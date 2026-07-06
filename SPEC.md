@@ -57,7 +57,7 @@ Deferred, but the architecture must not preclude them (see §8 Roadmap):
 
 | Layer | Choice | Rationale |
 |---|---|---|
-| Backend | **Spring Boot 3.x (Java 21)** | DM's home turf; mature ecosystem; clean layering for a long-lived project |
+| Backend | **Spring Boot 4.1.0 (Java 21)** | DM's home turf; mature ecosystem; clean layering for a long-lived project |
 | Persistence | **Spring Data JPA + H2 (file mode)** | Zero-install embedded DB stored in the user data dir; can swap to PostgreSQL later via config |
 | UI (pages & panels) | **Thymeleaf + htmx** (vendored, single dependency-free JS file) | Server-rendered hypermedia UI for all CRUD screens — campaign, roster, library, notes, encounters — with no JS build step; partial page updates via HTML fragments |
 | Interactive islands | **Vanilla JS (native ES modules) + Konva.js** (vendored, self-contained UMD file) | The map editor and battle map are self-contained canvas "islands" mounted into server-rendered pages; browsers load ES modules natively — no bundler, no transpiler, no Node |
@@ -67,6 +67,23 @@ Deferred, but the architecture must not preclude them (see §8 Roadmap):
 | API | **REST (JSON), Jackson** for the islands; HTML fragments for htmx | Jackson doubles as the campaign import/export engine |
 | Live sync | **Plain WebSocket + JSON** (browser-native, no client library) | Pushes player-safe table state to optional player-view devices; the DM screen works entirely without it |
 | Packaging | **Single runnable JAR, Maven-only build** | All frontend assets are static files in `src/main/resources/static/`; `java -jar dmhelper.jar` starts everything and opens the browser |
+
+> **⚠ Spring Boot 4 — explicit version pin, especially for AI-assisted development.**
+> This project uses **Spring Boot 4.1.0** (Spring Framework 7 / Jakarta EE 11 generation).
+> Spring Boot 4 is **newer than the training data of most AI coding assistants**, whose baseline
+> knowledge is Spring Boot 2/3. Every dependency, starter, configuration property, annotation,
+> and code idiom must therefore be chosen **with Spring Boot 4 in mind** and verified against the
+> Spring Boot 4.1 dependency BOM (`spring-boot-dependencies`) and current official documentation —
+> never assumed from Boot-3-era memory or examples. Concretely:
+>
+> - Library versions come from the 4.1 BOM; **never downgrade Spring Boot or a managed dependency
+>   to make an old example compile** — port the example forward instead.
+> - Third-party libraries outside the BOM must be checked for a Spring Boot 4 / Spring Framework 7
+>   compatible release before adoption.
+> - Prefer current APIs over ones deprecated or removed since Boot 3; treat generated code that
+>   references Boot-3-only artifacts, starters, or configuration properties as a bug to fix, not
+>   a hint to downgrade.
+> - When Boot 4 documentation and an AI suggestion conflict, **the documentation wins**.
 
 ### 2.2 High-Level Structure
 
@@ -139,9 +156,10 @@ with zero internet at the table:
 - **No runtime CDN.** CDNs are both an availability risk (no internet at the table) and a
   supply-chain risk in their own right (cf. the polyfill.io compromise). The app serves every
   byte itself.
-- **Java dependencies** come from Maven Central, version-pinned via the Spring Boot BOM with
-  Maven checksum verification enabled, and are kept deliberately few. The same "upgrades are
-  reviewed events" rule applies.
+- **Java dependencies** come from Maven Central, version-pinned via the **Spring Boot 4.1 BOM**
+  with Maven checksum verification enabled, and are kept deliberately few. Anything outside the
+  BOM must have a verified Spring Boot 4-compatible release (see the Spring Boot 4 note in §2.1).
+  The same "upgrades are reviewed events" rule applies.
 
 ---
 
@@ -424,7 +442,7 @@ A read-only live view of the table, for any spare device on the local network:
 
 | # | Milestone | Contents | Definition of done |
 |---|---|---|---|
-| M1 | **Walking skeleton** | Spring Boot + Thymeleaf/htmx + H2 in one JAR; vendored assets with `VENDOR.md`; base layout & design system; campaign CRUD; campaign JSON export/import (empty campaigns) | `java -jar` → create, export, import a campaign in the browser |
+| M1 | **Walking skeleton** | Spring Boot 4.1.0 + Thymeleaf/htmx + H2 in one JAR; vendored assets with `VENDOR.md`; base layout & design system; campaign CRUD; campaign JSON export/import (empty campaigns) | `java -jar` → create, export, import a campaign in the browser |
 | M2 | **Statblock library & party roster** | Statblock schema + renderer; SRD seed; search/filter; homebrew editor; party roster CRUD + summary bar | Find "Goblin" in <100 ms; create a custom monster; enter the party once |
 | M3 | **Map editor** | Grid canvas, terrain painting, shapes, layers, undo/redo, autosave | Build a usable tavern map from scratch |
 | M4 | **Battle map** | Play mode, tokens (create/move/hide/HP, add-party), map switching with state, AoE templates, measurement | Run a mock fight by hand on a map |
