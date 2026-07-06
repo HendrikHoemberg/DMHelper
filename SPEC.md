@@ -1,8 +1,8 @@
 # DMHelper — Specification
 
 A local-first web application that replaces the "multiple PDFs and 7 spreadsheets" workflow of running
-D&D 5.5e (2024 rules) campaigns with one integrated tool: campaign planning, an interactive battle map
-with a built-in map editor, combat tracking, a monster library, and a campaign wiki.
+D&D 5.5e (2024 rules) campaigns with one integrated tool: campaign planning, a party roster, an interactive battle map
+with a built-in map editor, combat tracking, a monster library, handouts, and a campaign wiki.
 
 **Status:** v1 specification · **Owner:** Hendrik (DM) · **Rules edition:** D&D 5.5e (2024 / SRD 5.2)
 
@@ -44,8 +44,9 @@ Deferred, but the architecture must not preclude them (see §8 Roadmap):
   v1 player view is display-only
 - Fog of war and per-player vision
 - Uploading map images as battle map backgrounds (v1 maps are built in the editor)
-- Dice roller and rules quick-reference
-- Character sheet management for players
+- Dice roller and rules quick-reference (first step post-v1: clickable statblock rolls)
+- Character sheet management for players — the v1 party roster (§4.2) stores only the
+  combat-relevant stats the DM needs; players keep their own sheets
 - Hosting for multiple DMs / user accounts
 
 ---
@@ -89,9 +90,9 @@ Deferred, but the architecture must not preclude them (see §8 Roadmap):
        H2 file DB  (~/.dmhelper/data)
 ```
 
-Backend packages are organized **by feature module** (`campaign`, `gamemap`, `encounter`,
-`library`, `notes`, `transfer`), each with its own `web/service/data` sub-packages, so modules
-stay decoupled and new ones (dice, journal, etc.) slot in cleanly.
+Backend packages are organized **by feature module** (`campaign`, `party`, `gamemap`, `encounter`,
+`library`, `notes`, `handout`, `transfer`), each with its own `web/service/data` sub-packages, so
+modules stay decoupled and new ones (dice, journal, etc.) slot in cleanly.
 
 ### 2.3 Key Architectural Rules
 
@@ -121,9 +122,11 @@ stay decoupled and new ones (dice, journal, etc.) slot in cleanly.
 
 ```
 Campaign 1──* GameMap 1──1 MapDocument (JSON blob: layers, tiles, shapes, grid config)
-    │             └────1──* Token ──?──> StatBlock
+    │             └────1──* Token ──?──> StatBlock | PartyMember
     │
-    ├──* Encounter 1──* Combatant ──?──> Token / StatBlock
+    ├──* PartyMember (lightweight PC stats, not a character sheet)
+    ├──* Encounter 1──* Combatant ──?──> Token / StatBlock / PartyMember
+    ├──* Handout (image file + metadata)
     ├──* Note (typed: NPC | LOCATION | QUEST | SESSION_LOG | GENERIC)
     └──* StatBlock (source=CUSTOM, campaign-scoped)   StatBlock (source=SRD, global)
 ```
@@ -131,12 +134,17 @@ Campaign 1──* GameMap 1──1 MapDocument (JSON blob: layers, tiles, shapes
 | Entity | Key fields |
 |---|---|
 | **Campaign** | name, description, createdAt, settings (JSON) |
+| **PartyMember** | campaign, characterName, playerName, classAndLevel, ac, maxHp, initiativeBonus, speed, passivePerception/Insight/Investigation, notes, `active` (absent player / retired PC) |
 | **GameMap** | campaign, name, gridWidth/Height, cellSizePx, sortOrder, `document` (JSON, versioned schema) |
-| **Token** | map, name, kind (PC/NPC/MONSTER/OBJECT), position (col,row), size (1×1 … 4×4), color/icon, `hidden` (DM-only), statBlockRef?, currentHp?, maxHp?, notes |
+| **Token** | map, name, kind (PC/NPC/MONSTER/OBJECT), position (col,row), size (1×1 … 4×4), color/icon, `hidden` (DM-only), statBlockRef? / partyMemberRef?, currentHp?, maxHp?, notes |
 | **StatBlock** | source (SRD/CUSTOM), campaign?, name, CR, type, AC, HP, speeds, ability scores, saves, skills, senses, languages, traits/actions/reactions/legendary (structured JSON), searchable columns (name, CR, type) |
 | **Encounter** | campaign, map?, name, status (PLANNED/ACTIVE/DONE), round, activeTurnIndex |
-| **Combatant** | encounter, name, initiative, currentHp, maxHp, conditions[], `hidden`, tokenRef?, statBlockRef? |
+| **Combatant** | encounter, name, initiative, currentHp, maxHp, conditions[], `concentrating`, legendaryActionsRemaining?, `hidden`, tokenRef?, statBlockRef? / partyMemberRef? |
+| **Handout** | campaign, title, image file reference, tags[], `dmOnly` until presented |
 | **Note** | campaign, type, title, body (Markdown), tags[], `dmOnly` (default true), wiki-links to other notes/statblocks/maps |
+
+Handout images live on the file system (`~/.dmhelper/files`), referenced by the entity — the
+database stays small and backups copy both.
 
 The `MapDocument` JSON schema carries a `schemaVersion` field from day one; the backend migrates
 old documents forward on load.
@@ -149,8 +157,9 @@ old documents forward on load.
 
 - CRUD for campaigns; a campaign dashboard listing its maps, encounters, notes, and custom content.
 - **Export**: one click produces a single self-contained `*.dmcampaign.json` file containing the
-  full campaign graph (maps + documents, tokens, encounters, notes, campaign-scoped statblocks).
-  SRD references are exported by stable SRD key, not duplicated.
+  full campaign graph (party roster, maps + documents, tokens, encounters, notes, handouts with
+  embedded images, campaign-scoped statblocks). SRD references are exported by stable SRD key,
+  not duplicated.
 - **Import**: upload a `*.dmcampaign.json`; the app validates it (schema version + referential
   integrity), reports problems clearly, and creates the campaign with fresh IDs (import never
   overwrites existing data). Unresolvable SRD references degrade to plain-text placeholders with a
@@ -164,7 +173,10 @@ Sketch of the format:
 {
   "formatVersion": 1,
   "campaign": { "name": "Curse of the Amber Court", "description": "..." },
+  "party": [ { "characterName": "Thia", "playerName": "Anna", "classAndLevel": "Rogue 5",
+               "ac": 16, "maxHp": 38, "initiativeBonus": 4, "passivePerception": 17 } ],
   "statBlocks": [ { "key": "amber-knight", "name": "Amber Knight", "cr": "5", "...": "..." } ],
+  "handouts": [ { "title": "The Regent's Letter", "image": "data:image/png;base64,..." } ],
   "maps": [ { "key": "throne-room", "name": "Throne Room", "grid": { "w": 30, "h": 20, "cellPx": 48 },
               "document": { "schemaVersion": 1, "layers": [ "..." ] },
               "tokens": [ { "name": "Amber Knight", "ref": "amber-knight", "pos": [12, 4], "hidden": true } ] } ],
@@ -174,7 +186,24 @@ Sketch of the format:
 }
 ```
 
-### 4.2 Map Editor (built-in, tile/shape based)
+### 4.2 Party Roster & Encounter Difficulty
+
+The DM-screen answer to "what's the rogue's passive Perception again?" — a lightweight roster of
+the player characters, **not** a character sheet system (players keep their own sheets):
+
+- Per campaign: character name, player name, class & level, AC, max HP, initiative bonus, speed,
+  passive Perception/Insight/Investigation, free-text notes (e.g., "darkvision, fey ancestry").
+  An `active` flag handles absent players and retired characters.
+- **Party summary bar**: a compact, always-available strip (AC + passives per character) on the
+  battle map and notes screens — the top row of a physical DM screen, digitized. DM Mode only.
+- **One-click integration**: "add party to map" creates PC tokens for all active members;
+  starting an encounter pre-fills PC combatants with names, HP, and initiative bonuses — no
+  re-typing per fight.
+- **Encounter difficulty calculator**: while building an encounter, the app shows the 2024-DMG
+  XP budget rating (Low / Moderate / High) live, computed from the active roster's size and levels
+  against the selected monsters' XP values. Prep-time guidance only — no hard limits.
+
+### 4.3 Map Editor (built-in, tile/shape based)
 
 Create battle maps inside the app — no external tools required.
 
@@ -191,7 +220,7 @@ Create battle maps inside the app — no external tools required.
 - The document model reserves an optional **image layer** slot so image-based backgrounds can be
   added post-v1 without a format break.
 
-### 4.3 Battle Map (live play)
+### 4.4 Battle Map (live play)
 
 The same canvas in "play" mode:
 
@@ -203,25 +232,35 @@ The same canvas in "play" mode:
   each map's token state — walk out of the tavern mid-fight, come back later, everything is where
   it was. Maps can be grouped/ordered for session flow.
 - **Annotations**: DM-only pings/markers/text on the annotation layer.
+- **AoE spell templates**: drag-and-drop cone, sphere/circle, cube, and line overlays with 5.5e
+  sizes (15-ft cone, 20-ft radius, …), semi-transparent and grid-aligned, so "who's in the
+  fireball?" is answered by looking. Templates are player-visible (they exist to be argued over),
+  removable with one click, and cleared automatically when the encounter ends.
 - Measurement helper: click-drag shows distance in cells/feet.
 
-### 4.4 Initiative & Combat Tracker
+### 4.5 Initiative & Combat Tracker
 
 Docked panel beside the battle map, linked to tokens:
 
-- Build an encounter from tokens on the current map (auto-pulls names/HP from statblocks) and/or
-  plan encounters ahead of time and activate them at the table.
-- Roll or type initiative per combatant (auto-roll for monsters using their DEX; PCs typed in);
-  sort, tie-break, drag to reorder.
+- Build an encounter from tokens on the current map (auto-pulls names/HP from statblocks and the
+  party roster) and/or plan encounters ahead of time and activate them at the table.
+- Roll or type initiative per combatant (auto-roll for monsters using their DEX; PCs typed in,
+  with their roster initiative bonus shown); sort, tie-break, drag to reorder.
 - Turn management: next/previous, round counter, active combatant highlighted **both** in the
   tracker and on the map.
 - HP tracking: apply damage/healing with quick math (`-12`, `+5`); death handling for monsters
   (auto-mark dead on 0) vs. PCs (death-save reminder).
 - Conditions: toggle 5.5e conditions per combatant; condition icons show on tokens.
+- **Concentration**: flag a combatant as concentrating (with the spell's name); when they take
+  damage the tracker prompts the save with the correct DC (10 or half damage). Losing it clears
+  the flag.
+- **Legendary & lair actions**: combatants whose statblock has legendary actions get a per-round
+  counter (decrement on use, reset at the top of the round); encounters can include a **lair
+  action** entry pinned at initiative 20.
 - In DM Mode off (player-safe), the tracker shows only names, order, and conditions — no monster
   HP or hidden combatants.
 
-### 4.5 Monster / NPC Statblock Library
+### 4.6 Monster / NPC Statblock Library
 
 - **Bundled SRD 5.2 content** (CC-BY-4.0): all SRD monsters, seeded into the read-only global
   library on first run, with attribution shown in the app's About screen as the license requires.
@@ -234,7 +273,7 @@ Docked panel beside the battle map, linked to tokens:
   entry as a starting point. Custom entries are campaign-scoped by default, promotable to global.
 - One-click paths: statblock → token on current map; statblock → combatant in encounter.
 
-### 4.6 Session Notes & Campaign Wiki
+### 4.7 Session Notes & Campaign Wiki
 
 The "kill the 7 spreadsheets" module:
 
@@ -248,7 +287,22 @@ The "kill the 7 spreadsheets" module:
   reachable mid-session without leaving the map.
 - Notes are `dmOnly` by default and therefore invisible when DM Mode is off.
 
-### 4.7 Player View (optional second display)
+### 4.8 Handouts
+
+The digital version of sliding a prop across the table:
+
+- Upload images per campaign (letters, portraits, item cards, shop inventories, region maps) with
+  a title and tags; browse them in a gallery. Handouts can be wiki-linked from notes
+  (`[[handout:The Regent's Letter]]`) so they're findable in the moment they're relevant.
+- **Present**: one click shows a handout full-screen — on the player view if devices are
+  connected, and/or as a full-screen overlay on the DM screen for device-less tables (safe to
+  rotate the laptop; the overlay hides everything else).
+- Handouts are `dmOnly` until first presented; afterwards they can be marked as "given to
+  players" so you remember what the party actually possesses.
+- Supported formats: PNG/JPEG/WebP; stored on the file system (§3), included in backups and in
+  campaign export (base64-embedded so the `.dmcampaign.json` stays a single self-contained file).
+
+### 4.9 Player View (optional second display)
 
 A read-only live view of the table, for any spare device on the local network:
 
@@ -257,13 +311,14 @@ A read-only live view of the table, for any spare device on the local network:
   connect; none are required.
 - **Always player-safe.** The player view has no DM Mode toggle — the server only ever sends it
   player-safe data (hidden tokens, monster HP, DM annotations, and notes are stripped server-side).
-- **What it shows:** the live battle map (tokens, terrain, active-turn highlight, condition icons)
-  and the initiative order (names + conditions). Nothing else — no navigation, no menus.
+- **What it shows:** the live battle map (tokens, terrain, AoE templates, active-turn highlight,
+  condition icons), the initiative order (names + conditions), or a presented handout
+  (full-screen). Nothing else — no navigation, no menus.
 - **The DM decides what's "on the table."** The player view does not blindly mirror the DM's
-  screen. The DM explicitly presents a map to the table ("Send to table" action); they can then
-  freely browse other maps, notes, or prep on their own screen without the players seeing any of
-  it. A **curtain mode** (splash screen with campaign name/artwork) lets the DM blank the table
-  display during scene transitions or secret prep.
+  screen. The DM explicitly presents a map or handout to the table ("Send to table" action); they
+  can then freely browse other maps, notes, or prep on their own screen without the players seeing
+  any of it. A **curtain mode** (splash screen with campaign name/artwork) lets the DM blank the
+  table display during scene transitions or secret prep.
 - **Sync behavior:** token moves, HP-driven token states, turn changes, and map presentation
   propagate over WebSocket within ~100 ms. A player view that loses its connection reconnects
   automatically and re-fetches the current table state — a flaky tablet must never require DM
@@ -271,14 +326,14 @@ A read-only live view of the table, for any spare device on the local network:
 - **View controls on the device itself:** pinch/scroll zoom and pan only (auto-fit by default),
   so a phone user can zoom into their corner of the fight.
 
-### 4.8 DM Mode Toggle (global)
+### 4.10 DM Mode Toggle (global)
 
 - One global switch in the app header + keyboard shortcut (default `Ctrl+Shift+D`), with an
   unmistakable visual state (e.g., colored border while player-safe mode is on).
 - When toggled to **player-safe**: hidden tokens vanish, monster HP/bars disappear, DM annotations
-  hide, the notes panel closes and locks, statblock/encounter-prep views blank out, and the map
-  switcher hides unvisited maps' names. The battle map and initiative order (names + conditions)
-  remain visible.
+  hide, the notes panel and party summary bar close and lock, statblock/encounter-prep views blank
+  out, and the map switcher hides unvisited maps' names. The battle map (including AoE templates),
+  initiative order (names + conditions), and any presented handout remain visible.
 - Implemented as a single frontend state that every component consumes — but driven by the same
   persisted `dmOnly`/`hidden` flags and server-side filtering rules that feed the player view
   (§2.3.3), so what "player-safe" means is defined exactly once.
@@ -291,7 +346,11 @@ A read-only live view of the table, for any spare device on the local network:
 
 - Base path `/api/v1`; JSON everywhere; entity IDs are UUIDs.
 - Resource-oriented: `/api/v1/campaigns/{id}/maps`, `/maps/{id}/tokens`, `/encounters/{id}/combatants`,
-  `/library/statblocks?search=&cr=&type=`, `/campaigns/{id}/notes?type=&tag=`.
+  `/library/statblocks?search=&cr=&type=`, `/campaigns/{id}/notes?type=&tag=`,
+  `/campaigns/{id}/party`, `/campaigns/{id}/handouts` (multipart image upload; files served from
+  `/files/{id}`).
+- Table presentation (what player views show) is set via `PUT /api/v1/table/presentation`
+  with a body of `{ "mode": "MAP" | "HANDOUT" | "CURTAIN", "ref": "<id>" }`.
 - Map documents saved via `PUT /maps/{id}/document` (whole-document replace with optimistic
   version check); token moves via small `PATCH` calls so live play is snappy.
 - Import/export: `GET /campaigns/{id}/export` (streams the JSON file),
@@ -312,8 +371,8 @@ A read-only live view of the table, for any spare device on the local network:
   data loss (encounter state is persisted server-side on every change).
 - **Performance targets**: map editor smooth at 60fps on a 50×50 grid with ~200 shapes; token drag
   latency imperceptible; statblock search results < 100 ms.
-- **Backups**: on every app start, copy the H2 database file to a rotating backup folder
-  (`~/.dmhelper/backups`, keep last 10).
+- **Backups**: on every app start, copy the H2 database file and the handout files directory to a
+  rotating backup folder (`~/.dmhelper/backups`, keep last 10).
 - **Testing**: service-layer unit tests; import/export round-trip tests (export → import → deep
   equality) as the flagship integration test; **exhaustive tests for the player-safe projection**
   (no `dmOnly`/`hidden` field may ever reach a player topic — this is the one security-like
@@ -330,11 +389,11 @@ A read-only live view of the table, for any spare device on the local network:
 | # | Milestone | Contents | Definition of done |
 |---|---|---|---|
 | M1 | **Walking skeleton** | Spring Boot + React + H2 wired into one JAR; campaign CRUD; campaign JSON export/import (empty campaigns) | `java -jar` → create, export, import a campaign in the browser |
-| M2 | **Statblock library** | Statblock schema + renderer; SRD seed; search/filter; homebrew editor | Find "Goblin" in <100 ms; create a custom monster |
+| M2 | **Statblock library & party roster** | Statblock schema + renderer; SRD seed; search/filter; homebrew editor; party roster CRUD + summary bar | Find "Goblin" in <100 ms; create a custom monster; enter the party once |
 | M3 | **Map editor** | Grid canvas, terrain painting, shapes, layers, undo/redo, autosave | Build a usable tavern map from scratch |
-| M4 | **Battle map** | Play mode, tokens (create/move/hide/HP), map switching with state, measurement | Run a mock fight by hand on a map |
-| M5 | **Combat tracker** | Encounters, initiative, turns, HP math, conditions, map linkage | Run a full combat without touching paper |
-| M6 | **Player view** | WebSocket broadcaster, server-side player-safe projection, `/player` route, send-to-table & curtain, QR join, auto-reconnect | Phone + laptop show the fight live while the DM preps elsewhere |
+| M4 | **Battle map** | Play mode, tokens (create/move/hide/HP, add-party), map switching with state, AoE templates, measurement | Run a mock fight by hand on a map |
+| M5 | **Combat tracker** | Encounters, initiative, turns, HP math, conditions, concentration, legendary/lair actions, difficulty calculator, map + roster linkage | Run a full combat (incl. a boss) without touching paper |
+| M6 | **Player view & handouts** | WebSocket broadcaster, server-side player-safe projection, `/player` route, send-to-table & curtain, QR join, auto-reconnect; handout upload/gallery/present | Phone + laptop show the fight live; a letter fills the TV |
 | M7 | **Notes & wiki** | Typed notes, Markdown, wiki-links + backlinks, search, side panel | Replace the campaign spreadsheet |
 | M8 | **Table polish** | DM Mode toggle everywhere, backups, error handling, keyboard shortcuts, full export/import of everything | Run a real session start-to-finish |
 
@@ -348,7 +407,9 @@ player devices.
 2. **Fog of war** — manual reveal first, vision-based later; renders on the player view.
 3. **Image map layers** — upload battle map images under the editor's shape layers (slot reserved
    in the map document schema).
-4. **Dice roller & rules reference** — with conditions/actions quick-cards.
+4. **Dice roller & rules reference** — first step: clickable statblock rolls (attack/damage/save
+   with modifiers applied — the RNG already exists for initiative); later a full roller with
+   conditions/actions quick-cards.
 5. **Spell & item tooling** — spell lists per statblock, loot tables, item cards.
 6. **Campaign templates** — export subsets (a dungeon + its monsters) as reusable modules.
 
