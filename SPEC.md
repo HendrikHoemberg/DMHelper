@@ -212,6 +212,24 @@ old documents forward on load.
 - The JSON format is **documented and versioned** (`formatVersion`) so campaigns can be authored or
   generated externally (e.g., by scripts or LLMs) and imported.
 
+**Generative tooling** — the import pipeline is the interface for AI-generated campaigns, so it
+must support a tight generate → validate → fix loop:
+
+- **Machine-readable JSON Schemas** for the campaign format and the map document ship with the
+  app (served at `/api/v1/schemas/…` and checked into the repo), so an external agent can
+  self-validate output before ever contacting the app. The schemas — not prose — are the
+  authoritative format definition; coordinate conventions (origin at top-left, `[col, row]`
+  order, sizes in cells) are encoded in their descriptions.
+- **Dry-run import**: `POST /campaigns/import?dryRun=true` runs the complete validation —
+  schema, referential integrity, and spatial checks (tokens inside grid bounds, primitives within
+  map dimensions) — and returns the full problem report without creating anything.
+- **SRD key catalog**: `GET /api/v1/library/srd-keys` lists every valid SRD reference key
+  (also exported as a checked-in file), so generators reference real content instead of
+  hallucinating keys. Unknown keys still degrade gracefully on import (see above), but the
+  catalog makes them avoidable.
+- Import remains strictly additive (never overwrites), so a failed or mediocre generation
+  costs nothing — delete the campaign and re-import.
+
 Sketch of the format:
 
 ```json
@@ -262,6 +280,13 @@ Create battle maps inside the app — no external tools required.
 - **Editing UX**: undo/redo, copy/paste of selections, pan (space-drag) and zoom (wheel), keyboard
   shortcuts.
 - Maps save automatically (debounced) into the map's `MapDocument`.
+- **Semantic map primitives**: alongside individually painted cells, the document schema supports
+  high-level declarations — `room` (rectangular area with walls), `corridor`, `door`, and
+  `region` (terrain fill over an area) — which the app expands to cells on render. The editor
+  emits painted cells; the primitives exist chiefly so that *generated* maps (§4.1 generative
+  tooling) can be expressed with few degrees of freedom ("room from (2,2) to (10,8), door at
+  (10,5)") instead of hundreds of coordinates — which is the difference between an LLM producing
+  coherent dungeons and geometric soup. Primitives are also valid hand-authoring shorthand.
 - The document model reserves an optional **image layer** slot so image-based backgrounds can be
   added post-v1 without a format break.
 
@@ -401,7 +426,9 @@ A read-only live view of the table, for any spare device on the local network:
 - Map documents saved via `PUT /maps/{id}/document` (whole-document replace with optimistic
   version check); token moves via small `PATCH` calls so live play is snappy.
 - Import/export: `GET /campaigns/{id}/export` (streams the JSON file),
-  `POST /campaigns/import` (multipart upload).
+  `POST /campaigns/import` (multipart upload; `?dryRun=true` for validate-only).
+- Generative tooling: `GET /api/v1/schemas/{name}` (JSON Schemas for the campaign format and map
+  document), `GET /api/v1/library/srd-keys` (valid SRD reference keys).
 - Errors follow RFC 7807 problem+json with actionable messages (especially import validation).
 - **Live sync (player view):** plain WebSocket at `/ws/table` (browser-native API, no client
   library, no STOMP). The server sends typed JSON messages: a full `TABLE_STATE` snapshot on
@@ -449,7 +476,7 @@ A read-only live view of the table, for any spare device on the local network:
 | M5 | **Combat tracker** | Encounters, initiative, turns, HP math, conditions, concentration, legendary/lair actions, difficulty calculator, map + roster linkage | Run a full combat (incl. a boss) without touching paper |
 | M6 | **Player view & handouts** | WebSocket broadcaster, server-side player-safe projection, `/player` route, send-to-table & curtain, QR join, auto-reconnect; handout upload/gallery/present | Phone + laptop show the fight live; a letter fills the TV |
 | M7 | **Notes & wiki** | Typed notes, Markdown, wiki-links + backlinks, search, side panel | Replace the campaign spreadsheet |
-| M8 | **Table polish** | DM Mode toggle everywhere, backups, error handling, keyboard shortcuts, full export/import of everything | Run a real session start-to-finish |
+| M8 | **Table polish & generative tooling** | DM Mode toggle everywhere, backups, error handling, keyboard shortcuts, full export/import of everything; JSON Schemas, dry-run import, SRD key catalog | Run a real session start-to-finish; an AI-generated campaign imports cleanly |
 
 Each milestone ends in a usable state — the app is session-worthy from M4 onward, with or without
 player devices.
