@@ -25,17 +25,23 @@ about a specific setting or adventure.
 
 - **Single user (the DM), running locally.** The app starts as a local server; the DM opens it in a
   browser. No accounts, no auth, no internet dependency at the table.
-- **One shared screen.** Players see the DM's screen (rotated laptop, TV mirroring, etc.).
-  Therefore the app has a global **DM Mode toggle**: one switch (with keyboard shortcut) that
-  instantly hides all DM-only information — hidden tokens, monster HP, notes, upcoming encounter
-  content — so the screen can be safely shown to players at any moment.
-- **DM controls everything.** Players never interact with the app directly in v1.
+- **Primary display: the DM's screen**, which may be shown to players at any time. The app has a
+  global **DM Mode toggle**: one switch (with keyboard shortcut) that instantly hides all DM-only
+  information — hidden tokens, monster HP, notes, upcoming encounter content — so the screen can be
+  safely shown to players at any moment.
+- **Optional player view.** Any device on the same network (TV, tablet, a player's phone or laptop)
+  can open a read-only, always-player-safe URL served by the same app and see the live table state.
+  This is strictly additive: every feature must work on the DM screen alone, so a table with no
+  spare device loses nothing.
+- **DM controls everything.** The player view is display-only; players never interact with the app
+  directly in v1.
 
 ### 1.3 Explicit Non-Goals for v1
 
-Deferred, but the architecture must not preclude them (see §9 Roadmap):
+Deferred, but the architecture must not preclude them (see §8 Roadmap):
 
-- Separate networked player view / multi-device sync (would add WebSockets)
+- Player *interaction* (players moving their own tokens, per-player identity/permissions) — the
+  v1 player view is display-only
 - Fog of war and per-player vision
 - Uploading map images as battle map backgrounds (v1 maps are built in the editor)
 - Dice roller and rules quick-reference
@@ -53,6 +59,7 @@ Deferred, but the architecture must not preclude them (see §9 Roadmap):
 | Backend | **Spring Boot 3.x (Java 21)** | DM's home turf; mature ecosystem; clean layering for a long-lived project |
 | Persistence | **Spring Data JPA + H2 (file mode)** | Zero-install embedded DB stored in the user data dir; can swap to PostgreSQL later via config |
 | API | **REST (JSON), Jackson** | Simple request/response fits the single-user model; Jackson doubles as the campaign import/export engine |
+| Live sync | **WebSocket (Spring STOMP)** | Pushes player-safe table state to optional player-view devices; the DM screen works entirely without it |
 | Frontend | **React + TypeScript (Vite)** | Best ecosystem for the canvas-heavy map editor; TypeScript keeps the large frontend maintainable |
 | Map canvas | **Konva.js (react-konva)** | Declarative 2D canvas with layers, drag & drop, snapping — exactly the battle map's needs |
 | Frontend state | **Zustand** (app/map state) + **TanStack Query** (server data) | Lightweight; avoids Redux ceremony |
@@ -61,24 +68,25 @@ Deferred, but the architecture must not preclude them (see §9 Roadmap):
 ### 2.2 High-Level Structure
 
 ```
-┌──────────────────────── Browser ────────────────────────┐
-│  React SPA                                              │
-│  ├─ Campaign manager        ├─ Battle map (Konva)       │
-│  ├─ Map editor (Konva)      ├─ Initiative tracker       │
-│  ├─ Statblock library       └─ Notes / wiki             │
-│  └─ Global DM Mode toggle (affects every view)          │
-└───────────────▲──────────────────────────────────────────┘
-                │ REST/JSON
-┌───────────────┴──────────────────────────────────────────┐
-│  Spring Boot                                             │
-│  ├─ web:        controllers, DTOs                        │
-│  ├─ service:    campaign, map, encounter, library, notes │
-│  ├─ data:       JPA entities & repositories              │
-│  ├─ transfer:   campaign JSON import/export              │
-│  └─ seed:       SRD 5.2 content loader (first run)       │
-└───────────────┬──────────────────────────────────────────┘
-                │ JPA
-        H2 file DB  (~/.dmhelper/data)
+┌────────────── DM's browser ──────────────┐   ┌── Player devices (optional) ──┐
+│  React SPA (full app)                    │   │  TV / tablet / phone browser  │
+│  ├─ Campaign manager  ├─ Battle map      │   │  React SPA at /player:        │
+│  ├─ Map editor        ├─ Init. tracker   │   │  read-only, always            │
+│  ├─ Statblock library └─ Notes / wiki    │   │  player-safe live view        │
+│  └─ Global DM Mode toggle                │   └───────────▲───────────────────┘
+└──────────────▲───────────────────────────┘               │ WebSocket (STOMP)
+               │ REST/JSON                                 │ player-safe topics
+┌──────────────┴────────────────────────────────────────────┴──────────────────┐
+│  Spring Boot                                                                 │
+│  ├─ web:        controllers, DTOs                                            │
+│  ├─ live:       table-state broadcaster (filters dmOnly before publishing)   │
+│  ├─ service:    campaign, map, encounter, library, notes                     │
+│  ├─ data:       JPA entities & repositories                                  │
+│  ├─ transfer:   campaign JSON import/export                                  │
+│  └─ seed:       SRD 5.2 content loader (first run)                          │
+└──────────────┬───────────────────────────────────────────────────────────────┘
+               │ JPA
+       H2 file DB  (~/.dmhelper/data)
 ```
 
 Backend packages are organized **by feature module** (`campaign`, `gamemap`, `encounter`,
@@ -95,9 +103,15 @@ stay decoupled and new ones (dice, journal, etc.) slot in cleanly.
    and shouldn't require schema migrations. Tokens, encounters, HP, and initiative are proper
    entities — they're queried and mutated individually at the table.
 3. **DM-only visibility is data, not UI convention.** Anything hideable (tokens, notes, encounter
-   entries) has an explicit `dmOnly`/`hidden` flag persisted on the entity, so DM Mode filtering
-   is consistent everywhere and a future networked player view can reuse it server-side.
-4. **SRD content is read-only seed data**; homebrew content is user data. Both share one statblock
+   entries) has an explicit `dmOnly`/`hidden` flag persisted on the entity. The same server-side
+   filter drives both the DM Mode toggle and the player-view payloads — DM-only data is stripped
+   **on the server** before it is ever published to a player-view connection, so a curious player
+   opening browser dev-tools on their phone finds nothing.
+4. **The player view is a pure projection.** It holds no state of its own and accepts no input; it
+   renders whatever "table state" the server broadcasts (live map, tokens, initiative). If no
+   player device is connected, nothing about the app changes — single-screen play is the baseline,
+   not a degraded mode.
+5. **SRD content is read-only seed data**; homebrew content is user data. Both share one statblock
    schema, distinguished by `source` (`SRD` vs `CUSTOM`). Custom content can be campaign-scoped or
    global (reusable across campaigns).
 
@@ -234,7 +248,30 @@ The "kill the 7 spreadsheets" module:
   reachable mid-session without leaving the map.
 - Notes are `dmOnly` by default and therefore invisible when DM Mode is off.
 
-### 4.7 DM Mode Toggle (global)
+### 4.7 Player View (optional second display)
+
+A read-only live view of the table, for any spare device on the local network:
+
+- The DM screen shows a **"Player view" link/QR code** (e.g., `http://<dm-ip>:8080/player`);
+  opening it on a TV, tablet, or player's phone joins the table display. Any number of devices can
+  connect; none are required.
+- **Always player-safe.** The player view has no DM Mode toggle — the server only ever sends it
+  player-safe data (hidden tokens, monster HP, DM annotations, and notes are stripped server-side).
+- **What it shows:** the live battle map (tokens, terrain, active-turn highlight, condition icons)
+  and the initiative order (names + conditions). Nothing else — no navigation, no menus.
+- **The DM decides what's "on the table."** The player view does not blindly mirror the DM's
+  screen. The DM explicitly presents a map to the table ("Send to table" action); they can then
+  freely browse other maps, notes, or prep on their own screen without the players seeing any of
+  it. A **curtain mode** (splash screen with campaign name/artwork) lets the DM blank the table
+  display during scene transitions or secret prep.
+- **Sync behavior:** token moves, HP-driven token states, turn changes, and map presentation
+  propagate over WebSocket within ~100 ms. A player view that loses its connection reconnects
+  automatically and re-fetches the current table state — a flaky tablet must never require DM
+  attention mid-fight.
+- **View controls on the device itself:** pinch/scroll zoom and pan only (auto-fit by default),
+  so a phone user can zoom into their corner of the fight.
+
+### 4.8 DM Mode Toggle (global)
 
 - One global switch in the app header + keyboard shortcut (default `Ctrl+Shift+D`), with an
   unmistakable visual state (e.g., colored border while player-safe mode is on).
@@ -242,12 +279,15 @@ The "kill the 7 spreadsheets" module:
   hide, the notes panel closes and locks, statblock/encounter-prep views blank out, and the map
   switcher hides unvisited maps' names. The battle map and initiative order (names + conditions)
   remain visible.
-- Implemented as a single frontend state that every component consumes — but driven by the
-  persisted `dmOnly`/`hidden` flags on the data (§2.3.3), so filtering rules live in one place.
+- Implemented as a single frontend state that every component consumes — but driven by the same
+  persisted `dmOnly`/`hidden` flags and server-side filtering rules that feed the player view
+  (§2.3.3), so what "player-safe" means is defined exactly once.
+- DM Mode remains essential even with player views connected: it covers the "player walks behind
+  the screen" case and tables with no second device at all.
 
 ---
 
-## 5. REST API Conventions
+## 5. API Conventions
 
 - Base path `/api/v1`; JSON everywhere; entity IDs are UUIDs.
 - Resource-oriented: `/api/v1/campaigns/{id}/maps`, `/maps/{id}/tokens`, `/encounters/{id}/combatants`,
@@ -257,6 +297,11 @@ The "kill the 7 spreadsheets" module:
 - Import/export: `GET /campaigns/{id}/export` (streams the JSON file),
   `POST /campaigns/import` (multipart upload).
 - Errors follow RFC 7807 problem+json with actionable messages (especially import validation).
+- **Live sync (player view):** STOMP over WebSocket at `/ws`. Player devices subscribe to
+  player-safe topics only — `/topic/table/state` (full snapshot on connect/reconnect and on map
+  presentation/curtain changes) and `/topic/table/events` (token moves, turn changes, condition
+  updates). All payloads on these topics are filtered through the same server-side player-safe
+  projection (§2.3.3); no DM-privileged topic exists in v1 because the DM screen uses REST.
 
 ---
 
@@ -270,9 +315,11 @@ The "kill the 7 spreadsheets" module:
 - **Backups**: on every app start, copy the H2 database file to a rotating backup folder
   (`~/.dmhelper/backups`, keep last 10).
 - **Testing**: service-layer unit tests; import/export round-trip tests (export → import → deep
-  equality) as the flagship integration test; frontend component tests for the initiative tracker
-  and DM Mode filtering; a Playwright smoke test for the core session loop (create map → place
-  token → start encounter → advance turns).
+  equality) as the flagship integration test; **exhaustive tests for the player-safe projection**
+  (no `dmOnly`/`hidden` field may ever reach a player topic — this is the one security-like
+  invariant in the app); frontend component tests for the initiative tracker and DM Mode
+  filtering; a Playwright smoke test for the core session loop (create map → place token → start
+  encounter → advance turns → verify on a second player-view page).
 - **Licensing**: SRD 5.2 under CC-BY-4.0 with required attribution; no non-SRD WotC content is
   ever bundled.
 
@@ -287,16 +334,18 @@ The "kill the 7 spreadsheets" module:
 | M3 | **Map editor** | Grid canvas, terrain painting, shapes, layers, undo/redo, autosave | Build a usable tavern map from scratch |
 | M4 | **Battle map** | Play mode, tokens (create/move/hide/HP), map switching with state, measurement | Run a mock fight by hand on a map |
 | M5 | **Combat tracker** | Encounters, initiative, turns, HP math, conditions, map linkage | Run a full combat without touching paper |
-| M6 | **Notes & wiki** | Typed notes, Markdown, wiki-links + backlinks, search, side panel | Replace the campaign spreadsheet |
-| M7 | **Table polish** | DM Mode toggle everywhere, backups, error handling, keyboard shortcuts, full export/import of everything | Run a real session start-to-finish |
+| M6 | **Player view** | WebSocket broadcaster, server-side player-safe projection, `/player` route, send-to-table & curtain, QR join, auto-reconnect | Phone + laptop show the fight live while the DM preps elsewhere |
+| M7 | **Notes & wiki** | Typed notes, Markdown, wiki-links + backlinks, search, side panel | Replace the campaign spreadsheet |
+| M8 | **Table polish** | DM Mode toggle everywhere, backups, error handling, keyboard shortcuts, full export/import of everything | Run a real session start-to-finish |
 
-Each milestone ends in a usable state — the app is session-worthy from M4 onward.
+Each milestone ends in a usable state — the app is session-worthy from M4 onward, with or without
+player devices.
 
 ## 8. Post-v1 Roadmap (design for, don't build)
 
-1. **Networked player view** — second device/TV shows the player-safe map live (WebSocket/STOMP;
-   the `dmOnly` data flags already define what it may see).
-2. **Fog of war** — manual reveal first, vision-based later.
+1. **Player interaction** — players move their own tokens from their devices (adds per-device
+   identity and permission rules on top of the read-only player view).
+2. **Fog of war** — manual reveal first, vision-based later; renders on the player view.
 3. **Image map layers** — upload battle map images under the editor's shape layers (slot reserved
    in the map document schema).
 4. **Dice roller & rules reference** — with conditions/actions quick-cards.
