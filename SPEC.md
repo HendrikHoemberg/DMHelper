@@ -59,29 +59,33 @@ Deferred, but the architecture must not preclude them (see §8 Roadmap):
 |---|---|---|
 | Backend | **Spring Boot 3.x (Java 21)** | DM's home turf; mature ecosystem; clean layering for a long-lived project |
 | Persistence | **Spring Data JPA + H2 (file mode)** | Zero-install embedded DB stored in the user data dir; can swap to PostgreSQL later via config |
-| API | **REST (JSON), Jackson** | Simple request/response fits the single-user model; Jackson doubles as the campaign import/export engine |
-| Live sync | **WebSocket (Spring STOMP)** | Pushes player-safe table state to optional player-view devices; the DM screen works entirely without it |
-| Frontend | **React + TypeScript (Vite)** | Best ecosystem for the canvas-heavy map editor; TypeScript keeps the large frontend maintainable |
-| Map canvas | **Konva.js (react-konva)** | Declarative 2D canvas with layers, drag & drop, snapping — exactly the battle map's needs |
-| Frontend state | **Zustand** (app/map state) + **TanStack Query** (server data) | Lightweight; avoids Redux ceremony |
-| Packaging | **Single runnable JAR** | Maven build compiles the React app (frontend-maven-plugin) into `static/`; `java -jar dmhelper.jar` starts everything and opens the browser |
+| UI (pages & panels) | **Thymeleaf + htmx** (vendored, single dependency-free JS file) | Server-rendered hypermedia UI for all CRUD screens — campaign, roster, library, notes, encounters — with no JS build step; partial page updates via HTML fragments |
+| Interactive islands | **Vanilla JS (native ES modules) + Konva.js** (vendored, self-contained UMD file) | The map editor and battle map are self-contained canvas "islands" mounted into server-rendered pages; browsers load ES modules natively — no bundler, no transpiler, no Node |
+| Client-side sprinkles | **Alpine.js** (vendored, zero dependencies) | Lightweight reactivity for toolbars, dialogs, and the initiative tracker where htmx round-trips would be clumsy |
+| Type safety | **JSDoc annotations** on the JS islands | IDE-checked (IntelliJ/VS Code) without introducing a compiler toolchain; the discipline of TypeScript without its build step |
+| Markdown | **commonmark-java** (Maven) | Notes render server-side — one less client library |
+| API | **REST (JSON), Jackson** for the islands; HTML fragments for htmx | Jackson doubles as the campaign import/export engine |
+| Live sync | **Plain WebSocket + JSON** (browser-native, no client library) | Pushes player-safe table state to optional player-view devices; the DM screen works entirely without it |
+| Packaging | **Single runnable JAR, Maven-only build** | All frontend assets are static files in `src/main/resources/static/`; `java -jar dmhelper.jar` starts everything and opens the browser |
 
 ### 2.2 High-Level Structure
 
 ```
 ┌────────────── DM's browser ──────────────┐   ┌── Player devices (optional) ──┐
-│  React SPA (full app)                    │   │  TV / tablet / phone browser  │
-│  ├─ Campaign manager  ├─ Battle map      │   │  React SPA at /player:        │
-│  ├─ Map editor        ├─ Init. tracker   │   │  read-only, always            │
-│  ├─ Statblock library └─ Notes / wiki    │   │  player-safe live view        │
+│  Server-rendered pages (Thymeleaf+htmx)  │   │  TV / tablet / phone browser  │
+│  ├─ Campaign mgr     ├─ Init. tracker    │   │  /player page: read-only,     │
+│  ├─ Library / notes  ├─ Party, handouts  │   │  always player-safe; Konva    │
+│  ├─ JS islands (vanilla ES modules):     │   │  map renderer fed over        │
+│  │    map editor & battle map (Konva)    │   │  WebSocket                    │
 │  └─ Global DM Mode toggle                │   └───────────▲───────────────────┘
-└──────────────▲───────────────────────────┘               │ WebSocket (STOMP)
-               │ REST/JSON                                 │ player-safe topics
+└──────────────▲───────────────────────────┘               │ WebSocket
+               │ HTML fragments (htmx)                     │ (JSON, player-safe)
+               │ + JSON /api/v1 (map islands)              │
 ┌──────────────┴────────────────────────────────────────────┴──────────────────┐
 │  Spring Boot                                                                 │
-│  ├─ web:        controllers, DTOs                                            │
+│  ├─ web:        Thymeleaf views + htmx fragments + JSON API controllers      │
 │  ├─ live:       table-state broadcaster (filters dmOnly before publishing)   │
-│  ├─ service:    campaign, map, encounter, library, notes                     │
+│  ├─ service:    campaign, party, map, encounter, library, notes, handouts    │
 │  ├─ data:       JPA entities & repositories                                  │
 │  ├─ transfer:   campaign JSON import/export                                  │
 │  └─ seed:       SRD 5.2 content loader (first run)                          │
@@ -115,6 +119,29 @@ modules stay decoupled and new ones (dice, journal, etc.) slot in cleanly.
 5. **SRD content is read-only seed data**; homebrew content is user data. Both share one statblock
    schema, distinguished by `source` (`SRD` vs `CUSTOM`). Custom content can be campaign-scoped or
    global (reusable across campaigns).
+6. **Hypermedia by default, islands where it earns it.** Screens are server-rendered and updated
+   via htmx fragments; only the map editor and battle map are client-side JS applications
+   (Konva canvas islands talking JSON to `/api/v1`). New features must justify becoming an island
+   rather than defaulting to one — this keeps the hand-written JS surface small and auditable.
+
+### 2.4 Dependency & Supply-Chain Policy
+
+A deliberate response to the npm-ecosystem supply-chain attacks; also what makes the app work
+with zero internet at the table:
+
+- **No Node/npm toolchain, ever.** The build is Maven-only; there is no `package.json`,
+  no lockfile, no install scripts, no transitive JS dependency tree.
+- **Frontend libraries are vendored, not fetched.** htmx, Konva, and Alpine are committed to the
+  repo under `static/vendor/` as single files at pinned versions. A `VENDOR.md` records each
+  file's name, version, upstream URL, and SHA-256 hash; upgrading a library is a deliberate,
+  reviewed commit — never an automatic resolution. All three are dependency-free by design,
+  so the entire third-party JS surface is three auditable files.
+- **No runtime CDN.** CDNs are both an availability risk (no internet at the table) and a
+  supply-chain risk in their own right (cf. the polyfill.io compromise). The app serves every
+  byte itself.
+- **Java dependencies** come from Maven Central, version-pinned via the Spring Boot BOM with
+  Maven checksum verification enabled, and are kept deliberately few. The same "upgrades are
+  reviewed events" rule applies.
 
 ---
 
@@ -344,7 +371,9 @@ A read-only live view of the table, for any spare device on the local network:
 
 ## 5. API Conventions
 
-- Base path `/api/v1`; JSON everywhere; entity IDs are UUIDs.
+- **Two styles, one backend**: CRUD screens are driven by htmx — controllers return Thymeleaf
+  HTML fragments from view routes. The canvas islands, import/export, and anything scriptable use
+  the JSON API under `/api/v1`. Entity IDs are UUIDs everywhere.
 - Resource-oriented: `/api/v1/campaigns/{id}/maps`, `/maps/{id}/tokens`, `/encounters/{id}/combatants`,
   `/library/statblocks?search=&cr=&type=`, `/campaigns/{id}/notes?type=&tag=`,
   `/campaigns/{id}/party`, `/campaigns/{id}/handouts` (multipart image upload; files served from
@@ -356,16 +385,22 @@ A read-only live view of the table, for any spare device on the local network:
 - Import/export: `GET /campaigns/{id}/export` (streams the JSON file),
   `POST /campaigns/import` (multipart upload).
 - Errors follow RFC 7807 problem+json with actionable messages (especially import validation).
-- **Live sync (player view):** STOMP over WebSocket at `/ws`. Player devices subscribe to
-  player-safe topics only — `/topic/table/state` (full snapshot on connect/reconnect and on map
-  presentation/curtain changes) and `/topic/table/events` (token moves, turn changes, condition
-  updates). All payloads on these topics are filtered through the same server-side player-safe
-  projection (§2.3.3); no DM-privileged topic exists in v1 because the DM screen uses REST.
+- **Live sync (player view):** plain WebSocket at `/ws/table` (browser-native API, no client
+  library, no STOMP). The server sends typed JSON messages: a full `TABLE_STATE` snapshot on
+  connect/reconnect and on presentation/curtain changes, and incremental events (`TOKEN_MOVED`,
+  `TURN_CHANGED`, `CONDITIONS_CHANGED`, …) during play. Every payload passes through the same
+  server-side player-safe projection (§2.3.3); the socket is broadcast-only — client messages are
+  ignored — and no DM-privileged channel exists in v1 because the DM screen uses REST.
 
 ---
 
 ## 6. Quality & Non-Functional Requirements
 
+- **Polish comes from a hand-written design system**, not a component library: one CSS file of
+  design tokens (CSS custom properties for color, spacing, type scale), a dark-first theme that
+  looks right in a dim game room, and a small set of reusable Thymeleaf fragments (cards, dialogs,
+  statblock layout) used everywhere. Modern CSS (grid, container queries, `dialog`, transitions)
+  covers what UI frameworks used to be needed for.
 - **Robustness at the table is the top priority**: autosave everything (no explicit save button
   outside the editor's debounced save); the app must survive a browser refresh mid-combat with zero
   data loss (encounter state is persisted server-side on every change).
@@ -377,8 +412,9 @@ A read-only live view of the table, for any spare device on the local network:
   equality) as the flagship integration test; **exhaustive tests for the player-safe projection**
   (no `dmOnly`/`hidden` field may ever reach a player topic — this is the one security-like
   invariant in the app); frontend component tests for the initiative tracker and DM Mode
-  filtering; a Playwright smoke test for the core session loop (create map → place token → start
-  encounter → advance turns → verify on a second player-view page).
+  filtering; a Playwright (**Java binding**, from Maven — keeping the no-npm rule) smoke test for
+  the core session loop (create map → place token → start encounter → advance turns → verify on a
+  second player-view page).
 - **Licensing**: SRD 5.2 under CC-BY-4.0 with required attribution; no non-SRD WotC content is
   ever bundled.
 
@@ -388,7 +424,7 @@ A read-only live view of the table, for any spare device on the local network:
 
 | # | Milestone | Contents | Definition of done |
 |---|---|---|---|
-| M1 | **Walking skeleton** | Spring Boot + React + H2 wired into one JAR; campaign CRUD; campaign JSON export/import (empty campaigns) | `java -jar` → create, export, import a campaign in the browser |
+| M1 | **Walking skeleton** | Spring Boot + Thymeleaf/htmx + H2 in one JAR; vendored assets with `VENDOR.md`; base layout & design system; campaign CRUD; campaign JSON export/import (empty campaigns) | `java -jar` → create, export, import a campaign in the browser |
 | M2 | **Statblock library & party roster** | Statblock schema + renderer; SRD seed; search/filter; homebrew editor; party roster CRUD + summary bar | Find "Goblin" in <100 ms; create a custom monster; enter the party once |
 | M3 | **Map editor** | Grid canvas, terrain painting, shapes, layers, undo/redo, autosave | Build a usable tavern map from scratch |
 | M4 | **Battle map** | Play mode, tokens (create/move/hide/HP, add-party), map switching with state, AoE templates, measurement | Run a mock fight by hand on a map |
