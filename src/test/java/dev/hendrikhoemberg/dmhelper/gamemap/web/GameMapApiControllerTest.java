@@ -1,0 +1,135 @@
+package dev.hendrikhoemberg.dmhelper.gamemap.web;
+
+import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(GameMapApiController.class)
+class GameMapApiControllerTest {
+
+    @Autowired private MockMvc mockMvc;
+    @MockitoBean private GameMapService service;
+
+    private GameMap map(String name, long version) {
+        GameMap m = new GameMap();
+        m.setId(UUID.randomUUID());
+        m.setName(name);
+        m.setGridWidth(30);
+        m.setGridHeight(20);
+        m.setCellSizePx(48);
+        m.setVersion(version);
+        return m;
+    }
+
+    @Test
+    void shouldListMaps() throws Exception {
+        UUID campaignId = UUID.randomUUID();
+        when(service.findByCampaignId(campaignId)).thenReturn(List.of(map("Tavern", 0)));
+
+        mockMvc.perform(get("/api/v1/campaigns/{campaignId}/maps", campaignId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Tavern"))
+                .andExpect(jsonPath("$[0].gridType").value("SQUARE"));
+    }
+
+    @Test
+    void shouldCreateMap() throws Exception {
+        UUID campaignId = UUID.randomUUID();
+        when(service.create(eq(campaignId), eq("Tavern"), eq(30), eq(20), eq(48)))
+                .thenReturn(map("Tavern", 0));
+        String body = """
+                {"name":"Tavern","gridWidth":30,"gridHeight":20,"cellSizePx":48}""";
+
+        mockMvc.perform(post("/api/v1/campaigns/{campaignId}/maps", campaignId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Tavern"));
+    }
+
+    @Test
+    void shouldRejectBlankMapName() throws Exception {
+        String body = """
+                {"name":"   "}""";
+
+        mockMvc.perform(post("/api/v1/campaigns/{campaignId}/maps", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturn404ForMissingMap() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(service.findById(id)).thenThrow(new NotFoundException("Map not found: " + id));
+
+        mockMvc.perform(get("/api/v1/maps/{id}", id))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldGetDocumentWithVersion() throws Exception {
+        GameMap m = map("Tavern", 3);
+        when(service.findById(m.getId())).thenReturn(m);
+        when(service.getDocument(m.getId()))
+                .thenReturn(MapDocumentDto.createDefault(30, 20, 48));
+
+        mockMvc.perform(get("/api/v1/maps/{id}/document", m.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.version").value(3))
+                .andExpect(jsonPath("$.document.schemaVersion").value(1))
+                .andExpect(jsonPath("$.document.layers.length()").value(3));
+    }
+
+    @Test
+    void shouldSaveDocumentAndReturnNewVersion() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(service.updateDocument(eq(id), anyString(), eq(3L))).thenReturn(4L);
+        String doc = """
+                {"schemaVersion":1,"grid":{"width":30,"height":20,"cellSizePx":48},"layers":[]}""";
+
+        mockMvc.perform(put("/api/v1/maps/{id}/document", id)
+                        .param("expectedVersion", "3")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(doc))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.version").value(4));
+    }
+
+    @Test
+    void shouldReturn409OnStaleDocumentVersion() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(service.updateDocument(eq(id), anyString(), eq(1L)))
+                .thenThrow(new OptimisticLockingFailureException("stale"));
+        String doc = """
+                {"schemaVersion":1,"grid":{"width":30,"height":20,"cellSizePx":48},"layers":[]}""";
+
+        mockMvc.perform(put("/api/v1/maps/{id}/document", id)
+                        .param("expectedVersion", "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(doc))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void shouldDeleteMap() throws Exception {
+        mockMvc.perform(delete("/api/v1/maps/{id}", UUID.randomUUID()))
+                .andExpect(status().isNoContent());
+    }
+}
