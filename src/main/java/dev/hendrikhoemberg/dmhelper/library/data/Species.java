@@ -19,7 +19,7 @@ public class Species {
     @Column(nullable = false, length = 255)
     private String name;
 
-    @Column(length = 50)
+    @Column(length = 255)
     private String size;
 
     @Column(length = 50)

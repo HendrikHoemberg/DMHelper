@@ -57,9 +57,11 @@ public class MagicItemSeedService {
                         m.setRarity(rarityName != null ? rarityName.toString() : null);
                     }
                     if (entry.weapon() != null) {
-                        m.setType(entry.weapon().get("name"));
+                        Object weaponName = entry.weapon().get("name");
+                        m.setType(weaponName != null ? weaponName.toString() : null);
                     } else if (entry.armor() != null) {
-                        m.setType(entry.armor().get("name"));
+                        Object armorName = entry.armor().get("name");
+                        m.setType(armorName != null ? armorName.toString() : null);
                     }
                     m.setWeight(entry.weight());
                     m.setCost(entry.cost());
@@ -80,8 +82,8 @@ public class MagicItemSeedService {
             String key, String name, String desc,
             Map<String, String> category,
             Map<String, Object> rarity,
-            Map<String, String> weapon,
-            Map<String, String> armor,
+            Map<String, Object> weapon,
+            Map<String, Object> armor,
             String weight, String cost,
             boolean requires_attunement, String attunement_detail
     ) {}
