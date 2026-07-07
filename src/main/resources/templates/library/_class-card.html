@@ -1,1 +1,14 @@
-<div th:fragment="class-card-list" th:remove="tag"></div>
+<th:block th:fragment="class-card-list">
+    <div class="card-grid" th:if="${classes != null and !classes.isEmpty()}">
+        <a th:each="c : ${classes}" class="card card-clickable"
+           th:href="@{/library/classes/__${c.sourceKey}__}">
+            <h3 class="card-title" th:text="${c.name}">Class Name</h3>
+            <div class="badge-group">
+                <span class="badge badge-srd" th:text="${'HD: ' + c.hitDie}">HD</span>
+                <span class="badge badge-type" th:if="${c.subclassOf != null}"
+                      th:text="${'Subclass of ' + c.subclassOf}">Subclass</span>
+            </div>
+        </a>
+    </div>
+    <div class="empty-state"><p>No classes match your search.</p></div>
+</th:block>

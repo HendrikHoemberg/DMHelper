@@ -1,1 +1,9 @@
-<div th:fragment="background-card-list" th:remove="tag"></div>
+<th:block th:fragment="background-card-list">
+    <div class="card-grid" th:if="${backgrounds != null and !backgrounds.isEmpty()}">
+        <div th:each="b : ${backgrounds}" class="card">
+            <h3 class="card-title" th:text="${b.name}">Background Name</h3>
+            <p class="card-text" th:text="${b.description}">Description</p>
+        </div>
+    </div>
+    <div class="empty-state"><p>No backgrounds match your search.</p></div>
+</th:block>

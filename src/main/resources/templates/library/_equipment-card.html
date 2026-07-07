@@ -1,1 +1,23 @@
-<div th:fragment="equipment-card-list" th:remove="tag"></div>
+<th:block th:fragment="equipment-card-list">
+    <table class="equipment-table" th:if="${equipment != null and !equipment.isEmpty()}">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Cost</th>
+                <th>Weight</th>
+                <th>Properties</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="e : ${equipment}">
+                <td th:text="${e.name}">Name</td>
+                <td th:text="${e.category}">Category</td>
+                <td th:text="${e.cost}">Cost</td>
+                <td th:text="${e.weight}">Weight</td>
+                <td th:text="${e.propertiesDisplay}">Properties</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="empty-state"><p>No equipment matches your search.</p></div>
+</th:block>

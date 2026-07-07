@@ -11,99 +11,117 @@
         <main>
             <div class="page-header">
                 <h1>Monster Library</h1>
-                <div style="display: flex; gap: var(--space-md); align-items: center;">
+                <div style="display: flex; gap: var(--space-md); align-items: center; flex-wrap: wrap;">
                     <button class="form-tab active" id="tab-monsters"
-                            onclick="switchLibraryTab('monsters')">Monsters</button>
+                            onclick="switchCompendiumTab('monsters')">Monsters</button>
                     <button class="form-tab" id="tab-spells"
-                            onclick="switchLibraryTab('spells')">Spells</button>
+                            onclick="switchCompendiumTab('spells')">Spells</button>
+                    <button class="form-tab" id="tab-conditions"
+                            onclick="switchCompendiumTab('conditions')">Conditions</button>
+                    <button class="form-tab" id="tab-rules"
+                            onclick="switchCompendiumTab('rules')">Rules</button>
+                    <button class="form-tab" id="tab-equipment"
+                            onclick="switchCompendiumTab('equipment')">Equipment</button>
+                    <button class="form-tab" id="tab-magic-items"
+                            onclick="switchCompendiumTab('magic-items')">Magic Items</button>
+                    <button class="form-tab" id="tab-classes"
+                            onclick="switchCompendiumTab('classes')">Classes</button>
+                    <button class="form-tab" id="tab-species"
+                            onclick="switchCompendiumTab('species')">Species</button>
+                    <button class="form-tab" id="tab-backgrounds"
+                            onclick="switchCompendiumTab('backgrounds')">Backgrounds</button>
+                    <button class="form-tab" id="tab-feats"
+                            onclick="switchCompendiumTab('feats')">Feats</button>
                 </div>
                 <a th:href="@{/library/statblocks/new}" class="btn btn-primary">+ New Homebrew</a>
             </div>
 
-            <div class="search-bar">
-                <div class="form-group">
-                    <label>Search</label>
-                    <input type="text" name="search" id="librarySearch" placeholder="Search by name..."
-                           hx-get="/library/statblocks"
-                           hx-trigger="keyup changed delay:200ms"
-                           hx-target="#library-results"
-                           hx-include="#libraryCr,#libraryType,#librarySource">
+            <div id="section-monsters" class="compendium-section">
+                <div class="search-bar">
+                    <div class="form-group">
+                        <label>Search</label>
+                        <input type="text" name="search" id="librarySearch" placeholder="Search by name..."
+                               hx-get="/library/statblocks"
+                               hx-trigger="keyup changed delay:200ms"
+                               hx-target="#library-results"
+                               hx-include="#libraryCr,#libraryType,#librarySource">
+                    </div>
+                    <div class="form-group">
+                        <label>CR</label>
+                        <select name="cr" id="libraryCr"
+                                hx-get="/library/statblocks" hx-trigger="change"
+                                hx-target="#library-results"
+                                hx-include="#librarySearch,#libraryType,#librarySource">
+                            <option value="">Any CR</option>
+                            <option value="0">0</option>
+                            <option value="1/8">1/8</option>
+                            <option value="1/4">1/4</option>
+                            <option value="1/2">1/2</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select name="type" id="libraryType"
+                                hx-get="/library/statblocks" hx-trigger="change"
+                                hx-target="#library-results"
+                                hx-include="#librarySearch,#libraryCr,#librarySource">
+                            <option value="">Any Type</option>
+                            <option value="Aberration">Aberration</option>
+                            <option value="Beast">Beast</option>
+                            <option value="Celestial">Celestial</option>
+                            <option value="Construct">Construct</option>
+                            <option value="Dragon">Dragon</option>
+                            <option value="Elemental">Elemental</option>
+                            <option value="Fey">Fey</option>
+                            <option value="Fiend">Fiend</option>
+                            <option value="Giant">Giant</option>
+                            <option value="Humanoid">Humanoid</option>
+                            <option value="Monstrosity">Monstrosity</option>
+                            <option value="Ooze">Ooze</option>
+                            <option value="Plant">Plant</option>
+                            <option value="Undead">Undead</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Source</label>
+                        <select name="source" id="librarySource"
+                                hx-get="/library/statblocks" hx-trigger="change"
+                                hx-target="#library-results"
+                                hx-include="#librarySearch,#libraryCr,#libraryType">
+                            <option value="">All</option>
+                            <option value="SRD">SRD</option>
+                            <option value="CUSTOM">Custom</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>CR</label>
-                    <select name="cr" id="libraryCr"
-                            hx-get="/library/statblocks" hx-trigger="change"
-                            hx-target="#library-results"
-                            hx-include="#librarySearch,#libraryType,#librarySource">
-                        <option value="">Any CR</option>
-                        <option value="0">0</option>
-                        <option value="1/8">1/8</option>
-                        <option value="1/4">1/4</option>
-                        <option value="1/2">1/2</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                        <option value="11">11</option>
-                        <option value="12">12</option>
-                        <option value="13">13</option>
-                        <option value="14">14</option>
-                        <option value="15">15</option>
-                        <option value="16">16</option>
-                        <option value="17">17</option>
-                        <option value="18">18</option>
-                        <option value="19">19</option>
-                        <option value="20">20</option>
-                        <option value="30">30</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Type</label>
-                    <select name="type" id="libraryType"
-                            hx-get="/library/statblocks" hx-trigger="change"
-                            hx-target="#library-results"
-                            hx-include="#librarySearch,#libraryCr,#librarySource">
-                        <option value="">Any Type</option>
-                        <option value="Aberration">Aberration</option>
-                        <option value="Beast">Beast</option>
-                        <option value="Celestial">Celestial</option>
-                        <option value="Construct">Construct</option>
-                        <option value="Dragon">Dragon</option>
-                        <option value="Elemental">Elemental</option>
-                        <option value="Fey">Fey</option>
-                        <option value="Fiend">Fiend</option>
-                        <option value="Giant">Giant</option>
-                        <option value="Humanoid">Humanoid</option>
-                        <option value="Monstrosity">Monstrosity</option>
-                        <option value="Ooze">Ooze</option>
-                        <option value="Plant">Plant</option>
-                        <option value="Undead">Undead</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Source</label>
-                    <select name="source" id="librarySource"
-                            hx-get="/library/statblocks" hx-trigger="change"
-                            hx-target="#library-results"
-                            hx-include="#librarySearch,#libraryCr,#libraryType">
-                        <option value="">All</option>
-                        <option value="SRD">SRD</option>
-                        <option value="CUSTOM">Custom</option>
-                    </select>
+
+                <div id="library-results" hx-get="/library/statblocks" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="empty-state"><p>Loading...</p></div>
                 </div>
             </div>
 
-            <div id="library-results" hx-get="/library/statblocks" hx-trigger="load" hx-swap="innerHTML">
-                <div class="empty-state"><p>Loading...</p></div>
-            </div>
-
-            <div id="spell-section" style="display:none;">
+            <div id="section-spells" class="compendium-section" style="display:none;">
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
@@ -154,6 +172,188 @@
                     <div class="empty-state"><p>Loading spells...</p></div>
                 </div>
             </div>
+
+            <div id="section-conditions" class="compendium-section" style="display:none;">
+                <div class="search-bar">
+                    <div class="form-group">
+                        <label>Search</label>
+                        <input type="text" name="search" placeholder="Search conditions..."
+                               hx-get="/library/conditions"
+                               hx-trigger="keyup changed delay:200ms"
+                               hx-target="#condition-results">
+                    </div>
+                </div>
+                <div id="condition-results" hx-get="/library/conditions" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="empty-state"><p>Loading conditions...</p></div>
+                </div>
+            </div>
+
+            <div id="section-rules" class="compendium-section" style="display:none;">
+                <div class="search-bar">
+                    <div class="form-group">
+                        <label>Search</label>
+                        <input type="text" name="search" placeholder="Search rules..."
+                               hx-get="/library/rules"
+                               hx-trigger="keyup changed delay:200ms"
+                               hx-target="#rule-results">
+                    </div>
+                </div>
+                <div id="rule-results" hx-get="/library/rules" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="empty-state"><p>Loading rules...</p></div>
+                </div>
+            </div>
+
+            <div id="section-equipment" class="compendium-section" style="display:none;">
+                <div class="search-bar">
+                    <div class="form-group">
+                        <label>Search</label>
+                        <input type="text" name="search" id="equipmentSearch" placeholder="Search equipment..."
+                               hx-get="/library/equipment"
+                               hx-trigger="keyup changed delay:200ms"
+                               hx-target="#equipment-results"
+                               hx-include="#equipmentCategory">
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select name="category" id="equipmentCategory"
+                                hx-get="/library/equipment" hx-trigger="change"
+                                hx-target="#equipment-results"
+                                hx-include="#equipmentSearch">
+                            <option value="">All Categories</option>
+                            <option value="WEAPON">Weapons</option>
+                            <option value="ARMOR">Armor</option>
+                            <option value="GEAR">Adventuring Gear</option>
+                            <option value="TOOL">Tools</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="equipment-results" hx-get="/library/equipment" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="empty-state"><p>Loading equipment...</p></div>
+                </div>
+            </div>
+
+            <div id="section-magic-items" class="compendium-section" style="display:none;">
+                <div class="search-bar">
+                    <div class="form-group">
+                        <label>Search</label>
+                        <input type="text" name="search" id="magicSearch" placeholder="Search magic items..."
+                               hx-get="/library/magic-items"
+                               hx-trigger="keyup changed delay:200ms"
+                               hx-target="#magic-item-results"
+                               hx-include="#magicRarity,#magicCategory">
+                    </div>
+                    <div class="form-group">
+                        <label>Rarity</label>
+                        <select name="rarity" id="magicRarity"
+                                hx-get="/library/magic-items" hx-trigger="change"
+                                hx-target="#magic-item-results"
+                                hx-include="#magicSearch,#magicCategory">
+                            <option value="">Any Rarity</option>
+                            <option value="Common">Common</option>
+                            <option value="Uncommon">Uncommon</option>
+                            <option value="Rare">Rare</option>
+                            <option value="Very Rare">Very Rare</option>
+                            <option value="Legendary">Legendary</option>
+                            <option value="Artifact">Artifact</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select name="category" id="magicCategory"
+                                hx-get="/library/magic-items" hx-trigger="change"
+                                hx-target="#magic-item-results"
+                                hx-include="#magicSearch,#magicRarity">
+                            <option value="">All Categories</option>
+                            <option value="Armor">Armor</option>
+                            <option value="Weapon">Weapon</option>
+                            <option value="Wondrous Item">Wondrous Item</option>
+                            <option value="Ring">Ring</option>
+                            <option value="Rod">Rod</option>
+                            <option value="Staff">Staff</option>
+                            <option value="Wand">Wand</option>
+                            <option value="Potion">Potion</option>
+                            <option value="Scroll">Scroll</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="magic-item-results" hx-get="/library/magic-items" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="empty-state"><p>Loading magic items...</p></div>
+                </div>
+            </div>
+
+            <div id="section-classes" class="compendium-section" style="display:none;">
+                <div class="search-bar">
+                    <div class="form-group">
+                        <label>Search</label>
+                        <input type="text" name="search" placeholder="Search classes..."
+                               hx-get="/library/classes"
+                               hx-trigger="keyup changed delay:200ms"
+                               hx-target="#class-results">
+                    </div>
+                </div>
+                <div id="class-results" hx-get="/library/classes" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="empty-state"><p>Loading classes...</p></div>
+                </div>
+            </div>
+
+            <div id="section-species" class="compendium-section" style="display:none;">
+                <div class="search-bar">
+                    <div class="form-group">
+                        <label>Search</label>
+                        <input type="text" name="search" placeholder="Search species..."
+                               hx-get="/library/species"
+                               hx-trigger="keyup changed delay:200ms"
+                               hx-target="#species-results">
+                    </div>
+                </div>
+                <div id="species-results" hx-get="/library/species" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="empty-state"><p>Loading species...</p></div>
+                </div>
+            </div>
+
+            <div id="section-backgrounds" class="compendium-section" style="display:none;">
+                <div class="search-bar">
+                    <div class="form-group">
+                        <label>Search</label>
+                        <input type="text" name="search" placeholder="Search backgrounds..."
+                               hx-get="/library/backgrounds"
+                               hx-trigger="keyup changed delay:200ms"
+                               hx-target="#background-results">
+                    </div>
+                </div>
+                <div id="background-results" hx-get="/library/backgrounds" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="empty-state"><p>Loading backgrounds...</p></div>
+                </div>
+            </div>
+
+            <div id="section-feats" class="compendium-section" style="display:none;">
+                <div class="search-bar">
+                    <div class="form-group">
+                        <label>Search</label>
+                        <input type="text" name="search" id="featSearch" placeholder="Search feats..."
+                               hx-get="/library/feats"
+                               hx-trigger="keyup changed delay:200ms"
+                               hx-target="#feat-results"
+                               hx-include="#featCategory">
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select name="category" id="featCategory"
+                                hx-get="/library/feats" hx-trigger="change"
+                                hx-target="#feat-results"
+                                hx-include="#featSearch">
+                            <option value="">All Categories</option>
+                            <option value="General">General</option>
+                            <option value="Origin">Origin</option>
+                            <option value="Fighting Style">Fighting Style</option>
+                            <option value="Epic Boon">Epic Boon</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="feat-results" hx-get="/library/feats" hx-trigger="load" hx-swap="innerHTML">
+                    <div class="empty-state"><p>Loading feats...</p></div>
+                </div>
+            </div>
         </main>
         <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
     </div>
@@ -165,19 +365,12 @@
             document.querySelectorAll('.form-tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
         }
-        function switchLibraryTab(tab) {
+        function switchCompendiumTab(tab) {
             document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
-            if (tab === 'monsters') {
-                document.getElementById('tab-monsters').classList.add('active');
-                document.querySelector('.search-bar').style.display = 'flex';
-                document.getElementById('library-results').style.display = 'block';
-                document.getElementById('spell-section').style.display = 'none';
-            } else {
-                document.getElementById('tab-spells').classList.add('active');
-                document.querySelector('.search-bar').style.display = 'none';
-                document.getElementById('library-results').style.display = 'none';
-                document.getElementById('spell-section').style.display = 'block';
-            }
+            document.querySelectorAll('.compendium-section').forEach(s => s.style.display = 'none');
+            document.getElementById('tab-' + tab).classList.add('active');
+            var section = document.getElementById('section-' + tab);
+            if (section) section.style.display = 'block';
         }
     </script>
 </body>

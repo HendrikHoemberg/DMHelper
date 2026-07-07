@@ -482,3 +482,57 @@ body.dm-mode-off {
 .ability-grid .form-group { text-align: center; }
 .ability-grid .form-group input { text-align: center; width: 100%; }
 .ability-grid .form-group label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Compendium sections */
+.compendium-section { }
+
+/* Rarity badges */
+.badge-common { background: var(--color-text); color: var(--color-bg); }
+.badge-uncommon { background: #2ecc71; color: #1a1a2e; }
+.badge-rare { background: #3498db; color: #fff; }
+.badge-very-rare { background: #9b59b6; color: #fff; }
+.badge-legendary { background: #f39c12; color: #1a1a2e; }
+.badge-artifact { background: #e74c3c; color: #fff; }
+.badge-attune { background: var(--color-accent); color: #fff; }
+
+/* Badge group */
+.badge-group {
+    display: flex;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-sm);
+}
+
+/* Clickable cards */
+.card-clickable {
+    text-decoration: none;
+    color: inherit;
+}
+.card-clickable:hover h3 {
+    color: var(--color-accent);
+}
+
+/* Equipment table */
+.equipment-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+.equipment-table th,
+.equipment-table td {
+    padding: var(--space-sm) var(--space-md);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+}
+.equipment-table th {
+    background: var(--color-surface-hover);
+    font-weight: 600;
+    color: var(--color-accent);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+}
+.equipment-table tr:hover td {
+    background: var(--color-surface-hover);
+}

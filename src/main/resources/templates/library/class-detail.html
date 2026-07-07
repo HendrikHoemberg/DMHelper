@@ -1,1 +1,97 @@
-<div th:fragment="content"></div>
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title>DMHelper -- Class Detail</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <a th:href="@{/library}" class="btn btn-text">← Library</a>
+                <h1 th:text="${classDetail.name}">Class Name</h1>
+            </div>
+
+            <div th:if="${subclass != null}" class="card" style="margin-bottom: var(--space-md);">
+                <p><strong>Subclass of:</strong>
+                    <a th:href="@{/library/classes/__${classDetail.subclassOf}__}"
+                       th:text="${subclass.name}">Base Class</a></p>
+            </div>
+
+            <div class="card">
+                <div class="badge-group">
+                    <span class="badge badge-srd" th:text="${'Hit Die: ' + classDetail.hitDie}">HD</span>
+                </div>
+
+                <div th:if="${savingThrows != null}">
+                    <h2>Saving Throws</h2>
+                    <p th:text="${savingThrows}">Saving Throws</p>
+                </div>
+
+                <!-- Level progression table -->
+                <h2>Level Progression</h2>
+                <table class="equipment-table" th:if="${levelFeatures != null and !levelFeatures.isEmpty()}">
+                    <thead>
+                        <tr>
+                            <th>Level</th>
+                            <th>Features</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="entry : ${levelFeatures}">
+                            <td th:text="${entry.key}">1</td>
+                            <td>
+                                <span th:each="feat, iterStat : ${entry.value}" th:text="${feat.name}"
+                                      th:if="${entry.value != null}">Feature</span>
+                                <span th:if="${iterStat.index < entry.value.size() - 1}">, </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Spellcasting -->
+                <div th:if="${spellcasting != null}">
+                    <h2>Spellcasting</h2>
+                    <p><strong>Ability:</strong> <span th:text="${spellcasting.ability}">—</span></p>
+                    <div th:if="${spellcasting.slots != null}">
+                        <p><strong>Spell Slots by Level:</strong></p>
+                        <table class="equipment-table">
+                            <thead>
+                                <tr>
+                                    <th>Class Level</th>
+                                    <th>1st</th><th>2nd</th><th>3rd</th><th>4th</th><th>5th</th>
+                                    <th>6th</th><th>7th</th><th>8th</th><th>9th</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="row : ${spellcasting.slots}">
+                                    <td th:text="${row.key}">1</td>
+                                    <td th:each="slot : ${row.value}" th:text="${slot}">0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div th:if="${classDetail.description != null and !classDetail.description.isBlank()}">
+                    <h2>Description</h2>
+                    <p th:utext="${@markdownUtil.toHtml(classDetail.description)}">Description</p>
+                </div>
+
+                <!-- Subclasses -->
+                <div th:if="${subclasses != null and !subclasses.isEmpty()}">
+                    <h2>Subclasses</h2>
+                    <ul>
+                        <li th:each="sc : ${subclasses}">
+                            <a th:href="@{/library/classes/__${sc.sourceKey}__}" th:text="${sc.name}">Subclass</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>

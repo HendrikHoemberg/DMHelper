@@ -1,1 +1,14 @@
-<div th:fragment="magic-item-card-list" th:remove="tag"></div>
+<th:block th:fragment="magic-item-card-list">
+    <div class="card-grid" th:if="${magicItems != null and !magicItems.isEmpty()}">
+        <div th:each="m : ${magicItems}" class="card">
+            <h3 class="card-title" th:text="${m.name}">Name</h3>
+            <div class="badge-group">
+                <span class="badge" th:classappend="'badge-' + ${m.rarity?.toLowerCase()}" th:text="${m.rarity}">Rarity</span>
+                <span class="badge badge-srd" th:text="${m.category}">Category</span>
+                <span class="badge badge-attune" th:if="${m.requiresAttunement}">Attunement</span>
+            </div>
+            <p class="card-text" th:utext="${@markdownUtil.toHtml(m.description)}">Description</p>
+        </div>
+    </div>
+    <div class="empty-state"><p>No magic items match your search.</p></div>
+</th:block>
