@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper -- Party | ' + ${campaign.name}">DMHelper -- Party</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <div>
+                    <h1 th:text="${campaign.name + ' -- Party'}">Campaign -- Party</h1>
+                    <a th:href="@{/campaigns/{id}(id=${campaign.id})}" class="btn btn-ghost" style="margin-top: var(--space-xs);">&larr; Back to Campaign</a>
+                </div>
+                <button class="btn btn-primary"
+                        hx-get="@{/campaigns/{cid}/party/new(cid=${campaign.id})}"
+                        hx-target="previous .card-grid"
+                        hx-swap="beforeend">+ Add Member</button>
+            </div>
+
+            <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${activeMembers})}"></th:block>
+
+            <div id="party-grid" class="card-grid">
+                <th:block th:if="${members == null or members.isEmpty()}">
+                    <div class="empty-state"><p>No party members yet. Add your first player character!</p></div>
+                </th:block>
+                <th:block th:each="pm : ${members}">
+                    <th:block th:replace="~{party/_card :: card(pm=${pm})}"></th:block>
+                </th:block>
+            </div>
+        </main>
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>

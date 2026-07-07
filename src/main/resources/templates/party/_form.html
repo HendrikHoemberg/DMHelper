@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="inline-form" th:fragment="form(campaignId, pm)">
+    <h3 th:text="${pm == null ? 'Add Party Member' : 'Edit ' + pm.characterName}">Add Party Member</h3>
+    <form th:action="${pm == null ? @{/campaigns/{cid}/party(cid=${campaignId})} : @{/campaigns/{cid}/party/{pid}(cid=${campaignId}, pid=${pm.id})}}"
+          th:method="${pm == null ? 'post' : 'put'}"
+          hx-target="#party-grid"
+          th:hx-swap="${pm == null ? 'beforeend' : 'outerHTML'}">
+        <div class="form-group"><label>Character Name *</label><input type="text" name="characterName" required th:value="${pm?.characterName}" placeholder="e.g. Thia"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+            <div class="form-group"><label>Player Name</label><input type="text" name="playerName" th:value="${pm?.playerName}" placeholder="Anna"></div>
+            <div class="form-group"><label>Class &amp; Level</label><input type="text" name="classAndLevel" th:value="${pm?.classAndLevel}" placeholder="Rogue 5"></div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md);">
+            <div class="form-group"><label>AC *</label><input type="number" name="ac" required th:value="${pm?.ac}" placeholder="16"></div>
+            <div class="form-group"><label>Max HP *</label><input type="number" name="maxHp" required th:value="${pm?.maxHp}" placeholder="38"></div>
+            <div class="form-group"><label>Init Bonus *</label><input type="number" name="initiativeBonus" required th:value="${pm?.initiativeBonus}" placeholder="4"></div>
+            <div class="form-group"><label>Speed *</label><input type="number" name="speed" required th:value="${pm?.speed}" placeholder="30"></div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md);">
+            <div class="form-group"><label>Passive Perception *</label><input type="number" name="passivePerception" required th:value="${pm?.passivePerception}" placeholder="17"></div>
+            <div class="form-group"><label>Passive Insight *</label><input type="number" name="passiveInsight" required th:value="${pm?.passiveInsight}" placeholder="12"></div>
+            <div class="form-group"><label>Passive Investigation *</label><input type="number" name="passiveInvestigation" required th:value="${pm?.passiveInvestigation}" placeholder="14"></div>
+        </div>
+        <div class="form-group"><label>Notes</label><textarea name="notes" rows="3" th:text="${pm?.notes}" placeholder="e.g. darkvision, fey ancestry"></textarea></div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-ghost"
+                    th:if="${pm != null}"
+                    hx-get="@{/campaigns/{cid}/party(cid=${campaignId})}" hx-target="body" hx-swap="outerHTML">Cancel</button>
+            <button type="submit" class="btn btn-primary" th:text="${pm == null ? 'Add' : 'Save'}">Add</button>
+        </div>
+    </form>
+</div>
+</html>

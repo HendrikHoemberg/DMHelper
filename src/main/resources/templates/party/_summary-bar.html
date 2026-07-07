@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="party-summary-bar" th:fragment="summary-bar(members)">
+    <span class="bar-label">Party</span>
+    <th:block th:if="${members == null or members.isEmpty()}">
+        <span style="color: var(--color-text-muted); font-size: var(--text-sm);">No party members yet.</span>
+    </th:block>
+    <th:block th:each="pm : ${members}">
+        <div class="party-member-chip">
+            <span class="chip-name" th:text="${pm.characterName}">Name</span>
+            <span class="chip-stats">
+                <span th:text="'AC ' + ${pm.ac}">AC 16</span>
+                <span th:text="'PP ' + ${pm.passivePerception}">PP 17</span>
+            </span>
+        </div>
+    </th:block>
+</div>
+</html>
