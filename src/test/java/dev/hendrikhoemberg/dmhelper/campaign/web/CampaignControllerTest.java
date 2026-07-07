@@ -2,6 +2,8 @@ package dev.hendrikhoemberg.dmhelper.campaign.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
+import dev.hendrikhoemberg.dmhelper.library.service.SpellSeedService;
+import dev.hendrikhoemberg.dmhelper.library.service.SrdSeedService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -29,6 +31,12 @@ class CampaignControllerTest {
 
     @MockitoBean
     private CampaignService service;
+
+    @MockitoBean
+    private SrdSeedService srdSeedService;
+
+    @MockitoBean
+    private SpellSeedService spellSeedService;
 
     private Campaign sampleCampaign() {
         Campaign c = new Campaign();
