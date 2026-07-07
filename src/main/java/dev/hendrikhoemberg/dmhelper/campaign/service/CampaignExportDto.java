@@ -1,6 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.service;
 
-import tools.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 
 import java.util.List;

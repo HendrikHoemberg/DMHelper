@@ -4,7 +4,7 @@
 
 **Goal:** Find "Goblin" in <100 ms; create a custom monster; enter the party once.
 
-**Architecture:** Spring Data JPA entities for `StatBlock` (flat table with JSON-blob traits/actions, indexed `name`/`cr`/`type` columns) and `PartyMember` (ManyToOne to Campaign). SRD 5.2 monsters bundled as JSON in `src/main/resources/srd/`, seeded on first run via `SrdSeedService`. Library search/filter uses JPA Specifications. Thymeleaf + htmx UI with a 5.5e-format statblock renderer. Party roster with compact summary bar. Campaign export/import extended to include party members and campaign-scoped custom statblocks.
+**Architecture:** Spring Data JPA entities for `StatBlock` (flat table with JSON-blob traits/actions, indexed `name`/`cr`/`type` columns, includes `xp` for encounter building) and `PartyMember` (ManyToOne to Campaign). 331 SRD 5.2 monsters + 339 SRD 5.2 spells (genuine D&D 5.5e stats from open5e.com, CC-BY-4.0) bundled as JSON in `src/main/resources/srd/`, seeded on first run. `Spell` entity is read-only reference data; no spell CRUD. `GET /library/statblocks/srd-keys` lists all valid SRD source keys for external generators. Library search/filter uses JPA Specifications. Thymeleaf + htmx UI with a 5.5e-format statblock renderer and spell cards. Party roster with compact summary bar. Campaign export/import extended to include party members and campaign-scoped custom statblocks.
 
 **Tech Stack:** Spring Boot 4.1.0, Java 25, Spring Data JPA + JpaSpecificationExecutor, H2, Thymeleaf + htmx, Jackson 3 (`tools.jackson`), JUnit 5 + Mockito + AssertJ + Hamcrest
 
@@ -136,6 +136,8 @@ public class StatBlock {
     @Column(length = 100)
     private String sourceKey;
 
+    private int xp;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -260,6 +262,9 @@ public class StatBlock {
 
     public String getSourceKey() { return sourceKey; }
     public void setSourceKey(String sourceKey) { this.sourceKey = sourceKey; }
+
+    public int getXp() { return xp; }
+    public void setXp(int xp) { this.xp = xp; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
@@ -467,24 +472,24 @@ git add src/main/java/dev/hendrikhoemberg/dmhelper/party/data/ && git commit -m 
 
 Run: `mkdir -p src/main/resources/srd`
 
-- [ ] **Step 2: Write SRD monster JSON file**
+- [ ] **Step 2: Fetch SRD 5.2 monsters from open5e.com**
 
-Create `src/main/resources/srd/srd-5.2-monsters.json` with 20 common D&D 5.5e SRD monsters. See the companion script `bin/generate-srd-json.py` that generates this file. Run:
+Run the generator script which fetches all 331 SRD 5.2 (D&D 5.5e / 2024 rules) monsters from the open5e v2 API and transforms them into DMHelper's flat JSON schema:
 
 ```bash
 python3 bin/generate-srd-json.py
 ```
 
-The generator script creates a JSON array of monster entries, each with fields: `sourceKey`, `name`, `size`, `type`, `alignment`, `ac`, `hp`, `speed`, `strScore` through `chaScore`, `skills`, `damageVulnerabilities` through `conditionImmunities`, `senses`, `languages`, `traits`, `actions`, `bonusActions`, `reactions`, `legendaryActions`, `legendaryDescription`, `lairActions`, `cr`.
+The script paginates through `https://api.open5e.com/v2/creatures/?document__key__in=srd-2024` (331 monsters, CC-BY-4.0) and maps each to a JSON entry with fields: `sourceKey`, `name`, `size`, `type`, `alignment`, `ac`, `hp`, `speed`, `strScore` through `chaScore`, `skills`, `damageVulnerabilities` through `conditionImmunities`, `senses`, `languages`, `traits`, `actions`, `bonusActions`, `reactions`, `legendaryActions`, `legendaryDescription`, `lairActions`, `cr`.
 
 The `traits`, `actions`, `bonusActions`, `reactions`, `legendaryActions`, and `lairActions` fields are JSON strings (escaped JSON arrays of `{"name":"...","description":"..."}` objects) because they are stored as CLOB text columns in the database. The renderer parses them client-side.
 
-**Monsters included (minimum 20):** Goblin, Kobold, Orc, Skeleton, Zombie, Ghoul, Ghost, Ogre, Owlbear, Troll, Wyvern, Frost Giant, Adult Black Dragon, Imp, Commoner, Bandit, Cultist, Dire Wolf, Shadow, Specter, Werewolf.
+Key 5.5e differences from 2014 SRD: goblins are Fey type (not Humanoid), kobolds are Dragon type, Nimble Escape is a bonus action, adult dragons have Spellcasting and Rend attacks, zombies have lower HP at the same CR.
 
 - [ ] **Step 3: Verify file**
 
 Run: `ls -la src/main/resources/srd/srd-5.2-monsters.json`
-Expected: File exists, non-empty.
+Expected: File exists, ~331 monster entries, non-empty.
 
 - [ ] **Step 4: Commit**
 
@@ -574,7 +579,7 @@ public class SrdSeedService {
             String senses, String languages,
             String traits, String actions, String bonusActions, String reactions,
             String legendaryActions, String legendaryDescription, String lairActions,
-            String cr
+            String cr, int xp
     ) {
         public StatBlock toStatBlock() {
             StatBlock sb = new StatBlock();
@@ -608,6 +613,7 @@ public class SrdSeedService {
             sb.setLegendaryDescription(legendaryDescription);
             sb.setLairActions(lairActions);
             sb.setCr(cr);
+            sb.setXp(xp);
             return sb;
         }
     }
@@ -656,6 +662,346 @@ Expected: BUILD SUCCESS
 
 ```bash
 git add src/main/java/dev/hendrikhoemberg/dmhelper/library/service/SrdSeedService.java src/main/java/dev/hendrikhoemberg/dmhelper/DmhelperApplication.java && git commit -m "feat: add SrdSeedService with idempotent SRD data seeding on first run"
+```
+
+---
+
+### Task 4b: Create Spell entity, seed data, and SpellSeedService
+
+**Files:**
+- Create: `src/main/java/dev/hendrikhoemberg/dmhelper/library/data/Spell.java`
+- Create: `src/main/java/dev/hendrikhoemberg/dmhelper/library/data/SpellRepository.java`
+- Create: `src/main/resources/srd/srd-5.2-spells.json`
+- Create: `bin/generate-srd-spells.py`
+- Create: `src/main/java/dev/hendrikhoemberg/dmhelper/library/service/SpellSeedService.java`
+- Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/DmhelperApplication.java`
+
+Spells are bundled as read-only reference data per SPEC §4.6 — no CRUD, just seed + display. The open5e srd-2024 document contains 339 spells.
+
+- [ ] **Step 1: Write spell generator script**
+
+Create `bin/generate-srd-spells.py`:
+
+```python
+#!/usr/bin/env python3
+"""Fetch D&D 5.5e SRD 5.2 spells from open5e.com."""
+
+import json, os, sys, time, urllib.request, urllib.error
+
+API_BASE = "https://api.open5e.com"
+PAGE_SIZE = 100
+OUTPUT_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "src", "main", "resources", "srd", "srd-5.2-spells.json",
+)
+
+def api_get(url):
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(url,
+                headers={"Accept": "application/json", "User-Agent": "DMHelper/1.0"})
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                return json.loads(resp.read().decode())
+        except Exception as e:
+            if attempt == 2: raise
+            time.sleep(2 ** attempt)
+
+def main():
+    entries = []
+    page = 1
+    while True:
+        url = f"{API_BASE}/v2/spells/?document__key__in=srd-2024&limit={PAGE_SIZE}&page={page}"
+        data = api_get(url)
+        results = data.get("results", [])
+        if not results:
+            break
+        for s in results:
+            components = s.get("components", "") or ""
+            material = s.get("material_component", "") or ""
+            if material:
+                components = f"{components} ({material})"
+            entries.append({
+                "sourceKey": s["key"].removeprefix("srd-2024_"),
+                "name": s["name"],
+                "level": s.get("level", 0),
+                "school": (s.get("school") or {}).get("name", ""),
+                "castingTime": s.get("casting_time", ""),
+                "range": s.get("range_text", ""),
+                "components": components,
+                "duration": s.get("duration", ""),
+                "description": s.get("desc", ""),
+                "higherLevel": s.get("higher_level", ""),
+                "ritual": s.get("ritual", False),
+                "concentration": s.get("concentration", False),
+            })
+        print(f"  Page {page}: {len(results)} spells ({len(entries)} total)")
+        if not data.get("next"): break
+        page += 1
+
+    entries.sort(key=lambda s: (s["level"], s["name"]))
+    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+    with open(OUTPUT_PATH, "w") as f:
+        json.dump(entries, f, indent=2, ensure_ascii=False)
+    print(f"Wrote {len(entries)} spells to {OUTPUT_PATH}")
+
+if __name__ == "__main__":
+    main()
+```
+
+Run: `python3 bin/generate-srd-spells.py`
+
+- [ ] **Step 2: Write Spell entity**
+
+Create `src/main/java/dev/hendrikhoemberg/dmhelper/library/data/Spell.java`:
+
+```java
+package dev.hendrikhoemberg.dmhelper.library.data;
+
+import jakarta.persistence.*;
+import java.util.UUID;
+
+@Entity
+@Table(name = "spell", indexes = {
+    @Index(name = "idx_spell_name", columnList = "name"),
+    @Index(name = "idx_spell_level", columnList = "level"),
+    @Index(name = "idx_spell_school", columnList = "school"),
+})
+public class Spell {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(nullable = false, length = 100, unique = true)
+    private String sourceKey;
+
+    @Column(nullable = false, length = 255)
+    private String name;
+
+    private int level;
+
+    @Column(length = 50)
+    private String school;
+
+    @Column(length = 100)
+    private String castingTime;
+
+    @Column(length = 100)
+    private String range;
+
+    @Column(length = 200)
+    private String components;
+
+    @Column(length = 100)
+    private String duration;
+
+    @Column(columnDefinition = "CLOB")
+    private String description;
+
+    @Column(columnDefinition = "CLOB")
+    private String higherLevel;
+
+    private boolean ritual;
+    private boolean concentration;
+
+    // Getters and setters
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public String getSourceKey() { return sourceKey; }
+    public void setSourceKey(String v) { this.sourceKey = v; }
+    public String getName() { return name; }
+    public void setName(String v) { this.name = v; }
+    public int getLevel() { return level; }
+    public void setLevel(int v) { this.level = v; }
+    public String getSchool() { return school; }
+    public void setSchool(String v) { this.school = v; }
+    public String getCastingTime() { return castingTime; }
+    public void setCastingTime(String v) { this.castingTime = v; }
+    public String getRange() { return range; }
+    public void setRange(String v) { this.range = v; }
+    public String getComponents() { return components; }
+    public void setComponents(String v) { this.components = v; }
+    public String getDuration() { return duration; }
+    public void setDuration(String v) { this.duration = v; }
+    public String getDescription() { return description; }
+    public void setDescription(String v) { this.description = v; }
+    public String getHigherLevel() { return higherLevel; }
+    public void setHigherLevel(String v) { this.higherLevel = v; }
+    public boolean isRitual() { return ritual; }
+    public void setRitual(boolean v) { this.ritual = v; }
+    public boolean isConcentration() { return concentration; }
+    public void setConcentration(boolean v) { this.concentration = v; }
+}
+```
+
+- [ ] **Step 3: Write SpellRepository**
+
+Create `src/main/java/dev/hendrikhoemberg/dmhelper/library/data/SpellRepository.java`:
+
+```java
+package dev.hendrikhoemberg.dmhelper.library.data;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.UUID;
+
+@Repository
+public interface SpellRepository extends JpaRepository<Spell, UUID>,
+        JpaSpecificationExecutor<Spell> {
+
+    List<Spell> findAllByOrderByLevelAscNameAsc();
+
+    boolean existsBySourceKey(String sourceKey);
+}
+```
+
+- [ ] **Step 4: Write SpellSeedService**
+
+Create `src/main/java/dev/hendrikhoemberg/dmhelper/library/service/SpellSeedService.java`:
+
+```java
+package dev.hendrikhoemberg.dmhelper.library.service;
+
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import dev.hendrikhoemberg.dmhelper.library.data.Spell;
+import dev.hendrikhoemberg.dmhelper.library.data.SpellRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.stereotype.Component;
+
+import java.io.InputStream;
+import java.util.List;
+
+@Component
+public class SpellSeedService {
+
+    private static final Logger log = LoggerFactory.getLogger(SpellSeedService.class);
+    private static final String SPELL_DATA_PATH = "srd/srd-5.2-spells.json";
+
+    private final SpellRepository repository;
+    private final ObjectMapper objectMapper;
+
+    public SpellSeedService(SpellRepository repository) {
+        this.repository = repository;
+        this.objectMapper = new ObjectMapper();
+    }
+
+    public void seedIfEmpty() {
+        if (repository.count() > 0) {
+            log.info("Spell data already seeded -- skipping");
+            return;
+        }
+        log.info("Seeding SRD 5.2 spell data...");
+        try {
+            ClassPathResource resource = new ClassPathResource(SPELL_DATA_PATH);
+            try (InputStream is = resource.getInputStream()) {
+                List<SpellEntry> entries = objectMapper.readValue(is,
+                        new TypeReference<List<SpellEntry>>() {});
+                int count = 0;
+                for (SpellEntry entry : entries) {
+                    Spell s = new Spell();
+                    s.setSourceKey(entry.sourceKey());
+                    s.setName(entry.name());
+                    s.setLevel(entry.level());
+                    s.setSchool(entry.school());
+                    s.setCastingTime(entry.castingTime());
+                    s.setRange(entry.range());
+                    s.setComponents(entry.components());
+                    s.setDuration(entry.duration());
+                    s.setDescription(entry.description());
+                    s.setHigherLevel(entry.higherLevel());
+                    s.setRitual(entry.ritual());
+                    s.setConcentration(entry.concentration());
+                    repository.save(s);
+                    count++;
+                }
+                log.info("Seeded {} spells", count);
+            }
+        } catch (Exception e) {
+            log.error("Failed to seed spell data", e);
+            throw new RuntimeException("Failed to seed SRD spell data", e);
+        }
+    }
+
+    public record SpellEntry(
+        String sourceKey, String name, int level, String school,
+        String castingTime, String range, String components, String duration,
+        String description, String higherLevel, boolean ritual, boolean concentration
+    ) {}
+}
+```
+
+- [ ] **Step 5: Wire SpellSeedService into DmhelperApplication**
+
+Add constructor injection of `SpellSeedService` and call `spellSeedService.seedIfEmpty()` after `srdSeedService.seedIfEmpty()` in the `seed()` event listener.
+
+- [ ] **Step 5b: Write SpellService**
+
+Create `src/main/java/dev/hendrikhoemberg/dmhelper/library/service/SpellService.java` (read-only, spells are reference data only):
+
+```java
+package dev.hendrikhoemberg.dmhelper.library.service;
+
+import dev.hendrikhoemberg.dmhelper.library.data.Spell;
+import dev.hendrikhoemberg.dmhelper.library.data.SpellRepository;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@Transactional(readOnly = true)
+public class SpellService {
+
+    private final SpellRepository repository;
+
+    public SpellService(SpellRepository repository) {
+        this.repository = repository;
+    }
+
+    public List<Spell> search(String search, Integer level, String school) {
+        return repository.findAll((root, query, cb) -> {
+            var predicates = new ArrayList<Predicate>();
+            if (level != null) {
+                predicates.add(cb.equal(root.get("level"), level));
+            }
+            if (school != null && !school.isBlank()) {
+                predicates.add(cb.equal(root.get("school"), school));
+            }
+            if (search != null && !search.isBlank()) {
+                predicates.add(cb.like(cb.lower(root.get("name")),
+                        "%" + search.toLowerCase() + "%"));
+            }
+            query.orderBy(cb.asc(root.get("level")), cb.asc(root.get("name")));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        });
+    }
+
+    public List<Spell> findAll() {
+        return repository.findAllByOrderByLevelAscNameAsc();
+    }
+}
+```
+
+- [ ] **Step 6: Verify compilation and commit**
+
+Run: `./mvnw compile`
+```bash
+git add src/main/java/dev/hendrikhoemberg/dmhelper/library/data/Spell.java \
+        src/main/java/dev/hendrikhoemberg/dmhelper/library/data/SpellRepository.java \
+        src/main/java/dev/hendrikhoemberg/dmhelper/library/service/SpellSeedService.java \
+        src/main/java/dev/hendrikhoemberg/dmhelper/library/service/SpellService.java \
+        src/main/java/dev/hendrikhoemberg/dmhelper/DmhelperApplication.java \
+        bin/generate-srd-spells.py \
+        src/main/resources/srd/srd-5.2-spells.json && \
+        git commit -m "feat: add Spell entity, seed data, and SpellSeedService (339 SRD 5.2 spells)"
 ```
 
 ---
@@ -1068,6 +1414,7 @@ public class StatBlockService {
         clone.setLegendaryActions(original.getLegendaryActions());
         clone.setLegendaryDescription(original.getLegendaryDescription());
         clone.setLairActions(original.getLairActions());
+        clone.setXp(original.getXp());
         return repository.save(clone);
     }
 
@@ -1587,6 +1934,92 @@ Create `src/main/resources/templates/library/list.html`:
 </html>
 ```
 
+Add a **Spells tab** to the library page by inserting the following after the "New Homebrew" button in the page-header div and before the monster search-bar:
+
+```html
+<div style="display: flex; gap: var(--space-md); align-items: center;">
+    <button class="form-tab active" id="tab-monsters"
+            onclick="switchLibraryTab('monsters')">Monsters</button>
+    <button class="form-tab" id="tab-spells"
+            onclick="switchLibraryTab('spells')">Spells</button>
+</div>
+```
+
+Then add a spell search bar and results section after the monster results `div`:
+
+```html
+<div id="spell-section" style="display:none;">
+    <div class="search-bar">
+        <div class="form-group">
+            <label>Search</label>
+            <input type="text" name="search" id="spellSearch" placeholder="Search spells..."
+                   hx-get="/library/spells"
+                   hx-trigger="keyup changed delay:200ms"
+                   hx-target="#spell-results"
+                   hx-include="#spellLevel,#spellSchool">
+        </div>
+        <div class="form-group">
+            <label>Level</label>
+            <select name="level" id="spellLevel"
+                    hx-get="/library/spells" hx-trigger="change"
+                    hx-target="#spell-results"
+                    hx-include="#spellSearch,#spellSchool">
+                <option value="">Any Level</option>
+                <option value="0">Cantrip</option>
+                <option value="1">1st</option>
+                <option value="2">2nd</option>
+                <option value="3">3rd</option>
+                <option value="4">4th</option>
+                <option value="5">5th</option>
+                <option value="6">6th</option>
+                <option value="7">7th</option>
+                <option value="8">8th</option>
+                <option value="9">9th</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>School</label>
+            <select name="school" id="spellSchool"
+                    hx-get="/library/spells" hx-trigger="change"
+                    hx-target="#spell-results"
+                    hx-include="#spellSearch,#spellLevel">
+                <option value="">Any School</option>
+                <option value="Abjuration">Abjuration</option>
+                <option value="Conjuration">Conjuration</option>
+                <option value="Divination">Divination</option>
+                <option value="Enchantment">Enchantment</option>
+                <option value="Evocation">Evocation</option>
+                <option value="Illusion">Illusion</option>
+                <option value="Necromancy">Necromancy</option>
+                <option value="Transmutation">Transmutation</option>
+            </select>
+        </div>
+    </div>
+    <div id="spell-results" hx-get="/library/spells" hx-trigger="load" hx-swap="innerHTML">
+        <div class="empty-state"><p>Loading spells...</p></div>
+    </div>
+</div>
+```
+
+Add the tab-switching JavaScript alongside the existing `switchFormTab`:
+
+```javascript
+function switchLibraryTab(tab) {
+    document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
+    if (tab === 'monsters') {
+        document.getElementById('tab-monsters').classList.add('active');
+        document.querySelector('.search-bar').style.display = 'flex';
+        document.getElementById('library-results').style.display = 'block';
+        document.getElementById('spell-section').style.display = 'none';
+    } else {
+        document.getElementById('tab-spells').classList.add('active');
+        document.querySelector('.search-bar').style.display = 'none';
+        document.getElementById('library-results').style.display = 'none';
+        document.getElementById('spell-section').style.display = 'block';
+    }
+}
+```
+
 - [ ] **Step 6: Write statblock detail page**
 
 Create `src/main/resources/templates/library/detail.html`:
@@ -1652,9 +2085,10 @@ Create `src/main/resources/templates/about.html`:
                 <p>DMHelper is a local-first web application for running D&amp;D 5.5e (2024 rules) campaigns.</p>
                 <h2>Open Source Licenses</h2>
                 <h3>SRD 5.2 Content</h3>
-                <p>The bundled monster statblock reference data is derived from the D&amp;D Systems Reference Document 5.2 (SRD 5.2), released under the Creative Commons Attribution 4.0 International License (CC-BY-4.0).</p>
+                <p>The bundled monster statblocks and spell reference data are derived from the D&amp;D Systems Reference Document 5.2 (SRD 5.2), released under the Creative Commons Attribution 4.0 International License (CC-BY-4.0).</p>
                 <p>This product includes material from the SRD 5.2 available at <a href="https://dnd.wizards.com/resources/systems-reference-document">Wizards of the Coast SRD page</a>.</p>
                 <p>SRD 5.2 content is copyright Wizards of the Coast LLC.</p>
+                <p>SRD 5.2 data sourced via the open5e community API (open5e.com).</p>
                 <h2>Frontend Libraries</h2>
                 <p>DMHelper includes htmx, Alpine.js, Konva.js, and commonmark-java, each used under their respective open-source licenses. See <code>VENDOR.md</code> for details.</p>
             </div>
@@ -1665,10 +2099,51 @@ Create `src/main/resources/templates/about.html`:
 </html>
 ```
 
+- [ ] **Step 7b: Write spell display fragment**
+
+Create `src/main/resources/templates/library/_spell-card.html`:
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="statblock-card" th:fragment="spell-card(spell)">
+    <h3 th:text="${spell.name}">Spell Name</h3>
+    <div class="statblock-meta">
+        <span th:if="${spell.level == 0}" class="badge-srd">Cantrip</span>
+        <span th:unless="${spell.level == 0}" class="badge-srd" th:text="'Level ' + ${spell.level}"></span>
+        <span th:text="${spell.school}">School</span>
+        <span th:if="${spell.ritual}">Ritual</span>
+        <span th:if="${spell.concentration}">Concentration</span>
+    </div>
+    <div class="spell-details">
+        <p><strong>Casting Time:</strong> <span th:text="${spell.castingTime}"></span></p>
+        <p><strong>Range:</strong> <span th:text="${spell.range}"></span></p>
+        <p><strong>Components:</strong> <span th:text="${spell.components}"></span></p>
+        <p><strong>Duration:</strong> <span th:text="${spell.duration}"></span></p>
+    </div>
+    <div class="sb-rule-thin" style="margin: var(--space-sm) 0; border-color: var(--color-border);"></div>
+    <div th:utext="${spell.description}"></div>
+    <div th:if="${spell.higherLevel != null and !spell.higherLevel.isBlank()}" style="margin-top: var(--space-sm);">
+        <strong>At Higher Levels:</strong>
+        <span th:utext="${spell.higherLevel}"></span>
+    </div>
+</div>
+
+<div class="card-grid" th:fragment="spell-card-list(spells)" th:if="${spells != null}">
+    <th:block th:if="${spells.isEmpty()}">
+        <div class="empty-state"><p>No spells match your search.</p></div>
+    </th:block>
+    <th:block th:each="spell : ${spells}">
+        <th:block th:replace="~{library/_spell-card :: spell-card(spell=${spell})}"></th:block>
+    </th:block>
+</div>
+</html>
+```
+
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/main/resources/templates/library/ src/main/resources/templates/about.html && git commit -m "feat: add library templates -- list, card, detail, statblock renderer, create/edit form, and about page with SRD attribution"
+git add src/main/resources/templates/library/ src/main/resources/templates/about.html && git commit -m "feat: add library templates -- list, card, detail, statblock renderer, spell cards, create/edit form, and about page with SRD attribution"
 ```
 
 ---
@@ -1692,6 +2167,7 @@ package dev.hendrikhoemberg.dmhelper.library.web;
 
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
+import dev.hendrikhoemberg.dmhelper.library.service.SpellService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -1712,6 +2188,7 @@ class LibraryControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private StatBlockService service;
+    @MockitoBean private SpellService spellService;
 
     private StatBlock sampleSb() {
         StatBlock sb = new StatBlock();
@@ -1820,6 +2297,20 @@ class LibraryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("CC-BY-4.0")));
     }
+
+    @Test
+    void shouldSearchSpells() throws Exception {
+        when(spellService.search(eq("fire"), isNull(), isNull())).thenReturn(List.of());
+        mockMvc.perform(get("/library/spells").param("search", "fire"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldListSrdKeys() throws Exception {
+        when(service.findAll()).thenReturn(List.of());
+        mockMvc.perform(get("/library/statblocks/srd-keys"))
+                .andExpect(status().isOk());
+    }
 }
 ```
 
@@ -1838,7 +2329,9 @@ package dev.hendrikhoemberg.dmhelper.library.web;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.Spell;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
+import dev.hendrikhoemberg.dmhelper.library.service.SpellService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -1851,10 +2344,12 @@ import java.util.*;
 public class LibraryController {
 
     private final StatBlockService service;
+    private final SpellService spellService;
     private final ObjectMapper objectMapper;
 
-    public LibraryController(StatBlockService service) {
+    public LibraryController(StatBlockService service, SpellService spellService) {
         this.service = service;
+        this.spellService = spellService;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -2036,6 +2531,30 @@ public class LibraryController {
         return "about";
     }
 
+    // ------- Spell routes (read-only reference) -------
+
+    @GetMapping("/spells")
+    public String searchSpells(@RequestParam(required = false) String search,
+                               @RequestParam(required = false) Integer level,
+                               @RequestParam(required = false) String school,
+                               Model model) {
+        List<Spell> spells = spellService.search(search, level, school);
+        model.addAttribute("spells", spells);
+        return "library/_spell-card :: spell-card-list";
+    }
+
+    // ------- SRD key catalog -------
+
+    @GetMapping("/statblocks/srd-keys")
+    @ResponseBody
+    public List<String> srdKeys() {
+        return service.findAll().stream()
+                .filter(sb -> sb.getSource() == StatBlock.Source.SRD)
+                .map(StatBlock::getSourceKey)
+                .sorted()
+                .toList();
+    }
+
     private void enrichStatBlock(StatBlock sb) {
         sb.setTraitsParsed(parseJsonArray(sb.getTraits()));
         sb.setActionsParsed(parseJsonArray(sb.getActions()));
@@ -2101,7 +2620,7 @@ Edit `src/main/java/dev/hendrikhoemberg/dmhelper/library/data/StatBlock.java` an
 - [ ] **Step 6: Run controller tests**
 
 Run: `./mvnw test -pl . -Dtest=LibraryControllerTest`
-Expected: All 8 tests pass
+Expected: All 10 tests pass
 
 - [ ] **Step 7: Commit**
 
@@ -2905,7 +3424,8 @@ public record CampaignExportDto(
             String damageImmunities, String conditionImmunities,
             String senses, String languages,
             String traits, String actions, String bonusActions, String reactions,
-            String legendaryActions, String legendaryDescription, String lairActions
+            String legendaryActions, String legendaryDescription, String lairActions,
+            int xp
     ) {
         public static StatBlockExportDto from(
                 dev.hendrikhoemberg.dmhelper.library.data.StatBlock sb) {
@@ -2922,7 +3442,8 @@ public record CampaignExportDto(
                     sb.getDamageImmunities(), sb.getConditionImmunities(),
                     sb.getSenses(), sb.getLanguages(),
                     sb.getTraits(), sb.getActions(), sb.getBonusActions(), sb.getReactions(),
-                    sb.getLegendaryActions(), sb.getLegendaryDescription(), sb.getLairActions()
+                    sb.getLegendaryActions(), sb.getLegendaryDescription(), sb.getLairActions(),
+                    sb.getXp()
             );
         }
     }
@@ -3040,6 +3561,7 @@ In `importFromJson()`, after creating the campaign from the DTO, loop through pa
                 if (sbDto.legendaryActions() != null) sb.setLegendaryActions(sbDto.legendaryActions());
                 if (sbDto.legendaryDescription() != null) sb.setLegendaryDescription(sbDto.legendaryDescription());
                 if (sbDto.lairActions() != null) sb.setLairActions(sbDto.lairActions());
+                sb.setXp(sbDto.xp());
             }
         }
 
@@ -3102,7 +3624,7 @@ Expected: BUILD SUCCESS, JAR in target
 Run: `java -jar target/dmhelper-0.0.1-SNAPSHOT.jar`
 Open `http://localhost:8081`:
 
-1. **Library:** Click "Library" in navbar. Verify SRD monsters are seeded (Goblin, Kobold, etc.). Search "Goblin" -- results appear. Filter by CR 5 -- should filter. Click a monster -- statblock detail renders in 5.5e format. Clone an SRD monster -- new custom statblock created.
+1. **Library:** Click "Library" in navbar. Verify 331 SRD 5.2 monsters are seeded (Goblin Warrior/Minion/Boss as Fey, Kobold Warrior as Dragon, etc.). Search "Goblin" — results appear. Filter by CR 5 — should filter. Click a monster — statblock detail renders in 5.5e format. Clone an SRD monster — new custom statblock created.
 
 2. **Party:** Go to a campaign detail, click "Manage Party Roster". Add party members. Verify summary bar shows AC and passive Perception. Edit a member. Mark one inactive. Delete one.
 
@@ -3116,6 +3638,10 @@ Open `http://localhost:8081`:
 
 7. **Performance:** Search for "Goblin" -- verify results appear in <100 ms.
 
+8. **Spells:** Switch to "Spells" tab in Library. Verify 339 spells are seeded. Search "Fireball" — verify result appears. Filter by level 3 — shows only 3rd-level spells. Filter by school Evocation — combined filter works.
+
+9. **SRD key catalog:** Visit `/library/statblocks/srd-keys` — verify 331 source keys returned as JSON array.
+
 - [ ] **Step 4: Commit**
 
 ```bash
@@ -3128,19 +3654,20 @@ git add -A && git commit -m "chore: final verification -- all tests pass, manual
 
 | Task | Component | Key Files |
 |---|---|---|
-| 1 | StatBlock entity + repo | `library/data/StatBlock.java`, `StatBlockRepository.java` |
+| 1 | StatBlock entity + repo (incl. xp field) | `library/data/StatBlock.java`, `StatBlockRepository.java` |
 | 2 | PartyMember entity + repo | `party/data/PartyMember.java`, `PartyMemberRepository.java` |
-| 3 | SRD seed data | `srd/srd-5.2-monsters.json`, `bin/generate-srd-json.py` |
-| 4 | SrdSeedService | `library/service/SrdSeedService.java`, `DmhelperApplication.java` |
+| 3 | SRD seed data (open5e srd-2024 API) | `srd/srd-5.2-monsters.json`, `bin/generate-srd-json.py` |
+| 4 | SrdSeedService (incl. xp) | `library/service/SrdSeedService.java`, `DmhelperApplication.java` |
+| 4b | Spell entity, seed data, SpellService | `library/data/Spell.java`, `SpellRepository.java`, `library/service/SpellSeedService.java`, `SpellService.java`, `srd/srd-5.2-spells.json`, `bin/generate-srd-spells.py` |
 | 5 | StatBlockService tests (red) | `library/service/StatBlockServiceTest.java` |
-| 6 | StatBlockService impl (green) | `library/service/StatBlockService.java` |
+| 6 | StatBlockService impl (green, incl. xp in clone) | `library/service/StatBlockService.java` |
 | 7 | CSS additions | `static/css/app.css` |
-| 8 | Library templates + About page | `templates/library/{list,detail,_card,_form,_statblock-renderer}.html`, `templates/about.html` |
-| 9 | LibraryController (red+green) | `library/web/LibraryController.java`, `LibraryControllerTest.java` |
+| 8 | Library/spell templates + About page | `templates/library/{list,detail,_card,_form,_statblock-renderer,_spell-card}.html`, `templates/about.html` |
+| 9 | LibraryController (red+green, incl. spells + SRD key catalog) | `library/web/LibraryController.java`, `LibraryControllerTest.java` |
 | 10 | PartyMemberService tests (red) | `party/service/PartyMemberServiceTest.java` |
 | 11 | PartyMemberService impl (green) | `party/service/PartyMemberService.java` |
 | 12 | Party templates | `templates/party/{list,_card,_form,_summary-bar}.html` |
 | 13 | PartyController (red+green) | `party/web/PartyController.java`, `PartyControllerTest.java` |
 | 14 | Navbar + campaign links | `fragments/navbar.html`, `campaigns/detail.html` |
-| 15 | Export/import update | `campaign/service/CampaignExportDto.java`, `CampaignService.java` |
+| 15 | Export/import update (incl. xp in DTO) | `campaign/service/CampaignExportDto.java`, `CampaignService.java` |
 | 16 | Final verification | Manual smoke test, all tests pass |

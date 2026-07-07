@@ -112,7 +112,7 @@ Deferred, but the architecture must not preclude them (see §8 Roadmap):
 │  ├─ service:    campaign, party, map, encounter, library, notes, handouts    │
 │  ├─ data:       JPA entities & repositories                                  │
 │  ├─ transfer:   campaign JSON import/export                                  │
-│  └─ seed:       SRD 5.2 content loader (first run)                          │
+│  └─ seed:       SRD 5.2 content loader — monsters & spells (first run)   │
 └──────────────┬───────────────────────────────────────────────────────────────┘
                │ JPA
        H2 file DB  (~/.dmhelper/data)
@@ -142,7 +142,7 @@ modules stay decoupled and new ones (dice, journal, etc.) slot in cleanly.
    not a degraded mode.
 5. **SRD content is read-only seed data**; homebrew content is user data. Both share one statblock
    schema, distinguished by `source` (`SRD` vs `CUSTOM`). Custom content can be campaign-scoped or
-   global (reusable across campaigns).
+   global (reusable across campaigns). Spell entries are also read-only SRD seed data (no CRUD).
 6. **Hypermedia by default, islands where it earns it.** Screens are server-rendered and updated
    via htmx fragments; only the map editor and battle map are client-side JS applications
    (Konva canvas islands talking JSON to `/api/v1`). New features must justify becoming an island
@@ -199,7 +199,8 @@ Campaign 1──* GameMap 1──1 MapDocument (JSON blob: layers, tiles, shapes
 | **PartyMember** | campaign, characterName, playerName, classAndLevel, ac, maxHp, initiativeBonus, speed, passivePerception/Insight/Investigation, notes, `active` (absent player / retired PC) |
 | **GameMap** | campaign, name, gridWidth/Height, cellSizePx, sortOrder, `document` (JSON, versioned schema) |
 | **Token** | map, name, kind (PC/NPC/MONSTER/OBJECT), position (col,row), size (1×1 … 4×4), color/icon, `hidden` (DM-only), statBlockRef? / partyMemberRef?, currentHp?, maxHp?, notes |
-| **StatBlock** | source (SRD/CUSTOM), campaign?, name, CR, type, AC, HP, speeds, ability scores, saves, skills, senses, languages, traits/actions/reactions/legendary (structured JSON), searchable columns (name, CR, type) |
+| **StatBlock** | source (SRD/CUSTOM), campaign?, name, CR, xp, type, AC, HP, speeds, ability scores, saves, skills, senses, languages, traits/actions/reactions/legendary (structured JSON), searchable columns (name, CR, type) |
+| **Spell** | sourceKey (unique), name, level, school, castingTime, range, components, duration, description, higherLevel, ritual, concentration — read-only reference data, no CRUD |
 | **Encounter** | campaign, map?, name, status (PLANNED/ACTIVE/DONE), round, activeTurnIndex |
 | **Combatant** | encounter, name, initiative, currentHp, maxHp, conditions[] (each with optional remaining-round duration), `concentrating`, legendaryActionsRemaining?, legendaryResistancesRemaining?, groupId? (identical monsters sharing one initiative entry), `hidden`, tokenRef?, statBlockRef? / partyMemberRef? |
 | **CombatLogEntry** | encounter, round, sequence, type (DAMAGE / HEAL / CONDITION / TURN / INITIATIVE / …), payload (JSON) — append-only; drives combat undo and session-log capture (§4.5) |
@@ -248,9 +249,9 @@ must support a tight generate → validate → fix loop:
   schema, referential integrity, and spatial checks (tokens inside grid bounds, primitives within
   map dimensions) — and returns the full problem report without creating anything.
 - **SRD key catalog**: `GET /api/v1/library/srd-keys` lists every valid SRD reference key
-  (also exported as a checked-in file), so generators reference real content instead of
-  hallucinating keys. Unknown keys still degrade gracefully on import (see above), but the
-  catalog makes them avoidable.
+  (auto-generated from seeded statblock data at runtime; also exportable as a checked-in file),
+  so generators reference real content instead of hallucinating keys. Unknown keys still degrade
+  gracefully on import (see above), but the catalog makes them avoidable.
 - Import remains strictly additive (never overwrites), so a failed or mediocre generation
   costs nothing — delete the campaign and re-import.
 
@@ -376,10 +377,12 @@ Docked panel beside the battle map, linked to tokens:
 
 ### 4.6 Monster / NPC Statblock Library
 
-- **Bundled SRD 5.2 content** (CC-BY-4.0): all SRD monsters, seeded into the read-only global
-  library on first run, with attribution shown in the app's About screen as the license requires.
-  (Spells and magic items from the SRD are bundled as reference entries in the same library;
-  full spell/item tooling is post-v1.)
+- **Bundled SRD 5.2 content** (CC-BY-4.0): all 331 SRD 5.2 monsters + 339 spells, fetched from
+  the open5e community API (`srd-2024` document) and seeded into the library on first run, with
+  attribution shown in the app's About screen as the license requires. Spells are read-only
+  reference entries in the same library; full spell/item tooling is post-v1.
+- Each statblock includes an `xp` field (from the SRD) to enable the encounter difficulty
+  calculator (§4.2) without a later schema migration.
 - Search and filter by name, CR, type, source; fast enough to use mid-combat.
 - Full 5.5e-format statblock rendering (2024 layout: traits, actions, bonus actions, reactions,
   legendary actions).
@@ -472,7 +475,9 @@ A read-only live view of the table, for any spare device on the local network:
   HTML fragments from view routes. The canvas islands, import/export, and anything scriptable use
   the JSON API under `/api/v1`. Entity IDs are UUIDs everywhere.
 - Resource-oriented: `/api/v1/campaigns/{id}/maps`, `/maps/{id}/tokens`, `/encounters/{id}/combatants`,
-  `/library/statblocks?search=&cr=&type=`, `/campaigns/{id}/notes?type=&tag=`,
+  `/library/statblocks?search=&cr=&type=`, `/library/spells?search=&level=&school=`,
+  `/library/statblocks/srd-keys` (JSON array of all SRD source keys, auto-generated from seeded data),
+  `/campaigns/{id}/notes?type=&tag=`,
   `/campaigns/{id}/party`, `/campaigns/{id}/handouts` (multipart image upload; files served from
   `/files/{id}`).
 - Table presentation (what player views show) is set via `PUT /api/v1/table/presentation`
@@ -482,7 +487,8 @@ A read-only live view of the table, for any spare device on the local network:
 - Import/export: `GET /campaigns/{id}/export` (streams the JSON file),
   `POST /campaigns/import` (multipart upload; `?dryRun=true` for validate-only).
 - Generative tooling: `GET /api/v1/schemas/{name}` (JSON Schemas for the campaign format and map
-  document), `GET /api/v1/library/srd-keys` (valid SRD reference keys).
+  document), `GET /api/v1/library/srd-keys` (valid SRD reference keys, auto-generated from
+  seeded statblock data).
 - Errors follow **RFC 9457** problem+json (Problem Details for HTTP APIs — the current spec,
   obsoleting RFC 7807) with actionable messages (especially import validation).
 - **Live sync (player view):** plain WebSocket at `/ws/table` (browser-native API, no client
@@ -526,7 +532,7 @@ A read-only live view of the table, for any spare device on the local network:
 | # | Milestone | Contents | Definition of done |
 |---|---|---|---|
 | M1 | **Walking skeleton** | Spring Boot 4.1.0 + Thymeleaf/htmx + H2 in one JAR; `ddl-auto=update` + backup system wired in; vendored assets with `VENDOR.md`; base layout & design system; campaign CRUD; campaign JSON export/import (empty campaigns) | `java -jar` → create, export, import a campaign in the browser |
-| M2 | **Statblock library & party roster** | Statblock schema + renderer; SRD seed; search/filter; homebrew editor; party roster CRUD + summary bar | Find "Goblin" in <100 ms; create a custom monster; enter the party once |
+| M2 | **Statblock library & party roster** | Statblock schema + renderer (incl. xp); 331 SRD 5.2 monsters + 339 spells from open5e; seed on first run; search/filter; homebrew editor; party roster CRUD + summary bar; SRD key catalog endpoint | Find "Goblin" in <100 ms; create a custom monster; enter the party once; look up "Fireball" |
 | M3 | **Map editor** | Grid canvas, terrain painting, shapes, layers, undo/redo, autosave | Build a usable tavern map from scratch |
 | M4 | **Battle map** | Play mode, tokens (create/move/hide/HP, add-party, bloodied state), map switching with state, AoE templates, measurement | Run a mock fight by hand on a map |
 | M5 | **Combat tracker** | Encounters, initiative, monster groups, turns, HP math, conditions + effect durations, concentration, legendary/lair actions, combat log with undo, difficulty calculator, map + roster linkage | Run a full combat (incl. a boss) without touching paper |
