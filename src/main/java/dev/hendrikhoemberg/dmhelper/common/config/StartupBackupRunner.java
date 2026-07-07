@@ -22,10 +22,12 @@ public class StartupBackupRunner implements ApplicationRunner {
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
 
     private final Path dataDir;
+    private final Path filesDir;
     private final Path backupDir;
 
     public StartupBackupRunner(@Value("${user.home}") String userHome) {
         this.dataDir = Path.of(userHome, ".dmhelper", "data");
+        this.filesDir = Path.of(userHome, ".dmhelper", "files");
         this.backupDir = Path.of(userHome, ".dmhelper", "backups");
     }
 
@@ -43,17 +45,30 @@ public class StartupBackupRunner implements ApplicationRunner {
             Path snapshotDir = backupDir.resolve("dmhelper-" + timestamp);
             Files.createDirectory(snapshotDir);
 
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(dataDir)) {
-                for (Path file : stream) {
-                    Files.copy(file, snapshotDir.resolve(file.getFileName()));
-                }
+            copyTree(dataDir, snapshotDir.resolve("data"));
+            if (Files.isDirectory(filesDir)) {
+                copyTree(filesDir, snapshotDir.resolve("files"));
             }
 
-            log.info("Database backup created at {}", snapshotDir);
+            log.info("Backup created at {}", snapshotDir);
 
             rotateBackups();
         } catch (IOException e) {
             log.error("Failed to create startup backup", e);
+        }
+    }
+
+    private void copyTree(Path source, Path target) throws IOException {
+        try (Stream<Path> walk = Files.walk(source)) {
+            for (Path path : walk.toList()) {
+                Path dest = target.resolve(source.relativize(path).toString());
+                if (Files.isDirectory(path)) {
+                    Files.createDirectories(dest);
+                } else {
+                    Files.createDirectories(dest.getParent());
+                    Files.copy(path, dest);
+                }
+            }
         }
     }
 
