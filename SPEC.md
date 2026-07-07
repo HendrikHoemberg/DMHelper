@@ -24,7 +24,8 @@ about a specific setting or adventure.
 ### 1.2 Usage Model (v1)
 
 - **Single user (the DM), running locally.** The app starts as a local server; the DM opens it in a
-  browser. No accounts, no auth, no internet dependency at the table.
+  browser. No accounts, no internet dependency at the table; the only access control is the
+  per-session DM PIN that keeps LAN devices out of the DM interface (§2.3.7).
 - **Primary display: the DM's screen**, which may be shown to players at any time. The app has a
   global **DM Mode toggle**: one switch (with keyboard shortcut) that instantly hides all DM-only
   information — hidden tokens, monster HP, notes, upcoming encounter content — so the screen can be
@@ -59,6 +60,7 @@ Deferred, but the architecture must not preclude them (see §8 Roadmap):
 |---|---|---|
 | Backend | **Spring Boot 4.1.0 (Java 21)** | DM's home turf; mature ecosystem; clean layering for a long-lived project |
 | Persistence | **Spring Data JPA + H2 (file mode)** | Zero-install embedded DB stored in the user data dir; can swap to PostgreSQL later via config |
+| Schema migrations | **Flyway** (versioned SQL, from M1) | A long-lived local DB holding years of campaign data must never rely on Hibernate `ddl-auto`; every schema change ships as a reviewed migration. Version comes from the Boot 4.1 BOM like everything else |
 | UI (pages & panels) | **Thymeleaf + htmx** (vendored, single dependency-free JS file) | Server-rendered hypermedia UI for all CRUD screens — campaign, roster, library, notes, encounters — with no JS build step; partial page updates via HTML fragments |
 | Interactive islands | **Vanilla JS (native ES modules) + Konva.js** (vendored, self-contained UMD file) | The map editor and battle map are self-contained canvas "islands" mounted into server-rendered pages; browsers load ES modules natively — no bundler, no transpiler, no Node |
 | Client-side sprinkles | **Alpine.js** (vendored, zero dependencies) | Lightweight reactivity for toolbars, dialogs, and the initiative tracker where htmx round-trips would be clumsy |
@@ -140,6 +142,16 @@ modules stay decoupled and new ones (dice, journal, etc.) slot in cleanly.
    via htmx fragments; only the map editor and battle map are client-side JS applications
    (Konva canvas islands talking JSON to `/api/v1`). New features must justify becoming an island
    rather than defaulting to one — this keeps the hand-written JS surface small and auditable.
+7. **The LAN sees only the player surface.** The player view requires the server to listen on the
+   network interface — which would otherwise expose the full DM interface (notes, hidden tokens,
+   upcoming encounters) to every device on the same Wi-Fi; a curious player wouldn't need
+   dev-tools, just the DM's URL. Therefore all DM routes — pages and every `/api/v1` endpoint
+   except the player-safe ones — are gated behind a **per-session PIN**: generated fresh at each
+   app start, printed to the terminal and shown in the DM header, entered once per browser
+   (cookie-backed). `/player`, `/ws/table`, and files referenced by player-safe payloads remain
+   open without a PIN — they only ever serve the player-safe projection (rule 3). This is the
+   same invariant as rule 3 arriving through a different door, and it is tested with the same
+   rigor (§6).
 
 ### 2.4 Dependency & Supply-Chain Policy
 
@@ -172,7 +184,7 @@ Campaign 1──* GameMap 1──1 MapDocument (JSON blob: layers, tiles, shapes
     ├──* PartyMember (lightweight PC stats, not a character sheet)
     ├──* Encounter 1──* Combatant ──?──> Token / StatBlock / PartyMember
     ├──* Handout (image file + metadata)
-    ├──* Note (typed: NPC | LOCATION | QUEST | SESSION_LOG | GENERIC)
+    ├──* Note (typed: NPC | LOCATION | QUEST | SESSION_LOG | SESSION_PLAN | GENERIC)
     └──* StatBlock (source=CUSTOM, campaign-scoped)   StatBlock (source=SRD, global)
 ```
 
@@ -184,7 +196,8 @@ Campaign 1──* GameMap 1──1 MapDocument (JSON blob: layers, tiles, shapes
 | **Token** | map, name, kind (PC/NPC/MONSTER/OBJECT), position (col,row), size (1×1 … 4×4), color/icon, `hidden` (DM-only), statBlockRef? / partyMemberRef?, currentHp?, maxHp?, notes |
 | **StatBlock** | source (SRD/CUSTOM), campaign?, name, CR, type, AC, HP, speeds, ability scores, saves, skills, senses, languages, traits/actions/reactions/legendary (structured JSON), searchable columns (name, CR, type) |
 | **Encounter** | campaign, map?, name, status (PLANNED/ACTIVE/DONE), round, activeTurnIndex |
-| **Combatant** | encounter, name, initiative, currentHp, maxHp, conditions[], `concentrating`, legendaryActionsRemaining?, `hidden`, tokenRef?, statBlockRef? / partyMemberRef? |
+| **Combatant** | encounter, name, initiative, currentHp, maxHp, conditions[] (each with optional remaining-round duration), `concentrating`, legendaryActionsRemaining?, legendaryResistancesRemaining?, groupId? (identical monsters sharing one initiative entry), `hidden`, tokenRef?, statBlockRef? / partyMemberRef? |
+| **CombatLogEntry** | encounter, round, sequence, type (DAMAGE / HEAL / CONDITION / TURN / INITIATIVE / …), payload (JSON) — append-only; drives combat undo and session-log capture (§4.5) |
 | **Handout** | campaign, title, image file reference, tags[], `dmOnly` until presented |
 | **Note** | campaign, type, title, body (Markdown), tags[], `dmOnly` (default true), wiki-links to other notes/statblocks/maps |
 
@@ -192,7 +205,9 @@ Handout images live on the file system (`~/.dmhelper/files`), referenced by the 
 database stays small and backups copy both.
 
 The `MapDocument` JSON schema carries a `schemaVersion` field from day one; the backend migrates
-old documents forward on load.
+old documents forward on load. The relational schema is migrated with **Flyway** from the first
+release — every change ships as a versioned migration, and Hibernate `ddl-auto` is never used to
+evolve a user's database (validate-only).
 
 ---
 
@@ -298,6 +313,10 @@ The same canvas in "play" mode:
   move with grid snapping; supports 1×1 to 4×4 sizes; color ring by kind (PC/ally/enemy/object);
   name label; optional HP bar (DM Mode only); duplicate ("add 4 goblins"); mark dead/remove.
 - **Hidden tokens**: flagged tokens render only in DM Mode (used for ambushes, secret NPCs).
+- **Bloodied indicator**: a token at or below half HP shows a player-visible "bloodied" state
+  (e.g., a red-tinged ring) — answering the table's constant "does it look hurt?" without leaking
+  numbers. The flag is computed server-side and included in the player-safe projection; exact HP
+  remains DM-only.
 - **Location swapping**: a map switcher lists all campaign maps; switching is instant and preserves
   each map's token state — walk out of the tavern mid-fight, come back later, everything is where
   it was. Maps can be grouped/ordered for session flow.
@@ -316,17 +335,33 @@ Docked panel beside the battle map, linked to tokens:
   party roster) and/or plan encounters ahead of time and activate them at the table.
 - Roll or type initiative per combatant (auto-roll for monsters using their DEX; PCs typed in,
   with their roster initiative bonus shown); sort, tie-break, drag to reorder.
+- **Monster groups**: identical monsters ("the 4 goblins") can share a single initiative entry —
+  one roll, one turn slot — while HP is tracked per creature within the group. A combatant can be
+  split out of its group when it matters (held action, banishment, the goblin that ran).
 - Turn management: next/previous, round counter, active combatant highlighted **both** in the
   tracker and on the map.
 - HP tracking: apply damage/healing with quick math (`-12`, `+5`); death handling for monsters
   (auto-mark dead on 0) vs. PCs (death-save reminder).
 - Conditions: toggle 5.5e conditions per combatant; condition icons show on tokens.
+- **Effect durations**: conditions and tracked effects take an optional duration in rounds
+  ("Bless — 10 rounds", "stunned until the end of its next turn"); the tracker ticks them down
+  at the appropriate point in the round and prompts on expiry instead of silently forgetting.
+  Statblock **recharge abilities** ("Recharge 5–6") prompt a recharge roll at the start of the
+  creature's turn.
 - **Concentration**: flag a combatant as concentrating (with the spell's name); when they take
   damage the tracker prompts the save with the correct DC (10 or half damage). Losing it clears
   the flag.
 - **Legendary & lair actions**: combatants whose statblock has legendary actions get a per-round
-  counter (decrement on use, reset at the top of the round); encounters can include a **lair
-  action** entry pinned at initiative 20.
+  counter (decrement on use, reset at the top of the round), and **legendary resistances** get a
+  per-encounter counter alongside; encounters can include a **lair action** entry pinned at
+  initiative 20.
+- **Combat action log with undo**: every tracker mutation — damage, healing, conditions, turn
+  advance, initiative edits — is appended to a per-encounter log, and **undo** steps back through
+  it, so a misclicked "next turn" or 12 damage applied to the wrong goblin is one keystroke to
+  fix. The editor gets undo/redo; the place where mistakes actually happen mid-session deserves
+  it more (same table-robustness priority as autosave, §6). The log doubles as raw material for
+  session records: when an encounter ends, its outcome (rounds, damage dealt, casualties) can be
+  appended to the session log.
 - In DM Mode off (player-safe), the tracker shows only names, order, and conditions — no monster
   HP or hidden combatants.
 
@@ -347,12 +382,21 @@ Docked panel beside the battle map, linked to tokens:
 
 The "kill the 7 spreadsheets" module:
 
-- Typed, Markdown-based notes: **NPCs, Locations, Quests, Session Logs, Generic**.
+- Typed, Markdown-based notes: **NPCs, Locations, Quests, Session Logs, Session Plans, Generic**.
 - **Wiki-style linking** with `[[Note Title]]` autocompletion; links can also target maps and
   statblocks (e.g., an NPC note links to its statblock and home location map). Backlinks are shown
   on every note ("referenced by …").
 - Tags + full-text search across the campaign.
+- **Global quick-search**: a `Ctrl+K` command palette, available from every screen, searches
+  notes, statblocks, maps, handouts, and encounters in one box and jumps straight to the result —
+  the mid-session "take me to X" path, so navigation never means walking menus while the table
+  waits.
 - Session log template (date, attendance, summary, loot, XP) to encourage consistent records.
+- **Session plan ("tonight's runsheet")**: a `SESSION_PLAN` note gathers everything prepared for
+  the next session — planned scenes, the encounters to activate, handouts queued, NPCs likely to
+  appear — as an ordered list of wiki-links with free text between. The current session plan is
+  the default content of the quick-access side panel, making it the session's front page: the
+  bridge between prep and play starts from one place instead of a search box.
 - Quick-access side panel available from every screen (including the battle map) so notes are
   reachable mid-session without leaving the map.
 - Notes are `dmOnly` by default and therefore invisible when DM Mode is off.
@@ -378,12 +422,12 @@ A read-only live view of the table, for any spare device on the local network:
 
 - The DM screen shows a **"Player view" link/QR code** (e.g., `http://<dm-ip>:8080/player`);
   opening it on a TV, tablet, or player's phone joins the table display. Any number of devices can
-  connect; none are required.
+  connect; none are required. Player routes need no PIN — only DM routes are gated (§2.3.7).
 - **Always player-safe.** The player view has no DM Mode toggle — the server only ever sends it
   player-safe data (hidden tokens, monster HP, DM annotations, and notes are stripped server-side).
 - **What it shows:** the live battle map (tokens, terrain, AoE templates, active-turn highlight,
-  condition icons), the initiative order (names + conditions), or a presented handout
-  (full-screen). Nothing else — no navigation, no menus.
+  condition icons, bloodied states), the initiative order (names + conditions), or a presented
+  handout (full-screen). Nothing else — no navigation, no menus.
 - **The DM decides what's "on the table."** The player view does not blindly mirror the DM's
   screen. The DM explicitly presents a map or handout to the table ("Send to table" action); they
   can then freely browse other maps, notes, or prep on their own screen without the players seeing
@@ -402,8 +446,9 @@ A read-only live view of the table, for any spare device on the local network:
   unmistakable visual state (e.g., colored border while player-safe mode is on).
 - When toggled to **player-safe**: hidden tokens vanish, monster HP/bars disappear, DM annotations
   hide, the notes panel and party summary bar close and lock, statblock/encounter-prep views blank
-  out, and the map switcher hides unvisited maps' names. The battle map (including AoE templates),
-  initiative order (names + conditions), and any presented handout remain visible.
+  out, and the map switcher hides unvisited maps' names. The battle map (including AoE templates
+  and bloodied states), initiative order (names + conditions), and any presented handout remain
+  visible.
 - Implemented as a single frontend state that every component consumes — but driven by the same
   persisted `dmOnly`/`hidden` flags and server-side filtering rules that feed the player view
   (§2.3.3), so what "player-safe" means is defined exactly once.
@@ -429,7 +474,8 @@ A read-only live view of the table, for any spare device on the local network:
   `POST /campaigns/import` (multipart upload; `?dryRun=true` for validate-only).
 - Generative tooling: `GET /api/v1/schemas/{name}` (JSON Schemas for the campaign format and map
   document), `GET /api/v1/library/srd-keys` (valid SRD reference keys).
-- Errors follow RFC 7807 problem+json with actionable messages (especially import validation).
+- Errors follow **RFC 9457** problem+json (Problem Details for HTTP APIs — the current spec,
+  obsoleting RFC 7807) with actionable messages (especially import validation).
 - **Live sync (player view):** plain WebSocket at `/ws/table` (browser-native API, no client
   library, no STOMP). The server sends typed JSON messages: a full `TABLE_STATE` snapshot on
   connect/reconnect and on presentation/curtain changes, and incremental events (`TOKEN_MOVED`,
@@ -455,8 +501,9 @@ A read-only live view of the table, for any spare device on the local network:
   rotating backup folder (`~/.dmhelper/backups`, keep last 10).
 - **Testing**: service-layer unit tests; import/export round-trip tests (export → import → deep
   equality) as the flagship integration test; **exhaustive tests for the player-safe projection**
-  (no `dmOnly`/`hidden` field may ever reach a player topic — this is the one security-like
-  invariant in the app); frontend component tests for the initiative tracker and DM Mode
+  (no `dmOnly`/`hidden` field may ever reach a player topic) plus **access-control tests that
+  every DM route rejects requests without the session PIN** — the two halves of the one
+  security-like invariant in the app (§2.3.3, §2.3.7); frontend component tests for the initiative tracker and DM Mode
   filtering; a Playwright (**Java binding**, from Maven — keeping the no-npm rule) smoke test for
   the core session loop (create map → place token → start encounter → advance turns → verify on a
   second player-view page).
@@ -469,14 +516,14 @@ A read-only live view of the table, for any spare device on the local network:
 
 | # | Milestone | Contents | Definition of done |
 |---|---|---|---|
-| M1 | **Walking skeleton** | Spring Boot 4.1.0 + Thymeleaf/htmx + H2 in one JAR; vendored assets with `VENDOR.md`; base layout & design system; campaign CRUD; campaign JSON export/import (empty campaigns) | `java -jar` → create, export, import a campaign in the browser |
+| M1 | **Walking skeleton** | Spring Boot 4.1.0 + Thymeleaf/htmx + H2 in one JAR; Flyway wired in with the first schema migration; vendored assets with `VENDOR.md`; base layout & design system; campaign CRUD; campaign JSON export/import (empty campaigns) | `java -jar` → create, export, import a campaign in the browser |
 | M2 | **Statblock library & party roster** | Statblock schema + renderer; SRD seed; search/filter; homebrew editor; party roster CRUD + summary bar | Find "Goblin" in <100 ms; create a custom monster; enter the party once |
 | M3 | **Map editor** | Grid canvas, terrain painting, shapes, layers, undo/redo, autosave | Build a usable tavern map from scratch |
-| M4 | **Battle map** | Play mode, tokens (create/move/hide/HP, add-party), map switching with state, AoE templates, measurement | Run a mock fight by hand on a map |
-| M5 | **Combat tracker** | Encounters, initiative, turns, HP math, conditions, concentration, legendary/lair actions, difficulty calculator, map + roster linkage | Run a full combat (incl. a boss) without touching paper |
-| M6 | **Player view & handouts** | WebSocket broadcaster, server-side player-safe projection, `/player` route, send-to-table & curtain, QR join, auto-reconnect; handout upload/gallery/present | Phone + laptop show the fight live; a letter fills the TV |
-| M7 | **Notes & wiki** | Typed notes, Markdown, wiki-links + backlinks, search, side panel | Replace the campaign spreadsheet |
-| M8 | **Table polish & generative tooling** | DM Mode toggle everywhere, backups, error handling, keyboard shortcuts, full export/import of everything; JSON Schemas, dry-run import, SRD key catalog | Run a real session start-to-finish; an AI-generated campaign imports cleanly |
+| M4 | **Battle map** | Play mode, tokens (create/move/hide/HP, add-party, bloodied state), map switching with state, AoE templates, measurement | Run a mock fight by hand on a map |
+| M5 | **Combat tracker** | Encounters, initiative, monster groups, turns, HP math, conditions + effect durations, concentration, legendary/lair actions, combat log with undo, difficulty calculator, map + roster linkage | Run a full combat (incl. a boss) without touching paper |
+| M6 | **Player view & handouts** | WebSocket broadcaster, server-side player-safe projection, DM-route PIN gate, `/player` route, send-to-table & curtain, QR join, auto-reconnect; handout upload/gallery/present | Phone + laptop show the fight live; a letter fills the TV |
+| M7 | **Notes & wiki** | Typed notes, Markdown, wiki-links + backlinks, search, session plans, side panel | Replace the campaign spreadsheet |
+| M8 | **Table polish & generative tooling** | DM Mode toggle everywhere, backups, error handling, keyboard shortcuts, `Ctrl+K` command palette, full export/import of everything; JSON Schemas, dry-run import, SRD key catalog | Run a real session start-to-finish; an AI-generated campaign imports cleanly |
 
 Each milestone ends in a usable state — the app is session-worthy from M4 onward, with or without
 player devices.
@@ -499,6 +546,7 @@ player devices.
 ## 9. Open Questions
 
 - Hex grid support in the map editor (square-only for v1)?
-- Should session logs auto-capture combat results (encounter outcomes, damage dealt)?
+- How much detail should the combat log (§4.5) append to session logs when an encounter ends —
+  a summary line, or the full blow-by-blow?
 - Multi-campaign shared homebrew: is "promote to global library" enough, or is a proper
   homebrew compendium module needed?
