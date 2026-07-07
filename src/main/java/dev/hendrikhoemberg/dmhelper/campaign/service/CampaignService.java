@@ -110,12 +110,15 @@ public class CampaignService {
 
         if (dto.party() != null) {
             for (var pmDto : dto.party()) {
-                partyMemberService.create(saved.getId(),
+                var member = partyMemberService.create(saved.getId(),
                         pmDto.characterName(), pmDto.playerName(),
                         pmDto.classAndLevel(), pmDto.ac(), pmDto.maxHp(),
                         pmDto.initiativeBonus(), pmDto.speed(),
                         pmDto.passivePerception(), pmDto.passiveInsight(),
                         pmDto.passiveInvestigation(), pmDto.notes());
+                if (!pmDto.active()) {
+                    partyMemberService.setActive(member.getId(), false);
+                }
             }
         }
         if (dto.statBlocks() != null) {
@@ -133,6 +136,7 @@ public class CampaignService {
                         sbDto.damageImmunities(), sbDto.conditionImmunities(),
                         sbDto.senses(), sbDto.languages());
                 if (sbDto.size() != null) sb.setSize(sbDto.size());
+                if (sbDto.sourceKey() != null) sb.setSourceKey(sbDto.sourceKey());
                 if (sbDto.alignment() != null) sb.setAlignment(sbDto.alignment());
                 if (sbDto.traits() != null) sb.setTraits(sbDto.traits());
                 if (sbDto.actions() != null) sb.setActions(sbDto.actions());
