@@ -1,8 +1,11 @@
 # DMHelper — Specification
 
 A local-first web application that replaces the "multiple PDFs and 7 spreadsheets" workflow of running
-D&D 5.5e (2024 rules) campaigns with one integrated tool: campaign planning, a party roster, an interactive battle map
-with a built-in map editor, combat tracking, a monster library, handouts, and a campaign wiki.
+D&D 5.5e (2024 rules) campaigns with one integrated tool: campaign planning, rules-aware character sheets
+for the party, an interactive battle map with a built-in map editor, combat tracking, a monster library
+plus a full SRD 5.2 rules compendium (rules, conditions, items, character options), loot & treasury
+tracking, an in-game calendar, handouts, a campaign wiki, and an optional dice roller. At the table the
+DM needs nothing else — no PDFs, no spreadsheets.
 
 **Status:** v1 specification · **Owner:** Hendrik (DM) · **Rules edition:** D&D 5.5e (2024 / SRD 5.2)
 
@@ -41,14 +44,16 @@ about a specific setting or adventure.
 
 Deferred, but the architecture must not preclude them (see §8 Roadmap):
 
-- Player *interaction* (players moving their own tokens, per-player identity/permissions) — the
-  v1 player view is display-only
+- Player *interaction* (players moving their own tokens, editing their own character sheets,
+  rolling dice from their own devices, per-player identity/permissions) — the v1 player view is
+  display-only and the DM operates everything, including the party's character sheets (§4.12)
 - Fog of war and per-player vision
 - Uploading map images as battle map backgrounds (v1 maps are built in the editor)
-- Dice roller and rules quick-reference (first step post-v1: clickable statblock rolls)
-- Character sheet management for players — the v1 party roster (§4.2) stores only the
-  combat-relevant stats the DM needs; players keep their own sheets
 - Hosting for multiple DMs / user accounts
+
+> Two former non-goals were deliberately promoted into v1 (see §9): **full rules-aware character
+> sheets** (§4.12, DM-operated) and the **dice roller & rules quick-reference** (§4.11, §4.16 —
+> always optional, never mandatory).
 
 ---
 
@@ -109,18 +114,21 @@ Deferred, but the architecture must not preclude them (see §8 Roadmap):
 │  Spring Boot                                                                 │
 │  ├─ web:        Thymeleaf views + htmx fragments + JSON API controllers      │
 │  ├─ live:       table-state broadcaster (filters dmOnly before publishing)   │
-│  ├─ service:    campaign, party, map, encounter, library, notes, handouts    │
+│  ├─ service:    campaign, party, sheets, map, encounter, library, notes,     │
+│  │              handouts, quicknotes, ledger, calendar, dice                 │
 │  ├─ data:       JPA entities & repositories                                  │
 │  ├─ transfer:   campaign JSON import/export                                  │
-│  └─ seed:       SRD 5.2 content loader — monsters & spells (first run)   │
+│  └─ seed:       SRD 5.2 content loader — monsters, spells & compendium       │
+│                 (conditions, rules, items, character options; first run)     │
 └──────────────┬───────────────────────────────────────────────────────────────┘
                │ JPA
        H2 file DB  (~/.dmhelper/data)
 ```
 
-Backend packages are organized **by feature module** (`campaign`, `party`, `gamemap`, `encounter`,
-`library`, `notes`, `handout`, `transfer`), each with its own `web/service/data` sub-packages, so
-modules stay decoupled and new ones (dice, journal, etc.) slot in cleanly.
+Backend packages are organized **by feature module** (`campaign`, `party`, `sheet`, `gamemap`,
+`encounter`, `library`, `notes`, `quicknote`, `handout`, `ledger`, `calendar`, `dice`, `transfer`),
+each with its own `web/service/data` sub-packages, so modules stay decoupled and new ones
+(journal, etc.) slot in cleanly.
 
 ### 2.3 Key Architectural Rules
 
@@ -157,6 +165,21 @@ modules stay decoupled and new ones (dice, journal, etc.) slot in cleanly.
    open without a PIN — they only ever serve the player-safe projection (rule 3). This is the
    same invariant as rule 3 arriving through a different door, and it is tested with the same
    rigor (§6).
+8. **Rules data provenance — nothing is ever guessed.** Every piece of D&D rules content in the
+   app (statblocks, spells, conditions, rules text, items, classes, species, backgrounds, feats,
+   progression tables, XP thresholds, …) comes exclusively from a verifiable 5.5e (2024 / SRD 5.2)
+   source: the open5e API (`srd-2024` document) or, where open5e cannot serve a content type or
+   field, verbatim transcription from the official SRD 5.2 document (CC-BY-4.0), committed as
+   checked-in seed files whose header records the source and date. If neither source covers a
+   value, the field stays empty and the feature degrades gracefully — an AI coding assistant (or
+   human contributor) must **never** fill in rules data from memory to complete a task. This rule
+   binds every implementation session, not just the initial seeding, and reviewers treat violations
+   as bugs.
+9. **The dice roller is never mandatory (optional-first).** Everywhere the app expects a roll —
+   initiative, attacks, saves, checks, recharge, HP on level-up — the UI offers both a roll action
+   and a plain numeric input, and no feature may depend on the digital roller being used. The DM
+   and players rolling physical dice is the first-class path; the roller is a convenience layered
+   on top (§4.16).
 
 ### 2.4 Dependency & Supply-Chain Policy
 
@@ -186,17 +209,26 @@ with zero internet at the table:
 Campaign 1──* GameMap 1──1 MapDocument (JSON blob: layers, tiles, shapes, grid config)
     │             └────1──* Token ──?──> StatBlock | PartyMember
     │
-    ├──* PartyMember (lightweight PC stats, not a character sheet)
+    ├──* PartyMember (combat projection) ──?──1 CharacterSheet (rules-aware, derived-with-override)
     ├──* Encounter 1──* Combatant ──?──> Token / StatBlock / PartyMember
     ├──* Handout (image file + metadata)
     ├──* Note (typed: NPC | LOCATION | QUEST | SESSION_LOG | SESSION_PLAN | GENERIC)
+    ├──* QuickNote ──> Encounter | GameMap | StatBlock | PartyMember | Handout | Note | Campaign
+    ├──* ItemAssignment (holder: PartyMember | party stash) ──?──> MagicItem | EquipmentItem
+    ├──* LedgerEntry (append-only gold/item transactions)
+    ├──* TimelineEvent (in-game date + title, ──?──> Note)
     └──* StatBlock (source=CUSTOM, campaign-scoped)   StatBlock (source=SRD, global)
+
+Global read-only compendium (seeded, referenced by sourceKey — see §2.3.8 provenance):
+    StatBlock(SRD) · Spell · Condition · RuleSection · EquipmentItem · MagicItem ·
+    CharacterClass · Species · Background · Feat
 ```
 
 | Entity | Key fields |
 |---|---|
-| **Campaign** | name, description, createdAt, settings (JSON) |
-| **PartyMember** | campaign, characterName, playerName, classAndLevel, ac, maxHp, initiativeBonus, speed, passivePerception/Insight/Investigation, notes, `active` (absent player / retired PC) |
+| **Campaign** | name, description, createdAt, settings (JSON: incl. calendar config, current in-game date, XP-vs-milestone leveling mode) |
+| **PartyMember** | campaign, characterName, playerName, classAndLevel, ac, maxHp, initiativeBonus, speed, passivePerception/Insight/Investigation, notes, `active` (absent player / retired PC). When a CharacterSheet exists, these combat fields are derived from it (override-able); sheet-less members stay hand-edited |
+| **CharacterSheet** | partyMember (1–1), abilityScores, classLevels[] (classRef + level, multiclass supported), speciesRef, backgroundRef, featRefs[], proficiencies (skills/saves/tools/languages), spellsKnown/prepared (Spell refs), hitDicePool, resources[] (name, max, current, reset-on-rest rule), xp, overrides (JSON: any derived value can be manually overridden) |
 | **GameMap** | campaign, name, gridWidth/Height, cellSizePx, sortOrder, `document` (JSON, versioned schema) |
 | **Token** | map, name, kind (PC/NPC/MONSTER/OBJECT), position (col,row), size (1×1 … 4×4), color/icon, `hidden` (DM-only), statBlockRef? / partyMemberRef?, currentHp?, maxHp?, notes |
 | **StatBlock** | source (SRD/CUSTOM), campaign?, name, CR, xp, type, AC, HP, speeds, ability scores, saves, skills, senses, languages, traits/actions/reactions/legendary (structured JSON), searchable columns (name, CR, type) |
@@ -206,6 +238,18 @@ Campaign 1──* GameMap 1──1 MapDocument (JSON blob: layers, tiles, shapes
 | **CombatLogEntry** | encounter, round, sequence, type (DAMAGE / HEAL / CONDITION / TURN / INITIATIVE / …), payload (JSON) — append-only; drives combat undo and session-log capture (§4.5) |
 | **Handout** | campaign, title, image file reference, tags[], `dmOnly` until presented |
 | **Note** | campaign, type, title, body (Markdown), tags[], `dmOnly` (default true), wiki-links to other notes/statblocks/maps |
+| **QuickNote** | campaign, targetType + targetId (encounter / map / statblock / party member / handout / note / campaign), body (plain text), createdAt — always DM-only; promotable to a full Note (§4.13) |
+| **ItemAssignment** | campaign, holder (PartyMember or party stash), magicItemRef? / equipmentItemRef? / customText, quantity, `attuned` (max 3 attuned per PC, warned not enforced) |
+| **LedgerEntry** | campaign, timestamp, inGameDate?, kind (GOLD / ITEM), direction (GAIN / SPEND), amount + currency?, itemAssignmentRef?, holder, note — append-only transaction history |
+| **TimelineEvent** | campaign, inGameDate, title, body?, noteRef? |
+| **Condition** | sourceKey, name, description — read-only compendium |
+| **RuleSection** | sourceKey, name, parentKey/group, body (Markdown), sortOrder — read-only compendium |
+| **EquipmentItem** | sourceKey, name, category (WEAPON / ARMOR / GEAR / TOOL), cost, weight, properties (JSON), description — read-only compendium |
+| **MagicItem** | sourceKey, name, rarity, type, `requiresAttunement`, description — read-only compendium |
+| **CharacterClass** | sourceKey, name, hitDie, savingThrows, proficiencies, spellcasting (ability + slot progression JSON), featuresByLevel (JSON), the SRD subclass (JSON) — read-only compendium |
+| **Species** | sourceKey, name, size, speed, traits (JSON) — read-only compendium |
+| **Background** | sourceKey, name, abilityScores, featRef, skills, tools, equipment, description — read-only compendium |
+| **Feat** | sourceKey, name, category, prerequisite, benefit — read-only compendium |
 
 Handout images live on the file system (`~/.dmhelper/files`), referenced by the entity — the
 database stays small and backups copy both.
@@ -227,8 +271,9 @@ DM's data is never at risk.
 
 - CRUD for campaigns; a campaign dashboard listing its maps, encounters, notes, and custom content.
 - **Export**: one click produces a single self-contained `*.dmcampaign.json` file containing the
-  full campaign graph (party roster, maps + documents, tokens, encounters, notes, handouts with
-  embedded images, campaign-scoped statblocks). SRD references are exported by stable SRD key,
+  full campaign graph (party roster + character sheets, maps + documents, tokens, encounters,
+  notes, quicknotes, item assignments, ledger, calendar + timeline, handouts with embedded images,
+  campaign-scoped statblocks). SRD and compendium references are exported by stable SRD key,
   not duplicated.
 - **Import**: upload a `*.dmcampaign.json`; the app validates it (schema version + referential
   integrity), reports problems clearly, and creates the campaign with fresh IDs (import never
@@ -277,7 +322,9 @@ Sketch of the format:
 ### 4.2 Party Roster & Encounter Difficulty
 
 The DM-screen answer to "what's the rogue's passive Perception again?" — a lightweight roster of
-the player characters, **not** a character sheet system (players keep their own sheets):
+the player characters. The roster is the **combat projection** of the party: from M9 onward its
+stats are derived from the full character sheets (§4.12) where a sheet exists, but the roster
+itself — and everything built on it in M4–M6 — works identically with or without sheets:
 
 - Per campaign: character name, player name, class & level, AC, max HP, initiative bonus, speed,
   passive Perception/Insight/Investigation, free-text notes (e.g., "darkvision, fey ancestry").
@@ -380,7 +427,8 @@ Docked panel beside the battle map, linked to tokens:
 - **Bundled SRD 5.2 content** (CC-BY-4.0): all 331 SRD 5.2 monsters + 339 spells, fetched from
   the open5e community API (`srd-2024` document) and seeded into the library on first run, with
   attribution shown in the app's About screen as the license requires. Spells are read-only
-  reference entries in the same library; full spell/item tooling is post-v1.
+  reference entries in the same library. The library UI also hosts the reference compendium
+  sections — rules, conditions, items, character options (§4.11).
 - Each statblock includes an `xp` field (from the SRD) to enable the encounter difficulty
   calculator (§4.2) without a later schema migration.
 - Search and filter by name, CR, type, source; fast enough to use mid-combat.
@@ -412,6 +460,8 @@ The "kill the 7 spreadsheets" module:
 - Quick-access side panel available from every screen (including the battle map) so notes are
   reachable mid-session without leaving the map.
 - Notes are `dmOnly` by default and therefore invisible when DM Mode is off.
+- Wiki notes are complemented by **entity-attached quicknotes** (§4.13) for mid-session jotting;
+  a quicknote that grows up can be promoted into a full wiki note.
 
 ### 4.8 Handouts
 
@@ -467,6 +517,121 @@ A read-only live view of the table, for any spare device on the local network:
 - DM Mode remains essential even with player views connected: it covers the "player walks behind
   the screen" case and tables with no second device at all.
 
+### 4.11 Reference Compendium (rules, conditions, items, character options)
+
+The rest of the "never open a PDF" promise — everything the SRD 5.2 defines beyond monsters and
+spells, seeded on first run and browsable in the same Library UI as the statblocks:
+
+- **Content types**: conditions, rules sections (combat, resting, travel, ability checks, …),
+  equipment (weapons, armor, gear, tools), magic items, and character options (classes, species,
+  backgrounds, feats). All read-only, global (not campaign-scoped), each with a stable `sourceKey`.
+- **Sourcing & provenance (hard rule, §2.3.8)**: content comes from the open5e API (`srd-2024`
+  document), like monsters and spells. open5e's srd-2024 coverage varies by content type, so
+  coverage is **verified per endpoint at implementation time**; any type or field open5e cannot
+  serve is transcribed **verbatim from the official SRD 5.2 document** (CC-BY-4.0) into
+  checked-in JSON seed files with recorded provenance. Nothing is ever reconstructed from an AI
+  assistant's memory; gaps degrade (empty field, skipped entry) rather than being guessed.
+  The milestone never blocks on the API.
+- **Search & lookup UX**: every compendium type is searchable with the same speed target as
+  statblocks (§6); the `Ctrl+K` command palette (M12) covers compendium entries, making
+  "how does Grappled work?" a two-keystroke answer mid-combat.
+- **Renderers per type**: condition and rule pages render as clean reference text; items show
+  cost/weight/properties or rarity/attunement; classes render their level table, features, and
+  the SRD subclass; species/backgrounds/feats render their traits and benefits.
+- **Integration points**: the combat tracker shows real condition text (tooltip/panel) when a
+  condition is toggled — the compendium ships before the tracker (M3 < M6), so this works from
+  day one. Magic and equipment items are referenced by the loot system (§4.14) and character
+  sheets (§4.12); classes/species/backgrounds/feats feed the sheet engine.
+- Compendium entries are covered by the same About-screen CC-BY-4.0 attribution as the SRD
+  statblocks, and the SRD key catalog (§4.1) extends to all compendium types.
+
+### 4.12 Character Sheets (rules-aware, DM-operated)
+
+Full character sheets in-app — a deliberate reversal of the original non-goal (§9). The party can
+be configured entirely in the app; nobody at the table needs a paper sheet or external tool
+(though players are free to keep them — the app never requires player interaction in v1).
+
+- **Structure**: a `CharacterSheet` hangs 1-to-1 off a `PartyMember` (§3). The PartyMember stays
+  the combat projection — everything the battle map, encounter prefill, and difficulty calculator
+  consume — so the map/combat modules (M4–M6) never couple to the sheet engine. Members without a
+  sheet (guest PCs, quick one-shots) remain fully hand-editable exactly as in M2.
+- **Rules-aware derivation**: ability scores are entered once; the engine derives modifiers,
+  proficiency bonus, save and skill bonuses, passive scores, spell slots (including the
+  multiclass spellcaster table), and max HP (rolled or average per level) from seeded compendium
+  data — classes, species, backgrounds, feats (§4.11). **Multiclassing is supported**; progression
+  data comes exclusively from compendium sources per the provenance rule (§2.3.8).
+- **Derived-with-override everywhere**: every computed value has a manual override slot (e.g., AC
+  from unusual items, homebrew features). The override is the escape valve that keeps the engine
+  from having to model every rules interaction; overridden values are visibly marked.
+- **Guided level-up**: pick the class to level, choose rolled-or-average HP (typed roll accepted —
+  §2.3.9), see the new features from class data, take the ASI/feat choice at the right levels;
+  slots and derived values update.
+- **Rest & resources**: short rest (spend hit dice, typed or rolled), long rest (HP restored,
+  slots reset, half hit dice back), and generic per-feature **resource counters** (name, max,
+  current, reset-on-short/long-rest rule) for everything from Rage uses to magic item charges.
+- **XP & leveling mode**: award XP to the party (equal split or custom), with level-up prompts at
+  the 5.5e thresholds; a per-campaign **milestone mode** disables XP tracking and the DM levels
+  members manually.
+- **Spells**: sheets track spells known/prepared as references into the seeded spell library;
+  the sheet renders a per-PC spell list with slot tracking.
+- Sheets are DM-only data (never in the player-safe projection); player-editable sheets are
+  post-v1 roadmap (§8).
+
+### 4.13 Quicknotes (entity-attached jotting)
+
+The margin scribbles of a paper DM screen — separate from, and lighter than, wiki notes (§4.7):
+
+- A `QuickNote` is a timestamped line of plain text attached to an entity: an encounter, map,
+  statblock, party member, handout, note, or the campaign itself ("goblin boss fled north",
+  "party owes the innkeeper 5 gp").
+- **Every entity screen shows its quicknotes strip** with a one-line input — jot without leaving
+  context. The battle map side panel shows the current map's and active encounter's quicknotes,
+  so mid-combat jotting never means navigation.
+- Quicknotes appear in campaign full-text search and the `Ctrl+K` palette.
+- **Promote to note**: one click converts a quicknote into a full wiki note, pre-linked to its
+  target entity, for when a scribble turns out to matter.
+- Always DM-only; never in the player-safe projection.
+
+### 4.14 Loot, Treasury & Attunement
+
+The loot spreadsheet, killed. Holdings are state; transactions are history:
+
+- **Item assignments** are the current state: a magic item, equipment item (both compendium
+  references), or free-text custom item is held by a PC or the **party stash**. Shown on the
+  holder's character sheet and in a party-wide loot overview ("who took the +1 dagger?").
+- **The ledger** is the append-only history: gold and items gained or spent, by whom, with a note
+  and an optional in-game date (§4.15). Running gold balances per PC and for the party stash are
+  derived from it.
+- **Attunement tracking**: assigned magic items can be flagged as attuned; the app warns at the
+  3-per-PC limit (warned, not enforced — table rulings win).
+- Presenting an item's description to the table works through the existing handout/present
+  mechanics where an image exists; the compendium text itself stays DM-side.
+
+### 4.15 In-Game Calendar & Timeline
+
+Where "the eclipse is in 12 days" stops living in the DM's head:
+
+- **Campaign calendar config** (month names/lengths, weekday names) lives in campaign settings —
+  a sensible default preset, fully customizable for homebrew worlds — plus a **current in-game
+  date** and an "advance day(s)" action (downtime is just advancing days).
+- **Timeline events**: dated entries (title, optional body, optional wiki-note link) form the
+  campaign timeline, shown chronologically with "in N days" relative markers.
+- Session logs and ledger entries can carry in-game dates, tying the records to world time.
+- DM-only in v1.
+
+### 4.16 Dice Roller (optional-first)
+
+Digital rolling as a convenience, never a requirement — physical dice are first-class (§2.3.9):
+
+- **Free-form roller**: dice expressions (`2d6+3`, `d20` with advantage/disadvantage), available
+  from every screen, with a recent-rolls history.
+- **Clickable rolls**: statblock entries (attack, damage, save DCs) and character sheet values
+  (checks, saves, attacks) render as roll buttons with modifiers pre-applied.
+- **Combat integration**: rolls made during an active encounter can log into the combat action
+  log (§4.5); initiative auto-roll (already specced) becomes a special case of the same roller.
+- Rolls execute **server-side** so the RNG and its log live in one place.
+- DM-side only in v1; player-facing rolling belongs to post-v1 player interaction (§8).
+
 ---
 
 ## 5. API Conventions
@@ -480,6 +645,17 @@ A read-only live view of the table, for any spare device on the local network:
   `/campaigns/{id}/notes?type=&tag=`,
   `/campaigns/{id}/party`, `/campaigns/{id}/handouts` (multipart image upload; files served from
   `/files/{id}`).
+- Compendium (read-only): `/library/conditions`, `/library/rules`, `/library/items?category=`,
+  `/library/magic-items?rarity=`, `/library/classes`, `/library/species`, `/library/backgrounds`,
+  `/library/feats` — all with `?search=`.
+- Character sheets: `/campaigns/{id}/party/{memberId}/sheet` (1–1 subresource), with action
+  endpoints `POST …/sheet/level-up`, `POST /campaigns/{id}/party/rest?type=SHORT|LONG`,
+  `POST /campaigns/{id}/party/xp` (award & split).
+- Bookkeeping: `/campaigns/{id}/quicknotes?target=`, `/campaigns/{id}/assignments`,
+  `/campaigns/{id}/ledger`, `/campaigns/{id}/calendar` (config + current date),
+  `/campaigns/{id}/timeline`.
+- Dice: `POST /api/v1/roll` (dice expression → structured result; logs into the combat log when
+  an encounter is active).
 - Table presentation (what player views show) is set via `PUT /api/v1/table/presentation`
   with a body of `{ "mode": "MAP" | "HANDOUT" | "CURTAIN", "ref": "<id>" }`.
 - Map documents saved via `PUT /maps/{id}/document` (whole-document replace with optimistic
@@ -515,7 +691,11 @@ A read-only live view of the table, for any spare device on the local network:
 - **Backups**: on every app start, copy the H2 database file and the handout files directory to a
   rotating backup folder (`~/.dmhelper/backups`, keep last 10).
 - **Testing**: service-layer unit tests; import/export round-trip tests (export → import → deep
-  equality) as the flagship integration test; **exhaustive tests for the player-safe projection**
+  equality, covering sheets, quicknotes, assignments, ledger, and timeline as they land) as the
+  flagship integration test; **table-driven derivation tests for the sheet engine** (known
+  builds → expected modifiers, save DCs, slots — including multiclass casters — with all expected
+  values taken from compendium-seeded data per §2.3.8, never hand-computed from memory);
+  **exhaustive tests for the player-safe projection**
   (no `dmOnly`/`hidden` field may ever reach a player topic) plus **access-control tests that
   every DM route rejects requests without the session PIN** — the two halves of the one
   security-like invariant in the app (§2.3.3, §2.3.7); frontend component tests for the initiative tracker and DM Mode
@@ -531,30 +711,34 @@ A read-only live view of the table, for any spare device on the local network:
 
 | # | Milestone | Contents | Definition of done |
 |---|---|---|---|
-| M1 | **Walking skeleton** | Spring Boot 4.1.0 + Thymeleaf/htmx + H2 in one JAR; `ddl-auto=update` + backup system wired in; vendored assets with `VENDOR.md`; base layout & design system; campaign CRUD; campaign JSON export/import (empty campaigns) | `java -jar` → create, export, import a campaign in the browser |
-| M2 | **Statblock library & party roster** | Statblock schema + renderer (incl. xp); 331 SRD 5.2 monsters + 339 spells from open5e; seed on first run; search/filter; homebrew editor; party roster CRUD + summary bar; SRD key catalog endpoint | Find "Goblin" in <100 ms; create a custom monster; enter the party once; look up "Fireball" |
-| M3 | **Map editor** | Grid canvas, terrain painting, shapes, layers, undo/redo, autosave | Build a usable tavern map from scratch |
-| M4 | **Battle map** | Play mode, tokens (create/move/hide/HP, add-party, bloodied state), map switching with state, AoE templates, measurement | Run a mock fight by hand on a map |
-| M5 | **Combat tracker** | Encounters, initiative, monster groups, turns, HP math, conditions + effect durations, concentration, legendary/lair actions, combat log with undo, difficulty calculator, map + roster linkage | Run a full combat (incl. a boss) without touching paper |
-| M6 | **Player view & handouts** | WebSocket broadcaster, server-side player-safe projection, DM-route PIN gate, `/player` route, send-to-table & curtain, QR join, auto-reconnect; handout upload/gallery/present | Phone + laptop show the fight live; a letter fills the TV |
-| M7 | **Notes & wiki** | Typed notes, Markdown, wiki-links + backlinks, search, session plans, side panel | Replace the campaign spreadsheet |
-| M8 | **Table polish & generative tooling** | DM Mode toggle everywhere, backups, error handling, keyboard shortcuts, `Ctrl+K` command palette, full export/import of everything; JSON Schemas, dry-run import, SRD key catalog | Run a real session start-to-finish; an AI-generated campaign imports cleanly |
+| M1 ✅ | **Walking skeleton** | Spring Boot 4.1.0 + Thymeleaf/htmx + H2 in one JAR; `ddl-auto=update` + backup system wired in; vendored assets with `VENDOR.md`; base layout & design system; campaign CRUD; campaign JSON export/import (empty campaigns) | `java -jar` → create, export, import a campaign in the browser |
+| M2 ✅ | **Statblock library & party roster** | Statblock schema + renderer (incl. xp); 331 SRD 5.2 monsters + 339 spells from open5e; seed on first run; search/filter; homebrew editor; party roster CRUD + summary bar; SRD key catalog endpoint | Find "Goblin" in <100 ms; create a custom monster; enter the party once; look up "Fireball" |
+| M3 | **Reference compendium** | Conditions, rules sections, equipment, magic items, classes, species, backgrounds, feats seeded from open5e `srd-2024` with verbatim-SRD-5.2 fallback seed files (§2.3.8 provenance); library UI sections + per-type renderers; search; SRD key catalog extended | Look up "Grappled", "Bag of Holding", and the Fighter level table without a PDF |
+| M4 | **Map editor** | Grid canvas, terrain painting, shapes, layers, undo/redo, autosave | Build a usable tavern map from scratch |
+| M5 | **Battle map** | Play mode, tokens (create/move/hide/HP, add-party, bloodied state), map switching with state, AoE templates, measurement | Run a mock fight by hand on a map |
+| M6 | **Combat tracker** | Encounters, initiative, monster groups, turns, HP math, conditions + effect durations (with compendium condition text), concentration, legendary/lair actions, combat log with undo, difficulty calculator, map + roster linkage | Run a full combat (incl. a boss) without touching paper |
+| M7 | **Player view & handouts** | WebSocket broadcaster, server-side player-safe projection, DM-route PIN gate, `/player` route, send-to-table & curtain, QR join, auto-reconnect; handout upload/gallery/present | Phone + laptop show the fight live; a letter fills the TV |
+| M8 | **Notes, wiki & quicknotes** | Typed notes, Markdown, wiki-links + backlinks, search, session plans, side panel; entity-attached quicknotes with promote-to-note | Replace the campaign spreadsheet; jot mid-fight without leaving the map |
+| M9 | **Character sheets** | Rules-aware sheets on top of the compendium (multiclass, derived-with-override, guided level-up), rest actions, resource counters, XP awarding + milestone mode, roster fields derived from sheets | Recreate a real PC from its paper sheet, level it up, long-rest it — numbers all correct |
+| M10 | **Loot, treasury & calendar** | Item assignments (PC/stash), gold + item ledger, attunement warnings, calendar config + current date + advance-days, timeline events, in-game dates on logs/ledger | Distribute a hoard to the party; "the eclipse is in 12 days" is a timeline entry |
+| M11 | **Dice roller** | Expression roller + history, clickable statblock/sheet rolls, combat-log integration, server-side RNG — optional-first everywhere (§2.3.9) | Run a fight rolling digitally *and* typing physical rolls interchangeably |
+| M12 | **Table polish & generative tooling** | DM Mode toggle everywhere, backups, error handling, keyboard shortcuts, `Ctrl+K` command palette (notes, compendium, quicknotes, everything), full export/import of everything; JSON Schemas, dry-run import, SRD key catalog | Run a real session start-to-finish; an AI-generated campaign imports cleanly |
 
-Each milestone ends in a usable state — the app is session-worthy from M4 onward, with or without
+Each milestone ends in a usable state — the app is session-worthy from M5 onward, with or without
 player devices.
 
 ## 8. Post-v1 Roadmap (design for, don't build)
 
-1. **Player interaction** — players move their own tokens from their devices (adds per-device
-   identity and permission rules on top of the read-only player view).
+1. **Player interaction** — players move their own tokens, view/edit their own character sheets,
+   and roll their own dice from their devices (adds per-device identity and permission rules on
+   top of the read-only player view).
 2. **Fog of war** — manual reveal first, vision-based later; renders on the player view.
 3. **Image map layers** — upload battle map images under the editor's shape layers (slot reserved
    in the map document schema).
-4. **Dice roller & rules reference** — first step: clickable statblock rolls (attack/damage/save
-   with modifiers applied — the RNG already exists for initiative); later a full roller with
-   conditions/actions quick-cards.
-5. **Spell & item tooling** — spell lists per statblock, loot tables, item cards.
-6. **Campaign templates** — export subsets (a dungeon + its monsters) as reusable modules.
+4. **Statblock spell-list linking, loot tables & random generators** — spellcasting monsters link
+   their spells to library entries; random treasure/name/encounter tables (subject to the same
+   provenance rule §2.3.8 for any rules content).
+5. **Campaign templates** — export subsets (a dungeon + its monsters) as reusable modules.
 
 ---
 
@@ -563,3 +747,7 @@ player devices.
 - **Hex grid support** — Square-only for v1. Hex grids are a post-v1 feature. The `GameMap` entity and map document schema should reserve a future `gridType` field.
 - **Combat log → session log** — When an encounter ends, a **summary line** (rounds, casualties, damage totals) is appended to the session log. The full blow-by-blow remains in the per-encounter combat log for inspection.
 - **Multi-campaign shared homebrew** — **Promote-to-global** per statblock is sufficient for v1. A proper homebrew compendium module can be added later if needed.
+- **Character sheets promoted into v1** (2026-07, after M2) — originally a non-goal; reversed to fulfill the "DM needs nothing else" premise. Full **rules-aware** sheets (§4.12), DM-operated, derived-with-override. `PartyMember` deliberately remains the combat projection so the map/combat modules (M4–M6) never depend on the sheet engine, and sheet-less members keep working.
+- **Rules data provenance** (§2.3.8) — no D&D rules content is ever reconstructed from an AI assistant's memory; open5e `srd-2024` first, verbatim SRD 5.2 seed files as fallback, graceful degradation otherwise. Binds all future implementation sessions.
+- **Dice roller is optional-first** (§2.3.9) — promoted into v1 (M11), but every roll input must accept a typed value so physical dice remain first-class forever; no feature may require the digital roller.
+- **New-feature milestone placement** (2026-07) — compendium lands directly after M2 (reuses the just-built open5e seeding machinery); map → battle → tracker → player view stay next so the app is table-ready early (M5); sheets (M9) follow the notes module and build on compendium data; bookkeeping (M10) and dice (M11) before final polish (M12).
