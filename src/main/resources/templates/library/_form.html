@@ -3,7 +3,7 @@
 <div class="detail-section" th:fragment="form(sb, campaignId)" id="statblock-form">
     <h2 th:text="${sb == null ? 'Create Custom Statblock' : 'Edit ' + sb.name}">Create Statblock</h2>
 
-    <form th:action="${sb == null ? @{/library/statblocks} : @{/library/statblocks/{id}(id=${sb.id})}}"
+    <form th:action="${sb == null} ? '/library/statblocks' : '/library/statblocks/' + ${sb.id}"
           th:method="${sb == null ? 'post' : 'put'}"
           hx-target="${sb == null ? '#library-results' : '#statblock-form'}"
           th:hx-swap="${sb == null ? 'beforeend' : 'outerHTML'}">

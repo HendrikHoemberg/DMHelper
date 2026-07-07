@@ -2,6 +2,8 @@ package dev.hendrikhoemberg.dmhelper.library.data;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -241,4 +243,40 @@ public class StatBlock {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    @Transient
+    private transient List<Map<String, String>> traitsParsed;
+
+    @Transient
+    private transient List<Map<String, String>> actionsParsed;
+
+    @Transient
+    private transient List<Map<String, String>> bonusActionsParsed;
+
+    @Transient
+    private transient List<Map<String, String>> reactionsParsed;
+
+    @Transient
+    private transient List<Map<String, String>> legendaryActionsParsed;
+
+    @Transient
+    private transient List<Map<String, String>> lairActionsParsed;
+
+    public List<Map<String, String>> getTraitsParsed() { return traitsParsed; }
+    public void setTraitsParsed(List<Map<String, String>> traitsParsed) { this.traitsParsed = traitsParsed; }
+
+    public List<Map<String, String>> getActionsParsed() { return actionsParsed; }
+    public void setActionsParsed(List<Map<String, String>> actionsParsed) { this.actionsParsed = actionsParsed; }
+
+    public List<Map<String, String>> getBonusActionsParsed() { return bonusActionsParsed; }
+    public void setBonusActionsParsed(List<Map<String, String>> bonusActionsParsed) { this.bonusActionsParsed = bonusActionsParsed; }
+
+    public List<Map<String, String>> getReactionsParsed() { return reactionsParsed; }
+    public void setReactionsParsed(List<Map<String, String>> reactionsParsed) { this.reactionsParsed = reactionsParsed; }
+
+    public List<Map<String, String>> getLegendaryActionsParsed() { return legendaryActionsParsed; }
+    public void setLegendaryActionsParsed(List<Map<String, String>> legendaryActionsParsed) { this.legendaryActionsParsed = legendaryActionsParsed; }
+
+    public List<Map<String, String>> getLairActionsParsed() { return lairActionsParsed; }
+    public void setLairActionsParsed(List<Map<String, String>> lairActionsParsed) { this.lairActionsParsed = lairActionsParsed; }
 }
