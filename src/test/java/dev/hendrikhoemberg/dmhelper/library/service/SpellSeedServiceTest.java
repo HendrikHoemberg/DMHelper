@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Import;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import({SpellSeedService.class, SrdSeedService.class})
+@Import(SpellSeedService.class)
 class SpellSeedServiceTest {
 
     @Autowired private SpellRepository repository;

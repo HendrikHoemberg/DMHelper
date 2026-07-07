@@ -1,17 +1,12 @@
 package dev.hendrikhoemberg.dmhelper.party.service;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
-import dev.hendrikhoemberg.dmhelper.library.service.SpellSeedService;
-import dev.hendrikhoemberg.dmhelper.library.service.SrdSeedService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
 import java.util.UUID;
@@ -19,7 +14,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import({PartyMemberService.class, PartyMemberServiceTest.TestMockConfig.class})
+@Import(PartyMemberService.class)
 class PartyMemberServiceTest {
 
     @Autowired private PartyMemberRepository repository;
@@ -29,19 +24,6 @@ class PartyMemberServiceTest {
     private jakarta.persistence.EntityManager em;
 
     private Campaign campaign;
-
-    @TestConfiguration
-    static class TestMockConfig {
-        @Bean
-        SrdSeedService srdSeedService() {
-            return Mockito.mock(SrdSeedService.class);
-        }
-
-        @Bean
-        SpellSeedService spellSeedService() {
-            return Mockito.mock(SpellSeedService.class);
-        }
-    }
 
     @BeforeEach
     void setUp() {

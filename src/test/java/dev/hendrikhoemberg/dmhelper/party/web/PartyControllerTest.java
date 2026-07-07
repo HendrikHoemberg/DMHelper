@@ -2,8 +2,6 @@ package dev.hendrikhoemberg.dmhelper.party.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
-import dev.hendrikhoemberg.dmhelper.library.service.SpellSeedService;
-import dev.hendrikhoemberg.dmhelper.library.service.SrdSeedService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import org.junit.jupiter.api.Test;
@@ -32,12 +30,6 @@ class PartyControllerTest {
 
     @MockitoBean
     private PartyMemberService partyService;
-
-    @MockitoBean
-    private SrdSeedService srdSeedService;
-
-    @MockitoBean
-    private SpellSeedService spellSeedService;
 
     private UUID campaignId = UUID.randomUUID();
 

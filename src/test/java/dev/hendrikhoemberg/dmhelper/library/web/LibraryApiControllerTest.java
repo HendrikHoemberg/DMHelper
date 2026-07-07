@@ -28,16 +28,6 @@ class LibraryApiControllerTest {
     @MockitoBean private SpeciesService speciesService;
     @MockitoBean private BackgroundService backgroundService;
     @MockitoBean private FeatService featService;
-    @MockitoBean private SrdSeedService srdSeedService;
-    @MockitoBean private SpellSeedService spellSeedService;
-    @MockitoBean private ConditionSeedService conditionSeedService;
-    @MockitoBean private RuleSectionSeedService ruleSectionSeedService;
-    @MockitoBean private EquipmentItemSeedService equipmentItemSeedService;
-    @MockitoBean private MagicItemSeedService magicItemSeedService;
-    @MockitoBean private CharacterClassSeedService characterClassSeedService;
-    @MockitoBean private SpeciesSeedService speciesSeedService;
-    @MockitoBean private BackgroundSeedService backgroundSeedService;
-    @MockitoBean private FeatSeedService featSeedService;
 
     private StatBlock srd(String key) {
         StatBlock sb = new StatBlock();

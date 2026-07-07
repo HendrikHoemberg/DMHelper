@@ -3,8 +3,6 @@ package dev.hendrikhoemberg.dmhelper.campaign.service;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
-import dev.hendrikhoemberg.dmhelper.library.service.SpellSeedService;
-import dev.hendrikhoemberg.dmhelper.library.service.SrdSeedService;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
@@ -12,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 
@@ -21,12 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @Import({CampaignService.class, PartyMemberService.class, StatBlockService.class})
 class CampaignImportExportRoundTripTest {
-
-    @MockitoBean
-    private SrdSeedService srdSeedService;
-
-    @MockitoBean
-    private SpellSeedService spellSeedService;
 
     @Autowired private CampaignService campaignService;
     @Autowired private PartyMemberService partyMemberService;

@@ -13,7 +13,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import({StatBlockService.class, SrdSeedService.class, SpellSeedService.class})
+@Import(StatBlockService.class)
 class StatBlockServiceTest {
 
     @Autowired
