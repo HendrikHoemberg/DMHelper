@@ -1,0 +1,1419 @@
+{
+  "_source": "SRD 5.2 PDF (equipment.pdf) \u2014 verbatim transcription",
+  "_fetched": "2026-07-07",
+  "results": [
+    {
+      "sourceKey": "club",
+      "name": "Club",
+      "category": "WEAPON",
+      "cost": "1 SP",
+      "weight": "2 lb.",
+      "properties": "{\"damage\": \"1d4 Bludgeoning\", \"properties\": [\"Light\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "dagger",
+      "name": "Dagger",
+      "category": "WEAPON",
+      "cost": "2 GP",
+      "weight": "1 lb.",
+      "properties": "{\"damage\": \"1d4 Piercing\", \"properties\": [\"Finesse\", \"Light\", \"Thrown (Range 20/60)\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "greatclub",
+      "name": "Greatclub",
+      "category": "WEAPON",
+      "cost": "2 SP",
+      "weight": "10 lb.",
+      "properties": "{\"damage\": \"1d8 Bludgeoning\", \"properties\": [\"Two-Handed\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "handaxe",
+      "name": "Handaxe",
+      "category": "WEAPON",
+      "cost": "5 GP",
+      "weight": "2 lb.",
+      "properties": "{\"damage\": \"1d6 Slashing\", \"properties\": [\"Light\", \"Thrown (Range 20/60)\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "javelin",
+      "name": "Javelin",
+      "category": "WEAPON",
+      "cost": "5 SP",
+      "weight": "2 lb.",
+      "properties": "{\"damage\": \"1d6 Piercing\", \"properties\": [\"Thrown (Range 30/120)\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "light-hammer",
+      "name": "Light Hammer",
+      "category": "WEAPON",
+      "cost": "2 GP",
+      "weight": "2 lb.",
+      "properties": "{\"damage\": \"1d4 Bludgeoning\", \"properties\": [\"Light\", \"Thrown (Range 20/60)\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "mace",
+      "name": "Mace",
+      "category": "WEAPON",
+      "cost": "5 GP",
+      "weight": "4 lb.",
+      "properties": "{\"damage\": \"1d6 Bludgeoning\", \"properties\": []}",
+      "description": ""
+    },
+    {
+      "sourceKey": "quarterstaff",
+      "name": "Quarterstaff",
+      "category": "WEAPON",
+      "cost": "2 SP",
+      "weight": "4 lb.",
+      "properties": "{\"damage\": \"1d6 Bludgeoning\", \"properties\": [\"Versatile (1d8)\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "sickle",
+      "name": "Sickle",
+      "category": "WEAPON",
+      "cost": "1 GP",
+      "weight": "2 lb.",
+      "properties": "{\"damage\": \"1d4 Slashing\", \"properties\": [\"Light\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "spear",
+      "name": "Spear",
+      "category": "WEAPON",
+      "cost": "1 GP",
+      "weight": "3 lb.",
+      "properties": "{\"damage\": \"1d6 Piercing\", \"properties\": [\"Thrown (Range 20/60)\", \"Versatile (1d8)\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "dart",
+      "name": "Dart",
+      "category": "WEAPON",
+      "cost": "5 CP",
+      "weight": "1/4 lb.",
+      "properties": "{\"damage\": \"1d4 Piercing\", \"properties\": [\"Finesse\", \"Thrown (Range 20/60)\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "light-crossbow",
+      "name": "Light Crossbow",
+      "category": "WEAPON",
+      "cost": "25 GP",
+      "weight": "5 lb.",
+      "properties": "{\"damage\": \"1d8 Piercing\", \"properties\": [\"Ammunition (Range 80/320; Bolt)\", \"Loading\", \"Two-Handed\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "shortbow",
+      "name": "Shortbow",
+      "category": "WEAPON",
+      "cost": "25 GP",
+      "weight": "2 lb.",
+      "properties": "{\"damage\": \"1d6 Piercing\", \"properties\": [\"Ammunition (Range 80/320; Arrow)\", \"Two-Handed\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "sling",
+      "name": "Sling",
+      "category": "WEAPON",
+      "cost": "1 SP",
+      "weight": "\u2014",
+      "properties": "{\"damage\": \"1d4 Bludgeoning\", \"properties\": [\"Ammunition (Range 30/120; Bullet)\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "battleaxe",
+      "name": "Battleaxe",
+      "category": "WEAPON",
+      "cost": "10 GP",
+      "weight": "4 lb.",
+      "properties": "{\"damage\": \"1d8 Slashing\", \"properties\": [\"Versatile (1d10)\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "flail",
+      "name": "Flail",
+      "category": "WEAPON",
+      "cost": "10 GP",
+      "weight": "2 lb.",
+      "properties": "{\"damage\": \"1d8 Bludgeoning\", \"properties\": []}",
+      "description": ""
+    },
+    {
+      "sourceKey": "glaive",
+      "name": "Glaive",
+      "category": "WEAPON",
+      "cost": "20 GP",
+      "weight": "6 lb.",
+      "properties": "{\"damage\": \"1d10 Slashing\", \"properties\": [\"Heavy\", \"Reach\", \"Two-Handed\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "greataxe",
+      "name": "Greataxe",
+      "category": "WEAPON",
+      "cost": "30 GP",
+      "weight": "7 lb.",
+      "properties": "{\"damage\": \"1d12 Slashing\", \"properties\": [\"Heavy\", \"Two-Handed\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "greatsword",
+      "name": "Greatsword",
+      "category": "WEAPON",
+      "cost": "50 GP",
+      "weight": "6 lb.",
+      "properties": "{\"damage\": \"2d6 Slashing\", \"properties\": [\"Heavy\", \"Two-Handed\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "halberd",
+      "name": "Halberd",
+      "category": "WEAPON",
+      "cost": "20 GP",
+      "weight": "6 lb.",
+      "properties": "{\"damage\": \"1d10 Slashing\", \"properties\": [\"Heavy\", \"Reach\", \"Two-Handed\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "lance",
+      "name": "Lance",
+      "category": "WEAPON",
+      "cost": "10 GP",
+      "weight": "6 lb.",
+      "properties": "{\"damage\": \"1d10 Piercing\", \"properties\": [\"Heavy\", \"Reach\", \"Two-Handed (unless mounted)\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "longsword",
+      "name": "Longsword",
+      "category": "WEAPON",
+      "cost": "15 GP",
+      "weight": "3 lb.",
+      "properties": "{\"damage\": \"1d8 Slashing\", \"properties\": [\"Versatile (1d10)\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "maul",
+      "name": "Maul",
+      "category": "WEAPON",
+      "cost": "10 GP",
+      "weight": "10 lb.",
+      "properties": "{\"damage\": \"2d6 Bludgeoning\", \"properties\": [\"Heavy\", \"Two-Handed\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "morningstar",
+      "name": "Morningstar",
+      "category": "WEAPON",
+      "cost": "15 GP",
+      "weight": "4 lb.",
+      "properties": "{\"damage\": \"1d8 Piercing\", \"properties\": []}",
+      "description": ""
+    },
+    {
+      "sourceKey": "pike",
+      "name": "Pike",
+      "category": "WEAPON",
+      "cost": "5 GP",
+      "weight": "18 lb.",
+      "properties": "{\"damage\": \"1d10 Piercing\", \"properties\": [\"Heavy\", \"Reach\", \"Two-Handed\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "rapier",
+      "name": "Rapier",
+      "category": "WEAPON",
+      "cost": "25 GP",
+      "weight": "2 lb.",
+      "properties": "{\"damage\": \"1d8 Piercing\", \"properties\": [\"Finesse\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "scimitar",
+      "name": "Scimitar",
+      "category": "WEAPON",
+      "cost": "25 GP",
+      "weight": "3 lb.",
+      "properties": "{\"damage\": \"1d6 Slashing\", \"properties\": [\"Finesse\", \"Light\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "shortsword",
+      "name": "Shortsword",
+      "category": "WEAPON",
+      "cost": "10 GP",
+      "weight": "2 lb.",
+      "properties": "{\"damage\": \"1d6 Piercing\", \"properties\": [\"Finesse\", \"Light\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "trident",
+      "name": "Trident",
+      "category": "WEAPON",
+      "cost": "5 GP",
+      "weight": "4 lb.",
+      "properties": "{\"damage\": \"1d8 Piercing\", \"properties\": [\"Thrown (Range 20/60)\", \"Versatile (1d10)\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "warhammer",
+      "name": "Warhammer",
+      "category": "WEAPON",
+      "cost": "15 GP",
+      "weight": "5 lb.",
+      "properties": "{\"damage\": \"1d8 Bludgeoning\", \"properties\": [\"Versatile (1d10)\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "war-pick",
+      "name": "War Pick",
+      "category": "WEAPON",
+      "cost": "5 GP",
+      "weight": "2 lb.",
+      "properties": "{\"damage\": \"1d8 Piercing\", \"properties\": [\"Versatile (1d10)\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "whip",
+      "name": "Whip",
+      "category": "WEAPON",
+      "cost": "2 GP",
+      "weight": "3 lb.",
+      "properties": "{\"damage\": \"1d4 Slashing\", \"properties\": [\"Finesse\", \"Reach\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "blowgun",
+      "name": "Blowgun",
+      "category": "WEAPON",
+      "cost": "10 GP",
+      "weight": "1 lb.",
+      "properties": "{\"damage\": \"1 Piercing\", \"properties\": [\"Ammunition (Range 25/100; Needle)\", \"Loading\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "hand-crossbow",
+      "name": "Hand Crossbow",
+      "category": "WEAPON",
+      "cost": "75 GP",
+      "weight": "3 lb.",
+      "properties": "{\"damage\": \"1d6 Piercing\", \"properties\": [\"Ammunition (Range 30/120; Bolt)\", \"Light\", \"Loading\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "heavy-crossbow",
+      "name": "Heavy Crossbow",
+      "category": "WEAPON",
+      "cost": "50 GP",
+      "weight": "18 lb.",
+      "properties": "{\"damage\": \"1d10 Piercing\", \"properties\": [\"Ammunition (Range 100/400; Bolt)\", \"Heavy\", \"Loading\", \"Two-Handed\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "longbow",
+      "name": "Longbow",
+      "category": "WEAPON",
+      "cost": "50 GP",
+      "weight": "2 lb.",
+      "properties": "{\"damage\": \"1d8 Piercing\", \"properties\": [\"Ammunition (Range 150/600; Arrow)\", \"Heavy\", \"Two-Handed\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "musket",
+      "name": "Musket",
+      "category": "WEAPON",
+      "cost": "500 GP",
+      "weight": "10 lb.",
+      "properties": "{\"damage\": \"1d12 Piercing\", \"properties\": [\"Ammunition (Range 40/120; Bullet)\", \"Loading\", \"Two-Handed\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "pistol",
+      "name": "Pistol",
+      "category": "WEAPON",
+      "cost": "250 GP",
+      "weight": "3 lb.",
+      "properties": "{\"damage\": \"1d10 Piercing\", \"properties\": [\"Ammunition (Range 30/90; Bullet)\", \"Loading\"]}",
+      "description": ""
+    },
+    {
+      "sourceKey": "padded-armor",
+      "name": "Padded Armor",
+      "category": "ARMOR",
+      "cost": "5 GP",
+      "weight": "8 lb.",
+      "properties": "{\"ac\": \"11 + Dex modifier\"}",
+      "description": ""
+    },
+    {
+      "sourceKey": "leather-armor",
+      "name": "Leather Armor",
+      "category": "ARMOR",
+      "cost": "10 GP",
+      "weight": "10 lb.",
+      "properties": "{\"ac\": \"11 + Dex modifier\"}",
+      "description": ""
+    },
+    {
+      "sourceKey": "studded-leather-armor",
+      "name": "Studded Leather Armor",
+      "category": "ARMOR",
+      "cost": "45 GP",
+      "weight": "13 lb.",
+      "properties": "{\"ac\": \"12 + Dex modifier\"}",
+      "description": ""
+    },
+    {
+      "sourceKey": "hide-armor",
+      "name": "Hide Armor",
+      "category": "ARMOR",
+      "cost": "10 GP",
+      "weight": "12 lb.",
+      "properties": "{\"ac\": \"12 + Dex modifier (max 2)\"}",
+      "description": ""
+    },
+    {
+      "sourceKey": "chain-shirt",
+      "name": "Chain Shirt",
+      "category": "ARMOR",
+      "cost": "50 GP",
+      "weight": "20 lb.",
+      "properties": "{\"ac\": \"13 + Dex modifier (max 2)\"}",
+      "description": ""
+    },
+    {
+      "sourceKey": "scale-mail",
+      "name": "Scale Mail",
+      "category": "ARMOR",
+      "cost": "50 GP",
+      "weight": "45 lb.",
+      "properties": "{\"ac\": \"14 + Dex modifier (max 2)\"}",
+      "description": ""
+    },
+    {
+      "sourceKey": "breastplate",
+      "name": "Breastplate",
+      "category": "ARMOR",
+      "cost": "400 GP",
+      "weight": "20 lb.",
+      "properties": "{\"ac\": \"14 + Dex modifier (max 2)\"}",
+      "description": ""
+    },
+    {
+      "sourceKey": "half-plate-armor",
+      "name": "Half Plate Armor",
+      "category": "ARMOR",
+      "cost": "750 GP",
+      "weight": "40 lb.",
+      "properties": "{\"ac\": \"15 + Dex modifier (max 2)\"}",
+      "description": ""
+    },
+    {
+      "sourceKey": "ring-mail",
+      "name": "Ring Mail",
+      "category": "ARMOR",
+      "cost": "30 GP",
+      "weight": "40 lb.",
+      "properties": "{\"ac\": \"14\"}",
+      "description": ""
+    },
+    {
+      "sourceKey": "chain-mail",
+      "name": "Chain Mail",
+      "category": "ARMOR",
+      "cost": "75 GP",
+      "weight": "55 lb.",
+      "properties": "{\"ac\": \"16\"}",
+      "description": ""
+    },
+    {
+      "sourceKey": "splint-armor",
+      "name": "Splint Armor",
+      "category": "ARMOR",
+      "cost": "200 GP",
+      "weight": "60 lb.",
+      "properties": "{\"ac\": \"17\"}",
+      "description": ""
+    },
+    {
+      "sourceKey": "plate-armor",
+      "name": "Plate Armor",
+      "category": "ARMOR",
+      "cost": "1,500 GP",
+      "weight": "65 lb.",
+      "properties": "{\"ac\": \"18\"}",
+      "description": ""
+    },
+    {
+      "sourceKey": "shield",
+      "name": "Shield",
+      "category": "ARMOR",
+      "cost": "10 GP",
+      "weight": "6 lb.",
+      "properties": "{\"ac\": \"+2\"}",
+      "description": ""
+    },
+    {
+      "sourceKey": "alchemists-supplies",
+      "name": "Alchemist's Supplies",
+      "category": "TOOL",
+      "cost": "50 GP",
+      "weight": "8 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "brewers-supplies",
+      "name": "Brewer's Supplies",
+      "category": "TOOL",
+      "cost": "20 GP",
+      "weight": "9 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "calligraphers-supplies",
+      "name": "Calligrapher's Supplies",
+      "category": "TOOL",
+      "cost": "10 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "carpenters-tools",
+      "name": "Carpenter's Tools",
+      "category": "TOOL",
+      "cost": "8 GP",
+      "weight": "6 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "cartographers-tools",
+      "name": "Cartographer's Tools",
+      "category": "TOOL",
+      "cost": "15 GP",
+      "weight": "6 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "cobblers-tools",
+      "name": "Cobbler's Tools",
+      "category": "TOOL",
+      "cost": "5 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "cooks-utensils",
+      "name": "Cook's Utensils",
+      "category": "TOOL",
+      "cost": "1 GP",
+      "weight": "8 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "glassblowers-tools",
+      "name": "Glassblower's Tools",
+      "category": "TOOL",
+      "cost": "30 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "jewelers-tools",
+      "name": "Jeweler's Tools",
+      "category": "TOOL",
+      "cost": "25 GP",
+      "weight": "2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "leatherworkers-tools",
+      "name": "Leatherworker's Tools",
+      "category": "TOOL",
+      "cost": "5 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "masons-tools",
+      "name": "Mason's Tools",
+      "category": "TOOL",
+      "cost": "10 GP",
+      "weight": "8 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "painters-supplies",
+      "name": "Painter's Supplies",
+      "category": "TOOL",
+      "cost": "10 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "potters-tools",
+      "name": "Potter's Tools",
+      "category": "TOOL",
+      "cost": "10 GP",
+      "weight": "3 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "smiths-tools",
+      "name": "Smith's Tools",
+      "category": "TOOL",
+      "cost": "20 GP",
+      "weight": "8 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "tinkers-tools",
+      "name": "Tinker's Tools",
+      "category": "TOOL",
+      "cost": "50 GP",
+      "weight": "10 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "weavers-tools",
+      "name": "Weaver's Tools",
+      "category": "TOOL",
+      "cost": "1 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "woodcarvers-tools",
+      "name": "Woodcarver's Tools",
+      "category": "TOOL",
+      "cost": "1 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "disguise-kit",
+      "name": "Disguise Kit",
+      "category": "TOOL",
+      "cost": "25 GP",
+      "weight": "3 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "forgery-kit",
+      "name": "Forgery Kit",
+      "category": "TOOL",
+      "cost": "15 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "gaming-set",
+      "name": "Gaming Set",
+      "category": "TOOL",
+      "cost": "Varies",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "herbalism-kit",
+      "name": "Herbalism Kit",
+      "category": "TOOL",
+      "cost": "5 GP",
+      "weight": "3 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "musical-instrument",
+      "name": "Musical Instrument",
+      "category": "TOOL",
+      "cost": "Varies",
+      "weight": "Varies",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "navigators-tools",
+      "name": "Navigator's Tools",
+      "category": "TOOL",
+      "cost": "25 GP",
+      "weight": "2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "poisoners-kit",
+      "name": "Poisoner's Kit",
+      "category": "TOOL",
+      "cost": "50 GP",
+      "weight": "2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "thieves-tools",
+      "name": "Thieves' Tools",
+      "category": "TOOL",
+      "cost": "25 GP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "acid",
+      "name": "Acid",
+      "category": "GEAR",
+      "cost": "25 GP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "alchemists-fire",
+      "name": "Alchemist's Fire",
+      "category": "GEAR",
+      "cost": "50 GP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "antitoxin",
+      "name": "Antitoxin",
+      "category": "GEAR",
+      "cost": "50 GP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "arcane-focus",
+      "name": "Arcane Focus",
+      "category": "GEAR",
+      "cost": "Varies",
+      "weight": "Varies",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "backpack",
+      "name": "Backpack",
+      "category": "GEAR",
+      "cost": "2 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "ball-bearings",
+      "name": "Ball Bearings",
+      "category": "GEAR",
+      "cost": "1 GP",
+      "weight": "2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "barrel",
+      "name": "Barrel",
+      "category": "GEAR",
+      "cost": "2 GP",
+      "weight": "70 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "basket",
+      "name": "Basket",
+      "category": "GEAR",
+      "cost": "4 SP",
+      "weight": "2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "bedroll",
+      "name": "Bedroll",
+      "category": "GEAR",
+      "cost": "1 GP",
+      "weight": "7 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "bell",
+      "name": "Bell",
+      "category": "GEAR",
+      "cost": "1 GP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "blanket",
+      "name": "Blanket",
+      "category": "GEAR",
+      "cost": "5 SP",
+      "weight": "3 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "block-and-tackle",
+      "name": "Block and Tackle",
+      "category": "GEAR",
+      "cost": "1 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "book",
+      "name": "Book",
+      "category": "GEAR",
+      "cost": "25 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "bottle-glass",
+      "name": "Bottle (Glass)",
+      "category": "GEAR",
+      "cost": "2 GP",
+      "weight": "2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "bucket",
+      "name": "Bucket",
+      "category": "GEAR",
+      "cost": "5 CP",
+      "weight": "2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "burglars-pack",
+      "name": "Burglar's Pack",
+      "category": "GEAR",
+      "cost": "16 GP",
+      "weight": "42 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "caltrops",
+      "name": "Caltrops",
+      "category": "GEAR",
+      "cost": "1 GP",
+      "weight": "2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "candle",
+      "name": "Candle",
+      "category": "GEAR",
+      "cost": "1 CP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "case-crossbow-bolt",
+      "name": "Case (Crossbow Bolt)",
+      "category": "GEAR",
+      "cost": "1 GP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "case-map-or-scroll",
+      "name": "Case (Map or Scroll)",
+      "category": "GEAR",
+      "cost": "1 GP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "chain",
+      "name": "Chain",
+      "category": "GEAR",
+      "cost": "5 GP",
+      "weight": "10 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "chest",
+      "name": "Chest",
+      "category": "GEAR",
+      "cost": "5 GP",
+      "weight": "25 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "climbers-kit",
+      "name": "Climber's Kit",
+      "category": "GEAR",
+      "cost": "25 GP",
+      "weight": "12 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "clothes-fine",
+      "name": "Clothes (Fine)",
+      "category": "GEAR",
+      "cost": "15 GP",
+      "weight": "6 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "clothes-travelers",
+      "name": "Clothes (Traveler's)",
+      "category": "GEAR",
+      "cost": "2 GP",
+      "weight": "4 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "component-pouch",
+      "name": "Component Pouch",
+      "category": "GEAR",
+      "cost": "25 GP",
+      "weight": "2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "costume",
+      "name": "Costume",
+      "category": "GEAR",
+      "cost": "5 GP",
+      "weight": "4 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "crowbar",
+      "name": "Crowbar",
+      "category": "GEAR",
+      "cost": "2 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "diplomats-pack",
+      "name": "Diplomat's Pack",
+      "category": "GEAR",
+      "cost": "39 GP",
+      "weight": "39 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "druidic-focus",
+      "name": "Druidic Focus",
+      "category": "GEAR",
+      "cost": "Varies",
+      "weight": "Varies",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "dungeoneers-pack",
+      "name": "Dungeoneer's Pack",
+      "category": "GEAR",
+      "cost": "12 GP",
+      "weight": "55 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "entertainers-pack",
+      "name": "Entertainer's Pack",
+      "category": "GEAR",
+      "cost": "40 GP",
+      "weight": "58½ lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "explorers-pack",
+      "name": "Explorer's Pack",
+      "category": "GEAR",
+      "cost": "10 GP",
+      "weight": "55 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "flask",
+      "name": "Flask",
+      "category": "GEAR",
+      "cost": "2 CP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "grappling-hook",
+      "name": "Grappling Hook",
+      "category": "GEAR",
+      "cost": "2 GP",
+      "weight": "4 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "healers-kit",
+      "name": "Healer's Kit",
+      "category": "GEAR",
+      "cost": "5 GP",
+      "weight": "3 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "holy-symbol",
+      "name": "Holy Symbol",
+      "category": "GEAR",
+      "cost": "Varies",
+      "weight": "Varies",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "holy-water",
+      "name": "Holy Water",
+      "category": "GEAR",
+      "cost": "25 GP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "hunting-trap",
+      "name": "Hunting Trap",
+      "category": "GEAR",
+      "cost": "5 GP",
+      "weight": "25 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "ink",
+      "name": "Ink",
+      "category": "GEAR",
+      "cost": "10 GP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "ink-pen",
+      "name": "Ink Pen",
+      "category": "GEAR",
+      "cost": "2 CP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "jug",
+      "name": "Jug",
+      "category": "GEAR",
+      "cost": "2 CP",
+      "weight": "4 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "ladder",
+      "name": "Ladder",
+      "category": "GEAR",
+      "cost": "1 SP",
+      "weight": "25 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "lamp",
+      "name": "Lamp",
+      "category": "GEAR",
+      "cost": "5 SP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "lantern-bullseye",
+      "name": "Lantern (Bullseye)",
+      "category": "GEAR",
+      "cost": "10 GP",
+      "weight": "2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "lantern-hooded",
+      "name": "Lantern (Hooded)",
+      "category": "GEAR",
+      "cost": "5 GP",
+      "weight": "2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "lock",
+      "name": "Lock",
+      "category": "GEAR",
+      "cost": "10 GP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "magnifying-glass",
+      "name": "Magnifying Glass",
+      "category": "GEAR",
+      "cost": "100 GP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "manacles",
+      "name": "Manacles",
+      "category": "GEAR",
+      "cost": "2 GP",
+      "weight": "6 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "map",
+      "name": "Map",
+      "category": "GEAR",
+      "cost": "1 GP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "mirror",
+      "name": "Mirror",
+      "category": "GEAR",
+      "cost": "5 GP",
+      "weight": "1/2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "net",
+      "name": "Net",
+      "category": "GEAR",
+      "cost": "1 GP",
+      "weight": "3 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "oil",
+      "name": "Oil",
+      "category": "GEAR",
+      "cost": "1 SP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "paper",
+      "name": "Paper",
+      "category": "GEAR",
+      "cost": "2 SP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "parchment",
+      "name": "Parchment",
+      "category": "GEAR",
+      "cost": "1 SP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "perfume",
+      "name": "Perfume",
+      "category": "GEAR",
+      "cost": "5 GP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "poison-basic",
+      "name": "Poison (Basic)",
+      "category": "GEAR",
+      "cost": "100 GP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "pole",
+      "name": "Pole",
+      "category": "GEAR",
+      "cost": "5 CP",
+      "weight": "7 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "pot-iron",
+      "name": "Pot (Iron)",
+      "category": "GEAR",
+      "cost": "2 GP",
+      "weight": "10 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "potion-of-healing",
+      "name": "Potion of Healing",
+      "category": "GEAR",
+      "cost": "50 GP",
+      "weight": "1/2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "pouch",
+      "name": "Pouch",
+      "category": "GEAR",
+      "cost": "5 SP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "priests-pack",
+      "name": "Priest's Pack",
+      "category": "GEAR",
+      "cost": "33 GP",
+      "weight": "29 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "quiver",
+      "name": "Quiver",
+      "category": "GEAR",
+      "cost": "1 GP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "ram-portable",
+      "name": "Ram (Portable)",
+      "category": "GEAR",
+      "cost": "4 GP",
+      "weight": "35 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "rations",
+      "name": "Rations",
+      "category": "GEAR",
+      "cost": "5 SP",
+      "weight": "2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "robe",
+      "name": "Robe",
+      "category": "GEAR",
+      "cost": "1 GP",
+      "weight": "4 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "rope",
+      "name": "Rope",
+      "category": "GEAR",
+      "cost": "1 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "sack",
+      "name": "Sack",
+      "category": "GEAR",
+      "cost": "1 CP",
+      "weight": "1/2 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "scholars-pack",
+      "name": "Scholar's Pack",
+      "category": "GEAR",
+      "cost": "40 GP",
+      "weight": "22 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "shovel",
+      "name": "Shovel",
+      "category": "GEAR",
+      "cost": "2 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "signal-whistle",
+      "name": "Signal Whistle",
+      "category": "GEAR",
+      "cost": "5 CP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "spell-scroll-cantrip",
+      "name": "Spell Scroll (Cantrip)",
+      "category": "GEAR",
+      "cost": "30 GP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "spell-scroll-level-1",
+      "name": "Spell Scroll (Level 1)",
+      "category": "GEAR",
+      "cost": "50 GP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "spikes-iron",
+      "name": "Spikes (Iron)",
+      "category": "GEAR",
+      "cost": "1 GP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "spyglass",
+      "name": "Spyglass",
+      "category": "GEAR",
+      "cost": "1,000 GP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "string",
+      "name": "String",
+      "category": "GEAR",
+      "cost": "1 SP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "tent",
+      "name": "Tent",
+      "category": "GEAR",
+      "cost": "2 GP",
+      "weight": "20 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "tinderbox",
+      "name": "Tinderbox",
+      "category": "GEAR",
+      "cost": "5 SP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "torch",
+      "name": "Torch",
+      "category": "GEAR",
+      "cost": "1 CP",
+      "weight": "1 lb.",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "vial",
+      "name": "Vial",
+      "category": "GEAR",
+      "cost": "1 GP",
+      "weight": "\u2014",
+      "properties": "",
+      "description": ""
+    },
+    {
+      "sourceKey": "waterskin",
+      "name": "Waterskin",
+      "category": "GEAR",
+      "cost": "2 SP",
+      "weight": "5 lb.",
+      "properties": "",
+      "description": ""
+    }
+  ]
+}
