@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <nav class="navbar" th:fragment="navbar">
-    <a href="/campaigns" class="navbar-brand">DMHelper</a>
+    <div style="display: flex; align-items: center; gap: var(--space-lg);">
+        <a href="/campaigns" class="navbar-brand">DMHelper</a>
+        <nav style="display: flex; gap: var(--space-md);">
+            <a href="/campaigns" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Campaigns</a>
+            <a href="/library" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Library</a>
+            <a href="/library/about" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">About</a>
+        </nav>
+    </div>
     <div class="navbar-right">
         <label class="dm-toggle">
             <input type="checkbox" id="dmModeCheckbox"

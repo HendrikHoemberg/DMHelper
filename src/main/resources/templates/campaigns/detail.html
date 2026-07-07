@@ -24,6 +24,13 @@
                      th:if="${campaign.description != null and !campaign.description.isBlank()}"
                      th:text="${campaign.description}">Description</div>
 
+                <h2>Party</h2>
+                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
+                    <a th:href="@{/campaigns/{id}/party(id=${campaign.id})}" class="btn btn-primary">
+                        Manage Party Roster
+                    </a>
+                </div>
+
                 <h2>Edit</h2>
                 <form hx-put="@{/campaigns/{id}(id=${campaign.id})}"
                       hx-target="body"
