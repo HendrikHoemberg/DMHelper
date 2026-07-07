@@ -217,18 +217,6 @@ public class LibraryController {
         return "library/_spell-card :: spell-card-list";
     }
 
-    // ------- SRD key catalog -------
-
-    @GetMapping("/statblocks/srd-keys")
-    @ResponseBody
-    public List<String> srdKeys() {
-        return service.findAll().stream()
-                .filter(sb -> sb.getSource() == StatBlock.Source.SRD)
-                .map(StatBlock::getSourceKey)
-                .sorted()
-                .toList();
-    }
-
     private void enrichStatBlock(StatBlock sb) {
         sb.setTraitsParsed(parseJsonArray(sb.getTraits()));
         sb.setActionsParsed(parseJsonArray(sb.getActions()));

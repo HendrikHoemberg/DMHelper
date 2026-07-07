@@ -144,11 +144,4 @@ class LibraryControllerTest {
         mockMvc.perform(get("/library/spells").param("search", "fire"))
                 .andExpect(status().isOk());
     }
-
-    @Test
-    void shouldListSrdKeys() throws Exception {
-        when(service.findAll()).thenReturn(List.of());
-        mockMvc.perform(get("/library/statblocks/srd-keys"))
-                .andExpect(status().isOk());
-    }
 }
