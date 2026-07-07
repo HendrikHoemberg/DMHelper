@@ -60,7 +60,7 @@ Deferred, but the architecture must not preclude them (see §8 Roadmap):
 |---|---|---|
 | Backend | **Spring Boot 4.1.0 (Java 25)** | DM's home turf; mature ecosystem; clean layering for a long-lived project |
 | Persistence | **Spring Data JPA + H2 (file mode)** | Zero-install embedded DB stored in the user data dir; can swap to PostgreSQL later via config |
-| Schema migrations | **Flyway** (versioned SQL, from M1) | A long-lived local DB holding years of campaign data must never rely on Hibernate `ddl-auto`; every schema change ships as a reviewed migration. Version comes from the Boot 4.1 BOM like everything else |
+| Schema migrations | **Hibernate `ddl-auto=update`** with backup safety net | Additive schema evolution from JPA entities; destructive changes handled by one-off `@PostConstruct` migration beans; rotating DB backups + campaign export/import as escape hatch |
 | UI (pages & panels) | **Thymeleaf + htmx** (vendored, single dependency-free JS file) | Server-rendered hypermedia UI for all CRUD screens — campaign, roster, library, notes, encounters — with no JS build step; partial page updates via HTML fragments |
 | Interactive islands | **Vanilla JS (native ES modules) + Konva.js** (vendored, self-contained UMD file) | The map editor and battle map are self-contained canvas "islands" mounted into server-rendered pages; browsers load ES modules natively — no bundler, no transpiler, no Node |
 | Client-side sprinkles | **Alpine.js** (vendored, zero dependencies) | Lightweight reactivity for toolbars, dialogs, and the initiative tracker where htmx round-trips would be clumsy |
@@ -205,9 +205,13 @@ Handout images live on the file system (`~/.dmhelper/files`), referenced by the 
 database stays small and backups copy both.
 
 The `MapDocument` JSON schema carries a `schemaVersion` field from day one; the backend migrates
-old documents forward on load. The relational schema is migrated with **Flyway** from the first
-release — every change ships as a versioned migration, and Hibernate `ddl-auto` is never used to
-evolve a user's database (validate-only).
+old documents forward on load. The relational schema evolves via Hibernate `ddl-auto=update` — additive changes
+(JPA entities, new columns, new tables) are applied automatically on startup.
+Destructive changes (column renames, type changes, drops) are handled with one-off
+`@PostConstruct` data-migration beans shipped alongside the entity change and deleted
+in the following release. Rotating DB backups on every app start (§6) and campaign
+export/import provide a robust escape hatch if `ddl-auto` ever misbehaves — the
+DM's data is never at risk.
 
 ---
 
@@ -516,7 +520,7 @@ A read-only live view of the table, for any spare device on the local network:
 
 | # | Milestone | Contents | Definition of done |
 |---|---|---|---|
-| M1 | **Walking skeleton** | Spring Boot 4.1.0 + Thymeleaf/htmx + H2 in one JAR; Flyway wired in with the first schema migration; vendored assets with `VENDOR.md`; base layout & design system; campaign CRUD; campaign JSON export/import (empty campaigns) | `java -jar` → create, export, import a campaign in the browser |
+| M1 | **Walking skeleton** | Spring Boot 4.1.0 + Thymeleaf/htmx + H2 in one JAR; `ddl-auto=update` + backup system wired in; vendored assets with `VENDOR.md`; base layout & design system; campaign CRUD; campaign JSON export/import (empty campaigns) | `java -jar` → create, export, import a campaign in the browser |
 | M2 | **Statblock library & party roster** | Statblock schema + renderer; SRD seed; search/filter; homebrew editor; party roster CRUD + summary bar | Find "Goblin" in <100 ms; create a custom monster; enter the party once |
 | M3 | **Map editor** | Grid canvas, terrain painting, shapes, layers, undo/redo, autosave | Build a usable tavern map from scratch |
 | M4 | **Battle map** | Play mode, tokens (create/move/hide/HP, add-party, bloodied state), map switching with state, AoE templates, measurement | Run a mock fight by hand on a map |
