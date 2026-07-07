@@ -5,7 +5,7 @@ import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
 import java.util.UUID;
@@ -13,7 +13,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import(StatBlockService.class)
+@Import({StatBlockService.class, SrdSeedService.class, SpellSeedService.class})
 class StatBlockServiceTest {
 
     @Autowired
@@ -26,6 +26,7 @@ class StatBlockServiceTest {
 
     @BeforeEach
     void setUp() {
+        repository.deleteAll();
         campaignId = UUID.randomUUID();
     }
 
@@ -55,7 +56,7 @@ class StatBlockServiceTest {
     }
 
     private void createCustomForOtherCampaign() {
-        service.createCustom(UUID.randomUUID(), "Custom B", "2", "Giant", 14, "30",
+        service.createCustom(UUID.randomUUID(), "Custom B", "2", "Giant", 14, "30", "30 ft.",
                 10, 10, 10, 10, 10, 10,
                 "30", "40 ft.",
                 null, null, null, null, null, null,
@@ -120,8 +121,8 @@ class StatBlockServiceTest {
         srd.setType("Humanoid");
         srd.setHp("7");
         srd.setAc(15);
-        srd = repository.save(srd);
-        assertThatThrownBy(() -> service.delete(srd.getId()))
+        StatBlock saved = repository.save(srd);
+        assertThatThrownBy(() -> service.delete(saved.getId()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Cannot delete SRD");
     }
@@ -144,8 +145,8 @@ class StatBlockServiceTest {
         srd.setType("Beast");
         srd.setHp("10");
         srd.setAc(12);
-        srd = repository.save(srd);
-        assertThatThrownBy(() -> service.promoteToGlobal(srd.getId()))
+        StatBlock saved = repository.save(srd);
+        assertThatThrownBy(() -> service.promoteToGlobal(saved.getId()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
