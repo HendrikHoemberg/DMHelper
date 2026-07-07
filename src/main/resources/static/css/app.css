@@ -384,3 +384,101 @@ body.dm-mode-off {
   border: 1px solid var(--color-success);
   color: var(--color-success);
 }
+
+/* Library / Statblock Styles */
+
+.search-bar {
+  display: flex; gap: var(--space-sm); flex-wrap: wrap; align-items: flex-end;
+  margin-bottom: var(--space-lg); padding: var(--space-md);
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+.search-bar .form-group { margin-bottom: 0; flex: 1; min-width: 160px; }
+.search-bar select {
+  width: 100%; padding: var(--space-sm) var(--space-md);
+  font-size: var(--text-base); font-family: inherit; color: var(--color-text);
+  background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius);
+}
+.search-bar select:focus { outline: none; border-color: var(--color-accent); }
+
+.statblock-card {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius); padding: var(--space-md);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  display: flex; flex-direction: column; gap: var(--space-xs);
+}
+.statblock-card:hover { border-color: var(--color-accent); box-shadow: var(--shadow); }
+.statblock-card h3 { font-size: var(--text-lg); margin: 0; }
+.statblock-card h3 a { color: var(--color-text); text-decoration: none; }
+.statblock-card h3 a:hover { color: var(--color-accent); }
+.statblock-meta { display: flex; gap: var(--space-sm); font-size: var(--text-sm); color: var(--color-text-muted); flex-wrap: wrap; }
+.badge-srd { background: var(--color-accent); color: #fff; font-size: var(--text-sm); padding: 1px 6px; border-radius: 4px; }
+.badge-custom { background: var(--color-success); color: #fff; font-size: var(--text-sm); padding: 1px 6px; border-radius: 4px; }
+
+/* Statblock Renderer (5.5e parchment style) */
+.statblock-render {
+  max-width: 500px; margin: 0 auto;
+  background: #f5f0e8; color: #2c1810;
+  border: 2px solid #8b7355; border-radius: 4px;
+  padding: var(--space-lg);
+  font-family: 'Bookman Old Style', Georgia, serif;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+}
+.statblock-render h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; font-variant: small-caps; }
+.statblock-render .sb-subtitle { font-style: italic; font-size: 0.875rem; margin-bottom: var(--space-md); color: #5c3d2e; }
+.statblock-render .sb-rule { border: none; border-top: 2px solid #8b2e1c; margin: var(--space-sm) 0; }
+.statblock-render .sb-rule-thin { border: none; border-top: 1px solid #8b2e1c; margin: var(--space-xs) 0; }
+.statblock-render .sb-stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-xs); font-size: 0.875rem; margin-bottom: var(--space-sm); }
+.statblock-render .sb-stat-row span { font-weight: 600; }
+.statblock-render .sb-abilities { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--space-xs); text-align: center; margin-bottom: var(--space-sm); }
+.statblock-render .sb-abilities div { font-size: 0.75rem; }
+.statblock-render .sb-abilities .score { font-size: 1rem; font-weight: 700; }
+.statblock-render .sb-props { font-size: 0.875rem; margin-bottom: var(--space-sm); }
+.statblock-render .sb-props dt { font-weight: 700; display: inline; }
+.statblock-render .sb-props dd { display: inline; margin-right: 1em; }
+.statblock-render h3 { font-size: 1.1rem; font-weight: 700; font-variant: small-caps; margin-top: var(--space-md); margin-bottom: var(--space-xs); border-bottom: 1px solid #8b2e1c; padding-bottom: 2px; }
+.statblock-render .sb-ability { margin-bottom: var(--space-sm); }
+.statblock-render .sb-ability .sb-ability-name { font-weight: 700; font-style: italic; }
+.statblock-render .sb-ability .sb-ability-text { font-size: 0.875rem; line-height: 1.5; }
+
+/* Party Roster Styles */
+.party-summary-bar {
+  display: flex; gap: var(--space-md); overflow-x: auto;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius); margin-bottom: var(--space-lg); align-items: center;
+}
+.party-summary-bar .bar-label { font-size: var(--text-sm); font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+.party-member-chip { display: flex; flex-direction: column; align-items: center; padding: var(--space-xs) var(--space-sm); border-right: 1px solid var(--color-border); min-width: 80px; }
+.party-member-chip:last-child { border-right: none; }
+.party-member-chip .chip-name { font-size: var(--text-sm); font-weight: 600; color: var(--color-accent); margin-bottom: 2px; }
+.party-member-chip .chip-stats { font-size: 0.7rem; color: var(--color-text-muted); display: flex; gap: 6px; }
+
+.party-member-card {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius); padding: var(--space-md);
+  display: grid; grid-template-columns: 1fr auto;
+  gap: var(--space-sm) var(--space-md);
+}
+.party-member-card:hover { border-color: var(--color-accent); }
+.party-member-card h3 { font-size: var(--text-lg); grid-column: 1; }
+.party-member-card .pm-player { font-size: var(--text-sm); color: var(--color-text-muted); }
+.party-member-card .pm-stats { display: flex; gap: var(--space-md); flex-wrap: wrap; font-size: var(--text-sm); grid-column: 1; }
+.party-member-card .pm-stats dt { color: var(--color-text-muted); font-size: 0.7rem; text-transform: uppercase; }
+.party-member-card .pm-stats dd { font-weight: 600; font-size: var(--text-base); }
+.party-member-card .pm-actions { grid-column: 2; grid-row: 1 / 4; display: flex; flex-direction: column; gap: var(--space-xs); }
+.pm-inactive { opacity: 0.4; }
+
+/* Form tabs */
+.form-tabs { display: flex; gap: 0; margin-bottom: var(--space-md); border-bottom: 2px solid var(--color-border); }
+.form-tab { padding: var(--space-xs) var(--space-md); font-size: var(--text-sm); border: none; background: none; color: var(--color-text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+.form-tab:hover { color: var(--color-text); }
+.form-tab.active { color: var(--color-accent); border-bottom-color: var(--color-accent); }
+.form-tab-content { display: none; }
+.form-tab-content.active { display: block; }
+
+/* Ability score grid in form */
+.ability-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--space-sm); }
+.ability-grid .form-group { text-align: center; }
+.ability-grid .form-group input { text-align: center; width: 100%; }
+.ability-grid .form-group label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
