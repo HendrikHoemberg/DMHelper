@@ -56,6 +56,8 @@ public class SrdSeedService {
             String sourceKey, String name, String size, String type, String alignment,
             int ac, String hp, String speed,
             int strScore, int dexScore, int conScore, int intScore, int wisScore, int chaScore,
+            Integer strSave, Integer dexSave, Integer conSave,
+            Integer intSave, Integer wisSave, Integer chaSave,
             String skills,
             String damageVulnerabilities, String damageResistances,
             String damageImmunities, String conditionImmunities,
@@ -81,6 +83,12 @@ public class SrdSeedService {
             sb.setIntScore(intScore);
             sb.setWisScore(wisScore);
             sb.setChaScore(chaScore);
+            sb.setStrSave(strSave);
+            sb.setDexSave(dexSave);
+            sb.setConSave(conSave);
+            sb.setIntSave(intSave);
+            sb.setWisSave(wisSave);
+            sb.setChaSave(chaSave);
             sb.setSkills(skills);
             sb.setDamageVulnerabilities(damageVulnerabilities);
             sb.setDamageResistances(damageResistances);
