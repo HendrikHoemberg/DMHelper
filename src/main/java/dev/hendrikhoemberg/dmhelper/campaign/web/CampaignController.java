@@ -32,8 +32,8 @@ public class CampaignController {
         if ("form".equals(fragment)) {
             return "campaigns/_form";
         }
-        if ("empty-form".equals(fragment)) {
-            return "common/_empty-state";
+        if ("new-button".equals(fragment)) {
+            return "campaigns/_new-button";
         }
 
         return "campaigns/list";

@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<button class="btn btn-primary" th:fragment="new-button"
+        hx-get="/campaigns?fragment=form"
+        hx-target="this"
+        hx-swap="outerHTML">
+    + New Campaign
+</button>
+</html>

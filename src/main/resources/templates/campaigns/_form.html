@@ -3,8 +3,9 @@
 <div class="inline-form" th:fragment="form">
     <h3>New Campaign</h3>
     <form hx-post="/campaigns"
-          hx-target="previous .card-grid"
-          hx-swap="beforeend">
+          hx-target="#campaign-grid"
+          hx-swap="beforeend"
+          hx-on::after-request="if (event.detail.successful) this.reset()">
         <div class="form-group">
             <label for="campaignName">Name</label>
             <input type="text" id="campaignName" name="name" required
@@ -17,7 +18,7 @@
         </div>
         <div class="form-actions">
             <button type="button" class="btn btn-ghost"
-                    hx-get="/campaigns?fragment=empty-form"
+                    hx-get="/campaigns?fragment=new-button"
                     hx-target="closest .inline-form"
                     hx-swap="outerHTML">Cancel</button>
             <button type="submit" class="btn btn-primary">Create</button>

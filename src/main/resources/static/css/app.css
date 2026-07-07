@@ -131,6 +131,12 @@ body.dm-mode-off {
   gap: var(--space-md);
 }
 
+/* The empty-state lives inside the grid so a freshly appended card
+   (htmx beforeend) hides it with no page refresh. */
+.card-grid:has(.card) .empty-state {
+  display: none;
+}
+
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -330,6 +336,7 @@ body.dm-mode-off {
   padding: calc(var(--space-xl) * 2);
   color: var(--color-text-muted);
   text-align: center;
+  grid-column: 1 / -1;
 }
 
 .empty-state p {
