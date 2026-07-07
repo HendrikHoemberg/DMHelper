@@ -1,345 +1,193 @@
 #!/usr/bin/env python3
-"""Fetch D&D 5.5e SRD 5.2 monsters from open5e.com and generate srd-5.2-monsters.json.
+"""Fetch D&D 5.5e SRD 5.2 monster data from open5e.com.
+Generates src/main/resources/srd/srd-5.2-monsters.json."""
 
-Uses the open5e v2 API (https://api.open5e.com/v2/) filtered to the srd-2024
-document, which contains the full CC-BY-4.0 SRD 5.2 (2024/5.5e rules) bestiary.
-
-Transforms each open5e creature into the flat JSON schema that DMHelper's SRD
-seed loader expects.  331 monsters as of open5e's current srd-2024 document.
-"""
-
-import json
-import os
-import sys
-import time
-import urllib.request
-import urllib.error
-
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
+import json, os, sys, time, urllib.request, urllib.error
 
 API_BASE = "https://api.open5e.com"
-DOCUMENT_KEY = "srd-2024"
-PAGE_SIZE = 50  # paginate — large pages time out on open5e
-
-def _index_url(page: int = 1) -> str:
-    return (
-        f"{API_BASE}/v2/creatures/"
-        f"?document__key__in={DOCUMENT_KEY}"
-        f"&limit={PAGE_SIZE}&page={page}"
-    )
-
+DOC_FILTER = "srd-2024"
+PAGE_SIZE = 100
 OUTPUT_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "src", "main", "resources", "srd", "srd-5.2-monsters.json",
 )
 
-SAVE_NAMES = {
-    "strength": "strSave", "dexterity": "dexSave", "constitution": "conSave",
-    "intelligence": "intSave", "wisdom": "wisSave", "charisma": "chaSave",
-}
+def ability_scores(s):
+    """Parse ability_score JSON array into individual int scores."""
+    if not s or not isinstance(s, list):
+        return [10, 10, 10, 10, 10, 10]
+    result = []
+    for entry in s:
+        if isinstance(entry, dict):
+            result.append(entry.get("value", 10))
+        else:
+            result.append(10)
+    while len(result) < 6:
+        result.append(10)
+    return result[:6]
 
-ABILITY_KEYS = [
-    ("strength", "strScore"), ("dexterity", "dexScore"),
-    ("constitution", "conScore"), ("intelligence", "intScore"),
-    ("wisdom", "wisScore"), ("charisma", "chaScore"),
-]
+def ability_saves(s):
+    """Parse saves dict into individual save bonuses, null if not proficient."""
+    saves = {"str": None, "dex": None, "con": None, "int": None, "wis": None, "cha": None}
+    if not s or not isinstance(s, dict):
+        return saves
+    for abbr, bonus in s.items():
+        key = abbr.lower()[:3]
+        if key in saves:
+            saves[key] = bonus if isinstance(bonus, int) else int(bonus)
+    return saves
 
-CR_FRACTION_MAP = {0.125: "1/8", 0.25: "1/4", 0.5: "1/2"}
+def calc_xp(cr_value, cr_text=""):
+    """Calculate XP from CR using 2024 DMG table.
+    For fractional CR: 0 = 10, 1/8 = 25, 1/4 = 50, 1/2 = 100.
+    For integer CR 1-30: mapped to standard XP values."""
+    cr_map = {
+        0: 10, "0": 10, "0.0": 10,
+        "1/8": 25, "0.125": 25,
+        "1/4": 50, "0.25": 50,
+        "1/2": 100, "0.5": 100,
+        1: 200, "1": 200, "1.0": 200,
+        2: 450, "2": 450, "2.0": 450,
+        3: 700, "3": 700, "3.0": 700,
+        4: 1100, "4": 1100, "4.0": 1100,
+        5: 1800, "5": 1800, "5.0": 1800,
+        6: 2300, "6": 2300, "6.0": 2300,
+        7: 2900, "7": 2900, "7.0": 2900,
+        8: 3900, "8": 3900, "8.0": 3900,
+        9: 5000, "9": 5000, "9.0": 5000,
+        10: 5900, "10": 5900, "10.0": 5900,
+        11: 7200, "11": 7200, "11.0": 7200,
+        12: 8400, "12": 8400, "12.0": 8400,
+        13: 10000, "13": 10000, "13.0": 10000,
+        14: 11500, "14": 11500, "14.0": 11500,
+        15: 13000, "15": 13000, "15.0": 13000,
+        16: 15000, "16": 15000, "16.0": 15000,
+        17: 18000, "17": 18000, "17.0": 18000,
+        18: 20000, "18": 20000, "18.0": 20000,
+        19: 22000, "19": 22000, "19.0": 22000,
+        20: 25000, "20": 25000, "20.0": 25000,
+        21: 33000, "21": 33000, "21.0": 33000,
+        22: 41000, "22": 41000, "22.0": 41000,
+        23: 50000, "23": 50000, "23.0": 50000,
+        24: 62000, "24": 62000, "24.0": 62000,
+        25: 75000, "25": 75000, "25.0": 75000,
+        26: 90000, "26": 90000, "26.0": 90000,
+        27: 105000, "27": 105000, "27.0": 105000,
+        28: 120000, "28": 120000, "28.0": 120000,
+        29: 135000, "29": 135000, "29.0": 135000,
+        30: 155000, "30": 155000, "30.0": 155000,
+    }
+    if isinstance(cr_value, (int, float)):
+        key = cr_value
+    else:
+        key = str(cr_value).strip()
+    return cr_map.get(key, 0)
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def api_get(url: str, retries: int = 3) -> dict:
-    """GET *url* and return parsed JSON, with simple retry logic."""
-    for attempt in range(retries):
+def api_get(url):
+    for attempt in range(3):
         try:
-            req = urllib.request.Request(url, headers={
-                "Accept": "application/json",
-                "User-Agent": "DMHelper/1.0",
-            })
+            req = urllib.request.Request(url,
+                headers={"Accept": "application/json", "User-Agent": "DMHelper/1.0"})
             with urllib.request.urlopen(req, timeout=30) as resp:
                 return json.loads(resp.read().decode())
-        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
-            if attempt == retries - 1:
-                raise
-            wait = 2 ** attempt
-            print(f"  ⚠ {exc} — retrying in {wait}s …")
-            time.sleep(wait)
-
-
-def cr_to_string(cr: float) -> str:
-    """Convert numeric CR to display string (e.g. 0.25 → '1/4')."""
-    if cr in CR_FRACTION_MAP:
-        return CR_FRACTION_MAP[cr]
-    return str(int(cr))
-
-
-def format_speed(speed: dict) -> str:
-    """open5e speed dict → '30 ft., fly 80 ft., swim 40 ft.'"""
-    parts = []
-    walk = speed.get("walk")
-    if walk and walk > 0:
-        parts.append(f"{walk} ft.")
-    for mode in ("burrow", "climb", "fly", "swim"):
-        val = speed.get(mode)
-        if val and val > 0:
-            parts.append(f"{mode} {val} ft.")
-    return ", ".join(parts) if parts else "0 ft."
-
-
-def format_senses(m: dict) -> str:
-    """Extract sense ranges + passive perception into a string."""
-    parts = []
-    for key, label in [
-        ("blindsight_range", "blindsight"),
-        ("darkvision_range", "darkvision"),
-        ("tremorsense_range", "tremorsense"),
-        ("truesight_range", "truesight"),
-    ]:
-        val = m.get(key)
-        if val and val > 0:
-            parts.append(f"{label} {val} ft.")
-    pp = m.get("passive_perception")
-    if pp is not None:
-        parts.append(f"passive Perception {pp}")
-    return ", ".join(parts)
-
-
-def format_skills(skill_bonuses: dict) -> str | None:
-    """open5e skill_bonuses dict → 'Perception +11, Stealth +7'."""
-    if not skill_bonuses:
-        return None
-    items = []
-    for name, bonus in skill_bonuses.items():
-        display = name.replace("_", " ").title()
-        sign = "+" if bonus >= 0 else ""
-        items.append(f"{display} {sign}{bonus}")
-    return ", ".join(items)
-
-
-def extract_saves(m: dict) -> dict:
-    """Return a dict of {strSave: N, ...} for proficiency saves only.
-
-    open5e returns all six saves in ``saving_throws``, but many are just the
-    ability modifier.  We only store saves where the creature is proficient
-    (saving_throws value differs from the raw modifier).
-    """
-    modifiers = m.get("modifiers", {})
-    saves = m.get("saving_throws", {})
-    result = {}
-    for stat_key, save_key in SAVE_NAMES.items():
-        save_val = saves.get(stat_key)
-        mod_val = modifiers.get(stat_key)
-        if save_val is not None and mod_val is not None and save_val != mod_val:
-            result[save_key] = save_val
-    return result
-
-
-def format_damage_display(display_str: str) -> str | None:
-    """'acid, fire' → 'acid, fire' (lowercased).  None / '' → None."""
-    if not display_str:
-        return None
-    return display_str.lower()
-
-
-def transform_action_entries(entries: list) -> str:
-    """Turn open5e action/trait objects into a JSON string of [{name, description}]."""
-    result = []
-    for entry in entries:
-        name = entry.get("name", "")
-        desc = entry.get("desc", "")
-        # Attach usage limits to name (e.g. "Acid Breath (Recharge 5–6)")
-        usage = entry.get("usage_limits")
-        if usage:
-            utype = usage.get("type", "")
-            if utype == "RECHARGE_ON_ROLL":
-                param = usage.get("param", 6)
-                if param <= 6:
-                    name = f"{name} (Recharge {param}–6)"
-                else:
-                    name = f"{name} (Recharge 6)"
-            elif utype in ("PER_DAY", "USES_PER_DAY"):
-                times = usage.get("param", 1)
-                name = f"{name} ({times}/Day)"
-            elif utype == "RECHARGE_AFTER_REST":
-                times = usage.get("param", 1)
-                name = f"{name} ({times}/Rest)"
-        result.append({"name": name, "description": desc})
-    return json.dumps(result)
-
-
-def build_legendary_description(m: dict) -> str | None:
-    """Generate standard legendary action description text."""
-    legendary = [
-        a for a in m.get("actions", [])
-        if a.get("action_type") == "LEGENDARY_ACTION"
-    ]
-    if not legendary:
-        return None
-    # Determine number of legendary actions from max cost
-    max_cost = max(
-        (a.get("legendary_action_cost") or 0 for a in legendary),
-        default=3,
-    )
-    name = m["name"].lower()
-    return (
-        f"The {name} can take {max_cost} legendary actions, choosing from "
-        f"the options below. Only one legendary action option can be used "
-        f"at a time and only at the end of another creature's turn. "
-        f"The {name} regains spent legendary actions at the start of its turn."
-    )
-
-
-# ---------------------------------------------------------------------------
-# Main transform
-# ---------------------------------------------------------------------------
-
-def transform_creature(m: dict) -> dict:
-    """Transform one open5e creature into DMHelper's flat JSON schema."""
-    abilities = m.get("ability_scores", {})
-    ri = m.get("resistances_and_immunities", {})
-    langs = m.get("languages", {})
-
-    # Build HP string
-    hp = m.get("hit_points", 0)
-    hd = m.get("hit_dice", "")
-    hp_str = f"{hp} ({hd})" if hd else str(hp)
-
-    # Split actions by type
-    all_actions = m.get("actions", []) or []
-    actions_list = [a for a in all_actions if a.get("action_type") == "ACTION"]
-    bonus_actions = [a for a in all_actions if a.get("action_type") == "BONUS_ACTION"]
-    reactions = [a for a in all_actions if a.get("action_type") == "REACTION"]
-    legendary = [a for a in all_actions if a.get("action_type") == "LEGENDARY_ACTION"]
-
-    # Alignment — open5e lowercase; title-case it
-    alignment = m.get("alignment", "")
-    if alignment:
-        alignment = alignment.title()
-
-    result = {
-        "sourceKey": m["key"].removeprefix(f"{DOCUMENT_KEY}_"),
-        "name": m["name"],
-        "size": (m.get("size") or {}).get("name", "Medium"),
-        "type": (m.get("type") or {}).get("name", "Humanoid"),
-        "alignment": alignment,
-        "ac": m.get("armor_class", 10),
-        "hp": hp_str,
-        "speed": format_speed(m.get("speed", {})),
-    }
-
-    # Ability scores
-    for api_key, dm_key in ABILITY_KEYS:
-        result[dm_key] = abilities.get(api_key, 10)
-
-    # Proficiency saves
-    result.update(extract_saves(m))
-
-    # Skills
-    skills_str = format_skills(m.get("skill_bonuses", {}))
-    if skills_str:
-        result["skills"] = skills_str
-
-    # Damage / condition
-    for api_field, dm_field in [
-        ("damage_vulnerabilities_display", "damageVulnerabilities"),
-        ("damage_resistances_display", "damageResistances"),
-        ("damage_immunities_display", "damageImmunities"),
-        ("condition_immunities_display", "conditionImmunities"),
-    ]:
-        val = format_damage_display(ri.get(api_field, ""))
-        if val:
-            result[dm_field] = val
-
-    # Senses
-    result["senses"] = format_senses(m)
-
-    # Languages
-    lang_str = langs.get("as_string", "")
-    if lang_str:
-        result["languages"] = lang_str
-
-    # Traits
-    traits = m.get("traits", []) or []
-    if traits:
-        result["traits"] = transform_action_entries(traits)
-
-    # Actions
-    if actions_list:
-        result["actions"] = transform_action_entries(actions_list)
-    if bonus_actions:
-        result["bonusActions"] = transform_action_entries(bonus_actions)
-    if reactions:
-        result["reactions"] = transform_action_entries(reactions)
-
-    # Legendary
-    if legendary:
-        result["legendaryActions"] = transform_action_entries(legendary)
-        legend_desc = build_legendary_description(m)
-        if legend_desc:
-            result["legendaryDescription"] = legend_desc
-
-    # CR
-    result["cr"] = cr_to_string(m.get("challenge_rating", 0))
-
-    return result
-
-
-# ---------------------------------------------------------------------------
-# Entrypoint
-# ---------------------------------------------------------------------------
+        except Exception as e:
+            if attempt == 2: raise
+            time.sleep(2 ** attempt)
 
 def main():
-    print(f"Fetching SRD 5.2 monsters from open5e /v2/creatures/ (document={DOCUMENT_KEY}) …")
+    entries = []
     page = 1
-    page_data = api_get(_index_url(page))
-    total = page_data.get("count", 0)
-    entries = page_data.get("results", [])
-    print(f"  Total: {total} monsters.  Page 1: {len(entries)} received.")
+    while True:
+        url = f"{API_BASE}/v2/creatures/?document__key__in={DOC_FILTER}&limit={PAGE_SIZE}&page={page}"
+        data = api_get(url)
+        results = data.get("results", [])
+        if not results:
+            break
+        for c in results:
+            cr = c.get("challenge_rating", "0")
+            if isinstance(cr, str):
+                cr = cr.strip()
+            elif isinstance(cr, (int, float)):
+                cr = str(int(cr)) if cr == int(cr) else str(cr)
+            else:
+                cr = str(cr)
 
-    while page_data.get("next"):
+            scores = ability_scores(c.get("ability_scores"))
+            score_list = [abs(scores[0]), abs(scores[1]), abs(scores[2]),
+                          abs(int(scores[3]) if len(scores) > 3 else 10),
+                          abs(int(scores[4]) if len(scores) > 4 else 10),
+                          abs(int(scores[5]) if len(scores) > 5 else 10)]
+
+            saves = ability_saves(c.get("saves"))
+
+            def extract_generic_actions(creature, key_name):
+                items = creature.get(key_name, [])
+                if not items:
+                    return None
+                result = []
+                for item in items:
+                    if isinstance(item, dict):
+                        result.append({"name": item.get("name", ""), "description": item.get("desc", "")})
+                return json.dumps(result) if result else None
+
+            traits_arr = extract_generic_actions(c, "special_abilities")
+            actions_arr = extract_generic_actions(c, "actions")
+            legendary_arr = extract_generic_actions(c, "legendary_actions")
+            reactions_arr = extract_generic_actions(c, "reactions")
+
+            xp = calc_xp(cr)
+            cr_text = c.get("challenge_rating_text", "") or ""
+
+            source_key = c.get("key", "").removeprefix("srd-2024_").removeprefix("srd-2024-")
+
+            entries.append({
+                "sourceKey": source_key,
+                "name": c.get("name", "Unknown"),
+                "size": (c.get("size") or {}).get("name", "") if isinstance(c.get("size"), dict) else (c.get("size") or ""),
+                "type": (c.get("type") or {}).get("name", "") if isinstance(c.get("type"), dict) else (c.get("type") or ""),
+                "alignment": (c.get("alignment") or {}).get("name", "") if isinstance(c.get("alignment"), dict) else (c.get("alignment") or ""),
+                "ac": c.get("armor_class", 10),
+                "hp": (c.get("hit_points", 0) or 0),
+                "speed": json.dumps(c.get("speed", {})) if isinstance(c.get("speed"), dict) else str(c.get("speed", "")),
+                "strScore": score_list[0],
+                "dexScore": score_list[1],
+                "conScore": score_list[2],
+                "intScore": score_list[3],
+                "wisScore": score_list[4],
+                "chaScore": score_list[5],
+                "strSave": saves.get("str"),
+                "dexSave": saves.get("dex"),
+                "conSave": saves.get("con"),
+                "intSave": saves.get("int"),
+                "wisSave": saves.get("wis"),
+                "chaSave": saves.get("cha"),
+                "skills": json.dumps(c.get("skills", {})) if isinstance(c.get("skills"), dict) else str(c.get("skills", "")),
+                "damageVulnerabilities": (c.get("damage_vulnerabilities") or ""),
+                "damageResistances": (c.get("damage_resistances") or ""),
+                "damageImmunities": (c.get("damage_immunities") or ""),
+                "conditionImmunities": (c.get("condition_immunities") or ""),
+                "senses": (c.get("senses") or ""),
+                "languages": (c.get("languages") or ""),
+                "traits": traits_arr,
+                "actions": actions_arr,
+                "bonusActions": extract_generic_actions(c, "bonus_actions"),
+                "reactions": reactions_arr,
+                "legendaryActions": legendary_arr,
+                "legendaryDescription": c.get("legendary_desc", ""),
+                "lairActions": None,
+                "cr": cr,
+                "xp": xp
+            })
+
+        print(f"  Page {page}: {len(results)} creatures ({len(entries)} total)")
+        if not data.get("next"): break
         page += 1
-        print(f"  Fetching page {page} …", end="", flush=True)
-        page_data = api_get(page_data["next"])
-        more = page_data.get("results", [])
-        entries.extend(more)
-        print(f" {len(more)} received ({len(entries)} total)")
 
-    if not entries:
-        print("ERROR: No monsters retrieved. Check API availability.")
-        sys.exit(1)
-
-    print(f"  Transforming {len(entries)} monsters …")
-
-    monsters = []
-    errors = []
-    for entry in entries:
-        name = entry.get("name", "?")
-        try:
-            monsters.append(transform_creature(entry))
-        except Exception as exc:
-            print(f"  ✗ {name}: {exc}")
-            errors.append((name, str(exc)))
-
-    monsters.sort(key=lambda m: m["name"])
-
+    entries.sort(key=lambda e: e["name"])
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
-        json.dump(monsters, f, indent=2, ensure_ascii=False)
-
-    print(f"\nWrote {len(monsters)} monsters to {OUTPUT_PATH}")
-    print("Source: open5e.com srd-2024 (D&D 5.5e / SRD 5.2, CC-BY-4.0)")
-
-    if errors:
-        print(f"\n⚠ {len(errors)} monster(s) failed:")
-        for slug, err in errors:
-            print(f"  - {slug}: {err}")
-        sys.exit(1)
-
+        json.dump(entries, f, indent=2, ensure_ascii=False)
+    print(f"Wrote {len(entries)} monsters to {OUTPUT_PATH}")
 
 if __name__ == "__main__":
     main()
