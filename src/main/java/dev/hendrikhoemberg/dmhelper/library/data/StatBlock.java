@@ -195,16 +195,16 @@ public class StatBlock {
     public void setSkills(String skills) { this.skills = skills; }
 
     public String getDamageVulnerabilities() { return damageVulnerabilities; }
-    public void setDamageVulnerabilities(String v) { this.damageVulnerabilities = v; }
+    public void setDamageVulnerabilities(String damageVulnerabilities) { this.damageVulnerabilities = damageVulnerabilities; }
 
     public String getDamageResistances() { return damageResistances; }
-    public void setDamageResistances(String v) { this.damageResistances = v; }
+    public void setDamageResistances(String damageResistances) { this.damageResistances = damageResistances; }
 
     public String getDamageImmunities() { return damageImmunities; }
-    public void setDamageImmunities(String v) { this.damageImmunities = v; }
+    public void setDamageImmunities(String damageImmunities) { this.damageImmunities = damageImmunities; }
 
     public String getConditionImmunities() { return conditionImmunities; }
-    public void setConditionImmunities(String v) { this.conditionImmunities = v; }
+    public void setConditionImmunities(String conditionImmunities) { this.conditionImmunities = conditionImmunities; }
 
     public String getSenses() { return senses; }
     public void setSenses(String senses) { this.senses = senses; }
@@ -228,7 +228,7 @@ public class StatBlock {
     public void setLegendaryActions(String legendaryActions) { this.legendaryActions = legendaryActions; }
 
     public String getLegendaryDescription() { return legendaryDescription; }
-    public void setLegendaryDescription(String v) { this.legendaryDescription = v; }
+    public void setLegendaryDescription(String legendaryDescription) { this.legendaryDescription = legendaryDescription; }
 
     public String getLairActions() { return lairActions; }
     public void setLairActions(String lairActions) { this.lairActions = lairActions; }
