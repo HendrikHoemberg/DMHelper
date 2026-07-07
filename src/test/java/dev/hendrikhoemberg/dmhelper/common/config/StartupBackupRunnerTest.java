@@ -50,23 +50,13 @@ class StartupBackupRunnerTest {
         Files.writeString(dmData.resolve("dmhelper.mv.db"), "db-bytes");
         Path backups = Files.createDirectories(home.resolve(".dmhelper/backups"));
         for (int i = 0; i < 12; i++) {
-            Files.createDirectory(backups.resolve("dmhelper-2020010" + String.format("%01d", i % 10) + "-00000" + i % 10 + "-old" + i));
-        }
-        // Trim pre-seeded fakes to a clean known set, then run once.
-        try (Stream<Path> old = Files.list(backups)) {
-            List<Path> toDelete = old.toList();
-            for (int i = 0; i < toDelete.size(); i++) {
-                Files.delete(toDelete.get(i));
-            }
-        }
-        for (int i = 0; i < 12; i++) {
             Files.createDirectory(backups.resolve("dmhelper-2020-" + String.format("%02d", i)));
         }
 
         new StartupBackupRunner(home.toString()).run(null);
 
         try (Stream<Path> remaining = Files.list(backups)) {
-            assertThat(remaining.filter(Files::isDirectory).count()).isLessThanOrEqualTo(10);
+            assertThat(remaining.filter(Files::isDirectory).count()).isEqualTo(10);
         }
     }
 }
