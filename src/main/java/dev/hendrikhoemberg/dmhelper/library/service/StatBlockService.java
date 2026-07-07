@@ -63,12 +63,11 @@ public class StatBlockService {
     public StatBlock createCustom(UUID campaignId, String name, String cr, String type,
                                   int ac, String hp, String speed,
                                   int str, int dex, int con, int intel, int wis, int cha,
-                                  String hpValue, String speedValue,
-                                  Integer strSave, Integer dexSave, Integer conSave,
-                                  Integer intSave, Integer wisSave, Integer chaSave,
-                                  String skills, String damageVuln, String damageRes,
-                                  String damageImm, String condImm,
-                                  String senses, String languages) {
+                                   Integer strSave, Integer dexSave, Integer conSave,
+                                   Integer intSave, Integer wisSave, Integer chaSave,
+                                   String skills, String damageVuln, String damageRes,
+                                   String damageImm, String condImm,
+                                   String senses, String languages) {
         StatBlock sb = new StatBlock();
         sb.setSource(StatBlock.Source.CUSTOM);
         sb.setCampaignId(campaignId);
@@ -102,13 +101,12 @@ public class StatBlockService {
 
     public StatBlock updateCustom(UUID id, String name, String cr, String type,
                                   int ac, String hp, String speed,
-                                  int str, int dex, int con, int intel, int wis, int cha,
-                                  String hpValue, String speedValue,
-                                  Integer strSave, Integer dexSave, Integer conSave,
-                                  Integer intSave, Integer wisSave, Integer chaSave,
-                                  String skills, String damageVuln, String damageRes,
-                                  String damageImm, String condImm,
-                                  String senses, String languages) {
+                                   int str, int dex, int con, int intel, int wis, int cha,
+                                   Integer strSave, Integer dexSave, Integer conSave,
+                                   Integer intSave, Integer wisSave, Integer chaSave,
+                                   String skills, String damageVuln, String damageRes,
+                                   String damageImm, String condImm,
+                                   String senses, String languages) {
         StatBlock sb = findById(id);
         if (sb.getSource() != StatBlock.Source.CUSTOM) {
             throw new IllegalArgumentException("Cannot edit SRD statblocks");

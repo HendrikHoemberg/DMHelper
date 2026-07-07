@@ -33,7 +33,6 @@ class StatBlockServiceTest {
     private StatBlock createCustom(String name, String cr, String type, int ac, String hp) {
         return service.createCustom(campaignId, name, cr, type, ac, hp, "30 ft.",
                 10, 10, 10, 10, 10, 10,
-                hp, "30 ft.",
                 null, null, null, null, null, null,
                 null, null, null, null, null,
                 "passive Perception 10", null);
@@ -58,7 +57,6 @@ class StatBlockServiceTest {
     private void createCustomForOtherCampaign() {
         service.createCustom(UUID.randomUUID(), "Custom B", "2", "Giant", 14, "30", "30 ft.",
                 10, 10, 10, 10, 10, 10,
-                "30", "40 ft.",
                 null, null, null, null, null, null,
                 null, null, null, null, null,
                 "passive Perception 10", "Giant");
@@ -97,7 +95,6 @@ class StatBlockServiceTest {
         StatBlock updated = service.updateCustom(created.getId(), "Renamed", "3", "Beast",
                 16, "45", "40 ft.",
                 16, 10, 16, 12, 14, 10,
-                "45", "40 ft.",
                 null, null, null, null, null, null,
                 null, null, null, null, null,
                 "darkvision 60 ft.", "Common, Giant");

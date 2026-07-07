@@ -128,7 +128,6 @@ public class CampaignService {
                         sbDto.ac(), sbDto.hp(), sbDto.speed(),
                         sbDto.strScore(), sbDto.dexScore(), sbDto.conScore(),
                         sbDto.intScore(), sbDto.wisScore(), sbDto.chaScore(),
-                        null, null,
                         sbDto.strSave(), sbDto.dexSave(), sbDto.conSave(),
                         sbDto.intSave(), sbDto.wisSave(), sbDto.chaSave(),
                         sbDto.skills(),

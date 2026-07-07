@@ -81,7 +81,6 @@ class LibraryControllerTest {
         when(service.createCustom(any(), anyString(), anyString(), anyString(),
                 anyInt(), anyString(), anyString(),
                 anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(),
-                anyString(), anyString(),
                 any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(sb);
@@ -95,7 +94,6 @@ class LibraryControllerTest {
                         .param("strScore", "8").param("dexScore", "14")
                         .param("conScore", "10").param("intScore", "10")
                         .param("wisScore", "8").param("chaScore", "8")
-                        .param("hpValue", "").param("speedValue", "")
                         .header("HX-Request", "true"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Custom Goblin")));

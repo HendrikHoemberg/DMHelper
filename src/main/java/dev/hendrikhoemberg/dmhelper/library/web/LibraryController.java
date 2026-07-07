@@ -78,8 +78,6 @@ public class LibraryController {
                          @RequestParam int strScore, @RequestParam int dexScore,
                          @RequestParam int conScore, @RequestParam int intScore,
                          @RequestParam int wisScore, @RequestParam int chaScore,
-                         @RequestParam(required = false) String hpValue,
-                         @RequestParam(required = false) String speedValue,
                          @RequestParam(required = false) String size,
                          @RequestParam(required = false) String alignment,
                          @RequestParam(required = false) Integer strSave,
@@ -106,7 +104,6 @@ public class LibraryController {
         if (name == null || name.isBlank()) throw new IllegalArgumentException("Name is required");
         StatBlock sb = service.createCustom(campaignId, name, cr, type, ac, hp, speed,
                 strScore, dexScore, conScore, intScore, wisScore, chaScore,
-                hpValue, speedValue,
                 strSave, dexSave, conSave, intSave, wisSave, chaSave,
                 skills, damageVulnerabilities, damageResistances,
                 damageImmunities, conditionImmunities, senses, languages);
@@ -132,8 +129,6 @@ public class LibraryController {
                          @RequestParam int strScore, @RequestParam int dexScore,
                          @RequestParam int conScore, @RequestParam int intScore,
                          @RequestParam int wisScore, @RequestParam int chaScore,
-                         @RequestParam(required = false) String hpValue,
-                         @RequestParam(required = false) String speedValue,
                          @RequestParam(required = false) String size,
                          @RequestParam(required = false) String alignment,
                          @RequestParam(required = false) Integer strSave,
@@ -159,7 +154,6 @@ public class LibraryController {
                          Model model) {
         StatBlock sb = service.updateCustom(id, name, cr, type, ac, hp, speed,
                 strScore, dexScore, conScore, intScore, wisScore, chaScore,
-                hpValue, speedValue,
                 strSave, dexSave, conSave, intSave, wisSave, chaSave,
                 skills, damageVulnerabilities, damageResistances,
                 damageImmunities, conditionImmunities, senses, languages);

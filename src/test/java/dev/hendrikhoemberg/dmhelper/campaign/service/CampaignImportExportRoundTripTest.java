@@ -46,7 +46,6 @@ class CampaignImportExportRoundTripTest {
         StatBlock sb = statBlockService.createCustom(c.getId(), "Amber Knight", "5", "Humanoid",
                 18, "75 (10d8 + 30)", "30 ft.",
                 16, 12, 16, 10, 12, 14,
-                null, null,
                 null, null, null, null, null, null,
                 null, null, null, null, null,
                 "passive Perception 12", "Common");
