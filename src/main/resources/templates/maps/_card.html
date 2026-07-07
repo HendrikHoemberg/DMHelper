@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="card" th:fragment="card(map, campaignId)">
+    <h3>
+        <a th:href="@{/campaigns/{cid}/maps/{mid}/edit(cid=${campaignId}, mid=${map.id})}"
+           th:text="${map.name}">Map Name</a>
+    </h3>
+    <div class="card-meta" style="color: var(--color-text-muted); font-size: var(--text-sm);">
+        <span th:text="${map.gridWidth} + '×' + ${map.gridHeight} + ' · ' + ${map.cellSizePx} + 'px cells'">30×20 · 48px cells</span>
+    </div>
+    <div class="card-actions">
+        <a class="btn btn-ghost"
+           th:href="@{/campaigns/{cid}/maps/{mid}/edit(cid=${campaignId}, mid=${map.id})}">
+            Edit
+        </a>
+        <button class="btn btn-danger"
+                th:attr="hx-delete=@{/campaigns/{cid}/maps/{mid}(cid=${campaignId}, mid=${map.id})}"
+                hx-confirm="Delete this map?"
+                hx-target="closest .card"
+                hx-swap="outerHTML">
+            Delete
+        </button>
+    </div>
+</div>
+</html>

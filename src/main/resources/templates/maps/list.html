@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title>DMHelper — Maps</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <div>
+                    <h1>Maps</h1>
+                    <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost"
+                       style="margin-top: var(--space-xs);">&larr; Back to Campaign</a>
+                </div>
+                <button class="btn btn-primary"
+                        th:attr="hx-get=@{/campaigns/{cid}/maps/new(cid=${campaignId})}"
+                        hx-target="#map-grid"
+                        hx-swap="beforeend">+ New Map</button>
+            </div>
+
+            <div id="map-grid" class="card-grid">
+                <th:block th:if="${maps == null or maps.isEmpty()}">
+                    <th:block th:replace="~{common/_empty-state :: empty-state('No maps yet. Create your first map!')}"></th:block>
+                </th:block>
+                <th:block th:each="map : ${maps}">
+                    <th:block th:replace="~{maps/_card :: card(map=${map}, campaignId=${campaignId})}"></th:block>
+                </th:block>
+            </div>
+        </main>
+
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>
