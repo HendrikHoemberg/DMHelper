@@ -33,6 +33,14 @@ class SpellReseedMigrationTest {
     }
 
     @Test
+    void clearsStaleSpellsWithNullSchool() {
+        repository.save(spell("a", null));
+        repository.save(spell("b", null));
+        new SpellReseedMigration(repository).reseedIfStale();
+        assertThat(repository.count()).isZero();
+    }
+
+    @Test
     void clearsStaleSpellsWithNoSchool() {
         repository.save(spell("a", ""));
         repository.save(spell("b", ""));

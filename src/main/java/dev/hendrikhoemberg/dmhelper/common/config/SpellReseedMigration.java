@@ -1,9 +1,11 @@
 package dev.hendrikhoemberg.dmhelper.common.config;
 
 import dev.hendrikhoemberg.dmhelper.library.data.SpellRepository;
-import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,7 +19,8 @@ public class SpellReseedMigration {
         this.spellRepository = spellRepository;
     }
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
+    @Order(1)
     public void reseedIfStale() {
         long total = spellRepository.count();
         if (total == 0) {
