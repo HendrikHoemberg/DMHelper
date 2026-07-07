@@ -85,6 +85,11 @@ Deferred, but the architecture must not preclude them (see §8 Roadmap):
 > - Prefer current APIs over ones deprecated or removed since Boot 3; treat generated code that
 >   references Boot-3-only artifacts, starters, or configuration properties as a bug to fix, not
 >   a hint to downgrade.
+> - **Jackson 3 (not Jackson 2).** Spring Boot 4 ships with Jackson 3 (`com.fasterxml.jackson.core:jackson-*`
+>   under the `jackson-modules` BOM), which uses the `tools.jackson` Maven group instead of
+>   `com.fasterxml.jackson.core`. AI assistants frequently default to Jackson 2 imports and
+>   class names; any reference to `com.fasterxml.jackson` or Jackson 2 API patterns is a bug
+>   — the correct dependency group for Boot 4 is `tools.jackson` with the Jackson 3 API.
 > - When Boot 4 documentation and an AI suggestion conflict, **the documentation wins**.
 
 ### 2.2 High-Level Structure
