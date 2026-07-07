@@ -58,7 +58,7 @@ Deferred, but the architecture must not preclude them (see §8 Roadmap):
 
 | Layer | Choice | Rationale |
 |---|---|---|
-| Backend | **Spring Boot 4.1.0 (Java 21)** | DM's home turf; mature ecosystem; clean layering for a long-lived project |
+| Backend | **Spring Boot 4.1.0 (Java 25)** | DM's home turf; mature ecosystem; clean layering for a long-lived project |
 | Persistence | **Spring Data JPA + H2 (file mode)** | Zero-install embedded DB stored in the user data dir; can swap to PostgreSQL later via config |
 | Schema migrations | **Flyway** (versioned SQL, from M1) | A long-lived local DB holding years of campaign data must never rely on Hibernate `ddl-auto`; every schema change ships as a reviewed migration. Version comes from the Boot 4.1 BOM like everything else |
 | UI (pages & panels) | **Thymeleaf + htmx** (vendored, single dependency-free JS file) | Server-rendered hypermedia UI for all CRUD screens — campaign, roster, library, notes, encounters — with no JS build step; partial page updates via HTML fragments |
@@ -161,10 +161,10 @@ with zero internet at the table:
 - **No Node/npm toolchain, ever.** The build is Maven-only; there is no `package.json`,
   no lockfile, no install scripts, no transitive JS dependency tree.
 - **Frontend libraries are vendored, not fetched.** htmx, Konva, and Alpine are committed to the
-  repo under `static/vendor/` as single files at pinned versions. A `VENDOR.md` records each
-  file's name, version, upstream URL, and SHA-256 hash; upgrading a library is a deliberate,
-  reviewed commit — never an automatic resolution. All three are dependency-free by design,
-  so the entire third-party JS surface is three auditable files.
+  repo under `static/vendor/` as single files at pinned versions. A `VENDOR.md` (Markdown table)
+  records each file's name, version, upstream URL, and SHA-256 hash; upgrading a library is a
+  deliberate, reviewed commit — never an automatic resolution. All three are dependency-free by
+  design, so the entire third-party JS surface is three auditable files.
 - **No runtime CDN.** CDNs are both an availability risk (no internet at the table) and a
   supply-chain risk in their own right (cf. the polyfill.io compromise). The app serves every
   byte itself.
@@ -543,10 +543,8 @@ player devices.
 
 ---
 
-## 9. Open Questions
+## 9. Resolved Design Decisions
 
-- Hex grid support in the map editor (square-only for v1)?
-- How much detail should the combat log (§4.5) append to session logs when an encounter ends —
-  a summary line, or the full blow-by-blow?
-- Multi-campaign shared homebrew: is "promote to global library" enough, or is a proper
-  homebrew compendium module needed?
+- **Hex grid support** — Square-only for v1. Hex grids are a post-v1 feature. The `GameMap` entity and map document schema should reserve a future `gridType` field.
+- **Combat log → session log** — When an encounter ends, a **summary line** (rounds, casualties, damage totals) is appended to the session log. The full blow-by-blow remains in the per-encounter combat log for inspection.
+- **Multi-campaign shared homebrew** — **Promote-to-global** per statblock is sufficient for v1. A proper homebrew compendium module can be added later if needed.
