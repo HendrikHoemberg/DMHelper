@@ -9,6 +9,7 @@ import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -17,7 +18,7 @@ import tools.jackson.databind.ObjectMapper;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import(CampaignService.class)
+@Import({CampaignService.class, GameMapService.class})
 class CampaignServiceTest {
 
     @Autowired

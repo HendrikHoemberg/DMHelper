@@ -11,6 +11,7 @@ import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,18 +27,21 @@ public class CampaignService {
     private final StatBlockRepository statBlockRepository;
     private final PartyMemberService partyMemberService;
     private final StatBlockService statBlockService;
+    private final GameMapService gameMapService;
     private final ObjectMapper objectMapper;
 
     public CampaignService(CampaignRepository repository,
                            PartyMemberRepository partyMemberRepository,
                            StatBlockRepository statBlockRepository,
                            PartyMemberService partyMemberService,
-                           StatBlockService statBlockService) {
+                           StatBlockService statBlockService,
+                           GameMapService gameMapService) {
         this.repository = repository;
         this.partyMemberRepository = partyMemberRepository;
         this.statBlockRepository = statBlockRepository;
         this.partyMemberService = partyMemberService;
         this.statBlockService = statBlockService;
+        this.gameMapService = gameMapService;
         this.objectMapper = JsonMapper.builder()
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -81,7 +85,10 @@ public class CampaignService {
                 .map(CampaignExportDto.PartyMemberExportDto::from).toList();
         var statBlocks = statBlockRepository.findByCampaignIdOrderByNameAsc(id).stream()
                 .map(CampaignExportDto.StatBlockExportDto::from).toList();
-        CampaignExportDto dto = CampaignExportDto.from(campaign, party, statBlocks);
+        var maps = gameMapService.findByCampaignId(id).stream()
+                .map(m -> CampaignExportDto.MapExportDto.from(m, gameMapService.getDocument(m.getId())))
+                .toList();
+        CampaignExportDto dto = CampaignExportDto.from(campaign, party, statBlocks, maps);
         try {
             return objectMapper.writeValueAsString(dto);
         } catch (Exception e) {
@@ -145,6 +152,21 @@ public class CampaignService {
                 if (sbDto.legendaryDescription() != null) sb.setLegendaryDescription(sbDto.legendaryDescription());
                 if (sbDto.lairActions() != null) sb.setLairActions(sbDto.lairActions());
                 sb.setXp(sbDto.xp());
+            }
+        }
+
+        if (dto.maps() != null) {
+            for (var mapDto : dto.maps()) {
+                var grid = mapDto.grid();
+                var map = gameMapService.create(saved.getId(), mapDto.name(),
+                        grid != null ? grid.w() : 30,
+                        grid != null ? grid.h() : 20,
+                        grid != null ? grid.cellPx() : 48);
+                if (mapDto.document() != null) {
+                    gameMapService.updateDocument(map.getId(),
+                            objectMapper.writeValueAsString(mapDto.document()),
+                            map.getVersion());
+                }
             }
         }
 

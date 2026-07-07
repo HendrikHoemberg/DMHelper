@@ -4,13 +4,16 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.List;
 
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
+
 public record CampaignExportDto(
         int formatVersion,
         CampaignDto campaign,
         List<PartyMemberExportDto> party,
         List<StatBlockExportDto> statBlocks,
         List<Object> handouts,
-        List<Object> maps,
+        List<MapExportDto> maps,
         List<Object> encounters,
         List<Object> notes
 ) {
@@ -19,18 +22,26 @@ public record CampaignExportDto(
     public static CampaignExportDto from(
             dev.hendrikhoemberg.dmhelper.campaign.data.Campaign campaign,
             List<PartyMemberExportDto> party,
-            List<StatBlockExportDto> statBlocks) {
+            List<StatBlockExportDto> statBlocks,
+            List<MapExportDto> maps) {
         return new CampaignExportDto(
                 CURRENT_FORMAT_VERSION,
                 new CampaignDto(campaign.getName(), campaign.getDescription()),
                 party,
                 statBlocks,
-                List.of(), List.of(), List.of(), List.of()
+                List.of(), maps, List.of(), List.of()
         );
     }
 
+    public static CampaignExportDto from(
+            dev.hendrikhoemberg.dmhelper.campaign.data.Campaign campaign,
+            List<PartyMemberExportDto> party,
+            List<StatBlockExportDto> statBlocks) {
+        return from(campaign, party, statBlocks, List.of());
+    }
+
     public static CampaignExportDto from(dev.hendrikhoemberg.dmhelper.campaign.data.Campaign campaign) {
-        return from(campaign, List.of(), List.of());
+        return from(campaign, List.of(), List.of(), List.of());
     }
 
     public record CampaignDto(
@@ -93,6 +104,25 @@ public record CampaignExportDto(
                     sb.getTraits(), sb.getActions(), sb.getBonusActions(), sb.getReactions(),
                     sb.getLegendaryActions(), sb.getLegendaryDescription(), sb.getLairActions(),
                     sb.getXp()
+            );
+        }
+    }
+
+    public record MapExportDto(
+            String key,
+            String name,
+            GridDto grid,
+            MapDocumentDto document
+    ) {
+        public record GridDto(int w, int h, int cellPx, String gridType) {}
+
+        public static MapExportDto from(GameMap map, MapDocumentDto document) {
+            return new MapExportDto(
+                    map.getId().toString(),
+                    map.getName(),
+                    new GridDto(map.getGridWidth(), map.getGridHeight(),
+                            map.getCellSizePx(), map.getGridType()),
+                    document
             );
         }
     }
