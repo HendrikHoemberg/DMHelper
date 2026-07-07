@@ -31,30 +31,37 @@ def main():
         if not results:
             break
         for s in results:
-            components_list = s.get("components", []) or []
-            component_names = []
-            for comp in components_list:
-                if isinstance(comp, dict):
-                    component_names.append(comp.get("raw", comp.get("abbreviation", "")))
-                else:
-                    component_names.append(str(comp))
-            components = ", ".join(c for c in component_names if c)
-            material = s.get("material_component", "") or ""
-            if material:
-                components = f"{components} ({material})"
+            # open5e v2 exposes components as booleans + a material description,
+            # not a list; school is a nested object; higher-level and
+            # concentration use different keys than v1.
+            comp_parts = []
+            if s.get("verbal"):
+                comp_parts.append("V")
+            if s.get("somatic"):
+                comp_parts.append("S")
+            if s.get("material"):
+                comp_parts.append("M")
+            components = ", ".join(comp_parts)
+            material_desc = s.get("material_specified", "") or ""
+            if components and material_desc and s.get("material"):
+                components = f"{components} ({material_desc})"
+
+            school = s.get("school") or {}
+            school_name = school.get("name", "") if isinstance(school, dict) else str(school)
+
             entries.append({
                 "sourceKey": s["key"].removeprefix("srd-2024_"),
                 "name": s["name"],
                 "level": s.get("level", 0),
-                "school": s.get("school_name", ""),
+                "school": school_name,
                 "castingTime": s.get("casting_time", ""),
                 "range": s.get("range_text", ""),
                 "components": components,
                 "duration": s.get("duration", ""),
                 "description": s.get("desc", ""),
-                "higherLevel": s.get("higher_level_desc", ""),
+                "higherLevel": s.get("higher_level", ""),
                 "ritual": s.get("ritual", False),
-                "concentration": s.get("requires_concentration", False),
+                "concentration": s.get("concentration", False),
             })
         print(f"  Page {page}: {len(results)} spells ({len(entries)} total)")
         if not data.get("next"): break

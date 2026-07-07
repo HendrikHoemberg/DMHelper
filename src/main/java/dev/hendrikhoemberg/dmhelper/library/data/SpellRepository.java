@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.library.data;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,4 +15,7 @@ public interface SpellRepository extends JpaRepository<Spell, UUID>,
     List<Spell> findAllByOrderByLevelAscNameAsc();
 
     boolean existsBySourceKey(String sourceKey);
+
+    @Query("select count(s) from Spell s where s.school is not null and s.school <> ''")
+    long countWithSchool();
 }
