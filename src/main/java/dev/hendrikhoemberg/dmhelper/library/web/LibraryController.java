@@ -2,10 +2,9 @@ package dev.hendrikhoemberg.dmhelper.library.web;
 
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
-import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
-import dev.hendrikhoemberg.dmhelper.library.data.Spell;
-import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
-import dev.hendrikhoemberg.dmhelper.library.service.SpellService;
+import tools.jackson.databind.JsonNode;
+import dev.hendrikhoemberg.dmhelper.library.data.*;
+import dev.hendrikhoemberg.dmhelper.library.service.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,11 +18,36 @@ public class LibraryController {
 
     private final StatBlockService service;
     private final SpellService spellService;
+    private final ConditionService conditionService;
+    private final RuleSectionService ruleSectionService;
+    private final EquipmentItemService equipmentItemService;
+    private final MagicItemService magicItemService;
+    private final CharacterClassService characterClassService;
+    private final SpeciesService speciesService;
+    private final BackgroundService backgroundService;
+    private final FeatService featService;
     private final ObjectMapper objectMapper;
 
-    public LibraryController(StatBlockService service, SpellService spellService) {
+    public LibraryController(StatBlockService service,
+                             SpellService spellService,
+                             ConditionService conditionService,
+                             RuleSectionService ruleSectionService,
+                             EquipmentItemService equipmentItemService,
+                             MagicItemService magicItemService,
+                             CharacterClassService characterClassService,
+                             SpeciesService speciesService,
+                             BackgroundService backgroundService,
+                             FeatService featService) {
         this.service = service;
         this.spellService = spellService;
+        this.conditionService = conditionService;
+        this.ruleSectionService = ruleSectionService;
+        this.equipmentItemService = equipmentItemService;
+        this.magicItemService = magicItemService;
+        this.characterClassService = characterClassService;
+        this.speciesService = speciesService;
+        this.backgroundService = backgroundService;
+        this.featService = featService;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -199,6 +223,115 @@ public class LibraryController {
         return "about";
     }
 
+    // ------- Compendium tab routes (read-only) -------
+
+    @GetMapping("/conditions")
+    public String searchConditions(@RequestParam(required = false) String search, Model model) {
+        model.addAttribute("conditions", conditionService.search(search));
+        return "library/_condition-card :: condition-card-list";
+    }
+
+    @GetMapping("/rules")
+    public String searchRules(@RequestParam(required = false) String search,
+                              @RequestParam(required = false) String ruleset,
+                              Model model) {
+        model.addAttribute("rules", ruleSectionService.search(search, ruleset));
+        return "library/_rule-card :: rule-card-list";
+    }
+
+    @GetMapping("/equipment")
+    public String searchEquipment(@RequestParam(required = false) String search,
+                                  @RequestParam(required = false) String category,
+                                  Model model) {
+        EquipmentItem.Category cat = null;
+        if (category != null && !category.isBlank()) {
+            cat = EquipmentItem.Category.valueOf(category);
+        }
+        model.addAttribute("equipment", equipmentItemService.search(search, cat));
+        return "library/_equipment-card :: equipment-card-list";
+    }
+
+    @GetMapping("/magic-items")
+    public String searchMagicItems(@RequestParam(required = false) String search,
+                                   @RequestParam(required = false) String rarity,
+                                   @RequestParam(required = false) String category,
+                                   Model model) {
+        model.addAttribute("magicItems", magicItemService.search(search, rarity, category));
+        return "library/_magic-item-card :: magic-item-card-list";
+    }
+
+    @GetMapping("/classes")
+    public String searchClasses(@RequestParam(required = false) String search, Model model) {
+        model.addAttribute("classes", characterClassService.search(search));
+        return "library/_class-card :: class-card-list";
+    }
+
+    @GetMapping("/species")
+    public String searchSpecies(@RequestParam(required = false) String search, Model model) {
+        model.addAttribute("speciesList", speciesService.search(search));
+        return "library/_species-card :: species-card-list";
+    }
+
+    @GetMapping("/backgrounds")
+    public String searchBackgrounds(@RequestParam(required = false) String search, Model model) {
+        model.addAttribute("backgrounds", backgroundService.search(search));
+        return "library/_background-card :: background-card-list";
+    }
+
+    @GetMapping("/feats")
+    public String searchFeats(@RequestParam(required = false) String search,
+                              @RequestParam(required = false) String category,
+                              Model model) {
+        model.addAttribute("feats", featService.search(search, category));
+        return "library/_feat-card :: feat-card-list";
+    }
+
+    @GetMapping("/classes/{sourceKey}")
+    public String classDetail(@PathVariable String sourceKey, Model model) {
+        CharacterClass cls = characterClassService.findBySourceKey(sourceKey)
+                .orElseThrow(() -> new RuntimeException("Class not found: " + sourceKey));
+        model.addAttribute("classDetail", cls);
+
+        // Build levelFeatures map from features JSON
+        List<Map<String, Object>> features = parseJsonList(cls.getFeatures());
+        Map<Integer, List<Map<String, Object>>> levelFeatures = new TreeMap<>();
+        if (features != null) {
+            for (Map<String, Object> f : features) {
+                Object gainedAt = f.get("gained_at");
+                int level = 1;
+                if (gainedAt instanceof List<?> list && !list.isEmpty()) {
+                    Object first = list.get(0);
+                    if (first instanceof Map<?, ?> m && m.get("level") instanceof Number n) {
+                        level = n.intValue();
+                    }
+                }
+                levelFeatures.computeIfAbsent(level, k -> new ArrayList<>()).add(f);
+            }
+        }
+        model.addAttribute("levelFeatures", levelFeatures);
+
+        // Parse saving throws
+        model.addAttribute("savingThrows", formatSavingThrows(cls.getSavingThrows()));
+
+        // Parse spellcasting
+        model.addAttribute("spellcasting", parseJsonObject(cls.getSpellcasting()));
+
+        // If this is a subclass, load the base class
+        if (cls.getSubclassOf() != null && !cls.getSubclassOf().isBlank()) {
+            characterClassService.findBySourceKey(cls.getSubclassOf())
+                    .ifPresent(base -> model.addAttribute("subclass", base));
+        }
+
+        // If this is a base class, load its subclasses
+        List<CharacterClass> subclasses = characterClassService
+                .findAll().stream()
+                .filter(c -> cls.getSourceKey().equals(c.getSubclassOf()))
+                .toList();
+        model.addAttribute("subclasses", subclasses);
+
+        return "library/class-detail";
+    }
+
     // ------- Spell routes (read-only reference) -------
 
     @GetMapping("/spells")
@@ -226,6 +359,42 @@ public class LibraryController {
             return objectMapper.readValue(json, new TypeReference<List<Map<String, String>>>() {});
         } catch (Exception e) {
             return List.of(Map.of("name", "(parse error)", "description", json));
+        }
+    }
+
+    private List<Map<String, Object>> parseJsonList(String json) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<Map<String, Object>>>() {});
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Map<String, Object> parseJsonObject(String json) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            return objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String formatSavingThrows(String json) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            JsonNode node = objectMapper.readTree(json);
+            List<String> parts = new ArrayList<>();
+            if (node.isArray()) {
+                for (JsonNode n : node) {
+                    if (n.isObject() && n.has("name")) parts.add(n.get("name").asText());
+                    else if (n.isObject() && n.has("ability")) parts.add(n.get("ability").asText());
+                    else if (n.isTextual()) parts.add(n.asText());
+                }
+            }
+            return parts.isEmpty() ? null : String.join(", ", parts);
+        } catch (Exception e) {
+            return null;
         }
     }
 }

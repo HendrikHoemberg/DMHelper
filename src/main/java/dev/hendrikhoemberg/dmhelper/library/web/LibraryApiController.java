@@ -1,28 +1,68 @@
 package dev.hendrikhoemberg.dmhelper.library.web;
 
-import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
-import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
+import dev.hendrikhoemberg.dmhelper.library.data.*;
+import dev.hendrikhoemberg.dmhelper.library.service.*;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/v1/library")
 public class LibraryApiController {
 
-    private final StatBlockService service;
+    private final StatBlockService statBlockService;
+    private final SpellService spellService;
+    private final ConditionService conditionService;
+    private final RuleSectionService ruleSectionService;
+    private final EquipmentItemService equipmentItemService;
+    private final MagicItemService magicItemService;
+    private final CharacterClassService characterClassService;
+    private final SpeciesService speciesService;
+    private final BackgroundService backgroundService;
+    private final FeatService featService;
 
-    public LibraryApiController(StatBlockService service) {
-        this.service = service;
+    public LibraryApiController(StatBlockService statBlockService,
+                                SpellService spellService,
+                                ConditionService conditionService,
+                                RuleSectionService ruleSectionService,
+                                EquipmentItemService equipmentItemService,
+                                MagicItemService magicItemService,
+                                CharacterClassService characterClassService,
+                                SpeciesService speciesService,
+                                BackgroundService backgroundService,
+                                FeatService featService) {
+        this.statBlockService = statBlockService;
+        this.spellService = spellService;
+        this.conditionService = conditionService;
+        this.ruleSectionService = ruleSectionService;
+        this.equipmentItemService = equipmentItemService;
+        this.magicItemService = magicItemService;
+        this.characterClassService = characterClassService;
+        this.speciesService = speciesService;
+        this.backgroundService = backgroundService;
+        this.featService = featService;
     }
 
     @GetMapping("/srd-keys")
     public List<String> srdKeys() {
-        return service.findAll().stream()
+        var statblocks = statBlockService.findAll().stream()
                 .filter(sb -> sb.getSource() == StatBlock.Source.SRD)
-                .map(StatBlock::getSourceKey)
+                .map(StatBlock::getSourceKey);
+        var spells = spellService.findAll().stream().map(Spell::getSourceKey);
+        var conditions = conditionService.findAll().stream().map(Condition::getSourceKey);
+        var rules = ruleSectionService.findAll().stream().map(RuleSection::getSourceKey);
+        var equipment = equipmentItemService.findAll().stream().map(EquipmentItem::getSourceKey);
+        var magicItems = magicItemService.findAll().stream().map(MagicItem::getSourceKey);
+        var classes = characterClassService.findAll().stream().map(CharacterClass::getSourceKey);
+        var species = speciesService.findAll().stream().map(Species::getSourceKey);
+        var backgrounds = backgroundService.findAll().stream().map(Background::getSourceKey);
+        var feats = featService.findAll().stream().map(Feat::getSourceKey);
+        return Stream.of(statblocks, spells, conditions, rules, equipment,
+                        magicItems, classes, species, backgrounds, feats)
+                .flatMap(s -> s)
                 .sorted()
                 .toList();
     }

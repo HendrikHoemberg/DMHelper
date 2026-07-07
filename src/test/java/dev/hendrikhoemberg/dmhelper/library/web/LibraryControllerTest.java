@@ -1,10 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.library.web;
 
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
-import dev.hendrikhoemberg.dmhelper.library.service.SpellSeedService;
-import dev.hendrikhoemberg.dmhelper.library.service.SpellService;
-import dev.hendrikhoemberg.dmhelper.library.service.SrdSeedService;
-import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
+import dev.hendrikhoemberg.dmhelper.library.service.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -26,8 +23,24 @@ class LibraryControllerTest {
     @Autowired private MockMvc mockMvc;
     @MockitoBean private StatBlockService service;
     @MockitoBean private SpellService spellService;
+    @MockitoBean private ConditionService conditionService;
+    @MockitoBean private RuleSectionService ruleSectionService;
+    @MockitoBean private EquipmentItemService equipmentItemService;
+    @MockitoBean private MagicItemService magicItemService;
+    @MockitoBean private CharacterClassService characterClassService;
+    @MockitoBean private SpeciesService speciesService;
+    @MockitoBean private BackgroundService backgroundService;
+    @MockitoBean private FeatService featService;
     @MockitoBean private SrdSeedService srdSeedService;
     @MockitoBean private SpellSeedService spellSeedService;
+    @MockitoBean private ConditionSeedService conditionSeedService;
+    @MockitoBean private RuleSectionSeedService ruleSectionSeedService;
+    @MockitoBean private EquipmentItemSeedService equipmentItemSeedService;
+    @MockitoBean private MagicItemSeedService magicItemSeedService;
+    @MockitoBean private CharacterClassSeedService characterClassSeedService;
+    @MockitoBean private SpeciesSeedService speciesSeedService;
+    @MockitoBean private BackgroundSeedService backgroundSeedService;
+    @MockitoBean private FeatSeedService featSeedService;
 
     private StatBlock sampleSb() {
         StatBlock sb = new StatBlock();
@@ -140,6 +153,62 @@ class LibraryControllerTest {
     void shouldSearchSpells() throws Exception {
         when(spellService.search(eq("fire"), isNull(), isNull())).thenReturn(List.of());
         mockMvc.perform(get("/library/spells").param("search", "fire"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldSearchConditions() throws Exception {
+        when(conditionService.search(isNull())).thenReturn(List.of());
+        mockMvc.perform(get("/library/conditions"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldSearchRules() throws Exception {
+        when(ruleSectionService.search(isNull(), isNull())).thenReturn(List.of());
+        mockMvc.perform(get("/library/rules"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldSearchEquipment() throws Exception {
+        when(equipmentItemService.search(isNull(), isNull())).thenReturn(List.of());
+        mockMvc.perform(get("/library/equipment"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldSearchMagicItems() throws Exception {
+        when(magicItemService.search(isNull(), isNull(), isNull())).thenReturn(List.of());
+        mockMvc.perform(get("/library/magic-items"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldSearchClasses() throws Exception {
+        when(characterClassService.search(isNull())).thenReturn(List.of());
+        mockMvc.perform(get("/library/classes"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldSearchSpecies() throws Exception {
+        when(speciesService.search(isNull())).thenReturn(List.of());
+        mockMvc.perform(get("/library/species"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldSearchBackgrounds() throws Exception {
+        when(backgroundService.search(isNull())).thenReturn(List.of());
+        mockMvc.perform(get("/library/backgrounds"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldSearchFeats() throws Exception {
+        when(featService.search(isNull(), isNull())).thenReturn(List.of());
+        mockMvc.perform(get("/library/feats"))
                 .andExpect(status().isOk());
     }
 }

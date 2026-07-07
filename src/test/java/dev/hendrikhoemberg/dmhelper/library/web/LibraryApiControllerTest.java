@@ -1,9 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.library.web;
 
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
-import dev.hendrikhoemberg.dmhelper.library.service.SpellSeedService;
-import dev.hendrikhoemberg.dmhelper.library.service.SrdSeedService;
-import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
+import dev.hendrikhoemberg.dmhelper.library.service.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -20,9 +18,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class LibraryApiControllerTest {
 
     @Autowired private MockMvc mockMvc;
-    @MockitoBean private StatBlockService service;
+    @MockitoBean private StatBlockService statBlockService;
+    @MockitoBean private SpellService spellService;
+    @MockitoBean private ConditionService conditionService;
+    @MockitoBean private RuleSectionService ruleSectionService;
+    @MockitoBean private EquipmentItemService equipmentItemService;
+    @MockitoBean private MagicItemService magicItemService;
+    @MockitoBean private CharacterClassService characterClassService;
+    @MockitoBean private SpeciesService speciesService;
+    @MockitoBean private BackgroundService backgroundService;
+    @MockitoBean private FeatService featService;
     @MockitoBean private SrdSeedService srdSeedService;
     @MockitoBean private SpellSeedService spellSeedService;
+    @MockitoBean private ConditionSeedService conditionSeedService;
+    @MockitoBean private RuleSectionSeedService ruleSectionSeedService;
+    @MockitoBean private EquipmentItemSeedService equipmentItemSeedService;
+    @MockitoBean private MagicItemSeedService magicItemSeedService;
+    @MockitoBean private CharacterClassSeedService characterClassSeedService;
+    @MockitoBean private SpeciesSeedService speciesSeedService;
+    @MockitoBean private BackgroundSeedService backgroundSeedService;
+    @MockitoBean private FeatSeedService featSeedService;
 
     private StatBlock srd(String key) {
         StatBlock sb = new StatBlock();
@@ -31,20 +46,22 @@ class LibraryApiControllerTest {
         return sb;
     }
 
-    private StatBlock custom() {
-        StatBlock sb = new StatBlock();
-        sb.setSource(StatBlock.Source.CUSTOM);
-        sb.setSourceKey("should-not-appear");
-        return sb;
-    }
-
     @Test
-    void listsSortedSrdKeysOnly() throws Exception {
-        when(service.findAll()).thenReturn(List.of(srd("goblin"), custom(), srd("aboleth")));
+    void listsSortedSrdKeysFromAllSources() throws Exception {
+        when(statBlockService.findAll()).thenReturn(List.of(srd("goblin")));
+        when(spellService.findAll()).thenReturn(List.of());
+        when(conditionService.findAll()).thenReturn(List.of());
+        when(ruleSectionService.findAll()).thenReturn(List.of());
+        when(equipmentItemService.findAll()).thenReturn(List.of());
+        when(magicItemService.findAll()).thenReturn(List.of());
+        when(characterClassService.findAll()).thenReturn(List.of());
+        when(speciesService.findAll()).thenReturn(List.of());
+        when(backgroundService.findAll()).thenReturn(List.of());
+        when(featService.findAll()).thenReturn(List.of());
+
         mockMvc.perform(get("/api/v1/library/srd-keys"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0]").value("aboleth"))
-                .andExpect(jsonPath("$[1]").value("goblin"))
-                .andExpect(jsonPath("$.length()").value(2));
+                .andExpect(jsonPath("$[0]").value("goblin"))
+                .andExpect(jsonPath("$.length()").value(1));
     }
 }
