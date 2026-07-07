@@ -62,6 +62,10 @@ class CampaignImportExportRoundTripTest {
                 .filter(m -> m.getCharacterName().equals("Borin")).findFirst().orElseThrow();
         assertThat(reBorin.isActive()).isFalse();
 
+        PartyMember reThia = members.stream()
+                .filter(m -> m.getCharacterName().equals("Thia")).findFirst().orElseThrow();
+        assertThat(reThia.isActive()).isTrue();
+
         List<StatBlock> blocks = statBlockService.findByCampaignId(imported.getId());
         assertThat(blocks).hasSize(1);
         assertThat(blocks.get(0).getSourceKey()).isEqualTo("amber-knight");
