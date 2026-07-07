@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper -- ' + ${sb.name}">DMHelper -- Statblock</title>
+    <script th:src="@{/vendor/alpine.min.js}"></script>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <a href="/library" class="btn btn-ghost">&larr; Back to Library</a>
+                <div style="display: flex; gap: var(--space-sm);">
+                    <th:block th:if="${sb.source.name() == 'SRD'}">
+                        <form hx-post="@{/library/statblocks/{id}/clone(id=${sb.id})}" hx-target="body">
+                            <button type="submit" class="btn btn-primary">Clone &amp; Edit</button>
+                        </form>
+                    </th:block>
+                    <th:block th:if="${sb.source.name() == 'CUSTOM'}">
+                        <a th:href="@{/library/statblocks/{id}/edit(id=${sb.id})}" class="btn btn-primary">Edit</a>
+                        <button class="btn btn-danger"
+                                hx-delete="@{/library/statblocks/{id}(id=${sb.id})}"
+                                hx-confirm="Delete this statblock?"
+                                hx-target="body" hx-swap="outerHTML">Delete</button>
+                    </th:block>
+                </div>
+            </div>
+            <div id="statblock-detail">
+                <th:block th:replace="~{library/_statblock-renderer :: renderer(sb=${sb})}"></th:block>
+            </div>
+        </main>
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>

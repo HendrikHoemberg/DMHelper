@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="statblock-card" th:fragment="spell-card(spell)">
+    <h3 th:text="${spell.name}">Spell Name</h3>
+    <div class="statblock-meta">
+        <span th:if="${spell.level == 0}" class="badge-srd">Cantrip</span>
+        <span th:unless="${spell.level == 0}" class="badge-srd" th:text="'Level ' + ${spell.level}"></span>
+        <span th:text="${spell.school}">School</span>
+        <span th:if="${spell.ritual}">Ritual</span>
+        <span th:if="${spell.concentration}">Concentration</span>
+    </div>
+    <div class="spell-details">
+        <p><strong>Casting Time:</strong> <span th:text="${spell.castingTime}"></span></p>
+        <p><strong>Range:</strong> <span th:text="${spell.range}"></span></p>
+        <p><strong>Components:</strong> <span th:text="${spell.components}"></span></p>
+        <p><strong>Duration:</strong> <span th:text="${spell.duration}"></span></p>
+    </div>
+    <div class="sb-rule-thin" style="margin: var(--space-sm) 0; border-color: var(--color-border);"></div>
+    <div th:utext="${spell.description}"></div>
+    <div th:if="${spell.higherLevel != null and !spell.higherLevel.isBlank()}" style="margin-top: var(--space-sm);">
+        <strong>At Higher Levels:</strong>
+        <span th:utext="${spell.higherLevel}"></span>
+    </div>
+</div>
+
+<div class="card-grid" th:fragment="spell-card-list(spells)" th:if="${spells != null}">
+    <th:block th:if="${spells.isEmpty()}">
+        <div class="empty-state"><p>No spells match your search.</p></div>
+    </th:block>
+    <th:block th:each="spell : ${spells}">
+        <th:block th:replace="~{library/_spell-card :: spell-card(spell=${spell})}"></th:block>
+    </th:block>
+</div>
+</html>

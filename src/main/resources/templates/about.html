@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title>DMHelper -- About</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <h1>About DMHelper</h1>
+            </div>
+            <div class="detail-section">
+                <p>DMHelper is a local-first web application for running D&amp;D 5.5e (2024 rules) campaigns.</p>
+                <h2>Open Source Licenses</h2>
+                <h3>SRD 5.2 Content</h3>
+                <p>The bundled monster statblocks and spell reference data are derived from the D&amp;D Systems Reference Document 5.2 (SRD 5.2), released under the Creative Commons Attribution 4.0 International License (CC-BY-4.0).</p>
+                <p>This product includes material from the SRD 5.2 available at <a href="https://dnd.wizards.com/resources/systems-reference-document">Wizards of the Coast SRD page</a>.</p>
+                <p>SRD 5.2 content is copyright Wizards of the Coast LLC.</p>
+                <p>SRD 5.2 data sourced via the open5e community API (open5e.com).</p>
+                <h2>Frontend Libraries</h2>
+                <p>DMHelper includes htmx, Alpine.js, Konva.js, and commonmark-java, each used under their respective open-source licenses. See <code>VENDOR.md</code> for details.</p>
+            </div>
+        </main>
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>

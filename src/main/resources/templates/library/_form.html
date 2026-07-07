@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="detail-section" th:fragment="form(sb, campaignId)" id="statblock-form">
+    <h2 th:text="${sb == null ? 'Create Custom Statblock' : 'Edit ' + sb.name}">Create Statblock</h2>
+
+    <form th:action="${sb == null ? @{/library/statblocks} : @{/library/statblocks/{id}(id=${sb.id})}}"
+          th:method="${sb == null ? 'post' : 'put'}"
+          hx-target="${sb == null ? '#library-results' : '#statblock-form'}"
+          th:hx-swap="${sb == null ? 'beforeend' : 'outerHTML'}">
+
+        <input type="hidden" name="campaignId" th:value="${campaignId}">
+
+        <div class="form-tabs">
+            <button type="button" class="form-tab active" onclick="switchFormTab(event, 'tab-basic')">Basic</button>
+            <button type="button" class="form-tab" onclick="switchFormTab(event, 'tab-abilities')">Abilities</button>
+            <button type="button" class="form-tab" onclick="switchFormTab(event, 'tab-combat')">Combat</button>
+        </div>
+
+        <div class="form-tab-content active" id="tab-basic">
+            <div class="form-group">
+                <label>Name *</label>
+                <input type="text" name="name" required th:value="${sb?.name}" placeholder="e.g. Goblin Boss">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md);">
+                <div class="form-group"><label>Size</label><input type="text" name="size" th:value="${sb?.size}" placeholder="Medium"></div>
+                <div class="form-group"><label>Type *</label><input type="text" name="type" required th:value="${sb?.type}" placeholder="Humanoid"></div>
+                <div class="form-group"><label>Alignment</label><input type="text" name="alignment" th:value="${sb?.alignment}" placeholder="Neutral Evil"></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+                <div class="form-group"><label>CR *</label><input type="text" name="cr" required th:value="${sb?.cr}" placeholder="1/4" style="width: 120px;"></div>
+                <div class="form-group"><label>AC *</label><input type="number" name="ac" required th:value="${sb?.ac}" placeholder="15" style="width: 80px;"></div>
+            </div>
+            <div class="form-group"><label>HP * (e.g. "7 (2d6)")</label><input type="text" name="hp" required th:value="${sb?.hp}" placeholder="7 (2d6)"></div>
+            <div class="form-group"><label>Speed</label><input type="text" name="speed" th:value="${sb?.speed}" placeholder="30 ft."></div>
+        </div>
+
+        <div class="form-tab-content" id="tab-abilities">
+            <div class="ability-grid">
+                <div class="form-group"><label>STR</label><input type="number" name="strScore" th:value="${sb?.strScore}" value="10"></div>
+                <div class="form-group"><label>DEX</label><input type="number" name="dexScore" th:value="${sb?.dexScore}" value="10"></div>
+                <div class="form-group"><label>CON</label><input type="number" name="conScore" th:value="${sb?.conScore}" value="10"></div>
+                <div class="form-group"><label>INT</label><input type="number" name="intScore" th:value="${sb?.intScore}" value="10"></div>
+                <div class="form-group"><label>WIS</label><input type="number" name="wisScore" th:value="${sb?.wisScore}" value="10"></div>
+                <div class="form-group"><label>CHA</label><input type="number" name="chaScore" th:value="${sb?.chaScore}" value="10"></div>
+            </div>
+        </div>
+
+        <div class="form-tab-content" id="tab-combat">
+            <div class="form-group"><label>Skills</label><input type="text" name="skills" th:value="${sb?.skills}"></div>
+            <div class="form-group"><label>Damage Vulnerabilities</label><input type="text" name="damageVulnerabilities" th:value="${sb?.damageVulnerabilities}"></div>
+            <div class="form-group"><label>Damage Resistances</label><input type="text" name="damageResistances" th:value="${sb?.damageResistances}"></div>
+            <div class="form-group"><label>Damage Immunities</label><input type="text" name="damageImmunities" th:value="${sb?.damageImmunities}"></div>
+            <div class="form-group"><label>Condition Immunities</label><input type="text" name="conditionImmunities" th:value="${sb?.conditionImmunities}"></div>
+            <div class="form-group"><label>Senses</label><input type="text" name="senses" th:value="${sb?.senses}" placeholder="passive Perception 10"></div>
+            <div class="form-group"><label>Languages</label><input type="text" name="languages" th:value="${sb?.languages}"></div>
+            <div class="form-group"><label>Traits (JSON array)</label><textarea name="traits" rows="4" th:text="${sb?.traits}"></textarea></div>
+            <div class="form-group"><label>Actions (JSON array)</label><textarea name="actions" rows="6" th:text="${sb?.actions}"></textarea></div>
+            <div class="form-group"><label>Bonus Actions (JSON array)</label><textarea name="bonusActions" rows="3" th:text="${sb?.bonusActions}"></textarea></div>
+            <div class="form-group"><label>Reactions (JSON array)</label><textarea name="reactions" rows="3" th:text="${sb?.reactions}"></textarea></div>
+            <div class="form-group"><label>Legendary Actions (JSON array)</label><textarea name="legendaryActions" rows="6" th:text="${sb?.legendaryActions}"></textarea></div>
+            <div class="form-group"><label>Legendary Description</label><textarea name="legendaryDescription" rows="2" th:text="${sb?.legendaryDescription}"></textarea></div>
+            <div class="form-group"><label>Lair Actions (JSON array)</label><textarea name="lairActions" rows="3" th:text="${sb?.lairActions}"></textarea></div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-ghost"
+                    th:if="${sb != null}"
+                    hx-get="@{/library/statblocks/{id}(id=${sb.id})}"
+                    hx-target="#statblock-form"
+                    hx-swap="outerHTML">Cancel</button>
+            <button type="submit" class="btn btn-primary" th:text="${sb == null ? 'Create' : 'Save'}">Create</button>
+        </div>
+    </form>
+</div>
+</html>

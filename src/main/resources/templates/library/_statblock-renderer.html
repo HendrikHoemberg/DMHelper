@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="statblock-render" th:fragment="renderer(sb)">
+    <h2 th:text="${sb.name}">Monster Name</h2>
+    <div class="sb-subtitle" th:with="st=((${sb.size} ?: '') + ' ' + (${sb.type} ?: '') + (${sb.alignment} ? ', ' + ${sb.alignment} : ''))" th:text="${st}"></div>
+    <hr class="sb-rule">
+
+    <div class="sb-stat-row">
+        <div><span>Armor Class</span> <span th:text="${sb.ac}">10</span></div>
+        <div><span>Hit Points</span> <span th:text="${sb.hp}">1</span></div>
+        <div><span>Speed</span> <span th:text="${sb.speed}">30 ft.</span></div>
+    </div>
+    <hr class="sb-rule-thin">
+
+    <div class="sb-abilities">
+        <div><span class="score" th:text="${sb.strScore}">10</span><br>STR</div>
+        <div><span class="score" th:text="${sb.dexScore}">10</span><br>DEX</div>
+        <div><span class="score" th:text="${sb.conScore}">10</span><br>CON</div>
+        <div><span class="score" th:text="${sb.intScore}">10</span><br>INT</div>
+        <div><span class="score" th:text="${sb.wisScore}">10</span><br>WIS</div>
+        <div><span class="score" th:text="${sb.chaScore}">10</span><br>CHA</div>
+    </div>
+    <hr class="sb-rule-thin">
+
+    <th:block th:if="${sb.skills != null and !sb.skills.isBlank()}"><div class="sb-props"><dt>Skills</dt> <dd th:text="${sb.skills}"></dd></div></th:block>
+    <th:block th:if="${sb.damageVulnerabilities != null and !sb.damageVulnerabilities.isBlank()}"><div class="sb-props"><dt>Damage Vulnerabilities</dt> <dd th:text="${sb.damageVulnerabilities}"></dd></div></th:block>
+    <th:block th:if="${sb.damageResistances != null and !sb.damageResistances.isBlank()}"><div class="sb-props"><dt>Damage Resistances</dt> <dd th:text="${sb.damageResistances}"></dd></div></th:block>
+    <th:block th:if="${sb.damageImmunities != null and !sb.damageImmunities.isBlank()}"><div class="sb-props"><dt>Damage Immunities</dt> <dd th:text="${sb.damageImmunities}"></dd></div></th:block>
+    <th:block th:if="${sb.conditionImmunities != null and !sb.conditionImmunities.isBlank()}"><div class="sb-props"><dt>Condition Immunities</dt> <dd th:text="${sb.conditionImmunities}"></dd></div></th:block>
+    <div class="sb-props"><dt>Senses</dt> <dd th:text="${sb.senses}"></dd></div>
+    <div class="sb-props"><dt>Languages</dt> <dd th:text="${sb.languages} ?: '--'"></dd></div>
+    <div class="sb-props"><dt>Challenge</dt> <dd th:text="${sb.cr}">0</dd></div>
+    <hr class="sb-rule">
+
+    <th:block th:if="${sb.traits != null and !sb.traits.isBlank()}">
+        <h3>Traits</h3>
+        <div class="sb-ability" th:each="trait : ${sb.traitsParsed}">
+            <div class="sb-ability-name" th:text="${trait.name}">Trait Name</div>
+            <div class="sb-ability-text" th:text="${trait.description}">Description.</div>
+        </div>
+    </th:block>
+
+    <th:block th:if="${sb.actions != null and !sb.actions.isBlank()}">
+        <h3>Actions</h3>
+        <div class="sb-ability" th:each="action : ${sb.actionsParsed}">
+            <div class="sb-ability-name" th:text="${action.name}">Action Name</div>
+            <div class="sb-ability-text" th:text="${action.description}">Description.</div>
+        </div>
+    </th:block>
+
+    <th:block th:if="${sb.bonusActions != null and !sb.bonusActions.isBlank()}">
+        <h3>Bonus Actions</h3>
+        <div class="sb-ability" th:each="ba : ${sb.bonusActionsParsed}">
+            <div class="sb-ability-name" th:text="${ba.name}"></div>
+            <div class="sb-ability-text" th:text="${ba.description}"></div>
+        </div>
+    </th:block>
+
+    <th:block th:if="${sb.reactions != null and !sb.reactions.isBlank()}">
+        <h3>Reactions</h3>
+        <div class="sb-ability" th:each="r : ${sb.reactionsParsed}">
+            <div class="sb-ability-name" th:text="${r.name}"></div>
+            <div class="sb-ability-text" th:text="${r.description}"></div>
+        </div>
+    </th:block>
+
+    <th:block th:if="${sb.legendaryActions != null and !sb.legendaryActions.isBlank()}">
+        <h3>Legendary Actions</h3>
+        <p class="sb-ability-text" th:if="${sb.legendaryDescription != null}" th:text="${sb.legendaryDescription}"></p>
+        <div class="sb-ability" th:each="la : ${sb.legendaryActionsParsed}">
+            <div class="sb-ability-name" th:text="${la.name}"></div>
+            <div class="sb-ability-text" th:text="${la.description}"></div>
+        </div>
+    </th:block>
+
+    <th:block th:if="${sb.lairActions != null and !sb.lairActions.isBlank()}">
+        <h3>Lair Actions</h3>
+        <div class="sb-ability" th:each="la : ${sb.lairActionsParsed}">
+            <div class="sb-ability-name" th:text="${la.name}"></div>
+            <div class="sb-ability-text" th:text="${la.description}"></div>
+        </div>
+    </th:block>
+</div>
+</html>
