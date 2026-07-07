@@ -769,7 +769,7 @@ class StatBlockServiceTest {
     @Test
     void shouldUpdateCustomStatBlock() {
         StatBlock created = createCustom("Original", "1", "Beast", 12, "10");
-        StatBlock updated = service.updateCustom(created.getId(), "Renamed", "3",
+        StatBlock updated = service.updateCustom(created.getId(), "Renamed", "3", "Beast",
                 16, "45", "40 ft.",
                 16, 10, 16, 12, 14, 10,
                 "45", "40 ft.",
@@ -800,6 +800,29 @@ class StatBlockServiceTest {
         assertThatThrownBy(() -> service.delete(srd.getId()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Cannot delete SRD");
+    }
+
+    @Test
+    void shouldPromoteToGlobal() {
+        StatBlock custom = createCustom("Campaign Monster", "2", "Giant", 14, "50");
+        assertThat(custom.getCampaignId()).isNotNull();
+        StatBlock promoted = service.promoteToGlobal(custom.getId());
+        assertThat(promoted.getCampaignId()).isNull();
+        assertThat(promoted.getSource()).isEqualTo(StatBlock.Source.CUSTOM);
+    }
+
+    @Test
+    void shouldNotPromoteSrdToGlobal() {
+        StatBlock srd = new StatBlock();
+        srd.setSource(StatBlock.Source.SRD);
+        srd.setName("SRD Monster");
+        srd.setCr("1");
+        srd.setType("Beast");
+        srd.setHp("10");
+        srd.setAc(12);
+        srd = repository.save(srd);
+        assertThatThrownBy(() -> service.promoteToGlobal(srd.getId()))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -1047,6 +1070,15 @@ public class StatBlockService {
         clone.setLairActions(original.getLairActions());
         return repository.save(clone);
     }
+
+    public StatBlock promoteToGlobal(UUID id) {
+        StatBlock sb = findById(id);
+        if (sb.getSource() != StatBlock.Source.CUSTOM) {
+            throw new IllegalArgumentException("Only custom statblocks can be promoted");
+        }
+        sb.setCampaignId(null);
+        return repository.save(sb);
+    }
 }
 ```
 
@@ -1065,7 +1097,7 @@ srd.setTraits("[{\"name\":\"Nimble Escape\",\"description\":\"Test\"}]");
 - [ ] **Step 3: Run tests**
 
 Run: `./mvnw test -pl . -Dtest=StatBlockServiceTest`
-Expected: All 9 tests pass
+Expected: All 11 tests pass
 
 - [ ] **Step 4: Commit**
 
@@ -1204,6 +1236,7 @@ git add src/main/resources/static/css/app.css && git commit -m "feat: add CSS fo
 - Create: `src/main/resources/templates/library/_card.html`
 - Create: `src/main/resources/templates/library/_statblock-renderer.html`
 - Create: `src/main/resources/templates/library/_form.html`
+- Create: `src/main/resources/templates/about.html`
 
 - [ ] **Step 1: Create library templates directory**
 
@@ -1331,6 +1364,13 @@ Create `src/main/resources/templates/library/_card.html` with both a `card(sb)` 
                     hx-confirm="Delete this statblock?"
                     hx-target="closest .statblock-card"
                     hx-swap="outerHTML">Delete</button>
+            <th:block th:if="${sb.campaignId != null}">
+                <button class="btn btn-ghost"
+                        hx-put="@{/library/statblocks/{id}/promote(id=${sb.id})}"
+                        hx-confirm="Promote to global? It will be available in all campaigns."
+                        hx-target="closest .statblock-card"
+                        hx-swap="outerHTML">Promote to Global</button>
+            </th:block>
         </th:block>
     </div>
 </div>
@@ -1590,10 +1630,45 @@ Create `src/main/resources/templates/library/detail.html`:
 </html>
 ```
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 7: Write About page with SRD attribution**
+
+Create `src/main/resources/templates/about.html`:
+
+```html
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title>DMHelper -- About</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <h1>About DMHelper</h1>
+            </div>
+            <div class="detail-section">
+                <p>DMHelper is a local-first web application for running D&amp;D 5.5e (2024 rules) campaigns.</p>
+                <h2>Open Source Licenses</h2>
+                <h3>SRD 5.2 Content</h3>
+                <p>The bundled monster statblock reference data is derived from the D&amp;D Systems Reference Document 5.2 (SRD 5.2), released under the Creative Commons Attribution 4.0 International License (CC-BY-4.0).</p>
+                <p>This product includes material from the SRD 5.2 available at <a href="https://dnd.wizards.com/resources/systems-reference-document">Wizards of the Coast SRD page</a>.</p>
+                <p>SRD 5.2 content is copyright Wizards of the Coast LLC.</p>
+                <h2>Frontend Libraries</h2>
+                <p>DMHelper includes htmx, Alpine.js, Konva.js, and commonmark-java, each used under their respective open-source licenses. See <code>VENDOR.md</code> for details.</p>
+            </div>
+        </main>
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>
+```
+
+- [ ] **Step 8: Commit**
 
 ```bash
-git add src/main/resources/templates/library/ && git commit -m "feat: add library templates -- list, card, detail, statblock renderer, create/edit form"
+git add src/main/resources/templates/library/ src/main/resources/templates/about.html && git commit -m "feat: add library templates -- list, card, detail, statblock renderer, create/edit form, and about page with SRD attribution"
 ```
 
 ---
@@ -1722,6 +1797,28 @@ class LibraryControllerTest {
         mockMvc.perform(get("/library/statblocks/new"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Create Custom Statblock")));
+    }
+
+    @Test
+    void shouldPromoteStatBlockToGlobal() throws Exception {
+        StatBlock sb = sampleSb();
+        sb.setSource(StatBlock.Source.CUSTOM);
+        sb.setCampaignId(UUID.randomUUID());
+        StatBlock promoted = sampleSb();
+        promoted.setSource(StatBlock.Source.CUSTOM);
+        promoted.setCampaignId(null);
+        when(service.promoteToGlobal(sb.getId())).thenReturn(promoted);
+
+        mockMvc.perform(put("/library/statblocks/{id}/promote", sb.getId())
+                        .header("HX-Request", "true"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldRenderAboutPage() throws Exception {
+        mockMvc.perform(get("/library/about"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("CC-BY-4.0")));
     }
 }
 ```
@@ -1926,6 +2023,19 @@ public class LibraryController {
         return "library/detail";
     }
 
+    @PutMapping("/statblocks/{id}/promote")
+    public String promoteToGlobal(@PathVariable UUID id, Model model) {
+        StatBlock promoted = service.promoteToGlobal(id);
+        enrichStatBlock(promoted);
+        model.addAttribute("sb", promoted);
+        return "library/_card :: card";
+    }
+
+    @GetMapping("/about")
+    public String about() {
+        return "about";
+    }
+
     private void enrichStatBlock(StatBlock sb) {
         sb.setTraitsParsed(parseJsonArray(sb.getTraits()));
         sb.setActionsParsed(parseJsonArray(sb.getActions()));
@@ -1991,7 +2101,7 @@ Edit `src/main/java/dev/hendrikhoemberg/dmhelper/library/data/StatBlock.java` an
 - [ ] **Step 6: Run controller tests**
 
 Run: `./mvnw test -pl . -Dtest=LibraryControllerTest`
-Expected: All 6 tests pass
+Expected: All 8 tests pass
 
 - [ ] **Step 7: Commit**
 
@@ -2668,6 +2778,7 @@ Add nav links between the brand and the right section. Edit the navbar to:
         <nav style="display: flex; gap: var(--space-md);">
             <a href="/campaigns" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Campaigns</a>
             <a href="/library" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Library</a>
+            <a href="/library/about" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">About</a>
         </nav>
     </div>
     <div class="navbar-right">
@@ -2869,9 +2980,28 @@ import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 
 - [ ] **Step 3: Update import for importFromJson**
 
-In `importFromJson()`, after creating the campaign from the DTO, loop through statBlocks and create them:
+In `importFromJson()`, after creating the campaign from the DTO, loop through party and statblocks to import them. Also inject `PartyMemberService` and `StatBlockService` into `CampaignService`:
 
 ```java
+    private final PartyMemberService partyMemberService;
+    private final StatBlockService statBlockService;
+
+    public CampaignService(CampaignRepository repository,
+                           PartyMemberRepository partyMemberRepository,
+                           StatBlockRepository statBlockRepository,
+                           PartyMemberService partyMemberService,
+                           StatBlockService statBlockService) {
+        this.repository = repository;
+        this.partyMemberRepository = partyMemberRepository;
+        this.statBlockRepository = statBlockRepository;
+        this.partyMemberService = partyMemberService;
+        this.statBlockService = statBlockService;
+        this.objectMapper = JsonMapper.builder()
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
+    }
+
     public Campaign importFromJson(String json) {
         // ... existing validation and campaign creation ...
 
@@ -2879,18 +3009,51 @@ In `importFromJson()`, after creating the campaign from the DTO, loop through st
 
         if (dto.party() != null) {
             for (var pmDto : dto.party()) {
-                // Party members not imported in M2 -- skip for now
+                partyMemberService.create(saved.getId(),
+                        pmDto.characterName(), pmDto.playerName(),
+                        pmDto.classAndLevel(), pmDto.ac(), pmDto.maxHp(),
+                        pmDto.initiativeBonus(), pmDto.speed(),
+                        pmDto.passivePerception(), pmDto.passiveInsight(),
+                        pmDto.passiveInvestigation(), pmDto.notes());
             }
         }
         if (dto.statBlocks() != null) {
             for (var sbDto : dto.statBlocks()) {
-                // Custom statblocks from other campaigns need new IDs
-                // For M2: skip import of statblocks (they would need FK resolution)
+                StatBlock sb = statBlockService.createCustom(saved.getId(),
+                        sbDto.name(), sbDto.cr(), sbDto.type(),
+                        sbDto.ac(), sbDto.hp(), sbDto.speed(),
+                        sbDto.strScore(), sbDto.dexScore(), sbDto.conScore(),
+                        sbDto.intScore(), sbDto.wisScore(), sbDto.chaScore(),
+                        null, null,
+                        sbDto.strSave(), sbDto.dexSave(), sbDto.conSave(),
+                        sbDto.intSave(), sbDto.wisSave(), sbDto.chaSave(),
+                        sbDto.skills(),
+                        sbDto.damageVulnerabilities(), sbDto.damageResistances(),
+                        sbDto.damageImmunities(), sbDto.conditionImmunities(),
+                        sbDto.senses(), sbDto.languages());
+                if (sbDto.size() != null) sb.setSize(sbDto.size());
+                if (sbDto.alignment() != null) sb.setAlignment(sbDto.alignment());
+                if (sbDto.traits() != null) sb.setTraits(sbDto.traits());
+                if (sbDto.actions() != null) sb.setActions(sbDto.actions());
+                if (sbDto.bonusActions() != null) sb.setBonusActions(sbDto.bonusActions());
+                if (sbDto.reactions() != null) sb.setReactions(sbDto.reactions());
+                if (sbDto.legendaryActions() != null) sb.setLegendaryActions(sbDto.legendaryActions());
+                if (sbDto.legendaryDescription() != null) sb.setLegendaryDescription(sbDto.legendaryDescription());
+                if (sbDto.lairActions() != null) sb.setLairActions(sbDto.lairActions());
             }
         }
 
         return saved;
     }
+```
+
+Also add the imports:
+```java
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 ```
 
 - [ ] **Step 4: Run existing tests**
@@ -2904,14 +3067,20 @@ Expected: All tests pass (the new repositories must be mocked or injected). If t
 
     @MockitoBean
     private StatBlockRepository statBlockRepository;
+
+    @MockitoBean
+    private PartyMemberService partyMemberService;
+
+    @MockitoBean
+    private StatBlockService statBlockService;
 ```
 
-Note: In a `@DataJpaTest` with `@Import(CampaignService.class)`, the `@MockitoBean` must be used for the new repositories since they are now constructor-injected dependencies. Add these two fields to `CampaignServiceTest`.
+Note: In a `@DataJpaTest` with `@Import(CampaignService.class)`, the `@MockitoBean` must be used for the new repositories and services since they are now constructor-injected dependencies. Add these four fields to `CampaignServiceTest`.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/main/java/dev/hendrikhoemberg/dmhelper/campaign/service/ src/test/java/dev/hendrikhoemberg/dmhelper/campaign/service/CampaignServiceTest.java && git commit -m "feat: extend campaign export with party and custom statblocks; add import placeholders"
+git add src/main/java/dev/hendrikhoemberg/dmhelper/campaign/service/ src/test/java/dev/hendrikhoemberg/dmhelper/campaign/service/CampaignServiceTest.java && git commit -m "feat: extend campaign export/import with full party and custom statblock support"
 ```
 
 ---
@@ -2939,9 +3108,13 @@ Open `http://localhost:8081`:
 
 3. **Export:** Export the campaign -- verify the JSON contains party members and custom statblocks.
 
-4. **Homebrew:** From library, click "+ New Homebrew". Create a monster. Verify it appears in results. Edit it. Delete it.
+4. **Homebrew:** From library, click "+ New Homebrew". Create a monster. Verify it appears in results. Edit it. Delete it. Create another custom, click "Promote to Global" -- verify it's shown without campaign badge.
 
-5. **Performance:** Search for "Goblin" -- verify results appear in <100 ms.
+5. **Attribution:** Click "About" in the navbar. Verify CC-BY-4.0 attribution text is shown.
+
+6. **Import:** Export a campaign with party + custom statblocks, then import it. Verify party members and statblocks appear in the imported campaign.
+
+7. **Performance:** Search for "Goblin" -- verify results appear in <100 ms.
 
 - [ ] **Step 4: Commit**
 
@@ -2962,7 +3135,7 @@ git add -A && git commit -m "chore: final verification -- all tests pass, manual
 | 5 | StatBlockService tests (red) | `library/service/StatBlockServiceTest.java` |
 | 6 | StatBlockService impl (green) | `library/service/StatBlockService.java` |
 | 7 | CSS additions | `static/css/app.css` |
-| 8 | Library templates | `templates/library/{list,detail,_card,_form,_statblock-renderer}.html` |
+| 8 | Library templates + About page | `templates/library/{list,detail,_card,_form,_statblock-renderer}.html`, `templates/about.html` |
 | 9 | LibraryController (red+green) | `library/web/LibraryController.java`, `LibraryControllerTest.java` |
 | 10 | PartyMemberService tests (red) | `party/service/PartyMemberServiceTest.java` |
 | 11 | PartyMemberService impl (green) | `party/service/PartyMemberService.java` |
