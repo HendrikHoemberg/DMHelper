@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="inline-form" th:fragment="form">
+    <h3>New Campaign</h3>
+    <form hx-post="/campaigns"
+          hx-target="previous .card-grid"
+          hx-swap="beforeend">
+        <div class="form-group">
+            <label for="campaignName">Name</label>
+            <input type="text" id="campaignName" name="name" required
+                   placeholder="Campaign name" autofocus>
+        </div>
+        <div class="form-group">
+            <label for="campaignDescription">Description</label>
+            <textarea id="campaignDescription" name="description"
+                      placeholder="Optional campaign description"></textarea>
+        </div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-ghost"
+                    hx-get="/campaigns?fragment=empty-form"
+                    hx-target="closest .inline-form"
+                    hx-swap="outerHTML">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create</button>
+        </div>
+    </form>
+</div>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="card" th:fragment="card(campaign)">
+    <h3>
+        <a th:href="@{/campaigns/{id}(id=${campaign.id})}" th:text="${campaign.name}">Campaign Name</a>
+    </h3>
+    <p th:if="${campaign.description != null and !campaign.description.isBlank()}"
+       th:text="${campaign.description}">Description</p>
+    <div class="card-time"
+         th:text="'Created ' + ${#temporals.format(campaign.createdAt, 'yyyy-MM-dd HH:mm')}">
+        Created date
+    </div>
+    <div class="card-actions">
+        <button class="btn btn-danger"
+                hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
+                hx-confirm="Delete this campaign?"
+                hx-target="closest .card"
+                hx-swap="outerHTML">
+            Delete
+        </button>
+    </div>
+</div>
+</html>

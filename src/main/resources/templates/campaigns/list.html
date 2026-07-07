@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title>DMHelper — Campaigns</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <h1>Campaigns</h1>
+                <button class="btn btn-primary"
+                        hx-get="/campaigns?fragment=form"
+                        hx-target="this"
+                        hx-swap="outerHTML"
+                        th:unless="${campaigns == null || campaigns.isEmpty()}">
+                    + New Campaign
+                </button>
+            </div>
+
+            <th:block th:if="${campaigns == null || campaigns.isEmpty()}">
+                <th:block th:replace="~{common/_empty-state :: empty-state('No campaigns yet. Create your first one!')}"></th:block>
+                <th:block th:replace="~{campaigns/_form :: form}"></th:block>
+            </th:block>
+
+            <div class="card-grid" th:unless="${campaigns == null or campaigns.isEmpty()}">
+                <th:block th:each="campaign : ${campaigns}">
+                    <th:block th:replace="~{campaigns/_card :: card(campaign=${campaign})}"></th:block>
+                </th:block>
+            </div>
+        </main>
+
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>
