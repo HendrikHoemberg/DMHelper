@@ -19,7 +19,7 @@
 | ItemAssignment entity (PC/stash holder) | Full — campaign, optional partyMember (null = stash), optional magicItem/equipmentItem refs, customText, quantity, attuned |
 | LedgerEntry entity (append-only) | Full — campaign, timestamp, optional inGameDate, kind (GOLD/ITEM), direction (GAIN/SPEND), amount, currency, optional itemAssignmentRef, holder (string), note |
 | Treasury CRUD (htmx) | Full — assign items to PCs or stash, view by holder, toggle attunement, change quantity, delete |
-| Attunement warnings | Full — per-PC count, warning at >3 attuned items (warned, not enforced) |
+| Attunement warnings | Full — per-PC count, warning at >=3 attuned items (warned, not enforced) |
 | Party-wide loot overview | Full — show all assignments grouped by holder, with gold balances from ledger |
 | Ledger CRUD (htmx) | Full — record gold/item transactions, view history, derived running balances per holder |
 | Calendar config in Campaign.settings | Full — month names/lengths, weekday names, defaults (Gregorian preset), editable via campaign settings form |
@@ -329,7 +329,7 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID> 
 
     List<LedgerEntry> findByCampaignIdAndHolderOrderByTimestampDesc(UUID campaignId, String holder);
 
-    @Query("SELECT COALESCE(SUM(CASE WHEN le.direction = 'GAIN' THEN le.amount ELSE le.amount.negate() END), 0) " +
+    @Query("SELECT COALESCE(SUM(CASE WHEN le.direction = 'GAIN' THEN le.amount ELSE le.amount * -1 END), 0) " +
            "FROM LedgerEntry le WHERE le.campaign.id = :campaignId AND le.kind = 'GOLD' AND le.holder = :holder " +
            "AND le.currency = :currency")
     BigDecimal computeGoldBalance(UUID campaignId, String holder, String currency);
@@ -1422,7 +1422,7 @@ public class LedgerService {
         UUID id, UUID campaignId, Instant timestamp,
         Integer inGameYear, Integer inGameMonth, Integer inGameDay,
         String kind, String direction, BigDecimal amount, String currency,
-        String holder, String note
+        String holder, String note, UUID itemAssignmentId
     ) {
         public static LedgerEntryDto from(LedgerEntry le) {
             return new LedgerEntryDto(
@@ -1431,7 +1431,8 @@ public class LedgerService {
                 le.getInGameYear(), le.getInGameMonth(), le.getInGameDay(),
                 le.getKind().name(), le.getDirection().name(),
                 le.getAmount(), le.getCurrency(),
-                le.getHolder(), le.getNote()
+                le.getHolder(), le.getNote(),
+                le.getItemAssignmentRef() != null ? le.getItemAssignmentRef().getId() : null
             );
         }
     }
@@ -1830,7 +1831,7 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
 import static org.assertj.core.api.Assertions.*;
@@ -2002,7 +2003,7 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
 import java.math.BigDecimal;
@@ -2112,7 +2113,7 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
 import static org.assertj.core.api.Assertions.*;
@@ -2269,7 +2270,6 @@ Create `treasury/web/TreasuryController.java` per the interface in §6.1. The co
 ```java
 package dev.hendrikhoemberg.dmhelper.treasury.web;
 
-import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.ledger.service.LedgerService;
@@ -2394,7 +2394,7 @@ Create the template files with appropriate Thymeleaf + htmx markup:
 - Quantity badge
 - Attuned badge (if attuned, with a subtle indicator)
 - Action buttons: attune toggle (htmx PUT), quantity change (inline input + htmx PUT), delete (htmx DELETE)
-- If attunement count > 3, include `_attunement-warn` fragment
+- If attunement count >= 3, include `_attunement-warn` fragment
 
 **`treasury/_form.html`** — Add item form fragment (`th:fragment="form"`):
 - Holder select dropdown (party members + "Party Stash" option)
@@ -2405,8 +2405,8 @@ Create the template files with appropriate Thymeleaf + htmx markup:
 - Submit button (htmx POST, swaps to list view)
 
 **`treasury/_attunement-warn.html`** — Warning fragment:
-- Displayed when attunement count > 3 for a PC
-- Shows current count, with text like "3 attuned items (limit 3) — table ruling advised"
+- Displayed when attunement count >= 3 for a PC
+- Shows current count, with text like "3 attuned items — at the attunement limit"
 
 **`treasury/_holder-section.html`** — Fragment for one holder's section (`th:fragment="holderSection"`):
 - Holder name header
