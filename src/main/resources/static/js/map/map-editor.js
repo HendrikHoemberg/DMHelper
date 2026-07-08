@@ -55,6 +55,9 @@ export class MapEditor {
         this.gridLayer = null;
         this.previewLayer = null;
         this.layers = {};   // layer id -> Konva.Layer
+        this.cellIndex = {};   // layer id -> Map<"col,row", Konva.Rect>
+        this.brushSize = 1;
+        this.lastPaintCell = null;   // {col, row} — last painted cell, for stroke interpolation
     }
 
     load() {
@@ -211,6 +214,7 @@ export class MapEditor {
         l.id(id);
         this.stage.add(l);
         this.layers[id] = l;
+        this.cellIndex[id] = new Map();
         return l;
     }
 
@@ -221,6 +225,7 @@ export class MapEditor {
             const kl = this.layers[layerDto.id];
             if (!kl) continue;
             kl.destroyChildren();
+            if (this.cellIndex[layerDto.id]) this.cellIndex[layerDto.id].clear();
 
             if (layerDto.type === 'TERRAIN') {
                 for (const cell of this.expandPrimitives()) {
@@ -250,6 +255,8 @@ export class MapEditor {
             rect.setAttr('_primitive', true);
         } else {
             rect.setAttr('_cell', { col: cell.col, row: cell.row, terrain: cell.terrain });
+            const index = this.cellIndex[konvaLayer.id()];
+            if (index) index.set(`${cell.col},${cell.row}`, rect);
         }
         konvaLayer.add(rect);
         return rect;
@@ -374,6 +381,7 @@ export class MapEditor {
             if (this.activeTool === 'brush') {
                 this.pushUndo();
                 this.drawing = true;
+                this.lastPaintCell = null;
                 this.paintCell(pos.col, pos.row);
             } else if (this.activeTool === 'polygon') {
                 this.polygonPoints.push(this.snapPt(pos.x), this.snapPt(pos.y));
@@ -396,7 +404,7 @@ export class MapEditor {
             if (!this.drawing) return;
 
             if (this.activeTool === 'brush') {
-                this.paintCell(pos.col, pos.row);
+                this.paintStrokeTo(pos.col, pos.row, false);
             } else if (this.activeTool === 'select' && this.marqueeStart) {
                 this.previewMarquee(this.marqueeStart, pos);
             } else if (this.shapeStart) {
@@ -412,6 +420,7 @@ export class MapEditor {
             }
             if (!this.drawing) return;
             this.drawing = false;
+            this.lastPaintCell = null;
 
             const pos = this.cellPos();
             if (this.activeTool === 'select' && this.marqueeStart && pos) {
@@ -512,7 +521,24 @@ export class MapEditor {
 
     /* ---- Brush ---- */
 
-    paintCell(col, row) {
+    setBrushSize(n) {
+        this.brushSize = Math.max(1, Math.min(3, Math.round(n)));
+    }
+
+    /** Cells covered by the brush footprint centered on (col,row), clipped to the grid. */
+    brushFootprint(col, row) {
+        const cells = [];
+        const half = Math.floor((this.brushSize - 1) / 2);
+        for (let dr = -half; dr < this.brushSize - half; dr++) {
+            for (let dc = -half; dc < this.brushSize - half; dc++) {
+                const c = col + dc, r = row + dr;
+                if (c >= 0 && c < this.gridWidth && r >= 0 && r < this.gridHeight) cells.push({ col: c, row: r });
+            }
+        }
+        return cells;
+    }
+
+    paintCell(col, row, { erase = false } = {}) {
         if (col < 0 || col >= this.gridWidth || row < 0 || row >= this.gridHeight) return;
         if (this.isLocked(this.activeLayerId)) return;
         const layerDto = this.layerDto(this.activeLayerId);
@@ -520,21 +546,65 @@ export class MapEditor {
             this.setStatus('The brush paints on the Terrain layer');
             return;
         }
-        const kl = this.layers[this.activeLayerId];
-        if (!kl) return;
 
-        for (const child of kl.getChildren()) {
-            const c = child.getAttr('_cell');
-            if (c && c.col === col && c.row === row) {
-                child.destroy();
-                break;
-            }
+        for (const cell of this.brushFootprint(col, row)) {
+            this.paintOneCell(cell.col, cell.row, erase);
         }
-        if (this.terrain !== DEFAULT_TERRAIN) {   // painting floor = erasing
-            this.addCellRect(kl, { col, row, terrain: this.terrain }, {});
-        }
-        kl.batchDraw();
+        this.lastPaintCell = { col, row };
+        this.layers[this.activeLayerId].batchDraw();
         this.markDirty();
+    }
+
+    paintOneCell(col, row, erase) {
+        const kl = this.layers[this.activeLayerId];
+        const index = this.cellIndex[this.activeLayerId];
+        if (!kl || !index) return;
+
+        const key = `${col},${row}`;
+        const existing = index.get(key);
+        if (existing) {
+            existing.destroy();
+            index.delete(key);
+        }
+        const terrain = erase ? DEFAULT_TERRAIN : this.terrain;
+        if (terrain !== DEFAULT_TERRAIN) {   // painting floor = erasing
+            this.addCellRect(kl, { col, row, terrain }, {});
+        }
+    }
+
+    /** Fills every cell on the line between the last painted cell and (col,row) — keeps
+     *  fast mouse strokes solid instead of leaving gaps between mousemove samples. */
+    paintStrokeTo(col, row, erase) {
+        if (!this.lastPaintCell) {
+            this.paintCell(col, row, { erase });
+            return;
+        }
+        const { col: c0, row: r0 } = this.lastPaintCell;
+        if (c0 === col && r0 === row) return;
+
+        for (const { col: c, row: r } of this.bresenham(c0, r0, col, row)) {
+            for (const cell of this.brushFootprint(c, r)) this.paintOneCell(cell.col, cell.row, erase);
+        }
+        this.lastPaintCell = { col, row };
+        this.layers[this.activeLayerId].batchDraw();
+        this.markDirty();
+    }
+
+    /** Integer grid line between two cells (Bresenham), inclusive of both endpoints. */
+    bresenham(c0, r0, c1, r1) {
+        const pts = [];
+        let dc = Math.abs(c1 - c0), dr = -Math.abs(r1 - r0);
+        let sc = c0 < c1 ? 1 : -1, sr = r0 < r1 ? 1 : -1;
+        let err = dc + dr;
+        let c = c0, r = r0;
+        while (true) {
+            pts.push({ col: c, row: r });
+            if (c === c1 && r === r1) break;
+            const e2 = 2 * err;
+            if (e2 >= dr) { err += dr; c += sc; }
+            if (e2 <= dc) { err += dc; r += sr; }
+        }
+        return pts;
     }
 
     /* ---- Shape tools (rect / circle / line) ---- */
