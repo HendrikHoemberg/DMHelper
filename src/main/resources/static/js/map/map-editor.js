@@ -604,6 +604,13 @@ export class MapEditor {
         window.addEventListener('keyup', (e) => {
             if (e.code === 'Space' && !this.panning) this.stage.draggable(false);
         });
+
+        window.addEventListener('beforeunload', (e) => {
+            if (!this.dirty) return;
+            this.flushSave();
+            e.preventDefault();
+            e.returnValue = '';
+        });
     }
 
     /** Pointer position in cell units, correct under pan/zoom. */
@@ -1380,6 +1387,24 @@ export class MapEditor {
             clearTimeout(this.saveTimer);
             this.saveTimer = setTimeout(() => this.save(), SAVE_DEBOUNCE_MS);
         }
+    }
+
+    /** Best-effort synchronous-ish save for page unload — `keepalive: true` lets the
+     *  request outlive navigation. Note: keepalive requests are capped around 64KB in
+     *  Chrome, so this is a safety net for the gap since the last debounced autosave,
+     *  not a replacement for it — very large maps may still exceed the cap. */
+    flushSave() {
+        if (!this.dirty || !this.document) return;
+        clearTimeout(this.saveTimer);
+        const doc = this.buildDocumentFromCanvas();
+        if (!doc) return;
+        this.dirty = false;
+        fetch(`/api/v1/maps/${this.mapId}/document?expectedVersion=${this.docVersion}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(doc),
+            keepalive: true,
+        }).catch(() => {});
     }
 
     /* ---- Load ---- */
