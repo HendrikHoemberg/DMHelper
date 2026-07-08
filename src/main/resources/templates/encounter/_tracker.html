@@ -86,7 +86,19 @@
             },
 
             loadConditionsCatalog() {
-                this.conditionsCatalog = COMMON_CONDITIONS;
+                fetch('/api/v1/library/conditions')
+                    .then(resp => resp.ok ? resp.json() : Promise.reject())
+                    .then(data => {
+                        this.conditionsCatalog = data.map(c => ({
+                            sourceKey: c.sourceKey,
+                            name: c.name,
+                            description: c.description || '',
+                            defaultDuration: 1,
+                        }));
+                    })
+                    .catch(() => {
+                        this.conditionsCatalog = COMMON_CONDITIONS;
+                    });
             },
 
             async loadActiveEncounter() {

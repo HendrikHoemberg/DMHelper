@@ -88,4 +88,17 @@ public class LibraryApiController {
                 .sorted()
                 .toList();
     }
+
+    public record ConditionSummary(String sourceKey, String name, String description) {
+        public static ConditionSummary from(Condition c) {
+            return new ConditionSummary(c.getSourceKey(), c.getName(), c.getDescription());
+        }
+    }
+
+    @GetMapping("/conditions")
+    public List<ConditionSummary> listConditions() {
+        return conditionService.findAll().stream()
+                .map(ConditionSummary::from)
+                .toList();
+    }
 }

@@ -13,6 +13,14 @@ const TERRAIN_COLORS = {
 const KIND_RING_COLORS = { PC: '#4a9eff', NPC: '#2ecc71', MONSTER: '#e74c3c', OBJECT: '#f39c12' };
 const HP_COLORS = { high: '#2ecc71', mid: '#f39c12', low: '#e74c3c' };
 
+const CONDITION_COLORS = {
+    blinded: '#95a5a6', charmed: '#e91e63', deafened: '#607d8b',
+    exhaustion: '#795548', frightened: '#9c27b0', grappled: '#ff5722',
+    incapacitated: '#9e9e9e', invisible: '#00bcd4', paralyzed: '#ff9800',
+    petrified: '#8d6e73', poisoned: '#4caf50', prone: '#2196f3',
+    restrained: '#ffeb3b', stunned: '#ff5722', unconscious: '#f44336',
+};
+
 const AOE_PRESETS = {
     cone: [{ label: '15 ft', radiusCells: 3 }, { label: '30 ft', radiusCells: 6 },
            { label: '60 ft', radiusCells: 12 }],
@@ -55,6 +63,14 @@ export class BattleMap {
         this.measureLabel = null;
         this.measureStart = null;
 
+        /** @type {Object.<string, Array<{sourceKey: string, name: string, durationRounds: number}>>} */
+        this.tokenConditions = {};
+        this.activeCombatantTokenId = null;
+        this._activeHighlightNode = null;
+
+        /** @type {Object.<string, string>} combatantId -> tokenId */
+        this._combatantTokenMap = {};
+
         this.annotationNodes = [];
         this.annotationDrawing = null;
         this.annotationStartPos = null;
@@ -92,6 +108,7 @@ export class BattleMap {
 
         setupPanAndZoom(this.stage, this.container);
         this.setupEvents();
+        this.setupTrackerListeners();
         await this.fetchMapDocument();
         await this.fetchTokens();
         this.renderGrid();
@@ -160,6 +177,39 @@ export class BattleMap {
                     if (pos) this.addAnnotationPing(pos);
                 }
             }
+        });
+    }
+
+    setupTrackerListeners() {
+        window.addEventListener('tracker-conditions-changed', (e) => {
+            if (!e.detail || !e.detail.combatants) return;
+            this.tokenConditions = {};
+            for (const c of e.detail.combatants) {
+                if (c.tokenId && c.conditions && c.conditions.length > 0) {
+                    this.tokenConditions[c.tokenId] = c.conditions;
+                }
+            }
+            this.renderConditionIndicators();
+        });
+
+        window.addEventListener('tracker-active-turn', (e) => {
+            if (!e.detail) return;
+            this.highlightActiveTurn(e.detail.combatantId);
+        });
+
+        window.addEventListener('tracker-encounter-state', (e) => {
+            if (!e.detail || !e.detail.combatants) return;
+            this.tokenConditions = {};
+            this._combatantTokenMap = {};
+            for (const c of e.detail.combatants) {
+                if (c.tokenId) {
+                    this._combatantTokenMap[c.id] = c.tokenId;
+                    if (c.conditions && c.conditions.length > 0) {
+                        this.tokenConditions[c.tokenId] = c.conditions;
+                    }
+                }
+            }
+            this.renderConditionIndicators();
         });
     }
 
@@ -488,6 +538,76 @@ export class BattleMap {
     setDmMode(dm) {
         this.dmMode = dm;
         this.renderTokens();
+        this.renderConditionIndicators();
+    }
+
+    renderConditionIndicators() {
+        for (const [tokenId, node] of Object.entries(this.tokenNodes)) {
+            node.group.find('.cond-icon').forEach(i => i.destroy());
+            const conditions = this.tokenConditions[tokenId];
+            if (!conditions || conditions.length === 0) continue;
+
+            const s = this.cellSizePx;
+            const token = this.tokens.find(t => t.id === tokenId);
+            if (!token) continue;
+            const tw = token.sizeCols * s;
+            const iconSize = Math.max(8, s * 0.2);
+            const startX = tw - iconSize - 2;
+            const startY = -2;
+
+            for (let i = 0; i < conditions.length; i++) {
+                const color = CONDITION_COLORS[conditions[i].sourceKey] || '#7b68ee';
+                const circle = new Konva.Circle({
+                    name: 'cond-icon',
+                    x: startX - i * (iconSize + 2),
+                    y: startY,
+                    radius: iconSize / 2,
+                    fill: color,
+                    stroke: '#000',
+                    strokeWidth: 1,
+                    listening: false,
+                });
+                node.group.add(circle);
+            }
+        }
+        this.tokenLayer.batchDraw();
+    }
+
+    highlightActiveTurn(combatantId) {
+        if (this._activeHighlightNode) {
+            this._activeHighlightNode.destroy();
+            this._activeHighlightNode = null;
+        }
+        this.activeCombatantTokenId = null;
+        if (!combatantId) return;
+
+        const tokenId = this._combatantTokenMap[combatantId];
+        if (!tokenId) return;
+
+        const node = this.tokenNodes[tokenId];
+        if (!node) return;
+
+        const token = this.tokens.find(t => t.id === tokenId);
+        if (!token) return;
+
+        const s = this.cellSizePx;
+        const tw = token.sizeCols * s;
+        const th = token.sizeRows * s;
+
+        const glow = new Konva.Rect({
+            width: tw + 8, height: th + 8,
+            x: -4, y: -4,
+            stroke: '#ffd700',
+            strokeWidth: 3,
+            cornerRadius: 6,
+            fillEnabled: false,
+            listening: false,
+            name: 'turn-highlight',
+        });
+        node.group.add(glow);
+        this._activeHighlightNode = glow;
+        this.activeCombatantTokenId = tokenId;
+        this.tokenLayer.batchDraw();
     }
 
     applyAoePreset(type, cells) {

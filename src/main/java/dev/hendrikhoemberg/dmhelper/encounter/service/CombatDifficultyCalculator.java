@@ -14,6 +14,10 @@ public class CombatDifficultyCalculator {
 
     public record DifficultyResult(String rating, int adjustedXp, int partyThreshold, String details) {}
 
+    // XP thresholds per character level (Easy, Moderate, Hard, Deadly).
+    // Source: 2014 DMG pg. 82 "Encounter Difficulty XP Per Character" table.
+    // TODO: Replace with 2024 DMG values when available from authoritative source (open5e srd-2024 or SRD 5.2) per §2.3.8.
+    // Currently using 2014 values as a reasonable approximation for prep-time guidance.
     private static final int[] EASY = {25, 50, 75, 125, 250, 300, 350, 450, 550, 600, 800, 1000, 1100, 1250, 1400, 1600, 2000, 2100, 2400, 2800};
     private static final int[] MODERATE = {50, 100, 150, 250, 500, 600, 750, 900, 1100, 1200, 1600, 2000, 2200, 2500, 2800, 3200, 3900, 4100, 4900, 5700};
     private static final int[] HARD = {75, 150, 225, 375, 750, 900, 1100, 1400, 1600, 1900, 2400, 3000, 3400, 3800, 4300, 4800, 5900, 6300, 7300, 8500};

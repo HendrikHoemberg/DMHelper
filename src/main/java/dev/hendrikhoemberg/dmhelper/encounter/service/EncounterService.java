@@ -849,138 +849,224 @@ public class EncounterService {
                 .findByEncounterIdOrderBySortOrderAsc(encounterId).stream()
                 .collect(Collectors.toMap(Combatant::getId, Function.identity()));
 
-        int reconstructedRound = encounter.getRound();
-        int reconstructedTurnIndex = encounter.getActiveTurnIndex();
+        for (Combatant c : combatants.values()) {
+            resetCombatantToBaseline(c);
+        }
+        encounter.setRound(1);
+        encounter.setActiveTurnIndex(-1);
 
         List<CombatLogEntry> entriesToKeep = log.subList(0, log.size() - 1);
         for (CombatLogEntry entry : entriesToKeep) {
-            switch (entry.getType()) {
-                case ROUND_ADVANCE -> reconstructedRound = entry.getRound();
-                case TURN_START -> {
-                    try {
-                        var node = JSON_MAPPER.readTree(entry.getPayload());
-                        reconstructedTurnIndex = node.get("activeTurnIndex").asInt(-1);
-                    } catch (Exception e) {
-                        // ignore malformed turn payload
-                    }
-                }
-                default -> {}
-            }
+            replayEntry(entry, combatants, encounter);
         }
 
-        reverseLogEntry(lastEntry, combatants);
+        resortCombatantsInMemory(combatants, encounter);
 
         for (Combatant c : combatants.values()) {
             combatantRepo.save(c);
         }
 
-        encounter.setRound(reconstructedRound);
-        encounter.setActiveTurnIndex(reconstructedTurnIndex);
         encounter.setLogSequence(entriesToKeep.size());
+        encounterRepo.save(encounter);
 
         combatLogRepo.delete(lastEntry);
     }
 
-    private void reverseLogEntry(CombatLogEntry entry, Map<UUID, Combatant> combatants) {
+    private void resetCombatantToBaseline(Combatant c) {
+        c.setCurrentHp(c.getMaxHp());
+        c.setTempHp(0);
+        c.setDefeated(false);
+        c.setConditionsJson("[]");
+        c.setConcentratingOn(null);
+        c.setConcentrationCheckPending(false);
+        c.setLegendaryActionsUsed(0);
+        c.setLegendaryResistancesUsed(0);
+        c.setInitiative(0);
+        c.setRechargedAbilities("[]");
+    }
+
+    private void replayEntry(CombatLogEntry entry, Map<UUID, Combatant> combatants, Encounter encounter) {
         UUID combatantId;
         try {
             combatantId = UUID.fromString(entry.getCombatantId());
         } catch (IllegalArgumentException e) {
-            return;
+            combatantId = null;
         }
-        Combatant combatant = combatants.get(combatantId);
+        Combatant c = combatantId != null ? combatants.get(combatantId) : null;
 
         switch (entry.getType()) {
+            case TURN_START -> {
+                try {
+                    var node = JSON_MAPPER.readTree(entry.getPayload());
+                    encounter.setActiveTurnIndex(node.get("activeTurnIndex").asInt(-1));
+                } catch (Exception e) {
+                    // ignore malformed payload
+                }
+            }
+            case ROUND_ADVANCE -> {
+                encounter.setRound(entry.getRound());
+            }
+            case INITIATIVE_SET -> {
+                if (c == null) return;
+                try {
+                    var node = JSON_MAPPER.readTree(entry.getPayload());
+                    c.setInitiative(node.get("initiative").asInt(0));
+                } catch (Exception e) {
+                    // ignore malformed payload
+                }
+            }
+            case COMBATANT_REORDERED -> {
+                for (int i = 0; i < combatants.size(); i++) {
+                    // sortOrder will be rebuilt by resortCombatantsInMemory after replay
+                }
+            }
             case DAMAGE -> {
-                if (combatant == null) return;
+                if (c == null) return;
                 try {
                     var node = JSON_MAPPER.readTree(entry.getPayload());
                     int amount = node.get("amount").asInt(0);
-                    combatant.setCurrentHp(combatant.getCurrentHp() - amount);
+                    if (amount < 0) {
+                        int damage = -amount;
+                        int remainingDamage = damage - c.getTempHp();
+                        c.setTempHp(Math.max(0, c.getTempHp() - damage));
+                        if (remainingDamage > 0) {
+                            c.setCurrentHp(Math.max(0, c.getCurrentHp() - remainingDamage));
+                        }
+                    }
                 } catch (Exception e) {
                     // ignore malformed payload
                 }
             }
             case HEAL -> {
-                if (combatant == null) return;
+                if (c == null) return;
                 try {
                     var node = JSON_MAPPER.readTree(entry.getPayload());
                     int amount = node.get("amount").asInt(0);
-                    combatant.setCurrentHp(combatant.getCurrentHp() - amount);
+                    if (amount > 0) {
+                        c.setCurrentHp(Math.min(c.getMaxHp(), c.getCurrentHp() + amount));
+                    }
                 } catch (Exception e) {
                     // ignore malformed payload
                 }
             }
             case TEMP_HP -> {
-                if (combatant == null) return;
+                if (c == null) return;
                 try {
                     var node = JSON_MAPPER.readTree(entry.getPayload());
                     int amount = node.get("amount").asInt(0);
-                    combatant.setTempHp(Math.max(0, combatant.getTempHp() - amount));
+                    c.setTempHp(c.getTempHp() + amount);
                 } catch (Exception e) {
                     // ignore malformed payload
                 }
             }
-            case DEFEATED -> {
-                if (combatant != null) combatant.setDefeated(false);
-            }
-            case REVIVED -> {
-                if (combatant != null) combatant.setDefeated(true);
-            }
             case CONDITION_ADDED -> {
-                if (combatant == null) return;
+                if (c == null) return;
                 try {
                     var node = JSON_MAPPER.readTree(entry.getPayload());
-                    var conditions = JSON_MAPPER.readValue(combatant.getConditionsJson(),
-                            new TypeReference<List<Map<String, Object>>>() {});
-                    String name = node.has("name") ? node.get("name").asText() : null;
-                    String sourceKey = node.has("sourceKey") ? node.get("sourceKey").asText() : null;
-                    conditions.removeIf(c -> {
-                        if (name != null && name.equals(c.get("name"))) return true;
-                        return sourceKey != null && sourceKey.equals(c.get("sourceKey"));
-                    });
-                    combatant.setConditionsJson(JSON_MAPPER.writeValueAsString(conditions));
+                    var conditions = new ArrayList<>(JSON_MAPPER.readValue(c.getConditionsJson(),
+                            new TypeReference<List<Map<String, Object>>>() {}));
+                    Map<String, Object> condition = Map.of(
+                            "sourceKey", node.has("sourceKey") ? node.get("sourceKey").asText() : "",
+                            "durationRounds", node.has("durationRounds") ? node.get("durationRounds").asInt(0) : 0);
+                    conditions.add(condition);
+                    c.setConditionsJson(JSON_MAPPER.writeValueAsString(conditions));
                 } catch (Exception e) {
                     // ignore malformed payload
                 }
             }
             case CONDITION_REMOVED -> {
-                if (combatant == null) return;
+                if (c == null) return;
                 try {
                     var node = JSON_MAPPER.readTree(entry.getPayload());
-                    var conditions = JSON_MAPPER.readValue(combatant.getConditionsJson(),
-                            new TypeReference<List<Map<String, Object>>>() {});
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> condition = JSON_MAPPER.convertValue(node, Map.class);
-                    conditions.add(condition);
-                    combatant.setConditionsJson(JSON_MAPPER.writeValueAsString(conditions));
+                    String sourceKey = node.has("sourceKey") ? node.get("sourceKey").asText() : "";
+                    var conditions = new ArrayList<>(JSON_MAPPER.readValue(c.getConditionsJson(),
+                            new TypeReference<List<Map<String, Object>>>() {}));
+                    conditions.removeIf(cond -> sourceKey.equals(cond.get("sourceKey")));
+                    c.setConditionsJson(JSON_MAPPER.writeValueAsString(conditions));
                 } catch (Exception e) {
                     // ignore malformed payload
                 }
             }
-            case INITIATIVE_SET -> {
-                if (combatant == null) return;
+            case DEFEATED -> {
+                if (c != null) c.setDefeated(true);
+            }
+            case REVIVED -> {
+                if (c != null) c.setDefeated(false);
+            }
+            case CONCENTRATION_SET -> {
+                if (c == null) return;
                 try {
                     var node = JSON_MAPPER.readTree(entry.getPayload());
-                    int previousValue = node.has("previousInitiative") ? node.get("previousInitiative").asInt() : combatant.getInitiative();
-                    combatant.setInitiative(previousValue);
+                    String spellName = node.has("spellName") ? node.get("spellName").asText() : null;
+                    c.setConcentratingOn(spellName != null && !spellName.isEmpty() ? spellName : null);
                 } catch (Exception e) {
                     // ignore malformed payload
                 }
             }
-            case COMBATANT_ADDED -> {
-                if (combatant != null) {
-                    combatants.remove(combatantId);
-                    combatantRepo.delete(combatant);
+            case CONCENTRATION_CHECK -> {
+                if (c != null) c.setConcentrationCheckPending(true);
+            }
+            case CONCENTRATION_LOST -> {
+                if (c != null) {
+                    c.setConcentratingOn(null);
+                    c.setConcentrationCheckPending(false);
                 }
             }
-            case COMBATANT_REMOVED, COMBATANT_REORDERED, CONCENTRATION_SET,
-                 CONCENTRATION_LOST, CONCENTRATION_CHECK, RECHARGE,
-                 LEGENDARY_ACTION, LEGENDARY_RESISTANCE, CONDITION_TICKED,
-                 GROUP_SPLIT, LAIR_ACTION, NOTE,
+            case RECHARGE -> {
+                if (c == null) return;
+                try {
+                    var node = JSON_MAPPER.readTree(entry.getPayload());
+                    boolean recharged = node.has("recharged") && !node.get("recharged").isNull()
+                            && node.get("recharged").asBoolean();
+                    String abilityName = node.has("abilityName") ? node.get("abilityName").asText() : "";
+                    if (recharged && !abilityName.isEmpty()) {
+                        List<String> rechargedList = new ArrayList<>(JSON_MAPPER.readValue(
+                                c.getRechargedAbilities(), new TypeReference<List<String>>() {}));
+                        if (!rechargedList.contains(abilityName)) {
+                            rechargedList.add(abilityName);
+                            c.setRechargedAbilities(JSON_MAPPER.writeValueAsString(rechargedList));
+                        }
+                    }
+                } catch (Exception e) {
+                    // ignore malformed payload
+                }
+            }
+            case LEGENDARY_ACTION -> {
+                if (c != null) c.setLegendaryActionsUsed(c.getLegendaryActionsUsed() + 1);
+            }
+            case LEGENDARY_RESISTANCE -> {
+                if (c != null) c.setLegendaryResistancesUsed(c.getLegendaryResistancesUsed() + 1);
+            }
+            case GROUP_SPLIT -> {
+                if (c != null) c.setGroupId(null);
+            }
+            case CONDITION_TICKED, TURN_END, LAIR_ACTION, NOTE,
                  ENCOUNTER_ACTIVATED, ENCOUNTER_ENDED,
-                 TURN_START, TURN_END, ROUND_ADVANCE -> {
-                // Not reversible via simple mutation — skip
+                 COMBATANT_ADDED, COMBATANT_REMOVED -> {
+                // No combatant state change to replay
+            }
+        }
+    }
+
+    private void resortCombatantsInMemory(Map<UUID, Combatant> combatants, Encounter encounter) {
+        List<Combatant> list = new ArrayList<>(combatants.values());
+        list.sort(Comparator
+                .comparing(Combatant::getInitiative).reversed()
+                .thenComparing(Comparator.comparing(Combatant::getTieBreaker).reversed())
+                .thenComparing(Combatant::getName));
+        for (int i = 0; i < list.size(); i++) {
+            list.get(i).setSortOrder(i);
+        }
+        if (!list.isEmpty()) {
+            int turnIndex = encounter.getActiveTurnIndex();
+            if (turnIndex >= 0 && turnIndex < list.size()) {
+                UUID activeId = list.get(turnIndex).getId();
+                for (int i = 0; i < list.size(); i++) {
+                    if (list.get(i).getId().equals(activeId)) {
+                        encounter.setActiveTurnIndex(i);
+                        break;
+                    }
+                }
             }
         }
     }

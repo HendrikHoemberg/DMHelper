@@ -2,8 +2,10 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <div class="inline-form" th:fragment="form(campaignId, encounter, maps)">
     <h3 th:text="${encounter == null ? 'New Encounter' : 'Edit ' + encounter.name}">New Encounter</h3>
-    <form th:action="${encounter == null ? @{/campaigns/{cid}/encounters(cid=${campaignId})} : @{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${encounter.id})}}"
-          th:method="${encounter == null ? 'post' : 'put'}"
+    <th:block th:with="formAction=${encounter == null ? '/campaigns/' + campaignId + '/encounters' : '/campaigns/' + campaignId + '/encounters/' + encounter.id},
+                      formMethod=${encounter == null ? 'post' : 'put'}">
+    <form th:action="@{${formAction}}"
+          th:method="${formMethod}"
           hx-target="body"
           hx-swap="outerHTML">
         <div class="form-group">
@@ -35,5 +37,6 @@
                     th:text="${encounter == null ? 'Create' : 'Save'}">Create</button>
         </div>
     </form>
+    </th:block>
 </div>
 </html>
