@@ -261,6 +261,24 @@
                     <span x-show="!dmMode">🚫 Player</span>
                 </button>
             </div>
+
+            <div class="tool-group">
+                <button class="tool-btn" :class="{ active: presentingMap }"
+                        @click="sendToTable()"
+                        title="Send current map to player view">
+                    Show to Table
+                </button>
+                <button class="tool-btn"
+                        @click="curtain()"
+                        title="Blank the player screen">
+                    Curtain
+                </button>
+                <button class="tool-btn btn-ghost" style="font-size: var(--text-sm);"
+                        onclick="window.open('/player', '_blank')"
+                        title="Open player view in new tab">
+                    Preview
+                </button>
+            </div>
         </div>
 
         <div class="battle-body">
@@ -391,7 +409,15 @@
                 activeEncounter: null,
                 plannedEncounters: [],
 
+                presentingMap: false,
+                playerViewUrl: window.location.origin + '/player',
+
                 init() {
+                    window.addEventListener('battle-state-changed', () => {
+                        if (this.presentingMap) {
+                            fetch('/api/v1/table/refresh', { method: 'POST' }).catch(() => {});
+                        }
+                    });
                     window.addEventListener('battle-toolchange', (e) => {
                         this.tool = e.detail.tool;
                         this.currentAoEPresets = AOE_PRESETS[this.tool] || [];
@@ -513,6 +539,28 @@
                     this.dmMode = !this.dmMode;
                     window.battleMap?.setDmMode(this.dmMode);
                     window.dispatchEvent(new CustomEvent('dm-mode-changed', { detail: { dmMode: this.dmMode } }));
+                },
+                async sendToTable() {
+                    try {
+                        const resp = await fetch('/api/v1/table/presentation', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ mode: 'MAP', ref: this.currentMapId }),
+                        });
+                        if (resp.ok) {
+                            this.presentingMap = true;
+                        }
+                    } catch (e) {}
+                },
+                async curtain() {
+                    try {
+                        await fetch('/api/v1/table/presentation', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ mode: 'CURTAIN', ref: '' }),
+                        });
+                        this.presentingMap = false;
+                    } catch (e) {}
                 },
                 clearAoe() { window.battleMap?.clearAoeNodes(); },
                 clearAnnotations() { window.battleMap?.clearAnnotations(); },

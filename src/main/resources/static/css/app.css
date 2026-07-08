@@ -721,3 +721,68 @@ body.dm-mode-off {
 
 .lair-action-row { border: 1px dashed var(--color-text-muted); margin: 4px var(--space-md); padding: var(--space-xs); border-radius: var(--radius); display: flex; align-items: center; gap: var(--space-xs); }
 .lair-init { background: var(--color-text-muted); }
+
+/* ==============================
+   Handout Gallery (M7)
+   ============================== */
+
+.handout-card img {
+    object-fit: cover;
+    transition: transform 0.2s ease;
+}
+.handout-card:hover img {
+    transform: scale(1.05);
+}
+
+.handout-overlay {
+    animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ==============================
+   DM Mode — player-safe indicator (M7)
+   ============================== */
+
+body.dm-mode-off {
+    border: 3px solid var(--color-warning);
+    border-top: none;
+}
+
+body.dm-mode-off .dm-only,
+body.dm-mode-off [data-dm-only] {
+    display: none !important;
+}
+
+/* ==============================
+   QR Popover (M7)
+   ============================== */
+
+.hidden { display: none !important; }
+
+#qrPopover {
+    animation: slideIn 0.15s ease;
+}
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==============================
+   Player View send-to-table indicator (M7)
+   ============================== */
+
+.presenting-indicator {
+    padding: 2px 8px;
+    background: var(--color-success);
+    color: var(--color-bg);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}

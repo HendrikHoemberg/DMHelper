@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMHelper — Player View</title>
+    <style>
+        :root { --color-bg: #1b1b3a; --color-text: #e0e0e0; --color-text-muted: #8888b0;
+                --color-surface: #1e2a4a; --color-accent: #7b68ee; --color-border: #2e3055;
+                --color-success: #2ecc71; --color-warning: #f39c12; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--color-bg); color: var(--color-text);
+               font-family: 'Segoe UI', system-ui, sans-serif;
+               display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .pv-canvas-wrap { flex: 1; overflow: hidden; position: relative; background: #0e0e28; }
+        .pv-initiative { display: flex; gap: 8px; padding: 8px 16px; background: var(--color-surface);
+                         border-top: 1px solid var(--color-border); min-height: 48px; align-items: center; overflow-x: auto; }
+        .pv-initiative .combatant-chip { padding: 4px 12px; border-radius: 4px;
+                  border: 1px solid var(--color-border); font-size: 0.875rem;
+                  display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .pv-initiative .combatant-chip.active { border-color: var(--color-accent); background: rgba(123,104,238,0.15); }
+        .pv-initiative .combatant-chip.defeated { opacity: 0.4; text-decoration: line-through; }
+        .pv-curtain { display: flex; align-items: center; justify-content: center; flex: 1;
+                      background: var(--color-bg); color: var(--color-text-muted); font-size: 1.5rem; }
+        .pv-handout { display: flex; align-items: center; justify-content: center; flex: 1;
+                      background: rgba(0,0,0,0.95); }
+        .pv-handout img { max-width: 95vw; max-height: 95vh; object-fit: contain; border-radius: 4px; }
+        .pv-status { position: absolute; bottom: 8px; right: 8px; font-size: 0.7rem;
+                     color: var(--color-text-muted); }
+        .cond-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--color-accent);
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 0.625rem; color: #fff; }
+    </style>
+</head>
+<body>
+    <div id="playerContent">
+        <div class="pv-curtain" id="pvCurtain">
+            <div style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 16px;">🎲</div>
+                <div>Waiting for the DM...</div>
+            </div>
+        </div>
+    </div>
+    <div class="pv-status" id="pvStatus">Disconnected</div>
+
+    <script th:src="@{/vendor/konva.min.js}"></script>
+    <script type="module" th:src="@{/js/player/player-view.js}"></script>
+</body>
+</html>

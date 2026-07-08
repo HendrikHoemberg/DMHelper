@@ -3,19 +3,41 @@
 <nav class="navbar" th:fragment="navbar">
     <div style="display: flex; align-items: center; gap: var(--space-lg);">
         <a href="/campaigns" class="navbar-brand">DMHelper</a>
-        <nav style="display: flex; gap: var(--space-md);">
+        <nav th:if="${campaignId != null}" style="display: flex; gap: var(--space-md);">
+            <a th:href="@{/campaigns/{id}(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Campaign</a>
+            <a th:href="@{/campaigns/{id}/party(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Party</a>
+            <a th:href="@{/campaigns/{id}/maps(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Maps</a>
+            <a th:href="@{/campaigns/{id}/encounters(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Encounters</a>
+            <a th:href="@{/campaigns/{id}/handouts(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Handouts</a>
+        </nav>
+        <nav th:unless="${campaignId != null}" style="display: flex; gap: var(--space-md);">
             <a href="/campaigns" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Campaigns</a>
             <a href="/library" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Library</a>
             <a href="/library/about" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">About</a>
         </nav>
     </div>
     <div class="navbar-right">
+        <a href="/player" target="_blank" class="btn btn-ghost" style="font-size: var(--text-sm);"
+           title="Open player view in a new tab">Player View</a>
+        <button class="btn btn-ghost" style="font-size: var(--text-sm);" id="qrToggle"
+                onclick="document.getElementById('qrPopover').classList.toggle('hidden')"
+                title="Show QR code for player view">QR</button>
+        <div id="qrPopover" class="hidden" style="position: absolute; top: 100%; right: 60px;
+                background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius);
+                padding: var(--space-md); z-index: 200; box-shadow: var(--shadow);">
+            <img th:src="@{/qr/player-view}" alt="Player View QR" width="180" height="180"
+                 style="display: block;">
+            <div style="text-align: center; margin-top: var(--space-xs); font-size: var(--text-sm); color: var(--color-text-muted);">
+                Scan to join
+            </div>
+        </div>
         <label class="dm-toggle">
             <input type="checkbox" id="dmModeCheckbox"
                    onclick="document.body.classList.toggle('dm-mode-off')">
             DM Mode
         </label>
-        <span class="pin-display" id="pinDisplay">PIN: &#x2014;</span>
+        <span class="pin-display" id="pinDisplay"
+              th:text="${pinDisplay}">PIN: -----</span>
     </div>
 </nav>
 </html>

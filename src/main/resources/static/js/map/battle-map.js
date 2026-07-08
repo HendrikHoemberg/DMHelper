@@ -124,6 +124,7 @@ export class BattleMap {
     emitState() {
         this.emit('modestate', { movementMode: this.movementMode, showGrid: this.showGrid });
         this.emit('tokenupdate', { tokens: this.tokens });
+        this.emit('state-changed');
     }
 
     setupEvents() {
@@ -697,6 +698,7 @@ export class BattleMap {
             this.aoeNodes.push(node);
             this.previewLayer.batchDraw();
         }
+        this.syncAoEs();
     }
 
     updateAoeTemplate() {
@@ -708,12 +710,36 @@ export class BattleMap {
         this.drawAoeTemplate(this.aoeStartPos, this.aoeRadius);
     }
 
-    finishAoeTemplate() { this.aoeStartPos = null; }
+    finishAoeTemplate() { this.aoeStartPos = null; this.syncAoEs(); }
 
     clearAoeNodes() {
         for (const node of this.aoeNodes) node.destroy();
         this.aoeNodes = [];
         this.previewLayer.batchDraw();
+        this.syncAoEs();
+    }
+
+    buildAoeTemplates() {
+        const result = [];
+        for (const node of this.aoeNodes) {
+            const type = node.getAttr('name') || node.getAttr('aoeType') || 'sphere';
+            const pos = node.getAbsolutePosition();
+            const width = node.width() || node.radius() * 2 || 0;
+            const cells = Math.round(width / this.cellSizePx);
+            result.push({ type, cells, x: pos.x, y: pos.y });
+        }
+        return result;
+    }
+
+    async syncAoEs() {
+        try {
+            const templates = this.buildAoeTemplates();
+            await fetch('/api/v1/table/aoes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(templates),
+            });
+        } catch (e) {}
     }
 
     /* ---- Measurement ---- */
