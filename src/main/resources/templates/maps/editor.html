@@ -158,6 +158,12 @@
             </div>
 
             <div class="tool-group">
+                <button class="tool-btn" :class="{ active: tool === 'room' }" @click="setTool('room')" title="Room (M)">▢ Room</button>
+                <button class="tool-btn" :class="{ active: tool === 'door' }" @click="setTool('door')" title="Door (D)">▯ Door</button>
+                <button class="tool-btn" :class="{ active: tool === 'region' }" @click="setTool('region')" title="Region (N)">▥ Region</button>
+            </div>
+
+            <div class="tool-group">
                 <button class="tool-btn" @click="undo()" title="Undo (Ctrl+Z)">↩ Undo</button>
                 <button class="tool-btn" @click="redo()" title="Redo (Ctrl+Y)">↪ Redo</button>
             </div>

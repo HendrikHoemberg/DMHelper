@@ -13,7 +13,7 @@ import { floodFillCells } from './flood-fill.js';
 
 const SAVE_DEBOUNCE_MS = 2000;
 const UNDO_MAX = 50;
-const DRAW_TOOLS = ['brush', 'rect', 'circle', 'line', 'polygon', 'fill-rect', 'bucket'];
+const DRAW_TOOLS = ['brush', 'rect', 'circle', 'line', 'polygon', 'fill-rect', 'bucket', 'room', 'door', 'region'];
 
 export class MapEditor {
     /**
@@ -190,15 +190,16 @@ export class MapEditor {
         this.clearShapeSelection();
         this.activeTool = tool;
         this.emit('map-toolchange', { tool });
-        this.setStatus(tool === 'polygon'
-            ? 'Polygon: click vertices, double-click or Enter to close, Esc to cancel'
-            : tool === 'select'
-                ? 'Select: drag a box, Ctrl+C copy, Ctrl+V paste'
-                : tool === 'fill-rect'
-                    ? 'Terrain Rect: drag to fill an area, right-click drag to erase'
-                    : tool === 'bucket'
-                        ? 'Bucket: click a region to fill it with the active terrain, right-click to erase'
-                        : 'Ready');
+        const messages = {
+            polygon: 'Polygon: click vertices, double-click or Enter to close, Esc to cancel',
+            select: 'Select: drag a box, Ctrl+C copy, Ctrl+X cut, Ctrl+V paste, Delete remove',
+            'fill-rect': 'Terrain Rect: drag to fill an area, right-click drag to erase',
+            bucket: 'Bucket: click a region to fill it with the active terrain, right-click to erase',
+            room: 'Room: drag a rectangle — walls the border, floors the interior',
+            door: 'Door: click a cell to place a door',
+            region: 'Region: drag a rectangle filled with the active terrain',
+        };
+        this.setStatus(messages[tool] || 'Ready');
     }
 
     setTerrain(key) {
@@ -462,6 +463,11 @@ export class MapEditor {
                 this.shapeStart = { col: pos.col, row: pos.row };
             } else if (this.activeTool === 'bucket') {
                 this.floodFillAt(pos.col, pos.row, e.evt.button === 2);
+            } else if (this.activeTool === 'room' || this.activeTool === 'region') {
+                this.drawing = true;
+                this.shapeStart = { col: pos.col, row: pos.row };
+            } else if (this.activeTool === 'door') {
+                this.commitDoorPrimitive(pos.col, pos.row);
             }
         });
 
@@ -482,7 +488,7 @@ export class MapEditor {
                 this.previewSelectionMove(pos);
             } else if (this.activeTool === 'select' && this.marqueeStart) {
                 this.previewMarquee(this.marqueeStart, pos);
-            } else if (this.activeTool === 'fill-rect' && this.shapeStart) {
+            } else if (['fill-rect', 'room', 'region'].includes(this.activeTool) && this.shapeStart) {
                 this.previewCellRect(this.shapeStart, { col: pos.col, row: pos.row });
             } else if (this.shapeStart) {
                 this.previewShape(this.shapeStart, { x: this.snapPt(pos.x), y: this.snapPt(pos.y) });
@@ -513,6 +519,10 @@ export class MapEditor {
             }
             if (this.activeTool === 'fill-rect' && this.shapeStart && pos) {
                 this.commitCellRect(this.shapeStart, { col: pos.col, row: pos.row }, e.evt.button === 2);
+            } else if (this.activeTool === 'room' && this.shapeStart && pos) {
+                this.commitRoomPrimitive(this.shapeStart, { col: pos.col, row: pos.row });
+            } else if (this.activeTool === 'region' && this.shapeStart && pos) {
+                this.commitRegionPrimitive(this.shapeStart, { col: pos.col, row: pos.row });
             } else if (this.shapeStart && pos) {
                 this.commitShape(this.shapeStart, { x: this.snapPt(pos.x), y: this.snapPt(pos.y) });
             }
@@ -578,6 +588,9 @@ export class MapEditor {
                 case 'b': this.setTool('brush'); break;
                 case 't': this.setTool('fill-rect'); break;
                 case 'g': this.setTool('bucket'); break;
+                case 'm': this.setTool('room'); break;
+                case 'd': this.setTool('door'); break;
+                case 'n': this.setTool('region'); break;
                 case 'r': this.setTool('rect'); break;
                 case 'c': this.setTool('circle'); break;
                 case 'l': this.setTool('line'); break;
@@ -823,6 +836,49 @@ export class MapEditor {
         this.layers[this.activeLayerId].batchDraw();
         this.markDirty();
         this.setStatus(`Filled ${region.length} cell(s)`);
+    }
+
+    /* ---- Primitive authoring: Room / Door / Region (SPEC §4.3) ---- */
+
+    commitRoomPrimitive(a, b) {
+        if (this.layerDto(this.activeLayerId)?.type !== 'TERRAIN') {
+            this.setStatus('Room/Door/Region primitives apply to the Terrain layer');
+            return;
+        }
+        this.pushUndo();
+        this.syncDocument();
+        this.document.primitives = this.document.primitives || [];
+        this.document.primitives.push({ type: 'ROOM', startCol: a.col, startRow: a.row, endCol: b.col, endRow: b.row });
+        this.renderDocument();
+        this.markDirty();
+    }
+
+    commitRegionPrimitive(a, b) {
+        if (this.layerDto(this.activeLayerId)?.type !== 'TERRAIN') {
+            this.setStatus('Room/Door/Region primitives apply to the Terrain layer');
+            return;
+        }
+        this.pushUndo();
+        this.syncDocument();
+        this.document.primitives = this.document.primitives || [];
+        this.document.primitives.push({
+            type: 'REGION', startCol: a.col, startRow: a.row, endCol: b.col, endRow: b.row, terrain: this.terrain,
+        });
+        this.renderDocument();
+        this.markDirty();
+    }
+
+    commitDoorPrimitive(col, row) {
+        if (this.layerDto(this.activeLayerId)?.type !== 'TERRAIN') {
+            this.setStatus('Room/Door/Region primitives apply to the Terrain layer');
+            return;
+        }
+        this.pushUndo();
+        this.syncDocument();
+        this.document.primitives = this.document.primitives || [];
+        this.document.primitives.push({ type: 'DOOR', startCol: col, startRow: row, endCol: col, endRow: row });
+        this.renderDocument();
+        this.markDirty();
     }
 
     /* ---- Freehand polygon (§4.3) ---- */
