@@ -36,6 +36,7 @@ public class SheetApiController {
             SheetDto existing = sheetService.getSheetDtoByPartyMemberId(memberId);
             UpdateSheetRequest updateReq = new UpdateSheetRequest(
                 request.abilityScores(), request.classLevels(),
+                request.proficiencies(),
                 request.speciesId(), request.backgroundId(),
                 request.featRefs(), null, request.xp()
             );

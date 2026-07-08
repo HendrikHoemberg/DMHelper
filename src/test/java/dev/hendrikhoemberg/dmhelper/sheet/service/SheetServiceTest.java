@@ -101,8 +101,10 @@ class SheetServiceTest {
         var scores = Map.of("str", 15, "dex", 14, "con", 13,
                 "int", 12, "wis", 10, "cha", 8);
         var entry = new ClassLevelEntry("srd-2024_fighter", 1, List.of());
+        Map<String, Object> prof = Map.of("skills", List.of(), "tools", List.of(),
+                "languages", List.of(), "armor", List.of(), "weapons", List.of(), "expertise", List.of());
         var req = new CreateSheetRequest(testMember.getId(), scores,
-                List.of(entry), null, null, List.of(), 0);
+                List.of(entry), prof, null, null, List.of(), 0);
 
         var dto = sheetService.createSheet(req);
 
@@ -132,9 +134,13 @@ class SheetServiceTest {
 
         var scores = Map.of("str", 15, "dex", 14, "con", 13,
                 "int", 12, "wis", 10, "cha", 8);
+        Map<String, Object> prof = new HashMap<>();
+        prof.put("skills", List.of()); prof.put("tools", List.of());
+        prof.put("languages", List.of()); prof.put("armor", List.of());
+        prof.put("weapons", List.of()); prof.put("expertise", List.of());
         var entry = new ClassLevelEntry("srd-2024_fighter", 1, List.of());
         var req = new CreateSheetRequest(testMember.getId(), scores,
-                List.of(entry), null, null, List.of(), 0);
+                List.of(entry), prof, null, null, List.of(), 0);
         var dto = sheetService.createSheet(req);
 
         var levelReq = new LevelUpRequest("srd-2024_fighter", 0, true);
@@ -152,9 +158,13 @@ class SheetServiceTest {
 
         var scores = Map.of("str", 15, "dex", 14, "con", 13,
                 "int", 12, "wis", 10, "cha", 8);
+        Map<String, Object> prof = new HashMap<>();
+        prof.put("skills", List.of()); prof.put("tools", List.of());
+        prof.put("languages", List.of()); prof.put("armor", List.of());
+        prof.put("weapons", List.of()); prof.put("expertise", List.of());
         var entry = new ClassLevelEntry("srd-2024_fighter", 1, List.of());
         var req = new CreateSheetRequest(testMember.getId(), scores,
-                List.of(entry), null, null, List.of(), 0);
+                List.of(entry), prof, null, null, List.of(), 0);
         var dto = sheetService.createSheet(req);
 
         var rested = sheetService.shortRest(dto.id(), 1);
@@ -170,9 +180,13 @@ class SheetServiceTest {
 
         var scores = Map.of("str", 15, "dex", 14, "con", 13,
                 "int", 12, "wis", 10, "cha", 8);
+        Map<String, Object> prof = new HashMap<>();
+        prof.put("skills", List.of()); prof.put("tools", List.of());
+        prof.put("languages", List.of()); prof.put("armor", List.of());
+        prof.put("weapons", List.of()); prof.put("expertise", List.of());
         var entry = new ClassLevelEntry("srd-2024_fighter", 1, List.of());
         var req = new CreateSheetRequest(testMember.getId(), scores,
-                List.of(entry), null, null, List.of(), 0);
+                List.of(entry), prof, null, null, List.of(), 0);
         var dto = sheetService.createSheet(req);
 
         sheetService.shortRest(dto.id(), 1);
@@ -191,9 +205,13 @@ class SheetServiceTest {
 
         var scores = Map.of("str", 15, "dex", 14, "con", 13,
                 "int", 12, "wis", 10, "cha", 8);
+        Map<String, Object> prof = new HashMap<>();
+        prof.put("skills", List.of()); prof.put("tools", List.of());
+        prof.put("languages", List.of()); prof.put("armor", List.of());
+        prof.put("weapons", List.of()); prof.put("expertise", List.of());
         var entry = new ClassLevelEntry("srd-2024_fighter", 1, List.of());
         var req = new CreateSheetRequest(testMember.getId(), scores,
-                List.of(entry), null, null, List.of(), 0);
+                List.of(entry), prof, null, null, List.of(), 0);
         var dto = sheetService.createSheet(req);
 
         var xpDto = sheetService.awardXp(dto.id(), 500);
@@ -209,9 +227,13 @@ class SheetServiceTest {
 
         var scores = Map.of("str", 15, "dex", 14, "con", 13,
                 "int", 12, "wis", 10, "cha", 8);
+        Map<String, Object> prof = new HashMap<>();
+        prof.put("skills", List.of()); prof.put("tools", List.of());
+        prof.put("languages", List.of()); prof.put("armor", List.of());
+        prof.put("weapons", List.of()); prof.put("expertise", List.of());
         var entry = new ClassLevelEntry("srd-2024_fighter", 1, List.of());
         var req = new CreateSheetRequest(testMember.getId(), scores,
-                List.of(entry), null, null, List.of(), 0);
+                List.of(entry), prof, null, null, List.of(), 0);
         var dto = sheetService.createSheet(req);
 
         sheetService.deleteSheet(dto.id());

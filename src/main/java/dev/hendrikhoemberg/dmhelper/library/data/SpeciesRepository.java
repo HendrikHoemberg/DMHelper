@@ -12,4 +12,5 @@ public interface SpeciesRepository extends JpaRepository<Species, UUID>,
         JpaSpecificationExecutor<Species> {
 
     List<Species> findAllByOrderByNameAsc();
+    Species findBySourceKey(String sourceKey);
 }

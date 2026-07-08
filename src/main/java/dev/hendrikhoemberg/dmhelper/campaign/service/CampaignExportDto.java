@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.campaign.service;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.List;
+import java.util.Map;
 
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
@@ -60,7 +61,8 @@ public record CampaignExportDto(
             String characterName, String playerName, String classAndLevel,
             int ac, int maxHp, int initiativeBonus, int speed,
             int passivePerception, int passiveInsight, int passiveInvestigation,
-            String notes, boolean active
+            String notes, boolean active,
+            @JsonInclude(JsonInclude.Include.NON_NULL) SheetExportDto sheet
     ) {
         public static PartyMemberExportDto from(
                 dev.hendrikhoemberg.dmhelper.party.data.PartyMember pm) {
@@ -68,10 +70,44 @@ public record CampaignExportDto(
                     pm.getCharacterName(), pm.getPlayerName(), pm.getClassAndLevel(),
                     pm.getAc(), pm.getMaxHp(), pm.getInitiativeBonus(), pm.getSpeed(),
                     pm.getPassivePerception(), pm.getPassiveInsight(),
-                    pm.getPassiveInvestigation(), pm.getNotes(), pm.isActive()
+                    pm.getPassiveInvestigation(), pm.getNotes(), pm.isActive(),
+                    null
             );
         }
     }
+
+    public record SheetExportDto(
+            Map<String, Object> abilityScores,
+            List<ClassLevelExportDto> classLevels,
+            Map<String, Object> proficiencies,
+            String speciesKey,
+            String backgroundKey,
+            List<String> featRefs,
+            int xp,
+            Map<String, Object> overrides,
+            int hitDiceUsed,
+            List<ResourceExportDto> resources,
+            List<SpellRefExportDto> spells
+    ) {}
+
+    public record ClassLevelExportDto(
+            String classSourceKey,
+            int level,
+            List<Integer> hitDieRolls
+    ) {}
+
+    public record ResourceExportDto(
+            String name,
+            int maxUses,
+            int currentUses,
+            String resetRule
+    ) {}
+
+    public record SpellRefExportDto(
+            String spellKey,
+            boolean prepared,
+            String sourceClass
+    ) {}
 
     public record StatBlockExportDto(
             String sourceKey, String name, String cr, String type,

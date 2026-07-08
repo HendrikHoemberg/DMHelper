@@ -2,6 +2,8 @@ package dev.hendrikhoemberg.dmhelper.sheet.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
+import dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService;
@@ -10,7 +12,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import tools.jackson.databind.ObjectMapper;
 
+import java.util.Arrays;
 import java.util.*;
 
 @Controller
@@ -20,12 +24,19 @@ public class SheetController {
     private final CampaignService campaignService;
     private final SheetService sheetService;
     private final PartyMemberRepository partyMemberRepo;
+    private final SpeciesRepository speciesRepo;
+    private final BackgroundRepository backgroundRepo;
+    private final ObjectMapper mapper = new ObjectMapper();
 
     public SheetController(CampaignService campaignService, SheetService sheetService,
-                           PartyMemberRepository partyMemberRepo) {
+                           PartyMemberRepository partyMemberRepo,
+                           SpeciesRepository speciesRepo,
+                           BackgroundRepository backgroundRepo) {
         this.campaignService = campaignService;
         this.sheetService = sheetService;
         this.partyMemberRepo = partyMemberRepo;
+        this.speciesRepo = speciesRepo;
+        this.backgroundRepo = backgroundRepo;
     }
 
     @ModelAttribute("campaign")
@@ -53,25 +64,63 @@ public class SheetController {
             model.addAttribute("sheet", dto);
         }
         model.addAttribute("hasSheet", hasSheet);
+
+        Campaign campaign = campaignService.findById(campaignId);
+        String levelingMode = "XP";
+        if (campaign.getSettings() != null && !campaign.getSettings().isBlank()) {
+            try {
+                Map<String, Object> settings = mapper.readValue(campaign.getSettings(), Map.class);
+                levelingMode = (String) settings.getOrDefault("levelingMode", "XP");
+            } catch (Exception e) {
+                // use default
+            }
+        }
+        model.addAttribute("levelingMode", levelingMode);
         return "sheet/detail";
+    }
+
+    @GetMapping("/party/{memberId}/sheet/create")
+    public String createForm(@PathVariable UUID campaignId, @PathVariable UUID memberId,
+                              Model model) {
+        PartyMember member = partyMemberRepo.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("Party member not found"));
+        model.addAttribute("member", member);
+        model.addAttribute("campaignId", campaignId);
+        model.addAttribute("speciesList", speciesRepo.findAllByOrderByNameAsc());
+        model.addAttribute("backgroundList", backgroundRepo.findAllByOrderByNameAsc());
+        return "sheet/create";
     }
 
     @PostMapping("/party/{memberId}/sheet")
     public String create(@PathVariable UUID campaignId, @PathVariable UUID memberId,
-                         @RequestParam Map<String, String> params,
+                         @RequestParam(defaultValue = "srd-2024_fighter") String classSourceKey,
+                         @RequestParam(defaultValue = "1") int classLevel,
+                         @RequestParam(defaultValue = "10") int str,
+                         @RequestParam(defaultValue = "10") int dex,
+                         @RequestParam(defaultValue = "10") int con,
+                         @RequestParam(defaultValue = "10") int intScore,
+                         @RequestParam(defaultValue = "10") int wis,
+                         @RequestParam(defaultValue = "10") int cha,
+                         @RequestParam(required = false) UUID speciesId,
+                         @RequestParam(required = false) UUID backgroundId,
                          RedirectAttributes redirectAttributes) {
         try {
             Map<String, Integer> scores = new HashMap<>();
-            scores.put("str", Integer.parseInt(params.getOrDefault("str", "10")));
-            scores.put("dex", Integer.parseInt(params.getOrDefault("dex", "10")));
-            scores.put("con", Integer.parseInt(params.getOrDefault("con", "10")));
-            scores.put("int", Integer.parseInt(params.getOrDefault("int", "10")));
-            scores.put("wis", Integer.parseInt(params.getOrDefault("wis", "10")));
-            scores.put("cha", Integer.parseInt(params.getOrDefault("cha", "10")));
+            scores.put("str", str);
+            scores.put("dex", dex);
+            scores.put("con", con);
+            scores.put("int", intScore);
+            scores.put("wis", wis);
+            scores.put("cha", cha);
 
-            ClassLevelEntry entry = new ClassLevelEntry("srd-2024_fighter", 1, List.of());
+            ClassLevelEntry entry = new ClassLevelEntry(classSourceKey, classLevel, List.of());
+            Map<String, Object> proficiencies = Map.of(
+                    "skills", List.of(), "tools", List.of(),
+                    "languages", List.of(), "armor", List.of(),
+                    "weapons", List.of(), "expertise", List.of()
+            );
             CreateSheetRequest req = new CreateSheetRequest(memberId, scores,
-                    List.of(entry), null, null, List.of(), 0);
+                    List.of(entry), proficiencies, speciesId, backgroundId, List.of(), 0);
             sheetService.createSheet(req);
             redirectAttributes.addFlashAttribute("message", "Character sheet created!");
         } catch (Exception e) {
@@ -152,9 +201,56 @@ public class SheetController {
             scores.put("int", Integer.parseInt(params.getOrDefault("int", "10")));
             scores.put("wis", Integer.parseInt(params.getOrDefault("wis", "10")));
             scores.put("cha", Integer.parseInt(params.getOrDefault("cha", "10")));
-            UpdateSheetRequest req = new UpdateSheetRequest(scores, null, null, null, null, null, -1);
+            UpdateSheetRequest req = new UpdateSheetRequest(scores, null, null, null, null, null, null, -1);
             sheetService.updateSheet(dto.id(), req);
             redirectAttributes.addFlashAttribute("message", "Ability scores updated.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Update failed: " + e.getMessage());
+        }
+        return "redirect:/campaigns/" + campaignId + "/party/" + memberId + "/sheet";
+    }
+
+    @PostMapping("/party/{memberId}/sheet/proficiencies")
+    public String updateProficiencies(@PathVariable UUID campaignId, @PathVariable UUID memberId,
+                                      @RequestParam String skills,
+                                      @RequestParam(defaultValue = "") String expertise,
+                                      @RequestParam(defaultValue = "") String tools,
+                                      @RequestParam(defaultValue = "") String languages,
+                                      RedirectAttributes redirectAttributes) {
+        try {
+            SheetDto dto = sheetService.getSheetDtoByPartyMemberId(memberId);
+            Map<String, Object> prof = new HashMap<>();
+            prof.put("skills", Arrays.asList(skills.split(",\\s*")));
+            prof.put("expertise", expertise.isEmpty() ? List.of() : Arrays.asList(expertise.split(",\\s*")));
+            prof.put("tools", tools.isEmpty() ? List.of() : Arrays.asList(tools.split(",\\s*")));
+            prof.put("languages", languages.isEmpty() ? List.of() : Arrays.asList(languages.split(",\\s*")));
+            prof.put("armor", List.of());
+            prof.put("weapons", List.of());
+            UpdateSheetRequest req = new UpdateSheetRequest(null, null, prof, null, null, null, null, -1);
+            sheetService.updateSheet(dto.id(), req);
+            redirectAttributes.addFlashAttribute("message", "Proficiencies updated.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Update failed: " + e.getMessage());
+        }
+        return "redirect:/campaigns/" + campaignId + "/party/" + memberId + "/sheet";
+    }
+
+    @PostMapping("/party/{memberId}/sheet/overrides")
+    public String updateOverrides(@PathVariable UUID campaignId, @PathVariable UUID memberId,
+                                  @RequestParam String overrideKey,
+                                  @RequestParam String overrideValue,
+                                  RedirectAttributes redirectAttributes) {
+        try {
+            SheetDto dto = sheetService.getSheetDtoByPartyMemberId(memberId);
+            Map<String, Object> overrides = new HashMap<>(dto.overrides());
+            try {
+                overrides.put(overrideKey, Integer.parseInt(overrideValue));
+            } catch (NumberFormatException e) {
+                overrides.put(overrideKey, overrideValue);
+            }
+            UpdateSheetRequest req = new UpdateSheetRequest(null, null, null, null, null, null, overrides, -1);
+            sheetService.updateSheet(dto.id(), req);
+            redirectAttributes.addFlashAttribute("message", "Override updated.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Update failed: " + e.getMessage());
         }

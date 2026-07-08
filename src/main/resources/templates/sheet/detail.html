@@ -17,7 +17,7 @@
             <div class="detail-section">
                 <h2>Overview</h2>
                 <dl>
-                    <dt>Class & Level</dt>
+                    <dt>Class &amp; Level</dt>
                     <dd th:text="${sheet.derivedValues().classAndLevel()}">Fighter 5</dd>
                     <dt>Total Level</dt>
                     <dd th:text="${sheet.derivedValues().totalLevel()}">5</dd>
@@ -27,14 +27,16 @@
                     <dd th:text="${sheet.speciesName() != null ? sheet.speciesName() : '—'}">Human</dd>
                     <dt>Background</dt>
                     <dd th:text="${sheet.backgroundName() != null ? sheet.backgroundName() : '—'}">Soldier</dd>
-                    <dt>XP</dt>
-                    <dd th:text="${sheet.xp()}">6500</dd>
+                    <dt th:if="${levelingMode == null or levelingMode == 'XP'}">XP</dt>
+                    <dd th:if="${levelingMode == null or levelingMode == 'XP'}" th:text="${sheet.xp()}">6500</dd>
+                    <dt th:if="${levelingMode == 'MILESTONE'}">Mode</dt>
+                    <dd th:if="${levelingMode == 'MILESTONE'}">Milestone</dd>
                 </dl>
             </div>
 
             <div class="detail-section">
                 <h2>Ability Scores</h2>
-                <div th:replace="~{sheet/_ability-scores :: abilityScores(sheet=${sheet})}"></div>
+                <div th:replace="~{sheet/_ability-scores :: abilityScores(sheet=${sheet}, campaignId=${campaign.id}, memberId=${member.id})}"></div>
             </div>
 
             <div class="detail-section">
@@ -119,9 +121,7 @@
 
         <div th:unless="${hasSheet}" class="empty-state">
             <p>No character sheet yet.</p>
-            <form th:action="@{/campaigns/{cid}/party/{pid}/sheet(cid=${campaign.id}, pid=${member.id})}" method="post">
-                <button type="submit" class="btn btn-primary">Create Sheet</button>
-            </form>
+            <a th:href="@{/campaigns/{cid}/party/{pid}/sheet/create(cid=${campaign.id}, pid=${member.id})}" class="btn btn-primary">Create Sheet</a>
         </div>
     </main>
 </div>
@@ -132,18 +132,19 @@
         <div class="form-group">
             <label>Class:</label>
             <select name="classSourceKey" required>
-                <option value="srd-2024_barbarian">Barbarian</option>
-                <option value="srd-2024_bard">Bard</option>
-                <option value="srd-2024_cleric">Cleric</option>
-                <option value="srd-2024_druid">Druid</option>
-                <option value="srd-2024_fighter">Fighter</option>
-                <option value="srd-2024_monk">Monk</option>
-                <option value="srd-2024_paladin">Paladin</option>
-                <option value="srd-2024_ranger">Ranger</option>
-                <option value="srd-2024_rogue">Rogue</option>
-                <option value="srd-2024_sorcerer">Sorcerer</option>
-                <option value="srd-2024_warlock">Warlock</option>
-                <option value="srd-2024_wizard">Wizard</option>
+                <option th:each="cl : ${sheet.classLevels()}" th:value="${cl.classSourceKey()}" th:text="${cl.classSourceKey()}">Fighter</option>
+                <option value="srd-2024_barbarian">— New: Barbarian —</option>
+                <option value="srd-2024_bard">— New: Bard —</option>
+                <option value="srd-2024_cleric">— New: Cleric —</option>
+                <option value="srd-2024_druid">— New: Druid —</option>
+                <option value="srd-2024_fighter">— New: Fighter —</option>
+                <option value="srd-2024_monk">— New: Monk —</option>
+                <option value="srd-2024_paladin">— New: Paladin —</option>
+                <option value="srd-2024_ranger">— New: Ranger —</option>
+                <option value="srd-2024_rogue">— New: Rogue —</option>
+                <option value="srd-2024_sorcerer">— New: Sorcerer —</option>
+                <option value="srd-2024_warlock">— New: Warlock —</option>
+                <option value="srd-2024_wizard">— New: Wizard —</option>
             </select>
         </div>
         <div class="form-group">

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — Create Sheet | ' + ${member.characterName}">Create Character Sheet</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-layout">
+        <main class="app-main">
+        <div class="page-header">
+            <h1 th:text="${member.characterName} + ' — Create Character Sheet'">Create Character Sheet</h1>
+            <a th:href="@{/campaigns/{cid}/party/{pid}/sheet(cid=${campaignId}, pid=${member.id})}" class="btn btn-ghost">&larr; Back</a>
+        </div>
+
+        <form th:action="@{/campaigns/{cid}/party/{pid}/sheet(cid=${campaignId}, pid=${member.id})}" method="post" class="card">
+            <h2>Class</h2>
+            <div class="form-group">
+                <label>Class:</label>
+                <select name="classSourceKey" required>
+                    <option value="srd-2024_barbarian">Barbarian</option>
+                    <option value="srd-2024_bard">Bard</option>
+                    <option value="srd-2024_cleric">Cleric</option>
+                    <option value="srd-2024_druid">Druid</option>
+                    <option value="srd-2024_fighter" selected>Fighter</option>
+                    <option value="srd-2024_monk">Monk</option>
+                    <option value="srd-2024_paladin">Paladin</option>
+                    <option value="srd-2024_ranger">Ranger</option>
+                    <option value="srd-2024_rogue">Rogue</option>
+                    <option value="srd-2024_sorcerer">Sorcerer</option>
+                    <option value="srd-2024_warlock">Warlock</option>
+                    <option value="srd-2024_wizard">Wizard</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Starting Level:</label>
+                <input type="number" name="classLevel" value="1" min="1" max="20" class="small-input">
+            </div>
+
+            <h2>Ability Scores</h2>
+            <div class="form-grid">
+                <div class="form-group" th:each="ability : ${{'STR','DEX','CON','INT','WIS','CHA'}}">
+                    <label th:text="${ability}">STR</label>
+                    <input type="number" th:name="${ability.toLowerCase()}" value="10" min="1" max="30" class="small-input">
+                </div>
+            </div>
+
+            <h2>Character Details</h2>
+            <div class="form-group">
+                <label>Species:</label>
+                <select name="speciesId">
+                    <option value="">— None —</option>
+                    <option th:each="s : ${speciesList}" th:value="${s.id}" th:text="${s.name}">Human</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Background:</label>
+                <select name="backgroundId">
+                    <option value="">— None —</option>
+                    <option th:each="b : ${backgroundList}" th:value="${b.id}" th:text="${b.name}">Soldier</option>
+                </select>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Create Sheet</button>
+            </div>
+        </form>
+    </main>
+</div>
+</body>
+</html>

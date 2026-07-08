@@ -44,6 +44,7 @@ public class SheetService {
             UUID partyMemberId,
             Map<String, Integer> abilityScores,
             List<ClassLevelEntry> classLevels,
+            Map<String, Object> proficiencies,
             UUID speciesId,
             UUID backgroundId,
             List<String> featRefs,
@@ -53,12 +54,54 @@ public class SheetService {
     public record UpdateSheetRequest(
             Map<String, Integer> abilityScores,
             List<ClassLevelEntry> classLevels,
+            Map<String, Object> proficiencies,
             UUID speciesId,
             UUID backgroundId,
             List<String> featRefs,
             Map<String, Object> overrides,
             int xp
     ) {}
+
+    private static final int[] XP_THRESHOLDS = {
+            0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000,
+            64000, 85000, 100000, 120000, 140000, 165000, 195000,
+            225000, 265000, 305000, 355000
+    };
+
+    public record XpResult(
+            UUID sheetId,
+            int xp,
+            int level,
+            boolean levelUp
+    ) {}
+
+    public XpResult checkLevelUp(CharacterSheet sheet) {
+        int xp = sheet.getXp();
+        int currentLevel = getTotalLevel(sheet);
+        int newLevel = currentLevel;
+        for (int i = currentLevel + 1; i <= 20 && i < XP_THRESHOLDS.length; i++) {
+            if (xp >= XP_THRESHOLDS[i]) {
+                newLevel = i;
+            } else {
+                break;
+            }
+        }
+        return new XpResult(sheet.getId(), xp, newLevel, newLevel > currentLevel);
+    }
+
+    private int getTotalLevel(CharacterSheet sheet) {
+        try {
+            List<Map<String, Object>> classLevels = mapper.readValue(sheet.getClassLevels(),
+                    mapper.getTypeFactory().constructCollectionType(List.class, Map.class));
+            int total = 0;
+            for (Map<String, Object> entry : classLevels) {
+                total += ((Number) entry.get("level")).intValue();
+            }
+            return total;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
 
     public record ClassLevelEntry(
             String classSourceKey,
@@ -136,14 +179,12 @@ public class SheetService {
         try {
             sheet.setAbilityScores(mapper.writeValueAsString(request.abilityScores()));
             sheet.setClassLevels(mapper.writeValueAsString(request.classLevels()));
-            sheet.setProficiencies(mapper.writeValueAsString(Map.of(
-                    "skills", List.of(),
-                    "tools", List.of(),
-                    "languages", List.of(),
-                    "armor", List.of(),
-                    "weapons", List.of(),
-                    "expertise", List.of()
-            )));
+            sheet.setProficiencies(mapper.writeValueAsString(
+                    request.proficiencies() != null ? request.proficiencies() : Map.of(
+                        "skills", List.of(), "tools", List.of(),
+                        "languages", List.of(), "armor", List.of(),
+                        "weapons", List.of(), "expertise", List.of()
+                    )));
             sheet.setFeatRefs(mapper.writeValueAsString(request.featRefs() != null ? request.featRefs() : List.of()));
             sheet.setOverrides(mapper.writeValueAsString(Map.of()));
             sheet.setSpellSlotsUsed(mapper.writeValueAsString(Map.of()));
@@ -186,6 +227,9 @@ public class SheetService {
             }
             if (request.classLevels() != null) {
                 sheet.setClassLevels(mapper.writeValueAsString(request.classLevels()));
+            }
+            if (request.proficiencies() != null) {
+                sheet.setProficiencies(mapper.writeValueAsString(request.proficiencies()));
             }
             if (request.featRefs() != null) {
                 sheet.setFeatRefs(mapper.writeValueAsString(request.featRefs()));

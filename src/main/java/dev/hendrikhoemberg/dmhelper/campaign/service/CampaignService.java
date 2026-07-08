@@ -6,11 +6,17 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.SerializationFeature;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
-import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
-import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.*;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
+import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
+import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
+import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResource;
+import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResourceRepository;
+import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReference;
+import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReferenceRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
@@ -20,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -36,6 +43,12 @@ public class CampaignService {
     private final QuickNoteRepository quickNoteRepository;
     private final NoteService noteService;
     private final ObjectMapper objectMapper;
+    private final CharacterSheetRepository sheetRepo;
+    private final SheetResourceRepository resourceRepo;
+    private final SheetSpellReferenceRepository spellRefRepo;
+    private final SpeciesRepository speciesRepo;
+    private final BackgroundRepository backgroundRepo;
+    private final SpellRepository spellRepo;
 
     public CampaignService(CampaignRepository repository,
                            PartyMemberRepository partyMemberRepository,
@@ -45,7 +58,13 @@ public class CampaignService {
                            GameMapService gameMapService,
                            NoteRepository noteRepository,
                            QuickNoteRepository quickNoteRepository,
-                           NoteService noteService) {
+                           NoteService noteService,
+                           CharacterSheetRepository sheetRepo,
+                           SheetResourceRepository resourceRepo,
+                           SheetSpellReferenceRepository spellRefRepo,
+                           SpeciesRepository speciesRepo,
+                           BackgroundRepository backgroundRepo,
+                           SpellRepository spellRepo) {
         this.repository = repository;
         this.partyMemberRepository = partyMemberRepository;
         this.statBlockRepository = statBlockRepository;
@@ -55,6 +74,12 @@ public class CampaignService {
         this.noteRepository = noteRepository;
         this.quickNoteRepository = quickNoteRepository;
         this.noteService = noteService;
+        this.sheetRepo = sheetRepo;
+        this.resourceRepo = resourceRepo;
+        this.spellRefRepo = spellRefRepo;
+        this.speciesRepo = speciesRepo;
+        this.backgroundRepo = backgroundRepo;
+        this.spellRepo = spellRepo;
         this.objectMapper = JsonMapper.builder()
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -95,7 +120,7 @@ public class CampaignService {
     public String exportToJson(UUID id) {
         Campaign campaign = findById(id);
         var party = partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(id).stream()
-                .map(CampaignExportDto.PartyMemberExportDto::from).toList();
+                .map(this::toPartyMemberExport).toList();
         var statBlocks = statBlockRepository.findByCampaignIdOrderByNameAsc(id).stream()
                 .map(CampaignExportDto.StatBlockExportDto::from).toList();
         var maps = gameMapService.findByCampaignId(id).stream()
@@ -154,6 +179,9 @@ public class CampaignService {
                 if (!pmDto.active()) {
                     partyMemberService.setActive(member.getId(), false);
                 }
+                if (pmDto.sheet() != null) {
+                    importSheet(member, pmDto.sheet());
+                }
             }
         }
         if (dto.statBlocks() != null) {
@@ -210,5 +238,150 @@ public class CampaignService {
 
         // TODO: import quicknotes once targetId mappings are available
         return saved;
+    }
+
+    private CampaignExportDto.PartyMemberExportDto toPartyMemberExport(PartyMember pm) {
+        var dto = CampaignExportDto.PartyMemberExportDto.from(pm);
+        var sheetOpt = sheetRepo.findByPartyMemberId(pm.getId());
+        if (sheetOpt.isEmpty()) return dto;
+
+        var sheet = sheetOpt.get();
+        CampaignExportDto.SheetExportDto sheetDto = new CampaignExportDto.SheetExportDto(
+                parseJsonMap(sheet.getAbilityScores()),
+                parseSheetClassLevels(sheet.getClassLevels()),
+                parseJsonMap(sheet.getProficiencies()),
+                sheet.getSpecies() != null ? sheet.getSpecies().getSourceKey() : null,
+                sheet.getBackground() != null ? sheet.getBackground().getSourceKey() : null,
+                parseJsonList(sheet.getFeatRefs()),
+                sheet.getXp(),
+                parseJsonMap(sheet.getOverrides()),
+                sheet.getHitDiceUsed(),
+                resourceRepo.findBySheetId(sheet.getId()).stream()
+                        .map(r -> new CampaignExportDto.ResourceExportDto(
+                                r.getName(), r.getMaxUses(), r.getCurrentUses(), r.getResetRule().name()))
+                        .toList(),
+                spellRefRepo.findBySheetId(sheet.getId()).stream()
+                        .map(s -> new CampaignExportDto.SpellRefExportDto(
+                                s.getSpell() != null ? s.getSpell().getSourceKey() : null,
+                                s.isPrepared(), s.getSourceClass()))
+                        .toList()
+        );
+
+        return new CampaignExportDto.PartyMemberExportDto(
+                pm.getCharacterName(), pm.getPlayerName(), pm.getClassAndLevel(),
+                pm.getAc(), pm.getMaxHp(), pm.getInitiativeBonus(), pm.getSpeed(),
+                pm.getPassivePerception(), pm.getPassiveInsight(),
+                pm.getPassiveInvestigation(), pm.getNotes(), pm.isActive(),
+                sheetDto
+        );
+    }
+
+    private void importSheet(PartyMember member, CampaignExportDto.SheetExportDto sheetDto) {
+        CharacterSheet sheet = new CharacterSheet();
+        sheet.setPartyMember(member);
+
+        try {
+            sheet.setAbilityScores(sheetDto.abilityScores() != null ?
+                    objectMapper.writeValueAsString(sheetDto.abilityScores()) : null);
+            sheet.setClassLevels(sheetDto.classLevels() != null ?
+                    objectMapper.writeValueAsString(sheetDto.classLevels()) : null);
+            sheet.setProficiencies(sheetDto.proficiencies() != null ?
+                    objectMapper.writeValueAsString(sheetDto.proficiencies()) : null);
+            sheet.setFeatRefs(sheetDto.featRefs() != null ?
+                    objectMapper.writeValueAsString(sheetDto.featRefs()) : "[]");
+            sheet.setOverrides(sheetDto.overrides() != null ?
+                    objectMapper.writeValueAsString(sheetDto.overrides()) : "{}");
+            sheet.setSpellSlotsUsed("{}");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to deserialize sheet data", e);
+        }
+
+        sheet.setXp(sheetDto.xp());
+        sheet.setHitDiceUsed(sheetDto.hitDiceUsed());
+
+        if (sheetDto.speciesKey() != null) {
+            var species = speciesRepo.findBySourceKey(sheetDto.speciesKey());
+            if (species != null) {
+                sheet.setSpecies(species);
+            } else {
+                System.err.println("WARNING: Unknown species key: " + sheetDto.speciesKey());
+            }
+        }
+        if (sheetDto.backgroundKey() != null) {
+            var background = backgroundRepo.findBySourceKey(sheetDto.backgroundKey());
+            if (background != null) {
+                sheet.setBackground(background);
+            } else {
+                System.err.println("WARNING: Unknown background key: " + sheetDto.backgroundKey());
+            }
+        }
+
+        sheet = sheetRepo.save(sheet);
+
+        if (sheetDto.resources() != null) {
+            for (var resDto : sheetDto.resources()) {
+                SheetResource sr = new SheetResource();
+                sr.setSheet(sheet);
+                sr.setName(resDto.name());
+                sr.setMaxUses(resDto.maxUses());
+                sr.setCurrentUses(resDto.currentUses());
+                sr.setResetRule(SheetResource.ResetRule.valueOf(resDto.resetRule()));
+                resourceRepo.save(sr);
+            }
+        }
+
+        if (sheetDto.spells() != null) {
+            for (var spellDto : sheetDto.spells()) {
+                if (spellDto.spellKey() != null) {
+                    var spell = spellRepo.findBySourceKey(spellDto.spellKey());
+                    if (spell != null) {
+                        SheetSpellReference ref = new SheetSpellReference();
+                        ref.setSheet(sheet);
+                        ref.setSpell(spell);
+                        ref.setPrepared(spellDto.prepared());
+                        ref.setSourceClass(spellDto.sourceClass());
+                        spellRefRepo.save(ref);
+                    } else {
+                        System.err.println("WARNING: Unknown spell key: " + spellDto.spellKey());
+                    }
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseJsonMap(String json) {
+        if (json == null || json.isBlank()) return Map.of();
+        try {
+            return objectMapper.readValue(json, Map.class);
+        } catch (Exception e) {
+            return Map.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> parseJsonList(String json) {
+        if (json == null || json.isBlank()) return List.of();
+        try {
+            return objectMapper.readValue(json, List.class);
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<CampaignExportDto.ClassLevelExportDto> parseSheetClassLevels(String json) {
+        if (json == null || json.isBlank()) return List.of();
+        try {
+            List<Map<String, Object>> raw = objectMapper.readValue(json, List.class);
+            return raw.stream().map(m -> new CampaignExportDto.ClassLevelExportDto(
+                    (String) m.get("classSourceKey"),
+                    ((Number) m.get("level")).intValue(),
+                    m.get("hitDieRolls") instanceof List<?> l ?
+                            l.stream().map(o -> ((Number) o).intValue()).toList() : List.of()
+            )).toList();
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 }

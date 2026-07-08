@@ -1,7 +1,12 @@
-<div th:fragment="abilityScores(sheet)" class="sheet-ability-grid">
-    <div th:each="entry : ${sheet.abilityScores()}" class="sheet-ability">
-        <span class="sheet-ability-name" th:text="${entry.key.toUpperCase()}">STR</span>
-        <span class="sheet-ability-score" th:text="${entry.value}">18</span>
-        <span class="sheet-ability-mod" th:text="${entry.value} / 2 - 5">+4</span>
-    </div>
+<div th:fragment="abilityScores(sheet, campaignId, memberId)" class="sheet-ability-grid">
+    <form th:action="@{/campaigns/{cid}/party/{pid}/sheet/abilities(cid=${campaignId}, pid=${memberId})}"
+          method="post" class="inline-form">
+        <div th:each="entry : ${sheet.abilityScores()}" class="sheet-ability">
+            <label class="sheet-ability-name" th:text="${entry.key.toUpperCase()}">STR</label>
+            <input type="number" th:name="${entry.key}" th:value="${entry.value}"
+                   min="1" max="30" class="ability-input small-input">
+            <span class="sheet-ability-mod" th:text="${(entry.value - 10) / 2}">+4</span>
+        </div>
+        <button type="submit" class="btn btn-ghost btn-sm">Save Scores</button>
+    </form>
 </div>

@@ -12,4 +12,5 @@ public interface BackgroundRepository extends JpaRepository<Background, UUID>,
         JpaSpecificationExecutor<Background> {
 
     List<Background> findAllByOrderByNameAsc();
+    Background findBySourceKey(String sourceKey);
 }

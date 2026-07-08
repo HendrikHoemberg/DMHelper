@@ -16,6 +16,8 @@ public interface SpellRepository extends JpaRepository<Spell, UUID>,
 
     boolean existsBySourceKey(String sourceKey);
 
+    Spell findBySourceKey(String sourceKey);
+
     @Query("select count(s) from Spell s where s.school is not null and s.school <> ''")
     long countWithSchool();
 }
