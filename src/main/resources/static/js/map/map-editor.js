@@ -585,12 +585,7 @@ export class MapEditor {
                 case 'backspace':
                     if (this.shapeSelection) {
                         e.preventDefault();
-                        this.pushUndo();
-                        const layer = this.shapeSelection.getLayer();
-                        this.shapeSelection.destroy();
-                        this.clearShapeSelection();
-                        layer.batchDraw();
-                        this.markDirty();
+                        this.deleteShapeSelection();
                     } else if (this.selection) {
                         e.preventDefault();
                         this.deleteSelectionContents();
@@ -1145,6 +1140,7 @@ export class MapEditor {
         this.transformer.nodes([node]);
         this.transformer.getLayer().batchDraw();
         this.setStatus('Shape selected — drag to move, handles to resize, Delete to remove, double-click to edit label');
+        this.emit('map-shapeselect', { shape: { ...node.getAttr('_shape') } });
     }
 
     clearShapeSelection() {
@@ -1157,6 +1153,7 @@ export class MapEditor {
             this.transformer.nodes([]);
             this.transformer.getLayer()?.batchDraw();
         }
+        this.emit('map-shapeselect', { shape: null });
     }
 
     /** Reads the node's current on-screen transform (position + scale) back into its
@@ -1190,6 +1187,52 @@ export class MapEditor {
             }
         }
         node.setAttr('_shape', shape);
+    }
+
+    setShapeFill(color) {
+        if (!this.shapeSelection) return;
+        this.pushUndo();
+        const shape = this.shapeSelection.getAttr('_shape');
+        shape.fill = color;
+        this.shapeSelection.setAttr('_shape', shape);
+        this.shapeSelection.fill(color);
+        this.shapeSelection.getLayer().batchDraw();
+        this.markDirty();
+    }
+
+    setShapeStroke(color) {
+        if (!this.shapeSelection) return;
+        this.pushUndo();
+        const shape = this.shapeSelection.getAttr('_shape');
+        shape.stroke = color;
+        this.shapeSelection.setAttr('_shape', shape);
+        this.shapeSelection.stroke(color);
+        this.shapeSelection.getLayer().batchDraw();
+        this.markDirty();
+    }
+
+    deleteShapeSelection() {
+        if (!this.shapeSelection) return;
+        this.pushUndo();
+        const layer = this.shapeSelection.getLayer();
+        this.shapeSelection.destroy();
+        this.clearShapeSelection();
+        layer.batchDraw();
+        this.markDirty();
+    }
+
+    setShapeLabel(text) {
+        if (!this.shapeSelection) return;
+        const shape = this.shapeSelection.getAttr('_shape');
+        const newLabel = (text || '').trim();
+        if (newLabel === (shape.label || '')) return;
+        this.pushUndo();
+        shape.label = newLabel;
+        this.shapeSelection.setAttr('_shape', shape);
+        this.syncDocument();
+        this.clearShapeSelection();
+        this.renderDocument();
+        this.markDirty();
     }
 
     /** Opens a floating text input over the shape's label anchor (its first point,

@@ -42,11 +42,46 @@
             border-color: var(--color-accent);
             color: #fff;
         }
+        .editor-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
         .editor-canvas-wrap {
             flex: 1;
             overflow: hidden;
             position: relative;
             background: #0a0a1a;
+        }
+        .editor-sidebar {
+            width: 220px;
+            flex-shrink: 0;
+            overflow-y: auto;
+            background: var(--color-surface);
+            border-left: 1px solid var(--color-border);
+            padding: var(--space-sm);
+        }
+        .sidebar-section {
+            margin-bottom: var(--space-md);
+        }
+        .sidebar-section h3 {
+            font-size: var(--text-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--color-text-muted);
+            margin: 0 0 var(--space-xs);
+        }
+        .sidebar-field {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-xs);
+            font-size: var(--text-sm);
+            margin-bottom: var(--space-xs);
+        }
+        .sidebar-field input[type="text"] {
+            flex: 1;
+            min-width: 0;
         }
         .editor-statusbar {
             display: flex;
@@ -122,24 +157,46 @@
                 <button class="tool-btn" @click="redo()" title="Redo (Ctrl+Y)">↪ Redo</button>
             </div>
 
-            <div class="tool-group" style="border-right: none; margin-left: auto;">
-                <template x-for="l in layerList" :key="l.id">
-                    <div class="layer-item" :class="{ active: activeLayer === l.id }">
-                        <span class="layer-name" @click="setLayer(l.id)" x-text="l.name"></span>
-                        <button @click="toggleVisible(l.id)"
-                                :title="layers[l.id].visible ? 'Hide layer' : 'Show layer'"
-                                x-text="layers[l.id].visible ? '👁' : '🚫'"></button>
-                        <button @click="toggleLocked(l.id)"
-                                :title="layers[l.id].locked ? 'Unlock layer' : 'Lock layer'"
-                                x-text="layers[l.id].locked ? '🔒' : '🔓'"></button>
-                    </div>
-                </template>
+        </div>
+
+        <div class="editor-body">
+            <div class="editor-canvas-wrap" id="editorCanvasWrap">
+                <!-- Konva stage mounts here -->
+            </div>
+
+            <div class="editor-sidebar">
+                <div class="sidebar-section">
+                    <h3>Layers</h3>
+                    <template x-for="l in layerList" :key="l.id">
+                        <div class="layer-item" :class="{ active: activeLayer === l.id }">
+                            <span class="layer-name" @click="setLayer(l.id)" x-text="l.name"></span>
+                            <button @click="toggleVisible(l.id)"
+                                    :title="layers[l.id].visible ? 'Hide layer' : 'Show layer'"
+                                    x-text="layers[l.id].visible ? '👁' : '🚫'"></button>
+                            <button @click="toggleLocked(l.id)"
+                                    :title="layers[l.id].locked ? 'Unlock layer' : 'Lock layer'"
+                                    x-text="layers[l.id].locked ? '🔒' : '🔓'"></button>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="sidebar-section" x-show="selectedShape" style="display: none;">
+                    <h3>Shape</h3>
+                    <label class="sidebar-field">Fill
+                        <input type="color" x-model="selectedShape.fill" @change="applyShapeFill()">
+                    </label>
+                    <label class="sidebar-field">Stroke
+                        <input type="color" x-model="selectedShape.stroke" @change="applyShapeStroke()">
+                    </label>
+                    <label class="sidebar-field">Label
+                        <input type="text" x-model="selectedShape.label" @change="applyShapeLabel()" placeholder="Label…">
+                    </label>
+                    <button class="btn btn-ghost" style="width: 100%; margin-top: var(--space-xs);" @click="deleteShape()">Delete shape</button>
+                </div>
             </div>
         </div>
 
-        <div class="editor-canvas-wrap" id="editorCanvasWrap">
-            <!-- Konva stage mounts here -->
-        </div>
+        <div class="editor-statusbar">
 
         <div class="editor-statusbar">
             <span id="statusMessage">Ready</span>
@@ -175,6 +232,7 @@
                     objects: { visible: true, locked: false },
                     annotations: { visible: true, locked: false },
                 },
+                selectedShape: null,
                 init() {
                     window.addEventListener('map-toolchange', (e) => { this.tool = e.detail.tool; });
                     window.addEventListener('map-palette', (e) => {
@@ -185,12 +243,17 @@
                             if (this.layers[id]) Object.assign(this.layers[id], state);
                         }
                     });
+                    window.addEventListener('map-shapeselect', (e) => { this.selectedShape = e.detail.shape; });
                 },
                 setTool(t) { window.mapEditor?.setTool(t); },
                 applyTerrain() { window.mapEditor?.setTerrain(this.terrain); },
                 setLayer(id) { this.activeLayer = id; window.mapEditor?.setLayer(id); },
                 toggleVisible(id) { window.mapEditor?.toggleLayerVisible(id); },
                 toggleLocked(id) { window.mapEditor?.toggleLayerLocked(id); },
+                applyShapeFill() { window.mapEditor?.setShapeFill(this.selectedShape.fill); },
+                applyShapeStroke() { window.mapEditor?.setShapeStroke(this.selectedShape.stroke); },
+                applyShapeLabel() { window.mapEditor?.setShapeLabel(this.selectedShape.label); },
+                deleteShape() { window.mapEditor?.deleteShapeSelection(); },
                 toggleSnap() { this.snap = !this.snap; window.mapEditor?.setSnap(this.snap); },
                 undo() { window.mapEditor?.undo(); },
                 redo() { window.mapEditor?.redo(); },
