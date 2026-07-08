@@ -61,20 +61,23 @@ public class PartyMemberService {
     }
 
     public PartyMember update(UUID id, String characterName, String playerName,
-                              String classAndLevel, int ac, int maxHp, int initiativeBonus,
-                              int speed, int passivePerception, int passiveInsight,
-                              int passiveInvestigation, String notes) {
+                               String classAndLevel, int ac, int maxHp, int initiativeBonus,
+                               int speed, int passivePerception, int passiveInsight,
+                               int passiveInvestigation, String notes) {
         PartyMember pm = findById(id);
         pm.setCharacterName(characterName);
         pm.setPlayerName(playerName);
         pm.setClassAndLevel(classAndLevel);
-        pm.setAc(ac);
-        pm.setMaxHp(maxHp);
-        pm.setInitiativeBonus(initiativeBonus);
-        pm.setSpeed(speed);
-        pm.setPassivePerception(passivePerception);
-        pm.setPassiveInsight(passiveInsight);
-        pm.setPassiveInvestigation(passiveInvestigation);
+        // Preserve sheet-derived combat fields when a character sheet exists
+        if (pm.getCharacterSheet() == null) {
+            pm.setAc(ac);
+            pm.setMaxHp(maxHp);
+            pm.setInitiativeBonus(initiativeBonus);
+            pm.setSpeed(speed);
+            pm.setPassivePerception(passivePerception);
+            pm.setPassiveInsight(passiveInsight);
+            pm.setPassiveInvestigation(passiveInvestigation);
+        }
         pm.setNotes(notes);
         return repository.save(pm);
     }
