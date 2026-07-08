@@ -786,3 +786,147 @@ body.dm-mode-off [data-dm-only] {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.6; }
 }
+
+/* ==============================
+   Notes & Wiki (M8)
+   ============================== */
+
+.note-body {
+    line-height: 1.8;
+    font-size: var(--text-base);
+}
+
+.note-body h1, .note-body h2, .note-body h3 {
+    color: var(--color-text);
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-sm);
+}
+
+.note-body h1 { font-size: var(--text-2xl); }
+.note-body h2 { font-size: var(--text-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-xs); }
+.note-body h3 { font-size: var(--text-lg); }
+
+.note-body p {
+    margin-bottom: var(--space-md);
+}
+
+.note-body ul, .note-body ol {
+    margin-bottom: var(--space-md);
+    padding-left: var(--space-lg);
+}
+
+.note-body li {
+    margin-bottom: var(--space-xs);
+}
+
+.note-body code {
+    background: var(--color-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.note-body pre {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: var(--space-md);
+    overflow-x: auto;
+    margin-bottom: var(--space-md);
+}
+
+.note-body pre code {
+    background: none;
+    padding: 0;
+}
+
+.note-body blockquote {
+    border-left: 3px solid var(--color-accent);
+    padding-left: var(--space-md);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-md);
+}
+
+.note-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--space-md);
+}
+
+.note-body th, .note-body td {
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--color-border);
+    text-align: left;
+}
+
+.note-body th {
+    background: var(--color-surface-hover);
+    font-weight: 600;
+}
+
+.note-body img {
+    max-width: 100%;
+    border-radius: var(--radius);
+}
+
+/* Wiki-link styles */
+.wiki-link {
+    color: var(--color-accent);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--color-accent);
+}
+
+.wiki-link:hover {
+    color: var(--color-accent-hover);
+    border-bottom-style: solid;
+}
+
+.wiki-link-resolved {
+    /* default */
+}
+
+.wiki-link-broken {
+    color: var(--color-danger);
+    border-bottom-color: var(--color-danger);
+    cursor: help;
+}
+
+/* Quicknotes strip */
+.quicknotes-strip {
+    padding: 0;
+}
+
+.quicknote-row:hover {
+    background: var(--color-surface-hover);
+}
+
+/* Note type filter bar */
+.note-type-bar {
+    display: flex;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-md);
+}
+
+.note-type-chip {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--text-sm);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all var(--transition);
+}
+
+.note-type-chip:hover {
+    border-color: var(--color-accent);
+    color: var(--color-text);
+}
+
+.note-type-chip.active {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+}
