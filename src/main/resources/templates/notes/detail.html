@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — ' + ${note.title}">DMHelper — Note</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <h1 th:text="${note.title}">Note Title</h1>
+                <a th:href="@{/campaigns/{id}/notes(id=${campaignId})}" class="btn btn-ghost">&larr; Notes</a>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-meta">
+                    <span class="badge" th:text="${note.type}">TYPE</span>
+                    <span style="margin-left: var(--space-md);"
+                          th:text="'Created ' + ${#temporals.format(note.createdAt, 'yyyy-MM-dd HH:mm')}">Date</span>
+                    <span th:if="${note.tags != null and !note.tags.isBlank()}"
+                          style="margin-left: var(--space-md); color: var(--color-text-muted);"
+                          th:text="'Tags: ' + ${note.tags}">Tags</span>
+                </div>
+
+                <div class="note-body" th:utext="${renderedBody}">
+                    Rendered body here
+                </div>
+
+                <div class="detail-actions" style="margin-top: var(--space-lg);">
+                    <a th:href="@{/campaigns/{cid}/notes/{nid}/edit(cid=${campaignId}, nid=${note.id})}"
+                       class="btn">Edit</a>
+                    <button class="btn btn-danger"
+                            hx-delete="@{/campaigns/{cid}/notes/{nid}(cid=${campaignId}, nid=${note.id})}"
+                            hx-confirm="Delete this note?"
+                            hx-target="body" hx-swap="outerHTML">
+                        Delete
+                    </button>
+                </div>
+            </div>
+
+            <div th:if="${not #lists.isEmpty(backlinks)}" class="detail-section" style="margin-top: var(--space-lg);">
+                <h2>Referenced By</h2>
+                <ul style="list-style: none; padding: 0;">
+                    <li th:each="bl : ${backlinks}" style="padding: var(--space-xs) 0;">
+                        <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaignId}, nid=${bl.id})}"
+                           th:text="${bl.title}">Backlink</a>
+                        <span class="badge" th:text="${bl.type}" style="margin-left: var(--space-sm); font-size: 0.7rem;">TYPE</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="detail-section" style="margin-top: var(--space-lg);">
+                <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='NOTE', targetId=${note.id})}"></th:block>
+            </div>
+        </main>
+
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>

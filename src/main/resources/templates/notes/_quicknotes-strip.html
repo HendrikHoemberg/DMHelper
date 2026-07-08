@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="strip(campaignId, targetType, targetId)">
+<div x-data="quicknotes('[[${campaignId}]]', '[[${targetType}]]', '[[${targetId}]]')"
+     class="quicknotes-strip">
+    <h3 style="font-size: var(--text-sm); color: var(--color-text-muted);
+               text-transform: uppercase; letter-spacing: 1px; margin-bottom: var(--space-sm);">
+        Quick Notes
+    </h3>
+
+    <form @submit.prevent="add()" style="display: flex; gap: var(--space-xs); margin-bottom: var(--space-sm);">
+        <input type="text" x-model="newBody" placeholder="Jot a quick note..."
+               style="flex: 1; padding: var(--space-xs) var(--space-sm);
+                      background: var(--color-bg); border: 1px solid var(--color-border);
+                      border-radius: var(--radius); color: var(--color-text);
+                      font-size: var(--text-sm);">
+        <button type="submit" class="btn btn-primary" style="font-size: var(--text-sm); padding: 2px 8px;">
+            Add
+        </button>
+    </form>
+
+    <div style="max-height: 200px; overflow-y: auto;">
+        <template x-for="qn in items" :key="qn.id">
+            <div class="quicknote-row" style="padding: var(--space-xs) 0;
+                     border-bottom: 1px solid var(--color-border);
+                     display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-xs);">
+                <div>
+                    <span x-text="qn.body" style="font-size: var(--text-sm); white-space: pre-wrap;"></span>
+                    <div style="font-size: 0.7rem; color: var(--color-text-muted);" x-text="formatTime(qn.createdAt)"></div>
+                </div>
+                <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                    <button @click="promote(qn)" class="btn btn-ghost"
+                            style="font-size: 0.7rem; padding: 1px 4px;"
+                            title="Promote to full note">&#8593;</button>
+                    <button @click="remove(qn.id)" class="btn btn-ghost"
+                            style="font-size: 0.7rem; padding: 1px 4px; color: var(--color-danger);"
+                            title="Delete">&times;</button>
+                </div>
+            </div>
+        </template>
+        <div x-show="items.length === 0" style="font-size: var(--text-sm); color: var(--color-text-muted); padding: var(--space-sm) 0;">
+            No quick notes yet.
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('quicknotes', (campaignId, targetType, targetId) => ({
+        items: [],
+        newBody: '',
+        campaignId: campaignId,
+        targetType: targetType,
+        targetId: targetId,
+
+        async init() {
+            await this.load();
+        },
+
+        async load() {
+            try {
+                const resp = await fetch(
+                    '/api/v1/campaigns/' + this.campaignId + '/quicknotes?targetType='
+                    + this.targetType + '&targetId=' + this.targetId);
+                this.items = await resp.json();
+            } catch (e) {
+                console.error('Failed to load quicknotes', e);
+            }
+        },
+
+        async add() {
+            if (!this.newBody.trim()) return;
+            const body = this.newBody.trim();
+            this.newBody = '';
+            try {
+                const formData = new FormData();
+                formData.append('targetType', this.targetType);
+                formData.append('targetId', this.targetId);
+                formData.append('body', body);
+                const resp = await fetch(
+                    '/api/v1/campaigns/' + this.campaignId + '/quicknotes',
+                    { method: 'POST', body: formData });
+                const qn = await resp.json();
+                this.items.push(qn);
+            } catch (e) {
+                console.error('Failed to create quicknote', e);
+            }
+        },
+
+        async remove(id) {
+            try {
+                await fetch('/api/v1/campaigns/' + this.campaignId + '/quicknotes/' + id,
+                    { method: 'DELETE' });
+                this.items = this.items.filter(i => i.id !== id);
+            } catch (e) {
+                console.error('Failed to delete quicknote', e);
+            }
+        },
+
+        async promote(qn) {
+            try {
+                const resp = await fetch(
+                    '/api/v1/campaigns/' + this.campaignId + '/quicknotes/' + qn.id + '/promote',
+                    { method: 'POST' });
+                const result = await resp.json();
+                this.items = this.items.filter(i => i.id !== qn.id);
+                window.location = result.url;
+            } catch (e) {
+                console.error('Failed to promote quicknote', e);
+            }
+        },
+
+        formatTime(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            return d.toLocaleString();
+        }
+    }));
+});
+</script>
+</th:block>
+</html>

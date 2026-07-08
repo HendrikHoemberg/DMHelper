@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="card(note)">
+<div class="card">
+    <h3>
+        <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${note.campaign.id}, nid=${note.id})}"
+           th:text="${note.title}">Title</a>
+    </h3>
+    <div class="statblock-meta">
+        <span class="badge" th:text="${note.type}">TYPE</span>
+    </div>
+    <p th:if="${note.body != null and !note.body.isBlank()}"
+       th:text="${#strings.abbreviate(note.body, 150)}">Snippet</p>
+    <div class="card-time" th:text="'Created ' + ${#temporals.format(note.createdAt, 'yyyy-MM-dd HH:mm')}">Time</div>
+    <div class="card-actions">
+        <a th:href="@{/campaigns/{cid}/notes/{nid}/edit(cid=${note.campaign.id}, nid=${note.id})}"
+           class="btn btn-ghost">Edit</a>
+        <button class="btn btn-danger"
+                hx-delete="@{/campaigns/{cid}/notes/{nid}(cid=${note.campaign.id}, nid=${note.id})}"
+                hx-target="#notes-list" hx-swap="outerHTML"
+                hx-confirm="Delete this note?">
+            Delete
+        </button>
+    </div>
+</div>
+</th:block>
+</html>

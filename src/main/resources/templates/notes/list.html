@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — ' + ${campaign.name} + ' — Notes'">DMHelper — Notes</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <h1>Notes</h1>
+                <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
+            </div>
+
+            <div class="search-bar">
+                <div class="form-group">
+                    <label for="noteSearch">Search</label>
+                    <input type="text" id="noteSearch" name="search"
+                           th:value="${search}"
+                           hx-get="@{/campaigns/{id}/notes(id=${campaignId})}"
+                           hx-trigger="keyup changed delay:200ms"
+                           hx-include="#noteTypeFilter"
+                           hx-target="#notes-list"
+                           hx-swap="outerHTML"
+                           placeholder="Search notes...">
+                </div>
+                <div class="form-group">
+                    <label for="noteTypeFilter">Type</label>
+                    <select id="noteTypeFilter" name="type"
+                            hx-get="@{/campaigns/{id}/notes(id=${campaignId})}"
+                            hx-trigger="change"
+                            hx-include="#noteSearch"
+                            hx-target="#notes-list"
+                            hx-swap="outerHTML">
+                        <option value="" th:selected="${selectedType == null}">All Types</option>
+                        <option th:each="t : ${noteTypes}"
+                                th:value="${t.name()}"
+                                th:text="${t.name()}"
+                                th:selected="${selectedType != null and selectedType.name() == t.name()}">Type</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-bottom: var(--space-md);">
+                <a th:href="@{/campaigns/{id}/notes/new(id=${campaignId})}"
+                   class="btn btn-primary">+ New Note</a>
+            </div>
+
+            <div id="notes-list" class="card-grid">
+                <th:block th:if="${notes.isEmpty()}">
+                    <div class="empty-state">
+                        <p>No notes yet</p>
+                        <a th:href="@{/campaigns/{id}/notes/new(id=${campaignId})}" class="btn btn-primary">Create your first note</a>
+                    </div>
+                </th:block>
+                <th:block th:each="note : ${notes}">
+                    <th:block th:replace="~{notes/_card :: card(note=${note})}"></th:block>
+                </th:block>
+            </div>
+        </main>
+
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>

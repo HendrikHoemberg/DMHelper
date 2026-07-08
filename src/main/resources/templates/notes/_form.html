@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="form(note, noteTypes, campaignId)">
+<form th:action="${note != null}
+          ? @{/campaigns/{cid}/notes/{nid}(cid=${campaignId}, nid=${note.id})}
+          : @{/campaigns/{cid}/notes(cid=${campaignId})}"
+      th:method="${note != null} ? 'put' : 'post'"
+      hx-target="body" hx-swap="outerHTML"
+      style="padding: var(--space-lg); max-width: 800px; margin: 0 auto;">
+
+    <h1 th:text="${note != null} ? 'Edit Note' : 'New Note'"
+        style="margin-bottom: var(--space-lg);">New Note</h1>
+
+    <div class="form-group">
+        <label for="noteTitle">Title</label>
+        <input type="text" id="noteTitle" name="title" required
+               th:value="${note != null ? note.title : ''}"
+               placeholder="Note title">
+    </div>
+
+    <div class="form-group">
+        <label for="noteType">Type</label>
+        <select id="noteType" name="type" required>
+            <option th:each="t : ${noteTypes}"
+                    th:value="${t.name()}"
+                    th:text="${t.name()}"
+                    th:selected="${note != null and note.type == t}">TYPE</option>
+        </select>
+        <style>
+            #noteType {
+                width: 100%; padding: var(--space-sm) var(--space-md);
+                font-size: var(--text-base); font-family: inherit;
+                color: var(--color-text); background: var(--color-bg);
+                border: 1px solid var(--color-border); border-radius: var(--radius);
+            }
+        </style>
+    </div>
+
+    <div class="form-group">
+        <label for="noteBody">Body (Markdown)</label>
+        <textarea id="noteBody" name="body" rows="20"
+                  th:text="${note != null ? note.body : ''}"
+                  placeholder="Write in Markdown. Use [[Note Title]] for wiki-links, [[statblock:Name]] for statblocks..."></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="noteTags">Tags (comma-separated)</label>
+        <input type="text" id="noteTags" name="tags"
+               th:value="${note != null ? note.tags : ''}"
+               placeholder="e.g. dungeon, level-1, goblins">
+    </div>
+
+    <div class="form-actions">
+        <a th:href="${note != null}
+                ? @{/campaigns/{cid}/notes/{nid}(cid=${campaignId}, nid=${note.id})}
+                : @{/campaigns/{cid}/notes(cid=${campaignId})}"
+           class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.getElementById('noteType');
+    const bodyArea = document.getElementById('noteBody');
+    if (typeSelect && bodyArea && !bodyArea.value) {
+        if (typeSelect.value === 'SESSION_LOG') {
+            bodyArea.value = "## Session Date: [date]\n\n## Attendance\n- \n\n## Summary\n\n\n\n## Loot & Rewards\n- \n\n## XP Awarded\n\n| Character | XP |\n|-----------|----|\n| | |\n\n## Notes\n\n";
+        }
+        typeSelect.addEventListener('change', function() {
+            if (this.value === 'SESSION_LOG' && !bodyArea.value.trim()) {
+                bodyArea.value = "## Session Date: [date]\n\n## Attendance\n- \n\n## Summary\n\n\n\n## Loot & Rewards\n- \n\n## XP Awarded\n\n| Character | XP |\n|-----------|----|\n| | |\n\n## Notes\n\n";
+            }
+        });
+    }
+});
+</script>
+</th:block>
+</html>
