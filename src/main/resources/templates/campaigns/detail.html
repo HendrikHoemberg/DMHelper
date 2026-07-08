@@ -45,6 +45,13 @@
                     </a>
                 </div>
 
+                <h2>Notes</h2>
+                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
+                    <a th:href="@{/campaigns/{id}/notes(id=${campaign.id})}" class="btn btn-primary">
+                        Manage Notes
+                    </a>
+                </div>
+
                 <h2>Edit</h2>
                 <form hx-put="@{/campaigns/{id}(id=${campaign.id})}"
                       hx-target="body"

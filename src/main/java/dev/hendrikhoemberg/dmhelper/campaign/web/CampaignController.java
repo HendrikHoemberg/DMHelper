@@ -2,6 +2,8 @@ package dev.hendrikhoemberg.dmhelper.campaign.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
+import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
+import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
@@ -19,9 +21,11 @@ import java.util.UUID;
 public class CampaignController {
 
     private final CampaignService service;
+    private final NoteService noteService;
 
-    public CampaignController(CampaignService service) {
+    public CampaignController(CampaignService service, NoteService noteService) {
         this.service = service;
+        this.noteService = noteService;
     }
 
     @GetMapping
@@ -54,6 +58,10 @@ public class CampaignController {
     @GetMapping("/{id}")
     public String detail(@PathVariable UUID id, Model model) {
         model.addAttribute("campaign", service.findById(id));
+        var plans = noteService.findByCampaignIdAndType(id, NoteType.SESSION_PLAN);
+        if (!plans.isEmpty()) {
+            model.addAttribute("sessionPlan", plans.get(0));
+        }
         return "campaigns/detail";
     }
 
