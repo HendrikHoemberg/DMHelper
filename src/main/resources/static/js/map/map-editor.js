@@ -391,7 +391,7 @@ export class MapEditor {
 
     setupEvents() {
         this.stage.on('mousedown touchstart', (e) => {
-            if (e.target.getParent() instanceof Konva.Transformer) return;   // let the Transformer handle its own anchors
+            if (e.target instanceof Konva.Transformer || e.target.getParent() instanceof Konva.Transformer) return;   // let the Transformer handle its own anchors
             if (e.evt.button === 1) {   // middle mouse: pan
                 this.panning = true;
                 this.stage.draggable(true);
@@ -979,7 +979,7 @@ export class MapEditor {
 
     clearPreview() {
         for (const child of [...this.previewLayer.getChildren()]) {
-            if (!child.getAttr('_selection')) child.destroy();
+            if (child !== this.transformer && !child.getAttr('_selection')) child.destroy();
         }
         this.previewLayer.batchDraw();
     }
