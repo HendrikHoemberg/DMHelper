@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -109,6 +110,37 @@ public class EncounterApiController {
     @GetMapping("/encounters/{id}/log")
     public List<CombatLogEntryDto> getLog(@PathVariable UUID id) {
         return service.getLog(id);
+    }
+
+    @PutMapping("/combatants/{id}/initiative")
+    public CombatantDto setInitiative(@PathVariable UUID id, @RequestBody EncounterService.InitiativeRequest req) {
+        return service.setInitiative(id, req.initiative());
+    }
+
+    @PostMapping("/encounters/{id}/auto-roll")
+    public List<CombatantDto> autoRollInitiative(@PathVariable UUID id) {
+        return service.autoRollInitiative(id);
+    }
+
+    @PutMapping("/encounters/{id}/combatants/reorder")
+    public List<CombatantDto> reorderCombatants(@PathVariable UUID id,
+                                                @RequestBody EncounterService.ReorderRequest req) {
+        return service.reorderCombatants(id, req.orderedIds());
+    }
+
+    @PostMapping("/encounters/{id}/next-turn")
+    public EncounterDto nextTurn(@PathVariable UUID id) {
+        return service.nextTurn(id);
+    }
+
+    @PostMapping("/encounters/{id}/previous-turn")
+    public EncounterDto previousTurn(@PathVariable UUID id) {
+        return service.previousTurn(id);
+    }
+
+    @PutMapping("/encounters/{id}/active-turn")
+    public EncounterDto setActiveTurn(@PathVariable UUID id, @RequestBody Map<String, UUID> body) {
+        return service.setActiveTurn(id, body.get("combatantId"));
     }
 
     @PostMapping("/encounters/{id}/undo")

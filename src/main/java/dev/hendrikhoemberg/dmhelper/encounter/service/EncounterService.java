@@ -26,6 +26,7 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -97,7 +98,11 @@ public class EncounterService {
                                          String concentratingOn, Boolean concentrationCheckPending,
                                          Integer legendaryActionsUsed, Integer legendaryActionsMax,
                                          Integer legendaryResistancesUsed, Integer legendaryResistancesMax,
-                                         String notes) {}
+                                          String notes) {}
+
+    public record InitiativeRequest(int initiative) {}
+
+    public record ReorderRequest(List<UUID> orderedIds) {}
 
     public record PrefillMapRequest(UUID mapId) {}
 
@@ -350,6 +355,150 @@ public class EncounterService {
     @Transactional(readOnly = true)
     public CombatantDto getCombatant(UUID combatantId) {
         return toDto(findCombatantById(combatantId));
+    }
+
+    public CombatantDto setInitiative(UUID combatantId, int initiative) {
+        Combatant c = findCombatantById(combatantId);
+        int previous = c.getInitiative();
+        c.setInitiative(initiative);
+        Combatant saved = combatantRepo.save(c);
+        resortCombatants(c.getEncounter().getId());
+
+        try {
+            String payload = JSON_MAPPER.writeValueAsString(
+                    Map.of("initiative", initiative, "previousInitiative", previous));
+            logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.INITIATIVE_SET,
+                    combatantId.toString(), payload);
+        } catch (Exception e) { /* log failure is non-fatal */ }
+
+        return toDto(saved);
+    }
+
+    public List<CombatantDto> autoRollInitiative(UUID encounterId) {
+        List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+        for (Combatant c : combatants) {
+            if (!"PC".equals(c.getKind())) {
+                int dexMod = 0;
+                if (c.getStatBlock() != null) {
+                    dexMod = dexModifier(c.getStatBlock());
+                }
+                int roll = new java.util.Random().nextInt(20) + 1;
+                c.setInitiative(roll + dexMod);
+                combatantRepo.save(c);
+                try {
+                    String payload = JSON_MAPPER.writeValueAsString(
+                            Map.of("initiative", c.getInitiative(), "roll", roll, "dexMod", dexMod));
+                    logEntry(encounterId, CombatLogEntry.EntryType.INITIATIVE_SET,
+                            c.getId().toString(), payload);
+                } catch (Exception e) { /* ignore */ }
+            }
+        }
+        resortCombatants(encounterId);
+        return getCombatants(encounterId);
+    }
+
+    static int dexModifier(StatBlock sb) {
+        return Math.floorDiv(sb.getDexScore() - 10, 2);
+    }
+
+    public List<CombatantDto> reorderCombatants(UUID encounterId, List<UUID> orderedIds) {
+        for (int i = 0; i < orderedIds.size(); i++) {
+            Combatant c = findCombatantById(orderedIds.get(i));
+            c.setSortOrder(i);
+            combatantRepo.save(c);
+        }
+        logEntry(encounterId, CombatLogEntry.EntryType.COMBATANT_REORDERED, "", "{}");
+        return getCombatants(encounterId);
+    }
+
+    private void resortCombatants(UUID encounterId) {
+        List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+        combatants.sort(Comparator
+                .comparing(Combatant::getInitiative).reversed()
+                .thenComparing(Comparator.comparing(Combatant::getTieBreaker).reversed())
+                .thenComparing(Combatant::getName));
+        for (int i = 0; i < combatants.size(); i++) {
+            combatants.get(i).setSortOrder(i);
+            combatantRepo.save(combatants.get(i));
+        }
+    }
+
+    public EncounterDto nextTurn(UUID encounterId) {
+        Encounter encounter = findEntityById(encounterId);
+        List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+
+        if (combatants.isEmpty()) {
+            throw new IllegalStateException("No combatants in encounter");
+        }
+
+        int idx = encounter.getActiveTurnIndex();
+        int loopCount = 0;
+
+        do {
+            idx = (idx + 1) % combatants.size();
+            loopCount++;
+        } while (combatants.get(idx).isDefeated() && loopCount < combatants.size());
+
+        if (loopCount >= combatants.size()) {
+            throw new IllegalStateException("All combatants defeated");
+        }
+
+        if (idx == 0) {
+            encounter.setRound(encounter.getRound() + 1);
+            logEntry(encounterId, CombatLogEntry.EntryType.ROUND_ADVANCE, "",
+                    "{\"round\":" + encounter.getRound() + "}");
+            resetLegendaryActions(encounterId);
+        }
+
+        encounter.setActiveTurnIndex(idx);
+        encounterRepo.save(encounter);
+
+        logEntry(encounterId, CombatLogEntry.EntryType.TURN_START,
+                combatants.get(idx).getId().toString(),
+                "{\"activeTurnIndex\":" + idx + ",\"combatantName\":\"" + combatants.get(idx).getName() + "\"}");
+
+        return toDto(encounter);
+    }
+
+    public EncounterDto previousTurn(UUID encounterId) {
+        Encounter encounter = findEntityById(encounterId);
+        List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+
+        if (combatants.isEmpty() || encounter.getActiveTurnIndex() < 0) {
+            return toDto(encounter);
+        }
+
+        int idx = encounter.getActiveTurnIndex();
+        if (idx == 0) {
+            idx = combatants.size() - 1;
+            if (encounter.getRound() > 1) {
+                encounter.setRound(encounter.getRound() - 1);
+            }
+        } else {
+            idx--;
+        }
+
+        encounter.setActiveTurnIndex(idx);
+        encounterRepo.save(encounter);
+        return toDto(encounter);
+    }
+
+    public EncounterDto setActiveTurn(UUID encounterId, UUID combatantId) {
+        Encounter encounter = findEntityById(encounterId);
+        List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+
+        for (int i = 0; i < combatants.size(); i++) {
+            if (combatants.get(i).getId().equals(combatantId)) {
+                encounter.setActiveTurnIndex(i);
+                encounterRepo.save(encounter);
+                return toDto(encounter);
+            }
+        }
+        throw new NotFoundException("Combatant not in encounter: " + combatantId);
+    }
+
+    private void resetLegendaryActions(UUID encounterId) {
+        // Will be implemented in Step 7
     }
 
     CombatLogEntry logEntry(UUID encounterId, CombatLogEntry.EntryType type, String combatantId, String payload) {
