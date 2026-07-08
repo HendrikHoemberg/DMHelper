@@ -60,6 +60,40 @@ class GameMapServiceTest {
     }
 
     @Test
+    void shouldRoundTripImageLayer() {
+        GameMap map = service.create(campaign.getId(), "Cave", 10, 10, 48);
+
+        String documentJson = """
+                {
+                  "schemaVersion": 1,
+                  "grid": {"width": 10, "height": 10, "cellSizePx": 48, "gridType": "square"},
+                  "layers": [
+                    {"id": "terrain", "name": "Terrain", "type": "TERRAIN", "cells": [], "shapes": []},
+                    {"id": "objects", "name": "Objects", "type": "OBJECTS", "cells": [], "shapes": []},
+                    {"id": "annotations", "name": "Annotations (DM only)", "type": "ANNOTATIONS", "cells": [], "shapes": []},
+                    {"id": "image", "name": "Background", "type": "IMAGE", "cells": [], "shapes": [],
+                     "image": {"dataUrl": "data:image/png;base64,AAAA", "x": 0, "y": 0, "width": 10, "height": 10}}
+                  ],
+                  "primitives": [],
+                  "customTerrain": []
+                }
+                """;
+
+        long initialVersion = map.getVersion();
+        long version = service.updateDocument(map.getId(), documentJson, initialVersion);
+        assertThat(version).isEqualTo(initialVersion + 1);
+
+        MapDocumentDto doc = service.getDocument(map.getId());
+        assertThat(doc.layers()).hasSize(4);
+        MapLayerDto imageLayer = doc.layers().get(3);
+        assertThat(imageLayer.id()).isEqualTo("image");
+        assertThat(imageLayer.type()).isEqualTo(MapLayerDto.LayerType.IMAGE);
+        assertThat(imageLayer.image()).isNotNull();
+        assertThat(imageLayer.image().dataUrl()).isEqualTo("data:image/png;base64,AAAA");
+        assertThat(imageLayer.image().width()).isEqualTo(10);
+    }
+
+    @Test
     void shouldAssignIncrementingSortOrders() {
         service.create(campaign.getId(), "Map 1", 20, 15, 48);
         GameMap map2 = service.create(campaign.getId(), "Map 2", 20, 15, 48);
