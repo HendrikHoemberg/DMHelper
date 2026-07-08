@@ -5,10 +5,14 @@ import dev.hendrikhoemberg.dmhelper.library.data.RuleSection;
 import dev.hendrikhoemberg.dmhelper.library.data.RuleSectionRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class SheetEngine {
@@ -21,6 +25,18 @@ public class SheetEngine {
     private Map<Integer, int[]> multiclassSlotTable;
     private Map<String, String> classSpellcastingAbilities;
     private Map<String, Map<Integer, int[]>> classSlotTables;
+    private Map<String, Integer> classHitDies;
+    private Map<String, Set<String>> classSavingThrows;
+    private Map<String, List<String>> classSkillProficiencies;
+    private Map<String, String> classNames;
+
+    private static final Logger log = LoggerFactory.getLogger(SheetEngine.class);
+
+    private static final Map<String, String> CASTER_TYPES = Map.of(
+        "wizard", "FULL", "sorcerer", "FULL", "cleric", "FULL", "druid", "FULL",
+        "bard", "FULL", "warlock", "PACT",
+        "paladin", "HALF", "ranger", "HALF"
+    );
 
     private static final Map<String, String> SKILL_ABILITY_MAP = Map.ofEntries(
         Map.entry("athletics", "str"),
@@ -76,6 +92,84 @@ public class SheetEngine {
         this.multiclassSlotTable = parseMulticlassSlotTable();
         this.classSpellcastingAbilities = buildSpellcastingAbilities();
         this.classSlotTables = buildClassSlotTables();
+        this.classHitDies = buildClassHitDies();
+        this.classSavingThrows = buildClassSavingThrows();
+        this.classSkillProficiencies = buildClassSkillProficiencies();
+        this.classNames = buildClassNames();
+    }
+
+    private Map<String, Integer> buildClassHitDies() {
+        Map<String, Integer> map = new HashMap<>();
+        var classes = classRepo.findAllByOrderByNameAsc();
+        for (var cls : classes) {
+            String die = cls.getHitDie();
+            if (die != null && die.startsWith("d")) {
+                map.put(cls.getSourceKey(), Integer.parseInt(die.substring(1)));
+            }
+        }
+        return map;
+    }
+
+    private Map<String, Set<String>> buildClassSavingThrows() {
+        Map<String, Set<String>> map = new HashMap<>();
+        var classes = classRepo.findAllByOrderByNameAsc();
+        for (var cls : classes) {
+            try {
+                @SuppressWarnings("unchecked")
+                List<String> saves = mapper.readValue(cls.getSavingThrows(), List.class);
+                if (saves != null) map.put(cls.getSourceKey(), new HashSet<>(saves));
+            } catch (Exception e) {
+                log.debug("Failed to parse saving throws for {}", cls.getSourceKey(), e);
+                map.put(cls.getSourceKey(), Set.of());
+            }
+        }
+        return map;
+    }
+
+    private Map<String, List<String>> buildClassSkillProficiencies() {
+        Map<String, List<String>> map = new HashMap<>();
+        var classes = classRepo.findAllByOrderByNameAsc();
+        for (var cls : classes) {
+            try {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> features = mapper.readValue(cls.getFeatures(), List.class);
+                List<String> skills = new ArrayList<>();
+                for (Map<String, Object> f : features) {
+                    if ("CORE_TRAITS_TABLE".equals(f.get("feature_type"))) {
+                        String desc = (String) f.get("description");
+                        if (desc != null) {
+                            for (String line : desc.split("\\n")) {
+                                if (line.toLowerCase().contains("skill proficiencies")) {
+                                    String[] cells = line.split("\\|");
+                                    if (cells.length >= 3) {
+                                        for (String s : cells[2].trim().split("[;,/]")) {
+                                            String skill = s.trim().toLowerCase().replace(" ", "_").replace("-", "_");
+                                            if (SKILL_ABILITY_MAP.containsKey(skill)) {
+                                                skills.add(skill);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                map.put(cls.getSourceKey(), skills);
+            } catch (Exception e) {
+                log.debug("Failed to parse skill proficiencies for {}", cls.getSourceKey(), e);
+                map.put(cls.getSourceKey(), List.of());
+            }
+        }
+        return map;
+    }
+
+    private Map<String, String> buildClassNames() {
+        Map<String, String> map = new HashMap<>();
+        var classes = classRepo.findAllByOrderByNameAsc();
+        for (var cls : classes) {
+            map.put(cls.getSourceKey(), cls.getName());
+        }
+        return map;
     }
 
     private Map<Integer, Integer> buildProficiencyBonusTable() {
@@ -99,14 +193,15 @@ public class SheetEngine {
                                 }
                             }
                         }
-                        return table;
+                        if (!table.isEmpty()) return table;
                     }
                 }
             } catch (Exception e) {
-                // try next class
+                log.debug("Failed to parse proficiency bonus features for {}", cls.getSourceKey(), e);
             }
         }
         if (table.isEmpty()) {
+            log.warn("Could not build proficiency bonus table from class data, using fallback table");
             int[] pb = {0, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6};
             for (int i = 1; i <= 20; i++) table.put(i, pb[i]);
         }
@@ -154,12 +249,16 @@ public class SheetEngine {
                         }
                         table.put(level, slots);
                     } catch (NumberFormatException e) {
-                        // skip header or malformed row
+                        log.debug("Failed to parse slot table row: {}", line, e);
                     }
                 }
             }
         }
-        return table.isEmpty() ? buildFallbackMulticlassTable() : table;
+        if (table.isEmpty()) {
+            log.warn("Could not parse multiclass slot table from rules section, using fallback table");
+            return buildFallbackMulticlassTable();
+        }
+        return table;
     }
 
     private Map<Integer, int[]> buildFallbackMulticlassTable() {
@@ -192,6 +291,7 @@ public class SheetEngine {
         var classes = classRepo.findAllByOrderByNameAsc();
         for (var cls : classes) {
             try {
+                @SuppressWarnings("unchecked")
                 List<Map<String, Object>> features = mapper.readValue(cls.getFeatures(), List.class);
                 boolean hasSpellSlots = false;
                 for (Map<String, Object> f : features) {
@@ -213,7 +313,9 @@ public class SheetEngine {
                         }
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                log.debug("Failed to parse spellcasting abilities for {}", cls.getSourceKey(), e);
+            }
         }
         return abilities;
     }
@@ -241,14 +343,21 @@ public class SheetEngine {
         var classes = classRepo.findAllByOrderByNameAsc();
         for (var cls : classes) {
             try {
+                @SuppressWarnings("unchecked")
                 List<Map<String, Object>> features = mapper.readValue(cls.getFeatures(), List.class);
                 Map<Integer, int[]> classTable = new HashMap<>();
                 for (Map<String, Object> f : features) {
                     if ("SPELL_SLOTS".equals(f.get("feature_type"))) {
                         String key = (String) f.get("key");
                         if (key != null) {
-                            String levelPart = key.replaceAll(".*_slots-(\\d+)(?:st|nd|rd|th)?$", "$1");
-                            int spellLevel = Integer.parseInt(levelPart);
+                            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("_slots-(\\d+)");
+                            java.util.regex.Matcher matcher = pattern.matcher(key);
+                            int spellLevel;
+                            if (matcher.find()) {
+                                spellLevel = Integer.parseInt(matcher.group(1));
+                            } else {
+                                continue;
+                            }
                             Object tableData = f.get("data_for_class_table");
                             if (tableData instanceof List<?> rows) {
                                 for (Object row : rows) {
@@ -270,7 +379,9 @@ public class SheetEngine {
                 if (!classTable.isEmpty()) {
                     tables.put(cls.getSourceKey(), classTable);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                log.debug("Failed to parse class slot tables for {}", cls.getSourceKey(), e);
+            }
         }
         return tables;
     }
@@ -314,15 +425,6 @@ public class SheetEngine {
             }
             int profBonus = proficiencyBonusTable.getOrDefault(totalLevel, 2);
 
-            Map<String, Integer> classHitDies = new HashMap<>();
-            var allClasses = classRepo.findAllByOrderByNameAsc();
-            for (var cls : allClasses) {
-                String die = cls.getHitDie();
-                if (die != null && die.startsWith("d")) {
-                    classHitDies.put(cls.getSourceKey(), Integer.parseInt(die.substring(1)));
-                }
-            }
-
             int maxHp = 0;
             int totalHitDice = 0;
             for (Map<String, Object> entry : classLevels) {
@@ -343,13 +445,8 @@ public class SheetEngine {
             Set<String> proficientSaves = new HashSet<>();
             for (Map<String, Object> entry : classLevels) {
                 String classKey = (String) entry.get("classSourceKey");
-                var clsOpt = classRepo.findBySourceKey(classKey);
-                if (clsOpt.isPresent()) {
-                    try {
-                        List<String> classSaves = mapper.readValue(clsOpt.get().getSavingThrows(), List.class);
-                        if (classSaves != null) proficientSaves.addAll(classSaves);
-                    } catch (Exception ignored) {}
-                }
+                Set<String> saves = classSavingThrows.getOrDefault(classKey, Set.of());
+                proficientSaves.addAll(saves);
             }
             Object saveProfs = prof.get("saving_throws");
             if (saveProfs instanceof List<?> sl) {
@@ -371,9 +468,12 @@ public class SheetEngine {
             }
             if (sheet.getBackground() != null && sheet.getBackground().getSkills() != null) {
                 try {
+                    @SuppressWarnings("unchecked")
                     List<String> bgSkills = mapper.readValue(sheet.getBackground().getSkills(), List.class);
                     if (bgSkills != null) profSkills.addAll(bgSkills);
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    log.debug("Failed to parse background skills", e);
+                }
             }
             Object expObj = prof.get("expertise");
             if (expObj instanceof List<?> el) {
@@ -382,32 +482,11 @@ public class SheetEngine {
 
             for (Map<String, Object> entry : classLevels) {
                 String classKey = (String) entry.get("classSourceKey");
-                var clsOpt = classRepo.findBySourceKey(classKey);
-                if (clsOpt.isPresent()) {
-                    try {
-                        List<Map<String, Object>> features = mapper.readValue(clsOpt.get().getFeatures(), List.class);
-                        for (Map<String, Object> f : features) {
-                            if ("CORE_TRAITS_TABLE".equals(f.get("feature_type"))) {
-                                String desc = (String) f.get("description");
-                                if (desc != null) {
-                                    for (String line : desc.split("\\n")) {
-                                        if (line.toLowerCase().contains("skill proficiencies")) {
-                                            String[] cells = line.split("\\|");
-                                            if (cells.length >= 3) {
-                                                String skillsText = cells[2].trim();
-                                                for (String s : skillsText.split("[;,/]")) {
-                                                    String skill = s.trim().toLowerCase().replace(" ", "_").replace("-", "_");
-                                                    if (SKILL_ABILITY_MAP.containsKey(skill) && !profSkills.contains(skill)) {
-                                                        profSkills.add(skill);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } catch (Exception ignored) {}
+                List<String> skills = classSkillProficiencies.getOrDefault(classKey, List.of());
+                for (String skill : skills) {
+                    if (!profSkills.contains(skill)) {
+                        profSkills.add(skill);
+                    }
                 }
             }
 
@@ -495,8 +574,7 @@ public class SheetEngine {
             for (Map<String, Object> entry : classLevels) {
                 String classKey = (String) entry.get("classSourceKey");
                 int level = getInt(entry, "level");
-                var clsOpt = classRepo.findBySourceKey(classKey);
-                String name = clsOpt.map(c -> c.getName()).orElse(classKey);
+                String name = classNames.getOrDefault(classKey, classKey);
                 classStrings.add(name + " " + level);
             }
             String classAndLevel = String.join(" / ", classStrings);
@@ -506,7 +584,9 @@ public class SheetEngine {
                 String speedStr = sheet.getSpecies().getSpeed();
                 try {
                     speed = Integer.parseInt(speedStr.replaceAll("[^\\d]", ""));
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException e) {
+                    log.debug("Failed to parse speed: {}", speedStr, e);
+                }
             }
 
             int armorClass = 10 + dexMod;
@@ -572,8 +652,9 @@ public class SheetEngine {
 
     private String getCasterType(String classKey) {
         if (classKey == null) return "NONE";
-        if (classKey.contains("warlock")) return "PACT";
-        if (classKey.contains("paladin") || classKey.contains("ranger")) return "HALF";
+        for (var entry : CASTER_TYPES.entrySet()) {
+            if (classKey.contains(entry.getKey())) return entry.getValue();
+        }
         if (classSlotTables.containsKey(classKey)) return "FULL";
         return "NONE";
     }
