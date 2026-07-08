@@ -229,8 +229,8 @@ Global read-only compendium (seeded, referenced by sourceKey — see §2.3.8 pro
 | **Campaign** | name, description, createdAt, settings (JSON: incl. calendar config, current in-game date, XP-vs-milestone leveling mode) |
 | **PartyMember** | campaign, characterName, playerName, classAndLevel, ac, maxHp, initiativeBonus, speed, passivePerception/Insight/Investigation, notes, `active` (absent player / retired PC). When a CharacterSheet exists, these combat fields are derived from it (override-able); sheet-less members stay hand-edited |
 | **CharacterSheet** | partyMember (1–1), abilityScores, classLevels[] (classRef + level, multiclass supported), speciesRef, backgroundRef, featRefs[], proficiencies (skills/saves/tools/languages), spellsKnown/prepared (Spell refs), hitDicePool, resources[] (name, max, current, reset-on-rest rule), xp, overrides (JSON: any derived value can be manually overridden) |
-| **GameMap** | campaign, name, gridWidth/Height, cellSizePx, sortOrder, `document` (JSON, versioned schema) |
-| **Token** | map, name, kind (PC/NPC/MONSTER/OBJECT), position (col,row), size (1×1 … 4×4), color/icon, `hidden` (DM-only), statBlockRef? / partyMemberRef?, currentHp?, maxHp?, notes |
+| **GameMap** | campaign, name, gridWidth/Height, cellSizePx, sortOrder, `movementMode` (GRID/FREEFORM), `showGrid` (boolean), `document` (JSON, versioned schema) |
+| **Token** | map, name, kind (PC/NPC/MONSTER/OBJECT), positionX/Y (pixels — Konva-native; grid snapping is frontend-only), size (1×1 … 4×4 cells × cellSizePx), color/icon, `hidden` (DM-only), statBlockRef? / partyMemberRef?, currentHp?, maxHp?, notes |
 | **StatBlock** | source (SRD/CUSTOM), campaign?, name, CR, xp, type, AC, HP, speeds, ability scores, saves, skills, senses, languages, traits/actions/reactions/legendary (structured JSON), searchable columns (name, CR, type) |
 | **Spell** | sourceKey (unique), name, level, school, castingTime, range, components, duration, description, higherLevel, ritual, concentration — read-only reference data, no CRUD |
 | **Encounter** | campaign, map?, name, status (PLANNED/ACTIVE/DONE), round, activeTurnIndex |
@@ -310,9 +310,11 @@ Sketch of the format:
                "ac": 16, "maxHp": 38, "initiativeBonus": 4, "passivePerception": 17 } ],
   "statBlocks": [ { "key": "amber-knight", "name": "Amber Knight", "cr": "5", "...": "..." } ],
   "handouts": [ { "title": "The Regent's Letter", "image": "data:image/png;base64,..." } ],
-  "maps": [ { "key": "throne-room", "name": "Throne Room", "grid": { "w": 30, "h": 20, "cellPx": 48 },
-              "document": { "schemaVersion": 1, "layers": [ "..." ] },
-              "tokens": [ { "name": "Amber Knight", "ref": "amber-knight", "pos": [12, 4], "hidden": true } ] } ],
+  "maps": [ { "key": "throne-room", "name": "Throne Room",
+               "grid": { "w": 30, "h": 20, "cellPx": 48 },
+               "movementMode": "GRID", "showGrid": true,
+               "document": { "schemaVersion": 1, "layers": [ "..." ] },
+               "tokens": [ { "name": "Amber Knight", "ref": "amber-knight", "x": 576, "y": 192, "hidden": true } ] } ],
   "encounters": [ { "name": "Throne Ambush", "map": "throne-room",
                     "combatants": [ { "ref": "amber-knight", "count": 2 } ] } ],
   "notes": [ { "type": "QUEST", "title": "Find the Regent", "body": "…links like [[Throne Room]]…" } ]
@@ -399,8 +401,9 @@ and autosaved on every edit.
 The same canvas in "play" mode:
 
 - **Tokens**: create from a statblock (drag from library), from a note (NPC), or ad hoc. Drag to
-  move with grid snapping; supports 1×1 to 4×4 sizes; color ring by kind (PC/ally/enemy/object);
-  name label; optional HP bar (DM Mode only); duplicate ("add 4 goblins"); mark dead/remove.
+  move — behavior depends on the map's movement mode (see below); supports 1×1 to 4×4 sizes; color
+  ring by kind (PC/ally/enemy/object); name label; optional HP bar (DM Mode only); duplicate
+  ("add 4 goblins"); mark dead/remove.
 - **Hidden tokens**: flagged tokens render only in DM Mode (used for ambushes, secret NPCs).
 - **Bloodied indicator**: a token at or below half HP shows a player-visible "bloodied" state
   (e.g., a red-tinged ring) — answering the table's constant "does it look hurt?" without leaking
@@ -411,10 +414,26 @@ The same canvas in "play" mode:
   it was. Maps can be grouped/ordered for session flow.
 - **Annotations**: DM-only pings/markers/text on the annotation layer.
 - **AoE spell templates**: drag-and-drop cone, sphere/circle, cube, and line overlays with 5.5e
-  sizes (15-ft cone, 20-ft radius, …), semi-transparent and grid-aligned, so "who's in the
-  fireball?" is answered by looking. Templates are player-visible (they exist to be argued over),
-  removable with one click, and cleared automatically when the encounter ends.
-- Measurement helper: click-drag shows distance in cells/feet.
+  sizes (15-ft cone, 20-ft radius, …), semi-transparent. Templates are player-visible (they exist
+  to be argued over), removable with one click, and cleared automatically when the encounter ends.
+- **Measurement helper**: click-drag shows distance. In grid mode: cells and feet. In freeform
+  mode: feet only (pixel distance ÷ cellSizePx × 5 ft per cell).
+
+**Movement mode** — each map has its own mode, persisted on `GameMap.movementMode`:
+
+| Mode | Token drag | AoE templates | Measurement | Token placement |
+|---|---|---|---|---|
+| **Grid** (default) | Snaps to nearest cell on release | Snap to grid | Cells + feet | Snaps to nearest cell |
+| **Freeform** | Free pixel movement, no snap | Freely placeable, no snap | Feet only | Exact pixel position of click |
+
+- **Mode switching**: toggling modes on a map with existing tokens keeps them where they are —
+  positions are stored as pixel coordinates in both modes. Toggling from freeform → grid does
+  NOT retroactively snap existing tokens (they'd jump); only newly moved tokens snap. The mode
+  indicator is shown in the battle map toolbar.
+- **Independent grid visibility**: `GameMap.showGrid` controls whether grid lines render on the
+  battle map — purely visual, independent of movement mode. A freeform map can show the grid
+  as a spatial reference, and a grid-mode map can hide it for a cleaner look. Default: `true`.
+- The map editor (§4.3) is always grid-based regardless of movement mode.
 
 ### 4.5 Initiative & Combat Tracker
 
@@ -691,7 +710,9 @@ Digital rolling as a convenience, never a requirement — physical dice are firs
 - Table presentation (what player views show) is set via `PUT /api/v1/table/presentation`
   with a body of `{ "mode": "MAP" | "HANDOUT" | "CURTAIN", "ref": "<id>" }`.
 - Map documents saved via `PUT /maps/{id}/document` (whole-document replace with optimistic
-  version check); token moves via small `PATCH` calls so live play is snappy.
+  version check); token moves via small `PATCH` calls with pixel positions (`x`, `y`) so live play
+  is snappy — grid snapping is frontend-only, the API is mode-agnostic.
+- Map mode & grid visibility toggled via `PATCH /maps/{id}` accepting `movementMode` and `showGrid`.
 - Import/export: `GET /campaigns/{id}/export` (streams the JSON file),
   `POST /campaigns/import` (multipart upload; `?dryRun=true` for validate-only).
 - Generative tooling: `GET /api/v1/schemas/{name}` (JSON Schemas for the campaign format and map
@@ -747,7 +768,7 @@ Digital rolling as a convenience, never a requirement — physical dice are firs
 | M2 ✅ | **Statblock library & party roster** | Statblock schema + renderer (incl. xp); 331 SRD 5.2 monsters + 339 spells from open5e; seed on first run; search/filter; homebrew editor; party roster CRUD + summary bar; SRD key catalog endpoint | Find "Goblin" in <100 ms; create a custom monster; enter the party once; look up "Fireball" |
 | M3 ✅ | **Reference compendium** | Conditions, rules sections, equipment, magic items, classes, species, backgrounds, feats seeded from open5e `srd-2024` with verbatim-SRD-5.2 fallback seed files (§2.3.8 provenance); library UI sections + per-type renderers; search; SRD key catalog extended | Look up "Grappled", "Bag of Holding", and the Fighter level table without a PDF |
 | M4 ✅ | **Map editor** | Grid canvas, terrain painting, shapes, layers, undo/redo, autosave | Build a usable tavern map from scratch |
-| M5 | **Battle map** | Play mode, tokens (create/move/hide/HP, add-party, bloodied state), map switching with state, AoE templates, measurement | Run a mock fight by hand on a map |
+| M5 | **Battle map** | Play mode, tokens (create/move/hide/HP, add-party, bloodied state), per-map movement mode toggle (grid ↔ freeform), independent grid-visibility toggle, map switching with state, AoE templates, measurement | Run a mock fight by hand on a map, toggling between grid and freeform movement |
 | M6 | **Combat tracker** | Encounters, initiative, monster groups, turns, HP math, conditions + effect durations (with compendium condition text), concentration, legendary/lair actions, combat log with undo, difficulty calculator, map + roster linkage | Run a full combat (incl. a boss) without touching paper |
 | M7 | **Player view & handouts** | WebSocket broadcaster, server-side player-safe projection, DM-route PIN gate, `/player` route, send-to-table & curtain, QR join, auto-reconnect; handout upload/gallery/present | Phone + laptop show the fight live; a letter fills the TV |
 | M8 | **Notes, wiki & quicknotes** | Typed notes, Markdown, wiki-links + backlinks, search, session plans, side panel; entity-attached quicknotes with promote-to-note | Replace the campaign spreadsheet; jot mid-fight without leaving the map |
@@ -783,3 +804,4 @@ player devices.
 - **Rules data provenance** (§2.3.8) — no D&D rules content is ever reconstructed from an AI assistant's memory; open5e `srd-2024` first, verbatim SRD 5.2 seed files as fallback, graceful degradation otherwise. Binds all future implementation sessions.
 - **Dice roller is optional-first** (§2.3.9) — promoted into v1 (M11), but every roll input must accept a typed value so physical dice remain first-class forever; no feature may require the digital roller.
 - **New-feature milestone placement** (2026-07) — compendium lands directly after M2 (reuses the just-built open5e seeding machinery); map → battle → tracker → player view stay next so the app is table-ready early (M5); sheets (M9) follow the notes module and build on compendium data; bookkeeping (M10) and dice (M11) before final polish (M12).
+- **Freeform movement toggle** (2026-07, before M5) — the battle map supports both grid-snapped and freeform pixel movement, toggled per-map via `GameMap.movementMode`. Token positions are stored as pixel coordinates in both modes; grid snapping is applied only on the frontend during drag. Grid visibility is an independent toggle (`showGrid`). Token sizes remain in cell increments (1×1..4×4) in both modes. The map editor stays grid-based always. AoE templates and measurement follow the active movement mode.
