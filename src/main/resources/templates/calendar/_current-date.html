@@ -11,9 +11,7 @@
         </div>
         <div th:if="${config.weekdayNames() != null and config.weekdayNames().length > 0}"
              class="detail-meta" style="margin-top:4px;">
-            <span th:with="totalDays=${currentDate.year() * 365 + #arrays.stream(config.monthLengths()).sum()}">
-                <span th:text="${config.weekdayNames()[0]}">Weekday</span>
-            </span>
+            <span th:text="${config.weekdayNames()[0]}">Weekday</span>
         </div>
     </div>
 </div>

@@ -39,10 +39,10 @@
 
             <!-- Item Assignments by Holder -->
             <div th:each="pm : ${partyMembers}" class="detail-section">
-                <th:block th:with="holderItems=${#lists.toList(assignments).stream().filter(a -> a.partyMemberId() != null && a.partyMemberId().equals(pm.id)).toList()}">
+                <th:block th:with="holderItems=${#lists.toList(assignments).?[partyMemberId() != null && partyMemberId().equals(pm.id)]}">
                     <h2 th:text="${pm.characterName} + '&apos;s Items'">PC's Items</h2>
                     <div th:if="${not #lists.isEmpty(holderItems)}" style="display:flex; flex-direction:column; gap: var(--space-sm);">
-                        <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=${#lists.toList(holderItems).stream().filter(a -> a.attuned()).count()})}"
+                        <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=${#lists.toList(holderItems).?[attuned()].size()})}"
                              th:each="a : ${holderItems}"></div>
                     </div>
                     <div th:if="${#lists.isEmpty(holderItems)}" class="empty-state">No items assigned</div>
@@ -51,7 +51,7 @@
 
             <!-- Party Stash -->
             <div class="detail-section">
-                <th:block th:with="stashItems=${#lists.toList(assignments).stream().filter(a -> a.partyMemberId() == null).toList()}">
+                <th:block th:with="stashItems=${#lists.toList(assignments).?[partyMemberId() == null]}">
                     <h2>Party Stash</h2>
                     <div th:if="${not #lists.isEmpty(stashItems)}" style="display:flex; flex-direction:column; gap: var(--space-sm);">
                         <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=0)}"

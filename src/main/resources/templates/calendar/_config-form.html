@@ -14,7 +14,7 @@
         <div class="form-group">
             <label>Month Lengths (comma-separated, 12 values)</label>
             <input type="text" name="monthLengths"
-                   th:value="${#strings.arrayJoin(#arrays.stream(config.monthLengths()).mapToObj(i -> '' + i).toArray(String[]::new), ',')}"
+                   th:value="${config.monthLengths().![#this].toString().replaceAll('[\\[\\] ]', '')}"
                    value="31,28,31,30,31,30,31,31,30,31,30,31" />
         </div>
 
