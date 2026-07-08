@@ -168,6 +168,11 @@
                 <button class="tool-btn" @click="redo()" title="Redo (Ctrl+Y)">↪ Redo</button>
             </div>
 
+            <div class="tool-group">
+                <button class="tool-btn" @click="$refs.imageInput.click()" title="Import a background reference image (PNG/JPG)">🖼 Import Image</button>
+                <input type="file" accept="image/*" x-ref="imageInput" style="display: none;" @change="importImage($event)">
+            </div>
+
         </div>
 
         <div class="editor-body">
@@ -235,11 +240,13 @@
                     { key: 'door', name: 'Door' },
                 ],
                 layerList: [
+                    { id: 'image', name: 'Background' },
                     { id: 'terrain', name: 'Terrain' },
                     { id: 'objects', name: 'Objects' },
                     { id: 'annotations', name: 'Annotations (DM only)' },
                 ],
                 layers: {
+                    image: { visible: true, locked: false },
                     terrain: { visible: true, locked: false },
                     objects: { visible: true, locked: false },
                     annotations: { visible: true, locked: false },
@@ -279,6 +286,14 @@
                     const walkable = confirm('Walkable terrain? (OK = yes, Cancel = no)');
                     const key = window.mapEditor?.addCustomTerrain(name.trim(), fill.trim(), walkable);
                     if (key) this.terrain = key;
+                },
+                importImage(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => window.mapEditor?.importBackgroundImage(reader.result);
+                    reader.readAsDataURL(file);
+                    event.target.value = '';
                 },
                 downloadBackup() { window.mapEditor?.downloadDocumentBackup(); },
             };

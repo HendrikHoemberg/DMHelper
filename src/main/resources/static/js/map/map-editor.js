@@ -50,6 +50,7 @@ export class MapEditor {
         this.pasteOffset = null;   // {col, row} — accumulates so repeated Ctrl+V doesn't stack pastes
         this.movingSelection = null;   // {startX, startY} in cell units, while dragging a bulk selection
         this.shapeSelection = null;   // single Konva shape node currently selected for transform, or null
+        this.imageSelection = null;    // single Konva Image node for the background layer, or null
         this.transformer = null;
 
         this.undoStack = [];
@@ -73,6 +74,8 @@ export class MapEditor {
             height: this.container.clientHeight,
             draggable: false,
         });
+
+        this.createLayer('image');   // background reference image — added first so it renders behind the grid
 
         this.gridLayer = new Konva.Layer({ listening: false });
         this.stage.add(this.gridLayer);
@@ -103,14 +106,17 @@ export class MapEditor {
         this.previewLayer.add(this.transformer);
 
         this.transformer.on('transformend', () => {
-            const node = this.shapeSelection;
-            if (!node) return;
-            this.pushUndo();
-            this.bakeShapeTransform(node);
-            this.syncDocument();
-            this.clearShapeSelection();
-            this.renderDocument();
-            this.markDirty();
+            if (this.shapeSelection) {
+                const node = this.shapeSelection;
+                this.pushUndo();
+                this.bakeShapeTransform(node);
+                this.syncDocument();
+                this.clearShapeSelection();
+                this.renderDocument();
+                this.markDirty();
+            } else if (this.imageSelection) {
+                this.commitImageTransform(this.imageSelection);
+            }
         });
     }
 
@@ -165,6 +171,29 @@ export class MapEditor {
         return key;
     }
 
+    importBackgroundImage(dataUrl) {
+        if (!this.document) return;
+        const probe = new Image();
+        probe.onload = () => {
+            this.pushUndo();
+            this.syncDocument();
+            const aspect = probe.naturalHeight / probe.naturalWidth;
+            const width = this.gridWidth;
+            const height = Math.max(1, Math.round(width * aspect));
+            let layerDto = this.layerDto('image');
+            if (!layerDto) {
+                layerDto = { id: 'image', name: 'Background', type: 'IMAGE', visible: true, locked: false, cells: [], shapes: [] };
+                this.document.layers.push(layerDto);
+            }
+            layerDto.image = { dataUrl, x: 0, y: 0, width, height };
+            this.renderDocument();
+            this.emitLayerState();
+            this.markDirty();
+            this.setStatus('Background image imported — Select tool to move/resize it');
+        };
+        probe.src = dataUrl;
+    }
+
     /* ---- Document / layer helpers ---- */
 
     layerDto(id) {
@@ -188,6 +217,7 @@ export class MapEditor {
         this.cancelPolygon();
         this.clearSelection();
         this.clearShapeSelection();
+        this.clearImageSelection();
         this.activeTool = tool;
         this.emit('map-toolchange', { tool });
         const messages = {
@@ -210,6 +240,7 @@ export class MapEditor {
         this.cancelPolygon();
         this.clearSelection();
         this.clearShapeSelection();
+        this.clearImageSelection();
         this.activeLayerId = layerId;
     }
 
@@ -272,6 +303,9 @@ export class MapEditor {
                 for (const cell of this.expandPrimitives()) {
                     this.addCellRect(kl, cell, { primitive: true });
                 }
+            }
+            if (layerDto.type === 'IMAGE' && layerDto.image) {
+                this.addImageNode(kl, layerDto.image);
             }
             for (const cell of (layerDto.cells || [])) {
                 this.addCellRect(kl, cell, {});
@@ -354,6 +388,22 @@ export class MapEditor {
         return node;
     }
 
+    addImageNode(konvaLayer, imageDto) {
+        const htmlImg = new Image();
+        htmlImg.onload = () => {
+            const node = new Konva.Image({
+                image: htmlImg,
+                x: imageDto.x * this.cellSizePx, y: imageDto.y * this.cellSizePx,
+                width: imageDto.width * this.cellSizePx, height: imageDto.height * this.cellSizePx,
+                listening: true,
+            });
+            node.setAttr('_imageLayer', true);
+            konvaLayer.add(node);
+            konvaLayer.batchDraw();
+        };
+        htmlImg.src = imageDto.dataUrl;
+    }
+
     /* ---- Semantic primitives (§4.3): expanded to cells on render, never serialized ---- */
 
     /** @returns {Cell[]} */
@@ -423,6 +473,11 @@ export class MapEditor {
                 const shapeNode = e.target && e.target.getAttr('_shape') ? e.target : null;
                 if (shapeNode) {
                     this.selectShapeForTransform(shapeNode);
+                    return;
+                }
+                const imageNode = e.target && e.target.getAttr('_imageLayer') ? e.target : null;
+                if (imageNode) {
+                    this.selectImageForTransform(imageNode);
                     return;
                 }
                 this.clearShapeSelection();
@@ -611,6 +666,7 @@ export class MapEditor {
                     this.cancelPolygon();
                     this.clearSelection();
                     this.clearShapeSelection();
+                    this.clearImageSelection();
                     break;
             }
         });
@@ -1192,6 +1248,7 @@ export class MapEditor {
         this.clearSelection();
         this.cancelPolygon();
         this.clearShapeSelection();
+        this.clearImageSelection();
         this.shapeSelection = node;
         node.draggable(true);
         node.on('dragend.shapeselect', () => {
@@ -1253,6 +1310,49 @@ export class MapEditor {
             }
         }
         node.setAttr('_shape', shape);
+    }
+
+    selectImageForTransform(node) {
+        this.clearShapeSelection();
+        this.clearSelection();
+        this.cancelPolygon();
+        this.imageSelection = node;
+        node.draggable(true);
+        node.on('dragend.imageselect', () => this.commitImageTransform(node));
+        this.transformer.keepRatio(false);
+        this.transformer.nodes([node]);
+        this.transformer.getLayer().batchDraw();
+        this.setStatus('Background image selected — drag to move, handles to resize');
+    }
+
+    clearImageSelection() {
+        if (this.imageSelection) {
+            this.imageSelection.draggable(false);
+            this.imageSelection.off('dragend.imageselect');
+        }
+        this.imageSelection = null;
+        if (this.transformer) {
+            this.transformer.nodes([]);
+            this.transformer.getLayer()?.batchDraw();
+        }
+    }
+
+    commitImageTransform(node) {
+        this.pushUndo();
+        this.syncDocument();
+        const layerDto = this.layerDto('image');
+        if (layerDto && layerDto.image) {
+            const cs = this.cellSizePx;
+            layerDto.image = {
+                dataUrl: layerDto.image.dataUrl,
+                x: this.round2(node.x() / cs), y: this.round2(node.y() / cs),
+                width: this.round2((node.width() * node.scaleX()) / cs),
+                height: this.round2((node.height() * node.scaleY()) / cs),
+            };
+        }
+        this.clearImageSelection();
+        this.renderDocument();
+        this.markDirty();
     }
 
     setShapeFill(color) {
