@@ -4,10 +4,19 @@ import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.SerializationFeature;
+import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEvent;
+import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEventRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntry;
+import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntryRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.*;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
+import dev.hendrikhoemberg.dmhelper.notes.data.Note;
+import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
+import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
+import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
+import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
@@ -18,15 +27,14 @@ import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResourceRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReference;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReferenceRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
-import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
-import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
-import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
-import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
+import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
+import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -49,6 +57,11 @@ public class CampaignService {
     private final SpeciesRepository speciesRepo;
     private final BackgroundRepository backgroundRepo;
     private final SpellRepository spellRepo;
+    private final ItemAssignmentRepository assignmentRepo;
+    private final LedgerEntryRepository ledgerEntryRepo;
+    private final TimelineEventRepository timelineEventRepo;
+    private final MagicItemRepository magicItemRepo;
+    private final EquipmentItemRepository equipmentItemRepo;
 
     public CampaignService(CampaignRepository repository,
                            PartyMemberRepository partyMemberRepository,
@@ -64,7 +77,12 @@ public class CampaignService {
                            SheetSpellReferenceRepository spellRefRepo,
                            SpeciesRepository speciesRepo,
                            BackgroundRepository backgroundRepo,
-                           SpellRepository spellRepo) {
+                           SpellRepository spellRepo,
+                           ItemAssignmentRepository assignmentRepo,
+                           LedgerEntryRepository ledgerEntryRepo,
+                           TimelineEventRepository timelineEventRepo,
+                           MagicItemRepository magicItemRepo,
+                           EquipmentItemRepository equipmentItemRepo) {
         this.repository = repository;
         this.partyMemberRepository = partyMemberRepository;
         this.statBlockRepository = statBlockRepository;
@@ -80,6 +98,11 @@ public class CampaignService {
         this.speciesRepo = speciesRepo;
         this.backgroundRepo = backgroundRepo;
         this.spellRepo = spellRepo;
+        this.assignmentRepo = assignmentRepo;
+        this.ledgerEntryRepo = ledgerEntryRepo;
+        this.timelineEventRepo = timelineEventRepo;
+        this.magicItemRepo = magicItemRepo;
+        this.equipmentItemRepo = equipmentItemRepo;
         this.objectMapper = JsonMapper.builder()
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -131,6 +154,32 @@ public class CampaignService {
         var quickNoteDtos = quickNoteRepository.findByCampaignIdOrderByCreatedAtDesc(id).stream()
                 .map(qn -> CampaignExportDto.QuickNoteExportDto.from(qn, java.util.Map.of()))
                 .toList();
+
+        var assignments = assignmentRepo.findByCampaignIdOrderByPartyMemberAsc(id).stream()
+                .map(a -> new CampaignExportDto.AssignmentExportDto(
+                        a.getId(),
+                        a.getPartyMember() != null ? a.getPartyMember().getCharacterName() : null,
+                        a.getMagicItem() != null ? a.getMagicItem().getSourceKey() : null,
+                        a.getEquipmentItem() != null ? a.getEquipmentItem().getSourceKey() : null,
+                        a.getCustomText(), a.getQuantity(), a.isAttuned()))
+                .toList();
+
+        var ledgerEntries = ledgerEntryRepo.findByCampaignIdOrderByTimestampDesc(id).stream()
+                .map(le -> new CampaignExportDto.LedgerExportDto(
+                        le.getId(), le.getTimestamp(),
+                        le.getInGameYear(), le.getInGameMonth(), le.getInGameDay(),
+                        le.getKind().name(), le.getDirection().name(),
+                        le.getAmount(), le.getCurrency(),
+                        le.getHolder(), le.getNote()))
+                .toList();
+
+        var timelineEvents = timelineEventRepo.findByCampaignIdOrderByInGameYearAscInGameMonthAscInGameDayAsc(id).stream()
+                .map(te -> new CampaignExportDto.TimelineExportDto(
+                        te.getId(), te.getInGameYear(), te.getInGameMonth(), te.getInGameDay(),
+                        te.getTitle(), te.getBody(),
+                        te.getNoteRef() != null ? te.getNoteRef().getTitle() : null))
+                .toList();
+
         CampaignExportDto dto = new CampaignExportDto(
                 CampaignExportDto.CURRENT_FORMAT_VERSION,
                 new CampaignExportDto.CampaignDto(campaign.getName(), campaign.getDescription()),
@@ -140,7 +189,10 @@ public class CampaignService {
                 maps,
                 List.of(),
                 noteDtos,
-                quickNoteDtos
+                quickNoteDtos,
+                assignments,
+                ledgerEntries,
+                timelineEvents
         );
         try {
             return objectMapper.writeValueAsString(dto);
@@ -237,6 +289,69 @@ public class CampaignService {
         }
 
         // TODO: import quicknotes once targetId mappings are available
+
+        if (dto.assignments() != null) {
+            for (var aDto : dto.assignments()) {
+                ItemAssignment ia = new ItemAssignment();
+                ia.setCampaign(saved);
+                if (aDto.holderName() != null) {
+                    partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(saved.getId())
+                        .stream().filter(pm -> pm.getCharacterName().equals(aDto.holderName()))
+                        .findFirst().ifPresent(ia::setPartyMember);
+                }
+                if (aDto.magicItemKey() != null) {
+                    MagicItem mi = magicItemRepo.findAll().stream()
+                        .filter(m -> aDto.magicItemKey().equals(m.getSourceKey())).findFirst().orElse(null);
+                    if (mi != null) ia.setMagicItem(mi);
+                }
+                if (aDto.equipmentItemKey() != null) {
+                    EquipmentItem ei = equipmentItemRepo.findAll().stream()
+                        .filter(e -> aDto.equipmentItemKey().equals(e.getSourceKey())).findFirst().orElse(null);
+                    if (ei != null) ia.setEquipmentItem(ei);
+                }
+                ia.setCustomText(aDto.customText());
+                ia.setQuantity(aDto.quantity());
+                ia.setAttuned(aDto.attuned());
+                assignmentRepo.save(ia);
+            }
+        }
+
+        if (dto.ledger() != null) {
+            for (var leDto : dto.ledger()) {
+                LedgerEntry le = new LedgerEntry();
+                le.setCampaign(saved);
+                le.setTimestamp(leDto.timestamp());
+                le.setInGameYear(leDto.inGameYear());
+                le.setInGameMonth(leDto.inGameMonth());
+                le.setInGameDay(leDto.inGameDay());
+                le.setKind(LedgerEntry.Kind.valueOf(leDto.kind()));
+                le.setDirection(LedgerEntry.Direction.valueOf(leDto.direction()));
+                le.setAmount(leDto.amount());
+                le.setCurrency(leDto.currency());
+                le.setHolder(leDto.holder());
+                le.setNote(leDto.note());
+                ledgerEntryRepo.save(le);
+            }
+        }
+
+        if (dto.timeline() != null) {
+            for (var teDto : dto.timeline()) {
+                TimelineEvent te = new TimelineEvent();
+                te.setCampaign(saved);
+                te.setInGameYear(teDto.inGameYear());
+                te.setInGameMonth(teDto.inGameMonth());
+                te.setInGameDay(teDto.inGameDay());
+                te.setTitle(teDto.title());
+                te.setBody(teDto.body());
+                if (teDto.noteTitle() != null) {
+                    Optional<Note> note = noteRepository.findByCampaignIdAndTitle(saved.getId(), teDto.noteTitle())
+                        .stream().findFirst();
+                    note.ifPresent(te::setNoteRef);
+                }
+                timelineEventRepo.save(te);
+            }
+        }
+
         return saved;
     }
 

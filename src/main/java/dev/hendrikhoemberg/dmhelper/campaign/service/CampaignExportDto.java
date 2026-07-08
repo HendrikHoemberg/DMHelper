@@ -2,8 +2,11 @@ package dev.hendrikhoemberg.dmhelper.campaign.service;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
@@ -17,7 +20,10 @@ public record CampaignExportDto(
         List<MapExportDto> maps,
         List<Object> encounters,
         List<NoteExportDto> notes,
-        List<QuickNoteExportDto> quicknotes
+        List<QuickNoteExportDto> quicknotes,
+        List<AssignmentExportDto> assignments,
+        List<LedgerExportDto> ledger,
+        List<TimelineExportDto> timeline
 ) {
     public static final int CURRENT_FORMAT_VERSION = 1;
 
@@ -31,7 +37,8 @@ public record CampaignExportDto(
                 new CampaignDto(campaign.getName(), campaign.getDescription()),
                 party,
                 statBlocks,
-                List.of(), maps, List.of(), List.of(), List.of()
+                List.of(), maps, List.of(), List.of(), List.of(),
+                List.of(), List.of(), List.of()
         );
     }
 
@@ -223,4 +230,23 @@ public record CampaignExportDto(
             return new HandoutExportDto(h.getTitle(), java.util.List.of());
         }
     }
+
+    public record AssignmentExportDto(
+            UUID id, String holderName,
+            String magicItemKey, String equipmentItemKey,
+            String customText, int quantity, boolean attuned
+    ) {}
+
+    public record LedgerExportDto(
+            UUID id, Instant timestamp,
+            Integer inGameYear, Integer inGameMonth, Integer inGameDay,
+            String kind, String direction,
+            BigDecimal amount, String currency,
+            String holder, String note
+    ) {}
+
+    public record TimelineExportDto(
+            UUID id, int inGameYear, int inGameMonth, int inGameDay,
+            String title, String body, String noteTitle
+    ) {}
 }

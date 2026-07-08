@@ -1,6 +1,10 @@
 package dev.hendrikhoemberg.dmhelper.campaign.service;
 
+import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEvent;
+import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEventRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntry;
+import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntryRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
@@ -10,12 +14,15 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
+import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
+import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +36,9 @@ class CampaignImportExportRoundTripTest {
     @Autowired private StatBlockService statBlockService;
     @Autowired private GameMapService gameMapService;
     @Autowired private StatBlockRepository statBlockRepository;
+    @Autowired private ItemAssignmentRepository assignmentRepo;
+    @Autowired private LedgerEntryRepository ledgerEntryRepo;
+    @Autowired private TimelineEventRepository timelineEventRepo;
 
     @MockitoBean
     private NoteService noteService;
@@ -95,5 +105,60 @@ class CampaignImportExportRoundTripTest {
         assertThat(reDoc.layers().get(0).cells().get(0).terrain()).isEqualTo("wall");
         assertThat(reDoc.primitives()).hasSize(1);
         assertThat(reDoc.customTerrain()).hasSize(1);
+    }
+
+    @Test
+    void roundTripPreservesTreasuryAndCalendar() {
+        Campaign c = campaignService.create("Full Trip", "all the things");
+
+        PartyMember pm = partyMemberService.create(c.getId(), "Thia", "Anna", "Rogue 5",
+                16, 38, 4, 30, 17, 12, 11, null);
+
+        ItemAssignment ia = new ItemAssignment();
+        ia.setCampaign(c);
+        ia.setPartyMember(pm);
+        ia.setCustomText("Dagger +1");
+        ia.setQuantity(1);
+        ia.setAttuned(true);
+        assignmentRepo.save(ia);
+
+        LedgerEntry le = new LedgerEntry();
+        le.setCampaign(c);
+        le.setKind(LedgerEntry.Kind.GOLD);
+        le.setDirection(LedgerEntry.Direction.GAIN);
+        le.setAmount(new BigDecimal("500"));
+        le.setCurrency("GP");
+        le.setHolder("Party Stash");
+        le.setNote("Dragon hoard");
+        ledgerEntryRepo.save(le);
+
+        TimelineEvent te = new TimelineEvent();
+        te.setCampaign(c);
+        te.setInGameYear(1492);
+        te.setInGameMonth(5);
+        te.setInGameDay(1);
+        te.setTitle("The Eclipse");
+        te.setBody("A dark omen");
+        timelineEventRepo.save(te);
+
+        String json = campaignService.exportToJson(c.getId());
+        Campaign imported = campaignService.importFromJson(json);
+
+        List<ItemAssignment> importedAssignments = assignmentRepo
+                .findByCampaignIdOrderByPartyMemberAsc(imported.getId());
+        assertThat(importedAssignments).hasSize(1);
+        assertThat(importedAssignments.get(0).getCustomText()).isEqualTo("Dagger +1");
+        assertThat(importedAssignments.get(0).isAttuned()).isTrue();
+
+        List<LedgerEntry> importedLedger = ledgerEntryRepo
+                .findByCampaignIdOrderByTimestampDesc(imported.getId());
+        assertThat(importedLedger).hasSize(1);
+        assertThat(importedLedger.get(0).getAmount()).isEqualByComparingTo("500");
+        assertThat(importedLedger.get(0).getHolder()).isEqualTo("Party Stash");
+
+        List<TimelineEvent> importedTimeline = timelineEventRepo
+                .findByCampaignIdOrderByInGameYearAscInGameMonthAscInGameDayAsc(imported.getId());
+        assertThat(importedTimeline).hasSize(1);
+        assertThat(importedTimeline.get(0).getTitle()).isEqualTo("The Eclipse");
     }
 }
