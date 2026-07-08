@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="timelineList" id="timeline-list" class="detail-section">
+    <div th:if="${not #lists.isEmpty(events)}" style="display:flex; flex-direction:column; gap: var(--space-sm);">
+        <div th:replace="~{calendar/_event-card :: eventCard(event=${e})}" th:each="e : ${events}"></div>
+    </div>
+    <div th:if="${#lists.isEmpty(events)}" class="empty-state">No timeline events</div>
+</div>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — ' + ${campaign.name} + ' — Calendar'">DMHelper — Calendar</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <h1>Calendar & Timeline</h1>
+                <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
+            </div>
+
+            <!-- Current Date -->
+            <div th:replace="~{calendar/_current-date :: currentDateFragment}"></div>
+
+            <!-- Advance Days -->
+            <div class="detail-section">
+                <form hx-post="@{/campaigns/{id}/calendar/advance(id=${campaignId})}"
+                      hx-target="#current-date-wrapper" hx-swap="outerHTML"
+                      style="display:flex; gap: var(--space-sm); align-items:center;">
+                    <label>Advance by</label>
+                    <input type="number" name="days" value="1" min="1" style="width:70px;" />
+                    <span>days</span>
+                    <button type="submit" class="btn btn-primary">Advance</button>
+                </form>
+            </div>
+
+            <!-- Set Date -->
+            <div class="detail-section">
+                <details>
+                    <summary style="cursor:pointer; margin-bottom: var(--space-sm);">Set Date</summary>
+                    <form hx-post="@{/campaigns/{id}/calendar/set-date(id=${campaignId})}"
+                          hx-target="body" hx-swap="outerHTML"
+                          style="display:flex; gap: var(--space-sm); align-items:end;">
+                        <div>
+                            <label style="font-size: var(--text-sm);">Year</label>
+                            <input type="number" name="year" th:value="${currentDate.year()}" required style="width:80px;" />
+                        </div>
+                        <div>
+                            <label style="font-size: var(--text-sm);">Month (0-indexed)</label>
+                            <input type="number" name="month" th:value="${currentDate.month()}" min="0" required style="width:80px;" />
+                        </div>
+                        <div>
+                            <label style="font-size: var(--text-sm);">Day</label>
+                            <input type="number" name="day" th:value="${currentDate.day()}" min="1" required style="width:80px;" />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Set Date</button>
+                    </form>
+                </details>
+            </div>
+
+            <!-- Calendar Config -->
+            <div class="detail-section">
+                <details>
+                    <summary style="cursor:pointer; margin-bottom: var(--space-sm);">Calendar Configuration</summary>
+                    <div id="config-form-area">
+                        <div th:replace="~{calendar/_config-form :: configForm}"></div>
+                    </div>
+                </details>
+            </div>
+
+            <!-- Timeline -->
+            <h2>Timeline</h2>
+            <div class="detail-actions" style="margin-bottom: var(--space-sm);">
+                <button class="btn btn-primary"
+                        hx-get="@{/campaigns/{id}/calendar/events/new(id=${campaignId})}"
+                        hx-target="#event-form-area"
+                        hx-swap="innerHTML">
+                    + Add Event
+                </button>
+            </div>
+            <div id="event-form-area"></div>
+            <div th:replace="~{calendar/_timeline-list :: timelineList}"></div>
+        </main>
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>

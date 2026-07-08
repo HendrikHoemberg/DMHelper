@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="configForm" class="card" style="padding: var(--space-md);">
+    <form hx-post="@{/campaigns/{id}/calendar/config(id=${campaignId})}"
+          hx-target="body" hx-swap="outerHTML">
+
+        <div class="form-group">
+            <label>Month Names (comma-separated, 12 values)</label>
+            <input type="text" name="monthNames"
+                   th:value="${#strings.arrayJoin(config.monthNames(), ',')}"
+                   value="January,February,March,April,May,June,July,August,September,October,November,December" />
+        </div>
+
+        <div class="form-group">
+            <label>Month Lengths (comma-separated, 12 values)</label>
+            <input type="text" name="monthLengths"
+                   th:value="${#strings.arrayJoin(#arrays.stream(config.monthLengths()).mapToObj(i -> '' + i).toArray(String[]::new), ',')}"
+                   value="31,28,31,30,31,30,31,31,30,31,30,31" />
+        </div>
+
+        <div class="form-group">
+            <label>Weekday Names (comma-separated, 7 values)</label>
+            <input type="text" name="weekdayNames"
+                   th:value="${#strings.arrayJoin(config.weekdayNames(), ',')}"
+                   value="Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday" />
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Calendar Config</button>
+        </div>
+    </form>
+</div>
+</html>

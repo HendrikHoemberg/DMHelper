@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="eventForm" id="event-form-area" class="card" style="padding: var(--space-md); margin-bottom: var(--space-md);">
+    <h3 th:text="${event != null} ? 'Edit Event' : 'Add Timeline Event'">Add Event</h3>
+
+    <form th:method="${event != null} ? 'put' : 'post'"
+          th:action="${event != null}
+              ? @{/campaigns/{cid}/calendar/events/{eid}(cid=${event.campaignId()}, eid=${event.id()})}
+              : @{/campaigns/{id}/calendar/events(id=${campaignId})}"
+          hx-target="#timeline-list" hx-swap="outerHTML">
+
+        <div style="display:flex; gap: var(--space-sm);">
+            <div class="form-group">
+                <label>Year</label>
+                <input type="number" name="year" th:value="${event != null ? event.inGameYear() : 1492}" required style="width:80px;" />
+            </div>
+            <div class="form-group">
+                <label>Month (0-indexed)</label>
+                <input type="number" name="month" th:value="${event != null ? event.inGameMonth() : 0}" min="0" required style="width:80px;" />
+            </div>
+            <div class="form-group">
+                <label>Day</label>
+                <input type="number" name="day" th:value="${event != null ? event.inGameDay() : 1}" min="1" required style="width:80px;" />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Title</label>
+            <input type="text" name="title" th:value="${event != null ? event.title() : ''}" placeholder="e.g. The Eclipse" required />
+        </div>
+
+        <div class="form-group">
+            <label>Body</label>
+            <textarea name="body" rows="3" th:text="${event != null ? event.body() : ''}" placeholder="Event description..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Linked Note ID (optional)</label>
+            <input type="text" name="noteId" th:value="${event != null ? event.noteId() : ''}" placeholder="UUID of linked note" />
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" th:text="${event != null} ? 'Update Event' : 'Add Event'">Add Event</button>
+            <button type="button" class="btn btn-ghost"
+                    hx-get="${event != null}
+                        ? @{/campaigns/{cid}/calendar/events/new(cid=${event.campaignId()})}
+                        : @{/campaigns/{id}/calendar/events/new(id=${campaignId})}"
+                    hx-target="#event-form-area" hx-swap="innerHTML">
+                Cancel
+            </button>
+        </div>
+    </form>
+</div>
+</html>
