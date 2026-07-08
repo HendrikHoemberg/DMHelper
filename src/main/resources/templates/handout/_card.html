@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<article class="card handout-card" th:fragment="card(handout)" th:id="'handout-' + ${handout.id}">
+    <div style="display: flex; gap: var(--space-sm); align-items: flex-start;">
+        <div style="width: 80px; height: 80px; flex-shrink: 0; border-radius: 4px; overflow: hidden; background: var(--color-bg);">
+            <img th:src="@{/files/{id}(id=${handout.id})}"
+                 th:alt="${handout.title}"
+                 style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div style="flex: 1;">
+            <h3 style="margin: 0;">
+                <a th:href="@{/campaigns/{cid}/handouts/{id}/present(cid=${handout.campaign.id},id=${handout.id})}"
+                   style="color: var(--color-text); text-decoration: none;"
+                   th:text="${handout.title}">Title</a>
+            </h3>
+            <div style="display: flex; gap: var(--space-xs); margin-top: var(--space-xs); flex-wrap: wrap;">
+                <span th:if="${handout.presented}" class="badge" style="background: var(--color-success);">Given to players</span>
+                <span th:if="${handout.dmOnly}" class="badge" style="background: var(--color-warning);">DM only</span>
+                <span th:each="tag : ${#strings.arraySplit(handout.tags, ',')}"
+                      th:if="${!#strings.isEmpty(tag.trim())}"
+                      th:text="${tag.trim()}"
+                      class="badge"
+                      style="background: var(--color-surface-hover); font-size: 0.7rem;"></span>
+            </div>
+        </div>
+    </div>
+    <div class="card-actions">
+        <button class="btn btn-ghost"
+                hx-get="@{/campaigns/{cid}/handouts/{id}/present(cid=${handout.campaign.id},id=${handout.id})}"
+                hx-target="body" hx-swap="beforeend">
+            Present
+        </button>
+        <button class="btn btn-danger"
+                hx-delete="@{/campaigns/{cid}/handouts/{id}(cid=${handout.campaign.id},id=${handout.id})}"
+                hx-confirm="Delete this handout?"
+                hx-swap="none">
+            Delete
+        </button>
+    </div>
+</article>
+</html>

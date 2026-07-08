@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — ' + ${campaign.name} + ' Handouts'">DMHelper — Handouts</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <div>
+                    <a th:href="@{/campaigns/{id}(id=${campaign.id})}"
+                       style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">
+                        &larr; Back to Campaign
+                    </a>
+                    <h1>Handouts</h1>
+                </div>
+            </div>
+
+            <div class="inline-form" style="margin-bottom: var(--space-lg);">
+                <h3>Upload New Handout</h3>
+                <form th:action="@{/campaigns/{cid}/handouts(cid=${campaignId})}"
+                      method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Image (PNG, JPEG, WebP)</label>
+                        <input type="file" name="file" accept="image/png,image/jpeg,image/webp" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" name="title" placeholder="Optional — uses filename if blank">
+                    </div>
+                    <div class="form-group">
+                        <label>Tags (comma-separated)</label>
+                        <input type="text" name="tags" placeholder="e.g. quest, regent, letter">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card-grid" id="handoutList" th:if="${not #lists.isEmpty(handouts)}">
+                <th:block th:each="h : ${handouts}">
+                    <th:block th:replace="~{handout/_card :: card(${h})}"></th:block>
+                </th:block>
+            </div>
+
+            <div class="empty-state" id="handoutEmpty" th:if="${#lists.isEmpty(handouts)}">
+                <p>No handouts yet.</p>
+                <span style="font-size: var(--text-sm);">Upload an image to share with your players.</span>
+            </div>
+        </main>
+
+        <aside class="sidebar">
+            <div class="sidebar-title">Quick Access</div>
+        </aside>
+    </div>
+</body>
+</html>
