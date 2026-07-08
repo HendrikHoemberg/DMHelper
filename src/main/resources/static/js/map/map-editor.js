@@ -155,6 +155,7 @@ export class MapEditor {
     addCustomTerrain(name, fill, walkable) {
         const key = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
         if (!key || this.palette[key] || !this.document) return null;
+        this.pushUndo();
         this.syncDocument();
         this.document.customTerrain = this.document.customTerrain || [];
         this.document.customTerrain.push({ key, name, fill, walkable });
@@ -215,6 +216,8 @@ export class MapEditor {
         this.snap = !!snap;
     }
 
+    // toggleLayerVisible/toggleLayerLocked intentionally do not pushUndo(): they're view/workflow
+    // state, not map content, so Ctrl+Z shouldn't silently flip them while undoing a content edit.
     toggleLayerVisible(id) {
         const l = this.layerDto(id);
         if (!l) return;
