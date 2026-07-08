@@ -104,6 +104,11 @@ public class EncounterService {
 
     public EncounterDto activate(UUID id) {
         Encounter e = findEntityById(id);
+        encounterRepo.findByCampaignIdAndStatus(e.getCampaign().getId(), Encounter.Status.ACTIVE)
+                .ifPresent(active -> {
+                    active.setStatus(Encounter.Status.DONE);
+                    encounterRepo.save(active);
+                });
         e.setStatus(Encounter.Status.ACTIVE);
         e.setRound(1);
         return toDto(encounterRepo.save(e));
