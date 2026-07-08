@@ -150,7 +150,7 @@ export class MapEditor {
             };
         }
         this.emit('map-palette', {
-            terrains: Object.entries(this.palette).map(([key, t]) => ({ key, name: t.name })),
+            terrains: Object.entries(this.palette).map(([key, t]) => ({ key, name: t.name, fill: t.fill, custom: !!t.custom })),
         });
     }
 
@@ -169,6 +169,20 @@ export class MapEditor {
         this.setTerrain(key);
         this.markDirty();
         return key;
+    }
+
+    /** Removes a custom terrain from the palette. Cells already painted with it keep their
+     *  terrain key; `addCellRect`'s `this.palette[cell.terrain] || this.palette[DEFAULT_TERRAIN]`
+     *  fallback already renders unknown keys as the default terrain, so no migration is needed. */
+    removeCustomTerrain(key) {
+        if (!this.document || !(this.document.customTerrain || []).some((t) => t.key === key)) return;
+        this.pushUndo();
+        this.syncDocument();
+        this.document.customTerrain = (this.document.customTerrain || []).filter((t) => t.key !== key);
+        this.rebuildPalette();
+        if (this.terrain === key) this.setTerrain(DEFAULT_TERRAIN);
+        this.renderDocument();
+        this.markDirty();
     }
 
     importBackgroundImage(dataUrl) {

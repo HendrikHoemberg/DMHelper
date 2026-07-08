@@ -129,6 +129,57 @@
             color: #fff;
             min-width: 80px;
         }
+        .terrain-swatch {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--color-border);
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 0;
+        }
+        .terrain-swatch.active { border-color: var(--color-accent); }
+        .terrain-swatch.erase { background: repeating-linear-gradient(45deg, #444 0 4px, #222 4px 8px); }
+        .terrain-swatch-sm {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            display: inline-block;
+            border: 1px solid var(--color-border);
+            flex-shrink: 0;
+        }
+        .terrain-panel {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 30;
+            margin-top: 4px;
+            width: 220px;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: var(--space-sm);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+        .terrain-panel-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: var(--space-sm);
+        }
+        .terrain-panel-row {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: 2px 0;
+            font-size: var(--text-sm);
+        }
+        .terrain-panel-form {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            border-top: 1px solid var(--color-border);
+            padding-top: var(--space-xs);
+        }
+        .terrain-panel-form input[type="text"] { width: 100%; }
     </style>
 </head>
 <body>
@@ -136,16 +187,35 @@
         <div class="editor-toolbar">
             <a th:href="@{/campaigns/{cid}/maps(cid=${campaignId})}" class="btn btn-ghost">&larr; Maps</a>
 
-            <div class="tool-group">
+            <div class="tool-group" style="position: relative;">
                 <button class="tool-btn" :class="{ active: tool === 'brush' }" @click="setTool('brush')" title="Brush (B) — right-click to erase">🖌 Brush</button>
                 <button class="tool-btn" :class="{ active: tool === 'fill-rect' }" @click="setTool('fill-rect')" title="Terrain Rect (T) — right-click to erase">▤ Terrain Rect</button>
                 <button class="tool-btn" :class="{ active: tool === 'bucket' }" @click="setTool('bucket')" title="Bucket (G) — right-click to erase">🪣 Bucket</button>
-                <select class="tool-btn" style="padding: 6px 8px;" x-model="terrain" @change="applyTerrain()">
-                    <template x-for="t in terrains" :key="t.key">
-                        <option :value="t.key" x-text="t.name"></option>
-                    </template>
-                </select>
-                <button class="tool-btn" @click="addTerrain()" title="Add custom terrain (name + color + walkable)">+ Terrain</button>
+                <template x-for="t in terrains" :key="t.key">
+                    <button class="terrain-swatch" :class="{ active: terrain === t.key, erase: t.key === '__erase__' }"
+                            :style="t.fill ? ('background:' + t.fill) : ''"
+                            :title="t.name" @click="terrain = t.key; applyTerrain()"></button>
+                </template>
+                <button class="tool-btn" @click="terrainPanelOpen = !terrainPanelOpen" title="Manage terrain palette">⚙</button>
+                <div class="terrain-panel" x-show="terrainPanelOpen" style="display: none;" @click.outside="terrainPanelOpen = false">
+                    <div class="terrain-panel-list">
+                        <template x-for="t in terrains.filter((x) => x.key !== '__erase__')" :key="t.key">
+                            <div class="terrain-panel-row">
+                                <span class="terrain-swatch-sm" :style="t.fill ? ('background:' + t.fill) : ''"></span>
+                                <span style="flex: 1;" x-text="t.name"></span>
+                                <button x-show="t.custom" @click="deleteTerrain(t.key)" title="Delete this terrain">🗑</button>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="terrain-panel-form">
+                        <input type="text" x-model="newTerrainName" placeholder="New terrain name" @keydown.enter="addTerrain()">
+                        <input type="color" x-model="newTerrainColor">
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: var(--text-sm);">
+                            <input type="checkbox" x-model="newTerrainWalkable"> Walkable
+                        </label>
+                        <button class="btn btn-primary" @click="addTerrain()">Add terrain</button>
+                    </div>
+                </div>
             </div>
 
             <div class="tool-group">
@@ -232,14 +302,18 @@
                 activeLayer: 'terrain',
                 terrains: [
                     { key: '__erase__', name: '◇ Erase' },
-                    { key: 'floor', name: 'Floor' },
-                    { key: 'wall', name: 'Wall' },
-                    { key: 'water', name: 'Water' },
-                    { key: 'difficult', name: 'Difficult Terrain' },
-                    { key: 'lava', name: 'Lava' },
-                    { key: 'pit', name: 'Pit' },
-                    { key: 'door', name: 'Door' },
+                    { key: 'floor', name: 'Floor', fill: '#2a2a3e' },
+                    { key: 'wall', name: 'Wall', fill: '#4a4a5e' },
+                    { key: 'water', name: 'Water', fill: '#1a3a6e' },
+                    { key: 'difficult', name: 'Difficult Terrain', fill: '#3a4a1e' },
+                    { key: 'lava', name: 'Lava', fill: '#6e2a1a' },
+                    { key: 'pit', name: 'Pit', fill: '#1a1a1a' },
+                    { key: 'door', name: 'Door', fill: '#8a6a2e' },
                 ],
+                terrainPanelOpen: false,
+                newTerrainName: '',
+                newTerrainColor: '#2a6e3a',
+                newTerrainWalkable: true,
                 layerList: [
                     { id: 'image', name: 'Background' },
                     { id: 'terrain', name: 'Terrain' },
@@ -259,6 +333,7 @@
                     window.addEventListener('map-palette', (e) => {
                         this.terrains = [{ key: '__erase__', name: '◇ Erase' }, ...e.detail.terrains];
                     });
+
                     window.addEventListener('map-layerstate', (e) => {
                         for (const [id, state] of Object.entries(e.detail.layers)) {
                             if (this.layers[id]) Object.assign(this.layers[id], state);
@@ -280,14 +355,15 @@
                 undo() { window.mapEditor?.undo(); },
                 redo() { window.mapEditor?.redo(); },
                 addTerrain() {
-                    const name = prompt('Terrain name:');
-                    if (!name || !name.trim()) return;
-                    const fill = prompt('Fill color (hex, e.g. #2a6e3a):', '#2a6e3a');
-                    if (!fill || !fill.trim()) return;
-                    const walkable = confirm('Walkable terrain? (OK = yes, Cancel = no)');
-                    const key = window.mapEditor?.addCustomTerrain(name.trim(), fill.trim(), walkable);
-                    if (key) this.terrain = key;
+                    const name = this.newTerrainName.trim();
+                    if (!name) return;
+                    const key = window.mapEditor?.addCustomTerrain(name, this.newTerrainColor, this.newTerrainWalkable);
+                    if (key) {
+                        this.terrain = key;
+                        this.newTerrainName = '';
+                    }
                 },
+                deleteTerrain(key) { window.mapEditor?.removeCustomTerrain(key); },
                 importImage(event) {
                     const file = event.target.files[0];
                     if (!file) return;
