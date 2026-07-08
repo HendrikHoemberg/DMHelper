@@ -391,6 +391,7 @@ export class MapEditor {
             }
 
             if (this.activeTool === 'brush') {
+                this.erasing = false;
                 this.pushUndo();
                 this.drawing = true;
                 this.lastPaintCell = null;
