@@ -9,10 +9,12 @@ import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
+import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 
@@ -27,6 +29,9 @@ class CampaignImportExportRoundTripTest {
     @Autowired private StatBlockService statBlockService;
     @Autowired private GameMapService gameMapService;
     @Autowired private StatBlockRepository statBlockRepository;
+
+    @MockitoBean
+    private NoteService noteService;
 
     @Test
     void roundTripPreservesPartyActiveAndStatblockSourceKey() {

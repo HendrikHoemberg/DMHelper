@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class MarkdownUtil {
 
     private final Parser parser = Parser.builder().build();
-    private final HtmlRenderer renderer = HtmlRenderer.builder().build();
+    private final HtmlRenderer renderer = HtmlRenderer.builder().escapeHtml(false).build();
 
     public String toHtml(String markdown) {
         if (markdown == null) return "";
