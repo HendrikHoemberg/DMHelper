@@ -29,6 +29,12 @@
             <div id="statblock-detail">
                 <th:block th:replace="~{library/_statblock-renderer :: renderer(sb=${sb})}"></th:block>
             </div>
+
+            <th:block th:if="${campaignId != null}">
+            <div style="margin-top: var(--space-lg);">
+                <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='STATBLOCK', targetId=${sb.id})}"></th:block>
+            </div>
+            </th:block>
         </main>
         <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
     </div>

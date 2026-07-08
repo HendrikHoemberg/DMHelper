@@ -134,6 +134,10 @@
                     </div>
                 </th:block>
             </div>
+
+            <div style="margin-top: var(--space-lg);">
+                <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='ENCOUNTER', targetId=${encounter.id})}"></th:block>
+            </div>
         </main>
 
         <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>

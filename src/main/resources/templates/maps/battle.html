@@ -379,6 +379,18 @@
                 <div x-show="showTracker" style="height: 100%;">
                     <th:block th:replace="~{encounter/_tracker :: tracker}"></th:block>
                 </div>
+
+                <!-- Map quicknotes -->
+                <div class="battle-sidebar-section" style="padding: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+                    <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='MAP', targetId=${map.id})}"></th:block>
+                </div>
+
+                <!-- Active encounter quicknotes (if an encounter is currently active) -->
+                <th:block th:if="${activeEncounter != null}">
+                <div class="battle-sidebar-section" style="padding: var(--space-sm); border-bottom: 1px solid var(--color-border);">
+                    <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='ENCOUNTER', targetId=${activeEncounter.id})}"></th:block>
+                </div>
+                </th:block>
             </div>
         </div>
 
