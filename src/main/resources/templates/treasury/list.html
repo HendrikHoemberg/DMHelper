@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — ' + ${campaign.name} + ' — Treasury'">DMHelper — Treasury</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <h1>Treasury & Loot</h1>
+                <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
+            </div>
+
+            <div class="detail-actions" style="margin-bottom: var(--space-lg);">
+                <button class="btn btn-primary"
+                        hx-get="@{/campaigns/{id}/treasury/new(id=${campaignId})}"
+                        hx-target="#treasury-form-area"
+                        hx-swap="innerHTML">
+                    + Add Item
+                </button>
+            </div>
+
+            <div id="treasury-form-area"></div>
+
+            <!-- Gold Balances -->
+            <div th:if="${not #lists.isEmpty(balances)}" class="detail-section">
+                <h2>Gold Balances</h2>
+                <div style="display:flex; flex-wrap:wrap; gap: var(--space-md);">
+                    <div th:each="b : ${balances}" class="card" style="padding: var(--space-sm) var(--space-md);">
+                        <strong th:text="${b.holder()}">Holder</strong>
+                        <span th:text="${b.balance() + ' ' + b.currency()}"
+                              style="margin-left: var(--space-sm); color: var(--color-accent);">0 GP</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Item Assignments by Holder -->
+            <div th:each="pm : ${partyMembers}" class="detail-section">
+                <th:block th:with="holderItems=${#lists.toList(assignments).stream().filter(a -> a.partyMemberId() != null && a.partyMemberId().equals(pm.id)).toList()}">
+                    <h2 th:text="${pm.characterName} + '&apos;s Items'">PC's Items</h2>
+                    <div th:if="${not #lists.isEmpty(holderItems)}" style="display:flex; flex-direction:column; gap: var(--space-sm);">
+                        <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=${#lists.toList(holderItems).stream().filter(a -> a.attuned()).count()})}"
+                             th:each="a : ${holderItems}"></div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(holderItems)}" class="empty-state">No items assigned</div>
+                </th:block>
+            </div>
+
+            <!-- Party Stash -->
+            <div class="detail-section">
+                <th:block th:with="stashItems=${#lists.toList(assignments).stream().filter(a -> a.partyMemberId() == null).toList()}">
+                    <h2>Party Stash</h2>
+                    <div th:if="${not #lists.isEmpty(stashItems)}" style="display:flex; flex-direction:column; gap: var(--space-sm);">
+                        <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=0)}"
+                             th:each="a : ${stashItems}"></div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(stashItems)}" class="empty-state">Party stash is empty</div>
+                </th:block>
+            </div>
+        </main>
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>

@@ -1,0 +1,6 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="warning(count)" style="color: var(--color-danger, #c44); font-size: var(--text-sm); margin-top: 4px;">
+    <span th:text="'⚠ ' + count + ' attuned items — at the attunement limit'">warning</span>
+</div>
+</html>

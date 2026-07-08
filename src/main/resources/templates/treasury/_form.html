@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="form" class="card" style="padding: var(--space-md); margin-bottom: var(--space-md);">
+    <h3 style="margin-top:0;">Add Item</h3>
+    <form hx-post="@{/campaigns/{id}/treasury(id=${campaignId})}"
+          hx-target="body" hx-swap="outerHTML">
+
+        <div class="form-group">
+            <label>Assign To</label>
+            <select name="partyMemberId">
+                <option value="">— Party Stash —</option>
+                <option th:each="pm : ${partyMembers}" th:value="${pm.id}" th:text="${pm.characterName}">PC Name</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Magic Item</label>
+            <select name="magicItemId">
+                <option value="">— None —</option>
+                <option th:each="mi : ${magicItems}" th:value="${mi.id}" th:text="${mi.name}">Magic Item</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Equipment Item</label>
+            <select name="equipmentItemId">
+                <option value="">— None —</option>
+                <option th:each="ei : ${equipmentItems}" th:value="${ei.id}" th:text="${ei.name}">Equipment</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Or Custom Item Name</label>
+            <input type="text" name="customText" placeholder="e.g. mysterious amulet" />
+        </div>
+
+        <div class="form-group" style="display:flex; gap: var(--space-md); align-items:center;">
+            <div>
+                <label>Quantity</label>
+                <input type="number" name="quantity" value="1" min="1" style="width:70px;" />
+            </div>
+            <div style="display:flex; align-items:center; gap:4px; padding-top: 1.2em;">
+                <input type="checkbox" name="attuned" value="true" id="attuned-check" />
+                <label for="attuned-check">Attuned</label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Add Item</button>
+        </div>
+    </form>
+</div>
+</html>
