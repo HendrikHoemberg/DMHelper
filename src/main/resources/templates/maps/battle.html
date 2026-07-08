@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — ' + ${map.name} + ' (Battle)'">DMHelper — Battle Map</title>
+    <style>
+        .battle-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: var(--color-bg);
+        }
+        .battle-toolbar {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            background: var(--color-surface);
+            border-bottom: 1px solid var(--color-border);
+            flex-shrink: 0;
+        }
+        .battle-toolbar .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding-right: var(--space-md);
+            border-right: 1px solid var(--color-border);
+        }
+        .battle-toolbar .tool-btn {
+            padding: 6px 10px;
+            font-size: var(--text-sm);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--color-text);
+            cursor: pointer;
+        }
+        .battle-toolbar .tool-btn:hover { background: var(--color-surface-hover); }
+        .battle-toolbar .tool-btn.active {
+            background: var(--color-accent);
+            border-color: var(--color-accent);
+            color: #fff;
+        }
+        .battle-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .battle-canvas-wrap {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            background: #0a0a1a;
+        }
+        .battle-sidebar {
+            width: 240px;
+            flex-shrink: 0;
+            overflow-y: auto;
+            background: var(--color-surface);
+            border-left: 1px solid var(--color-border);
+            padding: var(--space-sm);
+        }
+        .battle-statusbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2px var(--space-md);
+            background: var(--color-surface);
+            border-top: 1px solid var(--color-border);
+            font-size: var(--text-sm);
+            color: var(--color-text-muted);
+            flex-shrink: 0;
+        }
+        .sidebar-section {
+            margin-bottom: var(--space-md);
+        }
+        .sidebar-section h3 {
+            font-size: var(--text-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--color-text-muted);
+            margin: 0 0 var(--space-xs);
+        }
+        .token-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: var(--text-sm);
+            cursor: pointer;
+        }
+        .token-list-item:hover { background: var(--color-surface-hover); }
+        .token-swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            display: inline-block;
+            border: 1px solid var(--color-border);
+            flex-shrink: 0;
+            margin-right: 6px;
+        }
+        .save-indicator.save-saved { color: var(--color-success); }
+        .save-indicator.save-saving,
+        .save-indicator.save-unsaved { color: var(--color-warning); }
+        .save-indicator.save-error { color: var(--color-danger); }
+        .hp-input {
+            width: 50px;
+            padding: 2px 4px;
+            font-size: var(--text-sm);
+            border: 1px solid var(--color-border);
+            border-radius: 3px;
+            background: var(--color-bg);
+            color: var(--color-text);
+            text-align: center;
+        }
+        .map-switcher select {
+            padding: 4px 8px;
+            font-size: var(--text-sm);
+            background: var(--color-bg);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="battle-container" x-data="battleToolbar()">
+        <div class="battle-toolbar">
+            <a th:href="@{/campaigns/{cid}/maps(cid=${campaignId})}" class="btn btn-ghost">&larr; Maps</a>
+
+            <div class="tool-group">
+                <button class="tool-btn" :class="{ active: tool === 'select' }" @click="setTool('select')" title="Select/Move tokens">☝ Select</button>
+                <button class="tool-btn" :class="{ active: tool === 'measure' }" @click="setTool('measure')" title="Measure distance">↔ Measure</button>
+                <button class="tool-btn" @click="addToken()" title="Add a token">＋ Token</button>
+                <button class="tool-btn" @click="addParty()" title="Add all active party members to map">👥 Add Party</button>
+            </div>
+
+            <div class="tool-group">
+                <button class="tool-btn" :class="{ active: tool === 'cone' }" @click="setTool('cone')" title="Cone template">◤ Cone</button>
+                <button class="tool-btn" :class="{ active: tool === 'sphere' }" @click="setTool('sphere')" title="Sphere/Circle template">○ Sphere</button>
+                <button class="tool-btn" :class="{ active: tool === 'cube' }" @click="setTool('cube')" title="Cube template">□ Cube</button>
+                <button class="tool-btn" :class="{ active: tool === 'line' }" @click="setTool('line')" title="Line template">╱ Line</button>
+                <button class="tool-btn" @click="clearAoe()" title="Clear all AoE templates">✕ Clear AoE</button>
+            </div>
+
+            <div class="tool-group">
+                <button class="tool-btn" :class="{ active: movementMode === 'GRID' }"
+                        @click="toggleMovementMode()"
+                        :title="movementMode === 'GRID' ? 'Grid mode: tokens snap to cells' : 'Freeform mode: free pixel movement'">
+                    <span x-show="movementMode === 'GRID'">⬡ Grid</span>
+                    <span x-show="movementMode === 'FREEFORM'">⊡ Free</span>
+                </button>
+                <button class="tool-btn" :class="{ active: showGrid }"
+                        @click="toggleShowGrid()"
+                        title="Toggle grid visibility">
+                    # Grid
+                </button>
+            </div>
+
+            <div class="tool-group" style="border-right: none;">
+                <button class="tool-btn" :class="{ active: dmMode }"
+                        @click="toggleDmMode()"
+                        :title="dmMode ? 'DM Mode: all data visible' : 'Player view: hidden tokens dimmed'">
+                    <span x-show="dmMode">👁 DM</span>
+                    <span x-show="!dmMode">🚫 Player</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="battle-body">
+            <div class="battle-canvas-wrap" id="battleCanvasWrap"></div>
+
+            <div class="battle-sidebar">
+                <div class="sidebar-section" x-show="maps.length > 1" style="display: none;">
+                    <h3>Maps</h3>
+                    <div class="map-switcher">
+                        <select x-model="currentMapId" @change="switchMap()">
+                            <template x-for="m in maps" :key="m.id">
+                                <option :value="m.id" x-text="m.name" :selected="m.id === currentMapId"></option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Tokens (<span x-text="tokens.length"></span>)</h3>
+                    <template x-for="t in tokens" :key="t.id">
+                        <div class="token-list-item" @click="focusToken(t.id)">
+                            <span class="token-swatch" :style="{ background: t.color }"></span>
+                            <span x-text="t.name" style="flex: 1;"></span>
+                            <template x-if="t.currentHp != null && t.maxHp != null">
+                                <span x-text="t.currentHp + '/' + t.maxHp"
+                                      style="font-size: 0.75rem; color: var(--color-text-muted);"></span>
+                            </template>
+                            <button @click.stop="deleteToken(t.id)" class="btn btn-ghost" style="padding: 0 4px; font-size: var(--text-sm);">✕</button>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="sidebar-section" x-show="selectedToken" style="display: none;">
+                    <h3>Selected</h3>
+                    <div style="font-size: var(--text-sm);">
+                        <div style="margin-bottom: var(--space-xs);">
+                            <label style="display: block; color: var(--color-text-muted);">Name</label>
+                            <input type="text" x-model="selectedToken.name" @change="updateToken()" style="width: 100%;">
+                        </div>
+                        <div style="margin-bottom: var(--space-xs);">
+                            <label style="display: block; color: var(--color-text-muted);">HP</label>
+                            <div style="display: flex; gap: 4px; align-items: center;">
+                                <input type="number" class="hp-input" x-model="selectedToken.currentHp" @change="updateToken()">
+                                <span>/</span>
+                                <input type="number" class="hp-input" x-model="selectedToken.maxHp" @change="updateToken()">
+                            </div>
+                        </div>
+                        <div style="margin-bottom: var(--space-xs);">
+                            <label style="display: block; color: var(--color-text-muted);">Size</label>
+                            <select x-model="selectedToken.sizeCols" @change="updateToken()" style="font-size: var(--text-sm);">
+                                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: var(--space-xs);">
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox" x-model="selectedToken.hidden" @change="updateToken()"> Hidden
+                            </label>
+                        </div>
+                        <div style="margin-bottom: var(--space-xs);">
+                            <label style="display: block; color: var(--color-text-muted);">Color</label>
+                            <input type="color" x-model="selectedToken.color" @change="updateToken()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="battle-statusbar">
+            <span id="battleStatusMessage">Ready</span>
+            <span id="battleCursorInfo" style="color: var(--color-text-muted);"></span>
+            <span id="battleSaveIndicator" class="save-indicator save-saved">Saved</span>
+        </div>
+    </div>
+
+    <script th:src="@{/vendor/konva.min.js}"></script>
+    <script>
+        function battleToolbar() {
+            return {
+                tool: 'select',
+                movementMode: /*[[${map.movementMode}]]*/ 'GRID',
+                showGrid: /*[[${map.showGrid}]]*/ true,
+                dmMode: true,
+                currentMapId: /*[[${map.id}]]*/ '',
+                maps: [],
+                tokens: [],
+                selectedToken: null,
+
+                init() {
+                    window.addEventListener('battle-toolchange', (e) => { this.tool = e.detail.tool; });
+                    window.addEventListener('battle-tokenupdate', (e) => {
+                        this.tokens = e.detail.tokens;
+                        if (this.selectedToken) {
+                            const updated = this.tokens.find(t => t.id === this.selectedToken.id);
+                            if (updated) this.selectedToken = updated;
+                        }
+                    });
+                    window.addEventListener('battle-tokenselect', (e) => { this.selectedToken = e.detail.token; });
+                    window.addEventListener('battle-modestate', (e) => {
+                        this.movementMode = e.detail.movementMode;
+                        this.showGrid = e.detail.showGrid;
+                    });
+                    window.addEventListener('battle-maplist', (e) => {
+                        this.maps = e.detail.maps;
+                        this.currentMapId = e.detail.currentMapId;
+                    });
+                    this.loadMaps();
+                },
+
+                setTool(t) { window.battleMap?.setTool(t); },
+
+                async addToken() {
+                    const name = prompt('Token name:') || 'Token';
+                    const kind = prompt('Kind (PC/NPC/MONSTER/OBJECT):', 'NPC') || 'NPC';
+                    const colors = { PC: '#4a9eff', NPC: '#2ecc71', MONSTER: '#e74c3c', OBJECT: '#f39c12' };
+                    await window.battleMap?.createToken({
+                        name, kind, positionX: 0, positionY: 0,
+                        sizeCols: 1, sizeRows: 1,
+                        color: colors[kind] || '#7b68ee', hidden: false,
+                        currentHp: null, maxHp: null,
+                    });
+                },
+
+                async addParty() { await window.battleMap?.addPartyToMap(); },
+                async deleteToken(id) { if (confirm('Delete this token?')) await window.battleMap?.deleteToken(id); },
+                focusToken(id) { window.battleMap?.selectToken(id); },
+
+                async updateToken() {
+                    if (this.selectedToken) {
+                        await window.battleMap?.updateToken(this.selectedToken.id, this.selectedToken);
+                    }
+                },
+
+                async toggleMovementMode() {
+                    const newMode = this.movementMode === 'GRID' ? 'FREEFORM' : 'GRID';
+                    await window.battleMap?.setMovementMode(newMode);
+                },
+                async toggleShowGrid() {
+                    await window.battleMap?.setShowGrid(!this.showGrid);
+                },
+                toggleDmMode() {
+                    this.dmMode = !this.dmMode;
+                    window.battleMap?.setDmMode(this.dmMode);
+                },
+                clearAoe() { window.battleMap?.clearAoeNodes(); },
+
+                async loadMaps() {
+                    try {
+                        const resp = await fetch(`/api/v1/campaigns/${/*[[${campaignId}]]*/ ''}/maps`);
+                        if (resp.ok) this.maps = await resp.json();
+                    } catch (e) {}
+                },
+                switchMap() {
+                    window.location.href = `/campaigns/${/*[[${campaignId}]]*/ ''}/maps/${this.currentMapId}/play`;
+                },
+            };
+        }
+    </script>
+    <script type="module" th:inline="javascript">
+        import { BattleMap } from '/js/map/battle-map.js';
+
+        const battleMap = new BattleMap({
+            container: document.getElementById('battleCanvasWrap'),
+            mapId: /*[[${map.id}]]*/ '',
+            gridWidth: /*[[${map.gridWidth}]]*/ 30,
+            gridHeight: /*[[${map.gridHeight}]]*/ 20,
+            cellSizePx: /*[[${map.cellSizePx}]]*/ 48,
+            movementMode: /*[[${map.movementMode}]]*/ 'GRID',
+            showGrid: /*[[${map.showGrid}]]*/ true,
+            statusEl: document.getElementById('battleStatusMessage'),
+            saveIndicatorEl: document.getElementById('battleSaveIndicator'),
+            cursorInfoEl: document.getElementById('battleCursorInfo'),
+        });
+        window.battleMap = battleMap;
+        battleMap.load();
+    </script>
+    <script th:src="@{/vendor/alpine.min.js}" defer></script>
+</body>
+</html>
