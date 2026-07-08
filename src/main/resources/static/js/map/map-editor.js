@@ -1,5 +1,6 @@
 import { BUILTIN_TERRAIN, DEFAULT_TERRAIN, ERASE_KEY, SHAPE_COLORS } from './terrain-palette.js';
 import { floodFillCells } from './flood-fill.js';
+import { drawGrid, cellPos, snapPt } from './shared.js';
 
 /**
  * @typedef {{col: number, row: number, terrain: string}} Cell
@@ -126,20 +127,7 @@ export class MapEditor {
     /* ---- Grid ---- */
 
     drawGrid() {
-        const s = this.cellSizePx;
-        for (let col = 0; col <= this.gridWidth; col++) {
-            this.gridLayer.add(new Konva.Line({
-                points: [col * s, 0, col * s, this.gridHeight * s],
-                stroke: '#333', strokeWidth: 0.5, listening: false,
-            }));
-        }
-        for (let row = 0; row <= this.gridHeight; row++) {
-            this.gridLayer.add(new Konva.Line({
-                points: [0, row * s, this.gridWidth * s, row * s],
-                stroke: '#333', strokeWidth: 0.5, listening: false,
-            }));
-        }
-        this.gridLayer.batchDraw();
+        drawGrid(this.gridLayer, this.gridWidth, this.gridHeight, this.cellSizePx);
     }
 
     /* ---- Palette (extensible, §4.3) ---- */
@@ -772,16 +760,12 @@ export class MapEditor {
 
     /** Pointer position in cell units, correct under pan/zoom. */
     cellPos() {
-        const p = this.stage.getRelativePointerPosition();
-        if (!p) return null;
-        const x = p.x / this.cellSizePx;
-        const y = p.y / this.cellSizePx;
-        return { x, y, col: Math.floor(x), row: Math.floor(y) };
+        return cellPos(this.stage, this.cellSizePx);
     }
 
     /** Snap-to-grid with unsnapped option (§4.3): whole cells when on, 1/20 cell when off. */
     snapPt(v) {
-        return this.snap ? Math.round(v) : Math.round(v * 20) / 20;
+        return snapPt(v, this.snap);
     }
 
     round2(v) {

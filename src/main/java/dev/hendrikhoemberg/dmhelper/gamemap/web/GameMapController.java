@@ -56,6 +56,15 @@ public class GameMapController {
         return "maps/editor";
     }
 
+    @GetMapping("/{mapId}/play")
+    public String play(@PathVariable UUID campaignId,
+                       @PathVariable UUID mapId,
+                       Model model) {
+        model.addAttribute("campaignId", campaignId);
+        model.addAttribute("map", service.findById(mapId));
+        return "maps/battle";
+    }
+
     @DeleteMapping("/{mapId}")
     public ResponseEntity<Void> delete(@PathVariable UUID campaignId,
                                         @PathVariable UUID mapId) {
