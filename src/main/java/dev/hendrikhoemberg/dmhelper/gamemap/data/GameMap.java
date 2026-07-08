@@ -37,6 +37,14 @@ public class GameMap {
     @Column(nullable = false, length = 16)
     private String gridType = "SQUARE";
 
+    /** Movement mode: GRID (default, token movement snaps to cells) or FREEFORM (pixel movement). */
+    @Column(nullable = false, length = 16)
+    private String movementMode = "GRID";
+
+    /** Whether to show grid lines on the battle map (independent of movement mode). */
+    @Column(nullable = false)
+    private boolean showGrid = true;
+
     /** Optimistic-lock counter for whole-document replaces (SPEC §5). */
     @Version
     private long version;
@@ -67,6 +75,12 @@ public class GameMap {
 
     public String getGridType() { return gridType; }
     public void setGridType(String gridType) { this.gridType = gridType; }
+
+    public String getMovementMode() { return movementMode; }
+    public void setMovementMode(String movementMode) { this.movementMode = movementMode; }
+
+    public boolean isShowGrid() { return showGrid; }
+    public void setShowGrid(boolean showGrid) { this.showGrid = showGrid; }
 
     public long getVersion() { return version; }
     public void setVersion(long version) { this.version = version; }

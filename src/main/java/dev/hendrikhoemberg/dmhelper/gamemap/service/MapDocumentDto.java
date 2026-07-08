@@ -24,7 +24,7 @@ public record MapDocumentDto(
     public static MapDocumentDto createDefault(int gridWidth, int gridHeight, int cellSizePx) {
         return new MapDocumentDto(
                 CURRENT_SCHEMA_VERSION,
-                new GridDto(gridWidth, gridHeight, cellSizePx, "square"),
+                new GridDto(gridWidth, gridHeight, cellSizePx, "square", "GRID", true),
                 List.of(
                         MapLayerDto.createTerrainLayer(),
                         MapLayerDto.createObjectsLayer(),
@@ -36,9 +36,9 @@ public record MapDocumentDto(
     }
 
     /** gridType is reserved for post-v1 hex support (SPEC §9); always "square" in v1. */
-    public record GridDto(int width, int height, int cellSizePx, String gridType) {
-        public GridDto {
-            gridType = gridType != null ? gridType : "square";
+    public record GridDto(int width, int height, int cellSizePx, String gridType, String movementMode, boolean showGrid) {
+        public GridDto(int width, int height, int cellSizePx, String gridType) {
+            this(width, height, cellSizePx, gridType, "GRID", true);
         }
     }
 
