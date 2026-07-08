@@ -38,13 +38,13 @@ public class EncounterApiController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/campaigns/{campaignId}/encounters/activate")
-    public EncounterDto activate(@PathVariable UUID campaignId, @RequestParam UUID id) {
+    @PostMapping("/encounters/{id}/activate")
+    public EncounterDto activate(@PathVariable UUID id) {
         return service.activate(id);
     }
 
-    @PostMapping("/campaigns/{campaignId}/encounters/end")
-    public EncounterDto end(@PathVariable UUID campaignId, @RequestParam UUID id) {
+    @PostMapping("/encounters/{id}/end")
+    public EncounterDto end(@PathVariable UUID id) {
         return service.endEncounter(id);
     }
 
