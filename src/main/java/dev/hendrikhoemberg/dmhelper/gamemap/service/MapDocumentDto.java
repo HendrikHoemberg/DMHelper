@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.gamemap.service;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -39,6 +40,17 @@ public record MapDocumentDto(
     public record GridDto(int width, int height, int cellSizePx, String gridType, String movementMode, boolean showGrid) {
         public GridDto(int width, int height, int cellSizePx, String gridType) {
             this(width, height, cellSizePx, gridType, "GRID", true);
+        }
+
+        @JsonCreator
+        static GridDto create(
+                @JsonProperty("width") int width,
+                @JsonProperty("height") int height,
+                @JsonProperty("cellSizePx") int cellSizePx,
+                @JsonProperty("gridType") String gridType,
+                @JsonProperty(value = "movementMode", defaultValue = "GRID") String movementMode,
+                @JsonProperty(value = "showGrid", defaultValue = "true") boolean showGrid) {
+            return new GridDto(width, height, cellSizePx, gridType, movementMode, showGrid);
         }
     }
 
