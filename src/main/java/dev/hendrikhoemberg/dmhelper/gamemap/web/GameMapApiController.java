@@ -22,11 +22,15 @@ public class GameMapApiController {
 
     record MapRequest(String name, Integer gridWidth, Integer gridHeight, Integer cellSizePx) {}
 
+    record ModeUpdateRequest(String movementMode, Boolean showGrid) {}
+
     record GameMapDto(UUID id, String name, int gridWidth, int gridHeight,
-                      int cellSizePx, int sortOrder, String gridType, long version) {
+                      int cellSizePx, int sortOrder, String gridType, long version,
+                      String movementMode, boolean showGrid) {
         static GameMapDto from(GameMap m) {
             return new GameMapDto(m.getId(), m.getName(), m.getGridWidth(), m.getGridHeight(),
-                    m.getCellSizePx(), m.getSortOrder(), m.getGridType(), m.getVersion());
+                    m.getCellSizePx(), m.getSortOrder(), m.getGridType(), m.getVersion(),
+                    m.getMovementMode(), m.isShowGrid());
         }
     }
 
@@ -79,6 +83,12 @@ public class GameMapApiController {
                 request.gridWidth() != null ? request.gridWidth() : existing.getGridWidth(),
                 request.gridHeight() != null ? request.gridHeight() : existing.getGridHeight(),
                 request.cellSizePx() != null ? request.cellSizePx() : existing.getCellSizePx());
+        return GameMapDto.from(updated);
+    }
+
+    @PatchMapping("/maps/{id}")
+    public GameMapDto updateMode(@PathVariable UUID id, @RequestBody ModeUpdateRequest request) {
+        GameMap updated = service.updateMode(id, request.movementMode(), request.showGrid());
         return GameMapDto.from(updated);
     }
 

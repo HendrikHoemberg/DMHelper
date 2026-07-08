@@ -102,6 +102,20 @@ public class GameMapService {
         return repository.save(map);
     }
 
+    public GameMap updateMode(UUID mapId, String movementMode, Boolean showGrid) {
+        GameMap map = findById(mapId);
+        if (movementMode != null) {
+            if (!movementMode.equals("GRID") && !movementMode.equals("FREEFORM")) {
+                throw new IllegalArgumentException("Invalid movementMode: " + movementMode);
+            }
+            map.setMovementMode(movementMode);
+        }
+        if (showGrid != null) {
+            map.setShowGrid(showGrid);
+        }
+        return repository.save(map);
+    }
+
     public void delete(UUID mapId) {
         GameMap map = findById(mapId);
         UUID campaignId = map.getCampaign().getId();
