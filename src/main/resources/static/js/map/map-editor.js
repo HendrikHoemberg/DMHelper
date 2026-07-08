@@ -47,6 +47,8 @@ export class MapEditor {
         this.polygonPoints = [];   // flat [x1, y1, ...] in cell units
         this.selection = null;     // {origin: {col, row}, cells: Cell[], shapes: Shape[]}
         this.clipboard = null;     // {cells: Cell[], shapes: Shape[]} normalized to (0,0)
+        this.shapeSelection = null;   // single Konva shape node currently selected for transform, or null
+        this.transformer = null;
 
         this.undoStack = [];
         this.redoStack = [];
@@ -77,12 +79,37 @@ export class MapEditor {
         this.createLayer('objects');
         this.createLayer('annotations');
 
-        this.previewLayer = new Konva.Layer({ listening: false });
+        this.previewLayer = new Konva.Layer();
         this.stage.add(this.previewLayer);
 
+        this.initTransformer();
         this.drawGrid();
         this.setupEvents();
         this.fetchDocument();
+    }
+
+    initTransformer() {
+        this.transformer = new Konva.Transformer({
+            rotateEnabled: false,
+            enabledAnchors: ['top-left', 'top-center', 'top-right', 'middle-left', 'middle-right',
+                              'bottom-left', 'bottom-center', 'bottom-right'],
+            borderStroke: '#4a9eff',
+            anchorStroke: '#4a9eff',
+            anchorFill: '#fff',
+            anchorSize: 8,
+        });
+        this.previewLayer.add(this.transformer);
+
+        this.transformer.on('transformend', () => {
+            const node = this.shapeSelection;
+            if (!node) return;
+            this.pushUndo();
+            this.bakeShapeTransform(node);
+            this.syncDocument();
+            this.clearShapeSelection();
+            this.renderDocument();
+            this.markDirty();
+        });
     }
 
     /* ---- Grid ---- */
@@ -157,6 +184,7 @@ export class MapEditor {
     setTool(tool) {
         this.cancelPolygon();
         this.clearSelection();
+        this.clearShapeSelection();
         this.activeTool = tool;
         this.emit('map-toolchange', { tool });
         this.setStatus(tool === 'polygon'
@@ -177,6 +205,7 @@ export class MapEditor {
     setLayer(layerId) {
         this.cancelPolygon();
         this.clearSelection();
+        this.clearShapeSelection();
         this.activeLayerId = layerId;
     }
 
@@ -280,25 +309,25 @@ export class MapEditor {
             case 'rect':
                 node = new Konva.Rect({
                     x: px(pts[0]), y: px(pts[1]), width: px(pts[2]), height: px(pts[3]),
-                    fill, stroke, strokeWidth: sw, listening: false,
+                    fill, stroke, strokeWidth: sw, listening: true,
                 });
                 break;
             case 'circle':
                 node = new Konva.Circle({
                     x: px(pts[0]), y: px(pts[1]), radius: px(pts[2]),
-                    fill, stroke, strokeWidth: sw, listening: false,
+                    fill, stroke, strokeWidth: sw, listening: true,
                 });
                 break;
             case 'line':
                 node = new Konva.Line({
                     points: [px(pts[0]), px(pts[1]), px(pts[2]), px(pts[3])],
-                    stroke, strokeWidth: sw, lineCap: 'round', listening: false,
+                    stroke, strokeWidth: sw, lineCap: 'round', listening: true,
                 });
                 break;
             case 'polygon':
                 node = new Konva.Line({
                     points: pts.map(px), closed: true,
-                    fill, stroke, strokeWidth: sw, lineJoin: 'round', listening: false,
+                    fill, stroke, strokeWidth: sw, lineJoin: 'round', listening: true,
                 });
                 break;
             default:
@@ -362,6 +391,7 @@ export class MapEditor {
 
     setupEvents() {
         this.stage.on('mousedown touchstart', (e) => {
+            if (e.target.getParent() instanceof Konva.Transformer) return;   // let the Transformer handle its own anchors
             if (e.evt.button === 1) {   // middle mouse: pan
                 this.panning = true;
                 this.stage.draggable(true);
@@ -384,6 +414,12 @@ export class MapEditor {
             if (!pos) return;
 
             if (this.activeTool === 'select') {
+                const shapeNode = e.target && e.target.getAttr('_shape') ? e.target : null;
+                if (shapeNode) {
+                    this.selectShapeForTransform(shapeNode);
+                    return;
+                }
+                this.clearShapeSelection();
                 this.clearSelection();
                 this.marqueeStart = { x: pos.x, y: pos.y };
                 this.drawing = true;
@@ -526,9 +562,22 @@ export class MapEditor {
                 case 'p': this.setTool('polygon'); break;
                 case 'v': this.setTool('select'); break;
                 case 'enter': if (this.polygonPoints.length) this.commitPolygon(); break;
+                case 'delete':
+                case 'backspace':
+                    if (this.shapeSelection) {
+                        e.preventDefault();
+                        this.pushUndo();
+                        const layer = this.shapeSelection.getLayer();
+                        this.shapeSelection.destroy();
+                        this.clearShapeSelection();
+                        layer.batchDraw();
+                        this.markDirty();
+                    }
+                    break;
                 case 'escape':
                     this.cancelPolygon();
                     this.clearSelection();
+                    this.clearShapeSelection();
                     break;
             }
         });
@@ -941,6 +990,73 @@ export class MapEditor {
             if (child.getAttr('_selection')) child.destroy();
         }
         this.previewLayer.batchDraw();
+    }
+
+    /* ---- Shape selection & transform (click-select, move, resize, delete) ---- */
+
+    selectShapeForTransform(node) {
+        this.clearSelection();
+        this.cancelPolygon();
+        this.clearShapeSelection();
+        this.shapeSelection = node;
+        node.draggable(true);
+        node.on('dragend.shapeselect', () => {
+            this.pushUndo();
+            this.bakeShapeTransform(node);
+            this.syncDocument();
+            this.clearShapeSelection();
+            this.renderDocument();
+            this.markDirty();
+        });
+        this.transformer.keepRatio(node.getAttr('_shape')?.type === 'circle');
+        this.transformer.nodes([node]);
+        this.transformer.getLayer().batchDraw();
+        this.setStatus('Shape selected — drag to move, handles to resize, Delete to remove, double-click to edit label');
+    }
+
+    clearShapeSelection() {
+        if (this.shapeSelection) {
+            this.shapeSelection.draggable(false);
+            this.shapeSelection.off('dragend.shapeselect');
+        }
+        this.shapeSelection = null;
+        if (this.transformer) {
+            this.transformer.nodes([]);
+            this.transformer.getLayer()?.batchDraw();
+        }
+    }
+
+    /** Reads the node's current on-screen transform (position + scale) back into its
+     *  `_shape` data (cell units) and leaves the Konva transform in place — the caller
+     *  re-renders the whole document immediately after, which replaces this node. */
+    bakeShapeTransform(node) {
+        const shape = node.getAttr('_shape');
+        if (!shape) return;
+        const cs = this.cellSizePx;
+        const nx = node.x(), ny = node.y();
+        const sx = node.scaleX(), sy = node.scaleY();
+
+        switch (shape.type) {
+            case 'rect': {
+                const w = node.width() * sx, h = node.height() * sy;
+                shape.points = [this.round2(nx / cs), this.round2(ny / cs), this.round2(w / cs), this.round2(h / cs)];
+                break;
+            }
+            case 'circle': {
+                const r = node.radius() * ((sx + sy) / 2);
+                shape.points = [this.round2(nx / cs), this.round2(ny / cs), this.round2(r / cs)];
+                break;
+            }
+            case 'line':
+            case 'polygon': {
+                const pts = node.points();
+                const abs = [];
+                for (let i = 0; i + 1 < pts.length; i += 2) abs.push(nx + pts[i] * sx, ny + pts[i + 1] * sy);
+                shape.points = abs.map((v) => this.round2(v / cs));
+                break;
+            }
+        }
+        node.setAttr('_shape', shape);
     }
 
     /* ---- Undo / redo ---- */
