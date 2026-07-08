@@ -17,4 +17,6 @@ public interface CombatantRepository extends JpaRepository<Combatant, UUID> {
     void deleteByEncounterId(UUID encounterId);
 
     Optional<Combatant> findByEncounterIdAndTokenId(UUID encounterId, UUID tokenId);
+
+    Optional<Combatant> findByEncounterIdAndPartyMemberId(UUID encounterId, UUID partyMemberId);
 }

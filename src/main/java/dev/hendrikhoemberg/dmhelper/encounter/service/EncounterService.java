@@ -213,6 +213,9 @@ public class EncounterService {
         int currentHp = maxHp;
 
         if (req.tokenId() != null) {
+            if (combatantRepo.findByEncounterIdAndTokenId(encounterId, req.tokenId()).isPresent()) {
+                throw new IllegalArgumentException("Token already has a combatant in this encounter");
+            }
             Token token = tokenRepo.findById(req.tokenId())
                     .orElseThrow(() -> new NotFoundException("Token not found: " + req.tokenId()));
             name = token.getName();
@@ -227,6 +230,9 @@ public class EncounterService {
             kind = sb.getType();
             c.setStatBlock(sb);
         } else if (req.partyMemberId() != null) {
+            if (combatantRepo.findByEncounterIdAndPartyMemberId(encounterId, req.partyMemberId()).isPresent()) {
+                throw new IllegalArgumentException("Party member already has a combatant in this encounter");
+            }
             PartyMember pm = partyRepo.findById(req.partyMemberId())
                     .orElseThrow(() -> new NotFoundException("Party member not found: " + req.partyMemberId()));
             name = pm.getCharacterName();
@@ -296,6 +302,9 @@ public class EncounterService {
         Encounter e = findEntityById(encounterId);
         List<PartyMember> members = partyRepo.findByCampaignIdAndActiveTrueOrderByCharacterNameAsc(campaignId);
         for (PartyMember pm : members) {
+            if (combatantRepo.findByEncounterIdAndPartyMemberId(encounterId, pm.getId()).isPresent()) {
+                continue;
+            }
             Combatant c = new Combatant();
             c.setEncounter(e);
             c.setName(pm.getCharacterName());
