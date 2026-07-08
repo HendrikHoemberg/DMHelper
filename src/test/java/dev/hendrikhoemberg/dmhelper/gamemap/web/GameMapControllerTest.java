@@ -77,4 +77,14 @@ class GameMapControllerTest {
                         UUID.randomUUID(), UUID.randomUUID()))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void shouldRenderBattlePage() throws Exception {
+        GameMap m = map("Tavern");
+        when(service.findById(m.getId())).thenReturn(m);
+
+        mockMvc.perform(get("/campaigns/{campaignId}/maps/{mapId}/play", UUID.randomUUID(), m.getId()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("maps/battle"));
+    }
 }

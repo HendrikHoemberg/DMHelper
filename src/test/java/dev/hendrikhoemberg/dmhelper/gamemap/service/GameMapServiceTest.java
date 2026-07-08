@@ -198,4 +198,28 @@ class GameMapServiceTest {
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("Map not found");
     }
+
+    @Test
+    void shouldDefaultMovementModeAndShowGrid() {
+        GameMap map = service.create(campaign.getId(), "Battle", 30, 20, 48);
+        assertThat(map.getMovementMode()).isEqualTo("GRID");
+        assertThat(map.isShowGrid()).isTrue();
+    }
+
+    @Test
+    void shouldUpdateMovementMode() {
+        GameMap map = service.create(campaign.getId(), "ModeMap", 10, 10, 48);
+        service.updateMode(map.getId(), "FREEFORM", false);
+        GameMap updated = service.findById(map.getId());
+        assertThat(updated.getMovementMode()).isEqualTo("FREEFORM");
+        assertThat(updated.isShowGrid()).isFalse();
+    }
+
+    @Test
+    void shouldRejectInvalidMovementMode() {
+        GameMap map = service.create(campaign.getId(), "BadMode", 10, 10, 48);
+        assertThatThrownBy(() -> service.updateMode(map.getId(), "HEX", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid movementMode");
+    }
 }

@@ -45,7 +45,8 @@ class GameMapApiControllerTest {
         mockMvc.perform(get("/api/v1/campaigns/{campaignId}/maps", campaignId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Tavern"))
-                .andExpect(jsonPath("$[0].gridType").value("SQUARE"));
+                .andExpect(jsonPath("$[0].gridType").value("SQUARE"))
+                .andExpect(jsonPath("$[0].movementMode").value("GRID"));
     }
 
     @Test
@@ -131,5 +132,21 @@ class GameMapApiControllerTest {
     void shouldDeleteMap() throws Exception {
         mockMvc.perform(delete("/api/v1/maps/{id}", UUID.randomUUID()))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void shouldUpdateMovementMode() throws Exception {
+        UUID id = UUID.randomUUID();
+        GameMap m = map("Tavern", 0);
+        m.setMovementMode("FREEFORM");
+        m.setShowGrid(false);
+        when(service.updateMode(eq(id), eq("FREEFORM"), eq(false))).thenReturn(m);
+
+        mockMvc.perform(patch("/api/v1/maps/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"movementMode\":\"FREEFORM\",\"showGrid\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.movementMode").value("FREEFORM"))
+                .andExpect(jsonPath("$.showGrid").value(false));
     }
 }
