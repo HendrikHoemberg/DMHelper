@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/head :: head('Party Sheets')}"></head>
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — Party Sheets | ' + ${campaign.name}">DMHelper — Party Sheets</title>
+</head>
 <body>
-<div class="app-layout">
-    <div th:replace="~{fragments/navbar :: navbar}"></div>
-    <main class="app-main">
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-layout">
+        <main class="app-main">
         <div class="page-header">
             <h1 th:text="${campaign.name} + ' — Party Sheets'">Campaign — Party Sheets</h1>
             <a th:href="@{/campaigns/{id}/party(id=${campaign.id})}" class="btn btn-ghost">&larr; Party Roster</a>
