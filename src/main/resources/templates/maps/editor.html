@@ -180,6 +180,38 @@
             padding-top: var(--space-xs);
         }
         .terrain-panel-form input[type="text"] { width: 100%; }
+        .editor-toolbar .tool-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .shortcuts-panel {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            z-index: 30;
+            margin-top: 4px;
+            width: 280px;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: var(--space-sm) var(--space-md);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+        .shortcuts-panel h3 {
+            margin: 0 0 var(--space-xs);
+            font-size: var(--text-sm);
+            text-transform: uppercase;
+            color: var(--color-text-muted);
+        }
+        .shortcuts-panel dl {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 4px var(--space-sm);
+            margin: 0;
+            font-size: var(--text-sm);
+        }
+        .shortcuts-panel dt { font-weight: 600; }
+        .shortcuts-panel dd { margin: 0; color: var(--color-text-muted); }
     </style>
 </head>
 <body>
@@ -234,14 +266,38 @@
             </div>
 
             <div class="tool-group">
-                <button class="tool-btn" @click="undo()" title="Undo (Ctrl+Z)">↩ Undo</button>
-                <button class="tool-btn" @click="redo()" title="Redo (Ctrl+Y)">↪ Redo</button>
+                <button class="tool-btn" :disabled="!canUndo" @click="undo()" title="Undo (Ctrl+Z)">↩ Undo</button>
+                <button class="tool-btn" :disabled="!canRedo" @click="redo()" title="Redo (Ctrl+Y)">↪ Redo</button>
             </div>
 
             <div class="tool-group">
                 <button class="tool-btn" @click="$refs.imageInput.click()" title="Import a background reference image (PNG/JPG)">🖼 Import Image</button>
                 <input type="file" accept="image/*" x-ref="imageInput" style="display: none;" @change="importImage($event)">
                 <button class="tool-btn" @click="exportPng()" title="Export the current map view as a PNG">⬇ Export PNG</button>
+            </div>
+
+            <div class="tool-group" style="border-right: none; position: relative;">
+                <button class="tool-btn" @click="helpOpen = !helpOpen" title="Keyboard shortcuts">❓ Help</button>
+                <div class="shortcuts-panel" x-show="helpOpen" style="display: none;" @click.outside="helpOpen = false">
+                    <h3>Keyboard Shortcuts</h3>
+                    <dl>
+                        <dt>B</dt><dd>Brush (right-click erases)</dd>
+                        <dt>T</dt><dd>Terrain Rect</dd>
+                        <dt>G</dt><dd>Bucket fill</dd>
+                        <dt>M</dt><dd>Room</dd>
+                        <dt>D</dt><dd>Door</dd>
+                        <dt>N</dt><dd>Region</dd>
+                        <dt>R / C / L / P</dt><dd>Rect / Circle / Line / Polygon shape</dd>
+                        <dt>V</dt><dd>Select</dd>
+                        <dt>Space (hold)</dt><dd>Pan</dd>
+                        <dt>Scroll</dt><dd>Zoom</dd>
+                        <dt>Ctrl+Z / Ctrl+Y</dt><dd>Undo / Redo</dd>
+                        <dt>Ctrl+C / X / V</dt><dd>Copy / Cut / Paste selection</dd>
+                        <dt>Delete</dt><dd>Remove selected shape or selection</dd>
+                        <dt>Enter</dt><dd>Close polygon</dd>
+                        <dt>Esc</dt><dd>Cancel polygon / clear selection</dd>
+                    </dl>
+                </div>
             </div>
 
         </div>
@@ -329,6 +385,9 @@
                 },
                 selectedShape: null,
                 conflict: false,
+                canUndo: false,
+                canRedo: false,
+                helpOpen: false,
                 init() {
                     window.addEventListener('map-toolchange', (e) => { this.tool = e.detail.tool; });
                     window.addEventListener('map-palette', (e) => {
@@ -342,6 +401,10 @@
                     });
                     window.addEventListener('map-shapeselect', (e) => { this.selectedShape = e.detail.shape; });
                     window.addEventListener('map-conflict', () => { this.conflict = true; });
+                    window.addEventListener('map-historystate', (e) => {
+                        this.canUndo = e.detail.canUndo;
+                        this.canRedo = e.detail.canRedo;
+                    });
                 },
                 setTool(t) { window.mapEditor?.setTool(t); },
                 applyTerrain() { window.mapEditor?.setTerrain(this.terrain); },

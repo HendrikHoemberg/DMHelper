@@ -1483,6 +1483,7 @@ export class MapEditor {
         this.undoStack.push(snapshot);
         if (this.undoStack.length > UNDO_MAX) this.undoStack.shift();
         this.redoStack = [];
+        this.emitHistoryState();
     }
 
     undo() {
@@ -1493,6 +1494,7 @@ export class MapEditor {
         this.renderDocument();
         this.emitLayerState();
         this.markDirty();
+        this.emitHistoryState();
     }
 
     redo() {
@@ -1503,6 +1505,11 @@ export class MapEditor {
         this.renderDocument();
         this.emitLayerState();
         this.markDirty();
+        this.emitHistoryState();
+    }
+
+    emitHistoryState() {
+        this.emit('map-historystate', { canUndo: this.undoStack.length > 0, canRedo: this.redoStack.length > 0 });
     }
 
     /* ---- Serialization: canvas → document ---- */
