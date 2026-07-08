@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.encounter.web;
 
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatLogEntryDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantUpdateRequest;
@@ -103,5 +104,16 @@ public class EncounterApiController {
     @PostMapping("/combatants/{id}/split")
     public CombatantDto splitGroupMember(@PathVariable UUID id) {
         return service.splitGroupMember(id);
+    }
+
+    @GetMapping("/encounters/{id}/log")
+    public List<CombatLogEntryDto> getLog(@PathVariable UUID id) {
+        return service.getLog(id);
+    }
+
+    @PostMapping("/encounters/{id}/undo")
+    public ResponseEntity<Void> undo(@PathVariable UUID id) {
+        service.undo(id);
+        return ResponseEntity.ok().build();
     }
 }

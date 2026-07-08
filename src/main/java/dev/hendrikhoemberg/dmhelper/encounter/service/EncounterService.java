@@ -3,6 +3,8 @@ package dev.hendrikhoemberg.dmhelper.encounter.service;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntry;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntryRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
@@ -23,9 +25,14 @@ import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -40,19 +47,22 @@ public class EncounterService {
     private final EntityManager em;
     private final GameMapRepository mapRepo;
     private final CombatantRepository combatantRepo;
+    private final CombatLogEntryRepository combatLogRepo;
     private final TokenRepository tokenRepo;
     private final PartyMemberRepository partyRepo;
     private final StatBlockRepository statBlockRepo;
 
     public EncounterService(EncounterRepository encounterRepo, CampaignRepository campaignRepo,
                             EntityManager em, GameMapRepository mapRepo,
-                            CombatantRepository combatantRepo, TokenRepository tokenRepo,
+                            CombatantRepository combatantRepo, CombatLogEntryRepository combatLogRepo,
+                            TokenRepository tokenRepo,
                             PartyMemberRepository partyRepo, StatBlockRepository statBlockRepo) {
         this.encounterRepo = encounterRepo;
         this.campaignRepo = campaignRepo;
         this.em = em;
         this.mapRepo = mapRepo;
         this.combatantRepo = combatantRepo;
+        this.combatLogRepo = combatLogRepo;
         this.tokenRepo = tokenRepo;
         this.partyRepo = partyRepo;
         this.statBlockRepo = statBlockRepo;
@@ -96,6 +106,10 @@ public class EncounterService {
                                int round, int activeTurnIndex, int combatantCount,
                                String lairActionName, String lairActionDescription,
                                List<CombatantDto> combatants) {}
+
+    public record CombatLogEntryDto(UUID id, int round, long sequence, String type,
+                                     String combatantId, String combatantName, String payload,
+                                     Instant createdAt) {}
 
     static EncounterDto toDto(Encounter e) {
         return new EncounterDto(e.getId(), e.getCampaign().getId(),
@@ -193,13 +207,17 @@ public class EncounterService {
                 });
         e.setStatus(Encounter.Status.ACTIVE);
         e.setRound(1);
-        return toDto(encounterRepo.save(e));
+        EncounterDto dto = toDto(encounterRepo.save(e));
+        logEntry(id, CombatLogEntry.EntryType.ENCOUNTER_ACTIVATED, "", "");
+        return dto;
     }
 
     public EncounterDto endEncounter(UUID id) {
         Encounter e = findEntityById(id);
         e.setStatus(Encounter.Status.DONE);
-        return toDto(encounterRepo.save(e));
+        EncounterDto dto = toDto(encounterRepo.save(e));
+        logEntry(id, CombatLogEntry.EntryType.ENCOUNTER_ENDED, "", "");
+        return dto;
     }
 
     public CombatantDto addCombatant(UUID encounterId, CombatantCreateRequest req) {
@@ -333,6 +351,142 @@ public class EncounterService {
     @Transactional(readOnly = true)
     public CombatantDto getCombatant(UUID combatantId) {
         return toDto(findCombatantById(combatantId));
+    }
+
+    CombatLogEntry logEntry(UUID encounterId, CombatLogEntry.EntryType type, String combatantId, String payload) {
+        Encounter encounter = findEntityById(encounterId);
+        CombatLogEntry entry = new CombatLogEntry();
+        entry.setEncounter(encounter);
+        entry.setRound(encounter.getRound());
+        entry.setSequence(encounter.getLogSequence() + 1);
+        entry.setType(type);
+        entry.setCombatantId(combatantId);
+        entry.setPayload(payload);
+        encounter.setLogSequence(encounter.getLogSequence() + 1);
+        return combatLogRepo.save(entry);
+    }
+
+    private CombatLogEntryDto toLogDto(CombatLogEntry entry) {
+        String combatantName = "";
+        try {
+            UUID cid = UUID.fromString(entry.getCombatantId());
+            combatantName = combatantRepo.findById(cid).map(Combatant::getName).orElse("");
+        } catch (Exception e) {
+            // ignore
+        }
+        return new CombatLogEntryDto(
+                entry.getId(), entry.getRound(), entry.getSequence(),
+                entry.getType().name(), entry.getCombatantId(), combatantName,
+                entry.getPayload(), entry.getCreatedAt());
+    }
+
+    @Transactional(readOnly = true)
+    public List<CombatLogEntryDto> getLog(UUID encounterId) {
+        return combatLogRepo.findByEncounterIdOrderBySequenceAsc(encounterId).stream()
+                .map(this::toLogDto).toList();
+    }
+
+    @Transactional
+    public void undo(UUID encounterId) {
+        List<CombatLogEntry> log = combatLogRepo.findByEncounterIdOrderBySequenceAsc(encounterId);
+        if (log.isEmpty()) return;
+
+        CombatLogEntry lastEntry = log.get(log.size() - 1);
+        Map<UUID, Combatant> combatants = combatantRepo
+                .findByEncounterIdOrderBySortOrderAsc(encounterId).stream()
+                .collect(Collectors.toMap(Combatant::getId, Function.identity()));
+
+        List<CombatLogEntry> entriesToKeep = log.subList(0, log.size() - 1);
+
+        reverseLogEntry(lastEntry, combatants);
+
+        for (Combatant c : combatants.values()) {
+            combatantRepo.save(c);
+        }
+
+        int reconstructedRound = 0;
+        int reconstructedTurnIndex = -1;
+        for (CombatLogEntry entry : entriesToKeep) {
+            switch (entry.getType()) {
+                case ROUND_ADVANCE -> reconstructedRound = entry.getRound();
+                case TURN_START -> {
+                    try {
+                        var node = JSON_MAPPER.readTree(entry.getPayload());
+                        reconstructedTurnIndex = node.get("activeTurnIndex").asInt(-1);
+                    } catch (Exception ignored) {}
+                }
+                default -> {}
+            }
+        }
+
+        Encounter encounter = findEntityById(encounterId);
+        encounter.setRound(reconstructedRound);
+        encounter.setActiveTurnIndex(reconstructedTurnIndex);
+        encounter.setLogSequence(entriesToKeep.size());
+
+        combatLogRepo.delete(lastEntry);
+    }
+
+    private void reverseLogEntry(CombatLogEntry entry, Map<UUID, Combatant> combatants) {
+        UUID combatantId;
+        try {
+            combatantId = UUID.fromString(entry.getCombatantId());
+        } catch (Exception e) {
+            return;
+        }
+        Combatant combatant = combatants.get(combatantId);
+        if (combatant == null) return;
+
+        try {
+            switch (entry.getType()) {
+                case DAMAGE, HEAL -> {
+                    var node = JSON_MAPPER.readTree(entry.getPayload());
+                    int amount = node.get("amount").asInt(0);
+                    combatant.setCurrentHp(combatant.getCurrentHp() - amount);
+                }
+                case TEMP_HP -> {
+                    var node = JSON_MAPPER.readTree(entry.getPayload());
+                    int amount = node.get("amount").asInt(0);
+                    combatant.setTempHp(combatant.getTempHp() - amount);
+                }
+                case DEFEATED -> combatant.setDefeated(false);
+                case REVIVED -> combatant.setDefeated(true);
+                case CONDITION_ADDED -> {
+                    var node = JSON_MAPPER.readTree(entry.getPayload());
+                    var conditions = JSON_MAPPER.readValue(combatant.getConditionsJson(),
+                            new TypeReference<List<Map<String, Object>>>() {});
+                    String name = node.has("name") ? node.get("name").asText() : null;
+                    String sourceKey = node.has("sourceKey") ? node.get("sourceKey").asText() : null;
+                    conditions.removeIf(c -> {
+                        if (name != null && name.equals(c.get("name"))) return true;
+                        return sourceKey != null && sourceKey.equals(c.get("sourceKey"));
+                    });
+                    combatant.setConditionsJson(JSON_MAPPER.writeValueAsString(conditions));
+                }
+                case CONDITION_REMOVED -> {
+                    var node = JSON_MAPPER.readTree(entry.getPayload());
+                    var conditions = JSON_MAPPER.readValue(combatant.getConditionsJson(),
+                            new TypeReference<List<Map<String, Object>>>() {});
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> condition = JSON_MAPPER.convertValue(node, Map.class);
+                    conditions.add(condition);
+                    combatant.setConditionsJson(JSON_MAPPER.writeValueAsString(conditions));
+                }
+                case INITIATIVE_SET -> {
+                    // Cannot reverse without knowing previous value
+                }
+                case COMBATANT_ADDED -> {
+                    combatants.remove(combatantId);
+                    combatantRepo.delete(combatant);
+                }
+                case COMBATANT_REMOVED -> {
+                    // Cannot re-add without stored combatant data
+                }
+                default -> {}
+            }
+        } catch (Exception e) {
+            // Ignore errors during undo
+        }
     }
 
     Combatant findCombatantById(UUID id) {
