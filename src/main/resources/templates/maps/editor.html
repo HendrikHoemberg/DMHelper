@@ -94,6 +94,11 @@
             color: var(--color-text-muted);
             flex-shrink: 0;
         }
+        .save-indicator.save-saved { color: var(--color-success); }
+        .save-indicator.save-saving,
+        .save-indicator.save-unsaved { color: var(--color-warning); }
+        .save-indicator.save-error,
+        .save-indicator.save-conflict { color: var(--color-danger); }
         .layer-item {
             display: flex;
             align-items: center;
@@ -200,7 +205,8 @@
 
         <div class="editor-statusbar">
             <span id="statusMessage">Ready</span>
-            <span id="saveIndicator" style="color: var(--color-success);">Saved</span>
+                <button class="btn btn-ghost" style="padding: 0 6px; font-size: var(--text-sm); display: none;" x-show="conflict" @click="downloadBackup()">⬇ Backup</button>
+                <span id="saveIndicator" class="save-indicator save-saved">Saved</span>
         </div>
     </div>
 
@@ -233,6 +239,7 @@
                     annotations: { visible: true, locked: false },
                 },
                 selectedShape: null,
+                conflict: false,
                 init() {
                     window.addEventListener('map-toolchange', (e) => { this.tool = e.detail.tool; });
                     window.addEventListener('map-palette', (e) => {
@@ -244,6 +251,7 @@
                         }
                     });
                     window.addEventListener('map-shapeselect', (e) => { this.selectedShape = e.detail.shape; });
+                    window.addEventListener('map-conflict', () => { this.conflict = true; });
                 },
                 setTool(t) { window.mapEditor?.setTool(t); },
                 applyTerrain() { window.mapEditor?.setTerrain(this.terrain); },
@@ -266,6 +274,7 @@
                     const key = window.mapEditor?.addCustomTerrain(name.trim(), fill.trim(), walkable);
                     if (key) this.terrain = key;
                 },
+                downloadBackup() { window.mapEditor?.downloadDocumentBackup(); },
             };
         }
     </script>

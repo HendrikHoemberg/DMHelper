@@ -1346,9 +1346,34 @@ export class MapEditor {
 
     /* ---- Autosave (debounced, with optimistic version check §5) ---- */
 
+    setSaveState(state) {
+        if (!this.saveIndicatorEl) return;
+        const labels = { unsaved: 'Unsaved…', saving: 'Saving…', saved: 'Saved', error: 'Save failed!', conflict: 'Conflict!' };
+        this.saveIndicatorEl.textContent = labels[state] || state;
+        this.saveIndicatorEl.className = `save-indicator save-${state}`;
+    }
+
+    triggerDownload(blob, fileName) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    downloadDocumentBackup() {
+        const doc = this.buildDocumentFromCanvas() || this.document;
+        if (!doc) return;
+        const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' });
+        this.triggerDownload(blob, `map-backup-${this.mapId}.json`);
+    }
+
     markDirty() {
         this.dirty = true;
-        if (this.saveIndicatorEl) this.saveIndicatorEl.textContent = 'Unsaved…';
+        this.setSaveState('unsaved');
         clearTimeout(this.saveTimer);
         this.saveTimer = setTimeout(() => this.save(), SAVE_DEBOUNCE_MS);
     }
@@ -1361,7 +1386,7 @@ export class MapEditor {
         if (!doc) return;
         this.document = doc;
 
-        if (this.saveIndicatorEl) this.saveIndicatorEl.textContent = 'Saving…';
+        this.setSaveState('saving');
         try {
             const res = await fetch(
                 `/api/v1/maps/${this.mapId}/document?expectedVersion=${this.docVersion}`,
@@ -1371,17 +1396,18 @@ export class MapEditor {
                     body: JSON.stringify(doc),
                 });
             if (res.status === 409) {
-                if (this.saveIndicatorEl) this.saveIndicatorEl.textContent = 'Conflict!';
-                this.setStatus('Map was changed elsewhere — reload the page to continue');
+                this.setSaveState('conflict');
+                this.setStatus('Map was changed elsewhere — download a backup below, then reload to continue');
+                this.emit('map-conflict', {});
                 return;
             }
             if (!res.ok) throw new Error('Save failed: ' + res.status);
             const data = await res.json();
             this.docVersion = data.version;
-            if (this.saveIndicatorEl) this.saveIndicatorEl.textContent = 'Saved';
+            this.setSaveState('saved');
         } catch (err) {
             console.error('Autosave failed:', err);
-            if (this.saveIndicatorEl) this.saveIndicatorEl.textContent = 'Save failed!';
+            this.setSaveState('error');
             this.setStatus('Save error — retrying');
             this.dirty = true;
             clearTimeout(this.saveTimer);
