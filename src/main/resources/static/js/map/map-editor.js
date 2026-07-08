@@ -503,8 +503,12 @@ export class MapEditor {
             this.shapeStart = null;
         });
 
-        this.stage.on('dblclick dbltap', () => {
-            if (this.activeTool === 'polygon') this.commitPolygon();
+        this.stage.on('dblclick dbltap', (e) => {
+            if (this.activeTool === 'polygon') { this.commitPolygon(); return; }
+            if (this.activeTool === 'select') {
+                const shapeNode = e.target && e.target.getAttr('_shape') ? e.target : null;
+                if (shapeNode) this.editShapeLabel(shapeNode);
+            }
         });
 
         this.stage.on('contextmenu', (e) => { e.evt.preventDefault(); });
@@ -1057,6 +1061,47 @@ export class MapEditor {
             }
         }
         node.setAttr('_shape', shape);
+    }
+
+    /** Opens a floating text input over the shape's label anchor (its first point,
+     *  same anchor `addShapeNode` uses to draw the label `Text` node). */
+    editShapeLabel(node) {
+        const shape = node.getAttr('_shape');
+        if (!shape) return;
+        const pts = shape.points || [];
+        const stagePt = { x: pts[0] * this.cellSizePx, y: pts[1] * this.cellSizePx };
+        const screenPt = this.stage.getAbsoluteTransform().point(stagePt);
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = shape.label || '';
+        input.placeholder = 'Label…';
+        input.className = 'map-label-input';
+        input.style.left = `${screenPt.x + 2}px`;
+        input.style.top = `${screenPt.y + 2}px`;
+        this.container.appendChild(input);
+        input.focus();
+        input.select();
+
+        const commit = () => {
+            const newLabel = input.value.trim();
+            input.remove();
+            if (newLabel === (shape.label || '')) return;   // no-op edit, no undo entry
+            this.pushUndo();
+            shape.label = newLabel;
+            node.setAttr('_shape', shape);
+            this.syncDocument();
+            this.clearShapeSelection();   // renderDocument() below destroys `node` — drop any stale reference to it first
+            this.renderDocument();
+            this.markDirty();
+        };
+        const cancel = () => input.remove();
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') commit();
+            else if (e.key === 'Escape') cancel();
+        });
+        input.addEventListener('blur', commit);
     }
 
     /* ---- Undo / redo ---- */
