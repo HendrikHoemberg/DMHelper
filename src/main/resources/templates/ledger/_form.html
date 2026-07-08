@@ -1,0 +1,72 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="form" class="card" style="padding: var(--space-md); margin-bottom: var(--space-md);">
+    <h3 style="margin-top:0;">Record Transaction</h3>
+    <form hx-post="@{/campaigns/{id}/ledger(id=${campaignId})}"
+          hx-target="body" hx-swap="outerHTML">
+
+        <div class="form-group">
+            <label>Type</label>
+            <select name="kind">
+                <option value="GOLD">GOLD</option>
+                <option value="ITEM">ITEM</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Direction</label>
+            <select name="direction">
+                <option value="GAIN">GAIN</option>
+                <option value="SPEND">SPEND</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Amount</label>
+            <input type="number" name="amount" step="0.01" min="0" value="0" required />
+        </div>
+
+        <div class="form-group">
+            <label>Currency</label>
+            <select name="currency">
+                <option value="GP">GP</option>
+                <option value="SP">SP</option>
+                <option value="CP">CP</option>
+                <option value="PP">PP</option>
+                <option value="EP">EP</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Holder</label>
+            <input type="text" name="holder" placeholder="e.g. Thia, Party Stash" required />
+        </div>
+
+        <div class="form-group">
+            <label>Note</label>
+            <textarea name="note" rows="2" placeholder="e.g. Quest reward"></textarea>
+        </div>
+
+        <fieldset style="border: 1px solid var(--color-border); border-radius: var(--radius); padding: var(--space-sm); margin-bottom: var(--space-md);">
+            <legend>In-Game Date (optional)</legend>
+            <div style="display:flex; gap: var(--space-sm);">
+                <div>
+                    <label style="font-size: var(--text-sm);">Year</label>
+                    <input type="number" name="inGameYear" th:value="${currentYear}" style="width:80px;" />
+                </div>
+                <div>
+                    <label style="font-size: var(--text-sm);">Month</label>
+                    <input type="number" name="inGameMonth" th:value="${currentMonth}" min="0" style="width:80px;" />
+                </div>
+                <div>
+                    <label style="font-size: var(--text-sm);">Day</label>
+                    <input type="number" name="inGameDay" th:value="${currentDay}" min="1" style="width:80px;" />
+                </div>
+            </div>
+        </fieldset>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Record Transaction</button>
+        </div>
+    </form>
+</div>
+</html>
