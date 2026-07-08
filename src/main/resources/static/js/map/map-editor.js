@@ -1509,22 +1509,35 @@ export class MapEditor {
         this.saveIndicatorEl.className = `save-indicator save-${state}`;
     }
 
-    triggerDownload(blob, fileName) {
-        const url = URL.createObjectURL(blob);
+    /** Triggers a browser download for any URL — an object URL (caller creates/revokes it)
+     *  or a data: URL (e.g. Konva's toDataURL(), which needs no object URL at all). */
+    triggerDownload(url, fileName) {
         const a = document.createElement('a');
         a.href = url;
         a.download = fileName;
         document.body.appendChild(a);
         a.click();
         a.remove();
-        URL.revokeObjectURL(url);
     }
 
     downloadDocumentBackup() {
         const doc = this.buildDocumentFromCanvas() || this.document;
         if (!doc) return;
         const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' });
-        this.triggerDownload(blob, `map-backup-${this.mapId}.json`);
+        const url = URL.createObjectURL(blob);
+        this.triggerDownload(url, `map-backup-${this.mapId}.json`);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    exportPng() {
+        if (!this.stage) return;
+        this.clearShapeSelection();
+        this.clearImageSelection();
+        this.previewLayer.visible(false);   // hide selection/drag preview overlay from the export
+        const dataUrl = this.stage.toDataURL({ pixelRatio: 2 });
+        this.previewLayer.visible(true);
+        this.stage.batchDraw();
+        this.triggerDownload(dataUrl, `map-${this.mapId}.png`);
     }
 
     markDirty() {

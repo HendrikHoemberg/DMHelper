@@ -171,6 +171,7 @@
             <div class="tool-group">
                 <button class="tool-btn" @click="$refs.imageInput.click()" title="Import a background reference image (PNG/JPG)">🖼 Import Image</button>
                 <input type="file" accept="image/*" x-ref="imageInput" style="display: none;" @change="importImage($event)">
+                <button class="tool-btn" @click="exportPng()" title="Export the current map view as a PNG">⬇ Export PNG</button>
             </div>
 
         </div>
@@ -296,6 +297,7 @@
                     event.target.value = '';
                 },
                 downloadBackup() { window.mapEditor?.downloadDocumentBackup(); },
+                exportPng() { window.mapEditor?.exportPng(); },
             };
         }
     </script>
