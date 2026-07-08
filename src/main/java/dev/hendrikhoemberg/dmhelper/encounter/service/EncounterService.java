@@ -111,13 +111,18 @@ public class EncounterService {
     public record DamageRequest(int amount) {}
     public record DefeatedRequest(boolean defeated) {}
     public record ConditionToggleRequest(String sourceKey, int durationRounds) {}
+    public record ConcentrationRequest(String spellName) {}
+    public record ConcentrationCheckRequest(boolean passed) {}
+    public record RechargePrompt(String abilityName, int minRoll, int maxRoll) {}
+    public record RechargeCheckRequest(String abilityName, Integer rollResult) {}
 
     public record PrefillMapRequest(UUID mapId) {}
 
     public record EncounterDto(UUID id, UUID campaignId, UUID mapId, String name, String status,
                                int round, int activeTurnIndex, int combatantCount,
                                String lairActionName, String lairActionDescription,
-                               List<CombatantDto> combatants) {}
+                               List<CombatantDto> combatants,
+                               List<RechargePrompt> rechargePrompts) {}
 
     public record CombatLogEntryDto(UUID id, int round, long sequence, String type,
                                      String combatantId, String combatantName, String payload,
@@ -129,7 +134,7 @@ public class EncounterService {
                 e.getName(), e.getStatus().name(), e.getRound(), e.getActiveTurnIndex(),
                 0,
                 e.getLairActionName(), e.getLairActionDescription(),
-                List.of());
+                List.of(), List.of());
     }
 
     static CombatantDto toDto(Combatant c) {
@@ -588,7 +593,13 @@ public class EncounterService {
                 combatants.get(idx).getId().toString(),
                 "{\"activeTurnIndex\":" + idx + "}");
 
-        return toDto(encounter);
+        List<RechargePrompt> prompts = checkRechargeAbilities(combatants.get(idx).getId());
+        return new EncounterDto(encounter.getId(), encounter.getCampaign().getId(),
+                encounter.getMap() != null ? encounter.getMap().getId() : null,
+                encounter.getName(), encounter.getStatus().name(), encounter.getRound(),
+                encounter.getActiveTurnIndex(), 0,
+                encounter.getLairActionName(), encounter.getLairActionDescription(),
+                List.of(), prompts);
     }
 
     public EncounterDto previousTurn(UUID encounterId) {
@@ -640,8 +651,143 @@ public class EncounterService {
         throw new NotFoundException("Combatant not in encounter: " + combatantId);
     }
 
-    private void resetLegendaryActions(UUID encounterId) {
-        // Will be implemented in Step 7
+    public void resetLegendaryActions(UUID encounterId) {
+        List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+        for (Combatant c : combatants) {
+            c.setLegendaryActionsUsed(0);
+            c.setLegendaryResistancesUsed(0);
+            combatantRepo.save(c);
+        }
+        logEntry(encounterId, CombatLogEntry.EntryType.ROUND_ADVANCE, "", "{\"legendaryReset\":true}");
+    }
+
+    public CombatantDto setConcentration(UUID combatantId, String spellName) {
+        Combatant c = findCombatantById(combatantId);
+        c.setConcentratingOn(spellName != null && !spellName.isEmpty() ? spellName : null);
+        Combatant saved = combatantRepo.save(c);
+        logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.CONCENTRATION_SET,
+            combatantId.toString(), "{\"spellName\":\"" + (spellName != null ? spellName : "") + "\"}");
+        return toDto(saved);
+    }
+
+    public CombatantDto resolveConcentrationCheck(UUID combatantId, boolean passed) {
+        Combatant c = findCombatantById(combatantId);
+        c.setConcentrationCheckPending(false);
+        if (!passed) {
+            c.setConcentratingOn(null);
+            logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.CONCENTRATION_LOST,
+                combatantId.toString(), "{}");
+        } else {
+            logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.CONCENTRATION_CHECK,
+                combatantId.toString(), "{\"passed\":true}");
+        }
+        return toDto(combatantRepo.save(c));
+    }
+
+    public List<RechargePrompt> checkRechargeAbilities(UUID combatantId) {
+        Combatant c = findCombatantById(combatantId);
+        StatBlock sb = c.getStatBlock();
+        if (sb == null) return List.of();
+
+        List<String> recharged;
+        try {
+            recharged = JSON_MAPPER.readValue(c.getRechargedAbilities(), new TypeReference<List<String>>() {});
+        } catch (Exception e) { recharged = List.of(); }
+
+        List<RechargePrompt> prompts = new ArrayList<>();
+        String actionsJson = sb.getActions();
+        if (actionsJson != null && !actionsJson.isEmpty()) {
+            prompts.addAll(parseRechargePatterns(actionsJson, recharged));
+        }
+        String legendaryJson = sb.getLegendaryActions();
+        if (legendaryJson != null && !legendaryJson.isEmpty()) {
+            prompts.addAll(parseRechargePatterns(legendaryJson, recharged));
+        }
+        return prompts;
+    }
+
+    private List<RechargePrompt> parseRechargePatterns(String json, List<String> recharged) {
+        List<RechargePrompt> prompts = new ArrayList<>();
+        try {
+            var node = JSON_MAPPER.readTree(json);
+            if (node.isArray()) {
+                for (var item : node) {
+                    if (item.has("recharge")) {
+                        String recharge = item.get("recharge").asText();
+                        String[] parts = recharge.split("-");
+                        if (parts.length == 2) {
+                            int min = Integer.parseInt(parts[0].trim());
+                            int max = Integer.parseInt(parts[1].trim());
+                            String name = item.has("name") ? item.get("name").asText() : "Unknown";
+                            if (!recharged.contains(name)) {
+                                prompts.add(new RechargePrompt(name, min, max));
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) { /* ignore malformed JSON */ }
+        return prompts;
+    }
+
+    public void resolveRecharge(UUID combatantId, String abilityName, Integer rollResult) {
+        Combatant c = findCombatantById(combatantId);
+        List<String> recharged;
+        try {
+            recharged = new ArrayList<>(JSON_MAPPER.readValue(c.getRechargedAbilities(), new TypeReference<List<String>>() {}));
+        } catch (Exception e) { recharged = new ArrayList<>(); }
+
+        if (rollResult != null && c.getStatBlock() != null) {
+            var prompts = checkRechargeAbilities(combatantId);
+            for (var prompt : prompts) {
+                if (prompt.abilityName().equals(abilityName)) {
+                    if (rollResult >= prompt.minRoll()) {
+                        recharged.add(abilityName);
+                    }
+                    break;
+                }
+            }
+        }
+
+        try {
+            c.setRechargedAbilities(JSON_MAPPER.writeValueAsString(recharged));
+        } catch (Exception e) { /* ignore */ }
+        combatantRepo.save(c);
+
+        try {
+            String payload = JSON_MAPPER.writeValueAsString(Map.of(
+                "abilityName", abilityName, "rollResult", rollResult, "recharged", rollResult != null));
+            logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.RECHARGE,
+                combatantId.toString(), payload);
+        } catch (Exception e) { /* ignore */ }
+    }
+
+    public CombatantDto useLegendaryAction(UUID combatantId) {
+        Combatant c = findCombatantById(combatantId);
+        if (c.getLegendaryActionsUsed() >= c.getLegendaryActionsMax()) {
+            throw new IllegalStateException("No legendary actions remaining");
+        }
+        c.setLegendaryActionsUsed(c.getLegendaryActionsUsed() + 1);
+        Combatant saved = combatantRepo.save(c);
+        logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.LEGENDARY_ACTION,
+            combatantId.toString(), "{\"remaining\":" + (c.getLegendaryActionsMax() - c.getLegendaryActionsUsed()) + "}");
+        return toDto(saved);
+    }
+
+    public CombatantDto useLegendaryResistance(UUID combatantId) {
+        Combatant c = findCombatantById(combatantId);
+        if (c.getLegendaryResistancesUsed() >= c.getLegendaryResistancesMax()) {
+            throw new IllegalStateException("No legendary resistances remaining");
+        }
+        c.setLegendaryResistancesUsed(c.getLegendaryResistancesUsed() + 1);
+        Combatant saved = combatantRepo.save(c);
+        logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.LEGENDARY_RESISTANCE,
+            combatantId.toString(), "{\"remaining\":" + (c.getLegendaryResistancesMax() - c.getLegendaryResistancesUsed()) + "}");
+        return toDto(saved);
+    }
+
+    public void activateLairAction(UUID encounterId) {
+        logEntry(encounterId, CombatLogEntry.EntryType.LAIR_ACTION, "", "{}");
     }
 
     CombatLogEntry logEntry(UUID encounterId, CombatLogEntry.EntryType type, String combatantId, String payload) {

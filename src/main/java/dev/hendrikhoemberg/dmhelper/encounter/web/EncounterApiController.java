@@ -5,9 +5,13 @@ import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatLog
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantUpdateRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.ConcentrationCheckRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.ConcentrationRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.EncounterDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.PrefillMapRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.RechargeCheckRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.RechargePrompt;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.UpdateRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -177,6 +181,49 @@ public class EncounterApiController {
     @PostMapping("/encounters/{id}/tick-conditions")
     public ResponseEntity<Void> tickConditions(@PathVariable UUID id) {
         service.tickConditionDurations(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/combatants/{id}/concentration")
+    public CombatantDto setConcentration(@PathVariable UUID id, @RequestBody ConcentrationRequest req) {
+        return service.setConcentration(id, req.spellName());
+    }
+
+    @PostMapping("/combatants/{id}/concentration-check")
+    public CombatantDto resolveConcentrationCheck(@PathVariable UUID id, @RequestBody ConcentrationCheckRequest req) {
+        return service.resolveConcentrationCheck(id, req.passed());
+    }
+
+    @PostMapping("/combatants/{id}/legendary-action")
+    public CombatantDto useLegendaryAction(@PathVariable UUID id) {
+        return service.useLegendaryAction(id);
+    }
+
+    @PostMapping("/combatants/{id}/legendary-resistance")
+    public CombatantDto useLegendaryResistance(@PathVariable UUID id) {
+        return service.useLegendaryResistance(id);
+    }
+
+    @PostMapping("/encounters/{id}/reset-legendary")
+    public ResponseEntity<Void> resetLegendary(@PathVariable UUID id) {
+        service.resetLegendaryActions(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/encounters/{id}/lair-action")
+    public ResponseEntity<Void> activateLairAction(@PathVariable UUID id) {
+        service.activateLairAction(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/combatants/{id}/recharge-prompts")
+    public List<RechargePrompt> getRechargePrompts(@PathVariable UUID id) {
+        return service.checkRechargeAbilities(id);
+    }
+
+    @PostMapping("/combatants/{id}/recharge-check")
+    public ResponseEntity<Void> resolveRecharge(@PathVariable UUID id, @RequestBody RechargeCheckRequest req) {
+        service.resolveRecharge(id, req.abilityName(), req.rollResult());
         return ResponseEntity.ok().build();
     }
 }

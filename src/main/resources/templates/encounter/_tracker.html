@@ -40,6 +40,7 @@
             dmMode: true,
             lairActionUsedThisRound: false,
             rechargePrompts: [],
+            rechargeRolls: {},
             conditionsCatalog: [],
             showConditionMenu: null,
             conditionDuration: '',
@@ -145,6 +146,9 @@
                         await this.reloadCombatants();
                         if (this.encounter.round > prevRound) {
                             this.lairActionUsedThisRound = false;
+                        }
+                        if (this.encounter.rechargePrompts) {
+                            this.rechargePrompts = this.encounter.rechargePrompts;
                         }
                         this.dispatchTurnEvent();
                         this.dispatchState();
@@ -338,13 +342,26 @@
                 return this.combatants.filter(c => c.groupId === groupId).length;
             },
 
-            async clearConcentration(combatantId) {
+            async setConcentration(combatantId, spellName) {
                 if (!this._encounterId) return;
                 try {
-                    await fetch(`/api/v1/combatants/${combatantId}`, {
+                    await fetch(`/api/v1/combatants/${combatantId}/concentration`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ concentratingOn: null, concentrationCheckPending: false }),
+                        body: JSON.stringify({ spellName: spellName || null }),
+                    });
+                    await this.reloadCombatants();
+                    this.dispatchState();
+                } catch (e) {}
+            },
+
+            async resolveConcentrationCheck(combatantId, passed) {
+                if (!this._encounterId) return;
+                try {
+                    await fetch(`/api/v1/combatants/${combatantId}/concentration-check`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ passed }),
                     });
                     await this.reloadCombatants();
                     this.dispatchState();
@@ -352,30 +369,32 @@
             },
 
             async useLegendaryAction(combatantId) {
-                const c = this.combatants.find(x => x.id === combatantId);
-                if (!c || !this._encounterId) return;
+                if (!this._encounterId) return;
                 try {
-                    await fetch(`/api/v1/combatants/${combatantId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ legendaryActionsUsed: (c.legendaryActionsUsed || 0) + 1 }),
-                    });
+                    await fetch(`/api/v1/combatants/${combatantId}/legendary-action`, { method: 'POST' });
                     await this.reloadCombatants();
                     this.dispatchState();
                 } catch (e) {}
             },
 
             async useLegendaryResistance(combatantId) {
-                const c = this.combatants.find(x => x.id === combatantId);
-                if (!c || !this._encounterId) return;
+                if (!this._encounterId) return;
                 try {
-                    await fetch(`/api/v1/combatants/${combatantId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ legendaryResistancesUsed: (c.legendaryResistancesUsed || 0) + 1 }),
-                    });
+                    await fetch(`/api/v1/combatants/${combatantId}/legendary-resistance`, { method: 'POST' });
                     await this.reloadCombatants();
                     this.dispatchState();
+                } catch (e) {}
+            },
+
+            async resolveRecharge(combatantId, abilityName, rollResult) {
+                if (!this._encounterId) return;
+                try {
+                    await fetch(`/api/v1/combatants/${combatantId}/recharge-check`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ abilityName, rollResult }),
+                    });
+                    this.rechargePrompts = this.rechargePrompts.filter(p => p.abilityName !== abilityName);
                 } catch (e) {}
             },
 
@@ -428,16 +447,17 @@
                         @click="activateLairAction()">Lair</button>
             </div>
 
-            <!-- Recharge banner (Step 7) -->
+            <!-- Recharge banner -->
             <div class="recharge-banner" x-show="rechargePrompts.length > 0">
                 <template x-for="prompt in rechargePrompts" :key="prompt.abilityName">
                     <div class="recharge-prompt">
                         <span>🔄 <strong x-text="prompt.abilityName"></strong></span>
                         <input type="number" class="recharge-roll-input"
                                :placeholder="'d' + (prompt.maxRoll || 6)"
-                               @keydown.enter="/* resolveRecharge placeholder */">
-                        <button>Roll</button>
-                        <button>Skip</button>
+                               x-model="rechargeRolls[prompt.abilityName]"
+                               @keydown.enter="resolveRecharge(activeCombatantId, prompt.abilityName, parseInt(rechargeRolls[prompt.abilityName]) || null)">
+                        <button @click="resolveRecharge(activeCombatantId, prompt.abilityName, parseInt(rechargeRolls[prompt.abilityName]) || null)">Roll</button>
+                        <button @click="resolveRecharge(activeCombatantId, prompt.abilityName, null)">Skip</button>
                     </div>
                 </template>
             </div>
@@ -549,14 +569,14 @@
                     <template x-if="selected?.concentratingOn">
                         <div style="margin-bottom: var(--space-xs); font-size: var(--text-sm);">
                             Concentrating: <strong x-text="selected.concentratingOn"></strong>
-                            <button class="btn btn-ghost" style="padding: 1px 6px; font-size: 0.7rem;" @click="clearConcentration(selected.id)">Drop</button>
+                            <button class="btn btn-ghost" style="padding: 1px 6px; font-size: 0.7rem;" @click="setConcentration(selected.id, null)">Drop</button>
                         </div>
                     </template>
                     <template x-if="selected?.concentrationCheckPending">
                         <div class="conc-check" style="background: rgba(155, 89, 182, 0.15); padding: var(--space-xs); border-radius: 4px; margin-bottom: var(--space-xs);">
                             <span style="font-size: var(--text-sm);">Concentration check!</span>
-                            <button class="btn" style="padding: 1px 6px; font-size: 0.7rem;" @click="clearConcentration(selected.id)">Passed</button>
-                            <button class="btn" style="padding: 1px 6px; font-size: 0.7rem;" @click="clearConcentration(selected.id)">Failed</button>
+                            <button class="btn" style="padding: 1px 6px; font-size: 0.7rem;" @click="resolveConcentrationCheck(selected.id, true)">Passed</button>
+                            <button class="btn" style="padding: 1px 6px; font-size: 0.7rem;" @click="resolveConcentrationCheck(selected.id, false)">Failed</button>
                         </div>
                     </template>
                 </div>
