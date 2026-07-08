@@ -86,7 +86,7 @@
             <a th:href="@{/campaigns/{cid}/maps(cid=${campaignId})}" class="btn btn-ghost">&larr; Maps</a>
 
             <div class="tool-group">
-                <button class="tool-btn" :class="{ active: tool === 'brush' }" @click="setTool('brush')" title="Brush (B)">🖌 Brush</button>
+                <button class="tool-btn" :class="{ active: tool === 'brush' }" @click="setTool('brush')" title="Brush (B) — right-click to erase">🖌 Brush</button>
                 <select class="tool-btn" style="padding: 6px 8px;" x-model="terrain" @change="applyTerrain()">
                     <template x-for="t in terrains" :key="t.key">
                         <option :value="t.key" x-text="t.name"></option>
@@ -143,6 +143,7 @@
                 snap: true,
                 activeLayer: 'terrain',
                 terrains: [
+                    { key: '__erase__', name: '◇ Erase' },
                     { key: 'floor', name: 'Floor' },
                     { key: 'wall', name: 'Wall' },
                     { key: 'water', name: 'Water' },
@@ -163,7 +164,9 @@
                 },
                 init() {
                     window.addEventListener('map-toolchange', (e) => { this.tool = e.detail.tool; });
-                    window.addEventListener('map-palette', (e) => { this.terrains = e.detail.terrains; });
+                    window.addEventListener('map-palette', (e) => {
+                        this.terrains = [{ key: '__erase__', name: '◇ Erase' }, ...e.detail.terrains];
+                    });
                     window.addEventListener('map-layerstate', (e) => {
                         for (const [id, state] of Object.entries(e.detail.layers)) {
                             if (this.layers[id]) Object.assign(this.layers[id], state);

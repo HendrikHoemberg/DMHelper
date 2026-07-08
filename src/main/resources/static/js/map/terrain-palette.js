@@ -14,6 +14,9 @@ export const BUILTIN_TERRAIN = {
 };
 
 export const DEFAULT_TERRAIN = 'floor';
+/** UI-only sentinel for the palette picker's "Erase" entry — not a real terrain key.
+ *  Selecting it sets the active terrain to DEFAULT_TERRAIN, same as painting Floor. */
+export const ERASE_KEY = '__erase__';
 
 export const SHAPE_COLORS = {
     fill: '#8B4513',

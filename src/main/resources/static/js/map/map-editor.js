@@ -1,4 +1,4 @@
-import { BUILTIN_TERRAIN, DEFAULT_TERRAIN, SHAPE_COLORS } from './terrain-palette.js';
+import { BUILTIN_TERRAIN, DEFAULT_TERRAIN, ERASE_KEY, SHAPE_COLORS } from './terrain-palette.js';
 
 /**
  * @typedef {{col: number, row: number, terrain: string}} Cell
@@ -40,6 +40,7 @@ export class MapEditor {
 
         this.drawing = false;
         this.panning = false;
+        this.erasing = false;
         this.shapeStart = null;
         this.marqueeStart = null;
         this.polygonPoints = [];   // flat [x1, y1, ...] in cell units
@@ -165,7 +166,7 @@ export class MapEditor {
     }
 
     setTerrain(key) {
-        this.terrain = key;
+        this.terrain = key === ERASE_KEY ? DEFAULT_TERRAIN : key;
     }
 
     setLayer(layerId) {
@@ -361,6 +362,17 @@ export class MapEditor {
                 this.stage.draggable(true);
                 return;
             }
+            if (e.evt.button === 2 && this.activeTool === 'brush') {   // right mouse: erase
+                e.evt.preventDefault();
+                if (this.isLocked(this.activeLayerId)) { this.setStatus('Layer is locked'); return; }
+                this.pushUndo();
+                this.erasing = true;
+                this.drawing = true;
+                this.lastPaintCell = null;
+                const pos = this.cellPos();
+                if (pos) this.paintCell(pos.col, pos.row, { erase: true });
+                return;
+            }
             if (this.stage.draggable()) return;   // space-pan active
 
             const pos = this.cellPos();
@@ -404,7 +416,7 @@ export class MapEditor {
             if (!this.drawing) return;
 
             if (this.activeTool === 'brush') {
-                this.paintStrokeTo(pos.col, pos.row, false);
+                this.paintStrokeTo(pos.col, pos.row, !!this.erasing);
             } else if (this.activeTool === 'select' && this.marqueeStart) {
                 this.previewMarquee(this.marqueeStart, pos);
             } else if (this.shapeStart) {
@@ -421,6 +433,7 @@ export class MapEditor {
             if (!this.drawing) return;
             this.drawing = false;
             this.lastPaintCell = null;
+            this.erasing = false;
 
             const pos = this.cellPos();
             if (this.activeTool === 'select' && this.marqueeStart && pos) {
@@ -438,6 +451,8 @@ export class MapEditor {
         this.stage.on('dblclick dbltap', () => {
             if (this.activeTool === 'polygon') this.commitPolygon();
         });
+
+        this.stage.on('contextmenu', (e) => { e.evt.preventDefault(); });
 
         // Zoom (wheel)
         this.stage.on('wheel', (e) => {
