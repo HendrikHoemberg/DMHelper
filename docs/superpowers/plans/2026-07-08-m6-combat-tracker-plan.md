@@ -127,6 +127,9 @@ public class Combatant {
     int legendaryActionsMax;       // from statblock — denormalized for faster access
     int legendaryResistancesMax;
 
+    // Recharge tracking
+    @Column(columnDefinition = "CLOB") String rechargedAbilities = "[]"; // JSON array of ability names recharged this encounter
+
     // Display
     @Column(length = 255) String notes;
 }
@@ -167,6 +170,7 @@ public class CombatLogEntry {
         DAMAGE, HEAL, TEMP_HP,
         CONDITION_ADDED, CONDITION_REMOVED, CONDITION_TICKED,
         CONCENTRATION_SET, CONCENTRATION_LOST, CONCENTRATION_CHECK,
+        RECHARGE,
         LEGENDARY_ACTION, LEGENDARY_RESISTANCE,
         DEFEATED, REVIVED,
         COMBATANT_ADDED, COMBATANT_REMOVED, COMBATANT_REORDERED,
@@ -270,6 +274,10 @@ setConcentration(combatantId, spellName?)
 promptConcentrationCheck(combatantId, damageAmount)          // sets concentrationCheckPending = true
 resolveConcentrationCheck(combatantId, passed)               // clears pending; logs result
 
+// Recharge abilities
+checkRechargeAbilities(combatantId) -> List<RechargePrompt>  // scan linked statblock for recharge patterns
+resolveRecharge(combatantId, abilityName, rollResult?)       // mark as recharged on success; log RECHARGE
+
 // Legendary/Lair
 useLegendaryAction(combatantId)                               // increments used, logs
 useLegendaryResistance(combatantId)                           // increments used, logs
@@ -361,6 +369,9 @@ Used by the Alpine.js tracker panel for real-time combat operations:
 | `POST` | `/api/v1/encounters/{id}/reset-legendary` | Reset legendary actions for new round |
 | `POST` | `/api/v1/encounters/{id}/lair-action` | Activate lair action |
 
+| `GET` | `/api/v1/combatants/{id}/recharge-prompts` | Get pending recharge prompts for this combatant |
+| `POST` | `/api/v1/combatants/{id}/recharge-check` | Resolve a recharge roll (`{ "abilityName": "...", "rollResult": 4 }`; `rollResult: null` = skip) |
+
 | `GET` | `/api/v1/encounters/{id}/log` | Get combat log entries |
 | `POST` | `/api/v1/encounters/{id}/undo` | Undo last action |
 
@@ -391,6 +402,7 @@ Inner records in services/controllers, following the `TokenService.TokenDto` pat
 record EncounterDto(UUID id, UUID campaignId, UUID mapId, String name,
                     String status, int round, int activeTurnIndex,
                     int combatantCount, String lairActionName,
+                    String lairActionDescription,
                     List<CombatantDto> combatants) {}
 
 // CombatantDto — returned by combatant endpoints and embedded in EncounterDto
@@ -461,6 +473,8 @@ function combatTracker() {
         hpDelta: '',               // quick-math input: "+12" or "-5"
         conditionSearch: '',       // quick condition filter
         conditionsCatalog: [],     // all Condition compendium entries
+        dmMode: true,              // global DM Mode state (true = DM can see everything)
+        lairActionUsedThisRound: false, // reset on round wrap
 
         init() {
             // Load conditions catalog once for tooltips
@@ -471,10 +485,18 @@ function combatTracker() {
                 this.combatants = e.detail.combatants;
                 this.activeCombatantId = e.detail.activeCombatantId;
             });
+            // Listen for DM Mode toggle events
+            window.addEventListener('dm-mode-changed', (e) => {
+                this.dmMode = e.detail.dmMode;
+            });
         },
 
         // Turn management
-        async nextTurn() { ... POST /next-turn; reload combatants ... },
+        async nextTurn() {
+            // POST /next-turn; reload combatants
+            // if round advanced, resetLairAction() and reset legendary displays
+            // loadRechargePrompts(newActiveCombatantId)
+        },
         async previousTurn() { ... },
 
         // HP quick-math
@@ -509,6 +531,16 @@ function combatTracker() {
         async useLegendaryAction(combatantId) { ... },
         async useLegendaryResistance(combatantId) { ... },
 
+        // Recharge
+        rechargePrompts: [], // populated after nextTurn()
+        async loadRechargePrompts(combatantId) { ... GET /recharge-prompts ... },
+        async resolveRecharge(combatantId, abilityName, rollResult) { ... POST /recharge-check ... },
+        dismissRechargeBanner() { this.rechargePrompts = []; },
+
+        // Lair action
+        async activateLairAction() { ... POST /lair-action; this.lairActionUsedThisRound = true ... },
+        resetLairAction() { this.lairActionUsedThisRound = false; }, // called on round wrap
+
         // Drag-to-reorder (using Alpine's sort plugin — or a lightweight drag handler)
         // Undo
         async undo() { ... },
@@ -542,11 +574,29 @@ All tracker markup lives in a new Thymeleaf fragment `templates/encounter/_track
         <button @click="activateLairAction()" x-show="encounter?.lairActionName">Lair</button>
     </div>
 
+    <!-- Recharge banner (shown after advancing to a combatant with pending recharge abilities) -->
+    <div class="recharge-banner" x-show="rechargePrompts.length > 0">
+        <template x-for="prompt in rechargePrompts" :key="prompt.abilityName">
+            <div class="recharge-prompt">
+                <span>🔄 <strong x-text="prompt.abilityName"></strong>
+                      (Recharge <span x-text="prompt.minRoll"></span>–<span x-text="prompt.maxRoll"></span>)</span>
+                <input type="number" class="recharge-roll-input"
+                       :placeholder="'d' + prompt.maxRoll"
+                       x-ref="rechargeInput"
+                       @keydown.enter="resolveRecharge(activeCombatantId, prompt.abilityName, $event.target.value)">
+                <button @click="resolveRecharge(activeCombatantId, prompt.abilityName, $refs.rechargeInput?.value || null)">Roll</button>
+                <button @click="resolveRecharge(activeCombatantId, prompt.abilityName, null)">Skip</button>
+            </div>
+        </template>
+        <button @click="dismissRechargeBanner()">Dismiss All</button>
+    </div>
+
     <!-- Initiative list -->
     <div class="tracker-list">
         <template x-for="(c, idx) in combatants" :key="c.id">
             <div class="combatant-row"
                  :class="{ active: c.id === activeCombatantId, defeated: c.defeated, hidden: c.hidden }"
+                 x-show="dmMode || !c.hidden"
                  @click="selectCombatant(c.id)"
                  draggable="true"
                  @dragstart="dragStart(idx)" @dragover.prevent @drop="drop(idx)">
@@ -562,21 +612,21 @@ All tracker markup lives in a new Thymeleaf fragment `templates/encounter/_track
                     </template>
                 </span>
 
-                <!-- HP bar (mini) -->
-                <div class="hp-mini">
+                <!-- HP bar (mini) — DM Mode only -->
+                <div class="hp-mini" x-show="dmMode">
                     <div class="hp-mini-fill" :style="{ width: hpPercent(c) + '%' }"
                          :class="{ bloodied: c.bloodied, dead: c.defeated }"></div>
                 </div>
 
-                <!-- HP numbers + quick-entry -->
-                <div class="hp-entry">
+                <!-- HP numbers + quick-entry — DM Mode only -->
+                <div class="hp-entry" x-show="dmMode">
                     <input type="text" class="hp-delta-input"
                            placeholder="±HP"
                            @keydown.enter="applyHpDelta(c.id)"
                            x-model="hpDelta">
                 </div>
 
-                <!-- Condition icons (colored dots with tooltips) -->
+                <!-- Condition icons (colored dots with tooltips) — always visible -->
                 <div class="condition-icons">
                     <template x-for="cond in c.conditions" :key="cond.sourceKey">
                         <span class="cond-icon"
@@ -584,17 +634,27 @@ All tracker markup lives in a new Thymeleaf fragment `templates/encounter/_track
                               :title="getConditionText(cond.sourceKey)"
                               x-text="cond.durationRounds > 0 ? cond.durationRounds : '∞'"></span>
                     </template>
-                    <button @click.stop="openConditionMenu(c.id)">＋</button>
+                    <button @click.stop="openConditionMenu(c.id)" x-show="dmMode">＋</button>
                 </div>
 
-                <!-- Concentration indicator -->
-                <span x-show="c.concentratingOn" class="conc-badge" title="Concentrating">⏀</span>
+                <!-- Concentration indicator — always visible (circle icon, no spell name when DM Mode off) -->
+                <span x-show="c.concentratingOn" class="conc-badge"
+                      :title="dmMode ? c.concentratingOn : 'Concentrating'">⏀</span>
             </div>
         </template>
+
+        <!-- Lair action virtual row (rendered at initiative 20 position, between combatants with init > 20 and < 20) -->
+        <div class="lair-action-row" x-show="encounter?.lairActionName" x-if="lairActionRowVisible">
+            <span class="init-badge lair-init">20</span>
+            <span class="combatant-name lair-name" x-text="encounter.lairActionName"></span>
+            <span class="lair-used-badge" x-show="lairActionUsedThisRound">✓ this round</span>
+            <button @click="activateLairAction()"
+                    x-show="!lairActionUsedThisRound">Activate</button>
+        </div>
     </div>
 
-    <!-- Selected combatant detail -->
-    <div class="combatant-detail" x-show="selectedCombatantId">
+    <!-- Selected combatant detail — DM Mode only -->
+    <div class="combatant-detail" x-show="selectedCombatantId && dmMode">
         <!-- HP section -->
         <div class="detail-hp">
             <label>HP</label>
@@ -677,7 +737,8 @@ When an encounter is active, the `BattleMap` class needs:
 1. **Active-turn highlight**: the active combatant's linked token gets a glow/outline. The tracker publishes `tracker-active-turn` event; `BattleMap` listens and updates the token's visual.
 2. **Token selection → combatant selection**: clicking a token while the tracker is open selects the corresponding combatant in the tracker. Existing `battle-tokenselect` event is already dispatched; the tracker listens for it and sets `selectedCombatantId` if the token has a combatant link.
 3. **Combatant defeat → token dead**: when a combatant is defeated, `BattleMap` receives the event and marks the linked token as dead (if linked).
-4. **Encounter start**: building an encounter from current map tokens — calls `POST /api/v1/encounters/{id}/prefill/map`.
+4. **Condition icons → token condition indicators**: when conditions change on a combatant (added or removed), the tracker publishes a `tracker-conditions-changed` event carrying `{ combatantId, conditions }`. `BattleMap` listens and renders small condition indicator dots on the linked token (same color coding as the tracker's condition icons), so the table can see who is paralyzed/stunned/poisoned at a glance. These condition dots are **player-visible** (they appear even when DM Mode is off) — the SPEC explicitly calls for condition icons to show on tokens (§4.5).
+5. **Encounter start**: building an encounter from current map tokens — calls `POST /api/v1/encounters/{id}/prefill/map`.
 
 The `BattleMap` class currently has no awareness of encounters. A **new event bus message** `tracker-encounter-state` carries the active encounter status; the map listens for it and adjusts rendering accordingly.
 
@@ -830,8 +891,9 @@ if idx == 0: // wrapped around
     round++
     resetLegendaryActions()
     // tick conditions that tick on "source's turn" here
-    // prompt recharge rolls
 activeTurnIndex = idx
+// After advancing, check recharge abilities for the NEW active combatant
+// (returned as part of response or called separately by frontend)
 save(encounter)
 ```
 
@@ -859,6 +921,7 @@ static int dexModifier(StatBlock sb) {
 - Create `combatTracker()` Alpine function in an inline `<script>` in `battle.html` (or a separate JS module if it grows large)
 - Update `battle.html` to include the tracker panel, toggled by encounter active state
 - Wire up the `window` event bus for map↔tracker communication
+- **Wire DM Mode filtering**: the tracker component listens for the existing `dm-mode-changed` window event (same as `battleToolbar()`). When `dmMode` is false, hide: HP bars/numbers/quick-math inputs, hidden combatants entirely, the combatant detail panel, condition add buttons, and spell names on concentration badges. Keep visible: combatant names, initiative order, round counter, active-turn highlight, condition icons (with tooltip text from compendium), concentration badge (icon only), End Combat button, and undo button.
 
 **Condition toggle integration with compendium:**
 - The condition list in the detail panel is populated from `GET /api/v1/library/conditions` (existing endpoint).
@@ -869,13 +932,15 @@ static int dexModifier(StatBlock sb) {
 
 **Verification:** Create an encounter with combatants. Apply damage, see HP update, bloodied state toggle. Add/remove conditions with durations. Advance turns, verify durations tick down and expire.
 
-### Step 7: Concentration, Legendary & Lair Actions (backend + frontend)
+### Step 7: Concentration, Recharge, Legendary & Lair Actions (backend + frontend)
 
 **Add to `EncounterService`:**
 - `setConcentration(combatantId, spellName)` — sets `concentratingOn`, logs
 - `clearConcentration(combatantId)` — clears `concentratingOn`, logs
 - `promptConcentrationCheck(combatantId, damageAmount)` — sets `concentrationCheckPending = true`, calculates DC = max(10, damageAmount / 2)
 - `resolveConcentrationCheck(combatantId, passed)` — if passed: clears pending; if failed: clears concentration flag + pending
+- `checkRechargeAbilities(combatantId) → List<RechargePrompt>` — parses linked statblock's actions/legendaryActions JSON for `"recharge": "X-Y"` patterns; returns abilities not already recharged (tracked in `combatant.rechargedAbilities` JSON). Called at the start of a combatant's turn (inside `nextTurn()` after advancing).
+- `resolveRecharge(combatantId, abilityName, rollResult?)` — marks ability as recharged in `combatant.rechargedAbilities` if rollResult falls in range; logs `RECHARGE` entry. `rollResult = null` means "skip."
 - `useLegendaryAction(combatantId)` — increments used (must be < max)
 - `useLegendaryResistance(combatantId)` — increments used
 - `resetLegendaryActions(encounterId)` — zeroes used counters for all combatants
@@ -885,7 +950,9 @@ static int dexModifier(StatBlock sb) {
 - Add legendary actions/resistances counter to combatant detail panel
 - Add concentration set/clear controls
 - Add concentration check prompt (shown as a callout when pending)
-- Add lair action button in turn controls
+- Add recharge banner: after `nextTurn()`, fetch recharge prompts for the new active combatant; show a banner above the initiative list with roll/skip per ability (see §9 note 6 for full UI spec)
+- Add lair action virtual row in the initiative list at initiative 20 (see §9 note 7 for full UI spec)
+- Add lair action button in turn controls (supplementary to the init-20 row for quick access)
 
 **Concentration DC:** `max(10, damageAmount / 2)` — 5.5e rules. Integer division, round down.
 
@@ -912,7 +979,11 @@ static final int[] MODERATE = { 50, 100, 150, 250, 500, 600, 750, 900, 1100, 120
 static final int[] HARD = { 75, 150, 225, 375, 750, 900, 1100, 1400, 1600, 1900, 2400, 3000, 3400, 3800, 4300, 4800, 5900, 6300, 7300, 8500 };
 // Deadly = HARD * 2 (but check 2024 DMG for exact values)
 ```
-**Important:** These numbers MUST be verified against the official SRD 5.2 document before committing. If the SRD 5.2 document provides different values, those take precedence (provenance rule §2.3.8). If no official source is available for the 2024 thresholds, use the 2014 DMG values as a baseline and mark the feature as "2014 DMG reference — 2024 update pending source availability." Do NOT have the AI fill in values from memory.
+**Important — provenance (§2.3.8):** The XP threshold table values above are **placeholder samples** and MUST be replaced before committing. The authoritative source is:
+1. **open5e API** (`srd-2024` document) — check whether the `srd-2024` document exposes per-level XP thresholds for encounter difficulty. If available, parse them at seed time into a `static` table or a `@PostConstruct` cache.
+2. **Official SRD 5.2 document** (CC-BY-4.0) — if open5e does not cover XP thresholds, transcribe the relevant table verbatim from the SRD 5.2 PDF into a checked-in JSON seed file (`src/main/resources/seeds/xp-thresholds.json`) with a header recording the source document title, page number, and retrieval date.
+3. **Graceful degradation** — if neither source provides 2024 thresholds, use the **2014 DMG values** as a fallback, clearly marked with a `@deprecated` comment noting "2014 DMG reference — replace with SRD 5.2 values when available." The difficulty calculator must log a warning at startup when running in fallback mode.
+Under no circumstances may an AI assistant or human contributor fill in XP values from memory (§2.3.8).
 
 **Verification:** Set up a party of 4 level-5 PCs. Add 3 CR-3 monsters. See difficulty rating.
 
@@ -921,6 +992,8 @@ static final int[] HARD = { 75, 150, 225, 375, 750, 900, 1100, 1400, 1600, 1900,
 **Integration work:**
 - Wire the encounter system into the battle map toolbar ("Encounter ▼" dropdown with "New from map", "Activate existing", etc.)
 - Wire encounter CRUD pages into campaign navigation
+- **Condition icons on map tokens**: when the tracker modifies a combatant's conditions, publish `tracker-conditions-changed` event to the window bus. `BattleMap` listens and renders small condition indicator dots on the linked token, using the same color coding as the tracker. These dots are player-visible.
+- **DM Mode integration**: verify that toggling DM Mode correctly shows/hides HP, hidden combatants, and the detail panel in the tracker. The tracker must work correctly in player-safe mode on the DM's own screen (separate from the M7 player view WebSocket).
 - Handle edge cases: activating an encounter while another is active (auto-end the old one), combatants with no map, combatants with no token
 - Export/import: add `encounters` section to `CampaignExportDto` (use `List.of()` placeholder for now — full serialization in M12)
 
@@ -931,11 +1004,16 @@ static final int[] HARD = { 75, 150, 225, 375, 750, 900, 1100, 1400, 1600, 1900,
 | Unit | `CombatDifficultyCalculator` — known inputs → expected ratings |
 | Unit | `EncounterService` — replay-based undo for each mutation type |
 | Unit | `EncounterService` — initiative sorting edge cases (ties, empty list, all same initiative) |
+| Unit | `EncounterService` — recharge ability detection: parses statblock JSON with various recharge patterns, returns correct prompts |
+| Unit | `EncounterService` — recharge resolution: roll below threshold = no recharge, roll within = recharged, skip = dismissed |
 | Unit | DEX modifier calculation |
 | Unit | HP math edge cases (0 HP, negative HP, temp HP, heal-capped-at-max) |
 | Integration | `EncounterApiController` — full CRUD + turn flow via MockMvc |
 | Integration | `EncounterController` — htmx fragment rendering |
 | Integration | Combat flow end-to-end: create encounter → add combatants → set initiative → advance turns → apply damage → add conditions → undo |
+| Integration | Recharge flow: advance to combatant with recharge abilities → verify prompts returned → resolve/reject → verify log entries |
+| Integration | Lair action: activate → verify LAIR_ACTION log entry → advance round → verify lair action used-this-round flag resets |
+| Frontend | DM Mode toggle: verify HP bars, quick-math inputs, hidden combatants, and detail panel are hidden when DM Mode is off; verify names, conditions, order, and round remain visible |
 | Round-trip | Export/import encounter data (stub — full test in M12) |
 
 **Test pattern:** Follow existing test patterns in the project:
@@ -1018,8 +1096,48 @@ src/main/java/.../campaign/service/CampaignExportDto.java — add encounters stu
 
 4. **The tracker panel `_tracker.html` is an HTMX fragment loaded into `battle.html`**: It can be requested via htmx (`hx-get`) when an encounter is activated, and its Alpine component self-initializes. This keeps `battle.html` from growing to 1000+ lines.
 
-5. **No player-view projection yet**: `dmOnly`/`hidden` flags on Encounter and Combatant exist from day one, but the server-side player-safe projection (for M7 WebSocket) is not wired in M6. The DM Mode toggle on the battle map already hides HP — the tracker has no DM Mode toggle of its own because the tracker is always DM-only (players see nothing of it in v1).
+5. **DM Mode toggle applies to the tracker**: The global DM Mode toggle (§4.10) must filter the tracker panel when the DM shows their screen to the table. When DM Mode is **off** (player-safe):
+   - Monster HP bars, HP numbers, quick-math inputs, and defeated/revive controls are hidden.
+   - Hidden combatants (`hidden = true`) are hidden entirely from the initiative list.
+   - The combatant detail panel (HP math, concentration, legendary, defeat/revive controls) is hidden.
+   - What **remains** visible: combatant names, initiative order, round counter, active-turn highlight, condition icons (with tooltip text showing compendium descriptions), concentration badge (circle icon, no spell name), and the End Combat button.
+   - The lair action button and undo button remain visible — they don't leak HP.
+   - The encounter header (name, round) stays visible — encounter names are player-safe by design.
+   Implementation: the `combatTracker()` Alpine component listens for the existing `dm-mode-changed` window event that the DM Mode toggle already fires (the same event `battleToolbar()` uses). A reactive `dmMode` boolean gates every HP/defeated/hidden element with `x-show="dmMode"`. No server-side changes needed — the filtering is identical to what the battle map's token rendering already does for DM Mode (client-side concealment of server-side `dmOnly`/`hidden` data). This is the DM's screen being shown to players, not the M7 player view — the M7 WebSocket projection is a separate server-side concern.
 
-6. **Recharge abilities**: The SPEC mentions "Statblock recharge abilities ('Recharge 5-6') prompt a recharge roll at the start of the creature's turn." The `StatBlock` entity stores actions/legendaryActions as JSON strings. Recharge detection requires parsing these JSON strings for `recharge` fields. For M6, implement this as a regex scan of the action JSON at `nextTurn` time for the active combatant's statblock. If no statblock is linked, skip.
+6. **Recharge abilities**: The SPEC says "Statblock recharge abilities ('Recharge 5-6') prompt a recharge roll at the start of the creature's turn" (§4.5). Full implementation:
 
-7. **Lair actions at initiative 20**: The SPEC says "a lair action entry pinned at initiative 20." In D&D 5e, lair actions happen on initiative count 20 (losing ties). For M6, implement this as: the lair action appears as a dedicated **button in the turn controls**, labelled with the lair action name. The DM clicks it whenever the table reaches initiative 20 — the software does not auto-trigger. This is simpler and gives the DM full control over timing. The lair action button is only visible when `encounter.lairActionName` is set.
+   **Backend (`EncounterService`):**
+   - `checkRechargeAbilities(combatantId) → List<RechargePrompt>` — called at the start of a combatant's turn (inside `nextTurn()`). Parses the combatant's linked statblock's `actions` and `legendaryActions` JSON strings, scanning for `"recharge": "5-6"` or similar patterns (regex: `"recharge"\s*:\s*"(\d+)-(\d+)"`). Returns a list of ability names that have a recharge range and are not already recharged (tracked via `combatant.rechargedAbilities` JSON field — a list of ability names that have been manually recharged this encounter). If no statblock is linked, returns empty list.
+   - `resolveRecharge(combatantId, abilityName, rollResult)` — marks the ability as recharged in `combatant.rechargedAbilities` if the roll falls within the range; logs `RECHARGE` (with success/failure in payload).
+   - `clearRechargedAbilities(combatantId)` — clears the list when the ability is used (called by the DM clicking "Use" on the ability — out of scope for M6, but the data field is prepared).
+
+   **Entity changes (`Combatant`):**
+   - Add `@Column(columnDefinition = "CLOB") String rechargedAbilities = "[]";` — JSON array of ability names that have recharged. Reset to `"[]"` when an encounter is activated.
+
+   **API:**
+   - `GET /api/v1/combatants/{id}/recharge-prompts` — returns `{ "prompts": [ { "abilityName": "Frightful Presence", "minRoll": 5, "maxRoll": 6 } ] }`
+   - `POST /api/v1/combatants/{id}/recharge-check` — body: `{ "abilityName": "Frightful Presence", "rollResult": 4 }` (or `"rollResult": null` for "skip" — per §2.3.9 optional-first, the DM can type a roll or use physical dice)
+
+   **CombatLogEntry.EntryType:** add `RECHARGE` to the enum.
+
+   **Frontend (Alpine.js `combatTracker()`):**
+   - After `nextTurn()` completes, call `GET /recharge-prompts` for the new active combatant.
+   - If prompts exist, show a **recharge banner** above the initiative list (not a modal that blocks play): "🔄 Recharge: Frightful Presence (5–6) [Roll] [Skip]".
+   - Clicking "[Roll]" shows a dice expression input pre-filled with "d6" (or the DM types their physical roll result — per §2.3.9); clicking the result value posts to `/recharge-check`.
+   - Clicking "[Skip]" posts with `rollResult: null`.
+   - The banner dismisses when all prompts are resolved or skipped.
+   - Recharge prompts are part of the `nextTurn` flow — they do not block advancing to the next turn; the DM can ignore the banner and keep playing.
+
+7. **Lair actions at initiative 20**: The SPEC says "a lair action entry pinned at initiative 20" (§4.5). In D&D 5e, lair actions happen on initiative count 20 (losing ties). Implementation:
+
+   **Initiative list display**: The initiative list is sorted by `initiative` descending. When an encounter has a lair action (`encounter.lairActionName` is set), a **virtual lair action row** is injected into the initiative list at the initiative-20 position — between combatants with initiative > 20 and those with initiative < 20. This row is rendered with a distinct visual (dashed border, muted color) and displays the lair action name. It is **not a Combatant entity** — it's a synthetic entry constructed by the Alpine component from `encounter.lairActionName` and `encounter.lairActionDescription`.
+
+   **Turn flow**: `nextTurn()` does not stop at the lair action row — it skips over it. The lair action is not part of the turn cycle. Instead, the DM clicks the lair action row (or a dedicated button in the turn controls) to trigger it when the table reaches initiative 20. Clicking the lair action:
+   - Logs a `LAIR_ACTION` entry in the combat log (via `POST /api/v1/encounters/{id}/lair-action`).
+   - Shows the lair action description in a one-time tooltip or inline card so the DM can read it to the table.
+   - Does NOT advance the turn — the active combatant remains unchanged.
+
+   **Round management**: The lair action can be activated once per round (5e rule). The plan does not enforce this server-side (DM discretion), but the lair action row shows a "used this round" visual state after activation, reset automatically at the top of each new round (alongside legendary action reset). Track this client-side in the Alpine component via `lairActionUsedThisRound` boolean.
+
+   **Lair action description tooltip**: The `encounter.lairActionDescription` CLOB field stores the full description (e.g., "Magical darkness spreads from the altar in a 30-foot radius..."). This is shown in a popover when the DM hovers or clicks the lair action row, sourced from the encounter DTO.
