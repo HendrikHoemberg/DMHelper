@@ -1,4 +1,5 @@
 import { BUILTIN_TERRAIN, DEFAULT_TERRAIN, ERASE_KEY, SHAPE_COLORS } from './terrain-palette.js';
+import { floodFillCells } from './flood-fill.js';
 
 /**
  * @typedef {{col: number, row: number, terrain: string}} Cell
@@ -518,6 +519,7 @@ export class MapEditor {
             switch (e.key.toLowerCase()) {
                 case 'b': this.setTool('brush'); break;
                 case 't': this.setTool('fill-rect'); break;
+                case 'g': this.setTool('bucket'); break;
                 case 'r': this.setTool('rect'); break;
                 case 'c': this.setTool('circle'); break;
                 case 'l': this.setTool('line'); break;
@@ -724,6 +726,27 @@ export class MapEditor {
         }
         this.layers[this.activeLayerId].batchDraw();
         this.markDirty();
+    }
+
+    /* ---- Terrain bucket (flood-fill) ---- */
+
+    floodFillAt(col, row, erase) {
+        if (this.isLocked(this.activeLayerId)) { this.setStatus('Layer is locked'); return; }
+        const layerDto = this.layerDto(this.activeLayerId);
+        if (!layerDto || layerDto.type !== 'TERRAIN') {
+            this.setStatus('Bucket paints on the Terrain layer');
+            return;
+        }
+        this.syncDocument();
+        const cells = this.layerDto(this.activeLayerId)?.cells || [];
+        const region = floodFillCells(cells, this.gridWidth, this.gridHeight, col, row, DEFAULT_TERRAIN);
+        if (!region.length) return;
+
+        this.pushUndo();
+        for (const cell of region) this.paintOneCell(cell.col, cell.row, erase);
+        this.layers[this.activeLayerId].batchDraw();
+        this.markDirty();
+        this.setStatus(`Filled ${region.length} cell(s)`);
     }
 
     /* ---- Freehand polygon (§4.3) ---- */

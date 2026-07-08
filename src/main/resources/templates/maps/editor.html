@@ -88,6 +88,7 @@
             <div class="tool-group">
                 <button class="tool-btn" :class="{ active: tool === 'brush' }" @click="setTool('brush')" title="Brush (B) — right-click to erase">🖌 Brush</button>
                 <button class="tool-btn" :class="{ active: tool === 'fill-rect' }" @click="setTool('fill-rect')" title="Terrain Rect (T) — right-click to erase">▤ Terrain Rect</button>
+                <button class="tool-btn" :class="{ active: tool === 'bucket' }" @click="setTool('bucket')" title="Bucket (G) — right-click to erase">🪣 Bucket</button>
                 <select class="tool-btn" style="padding: 6px 8px;" x-model="terrain" @change="applyTerrain()">
                     <template x-for="t in terrains" :key="t.key">
                         <option :value="t.key" x-text="t.name"></option>
