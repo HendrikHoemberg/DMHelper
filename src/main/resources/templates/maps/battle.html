@@ -123,10 +123,57 @@
             border: 1px solid var(--color-border);
             border-radius: 4px;
         }
+        .aoepresets {
+            display: flex;
+            gap: 2px;
+            flex-wrap: wrap;
+        }
+        .aoepresets button {
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            border: 1px solid var(--color-border);
+            border-radius: 3px;
+            background: var(--color-bg);
+            color: var(--color-text-muted);
+            cursor: pointer;
+        }
+        .aoepresets button:hover { color: var(--color-text); background: var(--color-surface-hover); }
+        .statblock-search {
+            position: relative;
+        }
+        .statblock-search input {
+            width: 100%;
+            padding: 4px 8px;
+            font-size: var(--text-sm);
+            background: var(--color-bg);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+        }
+        .statblock-search .sb-results {
+            max-height: 200px;
+            overflow-y: auto;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            margin-top: 2px;
+        }
+        .sb-result-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 8px;
+            font-size: var(--text-sm);
+            cursor: pointer;
+        }
+        .sb-result-item:hover { background: var(--color-surface-hover); }
+        .sb-result-item .sb-cr { color: var(--color-text-muted); font-size: 0.7rem; margin-left: 4px; }
+        .token-dead { text-decoration: line-through; color: var(--color-text-muted); }
+        .aoepresets-label { font-size: 0.7rem; color: var(--color-text-muted); margin-right: 2px; }
     </style>
 </head>
 <body>
-    <div class="battle-container" x-data="battleToolbar()">
+    <div class="battle-container" x-data="battleToolbar()" th:data-campaign-id="${campaignId}">
         <div class="battle-toolbar">
             <a th:href="@{/campaigns/{cid}/maps(cid=${campaignId})}" class="btn btn-ghost">&larr; Maps</a>
 
@@ -142,7 +189,19 @@
                 <button class="tool-btn" :class="{ active: tool === 'sphere' }" @click="setTool('sphere')" title="Sphere/Circle template">○ Sphere</button>
                 <button class="tool-btn" :class="{ active: tool === 'cube' }" @click="setTool('cube')" title="Cube template">□ Cube</button>
                 <button class="tool-btn" :class="{ active: tool === 'line' }" @click="setTool('line')" title="Line template">╱ Line</button>
-                <button class="tool-btn" @click="clearAoe()" title="Clear all AoE templates">✕ Clear AoE</button>
+                <button class="tool-btn" @click="clearAoe()" title="Clear all AoE templates">✕ Clear</button>
+                <div class="aoepresets">
+                    <template x-for="p in currentAoEPresets" :key="p.label">
+                        <button @click="applyAoePreset(p.cells)" x-text="p.label"></button>
+                    </template>
+                </div>
+            </div>
+
+            <div class="tool-group">
+                <button class="tool-btn" :class="{ active: tool === 'text' }" @click="setTool('text')" title="Text annotation (DM-only)">A Text</button>
+                <button class="tool-btn" :class="{ active: tool === 'ping' }" @click="setTool('ping')" title="Ping (DM-only)">◎ Ping</button>
+                <button class="tool-btn" :class="{ active: tool === 'draw' }" @click="setTool('draw')" title="Freehand draw (DM-only)">✎ Draw</button>
+                <button class="tool-btn" @click="clearAnnotations()" title="Clear all annotations">⌫ Clear</button>
             </div>
 
             <div class="tool-group">
@@ -185,15 +244,34 @@
                 </div>
 
                 <div class="sidebar-section">
+                    <h3>From Library</h3>
+                    <div class="statblock-search">
+                        <input type="text" placeholder="Search statblocks..." x-model="sbSearch" @input="searchStatblocks()">
+                        <div class="sb-results" x-show="sbResults.length > 0 && sbSearch.length > 0" style="display: none;">
+                            <template x-for="sb in sbResults" :key="sb.id">
+                                <div class="sb-result-item" @click="addStatblockToken(sb.id)">
+                                    <span>
+                                        <strong x-text="sb.name"></strong>
+                                        <span class="sb-cr" x-text="'CR ' + sb.cr"></span>
+                                    </span>
+                                    <span style="font-size: 0.7rem;" x-text="sb.type"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
                     <h3>Tokens (<span x-text="tokens.length"></span>)</h3>
                     <template x-for="t in tokens" :key="t.id">
                         <div class="token-list-item" @click="focusToken(t.id)">
                             <span class="token-swatch" :style="{ background: t.color }"></span>
-                            <span x-text="t.name" style="flex: 1;"></span>
+                            <span :class="{ 'token-dead': t.dead }" x-text="t.name" style="flex: 1;"></span>
                             <template x-if="t.currentHp != null && t.maxHp != null">
                                 <span x-text="t.currentHp + '/' + t.maxHp"
                                       style="font-size: 0.75rem; color: var(--color-text-muted);"></span>
                             </template>
+                            <button @click.stop="duplicateToken(t.id)" class="btn btn-ghost" style="padding: 0 4px; font-size: var(--text-sm);" title="Duplicate">❏</button>
                             <button @click.stop="deleteToken(t.id)" class="btn btn-ghost" style="padding: 0 4px; font-size: var(--text-sm);">✕</button>
                         </div>
                     </template>
@@ -215,14 +293,23 @@
                             </div>
                         </div>
                         <div style="margin-bottom: var(--space-xs);">
-                            <label style="display: block; color: var(--color-text-muted);">Size</label>
+                            <label style="display: block; color: var(--color-text-muted);">Size (W×H)</label>
                             <select x-model="selectedToken.sizeCols" @change="updateToken()" style="font-size: var(--text-sm);">
+                                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                            </select>
+                            <span style="margin: 0 2px;">×</span>
+                            <select x-model="selectedToken.sizeRows" @change="updateToken()" style="font-size: var(--text-sm);">
                                 <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
                             </select>
                         </div>
                         <div style="margin-bottom: var(--space-xs);">
                             <label style="display: flex; align-items: center; gap: 4px;">
                                 <input type="checkbox" x-model="selectedToken.hidden" @change="updateToken()"> Hidden
+                            </label>
+                        </div>
+                        <div style="margin-bottom: var(--space-xs);">
+                            <label style="display: flex; align-items: center; gap: 4px;">
+                                <input type="checkbox" x-model="selectedToken.dead" @change="toggleDead()"> Dead
                             </label>
                         </div>
                         <div style="margin-bottom: var(--space-xs);">
@@ -253,9 +340,15 @@
                 maps: [],
                 tokens: [],
                 selectedToken: null,
+                sbSearch: '',
+                sbResults: [],
+                currentAoEPresets: [],
 
                 init() {
-                    window.addEventListener('battle-toolchange', (e) => { this.tool = e.detail.tool; });
+                    window.addEventListener('battle-toolchange', (e) => {
+                        this.tool = e.detail.tool;
+                        this.currentAoEPresets = AOE_PRESETS[this.tool] || [];
+                    });
                     window.addEventListener('battle-tokenupdate', (e) => {
                         this.tokens = e.detail.tokens;
                         if (this.selectedToken) {
@@ -280,9 +373,13 @@
                 async addToken() {
                     const name = prompt('Token name:') || 'Token';
                     const kind = prompt('Kind (PC/NPC/MONSTER/OBJECT):', 'NPC') || 'NPC';
+                    if (!window.battleMap) return;
+                    const s = window.battleMap.cellSizePx;
+                    let px = (-window.battleMap.stage.x() + window.battleMap.container.clientWidth / 2) / window.battleMap.stage.scaleX();
+                    let py = (-window.battleMap.stage.y() + window.battleMap.container.clientHeight / 2) / window.battleMap.stage.scaleY();
                     const colors = { PC: '#4a9eff', NPC: '#2ecc71', MONSTER: '#e74c3c', OBJECT: '#f39c12' };
-                    await window.battleMap?.createToken({
-                        name, kind, positionX: 0, positionY: 0,
+                    await window.battleMap.createToken({
+                        name, kind, positionX: Math.round(px), positionY: Math.round(py),
                         sizeCols: 1, sizeRows: 1,
                         color: colors[kind] || '#7b68ee', hidden: false,
                         currentHp: null, maxHp: null,
@@ -291,7 +388,13 @@
 
                 async addParty() { await window.battleMap?.addPartyToMap(); },
                 async deleteToken(id) { if (confirm('Delete this token?')) await window.battleMap?.deleteToken(id); },
-                focusToken(id) { window.battleMap?.selectToken(id); },
+                async duplicateToken(id) { await window.battleMap?.duplicateToken(id); },
+                async toggleDead() {
+                    if (this.selectedToken) {
+                        await window.battleMap?.markDead(this.selectedToken.id, this.selectedToken.dead);
+                    }
+                },
+                focusToken(id) { window.battleMap?.focusToken(id); },
 
                 async updateToken() {
                     if (this.selectedToken) {
@@ -311,6 +414,10 @@
                     window.battleMap?.setDmMode(this.dmMode);
                 },
                 clearAoe() { window.battleMap?.clearAoeNodes(); },
+                clearAnnotations() { window.battleMap?.clearAnnotations(); },
+                applyAoePreset(cells) {
+                    window.battleMap?.applyAoePreset(this.tool, cells);
+                },
 
                 async loadMaps() {
                     try {
@@ -319,7 +426,25 @@
                     } catch (e) {}
                 },
                 switchMap() {
-                    window.location.href = `/campaigns/${/*[[${campaignId}]]*/ ''}/maps/${this.currentMapId}/play`;
+                    const bm = window.battleMap;
+                    if (bm && this.currentMapId !== bm.mapId) {
+                        bm.switchToMap(this.currentMapId);
+                        const cid = document.querySelector('.battle-container')?.dataset?.campaignId || '';
+                        history.replaceState(null, '', `/campaigns/${cid}/maps/${this.currentMapId}/play`);
+                    }
+                },
+
+                async searchStatblocks() {
+                    if (!this.sbSearch || this.sbSearch.length < 2) { this.sbResults = []; return; }
+                    try {
+                        const resp = await fetch(`/api/v1/library/statblocks/search?q=${encodeURIComponent(this.sbSearch)}`);
+                        if (resp.ok) this.sbResults = await resp.json();
+                    } catch (e) {}
+                },
+                async addStatblockToken(id) {
+                    await window.battleMap?.createTokenFromStatblock(id);
+                    this.sbSearch = '';
+                    this.sbResults = [];
                 },
             };
         }
@@ -327,9 +452,17 @@
     <script type="module" th:inline="javascript">
         import { BattleMap } from '/js/map/battle-map.js';
 
+        window.AOE_PRESETS = {
+            cone: [{ label: '15 ft', cells: 3 }, { label: '30 ft', cells: 6 }, { label: '60 ft', cells: 12 }],
+            sphere: [{ label: '5 ft', cells: 1 }, { label: '10 ft', cells: 2 }, { label: '20 ft', cells: 4 }, { label: '30 ft', cells: 6 }],
+            cube: [{ label: '5 ft', cells: 1 }, { label: '10 ft', cells: 2 }, { label: '15 ft', cells: 3 }, { label: '20 ft', cells: 4 }],
+            line: [{ label: '30 ft', cells: 6 }, { label: '60 ft', cells: 12 }, { label: '120 ft', cells: 24 }],
+        };
+
         const battleMap = new BattleMap({
             container: document.getElementById('battleCanvasWrap'),
             mapId: /*[[${map.id}]]*/ '',
+            campaignId: /*[[${campaignId}]]*/ '',
             gridWidth: /*[[${map.gridWidth}]]*/ 30,
             gridHeight: /*[[${map.gridHeight}]]*/ 20,
             cellSizePx: /*[[${map.cellSizePx}]]*/ 48,

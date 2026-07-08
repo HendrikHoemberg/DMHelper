@@ -56,6 +56,18 @@ public class TokenApiController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/tokens/{id}/duplicate")
+    public TokenDto duplicateToken(@PathVariable UUID id,
+                                   @RequestParam(defaultValue = "48") int offsetX,
+                                   @RequestParam(defaultValue = "48") int offsetY) {
+        return service.duplicate(id, offsetX, offsetY);
+    }
+
+    @PatchMapping("/tokens/{id}/dead")
+    public TokenDto markDead(@PathVariable UUID id, @RequestBody TokenDeadRequest request) {
+        return service.markDead(id, request.dead());
+    }
+
     @PostMapping("/maps/{mapId}/tokens/add-party")
     public List<TokenDto> addPartyToMap(@PathVariable UUID mapId) {
         return service.addPartyToMap(mapId);

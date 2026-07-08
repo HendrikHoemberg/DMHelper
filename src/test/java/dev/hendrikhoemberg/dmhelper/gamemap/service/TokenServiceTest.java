@@ -101,4 +101,49 @@ class TokenServiceTest {
         List<TokenDto> tokens = tokenService.findByMapId(map.getId());
         assertThat(tokens).hasSize(2);
     }
+
+    @Test
+    void shouldDefaultDeadToFalse() {
+        var req = new TokenCreateRequest("Alive", "NPC", 0, 0, 1, 1,
+                "#fff", false, null, null, null, null);
+        TokenDto dto = tokenService.create(map.getId(), req);
+        assertThat(dto.dead()).isFalse();
+    }
+
+    @Test
+    void shouldMarkDead() {
+        var req = new TokenCreateRequest("MarkMe", "MONSTER", 0, 0, 1, 1,
+                "#e74c3c", false, 7, 7, null, null);
+        TokenDto created = tokenService.create(map.getId(), req);
+        TokenDto dead = tokenService.markDead(created.id(), true);
+        assertThat(dead.dead()).isTrue();
+    }
+
+    @Test
+    void shouldReviveToken() {
+        var req = new TokenCreateRequest("ReviveMe", "MONSTER", 0, 0, 1, 1,
+                "#e74c3c", false, 7, 7, null, null);
+        TokenDto created = tokenService.create(map.getId(), req);
+        tokenService.markDead(created.id(), true);
+        TokenDto revived = tokenService.markDead(created.id(), false);
+        assertThat(revived.dead()).isFalse();
+    }
+
+    @Test
+    void shouldDuplicateToken() {
+        var req = new TokenCreateRequest("CloneMe", "MONSTER", 100, 200, 2, 2,
+                "#e74c3c", true, 7, 7, null, null);
+        TokenDto original = tokenService.create(map.getId(), req);
+        TokenDto copy = tokenService.duplicate(original.id(), 48, 48);
+
+        assertThat(copy.id()).isNotEqualTo(original.id());
+        assertThat(copy.name()).isEqualTo("CloneMe");
+        assertThat(copy.kind()).isEqualTo("MONSTER");
+        assertThat(copy.positionX()).isEqualTo(148);
+        assertThat(copy.positionY()).isEqualTo(248);
+        assertThat(copy.sizeCols()).isEqualTo(2);
+        assertThat(copy.sizeRows()).isEqualTo(2);
+        assertThat(copy.maxHp()).isEqualTo(7);
+        assertThat(copy.hidden()).isTrue();
+    }
 }

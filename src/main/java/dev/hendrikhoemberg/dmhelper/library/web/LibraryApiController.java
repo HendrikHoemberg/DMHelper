@@ -3,15 +3,21 @@ package dev.hendrikhoemberg.dmhelper.library.web;
 import dev.hendrikhoemberg.dmhelper.library.data.*;
 import dev.hendrikhoemberg.dmhelper.library.service.*;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/v1/library")
 public class LibraryApiController {
+
+    public record StatBlockSummary(UUID id, String name, String cr, String type,
+                                   String hp, int ac, int xp) {}
 
     private final StatBlockService statBlockService;
     private final SpellService spellService;
@@ -44,6 +50,22 @@ public class LibraryApiController {
         this.speciesService = speciesService;
         this.backgroundService = backgroundService;
         this.featService = featService;
+    }
+
+    @GetMapping("/statblocks/search")
+    public List<StatBlockSummary> searchStatblocks(@RequestParam(required = false) String q) {
+        String search = (q != null) ? q : "";
+        return statBlockService.search(null, null, null, search).stream()
+                .map(sb -> new StatBlockSummary(sb.getId(), sb.getName(), sb.getCr(),
+                        sb.getType(), sb.getHp(), sb.getAc(), sb.getXp()))
+                .toList();
+    }
+
+    @GetMapping("/statblocks/{id}")
+    public StatBlockSummary getStatblock(@PathVariable UUID id) {
+        var sb = statBlockService.findById(id);
+        return new StatBlockSummary(sb.getId(), sb.getName(), sb.getCr(),
+                sb.getType(), sb.getHp(), sb.getAc(), sb.getXp());
     }
 
     @GetMapping("/srd-keys")

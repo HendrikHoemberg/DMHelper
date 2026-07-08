@@ -57,6 +57,9 @@ public class Token {
     @Column
     private Integer maxHp;
 
+    @Column(nullable = false)
+    private boolean dead = false;
+
     @Column(columnDefinition = "CLOB")
     private String notes;
 
@@ -101,6 +104,9 @@ public class Token {
 
     public Integer getMaxHp() { return maxHp; }
     public void setMaxHp(Integer maxHp) { this.maxHp = maxHp; }
+
+    public boolean isDead() { return dead; }
+    public void setDead(boolean dead) { this.dead = dead; }
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }

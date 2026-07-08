@@ -25,7 +25,7 @@ class TokenApiControllerTest {
 
     private TokenDto token(String name) {
         return new TokenDto(UUID.randomUUID(), name, "NPC", 0, 0, 1, 1,
-                "#fff", false, 10, 10, false, null, null);
+                "#fff", false, 10, 10, false, false, null, null);
     }
 
     @Test

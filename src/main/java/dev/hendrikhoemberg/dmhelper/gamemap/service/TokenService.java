@@ -31,7 +31,7 @@ public class TokenService {
     public record TokenDto(UUID id, String name, String kind, int positionX, int positionY,
                            int sizeCols, int sizeRows, String color, boolean hidden,
                            Integer currentHp, Integer maxHp, boolean bloodied,
-                           UUID statBlockId, UUID partyMemberId) {}
+                           boolean dead, UUID statBlockId, UUID partyMemberId) {}
 
     public record TokenCreateRequest(String name, String kind, int positionX, int positionY,
                                      int sizeCols, int sizeRows, String color, boolean hidden,
@@ -41,13 +41,15 @@ public class TokenService {
 
     public record TokenHpRequest(int currentHp) {}
 
+    public record TokenDeadRequest(boolean dead) {}
+
     public static TokenDto toDto(Token t) {
         boolean bloodied = t.getCurrentHp() != null && t.getMaxHp() != null
                 && t.getMaxHp() > 0 && t.getCurrentHp() <= t.getMaxHp() / 2;
         return new TokenDto(t.getId(), t.getName(), t.getKind(),
                 t.getPositionX(), t.getPositionY(), t.getSizeCols(), t.getSizeRows(),
                 t.getColor(), t.isHidden(), t.getCurrentHp(), t.getMaxHp(), bloodied,
-                t.getStatBlock() != null ? t.getStatBlock().getId() : null,
+                t.isDead(), t.getStatBlock() != null ? t.getStatBlock().getId() : null,
                 t.getPartyMember() != null ? t.getPartyMember().getId() : null);
     }
 
@@ -111,6 +113,32 @@ public class TokenService {
 
     public void delete(UUID id) {
         repository.delete(findEntityById(id));
+    }
+
+    public TokenDto duplicate(UUID id, int offsetX, int offsetY) {
+        Token original = findEntityById(id);
+        Token copy = new Token();
+        copy.setMap(original.getMap());
+        copy.setName(original.getName());
+        copy.setKind(original.getKind());
+        copy.setPositionX(original.getPositionX() + offsetX);
+        copy.setPositionY(original.getPositionY() + offsetY);
+        copy.setSizeCols(original.getSizeCols());
+        copy.setSizeRows(original.getSizeRows());
+        copy.setColor(original.getColor());
+        copy.setHidden(original.isHidden());
+        copy.setCurrentHp(original.getCurrentHp());
+        copy.setMaxHp(original.getMaxHp());
+        copy.setStatBlock(original.getStatBlock());
+        copy.setPartyMember(original.getPartyMember());
+        copy.setDead(original.isDead());
+        return toDto(repository.save(copy));
+    }
+
+    public TokenDto markDead(UUID id, boolean dead) {
+        Token t = findEntityById(id);
+        t.setDead(dead);
+        return toDto(repository.save(t));
     }
 
     public List<TokenDto> addPartyToMap(UUID mapId) {

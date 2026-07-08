@@ -3,7 +3,7 @@ import { drawGrid, setupPanAndZoom, cellPos, snapPixel, pixelToCell } from './sh
 /**
  * @typedef {{id: string, name: string, kind: string, positionX: number, positionY: number,
  *            sizeCols: number, sizeRows: number, color: string, hidden: boolean,
- *            currentHp: number|null, maxHp: number|null, bloodied: boolean}} TokenData
+ *            currentHp: number|null, maxHp: number|null, bloodied: boolean, dead: boolean}} TokenData
  */
 
 const TERRAIN_COLORS = {
@@ -13,11 +13,23 @@ const TERRAIN_COLORS = {
 const KIND_RING_COLORS = { PC: '#4a9eff', NPC: '#2ecc71', MONSTER: '#e74c3c', OBJECT: '#f39c12' };
 const HP_COLORS = { high: '#2ecc71', mid: '#f39c12', low: '#e74c3c' };
 
+const AOE_PRESETS = {
+    cone: [{ label: '15 ft', radiusCells: 3 }, { label: '30 ft', radiusCells: 6 },
+           { label: '60 ft', radiusCells: 12 }],
+    sphere: [{ label: '5 ft', radiusCells: 1 }, { label: '10 ft', radiusCells: 2 },
+             { label: '20 ft', radiusCells: 4 }, { label: '30 ft', radiusCells: 6 }],
+    cube: [{ label: '5 ft', radiusCells: 1 }, { label: '10 ft', radiusCells: 2 },
+           { label: '15 ft', radiusCells: 3 }, { label: '20 ft', radiusCells: 4 }],
+    line: [{ label: '30 ft', radiusCells: 6 }, { label: '60 ft', radiusCells: 12 },
+           { label: '120 ft', radiusCells: 24 }],
+};
+
 export class BattleMap {
     constructor({ container, mapId, gridWidth, gridHeight, cellSizePx, movementMode, showGrid,
-                  statusEl, saveIndicatorEl, cursorInfoEl }) {
+                  campaignId, statusEl, saveIndicatorEl, cursorInfoEl }) {
         this.container = container;
         this.mapId = mapId;
+        this.campaignId = campaignId;
         this.gridWidth = gridWidth;
         this.gridHeight = gridHeight;
         this.cellSizePx = cellSizePx;
@@ -34,7 +46,7 @@ export class BattleMap {
         this.activeTool = 'select';
         this.selectedTokenId = null;
 
-        /** @type {Object.<string, {group: import('konva').Group, body: import('konva').Rect, label: import('konva').Text, hpBar: import('konva').Rect, hpText: import('konva').Text, ring: import('konva').Rect}>} */
+        /** @type {Object.<string, {group: import('konva').Group, body: import('konva').Rect, label: import('konva').Text, hpBar: import('konva').Rect, hpText: import('konva').Text, ring: import('konva').Rect, deadOverlay: import('konva').Group}>} */
         this.tokenNodes = {};
         this.aoeNodes = [];
         this.aoeStartPos = null;
@@ -42,6 +54,10 @@ export class BattleMap {
         this.measureLine = null;
         this.measureLabel = null;
         this.measureStart = null;
+
+        this.annotationNodes = [];
+        this.annotationDrawing = null;
+        this.annotationStartPos = null;
 
         this.stage = null;
         this.gridLayer = null;
@@ -105,6 +121,8 @@ export class BattleMap {
                 this.startMeasure(pos);
             } else if (['cone', 'sphere', 'cube', 'line'].includes(this.activeTool)) {
                 this.startAoeTemplate(pos);
+            } else if (['text', 'ping', 'draw'].includes(this.activeTool)) {
+                this.startAnnotation(pos);
             }
         });
 
@@ -119,16 +137,28 @@ export class BattleMap {
             if (['cone', 'sphere', 'cube', 'line'].includes(this.activeTool) && this.aoeNodes.length) {
                 this.updateAoeTemplate();
             }
+            if (this.activeTool === 'draw' && this.annotationDrawing) {
+                this.updateAnnotationDraw();
+            }
         });
 
         this.stage.on('mouseup touchend', () => {
             if (this.activeTool === 'measure') { this.finishMeasure(); }
             if (['cone', 'sphere', 'cube', 'line'].includes(this.activeTool)) { this.finishAoeTemplate(); }
+            if (['text', 'ping'].includes(this.activeTool)) { this.finishAnnotationPoint(); }
+            if (this.activeTool === 'draw') { this.finishAnnotationDraw(); }
         });
 
         this.stage.on('click tap', (e) => {
             if (e.target === this.stage) {
                 this.deselectToken();
+                if (this.activeTool === 'text') {
+                    const pos = this.stage.getRelativePointerPosition();
+                    if (pos) this.addAnnotationText(pos);
+                } else if (this.activeTool === 'ping') {
+                    const pos = this.stage.getRelativePointerPosition();
+                    if (pos) this.addAnnotationPing(pos);
+                }
             }
         });
     }
@@ -190,33 +220,46 @@ export class BattleMap {
         const h = token.sizeRows * s;
         const isDm = this.dmMode;
 
-        const group = new Konva.Group({ x: px, y: py, draggable: true, name: 'token' });
+        const group = new Konva.Group({ x: px, y: py, draggable: !token.dead, name: 'token' });
         group._tokenId = token.id;
 
         const body = new Konva.Rect({
             width: w, height: h,
-            fill: token.color || '#7b68ee',
+            fill: token.dead ? '#555' : (token.color || '#7b68ee'),
             stroke: this.selectedTokenId === token.id ? '#ff0' : (KIND_RING_COLORS[token.kind] || '#fff'),
             strokeWidth: this.selectedTokenId === token.id ? 3 : 2,
             cornerRadius: 4,
-            opacity: (!isDm && token.hidden) ? 0.3 : 1,
+            opacity: (!isDm && token.hidden) ? 0.3 : (token.dead ? 0.6 : 1),
         });
         group.add(body);
 
         const ring = new Konva.Rect({
             width: w + 4, height: h + 4, x: -2, y: -2,
-            stroke: '#e74c3c', strokeWidth: 2, cornerRadius: 4,
-            fillEnabled: false, visible: token.bloodied, listening: false,
+            stroke: token.dead ? '#888' : '#e74c3c', strokeWidth: 2, cornerRadius: 4,
+            fillEnabled: false, visible: token.bloodied || token.dead, listening: false,
         });
         group.add(ring);
 
         const label = new Konva.Text({
             text: token.name.substring(0, 2),
             fontSize: Math.min(w, h) * 0.4,
-            fill: '#fff', align: 'center', verticalAlign: 'middle',
+            fill: token.dead ? '#999' : '#fff', align: 'center', verticalAlign: 'middle',
             width: w, height: h,
         });
         group.add(label);
+
+        const deadOverlay = new Konva.Group({ visible: token.dead });
+        const x1 = new Konva.Line({
+            points: [2, 2, w - 2, h - 2],
+            stroke: '#e74c3c', strokeWidth: 3, lineCap: 'round',
+        });
+        const x2 = new Konva.Line({
+            points: [w - 2, 2, 2, h - 2],
+            stroke: '#e74c3c', strokeWidth: 3, lineCap: 'round',
+        });
+        deadOverlay.add(x1);
+        deadOverlay.add(x2);
+        group.add(deadOverlay);
 
         const hpBarHeight = 4;
         const hasHp = token.currentHp != null && token.maxHp != null && token.maxHp > 0;
@@ -256,7 +299,7 @@ export class BattleMap {
         group.on('click tap', () => { this.selectToken(token.id); });
 
         this.tokenLayer.add(group);
-        this.tokenNodes[token.id] = { group, body, label, hpBar, hpText, ring };
+        this.tokenNodes[token.id] = { group, body, label, hpBar, hpText, ring, deadOverlay };
         return group;
     }
 
@@ -299,11 +342,83 @@ export class BattleMap {
         this.emit('tokenupdate', { tokens: this.tokens });
     }
 
+    async duplicateToken(id) {
+        const s = this.cellSizePx;
+        const resp = await fetch(`/api/v1/tokens/${id}/duplicate?offsetX=${s}&offsetY=${s}`, { method: 'POST' });
+        const token = await resp.json();
+        this.tokens.push(token);
+        this.addTokenNode(token);
+        this.tokenLayer.batchDraw();
+        this.emit('tokenupdate', { tokens: this.tokens });
+    }
+
+    async markDead(id, dead) {
+        const resp = await fetch(`/api/v1/tokens/${id}/dead`, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dead }),
+        });
+        const updated = await resp.json();
+        const idx = this.tokens.findIndex(t => t.id === id);
+        if (idx >= 0) this.tokens[idx] = updated;
+        this.renderTokens();
+        this.emit('tokenupdate', { tokens: this.tokens });
+        if (this.selectedTokenId === id) this.emit('tokenselect', { token: updated });
+    }
+
+    async createTokenFromStatblock(statblockId) {
+        const s = this.cellSizePx;
+        const resp = await fetch(`/api/v1/library/statblocks/${statblockId}`);
+        if (!resp.ok) return;
+        const sb = await resp.json();
+
+        const centerX = (-this.stage.x() + this.container.clientWidth / 2) / this.stage.scaleX();
+        const centerY = (-this.stage.y() + this.container.clientHeight / 2) / this.stage.scaleY();
+        let px = Math.round(centerX);
+        let py = Math.round(centerY);
+        if (this.movementMode === 'GRID') {
+            px = snapPixel(px, s, true);
+            py = snapPixel(py, s, true);
+        }
+
+        const hpMatch = sb.hp ? sb.hp.match(/(\d+)/) : null;
+        const hp = hpMatch ? parseInt(hpMatch[1], 10) : null;
+
+        await this.createToken({
+            name: sb.name, kind: 'MONSTER',
+            positionX: px, positionY: py,
+            sizeCols: 1, sizeRows: 1,
+            color: '#e74c3c', hidden: false,
+            currentHp: hp, maxHp: hp,
+        });
+    }
+
     selectToken(id) {
         this.selectedTokenId = id;
         const token = this.tokens.find(t => t.id === id);
         this.emit('tokenselect', { token });
         this.renderTokens();
+    }
+
+    focusToken(id) {
+        this.selectToken(id);
+        const node = this.tokenNodes[id];
+        if (!node || !this.stage) return;
+        const token = this.tokens.find(t => t.id === id);
+        if (!token) return;
+
+        const stageW = this.container.clientWidth;
+        const stageH = this.container.clientHeight;
+        const scale = this.stage.scaleX();
+        const tw = token.sizeCols * this.cellSizePx;
+        const th = token.sizeRows * this.cellSizePx;
+
+        const targetX = -token.positionX * scale + stageW / 2 - (tw * scale) / 2;
+        const targetY = -token.positionY * scale + stageH / 2 - (th * scale) / 2;
+
+        this.stage.to({
+            x: targetX, y: targetY,
+            duration: 0.2,
+        });
     }
 
     deselectToken() {
@@ -335,8 +450,15 @@ export class BattleMap {
     /* ---- Tool & Mode Switching ---- */
     setTool(tool) {
         this.activeTool = tool;
-        this.container.style.cursor = tool === 'measure' ? 'crosshair' : 'default';
-        if (!['cone', 'sphere', 'cube', 'line'].includes(tool)) this.clearAoeNodes();
+        const annotationTools = ['text', 'ping', 'draw'];
+        const aoeTools = ['cone', 'sphere', 'cube', 'line'];
+        if (annotationTools.includes(tool)) {
+            this.container.style.cursor = 'crosshair';
+        } else {
+            this.container.style.cursor = tool === 'measure' ? 'crosshair' : 'default';
+        }
+        if (!aoeTools.includes(tool)) this.clearAoeNodes();
+        if (!annotationTools.includes(tool)) this.clearAnnotationPreview();
         if (tool !== 'measure') this.clearMeasure();
         this.emit('toolchange', { tool });
     }
@@ -366,6 +488,21 @@ export class BattleMap {
     setDmMode(dm) {
         this.dmMode = dm;
         this.renderTokens();
+    }
+
+    applyAoePreset(type, cells) {
+        if (!['cone', 'sphere', 'cube', 'line'].includes(type)) return;
+        this.activeTool = type;
+        this.emit('toolchange', { tool: type });
+        this.clearAoeNodes();
+        const s = this.cellSizePx;
+        const radius = cells * s;
+        const centerX = this.gridWidth * s / 2;
+        const centerY = this.gridHeight * s / 2;
+        this.aoeStartPos = { x: centerX, y: centerY };
+        this.aoeRadius = radius;
+        this.drawAoeTemplate({ x: centerX, y: centerY }, radius);
+        this.emit('aoe-applied', { type, cells });
     }
 
     _setSaved() {
@@ -512,5 +649,125 @@ export class BattleMap {
         if (this.measureLabel) { this.measureLabel.destroy(); this.measureLabel = null; }
         this.measureStart = null;
         this.previewLayer.batchDraw();
+    }
+
+    /* ---- Annotations ---- */
+    startAnnotation(pos) {
+        this.annotationStartPos = pos;
+        if (this.activeTool === 'draw') {
+            this.annotationDrawing = new Konva.Line({
+                points: [pos.x, pos.y],
+                stroke: '#ff0', strokeWidth: 2, lineCap: 'round', lineJoin: 'round',
+                listening: false,
+            });
+            this.previewLayer.add(this.annotationDrawing);
+            this.previewLayer.batchDraw();
+        }
+    }
+
+    updateAnnotationDraw() {
+        const pos = this.stage.getRelativePointerPosition();
+        if (!pos || !this.annotationDrawing) return;
+        const points = this.annotationDrawing.points();
+        points.push(pos.x, pos.y);
+        this.annotationDrawing.points(points);
+        this.previewLayer.batchDraw();
+    }
+
+    finishAnnotationPoint() {
+        this.annotationStartPos = null;
+    }
+
+    finishAnnotationDraw() {
+        if (this.annotationDrawing) {
+            this.annotationLayer.add(this.annotationDrawing);
+            this.annotationNodes.push(this.annotationDrawing);
+            this.annotationDrawing = null;
+            this.annotationLayer.batchDraw();
+            this.previewLayer.batchDraw();
+        }
+        this.annotationStartPos = null;
+    }
+
+    addAnnotationText(pos) {
+        const text = prompt('Annotation text:');
+        if (!text) return;
+        const node = new Konva.Text({
+            x: pos.x, y: pos.y,
+            text, fontSize: 16, fill: '#ff0',
+            stroke: '#000', strokeWidth: 3, fillAfterStrokeEnabled: true,
+            listening: false,
+        });
+        this.annotationLayer.add(node);
+        this.annotationNodes.push(node);
+        this.annotationLayer.batchDraw();
+    }
+
+    addAnnotationPing(pos) {
+        const s = this.cellSizePx;
+        const circle = new Konva.Circle({
+            x: pos.x, y: pos.y, radius: s / 4,
+            fill: 'rgba(255, 255, 0, 0.4)', stroke: '#ff0', strokeWidth: 2,
+            listening: false,
+        });
+        this.annotationLayer.add(circle);
+        this.annotationNodes.push(circle);
+
+        const ring = new Konva.Ring({
+            x: pos.x, y: pos.y,
+            innerRadius: s / 4, outerRadius: s / 2,
+            fill: 'rgba(255, 255, 0, 0.2)', stroke: '#ff0', strokeWidth: 1,
+            listening: false,
+        });
+        this.annotationLayer.add(ring);
+        this.annotationNodes.push(ring);
+        this.annotationLayer.batchDraw();
+
+        setTimeout(() => {
+            ring.destroy();
+            circle.fill('rgba(255, 255, 0, 0.1)');
+            circle.strokeWidth(1);
+            this.annotationLayer.batchDraw();
+        }, 1500);
+    }
+
+    clearAnnotations() {
+        for (const node of this.annotationNodes) node.destroy();
+        this.annotationNodes = [];
+        if (this.annotationDrawing) { this.annotationDrawing.destroy(); this.annotationDrawing = null; }
+        this.annotationLayer.batchDraw();
+    }
+
+    clearAnnotationPreview() {
+        if (this.annotationDrawing) { this.annotationDrawing.destroy(); this.annotationDrawing = null; }
+        this.previewLayer.batchDraw();
+    }
+
+    /* ---- Map Switching ---- */
+    async switchToMap(mapId) {
+        const resp = await fetch(`/api/v1/maps/${mapId}`);
+        if (!resp.ok) return;
+        const mapData = await resp.json();
+
+        this.mapId = mapId;
+        this.gridWidth = mapData.gridWidth;
+        this.gridHeight = mapData.gridHeight;
+        this.movementMode = mapData.movementMode;
+        this.showGrid = mapData.showGrid;
+
+        this.clearAoeNodes();
+        this.clearMeasure();
+        this.clearAnnotations();
+        this.deselectToken();
+        this.tokens = [];
+        this.tokenNodes = {};
+
+        await this.fetchMapDocument();
+        await this.fetchTokens();
+        this.renderGrid();
+        this.renderTokens();
+        this.emit('modestate', { movementMode: this.movementMode, showGrid: this.showGrid });
+        this.emit('tokenupdate', { tokens: this.tokens });
+        this.emit('maploaded', { mapId, mapName: mapData.name });
     }
 }
