@@ -288,6 +288,7 @@
         <div class="editor-statusbar">
             <span id="statusMessage">Ready</span>
                 <button class="btn btn-ghost" style="padding: 0 6px; font-size: var(--text-sm); display: none;" x-show="conflict" @click="downloadBackup()">⬇ Backup</button>
+                <span id="cursorInfo" style="color: var(--color-text-muted);"></span>
                 <span id="saveIndicator" class="save-indicator save-saved">Saved</span>
         </div>
     </div>
@@ -389,6 +390,7 @@
             cellSizePx: /*[[${map.cellSizePx}]]*/ 48,
             statusEl: document.getElementById('statusMessage'),
             saveIndicatorEl: document.getElementById('saveIndicator'),
+            cursorInfoEl: document.getElementById('cursorInfo'),
         });
         window.mapEditor = editor;
         editor.load();

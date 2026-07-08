@@ -20,7 +20,7 @@ export class MapEditor {
      * @param {{container: HTMLElement, mapId: string, gridWidth: number, gridHeight: number,
      *          cellSizePx: number, statusEl?: HTMLElement, saveIndicatorEl?: HTMLElement}} opts
      */
-    constructor({ container, mapId, gridWidth, gridHeight, cellSizePx, statusEl, saveIndicatorEl }) {
+    constructor({ container, mapId, gridWidth, gridHeight, cellSizePx, statusEl, saveIndicatorEl, cursorInfoEl }) {
         this.container = container;
         this.mapId = mapId;
         this.gridWidth = gridWidth;
@@ -28,6 +28,7 @@ export class MapEditor {
         this.cellSizePx = cellSizePx;
         this.statusEl = statusEl;
         this.saveIndicatorEl = saveIndicatorEl;
+        this.cursorInfoEl = cursorInfoEl;
 
         /** @type {MapDocument|null} */
         this.document = null;
@@ -88,6 +89,7 @@ export class MapEditor {
         this.stage.add(this.previewLayer);
 
         this.initTransformer();
+        this.container.style.cursor = this.cursorForTool(this.activeTool);
         this.drawGrid();
         this.setupEvents();
         this.fetchDocument();
@@ -233,6 +235,7 @@ export class MapEditor {
         this.clearShapeSelection();
         this.clearImageSelection();
         this.activeTool = tool;
+        this.container.style.cursor = this.cursorForTool(tool);
         this.emit('map-toolchange', { tool });
         const messages = {
             polygon: 'Polygon: click vertices, double-click or Enter to close, Esc to cancel',
@@ -465,6 +468,7 @@ export class MapEditor {
             if (e.evt.button === 1) {   // middle mouse: pan
                 this.panning = true;
                 this.stage.draggable(true);
+                this.container.style.cursor = 'grabbing';
                 return;
             }
             if (e.evt.button === 2 && this.activeTool === 'brush') {   // right mouse: erase
@@ -544,6 +548,8 @@ export class MapEditor {
             if (this.panning) return;
             const pos = this.cellPos();
             if (!pos) return;
+            this.updateHoverPreview(pos);
+            this.updateCursorInfo(pos);
 
             if (this.activeTool === 'polygon' && this.polygonPoints.length) {
                 this.renderPolygonPreview(pos);
@@ -568,6 +574,7 @@ export class MapEditor {
             if (this.panning) {
                 this.panning = false;
                 this.stage.draggable(false);
+                this.container.style.cursor = this.cursorForTool(this.activeTool);
                 return;
             }
             if (!this.drawing) return;
@@ -629,6 +636,14 @@ export class MapEditor {
                 y: pointer.y - mousePointTo.y * newScale,
             });
             this.stage.batchDraw();
+            const p = this.cellPos();
+            if (p) this.updateCursorInfo(p);
+        });
+
+        this.stage.on('mouseleave', () => {
+            this.clearHoverPreview();
+            this.previewLayer.batchDraw();
+            if (this.cursorInfoEl) this.cursorInfoEl.textContent = '';
         });
 
         // Keyboard shortcuts (§4.3)
@@ -639,6 +654,7 @@ export class MapEditor {
                 if (!this.drawing) {
                     e.preventDefault();
                     this.stage.draggable(true);
+                    this.container.style.cursor = 'grab';
                 }
                 return;
             }
@@ -685,7 +701,10 @@ export class MapEditor {
             }
         });
         window.addEventListener('keyup', (e) => {
-            if (e.code === 'Space' && !this.panning) this.stage.draggable(false);
+            if (e.code === 'Space' && !this.panning) {
+                this.stage.draggable(false);
+                this.container.style.cursor = this.cursorForTool(this.activeTool);
+            }
         });
 
         window.addEventListener('beforeunload', (e) => {
@@ -1639,6 +1658,42 @@ export class MapEditor {
 
     setStatus(msg) {
         if (this.statusEl) this.statusEl.textContent = msg;
+    }
+
+    cursorForTool(tool) {
+        return tool === 'select' ? 'default' : 'crosshair';
+    }
+
+    updateHoverPreview(pos) {
+        this.clearHoverPreview();
+        if (this.drawing) return;
+        if (this.activeTool !== 'brush' && this.activeTool !== 'bucket') return;
+
+        const s = this.cellSizePx;
+        const cells = this.activeTool === 'brush' ? this.brushFootprint(pos.col, pos.row) : [{ col: pos.col, row: pos.row }];
+        const t = this.palette[this.terrain] || this.palette[DEFAULT_TERRAIN];
+        for (const c of cells) {
+            if (c.col < 0 || c.col >= this.gridWidth || c.row < 0 || c.row >= this.gridHeight) continue;
+            const rect = new Konva.Rect({
+                x: c.col * s, y: c.row * s, width: s, height: s,
+                fill: t.fill, opacity: 0.5, listening: false,
+            });
+            rect.setAttr('_hover', true);
+            this.previewLayer.add(rect);
+        }
+        this.previewLayer.batchDraw();
+    }
+
+    clearHoverPreview() {
+        for (const child of [...this.previewLayer.getChildren()]) {
+            if (child.getAttr('_hover')) child.destroy();
+        }
+    }
+
+    updateCursorInfo(pos) {
+        if (!this.cursorInfoEl) return;
+        const zoom = Math.round(this.stage.scaleX() * 100);
+        this.cursorInfoEl.textContent = `(${pos.col}, ${pos.row}) · ${zoom}%`;
     }
 
     emit(name, detail) {
