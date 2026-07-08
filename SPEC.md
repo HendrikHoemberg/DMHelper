@@ -48,7 +48,7 @@ Deferred, but the architecture must not preclude them (see §8 Roadmap):
   rolling dice from their own devices, per-player identity/permissions) — the v1 player view is
   display-only and the DM operates everything, including the party's character sheets (§4.12)
 - Fog of war and per-player vision
-- Uploading map images as battle map backgrounds (v1 maps are built in the editor)
+- Uploading map images as battle-map tokens (the background-image layer is in v1; image-based map *tokens* are not)
 - Hosting for multiple DMs / user accounts
 
 > Two former non-goals were deliberately promoted into v1 (see §9): **full rules-aware character
@@ -340,27 +340,59 @@ itself — and everything built on it in M4–M6 — works identically with or w
 
 ### 4.3 Map Editor (built-in, tile/shape based)
 
-Create battle maps inside the app — no external tools required.
+Create battle maps inside the app — no external tools required. The editor is a Konva.js canvas
+"island" with an Alpine.js toolbar, persisted as a versioned JSON document (optimistic locking)
+and autosaved on every edit.
 
 - **Grid-based canvas** (square grid, configurable dimensions and cell size).
 - **Terrain painting**: brush-paint cells from a palette of terrain types (floor, wall, water,
-  difficult terrain, lava, pit, …), each with a color/pattern. Palette is extensible with custom
-  entries (name + color + walkable flag).
+  difficult terrain, lava, pit, …), each with a color/pattern. The brush supports adjustable size
+  (1×1, 2×2, or 3×3 cells) and Bresenham stroke interpolation so fast mouse movements leave no
+  gaps. Palette is extensible with custom entries (name + color + walkable flag). Right-click or
+  the dedicated Erase palette entry erases cells back to floor without switching terrain.
+- **Terrain area tools**: Terrain Rect drag-fills a rectangular area; Bucket (flood-fill) fills
+  the entire 4-directionally connected region of the same terrain type — both with right-click
+  erase.
 - **Shape tools**: rectangles, circles, lines, and freehand polygons for rooms, furniture, area
-  effects; snap-to-grid with an unsnapped option.
-- **Layers**: at minimum *terrain*, *objects*, *annotations (DM-only)*; layers can be hidden/locked.
-- **Editing UX**: undo/redo, copy/paste of selections, pan (space-drag) and zoom (wheel), keyboard
-  shortcuts.
-- Maps save automatically (debounced) into the map's `MapDocument`.
-- **Semantic map primitives**: alongside individually painted cells, the document schema supports
-  high-level declarations — `room` (rectangular area with walls), `corridor`, `door`, and
-  `region` (terrain fill over an area) — which the app expands to cells on render. The editor
-  emits painted cells; the primitives exist chiefly so that *generated* maps (§4.1 generative
-  tooling) can be expressed with few degrees of freedom ("room from (2,2) to (10,8), door at
-  (10,5)") instead of hundreds of coordinates — which is the difference between an LLM producing
-  coherent dungeons and geometric soup. Primitives are also valid hand-authoring shorthand.
-- The document model reserves an optional **image layer** slot so image-based backgrounds can be
-  added post-v1 without a format break.
+  effects; snap-to-grid with an unsnapped option. Shapes can be **click-selected, moved, and
+  resized** (with a Konva Transformer; rotation disabled as shapes have no rotation field), and
+  their **labels edited** (double-click to open an inline text input) or changed via a shape
+  properties panel in the sidebar.
+- **Primitive authoring tools**: Room (drag a rectangle — walls the border, floors the interior),
+  Door (click a cell), and Region (drag a rectangle filled with the active terrain) let the DM
+  author semantic primitives directly in the editor, not just via JSON generation.
+- **Bulk selection**: the Select tool (marquee drag) selects cells and shapes; the selection can
+  be **dragged to a new position**, cut (Ctrl+X), copied (Ctrl+C), pasted (Ctrl+V — repeated
+  pastes offset by one cell each, no stacking), or deleted (Delete). The selection marker follows
+  the drag preview in real time.
+- **Layers**: *terrain*, *objects*, *annotations (DM-only)*; layers can be hidden/locked via a
+  right sidebar. The sidebar also shows a **Shape properties panel** (fill color, stroke color,
+  label text, delete button) whenever a shape is selected.
+- **Background image layer**: import a PNG or JPEG as a background reference image, positioned and
+  scaled behind the grid. Select and transform it with the same Transformer handles used for
+  shapes. The image is stored as a base64 data URL inside the map document — no separate file
+  storage or upload endpoints.
+- **Editing UX**: undo/redo, copy/cut/paste of selections, pan (space-drag, middle-mouse, or
+  two-finger touch), zoom (scroll wheel or two-finger pinch), keyboard shortcuts for every tool
+  (B/T/G/M/D/N/R/C/L/P/V), and a keyboard-shortcuts help panel. Undo/Redo buttons are disabled
+  when their stacks are empty; adding custom terrain is undoable.
+- **Save & data safety**: maps save automatically (debounced 2 seconds) into the `MapDocument` via
+  a versioned `PUT` with optimistic locking. On a 409 conflict, a JSON backup can be downloaded
+  before reloading. Unsaved changes are flushed with `keepalive` on navigation away, and the
+  browser warns before leaving with unsaved work. The status bar shows color-coded save states
+  (unsaved/saving/saved green; error/conflict red).
+- **Cursor & coordinate feedback**: the brush and bucket show a translucent hover preview of the
+  active terrain color snapped to cells. The cursor changes per tool (crosshair for drawing tools,
+  default for select) and shows grab/grabbing during pan. The status bar shows live cell
+  coordinates and zoom percentage.
+- **PNG export**: one click exports the current map view as a 2x-resolution PNG (selection
+  overlays hidden).
+- The map document carries a `schemaVersion` field; the backend migrates old documents forward on
+  load.
+- **Semantic map primitives** in the document schema: `room` (rectangular area with walls),
+  `corridor` (reserved, no visual), `door`, and `region` (terrain fill over an area) — expanded to
+  cells on render, so generated maps (§4.1) can be expressed with few degrees of freedom instead
+  of hundreds of coordinates.
 
 ### 4.4 Battle Map (live play)
 
