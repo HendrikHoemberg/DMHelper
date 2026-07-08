@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.party.data;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
 import jakarta.persistence.*;
 import java.util.UUID;
 
@@ -93,4 +94,10 @@ public class PartyMember {
 
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+
+    @OneToOne(mappedBy = "partyMember", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private CharacterSheet characterSheet;
+
+    public CharacterSheet getCharacterSheet() { return characterSheet; }
+    public void setCharacterSheet(CharacterSheet characterSheet) { this.characterSheet = characterSheet; }
 }
