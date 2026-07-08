@@ -12,7 +12,7 @@ import { BUILTIN_TERRAIN, DEFAULT_TERRAIN, ERASE_KEY, SHAPE_COLORS } from './ter
 
 const SAVE_DEBOUNCE_MS = 2000;
 const UNDO_MAX = 50;
-const DRAW_TOOLS = ['brush', 'rect', 'circle', 'line', 'polygon'];
+const DRAW_TOOLS = ['brush', 'rect', 'circle', 'line', 'polygon', 'fill-rect', 'bucket'];
 
 export class MapEditor {
     /**
@@ -162,7 +162,11 @@ export class MapEditor {
             ? 'Polygon: click vertices, double-click or Enter to close, Esc to cancel'
             : tool === 'select'
                 ? 'Select: drag a box, Ctrl+C copy, Ctrl+V paste'
-                : 'Ready');
+                : tool === 'fill-rect'
+                    ? 'Terrain Rect: drag to fill an area, right-click drag to erase'
+                    : tool === 'bucket'
+                        ? 'Bucket: click a region to fill it with the active terrain, right-click to erase'
+                        : 'Ready');
     }
 
     setTerrain(key) {
@@ -402,6 +406,15 @@ export class MapEditor {
             } else if (['rect', 'circle', 'line'].includes(this.activeTool)) {
                 this.drawing = true;
                 this.shapeStart = { x: this.snapPt(pos.x), y: this.snapPt(pos.y) };
+            } else if (this.activeTool === 'fill-rect') {
+                if (this.isLocked(this.activeLayerId) || this.layerDto(this.activeLayerId)?.type !== 'TERRAIN') {
+                    this.setStatus('Terrain Rect paints on the Terrain layer');
+                    return;
+                }
+                this.drawing = true;
+                this.shapeStart = { col: pos.col, row: pos.row };
+            } else if (this.activeTool === 'bucket') {
+                this.floodFillAt(pos.col, pos.row, e.evt.button === 2);
             }
         });
 
@@ -420,12 +433,14 @@ export class MapEditor {
                 this.paintStrokeTo(pos.col, pos.row, !!this.erasing);
             } else if (this.activeTool === 'select' && this.marqueeStart) {
                 this.previewMarquee(this.marqueeStart, pos);
+            } else if (this.activeTool === 'fill-rect' && this.shapeStart) {
+                this.previewCellRect(this.shapeStart, { col: pos.col, row: pos.row });
             } else if (this.shapeStart) {
                 this.previewShape(this.shapeStart, { x: this.snapPt(pos.x), y: this.snapPt(pos.y) });
             }
         });
 
-        this.stage.on('mouseup touchend', () => {
+        this.stage.on('mouseup touchend', (e) => {
             if (this.panning) {
                 this.panning = false;
                 this.stage.draggable(false);
@@ -442,7 +457,9 @@ export class MapEditor {
                 this.marqueeStart = null;
                 return;
             }
-            if (this.shapeStart && pos) {
+            if (this.activeTool === 'fill-rect' && this.shapeStart && pos) {
+                this.commitCellRect(this.shapeStart, { col: pos.col, row: pos.row }, e.evt.button === 2);
+            } else if (this.shapeStart && pos) {
                 this.commitShape(this.shapeStart, { x: this.snapPt(pos.x), y: this.snapPt(pos.y) });
             }
             this.clearPreview();
@@ -500,6 +517,7 @@ export class MapEditor {
 
             switch (e.key.toLowerCase()) {
                 case 'b': this.setTool('brush'); break;
+                case 't': this.setTool('fill-rect'); break;
                 case 'r': this.setTool('rect'); break;
                 case 'c': this.setTool('circle'); break;
                 case 'l': this.setTool('line'); break;
@@ -679,6 +697,31 @@ export class MapEditor {
         record = { ...record, fill: SHAPE_COLORS.fill, stroke: SHAPE_COLORS.stroke, strokeWidth: 2, label: '' };
         this.pushUndo();
         this.addShapeNode(this.layers[this.activeLayerId], record);
+        this.layers[this.activeLayerId].batchDraw();
+        this.markDirty();
+    }
+
+    /* ---- Terrain rect-fill ---- */
+
+    previewCellRect(a, b) {
+        this.clearPreview();
+        const s = this.cellSizePx;
+        const c0 = Math.min(a.col, b.col), c1 = Math.max(a.col, b.col);
+        const r0 = Math.min(a.row, b.row), r1 = Math.max(a.row, b.row);
+        this.previewLayer.add(new Konva.Rect({
+            x: c0 * s, y: r0 * s, width: (c1 - c0 + 1) * s, height: (r1 - r0 + 1) * s,
+            fill: 'rgba(139,69,19,0.3)', stroke: '#8B4513', strokeWidth: 2, dash: [4, 4], listening: false,
+        }));
+        this.previewLayer.batchDraw();
+    }
+
+    commitCellRect(a, b, erase) {
+        const c0 = Math.min(a.col, b.col), c1 = Math.max(a.col, b.col);
+        const r0 = Math.min(a.row, b.row), r1 = Math.max(a.row, b.row);
+        this.pushUndo();
+        for (let r = r0; r <= r1; r++) {
+            for (let c = c0; c <= c1; c++) this.paintOneCell(c, r, erase);
+        }
         this.layers[this.activeLayerId].batchDraw();
         this.markDirty();
     }
