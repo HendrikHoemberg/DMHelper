@@ -148,4 +148,35 @@ public class EncounterApiController {
         service.undo(id);
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping("/combatants/{id}/hp")
+    public CombatantDto setHp(@PathVariable UUID id, @RequestBody EncounterService.HpRequest req) {
+        return service.setHp(id, req.currentHp(), req.tempHp());
+    }
+
+    @PostMapping("/combatants/{id}/damage")
+    public CombatantDto applyDamage(@PathVariable UUID id, @RequestBody EncounterService.DamageRequest req) {
+        return service.applyDamage(id, req.amount());
+    }
+
+    @PutMapping("/combatants/{id}/defeated")
+    public CombatantDto markDefeated(@PathVariable UUID id, @RequestBody EncounterService.DefeatedRequest req) {
+        return service.markDefeated(id, req.defeated());
+    }
+
+    @PutMapping("/combatants/{id}/conditions")
+    public CombatantDto toggleCondition(@PathVariable UUID id, @RequestBody EncounterService.ConditionToggleRequest req) {
+        return service.toggleCondition(id, req.sourceKey(), req.durationRounds());
+    }
+
+    @PostMapping("/combatants/{id}/conditions/{key}/remove")
+    public CombatantDto removeCondition(@PathVariable UUID id, @PathVariable String key) {
+        return service.removeCondition(id, key);
+    }
+
+    @PostMapping("/encounters/{id}/tick-conditions")
+    public ResponseEntity<Void> tickConditions(@PathVariable UUID id) {
+        service.tickConditionDurations(id);
+        return ResponseEntity.ok().build();
+    }
 }

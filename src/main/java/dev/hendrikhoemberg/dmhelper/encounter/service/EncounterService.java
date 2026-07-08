@@ -26,6 +26,7 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -105,6 +106,11 @@ public class EncounterService {
     public record ReorderRequest(List<UUID> orderedIds) {}
 
     public record ActiveTurnRequest(UUID combatantId) {}
+
+    public record HpRequest(Integer currentHp, Integer tempHp) {}
+    public record DamageRequest(int amount) {}
+    public record DefeatedRequest(boolean defeated) {}
+    public record ConditionToggleRequest(String sourceKey, int durationRounds) {}
 
     public record PrefillMapRequest(UUID mapId) {}
 
@@ -404,6 +410,122 @@ public class EncounterService {
         return Math.floorDiv(sb.getDexScore() - 10, 2);
     }
 
+    public CombatantDto applyDamage(UUID combatantId, int amount) {
+        Combatant c = findCombatantById(combatantId);
+        if (amount < 0) {
+            int damage = -amount;
+            int remainingDamage = damage - c.getTempHp();
+            c.setTempHp(Math.max(0, c.getTempHp() - damage));
+            if (remainingDamage > 0) {
+                c.setCurrentHp(c.getCurrentHp() - remainingDamage);
+            }
+        } else if (amount > 0) {
+            c.setCurrentHp(Math.min(c.getMaxHp(), c.getCurrentHp() + amount));
+        }
+        if (c.getCurrentHp() <= 0 && !"PC".equals(c.getKind()) && !c.isDefeated()) {
+            c.setDefeated(true);
+            logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.DEFEATED,
+                combatantId.toString(), "{}");
+        }
+        if (amount < 0 && c.getConcentratingOn() != null && !c.getConcentratingOn().isEmpty()) {
+            c.setConcentrationCheckPending(true);
+            int dc = Math.max(10, (-amount) / 2);
+            try {
+                String payload = JSON_MAPPER.writeValueAsString(Map.of("dc", dc, "amount", -amount));
+                logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.CONCENTRATION_CHECK,
+                    combatantId.toString(), payload);
+            } catch (Exception e) { /* ignore */ }
+        }
+        Combatant saved = combatantRepo.save(c);
+        CombatLogEntry.EntryType type = amount < 0 ? CombatLogEntry.EntryType.DAMAGE : CombatLogEntry.EntryType.HEAL;
+        try {
+            String payload = JSON_MAPPER.writeValueAsString(Map.of("amount", amount));
+            logEntry(c.getEncounter().getId(), type, combatantId.toString(), payload);
+        } catch (Exception e) { /* ignore */ }
+        return toDto(saved);
+    }
+
+    public CombatantDto setHp(UUID combatantId, Integer currentHp, Integer tempHp) {
+        Combatant c = findCombatantById(combatantId);
+        if (currentHp != null) c.setCurrentHp(currentHp);
+        if (tempHp != null) c.setTempHp(tempHp);
+        return toDto(combatantRepo.save(c));
+    }
+
+    public CombatantDto markDefeated(UUID combatantId, boolean defeated) {
+        Combatant c = findCombatantById(combatantId);
+        c.setDefeated(defeated);
+        Combatant saved = combatantRepo.save(c);
+        CombatLogEntry.EntryType type = defeated ? CombatLogEntry.EntryType.DEFEATED : CombatLogEntry.EntryType.REVIVED;
+        logEntry(c.getEncounter().getId(), type, combatantId.toString(), "{}");
+        return toDto(saved);
+    }
+
+    public CombatantDto toggleCondition(UUID combatantId, String sourceKey, int durationRounds) {
+        Combatant c = findCombatantById(combatantId);
+        List<ConditionStateDto> conditions = parseConditions(c);
+        boolean removed = conditions.removeIf(cond -> cond.sourceKey().equals(sourceKey));
+        if (!removed) {
+            conditions.add(new ConditionStateDto(sourceKey, sourceKey, "", durationRounds, true,
+                c.getEncounter().getRound(), null));
+        }
+        try {
+            c.setConditionsJson(JSON_MAPPER.writeValueAsString(conditions));
+        } catch (Exception e) { /* ignore */ }
+        Combatant saved = combatantRepo.save(c);
+        CombatLogEntry.EntryType type = removed ? CombatLogEntry.EntryType.CONDITION_REMOVED : CombatLogEntry.EntryType.CONDITION_ADDED;
+        try {
+            String payload = JSON_MAPPER.writeValueAsString(Map.of("sourceKey", sourceKey, "durationRounds", durationRounds));
+            logEntry(c.getEncounter().getId(), type, combatantId.toString(), payload);
+        } catch (Exception e) { /* ignore */ }
+        return toDto(saved);
+    }
+
+    public void tickConditionDurations(UUID encounterId) {
+        List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+        Encounter encounter = findEntityById(encounterId);
+        for (Combatant c : combatants) {
+            List<ConditionStateDto> conditions = parseConditions(c);
+            List<ConditionStateDto> updated = conditions.stream()
+                .filter(cond -> {
+                    if (cond.durationRounds() <= 0) return true;
+                    int elapsed = encounter.getRound() - cond.appliedInRound();
+                    return elapsed < cond.durationRounds();
+                })
+                .collect(Collectors.toList());
+            if (updated.size() != conditions.size()) {
+                try {
+                    c.setConditionsJson(JSON_MAPPER.writeValueAsString(updated));
+                } catch (Exception e) { /* ignore */ }
+                combatantRepo.save(c);
+                logEntry(encounterId, CombatLogEntry.EntryType.CONDITION_TICKED,
+                    c.getId().toString(), "{\"remaining\":" + updated.size() + "}");
+            }
+        }
+    }
+
+    public CombatantDto removeCondition(UUID combatantId, String sourceKey) {
+        Combatant c = findCombatantById(combatantId);
+        List<ConditionStateDto> conditions = parseConditions(c);
+        conditions.removeIf(cond -> cond.sourceKey().equals(sourceKey));
+        try {
+            c.setConditionsJson(JSON_MAPPER.writeValueAsString(conditions));
+        } catch (Exception e) { /* ignore */ }
+        Combatant saved = combatantRepo.save(c);
+        logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.CONDITION_REMOVED,
+            combatantId.toString(), "{\"sourceKey\":\"" + sourceKey + "\"}");
+        return toDto(saved);
+    }
+
+    private List<ConditionStateDto> parseConditions(Combatant c) {
+        try {
+            return JSON_MAPPER.readValue(c.getConditionsJson(),
+                new TypeReference<List<ConditionStateDto>>() {});
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+    }
+
     public List<CombatantDto> reorderCombatants(UUID encounterId, List<UUID> orderedIds) {
         List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
         var encounterIds = combatants.stream().map(Combatant::getId).collect(Collectors.toSet());
@@ -456,6 +578,7 @@ public class EncounterService {
             logEntry(encounterId, CombatLogEntry.EntryType.ROUND_ADVANCE, "",
                     "{\"round\":" + encounter.getRound() + "}");
             resetLegendaryActions(encounterId);
+            tickConditionDurations(encounterId);
         }
 
         encounter.setActiveTurnIndex(idx);
