@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.encounter.web;
 
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import org.springframework.http.ResponseEntity;
@@ -85,9 +86,34 @@ public class EncounterController {
         return "redirect:/campaigns/" + campaignId + "/encounters/" + id;
     }
 
+    @PostMapping("/{encounterId}/combatants")
+    public String addCombatant(@PathVariable UUID campaignId, @PathVariable UUID encounterId,
+                               @RequestParam String name,
+                               @RequestParam(defaultValue = "10") int maxHp,
+                               @RequestParam(defaultValue = "NPC") String kind) {
+        encounterService.addCombatant(encounterId, new CombatantCreateRequest(name, maxHp, kind, null, null, null));
+        return "redirect:/campaigns/" + campaignId + "/encounters/" + encounterId;
+    }
+
+    @PostMapping("/{encounterId}/prefill/map")
+    public String prefillFromMap(@PathVariable UUID campaignId, @PathVariable UUID encounterId) {
+        var enc = encounterService.getById(encounterId);
+        if (enc.mapId() != null) {
+            encounterService.prefillFromMap(encounterId, enc.mapId());
+        }
+        return "redirect:/campaigns/" + campaignId + "/encounters/" + encounterId;
+    }
+
+    @PostMapping("/{encounterId}/prefill/party")
+    public String prefillFromParty(@PathVariable UUID campaignId, @PathVariable UUID encounterId) {
+        encounterService.prefillFromParty(encounterId, campaignId);
+        return "redirect:/campaigns/" + campaignId + "/encounters/" + encounterId;
+    }
+
     @GetMapping("/{id}")
     public String detail(@PathVariable UUID campaignId, @PathVariable UUID id, Model model) {
         model.addAttribute("encounter", encounterService.getById(id));
+        model.addAttribute("combatants", encounterService.getCombatants(id));
         model.addAttribute("campaignId", campaignId);
         return "encounter/detail";
     }

@@ -1,8 +1,12 @@
 package dev.hendrikhoemberg.dmhelper.encounter.web;
 
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantDto;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantUpdateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.EncounterDto;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.PrefillMapRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.UpdateRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -61,5 +65,43 @@ public class EncounterApiController {
     @GetMapping("/campaigns/{campaignId}/encounters/active")
     public ResponseEntity<EncounterDto> getActive(@PathVariable UUID campaignId) {
         return ResponseEntity.of(service.findActiveByCampaignId(campaignId));
+    }
+
+    @GetMapping("/encounters/{id}/combatants")
+    public List<CombatantDto> getCombatants(@PathVariable UUID id) {
+        return service.getCombatants(id);
+    }
+
+    @PostMapping("/encounters/{id}/combatants")
+    public ResponseEntity<CombatantDto> addCombatant(@PathVariable UUID id,
+                                                     @RequestBody CombatantCreateRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.addCombatant(id, req));
+    }
+
+    @PutMapping("/combatants/{id}")
+    public CombatantDto updateCombatant(@PathVariable UUID id, @RequestBody CombatantUpdateRequest req) {
+        return service.updateCombatant(id, req);
+    }
+
+    @DeleteMapping("/combatants/{id}")
+    public ResponseEntity<Void> removeCombatant(@PathVariable UUID id) {
+        service.removeCombatant(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/encounters/{id}/prefill/map")
+    public List<CombatantDto> prefillFromMap(@PathVariable UUID id, @RequestBody PrefillMapRequest req) {
+        return service.prefillFromMap(id, req.mapId());
+    }
+
+    @PostMapping("/encounters/{id}/prefill/party")
+    public List<CombatantDto> prefillFromParty(@PathVariable UUID id) {
+        EncounterDto e = service.getById(id);
+        return service.prefillFromParty(id, e.campaignId());
+    }
+
+    @PostMapping("/combatants/{id}/split")
+    public CombatantDto splitGroupMember(@PathVariable UUID id) {
+        return service.splitGroupMember(id);
     }
 }

@@ -49,8 +49,66 @@
                 </div>
 
                 <h2>Combatants</h2>
-                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
-                    <p style="color: var(--color-text-muted);">Combatants will be available after linking creatures to this encounter.</p>
+
+                <div style="margin-bottom: var(--space-lg);">
+                    <table class="data-table" th:if="${not #lists.isEmpty(combatants)}">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Kind</th>
+                                <th>HP</th>
+                                <th>Initiative</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="c : ${combatants}"
+                                th:classappend="${c.defeated} ? 'row-defeated' : (${c.bloodied} ? 'row-bloodied' : '')">
+                                <td th:text="${c.name}">Name</td>
+                                <td th:text="${c.kind}">Kind</td>
+                                <td th:text="${c.currentHp + ' / ' + c.maxHp}">HP</td>
+                                <td th:text="${c.initiative}">0</td>
+                                <td>
+                                    <span th:if="${c.defeated}" style="color: var(--color-danger);">Defeated</span>
+                                    <span th:if="${c.bloodied and !c.defeated}" style="color: var(--color-warning);">Bloodied</span>
+                                    <span th:if="${!c.bloodied and !c.defeated}" style="color: var(--color-success);">Healthy</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p th:if="${#lists.isEmpty(combatants)}" style="color: var(--color-text-muted);">No combatants yet.</p>
+                </div>
+
+                <div class="detail-actions" style="margin-bottom: var(--space-lg); gap: var(--space-sm); display: flex; flex-wrap: wrap;">
+                    <form method="post"
+                          th:action="@{/campaigns/{cid}/encounters/{eid}/combatants(cid=${campaignId}, eid=${encounter.id})}"
+                          style="display: flex; gap: var(--space-sm); align-items: center;">
+                        <input type="text" name="name" placeholder="Name" required
+                               style="flex: 1; min-width: 120px; padding: 0.3em 0.5em;">
+                        <input type="number" name="maxHp" placeholder="HP" value="10"
+                               style="width: 60px; padding: 0.3em 0.5em;">
+                        <select name="kind" style="padding: 0.3em 0.5em;">
+                            <option value="NPC">NPC</option>
+                            <option value="PC">PC</option>
+                            <option value="MONSTER">Monster</option>
+                            <option value="OBJECT">Object</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">Add</button>
+                    </form>
+
+                    <th:block th:if="${encounter.mapId != null}">
+                        <form method="post"
+                              th:action="@{/campaigns/{cid}/encounters/{eid}/prefill/map(cid=${campaignId}, eid=${encounter.id})}"
+                              style="display: inline;">
+                            <button type="submit" class="btn btn-sm">Prefill from Map</button>
+                        </form>
+                    </th:block>
+
+                    <form method="post"
+                          th:action="@{/campaigns/{cid}/encounters/{eid}/prefill/party(cid=${campaignId}, eid=${encounter.id})}"
+                          style="display: inline;">
+                        <button type="submit" class="btn btn-sm">Prefill from Party</button>
+                    </form>
                 </div>
 
                 <h2>Difficulty</h2>
