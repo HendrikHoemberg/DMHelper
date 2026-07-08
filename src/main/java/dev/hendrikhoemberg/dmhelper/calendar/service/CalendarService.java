@@ -200,6 +200,12 @@ public class CalendarService {
                 .toList();
     }
 
+    public String computeWeekdayName(InGameDate date, CalendarConfig cfg) {
+        int days = dateToEpochDays(date, cfg);
+        int index = Math.floorMod(days - 1, cfg.weekdayNames().length);
+        return cfg.weekdayNames()[index];
+    }
+
     // --- Helpers ---
 
     private String computeRelativeLabel(UUID campaignId, TimelineEvent te) {

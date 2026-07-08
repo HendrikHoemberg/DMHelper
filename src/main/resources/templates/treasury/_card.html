@@ -12,11 +12,9 @@
                 <span th:if="${assignment.quantity() > 1}" class="badge" th:text="'x' + ${assignment.quantity()}">x1</span>
                 <span th:if="${assignment.attuned()}" class="badge" style="background: var(--color-accent); color: #000;">attuned</span>
             </div>
-            <div th:if="${assignment.attuned() and attunementCount != null and attunementCount >= 3}"
-                 style="color: var(--color-danger, #c44); font-size: var(--text-sm); margin-top: 4px;"
-                 th:text="'⚠ ' + ${attunementCount} + ' attuned items — at the attunement limit'">
-                attunement warning
-            </div>
+            <th:block th:if="${assignment.attuned() and attunementCount != null and attunementCount >= 3}">
+                <div th:replace="~{treasury/_attunement-warn :: warning(count=${attunementCount})}"></div>
+            </th:block>
         </div>
     </div>
 

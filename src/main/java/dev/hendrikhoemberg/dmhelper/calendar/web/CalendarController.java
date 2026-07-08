@@ -36,6 +36,7 @@ public class CalendarController {
         var config = calendarService.getCalendarConfig(campaignId);
         model.addAttribute("currentDate", date);
         model.addAttribute("config", config);
+        model.addAttribute("currentWeekday", calendarService.computeWeekdayName(date, config));
         model.addAttribute("events", calendarService.findByCampaignId(campaignId));
         return "calendar/overview";
     }
@@ -43,8 +44,10 @@ public class CalendarController {
     @PostMapping("/advance")
     String advance(@PathVariable UUID campaignId, @RequestParam(defaultValue = "1") int days, Model model) {
         var date = calendarService.advanceDays(campaignId, days);
+        var config = calendarService.getCalendarConfig(campaignId);
         model.addAttribute("currentDate", date);
-        model.addAttribute("config", calendarService.getCalendarConfig(campaignId));
+        model.addAttribute("config", config);
+        model.addAttribute("currentWeekday", calendarService.computeWeekdayName(date, config));
         return "calendar/_current-date :: currentDateFragment";
     }
 
@@ -54,8 +57,10 @@ public class CalendarController {
                    Model model) {
         calendarService.setCurrentDate(campaignId, new CalendarService.InGameDate(year, month, day));
         var date = calendarService.getCurrentDate(campaignId);
+        var config = calendarService.getCalendarConfig(campaignId);
         model.addAttribute("currentDate", date);
-        model.addAttribute("config", calendarService.getCalendarConfig(campaignId));
+        model.addAttribute("config", config);
+        model.addAttribute("currentWeekday", calendarService.computeWeekdayName(date, config));
         model.addAttribute("events", calendarService.findByCampaignId(campaignId));
         return "calendar/overview";
     }

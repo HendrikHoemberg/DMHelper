@@ -9,9 +9,9 @@
             <span th:text="${monthName}">March</span>
             <span th:text="${currentDate.year()}">1492</span>
         </div>
-        <div th:if="${config.weekdayNames() != null and config.weekdayNames().length > 0}"
+        <div th:if="${currentWeekday != null}"
              class="detail-meta" style="margin-top:4px;">
-            <span th:text="${config.weekdayNames()[0]}">Weekday</span>
+            <span th:text="${currentWeekday}">Weekday</span>
         </div>
     </div>
 </div>

@@ -117,6 +117,15 @@
                     <button class="btn btn-primary" onclick="document.getElementById('level-up-dialog').showModal()">Level Up</button>
                 </div>
             </div>
+
+            <section id="sheet-loot"
+                     hx-get="@{/campaigns/{cid}/treasury/fragment/{mid}(cid=${campaign.id}, mid=${member.id})}"
+                     hx-trigger="load">
+                <div class="detail-section">
+                    <h2>Equipment &amp; Loot</h2>
+                    <div class="loading" style="color: var(--color-text-muted);">Loading...</div>
+                </div>
+            </section>
         </div>
 
         <div th:unless="${hasSheet}" class="empty-state">
