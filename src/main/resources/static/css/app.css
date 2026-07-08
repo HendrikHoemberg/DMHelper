@@ -536,3 +536,188 @@ body.dm-mode-off {
 .equipment-table tr:hover td {
     background: var(--color-surface-hover);
 }
+
+/* ==============================
+   Combat Tracker Panel (M6)
+   ============================== */
+
+.tracker-panel {
+    --color-hp-bar: var(--color-success);
+    --color-hp-bloodied: #e67e22;
+    --color-hp-dead: var(--color-danger);
+    --color-condition-active: var(--color-accent);
+    --color-concentration: #9b59b6;
+    --color-legendary: #f1c40f;
+    --color-tracker-bg: var(--color-surface);
+    --color-combatant-active: rgba(74, 158, 255, 0.15);
+    --color-combatant-hover: rgba(255, 255, 255, 0.05);
+    --color-initiative-badge: var(--color-accent);
+}
+
+.tracker-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--color-tracker-bg);
+    font-size: var(--text-sm);
+}
+
+.tracker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.tracker-turns {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-xs) var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+    gap: var(--space-sm);
+}
+
+.tracker-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-xs) 0;
+}
+
+.combatant-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-md);
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    transition: background var(--transition);
+}
+
+.combatant-row:hover { background: var(--color-combatant-hover); }
+.combatant-row.active { background: var(--color-combatant-active); border-left-color: var(--color-accent); }
+.combatant-row.defeated { opacity: 0.5; text-decoration: line-through; }
+.combatant-row.hidden { opacity: 0.4; }
+
+.init-badge {
+    width: 28px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-initiative-badge);
+    color: white;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.combatant-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hp-mini {
+    width: 60px;
+    height: 6px;
+    background: var(--color-border);
+    border-radius: 3px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.hp-mini-fill {
+    height: 100%;
+    background: var(--color-hp-bar);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.hp-mini-fill.bloodied { background: var(--color-hp-bloodied); }
+.hp-mini-fill.dead { background: var(--color-hp-dead); }
+
+.hp-delta-input {
+    width: 50px;
+    padding: 2px 4px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    text-align: center;
+}
+
+.condition-icons {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.cond-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.625rem;
+    color: white;
+    cursor: pointer;
+    background: var(--color-accent);
+}
+
+.conc-badge {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-concentration);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.625rem;
+    flex-shrink: 0;
+}
+
+.tracker-footer {
+    padding: var(--space-xs) var(--space-md);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.combatant-detail {
+    border-top: 1px solid var(--color-border);
+    padding: var(--space-sm) var(--space-md);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.combatant-detail label { display: block; font-size: 0.75rem; color: var(--color-text-muted); margin-bottom: 2px; }
+
+.detail-hp { display: flex; align-items: center; gap: var(--space-xs); margin-bottom: var(--space-sm); }
+.detail-hp input { width: 60px; padding: 2px 8px; }
+.detail-hp span { color: var(--color-text-muted); }
+
+.hp-quick { display: flex; gap: var(--space-xs); margin-bottom: var(--space-sm); }
+.hp-quick button { padding: 2px 8px; font-size: var(--text-sm); }
+.hp-flag { font-size: 0.75rem; padding: 1px 6px; border-radius: 4px; }
+.hp-flag.bloodied { background: var(--color-hp-bloodied); color: white; }
+.hp-flag.dead { background: var(--color-hp-dead); color: white; }
+
+.detail-conditions { margin-bottom: var(--space-sm); }
+.detail-conditions h4 { margin: 0 0 var(--space-xs); font-size: var(--text-sm); color: var(--color-text-muted); }
+.condition-toggle { display: flex; align-items: center; gap: var(--space-xs); padding: 2px 0; cursor: pointer; }
+
+.recharge-banner { background: var(--color-warning); color: var(--color-bg); padding: var(--space-sm); font-size: var(--text-sm); }
+.recharge-prompt { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: 4px; }
+.recharge-roll-input { width: 40px; padding: 2px 4px; text-align: center; }
+
+.lair-action-row { border: 1px dashed var(--color-text-muted); margin: 4px var(--space-md); padding: var(--space-xs); border-radius: var(--radius); display: flex; align-items: center; gap: var(--space-xs); }
+.lair-init { background: var(--color-text-muted); }

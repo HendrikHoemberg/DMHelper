@@ -54,9 +54,10 @@
             background: #0a0a1a;
         }
         .battle-sidebar {
-            width: 240px;
+            width: 320px;
             flex-shrink: 0;
             overflow-y: auto;
+            overflow-x: hidden;
             background: var(--color-surface);
             border-left: 1px solid var(--color-border);
             padding: var(--space-sm);
@@ -218,6 +219,15 @@
                 </button>
             </div>
 
+            <div class="tool-group">
+                <button class="tool-btn" :class="{ active: showTracker }"
+                        @click="showTracker = !showTracker"
+                        title="Toggle combat tracker">
+                    <span x-show="!showTracker">⚔ Tracker</span>
+                    <span x-show="showTracker">✕ Close</span>
+                </button>
+            </div>
+
             <div class="tool-group" style="border-right: none;">
                 <button class="tool-btn" :class="{ active: dmMode }"
                         @click="toggleDmMode()"
@@ -232,91 +242,99 @@
             <div class="battle-canvas-wrap" id="battleCanvasWrap"></div>
 
             <div class="battle-sidebar">
-                <div class="sidebar-section" x-show="maps.length > 1" style="display: none;">
-                    <h3>Maps</h3>
-                    <div class="map-switcher">
-                        <select x-model="currentMapId" @change="switchMap()">
-                            <template x-for="m in maps" :key="m.id">
-                                <option :value="m.id" x-text="m.name" :selected="m.id === currentMapId"></option>
-                            </template>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="sidebar-section">
-                    <h3>From Library</h3>
-                    <div class="statblock-search">
-                        <input type="text" placeholder="Search statblocks..." x-model="sbSearch" @input="searchStatblocks()">
-                        <div class="sb-results" x-show="sbResults.length > 0 && sbSearch.length > 0" style="display: none;">
-                            <template x-for="sb in sbResults" :key="sb.id">
-                                <div class="sb-result-item" @click="addStatblockToken(sb.id)">
-                                    <span>
-                                        <strong x-text="sb.name"></strong>
-                                        <span class="sb-cr" x-text="'CR ' + sb.cr"></span>
-                                    </span>
-                                    <span style="font-size: 0.7rem;" x-text="sb.type"></span>
-                                </div>
-                            </template>
+                <!-- Normal sidebar content -->
+                <div x-show="!showTracker">
+                    <div class="sidebar-section" x-show="maps.length > 1" style="display: none;">
+                        <h3>Maps</h3>
+                        <div class="map-switcher">
+                            <select x-model="currentMapId" @change="switchMap()">
+                                <template x-for="m in maps" :key="m.id">
+                                    <option :value="m.id" x-text="m.name" :selected="m.id === currentMapId"></option>
+                                </template>
+                            </select>
                         </div>
                     </div>
-                </div>
 
-                <div class="sidebar-section">
-                    <h3>Tokens (<span x-text="tokens.length"></span>)</h3>
-                    <template x-for="t in tokens" :key="t.id">
-                        <div class="token-list-item" @click="focusToken(t.id)">
-                            <span class="token-swatch" :style="{ background: t.color }"></span>
-                            <span :class="{ 'token-dead': t.dead }" x-text="t.name" style="flex: 1;"></span>
-                            <template x-if="t.currentHp != null && t.maxHp != null">
-                                <span x-text="t.currentHp + '/' + t.maxHp"
-                                      style="font-size: 0.75rem; color: var(--color-text-muted);"></span>
-                            </template>
-                            <button @click.stop="duplicateToken(t.id)" class="btn btn-ghost" style="padding: 0 4px; font-size: var(--text-sm);" title="Duplicate">❏</button>
-                            <button @click.stop="deleteToken(t.id)" class="btn btn-ghost" style="padding: 0 4px; font-size: var(--text-sm);">✕</button>
-                        </div>
-                    </template>
-                </div>
-
-                <div class="sidebar-section" x-show="selectedToken" style="display: none;">
-                    <h3>Selected</h3>
-                    <div style="font-size: var(--text-sm);">
-                        <div style="margin-bottom: var(--space-xs);">
-                            <label style="display: block; color: var(--color-text-muted);">Name</label>
-                            <input type="text" x-model="selectedToken.name" @change="updateToken()" style="width: 100%;">
-                        </div>
-                        <div style="margin-bottom: var(--space-xs);">
-                            <label style="display: block; color: var(--color-text-muted);">HP</label>
-                            <div style="display: flex; gap: 4px; align-items: center;">
-                                <input type="number" class="hp-input" x-model="selectedToken.currentHp" @change="updateToken()">
-                                <span>/</span>
-                                <input type="number" class="hp-input" x-model="selectedToken.maxHp" @change="updateToken()">
+                    <div class="sidebar-section">
+                        <h3>From Library</h3>
+                        <div class="statblock-search">
+                            <input type="text" placeholder="Search statblocks..." x-model="sbSearch" @input="searchStatblocks()">
+                            <div class="sb-results" x-show="sbResults.length > 0 && sbSearch.length > 0" style="display: none;">
+                                <template x-for="sb in sbResults" :key="sb.id">
+                                    <div class="sb-result-item" @click="addStatblockToken(sb.id)">
+                                        <span>
+                                            <strong x-text="sb.name"></strong>
+                                            <span class="sb-cr" x-text="'CR ' + sb.cr"></span>
+                                        </span>
+                                        <span style="font-size: 0.7rem;" x-text="sb.type"></span>
+                                    </div>
+                                </template>
                             </div>
                         </div>
-                        <div style="margin-bottom: var(--space-xs);">
-                            <label style="display: block; color: var(--color-text-muted);">Size (W×H)</label>
-                            <select x-model="selectedToken.sizeCols" @change="updateToken()" style="font-size: var(--text-sm);">
-                                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
-                            </select>
-                            <span style="margin: 0 2px;">×</span>
-                            <select x-model="selectedToken.sizeRows" @change="updateToken()" style="font-size: var(--text-sm);">
-                                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
-                            </select>
-                        </div>
-                        <div style="margin-bottom: var(--space-xs);">
-                            <label style="display: flex; align-items: center; gap: 4px;">
-                                <input type="checkbox" x-model="selectedToken.hidden" @change="updateToken()"> Hidden
-                            </label>
-                        </div>
-                        <div style="margin-bottom: var(--space-xs);">
-                            <label style="display: flex; align-items: center; gap: 4px;">
-                                <input type="checkbox" x-model="selectedToken.dead" @change="toggleDead()"> Dead
-                            </label>
-                        </div>
-                        <div style="margin-bottom: var(--space-xs);">
-                            <label style="display: block; color: var(--color-text-muted);">Color</label>
-                            <input type="color" x-model="selectedToken.color" @change="updateToken()">
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h3>Tokens (<span x-text="tokens.length"></span>)</h3>
+                        <template x-for="t in tokens" :key="t.id">
+                            <div class="token-list-item" @click="focusToken(t.id)">
+                                <span class="token-swatch" :style="{ background: t.color }"></span>
+                                <span :class="{ 'token-dead': t.dead }" x-text="t.name" style="flex: 1;"></span>
+                                <template x-if="t.currentHp != null && t.maxHp != null">
+                                    <span x-text="t.currentHp + '/' + t.maxHp"
+                                          style="font-size: 0.75rem; color: var(--color-text-muted);"></span>
+                                </template>
+                                <button @click.stop="duplicateToken(t.id)" class="btn btn-ghost" style="padding: 0 4px; font-size: var(--text-sm);" title="Duplicate">❏</button>
+                                <button @click.stop="deleteToken(t.id)" class="btn btn-ghost" style="padding: 0 4px; font-size: var(--text-sm);">✕</button>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="sidebar-section" x-show="selectedToken" style="display: none;">
+                        <h3>Selected</h3>
+                        <div style="font-size: var(--text-sm);">
+                            <div style="margin-bottom: var(--space-xs);">
+                                <label style="display: block; color: var(--color-text-muted);">Name</label>
+                                <input type="text" x-model="selectedToken.name" @change="updateToken()" style="width: 100%;">
+                            </div>
+                            <div style="margin-bottom: var(--space-xs);">
+                                <label style="display: block; color: var(--color-text-muted);">HP</label>
+                                <div style="display: flex; gap: 4px; align-items: center;">
+                                    <input type="number" class="hp-input" x-model="selectedToken.currentHp" @change="updateToken()">
+                                    <span>/</span>
+                                    <input type="number" class="hp-input" x-model="selectedToken.maxHp" @change="updateToken()">
+                                </div>
+                            </div>
+                            <div style="margin-bottom: var(--space-xs);">
+                                <label style="display: block; color: var(--color-text-muted);">Size (W×H)</label>
+                                <select x-model="selectedToken.sizeCols" @change="updateToken()" style="font-size: var(--text-sm);">
+                                    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                                </select>
+                                <span style="margin: 0 2px;">×</span>
+                                <select x-model="selectedToken.sizeRows" @change="updateToken()" style="font-size: var(--text-sm);">
+                                    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                                </select>
+                            </div>
+                            <div style="margin-bottom: var(--space-xs);">
+                                <label style="display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" x-model="selectedToken.hidden" @change="updateToken()"> Hidden
+                                </label>
+                            </div>
+                            <div style="margin-bottom: var(--space-xs);">
+                                <label style="display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" x-model="selectedToken.dead" @change="toggleDead()"> Dead
+                                </label>
+                            </div>
+                            <div style="margin-bottom: var(--space-xs);">
+                                <label style="display: block; color: var(--color-text-muted);">Color</label>
+                                <input type="color" x-model="selectedToken.color" @change="updateToken()">
+                            </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Tracker panel (shown when toggled) -->
+                <div x-show="showTracker" style="height: 100%;">
+                    <th:block th:replace="~{encounter/_tracker :: tracker}"></th:block>
                 </div>
             </div>
         </div>
@@ -336,6 +354,7 @@
                 movementMode: /*[[${map.movementMode}]]*/ 'GRID',
                 showGrid: /*[[${map.showGrid}]]*/ true,
                 dmMode: true,
+                showTracker: false,
                 currentMapId: /*[[${map.id}]]*/ '',
                 maps: [],
                 tokens: [],
@@ -412,6 +431,7 @@
                 toggleDmMode() {
                     this.dmMode = !this.dmMode;
                     window.battleMap?.setDmMode(this.dmMode);
+                    window.dispatchEvent(new CustomEvent('dm-mode-changed', { detail: { dmMode: this.dmMode } }));
                 },
                 clearAoe() { window.battleMap?.clearAoeNodes(); },
                 clearAnnotations() { window.battleMap?.clearAnnotations(); },
