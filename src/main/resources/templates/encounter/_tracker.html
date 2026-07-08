@@ -402,6 +402,9 @@
                 window.dispatchEvent(new CustomEvent('tracker-encounter-state', {
                     detail: { encounter: this.encounter, combatants: this.combatants }
                 }));
+                window.dispatchEvent(new CustomEvent('tracker-conditions-changed', {
+                    detail: { combatants: this.combatants }
+                }));
             },
 
             dispatchTurnEvent() {

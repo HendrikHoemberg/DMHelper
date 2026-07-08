@@ -108,6 +108,23 @@ public record CampaignExportDto(
         }
     }
 
+    // Encounter export — full serialization in M12
+    public record EncounterExportDto(
+            String name,
+            List<Object> combatants,
+            String status,
+            int round,
+            String lairActionName,
+            String lairActionDescription
+    ) {
+        public static EncounterExportDto from(
+                dev.hendrikhoemberg.dmhelper.encounter.data.Encounter enc) {
+            return new EncounterExportDto(
+                    enc.getName(), List.of(), enc.getStatus().name(),
+                    enc.getRound(), enc.getLairActionName(), enc.getLairActionDescription());
+        }
+    }
+
     public record MapExportDto(
             String key,
             String name,
