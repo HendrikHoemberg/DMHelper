@@ -47,6 +47,8 @@ export class MapEditor {
         this.polygonPoints = [];   // flat [x1, y1, ...] in cell units
         this.selection = null;     // {origin: {col, row}, cells: Cell[], shapes: Shape[]}
         this.clipboard = null;     // {cells: Cell[], shapes: Shape[]} normalized to (0,0)
+        this.pasteOffset = null;   // {col, row} — accumulates so repeated Ctrl+V doesn't stack pastes
+        this.movingSelection = null;   // {startX, startY} in cell units, while dragging a bulk selection
         this.shapeSelection = null;   // single Konva shape node currently selected for transform, or null
         this.transformer = null;
 
@@ -420,6 +422,11 @@ export class MapEditor {
                     return;
                 }
                 this.clearShapeSelection();
+                if (this.selection && this.pointInSelectionBounds(pos)) {
+                    this.movingSelection = { startX: pos.x, startY: pos.y };
+                    this.drawing = true;
+                    return;
+                }
                 this.clearSelection();
                 this.marqueeStart = { x: pos.x, y: pos.y };
                 this.drawing = true;
@@ -468,6 +475,8 @@ export class MapEditor {
 
             if (this.activeTool === 'brush') {
                 this.paintStrokeTo(pos.col, pos.row, !!this.erasing);
+            } else if (this.activeTool === 'select' && this.movingSelection) {
+                this.previewSelectionMove(pos);
             } else if (this.activeTool === 'select' && this.marqueeStart) {
                 this.previewMarquee(this.marqueeStart, pos);
             } else if (this.activeTool === 'fill-rect' && this.shapeStart) {
@@ -489,6 +498,11 @@ export class MapEditor {
             this.erasing = false;
 
             const pos = this.cellPos();
+            if (this.activeTool === 'select' && this.movingSelection && pos) {
+                this.commitSelectionMove(pos);
+                this.movingSelection = null;
+                return;
+            }
             if (this.activeTool === 'select' && this.marqueeStart && pos) {
                 this.finishSelection(this.marqueeStart, pos);
                 this.marqueeStart = null;
@@ -552,6 +566,7 @@ export class MapEditor {
                 if (k === 'z') { e.preventDefault(); e.shiftKey ? this.redo() : this.undo(); }
                 else if (k === 'y') { e.preventDefault(); this.redo(); }
                 else if (k === 'c' && this.selection) { e.preventDefault(); this.copySelection(); }
+                else if (k === 'x' && this.selection) { e.preventDefault(); this.cutSelection(); }
                 else if (k === 'v' && this.clipboard) { e.preventDefault(); this.pasteClipboard(); }
                 return;
             }
@@ -576,6 +591,9 @@ export class MapEditor {
                         this.clearShapeSelection();
                         layer.batchDraw();
                         this.markDirty();
+                    } else if (this.selection) {
+                        e.preventDefault();
+                        this.deleteSelectionContents();
                     }
                     break;
                 case 'escape':
@@ -886,20 +904,100 @@ export class MapEditor {
 
         this.selection = {
             origin: { col: Math.floor(bounds.minX), row: Math.floor(bounds.minY) },
+            bounds,
             cells: structuredClone(cells),
             shapes: structuredClone(shapes),
         };
 
+        this.drawSelectionMarker();
+        this.setStatus(`${cells.length} cell(s), ${shapes.length} shape(s) selected — Ctrl+C copy, Ctrl+X cut, Delete remove, drag to move`);
+    }
+
+    drawSelectionMarker() {
+        const b = this.selection.bounds;
         const px = (v) => v * this.cellSizePx;
         const rect = new Konva.Rect({
-            x: px(bounds.minX), y: px(bounds.minY),
-            width: px(bounds.maxX - bounds.minX), height: px(bounds.maxY - bounds.minY),
+            x: px(b.minX), y: px(b.minY), width: px(b.maxX - b.minX), height: px(b.maxY - b.minY),
             stroke: '#4a9eff', strokeWidth: 1.5, dash: [6, 4], listening: false,
         });
         rect.setAttr('_selection', true);
         this.previewLayer.add(rect);
         this.previewLayer.batchDraw();
-        this.setStatus(`${cells.length} cell(s), ${shapes.length} shape(s) selected — Ctrl+C to copy`);
+    }
+
+    pointInSelectionBounds(pos) {
+        if (!this.selection) return false;
+        const b = this.selection.bounds;
+        return pos.x >= b.minX && pos.x <= b.maxX && pos.y >= b.minY && pos.y <= b.maxY;
+    }
+
+    previewSelectionMove(pos) {
+        const dx = pos.x - this.movingSelection.startX;
+        const dy = pos.y - this.movingSelection.startY;
+        for (const child of [...this.previewLayer.getChildren()]) {
+            if (child.getAttr('_selection')) child.destroy();
+        }
+        const b = this.selection.bounds;
+        const px = (v) => v * this.cellSizePx;
+        const rect = new Konva.Rect({
+            x: px(b.minX + dx), y: px(b.minY + dy),
+            width: px(b.maxX - b.minX), height: px(b.maxY - b.minY),
+            stroke: '#4a9eff', strokeWidth: 1.5, dash: [6, 4], listening: false,
+        });
+        rect.setAttr('_selection', true);
+        this.previewLayer.add(rect);
+        this.previewLayer.batchDraw();
+    }
+
+    sameShape(a, b) {
+        return JSON.stringify(a) === JSON.stringify(b);
+    }
+
+    commitSelectionMove(pos) {
+        const dx = Math.round(pos.x - this.movingSelection.startX);
+        const dy = Math.round(pos.y - this.movingSelection.startY);
+        for (const child of [...this.previewLayer.getChildren()]) {
+            if (child.getAttr('_selection')) child.destroy();
+        }
+        if (!dx && !dy) {
+            this.drawSelectionMarker();
+            return;
+        }
+        this.pushUndo();
+        this.syncDocument();
+        const layerDto = this.layerDto(this.activeLayerId);
+        if (!layerDto) return;
+
+        const removedCellKeys = new Set(this.selection.cells.map((c) => `${c.col},${c.row}`));
+        layerDto.cells = (layerDto.cells || []).filter((c) => !removedCellKeys.has(`${c.col},${c.row}`));
+        layerDto.shapes = (layerDto.shapes || []).filter((s) => !this.selection.shapes.some((rs) => this.sameShape(rs, s)));
+
+        layerDto.cells = layerDto.cells || [];
+        for (const c of this.selection.cells) {
+            const col = c.col + dx, row = c.row + dy;
+            if (col < 0 || col >= this.gridWidth || row < 0 || row >= this.gridHeight) continue;
+            layerDto.cells = layerDto.cells.filter((x) => !(x.col === col && x.row === row));
+            layerDto.cells.push({ col, row, terrain: c.terrain });
+        }
+        layerDto.shapes = layerDto.shapes || [];
+        for (const s of this.selection.shapes) {
+            layerDto.shapes.push(this.shiftShape(structuredClone(s), dx, dy));
+        }
+
+        this.selection = {
+            origin: { col: this.selection.origin.col + dx, row: this.selection.origin.row + dy },
+            bounds: {
+                minX: this.selection.bounds.minX + dx, maxX: this.selection.bounds.maxX + dx,
+                minY: this.selection.bounds.minY + dy, maxY: this.selection.bounds.maxY + dy,
+            },
+            cells: this.selection.cells.map((c) => ({ ...c, col: c.col + dx, row: c.row + dy })),
+            shapes: this.selection.shapes.map((s) => this.shiftShape(structuredClone(s), dx, dy)),
+        };
+        this.pasteOffset = null;
+
+        this.renderDocument();
+        this.drawSelectionMarker();
+        this.markDirty();
     }
 
     shapeInBounds(s, b) {
@@ -930,7 +1028,34 @@ export class MapEditor {
             cells: this.selection.cells.map((c) => ({ ...c, col: c.col - col, row: c.row - row })),
             shapes: this.selection.shapes.map((s) => this.shiftShape(structuredClone(s), -col, -row)),
         };
+        this.pasteOffset = { col: 1, row: 1 };
         this.setStatus('Copied — Ctrl+V to paste (offset by one cell)');
+    }
+
+    cutSelection() {
+        if (!this.selection) {
+            this.setStatus('Nothing selected — use the Select tool (V) first');
+            return;
+        }
+        this.copySelection();
+        this.deleteSelectionContents();
+    }
+
+    deleteSelectionContents() {
+        if (!this.selection) return;
+        this.pushUndo();
+        this.syncDocument();
+        const layerDto = this.layerDto(this.activeLayerId);
+        if (!layerDto) return;
+
+        const removedCellKeys = new Set(this.selection.cells.map((c) => `${c.col},${c.row}`));
+        layerDto.cells = (layerDto.cells || []).filter((c) => !removedCellKeys.has(`${c.col},${c.row}`));
+        layerDto.shapes = (layerDto.shapes || []).filter((s) => !this.selection.shapes.some((rs) => this.sameShape(rs, s)));
+
+        this.clearSelection();
+        this.renderDocument();
+        this.markDirty();
+        this.setStatus('Deleted');
     }
 
     pasteClipboard() {
@@ -944,7 +1069,8 @@ export class MapEditor {
         const target = this.layerDto(this.activeLayerId);
         if (!target) return;
 
-        const off = { col: (this.selection?.origin.col ?? 0) + 1, row: (this.selection?.origin.row ?? 0) + 1 };
+        if (!this.pasteOffset) this.pasteOffset = { col: 1, row: 1 };
+        const off = this.pasteOffset;
         if (target.type === 'TERRAIN') {
             target.cells = target.cells || [];
             for (const c of this.clipboard.cells) {
@@ -962,6 +1088,7 @@ export class MapEditor {
         this.renderDocument();
         this.markDirty();
         this.setStatus('Pasted');
+        this.pasteOffset = { col: off.col + 1, row: off.row + 1 };
     }
 
     shiftShape(shape, dx, dy) {
@@ -990,6 +1117,8 @@ export class MapEditor {
 
     clearSelection() {
         this.selection = null;
+        this.movingSelection = null;
+        this.pasteOffset = null;
         for (const child of [...this.previewLayer.getChildren()]) {
             if (child.getAttr('_selection')) child.destroy();
         }
