@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — ' + ${encounter.name}">DMHelper — Encounter</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <div>
+                    <h1 th:text="${encounter.name}">Encounter Name</h1>
+                    <a th:href="@{/campaigns/{cid}/encounters(cid=${campaignId})}" class="btn btn-ghost"
+                       style="margin-top: var(--space-xs);">&larr; Back to Encounters</a>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-meta">
+                    <span th:if="${encounter.status == 'ACTIVE'}" style="color: var(--color-success); font-weight: bold;">ACTIVE</span>
+                    <span th:if="${encounter.status == 'PLANNED'}" style="color: var(--color-info); font-weight: bold;">PLANNED</span>
+                    <span th:if="${encounter.status == 'DONE'}" style="color: var(--color-text-muted); font-weight: bold;">DONE</span>
+                    <span th:if="${encounter.round > 0}" th:text="' · Round ' + ${encounter.round}"> · Round 1</span>
+                    <span th:if="${encounter.combatantCount > 0}" th:text="' · ' + ${encounter.combatantCount} + ' combatants'"> · 0 combatants</span>
+                </div>
+
+                <div class="detail-actions" style="margin: var(--space-lg) 0;">
+                    <th:block th:if="${encounter.status == 'PLANNED'}">
+                        <form method="post" th:action="@{/campaigns/{cid}/encounters/{eid}/activate(cid=${campaignId}, eid=${encounter.id})}"
+                              style="display: inline;">
+                            <button type="submit" class="btn btn-primary">Activate</button>
+                        </form>
+                    </th:block>
+                    <th:block th:if="${encounter.status == 'ACTIVE'}">
+                        <form method="post" th:action="@{/campaigns/{cid}/encounters/{eid}/end(cid=${campaignId}, eid=${encounter.id})}"
+                              style="display: inline;">
+                            <button type="submit" class="btn" style="background: var(--color-warning);">End Encounter</button>
+                        </form>
+                    </th:block>
+                    <a class="btn btn-ghost"
+                       th:href="@{/campaigns/{cid}/encounters/{eid}/edit(cid=${campaignId}, eid=${encounter.id})}">Edit</a>
+                    <button class="btn btn-danger"
+                            th:attr="hx-delete=@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${encounter.id})}"
+                            hx-confirm="Delete this encounter?"
+                            hx-target="body"
+                            hx-swap="outerHTML">Delete</button>
+                </div>
+
+                <h2>Combatants</h2>
+                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
+                    <p style="color: var(--color-text-muted);">Combatants will be available after linking creatures to this encounter.</p>
+                </div>
+
+                <h2>Difficulty</h2>
+                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
+                    <p style="color: var(--color-text-muted);">Difficulty calculations will appear here once combatants are added.</p>
+                </div>
+
+                <th:block th:if="${encounter.lairActionName != null and !encounter.lairActionName.isBlank()}">
+                    <h2>Lair Actions</h2>
+                    <div class="detail-description">
+                        <h3 th:text="${encounter.lairActionName}">Lair Action Name</h3>
+                        <p th:text="${encounter.lairActionDescription}">Description</p>
+                    </div>
+                </th:block>
+            </div>
+        </main>
+
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>

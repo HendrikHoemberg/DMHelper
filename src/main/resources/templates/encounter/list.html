@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title>DMHelper — Encounters</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <div>
+                    <h1>Encounters</h1>
+                    <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost"
+                       style="margin-top: var(--space-xs);">&larr; Back to Campaign</a>
+                </div>
+                <button class="btn btn-primary"
+                        th:attr="hx-get=@{/campaigns/{cid}/encounters/new(cid=${campaignId})}"
+                        hx-target="#encounter-grid"
+                        hx-swap="beforeend">+ New Encounter</button>
+            </div>
+
+            <div id="encounter-grid" class="card-grid">
+                <th:block th:if="${encounters == null or encounters.isEmpty()}">
+                    <th:block th:replace="~{common/_empty-state :: empty-state('No encounters yet. Create your first encounter!')}"></th:block>
+                </th:block>
+                <th:block th:each="e : ${encounters}">
+                    <th:block th:replace="~{encounter/_card :: card(encounter=${e}, campaignId=${campaignId})}"></th:block>
+                </th:block>
+            </div>
+        </main>
+
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>

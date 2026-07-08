@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="inline-form" th:fragment="form(campaignId, encounter, maps)">
+    <h3 th:text="${encounter == null ? 'New Encounter' : 'Edit ' + encounter.name}">New Encounter</h3>
+    <form th:action="${encounter == null ? @{/campaigns/{cid}/encounters(cid=${campaignId})} : @{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${encounter.id})}}"
+          th:method="${encounter == null ? 'post' : 'put'}"
+          hx-target="body"
+          hx-swap="outerHTML">
+        <div class="form-group">
+            <label for="encounterName">Name *</label>
+            <input type="text" id="encounterName" name="name" required
+                   th:value="${encounter?.name}" placeholder="e.g. Goblin Ambush">
+        </div>
+        <div class="form-group">
+            <label for="mapId">Map</label>
+            <select id="mapId" name="mapId">
+                <option value="">-- No map --</option>
+                <option th:each="map : ${maps}" th:value="${map.id}"
+                        th:selected="${encounter?.mapId == map.id}"
+                        th:text="${map.name}">Map Name</option>
+            </select>
+        </div>
+        <th:block th:if="${encounter != null}">
+            <div class="form-group">
+                <label>Status</label>
+                <span th:text="${encounter.status}">PLANNED</span>
+            </div>
+        </th:block>
+        <div class="form-actions">
+            <button type="button" class="btn btn-ghost"
+                    th:attr="hx-get=@{/campaigns/{cid}/encounters(cid=${campaignId})}"
+                    hx-target="body"
+                    hx-swap="outerHTML">Cancel</button>
+            <button type="submit" class="btn btn-primary"
+                    th:text="${encounter == null ? 'Create' : 'Save'}">Create</button>
+        </div>
+    </form>
+</div>
+</html>
