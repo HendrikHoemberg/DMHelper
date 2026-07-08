@@ -43,6 +43,7 @@ export class MapEditor {
         this.drawing = false;
         this.panning = false;
         this.erasing = false;
+        this.pinchStart = null;   // {dist, scale, stagePointAtCenter} while a two-finger gesture is active
         this.shapeStart = null;
         this.marqueeStart = null;
         this.polygonPoints = [];   // flat [x1, y1, ...] in cell units
@@ -464,6 +465,11 @@ export class MapEditor {
 
     setupEvents() {
         this.stage.on('mousedown touchstart', (e) => {
+            if (e.evt.touches && e.evt.touches.length === 2) {
+                e.evt.preventDefault();
+                this.startPinch(e.evt.touches);
+                return;
+            }
             if (e.target instanceof Konva.Transformer || e.target.getParent() instanceof Konva.Transformer) return;   // let the Transformer handle its own anchors
             if (e.evt.button === 1) {   // middle mouse: pan
                 this.panning = true;
@@ -544,7 +550,12 @@ export class MapEditor {
             }
         });
 
-        this.stage.on('mousemove touchmove', () => {
+        this.stage.on('mousemove touchmove', (e) => {
+            if (this.pinchStart && e.evt.touches && e.evt.touches.length === 2) {
+                e.evt.preventDefault();
+                this.updatePinch(e.evt.touches);
+                return;
+            }
             if (this.panning) return;
             const pos = this.cellPos();
             if (!pos) return;
@@ -571,6 +582,7 @@ export class MapEditor {
         });
 
         this.stage.on('mouseup touchend', (e) => {
+            if (e.evt.touches && e.evt.touches.length < 2) this.pinchStart = null;
             if (this.panning) {
                 this.panning = false;
                 this.stage.draggable(false);
@@ -713,6 +725,49 @@ export class MapEditor {
             e.preventDefault();
             e.returnValue = '';
         });
+    }
+
+    /** Distance and midpoint (in container-local pixels) between two active touches. */
+    pinchState(touches) {
+        const [t1, t2] = touches;
+        const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        const rect = this.container.getBoundingClientRect();
+        const center = {
+            x: (t1.clientX + t2.clientX) / 2 - rect.left,
+            y: (t1.clientY + t2.clientY) / 2 - rect.top,
+        };
+        return { dist, center };
+    }
+
+    startPinch(touches) {
+        this.drawing = false;
+        this.marqueeStart = null;
+        this.movingSelection = null;
+        this.shapeStart = null;
+        this.polygonPoints = [];
+        this.clearPreview();
+        const state = this.pinchState(touches);
+        const scale = this.stage.scaleX();
+        this.pinchStart = {
+            dist: state.dist,
+            scale,
+            stagePointAtCenter: {
+                x: (state.center.x - this.stage.x()) / scale,
+                y: (state.center.y - this.stage.y()) / scale,
+            },
+        };
+    }
+
+    updatePinch(touches) {
+        if (!this.pinchStart) return;
+        const state = this.pinchState(touches);
+        const newScale = Math.max(0.2, Math.min(5, this.pinchStart.scale * (state.dist / this.pinchStart.dist)));
+        this.stage.scale({ x: newScale, y: newScale });
+        this.stage.position({
+            x: state.center.x - this.pinchStart.stagePointAtCenter.x * newScale,
+            y: state.center.y - this.pinchStart.stagePointAtCenter.y * newScale,
+        });
+        this.stage.batchDraw();
     }
 
     /** Pointer position in cell units, correct under pan/zoom. */
