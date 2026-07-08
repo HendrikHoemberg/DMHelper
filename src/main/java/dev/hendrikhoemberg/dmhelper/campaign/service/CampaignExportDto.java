@@ -12,10 +12,11 @@ public record CampaignExportDto(
         CampaignDto campaign,
         List<PartyMemberExportDto> party,
         List<StatBlockExportDto> statBlocks,
-        List<Object> handouts,
+        List<HandoutExportDto> handouts,
         List<MapExportDto> maps,
         List<Object> encounters,
-        List<Object> notes
+        List<NoteExportDto> notes,
+        List<QuickNoteExportDto> quicknotes
 ) {
     public static final int CURRENT_FORMAT_VERSION = 1;
 
@@ -29,7 +30,7 @@ public record CampaignExportDto(
                 new CampaignDto(campaign.getName(), campaign.getDescription()),
                 party,
                 statBlocks,
-                List.of(), maps, List.of(), List.of()
+                List.of(), maps, List.of(), List.of(), List.of()
         );
     }
 
@@ -141,6 +142,49 @@ public record CampaignExportDto(
                             map.getCellSizePx(), map.getGridType()),
                     document
             );
+        }
+    }
+
+    public record NoteExportDto(
+            String type,
+            String title,
+            String body,
+            String tags,
+            boolean dmOnly
+    ) {
+        public static NoteExportDto from(dev.hendrikhoemberg.dmhelper.notes.data.Note note) {
+            return new NoteExportDto(
+                    note.getType().name(),
+                    note.getTitle(),
+                    note.getBody(),
+                    note.getTags(),
+                    note.isDmOnly()
+            );
+        }
+    }
+
+    public record QuickNoteExportDto(
+            String targetType,
+            String targetId,
+            String body,
+            String createdAt
+    ) {
+        public static QuickNoteExportDto from(
+                dev.hendrikhoemberg.dmhelper.notes.data.QuickNote qn,
+                java.util.Map<java.util.UUID, String> idMappings) {
+            String mappedTargetId = idMappings.getOrDefault(qn.getTargetId(), qn.getTargetId().toString());
+            return new QuickNoteExportDto(
+                    qn.getTargetType(),
+                    mappedTargetId,
+                    qn.getBody(),
+                    qn.getCreatedAt().toString()
+            );
+        }
+    }
+
+    public record HandoutExportDto(String title, java.util.List<String> tags) {
+        public static HandoutExportDto from(dev.hendrikhoemberg.dmhelper.handout.data.Handout h) {
+            return new HandoutExportDto(h.getTitle(), java.util.List.of());
         }
     }
 }

@@ -12,6 +12,10 @@ import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
+import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
+import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
+import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
+import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +32,9 @@ public class CampaignService {
     private final PartyMemberService partyMemberService;
     private final StatBlockService statBlockService;
     private final GameMapService gameMapService;
+    private final NoteRepository noteRepository;
+    private final QuickNoteRepository quickNoteRepository;
+    private final NoteService noteService;
     private final ObjectMapper objectMapper;
 
     public CampaignService(CampaignRepository repository,
@@ -35,13 +42,19 @@ public class CampaignService {
                            StatBlockRepository statBlockRepository,
                            PartyMemberService partyMemberService,
                            StatBlockService statBlockService,
-                           GameMapService gameMapService) {
+                           GameMapService gameMapService,
+                           NoteRepository noteRepository,
+                           QuickNoteRepository quickNoteRepository,
+                           NoteService noteService) {
         this.repository = repository;
         this.partyMemberRepository = partyMemberRepository;
         this.statBlockRepository = statBlockRepository;
         this.partyMemberService = partyMemberService;
         this.statBlockService = statBlockService;
         this.gameMapService = gameMapService;
+        this.noteRepository = noteRepository;
+        this.quickNoteRepository = quickNoteRepository;
+        this.noteService = noteService;
         this.objectMapper = JsonMapper.builder()
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -88,7 +101,22 @@ public class CampaignService {
         var maps = gameMapService.findByCampaignId(id).stream()
                 .map(m -> CampaignExportDto.MapExportDto.from(m, gameMapService.getDocument(m.getId())))
                 .toList();
-        CampaignExportDto dto = CampaignExportDto.from(campaign, party, statBlocks, maps);
+        var noteDtos = noteRepository.findByCampaignIdOrderByCreatedAtDesc(id).stream()
+                .map(CampaignExportDto.NoteExportDto::from).toList();
+        var quickNoteDtos = quickNoteRepository.findByCampaignIdOrderByCreatedAtDesc(id).stream()
+                .map(qn -> CampaignExportDto.QuickNoteExportDto.from(qn, java.util.Map.of()))
+                .toList();
+        CampaignExportDto dto = new CampaignExportDto(
+                CampaignExportDto.CURRENT_FORMAT_VERSION,
+                new CampaignExportDto.CampaignDto(campaign.getName(), campaign.getDescription()),
+                party,
+                statBlocks,
+                List.of(),
+                maps,
+                List.of(),
+                noteDtos,
+                quickNoteDtos
+        );
         try {
             return objectMapper.writeValueAsString(dto);
         } catch (Exception e) {
@@ -170,6 +198,17 @@ public class CampaignService {
             }
         }
 
+        if (dto.notes() != null) {
+            for (var noteDto : dto.notes()) {
+                noteService.create(saved.getId(),
+                        NoteType.valueOf(noteDto.type()),
+                        noteDto.title(),
+                        noteDto.body(),
+                        noteDto.tags());
+            }
+        }
+
+        // TODO: import quicknotes once targetId mappings are available
         return saved;
     }
 }
