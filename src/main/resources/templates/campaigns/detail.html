@@ -45,6 +45,13 @@
                     </a>
                 </div>
 
+                <h2>Character Sheets</h2>
+                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
+                    <a th:href="@{/campaigns/{id}/sheets(id=${campaign.id})}" class="btn btn-primary">
+                        Open Sheets
+                    </a>
+                </div>
+
                 <h2>Notes</h2>
                 <div class="detail-actions" style="margin-bottom: var(--space-lg);">
                     <a th:href="@{/campaigns/{id}/notes(id=${campaign.id})}" class="btn btn-primary">

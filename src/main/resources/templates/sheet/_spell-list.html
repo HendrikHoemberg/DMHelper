@@ -1,0 +1,9 @@
+<div th:fragment="spellList(sheet)" class="sheet-spells">
+    <div th:each="spell : ${sheet.spells()}" class="sheet-spell">
+        <span class="sheet-spell-name" th:text="${spell.spellName()}">Magic Missile</span>
+        <span class="badge" th:text="'Lvl ' + ${spell.spellLevel()}">Lvl 1</span>
+        <span th:if="${spell.sourceClass() != null}" class="badge" th:text="${spell.sourceClass()}">wizard</span>
+        <span th:if="${spell.prepared()}" class="badge badge-success">Prepared</span>
+    </div>
+    <p th:if="${sheet.spells().isEmpty()}" class="text-muted">No spells</p>
+</div>

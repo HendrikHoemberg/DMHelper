@@ -1,0 +1,8 @@
+<div th:fragment="resources(sheet)" class="sheet-resources">
+    <div th:each="res : ${sheet.resources()}" class="sheet-resource">
+        <span class="sheet-resource-name" th:text="${res.name()}">Rage</span>
+        <span class="sheet-resource-uses" th:text="${res.currentUses() + ' / ' + res.maxUses()}">3 / 3</span>
+        <span class="badge" th:text="${res.resetRule()}">LONG_REST</span>
+    </div>
+    <p th:if="${sheet.resources().isEmpty()}" class="text-muted">No resources tracked</p>
+</div>

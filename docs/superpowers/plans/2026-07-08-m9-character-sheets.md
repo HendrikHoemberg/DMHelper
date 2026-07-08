@@ -1199,9 +1199,10 @@ Update editable fields: ability scores, proficiencies, species, background, feat
 
 - [ ] **Step 9: Implement `longRest()`**
 
-1. Set `hitDiceUsed = max(0, hitDiceUsed - totalHitDice / 2)` (recover half rounded down)
-2. Reset all resources with `resetRule = LONG_REST` or `SHORT_REST`
-3. Save, re-derive, sync
+1. Reset `spellSlotsUsed` to all zeros (`{"1":0,"2":0,...}`) — all spell slots restored
+2. Set `hitDiceUsed = max(0, hitDiceUsed - totalHitDice / 2)` (recover half rounded down)
+3. Reset all resources with `resetRule = LONG_REST` or `SHORT_REST`
+4. Save, re-derive, sync
    - max HP remains at derived value (full HP is the derived max — the engine computes maxHP as derived, and current HP is on PartyMember; long rest restores PartyMember.currentHp? No — current HP is not on CharacterSheet)
    
    **Important:** `currentHp` is on `PartyMember`, not `CharacterSheet`. On long rest, the service should also set `partyMember.currentHp = maxHp` and save the PartyMember. Actually, `PartyMember.maxHp` was set by derivation — we reset current to that value directly here, or better: delegate to PartyMemberService.
@@ -1548,16 +1549,9 @@ Class features are displayed as read-only text from the compendium. The features
 
 The UI shows a slot tracker: for each spell level (1–9), show "used / available" with +/- buttons. Used count is per-sheet, stored in a simple JSON map on the CharacterSheet as `spellSlotsUsed` (or as a simple `String spellSlotsUsed` JSON column holding `{"1":0,"2":1,"3":0,...}`).
 
-Actually, this field is NOT in the entity design above. We need to add it. Let me add it as `spellSlotsUsed` (CLOB JSON) on `CharacterSheet`:
-
-```java
-@Column(columnDefinition = "CLOB")
-private String spellSlotsUsed; // JSON: {"1":0,"2":1,"3":0,...}
-```
+The `spellSlotsUsed` field is already included in the `CharacterSheet` entity design (§3.1, line 165) — no additional entity change needed.
 
 This is reset on long rest. Warlock pact slots are stored in the same map under the pact slot level.
-
-**Implementation correction:** Add `spellSlotsUsed` field to `CharacterSheet` entity during Task 1.
 
 ### 13.4 Pact Magic (Warlock)
 

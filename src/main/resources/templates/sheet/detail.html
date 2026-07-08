@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Character Sheet')}"></head>
+<body>
+<div class="app-layout">
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <h1 th:text="${member.characterName} + ' — Character Sheet'">Character Sheet</h1>
+            <a th:href="@{/campaigns/{cid}/sheets(cid=${campaign.id})}" class="btn btn-ghost">&larr; Back to Sheets</a>
+        </div>
+
+        <div th:if="${hasSheet}">
+            <div class="detail-section">
+                <h2>Overview</h2>
+                <dl>
+                    <dt>Class & Level</dt>
+                    <dd th:text="${sheet.derivedValues().classAndLevel()}">Fighter 5</dd>
+                    <dt>Total Level</dt>
+                    <dd th:text="${sheet.derivedValues().totalLevel()}">5</dd>
+                    <dt>Proficiency Bonus</dt>
+                    <dd th:text="'+' + ${sheet.derivedValues().proficiencyBonus()}">+3</dd>
+                    <dt>Species</dt>
+                    <dd th:text="${sheet.speciesName() != null ? sheet.speciesName() : '—'}">Human</dd>
+                    <dt>Background</dt>
+                    <dd th:text="${sheet.backgroundName() != null ? sheet.backgroundName() : '—'}">Soldier</dd>
+                    <dt>XP</dt>
+                    <dd th:text="${sheet.xp()}">6500</dd>
+                </dl>
+            </div>
+
+            <div class="detail-section">
+                <h2>Ability Scores</h2>
+                <div th:replace="~{sheet/_ability-scores :: abilityScores(sheet=${sheet})}"></div>
+            </div>
+
+            <div class="detail-section">
+                <h2>Combat</h2>
+                <div th:replace="~{sheet/_derived-stats :: derivedStats(sheet=${sheet})}"></div>
+                <div class="pm-stats" style="margin-top: var(--space-sm)">
+                    <div><dt>Hit Dice</dt>
+                        <dd th:text="${sheet.derivedValues().remainingHitDice()} + ' / ' + ${sheet.derivedValues().totalHitDice()}">5 / 5</dd>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h2>Saving Throws</h2>
+                <dl class="pm-stats">
+                    <div><dt>STR</dt><dd th:text="'+' + ${sheet.derivedValues().saveStr()}">+7</dd></div>
+                    <div><dt>DEX</dt><dd th:text="'+' + ${sheet.derivedValues().saveDex()}">+2</dd></div>
+                    <div><dt>CON</dt><dd th:text="'+' + ${sheet.derivedValues().saveCon()}">+6</dd></div>
+                    <div><dt>INT</dt><dd th:text="'+' + ${sheet.derivedValues().saveInt()}">-1</dd></div>
+                    <div><dt>WIS</dt><dd th:text="'+' + ${sheet.derivedValues().saveWis()}">+1</dd></div>
+                    <div><dt>CHA</dt><dd th:text="'+' + ${sheet.derivedValues().saveCha()}">+0</dd></div>
+                </dl>
+            </div>
+
+            <div class="detail-section">
+                <h2>Skills</h2>
+                <div class="sheet-skill-list">
+                    <div class="sheet-skill" th:each="entry : ${sheet.derivedValues().skillBonuses()}">
+                        <span class="sheet-skill-name" th:text="${entry.key.replace('_', ' ')}">perception</span>
+                        <span class="sheet-skill-bonus" th:text="(${entry.value} >= 0 ? '+' : '') + ${entry.value}">+4</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h2>Passive Scores</h2>
+                <dl class="pm-stats">
+                    <div><dt>Perception</dt><dd th:text="${sheet.derivedValues().passivePerception()}">14</dd></div>
+                    <div><dt>Insight</dt><dd th:text="${sheet.derivedValues().passiveInsight()}">11</dd></div>
+                    <div><dt>Investigation</dt><dd th:text="${sheet.derivedValues().passiveInvestigation()}">9</dd></div>
+                </dl>
+            </div>
+
+            <div class="detail-section" th:if="${!sheet.derivedValues().classSpellcastingAbilities().isEmpty()}">
+                <h2>Spellcasting</h2>
+                <dl>
+                    <dt>Spell Save DC</dt>
+                    <dd th:text="${sheet.derivedValues().spellSaveDC()}">13</dd>
+                    <dt>Spell Attack Bonus</dt>
+                    <dd th:text="'+' + ${sheet.derivedValues().spellAttackBonus()}">+5</dd>
+                </dl>
+                <div th:each="entry : ${sheet.derivedValues().classSpellcastingAbilities()}">
+                    <span th:text="${entry.key + ': ' + entry.value}">wizard: int</span>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h2>Spells</h2>
+                <div th:replace="~{sheet/_spell-list :: spellList(sheet=${sheet})}"></div>
+            </div>
+
+            <div class="detail-section">
+                <h2>Resources</h2>
+                <div th:replace="~{sheet/_resources :: resources(sheet=${sheet})}"></div>
+            </div>
+
+            <div class="detail-section">
+                <h2>Actions</h2>
+                <div class="form-actions" style="flex-wrap: wrap;">
+                    <form th:action="@{/campaigns/{cid}/party/{pid}/sheet/rest/short(cid=${campaign.id}, pid=${member.id})}" method="post" class="inline-form" style="display: flex; align-items: center; gap: var(--space-sm);">
+                        <label>Hit Dice:</label>
+                        <input type="number" name="hitDiceSpent" value="0" min="0" class="small-input">
+                        <button type="submit" class="btn btn-primary">Short Rest</button>
+                    </form>
+                    <form th:action="@{/campaigns/{cid}/party/{pid}/sheet/rest/long(cid=${campaign.id}, pid=${member.id})}" method="post" class="inline-form" style="display: flex; align-items: center; gap: var(--space-sm);">
+                        <button type="submit" class="btn btn-primary">Long Rest</button>
+                    </form>
+                    <button class="btn btn-primary" onclick="document.getElementById('level-up-dialog').showModal()">Level Up</button>
+                </div>
+            </div>
+        </div>
+
+        <div th:unless="${hasSheet}" class="empty-state">
+            <p>No character sheet yet.</p>
+            <form th:action="@{/campaigns/{cid}/party/{pid}/sheet(cid=${campaign.id}, pid=${member.id})}" method="post">
+                <button type="submit" class="btn btn-primary">Create Sheet</button>
+            </form>
+        </div>
+    </main>
+</div>
+
+<dialog id="level-up-dialog" class="sheet-level-up-dialog">
+    <h3>Level Up</h3>
+    <form th:action="@{/campaigns/{cid}/party/{pid}/sheet/level-up(cid=${campaign.id}, pid=${member.id})}" method="post">
+        <div class="form-group">
+            <label>Class:</label>
+            <select name="classSourceKey" required>
+                <option value="srd-2024_barbarian">Barbarian</option>
+                <option value="srd-2024_bard">Bard</option>
+                <option value="srd-2024_cleric">Cleric</option>
+                <option value="srd-2024_druid">Druid</option>
+                <option value="srd-2024_fighter">Fighter</option>
+                <option value="srd-2024_monk">Monk</option>
+                <option value="srd-2024_paladin">Paladin</option>
+                <option value="srd-2024_ranger">Ranger</option>
+                <option value="srd-2024_rogue">Rogue</option>
+                <option value="srd-2024_sorcerer">Sorcerer</option>
+                <option value="srd-2024_warlock">Warlock</option>
+                <option value="srd-2024_wizard">Wizard</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label><input type="radio" name="isAverage" value="true" checked> Average HP</label>
+            <label><input type="radio" name="isAverage" value="false"> Roll:</label>
+            <input type="number" name="hpRoll" value="1" min="1" max="12" class="small-input">
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Confirm</button>
+            <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+        </div>
+    </form>
+</dialog>
+</body>
+</html>

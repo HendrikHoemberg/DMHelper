@@ -117,6 +117,10 @@ public class SheetService {
         this.mapper = new ObjectMapper();
     }
 
+    public boolean hasSheet(UUID partyMemberId) {
+        return sheetRepo.findByPartyMemberId(partyMemberId).isPresent();
+    }
+
     // ---- Sheet CRUD ----
 
     public SheetDto createSheet(CreateSheetRequest request) {

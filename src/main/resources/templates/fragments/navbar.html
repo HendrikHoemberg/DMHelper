@@ -9,6 +9,7 @@
             <a th:href="@{/campaigns/{id}/maps(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Maps</a>
             <a th:href="@{/campaigns/{id}/encounters(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Encounters</a>
             <a th:href="@{/campaigns/{id}/handouts(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Handouts</a>
+            <a th:href="@{/campaigns/{id}/sheets(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Sheets</a>
             <a th:href="@{/campaigns/{id}/notes(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Notes</a>
         </nav>
         <nav th:unless="${campaignId != null}" style="display: flex; gap: var(--space-md);">

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Party Sheets')}"></head>
+<body>
+<div class="app-layout">
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+    <main class="app-main">
+        <div class="page-header">
+            <h1 th:text="${campaign.name} + ' — Party Sheets'">Campaign — Party Sheets</h1>
+            <a th:href="@{/campaigns/{id}/party(id=${campaign.id})}" class="btn btn-ghost">&larr; Party Roster</a>
+        </div>
+        <div class="card-grid" th:if="${!members.isEmpty()}">
+            <div class="card" th:each="pm : ${members}">
+                <h3 th:text="${pm.characterName}">Character Name</h3>
+                <div class="pm-player">
+                    <span th:if="${pm.classAndLevel != null and !pm.classAndLevel.isBlank()}"
+                          th:text="${pm.classAndLevel}"></span>
+                </div>
+                <dl class="pm-stats">
+                    <div><dt>AC</dt><dd th:text="${pm.ac}">16</dd></div>
+                    <div><dt>HP</dt><dd th:text="${pm.maxHp}">38</dd></div>
+                    <div><dt>Init</dt><dd th:text="'+' + ${pm.initiativeBonus}">+4</dd></div>
+                    <div><dt>Speed</dt><dd th:text="${pm.speed + ' ft.'}">30 ft.</dd></div>
+                    <div><dt>P. Perception</dt><dd th:text="${pm.passivePerception}">17</dd></div>
+                </dl>
+                <div th:if="${pm.characterSheet != null}" class="badge badge-success">Sheet</div>
+                <div th:unless="${pm.characterSheet != null}" class="badge">Manual</div>
+                <div class="pm-actions">
+                    <a th:if="${pm.characterSheet != null}"
+                       th:href="@{/campaigns/{cid}/party/{pid}/sheet(cid=${campaign.id}, pid=${pm.id})}"
+                       class="btn btn-primary">View Sheet</a>
+                    <a th:unless="${pm.characterSheet != null}"
+                       th:href="@{/campaigns/{cid}/party/{pid}/sheet(cid=${campaign.id}, pid=${pm.id})}"
+                       class="btn btn-ghost">Create Sheet</a>
+                </div>
+            </div>
+        </div>
+        <div class="empty-state" th:unless="${!members.isEmpty()}">
+            <p>No party members yet. Add members in the Party roster first.</p>
+            <a th:href="@{/campaigns/{id}/party(id=${campaign.id})}" class="btn btn-primary">Party Roster</a>
+        </div>
+    </main>
+</div>
+</body>
+</html>

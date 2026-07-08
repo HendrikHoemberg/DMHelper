@@ -1,0 +1,7 @@
+<div th:fragment="abilityScores(sheet)" class="sheet-ability-grid">
+    <div th:each="entry : ${sheet.abilityScores()}" class="sheet-ability">
+        <span class="sheet-ability-name" th:text="${entry.key.toUpperCase()}">STR</span>
+        <span class="sheet-ability-score" th:text="${entry.value}">18</span>
+        <span class="sheet-ability-mod" th:text="(${entry.value} - 10) / 2">+4</span>
+    </div>
+</div>
