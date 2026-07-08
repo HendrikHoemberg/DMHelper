@@ -9,6 +9,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.service.CombatDifficultyCalculator.DifficultyResult;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
@@ -52,12 +53,14 @@ public class EncounterService {
     private final TokenRepository tokenRepo;
     private final PartyMemberRepository partyRepo;
     private final StatBlockRepository statBlockRepo;
+    private final CombatDifficultyCalculator calculator;
 
     public EncounterService(EncounterRepository encounterRepo, CampaignRepository campaignRepo,
                             EntityManager em, GameMapRepository mapRepo,
                             CombatantRepository combatantRepo, CombatLogEntryRepository combatLogRepo,
                             TokenRepository tokenRepo,
-                            PartyMemberRepository partyRepo, StatBlockRepository statBlockRepo) {
+                            PartyMemberRepository partyRepo, StatBlockRepository statBlockRepo,
+                            CombatDifficultyCalculator calculator) {
         this.encounterRepo = encounterRepo;
         this.campaignRepo = campaignRepo;
         this.em = em;
@@ -67,6 +70,7 @@ public class EncounterService {
         this.tokenRepo = tokenRepo;
         this.partyRepo = partyRepo;
         this.statBlockRepo = statBlockRepo;
+        this.calculator = calculator;
     }
 
     public record CreateRequest(String name, UUID mapId) {}
@@ -787,7 +791,17 @@ public class EncounterService {
     }
 
     public void activateLairAction(UUID encounterId) {
-        logEntry(encounterId, CombatLogEntry.EntryType.LAIR_ACTION, "", "{}");
+        logEntry(encounterId, CombatLogEntry.EntryType.LAIR_ACTION, "", "");
+    }
+
+    @Transactional(readOnly = true)
+    public DifficultyResult calculateDifficulty(UUID campaignId, UUID encounterId) {
+        findEntityById(encounterId);
+        List<PartyMember> party = partyRepo.findByCampaignIdAndActiveTrueOrderByCharacterNameAsc(campaignId);
+        List<CombatantDto> monsters = getCombatants(encounterId).stream()
+            .filter(c -> !"PC".equals(c.kind()))
+            .toList();
+        return calculator.calculate(party, monsters);
     }
 
     CombatLogEntry logEntry(UUID encounterId, CombatLogEntry.EntryType type, String combatantId, String payload) {
@@ -965,7 +979,7 @@ public class EncounterService {
                  LEGENDARY_ACTION, LEGENDARY_RESISTANCE, CONDITION_TICKED,
                  GROUP_SPLIT, LAIR_ACTION, NOTE,
                  ENCOUNTER_ACTIVATED, ENCOUNTER_ENDED,
-                 INITIATIVE_SET, TURN_START, TURN_END, ROUND_ADVANCE -> {
+                 TURN_START, TURN_END, ROUND_ADVANCE -> {
                 // Not reversible via simple mutation — skip
             }
         }

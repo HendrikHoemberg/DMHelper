@@ -114,6 +114,7 @@ public class EncounterController {
     public String detail(@PathVariable UUID campaignId, @PathVariable UUID id, Model model) {
         model.addAttribute("encounter", encounterService.getById(id));
         model.addAttribute("combatants", encounterService.getCombatants(id));
+        model.addAttribute("difficulty", encounterService.calculateDifficulty(campaignId, id));
         model.addAttribute("campaignId", campaignId);
         return "encounter/detail";
     }

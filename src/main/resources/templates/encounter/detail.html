@@ -112,8 +112,18 @@
                 </div>
 
                 <h2>Difficulty</h2>
-                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
-                    <p style="color: var(--color-text-muted);">Difficulty calculations will appear here once combatants are added.</p>
+                <div class="detail-actions" style="margin-bottom: var(--space-lg); gap: var(--space-sm); display: flex; flex-wrap: wrap; align-items: center;">
+                    <th:block th:if="${difficulty.rating == 'N/A'}">
+                        <p style="color: var(--color-text-muted);">No party or monsters — add combatants to see difficulty.</p>
+                    </th:block>
+                    <th:block th:unless="${difficulty.rating == 'N/A'}">
+                        <span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(difficulty.rating)}"
+                              th:text="${difficulty.rating}"
+                              style="font-weight: bold; padding: 0.25em 0.75em; border-radius: 4px;">RATING</span>
+                        <span style="color: var(--color-text-muted);" th:text="'Adjusted XP: ' + ${difficulty.adjustedXp}">XP</span>
+                        <span style="color: var(--color-text-muted);" th:text="'Party Threshold: ' + ${difficulty.partyThreshold}">THRESHOLD</span>
+                        <span style="color: var(--color-text-muted); font-size: 0.85em;" th:text="${difficulty.details}">DETAILS</span>
+                    </th:block>
                 </div>
 
                 <th:block th:if="${encounter.lairActionName != null and !encounter.lairActionName.isBlank()}">

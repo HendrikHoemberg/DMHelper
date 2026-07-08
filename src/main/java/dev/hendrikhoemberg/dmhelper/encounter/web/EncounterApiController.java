@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.encounter.web;
 
+import dev.hendrikhoemberg.dmhelper.encounter.service.CombatDifficultyCalculator.DifficultyResult;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatLogEntryDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
@@ -114,6 +115,11 @@ public class EncounterApiController {
     @GetMapping("/encounters/{id}/log")
     public List<CombatLogEntryDto> getLog(@PathVariable UUID id) {
         return service.getLog(id);
+    }
+
+    @GetMapping("/campaigns/{campaignId}/encounters/{encounterId}/difficulty")
+    public DifficultyResult getDifficulty(@PathVariable UUID campaignId, @PathVariable UUID encounterId) {
+        return service.calculateDifficulty(campaignId, encounterId);
     }
 
     @PutMapping("/combatants/{id}/initiative")
