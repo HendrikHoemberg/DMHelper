@@ -104,6 +104,8 @@ public class EncounterService {
 
     public record ReorderRequest(List<UUID> orderedIds) {}
 
+    public record ActiveTurnRequest(UUID combatantId) {}
+
     public record PrefillMapRequest(UUID mapId) {}
 
     public record EncounterDto(UUID id, UUID campaignId, UUID mapId, String name, String status,
@@ -211,6 +213,7 @@ public class EncounterService {
                 });
         e.setStatus(Encounter.Status.ACTIVE);
         e.setRound(1);
+        e.setActiveTurnIndex(-1);
         EncounterDto dto = toDto(encounterRepo.save(e));
         logEntry(id, CombatLogEntry.EntryType.ENCOUNTER_ACTIVATED, "", "");
         return dto;
@@ -402,11 +405,16 @@ public class EncounterService {
     }
 
     public List<CombatantDto> reorderCombatants(UUID encounterId, List<UUID> orderedIds) {
+        List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+        var encounterIds = combatants.stream().map(Combatant::getId).collect(Collectors.toSet());
+        if (orderedIds.size() != encounterIds.size() || !encounterIds.containsAll(orderedIds)) {
+            throw new IllegalArgumentException("orderedIds must contain exactly the encounter's combatants");
+        }
         for (int i = 0; i < orderedIds.size(); i++) {
             Combatant c = findCombatantById(orderedIds.get(i));
             c.setSortOrder(i);
-            combatantRepo.save(c);
         }
+        combatantRepo.saveAll(combatants);
         logEntry(encounterId, CombatLogEntry.EntryType.COMBATANT_REORDERED, "", "{}");
         return getCombatants(encounterId);
     }
@@ -455,7 +463,7 @@ public class EncounterService {
 
         logEntry(encounterId, CombatLogEntry.EntryType.TURN_START,
                 combatants.get(idx).getId().toString(),
-                "{\"activeTurnIndex\":" + idx + ",\"combatantName\":\"" + combatants.get(idx).getName() + "\"}");
+                "{\"activeTurnIndex\":" + idx + "}");
 
         return toDto(encounter);
     }
@@ -469,13 +477,25 @@ public class EncounterService {
         }
 
         int idx = encounter.getActiveTurnIndex();
-        if (idx == 0) {
+        if (idx >= combatants.size()) {
             idx = combatants.size() - 1;
-            if (encounter.getRound() > 1) {
-                encounter.setRound(encounter.getRound() - 1);
+        }
+
+        int loopCount = 0;
+        do {
+            if (idx == 0) {
+                idx = combatants.size() - 1;
+                if (encounter.getRound() > 1) {
+                    encounter.setRound(encounter.getRound() - 1);
+                }
+            } else {
+                idx--;
             }
-        } else {
-            idx--;
+            loopCount++;
+        } while (combatants.get(idx).isDefeated() && loopCount < combatants.size());
+
+        if (loopCount >= combatants.size()) {
+            return toDto(encounter);
         }
 
         encounter.setActiveTurnIndex(idx);

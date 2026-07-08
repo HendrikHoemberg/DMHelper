@@ -139,8 +139,8 @@ public class EncounterApiController {
     }
 
     @PutMapping("/encounters/{id}/active-turn")
-    public EncounterDto setActiveTurn(@PathVariable UUID id, @RequestBody Map<String, UUID> body) {
-        return service.setActiveTurn(id, body.get("combatantId"));
+    public EncounterDto setActiveTurn(@PathVariable UUID id, @RequestBody EncounterService.ActiveTurnRequest req) {
+        return service.setActiveTurn(id, req.combatantId());
     }
 
     @PostMapping("/encounters/{id}/undo")
