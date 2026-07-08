@@ -48,9 +48,11 @@ public record MapDocumentDto(
                 @JsonProperty("height") int height,
                 @JsonProperty("cellSizePx") int cellSizePx,
                 @JsonProperty("gridType") String gridType,
-                @JsonProperty(value = "movementMode", defaultValue = "GRID") String movementMode,
-                @JsonProperty(value = "showGrid", defaultValue = "true") boolean showGrid) {
-            return new GridDto(width, height, cellSizePx, gridType, movementMode, showGrid);
+                @JsonProperty("movementMode") String movementMode,
+                @JsonProperty("showGrid") Boolean showGrid) {
+            return new GridDto(width, height, cellSizePx, gridType,
+                    movementMode != null ? movementMode : "GRID",
+                    showGrid != null ? showGrid : true);
         }
     }
 
