@@ -16,6 +16,8 @@ import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReferenceRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetEngine.DerivedValues;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.*;
@@ -35,6 +37,8 @@ public class SheetService {
     private final BackgroundRepository backgroundRepo;
     private final SpellRepository spellRepo;
     private final ObjectMapper mapper;
+
+    private static final Logger log = LoggerFactory.getLogger(SheetService.class);
 
     public record CreateSheetRequest(
             UUID partyMemberId,
@@ -241,7 +245,7 @@ public class SheetService {
             int currentLevel = ((Number) entry.get("level")).intValue();
             entry.put("level", currentLevel + 1);
 
-            List<Number> rolls = (List<Number>) entry.get("hitDieRolls");
+            List<Integer> rolls = getHitDieRolls(entry);
             int hpGain;
             if (request.isAverage()) {
                 var cls = classRepo.findBySourceKey(request.classSourceKey());
@@ -249,7 +253,7 @@ public class SheetService {
                 if (cls.isPresent() && cls.get().getHitDie() != null) {
                     dieType = Integer.parseInt(cls.get().getHitDie().substring(1));
                 }
-                hpGain = (int) Math.ceil(dieType / 2.0);
+                hpGain = (dieType / 2) + 1;
             } else {
                 hpGain = request.hpRoll();
             }
@@ -330,7 +334,7 @@ public class SheetService {
         return toDto(sheet);
     }
 
-    public void setLevel(UUID sheetId, int totalLevel) {
+    public SheetDto setLevel(UUID sheetId, int totalLevel) {
         CharacterSheet sheet = sheetRepo.findById(sheetId)
                 .orElseThrow(() -> new IllegalArgumentException("Sheet not found"));
 
@@ -347,10 +351,10 @@ public class SheetService {
             int newLevel = totalLevel;
             firstEntry.put("level", newLevel);
 
-            List<Number> rolls = (List<Number>) firstEntry.get("hitDieRolls");
+            List<Integer> rolls = getHitDieRolls(firstEntry);
             if (newLevel > oldLevel) {
                 int dieSize = getHitDieSize((String) firstEntry.get("classSourceKey"));
-                int avg = (int) Math.ceil(dieSize / 2.0);
+                int avg = (dieSize / 2) + 1;
                 for (int i = oldLevel; i < newLevel; i++) {
                     rolls.add(avg);
                 }
@@ -367,8 +371,9 @@ public class SheetService {
             throw new RuntimeException("Failed to set level", e);
         }
 
-        sheetRepo.save(sheet);
+        sheet = sheetRepo.save(sheet);
         syncToPartyMember(sheet);
+        return toDto(sheet);
     }
 
     // ---- Resources ----
@@ -472,7 +477,7 @@ public class SheetService {
                         mapper.getTypeFactory().constructMapType(Map.class, String.class, Integer.class));
             }
         } catch (Exception e) {
-            // use defaults
+            log.warn("Failed to deserialize sheet JSON fields", e);
         }
 
         List<SheetResourceDto> resources = resourceRepo.findBySheetId(sheet.getId()).stream()
@@ -500,6 +505,19 @@ public class SheetService {
                 featRefs, sheet.getXp(), overrides, sheet.getHitDiceUsed(),
                 spellsUsed, derived, resources, spells
         );
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Integer> getHitDieRolls(Map<String, Object> entry) {
+        Object rolls = entry.get("hitDieRolls");
+        if (rolls instanceof List<?> list) {
+            List<Integer> result = new ArrayList<>();
+            for (Object item : list) {
+                if (item instanceof Number n) result.add(n.intValue());
+            }
+            return result;
+        }
+        return new ArrayList<>();
     }
 
     private int getHitDieSize(String classSourceKey) {

@@ -3,6 +3,8 @@ package dev.hendrikhoemberg.dmhelper.party.service;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResourceRepository;
+import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReferenceRepository;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,10 +18,16 @@ public class PartyMemberService {
 
     private final PartyMemberRepository repository;
     private final EntityManager em;
+    private final SheetResourceRepository sheetResourceRepo;
+    private final SheetSpellReferenceRepository sheetSpellRefRepo;
 
-    public PartyMemberService(PartyMemberRepository repository, EntityManager em) {
+    public PartyMemberService(PartyMemberRepository repository, EntityManager em,
+                              SheetResourceRepository sheetResourceRepo,
+                              SheetSpellReferenceRepository sheetSpellRefRepo) {
         this.repository = repository;
         this.em = em;
+        this.sheetResourceRepo = sheetResourceRepo;
+        this.sheetSpellRefRepo = sheetSpellRefRepo;
     }
 
     public PartyMember create(UUID campaignId, String characterName, String playerName,
@@ -67,9 +75,9 @@ public class PartyMemberService {
         PartyMember pm = findById(id);
         pm.setCharacterName(characterName);
         pm.setPlayerName(playerName);
-        pm.setClassAndLevel(classAndLevel);
-        // Preserve sheet-derived combat fields when a character sheet exists
+        // Preserve sheet-derived fields when a character sheet exists
         if (pm.getCharacterSheet() == null) {
+            pm.setClassAndLevel(classAndLevel);
             pm.setAc(ac);
             pm.setMaxHp(maxHp);
             pm.setInitiativeBonus(initiativeBonus);
@@ -84,6 +92,11 @@ public class PartyMemberService {
 
     public void delete(UUID id) {
         PartyMember pm = findById(id);
+        if (pm.getCharacterSheet() != null) {
+            UUID sheetId = pm.getCharacterSheet().getId();
+            sheetResourceRepo.deleteBySheetId(sheetId);
+            sheetSpellRefRepo.deleteBySheetId(sheetId);
+        }
         repository.delete(pm);
     }
 
