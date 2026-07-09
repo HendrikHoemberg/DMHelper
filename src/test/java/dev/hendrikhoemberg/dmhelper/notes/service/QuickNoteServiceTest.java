@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.notes.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
@@ -26,6 +27,9 @@ class QuickNoteServiceTest {
     @Autowired private NoteRepository noteRepository;
     @Autowired private StatBlockRepository statBlockRepository;
     @Autowired private QuickNoteService quickNoteService;
+    @Autowired private AdventureRepository adventureRepository;
+    @Autowired private ChapterRepository chapterRepository;
+    @Autowired private SceneRepository sceneRepository;
 
     private Campaign campaign;
 
@@ -79,6 +83,30 @@ class QuickNoteServiceTest {
         QuickNote qn = quickNoteService.create(campaign.getId(), "ENCOUNTER", UUID.randomUUID(), "Temp note.");
         quickNoteService.delete(qn.getId());
         assertTrue(quickNoteRepository.findById(qn.getId()).isEmpty());
+    }
+
+    @Test
+    void promotesQuickNoteWithSceneLink() {
+        Adventure adv = new Adventure();
+        adv.setCampaign(campaign);
+        adv.setName("Test Adventure");
+        adventureRepository.save(adv);
+
+        Chapter ch = new Chapter();
+        ch.setAdventure(adv);
+        ch.setTitle("Test Chapter");
+        chapterRepository.save(ch);
+
+        Scene scene = new Scene();
+        scene.setChapter(ch);
+        scene.setTitle("Throne Room");
+        sceneRepository.save(scene);
+
+        QuickNote qn = quickNoteService.create(campaign.getId(), "SCENE", scene.getId(), "The king sits here.");
+        Note note = quickNoteService.promoteToNote(qn.getId(), "Throne Room Notes", NoteType.LOCATION);
+
+        assertTrue(note.getBody().startsWith("[[scene:Throne Room]]"));
+        assertTrue(note.getBody().contains("The king sits here."));
     }
 
     @Test

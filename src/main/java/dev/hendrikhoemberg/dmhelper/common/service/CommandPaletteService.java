@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.common.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
@@ -38,6 +39,7 @@ public class CommandPaletteService {
     private final EncounterRepository encounterRepo;
     private final HandoutRepository handoutRepo;
     private final PartyMemberRepository partyMemberRepo;
+    private final SceneRepository sceneRepo;
 
     public CommandPaletteService(NoteRepository noteRepo, QuickNoteRepository quickNoteRepo,
                                   StatBlockRepository statBlockRepo, SpellRepository spellRepo,
@@ -46,7 +48,8 @@ public class CommandPaletteService {
                                   CharacterClassRepository characterClassRepo, SpeciesRepository speciesRepo,
                                   BackgroundRepository backgroundRepo, FeatRepository featRepo,
                                   GameMapRepository gameMapRepo, EncounterRepository encounterRepo,
-                                  HandoutRepository handoutRepo, PartyMemberRepository partyMemberRepo) {
+                                  HandoutRepository handoutRepo, PartyMemberRepository partyMemberRepo,
+                                  SceneRepository sceneRepo) {
         this.noteRepo = noteRepo;
         this.quickNoteRepo = quickNoteRepo;
         this.statBlockRepo = statBlockRepo;
@@ -63,6 +66,7 @@ public class CommandPaletteService {
         this.encounterRepo = encounterRepo;
         this.handoutRepo = handoutRepo;
         this.partyMemberRepo = partyMemberRepo;
+        this.sceneRepo = sceneRepo;
     }
 
     public List<SearchResultItem> search(String query, UUID campaignId) {
@@ -116,6 +120,19 @@ public class CommandPaletteService {
                     .map(pm -> new SearchResultItem(pm.getId().toString(), pm.getCharacterName(),
                             "party-member", pm.getClassAndLevel(),
                             "/campaigns/" + campaignId + "/party/" + pm.getId()))
+                    .forEach(results::add);
+
+            sceneRepo.findByChapterAdventureCampaignId(campaignId).stream()
+                    .filter(s -> matches(s.getTitle(), q))
+                    .limit(MAX_RESULTS)
+                    .map(s -> {
+                        String subtype = (s.getSceneKey() != null ? s.getSceneKey() + " · " : "")
+                                + s.getChapter().getAdventure().getName();
+                        return new SearchResultItem(s.getId().toString(), s.getTitle(), "scene",
+                                subtype,
+                                "/campaigns/" + campaignId + "/adventures/"
+                                        + s.getChapter().getAdventure().getId() + "/scenes/" + s.getId());
+                    })
                     .forEach(results::add);
         }
 

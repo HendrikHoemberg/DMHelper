@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.common.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
@@ -29,6 +30,9 @@ class CommandPaletteServiceTest {
     @Autowired private GameMapRepository gameMapRepository;
     @Autowired private EncounterRepository encounterRepository;
     @Autowired private CampaignRepository campaignRepository;
+    @Autowired private AdventureRepository adventureRepository;
+    @Autowired private ChapterRepository chapterRepository;
+    @Autowired private SceneRepository sceneRepository;
 
     private Campaign campaign;
 
@@ -77,6 +81,22 @@ class CommandPaletteServiceTest {
         encounter.setName("Tavern Brawl");
         encounter.setStatus(Encounter.Status.PLANNED);
         encounterRepository.save(encounter);
+
+        Adventure adv = new Adventure();
+        adv.setCampaign(campaign);
+        adv.setName("Test Adventure");
+        adventureRepository.save(adv);
+
+        Chapter ch = new Chapter();
+        ch.setAdventure(adv);
+        ch.setTitle("Test Chapter");
+        chapterRepository.save(ch);
+
+        Scene scene = new Scene();
+        scene.setChapter(ch);
+        scene.setTitle("Throne Room");
+        scene.setSceneKey("TR");
+        sceneRepository.save(scene);
     }
 
     @Test
@@ -114,6 +134,12 @@ class CommandPaletteServiceTest {
         var results = commandPaletteService.search("Goblin", null);
         assertThat(results).anyMatch(r -> r.type().equals("statblock"));
         assertThat(results).noneMatch(r -> r.type().equals("note"));
+    }
+
+    @Test
+    void searchFindsScenesByTitle() {
+        var results = commandPaletteService.search("Throne", campaign.getId());
+        assertThat(results).anyMatch(r -> r.title().equals("Throne Room") && r.type().equals("scene"));
     }
 
     @Test

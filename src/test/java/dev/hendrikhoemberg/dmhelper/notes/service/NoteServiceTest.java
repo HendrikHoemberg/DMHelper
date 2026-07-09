@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.notes.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
@@ -32,10 +33,14 @@ class NoteServiceTest {
     @Autowired private GameMapRepository gameMapRepository;
     @Autowired private HandoutRepository handoutRepository;
     @Autowired private NoteService noteService;
+    @Autowired private AdventureRepository adventureRepository;
+    @Autowired private ChapterRepository chapterRepository;
+    @Autowired private SceneRepository sceneRepository;
 
     private Campaign campaign;
     private StatBlock goblin;
     private GameMap dungeon;
+    private Scene throneRoom;
 
     @BeforeEach
     void setUp() {
@@ -59,6 +64,22 @@ class NoteServiceTest {
         dungeon.setGridHeight(20);
         dungeon.setCellSizePx(48);
         gameMapRepository.save(dungeon);
+
+        Adventure adv = new Adventure();
+        adv.setCampaign(campaign);
+        adv.setName("Test Adventure");
+        adventureRepository.save(adv);
+
+        Chapter ch = new Chapter();
+        ch.setAdventure(adv);
+        ch.setTitle("Test Chapter");
+        chapterRepository.save(ch);
+
+        throneRoom = new Scene();
+        throneRoom.setChapter(ch);
+        throneRoom.setTitle("Throne Room");
+        throneRoom.setSceneKey("TR");
+        sceneRepository.save(throneRoom);
     }
 
     @Test
@@ -129,6 +150,21 @@ class NoteServiceTest {
         noteService.delete(note.getId());
         assertTrue(noteLinkRepository.findBySourceNoteId(note.getId()).isEmpty());
         assertTrue(noteRepository.findById(note.getId()).isEmpty());
+    }
+
+    @Test
+    void resolvesSceneLink() {
+        Note note = noteService.create(campaign.getId(), NoteType.LOCATION, "The Throne Room",
+            "The king sits here. [[scene:Throne Room]]", "");
+
+        var links = noteLinkRepository.findBySourceNoteId(note.getId());
+        var sceneLink = links.stream().filter(l -> "SCENE".equals(l.getTargetType())).findFirst().orElseThrow();
+        assertTrue(sceneLink.isResolved());
+        assertEquals(throneRoom.getId(), sceneLink.getTargetId());
+
+        String rendered = noteService.renderBody(note);
+        assertTrue(rendered.contains("/campaigns/" + campaign.getId() + "/adventures/"));
+        assertTrue(rendered.contains("/scenes/" + throneRoom.getId()));
     }
 
     @Test

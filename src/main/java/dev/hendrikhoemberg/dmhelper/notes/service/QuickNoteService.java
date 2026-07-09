@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.notes.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
@@ -26,6 +27,7 @@ public class QuickNoteService {
     private final GameMapRepository gameMapRepository;
     private final HandoutRepository handoutRepository;
     private final PartyMemberRepository partyMemberRepository;
+    private final SceneRepository sceneRepository;
 
     public QuickNoteService(QuickNoteRepository quickNoteRepository,
                             CampaignRepository campaignRepository,
@@ -34,7 +36,8 @@ public class QuickNoteService {
                             StatBlockRepository statBlockRepository,
                             GameMapRepository gameMapRepository,
                             HandoutRepository handoutRepository,
-                            PartyMemberRepository partyMemberRepository) {
+                            PartyMemberRepository partyMemberRepository,
+                            SceneRepository sceneRepository) {
         this.quickNoteRepository = quickNoteRepository;
         this.campaignRepository = campaignRepository;
         this.noteService = noteService;
@@ -43,6 +46,7 @@ public class QuickNoteService {
         this.gameMapRepository = gameMapRepository;
         this.handoutRepository = handoutRepository;
         this.partyMemberRepository = partyMemberRepository;
+        this.sceneRepository = sceneRepository;
     }
 
     public QuickNote create(UUID campaignId, String targetType, UUID targetId, String body) {
@@ -121,6 +125,10 @@ public class QuickNoteService {
             case "CAMPAIGN" -> {
                 var camp = campaignRepository.findById(targetId);
                 yield camp.map(c -> "[[campaign:" + c.getName() + "]]\n\n").orElse("");
+            }
+            case "SCENE" -> {
+                var scene = sceneRepository.findById(targetId);
+                yield scene.map(s -> "[[scene:" + s.getTitle() + "]]\n\n").orElse("");
             }
             default -> "";
         };

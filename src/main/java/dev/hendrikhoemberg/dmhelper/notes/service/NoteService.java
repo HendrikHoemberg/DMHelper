@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.notes.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
@@ -27,6 +28,7 @@ public class NoteService {
     private final HandoutRepository handoutRepository;
     private final EncounterRepository encounterRepository;
     private final WikiLinkParser wikiLinkParser;
+    private final SceneRepository sceneRepository;
 
     public NoteService(NoteRepository noteRepository,
                        NoteLinkRepository noteLinkRepository,
@@ -35,7 +37,8 @@ public class NoteService {
                        GameMapRepository gameMapRepository,
                        HandoutRepository handoutRepository,
                        EncounterRepository encounterRepository,
-                       WikiLinkParser wikiLinkParser) {
+                       WikiLinkParser wikiLinkParser,
+                       SceneRepository sceneRepository) {
         this.noteRepository = noteRepository;
         this.noteLinkRepository = noteLinkRepository;
         this.campaignRepository = campaignRepository;
@@ -44,6 +47,7 @@ public class NoteService {
         this.handoutRepository = handoutRepository;
         this.encounterRepository = encounterRepository;
         this.wikiLinkParser = wikiLinkParser;
+        this.sceneRepository = sceneRepository;
     }
 
     public Note create(UUID campaignId, NoteType type, String title, String body, String tags, boolean dmOnly) {
@@ -179,6 +183,16 @@ public class NoteService {
                         resolved = true;
                     }
                 }
+                case "SCENE" -> {
+                    var scenes = sceneRepository.findByChapterAdventureCampaignIdAndTitleIgnoreCase(
+                            note.getCampaign().getId(), target.title());
+                    if (!scenes.isEmpty()) {
+                        var s = scenes.getFirst();
+                        url = "/campaigns/" + note.getCampaign().getId() + "/adventures/"
+                                + s.getChapter().getAdventure().getId() + "/scenes/" + s.getId();
+                        resolved = true;
+                    }
+                }
             }
 
             refs.add(new WikiLinkParser.WikiLinkReference(
@@ -255,6 +269,16 @@ public class NoteService {
                             .findFirst();
                     if (match.isPresent()) {
                         link.setTargetId(match.get().getId());
+                        yield true;
+                    }
+                    link.setTargetId(UUID.randomUUID());
+                    yield false;
+                }
+                case "SCENE" -> {
+                    var scenes = sceneRepository.findByChapterAdventureCampaignIdAndTitleIgnoreCase(
+                            note.getCampaign().getId(), target.title());
+                    if (!scenes.isEmpty()) {
+                        link.setTargetId(scenes.getFirst().getId());
                         yield true;
                     }
                     link.setTargetId(UUID.randomUUID());

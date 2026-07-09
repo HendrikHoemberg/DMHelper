@@ -28,7 +28,8 @@ public class WikiLinkParser {
             if (colonIdx > 0) {
                 String maybePrefix = raw.substring(0, colonIdx).toUpperCase();
                 if (maybePrefix.equals("HANDOUT") || maybePrefix.equals("MAP")
-                        || maybePrefix.equals("STATBLOCK") || maybePrefix.equals("ENCOUNTER")) {
+                        || maybePrefix.equals("STATBLOCK") || maybePrefix.equals("ENCOUNTER")
+                        || maybePrefix.equals("SCENE")) {
                     prefix = maybePrefix;
                     title = raw.substring(colonIdx + 1).trim();
                 }

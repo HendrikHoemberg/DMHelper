@@ -43,6 +43,14 @@ class WikiLinkParserTest {
     }
 
     @Test
+    void extractsSceneLink() {
+        var refs = parser.extractReferences("[[scene:Throne Room]]");
+        assertEquals(1, refs.size());
+        assertEquals("SCENE", refs.get(0).targetType());
+        assertEquals("Throne Room", refs.get(0).title());
+    }
+
+    @Test
     void convertsLinksToHtml() {
         var refs = List.of(
             new WikiLinkParser.WikiLinkReference("NOTE", "Goblin Cave", "/campaigns/x/notes/y", true),
