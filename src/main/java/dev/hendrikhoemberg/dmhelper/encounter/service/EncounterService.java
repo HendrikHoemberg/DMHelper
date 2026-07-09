@@ -250,6 +250,8 @@ public class EncounterService {
         e.setStatus(Encounter.Status.DONE);
         EncounterDto dto = toDto(encounterRepo.save(e));
         logEntry(id, CombatLogEntry.EntryType.ENCOUNTER_ENDED, "", "");
+        logEntry(id, CombatLogEntry.EntryType.SESSION_END, "",
+                "{\"endedAt\":\"" + Instant.now().toString() + "\"}");
         return dto;
     }
 
