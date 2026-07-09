@@ -563,4 +563,38 @@ class EncounterServiceTest {
         var logEntries = combatLogRepo.findByEncounterIdOrderBySequenceAsc(enc.id());
         assertThat(logEntries).anyMatch(e -> e.getType() == CombatLogEntry.EntryType.TURN_END);
     }
+
+    @Test
+    void groupMembersShareTurnSlot() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        service.activate(enc.id());
+        CombatantDto leader = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Goblin Leader", 10, "MONSTER", null, null, null));
+        CombatantDto goblin1 = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Goblin 1", 10, "MONSTER", null, null, null));
+        CombatantDto goblin2 = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Goblin 2", 10, "MONSTER", null, null, null));
+        CombatantDto fighter = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Fighter", 10, "PC", null, null, null));
+
+        String groupId = "goblin-group";
+        service.updateCombatant(leader.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
+                null, groupId, true, null, null, null, null, null, null, null, null, null));
+        service.updateCombatant(goblin1.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
+                null, groupId, false, null, null, null, null, null, null, null, null, null));
+        service.updateCombatant(goblin2.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
+                null, groupId, false, null, null, null, null, null, null, null, null, null));
+
+        service.setActiveTurn(enc.id(), leader.id());
+
+        // Should skip goblin1 and goblin2, stop at fighter (index 3)
+        EncounterDto turn1 = service.nextTurn(enc.id());
+        assertThat(turn1.activeTurnIndex()).isEqualTo(3);
+        assertThat(turn1.round()).isEqualTo(1);
+
+        // Wraps back to leader (index 0) and advances round to 2
+        EncounterDto turn2 = service.nextTurn(enc.id());
+        assertThat(turn2.activeTurnIndex()).isEqualTo(0);
+        assertThat(turn2.round()).isEqualTo(2);
+    }
 }

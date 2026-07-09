@@ -646,7 +646,10 @@ public class EncounterService {
 
         while (checked < combatants.size()) {
             idx = (idx + 1) % combatants.size();
-            if (!combatants.get(idx).isDefeated()) {
+            Combatant candidate = combatants.get(idx);
+            boolean stoppable = !candidate.isDefeated()
+                    && (candidate.getGroupId() == null || candidate.isGroupLeader());
+            if (stoppable) {
                 break;
             }
             checked++;
@@ -708,7 +711,8 @@ public class EncounterService {
                 idx--;
             }
             checked++;
-            if (!combatants.get(idx).isDefeated()) {
+            if (!combatants.get(idx).isDefeated()
+                    && (combatants.get(idx).getGroupId() == null || combatants.get(idx).isGroupLeader())) {
                 break;
             }
         }
