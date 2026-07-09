@@ -6,12 +6,23 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+record RateLimitEntry(int failures, long firstFailureTime, long blockedUntil) {
+}
 
 public class PinInterceptor implements HandlerInterceptor {
 
     public static final String PIN_COOKIE = "dm_pin";
 
     private final PinManager pinManager;
+    private final Map<String, RateLimitEntry> rateLimitMap = new ConcurrentHashMap<>();
+
+    private static final int FAILURE_THRESHOLD_SLOWDOWN = 5;
+    private static final int FAILURE_THRESHOLD_BLOCK = 10;
+    private static final long BLOCK_DURATION_MS = 30_000;
+    private static final long SLOWDOWN_DELAY_MS = 2_000;
 
     public PinInterceptor(PinManager pinManager) {
         this.pinManager = pinManager;
@@ -21,8 +32,39 @@ public class PinInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
                              Object handler) throws Exception {
         String pin = extractPin(request);
+        String ip = request.getRemoteAddr();
+
+        RateLimitEntry entry = rateLimitMap.get(ip);
+        if (entry != null && entry.blockedUntil() > System.currentTimeMillis()) {
+            response.setStatus(429);
+            response.setContentType("text/plain");
+            response.getWriter().write("Too many PIN attempts");
+            response.getWriter().flush();
+            return false;
+        }
+        if (entry != null && entry.blockedUntil() > 0) {
+            rateLimitMap.remove(ip);
+        }
 
         if (!pinManager.isValid(pin)) {
+            RateLimitEntry current = rateLimitMap.merge(ip,
+                    new RateLimitEntry(1, System.currentTimeMillis(), 0),
+                    (old, val) -> new RateLimitEntry(old.failures() + 1, old.firstFailureTime(), 0));
+
+            if (current.failures() >= FAILURE_THRESHOLD_BLOCK) {
+                rateLimitMap.put(ip, new RateLimitEntry(current.failures(), current.firstFailureTime(),
+                        System.currentTimeMillis() + BLOCK_DURATION_MS));
+                response.setStatus(429);
+                response.setContentType("text/plain");
+                response.getWriter().write("Too many PIN attempts");
+                response.getWriter().flush();
+                return false;
+            }
+
+            if (current.failures() >= FAILURE_THRESHOLD_SLOWDOWN) {
+                Thread.sleep(SLOWDOWN_DELAY_MS);
+            }
+
             response.setStatus(403);
             response.setContentType("text/html");
             response.getWriter().write("""
@@ -61,6 +103,7 @@ public class PinInterceptor implements HandlerInterceptor {
             return false;
         }
 
+        rateLimitMap.remove(ip);
         return true;
     }
 
