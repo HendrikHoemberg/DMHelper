@@ -467,6 +467,19 @@ public class CampaignService {
                         token.setMaxHp(tDto.maxHp());
                         token.setDead(tDto.dead());
                         token.setNotes(tDto.notes());
+                        if (tDto.statBlockKey() != null) {
+                            var resolved = statBlockRepository.findByCampaignIdAndSourceKey(saved.getId(), tDto.statBlockKey())
+                                    .or(() -> statBlockRepository.findBySourceKey(tDto.statBlockKey()));
+                            resolved.ifPresentOrElse(token::setStatBlock,
+                                    () -> System.err.println("WARNING: Unknown statblock key: " + tDto.statBlockKey()));
+                        }
+                        if (tDto.partyMemberName() != null) {
+                            partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(saved.getId()).stream()
+                                    .filter(pm -> tDto.partyMemberName().equals(pm.getCharacterName()))
+                                    .findFirst()
+                                    .ifPresentOrElse(token::setPartyMember,
+                                            () -> System.err.println("WARNING: Unknown party member '" + tDto.partyMemberName() + "' in token '" + tDto.name() + "'"));
+                        }
                         token = tokenRepo.save(token);
                         if (tDto.id() != null) {
                             tokenOldToNewId.put(tDto.id(), token.getId());
