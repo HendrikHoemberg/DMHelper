@@ -127,7 +127,7 @@ public class TablePresentationService {
                                 currentState.map().gridWidth(), currentState.map().gridHeight(),
                                 currentState.map().cellSizePx(), currentState.map().movementMode(),
                                 currentState.map().showGrid(),
-                                currentState.map().document(), tokens,
+                                projectionService.projectMapDocument(gameMap), tokens,
                                 currentAoEs
                         ),
                         null,

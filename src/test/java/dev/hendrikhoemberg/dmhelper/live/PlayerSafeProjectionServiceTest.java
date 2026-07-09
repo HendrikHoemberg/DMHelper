@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.live;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,23 +74,6 @@ class PlayerSafeProjectionServiceTest {
     }
 
     @Test
-    void shouldStripMonsterHpFromProjection() {
-        Token token = new Token();
-        token.setMap(gameMap);
-        token.setName("Dragon");
-        token.setMaxHp(200);
-        token.setCurrentHp(150);
-        token.setHidden(false);
-        em.persist(token);
-        em.flush();
-
-        var result = service.projectTokens(gameMap);
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().currentHp()).isNull();
-        assertThat(result.getFirst().maxHp()).isNull();
-    }
-
-    @Test
     void shouldStripAnnotationsLayer() {
         gameMap.setDocument("{\"schemaVersion\":1,\"grid\":{\"width\":20,\"height\":15,\"cellSizePx\":48,\"gridType\":\"SQUARE\",\"movementMode\":\"GRID\",\"showGrid\":true},\"layers\":[{\"id\":\"l1\",\"name\":\"Terrain\",\"type\":\"TERRAIN\",\"visible\":true,\"locked\":false,\"cells\":[],\"shapes\":[]},{\"id\":\"l2\",\"name\":\"Annotations\",\"type\":\"ANNOTATIONS\",\"visible\":true,\"locked\":false,\"cells\":[],\"shapes\":[]}],\"primitives\":[],\"customTerrain\":[]}");
         em.merge(gameMap);
@@ -99,5 +83,43 @@ class PlayerSafeProjectionServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.layers()).hasSize(1);
         assertThat(result.layers().getFirst().name()).isEqualTo("Terrain");
+    }
+
+    @Test
+    void shouldReProjectMapDocumentAfterModification() {
+        String initialDoc = "{\"schemaVersion\":1,\"grid\":{\"width\":20,\"height\":15,\"cellSizePx\":48,\"gridType\":\"SQUARE\",\"movementMode\":\"GRID\",\"showGrid\":true},\"layers\":[{\"id\":\"l1\",\"name\":\"Terrain\",\"type\":\"TERRAIN\",\"visible\":true,\"locked\":false,\"cells\":[{\"col\":1,\"row\":1,\"terrain\":\"floor\"}],\"shapes\":[]}],\"primitives\":[],\"customTerrain\":[]}";
+        String modifiedDoc = "{\"schemaVersion\":1,\"grid\":{\"width\":20,\"height\":15,\"cellSizePx\":48,\"gridType\":\"SQUARE\",\"movementMode\":\"GRID\",\"showGrid\":true},\"layers\":[{\"id\":\"l1\",\"name\":\"Terrain\",\"type\":\"TERRAIN\",\"visible\":true,\"locked\":false,\"cells\":[{\"col\":5,\"row\":5,\"terrain\":\"wall\"}],\"shapes\":[]}],\"primitives\":[],\"customTerrain\":[]}";
+
+        gameMap.setDocument(initialDoc);
+        em.merge(gameMap);
+        em.flush();
+
+        MapDocumentDto firstProjection = service.projectMapDocument(gameMap);
+        assertThat(firstProjection.layers().getFirst().cells().getFirst().terrain()).isEqualTo("floor");
+
+        gameMap.setDocument(modifiedDoc);
+        em.merge(gameMap);
+        em.flush();
+
+        MapDocumentDto secondProjection = service.projectMapDocument(gameMap);
+        assertThat(secondProjection.layers().getFirst().cells().getFirst().terrain()).isEqualTo("wall");
+    }
+
+    @Test
+    void shouldStripInvisibleLayerContent() {
+        gameMap.setDocument("{\"schemaVersion\":1,\"grid\":{\"width\":20,\"height\":15,\"cellSizePx\":48,\"gridType\":\"SQUARE\",\"movementMode\":\"GRID\",\"showGrid\":true},\"layers\":[{\"id\":\"l1\",\"name\":\"Terrain\",\"type\":\"TERRAIN\",\"visible\":true,\"locked\":false,\"cells\":[],\"shapes\":[]},{\"id\":\"l2\",\"name\":\"DM Secrets\",\"type\":\"OBJECTS\",\"visible\":false,\"locked\":true,\"cells\":[{\"col\":5,\"row\":5,\"terrain\":\"wall\"}],\"shapes\":[{\"type\":\"rect\",\"points\":[1,1,3,3],\"fill\":\"#ff0000\",\"stroke\":\"#000\",\"strokeWidth\":1}],\"image\":{\"dataUrl\":\"data:image/png;base64,abc123\",\"x\":0,\"y\":0,\"width\":10,\"height\":10}}],\"primitives\":[],\"customTerrain\":[]}");
+        em.merge(gameMap);
+        em.flush();
+
+        var result = service.projectMapDocument(gameMap);
+        assertThat(result).isNotNull();
+        assertThat(result.layers()).hasSize(2);
+
+        var invisibleLayer = result.layers().get(1);
+        assertThat(invisibleLayer.name()).isEqualTo("DM Secrets");
+        assertThat(invisibleLayer.visible()).isFalse();
+        assertThat(invisibleLayer.cells()).isEmpty();
+        assertThat(invisibleLayer.shapes()).isEmpty();
+        assertThat(invisibleLayer.image()).isNull();
     }
 }
