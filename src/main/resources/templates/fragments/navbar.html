@@ -22,6 +22,10 @@
         </nav>
     </div>
     <div class="navbar-right">
+        <button class="dice-toggle-btn" id="diceToggle"
+                :class="{ active: open }"
+                @click="open = !open"
+                title="Toggle Dice Roller (Ctrl+R)">&#x1F3B2;</button>
         <a href="/player" target="_blank" class="btn btn-ghost" style="font-size: var(--text-sm);"
            title="Open player view in a new tab">Player View</a>
         <button class="btn btn-ghost" style="font-size: var(--text-sm);" id="qrToggle"
@@ -45,4 +49,94 @@
               th:text="${pinDisplay}">PIN: -----</span>
     </div>
 </nav>
+
+<th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('diceRoller', () => ({
+        open: false,
+        expression: '',
+        advantage: false,
+        disadvantage: false,
+        result: null,
+        history: [],
+        loading: false,
+        _encounterId: null,
+
+        async init() {
+            await this.loadHistory();
+            window.addEventListener('tracker-encounter-state', (e) => {
+                const encId = e.detail?.encounter?.id || null;
+                this._encounterId = encId;
+                document.body.dataset.activeEncounterId = encId || '';
+            });
+        },
+
+        async roll() {
+            let expr = this.expression.trim();
+            if (!expr) return;
+
+            if (this.advantage && !expr.toLowerCase().includes('adv')) {
+                expr = expr + ' adv';
+            } else if (this.disadvantage && !expr.toLowerCase().includes('dis')) {
+                expr = expr + ' dis';
+            }
+
+            this.loading = true;
+            try {
+                const body = { expression: expr };
+                if (this._encounterId) body.encounterId = this._encounterId;
+
+                const resp = await fetch('/api/v1/roll', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    alert(err.detail || 'Roll failed');
+                    return;
+                }
+
+                this.result = await resp.json();
+                window.dispatchEvent(new CustomEvent('dice-roll-result', {
+                    detail: this.result
+                }));
+                await this.loadHistory();
+                this.expression = '';
+                this.advantage = false;
+                this.disadvantage = false;
+            } catch (e) {
+                alert('Roll failed: ' + e.message);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async loadHistory() {
+            try {
+                const resp = await fetch('/api/v1/roll/history');
+                if (resp.ok) this.history = await resp.json();
+            } catch (e) {
+                // silently ignore
+            }
+        }
+    }));
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'r') {
+        e.preventDefault();
+        const root = document.querySelector('[x-data="diceRoller()"]');
+        if (root && root.__x) {
+            const data = root.__x.getUnobservedData();
+            data.open = !data.open;
+            root.__x.updateElements(root);
+        }
+    }
+});
+</script>
+
 </html>
