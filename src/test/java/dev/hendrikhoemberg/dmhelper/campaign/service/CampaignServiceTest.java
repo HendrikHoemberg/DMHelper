@@ -10,6 +10,7 @@ import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
@@ -18,9 +19,14 @@ import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import org.mockito.ArgumentCaptor;
+import java.util.Optional;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @DataJpaTest
 @Import({CampaignService.class, GameMapService.class})
@@ -206,5 +212,64 @@ class CampaignServiceTest {
         assertThatThrownBy(() -> service.importFromJson(json))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("name");
+    }
+
+    @Test
+    void importResolvesSrdStatBlock() throws Exception {
+        Campaign saved = service.create("SRD Import Test", null);
+
+        StatBlock sb = mock(StatBlock.class);
+        when(sb.getSourceKey()).thenReturn("goblin");
+        when(sb.getName()).thenReturn("Goblin");
+
+        when(statBlockRepository.findByCampaignIdAndSourceKey(any(), eq("goblin")))
+                .thenReturn(Optional.empty());
+        when(statBlockRepository.findBySourceKey("goblin"))
+                .thenReturn(Optional.of(sb));
+
+        String json = """
+                {
+                  "formatVersion": 1,
+                  "campaign": { "name": "SRD Import" },
+                  "party": [],
+                  "statBlocks": [],
+                  "handouts": [],
+                  "maps": [],
+                  "encounters": [
+                    {
+                      "name": "Test Encounter",
+                      "combatants": [
+                        {
+                          "name": "Goblin Scout",
+                          "initiative": 10, "tieBreaker": 0, "sortOrder": 0,
+                          "maxHp": 7, "currentHp": 7, "tempHp": 0,
+                          "kind": "NPC",
+                          "groupId": null, "groupLeader": false,
+                          "statBlockKey": "goblin",
+                          "defeated": false, "hidden": false,
+                          "conditionsJson": null, "concentratingOn": null,
+                          "concentrationCheckPending": false,
+                          "legendaryActionsUsed": 0, "legendaryResistancesUsed": 0,
+                          "legendaryActionsMax": 0, "legendaryResistancesMax": 0,
+                          "rechargedAbilities": null, "notes": null
+                        }
+                      ],
+                      "status": "ACTIVE", "round": 1, "activeTurnIndex": 0,
+                      "logSequence": 0, "lairActionName": null,
+                      "lairActionDescription": null
+                    }
+                  ],
+                  "notes": [], "quicknotes": [], "assignments": [],
+                  "ledger": [], "timeline": []
+                }
+                """;
+
+        service.importFromJson(json);
+
+        ArgumentCaptor<Combatant> captor = ArgumentCaptor.forClass(Combatant.class);
+        verify(combatantRepo).save(captor.capture());
+        Combatant importedCombatant = captor.getValue();
+        assertThat(importedCombatant.getStatBlock()).isNotNull();
+        assertThat(importedCombatant.getStatBlock().getSourceKey()).isEqualTo("goblin");
     }
 }

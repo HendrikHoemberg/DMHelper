@@ -545,9 +545,10 @@ public class CampaignService {
                             }
                         }
                         if (cDto.statBlockKey() != null) {
-                            statBlockRepository.findByCampaignIdAndSourceKey(saved.getId(), cDto.statBlockKey())
-                                    .ifPresentOrElse(combatant::setStatBlock,
-                                            () -> System.err.println("WARNING: Unknown statblock key: " + cDto.statBlockKey()));
+                            var resolved = statBlockRepository.findByCampaignIdAndSourceKey(saved.getId(), cDto.statBlockKey())
+                                    .or(() -> statBlockRepository.findBySourceKey(cDto.statBlockKey()));
+                            resolved.ifPresentOrElse(combatant::setStatBlock,
+                                    () -> System.err.println("WARNING: Unknown statblock key: " + cDto.statBlockKey()));
                         }
                         if (cDto.partyMemberName() != null) {
                             partyMembers.stream()
