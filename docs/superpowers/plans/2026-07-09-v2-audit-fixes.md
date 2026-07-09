@@ -8,251 +8,202 @@
 
 **Tech Stack:** Spring Boot 4.1, Java 25, JPA/Hibernate, H2, Thymeleaf, Konva.js, JUnit 5 + Mockito.
 
+> **Verification pass (2026-07-09):** every task in this plan was cross-checked against the real source before handoff. Diagnoses were accurate almost everywhere, but several proposed fixes referenced methods/fields/schemas that don't actually exist, or would not have compiled, or (Task 3.2) would have introduced a worse bug than the one being fixed. The following tasks were rewritten in place and are flagged inline with a "Revised after source verification" note where they occur: **1.1, 1.2, 2.1, 2.2, 3.2, 3.4 (bonus fix), 8.1, 8.3 (merged into 8.1), 8.6, 8.9.1, 8.9.6**. All other tasks were verified correct as originally written (or plausible-but-unverified for a few of the smaller quick wins) and are unchanged.
+
 ---
 
 ## Module 1: Live Table Sync
 
-### Task 1.1: Fire `battle-state-changed` event on every token mutation
+> **Revised after source verification:** the original drafts of Task 1.1 and 1.2 referenced JS methods (`onTokenDragEnd`, `onTokenMove`, `addTokenAt`, `onHideSelected`, `deleteSelected`, `handleTokenupdateMessage`) and a `broadcast(LiveTableState)` overload that do not exist in the real codebase. Rewritten below against the actual `battle-map.js` and `TablePresentationService.java`.
+
+### Task 1.1: Fire `battle-state-changed` on every real token mutation
 
 **Files:**
 - Modify: `src/main/resources/static/js/map/battle-map.js`
 
-**Problem:** `emitState()` (which dispatches `battle-state-changed`) is only called once at init (line 116). All subsequent move/add/hide/delete operations (8+ call sites) fire `tokenupdate` but never `state-changed`. The player view listens for `battle-state-changed` to trigger a `/api/v1/table/refresh` POST — stale forever.
+**Problem:** `emitState()` (which fires `state-changed` → `battle-state-changed`, consumed by `battle.html:428-430` to POST `/api/v1/table/refresh`) is only called once, in `load()` (line 116). The real token-mutating methods are `saveTokenMove()` (357), `createToken()` (374), `deleteToken()` (386), `duplicateToken()` (396), `markDead()` (406), `updateToken()` (481), and `addPartyToMap()` (494) — each already does `this.emit('tokenupdate', { tokens: this.tokens })` (which repaints only the DM's own canvas) but never emits `state-changed`.
 
-**Fix:** Call `this.emitState()` at the end of every token mutation handler:
-- `onTokenDragEnd()`
-- `onTokenMove()`
-- `addTokenAt()`
-- `onHideSelected()`
-- `deleteSelected()`
+**Fix:** Add `this.emit('state-changed');` immediately after the existing `this.emit('tokenupdate', ...)` call in each of those methods, plus in `switchToMap()` (917) so presenting continuity survives a map switch.
 
-No new test file — manual verification: present a map, drag a token, confirm player view updates. (A Playwright E2E test covering this path is deferred to Task 8.9.)
-
-- [ ] **Step 1: Add `this.emitState()` calls**
-
-Read `src/main/resources/static/js/map/battle-map.js` and locate each handler:
-
-`onTokenDragEnd()` — add at end:
-```javascript
-this.emitState();
-```
-
-`addTokenAt()` — after `this.renderTokens()`:
-```javascript
-this.emitState();
-```
-
-`onHideSelected()` — after `this.renderTokens()`:
-```javascript
-this.emitState();
-```
-
-`deleteSelected()` — after tokens removed and `renderTokens()`:
-```javascript
-this.emitState();
-```
-
-- [ ] **Step 2: Call emitState from tokenupdate listener dispatch side**
-
-Also ensure `emitState()` is called after `onTokenMove()`. Check `handleTokenupdateMessage()`:
+- [ ] **Step 1: Add the emit call to each real mutation method**
 
 ```javascript
-handleTokenupdateMessage(payload) {
-    if (payload && payload.tokens && payload.tokens.length > 0) {
-        this.tokens = payload.tokens;
-        this.renderTokens();
-        this.emitState();
-    }
-}
+// e.g. in saveTokenMove(), right after:
+this.emit('tokenupdate', { tokens: this.tokens });
+this.emit('state-changed');
 ```
+
+Repeat identically in `createToken()`, `deleteToken()`, `duplicateToken()`, `markDead()`, `updateToken()`, `addPartyToMap()`, and `switchToMap()` — each already has a `this.emit('tokenupdate', ...)` call; add `this.emit('state-changed');` directly after it.
+
+- [ ] **Step 2: Manual verification**
+
+Present a map (`Send to Table`). In the DM view: drag a token, add one from a statblock, mark one dead, delete one, switch maps. Confirm `/player` (open in a second tab) updates within ~1s each time. No new automated test — a real Playwright E2E test covering this path is deferred to Task 8.9.14.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add src/main/resources/static/js/map/battle-map.js
-git commit -m "fix: fire battle-state-changed on every token mutation so player view stays in sync"
+git commit -m "fix: fire battle-state-changed on every real token mutation so player view stays in sync"
 ```
 
 ---
 
-### Task 1.2: Call `LiveTableState.tokenMoved()` / `turnChanged()` from all mutation paths
+### Task 1.2: Push a table refresh when the turn advances
 
 **Files:**
 - Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/encounter/service/EncounterService.java`
-- Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/live/TablePresentationService.java`
 
-**Problem:** `LiveTableState.tokenMoved()` and `turnChanged()` are fully built factory methods never called anywhere — confirmed by grep. Token moves and turn advances never push incremental updates.
+**Problem:** Task 1.1 fixes token mutations by relying on the *existing* `battle-state-changed` → `POST /api/v1/table/refresh` → `TablePresentationService.broadcastCurrentState()` path (`TablePresentationController.java:35-38`), which already correctly re-reads tokens/combatants/turn index from the DB and re-broadcasts. Turn advancement never goes through the browser at all — `EncounterApiController` calls `EncounterService.nextTurn()`/`previousTurn()` directly, and nothing in that path touches `TablePresentationService` (confirmed by grep: zero references to it anywhere under `encounter/`). So "Next Turn" still never reaches the player view even after Task 1.1.
 
-**Fix:** Wire the methods. Create an `updateTable(predicate)` helper in `TablePresentationService` that checks if a table is active and sends the appropriate message type.
+`LiveTableState.tokenMoved(MapSnapshot)` and `turnChanged(List<CombatantSnapshot>, int)` (`LiveTableState.java:26-32`) really do exist unused, as the audit says — but wiring them in means building a second, parallel incremental-message path. `TablePresentationService.broadcast()` (line 156) is `private`, takes **zero arguments**, and just replays the `onStateChange` callback against the `currentState` field — it has no support today for dispatching a distinct `TOKEN_MOVED`/`TURN_CHANGED` payload type, and the client side has no handler for one either. Building that out is real, separable work. It is not required to fix this bug: the already-correct `broadcastCurrentState()` full-refresh is enough.
 
-- [ ] **Step 1: Add `sendTokenUpdate` to TablePresentationService**
+**Fix:** Inject `TablePresentationService` into `EncounterService` and call `broadcastCurrentState()` at the end of `nextTurn()` and `previousTurn()`. No circular dependency: `TablePresentationService`'s constructor depends only on `PlayerSafeProjectionService`, `GameMapRepository`, `EncounterRepository`, `CombatantRepository`, `HandoutRepository` — not `EncounterService`.
 
-Read `src/main/java/dev/hendrikhoemberg/dmhelper/live/TablePresentationService.java`. Add:
+- [ ] **Step 1: Inject TablePresentationService into EncounterService**
 
 ```java
-public void sendTokenUpdate(UUID mapId) {
-    var state = currentState;
-    if (state == null || state.mode() == null || "CURTAIN".equals(state.mode())) return;
-    GameMap gameMap = gameMapRepository.findById(mapId).orElse(null);
-    if (gameMap == null) return;
-    var projected = projectionService.projectMapDocument(gameMap);
-    List<TokenSnapshot> snapshots = buildTokenSnapshots(gameMap);
-    var mapSnap = new LiveTableState.MapSnapshot(
-            gameMap.getId().toString(), gameMap.getName(),
-            gameMap.getGridWidth(), gameMap.getGridHeight(),
-            gameMap.getCellSizePx(), gameMap.getMovementMode(),
-            gameMap.isShowGrid(), projected, snapshots, List.of());
-    var message = LiveTableState.tokenMoved(mapSnap);
-    broadcast(message);
-}
-
-public void sendTurnUpdate(UUID encounterId) {
-    var state = currentState;
-    if (state == null || state.mode() == null || "CURTAIN".equals(state.mode())) return;
-    Encounter encounter = encounterRepository.findById(encounterId).orElse(null);
-    if (encounter == null || encounter.getStatus() != Encounter.Status.ACTIVE) return;
-    var combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
-    List<LiveTableState.CombatantSnapshot> snaps = combatants.stream()
-            .map(c -> new LiveTableState.CombatantSnapshot(
-                    c.getId().toString(), c.getName(), c.getInitiative(),
-                    c.isDefeated(), combatants.indexOf(c) == encounter.getActiveTurnIndex(),
-                    parseConditionKeys(c.getConditionsJson())))
-            .toList();
-    broadcast(LiveTableState.turnChanged(snaps, encounter.getActiveTurnIndex()));
-}
+private final TablePresentationService tablePresentationService;
+// add as the last constructor parameter and assign it in the body
 ```
 
-- [ ] **Step 2: Call sendTokenUpdate from token mutation endpoints**
+- [ ] **Step 2: Call it at the end of nextTurn() and previousTurn()**
 
-In each token controller handler (`TokenApiController`), after saving, call:
 ```java
-tablePresentationService.sendTokenUpdate(mapId);
+// nextTurn(), just before `return new EncounterDto(...)`:
+tablePresentationService.broadcastCurrentState();
+
+// previousTurn() (post Task 3.1's restructuring), just before the final
+// `return toDto(encounter);` that follows an actual index/round change:
+tablePresentationService.broadcastCurrentState();
 ```
 
-- [ ] **Step 3: Call sendTurnUpdate from turn advancement**
+`broadcastCurrentState()` already no-ops safely when nothing is presented or the presented mode isn't `MAP` (`TablePresentationService.java:112-114`), so it's safe to call unconditionally.
 
-In `EncounterService.nextTurn()` and `previousTurn()`, after saving, call:
-```java
-tablePresentationService.sendTurnUpdate(encounterId);
-```
+- [ ] **Step 3: Note the remaining gap (not fixed here)**
+
+HP changes, condition add/remove, and `undo()` have the identical staleness problem. Out of scope for this task, but the fix is the same one-line call added to `applyDamage()`, `addCondition()`, `removeCondition()`, and `undo()`.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/main/java/dev/hendrikhoemberg/dmhelper/live/TablePresentationService.java src/main/java/dev/hendrikhoemberg/dmhelper/encounter/service/EncounterService.java src/main/java/dev/hendrikhoemberg/dmhelper/gamemap/web/TokenApiController.java
-git commit -m "fix: push incremental token-moved and turn-changed updates to player view"
+git add src/main/java/dev/hendrikhoemberg/dmhelper/encounter/service/EncounterService.java
+git commit -m "fix: broadcast table state after turn advancement so player view reflects Next/Previous Turn"
 ```
 
 ---
 
 ## Module 2: Map Primitive Rendering Outside Editor
 
-### Task 2.1: Bake primitives into cells on autosave/export for non-editor rendering
+> **Revised after source verification:** the original Task 2.1 invented a primitive schema (`lowercase types`, `col/row/w/h/layerId`) that doesn't match the real one, and proposed baking primitives into saved cells, which conflicts with the codebase's existing, deliberate design (primitives stay as editable source-of-truth, expanded only at render time — see `map-editor.js:413`, "expanded to cells on render, never serialized"). Rewritten below to extend that existing pattern instead of replacing it.
+
+### Task 2.1: Expand primitives into visible cells outside the editor
 
 **Files:**
 - Modify: `src/main/resources/static/js/map/shared.js`
-- Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/gamemap/service/GameMapService.java`
+- Modify: `src/main/resources/static/js/map/map-editor.js`
+- Modify: `src/main/resources/static/js/map/battle-map.js`
+- Modify: `src/main/resources/static/js/player/player-view.js`
 
-**Problem:** `battle-map.js`'s `renderTerrain()` reads raw `cells` from layers exclusively. `buildDocumentFromCanvas()` in the editor skips primitive-flagged nodes. Room/Door/Region primitives authored in the editor never render in play mode or the player view.
+**Problem:** The real primitive schema (`map-editor.js:979,992,1007`) is `{type: 'ROOM'|'DOOR'|'REGION'|'CORRIDOR', startCol, startRow, endCol, endRow, terrain?}` — uppercase types, `start*/end*` fields, no `layerId`. `map-editor.js` already has a correctly-shaped expansion function, `expandPrimitives()` (lines 416-450), used *only* to feed the editor's own live preview (`addCellRect(kl, cell, {primitive:true})`, line 309-310). Primitives are deliberately never baked into `cells` on save — `buildDocumentFromCanvas()` explicitly skips `_primitive`-tagged nodes (line 1574: "`_primitive` nodes ... carry neither attr → skipped"). That's intentional, not a bug: primitives stay editable, re-expanded at render time. The actual bug is that `battle-map.js`'s `renderTerrain()` and `player-view.js`'s terrain loop (`player-view.js:121-126`) only ever read `layers[...].cells` directly and never call any primitive-expansion logic — so a primitive-only map renders blank everywhere except inside the editor.
 
-**Fix:** Add a `bakePrimitives(document)` function that expands primitives into cells on their parent layer and removes the primitive from the `primitives` array. Call this during every autosave from the editor (before serializing) and on document load in battle-map. Also add a server-side `POST /api/v1/maps/{id}/bake-primitives` endpoint for import/API use.
+**Fix:** Move `expandPrimitives()` into `shared.js` as a plain exported function, and call it from all three renderers (editor, battle-map, player-view). No server-side change needed: `MapDocumentDto.primitives()` (Java) already passes primitives through untouched on both the raw `/maps/{id}/document` endpoint and the player-projected path (`PlayerSafeProjectionService.projectMapDocument()`, line 55).
 
-- [ ] **Step 1: Add `bakePrimitives()` to shared.js**
-
-Read `src/main/resources/static/js/map/shared.js`. Add:
+- [ ] **Step 1: Move `expandPrimitives()` into `shared.js`**
 
 ```javascript
-function bakePrimitives(document) {
-    if (!document.layers || !document.primitives) return document;
-
-    const layers = document.layers;
-    document.primitives.forEach(primitive => {
-        const layer = layers.find(l => l.id === primitive.layerId);
-        if (!layer) return;
-
-        let cells = [];
-        switch (primitive.type) {
-            case 'room': {
-                const r = primitive;
-                for (let col = r.col; col < r.col + r.w; col++) {
-                    for (let row = r.row; row < r.row + r.h; row++) {
-                        if (col === r.col || col === r.col + r.w - 1 ||
-                            row === r.row || row === r.row + r.h - 1) {
-                            cells.push({col, row, terrain: (r.wall || 'wall')});
-                        } else {
-                            cells.push({col, row, terrain: (r.floor || 'floor')});
-                        }
+// shared.js
+export function expandPrimitives(document) {
+    const cells = [];
+    for (const p of (document?.primitives || [])) {
+        const c0 = Math.min(p.startCol, p.endCol), c1 = Math.max(p.startCol, p.endCol);
+        const r0 = Math.min(p.startRow, p.endRow), r1 = Math.max(p.startRow, p.endRow);
+        switch (p.type) {
+            case 'ROOM':
+                for (let r = r0; r <= r1; r++) {
+                    for (let c = c0; c <= c1; c++) {
+                        const edge = r === r0 || r === r1 || c === c0 || c === c1;
+                        cells.push({ col: c, row: r, terrain: edge ? 'wall' : 'floor' });
                     }
                 }
                 break;
-            }
-            case 'door': {
-                const d = primitive;
-                cells.push({col: d.col, row: d.row, terrain: 'door'});
+            case 'CORRIDOR':
+                break; // open floor; nothing to paint
+            case 'DOOR':
+                cells.push({ col: p.startCol, row: p.startRow, terrain: 'door' });
                 break;
-            }
-            case 'region': {
-                const reg = primitive;
-                for (let col = reg.col; col < reg.col + reg.w; col++) {
-                    for (let row = reg.row; row < reg.row + reg.h; row++) {
-                        cells.push({col, row, terrain: (reg.terrain || 'floor')});
+            case 'REGION': {
+                const terrain = p.terrain || 'floor';
+                for (let r = r0; r <= r1; r++) {
+                    for (let c = c0; c <= c1; c++) {
+                        cells.push({ col: c, row: r, terrain });
                     }
                 }
                 break;
             }
         }
-
-        cells.forEach(cell => {
-            const exists = layer.cells.find(
-                c => c.col === cell.col && c.row === cell.row);
-            if (!exists) layer.cells.push(cell);
-        });
-    });
-
-    document.primitives = [];
-    return document;
+    }
+    return cells;
 }
 ```
 
-- [ ] **Step 2: Call bakePrimitives in editor autosave**
+Note the one behavior change from the editor's current copy: `ROOM` now explicitly pushes `terrain: 'floor'` for interior cells instead of pushing nothing for them — this folds in Task 2.2 (below).
 
-In `map-editor.js`, find the autosave path (typically `saveDocument()`) and before serializing, call:
-
-```javascript
-const docClone = JSON.parse(JSON.stringify(this.document));
-bakePrimitives(docClone);
-const json = JSON.stringify(docClone);
-// POST to server...
-```
-
-- [ ] **Step 3: Call bakePrimitives in battle-map initialization**
-
-In `battle-map.js`, in `fetchMapDocument()` after parsing the document JSON:
+- [ ] **Step 2: Make `map-editor.js` delegate to the shared function**
 
 ```javascript
-const doc = JSON.parse(response.document);
-this.document = bakePrimitives(doc);
+import { expandPrimitives } from './shared.js';
+// ...
+expandPrimitives() {
+    return expandPrimitives(this.document);
+}
 ```
+Every existing call site in `map-editor.js` (e.g. line 309) keeps working unchanged.
 
-- [ ] **Step 4: Verifying server-side endpoint**
+- [ ] **Step 3: Use it in `battle-map.js`'s `renderTerrain()`**
 
-Read `src/main/java/dev/hendrikhoemberg/dmhelper/gamemap/web/GameMapApiController.java`. No new endpoint needed if baking happens client-side. Server-side validation can be added later.
+```javascript
+import { drawGrid, setupPanAndZoom, cellPos, snapPixel, pixelToCell, expandPrimitives } from './shared.js';
+// ...
+renderTerrain(doc) {
+    this.terrainLayer.destroyChildren();
+    if (!doc || !doc.layers) return;
+    const terrainLayer = doc.layers.find(l => l.id === 'terrain');
+    const explicitCells = terrainLayer?.cells || [];
+    const explicitKeys = new Set(explicitCells.map(c => `${c.col},${c.row}`));
+    const primitiveCells = expandPrimitives(doc).filter(c => !explicitKeys.has(`${c.col},${c.row}`));
+    const s = this.cellSizePx;
+    for (const cell of [...primitiveCells, ...explicitCells]) {
+        const color = TERRAIN_COLORS[cell.terrain] || '#2a2a3e';
+        this.terrainLayer.add(new Konva.Rect({
+            x: cell.col * s, y: cell.row * s, width: s, height: s,
+            fill: color, stroke: '#222', strokeWidth: 0.5,
+        }));
+    }
+    this.terrainLayer.batchDraw();
+}
+```
+Explicitly-painted cells win over primitive-implied ones, matching how the editor already lets you paint over a primitive.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Apply the same merge in `player-view.js` (terrain loop around lines 121-126)**
+
+Import `expandPrimitives` from `shared.js` (add the import if `player-view.js` doesn't already have one) and merge primitive cells behind the existing `layer.cells` the same way as Step 3.
+
+- [ ] **Step 5: Manual verification**
+
+In the editor, draw a Room primitive and a Door primitive, save, open Play mode and `/player` — confirm walls, floor, and the door render identically to the editor's own preview.
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add src/main/resources/static/js/map/shared.js src/main/resources/static/js/map/map-editor.js src/main/resources/static/js/map/battle-map.js
-git commit -m "fix: bake map primitives (room/door/region) into layer cells before save and on battle-map load"
+git add src/main/resources/static/js/map/shared.js src/main/resources/static/js/map/map-editor.js src/main/resources/static/js/map/battle-map.js src/main/resources/static/js/player/player-view.js
+git commit -m "fix: expand map primitives into terrain cells in battle-map and player-view, not just the editor"
 ```
 
 ---
 
-### Task 2.2: Fix room primitive to emit floor cells
+### Task 2.2: Room primitive floor cells
 
-**Files:**
-- Modify: `src/main/resources/static/js/map/shared.js` (the `bakePrimitives` function from Task 2.1)
-
-**Fix:** The room primitive expansion in Task 2.1 already handles both wall border cells (`col === r.col || col === r.col + r.w - 1 || row === r.row || row === r.row + r.h - 1`) and interior floor cells (the `else` branch). No additional change needed — this is validated during Task 2.1 implementation.
+Folded into Task 2.1's `expandPrimitives()` rewrite above (the `edge ? 'wall' : 'floor'` branch) — no separate change needed. This also fixes the same bug in the editor's own live preview, which previously pushed only wall cells and left the interior "floored" purely by coincidence of the blank canvas background.
 
 ---
 
@@ -340,62 +291,54 @@ git commit -m "fix: restructure previousTurn to check bailout before decrementin
 - Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/encounter/service/EncounterService.java`
 - Modify: `src/test/java/dev/hendrikhoemberg/dmhelper/encounter/service/EncounterServiceTest.java`
 
-**Problem:** `nextTurn()` and `previousTurn()` are pure index walks over combatants sorted by `sortOrder`, with zero reference to `groupId`/`groupLeader`. "The 4 goblins" take 4 separate turns — the UI only adds a cosmetic prefix and count badge.
+> **Revised after source verification:** the original draft's "redirect to the group leader" logic was traced against its own example scenario and found to deadlock the turn cursor on the leader (and spuriously increment the round every call) instead of advancing past the group. Rewritten below with a different, verified-correct approach.
 
-**Fix:** In `nextTurn()`, after finding the next non-defeated combatant, skip all subsequent combatants that share the same `groupId` (i.e., are part of the same monster group). Advance the turn index past all group members. Also add an API to take a group's turn collectively: `POST /api/v1/encounters/{id}/group-turn`.
+**Problem:** `Combatant.groupId`/`isGroupLeader()` already exist (`Combatant.java:46,48,118-122`) and are unused by `nextTurn()`/`previousTurn()` (`EncounterService.java:631-677`) — confirmed by reading both methods: pure `sortOrder` index walks with no group awareness. "The 4 goblins" take 4 separate turns.
 
-- [ ] **Step 1: Modify nextTurn() to skip group members**
+**Fix:** Change the walk's stop condition so a non-defeated combatant is a valid stopping point only when it's ungrouped or is its group's leader — non-leader group members get silently skipped over during the walk, the same way defeated combatants already are. The group leader's slot becomes the only place the cursor stops for that group.
 
-In `EncounterService.nextTurn()`, after the `while` loop finds `idx`:
+- [ ] **Step 1: Update the walk condition in `nextTurn()`**
 
 ```java
-// After finding the next non-defeated combatant (idx):
-// Skip over remaining members of the same group
-Combatant current = combatants.get(idx);
-if (current.getGroupId() != null) {
-    int skipIdx = idx;
-    int skipCount = 0;
-    while (skipCount < combatants.size()) {
-        skipIdx = (skipIdx + 1) % combatants.size();
-        Combatant next = combatants.get(skipIdx);
-        if (current.getGroupId().equals(next.getGroupId()) && !next.isDefeated()) {
-            skipCount++;
-        } else {
-            break;
-        }
+// OLD:
+while (checked < combatants.size()) {
+    idx = (idx + 1) % combatants.size();
+    if (!combatants.get(idx).isDefeated()) {
+        break;
     }
+    checked++;
 }
-// Mark all group members as having acted this round (we skip them in the turn walk)
-```
 
-For `previousTurn()`, same pattern but walking backwards.
-
-Actually, the simplest correct fix: groups act *together*. When the turn cursor lands on a combatant that has `groupId` set, all non-defeated members of that group are considered active. The DM can individually act for each, but the turn only advances when *all* group members have acted. This requires a `actedThisRound` flag per combatant.
-
-Simpler v1 approach: skip group members in the turn walk. When a group leader's turn ends, advance past all group members.
-
-In `nextTurn()`, after finding the next live combatant:
-
-```java
-Combatant current = combatants.get(idx);
-String groupId = current.getGroupId();
-if (groupId != null) {
-    // If this combatant is in a group but is NOT the leader,
-    // find and advance to the leader
-    if (!current.isGroupLeader()) {
-        for (int gi = 0; gi < combatants.size(); gi++) {
-            Combatant gc = combatants.get(gi);
-            if (groupId.equals(gc.getGroupId()) && gc.isGroupLeader()) {
-                idx = gi;
-                current = gc;
-                break;
-            }
-        }
+// NEW:
+while (checked < combatants.size()) {
+    idx = (idx + 1) % combatants.size();
+    Combatant candidate = combatants.get(idx);
+    boolean stoppable = !candidate.isDefeated()
+            && (candidate.getGroupId() == null || candidate.isGroupLeader());
+    if (stoppable) {
+        break;
     }
+    checked++;
 }
 ```
 
-- [ ] **Step 2: Write test**
+Trace on `[Leader@0(G,leader), Member1@1(G), Member2@2(G), OtherPC@3]`, turn starting on the Leader (`oldIdx=0`): idx=1 (Member1, grouped non-leader → skip) → idx=2 (Member2, same → skip) → idx=3 (OtherPC, ungrouped → stop). One `nextTurn()` call correctly advances past the whole group. Next call from `oldIdx=3`: idx=0 (Leader, grouped leader → stop); `idx(0) <= oldIdx(3)` so the round correctly advances, once per full lap through the group.
+
+- [ ] **Step 2: Mirror the same condition in `previousTurn()`** (post-Task-3.1 version)
+
+```java
+// In the while-loop from Task 3.1, change the break condition to:
+if (!combatants.get(idx).isDefeated()
+        && (combatants.get(idx).getGroupId() == null || combatants.get(idx).isGroupLeader())) {
+    break;
+}
+```
+
+- [ ] **Step 3: Known v1 limitation**
+
+If the group leader is defeated but other members survive, the walk skips that group's slot entirely rather than promoting a member to leader. The DM can still act for a specific surviving member via the existing `setActiveTurn(encounterId, combatantId)` endpoint — document this as a known limitation instead of solving leader succession here.
+
+- [ ] **Step 4: Write test**
 
 ```java
 @Test
@@ -403,45 +346,33 @@ void groupMembersShareTurnSlot() {
     Encounter encounter = createActiveEncounter();
     String groupId = UUID.randomUUID().toString();
     Combatant leader = createCombatant(encounter, "Goblin Leader");
-    leader.setGroupId(groupId);
-    leader.setGroupLeader(true);
-    leader.setSortOrder(0);
+    leader.setGroupId(groupId); leader.setGroupLeader(true); leader.setSortOrder(0);
     Combatant member1 = createCombatant(encounter, "Goblin 1");
-    member1.setGroupId(groupId);
-    member1.setGroupLeader(false);
-    member1.setSortOrder(1);
+    member1.setGroupId(groupId); member1.setGroupLeader(false); member1.setSortOrder(1);
     Combatant member2 = createCombatant(encounter, "Goblin 2");
-    member2.setGroupId(groupId);
-    member2.setGroupLeader(false);
-    member2.setSortOrder(2);
-    combatantRepo.saveAll(List.of(leader, member1, member2));
+    member2.setGroupId(groupId); member2.setGroupLeader(false); member2.setSortOrder(2);
+    Combatant other = createCombatant(encounter, "Fighter");
+    other.setSortOrder(3);
+    combatantRepo.saveAll(List.of(leader, member1, member2, other));
 
-    // Set turn to leader
     encounter.setActiveTurnIndex(0);
     encounterRepo.save(encounter);
 
-    // Advance turn — should skip other group members
     EncounterDto dto = encounterService.nextTurn(encounter.getId());
-    // After advancing past group, turn should be on a non-group combatant (or wrap)
-    assertThat(dto.activeTurnIndex()).isNotIn(1, 2);
+    assertThat(dto.activeTurnIndex()).isEqualTo(3); // skipped straight past the group to the Fighter
+
+    EncounterDto dto2 = encounterService.nextTurn(encounter.getId());
+    assertThat(dto2.activeTurnIndex()).isEqualTo(0); // back to the leader
+    assertThat(dto2.round()).isEqualTo(2); // round advanced exactly once per lap
 }
 ```
 
-- [ ] **Step 3: Run test**
+- [ ] **Step 5: Run test and commit**
 
 ```bash
 mvn test -pl . -Dtest=EncounterServiceTest#groupMembersShareTurnSlot -Dsurefire.useFile=false
-```
-
-- [ ] **Step 4: Add similar skipping in previousTurn()**
-
-Same pattern: when walking backward, skip to just before the group leader.
-
-- [ ] **Step 5: Commit**
-
-```bash
 git add src/main/java/dev/hendrikhoemberg/dmhelper/encounter/service/EncounterService.java src/test/java/dev/hendrikhoemberg/dmhelper/encounter/service/EncounterServiceTest.java
-git commit -m "fix: skip group members in turn order so monsters share one turn slot"
+git commit -m "fix: skip non-leader group members in turn walk so monster groups share one turn slot"
 ```
 
 ---
@@ -553,6 +484,17 @@ git commit -m "fix: log sort order changes so undo doesn't revert manual initiat
 **Problem:** Lair action is rendered as a free-floating button after the combatant list, not a slot at initiative 20 the turn cursor passes through.
 
 **Fix:** Treat lair actions as a pseudo-combatant in the turn order. When `nextTurn()` advances past initiative 20 relative to the last combatant, activate the lair action. Add a visual indicator in the tracker template.
+
+> **Bonus fix found during verification (not one of the 7 originally requested, but a hard compile-blocker with a trivial fix):** `Encounter.java` currently only has `lairActionName`/`lairActionDescription` (lines 46-49, 75-79) — no `lairActionTriggered` field. The steps below call `encounter.setLairActionTriggered(true)` and expect `encounter.lairActionAvailable` in the template; neither exists yet. Add this first:
+> ```java
+> // Encounter.java
+> @Column(nullable = false)
+> private boolean lairActionTriggered = false;
+>
+> public boolean isLairActionTriggered() { return lairActionTriggered; }
+> public void setLairActionTriggered(boolean lairActionTriggered) { this.lairActionTriggered = lairActionTriggered; }
+> ```
+> Then add `boolean lairActionAvailable` to `EncounterDto` (already listed in this plan's own "Summary of New Entities/Fields" table below), computed as `encounter.getLairActionName() != null && !encounter.isLairActionTriggered()` wherever the DTO is built.
 
 - [ ] **Step 1: Add lair-action slot to nextTurn()**
 
@@ -1360,56 +1302,119 @@ git commit -m "fix: auto-roll d6 for recharge check instead of requiring DM to t
 
 ## Module 8: Polish & Validation
 
-### Task 8.1: Scope DiceRoll to Campaign
+### Task 8.1 + 8.3: Scope DiceRoll to Campaign, and only log to ACTIVE encounters
 
 **Files:**
 - Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/dice/data/DiceRoll.java`
+- Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/dice/data/DiceRollRepository.java`
 - Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/dice/service/DiceService.java`
+- Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/dice/web/DiceApiController.java`
+- Modify: `src/main/resources/templates/fragments/navbar.html`
 - Modify: `src/test/java/dev/hendrikhoemberg/dmhelper/dice/service/DiceServiceTest.java`
 
-**Problem:** `DiceRoll` has no `campaign` FK. `findTop20ByOrderByCreatedAtDesc()` is global — a DM with two campaigns sees Campaign A's rolls in Campaign B's panel.
+> **Revised after source verification:** this was originally two separate tasks (8.1 here, 8.3 further down). Both rewrite the same `DiceService.roll()` method with incompatible signatures — 8.1's draft dropped the `encounterId` parameter and the `encounterService.logDiceRoll(...)` call that already exists in the real code, which would be a regression, and 8.3 assumed `roll()` still takes `encounterId`. Merged into one task so the method only gets rewritten once, correctly.
 
-**Fix:** Add `@ManyToOne Campaign campaign` to `DiceRoll`. Update `DiceService` methods to require `campaignId`. Change the query to `findTop20ByCampaignIdOrderByCreatedAtDesc(UUID campaignId)`. Wire `campaignId` from session into the dice API controller.
+**Problem:** `DiceRoll` has no `campaign` FK; `DiceRollRepository.findTop20ByOrderByCreatedAtDesc()` is global, so a DM running two campaigns sees Campaign A's rolls in Campaign B's history panel. Separately (Medium finding, Task 8.3 originally), the real `DiceService.roll(String expression, UUID encounterId)` already threads `encounterId` through to `encounterService.logDiceRoll(...)` with no check that the encounter is actually `ACTIVE`.
 
-- [ ] **Step 1: Add campaign field to DiceRoll**
+- [ ] **Step 1: Add campaign to DiceRoll**
 
 ```java
+// DiceRoll.java — import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign
 @ManyToOne(fetch = FetchType.LAZY)
-@JoinColumn(name = "campaign_id")
+@JoinColumn(name = "campaign_id", nullable = false)
 private Campaign campaign;
+
+public Campaign getCampaign() { return campaign; }
+public void setCampaign(Campaign campaign) { this.campaign = campaign; }
 ```
 
-- [ ] **Step 2: Update repository query**
+- [ ] **Step 2: Add campaign-scoped query**
 
 ```java
+// DiceRollRepository.java
 List<DiceRoll> findTop20ByCampaignIdOrderByCreatedAtDesc(UUID campaignId);
 ```
 
-- [ ] **Step 3: Update DiceService.roll() to accept campaignId**
+- [ ] **Step 3: Update `DiceService.roll()` — add campaignId, keep encounterId, gate the encounter log on ACTIVE**
 
 ```java
-public DiceResult roll(String expression, UUID campaignId) {
+private final CampaignRepository campaignRepo; // new constructor param
+
+public DiceResult roll(String expression, UUID campaignId, UUID encounterId) {
     DiceResult result = diceEngine.roll(expression);
+
     DiceRoll roll = new DiceRoll();
-    roll.setExpression(expression);
-    roll.setTotal(result.total());
+    roll.setExpression(result.expression());
     roll.setModifier(result.modifier());
-    roll.setRolls(result.rolls().toString());
-    roll.setCampaign(campaignRepo.findById(campaignId).orElse(null));
-    diceRollRepository.save(roll);
+    roll.setTotal(result.total());
+    roll.setAdvantage(result.advantage());
+    roll.setDisadvantage(result.disadvantage());
+    roll.setCampaign(campaignRepo.getReferenceById(campaignId));
+
+    boolean encounterActive = false;
+    if (encounterId != null) {
+        encounterActive = encounterService.findActiveByCampaignId(campaignId)
+                .map(e -> e.id().equals(encounterId))
+                .orElse(false);
+        roll.setEncounterId(encounterActive ? encounterId.toString() : null);
+    }
+
+    String rollsJson = serializeRolls(result);
+    roll.setRolls(rollsJson);
+    diceRollRepo.save(roll);
+
+    if (encounterActive) {
+        encounterService.logDiceRoll(encounterId, result.expression(), result.total(), rollsJson);
+    }
     return result;
+}
+
+@Transactional(readOnly = true)
+public List<DiceRoll> getHistory(UUID campaignId) {
+    return diceRollRepo.findTop20ByCampaignIdOrderByCreatedAtDesc(campaignId);
+}
+```
+`EncounterService.findActiveByCampaignId(UUID)` already exists (`EncounterService.java:221-224`) and returns the currently-`ACTIVE` encounter for a campaign, if any — reuse it instead of adding a new query.
+
+- [ ] **Step 4: Update `DiceApiController`**
+
+```java
+@PostMapping
+public ResponseEntity<?> roll(@RequestBody Map<String, Object> body) {
+    // ... existing expression validation unchanged ...
+    UUID campaignId = UUID.fromString((String) body.get("campaignId"));
+    Object encounterIdObj = body.get("encounterId");
+    UUID encounterId = encounterIdObj != null ? UUID.fromString(encounterIdObj.toString()) : null;
+    DiceResult result = diceService.roll(expression, campaignId, encounterId);
+    return ResponseEntity.ok(result);
+}
+
+@GetMapping("/history")
+public ResponseEntity<List<DiceRoll>> history(@RequestParam UUID campaignId) {
+    return ResponseEntity.ok(diceService.getHistory(campaignId));
 }
 ```
 
-- [ ] **Step 4: Update controller and tests**
+- [ ] **Step 5: Pass campaignId from the client**
 
-Pass `campaignId` from the current campaign context (stored in session or path variable).
+`campaignId` is already a Thymeleaf model attribute on every campaign-scoped page (`navbar.html:6`: `th:if="${campaignId != null}"`). Add near the top of the existing `<script>` block in `navbar.html`:
+```html
+<script th:inline="javascript">
+const CURRENT_CAMPAIGN_ID = /*[[${campaignId}]]*/ null;
+</script>
+```
+Then in both request bodies (the `data-roll` click handler around line 91, and the `diceRoller` Alpine component's `roll()` around line 149), add:
+```javascript
+if (CURRENT_CAMPAIGN_ID) body.campaignId = CURRENT_CAMPAIGN_ID;
+```
+and append `?campaignId=${CURRENT_CAMPAIGN_ID}` to the `/api/v1/roll/history` fetch in `loadHistory()`.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Update tests, run, commit**
 
 ```bash
-git add src/main/java/dev/hendrikhoemberg/dmhelper/dice/data/DiceRoll.java src/main/java/dev/hendrikhoemberg/dmhelper/dice/service/DiceService.java src/main/java/dev/hendrikhoemberg/dmhelper/dice/web/DiceApiController.java src/test/java/dev/hendrikhoemberg/dmhelper/dice/service/DiceServiceTest.java
-git commit -m "fix: scope DiceRoll to Campaign so rolls don't bleed between campaigns"
+mvn test -pl . -Dtest=DiceServiceTest -Dsurefire.useFile=false
+git add src/main/java/dev/hendrikhoemberg/dmhelper/dice/data/DiceRoll.java src/main/java/dev/hendrikhoemberg/dmhelper/dice/data/DiceRollRepository.java src/main/java/dev/hendrikhoemberg/dmhelper/dice/service/DiceService.java src/main/java/dev/hendrikhoemberg/dmhelper/dice/web/DiceApiController.java src/main/resources/templates/fragments/navbar.html src/test/java/dev/hendrikhoemberg/dmhelper/dice/service/DiceServiceTest.java
+git commit -m "fix: scope DiceRoll to Campaign and only log rolls to the ACTIVE encounter"
 ```
 
 ---
@@ -1470,30 +1475,7 @@ git commit -m "fix: validate d0 and huge dice counts with clean validation error
 
 ### Task 8.3: Validate that dice rolls log into an active encounter
 
-**Files:**
-- Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/dice/service/DiceService.java`
-
-**Problem:** Dice rolls log into whatever encounter the tracker has loaded with no check that it's ACTIVE.
-
-**Fix:** In `DiceService`, when an `encounterId` is provided, verify the encounter status is `ACTIVE` before logging.
-
-```java
-if (encounterId != null) {
-    Encounter enc = encounterRepo.findById(encounterId).orElse(null);
-    if (enc != null && enc.getStatus() == Encounter.Status.ACTIVE) {
-        DiceRoll roll = /* ... */;
-        roll.setEncounterId(encounterId.toString());
-    }
-    // else: don't log to any encounter
-}
-```
-
-- [ ] **Step 1: Commit**
-
-```bash
-git add src/main/java/dev/hendrikhoemberg/dmhelper/dice/service/DiceService.java
-git commit -m "fix: only log dice rolls to active encounters"
-```
+**Merged into Task 8.1 above** (see that task's header note) — implementing 8.1 already implements this. No separate work here.
 
 ---
 
@@ -1545,32 +1527,33 @@ git commit -m "fix: ensure long-rest hit-dice recovery has a minimum of 1"
 **Files:**
 - Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/encounter/service/EncounterService.java`
 
-In the `DONE` transition:
-```java
-tablePresentationService.clearAoeTemplates();
-```
+> **Revised after source verification:** `TablePresentationService.broadcast()` (line 156) is `private` and takes **zero arguments** — the original draft's `broadcast(LiveTableState.full(...))` doesn't compile against the real signature. AoEs live in a separate `currentAoEs` field (`TablePresentationService.java:34`), already mutated by the existing public `updateAoEs(List<AoeTemplateSnapshot>)` (lines 57-59) — the same method `TablePresentationController.updateAoEs()` already calls before triggering a broadcast. No new method needed on `TablePresentationService` at all.
 
-Add `clearAoeTemplates()` to `TablePresentationService`:
+**Problem:** AoE templates are never cleared when an encounter ends.
+
+**Fix:** In `EncounterService.endEncounter()` (lines 241-247 — the real DONE-transition method; there's no separate one), call the existing `updateAoEs(List.of())` then `broadcastCurrentState()`.
+
+- [ ] **Step 1: Inject TablePresentationService** (same injection as Task 1.2 — do it once if both tasks land)
+
+- [ ] **Step 2: Clear AoEs in endEncounter()**
+
 ```java
-public void clearAoeTemplates() {
-    var state = currentState;
-    if (state != null && state.map() != null) {
-        var cleared = new LiveTableState.MapSnapshot(
-                state.map().mapId(), state.map().mapName(),
-                state.map().gridWidth(), state.map().gridHeight(),
-                state.map().cellSizePx(), state.map().movementMode(),
-                state.map().showGrid(), state.map().document(),
-                state.map().tokens(), List.of());  // empty aoes
-        broadcast(LiveTableState.full("MAP", cleared, null, null, null));
-    }
+public EncounterDto endEncounter(UUID id) {
+    Encounter e = findEntityById(id);
+    e.setStatus(Encounter.Status.DONE);
+    EncounterDto dto = toDto(encounterRepo.save(e));
+    logEntry(id, CombatLogEntry.EntryType.ENCOUNTER_ENDED, "", "");
+    tablePresentationService.updateAoEs(List.of());
+    tablePresentationService.broadcastCurrentState();
+    return dto;
 }
 ```
 
-- [ ] **Step 1: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
-git add src/main/java/dev/hendrikhoemberg/dmhelper/encounter/service/EncounterService.java src/main/java/dev/hendrikhoemberg/dmhelper/live/TablePresentationService.java
-git commit -m "fix: auto-clear AoE templates when encounter ends"
+git add src/main/java/dev/hendrikhoemberg/dmhelper/encounter/service/EncounterService.java
+git commit -m "fix: clear AoE templates on the live table when an encounter ends"
 ```
 
 ---
@@ -1667,10 +1650,20 @@ git commit -m "fix: add quicknote UI to party member, handout gallery, and campa
 
 **These are single-line-of-code fixes — one commit each:**
 
-#### 8.9.1: Add provenance header to monster/spell seed files
-Add `"_provenance": "SRD 5.2, CC-BY-4.0"` header to:
-- `src/main/resources/srd/srd-5.2-monsters.json`
-- `src/main/resources/srd/srd-5.2-spells.json`
+#### 8.9.1: Add provenance header to monster/spell seed files (revised — original fix is invalid JSON)
+`srd-5.2-monsters.json`/`srd-5.2-spells.json` are bare top-level JSON **arrays**, parsed via `objectMapper.readValue(is, new TypeReference<List<X>>(){})` in `SrdSeedService.java`/`SpellSeedService.java`. You cannot add a `"_provenance"` key to a bare array. Restructure both files the way `srd-5.2-conditions.json` already does it (`{"_source": ..., "_fetched": ..., "results": [...]}`, parsed via `readTree()` + `root.get("results")` in `ConditionSeedService.java`):
+```bash
+for f in src/main/resources/srd/srd-5.2-monsters.json src/main/resources/srd/srd-5.2-spells.json; do
+  jq '{"_source": "SRD 5.2, CC-BY-4.0", "_fetched": "2026-07-09", "results": .}' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+done
+```
+Then update `SrdSeedService.seedIfEmpty()` and the equivalent in `SpellSeedService.java` to parse the wrapper (mirroring `ConditionSeedService`):
+```java
+JsonNode root = objectMapper.readTree(is);
+List<SrdMonsterEntry> entries = objectMapper.convertValue(root.get("results"),
+        new TypeReference<List<SrdMonsterEntry>>() {});
+```
+Run `mvn test` afterward — the seed-service tests seed directly from these files and will catch any format regression immediately.
 
 #### 8.9.2: Fix status bar color count
 Reduce to 2 colors as spec describes (currently 3).
@@ -1686,8 +1679,21 @@ Add `${member.initiativeBonus}` to the party summary bar template.
 c.setCurrentHp(Math.max(0, Math.min(c.getMaxHp(), currentHp)));
 ```
 
-#### 8.9.6: Fix wiki-link parser to resolve [[Encounter:...]] prefix
-Read `WikiLinkParser.java`. Add `ENCOUNTER` to the recognized prefixes and implement resolution.
+#### 8.9.6: Fix wiki-link parser to resolve [[Encounter:...]] prefix (revised — wrong file identified)
+`WikiLinkParser.java:31` **already** recognizes the `ENCOUNTER` prefix — no change needed there. The real gap is in `NoteService.java`: both `renderBody()` (switch at line 129) and `rebuildLinks()` (switch at line 189) handle only `NOTE`/`STATBLOCK`/`HANDOUT`/`MAP`, with no `ENCOUNTER` case in either, so an `[[Encounter:...]]` link is extracted correctly but always renders as unresolved/broken. Fix: inject `EncounterRepository` into `NoteService` (it already injects `GameMapRepository`/`HandoutRepository` the same way for the `MAP`/`HANDOUT` cases), and add an `ENCOUNTER` case to both switches, resolving by name within the note's campaign — same pattern as the existing `MAP` case, reusing `EncounterRepository.findByCampaignIdOrderByNameAsc(UUID)` (already used by `EncounterService.list()`):
+```java
+case "ENCOUNTER" -> {
+    var encounters = encounterRepository.findByCampaignIdOrderByNameAsc(note.getCampaign().getId());
+    var match = encounters.stream()
+            .filter(enc -> enc.getName().equalsIgnoreCase(target.title()))
+            .findFirst();
+    if (match.isPresent()) {
+        url = "/campaigns/" + note.getCampaign().getId() + "/encounters/" + match.get().getId();
+        resolved = true;
+    }
+}
+```
+(and the analogous case in `rebuildLinks()`, setting `link.setTargetId(...)` / `yield true|false` following the existing `MAP` case's shape).
 
 #### 8.9.7: Map switcher hides unvisited maps' names
 Add a `visited` flag to `GameMap` or track visited maps in the session. Filter the switcher list.
@@ -1738,4 +1744,7 @@ After each module: run `mvn test` to verify no regressions.
 | `DiceRoll` | `campaign` | `@ManyToOne Campaign` |
 | `CombatLogEntry` | `SORT_ORDER` | new EntryType enum value |
 | `EncounterDto` | `lairActionAvailable` | `boolean` |
+| `Encounter` | `lairActionTriggered` | `boolean` (required by Task 3.4; missing from the original draft) |
 | `StatBlock` | `sourceKey` auto-generated in `createCustom()` | existing field |
+| `LedgerExportDto` | `itemAssignmentRef` | `String` (new DTO field, Task 5.2) |
+| `DerivedValues` | `featsRequiringManualAssignment` | `List<String>` (new record field, Task 6.1) |
