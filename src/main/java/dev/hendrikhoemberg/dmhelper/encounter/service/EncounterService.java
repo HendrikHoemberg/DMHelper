@@ -276,7 +276,7 @@ public class EncounterService {
             StatBlock sb = statBlockRepo.findById(req.statBlockId())
                     .orElseThrow(() -> new NotFoundException("StatBlock not found: " + req.statBlockId()));
             name = sb.getName();
-            kind = sb.getType();
+            kind = "MONSTER";
             c.setStatBlock(sb);
         } else if (req.partyMemberId() != null) {
             if (combatantRepo.findByEncounterIdAndPartyMemberId(encounterId, req.partyMemberId()).isPresent()) {
