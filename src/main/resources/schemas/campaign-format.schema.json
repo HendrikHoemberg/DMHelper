@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dmhelper/campaign-format.schema.json",
+  "title": "DMHelper Campaign Export Format",
+  "description": "Schema for the .dmcampaign.json export/import format. All coordinate positions use pixel units with origin at top-left. Token sizes are in cell units (1 cell = cellSizePx pixels). Grid coordinates use [col, row] order (zero-indexed from top-left).",
+  "type": "object",
+  "required": ["formatVersion", "campaign"],
+  "properties": {
+    "formatVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "Schema format version. Currently only version 1 is supported."
+    },
+    "campaign": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" }
+      }
+    },
+    "party": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["characterName", "playerName", "classAndLevel"],
+        "properties": {
+          "characterName": { "type": "string" },
+          "playerName": { "type": "string" },
+          "classAndLevel": { "type": "string" },
+          "ac": { "type": "integer", "minimum": 0 },
+          "maxHp": { "type": "integer", "minimum": 1 },
+          "initiativeBonus": { "type": "integer" },
+          "speed": { "type": "integer", "minimum": 0 },
+          "passivePerception": { "type": "integer" },
+          "passiveInsight": { "type": "integer" },
+          "passiveInvestigation": { "type": "integer" },
+          "notes": { "type": "string" },
+          "active": { "type": "boolean" },
+          "sheet": { "$ref": "#/$defs/sheet" }
+        }
+      }
+    },
+    "statBlocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "sourceKey": { "type": "string" },
+          "name": { "type": "string" },
+          "cr": { "type": "string" },
+          "type": { "type": "string" },
+          "size": { "type": "string" },
+          "alignment": { "type": "string" },
+          "ac": { "type": "integer" },
+          "hp": { "type": "string" },
+          "speed": { "type": "string" },
+          "strScore": { "type": "integer" },
+          "dexScore": { "type": "integer" },
+          "conScore": { "type": "integer" },
+          "intScore": { "type": "integer" },
+          "wisScore": { "type": "integer" },
+          "chaScore": { "type": "integer" },
+          "xp": { "type": "integer" }
+        }
+      }
+    },
+    "handouts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "title": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "fileName": { "type": "string" },
+          "contentType": { "type": "string" },
+          "imageData": {
+            "type": "string",
+            "description": "Base64-encoded image data URL (data:image/...;base64,...)"
+          }
+        }
+      }
+    },
+    "maps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "grid", "document"],
+        "properties": {
+          "key": { "type": "string" },
+          "name": { "type": "string" },
+          "grid": {
+            "type": "object",
+            "required": ["w", "h", "cellPx"],
+            "properties": {
+              "w": { "type": "integer", "minimum": 1 },
+              "h": { "type": "integer", "minimum": 1 },
+              "cellPx": { "type": "integer", "minimum": 1 },
+              "gridType": { "type": "string", "enum": ["square"] }
+            }
+          },
+          "document": {
+            "type": "object",
+            "required": ["schemaVersion", "grid", "layers"],
+            "properties": {
+              "schemaVersion": { "type": "integer", "const": 1 },
+              "grid": {
+                "type": "object",
+                "required": ["width", "height", "cellSizePx", "gridType"],
+                "properties": {
+                  "width": { "type": "integer", "minimum": 1 },
+                  "height": { "type": "integer", "minimum": 1 },
+                  "cellSizePx": { "type": "integer", "minimum": 1 },
+                  "gridType": { "type": "string", "enum": ["square"] }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "encounters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "status": { "type": "string", "enum": ["PLANNED", "ACTIVE", "DONE"] },
+          "round": { "type": "integer" },
+          "combatants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name"],
+              "properties": {
+                "name": { "type": "string" },
+                "initiative": { "type": "integer" },
+                "maxHp": { "type": "integer" },
+                "currentHp": { "type": "integer" },
+                "kind": { "type": "string" },
+                "hidden": { "type": "boolean" },
+                "statBlockKey": { "type": "string" },
+                "partyMemberName": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "type"],
+        "properties": {
+          "type": { "type": "string", "enum": ["NPC", "LOCATION", "QUEST", "SESSION_LOG", "SESSION_PLAN", "GENERIC"] },
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "tags": { "type": "string" },
+          "dmOnly": { "type": "boolean" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sheet": {
+      "type": "object",
+      "properties": {
+        "abilityScores": { "type": "object" },
+        "classLevels": { "type": "array" },
+        "speciesKey": { "type": "string" },
+        "backgroundKey": { "type": "string" },
+        "xp": { "type": "integer" }
+      }
+    }
+  }
+}
