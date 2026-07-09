@@ -818,10 +818,17 @@ public class EncounterService {
         String actionsJson = sb.getActions();
         if (actionsJson != null && !actionsJson.isEmpty()) {
             prompts.addAll(parseRechargePatterns(actionsJson, recharged));
+            prompts.addAll(parseRechargeFromNames(actionsJson, recharged));
         }
         String legendaryJson = sb.getLegendaryActions();
         if (legendaryJson != null && !legendaryJson.isEmpty()) {
             prompts.addAll(parseRechargePatterns(legendaryJson, recharged));
+            prompts.addAll(parseRechargeFromNames(legendaryJson, recharged));
+        }
+        String bonusJson = sb.getBonusActions();
+        if (bonusJson != null && !bonusJson.isEmpty()) {
+            prompts.addAll(parseRechargePatterns(bonusJson, recharged));
+            prompts.addAll(parseRechargeFromNames(bonusJson, recharged));
         }
         return prompts;
     }
@@ -847,6 +854,29 @@ public class EncounterService {
                 }
             }
         } catch (Exception e) { /* ignore malformed JSON */ }
+        return prompts;
+    }
+
+    private List<RechargePrompt> parseRechargeFromNames(String json, List<String> recharged) {
+        List<RechargePrompt> prompts = new ArrayList<>();
+        try {
+            var node = JSON_MAPPER.readTree(json);
+            if (node.isArray()) {
+                for (var item : node) {
+                    if (item.has("name")) {
+                        String name = item.get("name").asText();
+                        java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                                "\\(Recharge\\s+(\\d+)-(\\d+)\\)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                                .matcher(name);
+                        if (m.find() && !recharged.contains(name)) {
+                            int min = Integer.parseInt(m.group(1));
+                            int max = Integer.parseInt(m.group(2));
+                            prompts.add(new RechargePrompt(name, min, max));
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) { /* ignore */ }
         return prompts;
     }
 
