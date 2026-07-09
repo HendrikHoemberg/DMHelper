@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.party.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
 import jakarta.persistence.*;
@@ -96,6 +97,7 @@ public class PartyMember {
     public void setActive(boolean active) { this.active = active; }
 
     @OneToOne(mappedBy = "partyMember", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore
     private CharacterSheet characterSheet;
 
     public CharacterSheet getCharacterSheet() { return characterSheet; }

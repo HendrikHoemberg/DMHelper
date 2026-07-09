@@ -73,7 +73,6 @@ public class StatBlockService {
                                    String senses, String languages) {
         StatBlock sb = new StatBlock();
         sb.setSource(StatBlock.Source.CUSTOM);
-        sb.setCampaignId(campaignId);
         if (campaignId != null) {
             campaignRepo.findById(campaignId).ifPresent(sb::setCampaign);
         }
@@ -157,7 +156,6 @@ public class StatBlockService {
         StatBlock original = findById(sourceId);
         StatBlock clone = new StatBlock();
         clone.setSource(StatBlock.Source.CUSTOM);
-        clone.setCampaignId(targetCampaignId);
         if (targetCampaignId != null) {
             campaignRepo.findById(targetCampaignId).ifPresent(clone::setCampaign);
         }
@@ -205,7 +203,6 @@ public class StatBlockService {
             throw new IllegalArgumentException("Only custom statblocks can be promoted");
         }
         sb.setCampaign(null);
-        sb.setCampaignId(null);
         return repository.save(sb);
     }
 }

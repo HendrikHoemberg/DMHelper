@@ -1,5 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.library.service;
 
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +22,9 @@ class StatBlockServiceTest {
     private StatBlockRepository repository;
 
     @Autowired
+    private CampaignRepository campaignRepository;
+
+    @Autowired
     private StatBlockService service;
 
     private UUID campaignId;
@@ -27,7 +32,11 @@ class StatBlockServiceTest {
     @BeforeEach
     void setUp() {
         repository.deleteAll();
-        campaignId = UUID.randomUUID();
+        campaignRepository.deleteAll();
+        Campaign campaign = new Campaign();
+        campaign.setName("Test Campaign");
+        campaign = campaignRepository.save(campaign);
+        campaignId = campaign.getId();
     }
 
     private StatBlock createCustom(String name, String cr, String type, int ac, String hp) {

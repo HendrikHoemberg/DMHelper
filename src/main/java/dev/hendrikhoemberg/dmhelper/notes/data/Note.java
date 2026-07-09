@@ -71,6 +71,9 @@ public class Note {
     public boolean isDmOnly() { return dmOnly; }
     public void setDmOnly(boolean dmOnly) { this.dmOnly = dmOnly; }
 
+    public List<dev.hendrikhoemberg.dmhelper.notes.data.NoteLink> getLinks() { return links; }
+    public void setLinks(List<dev.hendrikhoemberg.dmhelper.notes.data.NoteLink> links) { this.links = links; }
+
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }

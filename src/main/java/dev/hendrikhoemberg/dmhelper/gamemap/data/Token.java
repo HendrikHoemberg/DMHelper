@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.gamemap.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import jakarta.persistence.*;
@@ -17,6 +18,7 @@ public class Token {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "map_id", nullable = false)
+    @JsonIgnore
     private GameMap map;
 
     @Column(nullable = false, length = 255)

@@ -97,4 +97,10 @@ public class CharacterSheet {
 
     public String getSpellSlotsUsed() { return spellSlotsUsed; }
     public void setSpellSlotsUsed(String spellSlotsUsed) { this.spellSlotsUsed = spellSlotsUsed; }
+
+    public List<dev.hendrikhoemberg.dmhelper.sheet.data.SheetResource> getResources() { return resources; }
+    public void setResources(List<dev.hendrikhoemberg.dmhelper.sheet.data.SheetResource> resources) { this.resources = resources; }
+
+    public List<dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReference> getSpells() { return spells; }
+    public void setSpells(List<dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReference> spells) { this.spells = spells; }
 }
