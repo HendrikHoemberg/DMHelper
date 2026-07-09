@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 
 @Controller
@@ -103,12 +104,18 @@ public class CampaignController {
     }
 
     @PostMapping("/import")
-    public String importCampaign(@RequestParam("file") MultipartFile file, Model model) {
+    public Object importCampaign(@RequestParam("file") MultipartFile file,
+                                  @RequestParam(defaultValue = "false") boolean dryRun,
+                                  Model model) {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("No file uploaded");
         }
         try {
             String json = new String(file.getBytes(), StandardCharsets.UTF_8);
+            if (dryRun) {
+                List<String> report = service.validateImport(json);
+                return ResponseEntity.ok(new DryRunResult(report));
+            }
             Campaign campaign = service.importFromJson(json);
             model.addAttribute("campaign", campaign);
             return "campaigns/_card";
@@ -116,4 +123,6 @@ public class CampaignController {
             throw new IllegalArgumentException("Failed to read uploaded file: " + e.getMessage());
         }
     }
+
+    public record DryRunResult(List<String> messages) {}
 }

@@ -37,6 +37,7 @@ import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -246,6 +247,75 @@ public class CampaignService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to export campaign", e);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> validateImport(String json) {
+        List<String> warnings = new ArrayList<>();
+        CampaignExportDto dto;
+        try {
+            dto = objectMapper.readValue(json, CampaignExportDto.class);
+        } catch (Exception e) {
+            return List.of("Failed to parse JSON: " + e.getMessage());
+        }
+
+        if (dto.formatVersion() != CampaignExportDto.CURRENT_FORMAT_VERSION) {
+            warnings.add("Unsupported formatVersion: " + dto.formatVersion() +
+                    ". Expected: " + CampaignExportDto.CURRENT_FORMAT_VERSION);
+        }
+        if (dto.campaign() == null || dto.campaign().name() == null || dto.campaign().name().isBlank()) {
+            warnings.add("Campaign name is required");
+        }
+
+        if (dto.maps() != null) {
+            for (var mapDto : dto.maps()) {
+                var grid = mapDto.grid();
+                if (grid == null) {
+                    warnings.add("Map '" + mapDto.name() + "' has no grid config");
+                } else {
+                    if (grid.w() < 1) warnings.add("Map '" + mapDto.name() + "' grid width must be >= 1");
+                    if (grid.h() < 1) warnings.add("Map '" + mapDto.name() + "' grid height must be >= 1");
+                }
+            }
+        }
+
+        if (dto.statBlocks() != null) {
+            for (var sbDto : dto.statBlocks()) {
+                if (sbDto.name() == null || sbDto.name().isBlank()) {
+                    warnings.add("StatBlock has no name");
+                }
+            }
+        }
+
+        if (dto.encounters() != null) {
+            for (var encDto : dto.encounters()) {
+                if (encDto.name() == null || encDto.name().isBlank()) {
+                    warnings.add("Encounter has no name");
+                }
+                if (encDto.combatants() != null) {
+                    for (int i = 0; i < encDto.combatants().size(); i++) {
+                        var c = encDto.combatants().get(i);
+                        if (c.name() == null || c.name().isBlank()) {
+                            warnings.add("Combatant #" + (i + 1) + " in encounter '" +
+                                    encDto.name() + "' has no name");
+                        }
+                        if (c.statBlockKey() != null && c.statBlockKey().startsWith("srd-")) {
+                            var resolved = statBlockRepository.findBySourceKey(c.statBlockKey());
+                            if (resolved.isEmpty()) {
+                                warnings.add("SRD statblock key '" + c.statBlockKey() +
+                                        "' not found in library (will use plain text)");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (warnings.isEmpty()) {
+            warnings.add("Validation passed — campaign is ready for import.");
+        }
+
+        return warnings;
     }
 
     public Campaign importFromJson(String json) {
