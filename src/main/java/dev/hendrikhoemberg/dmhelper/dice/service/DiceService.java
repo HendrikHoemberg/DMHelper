@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.dice.service;
 
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.dice.DiceEngine;
 import dev.hendrikhoemberg.dmhelper.dice.DiceResult;
 import dev.hendrikhoemberg.dmhelper.dice.data.DiceRoll;
@@ -22,15 +23,17 @@ public class DiceService {
     private final DiceEngine diceEngine;
     private final DiceRollRepository diceRollRepo;
     private final EncounterService encounterService;
+    private final CampaignRepository campaignRepo;
 
     public DiceService(DiceEngine diceEngine, DiceRollRepository diceRollRepo,
-                       EncounterService encounterService) {
+                       EncounterService encounterService, CampaignRepository campaignRepo) {
         this.diceEngine = diceEngine;
         this.diceRollRepo = diceRollRepo;
         this.encounterService = encounterService;
+        this.campaignRepo = campaignRepo;
     }
 
-    public DiceResult roll(String expression, UUID encounterId) {
+    public DiceResult roll(String expression, UUID encounterId, UUID campaignId) {
         DiceResult result = diceEngine.roll(expression);
 
         DiceRoll roll = new DiceRoll();
@@ -39,14 +42,22 @@ public class DiceService {
         roll.setTotal(result.total());
         roll.setAdvantage(result.advantage());
         roll.setDisadvantage(result.disadvantage());
-        roll.setEncounterId(encounterId != null ? encounterId.toString() : null);
+        roll.setCampaign(campaignRepo.getReferenceById(campaignId));
+
+        boolean encounterActive = false;
+        if (encounterId != null) {
+            encounterActive = encounterService.findActiveByCampaignId(campaignId)
+                    .map(e -> e.id().equals(encounterId))
+                    .orElse(false);
+        }
+        roll.setEncounterId(encounterActive ? encounterId.toString() : null);
 
         String rollsJson = serializeRolls(result);
         roll.setRolls(rollsJson);
 
         diceRollRepo.save(roll);
 
-        if (encounterId != null) {
+        if (encounterActive) {
             encounterService.logDiceRoll(encounterId, result.expression(), result.total(), rollsJson);
         }
 
@@ -56,6 +67,11 @@ public class DiceService {
     @Transactional(readOnly = true)
     public List<DiceRoll> getHistory() {
         return diceRollRepo.findTop20ByOrderByCreatedAtDesc();
+    }
+
+    @Transactional(readOnly = true)
+    public List<DiceRoll> getHistory(UUID campaignId) {
+        return diceRollRepo.findTop20ByCampaignIdOrderByCreatedAtDesc(campaignId);
     }
 
     private static String serializeRolls(DiceResult result) {

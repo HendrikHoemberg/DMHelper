@@ -1,5 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.dice.service;
 
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.dice.DiceEngine;
 import dev.hendrikhoemberg.dmhelper.dice.DiceResult;
 import dev.hendrikhoemberg.dmhelper.dice.data.DiceRoll;
@@ -12,7 +14,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,12 +34,16 @@ class DiceServiceTest {
     @Mock private DiceRollRepository diceRollRepo;
     @Mock private EncounterService encounterService;
     @Mock private DiceEngine diceEngine;
+    @Mock private CampaignRepository campaignRepo;
 
     private DiceService diceService;
+    private final UUID campaignId = UUID.randomUUID();
+    private final Campaign campaign = new Campaign();
 
     @BeforeEach
     void setUp() {
-        diceService = new DiceService(diceEngine, diceRollRepo, encounterService);
+        campaign.setId(campaignId);
+        diceService = new DiceService(diceEngine, diceRollRepo, encounterService, campaignRepo);
     }
 
     @Test
@@ -44,8 +52,12 @@ class DiceServiceTest {
         DiceResult expectedResult = new DiceResult("2d6+4",
                 List.of(new DiceResult.DieRoll("d6", List.of(3, 5))), 4, 12, false, false);
         when(diceEngine.roll("2d6+4")).thenReturn(expectedResult);
+        when(campaignRepo.getReferenceById(campaignId)).thenReturn(campaign);
+        when(encounterService.findActiveByCampaignId(campaignId))
+                .thenReturn(Optional.of(new EncounterService.EncounterDto(encounterId, campaignId, null, "Active Encounter", "ACTIVE",
+                        0, 0, 0, null, null, false, Collections.emptyList(), Collections.emptyList())));
 
-        DiceResult result = diceService.roll("2d6+4", encounterId);
+        DiceResult result = diceService.roll("2d6+4", encounterId, campaignId);
 
         assertThat(result).isEqualTo(expectedResult);
 
@@ -54,6 +66,7 @@ class DiceServiceTest {
         DiceRoll saved = captor.getValue();
         assertThat(saved.getExpression()).isEqualTo("2d6+4");
         assertThat(saved.getTotal()).isEqualTo(12);
+        assertThat(saved.getCampaign().getId()).isEqualTo(campaignId);
         assertThat(saved.getEncounterId()).isEqualTo(encounterId.toString());
 
         verify(encounterService).logDiceRoll(eq(encounterId), eq("2d6+4"), eq(12), anyString());
@@ -64,8 +77,9 @@ class DiceServiceTest {
         DiceResult expectedResult = new DiceResult("d20",
                 List.of(new DiceResult.DieRoll("d20", List.of(17))), 0, 17, false, false);
         when(diceEngine.roll("d20")).thenReturn(expectedResult);
+        when(campaignRepo.getReferenceById(campaignId)).thenReturn(campaign);
 
-        DiceResult result = diceService.roll("d20", null);
+        DiceResult result = diceService.roll("d20", null, campaignId);
 
         assertThat(result).isEqualTo(expectedResult);
         verify(diceRollRepo).save(any());
@@ -76,8 +90,9 @@ class DiceServiceTest {
     void shouldHandleTypedInput() {
         DiceResult expectedResult = new DiceResult("typed: 15", List.of(), 0, 15, false, false);
         when(diceEngine.roll("15")).thenReturn(expectedResult);
+        when(campaignRepo.getReferenceById(campaignId)).thenReturn(campaign);
 
-        DiceResult result = diceService.roll("15", null);
+        DiceResult result = diceService.roll("15", null, campaignId);
 
         assertThat(result.expression()).isEqualTo("typed: 15");
         assertThat(result.total()).isEqualTo(15);
@@ -96,9 +111,9 @@ class DiceServiceTest {
         DiceRoll roll2 = new DiceRoll();
         roll2.setExpression("2d6+4");
         roll2.setTotal(12);
-        when(diceRollRepo.findTop20ByOrderByCreatedAtDesc()).thenReturn(List.of(roll2, roll1));
+        when(diceRollRepo.findTop20ByCampaignIdOrderByCreatedAtDesc(campaignId)).thenReturn(List.of(roll2, roll1));
 
-        List<DiceRoll> history = diceService.getHistory();
+        List<DiceRoll> history = diceService.getHistory(campaignId);
 
         assertThat(history).hasSize(2);
         assertThat(history.get(0).getExpression()).isEqualTo("2d6+4");

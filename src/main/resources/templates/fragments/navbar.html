@@ -44,6 +44,11 @@
             <input type="checkbox" id="dmModeCheckbox">
             DM Mode
         </label>
+        <script th:inline="javascript">
+        /*<![CDATA[*/
+        document.body.dataset.campaignId = /*[[${campaignId}]]*/ '';
+        /*]]>*/
+        </script>
         <script>
         (function() {
             const checkbox = document.getElementById('dmModeCheckbox');
@@ -88,7 +93,8 @@ document.addEventListener('click', async (e) => {
     tooltip.style.top = (rect.top - 32) + 'px';
 
     try {
-        const body = { expression: expr };
+        const campId = document.body.dataset.campaignId;
+        const body = { expression: expr, campaignId: campId };
         const activeEnc = document.body.dataset.activeEncounterId || null;
         if (activeEnc) body.encounterId = activeEnc;
 
@@ -146,7 +152,8 @@ document.addEventListener('alpine:init', () => {
 
             this.loading = true;
             try {
-                const body = { expression: expr };
+                const campId = document.body.dataset.campaignId;
+                const body = { expression: expr, campaignId: campId };
                 if (this._encounterId) body.encounterId = this._encounterId;
 
                 const resp = await fetch('/api/v1/roll', {
@@ -178,7 +185,8 @@ document.addEventListener('alpine:init', () => {
 
         async loadHistory() {
             try {
-                const resp = await fetch('/api/v1/roll/history');
+                const campId = document.body.dataset.campaignId;
+                const resp = await fetch('/api/v1/roll/history?campaignId=' + encodeURIComponent(campId));
                 if (resp.ok) this.history = await resp.json();
             } catch (e) {
                 // silently ignore

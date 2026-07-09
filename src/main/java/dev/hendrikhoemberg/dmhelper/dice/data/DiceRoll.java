@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.dice.data;
 
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
@@ -26,6 +27,10 @@ public class DiceRoll {
     private boolean advantage;
 
     private boolean disadvantage;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "campaign_id", nullable = false)
+    private Campaign campaign;
 
     @Column(length = 36)
     private String encounterId;
@@ -60,6 +65,9 @@ public class DiceRoll {
 
     public boolean isDisadvantage() { return disadvantage; }
     public void setDisadvantage(boolean disadvantage) { this.disadvantage = disadvantage; }
+
+    public Campaign getCampaign() { return campaign; }
+    public void setCampaign(Campaign campaign) { this.campaign = campaign; }
 
     public String getEncounterId() { return encounterId; }
     public void setEncounterId(String encounterId) { this.encounterId = encounterId; }
