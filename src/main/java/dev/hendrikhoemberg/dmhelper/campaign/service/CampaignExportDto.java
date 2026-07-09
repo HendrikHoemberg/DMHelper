@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,7 +19,7 @@ public record CampaignExportDto(
         List<StatBlockExportDto> statBlocks,
         List<HandoutExportDto> handouts,
         List<MapExportDto> maps,
-        List<Object> encounters,
+        List<EncounterExportDto> encounters,
         List<NoteExportDto> notes,
         List<QuickNoteExportDto> quicknotes,
         List<AssignmentExportDto> assignments,
@@ -152,20 +153,53 @@ public record CampaignExportDto(
         }
     }
 
-    // Encounter export — full serialization in M12
     public record EncounterExportDto(
             String name,
-            List<Object> combatants,
+            List<CombatantExportDto> combatants,
             String status,
             int round,
+            int activeTurnIndex,
+            long logSequence,
             String lairActionName,
             String lairActionDescription
     ) {
         public static EncounterExportDto from(
-                dev.hendrikhoemberg.dmhelper.encounter.data.Encounter enc) {
+                dev.hendrikhoemberg.dmhelper.encounter.data.Encounter enc,
+                List<CombatantExportDto> combatants) {
             return new EncounterExportDto(
-                    enc.getName(), List.of(), enc.getStatus().name(),
-                    enc.getRound(), enc.getLairActionName(), enc.getLairActionDescription());
+                    enc.getName(), combatants, enc.getStatus().name(),
+                    enc.getRound(), enc.getActiveTurnIndex(), enc.getLogSequence(),
+                    enc.getLairActionName(), enc.getLairActionDescription());
+        }
+    }
+
+    public record CombatantExportDto(
+            String name, int initiative, int tieBreaker, int sortOrder,
+            int maxHp, int currentHp, int tempHp,
+            String kind, String groupId, boolean groupLeader,
+            String tokenId, String statBlockKey, String partyMemberName,
+            boolean defeated, boolean hidden,
+            String conditionsJson, String concentratingOn, boolean concentrationCheckPending,
+            int legendaryActionsUsed, int legendaryResistancesUsed,
+            int legendaryActionsMax, int legendaryResistancesMax,
+            String rechargedAbilities, String notes
+    ) {
+        public static CombatantExportDto from(
+                dev.hendrikhoemberg.dmhelper.encounter.data.Combatant c,
+                java.util.Map<java.util.UUID, String> tokenIdMap) {
+            return new CombatantExportDto(
+                    c.getName(), c.getInitiative(), c.getTieBreaker(), c.getSortOrder(),
+                    c.getMaxHp(), c.getCurrentHp(), c.getTempHp(),
+                    c.getKind(), c.getGroupId(), c.isGroupLeader(),
+                    c.getToken() != null ? c.getToken().getId().toString() : null,
+                    c.getStatBlock() != null ? c.getStatBlock().getSourceKey() : null,
+                    c.getPartyMember() != null ? c.getPartyMember().getCharacterName() : null,
+                    c.isDefeated(), c.isHidden(),
+                    c.getConditionsJson(), c.getConcentratingOn(), c.isConcentrationCheckPending(),
+                    c.getLegendaryActionsUsed(), c.getLegendaryResistancesUsed(),
+                    c.getLegendaryActionsMax(), c.getLegendaryResistancesMax(),
+                    c.getRechargedAbilities(), c.getNotes()
+            );
         }
     }
 
@@ -225,9 +259,25 @@ public record CampaignExportDto(
         }
     }
 
-    public record HandoutExportDto(String title, java.util.List<String> tags) {
-        public static HandoutExportDto from(dev.hendrikhoemberg.dmhelper.handout.data.Handout h) {
-            return new HandoutExportDto(h.getTitle(), java.util.List.of());
+    public record HandoutExportDto(
+            String title,
+            List<String> tags,
+            String fileName,
+            String contentType,
+            String imageData
+    ) {
+        public static HandoutExportDto from(dev.hendrikhoemberg.dmhelper.handout.data.Handout h,
+                                             String imageBase64) {
+            return new HandoutExportDto(h.getTitle(), parseTags(h.getTags()),
+                    h.getFileName(), h.getContentType(), imageBase64);
+        }
+
+        private static List<String> parseTags(String tagsStr) {
+            if (tagsStr == null || tagsStr.isBlank()) return List.of();
+            return Arrays.stream(tagsStr.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .toList();
         }
     }
 

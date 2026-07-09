@@ -10,7 +10,11 @@ import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
+import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
+import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -42,6 +46,18 @@ class CampaignServiceTest {
 
     @MockitoBean
     private NoteService noteService;
+
+    @MockitoBean
+    private EncounterRepository encounterRepo;
+
+    @MockitoBean
+    private CombatantRepository combatantRepo;
+
+    @MockitoBean
+    private HandoutService handoutService;
+
+    @MockitoBean
+    private HandoutRepository handoutRepo;
 
     private ObjectMapper objectMapper;
 

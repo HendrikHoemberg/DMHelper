@@ -13,6 +13,7 @@ import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
+import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
@@ -42,6 +43,9 @@ class CampaignImportExportRoundTripTest {
 
     @MockitoBean
     private NoteService noteService;
+
+    @MockitoBean
+    private HandoutService handoutService;
 
     @Test
     void roundTripPreservesPartyActiveAndStatblockSourceKey() {

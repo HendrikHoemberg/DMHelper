@@ -26,7 +26,11 @@ import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResource;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResourceRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReference;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReferenceRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
+import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
+import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import org.springframework.stereotype.Service;
@@ -62,6 +66,10 @@ public class CampaignService {
     private final TimelineEventRepository timelineEventRepo;
     private final MagicItemRepository magicItemRepo;
     private final EquipmentItemRepository equipmentItemRepo;
+    private final EncounterRepository encounterRepo;
+    private final CombatantRepository combatantRepo;
+    private final HandoutService handoutService;
+    private final HandoutRepository handoutRepo;
 
     public CampaignService(CampaignRepository repository,
                            PartyMemberRepository partyMemberRepository,
@@ -81,8 +89,12 @@ public class CampaignService {
                            ItemAssignmentRepository assignmentRepo,
                            LedgerEntryRepository ledgerEntryRepo,
                            TimelineEventRepository timelineEventRepo,
-                           MagicItemRepository magicItemRepo,
-                           EquipmentItemRepository equipmentItemRepo) {
+                            MagicItemRepository magicItemRepo,
+                            EquipmentItemRepository equipmentItemRepo,
+                            EncounterRepository encounterRepo,
+                            CombatantRepository combatantRepo,
+                            HandoutService handoutService,
+                            HandoutRepository handoutRepo) {
         this.repository = repository;
         this.partyMemberRepository = partyMemberRepository;
         this.statBlockRepository = statBlockRepository;
@@ -103,6 +115,10 @@ public class CampaignService {
         this.timelineEventRepo = timelineEventRepo;
         this.magicItemRepo = magicItemRepo;
         this.equipmentItemRepo = equipmentItemRepo;
+        this.encounterRepo = encounterRepo;
+        this.combatantRepo = combatantRepo;
+        this.handoutService = handoutService;
+        this.handoutRepo = handoutRepo;
         this.objectMapper = JsonMapper.builder()
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -149,6 +165,33 @@ public class CampaignService {
         var maps = gameMapService.findByCampaignId(id).stream()
                 .map(m -> CampaignExportDto.MapExportDto.from(m, gameMapService.getDocument(m.getId())))
                 .toList();
+
+        var encounters = encounterRepo.findByCampaignIdOrderByNameAsc(id).stream()
+                .map(enc -> {
+                    var combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(enc.getId()).stream()
+                            .map(c -> CampaignExportDto.CombatantExportDto.from(c, java.util.Map.of()))
+                            .toList();
+                    return CampaignExportDto.EncounterExportDto.from(enc, combatants);
+                })
+                .toList();
+
+        var handouts = handoutRepo.findByCampaignIdOrderByTitleAsc(id).stream()
+                .map(h -> {
+                    String imageBase64 = null;
+                    try {
+                        java.nio.file.Path filePath = java.nio.file.Path.of(
+                                System.getProperty("user.home"), ".dmhelper", "files")
+                                .resolve(h.getFileName());
+                        byte[] bytes = java.nio.file.Files.readAllBytes(filePath);
+                        imageBase64 = "data:" + h.getContentType() + ";base64," +
+                                java.util.Base64.getEncoder().encodeToString(bytes);
+                    } catch (Exception e) {
+                        System.err.println("WARNING: Could not read handout image: " + h.getFileName());
+                    }
+                    return CampaignExportDto.HandoutExportDto.from(h, imageBase64);
+                })
+                .toList();
+
         var noteDtos = noteRepository.findByCampaignIdOrderByCreatedAtDesc(id).stream()
                 .map(CampaignExportDto.NoteExportDto::from).toList();
         var quickNoteDtos = quickNoteRepository.findByCampaignIdOrderByCreatedAtDesc(id).stream()
@@ -185,9 +228,9 @@ public class CampaignService {
                 new CampaignExportDto.CampaignDto(campaign.getName(), campaign.getDescription()),
                 party,
                 statBlocks,
-                List.of(),
+                handouts,
                 maps,
-                List.of(),
+                encounters,
                 noteDtos,
                 quickNoteDtos,
                 assignments,
