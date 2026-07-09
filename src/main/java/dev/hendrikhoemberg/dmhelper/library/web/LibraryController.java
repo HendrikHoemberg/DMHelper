@@ -92,7 +92,7 @@ public class LibraryController {
     public String editForm(@PathVariable UUID id, Model model) {
         StatBlock sb = service.findById(id);
         model.addAttribute("sb", sb);
-        model.addAttribute("campaignId", sb.getCampaignId());
+        model.addAttribute("campaignId", sb.getCampaign() != null ? sb.getCampaign().getId() : null);
         return "library/_form :: form";
     }
 

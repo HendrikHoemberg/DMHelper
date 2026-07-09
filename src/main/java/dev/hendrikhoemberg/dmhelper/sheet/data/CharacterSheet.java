@@ -1,10 +1,13 @@
 package dev.hendrikhoemberg.dmhelper.sheet.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.hendrikhoemberg.dmhelper.library.data.Species;
 import dev.hendrikhoemberg.dmhelper.library.data.Background;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -50,6 +53,14 @@ public class CharacterSheet {
 
     @Column(columnDefinition = "CLOB")
     private String spellSlotsUsed;
+
+    @OneToMany(mappedBy = "sheet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<dev.hendrikhoemberg.dmhelper.sheet.data.SheetResource> resources = new ArrayList<>();
+
+    @OneToMany(mappedBy = "sheet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReference> spells = new ArrayList<>();
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }

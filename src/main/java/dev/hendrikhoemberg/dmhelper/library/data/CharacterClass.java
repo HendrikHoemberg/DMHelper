@@ -38,6 +38,9 @@ public class CharacterClass {
     @Column(columnDefinition = "CLOB")
     private String description;
 
+    @Column(columnDefinition = "CLOB")
+    private String proficiencies;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public String getSourceKey() { return sourceKey; }
@@ -56,4 +59,6 @@ public class CharacterClass {
     public void setSubclassOf(String subclassOf) { this.subclassOf = subclassOf; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public String getProficiencies() { return proficiencies; }
+    public void setProficiencies(String proficiencies) { this.proficiencies = proficiencies; }
 }

@@ -34,6 +34,9 @@ public class Background {
     @Column(columnDefinition = "CLOB")
     private String description;
 
+    @Column(columnDefinition = "CLOB")
+    private String equipment;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public String getSourceKey() { return sourceKey; }
@@ -50,4 +53,6 @@ public class Background {
     public void setTools(String tools) { this.tools = tools; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public String getEquipment() { return equipment; }
+    public void setEquipment(String equipment) { this.equipment = equipment; }
 }

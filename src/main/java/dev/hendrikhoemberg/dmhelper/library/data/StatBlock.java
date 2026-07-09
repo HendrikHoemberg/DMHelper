@@ -1,5 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.library.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.List;
@@ -26,6 +28,12 @@ public class StatBlock {
     @Column(nullable = false, length = 10)
     private Source source;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "campaign_id_fk")
+    @JsonIgnore
+    private Campaign campaign;
+
+    @Deprecated(forRemoval = true)
     @Column(name = "campaign_id")
     private UUID campaignId;
 
@@ -130,7 +138,13 @@ public class StatBlock {
     public Source getSource() { return source; }
     public void setSource(Source source) { this.source = source; }
 
-    public UUID getCampaignId() { return campaignId; }
+    public Campaign getCampaign() { return campaign; }
+    public void setCampaign(Campaign campaign) { this.campaign = campaign; }
+
+    @Deprecated(forRemoval = true)
+    public UUID getCampaignId() { return campaign != null ? campaign.getId() : campaignId; }
+
+    @Deprecated(forRemoval = true)
     public void setCampaignId(UUID campaignId) { this.campaignId = campaignId; }
 
     public String getName() { return name; }

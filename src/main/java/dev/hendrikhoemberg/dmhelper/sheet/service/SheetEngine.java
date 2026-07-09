@@ -239,7 +239,7 @@ public class SheetEngine {
 
         if (targetSection == null) return buildFallbackMulticlassTable();
 
-        String desc = targetSection.getDescription();
+        String desc = targetSection.getBody();
         if (desc == null) return buildFallbackMulticlassTable();
 
         String[] lines = desc.split("\\n");

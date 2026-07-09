@@ -21,7 +21,7 @@ public class RuleSection {
     private String name;
 
     @Column(columnDefinition = "CLOB")
-    private String description;
+    private String body;
 
     @Column(length = 100)
     private String parentKey;
@@ -39,8 +39,8 @@ public class RuleSection {
     public void setSourceKey(String sourceKey) { this.sourceKey = sourceKey; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    public String getBody() { return body; }
+    public void setBody(String body) { this.body = body; }
     public String getParentKey() { return parentKey; }
     public void setParentKey(String parentKey) { this.parentKey = parentKey; }
     public int getSortOrder() { return sortOrder; }

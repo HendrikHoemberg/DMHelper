@@ -1,8 +1,11 @@
 package dev.hendrikhoemberg.dmhelper.notes.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -32,6 +35,10 @@ public class Note {
 
     @Column(nullable = false)
     private boolean dmOnly = true;
+
+    @OneToMany(mappedBy = "sourceNote", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<dev.hendrikhoemberg.dmhelper.notes.data.NoteLink> links = new ArrayList<>();
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;

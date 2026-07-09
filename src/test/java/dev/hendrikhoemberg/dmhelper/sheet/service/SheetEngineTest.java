@@ -101,7 +101,7 @@ class SheetEngineTest {
 
         var multiclassRule = new RuleSection();
         multiclassRule.setSourceKey("srd-2024_multiclassing_spellcasting");
-        multiclassRule.setDescription("""
+        multiclassRule.setBody("""
                 |Level|1|2|3|4|5|6|7|8|9|
                 |---|---|---|---|---|---|---|---|---|---|
                 |1|2|—|—|—|—|—|—|—|—|

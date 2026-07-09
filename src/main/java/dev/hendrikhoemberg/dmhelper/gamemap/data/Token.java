@@ -63,6 +63,9 @@ public class Token {
     @Column(columnDefinition = "CLOB")
     private String notes;
 
+    @Column(length = 100)
+    private String icon;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -110,4 +113,7 @@ public class Token {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public String getIcon() { return icon; }
+    public void setIcon(String icon) { this.icon = icon; }
 }

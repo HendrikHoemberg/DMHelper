@@ -47,7 +47,7 @@ public class RuleSectionSeedService {
                     RuleSection r = new RuleSection();
                     r.setSourceKey(entry.key());
                     r.setName(entry.name());
-                    r.setDescription(entry.desc());
+                    r.setBody(entry.desc());
                     r.setRuleset(entry.ruleset());
                     r.setSortOrder(entry.index());
                     r.setInitialHeaderLevel(entry.initialHeaderLevel());

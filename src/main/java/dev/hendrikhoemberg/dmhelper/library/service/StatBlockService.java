@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.library.service;
 
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import jakarta.persistence.criteria.Predicate;
@@ -15,9 +16,11 @@ import java.util.UUID;
 public class StatBlockService {
 
     private final StatBlockRepository repository;
+    private final CampaignRepository campaignRepo;
 
-    public StatBlockService(StatBlockRepository repository) {
+    public StatBlockService(StatBlockRepository repository, CampaignRepository campaignRepo) {
         this.repository = repository;
+        this.campaignRepo = campaignRepo;
     }
 
     @Transactional(readOnly = true)
@@ -71,6 +74,9 @@ public class StatBlockService {
         StatBlock sb = new StatBlock();
         sb.setSource(StatBlock.Source.CUSTOM);
         sb.setCampaignId(campaignId);
+        if (campaignId != null) {
+            campaignRepo.findById(campaignId).ifPresent(sb::setCampaign);
+        }
         sb.setName(name);
         sb.setCr(cr);
         sb.setType(type);
@@ -152,6 +158,9 @@ public class StatBlockService {
         StatBlock clone = new StatBlock();
         clone.setSource(StatBlock.Source.CUSTOM);
         clone.setCampaignId(targetCampaignId);
+        if (targetCampaignId != null) {
+            campaignRepo.findById(targetCampaignId).ifPresent(clone::setCampaign);
+        }
         clone.setName(newName != null && !newName.isBlank() ? newName : original.getName());
         clone.setCr(original.getCr());
         clone.setType(original.getType());
@@ -195,6 +204,7 @@ public class StatBlockService {
         if (sb.getSource() != StatBlock.Source.CUSTOM) {
             throw new IllegalArgumentException("Only custom statblocks can be promoted");
         }
+        sb.setCampaign(null);
         sb.setCampaignId(null);
         return repository.save(sb);
     }
