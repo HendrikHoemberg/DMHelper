@@ -220,8 +220,21 @@ public class CampaignService {
 
         var noteDtos = noteRepository.findByCampaignIdOrderByCreatedAtDesc(id).stream()
                 .map(CampaignExportDto.NoteExportDto::from).toList();
+        java.util.Map<java.util.UUID, String> quickNoteIdMappings = new java.util.HashMap<>();
+        for (var gm : gameMapService.findByCampaignId(id)) {
+            quickNoteIdMappings.put(gm.getId(), gm.getId().toString());
+        }
+        for (var sb : statBlockRepository.findByCampaignIdOrderByNameAsc(id)) {
+            if (sb.getSourceKey() != null) quickNoteIdMappings.put(sb.getId(), sb.getSourceKey());
+        }
+        for (var note : noteRepository.findByCampaignIdOrderByCreatedAtDesc(id)) {
+            quickNoteIdMappings.put(note.getId(), note.getTitle());
+        }
+        for (var handout : handoutRepo.findByCampaignIdOrderByTitleAsc(id)) {
+            quickNoteIdMappings.put(handout.getId(), handout.getTitle());
+        }
         var quickNoteDtos = quickNoteRepository.findByCampaignIdOrderByCreatedAtDesc(id).stream()
-                .map(qn -> CampaignExportDto.QuickNoteExportDto.from(qn, java.util.Map.of()))
+                .map(qn -> CampaignExportDto.QuickNoteExportDto.from(qn, quickNoteIdMappings))
                 .toList();
 
         var assignments = assignmentRepo.findByCampaignIdOrderByPartyMemberAsc(id).stream()
@@ -358,6 +371,10 @@ public class CampaignService {
 
         Campaign saved = create(dto.campaign().name(), dto.campaign().description());
 
+        java.util.Map<String, UUID> mapKeyToId = new java.util.HashMap<>();
+        java.util.Map<String, UUID> tokenOldToNewId = new java.util.HashMap<>();
+        java.util.Map<String, UUID> statblockKeyToId = new java.util.HashMap<>();
+
         if (dto.party() != null) {
             for (var pmDto : dto.party()) {
                 var member = partyMemberService.create(saved.getId(),
@@ -398,11 +415,12 @@ public class CampaignService {
                 if (sbDto.legendaryDescription() != null) sb.setLegendaryDescription(sbDto.legendaryDescription());
                 if (sbDto.lairActions() != null) sb.setLairActions(sbDto.lairActions());
                 sb.setXp(sbDto.xp());
+                if (sbDto.sourceKey() != null) {
+                    statblockKeyToId.put(sbDto.sourceKey(), sb.getId());
+                }
             }
         }
 
-        java.util.Map<String, UUID> mapKeyToId = new java.util.HashMap<>();
-        java.util.Map<String, UUID> tokenOldToNewId = new java.util.HashMap<>();
         if (dto.maps() != null) {
             for (var mapDto : dto.maps()) {
                 var grid = mapDto.grid();
@@ -564,6 +582,38 @@ public class CampaignService {
                 qn.setCampaign(saved);
                 qn.setTargetType(qnDto.targetType());
                 qn.setBody(qnDto.body());
+                UUID resolvedId = null;
+                if (qnDto.targetRef() != null) {
+                    resolvedId = switch (qnDto.targetType()) {
+                        case "MAP" -> mapKeyToId.get(qnDto.targetRef());
+                        case "STATBLOCK" -> statblockKeyToId.get(qnDto.targetRef());
+                        case "NOTE" -> {
+                            var notes = noteRepository.findByCampaignIdAndTitle(saved.getId(), qnDto.targetRef());
+                            yield notes.isEmpty() ? null : notes.get(0).getId();
+                        }
+                        case "HANDOUT" -> {
+                            var handouts = handoutRepo.findByCampaignIdOrderByTitleAsc(saved.getId());
+                            yield handouts.stream()
+                                    .filter(h -> h.getTitle().equals(qnDto.targetRef()))
+                                    .findFirst().map(h -> h.getId()).orElse(null);
+                        }
+                        default -> {
+                            try {
+                                yield java.util.UUID.fromString(qnDto.targetRef());
+                            } catch (Exception e) {
+                                yield null;
+                            }
+                        }
+                    };
+                    if (resolvedId == null) {
+                        try {
+                            resolvedId = java.util.UUID.fromString(qnDto.targetRef());
+                        } catch (Exception e) { /* leave null */ }
+                    }
+                }
+                if (resolvedId != null) {
+                    qn.setTargetId(resolvedId);
+                }
                 quickNoteRepository.save(qn);
             }
         }

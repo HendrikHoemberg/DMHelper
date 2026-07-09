@@ -23,6 +23,8 @@ import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
+import dev.hendrikhoemberg.dmhelper.notes.data.QuickNote;
+import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import dev.hendrikhoemberg.dmhelper.notes.service.WikiLinkParser;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
@@ -55,6 +57,7 @@ class CampaignImportExportRoundTripTest {
     @Autowired private CombatantRepository combatantRepo;
     @Autowired private TokenRepository tokenRepo;
     @Autowired private NoteRepository noteRepository;
+    @Autowired private QuickNoteRepository quickNoteRepository;
 
     @MockitoBean
     private HandoutService handoutService;
@@ -330,5 +333,59 @@ class CampaignImportExportRoundTripTest {
         note.setTags(tags);
         note.setDmOnly(dmOnly);
         return noteRepository.save(note);
+    }
+
+    @Test
+    void roundTripPreservesQuickNoteReferences() {
+        Campaign c = campaignService.create("QuickNote Trip", "quicknotes");
+        GameMap map = gameMapService.create(c.getId(), "Dungeon", 30, 20, 48);
+        Note note = createNote(c, "Secret Room", NoteType.LOCATION, "hidden passage", "", false);
+        StatBlock sb = statBlockService.createCustom(c.getId(), "Goblin", "1/4", "Humanoid",
+                15, "7 (2d6)", "30 ft.",
+                8, 14, 10, 10, 8, 8,
+                null, null, null, null, null, null,
+                null, null, null, null, null,
+                null, "Common");
+        sb.setSourceKey("goblin-ref");
+        statBlockRepository.save(sb);
+
+        QuickNote qnMap = new QuickNote();
+        qnMap.setCampaign(c);
+        qnMap.setTargetType("MAP");
+        qnMap.setTargetId(map.getId());
+        qnMap.setBody("Map note");
+        quickNoteRepository.save(qnMap);
+
+        QuickNote qnNote = new QuickNote();
+        qnNote.setCampaign(c);
+        qnNote.setTargetType("NOTE");
+        qnNote.setTargetId(note.getId());
+        qnNote.setBody("Note note");
+        quickNoteRepository.save(qnNote);
+
+        QuickNote qnStatblock = new QuickNote();
+        qnStatblock.setCampaign(c);
+        qnStatblock.setTargetType("STATBLOCK");
+        qnStatblock.setTargetId(sb.getId());
+        qnStatblock.setBody("SB note");
+        quickNoteRepository.save(qnStatblock);
+
+        String json = campaignService.exportToJson(c.getId());
+        Campaign imported = campaignService.importFromJson(json);
+
+        List<QuickNote> quicknotes = quickNoteRepository.findByCampaignIdOrderByCreatedAtDesc(imported.getId());
+        assertThat(quicknotes).hasSize(3);
+
+        QuickNote reMapQn = quicknotes.stream().filter(q -> q.getBody().equals("Map note")).findFirst().orElseThrow();
+        assertThat(reMapQn.getTargetType()).isEqualTo("MAP");
+        assertThat(reMapQn.getTargetId()).isNotNull();
+
+        QuickNote reNoteQn = quicknotes.stream().filter(q -> q.getBody().equals("Note note")).findFirst().orElseThrow();
+        assertThat(reNoteQn.getTargetType()).isEqualTo("NOTE");
+        assertThat(reNoteQn.getTargetId()).isNotNull();
+
+        QuickNote reSbQn = quicknotes.stream().filter(q -> q.getBody().equals("SB note")).findFirst().orElseThrow();
+        assertThat(reSbQn.getTargetType()).isEqualTo("STATBLOCK");
+        assertThat(reSbQn.getTargetId()).isNotNull();
     }
 }

@@ -253,17 +253,17 @@ public record CampaignExportDto(
 
     public record QuickNoteExportDto(
             String targetType,
-            String targetId,
+            String targetRef,
             String body,
             String createdAt
     ) {
         public static QuickNoteExportDto from(
                 dev.hendrikhoemberg.dmhelper.notes.data.QuickNote qn,
                 java.util.Map<java.util.UUID, String> idMappings) {
-            String mappedTargetId = idMappings.getOrDefault(qn.getTargetId(), qn.getTargetId().toString());
+            String mappedTargetRef = idMappings.getOrDefault(qn.getTargetId(), qn.getTargetId().toString());
             return new QuickNoteExportDto(
                     qn.getTargetType(),
-                    mappedTargetId,
+                    mappedTargetRef,
                     qn.getBody(),
                     qn.getCreatedAt().toString()
             );
