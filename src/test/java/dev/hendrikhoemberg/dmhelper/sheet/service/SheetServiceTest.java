@@ -193,10 +193,10 @@ class SheetServiceTest {
 
         sheetService.shortRest(dto.id(), 1);
 
-        // 1 total HD, half(1/2)=0 recovered, so still 1 used
+        // 1 total HD, min(1, half(1/2)=1) recovered, so used goes from 1 to 0
         var rested = sheetService.longRest(dto.id(), 0);
 
-        assertEquals(1, rested.hitDiceUsed());
+        assertEquals(0, rested.hitDiceUsed());
     }
 
     @Test
