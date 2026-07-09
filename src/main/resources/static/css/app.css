@@ -1035,3 +1035,222 @@ body.dm-mode-off [data-dm-only] {
 .text-muted {
     color: var(--color-text-muted);
 }
+
+/* ── Dice Roller Panel ── */
+.dice-panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 320px;
+    background: var(--color-surface);
+    border-left: 1px solid var(--color-border);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(0);
+    transition: transform 0.2s ease;
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.4);
+}
+.dice-panel.closed {
+    transform: translateX(100%);
+}
+
+.dice-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-lg);
+    font-weight: 600;
+}
+
+.dice-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-md) var(--space-lg);
+}
+
+.dice-input-row {
+    display: flex;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.dice-input-row input[type="text"] {
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    color: var(--color-text);
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-md);
+}
+
+.dice-input-row input[type="text"]:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.dice-input-row button {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-accent);
+    border: none;
+    border-radius: var(--radius);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.dice-input-row button:hover {
+    background: var(--color-accent-hover);
+}
+
+.dice-options {
+    display: flex;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+    font-size: var(--text-sm);
+}
+
+.dice-options label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.dice-result {
+    padding: var(--space-md);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    margin-bottom: var(--space-md);
+    text-align: center;
+}
+
+.dice-result-total {
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: var(--font-mono, monospace);
+    color: var(--color-accent);
+}
+.dice-result-total.high {
+    color: #4ade80;
+}
+.dice-result-total.low {
+    color: #f87171;
+}
+
+.dice-result-details {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-top: var(--space-sm);
+}
+
+.dice-history-section h4 {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-sm);
+}
+
+.dice-history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+}
+.dice-history-item:last-child {
+    border-bottom: none;
+}
+
+.dice-history-item .expr {
+    color: var(--color-text-muted);
+    font-family: var(--font-mono, monospace);
+}
+.dice-history-item .value {
+    font-weight: 700;
+    font-family: var(--font-mono, monospace);
+    min-width: 2em;
+    text-align: right;
+}
+.dice-history-item .value.high {
+    color: #4ade80;
+}
+.dice-history-item .value.low {
+    color: #f87171;
+}
+
+/* ── Dice Roller Toggle Button ── */
+.dice-toggle-btn {
+    cursor: pointer;
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: var(--space-xs) var(--space-sm);
+    color: var(--color-text-muted);
+    font-size: var(--text-md);
+}
+.dice-toggle-btn:hover {
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+.dice-toggle-btn.active {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+}
+
+/* ── Inline Roll Buttons ── */
+.roll-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+.roll-btn:hover {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+}
+
+/* ── Roll Result Tooltip ── */
+.roll-tooltip {
+    position: absolute;
+    z-index: 50;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    font-family: var(--font-mono, monospace);
+    color: var(--color-accent);
+    box-shadow: var(--shadow);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* ── DM Mode ── */
+body.dm-mode-off .dice-panel,
+body.dm-mode-off .dice-toggle-btn { display: none; }
