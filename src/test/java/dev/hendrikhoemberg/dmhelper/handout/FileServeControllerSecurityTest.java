@@ -54,4 +54,13 @@ class FileServeControllerSecurityTest {
         mockMvc.perform(get("/player/files/" + handoutId))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void getFileEndpointReturns200ForExistingHandout() throws Exception {
+        when(handoutService.findById(handoutId)).thenReturn(unpublished);
+        when(handoutService.getFileContent(handoutId)).thenReturn(new byte[]{1,2,3});
+
+        mockMvc.perform(get("/files/" + handoutId))
+                .andExpect(status().isOk());
+    }
 }

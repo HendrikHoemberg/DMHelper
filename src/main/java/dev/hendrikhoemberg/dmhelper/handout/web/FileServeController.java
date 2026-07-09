@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.handout.web;
 
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
@@ -22,12 +23,7 @@ public class FileServeController {
     @GetMapping("/files/{id}")
     public ResponseEntity<byte[]> serveFile(@PathVariable UUID id) throws IOException {
         var handout = handoutService.findById(id);
-        byte[] content = handoutService.getFileContent(id);
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(
-                        handout.getContentType() != null ? handout.getContentType() : "application/octet-stream"))
-                .cacheControl(CacheControl.maxAge(1, TimeUnit.HOURS))
-                .body(content);
+        return serveFileInternal(handout);
     }
 
     @GetMapping("/player/files/{id}")
@@ -36,7 +32,11 @@ public class FileServeController {
         if (!handout.isPresented()) {
             return ResponseEntity.notFound().build();
         }
-        byte[] content = handoutService.getFileContent(id);
+        return serveFileInternal(handout);
+    }
+
+    private ResponseEntity<byte[]> serveFileInternal(Handout handout) throws IOException {
+        byte[] content = handoutService.getFileContent(handout.getId());
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(
                         handout.getContentType() != null ? handout.getContentType() : "application/octet-stream"))

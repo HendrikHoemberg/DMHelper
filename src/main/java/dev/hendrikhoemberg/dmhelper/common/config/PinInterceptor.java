@@ -55,6 +55,7 @@ public class PinInterceptor implements HandlerInterceptor {
                 rateLimitMap.put(ip, new RateLimitEntry(current.failures(), current.firstFailureTime(),
                         System.currentTimeMillis() + BLOCK_DURATION_MS));
                 response.setStatus(429);
+                response.setHeader("Retry-After", "30");
                 response.setContentType("text/plain");
                 response.getWriter().write("Too many PIN attempts");
                 response.getWriter().flush();
@@ -62,7 +63,12 @@ public class PinInterceptor implements HandlerInterceptor {
             }
 
             if (current.failures() >= FAILURE_THRESHOLD_SLOWDOWN) {
-                Thread.sleep(SLOWDOWN_DELAY_MS);
+                response.setStatus(429);
+                response.setHeader("Retry-After", "2");
+                response.setContentType("text/plain");
+                response.getWriter().write("Too many attempts, try again in 2 seconds");
+                response.getWriter().flush();
+                return false;
             }
 
             response.setStatus(403);

@@ -28,7 +28,7 @@ class PinInterceptorRateLimitTest {
     }
 
     @Test
-    void allowsFirstRequestWithoutPin() throws Exception {
+    void deniesFirstRequestWithoutPin() throws Exception {
         assertThat(interceptor.preHandle(request, response, null)).isFalse();
         assertThat(response.getStatus()).isEqualTo(HttpServletResponse.SC_FORBIDDEN);
     }
