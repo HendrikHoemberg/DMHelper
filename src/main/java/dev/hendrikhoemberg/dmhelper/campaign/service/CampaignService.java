@@ -313,6 +313,15 @@ public class CampaignService {
                 } else {
                     if (grid.w() < 1) warnings.add("Map '" + mapDto.name() + "' grid width must be >= 1");
                     if (grid.h() < 1) warnings.add("Map '" + mapDto.name() + "' grid height must be >= 1");
+                    if (mapDto.tokens() != null) {
+                        for (var tDto : mapDto.tokens()) {
+                            if (tDto.positionX() < 0 || tDto.positionX() >= grid.w() ||
+                                tDto.positionY() < 0 || tDto.positionY() >= grid.h()) {
+                                warnings.add("Map '" + mapDto.name() + "': token '" + tDto.name() +
+                                        "' at (" + tDto.positionX() + "," + tDto.positionY() + ") is outside grid bounds");
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -337,11 +346,11 @@ public class CampaignService {
                             warnings.add("Combatant #" + (i + 1) + " in encounter '" +
                                     encDto.name() + "' has no name");
                         }
-                        if (c.statBlockKey() != null && c.statBlockKey().startsWith("srd-")) {
-                            var resolved = statBlockRepository.findBySourceKey(c.statBlockKey());
+                        if (c.statBlockKey() != null) {
+                            var resolved = statBlockRepository.findByCampaignIdAndSourceKey(null, c.statBlockKey())
+                                    .or(() -> statBlockRepository.findBySourceKey(c.statBlockKey()));
                             if (resolved.isEmpty()) {
-                                warnings.add("SRD statblock key '" + c.statBlockKey() +
-                                        "' not found in library (will use plain text)");
+                                warnings.add("Statblock key '" + c.statBlockKey() + "' not found in library");
                             }
                         }
                     }
