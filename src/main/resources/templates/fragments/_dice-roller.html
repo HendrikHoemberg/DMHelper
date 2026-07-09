@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="dice-roller"
+     x-data="diceRoller()"
+     x-show="open"
+     class="dice-panel"
+     :class="{ closed: !open }"
+     @keydown.escape.window="open = false">
+
+    <div class="dice-panel-header">
+        <span>&#x1F3B2; Dice Roller</span>
+        <button class="btn btn-ghost" style="font-size: var(--text-lg); line-height: 1; padding: 0 var(--space-xs);"
+                @click="open = false">&times;</button>
+    </div>
+
+    <div class="dice-panel-body">
+        <div class="dice-input-row">
+            <input type="text"
+                   x-model="expression"
+                   placeholder="e.g. 2d6+4 or typed value"
+                   @keydown.enter="roll()"
+                   :disabled="loading"
+                   autofocus>
+            <button @click="roll()" :disabled="loading || !expression">
+                <span x-show="!loading">Roll</span>
+                <span x-show="loading">...</span>
+            </button>
+        </div>
+
+        <div class="dice-options">
+            <label>
+                <input type="checkbox" x-model="advantage"
+                       @change="if(advantage) disadvantage = false">
+                Adv
+            </label>
+            <label>
+                <input type="checkbox" x-model="disadvantage"
+                       @change="if(disadvantage) advantage = false">
+                Dis
+            </label>
+        </div>
+
+        <div class="dice-result" x-show="result" x-transition>
+            <div class="dice-result-total"
+                 :class="{ high: result && result.disadvantage == false && result.advantage == false && result.total >= 15 && result.expression && result.expression.startsWith('d20'),
+                           low: result && result.disadvantage == false && result.advantage == false && result.total <= 5 && result.expression && result.expression.startsWith('d20') }"
+                 x-text="result ? result.total : ''"></div>
+            <div class="dice-result-details" x-show="result && result.rolls && result.rolls.length > 0">
+                <template x-for="dieRoll in result.rolls" :key="dieRoll.die">
+                    <div>
+                        <span x-text="dieRoll.die + ': '"></span>
+                        <span x-text="'[' + dieRoll.values.join('] [') + ']'"></span>
+                    </div>
+                </template>
+                <div x-show="result.modifier != 0">
+                    <span x-text="result.modifier >= 0 ? '+ ' + result.modifier : '- ' + Math.abs(result.modifier)"></span>
+                </div>
+                <div x-show="result.advantage" style="color: #4ade80;">(advantage — higher of 2)</div>
+                <div x-show="result.disadvantage" style="color: #f87171;">(disadvantage — lower of 2)</div>
+            </div>
+            <div class="dice-result-details" x-show="result && (!result.rolls || result.rolls.length == 0)">
+                typed input
+            </div>
+        </div>
+
+        <div class="dice-history-section">
+            <h4>Recent Rolls</h4>
+            <template x-if="history.length === 0">
+                <div style="color: var(--color-text-muted); font-size: var(--text-sm);">No rolls yet</div>
+            </template>
+            <template x-for="item in history" :key="item.id">
+                <div class="dice-history-item">
+                    <span class="expr" x-text="item.expression"></span>
+                    <span class="value"
+                          :class="{ high: item.total >= 15 && item.expression && item.expression.startsWith('d20') && !item.advantage && !item.disadvantage,
+                                    low: item.total <= 5 && item.expression && item.expression.startsWith('d20') && !item.advantage && !item.disadvantage }"
+                          x-text="item.total"></span>
+                </div>
+            </template>
+        </div>
+    </div>
+</div>
+</html>
