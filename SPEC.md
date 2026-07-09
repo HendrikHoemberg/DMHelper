@@ -775,7 +775,7 @@ Digital rolling as a convenience, never a requirement — physical dice are firs
 | M9 ✅ | **Character sheets** | Rules-aware sheets on top of the compendium (multiclass, derived-with-override, guided level-up), rest actions, resource counters, XP awarding + milestone mode, roster fields derived from sheets | Recreate a real PC from its paper sheet, level it up, long-rest it — numbers all correct |
 | M10 ✅ | **Loot, treasury & calendar** | Item assignments (PC/stash), gold + item ledger, attunement warnings, calendar config + current date + advance-days, timeline events, in-game dates on logs/ledger | Distribute a hoard to the party; "the eclipse is in 12 days" is a timeline entry |
 | M11 ✅ | **Dice roller** | Expression roller + history, clickable statblock/sheet rolls, combat-log integration, server-side RNG — optional-first everywhere (§2.3.9) | Run a fight rolling digitally *and* typing physical rolls interchangeably |
-| M12 | **Table polish & generative tooling** | DM Mode toggle everywhere, backups, error handling, keyboard shortcuts, `Ctrl+K` command palette (notes, compendium, quicknotes, everything), full export/import of everything; JSON Schemas, dry-run import, SRD key catalog | Run a real session start-to-finish; an AI-generated campaign imports cleanly |
+| M12 ✅ | **Table polish & generative tooling** | DM Mode toggle everywhere, backups, error handling, keyboard shortcuts, `Ctrl+K` command palette (notes, compendium, quicknotes, everything), full export/import of everything; JSON Schemas, dry-run import, SRD key catalog | Run a real session start-to-finish; an AI-generated campaign imports cleanly |
 
 Each milestone ends in a usable state — the app is session-worthy from M5 onward, with or without
 player devices.
