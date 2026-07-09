@@ -35,7 +35,8 @@ public class SheetEngine {
     private static final Map<String, String> CASTER_TYPES = Map.of(
         "wizard", "FULL", "sorcerer", "FULL", "cleric", "FULL", "druid", "FULL",
         "bard", "FULL", "warlock", "PACT",
-        "paladin", "HALF", "ranger", "HALF"
+        "paladin", "HALF", "ranger", "HALF",
+        "fighter", "THIRD", "rogue", "THIRD"
     );
 
     private static final Map<String, String> SKILL_ABILITY_MAP = Map.ofEntries(
@@ -562,6 +563,8 @@ public class SheetEngine {
                             combinedLevel += classLevel;
                         } else if ("HALF".equals(casterType)) {
                             combinedLevel += (int) Math.ceil(classLevel / 2.0);
+                        } else if ("THIRD".equals(casterType)) {
+                            combinedLevel += Math.floorDiv(classLevel, 3);
                         }
                     }
                 }
@@ -586,6 +589,9 @@ public class SheetEngine {
                     if (atk > bestAtk) bestAtk = atk;
                 }
             }
+
+            bestDC = getOverrideInt(overrides, "spellSaveDc", bestDC);
+            bestAtk = getOverrideInt(overrides, "spellAttackBonus", bestAtk);
 
             List<String> classStrings = new ArrayList<>();
             for (Map<String, Object> entry : classLevels) {
@@ -670,7 +676,10 @@ public class SheetEngine {
     private String getCasterType(String classKey) {
         if (classKey == null) return "NONE";
         for (var entry : CASTER_TYPES.entrySet()) {
-            if (classKey.contains(entry.getKey())) return entry.getValue();
+            String prefix = "srd-2024_" + entry.getKey();
+            if (classKey.equals(prefix) || classKey.startsWith(prefix + "_")) {
+                return entry.getValue();
+            }
         }
         if (classSlotTables.containsKey(classKey)) return "FULL";
         return "NONE";

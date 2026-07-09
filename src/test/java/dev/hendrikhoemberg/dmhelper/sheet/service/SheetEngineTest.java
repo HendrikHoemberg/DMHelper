@@ -2,6 +2,8 @@ package dev.hendrikhoemberg.dmhelper.sheet.service;
 
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.Feat;
+import dev.hendrikhoemberg.dmhelper.library.data.FeatRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.RuleSection;
 import dev.hendrikhoemberg.dmhelper.library.data.RuleSectionRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.Species;
@@ -27,6 +29,9 @@ class SheetEngineTest {
 
     @Mock
     private RuleSectionRepository ruleSectionRepo;
+
+    @Mock
+    private FeatRepository featRepo;
 
     private SheetEngine engine;
 
@@ -127,7 +132,7 @@ class SheetEngineTest {
                 """);
         when(ruleSectionRepo.findAllByOrderBySortOrderAsc()).thenReturn(List.of(multiclassRule));
 
-        engine = new SheetEngine(classRepo, ruleSectionRepo);
+        engine = new SheetEngine(classRepo, ruleSectionRepo, featRepo);
         engine.initialize();
     }
 
@@ -286,6 +291,129 @@ class SheetEngineTest {
 
         assertEquals(25, dv.speed(), "Dwarf speed = 25");
     }
+
+    @Test
+    void eldritchKnight5Wizard5() throws Exception {
+        var ekClass = new CharacterClass();
+        ekClass.setSourceKey("srd-2024_fighter_eldritch_knight");
+        ekClass.setName("Eldritch Knight");
+        ekClass.setHitDie("d10");
+        ekClass.setSavingThrows("[\"str\", \"con\"]");
+        ekClass.setFeatures("""
+                [
+                    {"feature_type": "SPELL_SLOTS", "key": "srd-2024_fighter_eldritch_knight_slots-1st", "data_for_class_table": [
+                        {"level": 1, "column_value": "0"},
+                        {"level": 2, "column_value": "0"},
+                        {"level": 3, "column_value": "2"},
+                        {"level": 4, "column_value": "3"},
+                        {"level": 5, "column_value": "3"}
+                    ]},
+                    {"feature_type": "SPELL_SLOTS", "key": "srd-2024_fighter_eldritch_knight_slots-2nd", "data_for_class_table": [
+                        {"level": 1, "column_value": "0"},
+                        {"level": 2, "column_value": "0"},
+                        {"level": 3, "column_value": "0"},
+                        {"level": 4, "column_value": "0"},
+                        {"level": 5, "column_value": "0"}
+                    ]}
+                ]
+                """);
+
+        var wizardClass2 = new CharacterClass();
+        wizardClass2.setSourceKey("srd-2024_wizard");
+        wizardClass2.setName("Wizard");
+        wizardClass2.setHitDie("d6");
+        wizardClass2.setSavingThrows("[\"int\", \"wis\"]");
+        wizardClass2.setFeatures("""
+                [
+                    {"feature_type": "CORE_TRAITS_TABLE", "description": "|Hit Die||d6 per wizard level|\\n|Primary Ability|Intelligence|"},
+                    {"feature_type": "SPELL_SLOTS", "key": "srd-2024_wizard_slots-1st", "data_for_class_table": [
+                        {"level": 1, "column_value": "2"},
+                        {"level": 2, "column_value": "3"},
+                        {"level": 3, "column_value": "4"},
+                        {"level": 4, "column_value": "4"},
+                        {"level": 5, "column_value": "4"}
+                    ]},
+                    {"feature_type": "SPELL_SLOTS", "key": "srd-2024_wizard_slots-2nd", "data_for_class_table": [
+                        {"level": 1, "column_value": "0"},
+                        {"level": 2, "column_value": "0"},
+                        {"level": 3, "column_value": "2"},
+                        {"level": 4, "column_value": "3"},
+                        {"level": 5, "column_value": "3"}
+                    ]},
+                    {"feature_type": "SPELL_SLOTS", "key": "srd-2024_wizard_slots-3rd", "data_for_class_table": [
+                        {"level": 1, "column_value": "0"},
+                        {"level": 2, "column_value": "0"},
+                        {"level": 3, "column_value": "0"},
+                        {"level": 4, "column_value": "0"},
+                        {"level": 5, "column_value": "2"}
+                    ]}
+                ]
+                """);
+
+        when(classRepo.findAllByOrderByNameAsc()).thenReturn(List.of(ekClass, wizardClass2));
+
+        var mcRule = new RuleSection();
+        mcRule.setSourceKey("srd-2024_multiclassing_spellcasting");
+        mcRule.setBody("""
+                |Level|1|2|3|4|5|6|7|8|9|
+                |---|---|---|---|---|---|---|---|---|---|
+                |1|2|—|—|—|—|—|—|—|—|
+                |2|3|—|—|—|—|—|—|—|—|
+                |3|4|2|—|—|—|—|—|—|—|
+                |4|4|3|—|—|—|—|—|—|—|
+                |5|4|3|2|—|—|—|—|—|—|
+                |6|4|3|3|—|—|—|—|—|—|
+                |7|4|3|3|1|—|—|—|—|—|
+                |8|4|3|3|2|—|—|—|—|—|
+                |9|4|3|3|3|1|—|—|—|—|
+                |10|4|3|3|3|2|—|—|—|—|
+                |11|4|3|3|3|2|1|—|—|—|
+                |12|4|3|3|3|2|1|—|—|—|
+                |13|4|3|3|3|2|1|1|—|—|
+                |14|4|3|3|3|2|1|1|—|—|
+                |15|4|3|3|3|2|1|1|1|—|
+                |16|4|3|3|3|2|1|1|1|—|
+                |17|4|3|3|3|2|1|1|1|1|
+                |18|4|3|3|3|3|1|1|1|1|
+                |19|4|3|3|3|3|2|1|1|1|
+                |20|4|3|3|3|3|2|2|1|1|
+                """);
+        when(ruleSectionRepo.findAllByOrderBySortOrderAsc()).thenReturn(List.of(mcRule));
+
+        var ekEngine = new SheetEngine(classRepo, ruleSectionRepo, featRepo);
+        ekEngine.initialize();
+
+        var scores = Map.of("str", 10, "dex", 14, "con", 12, "int", 16, "wis", 10, "cha", 10);
+        var classLevels = List.<Map<String, Object>>of(
+                Map.of("classSourceKey", "srd-2024_fighter_eldritch_knight", "level", 5,
+                        "hitDieRolls", List.of()),
+                Map.of("classSourceKey", "srd-2024_wizard", "level", 5,
+                        "hitDieRolls", List.of())
+        );
+        var sheet = createSheet(scores, classLevels, List.of(), List.of(), null, 0, 0);
+
+        var dv = ekEngine.derive(sheet);
+
+        assertEquals(10, dv.totalLevel());
+        assertEquals(4, dv.spellSlots()[1], "Combined caster level 6 gives 4 1st-level slots");
+        assertEquals(3, dv.spellSlots()[2], "Combined caster level 6 gives 3 2nd-level slots");
+    }
+
+    @Test
+    void overrideSpellSaveDC() throws Exception {
+        var scores = Map.of("str", 10, "dex", 14, "con", 10, "int", 16, "wis", 10, "cha", 10);
+        var classLevels = List.<Map<String, Object>>of(
+                Map.of("classSourceKey", "srd-2024_wizard", "level", 5, "hitDieRolls", List.of(4, 3, 5, 2))
+        );
+        var sheet = createSheet(scores, classLevels, List.of(), List.of(), null, 0, 0);
+        var mapper = new ObjectMapper();
+        sheet.setOverrides(mapper.writeValueAsString(Map.of("spellSaveDc", 17)));
+
+        var dv = engine.derive(sheet);
+
+        assertEquals(17, dv.spellSaveDC(), "Override spellSaveDC takes precedence");
+    }
+
 
     @Test
     void skillExpertise() throws Exception {
