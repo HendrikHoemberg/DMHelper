@@ -41,10 +41,26 @@
             </div>
         </div>
         <label class="dm-toggle">
-            <input type="checkbox" id="dmModeCheckbox"
-                   onclick="document.body.classList.toggle('dm-mode-off')">
+            <input type="checkbox" id="dmModeCheckbox">
             DM Mode
         </label>
+        <script>
+        (function() {
+            const checkbox = document.getElementById('dmModeCheckbox');
+            checkbox.addEventListener('change', () => {
+                document.body.classList.toggle('dm-mode-off', !checkbox.checked);
+            });
+            checkbox.checked = true;
+            window.addEventListener('dm-mode-toggle', () => {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            });
+            window.addEventListener('tracker-dm-mode-grown', (e) => {
+                checkbox.checked = e.detail.dmMode;
+                document.body.classList.toggle('dm-mode-off', !e.detail.dmMode);
+            });
+        })();
+        </script>
         <span class="pin-display" id="pinDisplay"
               th:text="${pinDisplay}">PIN: -----</span>
     </div>

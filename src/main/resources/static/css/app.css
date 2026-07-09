@@ -44,11 +44,6 @@ body {
   min-height: 100vh;
 }
 
-body.dm-mode-off {
-  border: 3px solid var(--color-warning);
-  border-top: none;
-}
-
 .navbar {
   display: flex;
   align-items: center;
@@ -755,6 +750,15 @@ body.dm-mode-off .dm-only,
 body.dm-mode-off [data-dm-only] {
     display: none !important;
 }
+
+body.dm-mode-off .party-summary-bar { display: none; }
+body.dm-mode-off .map-switcher-name { display: none; }
+body.dm-mode-off .statblock-full { display: none; }
+body.dm-mode-off .encounter-prep { display: none; }
+body.dm-mode-off .note-dm-only { display: none; }
+
+/* Toolbar visual indicator when DM Mode is off */
+body.dm-mode-off .navbar { border-bottom-color: var(--color-warning); }
 
 /* ==============================
    QR Popover (M7)
