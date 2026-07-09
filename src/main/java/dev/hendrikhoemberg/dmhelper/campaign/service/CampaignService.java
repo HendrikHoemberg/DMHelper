@@ -415,6 +415,69 @@ public class CampaignService {
             }
         }
 
+        if (dto.adventures() != null) {
+            for (var advDto : dto.adventures()) {
+                if (advDto.chapters() == null) continue;
+                for (var chDto : advDto.chapters()) {
+                    if (chDto.scenes() == null) continue;
+                    for (var scDto : chDto.scenes()) {
+                        if (scDto.map() != null) {
+                            boolean mapFound = dto.maps() != null &&
+                                    dto.maps().stream().anyMatch(m -> scDto.map().equals(m.name()));
+                            if (!mapFound) {
+                                warnings.add("Scene '" + scDto.title() + "': map '" + scDto.map() + "' not found in campaign maps");
+                            }
+                        }
+                        if (scDto.encounter() != null) {
+                            boolean encFound = dto.encounters() != null &&
+                                    dto.encounters().stream()
+                                            .anyMatch(e -> scDto.encounter().equals(e.encounterKey())
+                                                    || scDto.encounter().equals(e.name()));
+                            if (!encFound) {
+                                warnings.add("Scene '" + scDto.title() + "': encounter '" + scDto.encounter() + "' not found in campaign encounters");
+                            }
+                        }
+                        if (scDto.handouts() != null) {
+                            for (var hTitle : scDto.handouts()) {
+                                boolean hFound = dto.handouts() != null &&
+                                        dto.handouts().stream().anyMatch(h -> hTitle.equals(h.title()));
+                                if (!hFound) {
+                                    warnings.add("Scene '" + scDto.title() + "': handout '" + hTitle + "' not found in campaign handouts");
+                                }
+                            }
+                        }
+                        if (scDto.statblocks() != null) {
+                            for (var sbKey : scDto.statblocks()) {
+                                boolean sbFound = dto.statBlocks() != null &&
+                                        dto.statBlocks().stream()
+                                                .anyMatch(sb -> sbKey.equals(sb.sourceKey()) || sbKey.equals(sb.name()));
+                                if (!sbFound) {
+                                    warnings.add("Scene '" + scDto.title() + "': statblock key '" + sbKey + "' not found in campaign statblocks");
+                                }
+                            }
+                        }
+                        if (scDto.pin() != null && scDto.map() != null) {
+                            for (var mapDto : dto.maps() != null ? dto.maps() : List.<CampaignExportDto.MapExportDto>of()) {
+                                if (scDto.map().equals(mapDto.name())) {
+                                    var grid = mapDto.grid();
+                                    if (grid != null) {
+                                        int maxW = grid.w() * grid.cellPx();
+                                        int maxH = grid.h() * grid.cellPx();
+                                        int px = scDto.pin().get("x");
+                                        int py = scDto.pin().get("y");
+                                        if (px < 0 || py < 0 || px >= maxW || py >= maxH) {
+                                            warnings.add("Scene '" + scDto.title() + "': pin (" + px + "," + py + ") is out of bounds for map '" + scDto.map() + "' (" + maxW + "x" + maxH + "px)");
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if (warnings.isEmpty()) {
             warnings.add("Validation passed — campaign is ready for import.");
         }

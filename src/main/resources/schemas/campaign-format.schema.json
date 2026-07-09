@@ -16,7 +16,8 @@
       "required": ["name"],
       "properties": {
         "name": { "type": "string", "minLength": 1 },
-        "description": { "type": "string" }
+        "description": { "type": "string" },
+        "currentScene": { "type": "string", "description": "Path-based reference: 'Adventure/Chapter/SceneKey'." }
       }
     },
     "party": {
@@ -181,8 +182,10 @@
           "activeTurnIndex": { "type": "integer" },
           "logSequence": { "type": "integer" },
           "lairActionName": { "type": "string" },
-          "lairActionDescription": { "type": "string" },
-          "combatants": {
+      "lairActionDescription": { "type": "string" },
+      "encounterKey": { "type": "string" },
+      "map": { "type": "string" },
+      "combatants": {
             "type": "array",
             "items": {
               "type": "object",
@@ -292,9 +295,64 @@
           "noteTitle": { "type": "string" }
         }
       }
+    },
+    "adventures": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/adventure" }
     }
   },
   "$defs": {
+    "adventure": {
+      "type": "object",
+      "required": ["name", "sortOrder", "chapters"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "sourceAttribution": { "type": "string" },
+        "sortOrder": { "type": "integer" },
+        "chapters": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/chapter" }
+        }
+      }
+    },
+    "chapter": {
+      "type": "object",
+      "required": ["title", "sortOrder", "scenes"],
+      "properties": {
+        "title": { "type": "string" },
+        "intro": { "type": "string" },
+        "sortOrder": { "type": "integer" },
+        "scenes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scene" }
+        }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "required": ["title", "sortOrder"],
+      "properties": {
+        "title": { "type": "string" },
+        "sceneKey": { "type": "string", "description": "The book's area number (e.g. '14', 'B3')." },
+        "body": { "type": "string", "description": "Markdown body. ```read-aloud fenced blocks for boxed DM text." },
+        "status": { "enum": ["UNVISITED", "VISITED", "DONE"] },
+        "sortOrder": { "type": "integer" },
+        "map": { "type": "string", "description": "Map key (matches map name)." },
+        "pin": {
+          "type": "object",
+          "description": "Pin position on map in pixels, origin top-left.",
+          "properties": {
+            "x": { "type": "integer" },
+            "y": { "type": "integer" }
+          },
+          "required": ["x", "y"]
+        },
+        "encounter": { "type": "string", "description": "Encounter key (falls back to name)." },
+        "statblocks": { "type": "array", "items": { "type": "string" }, "description": "StatBlock sourceKeys." },
+        "handouts": { "type": "array", "items": { "type": "string" }, "description": "Handout titles." }
+      }
+    },
     "sheet": {
       "type": "object",
       "properties": {

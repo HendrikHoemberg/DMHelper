@@ -40,6 +40,8 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -316,6 +318,73 @@ class CampaignImportExportRoundTripTest {
         assertThat(reCombatant.getToken().getPositionX()).isEqualTo(5);
         assertThat(reCombatant.getToken().getPositionY()).isEqualTo(3);
         assertThat(reCombatant.getToken().getColor()).isEqualTo("#ff0000");
+    }
+
+    @Test
+    void exportedJsonContainsAdventuresAndSceneFields() throws Exception {
+        Campaign c = campaignService.create("JSON Check", "adventures in JSON");
+
+        StatBlock sb = statBlockService.createCustom(c.getId(), "Test Monster", "2", "Monstrosity",
+                15, "30 (5d8+5)", "30 ft.",
+                12, 12, 12, 10, 10, 10,
+                null, null, null, null, null, null,
+                null, null, null, null, null,
+                null, "Common",
+                null, null);
+        sb.setSourceKey("test-monster");
+        statBlockRepository.save(sb);
+
+        Handout handout = new Handout();
+        handout.setCampaign(c);
+        handout.setTitle("Handout A");
+        handout.setFileName("handout_a.jpg");
+        handout.setContentType("image/jpeg");
+        handout.setDmOnly(true);
+        handout.setPresented(false);
+        handoutRepo.save(handout);
+
+        GameMap map = gameMapService.create(c.getId(), "Test Map", 20, 15, 48);
+
+        Adventure adv = adventureService.createAdventure(c.getId(), "Main Quest", "The main quest", null);
+        Chapter ch = adventureService.createChapter(adv.getId(), "Ch 1", "Begin");
+        Scene scene = adventureService.createScene(ch.getId(), "Start", "S-01", "You begin here.");
+        adventureService.linkMap(scene.getId(), map.getId(), 100, 200);
+        adventureService.addStatBlock(scene.getId(), sb.getId());
+        adventureService.addHandout(scene.getId(), handout.getId());
+
+        String json = campaignService.exportToJson(c.getId());
+
+        ObjectMapper om = new ObjectMapper();
+        JsonNode root = om.readTree(json);
+
+        JsonNode adventures = root.get("adventures");
+        assertThat(adventures).isNotNull();
+        assertThat(adventures.isArray()).isTrue();
+        assertThat(adventures).hasSize(1);
+
+        JsonNode advNode = adventures.get(0);
+        assertThat(advNode.get("name").asText()).isEqualTo("Main Quest");
+        assertThat(advNode.has("chapters")).isTrue();
+
+        JsonNode chapters = advNode.get("chapters");
+        assertThat(chapters).hasSize(1);
+        JsonNode chNode = chapters.get(0);
+        assertThat(chNode.get("title").asText()).isEqualTo("Ch 1");
+
+        JsonNode scenes = chNode.get("scenes");
+        assertThat(scenes).hasSize(1);
+        JsonNode scNode = scenes.get(0);
+        assertThat(scNode.get("title").asText()).isEqualTo("Start");
+        assertThat(scNode.get("sceneKey").asText()).isEqualTo("S-01");
+        assertThat(scNode.get("body").asText()).isEqualTo("You begin here.");
+        assertThat(scNode.get("map").asText()).isEqualTo("Test Map");
+        assertThat(scNode.has("pin")).isTrue();
+        assertThat(scNode.get("pin").get("x").asInt()).isEqualTo(100);
+        assertThat(scNode.get("pin").get("y").asInt()).isEqualTo(200);
+        assertThat(scNode.get("statblocks")).isNotNull();
+        assertThat(scNode.get("statblocks").get(0).asText()).isEqualTo("test-monster");
+        assertThat(scNode.get("handouts")).isNotNull();
+        assertThat(scNode.get("handouts").get(0).asText()).isEqualTo("Handout A");
     }
 
     @Test
