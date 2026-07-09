@@ -28,6 +28,7 @@ import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReference;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReferenceRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
@@ -70,6 +71,7 @@ public class CampaignService {
     private final CombatantRepository combatantRepo;
     private final HandoutService handoutService;
     private final HandoutRepository handoutRepo;
+    private final TokenRepository tokenRepo;
 
     public CampaignService(CampaignRepository repository,
                            PartyMemberRepository partyMemberRepository,
@@ -91,10 +93,11 @@ public class CampaignService {
                            TimelineEventRepository timelineEventRepo,
                             MagicItemRepository magicItemRepo,
                             EquipmentItemRepository equipmentItemRepo,
-                            EncounterRepository encounterRepo,
-                            CombatantRepository combatantRepo,
-                            HandoutService handoutService,
-                            HandoutRepository handoutRepo) {
+                             EncounterRepository encounterRepo,
+                             CombatantRepository combatantRepo,
+                             HandoutService handoutService,
+                             HandoutRepository handoutRepo,
+                             TokenRepository tokenRepo) {
         this.repository = repository;
         this.partyMemberRepository = partyMemberRepository;
         this.statBlockRepository = statBlockRepository;
@@ -119,6 +122,7 @@ public class CampaignService {
         this.combatantRepo = combatantRepo;
         this.handoutService = handoutService;
         this.handoutRepo = handoutRepo;
+        this.tokenRepo = tokenRepo;
         this.objectMapper = JsonMapper.builder()
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -306,6 +310,7 @@ public class CampaignService {
             }
         }
 
+        java.util.Map<String, UUID> mapKeyToId = new java.util.HashMap<>();
         if (dto.maps() != null) {
             for (var mapDto : dto.maps()) {
                 var grid = mapDto.grid();
@@ -313,10 +318,108 @@ public class CampaignService {
                         grid != null ? grid.w() : 30,
                         grid != null ? grid.h() : 20,
                         grid != null ? grid.cellPx() : 48);
+                mapKeyToId.put(mapDto.key(), map.getId());
                 if (mapDto.document() != null) {
                     gameMapService.updateDocument(map.getId(),
                             objectMapper.writeValueAsString(mapDto.document()),
                             map.getVersion());
+                }
+            }
+        }
+
+        if (dto.handouts() != null) {
+            for (var hDto : dto.handouts()) {
+                if (hDto.imageData() != null && hDto.fileName() != null && hDto.contentType() != null) {
+                    try {
+                        String base64Data = hDto.imageData();
+                        if (base64Data.startsWith("data:")) {
+                            int commaIdx = base64Data.indexOf(',');
+                            if (commaIdx > 0) {
+                                base64Data = base64Data.substring(commaIdx + 1);
+                            }
+                        }
+                        byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+                        java.nio.file.Path filesDir = java.nio.file.Path.of(
+                                System.getProperty("user.home"), ".dmhelper", "files");
+                        java.nio.file.Path targetPath = filesDir.resolve(hDto.fileName());
+                        java.nio.file.Files.createDirectories(targetPath.getParent());
+                        java.nio.file.Files.write(targetPath, imageBytes);
+
+                        dev.hendrikhoemberg.dmhelper.handout.data.Handout handout =
+                                new dev.hendrikhoemberg.dmhelper.handout.data.Handout();
+                        handout.setCampaign(saved);
+                        handout.setTitle(hDto.title());
+                        handout.setFileName(hDto.fileName());
+                        handout.setContentType(hDto.contentType());
+                        handout.setTags(hDto.tags() != null ? String.join(",", hDto.tags()) : null);
+                        handout.setDmOnly(true);
+                        handout.setPresented(false);
+                        handoutRepo.save(handout);
+                    } catch (Exception e) {
+                        System.err.println("WARNING: Failed to import handout '" + hDto.title() + "': " + e.getMessage());
+                    }
+                }
+            }
+        }
+
+        if (dto.encounters() != null) {
+            for (var encDto : dto.encounters()) {
+                var encounter = new dev.hendrikhoemberg.dmhelper.encounter.data.Encounter();
+                encounter.setCampaign(saved);
+                encounter.setName(encDto.name());
+                encounter.setStatus(dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.valueOf(encDto.status()));
+                encounter.setRound(encDto.round());
+                encounter.setActiveTurnIndex(encDto.activeTurnIndex());
+                encounter.setLogSequence(encDto.logSequence());
+                encounter.setLairActionName(encDto.lairActionName());
+                encounter.setLairActionDescription(encDto.lairActionDescription());
+                encounter = encounterRepo.save(encounter);
+
+                if (encDto.combatants() != null) {
+                    for (var cDto : encDto.combatants()) {
+                        var combatant = new dev.hendrikhoemberg.dmhelper.encounter.data.Combatant();
+                        combatant.setEncounter(encounter);
+                        combatant.setName(cDto.name());
+                        combatant.setInitiative(cDto.initiative());
+                        combatant.setTieBreaker(cDto.tieBreaker());
+                        combatant.setSortOrder(cDto.sortOrder());
+                        combatant.setMaxHp(cDto.maxHp());
+                        combatant.setCurrentHp(cDto.currentHp());
+                        combatant.setTempHp(cDto.tempHp());
+                        combatant.setKind(cDto.kind());
+                        combatant.setGroupId(cDto.groupId());
+                        combatant.setGroupLeader(cDto.groupLeader());
+                        if (cDto.tokenId() != null) {
+                            try {
+                                tokenRepo.findById(java.util.UUID.fromString(cDto.tokenId()))
+                                        .ifPresent(combatant::setToken);
+                            } catch (Exception e) {
+                                System.err.println("WARNING: Invalid token ID: " + cDto.tokenId());
+                            }
+                        }
+                        if (cDto.statBlockKey() != null) {
+                            statBlockRepository.findBySourceKey(cDto.statBlockKey())
+                                    .ifPresentOrElse(combatant::setStatBlock,
+                                            () -> System.err.println("WARNING: Unknown statblock key: " + cDto.statBlockKey()));
+                        }
+                        if (cDto.partyMemberName() != null) {
+                            partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(saved.getId())
+                                    .stream().filter(pm -> pm.getCharacterName().equals(cDto.partyMemberName()))
+                                    .findFirst().ifPresent(combatant::setPartyMember);
+                        }
+                        combatant.setDefeated(cDto.defeated());
+                        combatant.setHidden(cDto.hidden());
+                        combatant.setConditionsJson(cDto.conditionsJson());
+                        combatant.setConcentratingOn(cDto.concentratingOn());
+                        combatant.setConcentrationCheckPending(cDto.concentrationCheckPending());
+                        combatant.setLegendaryActionsUsed(cDto.legendaryActionsUsed());
+                        combatant.setLegendaryResistancesUsed(cDto.legendaryResistancesUsed());
+                        combatant.setLegendaryActionsMax(cDto.legendaryActionsMax());
+                        combatant.setLegendaryResistancesMax(cDto.legendaryResistancesMax());
+                        combatant.setRechargedAbilities(cDto.rechargedAbilities());
+                        combatant.setNotes(cDto.notes());
+                        combatantRepo.save(combatant);
+                    }
                 }
             }
         }
@@ -331,7 +434,16 @@ public class CampaignService {
             }
         }
 
-        // TODO: import quicknotes once targetId mappings are available
+        if (dto.quicknotes() != null) {
+            for (var qnDto : dto.quicknotes()) {
+                dev.hendrikhoemberg.dmhelper.notes.data.QuickNote qn =
+                        new dev.hendrikhoemberg.dmhelper.notes.data.QuickNote();
+                qn.setCampaign(saved);
+                qn.setTargetType(qnDto.targetType());
+                qn.setBody(qnDto.body());
+                quickNoteRepository.save(qn);
+            }
+        }
 
         if (dto.assignments() != null) {
             for (var aDto : dto.assignments()) {
