@@ -1,0 +1,28 @@
+<div th:fragment="form" xmlns:th="http://www.thymeleaf.org"
+     th:with="editing = ${chapter != null}">
+  <form class="inline-form"
+        th:action="@{${editing}
+              ? '/campaigns/{cid}/adventures/{aid}/chapters/{chId}'
+                   (cid=${campaignId},aid=${adventure.id},chId=${chapter.id})
+              : '/campaigns/{cid}/adventures/{aid}/chapters'
+                   (cid=${campaignId},aid=${adventure.id})}"
+        th:method="${editing} ? 'put' : 'post'"
+        hx-post th:if="${!editing}"
+        hx-target="closest .detail-section" hx-swap="outerHTML">
+    <input type="hidden" th:if="${editing}" name="_method" value="put"/>
+    <div class="form-group">
+      <input type="text" name="title" placeholder="Chapter title" required
+             th:value="${chapter?.title}" class="form-input"/>
+    </div>
+    <div class="form-group">
+      <textarea name="intro" placeholder="Introduction (optional)"
+                th:text="${chapter?.intro}" class="form-input" rows="2"></textarea>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" th:text="${editing} ? 'Update' : 'Create'">Create</button>
+      <button type="button" class="btn btn-ghost"
+              hx-get="@{/campaigns/{cid}/adventures/{aid}(cid=${campaignId},aid=${adventure.id})}"
+              hx-target="closest .detail-section" hx-swap="outerHTML">Cancel</button>
+    </div>
+  </form>
+</div>

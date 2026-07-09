@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="|${adventure.name} — ${campaign.name}|">Adventure Detail</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <h1 th:text="${adventure.name}">Adventure</h1>
+                <div class="page-header-actions">
+                    <a th:href="@{/campaigns/{cid}/adventures(cid=${campaignId})}"
+                       class="btn btn-ghost">&larr; All Adventures</a>
+                    <button class="btn btn-ghost"
+                            hx-get="@{/campaigns/{cid}/adventures/{id}/edit(cid=${campaignId},id=${adventure.id})}"
+                            hx-target="#adventure-header"
+                            hx-swap="innerHTML">Edit</button>
+                </div>
+            </div>
+
+            <div id="adventure-header">
+                <div class="detail-section" th:if="${adventure.sourceAttribution}">
+                    <div class="detail-meta" th:text="${adventure.sourceAttribution}">Source</div>
+                </div>
+                <div class="detail-section" th:if="${adventure.description}">
+                    <div class="detail-description" th:text="${adventure.description}">Description</div>
+                </div>
+            </div>
+
+            <div th:replace="~{adventure/_chapter-list :: chapterList}"></div>
+
+        </main>
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>

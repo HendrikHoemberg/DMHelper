@@ -1,0 +1,57 @@
+<div th:fragment="chapterList" xmlns:th="http://www.thymeleaf.org">
+  <div class="detail-section">
+    <h2>Chapters
+      <button class="btn btn-primary btn-sm"
+              hx-get="@{/campaigns/{cid}/adventures/{aid}/chapters/new(cid=${campaignId},aid=${adventure.id})}"
+              hx-target="#chapter-form-placeholder"
+              hx-swap="innerHTML">+ New Chapter</button>
+    </h2>
+    <div id="chapter-form-placeholder"></div>
+
+    <div th:each="ch : ${chapters}" style="margin-bottom: var(--space-md); border: 1px solid var(--color-border); border-radius: var(--radius); padding: var(--space-md);"
+         th:with="doneCount = ${ch.scenes != null ? #lists.size(ch.scenes.?[status.name() == 'DONE']) : 0},
+                  totalCount = ${ch.scenes != null ? #lists.size(ch.scenes) : 0}">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0;" th:text="${ch.title}">Chapter</h3>
+        <span style="font-size: var(--text-sm); color: var(--color-text-muted);"
+              th:text="${totalCount > 0 ? doneCount + '/' + totalCount + ' done' : 'no scenes'}">0/0 done</span>
+      </div>
+      <div th:if="${ch.intro}" class="detail-meta" th:utext="${@markdownUtil.toHtml(ch.intro)}" style="margin: var(--space-sm) 0;">Intro</div>
+
+      <div th:if="${ch.scenes != null and !ch.scenes.isEmpty()}">
+        <div th:each="s : ${ch.scenes}" style="display: flex; gap: var(--space-sm); padding: var(--space-xs) 0; border-bottom: 1px solid var(--color-border);">
+          <span class="badge" style="min-width: 24px; text-align: center;"
+                th:classappend="${s.status == SceneStatus.DONE} ? 'badge-success' :
+                                (${s.status == SceneStatus.VISITED} ? 'badge-warning' : '')"
+                th:text="${s.status.name().charAt(0)}">U</span>
+          <span th:if="${s.sceneKey}" class="badge" th:text="${s.sceneKey}">14</span>
+          <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}
+                       (cid=${campaignId},aid=${adventure.id},sid=${s.id})}"
+             th:text="${s.title}">Scene Title</a>
+        </div>
+      </div>
+
+      <div style="margin-top: var(--space-sm); display: flex; gap: var(--space-xs);">
+        <button class="btn btn-ghost btn-sm"
+                hx-put="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}/move
+                          (cid=${campaignId},aid=${adventure.id},chId=${ch.id})}"
+                hx-vals='{"direction": -1}'
+                hx-target="closest .detail-section" hx-swap="outerHTML">↑</button>
+        <button class="btn btn-ghost btn-sm"
+                hx-put="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}/move
+                          (cid=${campaignId},aid=${adventure.id},chId=${ch.id})}"
+                hx-vals='{"direction": 1}'
+                hx-target="closest .detail-section" hx-swap="outerHTML">↓</button>
+        <button class="btn btn-ghost btn-sm"
+                hx-get="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}/edit
+                          (cid=${campaignId},aid=${adventure.id},chId=${ch.id})}"
+                hx-target="closest div[style*='border']" hx-swap="outerHTML">Edit</button>
+        <button class="btn btn-danger btn-sm"
+                hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}
+                             (cid=${campaignId},aid=${adventure.id},chId=${ch.id})}"
+                hx-confirm="Delete this chapter and all its scenes?"
+                hx-target="closest .detail-section" hx-swap="outerHTML">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>

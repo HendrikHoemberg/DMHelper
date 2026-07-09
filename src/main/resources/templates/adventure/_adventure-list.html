@@ -1,0 +1,40 @@
+<div th:fragment="adventureList" xmlns:th="http://www.thymeleaf.org">
+  <div class="detail-section">
+    <h2>Adventures <button class="btn btn-primary"
+            hx-get="@{/campaigns/{cid}/adventures/new(cid=${campaignId})}"
+            hx-target="#adventure-form-placeholder"
+            hx-swap="innerHTML">+ New</button></h2>
+    <div id="adventure-form-placeholder"></div>
+    <div th:if="${adventures.isEmpty()}" class="empty-state">No adventures yet.</div>
+    <div th:each="a : ${adventures}" class="card">
+      <div class="card-header">
+        <h3>
+          <a th:href="@{/campaigns/{cid}/adventures/{id}(cid=${campaignId},id=${a.id})}"
+             th:text="${a.name}">Adventure</a>
+        </h3>
+        <div class="card-actions">
+          <button class="btn btn-ghost btn-sm"
+                  hx-put="@{/campaigns/{cid}/adventures/{id}/move(cid=${campaignId},id=${a.id})}"
+                  hx-vals='{"direction": -1}'
+                  hx-target="closest .detail-section"
+                  hx-swap="outerHTML">↑</button>
+          <button class="btn btn-ghost btn-sm"
+                  hx-put="@{/campaigns/{cid}/adventures/{id}/move(cid=${campaignId},id=${a.id})}"
+                  hx-vals='{"direction": 1}'
+                  hx-target="closest .detail-section"
+                  hx-swap="outerHTML">↓</button>
+          <button class="btn btn-ghost btn-sm"
+                  hx-get="@{/campaigns/{cid}/adventures/{id}/edit(cid=${campaignId},id=${a.id})}"
+                  hx-target="closest .card"
+                  hx-swap="outerHTML">Edit</button>
+          <button class="btn btn-danger btn-sm"
+                  hx-delete="@{/campaigns/{cid}/adventures/{id}(cid=${campaignId},id=${a.id})}"
+                  hx-confirm="Delete this adventure and all its chapters and scenes?"
+                  hx-target="body" hx-swap="outerHTML">Delete</button>
+        </div>
+      </div>
+      <div class="card-meta" th:if="${a.sourceAttribution}" th:text="${a.sourceAttribution}">Source</div>
+      <div class="card-body" th:if="${a.description}" th:text="${a.description}">Description</div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,31 @@
+<div th:fragment="form" xmlns:th="http://www.thymeleaf.org"
+     th:with="editing = ${adventure != null}">
+  <form class="inline-form"
+        th:action="@{${editing}
+              ? '/campaigns/{cid}/adventures/{id}(cid=${campaignId},id=${adventure.id})'
+              : '/campaigns/{cid}/adventures(cid=${campaignId})'}"
+        th:method="${editing} ? 'put' : 'post'"
+        hx-post th:if="${!editing}"
+        hx-throttle="500ms">
+    <input type="hidden" th:if="${editing}" name="_method" value="put"/>
+    <div class="form-group">
+      <input type="text" name="name" placeholder="Adventure name" required
+             th:value="${adventure?.name}" class="form-input"/>
+    </div>
+    <div class="form-group">
+      <textarea name="description" placeholder="Description (optional)"
+                th:text="${adventure?.description}" class="form-input" rows="2"></textarea>
+    </div>
+    <div class="form-group">
+      <input type="text" name="sourceAttribution" placeholder="Source attribution"
+             th:value="${adventure?.sourceAttribution}" class="form-input"/>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" th:text="${editing} ? 'Update' : 'Create'">Create</button>
+      <button type="button" class="btn btn-ghost"
+              hx-get th:if="${editing}"
+              th:hx-get="@{/campaigns/{cid}/adventures/{id}(cid=${campaignId},id=${adventure.id})}"
+              hx-target="closest .card" hx-swap="outerHTML">Cancel</button>
+    </div>
+  </form>
+</div>
