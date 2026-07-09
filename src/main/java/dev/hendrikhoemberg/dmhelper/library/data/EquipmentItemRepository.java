@@ -14,4 +14,6 @@ public interface EquipmentItemRepository extends JpaRepository<EquipmentItem, UU
     List<EquipmentItem> findAllByOrderByNameAsc();
 
     List<EquipmentItem> findByCategoryOrderByNameAsc(EquipmentItem.Category category);
+
+    List<EquipmentItem> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 }

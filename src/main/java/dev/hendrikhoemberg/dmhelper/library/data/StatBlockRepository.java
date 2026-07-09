@@ -21,4 +21,6 @@ public interface StatBlockRepository extends JpaRepository<StatBlock, UUID>,
     Optional<StatBlock> findBySourceAndSourceKey(StatBlock.Source source, String sourceKey);
 
     boolean existsBySource(StatBlock.Source source);
+
+    List<StatBlock> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 }

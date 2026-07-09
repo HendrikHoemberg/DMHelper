@@ -20,4 +20,6 @@ public interface SpellRepository extends JpaRepository<Spell, UUID>,
 
     @Query("select count(s) from Spell s where s.school is not null and s.school <> ''")
     long countWithSchool();
+
+    List<Spell> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 }

@@ -12,4 +12,6 @@ public interface FeatRepository extends JpaRepository<Feat, UUID>,
         JpaSpecificationExecutor<Feat> {
 
     List<Feat> findAllByOrderByNameAsc();
+
+    List<Feat> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 }

@@ -12,4 +12,6 @@ public interface ConditionRepository extends JpaRepository<Condition, UUID>,
         JpaSpecificationExecutor<Condition> {
 
     List<Condition> findAllByOrderByNameAsc();
+
+    List<Condition> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 }

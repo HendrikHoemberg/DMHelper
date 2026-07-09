@@ -13,4 +13,6 @@ public interface BackgroundRepository extends JpaRepository<Background, UUID>,
 
     List<Background> findAllByOrderByNameAsc();
     Background findBySourceKey(String sourceKey);
+
+    List<Background> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 }

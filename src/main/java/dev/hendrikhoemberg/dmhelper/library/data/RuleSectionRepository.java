@@ -14,4 +14,6 @@ public interface RuleSectionRepository extends JpaRepository<RuleSection, UUID>,
     List<RuleSection> findByRulesetOrderBySortOrderAsc(String ruleset);
 
     List<RuleSection> findAllByOrderBySortOrderAsc();
+
+    List<RuleSection> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 }

@@ -19,4 +19,6 @@ public interface CharacterClassRepository extends JpaRepository<CharacterClass, 
     List<CharacterClass> findAllByOrderByNameAsc();
 
     Optional<CharacterClass> findBySourceKey(String sourceKey);
+
+    List<CharacterClass> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 }

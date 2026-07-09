@@ -12,4 +12,6 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, UUID>,
         JpaSpecificationExecutor<MagicItem> {
 
     List<MagicItem> findAllByOrderByNameAsc();
+
+    List<MagicItem> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 }

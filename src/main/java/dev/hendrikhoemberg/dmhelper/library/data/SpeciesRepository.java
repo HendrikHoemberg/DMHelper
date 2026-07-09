@@ -13,4 +13,6 @@ public interface SpeciesRepository extends JpaRepository<Species, UUID>,
 
     List<Species> findAllByOrderByNameAsc();
     Species findBySourceKey(String sourceKey);
+
+    List<Species> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 }
