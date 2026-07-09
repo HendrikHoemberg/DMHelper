@@ -628,14 +628,12 @@ public class CampaignService {
                         .findFirst().ifPresent(ia::setPartyMember);
                 }
                 if (aDto.magicItemKey() != null) {
-                    MagicItem mi = magicItemRepo.findAll().stream()
-                        .filter(m -> aDto.magicItemKey().equals(m.getSourceKey())).findFirst().orElse(null);
-                    if (mi != null) ia.setMagicItem(mi);
+                    magicItemRepo.findBySourceKey(aDto.magicItemKey())
+                        .ifPresent(ia::setMagicItem);
                 }
                 if (aDto.equipmentItemKey() != null) {
-                    EquipmentItem ei = equipmentItemRepo.findAll().stream()
-                        .filter(e -> aDto.equipmentItemKey().equals(e.getSourceKey())).findFirst().orElse(null);
-                    if (ei != null) ia.setEquipmentItem(ei);
+                    equipmentItemRepo.findBySourceKey(aDto.equipmentItemKey())
+                        .ifPresent(ia::setEquipmentItem);
                 }
                 ia.setCustomText(aDto.customText());
                 ia.setQuantity(aDto.quantity());

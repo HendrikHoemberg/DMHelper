@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -16,4 +17,6 @@ public interface EquipmentItemRepository extends JpaRepository<EquipmentItem, UU
     List<EquipmentItem> findByCategoryOrderByNameAsc(EquipmentItem.Category category);
 
     List<EquipmentItem> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
+
+    Optional<EquipmentItem> findBySourceKey(String sourceKey);
 }

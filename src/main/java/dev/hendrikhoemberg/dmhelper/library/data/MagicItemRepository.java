@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -14,4 +15,6 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, UUID>,
     List<MagicItem> findAllByOrderByNameAsc();
 
     List<MagicItem> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
+
+    Optional<MagicItem> findBySourceKey(String sourceKey);
 }
