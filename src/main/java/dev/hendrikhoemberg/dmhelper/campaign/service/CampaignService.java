@@ -552,7 +552,8 @@ public class CampaignService {
                         NoteType.valueOf(noteDto.type()),
                         noteDto.title(),
                         noteDto.body(),
-                        noteDto.tags());
+                        noteDto.tags(),
+                        noteDto.dmOnly());
             }
         }
 

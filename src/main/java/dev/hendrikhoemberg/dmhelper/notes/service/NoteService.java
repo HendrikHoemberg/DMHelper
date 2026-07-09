@@ -42,6 +42,12 @@ public class NoteService {
         this.wikiLinkParser = wikiLinkParser;
     }
 
+    public Note create(UUID campaignId, NoteType type, String title, String body, String tags, boolean dmOnly) {
+        Note note = create(campaignId, type, title, body, tags);
+        note.setDmOnly(dmOnly);
+        return noteRepository.save(note);
+    }
+
     public Note create(UUID campaignId, NoteType type, String title, String body, String tags) {
         Campaign campaign = campaignRepository.findById(campaignId)
                 .orElseThrow(() -> new NotFoundException("Campaign not found"));

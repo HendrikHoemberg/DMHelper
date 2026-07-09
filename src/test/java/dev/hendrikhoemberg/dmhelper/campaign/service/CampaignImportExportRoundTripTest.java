@@ -20,7 +20,11 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
+import dev.hendrikhoemberg.dmhelper.notes.data.Note;
+import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
+import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
+import dev.hendrikhoemberg.dmhelper.notes.service.WikiLinkParser;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import org.junit.jupiter.api.Test;
@@ -35,7 +39,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import({CampaignService.class, PartyMemberService.class, StatBlockService.class, GameMapService.class})
+@Import({CampaignService.class, PartyMemberService.class, StatBlockService.class, GameMapService.class,
+         NoteService.class, WikiLinkParser.class})
 class CampaignImportExportRoundTripTest {
 
     @Autowired private CampaignService campaignService;
@@ -49,9 +54,7 @@ class CampaignImportExportRoundTripTest {
     @Autowired private EncounterRepository encounterRepo;
     @Autowired private CombatantRepository combatantRepo;
     @Autowired private TokenRepository tokenRepo;
-
-    @MockitoBean
-    private NoteService noteService;
+    @Autowired private NoteRepository noteRepository;
 
     @MockitoBean
     private HandoutService handoutService;
@@ -298,5 +301,34 @@ class CampaignImportExportRoundTripTest {
         assertThat(reCombatant.getToken().getPositionX()).isEqualTo(5);
         assertThat(reCombatant.getToken().getPositionY()).isEqualTo(3);
         assertThat(reCombatant.getToken().getColor()).isEqualTo("#ff0000");
+    }
+
+    @Test
+    void roundTripPreservesDmOnlyNoteFlag() {
+        Campaign c = campaignService.create("Note Trip", "dmOnly");
+        noteRepository.save(createNote(c, "DM Secret", NoteType.LOCATION, "hidden body", "secret", true));
+        noteRepository.save(createNote(c, "Public Note", NoteType.QUEST, "visible body", "public", false));
+
+        String json = campaignService.exportToJson(c.getId());
+        Campaign imported = campaignService.importFromJson(json);
+
+        List<Note> notes = noteRepository.findByCampaignIdOrderByCreatedAtDesc(imported.getId());
+        assertThat(notes).hasSize(2);
+        Note dmNote = notes.stream().filter(n -> n.getTitle().equals("DM Secret")).findFirst().orElseThrow();
+        assertThat(dmNote.isDmOnly()).isTrue();
+        assertThat(dmNote.getBody()).isEqualTo("hidden body");
+        Note publicNote = notes.stream().filter(n -> n.getTitle().equals("Public Note")).findFirst().orElseThrow();
+        assertThat(publicNote.isDmOnly()).isFalse();
+    }
+
+    private Note createNote(Campaign campaign, String title, NoteType type, String body, String tags, boolean dmOnly) {
+        Note note = new Note();
+        note.setCampaign(campaign);
+        note.setTitle(title);
+        note.setType(type);
+        note.setBody(body);
+        note.setTags(tags);
+        note.setDmOnly(dmOnly);
+        return noteRepository.save(note);
     }
 }
