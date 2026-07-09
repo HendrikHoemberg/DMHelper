@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.gamemap.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
@@ -16,7 +17,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import({TokenService.class, GameMapService.class})
+@Import({TokenService.class, GameMapService.class, SceneRefCleaner.class})
 class TokenServiceTest {
 
     @Autowired private TokenService tokenService;

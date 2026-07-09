@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.encounter.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
@@ -60,6 +61,7 @@ public class EncounterService {
     private final CombatDifficultyCalculator calculator;
     private final DiceEngine diceEngine;
     private final TablePresentationService tablePresentationService;
+    private final SceneRefCleaner sceneRefCleaner;
 
     public EncounterService(EncounterRepository encounterRepo, CampaignRepository campaignRepo,
                             EntityManager em, GameMapRepository mapRepo,
@@ -67,7 +69,8 @@ public class EncounterService {
                             TokenRepository tokenRepo,
                             PartyMemberRepository partyRepo, StatBlockRepository statBlockRepo,
                             CombatDifficultyCalculator calculator, DiceEngine diceEngine,
-                            TablePresentationService tablePresentationService) {
+                            TablePresentationService tablePresentationService,
+                            SceneRefCleaner sceneRefCleaner) {
         this.encounterRepo = encounterRepo;
         this.campaignRepo = campaignRepo;
         this.em = em;
@@ -80,6 +83,7 @@ public class EncounterService {
         this.calculator = calculator;
         this.diceEngine = diceEngine;
         this.tablePresentationService = tablePresentationService;
+        this.sceneRefCleaner = sceneRefCleaner;
     }
 
     public record CreateRequest(String name, UUID mapId) {}
@@ -210,6 +214,7 @@ public class EncounterService {
     }
 
     public void delete(UUID id) {
+        sceneRefCleaner.detachEncounter(id);
         encounterRepo.delete(findEntityById(id));
     }
 

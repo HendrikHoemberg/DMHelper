@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.notes.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
@@ -21,7 +22,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@Import({NoteService.class, WikiLinkParser.class, StatBlockService.class})
+@Import({NoteService.class, WikiLinkParser.class, StatBlockService.class, SceneRefCleaner.class})
 class NoteServiceTest {
 
     @Autowired private NoteRepository noteRepository;

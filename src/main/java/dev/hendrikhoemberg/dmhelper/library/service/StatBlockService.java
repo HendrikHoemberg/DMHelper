@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.library.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
@@ -17,10 +18,13 @@ public class StatBlockService {
 
     private final StatBlockRepository repository;
     private final CampaignRepository campaignRepo;
+    private final SceneRefCleaner sceneRefCleaner;
 
-    public StatBlockService(StatBlockRepository repository, CampaignRepository campaignRepo) {
+    public StatBlockService(StatBlockRepository repository, CampaignRepository campaignRepo,
+                            SceneRefCleaner sceneRefCleaner) {
         this.repository = repository;
         this.campaignRepo = campaignRepo;
+        this.sceneRefCleaner = sceneRefCleaner;
     }
 
     @Transactional(readOnly = true)
@@ -174,6 +178,7 @@ public class StatBlockService {
     }
 
     public void delete(UUID id) {
+        sceneRefCleaner.detachStatBlock(id);
         StatBlock sb = findById(id);
         if (sb.getSource() != StatBlock.Source.CUSTOM) {
             throw new IllegalArgumentException("Cannot delete SRD statblocks");

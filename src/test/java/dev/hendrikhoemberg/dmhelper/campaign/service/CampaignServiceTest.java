@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +30,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @DataJpaTest
-@Import({CampaignService.class, GameMapService.class})
+@Import({CampaignService.class, GameMapService.class, SceneRefCleaner.class})
 class CampaignServiceTest {
 
     @Autowired

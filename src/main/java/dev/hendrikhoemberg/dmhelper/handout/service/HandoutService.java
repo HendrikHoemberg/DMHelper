@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.handout.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
@@ -24,13 +25,16 @@ public class HandoutService {
 
     private final HandoutRepository handoutRepository;
     private final CampaignRepository campaignRepository;
+    private final SceneRefCleaner sceneRefCleaner;
     private final Path filesDir;
 
     public HandoutService(HandoutRepository handoutRepository,
                           CampaignRepository campaignRepository,
+                          SceneRefCleaner sceneRefCleaner,
                           @Value("${user.home}") String userHome) {
         this.handoutRepository = handoutRepository;
         this.campaignRepository = campaignRepository;
+        this.sceneRefCleaner = sceneRefCleaner;
         this.filesDir = Path.of(userHome, ".dmhelper", "files");
     }
 
@@ -92,6 +96,7 @@ public class HandoutService {
     }
 
     public void delete(UUID id) {
+        sceneRefCleaner.detachHandout(id);
         Handout handout = findById(id);
         try {
             Path filePath = filesDir.resolve(handout.getFileName());

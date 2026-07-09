@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEvent;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEventRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
@@ -42,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @Import({CampaignService.class, PartyMemberService.class, StatBlockService.class, GameMapService.class,
-         NoteService.class, WikiLinkParser.class})
+         NoteService.class, WikiLinkParser.class, SceneRefCleaner.class})
 class CampaignImportExportRoundTripTest {
 
     @Autowired private CampaignService campaignService;

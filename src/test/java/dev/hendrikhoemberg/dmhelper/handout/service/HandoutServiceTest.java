@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.handout.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
@@ -15,7 +16,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import(HandoutService.class)
+@Import({HandoutService.class, SceneRefCleaner.class})
 class HandoutServiceTest {
 
     @Autowired private HandoutService service;

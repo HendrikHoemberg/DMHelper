@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.gamemap.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
@@ -19,11 +20,14 @@ public class GameMapService {
 
     private final GameMapRepository repository;
     private final CampaignRepository campaignRepository;
+    private final SceneRefCleaner sceneRefCleaner;
     private final ObjectMapper objectMapper;
 
-    public GameMapService(GameMapRepository repository, CampaignRepository campaignRepository) {
+    public GameMapService(GameMapRepository repository, CampaignRepository campaignRepository,
+                          SceneRefCleaner sceneRefCleaner) {
         this.repository = repository;
         this.campaignRepository = campaignRepository;
+        this.sceneRefCleaner = sceneRefCleaner;
         this.objectMapper = JsonMapper.builder().build();
     }
 
@@ -117,6 +121,7 @@ public class GameMapService {
     }
 
     public void delete(UUID mapId) {
+        sceneRefCleaner.detachMap(mapId);
         GameMap map = findById(mapId);
         UUID campaignId = map.getCampaign().getId();
         repository.delete(map);
