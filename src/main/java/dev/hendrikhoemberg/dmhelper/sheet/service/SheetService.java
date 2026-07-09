@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.sheet.service;
 
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository;
@@ -76,6 +77,10 @@ public class SheetService {
     ) {}
 
     public XpResult checkLevelUp(CharacterSheet sheet) {
+        Campaign campaign = sheet.getPartyMember().getCampaign();
+        if (campaign.isMilestoneLeveling()) {
+            return new XpResult(sheet.getId(), sheet.getXp(), getTotalLevel(sheet), false);
+        }
         int xp = sheet.getXp();
         int currentLevel = getTotalLevel(sheet);
         int newLevel = currentLevel;

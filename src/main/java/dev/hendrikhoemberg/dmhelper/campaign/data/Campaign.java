@@ -21,6 +21,9 @@ public class Campaign {
     @Column(columnDefinition = "CLOB")
     private String settings;
 
+    @Column(nullable = false)
+    private boolean milestoneLeveling = false;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -42,6 +45,9 @@ public class Campaign {
 
     public String getSettings() { return settings; }
     public void setSettings(String settings) { this.settings = settings; }
+
+    public boolean isMilestoneLeveling() { return milestoneLeveling; }
+    public void setMilestoneLeveling(boolean milestoneLeveling) { this.milestoneLeveling = milestoneLeveling; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

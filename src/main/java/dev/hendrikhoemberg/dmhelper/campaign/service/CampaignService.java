@@ -160,6 +160,12 @@ public class CampaignService {
         repository.delete(campaign);
     }
 
+    public void setMilestoneMode(UUID campaignId, boolean enabled) {
+        Campaign c = findById(campaignId);
+        c.setMilestoneLeveling(enabled);
+        repository.save(c);
+    }
+
     @Transactional(readOnly = true)
     public String exportToJson(UUID id) {
         Campaign campaign = findById(id);

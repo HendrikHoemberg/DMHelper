@@ -76,6 +76,14 @@ public class CampaignController {
         return "campaigns/detail";
     }
 
+    @PutMapping("/{id}/milestone")
+    @ResponseBody
+    public ResponseEntity<Void> toggleMilestone(@PathVariable UUID id,
+                                                @RequestParam boolean enabled) {
+        service.setMilestoneMode(id, enabled);
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
