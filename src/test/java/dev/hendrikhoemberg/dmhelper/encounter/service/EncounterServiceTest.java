@@ -15,10 +15,14 @@ import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntry;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntryRepository;
+import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
 import java.util.UUID;
@@ -26,8 +30,16 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import({EncounterService.class, CombatDifficultyCalculator.class, GameMapService.class, DiceEngine.class})
+@Import({EncounterService.class, CombatDifficultyCalculator.class, GameMapService.class, DiceEngine.class, EncounterServiceTest.MockConfig.class})
 class EncounterServiceTest {
+
+    @TestConfiguration
+    static class MockConfig {
+        @Bean
+        TablePresentationService tablePresentationService() {
+            return Mockito.mock(TablePresentationService.class);
+        }
+    }
 
     @Autowired private EncounterService service;
     @Autowired private GameMapService mapService;
