@@ -38,7 +38,6 @@
             editTempHp: 0,
             hpDelta: '',
             dmMode: true,
-            lairActionUsedThisRound: false,
             rechargePrompts: [],
             rechargeRolls: {},
             conditionsCatalog: [],
@@ -150,15 +149,11 @@
 
             async nextTurn() {
                 if (!this._encounterId) return;
-                const prevRound = this.encounter?.round || 0;
                 try {
                     const resp = await fetch(`/api/v1/encounters/${this._encounterId}/next-turn`, { method: 'POST' });
                     if (resp.ok) {
                         this.encounter = await resp.json();
                         await this.reloadCombatants();
-                        if (this.encounter.round > prevRound) {
-                            this.lairActionUsedThisRound = false;
-                        }
                         if (this.encounter.rechargePrompts) {
                             this.rechargePrompts = this.encounter.rechargePrompts;
                         }
@@ -293,7 +288,7 @@
                 if (!this._encounterId) return;
                 try {
                     await fetch(`/api/v1/encounters/${this._encounterId}/lair-action`, { method: 'POST' });
-                    this.lairActionUsedThisRound = true;
+                    await this.loadEncounter(this._encounterId);
                 } catch (e) {}
             },
 
@@ -457,9 +452,6 @@
                     Active: <strong x-text="activeCombatant?.name || '—'"></strong>
                 </span>
                 <button class="btn btn-ghost" style="padding: 2px 8px;" @click="nextTurn()">Next ▶</button>
-                <button class="btn btn-ghost" style="padding: 2px 8px;"
-                        x-show="encounter?.lairActionName"
-                        @click="activateLairAction()">Lair</button>
             </div>
 
             <!-- Recharge banner -->
@@ -529,14 +521,14 @@
                     </div>
                 </template>
 
-                <!-- Lair action virtual row -->
+                <!-- Lair action slot (initiative 20) -->
                 <div class="lair-action-row" x-show="lairActionRowVisible">
                     <span class="init-badge lair-init">20</span>
                     <span class="combatant-name" x-text="encounter?.lairActionName || 'Lair Action'"></span>
                     <span style="font-size: 0.7rem; color: var(--color-text-muted); margin-left: auto;"
-                          x-show="lairActionUsedThisRound">✓ this round</span>
+                          x-show="!encounter?.lairActionAvailable">✓ this round</span>
                     <button class="btn btn-ghost" style="padding: 1px 6px; font-size: 0.75rem;"
-                            x-show="!lairActionUsedThisRound"
+                            x-show="encounter?.lairActionAvailable"
                             @click="activateLairAction()">Activate</button>
                 </div>
             </div>

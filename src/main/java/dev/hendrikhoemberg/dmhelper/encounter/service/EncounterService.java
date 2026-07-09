@@ -134,6 +134,7 @@ public class EncounterService {
     public record EncounterDto(UUID id, UUID campaignId, UUID mapId, String name, String status,
                                int round, int activeTurnIndex, int combatantCount,
                                String lairActionName, String lairActionDescription,
+                               boolean lairActionAvailable,
                                List<CombatantDto> combatants,
                                List<RechargePrompt> rechargePrompts) {}
 
@@ -147,6 +148,7 @@ public class EncounterService {
                 e.getName(), e.getStatus().name(), e.getRound(), e.getActiveTurnIndex(),
                 0,
                 e.getLairActionName(), e.getLairActionDescription(),
+                e.getLairActionName() != null && !e.isLairActionTriggered(),
                 List.of(), List.of());
     }
 
@@ -669,8 +671,17 @@ public class EncounterService {
             throw new IllegalStateException("All combatants defeated");
         }
 
+        if (oldIdx >= 0 && encounter.getLairActionName() != null) {
+            Combatant oldCombatant = combatants.get(oldIdx);
+            Combatant newCombatant = combatants.get(idx);
+            if (oldCombatant.getInitiative() >= 20 && newCombatant.getInitiative() < 20) {
+                encounter.setLairActionTriggered(true);
+            }
+        }
+
         if (idx <= oldIdx) {
             encounter.setRound(encounter.getRound() + 1);
+            encounter.setLairActionTriggered(false);
             logEntry(encounterId, CombatLogEntry.EntryType.ROUND_ADVANCE, "",
                     "{\"round\":" + encounter.getRound() + "}");
             tickConditionDurations(encounterId);
@@ -691,6 +702,7 @@ public class EncounterService {
                 encounter.getName(), encounter.getStatus().name(), encounter.getRound(),
                 encounter.getActiveTurnIndex(), 0,
                 encounter.getLairActionName(), encounter.getLairActionDescription(),
+                encounter.getLairActionName() != null && !encounter.isLairActionTriggered(),
                 List.of(), prompts);
     }
 
@@ -895,6 +907,9 @@ public class EncounterService {
     }
 
     public void activateLairAction(UUID encounterId) {
+        Encounter encounter = findEntityById(encounterId);
+        encounter.setLairActionTriggered(true);
+        encounterRepo.save(encounter);
         logEntry(encounterId, CombatLogEntry.EntryType.LAIR_ACTION, "", "");
     }
 
@@ -980,6 +995,7 @@ public class EncounterService {
         }
         encounter.setRound(1);
         encounter.setActiveTurnIndex(-1);
+        encounter.setLairActionTriggered(false);
 
         List<CombatLogEntry> entriesToKeep = log.subList(0, log.size() - 1);
         for (CombatLogEntry entry : entriesToKeep) {

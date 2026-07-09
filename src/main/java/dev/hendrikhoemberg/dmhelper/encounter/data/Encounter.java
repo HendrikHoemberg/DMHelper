@@ -48,6 +48,9 @@ public class Encounter {
     @Column(columnDefinition = "CLOB")
     private String lairActionDescription;
 
+    @Column(nullable = false)
+    private boolean lairActionTriggered = false;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -77,4 +80,7 @@ public class Encounter {
 
     public String getLairActionDescription() { return lairActionDescription; }
     public void setLairActionDescription(String lairActionDescription) { this.lairActionDescription = lairActionDescription; }
+
+    public boolean isLairActionTriggered() { return lairActionTriggered; }
+    public void setLairActionTriggered(boolean lairActionTriggered) { this.lairActionTriggered = lairActionTriggered; }
 }

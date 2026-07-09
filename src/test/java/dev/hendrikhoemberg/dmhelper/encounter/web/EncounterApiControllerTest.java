@@ -28,7 +28,7 @@ class EncounterApiControllerTest {
 
     private EncounterDto enc(UUID id, String name, String status) {
         return new EncounterDto(id, UUID.randomUUID(), UUID.randomUUID(), name, status,
-                1, 0, 0, null, null, List.of(), List.of());
+                1, 0, 0, null, null, false, List.of(), List.of());
     }
 
     private CombatantDto combatant(String name) {
@@ -45,7 +45,7 @@ class EncounterApiControllerTest {
         UUID encId = UUID.randomUUID();
         when(service.create(eq(campId), any())).thenReturn(
                 new EncounterDto(encId, campId, null, "New Encounter", "PLANNED",
-                        0, -1, 0, null, null, List.of(), List.of()));
+                        0, -1, 0, null, null, false, List.of(), List.of()));
 
         mockMvc.perform(post("/api/v1/campaigns/{campaignId}/encounters", campId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -74,7 +74,7 @@ class EncounterApiControllerTest {
         UUID encId = UUID.randomUUID();
         when(service.activate(encId)).thenReturn(
                 new EncounterDto(encId, UUID.randomUUID(), null, "Active Encounter", "ACTIVE",
-                        1, -1, 0, null, null, List.of(), List.of()));
+                        1, -1, 0, null, null, false, List.of(), List.of()));
 
         mockMvc.perform(post("/api/v1/encounters/{id}/activate", encId))
                 .andExpect(status().isOk())
@@ -86,7 +86,7 @@ class EncounterApiControllerTest {
         UUID encId = UUID.randomUUID();
         when(service.nextTurn(encId)).thenReturn(
                 new EncounterDto(encId, UUID.randomUUID(), null, "Encounter", "ACTIVE",
-                        2, 1, 0, null, null, List.of(), List.of()));
+                        2, 1, 0, null, null, false, List.of(), List.of()));
 
         mockMvc.perform(post("/api/v1/encounters/{id}/next-turn", encId))
                 .andExpect(status().isOk())
@@ -113,7 +113,7 @@ class EncounterApiControllerTest {
         when(service.findActiveByCampaignId(campId))
                 .thenReturn(java.util.Optional.of(
                         new EncounterDto(encId, campId, null, "Active", "ACTIVE",
-                                1, 0, 0, null, null, List.of(), List.of())));
+                                1, 0, 0, null, null, false, List.of(), List.of())));
 
         mockMvc.perform(get("/api/v1/campaigns/{campaignId}/encounters/active", campId))
                 .andExpect(status().isOk())
