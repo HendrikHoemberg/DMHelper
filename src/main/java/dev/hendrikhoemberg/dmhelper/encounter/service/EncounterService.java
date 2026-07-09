@@ -689,31 +689,36 @@ public class EncounterService {
             return toDto(encounter);
         }
 
-        int idx = encounter.getActiveTurnIndex();
-        if (idx >= combatants.size()) {
-            idx = combatants.size() - 1;
+        int oldIdx = encounter.getActiveTurnIndex();
+        if (oldIdx >= combatants.size()) {
+            oldIdx = combatants.size() - 1;
         }
 
+        int idx = oldIdx;
+        int checked = 0;
         boolean crossedBoundary = false;
-        int loopCount = 0;
-        do {
+
+        while (checked < combatants.size()) {
             if (idx == 0) {
                 idx = combatants.size() - 1;
                 if (encounter.getRound() > 1) {
-                    encounter.setRound(encounter.getRound() - 1);
                     crossedBoundary = true;
                 }
             } else {
                 idx--;
             }
-            loopCount++;
-        } while (combatants.get(idx).isDefeated() && loopCount < combatants.size());
+            checked++;
+            if (!combatants.get(idx).isDefeated()) {
+                break;
+            }
+        }
 
-        if (loopCount >= combatants.size()) {
+        if (checked >= combatants.size()) {
             return toDto(encounter);
         }
 
         if (crossedBoundary) {
+            encounter.setRound(encounter.getRound() - 1);
             logEntry(encounterId, CombatLogEntry.EntryType.TURN_END, "", "");
         }
 
