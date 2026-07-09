@@ -304,7 +304,8 @@ public record CampaignExportDto(
             Integer inGameYear, Integer inGameMonth, Integer inGameDay,
             String kind, String direction,
             BigDecimal amount, String currency,
-            String holder, String note
+            String holder, String note,
+            String itemAssignmentRef
     ) {}
 
     public record TimelineExportDto(

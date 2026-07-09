@@ -256,7 +256,9 @@ public class CampaignService {
                         le.getInGameYear(), le.getInGameMonth(), le.getInGameDay(),
                         le.getKind().name(), le.getDirection().name(),
                         le.getAmount(), le.getCurrency(),
-                        le.getHolder(), le.getNote()))
+                        le.getHolder(), le.getNote(),
+                        le.getItemAssignmentRef() != null ?
+                                le.getItemAssignmentRef().getId().toString() : null))
                 .toList();
 
         var timelineEvents = timelineEventRepo.findByCampaignIdOrderByInGameYearAscInGameMonthAscInGameDayAsc(id).stream()
@@ -659,6 +661,7 @@ public class CampaignService {
             }
         }
 
+        java.util.Map<String, UUID> assignmentIdMap = new java.util.HashMap<>();
         if (dto.assignments() != null) {
             for (var aDto : dto.assignments()) {
                 ItemAssignment ia = new ItemAssignment();
@@ -683,7 +686,8 @@ public class CampaignService {
                 ia.setCustomText(aDto.customText());
                 ia.setQuantity(aDto.quantity());
                 ia.setAttuned(aDto.attuned());
-                assignmentRepo.save(ia);
+                ia = assignmentRepo.save(ia);
+                assignmentIdMap.put(aDto.id().toString(), ia.getId());
             }
         }
 
@@ -701,6 +705,13 @@ public class CampaignService {
                 le.setCurrency(leDto.currency());
                 le.setHolder(leDto.holder());
                 le.setNote(leDto.note());
+                if (leDto.itemAssignmentRef() != null) {
+                    UUID newAssignmentId = assignmentIdMap.get(leDto.itemAssignmentRef());
+                    if (newAssignmentId != null) {
+                        assignmentRepo.findById(newAssignmentId)
+                                .ifPresent(le::setItemAssignmentRef);
+                    }
+                }
                 ledgerEntryRepo.save(le);
             }
         }
