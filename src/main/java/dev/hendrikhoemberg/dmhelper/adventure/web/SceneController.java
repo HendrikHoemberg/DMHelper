@@ -227,8 +227,12 @@ public class SceneController {
         if (sceneId.isBlank()) {
             adventureService.clearCurrentScene(campaignId);
         } else {
-            Scene s = adventureService.setCurrentScene(campaignId, UUID.fromString(sceneId));
-            model.addAttribute("scene", s);
+            try {
+                Scene s = adventureService.setCurrentScene(campaignId, UUID.fromString(sceneId));
+                model.addAttribute("scene", s);
+            } catch (IllegalArgumentException e) {
+                // invalid UUID — reload without setting current scene
+            }
         }
         model.addAttribute("campaignId", campaignId);
         adventureService.getCurrentScene(campaignId).ifPresent(s -> model.addAttribute("currentScene", s));

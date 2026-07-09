@@ -75,7 +75,7 @@
           <span th:text="${sb.name}">StatBlock</span>
           <button type="button" class="btn btn-danger btn-sm"
                   hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/remove-statblock(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-                  hx-vals='{"statBlockId": "${sb.id}"}'
+                  th:attr="hx-vals='{&quot;statBlockId&quot;: &quot;' + ${sb.id} + '&quot;}'"
                   hx-target="#actionRail" hx-swap="innerHTML">&times;</button>
         </div>
       </div>
@@ -93,7 +93,7 @@
           <span th:text="${h.title}">Handout</span>
           <button type="button" class="btn btn-danger btn-sm"
                   hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/remove-handout(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-                  hx-vals='{"handoutId": "${h.id}"}'
+                  th:attr="hx-vals='{&quot;handoutId&quot;: &quot;' + ${h.id} + '&quot;}'"
                   hx-target="#actionRail" hx-swap="innerHTML">&times;</button>
         </div>
       </div>

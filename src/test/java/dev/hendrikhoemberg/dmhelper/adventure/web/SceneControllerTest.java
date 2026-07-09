@@ -114,9 +114,6 @@ class SceneControllerTest {
     @Test
     void stepCurrentScene() throws Exception {
         when(adventureService.stepCurrentScene(campaignId, 1)).thenReturn(Optional.of(scene));
-        when(adventureService.findAdventureById(adventureId)).thenReturn(scene.getChapter().getAdventure());
-        when(adventureService.findSceneById(sceneId)).thenReturn(scene);
-        when(adventureService.getCurrentScene(campaignId)).thenReturn(Optional.of(scene));
 
         mockMvc.perform(put("/campaigns/{cid}/current-scene/step", campaignId)
                         .param("direction", "1"))

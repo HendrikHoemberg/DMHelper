@@ -5,24 +5,24 @@
     <div style="display: flex; gap: var(--space-xs); margin-bottom: var(--space-md);">
       <button class="btn btn-sm"
               th:classappend="${scene.status.name() == 'VISITED'} ? 'btn-primary' : 'btn-ghost'"
-              hx-put="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/status(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+              hx-put="@{/scenes/{id}/status(id=${scene.id})}"
               hx-vals='{"status": "VISITED"}'
-              hx-target="closest .detail-section" hx-swap="outerHTML">Visited</button>
+              hx-target="closest .status-badge-container" hx-swap="outerHTML">Visited</button>
       <button class="btn btn-sm"
               th:classappend="${scene.status.name() == 'DONE'} ? 'btn-success' : 'btn-ghost'"
-              hx-put="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/status(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+              hx-put="@{/scenes/{id}/status(id=${scene.id})}"
               hx-vals='{"status": "DONE"}'
-              hx-target="closest .detail-section" hx-swap="outerHTML">Done</button>
+              hx-target="closest .status-badge-container" hx-swap="outerHTML">Done</button>
       <button class="btn btn-sm btn-ghost"
-              hx-put="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/status(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+              hx-put="@{/scenes/{id}/status(id=${scene.id})}"
               hx-vals='{"status": "UNVISITED"}'
-              hx-target="closest .detail-section" hx-swap="outerHTML">Unvisit</button>
+              hx-target="closest .status-badge-container" hx-swap="outerHTML">Unvisit</button>
     </div>
 
     <div style="margin-bottom: var(--space-md);">
       <button class="btn btn-primary btn-sm" style="width: 100%;"
               hx-post="@{/campaigns/{cid}/current-scene(cid=${campaignId})}"
-              hx-vals='{"sceneId": "${scene.id}"}'
+              th:attr="hx-vals='{&quot;sceneId&quot;: &quot;' + ${scene.id} + '&quot;}'"
               hx-target="#scenePanel"
               hx-swap="innerHTML">Set as Current Scene</button>
     </div>
@@ -54,7 +54,7 @@
         <span th:text="${sb.name}">StatBlock</span>
         <button class="btn btn-danger btn-sm"
                 hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/remove-statblock(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-                hx-vals='{"statBlockId": "${sb.id}"}'
+                th:attr="hx-vals='{&quot;statBlockId&quot;: &quot;' + ${sb.id} + '&quot;}'"
                 hx-target="#actionRail" hx-swap="innerHTML">&times;</button>
       </div>
     </div>
@@ -82,8 +82,10 @@
 </div>
 
 <div th:fragment="statusBadge" xmlns:th="http://www.thymeleaf.org">
-  <span class="badge"
-        th:classappend="${scene.status.name() == 'DONE'} ? 'badge-success' :
-                        (${scene.status.name() == 'VISITED'} ? 'badge-warning' : '')"
-        th:text="${scene.status.name()}">STATUS</span>
+  <div class="status-badge-container">
+    <span class="badge"
+          th:classappend="${scene.status.name() == 'DONE'} ? 'badge-success' :
+                          (${scene.status.name() == 'VISITED'} ? 'badge-warning' : '')"
+          th:text="${scene.status.name()}">STATUS</span>
+  </div>
 </div>
