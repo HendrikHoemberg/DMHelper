@@ -416,6 +416,28 @@ class SheetEngineTest {
 
 
     @Test
+    void featAsiAppliesToAbilityScores() throws Exception {
+        var asiFeat = new Feat();
+        asiFeat.setSourceKey("srd-2024_asi_feat");
+        asiFeat.setName("Ability Score Improvement");
+        asiFeat.setBenefit("+2 to Strength");
+
+        when(featRepo.findBySourceKeyIn(List.of("srd-2024_asi_feat"))).thenReturn(List.of(asiFeat));
+
+        var scores = Map.of("str", 15, "dex", 14, "con", 13, "int", 10, "wis", 10, "cha", 8);
+        var classLevels = List.<Map<String, Object>>of(
+                Map.of("classSourceKey", "srd-2024_fighter", "level", 6, "hitDieRolls", List.of(8, 5, 8, 6, 6))
+        );
+        var sheet = createSheet(scores, classLevels, List.of(), List.of(), null, 14000, 0);
+        var mapper = new ObjectMapper();
+        sheet.setFeatRefs(mapper.writeValueAsString(List.of("srd-2024_asi_feat")));
+
+        var dv = engine.derive(sheet);
+
+        assertEquals(3, dv.strMod(), "STR 15 + 2 = 17 -> +3 mod");
+    }
+
+    @Test
     void skillExpertise() throws Exception {
         var scores = Map.of("str", 10, "dex", 10, "con", 10, "int", 10, "wis", 14, "cha", 10);
         var classLevels = List.<Map<String, Object>>of(

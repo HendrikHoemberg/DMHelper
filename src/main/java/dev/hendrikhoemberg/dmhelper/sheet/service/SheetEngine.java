@@ -1,6 +1,8 @@
 package dev.hendrikhoemberg.dmhelper.sheet.service;
 
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.Feat;
+import dev.hendrikhoemberg.dmhelper.library.data.FeatRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.RuleSection;
 import dev.hendrikhoemberg.dmhelper.library.data.RuleSectionRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
@@ -19,6 +21,7 @@ public class SheetEngine {
 
     private final CharacterClassRepository classRepo;
     private final RuleSectionRepository ruleSectionRepo;
+    private final FeatRepository featRepo;
     private final ObjectMapper mapper;
 
     private Map<Integer, Integer> proficiencyBonusTable;
@@ -65,9 +68,10 @@ public class SheetEngine {
         "intelligence", "int", "wisdom", "wis", "charisma", "cha"
     );
 
-    public SheetEngine(CharacterClassRepository classRepo, RuleSectionRepository ruleSectionRepo) {
+    public SheetEngine(CharacterClassRepository classRepo, RuleSectionRepository ruleSectionRepo, FeatRepository featRepo) {
         this.classRepo = classRepo;
         this.ruleSectionRepo = ruleSectionRepo;
+        this.featRepo = featRepo;
         this.mapper = new ObjectMapper();
     }
 
@@ -89,7 +93,8 @@ public class SheetEngine {
         String classAndLevel,
         int speed,
         int initiativeBonus,
-        int armorClass
+        int armorClass,
+        List<String> skillChoices
     ) {}
 
     @PostConstruct
@@ -144,6 +149,10 @@ public class SheetEngine {
         return map;
     }
 
+    private static final Pattern CHOOSE_FROM_PATTERN = Pattern.compile(
+        "choose\\s+(\\d+)\\s+from\\s+([A-Za-z_\\s,]+)", Pattern.CASE_INSENSITIVE
+    );
+
     private Map<String, List<String>> buildClassSkillProficiencies() {
         Map<String, List<String>> map = new HashMap<>();
         var classes = classRepo.findAllByOrderByNameAsc();
@@ -151,19 +160,30 @@ public class SheetEngine {
             try {
                 @SuppressWarnings("unchecked")
                 List<Map<String, Object>> features = mapper.readValue(cls.getFeatures(), List.class);
-                List<String> skills = new ArrayList<>();
+                List<String> unconditionalSkills = new ArrayList<>();
                 for (Map<String, Object> f : features) {
                     if ("CORE_TRAITS_TABLE".equals(f.get("feature_type"))) {
                         String desc = (String) f.get("description");
                         if (desc != null) {
+                            Set<String> chooseSkills = new HashSet<>();
+                            Matcher matcher = CHOOSE_FROM_PATTERN.matcher(desc);
+                            while (matcher.find()) {
+                                String skillsPart = matcher.group(2);
+                                for (String s : skillsPart.split("[;,/]")) {
+                                    String skill = s.trim().toLowerCase().replace(" ", "_").replace("-", "_");
+                                    if (SKILL_ABILITY_MAP.containsKey(skill)) {
+                                        chooseSkills.add(skill);
+                                    }
+                                }
+                            }
                             for (String line : desc.split("\\n")) {
                                 if (line.toLowerCase().contains("skill proficiencies")) {
                                     String[] cells = line.split("\\|");
                                     if (cells.length >= 3) {
                                         for (String s : cells[2].trim().split("[;,/]")) {
                                             String skill = s.trim().toLowerCase().replace(" ", "_").replace("-", "_");
-                                            if (SKILL_ABILITY_MAP.containsKey(skill)) {
-                                                skills.add(skill);
+                                            if (SKILL_ABILITY_MAP.containsKey(skill) && !chooseSkills.contains(skill)) {
+                                                unconditionalSkills.add(skill);
                                             }
                                         }
                                     }
@@ -172,7 +192,7 @@ public class SheetEngine {
                         }
                     }
                 }
-                map.put(cls.getSourceKey(), skills);
+                map.put(cls.getSourceKey(), unconditionalSkills);
             } catch (Exception e) {
                 log.debug("Failed to parse skill proficiencies for {}", cls.getSourceKey(), e);
                 map.put(cls.getSourceKey(), List.of());
@@ -425,6 +445,34 @@ public class SheetEngine {
             int wis = getInt(scores, "wis");
             int cha = getInt(scores, "cha");
 
+            if (!featRefs.isEmpty()) {
+                var feats = featRepo.findBySourceKeyIn(featRefs);
+                for (Feat feat : feats) {
+                    String benefit = feat.getBenefit();
+                    if (benefit != null) {
+                        String lower = benefit.toLowerCase();
+                        Matcher m = Pattern.compile("\\+(\\d+)\\s+to\\s+(\\w+)").matcher(lower);
+                        while (m.find()) {
+                            int bonus = Integer.parseInt(m.group(1));
+                            String target = m.group(2);
+                            switch (target) {
+                                case "strength" -> str += bonus;
+                                case "dexterity" -> dex += bonus;
+                                case "constitution" -> con += bonus;
+                                case "intelligence" -> intel += bonus;
+                                case "wisdom" -> wis += bonus;
+                                case "charisma" -> cha += bonus;
+                                default -> {
+                                    if (target.startsWith("any")) {
+                                        str += bonus;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             int strMod = mod(str);
             int dexMod = mod(dex);
             int conMod = mod(con);
@@ -593,6 +641,37 @@ public class SheetEngine {
             bestDC = getOverrideInt(overrides, "spellSaveDc", bestDC);
             bestAtk = getOverrideInt(overrides, "spellAttackBonus", bestAtk);
 
+            List<String> skillChoices = new ArrayList<>();
+            for (Map<String, Object> entry : classLevels) {
+                String classKey = (String) entry.get("classSourceKey");
+                if (classKey == null) continue;
+                var clsOpt = classRepo.findBySourceKey(classKey);
+                if (clsOpt.isEmpty()) continue;
+                try {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> features = mapper.readValue(clsOpt.get().getFeatures(), List.class);
+                    for (Map<String, Object> f : features) {
+                        if ("CORE_TRAITS_TABLE".equals(f.get("feature_type"))) {
+                            String desc = (String) f.get("description");
+                            if (desc != null) {
+                                Matcher m = CHOOSE_FROM_PATTERN.matcher(desc);
+                                while (m.find()) {
+                                    String skillsPart = m.group(2);
+                                    for (String s : skillsPart.split("[;,/]")) {
+                                        String skill = s.trim().toLowerCase().replace(" ", "_").replace("-", "_");
+                                        if (SKILL_ABILITY_MAP.containsKey(skill) && !skillChoices.contains(skill)) {
+                                            skillChoices.add(skill);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.debug("Failed to parse features for skill choices: {}", classKey, e);
+                }
+            }
+
             List<String> classStrings = new ArrayList<>();
             for (Map<String, Object> entry : classLevels) {
                 String classKey = (String) entry.get("classSourceKey");
@@ -650,7 +729,8 @@ public class SheetEngine {
                 classCasting,
                 bestDC, bestAtk,
                 classAndLevel,
-                speed, initiativeBonus, armorClass
+                speed, initiativeBonus, armorClass,
+                skillChoices
             );
         } catch (Exception e) {
             throw new RuntimeException("Failed to derive sheet values", e);
