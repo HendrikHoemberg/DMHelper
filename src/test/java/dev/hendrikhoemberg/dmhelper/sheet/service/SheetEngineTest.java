@@ -416,6 +416,22 @@ class SheetEngineTest {
 
 
     @Test
+    void overrideSpellAttackBonus() throws Exception {
+        var scores = Map.of("str", 10, "dex", 14, "con", 10, "int", 16, "wis", 10, "cha", 10);
+        var classLevels = List.<Map<String, Object>>of(
+                Map.of("classSourceKey", "srd-2024_wizard", "level", 5, "hitDieRolls", List.of(4, 3, 5, 2))
+        );
+        var sheet = createSheet(scores, classLevels, List.of(), List.of(), null, 0, 0);
+        var mapper = new ObjectMapper();
+        sheet.setOverrides(mapper.writeValueAsString(Map.of("spellAttackBonus", 10)));
+
+        var dv = engine.derive(sheet);
+
+        assertEquals(10, dv.spellAttackBonus(), "Override spellAttackBonus takes precedence");
+    }
+
+
+    @Test
     void featAsiAppliesToAbilityScores() throws Exception {
         var asiFeat = new Feat();
         asiFeat.setSourceKey("srd-2024_asi_feat");

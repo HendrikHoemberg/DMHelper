@@ -246,6 +246,46 @@ class SheetServiceTest {
     }
 
     @Test
+    void setLevelWithClassSourceKey() {
+        var wizard = new CharacterClass();
+        wizard.setSourceKey("srd-2024_wizard");
+        wizard.setName("Wizard");
+        wizard.setHitDie("d6");
+        wizard.setSavingThrows("[\"int\", \"wis\"]");
+        wizard.setFeatures("[]");
+        classRepo.save(wizard);
+
+        when(sheetEngine.derive(any())).thenReturn(
+                makeDerived(15, 14, 13, 2, 2, 11, 2, 2, "Fighter 1, Wizard 1")
+        );
+
+        var scores = Map.of("str", 15, "dex", 14, "con", 13,
+                "int", 12, "wis", 10, "cha", 8);
+        Map<String, Object> prof = new HashMap<>();
+        prof.put("skills", List.of()); prof.put("tools", List.of());
+        prof.put("languages", List.of()); prof.put("armor", List.of());
+        prof.put("weapons", List.of()); prof.put("expertise", List.of());
+        var entries = List.of(
+                new ClassLevelEntry("srd-2024_fighter", 1, List.of()),
+                new ClassLevelEntry("srd-2024_wizard", 1, List.of())
+        );
+        var req = new CreateSheetRequest(testMember.getId(), scores,
+                entries, prof, null, null, List.of(), 0);
+        var dto = sheetService.createSheet(req);
+
+        when(sheetEngine.derive(any())).thenReturn(
+                makeDerived(15, 14, 13, 6, 3, 11, 6, 6, "Fighter 1, Wizard 5")
+        );
+
+        var updated = sheetService.setLevel(dto.id(), "srd-2024_wizard", 5);
+
+        assertEquals(2, updated.classLevels().size());
+        assertEquals(1, updated.classLevels().get(0).level(), "Fighter level unchanged");
+        assertEquals(5, updated.classLevels().get(1).level(), "Wizard level updated to 5");
+    }
+
+
+    @Test
     void deleteSheet() {
         when(sheetEngine.derive(any())).thenReturn(
                 makeDerived(15, 14, 13, 1, 2, 11, 1, 1, "Fighter 1")

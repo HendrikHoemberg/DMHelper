@@ -13,6 +13,8 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntry;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,7 @@ class EncounterServiceTest {
     @Autowired private GameMapService mapService;
     @Autowired private TokenRepository tokenRepo;
     @Autowired private PartyMemberRepository partyRepo;
+    @Autowired private CombatLogEntryRepository combatLogRepo;
 
     @Autowired
     private jakarta.persistence.EntityManager em;
@@ -497,5 +500,67 @@ class EncounterServiceTest {
         CombatantDto restored = service.getCombatant(removedId);
         assertThat(restored).isNotNull();
         assertThat(restored.currentHp()).isEqualTo(10);
+    }
+
+    @Test
+    void shouldRebuildSortOrderForUndoRespectTieBreaker() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        service.activate(enc.id());
+        CombatantDto a = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Alice", 10, "NPC", null, null, null));
+        CombatantDto b = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Bob", 10, "NPC", null, null, null));
+        service.setInitiative(a.id(), 10);
+        service.setInitiative(b.id(), 10);
+
+        em.createQuery("update Combatant c set c.tieBreaker = :tb where c.id = :id")
+                .setParameter("tb", 5).setParameter("id", a.id()).executeUpdate();
+        em.createQuery("update Combatant c set c.tieBreaker = :tb where c.id = :id")
+                .setParameter("tb", 10).setParameter("id", b.id()).executeUpdate();
+        em.flush();
+        em.clear();
+
+        service.applyDamage(a.id(), -5);
+        service.undo(enc.id());
+
+        var combatants = service.getCombatants(enc.id());
+        assertThat(combatants).hasSize(2);
+        assertThat(combatants.get(0).name()).isEqualTo("Bob");
+        assertThat(combatants.get(1).name()).isEqualTo("Alice");
+    }
+
+    @Test
+    void shouldLogCombatantAdded() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Goblin", 7, "MONSTER", null, null, null));
+
+        var logEntries = combatLogRepo.findByEncounterIdOrderBySequenceAsc(enc.id());
+        assertThat(logEntries).anyMatch(e ->
+                e.getType() == CombatLogEntry.EntryType.COMBATANT_ADDED
+                        && e.getPayload().contains("\"name\":\"Goblin\""));
+    }
+
+    @Test
+    void shouldPreviousTurnCrossRoundBoundary() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        service.activate(enc.id());
+        service.addCombatant(enc.id(),
+                new CombatantCreateRequest("A", 10, "NPC", null, null, null));
+        service.addCombatant(enc.id(),
+                new CombatantCreateRequest("B", 10, "NPC", null, null, null));
+        service.setInitiative(service.getCombatants(enc.id()).get(0).id(), 10);
+        service.setInitiative(service.getCombatants(enc.id()).get(1).id(), 5);
+
+        service.nextTurn(enc.id());
+        service.nextTurn(enc.id());
+        EncounterDto round2 = service.nextTurn(enc.id());
+        assertThat(round2.round()).isEqualTo(2);
+
+        EncounterDto prev = service.previousTurn(enc.id());
+        assertThat(prev.round()).isEqualTo(1);
+
+        var logEntries = combatLogRepo.findByEncounterIdOrderBySequenceAsc(enc.id());
+        assertThat(logEntries).anyMatch(e -> e.getType() == CombatLogEntry.EntryType.TURN_END);
     }
 }
