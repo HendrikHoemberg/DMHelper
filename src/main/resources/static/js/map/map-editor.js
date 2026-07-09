@@ -1,6 +1,6 @@
 import { BUILTIN_TERRAIN, DEFAULT_TERRAIN, ERASE_KEY, SHAPE_COLORS } from './terrain-palette.js';
 import { floodFillCells } from './flood-fill.js';
-import { drawGrid, cellPos, snapPt } from './shared.js';
+import { drawGrid, cellPos, snapPt, expandPrimitives } from './shared.js';
 
 /**
  * @typedef {{col: number, row: number, terrain: string}} Cell
@@ -414,39 +414,7 @@ export class MapEditor {
 
     /** @returns {Cell[]} */
     expandPrimitives() {
-        const cells = [];
-        for (const p of (this.document?.primitives || [])) {
-            const c0 = Math.min(p.startCol, p.endCol), c1 = Math.max(p.startCol, p.endCol);
-            const r0 = Math.min(p.startRow, p.endRow), r1 = Math.max(p.startRow, p.endRow);
-            switch (p.type) {
-                case 'ROOM':
-                    for (let r = r0; r <= r1; r++) {
-                        for (let c = c0; c <= c1; c++) {
-                            const edge = r === r0 || r === r1 || c === c0 || c === c1;
-                            if (edge) cells.push({ col: c, row: r, terrain: 'wall' });
-                        }
-                    }
-                    break;
-                case 'CORRIDOR':
-                    // open floor; nothing to paint (absent cells are floor).
-                    // REGION with terrain can be used for visible corridor flooring.
-                    break;
-                case 'DOOR':
-                    cells.push({ col: p.startCol, row: p.startRow, terrain: 'door' });
-                    break;
-                case 'REGION': {
-                    const terrain = p.terrain || DEFAULT_TERRAIN;
-                    if (terrain === DEFAULT_TERRAIN) break;
-                    for (let r = r0; r <= r1; r++) {
-                        for (let c = c0; c <= c1; c++) {
-                            cells.push({ col: c, row: r, terrain });
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-        return cells;
+        return expandPrimitives(this.document);
     }
 
     /* ---- Events ---- */

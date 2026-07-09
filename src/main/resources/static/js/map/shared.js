@@ -142,3 +142,41 @@ export function cellToPixel(col, row, cellSizePx) {
 export function pixelToCell(px, py, cellSizePx) {
     return { col: Math.floor(px / cellSizePx), row: Math.floor(py / cellSizePx) };
 }
+
+/**
+ * Expand semantic map primitives (ROOM, DOOR, REGION, CORRIDOR) into cell arrays.
+ * @param {{primitives?: Array}} document
+ * @returns {Array<{col: number, row: number, terrain: string}>}
+ */
+export function expandPrimitives(document) {
+    const cells = [];
+    for (const p of (document?.primitives || [])) {
+        const c0 = Math.min(p.startCol, p.endCol), c1 = Math.max(p.startCol, p.endCol);
+        const r0 = Math.min(p.startRow, p.endRow), r1 = Math.max(p.startRow, p.endRow);
+        switch (p.type) {
+            case 'ROOM':
+                for (let r = r0; r <= r1; r++) {
+                    for (let c = c0; c <= c1; c++) {
+                        const edge = r === r0 || r === r1 || c === c0 || c === c1;
+                        cells.push({ col: c, row: r, terrain: edge ? 'wall' : 'floor' });
+                    }
+                }
+                break;
+            case 'CORRIDOR':
+                break;
+            case 'DOOR':
+                cells.push({ col: p.startCol, row: p.startRow, terrain: 'door' });
+                break;
+            case 'REGION': {
+                const terrain = p.terrain || 'floor';
+                for (let r = r0; r <= r1; r++) {
+                    for (let c = c0; c <= c1; c++) {
+                        cells.push({ col: c, row: r, terrain });
+                    }
+                }
+                break;
+            }
+        }
+    }
+    return cells;
+}

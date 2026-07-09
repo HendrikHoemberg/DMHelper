@@ -1,3 +1,5 @@
+import { expandPrimitives } from '../map/shared.js';
+
 const WS_URL = `ws://${window.location.host}/ws/table`;
 
 let stage = null;
@@ -119,18 +121,24 @@ function showMap(state) {
     drawGrid(width, height, cellPx, map.showGrid);
 
     if (map.document && map.document.layers) {
+        const explicitCells = [];
         for (const layer of map.document.layers) {
             if (layer.cells) {
                 for (const cell of layer.cells) {
-                    const fill = getTerrainFill(cell.terrain, map.document.customTerrain);
-                    const rect = new Konva.Rect({
-                        x: cell.col * cellPx, y: cell.row * cellPx,
-                        width: cellPx, height: cellPx,
-                        fill: fill, stroke: 'rgba(255,255,255,0.05)', strokeWidth: 0.5,
-                    });
-                    gridLayer.add(rect);
+                    explicitCells.push(cell);
                 }
             }
+        }
+        const explicitKeys = new Set(explicitCells.map(c => `${c.col},${c.row}`));
+        const primitiveCells = expandPrimitives(map.document).filter(c => !explicitKeys.has(`${c.col},${c.row}`));
+        for (const cell of [...primitiveCells, ...explicitCells]) {
+            const fill = getTerrainFill(cell.terrain, map.document.customTerrain);
+            const rect = new Konva.Rect({
+                x: cell.col * cellPx, y: cell.row * cellPx,
+                width: cellPx, height: cellPx,
+                fill: fill, stroke: 'rgba(255,255,255,0.05)', strokeWidth: 0.5,
+            });
+            gridLayer.add(rect);
         }
     }
 

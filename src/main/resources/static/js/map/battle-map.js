@@ -1,4 +1,4 @@
-import { drawGrid, setupPanAndZoom, cellPos, snapPixel, pixelToCell } from './shared.js';
+import { drawGrid, setupPanAndZoom, cellPos, snapPixel, pixelToCell, expandPrimitives } from './shared.js';
 
 /**
  * @typedef {{id: string, name: string, kind: string, positionX: number, positionY: number,
@@ -226,9 +226,11 @@ export class BattleMap {
         this.terrainLayer.destroyChildren();
         if (!doc || !doc.layers) return;
         const terrainLayer = doc.layers.find(l => l.id === 'terrain');
-        if (!terrainLayer || !terrainLayer.cells) return;
+        const explicitCells = terrainLayer?.cells || [];
+        const explicitKeys = new Set(explicitCells.map(c => `${c.col},${c.row}`));
+        const primitiveCells = expandPrimitives(doc).filter(c => !explicitKeys.has(`${c.col},${c.row}`));
         const s = this.cellSizePx;
-        for (const cell of terrainLayer.cells) {
+        for (const cell of [...primitiveCells, ...explicitCells]) {
             const color = TERRAIN_COLORS[cell.terrain] || '#2a2a3e';
             this.terrainLayer.add(new Konva.Rect({
                 x: cell.col * s, y: cell.row * s, width: s, height: s,
