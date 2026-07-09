@@ -191,7 +191,7 @@ public record CampaignExportDto(
                     c.getName(), c.getInitiative(), c.getTieBreaker(), c.getSortOrder(),
                     c.getMaxHp(), c.getCurrentHp(), c.getTempHp(),
                     c.getKind(), c.getGroupId(), c.isGroupLeader(),
-                    c.getToken() != null ? c.getToken().getId().toString() : null,
+                    c.getToken() != null ? tokenIdMap.getOrDefault(c.getToken().getId(), c.getToken().getId().toString()) : null,
                     c.getStatBlock() != null ? c.getStatBlock().getSourceKey() : null,
                     c.getPartyMember() != null ? c.getPartyMember().getCharacterName() : null,
                     c.isDefeated(), c.isHidden(),
@@ -209,11 +209,17 @@ public record CampaignExportDto(
             GridDto grid,
             String movementMode,
             boolean showGrid,
-            MapDocumentDto document
+            MapDocumentDto document,
+            List<TokenExportDto> tokens
     ) {
         public record GridDto(int w, int h, int cellPx, String gridType) {}
 
-        public static MapExportDto from(GameMap map, MapDocumentDto document) {
+        public record TokenExportDto(String id, String name, String kind, String color,
+                                      int positionX, int positionY, int sizeCols, int sizeRows,
+                                      boolean hidden, String statBlockKey, String partyMemberName,
+                                      Integer currentHp, Integer maxHp, boolean dead, String notes) {}
+
+        public static MapExportDto from(GameMap map, MapDocumentDto document, List<TokenExportDto> tokens) {
             return new MapExportDto(
                     map.getId().toString(),
                     map.getName(),
@@ -221,7 +227,8 @@ public record CampaignExportDto(
                             map.getCellSizePx(), map.getGridType()),
                     map.getMovementMode(),
                     map.isShowGrid(),
-                    document
+                    document,
+                    tokens
             );
         }
     }

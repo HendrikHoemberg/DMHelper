@@ -167,18 +167,39 @@ public class CampaignService {
                 .map(this::toPartyMemberExport).toList();
         var statBlocks = statBlockRepository.findByCampaignIdOrderByNameAsc(id).stream()
                 .map(CampaignExportDto.StatBlockExportDto::from).toList();
-        var maps = gameMapService.findByCampaignId(id).stream()
-                .map(m -> CampaignExportDto.MapExportDto.from(m, gameMapService.getDocument(m.getId())))
-                .toList();
+        java.util.Map<java.util.UUID, java.util.Map<java.util.UUID, String>> tokenIdMapsByMap = new java.util.HashMap<>();
+        List<CampaignExportDto.MapExportDto> maps = new java.util.ArrayList<>();
+        for (var gameMap : gameMapService.findByCampaignId(id)) {
+            var document = gameMapService.getDocument(gameMap.getId());
+            var tokens = tokenRepo.findByMapIdOrderByNameAsc(gameMap.getId());
+            List<CampaignExportDto.MapExportDto.TokenExportDto> tokenDtos = new java.util.ArrayList<>();
+            java.util.Map<java.util.UUID, String> tokenIdMap = new java.util.HashMap<>();
+            for (var t : tokens) {
+                tokenDtos.add(new CampaignExportDto.MapExportDto.TokenExportDto(
+                        t.getId().toString(), t.getName(), t.getKind(), t.getColor(),
+                        t.getPositionX(), t.getPositionY(), t.getSizeCols(), t.getSizeRows(),
+                        t.isHidden(),
+                        t.getStatBlock() != null ? t.getStatBlock().getSourceKey() : null,
+                        t.getPartyMember() != null ? t.getPartyMember().getCharacterName() : null,
+                        t.getCurrentHp(), t.getMaxHp(), t.isDead(), t.getNotes()));
+                tokenIdMap.put(t.getId(), t.getId().toString());
+            }
+            tokenIdMapsByMap.put(gameMap.getId(), tokenIdMap);
+            maps.add(CampaignExportDto.MapExportDto.from(gameMap, document, tokenDtos));
+        }
 
-        var encounters = encounterRepo.findByCampaignIdOrderByNameAsc(id).stream()
-                .map(enc -> {
-                    var combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(enc.getId()).stream()
-                            .map(c -> CampaignExportDto.CombatantExportDto.from(c, java.util.Map.of()))
-                            .toList();
-                    return CampaignExportDto.EncounterExportDto.from(enc, combatants);
-                })
-                .toList();
+        List<CampaignExportDto.EncounterExportDto> encounters = new java.util.ArrayList<>();
+        for (var enc : encounterRepo.findByCampaignIdOrderByNameAsc(id)) {
+            var encMap = enc.getMap();
+            java.util.Map<java.util.UUID, String> tokenIdMap = encMap != null
+                    ? tokenIdMapsByMap.getOrDefault(encMap.getId(), java.util.Map.of())
+                    : java.util.Map.of();
+            List<CampaignExportDto.CombatantExportDto> combatants = combatantRepo
+                    .findByEncounterIdOrderBySortOrderAsc(enc.getId()).stream()
+                    .map(c -> CampaignExportDto.CombatantExportDto.from(c, tokenIdMap))
+                    .toList();
+            encounters.add(CampaignExportDto.EncounterExportDto.from(enc, combatants));
+        }
 
         var handouts = handoutRepo.findByCampaignIdOrderByTitleAsc(id).stream()
                 .map(h -> {
@@ -381,6 +402,7 @@ public class CampaignService {
         }
 
         java.util.Map<String, UUID> mapKeyToId = new java.util.HashMap<>();
+        java.util.Map<String, UUID> tokenOldToNewId = new java.util.HashMap<>();
         if (dto.maps() != null) {
             for (var mapDto : dto.maps()) {
                 var grid = mapDto.grid();
@@ -396,6 +418,28 @@ public class CampaignService {
                     gameMapService.updateDocument(map.getId(),
                             objectMapper.writeValueAsString(mapDto.document()),
                             map.getVersion());
+                }
+                if (mapDto.tokens() != null) {
+                    for (var tDto : mapDto.tokens()) {
+                        var token = new dev.hendrikhoemberg.dmhelper.gamemap.data.Token();
+                        token.setMap(map);
+                        token.setName(tDto.name());
+                        token.setKind(tDto.kind());
+                        token.setColor(tDto.color());
+                        token.setPositionX(tDto.positionX());
+                        token.setPositionY(tDto.positionY());
+                        token.setSizeCols(tDto.sizeCols());
+                        token.setSizeRows(tDto.sizeRows());
+                        token.setHidden(tDto.hidden());
+                        token.setCurrentHp(tDto.currentHp());
+                        token.setMaxHp(tDto.maxHp());
+                        token.setDead(tDto.dead());
+                        token.setNotes(tDto.notes());
+                        token = tokenRepo.save(token);
+                        if (tDto.id() != null) {
+                            tokenOldToNewId.put(tDto.id(), token.getId());
+                        }
+                    }
                 }
             }
         }
@@ -463,11 +507,16 @@ public class CampaignService {
                         combatant.setGroupId(cDto.groupId());
                         combatant.setGroupLeader(cDto.groupLeader());
                         if (cDto.tokenId() != null) {
-                            try {
-                                tokenRepo.findById(java.util.UUID.fromString(cDto.tokenId()))
-                                        .ifPresent(combatant::setToken);
-                            } catch (Exception e) {
-                                System.err.println("WARNING: Invalid token ID: " + cDto.tokenId());
+                            UUID newTokenId = tokenOldToNewId.get(cDto.tokenId());
+                            if (newTokenId != null) {
+                                tokenRepo.findById(newTokenId).ifPresent(combatant::setToken);
+                            } else {
+                                try {
+                                    tokenRepo.findById(java.util.UUID.fromString(cDto.tokenId()))
+                                            .ifPresent(combatant::setToken);
+                                } catch (Exception e) {
+                                    System.err.println("WARNING: Invalid token ID: " + cDto.tokenId());
+                                }
                             }
                         }
                         if (cDto.statBlockKey() != null) {

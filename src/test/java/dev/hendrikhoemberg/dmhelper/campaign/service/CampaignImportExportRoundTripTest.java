@@ -11,6 +11,8 @@ import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
@@ -46,6 +48,7 @@ class CampaignImportExportRoundTripTest {
     @Autowired private TimelineEventRepository timelineEventRepo;
     @Autowired private EncounterRepository encounterRepo;
     @Autowired private CombatantRepository combatantRepo;
+    @Autowired private TokenRepository tokenRepo;
 
     @MockitoBean
     private NoteService noteService;
@@ -246,5 +249,54 @@ class CampaignImportExportRoundTripTest {
         assertThat(reNPC.getName()).isEqualTo("Goblin Boss");
         assertThat(reNPC.isHidden()).isTrue();
         assertThat(reNPC.getStatBlock().getSourceKey()).isEqualTo("goblin-boss");
+    }
+
+    @Test
+    void roundTripPreservesCombatantTokenReference() {
+        Campaign c = campaignService.create("Token Trip", "tokens");
+        GameMap map = gameMapService.create(c.getId(), "Dungeon", 30, 20, 48);
+
+        Token token = new Token();
+        token.setMap(map);
+        token.setName("Goblin Token");
+        token.setKind("NPC");
+        token.setColor("#ff0000");
+        token.setPositionX(5);
+        token.setPositionY(3);
+        token.setSizeCols(1);
+        token.setSizeRows(1);
+        token = tokenRepo.save(token);
+
+        Encounter encounter = new Encounter();
+        encounter.setCampaign(c);
+        encounter.setMap(map);
+        encounter.setName("Corridor Fight");
+        encounter.setStatus(Encounter.Status.ACTIVE);
+        encounter = encounterRepo.save(encounter);
+
+        Combatant combatant = new Combatant();
+        combatant.setEncounter(encounter);
+        combatant.setName("Goblin");
+        combatant.setToken(token);
+        combatant.setInitiative(10);
+        combatant.setSortOrder(0);
+        combatant.setMaxHp(10);
+        combatant.setCurrentHp(10);
+        combatant.setKind("NPC");
+        combatantRepo.save(combatant);
+
+        String json = campaignService.exportToJson(c.getId());
+        Campaign imported = campaignService.importFromJson(json);
+
+        List<Encounter> reEncounters = encounterRepo.findByCampaignIdOrderByNameAsc(imported.getId());
+        assertThat(reEncounters).hasSize(1);
+        List<Combatant> reCombatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(reEncounters.get(0).getId());
+        assertThat(reCombatants).hasSize(1);
+        Combatant reCombatant = reCombatants.get(0);
+        assertThat(reCombatant.getToken()).isNotNull();
+        assertThat(reCombatant.getToken().getName()).isEqualTo("Goblin Token");
+        assertThat(reCombatant.getToken().getPositionX()).isEqualTo(5);
+        assertThat(reCombatant.getToken().getPositionY()).isEqualTo(3);
+        assertThat(reCombatant.getToken().getColor()).isEqualTo("#ff0000");
     }
 }
