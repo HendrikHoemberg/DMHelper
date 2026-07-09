@@ -353,4 +353,149 @@ class EncounterServiceTest {
         CombatantDto reverted = service.getCombatant(c.id());
         assertThat(reverted.currentHp()).isEqualTo(originalHp);
     }
+
+    @Test
+    void shouldNotResetLegendaryResistancesOnRoundAdvance() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        service.activate(enc.id());
+        CombatantDto c = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Dragon", 100, "MONSTER", null, null, null));
+        CombatantDto d = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Other", 50, "MONSTER", null, null, null));
+        service.setInitiative(c.id(), 20);
+        service.setInitiative(d.id(), 10);
+
+        service.updateCombatant(c.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
+                null, null, null, null, null, null, null, 3, null, 2, null, null));
+
+        CombatantDto afterUpdate = service.getCombatant(c.id());
+        assertThat(afterUpdate.legendaryActionsUsed()).isEqualTo(3);
+        assertThat(afterUpdate.legendaryResistancesUsed()).isEqualTo(2);
+
+        service.nextTurn(enc.id());
+        service.nextTurn(enc.id());
+        EncounterDto round2 = service.nextTurn(enc.id());
+        assertThat(round2.round()).isEqualTo(2);
+
+        CombatantDto dragon = service.getCombatant(c.id());
+        assertThat(dragon.legendaryActionsUsed()).isEqualTo(0);
+        assertThat(dragon.legendaryResistancesUsed()).isEqualTo(2);
+    }
+
+    @Test
+    void shouldPreserveConcentrationOnUndoAfterPassedCheck() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        CombatantDto c = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Wizard", 20, "NPC", null, null, null));
+        service.setConcentration(c.id(), "Haste");
+
+        assertThat(service.getCombatant(c.id()).concentratingOn()).isEqualTo("Haste");
+
+        service.applyDamage(c.id(), -5);
+        CombatantDto afterDmg = service.getCombatant(c.id());
+        assertThat(afterDmg.concentrationCheckPending()).isTrue();
+
+        service.resolveConcentrationCheck(c.id(), true);
+        CombatantDto afterResolve = service.getCombatant(c.id());
+        assertThat(afterResolve.concentrationCheckPending()).isFalse();
+        assertThat(afterResolve.concentratingOn()).isEqualTo("Haste");
+
+        // Use heal to add an undoable action without triggering another concentration check
+        service.applyDamage(c.id(), 5);
+
+        service.undo(enc.id());
+
+        CombatantDto reverted = service.getCombatant(c.id());
+        assertThat(reverted.concentrationCheckPending()).isFalse();
+        assertThat(reverted.concentratingOn()).isEqualTo("Haste");
+    }
+
+    @Test
+    void shouldNotMarkDefeatedOnUndoWhenHpAboveZero() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        CombatantDto c = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Goblin", 20, "MONSTER", null, null, null));
+
+        service.markDefeated(c.id(), true);
+        service.applyDamage(c.id(), -5);
+
+        service.undo(enc.id());
+
+        CombatantDto reverted = service.getCombatant(c.id());
+        assertThat(reverted.currentHp()).isEqualTo(20);
+        assertThat(reverted.defeated()).isFalse();
+    }
+
+    @Test
+    void shouldUndoSetHp() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        CombatantDto c = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Target", 30, "MONSTER", null, null, null));
+
+        service.setHp(c.id(), 15, 0);
+        service.undo(enc.id());
+
+        CombatantDto reverted = service.getCombatant(c.id());
+        assertThat(reverted.currentHp()).isEqualTo(30);
+    }
+
+    @Test
+    void shouldRemoveExpiredConditionOnUndo() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        service.activate(enc.id());
+        CombatantDto a = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("A", 10, "NPC", null, null, null));
+        CombatantDto b = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("B", 10, "NPC", null, null, null));
+        service.setInitiative(a.id(), 10);
+        service.setInitiative(b.id(), 5);
+
+        service.toggleCondition(a.id(), "poisoned", 1);
+        // Advance past both combatants (idx -1 → 0, 0 → 1)
+        service.nextTurn(enc.id());
+        service.nextTurn(enc.id());
+        // Wrap back to idx 0: increments round → triggers tickConditionDurations
+        EncounterDto afterWrap = service.nextTurn(enc.id());
+        assertThat(afterWrap.round()).isEqualTo(2);
+
+        CombatantDto afterTick = service.getCombatant(a.id());
+        assertThat(afterTick.conditions()).isEmpty();
+
+        service.undo(enc.id());
+
+        CombatantDto reverted = service.getCombatant(a.id());
+        assertThat(reverted.conditions()).isEmpty();
+    }
+
+    @Test
+    void shouldUndoAddCombatant() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        CombatantDto c = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Temporary", 10, "MONSTER", null, null, null));
+        int countBefore = service.getCombatants(enc.id()).size();
+
+        service.undo(enc.id());
+
+        int countAfter = service.getCombatants(enc.id()).size();
+        assertThat(countAfter).isLessThan(countBefore);
+    }
+
+    @Test
+    void shouldUndoRemoveCombatant() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        CombatantDto c = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("ToBeRemoved", 10, "MONSTER", null, null, null));
+        UUID removedId = c.id();
+
+        service.removeCombatant(c.id());
+
+        CombatantDto removed = service.getCombatant(removedId);
+        assertThat(removed.hidden()).isTrue();
+
+        service.undo(enc.id());
+
+        CombatantDto restored = service.getCombatant(removedId);
+        assertThat(restored).isNotNull();
+        assertThat(restored.currentHp()).isEqualTo(10);
+    }
 }

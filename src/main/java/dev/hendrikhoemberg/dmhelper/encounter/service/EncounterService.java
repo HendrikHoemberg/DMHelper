@@ -292,11 +292,42 @@ public class EncounterService {
         c.setCurrentHp(currentHp);
         c.setSortOrder((int) combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).size());
 
-        return toDto(combatantRepo.save(c));
+        Combatant saved = combatantRepo.save(c);
+        try {
+            String payload = JSON_MAPPER.writeValueAsString(Map.of(
+                "name", saved.getName(),
+                "initiative", saved.getInitiative(),
+                "maxHp", saved.getMaxHp(),
+                "kind", saved.getKind()));
+            logEntry(encounterId, CombatLogEntry.EntryType.COMBATANT_ADDED,
+                saved.getId().toString(), payload);
+        } catch (Exception ex2) { /* ignore */ }
+        return toDto(saved);
     }
 
     public void removeCombatant(UUID combatantId) {
-        combatantRepo.delete(findCombatantById(combatantId));
+        Combatant c = findCombatantById(combatantId);
+        try {
+            java.util.Map<String, Object> data = new java.util.HashMap<>();
+            data.put("name", c.getName());
+            data.put("initiative", c.getInitiative());
+            data.put("maxHp", c.getMaxHp());
+            data.put("currentHp", c.getCurrentHp());
+            data.put("tempHp", c.getTempHp());
+            data.put("kind", c.getKind());
+            data.put("sortOrder", c.getSortOrder());
+            data.put("defeated", c.isDefeated());
+            data.put("hidden", c.isHidden());
+            data.put("conditionsJson", c.getConditionsJson());
+            data.put("concentratingOn", c.getConcentratingOn() != null ? c.getConcentratingOn() : "");
+            data.put("groupLeader", c.isGroupLeader());
+            String payload = JSON_MAPPER.writeValueAsString(data);
+            logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.COMBATANT_REMOVED,
+                combatantId.toString(), payload);
+        } catch (Exception ex) { /* ignore */ }
+        c.setDefeated(true);
+        c.setHidden(true);
+        combatantRepo.save(c);
     }
 
     public CombatantDto updateCombatant(UUID id, CombatantUpdateRequest req) {
@@ -479,7 +510,7 @@ public class EncounterService {
             String payload = JSON_MAPPER.writeValueAsString(Map.of(
                 "currentHp", saved.getCurrentHp(),
                 "tempHp", saved.getTempHp()));
-            logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.DAMAGE,
+            logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.SET_HP,
                 combatantId.toString(), payload);
         } catch (Exception e) { /* ignore */ }
         return toDto(saved);
@@ -519,11 +550,14 @@ public class EncounterService {
         Encounter encounter = findEntityById(encounterId);
         for (Combatant c : combatants) {
             List<ConditionStateDto> conditions = parseConditions(c);
+            List<String> expiredKeys = new ArrayList<>();
             List<ConditionStateDto> updated = conditions.stream()
                 .filter(cond -> {
                     if (cond.durationRounds() <= 0) return true;
                     int elapsed = encounter.getRound() - cond.appliedInRound();
-                    return elapsed < cond.durationRounds();
+                    boolean expired = elapsed >= cond.durationRounds();
+                    if (expired) expiredKeys.add(cond.sourceKey());
+                    return !expired;
                 })
                 .collect(Collectors.toList());
             if (updated.size() != conditions.size()) {
@@ -531,8 +565,13 @@ public class EncounterService {
                     c.setConditionsJson(JSON_MAPPER.writeValueAsString(updated));
                 } catch (Exception e) { /* ignore */ }
                 combatantRepo.save(c);
-                logEntry(encounterId, CombatLogEntry.EntryType.CONDITION_TICKED,
-                    c.getId().toString(), "{\"remaining\":" + updated.size() + "}");
+                try {
+                    String payload = JSON_MAPPER.writeValueAsString(Map.of(
+                        "expiredKeys", expiredKeys,
+                        "remaining", updated.size()));
+                    logEntry(encounterId, CombatLogEntry.EntryType.CONDITION_TICKED,
+                        c.getId().toString(), payload);
+                } catch (Exception e) { /* ignore */ }
             }
         }
     }
@@ -614,11 +653,11 @@ public class EncounterService {
             encounter.setRound(encounter.getRound() + 1);
             logEntry(encounterId, CombatLogEntry.EntryType.ROUND_ADVANCE, "",
                     "{\"round\":" + encounter.getRound() + "}");
-            resetLegendaryActions(encounterId);
             tickConditionDurations(encounterId);
         }
 
         encounter.setActiveTurnIndex(idx);
+        resetLegendaryActions(combatants.get(idx));
         encounterRepo.save(encounter);
 
         logEntry(encounterId, CombatLogEntry.EntryType.TURN_START,
@@ -647,12 +686,14 @@ public class EncounterService {
             idx = combatants.size() - 1;
         }
 
+        boolean crossedBoundary = false;
         int loopCount = 0;
         do {
             if (idx == 0) {
                 idx = combatants.size() - 1;
                 if (encounter.getRound() > 1) {
                     encounter.setRound(encounter.getRound() - 1);
+                    crossedBoundary = true;
                 }
             } else {
                 idx--;
@@ -662,6 +703,10 @@ public class EncounterService {
 
         if (loopCount >= combatants.size()) {
             return toDto(encounter);
+        }
+
+        if (crossedBoundary) {
+            logEntry(encounterId, CombatLogEntry.EntryType.TURN_END, "", "");
         }
 
         encounter.setActiveTurnIndex(idx);
@@ -687,10 +732,13 @@ public class EncounterService {
         List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
         for (Combatant c : combatants) {
             c.setLegendaryActionsUsed(0);
-            c.setLegendaryResistancesUsed(0);
             combatantRepo.save(c);
         }
         logEntry(encounterId, CombatLogEntry.EntryType.ROUND_ADVANCE, "", "{\"legendaryReset\":true}");
+    }
+
+    private void resetLegendaryActions(Combatant c) {
+        c.setLegendaryActionsUsed(0);
     }
 
     public CombatantDto setConcentration(UUID combatantId, String spellName) {
@@ -913,8 +961,20 @@ public class EncounterService {
         rebuildSortOrderForUndo(combatants, encounter);
 
         for (Combatant c : combatants.values()) {
-            combatantRepo.save(c);
+            if (!em.contains(c)) {
+                combatantRepo.save(c);
+            }
         }
+
+        if (lastEntry.getType() == CombatLogEntry.EntryType.COMBATANT_ADDED) {
+            try {
+                UUID addedId = UUID.fromString(lastEntry.getCombatantId());
+                combatants.remove(addedId);
+                combatantRepo.deleteById(addedId);
+            } catch (Exception e) { /* ignore */ }
+        }
+
+        tickConditionDurations(encounterId);
 
         encounter.setLogSequence(entriesToKeep.size());
         encounterRepo.save(encounter);
@@ -926,6 +986,7 @@ public class EncounterService {
         c.setCurrentHp(c.getMaxHp());
         c.setTempHp(0);
         c.setDefeated(false);
+        c.setHidden(false);
         c.setConditionsJson("[]");
         c.setConcentratingOn(null);
         c.setConcentrationCheckPending(false);
@@ -995,6 +1056,9 @@ public class EncounterService {
                             c.setCurrentHp(Math.max(0, c.getCurrentHp() - remainingDamage));
                         }
                     }
+                    if (c.getCurrentHp() <= 0 && !"PC".equals(c.getKind())) {
+                        c.setDefeated(true);
+                    }
                 } catch (Exception e) {
                     // ignore malformed payload
                 }
@@ -1050,7 +1114,7 @@ public class EncounterService {
                 }
             }
             case DEFEATED -> {
-                if (c != null) c.setDefeated(true);
+                if (c != null && c.getCurrentHp() <= 0) c.setDefeated(true);
             }
             case REVIVED -> {
                 if (c != null) c.setDefeated(false);
@@ -1066,7 +1130,21 @@ public class EncounterService {
                 }
             }
             case CONCENTRATION_CHECK -> {
-                if (c != null) c.setConcentrationCheckPending(true);
+                if (c == null) return;
+                try {
+                    var node = JSON_MAPPER.readTree(entry.getPayload());
+                    String passed = node.has("passed") ? node.get("passed").asText() : null;
+                    if ("true".equals(passed)) {
+                        c.setConcentrationCheckPending(false);
+                    } else if ("false".equals(passed)) {
+                        c.setConcentratingOn(null);
+                        c.setConcentrationCheckPending(false);
+                    } else {
+                        c.setConcentrationCheckPending(true);
+                    }
+                } catch (Exception e) {
+                    c.setConcentrationCheckPending(true);
+                }
             }
             case CONCENTRATION_LOST -> {
                 if (c != null) {
@@ -1102,9 +1180,62 @@ public class EncounterService {
             case GROUP_SPLIT -> {
                 if (c != null) c.setGroupId(null);
             }
-            case CONDITION_TICKED, TURN_END, LAIR_ACTION, NOTE, DICE_ROLL,
-                 ENCOUNTER_ACTIVATED, ENCOUNTER_ENDED,
-                 COMBATANT_ADDED, COMBATANT_REMOVED -> {
+            case SET_HP -> {
+                if (c == null) return;
+                try {
+                    var node = JSON_MAPPER.readTree(entry.getPayload());
+                    c.setCurrentHp(node.get("currentHp").asInt());
+                    c.setTempHp(node.get("tempHp").asInt(0));
+                } catch (Exception e) {
+                    // ignore malformed payload
+                }
+            }
+            case CONDITION_TICKED -> {
+                if (c == null) return;
+                try {
+                    var node = JSON_MAPPER.readTree(entry.getPayload());
+                    var expiredNode = node.get("expiredKeys");
+                    if (expiredNode != null && expiredNode.isArray()) {
+                        var conditions = new ArrayList<>(JSON_MAPPER.readValue(c.getConditionsJson(),
+                                new TypeReference<List<Map<String, Object>>>() {}));
+                        for (var keyNode : expiredNode) {
+                            String expiredKey = keyNode.asText();
+                            conditions.removeIf(cond -> expiredKey.equals(cond.get("sourceKey")));
+                        }
+                        c.setConditionsJson(JSON_MAPPER.writeValueAsString(conditions));
+                    }
+                } catch (Exception e) {
+                    // ignore malformed payload
+                }
+            }
+            case COMBATANT_ADDED -> {
+                if (combatantId != null && c == null) {
+                    try {
+                        var node = JSON_MAPPER.readTree(entry.getPayload());
+                        Combatant restored = new Combatant();
+                        restored.setEncounter(encounter);
+                        restored.setName(node.get("name").asText());
+                        restored.setInitiative(node.get("initiative").asInt(0));
+                        restored.setMaxHp(node.get("maxHp").asInt(10));
+                        restored.setCurrentHp(node.get("maxHp").asInt(10));
+                        restored.setKind(node.get("kind").asText("NPC"));
+                        restored.setConditionsJson("[]");
+                        em.persist(restored);
+                        em.flush();
+                        combatants.put(restored.getId(), restored);
+                    } catch (Exception e) {
+                        // ignore malformed payload
+                    }
+                }
+            }
+            case COMBATANT_REMOVED -> {
+                if (c != null) {
+                    c.setDefeated(false);
+                    c.setHidden(false);
+                }
+            }
+            case TURN_END, LAIR_ACTION, NOTE, DICE_ROLL,
+                 ENCOUNTER_ACTIVATED, ENCOUNTER_ENDED -> {
                 // No combatant state change to replay
             }
         }
@@ -1113,7 +1244,8 @@ public class EncounterService {
     private void rebuildSortOrderForUndo(Map<UUID, Combatant> combatants, Encounter encounter) {
         List<Combatant> list = new ArrayList<>(combatants.values());
         list.sort(Comparator
-                .comparingInt(Combatant::getSortOrder)
+                .comparingInt(Combatant::getInitiative).reversed()
+                .thenComparing(Comparator.comparingInt(Combatant::getTieBreaker).reversed())
                 .thenComparing(Combatant::getName));
         for (int i = 0; i < list.size(); i++) {
             list.get(i).setSortOrder(i);
