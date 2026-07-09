@@ -32,6 +32,7 @@ import tools.jackson.databind.json.JsonMapper;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -630,6 +631,14 @@ public class EncounterService {
             combatants.get(i).setSortOrder(i);
             combatantRepo.save(combatants.get(i));
         }
+        try {
+            Map<String, Integer> orderMap = new HashMap<>();
+            for (Combatant c : combatants) {
+                orderMap.put(c.getId().toString(), c.getSortOrder());
+            }
+            logEntry(encounterId, CombatLogEntry.EntryType.SORT_ORDER, "",
+                    JSON_MAPPER.writeValueAsString(orderMap));
+        } catch (Exception e) { /* ignore */ }
     }
 
     public EncounterDto nextTurn(UUID encounterId) {
@@ -976,8 +985,6 @@ public class EncounterService {
             replayEntry(entry, combatants, encounter);
         }
 
-        rebuildSortOrderForUndo(combatants, encounter);
-
         for (Combatant c : combatants.values()) {
             if (!em.contains(c)) {
                 combatantRepo.save(c);
@@ -1060,6 +1067,21 @@ public class EncounterService {
                 } catch (Exception e) {
                     // ignore malformed payload
                 }
+            }
+            case SORT_ORDER -> {
+                try {
+                    Map<String, Integer> orderMap = JSON_MAPPER.readValue(
+                            entry.getPayload(), new TypeReference<Map<String, Integer>>() {});
+                    for (var entry_ : orderMap.entrySet()) {
+                        try {
+                            UUID cid = UUID.fromString(entry_.getKey());
+                            Combatant so = combatants.get(cid);
+                            if (so != null) {
+                                so.setSortOrder(entry_.getValue());
+                            }
+                        } catch (Exception e) { /* ignore */ }
+                    }
+                } catch (Exception e) { /* ignore */ }
             }
             case DAMAGE -> {
                 if (c == null) return;

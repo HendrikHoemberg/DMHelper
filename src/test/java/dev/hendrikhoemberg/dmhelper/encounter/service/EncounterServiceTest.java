@@ -25,6 +25,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
@@ -522,15 +523,17 @@ class EncounterServiceTest {
                 new CombatantCreateRequest("Alice", 10, "NPC", null, null, null));
         CombatantDto b = service.addCombatant(enc.id(),
                 new CombatantCreateRequest("Bob", 10, "NPC", null, null, null));
-        service.setInitiative(a.id(), 10);
-        service.setInitiative(b.id(), 10);
 
+        // Set tieBreaker BEFORE initiative (so resortCombatants captures the right order)
         em.createQuery("update Combatant c set c.tieBreaker = :tb where c.id = :id")
                 .setParameter("tb", 5).setParameter("id", a.id()).executeUpdate();
         em.createQuery("update Combatant c set c.tieBreaker = :tb where c.id = :id")
                 .setParameter("tb", 10).setParameter("id", b.id()).executeUpdate();
         em.flush();
         em.clear();
+
+        service.setInitiative(a.id(), 10);
+        service.setInitiative(b.id(), 10);
 
         service.applyDamage(a.id(), -5);
         service.undo(enc.id());
@@ -539,6 +542,33 @@ class EncounterServiceTest {
         assertThat(combatants).hasSize(2);
         assertThat(combatants.get(0).name()).isEqualTo("Bob");
         assertThat(combatants.get(1).name()).isEqualTo("Alice");
+    }
+
+    @Test
+    void undoDoesNotDiscardManualReordering() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        service.activate(enc.id());
+        CombatantDto a = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("A", 10, "NPC", null, null, null));
+        CombatantDto b = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("B", 10, "NPC", null, null, null));
+        service.setInitiative(a.id(), 20);
+        service.setInitiative(b.id(), 10);
+
+        // Manually reorder: B (index 0) before A (index 1)
+        service.reorderCombatants(enc.id(), List.of(b.id(), a.id()));
+
+        // Do some other action
+        service.applyDamage(a.id(), -5);
+
+        // Undo damage
+        service.undo(enc.id());
+
+        // Verify manual reorder preserved (B before A)
+        var combatants = service.getCombatants(enc.id());
+        assertThat(combatants).hasSize(2);
+        assertThat(combatants.get(0).id()).isEqualTo(b.id());
+        assertThat(combatants.get(1).id()).isEqualTo(a.id());
     }
 
     @Test
