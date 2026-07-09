@@ -89,6 +89,7 @@ class SheetServiceTest {
                 0, 0,
                 classAndLevel,
                 30, (dex - 10) / 2, 10 + (dex - 10) / 2,
+                List.of(),
                 List.of()
         );
     }
