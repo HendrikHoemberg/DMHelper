@@ -62,6 +62,26 @@
           "intScore": { "type": "integer" },
           "wisScore": { "type": "integer" },
           "chaScore": { "type": "integer" },
+          "strSave": { "type": "integer" },
+          "dexSave": { "type": "integer" },
+          "conSave": { "type": "integer" },
+          "intSave": { "type": "integer" },
+          "wisSave": { "type": "integer" },
+          "chaSave": { "type": "integer" },
+          "skills": { "type": "string" },
+          "damageVulnerabilities": { "type": "string" },
+          "damageResistances": { "type": "string" },
+          "damageImmunities": { "type": "string" },
+          "conditionImmunities": { "type": "string" },
+          "senses": { "type": "string" },
+          "languages": { "type": "string" },
+          "traits": { "type": "string" },
+          "actions": { "type": "string" },
+          "bonusActions": { "type": "string" },
+          "reactions": { "type": "string" },
+          "legendaryActions": { "type": "string" },
+          "legendaryDescription": { "type": "string" },
+          "lairActions": { "type": "string" },
           "xp": { "type": "integer" }
         }
       }
@@ -91,6 +111,8 @@
         "properties": {
           "key": { "type": "string" },
           "name": { "type": "string" },
+          "movementMode": { "type": "string" },
+          "showGrid": { "type": "boolean" },
           "grid": {
             "type": "object",
             "required": ["w", "h", "cellPx"],
@@ -115,6 +137,32 @@
                   "cellSizePx": { "type": "integer", "minimum": 1 },
                   "gridType": { "type": "string", "enum": ["square"] }
                 }
+              },
+              "layers": { "type": "array" },
+              "primitives": { "type": "array" },
+              "customTerrain": { "type": "array" }
+            }
+          },
+          "tokens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "kind": { "type": "string" },
+                "color": { "type": "string" },
+                "positionX": { "type": "integer" },
+                "positionY": { "type": "integer" },
+                "sizeCols": { "type": "integer", "minimum": 1 },
+                "sizeRows": { "type": "integer", "minimum": 1 },
+                "hidden": { "type": "boolean" },
+                "statBlockKey": { "type": "string" },
+                "partyMemberName": { "type": "string" },
+                "currentHp": { "type": "integer" },
+                "maxHp": { "type": "integer" },
+                "dead": { "type": "boolean" },
+                "notes": { "type": "string" }
               }
             }
           }
@@ -130,6 +178,10 @@
           "name": { "type": "string" },
           "status": { "type": "string", "enum": ["PLANNED", "ACTIVE", "DONE"] },
           "round": { "type": "integer" },
+          "activeTurnIndex": { "type": "integer" },
+          "logSequence": { "type": "integer" },
+          "lairActionName": { "type": "string" },
+          "lairActionDescription": { "type": "string" },
           "combatants": {
             "type": "array",
             "items": {
@@ -138,12 +190,28 @@
               "properties": {
                 "name": { "type": "string" },
                 "initiative": { "type": "integer" },
+                "tieBreaker": { "type": "integer" },
+                "sortOrder": { "type": "integer" },
                 "maxHp": { "type": "integer" },
                 "currentHp": { "type": "integer" },
+                "tempHp": { "type": "integer" },
                 "kind": { "type": "string" },
-                "hidden": { "type": "boolean" },
+                "groupId": { "type": "string" },
+                "groupLeader": { "type": "boolean" },
+                "tokenId": { "type": "string" },
                 "statBlockKey": { "type": "string" },
-                "partyMemberName": { "type": "string" }
+                "partyMemberName": { "type": "string" },
+                "defeated": { "type": "boolean" },
+                "hidden": { "type": "boolean" },
+                "conditionsJson": { "type": "string" },
+                "concentratingOn": { "type": "string" },
+                "concentrationCheckPending": { "type": "boolean" },
+                "legendaryActionsUsed": { "type": "integer" },
+                "legendaryResistancesUsed": { "type": "integer" },
+                "legendaryActionsMax": { "type": "integer" },
+                "legendaryResistancesMax": { "type": "integer" },
+                "rechargedAbilities": { "type": "string" },
+                "notes": { "type": "string" }
               }
             }
           }
@@ -163,6 +231,67 @@
           "dmOnly": { "type": "boolean" }
         }
       }
+    },
+    "quicknotes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "targetType": { "type": "string" },
+          "targetRef": { "type": "string" },
+          "body": { "type": "string" },
+          "createdAt": { "type": "string" }
+        }
+      }
+    },
+    "assignments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "holderName": { "type": "string" },
+          "magicItemKey": { "type": "string" },
+          "equipmentItemKey": { "type": "string" },
+          "customText": { "type": "string" },
+          "quantity": { "type": "integer" },
+          "attuned": { "type": "boolean" }
+        }
+      }
+    },
+    "ledger": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "timestamp": { "type": "string" },
+          "inGameYear": { "type": "integer" },
+          "inGameMonth": { "type": "integer" },
+          "inGameDay": { "type": "integer" },
+          "kind": { "type": "string" },
+          "direction": { "type": "string" },
+          "amount": { "type": "number" },
+          "currency": { "type": "string" },
+          "holder": { "type": "string" },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "timeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "inGameYear": { "type": "integer" },
+          "inGameMonth": { "type": "integer" },
+          "inGameDay": { "type": "integer" },
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "noteTitle": { "type": "string" }
+        }
+      }
     }
   },
   "$defs": {
@@ -171,9 +300,37 @@
       "properties": {
         "abilityScores": { "type": "object" },
         "classLevels": { "type": "array" },
+        "proficiencies": { "type": "object" },
         "speciesKey": { "type": "string" },
         "backgroundKey": { "type": "string" },
-        "xp": { "type": "integer" }
+        "featRefs": { "type": "array", "items": { "type": "string" } },
+        "xp": { "type": "integer" },
+        "overrides": { "type": "object" },
+        "hitDiceUsed": { "type": "integer" },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "maxUses": { "type": "integer" },
+              "currentUses": { "type": "integer" },
+              "resetRule": { "type": "string" }
+            }
+          }
+        },
+        "spells": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "spellKey": { "type": "string" },
+              "prepared": { "type": "boolean" },
+              "sourceClass": { "type": "string" }
+            }
+          }
+        },
+        "spellSlotsUsed": { "type": "object" }
       }
     }
   }
