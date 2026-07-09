@@ -88,7 +88,8 @@ class SheetServiceTest {
                 Map.of(),
                 0, 0,
                 classAndLevel,
-                30, (dex - 10) / 2, 10 + (dex - 10) / 2
+                30, (dex - 10) / 2, 10 + (dex - 10) / 2,
+                List.of()
         );
     }
 
@@ -192,7 +193,7 @@ class SheetServiceTest {
         sheetService.shortRest(dto.id(), 1);
 
         // 1 total HD, half(1/2)=0 recovered, so still 1 used
-        var rested = sheetService.longRest(dto.id());
+        var rested = sheetService.longRest(dto.id(), 0);
 
         assertEquals(1, rested.hitDiceUsed());
     }
@@ -217,6 +218,31 @@ class SheetServiceTest {
         var xpDto = sheetService.awardXp(dto.id(), 500);
 
         assertEquals(500, xpDto.xp());
+    }
+
+    @Test
+    void xpLevel20Achievable() {
+        when(sheetEngine.derive(any())).thenReturn(
+                makeDerived(15, 14, 13, 1, 2, 11, 1, 1, "Fighter 1")
+        );
+
+        var scores = Map.of("str", 15, "dex", 14, "con", 13,
+                "int", 12, "wis", 10, "cha", 8);
+        Map<String, Object> prof = new HashMap<>();
+        prof.put("skills", List.of()); prof.put("tools", List.of());
+        prof.put("languages", List.of()); prof.put("armor", List.of());
+        prof.put("weapons", List.of()); prof.put("expertise", List.of());
+        var entry = new ClassLevelEntry("srd-2024_fighter", 1, List.of());
+        var req = new CreateSheetRequest(testMember.getId(), scores,
+                List.of(entry), prof, null, null, List.of(), 355000);
+        var dto = sheetService.createSheet(req);
+
+        var sheet = sheetRepo.findById(dto.id()).orElseThrow();
+        var result = sheetService.checkLevelUp(sheet);
+
+        assertEquals(355000, result.xp());
+        assertEquals(20, result.level(), "355000 XP should reach level 20");
+        assertTrue(result.levelUp(), "Level-up should trigger at 355000 XP");
     }
 
     @Test

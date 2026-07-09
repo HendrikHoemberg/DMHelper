@@ -63,7 +63,7 @@ public class SheetService {
     ) {}
 
     private static final int[] XP_THRESHOLDS = {
-            0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000,
+            0, 0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000,
             64000, 85000, 100000, 120000, 140000, 165000, 195000,
             225000, 265000, 305000, 355000
     };
@@ -79,7 +79,7 @@ public class SheetService {
         int xp = sheet.getXp();
         int currentLevel = getTotalLevel(sheet);
         int newLevel = currentLevel;
-        for (int i = currentLevel + 1; i <= 20 && i < XP_THRESHOLDS.length; i++) {
+        for (int i = currentLevel + 1; i < XP_THRESHOLDS.length; i++) {
             if (xp >= XP_THRESHOLDS[i]) {
                 newLevel = i;
             } else {
@@ -342,7 +342,7 @@ public class SheetService {
         return toDto(sheet);
     }
 
-    public SheetDto longRest(UUID sheetId) {
+    public SheetDto longRest(UUID sheetId, int hitDiceSpent) {
         CharacterSheet sheet = sheetRepo.findById(sheetId)
                 .orElseThrow(() -> new IllegalArgumentException("Sheet not found"));
 
@@ -350,6 +350,8 @@ public class SheetService {
 
         int recovered = Math.min(sheet.getHitDiceUsed(), derived.totalHitDice() / 2);
         sheet.setHitDiceUsed(Math.max(0, sheet.getHitDiceUsed() - recovered));
+        int toSpend = Math.min(hitDiceSpent, derived.remainingHitDice());
+        sheet.setHitDiceUsed(sheet.getHitDiceUsed() + toSpend);
 
         try {
             sheet.setSpellSlotsUsed(mapper.writeValueAsString(Map.of()));
@@ -382,7 +384,7 @@ public class SheetService {
         return toDto(sheet);
     }
 
-    public SheetDto setLevel(UUID sheetId, int totalLevel) {
+    public SheetDto setLevel(UUID sheetId, String classSourceKey, int totalLevel) {
         CharacterSheet sheet = sheetRepo.findById(sheetId)
                 .orElseThrow(() -> new IllegalArgumentException("Sheet not found"));
 
@@ -390,29 +392,33 @@ public class SheetService {
             List<Map<String, Object>> classLevels = mapper.readValue(sheet.getClassLevels(),
                     mapper.getTypeFactory().constructCollectionType(List.class, Map.class));
 
-            if (classLevels.isEmpty()) {
-                throw new IllegalStateException("No classes on sheet; cannot set level");
+            Map<String, Object> entry = null;
+            for (Map<String, Object> e : classLevels) {
+                if (classSourceKey.equals(e.get("classSourceKey"))) {
+                    entry = e;
+                    break;
+                }
+            }
+            if (entry == null) {
+                throw new IllegalStateException("Class not found on sheet: " + classSourceKey);
             }
 
-            Map<String, Object> firstEntry = classLevels.get(0);
-            int oldLevel = ((Number) firstEntry.get("level")).intValue();
-            int newLevel = totalLevel;
-            firstEntry.put("level", newLevel);
+            int oldLevel = ((Number) entry.get("level")).intValue();
+            entry.put("level", totalLevel);
 
-            List<Integer> rolls = getHitDieRolls(firstEntry);
-            if (newLevel > oldLevel) {
-                int dieSize = getHitDieSize((String) firstEntry.get("classSourceKey"));
+            List<Integer> rolls = getHitDieRolls(entry);
+            if (totalLevel > oldLevel) {
+                int dieSize = getHitDieSize((String) entry.get("classSourceKey"));
                 int avg = (dieSize / 2) + 1;
-                for (int i = oldLevel; i < newLevel; i++) {
+                for (int i = oldLevel; i < totalLevel; i++) {
                     rolls.add(avg);
                 }
-            } else if (newLevel < oldLevel && newLevel > 1) {
-                while (rolls.size() > newLevel - 1) {
+            } else if (totalLevel < oldLevel && totalLevel > 1) {
+                while (rolls.size() > totalLevel - 1) {
                     rolls.remove(rolls.size() - 1);
                 }
             }
-            firstEntry.put("hitDieRolls", rolls);
-            classLevels.set(0, firstEntry);
+            entry.put("hitDieRolls", rolls);
 
             sheet.setClassLevels(mapper.writeValueAsString(classLevels));
         } catch (Exception e) {

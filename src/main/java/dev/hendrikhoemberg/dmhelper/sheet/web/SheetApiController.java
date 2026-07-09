@@ -66,16 +66,17 @@ public class SheetApiController {
     public ResponseEntity<Map<String, Object>> batchRest(
             @PathVariable UUID campaignId,
             @RequestParam String type,
-            @RequestParam List<UUID> members) {
+            @RequestParam List<UUID> members,
+            @RequestParam(defaultValue = "1") int hitDiceSpent) {
         List<Map<String, Object>> results = new ArrayList<>();
         for (UUID memberId : members) {
             try {
                 if ("SHORT".equalsIgnoreCase(type)) {
                     sheetService.shortRest(
-                        sheetService.getSheetDtoByPartyMemberId(memberId).id(), 0);
+                        sheetService.getSheetDtoByPartyMemberId(memberId).id(), hitDiceSpent);
                 } else {
                     sheetService.longRest(
-                        sheetService.getSheetDtoByPartyMemberId(memberId).id());
+                        sheetService.getSheetDtoByPartyMemberId(memberId).id(), 0);
                 }
                 results.add(Map.of("id", memberId.toString(), "status", "ok"));
             } catch (Exception e) {
@@ -83,7 +84,7 @@ public class SheetApiController {
                     "message", e.getMessage()));
             }
         }
-        return ResponseEntity.ok(Map.of("members", results));
+        return ResponseEntity.ok(Map.of("results", results));
     }
 
     @PostMapping("/party/xp")

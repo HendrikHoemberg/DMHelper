@@ -180,7 +180,7 @@ public class SheetController {
                            RedirectAttributes redirectAttributes) {
         try {
             SheetDto dto = sheetService.getSheetDtoByPartyMemberId(memberId);
-            sheetService.longRest(dto.id());
+            sheetService.longRest(dto.id(), 0);
             redirectAttributes.addFlashAttribute("message", "Long rest completed.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Long rest failed: " + e.getMessage());
