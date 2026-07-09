@@ -24,5 +24,7 @@ public interface StatBlockRepository extends JpaRepository<StatBlock, UUID>,
 
     Optional<StatBlock> findBySourceKey(String sourceKey);
 
+    Optional<StatBlock> findByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
+
     List<StatBlock> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 }

@@ -468,7 +468,7 @@ public class CampaignService {
                             }
                         }
                         if (cDto.statBlockKey() != null) {
-                            statBlockRepository.findBySourceKey(cDto.statBlockKey())
+                            statBlockRepository.findByCampaignIdAndSourceKey(saved.getId(), cDto.statBlockKey())
                                     .ifPresentOrElse(combatant::setStatBlock,
                                             () -> System.err.println("WARNING: Unknown statblock key: " + cDto.statBlockKey()));
                         }

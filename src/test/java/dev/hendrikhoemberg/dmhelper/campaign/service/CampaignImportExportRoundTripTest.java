@@ -12,6 +12,10 @@ import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
@@ -40,6 +44,8 @@ class CampaignImportExportRoundTripTest {
     @Autowired private ItemAssignmentRepository assignmentRepo;
     @Autowired private LedgerEntryRepository ledgerEntryRepo;
     @Autowired private TimelineEventRepository timelineEventRepo;
+    @Autowired private EncounterRepository encounterRepo;
+    @Autowired private CombatantRepository combatantRepo;
 
     @MockitoBean
     private NoteService noteService;
@@ -164,5 +170,81 @@ class CampaignImportExportRoundTripTest {
                 .findByCampaignIdOrderByInGameYearAscInGameMonthAscInGameDayAsc(imported.getId());
         assertThat(importedTimeline).hasSize(1);
         assertThat(importedTimeline.get(0).getTitle()).isEqualTo("The Eclipse");
+    }
+
+    @Test
+    void roundTripPreservesEncountersWithCombatants() {
+        Campaign c = campaignService.create("Encounter Trip", "encounters");
+        GameMap map = gameMapService.create(c.getId(), "Battlefield", 30, 20, 48);
+
+        PartyMember pm = partyMemberService.create(c.getId(), "Thia", "Anna", "Rogue 5",
+                16, 38, 4, 30, 17, 12, 11, null);
+
+        StatBlock sb = statBlockService.createCustom(c.getId(), "Goblin Boss", "1", "Humanoid",
+                17, "21 (6d6)", "30 ft.",
+                10, 14, 10, 10, 8, 8,
+                null, null, null, null, null, null,
+                null, null, null, null, null,
+                "darkvision 60 ft.", "Common, Goblin");
+        sb.setSourceKey("goblin-boss");
+        statBlockRepository.save(sb);
+
+        Encounter encounter = new Encounter();
+        encounter.setCampaign(c);
+        encounter.setName("Goblin Ambush");
+        encounter.setStatus(Encounter.Status.ACTIVE);
+        encounter.setRound(2);
+        encounter.setActiveTurnIndex(0);
+        encounter.setLairActionName("Falling Rocks");
+        encounter.setLairActionDescription("Rocks fall, everyone dies");
+        encounter = encounterRepo.save(encounter);
+
+        Combatant pcCombatant = new Combatant();
+        pcCombatant.setEncounter(encounter);
+        pcCombatant.setName("Thia");
+        pcCombatant.setPartyMember(pm);
+        pcCombatant.setInitiative(18);
+        pcCombatant.setSortOrder(0);
+        pcCombatant.setMaxHp(38);
+        pcCombatant.setCurrentHp(30);
+        pcCombatant.setKind("PC");
+        pcCombatant.setConditionsJson("[blinded]");
+        combatantRepo.save(pcCombatant);
+
+        Combatant npcCombatant = new Combatant();
+        npcCombatant.setEncounter(encounter);
+        npcCombatant.setName("Goblin Boss");
+        npcCombatant.setStatBlock(sb);
+        npcCombatant.setInitiative(12);
+        npcCombatant.setSortOrder(1);
+        npcCombatant.setMaxHp(21);
+        npcCombatant.setCurrentHp(10);
+        npcCombatant.setKind("NPC");
+        npcCombatant.setHidden(true);
+        combatantRepo.save(npcCombatant);
+
+        String json = campaignService.exportToJson(c.getId());
+        Campaign imported = campaignService.importFromJson(json);
+
+        List<Encounter> encounters = encounterRepo.findByCampaignIdOrderByNameAsc(imported.getId());
+        assertThat(encounters).hasSize(1);
+        Encounter reEnc = encounters.get(0);
+        assertThat(reEnc.getName()).isEqualTo("Goblin Ambush");
+        assertThat(reEnc.getStatus()).isEqualTo(Encounter.Status.ACTIVE);
+        assertThat(reEnc.getRound()).isEqualTo(2);
+        assertThat(reEnc.getLairActionName()).isEqualTo("Falling Rocks");
+
+        List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(reEnc.getId());
+        assertThat(combatants).hasSize(2);
+        Combatant rePC = combatants.get(0);
+        assertThat(rePC.getName()).isEqualTo("Thia");
+        assertThat(rePC.getInitiative()).isEqualTo(18);
+        assertThat(rePC.getCurrentHp()).isEqualTo(30);
+        assertThat(rePC.getConditionsJson()).contains("blinded");
+
+        Combatant reNPC = combatants.get(1);
+        assertThat(reNPC.getName()).isEqualTo("Goblin Boss");
+        assertThat(reNPC.isHidden()).isTrue();
+        assertThat(reNPC.getStatBlock().getSourceKey()).isEqualTo("goblin-boss");
     }
 }
