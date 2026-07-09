@@ -92,9 +92,7 @@ public class PlayerSafeProjectionService {
                 token.getSizeCols(),
                 token.getSizeRows(),
                 token.isDead(),
-                computeBloodied(token),
-                null,
-                null
+                computeBloodied(token)
         );
     }
 

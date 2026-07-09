@@ -54,9 +54,7 @@ public record LiveTableState(
             int sizeCols,
             int sizeRows,
             boolean dead,
-            Boolean bloodied,
-            Integer currentHp,
-            Integer maxHp
+            Boolean bloodied
     ) {}
 
     public record HandoutRef(
