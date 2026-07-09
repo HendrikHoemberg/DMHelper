@@ -246,7 +246,7 @@
 
             <div class="tool-group">
                 <button class="tool-btn" :class="{ active: showTracker }"
-                        @click="showTracker = !showTracker"
+                        @click="showTracker = !showTracker; activeTab = showTracker ? 'tracker' : 'tokens'"
                         title="Toggle combat tracker">
                     <span x-show="!showTracker">⚔ Tracker</span>
                     <span x-show="showTracker">✕ Close</span>
@@ -285,8 +285,16 @@
             <div class="battle-canvas-wrap" id="battleCanvasWrap"></div>
 
             <div class="battle-sidebar">
+                <div style="display: flex; gap: 4px; margin-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-xs);">
+                    <button class="tool-btn" :class="{ active: activeTab === 'tokens' }"
+                            @click="showTracker = false; activeTab = 'tokens'">Tokens</button>
+                    <button class="tool-btn" :class="{ active: activeTab === 'tracker' }"
+                            @click="showTracker = true; activeTab = 'tracker'">Tracker</button>
+                    <button class="tool-btn" :class="{ active: activeTab === 'scene' }"
+                            @click="showTracker = false; activeTab = 'scene'">Scene</button>
+                </div>
                 <!-- Normal sidebar content -->
-                <div x-show="!showTracker">
+                <div x-show="activeTab === 'tokens'">
                     <div class="sidebar-section" x-show="maps.length > 1" style="display: none;">
                         <h3>Maps</h3>
                         <div class="map-switcher">
@@ -376,8 +384,15 @@
                 </div>
 
                 <!-- Tracker panel (shown when toggled) -->
-                <div x-show="showTracker" style="height: 100%;">
+                <div x-show="activeTab === 'tracker'" style="height: 100%;">
                     <th:block th:replace="~{encounter/_tracker :: tracker}"></th:block>
+                </div>
+
+                <!-- Scene panel -->
+                <div x-show="activeTab === 'scene'" style="height: 100%;">
+                    <div id="scene-panel-container">
+                        <div class="empty-state">No current scene. Set one from an adventure.</div>
+                    </div>
                 </div>
 
                 <!-- Map quicknotes -->
@@ -410,6 +425,7 @@
                 showGrid: /*[[${map.showGrid}]]*/ true,
                 dmMode: true,
                 showTracker: false,
+                activeTab: 'tokens',
                 currentMapId: /*[[${map.id}]]*/ '',
                 maps: [],
                 tokens: [],
@@ -637,5 +653,14 @@
         battleMap.load();
     </script>
     <script th:src="@{/vendor/alpine.min.js}" defer></script>
+    <script>
+        window.openSceneInPanel = function(sceneId) {
+            const container = document.getElementById('scene-panel-container');
+            const campaignId = document.querySelector('.battle-container').dataset.campaignId;
+            htmx.ajax('GET', `/campaigns/${campaignId}/scenes/${sceneId}/panel`, { target: '#scene-panel-container', swap: 'innerHTML' });
+            const alpineComponent = document.querySelector('[x-data]').__x.$data;
+            alpineComponent.activeTab = 'scene';
+        };
+    </script>
 </body>
 </html>

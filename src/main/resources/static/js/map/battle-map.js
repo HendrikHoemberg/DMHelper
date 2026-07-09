@@ -80,6 +80,7 @@ export class BattleMap {
         this.terrainLayer = null;
         this.tokenLayer = null;
         this.annotationLayer = null;
+        this.pinLayer = null;
         this.previewLayer = null;
     }
 
@@ -103,6 +104,9 @@ export class BattleMap {
         this.annotationLayer = new Konva.Layer({ listening: false });
         this.stage.add(this.annotationLayer);
 
+        this.pinLayer = new Konva.Layer({ listening: true });
+        this.stage.add(this.pinLayer);
+
         this.previewLayer = new Konva.Layer();
         this.stage.add(this.previewLayer);
 
@@ -113,6 +117,7 @@ export class BattleMap {
         await this.fetchTokens();
         this.renderGrid();
         this.renderTokens();
+        await this.loadPins(this.mapId);
         this.emitState();
     }
 
@@ -549,6 +554,8 @@ export class BattleMap {
         this.dmMode = dm;
         this.renderTokens();
         this.renderConditionIndicators();
+        if (dm) this.showPins();
+        else this.hidePins();
     }
 
     renderConditionIndicators() {
@@ -898,6 +905,49 @@ export class BattleMap {
         this.previewLayer.batchDraw();
     }
 
+    /* ---- Pins ---- */
+    async loadPins(mapId) {
+        this.pinLayer.destroyChildren();
+        if (!this.dmMode) return;
+        const res = await fetch(`/api/v1/maps/${mapId}/pins`);
+        if (!res.ok) return;
+        const pins = await res.json();
+        for (const pin of pins) {
+            const circle = new Konva.Circle({
+                x: pin.x, y: pin.y, radius: 14,
+                fill: '#b45309', stroke: '#fff', strokeWidth: 2,
+                draggable: false
+            });
+            const label = new Konva.Text({
+                x: pin.x - 8, y: pin.y - 8,
+                text: pin.sceneKey || '\u2022',
+                fontSize: 12, fill: '#fff',
+                fontStyle: 'bold', align: 'center',
+                width: 16
+            });
+            const group = new Konva.Group({ listening: true });
+            group.add(circle);
+            group.add(label);
+            group.on('click', () => {
+                if (window.openSceneInPanel) {
+                    window.openSceneInPanel(pin.sceneId);
+                }
+            });
+            this.pinLayer.add(group);
+        }
+        this.pinLayer.draw();
+    }
+
+    showPins() {
+        this.pinLayer.visible(true);
+        this.pinLayer.draw();
+    }
+
+    hidePins() {
+        this.pinLayer.visible(false);
+        this.pinLayer.draw();
+    }
+
     /* ---- Map Switching ---- */
     async switchToMap(mapId) {
         const resp = await fetch(`/api/v1/maps/${mapId}`);
@@ -921,6 +971,7 @@ export class BattleMap {
         await this.fetchTokens();
         this.renderGrid();
         this.renderTokens();
+        await this.loadPins(mapData.id);
         this.emit('modestate', { movementMode: this.movementMode, showGrid: this.showGrid });
         this.emit('tokenupdate', { tokens: this.tokens });
         this.emit('state-changed');
