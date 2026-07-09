@@ -353,7 +353,7 @@ public class SheetService {
 
         DerivedValues derived = sheetEngine.derive(sheet);
 
-        int recovered = Math.min(sheet.getHitDiceUsed(), derived.totalHitDice() / 2);
+        int recovered = Math.min(sheet.getHitDiceUsed(), Math.max(1, derived.totalHitDice() / 2));
         sheet.setHitDiceUsed(Math.max(0, sheet.getHitDiceUsed() - recovered));
         int toSpend = Math.min(hitDiceSpent, derived.remainingHitDice());
         sheet.setHitDiceUsed(sheet.getHitDiceUsed() + toSpend);
