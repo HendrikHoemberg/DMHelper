@@ -252,6 +252,8 @@ public class EncounterService {
         logEntry(id, CombatLogEntry.EntryType.ENCOUNTER_ENDED, "", "");
         logEntry(id, CombatLogEntry.EntryType.SESSION_END, "",
                 "{\"endedAt\":\"" + Instant.now().toString() + "\"}");
+        tablePresentationService.updateAoEs(List.of());
+        tablePresentationService.broadcastCurrentState();
         return dto;
     }
 
