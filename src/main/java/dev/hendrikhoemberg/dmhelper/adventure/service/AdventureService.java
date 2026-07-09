@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -222,6 +223,57 @@ public class AdventureService {
             flat.addAll(sceneRepository.findByChapterIdOrderBySortOrderAsc(ch.getId()));
         }
         return flat;
+    }
+
+    // ---- Run mode: status & cursor ----
+
+    public Scene setStatus(UUID sceneId, SceneStatus status) {
+        Scene s = findSceneById(sceneId);
+        s.setStatus(status);
+        return sceneRepository.save(s);
+    }
+
+    public Scene setCurrentScene(UUID campaignId, UUID sceneId) {
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new NotFoundException("Campaign not found"));
+        Scene s = findSceneById(sceneId);
+        campaign.setCurrentSceneId(s.getId());
+        campaignRepository.save(campaign);
+        if (s.getStatus() == SceneStatus.UNVISITED) {
+            s.setStatus(SceneStatus.VISITED);
+            s = sceneRepository.save(s);
+        }
+        return s;
+    }
+
+    public void clearCurrentScene(UUID campaignId) {
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new NotFoundException("Campaign not found"));
+        campaign.setCurrentSceneId(null);
+        campaignRepository.save(campaign);
+    }
+
+    public Optional<Scene> getCurrentScene(UUID campaignId) {
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new NotFoundException("Campaign not found"));
+        if (campaign.getCurrentSceneId() == null) return Optional.empty();
+        var scene = sceneRepository.findById(campaign.getCurrentSceneId());
+        if (scene.isEmpty()) {
+            campaign.setCurrentSceneId(null);
+            campaignRepository.save(campaign);
+        }
+        return scene;
+    }
+
+    public Optional<Scene> stepCurrentScene(UUID campaignId, int direction) {
+        var currentOpt = getCurrentScene(campaignId);
+        if (currentOpt.isEmpty()) return Optional.empty();
+        Scene current = currentOpt.get();
+        List<Scene> flat = flattenedScenes(current.getChapter().getAdventure().getId());
+        int idx = indexOfId(flat.stream().map(Scene::getId).toList(), current.getId());
+        int target = idx + direction;
+        if (target < 0 || target >= flat.size()) return Optional.of(current);
+        return Optional.of(setCurrentScene(campaignId, flat.get(target).getId()));
     }
 
     // ---- Scene links ----

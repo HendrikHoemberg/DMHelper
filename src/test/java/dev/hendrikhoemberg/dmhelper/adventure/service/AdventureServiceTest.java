@@ -179,4 +179,55 @@ class AdventureServiceTest {
         assertThat(campaignRepository.findById(campaign.getId()).orElseThrow()
                 .getCurrentSceneId()).isNull();
     }
+
+    @Test
+    void setCurrentSceneBumpsUnvisitedToVisitedOnly() {
+        var a = service.createAdventure(campaign.getId(), "A", null, null);
+        var ch = service.createChapter(a.getId(), "Ch", null);
+        var s = service.createScene(ch.getId(), "Scene", null, null);
+
+        service.setCurrentScene(campaign.getId(), s.getId());
+        assertThat(service.findSceneById(s.getId()).getStatus()).isEqualTo(SceneStatus.VISITED);
+        assertThat(campaignRepository.findById(campaign.getId()).orElseThrow()
+                .getCurrentSceneId()).isEqualTo(s.getId());
+
+        service.setStatus(s.getId(), SceneStatus.DONE);
+        service.setCurrentScene(campaign.getId(), s.getId());
+        assertThat(service.findSceneById(s.getId()).getStatus()).isEqualTo(SceneStatus.DONE);
+    }
+
+    @Test
+    void stepWalksAcrossChaptersAndStopsAtEdges() {
+        var a = service.createAdventure(campaign.getId(), "A", null, null);
+        var ch1 = service.createChapter(a.getId(), "Ch 1", null);
+        var ch2 = service.createChapter(a.getId(), "Ch 2", null);
+        var s1 = service.createScene(ch1.getId(), "1a", null, null);
+        var s2 = service.createScene(ch2.getId(), "2a", null, null);
+
+        service.setCurrentScene(campaign.getId(), s1.getId());
+
+        var next = service.stepCurrentScene(campaign.getId(), 1);
+        assertThat(next).isPresent();
+        assertThat(next.get().getId()).isEqualTo(s2.getId());
+
+        // at the last scene: stays put
+        var edge = service.stepCurrentScene(campaign.getId(), 1);
+        assertThat(edge).isPresent();
+        assertThat(edge.get().getId()).isEqualTo(s2.getId());
+
+        var back = service.stepCurrentScene(campaign.getId(), -1);
+        assertThat(back).isPresent();
+        assertThat(back.get().getId()).isEqualTo(s1.getId());
+    }
+
+    @Test
+    void stepWithoutCursorIsEmptyAndStaleCursorSelfHeals() {
+        assertThat(service.stepCurrentScene(campaign.getId(), 1)).isEmpty();
+
+        campaign.setCurrentSceneId(UUID.randomUUID()); // points at nothing
+        campaignRepository.save(campaign);
+        assertThat(service.getCurrentScene(campaign.getId())).isEmpty();
+        assertThat(campaignRepository.findById(campaign.getId()).orElseThrow()
+                .getCurrentSceneId()).isNull();
+    }
 }
