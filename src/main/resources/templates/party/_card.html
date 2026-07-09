@@ -39,5 +39,8 @@
                 hx-confirm="Remove this party member?"
                 hx-target="closest .party-member-card" hx-swap="outerHTML">Remove</button>
     </div>
+    <div style="margin-top: var(--space-md);">
+        <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${pm.campaign.id}, targetType='PARTY_MEMBER', targetId=${pm.id})}"></th:block>
+    </div>
 </div>
 </html>

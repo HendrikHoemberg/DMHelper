@@ -6,6 +6,7 @@ import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ public class QuickNoteService {
     private final StatBlockRepository statBlockRepository;
     private final GameMapRepository gameMapRepository;
     private final HandoutRepository handoutRepository;
+    private final PartyMemberRepository partyMemberRepository;
 
     public QuickNoteService(QuickNoteRepository quickNoteRepository,
                             CampaignRepository campaignRepository,
@@ -31,7 +33,8 @@ public class QuickNoteService {
                             NoteRepository noteRepository,
                             StatBlockRepository statBlockRepository,
                             GameMapRepository gameMapRepository,
-                            HandoutRepository handoutRepository) {
+                            HandoutRepository handoutRepository,
+                            PartyMemberRepository partyMemberRepository) {
         this.quickNoteRepository = quickNoteRepository;
         this.campaignRepository = campaignRepository;
         this.noteService = noteService;
@@ -39,6 +42,7 @@ public class QuickNoteService {
         this.statBlockRepository = statBlockRepository;
         this.gameMapRepository = gameMapRepository;
         this.handoutRepository = handoutRepository;
+        this.partyMemberRepository = partyMemberRepository;
     }
 
     public QuickNote create(UUID campaignId, String targetType, UUID targetId, String body) {
@@ -109,6 +113,14 @@ public class QuickNoteService {
             case "NOTE" -> {
                 var note = noteRepository.findById(targetId);
                 yield note.map(n -> "[[" + n.getTitle() + "]]\n\n").orElse("");
+            }
+            case "PARTY_MEMBER" -> {
+                var pm = partyMemberRepository.findById(targetId);
+                yield pm.map(p -> "[[partymember:" + p.getCharacterName() + "]]\n\n").orElse("");
+            }
+            case "CAMPAIGN" -> {
+                var camp = campaignRepository.findById(targetId);
+                yield camp.map(c -> "[[campaign:" + c.getName() + "]]\n\n").orElse("");
             }
             default -> "";
         };

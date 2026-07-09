@@ -125,6 +125,9 @@
                     </button>
                 </div>
             </div>
+        <div style="margin-top: var(--space-lg);">
+            <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaign.id}, targetType='CAMPAIGN', targetId=${campaign.id})}"></th:block>
+        </div>
         </main>
 
         <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>

@@ -37,5 +37,8 @@
             Delete
         </button>
     </div>
+    <div style="margin-top: var(--space-md);">
+        <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${handout.campaign.id}, targetType='HANDOUT', targetId=${handout.id})}"></th:block>
+    </div>
 </article>
 </html>
