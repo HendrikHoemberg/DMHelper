@@ -705,7 +705,8 @@ public class CampaignService {
                         .map(s -> new CampaignExportDto.SpellRefExportDto(
                                 s.getSpell() != null ? s.getSpell().getSourceKey() : null,
                                 s.isPrepared(), s.getSourceClass()))
-                        .toList()
+                        .toList(),
+                parseJsonMap(sheet.getSpellSlotsUsed())
         );
 
         return new CampaignExportDto.PartyMemberExportDto(
@@ -732,7 +733,8 @@ public class CampaignService {
                     objectMapper.writeValueAsString(sheetDto.featRefs()) : "[]");
             sheet.setOverrides(sheetDto.overrides() != null ?
                     objectMapper.writeValueAsString(sheetDto.overrides()) : "{}");
-            sheet.setSpellSlotsUsed("{}");
+            sheet.setSpellSlotsUsed(sheetDto.spellSlotsUsed() != null ?
+                    objectMapper.writeValueAsString(sheetDto.spellSlotsUsed()) : "{}");
         } catch (Exception e) {
             throw new RuntimeException("Failed to deserialize sheet data", e);
         }

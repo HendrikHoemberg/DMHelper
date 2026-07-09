@@ -95,7 +95,8 @@ public record CampaignExportDto(
             Map<String, Object> overrides,
             int hitDiceUsed,
             List<ResourceExportDto> resources,
-            List<SpellRefExportDto> spells
+            List<SpellRefExportDto> spells,
+            @JsonInclude(JsonInclude.Include.NON_NULL) Map<String, Object> spellSlotsUsed
     ) {}
 
     public record ClassLevelExportDto(
