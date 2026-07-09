@@ -165,11 +165,13 @@ public class CampaignService {
         Campaign campaign = findById(id);
         var party = partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(id).stream()
                 .map(this::toPartyMemberExport).toList();
-        var statBlocks = statBlockRepository.findByCampaignIdOrderByNameAsc(id).stream()
+        var statBlockEntities = statBlockRepository.findByCampaignIdOrderByNameAsc(id);
+        var statBlocks = statBlockEntities.stream()
                 .map(CampaignExportDto.StatBlockExportDto::from).toList();
+        var gameMaps = gameMapService.findByCampaignId(id);
         java.util.Map<java.util.UUID, java.util.Map<java.util.UUID, String>> tokenIdMapsByMap = new java.util.HashMap<>();
         List<CampaignExportDto.MapExportDto> maps = new java.util.ArrayList<>();
-        for (var gameMap : gameMapService.findByCampaignId(id)) {
+        for (var gameMap : gameMaps) {
             var document = gameMapService.getDocument(gameMap.getId());
             var tokens = tokenRepo.findByMapIdOrderByNameAsc(gameMap.getId());
             List<CampaignExportDto.MapExportDto.TokenExportDto> tokenDtos = new java.util.ArrayList<>();
@@ -201,7 +203,8 @@ public class CampaignService {
             encounters.add(CampaignExportDto.EncounterExportDto.from(enc, combatants));
         }
 
-        var handouts = handoutRepo.findByCampaignIdOrderByTitleAsc(id).stream()
+        var handoutEntities = handoutRepo.findByCampaignIdOrderByTitleAsc(id);
+        var handouts = handoutEntities.stream()
                 .map(h -> {
                     String imageBase64 = null;
                     try {
@@ -218,19 +221,20 @@ public class CampaignService {
                 })
                 .toList();
 
-        var noteDtos = noteRepository.findByCampaignIdOrderByCreatedAtDesc(id).stream()
+        var noteEntities = noteRepository.findByCampaignIdOrderByCreatedAtDesc(id);
+        var noteDtos = noteEntities.stream()
                 .map(CampaignExportDto.NoteExportDto::from).toList();
         java.util.Map<java.util.UUID, String> quickNoteIdMappings = new java.util.HashMap<>();
-        for (var gm : gameMapService.findByCampaignId(id)) {
+        for (var gm : gameMaps) {
             quickNoteIdMappings.put(gm.getId(), gm.getId().toString());
         }
-        for (var sb : statBlockRepository.findByCampaignIdOrderByNameAsc(id)) {
+        for (var sb : statBlockEntities) {
             if (sb.getSourceKey() != null) quickNoteIdMappings.put(sb.getId(), sb.getSourceKey());
         }
-        for (var note : noteRepository.findByCampaignIdOrderByCreatedAtDesc(id)) {
+        for (var note : noteEntities) {
             quickNoteIdMappings.put(note.getId(), note.getTitle());
         }
-        for (var handout : handoutRepo.findByCampaignIdOrderByTitleAsc(id)) {
+        for (var handout : handoutEntities) {
             quickNoteIdMappings.put(handout.getId(), handout.getTitle());
         }
         var quickNoteDtos = quickNoteRepository.findByCampaignIdOrderByCreatedAtDesc(id).stream()
@@ -464,7 +468,7 @@ public class CampaignService {
 
         if (dto.handouts() != null) {
             for (var hDto : dto.handouts()) {
-                if (hDto.imageData() != null && hDto.fileName() != null && hDto.contentType() != null) {
+                if (hDto.imageData() != null) {
                     try {
                         String base64Data = hDto.imageData();
                         if (base64Data.startsWith("data:")) {
@@ -479,24 +483,26 @@ public class CampaignService {
                         java.nio.file.Path targetPath = filesDir.resolve(hDto.fileName());
                         java.nio.file.Files.createDirectories(targetPath.getParent());
                         java.nio.file.Files.write(targetPath, imageBytes);
-
-                        dev.hendrikhoemberg.dmhelper.handout.data.Handout handout =
-                                new dev.hendrikhoemberg.dmhelper.handout.data.Handout();
-                        handout.setCampaign(saved);
-                        handout.setTitle(hDto.title());
-                        handout.setFileName(hDto.fileName());
-                        handout.setContentType(hDto.contentType());
-                        handout.setTags(hDto.tags() != null ? String.join(",", hDto.tags()) : null);
-                        handout.setDmOnly(true);
-                        handout.setPresented(false);
-                        handoutRepo.save(handout);
                     } catch (Exception e) {
-                        System.err.println("WARNING: Failed to import handout '" + hDto.title() + "': " + e.getMessage());
+                        System.err.println("WARNING: Failed to import handout image '" + hDto.title() + "': " + e.getMessage());
                     }
+                } else {
+                    System.err.println("WARNING: Handout '" + hDto.title() + "' has no image data");
                 }
+                dev.hendrikhoemberg.dmhelper.handout.data.Handout handout =
+                        new dev.hendrikhoemberg.dmhelper.handout.data.Handout();
+                handout.setCampaign(saved);
+                handout.setTitle(hDto.title());
+                handout.setFileName(hDto.fileName());
+                handout.setContentType(hDto.contentType());
+                handout.setTags(hDto.tags() != null ? String.join(",", hDto.tags()) : null);
+                handout.setDmOnly(true);
+                handout.setPresented(false);
+                handoutRepo.save(handout);
             }
         }
 
+        List<PartyMember> partyMembers = partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(saved.getId());
         if (dto.encounters() != null) {
             for (var encDto : dto.encounters()) {
                 var encounter = new dev.hendrikhoemberg.dmhelper.encounter.data.Encounter();
@@ -543,9 +549,11 @@ public class CampaignService {
                                             () -> System.err.println("WARNING: Unknown statblock key: " + cDto.statBlockKey()));
                         }
                         if (cDto.partyMemberName() != null) {
-                            partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(saved.getId())
-                                    .stream().filter(pm -> pm.getCharacterName().equals(cDto.partyMemberName()))
-                                    .findFirst().ifPresent(combatant::setPartyMember);
+                            partyMembers.stream()
+                                    .filter(pm -> pm.getCharacterName().equals(cDto.partyMemberName()))
+                                    .findFirst()
+                                    .ifPresentOrElse(combatant::setPartyMember,
+                                            () -> System.err.println("WARNING: Unknown party member '" + cDto.partyMemberName() + "' in combatant '" + cDto.name() + "'"));
                         }
                         combatant.setDefeated(cDto.defeated());
                         combatant.setHidden(cDto.hidden());
@@ -564,15 +572,22 @@ public class CampaignService {
             }
         }
 
+        List<Note> importedNotes = new ArrayList<>();
         if (dto.notes() != null) {
             for (var noteDto : dto.notes()) {
-                noteService.create(saved.getId(),
-                        NoteType.valueOf(noteDto.type()),
-                        noteDto.title(),
-                        noteDto.body(),
-                        noteDto.tags(),
-                        noteDto.dmOnly());
+                Note note = new Note();
+                note.setCampaign(saved);
+                note.setType(NoteType.valueOf(noteDto.type()));
+                note.setTitle(noteDto.title());
+                note.setBody(noteDto.body());
+                note.setTags(noteDto.tags());
+                note.setDmOnly(noteDto.dmOnly());
+                note = noteRepository.save(note);
+                importedNotes.add(note);
             }
+        }
+        for (var note : importedNotes) {
+            noteService.rebuildLinks(note);
         }
 
         if (dto.quicknotes() != null) {
@@ -613,6 +628,8 @@ public class CampaignService {
                 }
                 if (resolvedId != null) {
                     qn.setTargetId(resolvedId);
+                } else {
+                    System.err.println("WARNING: Could not resolve target reference '" + qnDto.targetRef() + "' for quicknote of type " + qnDto.targetType());
                 }
                 quickNoteRepository.save(qn);
             }
@@ -623,17 +640,21 @@ public class CampaignService {
                 ItemAssignment ia = new ItemAssignment();
                 ia.setCampaign(saved);
                 if (aDto.holderName() != null) {
-                    partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(saved.getId())
-                        .stream().filter(pm -> pm.getCharacterName().equals(aDto.holderName()))
-                        .findFirst().ifPresent(ia::setPartyMember);
+                    partyMembers.stream()
+                        .filter(pm -> pm.getCharacterName().equals(aDto.holderName()))
+                        .findFirst()
+                        .ifPresentOrElse(ia::setPartyMember,
+                                () -> System.err.println("WARNING: Unknown party member '" + aDto.holderName() + "' in assignment"));
                 }
                 if (aDto.magicItemKey() != null) {
                     magicItemRepo.findBySourceKey(aDto.magicItemKey())
-                        .ifPresent(ia::setMagicItem);
+                        .ifPresentOrElse(ia::setMagicItem,
+                                () -> System.err.println("WARNING: Unknown magic item key '" + aDto.magicItemKey() + "' in assignment"));
                 }
                 if (aDto.equipmentItemKey() != null) {
                     equipmentItemRepo.findBySourceKey(aDto.equipmentItemKey())
-                        .ifPresent(ia::setEquipmentItem);
+                        .ifPresentOrElse(ia::setEquipmentItem,
+                                () -> System.err.println("WARNING: Unknown equipment item key '" + aDto.equipmentItemKey() + "' in assignment"));
                 }
                 ia.setCustomText(aDto.customText());
                 ia.setQuantity(aDto.quantity());

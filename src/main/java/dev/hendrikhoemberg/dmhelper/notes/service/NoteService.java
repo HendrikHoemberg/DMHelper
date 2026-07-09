@@ -176,7 +176,7 @@ public class NoteService {
         return wikiLinkParser.replaceLinks(body, refs);
     }
 
-    private void rebuildLinks(Note note) {
+    public void rebuildLinks(Note note) {
         noteLinkRepository.deleteBySourceNoteId(note.getId());
 
         var targets = wikiLinkParser.extractReferences(note.getBody());
