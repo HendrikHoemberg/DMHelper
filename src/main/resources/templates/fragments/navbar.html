@@ -65,6 +65,7 @@
         <span class="pin-display" id="pinDisplay"
               th:text="${pinDisplay}">PIN: -----</span>
     </div>
+    <th:block th:replace="~{fragments/_command-palette :: command-palette}"></th:block>
 </nav>
 
 <th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>

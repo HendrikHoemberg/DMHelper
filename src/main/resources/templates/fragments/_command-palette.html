@@ -1,0 +1,45 @@
+<div class="command-palette-overlay" th:fragment="command-palette"
+     x-data="commandPalette" x-show="open"
+     @click.self="open = false"
+     @keydown.escape.window="if(open) { open = false; query = ''; results = []; }"
+     x-cloak
+     x-init="$watch('open', v => { if(v) document.body.classList.add('palette-open'); else document.body.classList.remove('palette-open'); })">
+    <div class="command-palette-box">
+        <div class="command-palette-search">
+            <span class="command-palette-icon">&#x2318;</span>
+            <input type="text" x-ref="input" x-model="query"
+                   @input="doSearch()" @keydown="onKeydown($event)"
+                   placeholder="Search notes, monsters, spells, maps..."
+                   class="command-palette-input">
+            <span x-show="loading" class="command-palette-loading">…</span>
+        </div>
+        <div class="command-palette-results">
+            <template x-if="results.length === 0 && query.length >= 2">
+                <div class="command-palette-empty">
+                    No results found
+                </div>
+            </template>
+            <template x-if="query.length < 2">
+                <div class="command-palette-hint">
+                    Type to search across all campaign content and the SRD library
+                </div>
+            </template>
+            <template x-for="(item, idx) in results" :key="item.id">
+                <div class="palette-result"
+                     :class="{ 'palette-selected': idx === selectedIndex }"
+                     @click="navigateTo(item)">
+                    <div class="palette-result-main">
+                        <span x-text="item.title" class="palette-result-title"></span>
+                        <span x-text="item.subtype" x-show="item.subtype" class="palette-result-subtitle"></span>
+                    </div>
+                    <span x-text="typeLabel(item.type)" class="palette-result-type"></span>
+                </div>
+            </template>
+        </div>
+        <div class="command-palette-footer">
+            <span>Esc — close</span>
+            <span>&uarr;&darr; — navigate</span>
+            <span>Enter — open</span>
+        </div>
+    </div>
+</div>
