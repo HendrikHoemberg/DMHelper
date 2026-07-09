@@ -49,13 +49,13 @@
 
   const SHORTCUTS = {
     'D': { ctrl: true, shift: true, event: 'dm-mode-toggle' },
-    'k': { ctrl: true, event: 'command-palette-toggle' },
+    'k': { ctrl: true, shift: false, event: 'command-palette-toggle' },
   };
 
   document.addEventListener('keydown', (e) => {
     for (const [key, config] of Object.entries(SHORTCUTS)) {
-      const ctrlMatch = config.ctrl ? (e.ctrlKey || e.metaKey) : true;
-      const shiftMatch = config.shift ? e.shiftKey : (config.shift === false ? false : true);
+      const ctrlMatch = config.ctrl ? (e.ctrlKey || e.metaKey) : !(e.ctrlKey || e.metaKey);
+      const shiftMatch = config.shift ? e.shiftKey : !e.shiftKey;
       if (ctrlMatch && shiftMatch && e.key === key) {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent(config.event));
@@ -505,7 +505,7 @@ public class CommandPaletteService {
                     .forEach(results::add);
         }
 
-        statBlockRepo.searchByNameContaining(q).stream()
+        statBlockRepo.findByNameContainingIgnoreCaseOrderByNameAsc(q).stream()
                 .limit(MAX_RESULTS)
                 .map(sb -> new SearchResultItem(sb.getId().toString(), sb.getName(), "statblock",
                         sb.getType() + " (CR " + sb.getCr() + ")",
@@ -582,9 +582,8 @@ Several repositories need `searchByNameContaining` or `findByNameContainingIgnor
 
 In `StatBlockRepository.java`:
 ```java
-List<StatBlock> searchByNameContaining(String name);
+List<StatBlock> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 ```
-(Spring Data JPA derived query: creates `WHERE name LIKE %?1%`)
 
 In `SpellRepository.java`:
 ```java
@@ -636,7 +635,7 @@ List<Feat> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 Create `src/main/java/dev/hendrikhoemberg/dmhelper/common/web/CommandPaletteApiController.java`:
 
 ```java
-package io.github.hendrikhoemberg.dmhelper.common.web;
+package dev.hendrikhoemberg.dmhelper.common.web;
 
 import dev.hendrikhoemberg.dmhelper.common.service.CommandPaletteService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -810,8 +809,6 @@ Create `src/main/resources/static/js/command-palette.js`:
 Create `src/main/resources/templates/fragments/_command-palette.html`:
 
 ```html
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
 <div class="command-palette-overlay" th:fragment="command-palette"
      x-data="commandPalette" x-show="open"
      @click.self="open = false"
@@ -870,7 +867,6 @@ Create `src/main/resources/templates/fragments/_command-palette.html`:
         </div>
     </div>
 </div>
-</html>
 ```
 
 - [ ] **Step 3: Include command-palette fragment in navbar.html**
@@ -1464,7 +1460,7 @@ Create `src/main/resources/schemas/campaign-format.schema.json`:
           "passiveInvestigation": { "type": "integer" },
           "notes": { "type": "string" },
           "active": { "type": "boolean" },
-          "sheet": { "$ref": "#/definitions/sheet" }
+          "sheet": { "$ref": "#/$defs/sheet" }
         }
       }
     },
@@ -1592,7 +1588,7 @@ Create `src/main/resources/schemas/campaign-format.schema.json`:
       }
     }
   },
-  "definitions": {
+  "$defs": {
     "sheet": {
       "type": "object",
       "properties": {

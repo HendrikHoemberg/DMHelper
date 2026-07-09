@@ -58,6 +58,7 @@
             window.addEventListener('tracker-dm-mode-grown', (e) => {
                 checkbox.checked = e.detail.dmMode;
                 document.body.classList.toggle('dm-mode-off', !e.detail.dmMode);
+                checkbox.dispatchEvent(new Event('change'));
             });
         })();
         </script>
