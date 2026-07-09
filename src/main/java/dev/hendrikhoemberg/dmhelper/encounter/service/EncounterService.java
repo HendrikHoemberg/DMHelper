@@ -510,8 +510,8 @@ public class EncounterService {
 
     public CombatantDto setHp(UUID combatantId, Integer currentHp, Integer tempHp) {
         Combatant c = findCombatantById(combatantId);
-        if (currentHp != null) c.setCurrentHp(currentHp);
-        if (tempHp != null) c.setTempHp(tempHp);
+        if (currentHp != null) c.setCurrentHp(Math.max(0, Math.min(c.getMaxHp(), currentHp)));
+        if (tempHp != null) c.setTempHp(Math.max(0, tempHp));
         if (c.getCurrentHp() <= 0 && !"PC".equals(c.getKind()) && !c.isDefeated()) {
             c.setDefeated(true);
             logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.DEFEATED,

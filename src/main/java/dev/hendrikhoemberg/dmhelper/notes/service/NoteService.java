@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.notes.service;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
@@ -24,6 +25,7 @@ public class NoteService {
     private final StatBlockService statBlockService;
     private final GameMapRepository gameMapRepository;
     private final HandoutRepository handoutRepository;
+    private final EncounterRepository encounterRepository;
     private final WikiLinkParser wikiLinkParser;
 
     public NoteService(NoteRepository noteRepository,
@@ -32,6 +34,7 @@ public class NoteService {
                        StatBlockService statBlockService,
                        GameMapRepository gameMapRepository,
                        HandoutRepository handoutRepository,
+                       EncounterRepository encounterRepository,
                        WikiLinkParser wikiLinkParser) {
         this.noteRepository = noteRepository;
         this.noteLinkRepository = noteLinkRepository;
@@ -39,6 +42,7 @@ public class NoteService {
         this.statBlockService = statBlockService;
         this.gameMapRepository = gameMapRepository;
         this.handoutRepository = handoutRepository;
+        this.encounterRepository = encounterRepository;
         this.wikiLinkParser = wikiLinkParser;
     }
 
@@ -164,6 +168,17 @@ public class NoteService {
                         resolved = true;
                     }
                 }
+                case "ENCOUNTER" -> {
+                    var encounters = encounterRepository.findByCampaignIdOrderByNameAsc(
+                            note.getCampaign().getId());
+                    var match = encounters.stream()
+                            .filter(enc -> enc.getName().equalsIgnoreCase(target.title()))
+                            .findFirst();
+                    if (match.isPresent()) {
+                        url = "/campaigns/" + note.getCampaign().getId() + "/encounters/" + match.get().getId();
+                        resolved = true;
+                    }
+                }
             }
 
             refs.add(new WikiLinkParser.WikiLinkReference(
@@ -224,6 +239,19 @@ public class NoteService {
                             note.getCampaign().getId());
                     var match = maps.stream()
                             .filter(m -> m.getName().equalsIgnoreCase(target.title()))
+                            .findFirst();
+                    if (match.isPresent()) {
+                        link.setTargetId(match.get().getId());
+                        yield true;
+                    }
+                    link.setTargetId(UUID.randomUUID());
+                    yield false;
+                }
+                case "ENCOUNTER" -> {
+                    var encounters = encounterRepository.findByCampaignIdOrderByNameAsc(
+                            note.getCampaign().getId());
+                    var match = encounters.stream()
+                            .filter(enc -> enc.getName().equalsIgnoreCase(target.title()))
                             .findFirst();
                     if (match.isPresent()) {
                         link.setTargetId(match.get().getId());
