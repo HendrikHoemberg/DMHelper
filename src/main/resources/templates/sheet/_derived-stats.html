@@ -2,7 +2,7 @@
     <div class="pm-stats">
         <div><dt>AC</dt><dd th:text="${sheet.derivedValues().armorClass()}">16</dd></div>
         <div><dt>HP</dt><dd th:text="${sheet.derivedValues().maxHp()}">52</dd></div>
-        <div><dt>Init</dt><dd th:text="'+' + ${sheet.derivedValues().initiativeBonus()}">+2</dd></div>
+        <div><dt>Init</dt><dd th:text="'+' + ${sheet.derivedValues().initiativeBonus()}">+2 <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().initiativeBonus()}'" type="button" title="Initiative">d20</button></dd></div>
         <div><dt>Speed</dt><dd th:text="${sheet.derivedValues().speed() + ' ft.'}">30 ft.</dd></div>
     </div>
 </div>

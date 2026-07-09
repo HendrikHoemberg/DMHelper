@@ -6,6 +6,8 @@
             <input type="number" th:name="${entry.key}" th:value="${entry.value}"
                    min="1" max="30" class="ability-input small-input">
             <span class="sheet-ability-mod" th:text="${(entry.value - 10) / 2}">+4</span>
+            <button class="roll-btn" th:attr="data-roll='d20+${(entry.value - 10) / 2}'"
+                    type="button" th:title="${entry.key.toUpperCase()} + ' check'">d20</button>
         </div>
         <button type="submit" class="btn btn-ghost btn-sm">Save Scores</button>
     </form>
