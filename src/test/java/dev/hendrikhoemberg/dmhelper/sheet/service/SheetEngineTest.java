@@ -454,6 +454,29 @@ class SheetEngineTest {
     }
 
     @Test
+    void asiFeatIsFlaggedForManualAssignment() throws Exception {
+        var asiFeat = new Feat();
+        asiFeat.setSourceKey("ability-score-improvement");
+        asiFeat.setName("Ability Score Improvement");
+        asiFeat.setBenefit("Increase one ability score of your choice by 2, or increase two ability scores of your choice by 1.");
+
+        when(featRepo.findBySourceKeyIn(List.of("ability-score-improvement"))).thenReturn(List.of(asiFeat));
+
+        var scores = Map.of("str", 15, "dex", 14, "con", 13, "int", 10, "wis", 10, "cha", 8);
+        var classLevels = List.<Map<String, Object>>of(
+                Map.of("classSourceKey", "srd-2024_fighter", "level", 4, "hitDieRolls", List.of(8, 5, 8))
+        );
+        var sheet = createSheet(scores, classLevels, List.of(), List.of(), null, 14000, 0);
+        var mapper = new ObjectMapper();
+        sheet.setFeatRefs(mapper.writeValueAsString(List.of("ability-score-improvement")));
+
+        var dv = engine.derive(sheet);
+
+        assertTrue(dv.featsRequiringManualAssignment().contains("Ability Score Improvement"));
+        assertEquals(2, dv.strMod(), "STR 15 unchanged -> +2 mod");
+    }
+
+    @Test
     void skillExpertise() throws Exception {
         var scores = Map.of("str", 10, "dex", 10, "con", 10, "int", 10, "wis", 14, "cha", 10);
         var classLevels = List.<Map<String, Object>>of(

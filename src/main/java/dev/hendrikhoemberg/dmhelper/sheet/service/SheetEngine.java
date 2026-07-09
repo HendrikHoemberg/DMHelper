@@ -94,7 +94,8 @@ public class SheetEngine {
         int speed,
         int initiativeBonus,
         int armorClass,
-        List<String> skillChoices
+        List<String> skillChoices,
+        List<String> featsRequiringManualAssignment
     ) {}
 
     @PostConstruct
@@ -445,9 +446,15 @@ public class SheetEngine {
             int wis = getInt(scores, "wis");
             int cha = getInt(scores, "cha");
 
+            List<String> featsRequiringManualAssignment = new ArrayList<>();
+
             if (!featRefs.isEmpty()) {
                 var feats = featRepo.findBySourceKeyIn(featRefs);
                 for (Feat feat : feats) {
+                    if ("ability-score-improvement".equals(feat.getSourceKey())) {
+                        featsRequiringManualAssignment.add(feat.getName());
+                        continue;
+                    }
                     String benefit = feat.getBenefit();
                     if (benefit != null) {
                         String lower = benefit.toLowerCase();
@@ -730,7 +737,8 @@ public class SheetEngine {
                 bestDC, bestAtk,
                 classAndLevel,
                 speed, initiativeBonus, armorClass,
-                skillChoices
+                skillChoices,
+                featsRequiringManualAssignment
             );
         } catch (Exception e) {
             throw new RuntimeException("Failed to derive sheet values", e);
