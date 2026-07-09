@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
@@ -823,10 +824,19 @@ public class EncounterService {
     public void logDiceRoll(UUID encounterId, String expression, int total, String rollsJson) {
         String payload;
         try {
-            payload = JSON_MAPPER.writeValueAsString(Map.of(
-                    "expression", expression,
-                    "total", total,
-                    "rolls", rollsJson));
+            JsonNode rollsNode;
+            try {
+                rollsNode = JSON_MAPPER.readTree(rollsJson);
+            } catch (Exception e) {
+                rollsNode = null;
+            }
+            Map<String, Object> map = new java.util.LinkedHashMap<>();
+            map.put("expression", expression);
+            map.put("total", total);
+            if (rollsNode != null) {
+                map.put("rolls", rollsNode);
+            }
+            payload = JSON_MAPPER.writeValueAsString(map);
         } catch (Exception e) {
             payload = "{\"expression\":\"" + expression + "\",\"total\":" + total + "}";
         }
