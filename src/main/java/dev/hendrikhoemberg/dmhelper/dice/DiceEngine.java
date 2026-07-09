@@ -39,9 +39,20 @@ public class DiceEngine {
         }
 
         String countStr = matcher.group(1);
-        int count = (countStr == null || countStr.isEmpty()) ? 1 : Integer.parseInt(countStr);
+        int count;
+        try {
+            count = (countStr == null || countStr.isEmpty()) ? 1 : Integer.parseInt(countStr);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid dice expression: " + expression);
+        }
+        if (count > 1000) {
+            throw new IllegalArgumentException("Dice count exceeds maximum (1000): " + expression);
+        }
         String sidesStr = matcher.group(2);
         int sides = Integer.parseInt(sidesStr);
+        if (sides == 0) {
+            throw new IllegalArgumentException("Invalid dice expression: sides cannot be 0 in " + expression);
+        }
         String modifierStr = matcher.group(3);
         int modifier = 0;
         if (modifierStr != null) {

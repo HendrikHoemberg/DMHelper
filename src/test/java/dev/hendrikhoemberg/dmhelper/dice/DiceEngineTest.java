@@ -138,6 +138,20 @@ class DiceEngineTest {
     }
 
     @Test
+    void d0ThrowsValidationError() {
+        assertThatThrownBy(() -> engine.roll("1d0"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("sides cannot be 0");
+    }
+
+    @Test
+    void hugeCountThrowsValidationError() {
+        assertThatThrownBy(() -> engine.roll("99999d6"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Dice count exceeds maximum");
+    }
+
+    @Test
     void shouldAcceptTypedZero() {
         DiceResult result = engine.roll("0");
         assertThat(result.expression()).isEqualTo("typed: 0");
