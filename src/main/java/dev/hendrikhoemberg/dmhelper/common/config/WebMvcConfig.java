@@ -34,7 +34,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
                     .excludePathPatterns(
                             "/player", "/player/**",
                             "/ws/table", "/ws/table/**",
-                            "/files/**",
                             "/dm/authenticate",
                             "/css/**", "/js/**", "/vendor/**",
                             "/api/v1/schemas/**",

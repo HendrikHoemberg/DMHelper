@@ -29,4 +29,18 @@ public class FileServeController {
                 .cacheControl(CacheControl.maxAge(1, TimeUnit.HOURS))
                 .body(content);
     }
+
+    @GetMapping("/player/files/{id}")
+    public ResponseEntity<byte[]> servePlayerFile(@PathVariable UUID id) throws IOException {
+        var handout = handoutService.findById(id);
+        if (!handout.isPresented()) {
+            return ResponseEntity.notFound().build();
+        }
+        byte[] content = handoutService.getFileContent(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(
+                        handout.getContentType() != null ? handout.getContentType() : "application/octet-stream"))
+                .cacheControl(CacheControl.maxAge(1, TimeUnit.HOURS))
+                .body(content);
+    }
 }
