@@ -68,14 +68,17 @@ class CoreSessionLoopSmokeTest {
     @Test
     @Order(1)
     void createCampaign() {
-        dmPage.navigate("http://localhost:" + port + "/campaigns/new");
+        dmPage.navigate("http://localhost:" + port + "/campaigns");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
 
-        dmPage.fill("input[name='name']", "Smoke Test Campaign");
-        dmPage.fill("textarea[name='description']", "Playwright smoke test");
+        dmPage.click("text=+ New Campaign");
+        dmPage.waitForSelector("#campaignName");
+
+        dmPage.fill("#campaignName", "Smoke Test Campaign");
+        dmPage.fill("#campaignDescription", "Playwright smoke test");
         dmPage.click("button[type='submit']");
-        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
 
+        dmPage.waitForTimeout(500);
         var campaigns = campaignRepo.findAllByOrderByNameAsc();
         assertThat(campaigns).isNotEmpty();
         campaignId = campaigns.getFirst().getId();
@@ -84,15 +87,18 @@ class CoreSessionLoopSmokeTest {
     @Test
     @Order(2)
     void createMap() {
-        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/maps/new");
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/maps");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
 
-        dmPage.fill("input[name='name']", "Test Battle Map");
-        dmPage.fill("input[name='gridWidth']", "20");
-        dmPage.fill("input[name='gridHeight']", "15");
+        dmPage.click("text=+ New Map");
+        dmPage.waitForSelector("#mapName");
+
+        dmPage.fill("#mapName", "Test Battle Map");
+        dmPage.fill("#gridWidth", "20");
+        dmPage.fill("#gridHeight", "15");
         dmPage.click("button[type='submit']");
-        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
 
+        dmPage.waitForTimeout(500);
         var maps = mapRepo.findAll();
         assertThat(maps).isNotEmpty();
         mapId = maps.getFirst().getId();

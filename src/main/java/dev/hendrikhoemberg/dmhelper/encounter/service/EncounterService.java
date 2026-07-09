@@ -638,14 +638,17 @@ public class EncounterService {
 
         int oldIdx = encounter.getActiveTurnIndex();
         int idx = oldIdx;
-        int loopCount = 0;
+        int checked = 0;
 
-        do {
+        while (checked < combatants.size()) {
             idx = (idx + 1) % combatants.size();
-            loopCount++;
-        } while (combatants.get(idx).isDefeated() && loopCount < combatants.size());
+            if (!combatants.get(idx).isDefeated()) {
+                break;
+            }
+            checked++;
+        }
 
-        if (loopCount >= combatants.size()) {
+        if (checked >= combatants.size()) {
             throw new IllegalStateException("All combatants defeated");
         }
 
