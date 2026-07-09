@@ -22,8 +22,7 @@ public class CommandPaletteApiController {
     @GetMapping("/search")
     public List<CommandPaletteService.SearchResultItem> search(
             @RequestParam String q,
-            @RequestParam(required = false) UUID campaignId,
-            @RequestParam(required = false) String type) {
-        return commandPaletteService.search(q, campaignId, type);
+            @RequestParam(required = false) UUID campaignId) {
+        return commandPaletteService.search(q, campaignId);
     }
 }

@@ -65,7 +65,7 @@ public class CommandPaletteService {
         this.partyMemberRepo = partyMemberRepo;
     }
 
-    public List<SearchResultItem> search(String query, UUID campaignId, String typeFilter) {
+    public List<SearchResultItem> search(String query, UUID campaignId) {
         if (query == null || query.isBlank()) return List.of();
         String q = query.strip().toLowerCase();
         List<SearchResultItem> results = new ArrayList<>();

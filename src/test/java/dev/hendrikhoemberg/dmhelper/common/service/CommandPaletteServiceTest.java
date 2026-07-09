@@ -81,44 +81,44 @@ class CommandPaletteServiceTest {
 
     @Test
     void searchFindsNotesByTitle() {
-        var results = commandPaletteService.search("Cave", campaign.getId(), null);
+        var results = commandPaletteService.search("Cave", campaign.getId());
         assertThat(results).anyMatch(r -> r.title().equals("The Goblin Cave") && r.type().equals("note"));
     }
 
     @Test
     void searchFindsStatblocksByName() {
-        var results = commandPaletteService.search("Goblin", null, null);
+        var results = commandPaletteService.search("Goblin", null);
         assertThat(results).anyMatch(r -> r.title().equals("Goblin") && r.type().equals("statblock"));
     }
 
     @Test
     void searchFindsSpellsByName() {
-        var results = commandPaletteService.search("Fireball", null, null);
+        var results = commandPaletteService.search("Fireball", null);
         assertThat(results).anyMatch(r -> r.title().equals("Fireball") && r.type().equals("spell"));
     }
 
     @Test
     void searchFindsMapsByName() {
-        var results = commandPaletteService.search("Tavern", campaign.getId(), null);
+        var results = commandPaletteService.search("Tavern", campaign.getId());
         assertThat(results).anyMatch(r -> r.title().equals("Tavern Map") && r.type().equals("map"));
     }
 
     @Test
     void searchFindsEncountersByName() {
-        var results = commandPaletteService.search("Brawl", campaign.getId(), null);
+        var results = commandPaletteService.search("Brawl", campaign.getId());
         assertThat(results).anyMatch(r -> r.title().equals("Tavern Brawl") && r.type().equals("encounter"));
     }
 
     @Test
     void searchWithNoCampaignOnlyReturnsGlobalContent() {
-        var results = commandPaletteService.search("Goblin", null, null);
+        var results = commandPaletteService.search("Goblin", null);
         assertThat(results).anyMatch(r -> r.type().equals("statblock"));
         assertThat(results).noneMatch(r -> r.type().equals("note"));
     }
 
     @Test
     void emptyQueryReturnsEmptyList() {
-        var results = commandPaletteService.search("   ", campaign.getId(), null);
+        var results = commandPaletteService.search("   ", campaign.getId());
         assertThat(results).isEmpty();
     }
 }

@@ -25,7 +25,7 @@ class CommandPaletteApiControllerTest {
         var item = new CommandPaletteService.SearchResultItem(
                 "550e8400-e29b-41d4-a716-446655440000", "Goblin", "statblock",
                 "Humanoid (CR 1/4)", "/library/statblocks/550e8400-e29b-41d4-a716-446655440000");
-        when(commandPaletteService.search("Goblin", null, null)).thenReturn(List.of(item));
+        when(commandPaletteService.search("Goblin", null)).thenReturn(List.of(item));
 
         mockMvc.perform(get("/api/v1/search").param("q", "Goblin"))
                 .andExpect(status().isOk())
@@ -38,7 +38,7 @@ class CommandPaletteApiControllerTest {
     void searchWithCampaignIdPassesItToService() throws Exception {
         var item = new CommandPaletteService.SearchResultItem(
                 "abc", "The Cave", "note", "LOCATION", "/campaigns/uuid/notes/abc");
-        when(commandPaletteService.search("cave", java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000"), null))
+        when(commandPaletteService.search("cave", java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000")))
                 .thenReturn(List.of(item));
 
         mockMvc.perform(get("/api/v1/search")
