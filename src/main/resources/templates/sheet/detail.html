@@ -52,12 +52,12 @@
             <div class="detail-section">
                 <h2>Saving Throws</h2>
                 <dl class="pm-stats">
-                    <div><dt>STR</dt><dd th:text="'+' + ${sheet.derivedValues().saveStr()}">+7 <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveStr()}'" type="button" title="STR save">d20</button></dd></div>
-                    <div><dt>DEX</dt><dd th:text="'+' + ${sheet.derivedValues().saveDex()}">+2 <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveDex()}'" type="button" title="DEX save">d20</button></dd></div>
-                    <div><dt>CON</dt><dd th:text="'+' + ${sheet.derivedValues().saveCon()}">+6 <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveCon()}'" type="button" title="CON save">d20</button></dd></div>
-                    <div><dt>INT</dt><dd th:text="'+' + ${sheet.derivedValues().saveInt()}">-1 <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveInt()}'" type="button" title="INT save">d20</button></dd></div>
-                    <div><dt>WIS</dt><dd th:text="'+' + ${sheet.derivedValues().saveWis()}">+1 <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveWis()}'" type="button" title="WIS save">d20</button></dd></div>
-                    <div><dt>CHA</dt><dd th:text="'+' + ${sheet.derivedValues().saveCha()}">+0 <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveCha()}'" type="button" title="CHA save">d20</button></dd></div>
+                    <div><dt>STR</dt><dd><span th:text="'+' + ${sheet.derivedValues().saveStr()}">+7</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveStr()}'" type="button" title="STR save">d20</button></dd></div>
+                    <div><dt>DEX</dt><dd><span th:text="'+' + ${sheet.derivedValues().saveDex()}">+2</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveDex()}'" type="button" title="DEX save">d20</button></dd></div>
+                    <div><dt>CON</dt><dd><span th:text="'+' + ${sheet.derivedValues().saveCon()}">+6</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveCon()}'" type="button" title="CON save">d20</button></dd></div>
+                    <div><dt>INT</dt><dd><span th:text="'+' + ${sheet.derivedValues().saveInt()}">-1</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveInt()}'" type="button" title="INT save">d20</button></dd></div>
+                    <div><dt>WIS</dt><dd><span th:text="'+' + ${sheet.derivedValues().saveWis()}">+1</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveWis()}'" type="button" title="WIS save">d20</button></dd></div>
+                    <div><dt>CHA</dt><dd><span th:text="'+' + ${sheet.derivedValues().saveCha()}">+0</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveCha()}'" type="button" title="CHA save">d20</button></dd></div>
                 </dl>
             </div>
 
@@ -87,7 +87,7 @@
                     <dt>Spell Save DC</dt>
                     <dd th:text="${sheet.derivedValues().spellSaveDC()}">13</dd>
                     <dt>Spell Attack Bonus</dt>
-                    <dd th:text="'+' + ${sheet.derivedValues().spellAttackBonus()}">+5 <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().spellAttackBonus()}'" type="button" title="Spell attack">d20</button></dd>
+                    <dd><span th:text="'+' + ${sheet.derivedValues().spellAttackBonus()}">+5</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().spellAttackBonus()}'" type="button" title="Spell attack">d20</button></dd>
                 </dl>
                 <div th:each="entry : ${sheet.derivedValues().classSpellcastingAbilities()}">
                     <span th:text="${entry.key + ': ' + entry.value}">wizard: int</span>
