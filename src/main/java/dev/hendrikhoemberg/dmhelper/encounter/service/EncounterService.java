@@ -329,6 +329,10 @@ public class EncounterService {
             if (combatantRepo.findByEncounterIdAndTokenId(encounterId, token.getId()).isPresent()) {
                 continue;
             }
+            if (token.getPartyMember() != null
+                    && combatantRepo.findByEncounterIdAndPartyMemberId(encounterId, token.getPartyMember().getId()).isPresent()) {
+                continue;
+            }
             Combatant c = new Combatant();
             c.setEncounter(e);
             c.setName(token.getName());
@@ -336,6 +340,9 @@ public class EncounterService {
             c.setMaxHp(token.getMaxHp() != null ? token.getMaxHp() : 10);
             c.setCurrentHp(token.getCurrentHp() != null ? token.getCurrentHp() : c.getMaxHp());
             c.setToken(token);
+            if (token.getPartyMember() != null) {
+                c.setPartyMember(token.getPartyMember());
+            }
             c.setSortOrder((int) combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).size());
             combatantRepo.save(c);
         }
@@ -462,7 +469,20 @@ public class EncounterService {
         Combatant c = findCombatantById(combatantId);
         if (currentHp != null) c.setCurrentHp(currentHp);
         if (tempHp != null) c.setTempHp(tempHp);
-        return toDto(combatantRepo.save(c));
+        if (c.getCurrentHp() <= 0 && !"PC".equals(c.getKind()) && !c.isDefeated()) {
+            c.setDefeated(true);
+            logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.DEFEATED,
+                combatantId.toString(), "{}");
+        }
+        Combatant saved = combatantRepo.save(c);
+        try {
+            String payload = JSON_MAPPER.writeValueAsString(Map.of(
+                "currentHp", saved.getCurrentHp(),
+                "tempHp", saved.getTempHp()));
+            logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.DAMAGE,
+                combatantId.toString(), payload);
+        } catch (Exception e) { /* ignore */ }
+        return toDto(saved);
     }
 
     public CombatantDto markDefeated(UUID combatantId, boolean defeated) {
@@ -550,7 +570,10 @@ public class EncounterService {
             c.setSortOrder(i);
         }
         combatantRepo.saveAll(combatants);
-        logEntry(encounterId, CombatLogEntry.EntryType.COMBATANT_REORDERED, "", "{}");
+        try {
+            String payload = JSON_MAPPER.writeValueAsString(Map.of("orderedIds", orderedIds));
+            logEntry(encounterId, CombatLogEntry.EntryType.COMBATANT_REORDERED, "", payload);
+        } catch (Exception e) { /* ignore */ }
         return getCombatants(encounterId);
     }
 
@@ -574,7 +597,8 @@ public class EncounterService {
             throw new IllegalStateException("No combatants in encounter");
         }
 
-        int idx = encounter.getActiveTurnIndex();
+        int oldIdx = encounter.getActiveTurnIndex();
+        int idx = oldIdx;
         int loopCount = 0;
 
         do {
@@ -586,7 +610,7 @@ public class EncounterService {
             throw new IllegalStateException("All combatants defeated");
         }
 
-        if (idx == 0) {
+        if (idx <= oldIdx) {
             encounter.setRound(encounter.getRound() + 1);
             logEntry(encounterId, CombatLogEntry.EntryType.ROUND_ADVANCE, "",
                     "{\"round\":" + encounter.getRound() + "}");
@@ -869,7 +893,7 @@ public class EncounterService {
         if (log.isEmpty()) return;
 
         CombatLogEntry lastEntry = log.get(log.size() - 1);
-        Encounter encounter = findEntityById(encounterId);
+            Encounter encounter = findEntityById(encounterId);
 
         Map<UUID, Combatant> combatants = combatantRepo
                 .findByEncounterIdOrderBySortOrderAsc(encounterId).stream()
@@ -886,7 +910,7 @@ public class EncounterService {
             replayEntry(entry, combatants, encounter);
         }
 
-        resortCombatantsInMemory(combatants, encounter);
+        rebuildSortOrderForUndo(combatants, encounter);
 
         for (Combatant c : combatants.values()) {
             combatantRepo.save(c);
@@ -942,8 +966,20 @@ public class EncounterService {
                 }
             }
             case COMBATANT_REORDERED -> {
-                for (int i = 0; i < combatants.size(); i++) {
-                    // sortOrder will be rebuilt by resortCombatantsInMemory after replay
+                try {
+                    var node = JSON_MAPPER.readTree(entry.getPayload());
+                    var orderedNode = node.get("orderedIds");
+                    if (orderedNode != null && orderedNode.isArray()) {
+                        for (int i = 0; i < orderedNode.size(); i++) {
+                            String idStr = orderedNode.get(i).asText();
+                            Combatant rc = combatants.get(UUID.fromString(idStr));
+                            if (rc != null) {
+                                rc.setSortOrder(i);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // ignore malformed payload
                 }
             }
             case DAMAGE -> {
@@ -1070,6 +1106,26 @@ public class EncounterService {
                  ENCOUNTER_ACTIVATED, ENCOUNTER_ENDED,
                  COMBATANT_ADDED, COMBATANT_REMOVED -> {
                 // No combatant state change to replay
+            }
+        }
+    }
+
+    private void rebuildSortOrderForUndo(Map<UUID, Combatant> combatants, Encounter encounter) {
+        List<Combatant> list = new ArrayList<>(combatants.values());
+        list.sort(Comparator
+                .comparingInt(Combatant::getSortOrder)
+                .thenComparing(Combatant::getName));
+        for (int i = 0; i < list.size(); i++) {
+            list.get(i).setSortOrder(i);
+        }
+        int turnIndex = encounter.getActiveTurnIndex();
+        if (turnIndex >= 0 && turnIndex < list.size()) {
+            UUID activeId = list.get(turnIndex).getId();
+            for (int i = 0; i < list.size(); i++) {
+                if (list.get(i).getId().equals(activeId)) {
+                    encounter.setActiveTurnIndex(i);
+                    break;
+                }
             }
         }
     }

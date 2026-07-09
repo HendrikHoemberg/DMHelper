@@ -197,19 +197,20 @@ class EncounterServiceTest {
         service.setInitiative(b.id(), 5);
 
         // Activate sets round=1, activeTurnIndex=-1
-        // First nextTurn advances to index 0 (wraps around), incrementing round
+        // First nextTurn advances to index 0, round stays at 1 (no wrap)
         EncounterDto turn1 = service.nextTurn(enc.id());
         assertThat(turn1.activeTurnIndex()).isEqualTo(0);
-        assertThat(turn1.round()).isEqualTo(2);
+        assertThat(turn1.round()).isEqualTo(1);
 
+        // Second turn moves to next combatant
         EncounterDto turn2 = service.nextTurn(enc.id());
         assertThat(turn2.activeTurnIndex()).isEqualTo(1);
-        assertThat(turn2.round()).isEqualTo(2);
+        assertThat(turn2.round()).isEqualTo(1);
 
-        // Wrap back to index 0 increments round again
+        // Wrap back from last combatant to index 0 increments round
         EncounterDto turn3 = service.nextTurn(enc.id());
         assertThat(turn3.activeTurnIndex()).isEqualTo(0);
-        assertThat(turn3.round()).isEqualTo(3);
+        assertThat(turn3.round()).isEqualTo(2);
     }
 
     @Test

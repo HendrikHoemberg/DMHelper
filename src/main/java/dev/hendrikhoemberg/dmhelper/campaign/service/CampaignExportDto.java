@@ -207,6 +207,8 @@ public record CampaignExportDto(
             String key,
             String name,
             GridDto grid,
+            String movementMode,
+            boolean showGrid,
             MapDocumentDto document
     ) {
         public record GridDto(int w, int h, int cellPx, String gridType) {}
@@ -217,6 +219,8 @@ public record CampaignExportDto(
                     map.getName(),
                     new GridDto(map.getGridWidth(), map.getGridHeight(),
                             map.getCellSizePx(), map.getGridType()),
+                    map.getMovementMode(),
+                    map.isShowGrid(),
                     document
             );
         }

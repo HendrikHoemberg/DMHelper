@@ -14,14 +14,14 @@ public class CombatDifficultyCalculator {
 
     public record DifficultyResult(String rating, int adjustedXp, int partyThreshold, String details) {}
 
-    // XP thresholds per character level (Easy, Moderate, Hard, Deadly).
+    // XP thresholds per character level for Moderate difficulty.
     // Source: 2014 DMG pg. 82 "Encounter Difficulty XP Per Character" table.
     // TODO: Replace with 2024 DMG values when available from authoritative source (open5e srd-2024 or SRD 5.2) per §2.3.8.
-    // Currently using 2014 values as a reasonable approximation for prep-time guidance.
-    private static final int[] EASY = {25, 50, 75, 125, 250, 300, 350, 450, 550, 600, 800, 1000, 1100, 1250, 1400, 1600, 2000, 2100, 2400, 2800};
-    private static final int[] MODERATE = {50, 100, 150, 250, 500, 600, 750, 900, 1100, 1200, 1600, 2000, 2200, 2500, 2800, 3200, 3900, 4100, 4900, 5700};
-    private static final int[] HARD = {75, 150, 225, 375, 750, 900, 1100, 1400, 1600, 1900, 2400, 3000, 3400, 3800, 4300, 4800, 5900, 6300, 7300, 8500};
-    private static final int[] DEADLY = {100, 200, 300, 500, 1100, 1400, 1700, 2100, 2400, 2800, 3600, 4500, 5100, 5700, 6400, 7200, 8800, 9500, 10900, 12700};
+    // The 2024 DMG uses Low/Moderate/High categories instead of Easy/Medium/Hard/Deadly.
+    // Currently using 2014 Hard threshold as a reasonable approximation for prep-time guidance.
+    private static final int[] MODERATE_XP = {50, 100, 150, 250, 500, 600, 750, 900, 1100, 1200, 1600, 2000, 2200, 2500, 2800, 3200, 3900, 4100, 4900, 5700};
+    // High uses 2× Moderate as a rough heuristic
+    private static final int HIGH_MULTIPLIER = 2;
 
     private static final Pattern LEVEL_PATTERN = Pattern.compile("(\\d+)\\s*$");
 
@@ -40,19 +40,12 @@ public class CombatDifficultyCalculator {
         int totalXp = computeTotalMonsterXp(monsters);
 
         String rating;
-        int threshold;
-        if (totalXp >= partyThreshold * 2) {
-            rating = "DEADLY";
-            threshold = partyThreshold * 2;
-        } else if (totalXp >= partyThreshold) {
+        if (totalXp >= partyThreshold * HIGH_MULTIPLIER) {
             rating = "HIGH";
-            threshold = partyThreshold;
-        } else if (totalXp >= partyThreshold / 2) {
+        } else if (totalXp >= partyThreshold) {
             rating = "MODERATE";
-            threshold = partyThreshold / 2;
         } else {
             rating = "LOW";
-            threshold = partyThreshold / 4;
         }
 
         return new DifficultyResult(rating, totalXp, partyThreshold,
@@ -64,7 +57,7 @@ public class CombatDifficultyCalculator {
         for (PartyMember pm : party) {
             int level = extractLevel(pm.getClassAndLevel());
             int idx = Math.max(0, Math.min(level - 1, 19));
-            total += HARD[idx];
+            total += MODERATE_XP[idx];
         }
         return total;
     }

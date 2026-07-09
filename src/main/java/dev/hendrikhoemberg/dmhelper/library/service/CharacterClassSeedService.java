@@ -13,12 +13,18 @@ import org.springframework.stereotype.Component;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class CharacterClassSeedService {
 
     private static final Logger log = LoggerFactory.getLogger(CharacterClassSeedService.class);
     private static final String DATA_PATH = "srd/srd-5.2-classes.json";
+
+    private static final Map<String, String> SAVE_NAME_MAP = Map.of(
+            "strength", "str", "dexterity", "dex", "constitution", "con",
+            "intelligence", "int", "wisdom", "wis", "charisma", "cha"
+    );
 
     private final CharacterClassRepository repository;
     private final ObjectMapper objectMapper;
@@ -51,7 +57,7 @@ public class CharacterClassSeedService {
                     c.setHitDie(entry.hit_dice());
                     c.setDescription(entry.desc());
                     try {
-                        c.setSavingThrows(objectMapper.writeValueAsString(entry.saving_throws()));
+                        c.setSavingThrows(objectMapper.writeValueAsString(normalizeSavingThrows(entry.saving_throws())));
                     } catch (Exception ignored) {}
                     try {
                         c.setFeatures(objectMapper.writeValueAsString(entry.features()));
@@ -85,4 +91,22 @@ public class CharacterClassSeedService {
             Object saving_throws, Object features, Object spellcasting,
             Object subclass_of
     ) {}
+
+    @SuppressWarnings("unchecked")
+    private List<String> normalizeSavingThrows(Object raw) {
+        if (raw instanceof List<?> list) {
+            return list.stream()
+                    .map(item -> {
+                        if (item instanceof Map<?, ?> m) {
+                            String name = (String) m.get("name");
+                            if (name != null) {
+                                return SAVE_NAME_MAP.getOrDefault(name.toLowerCase(), name.toLowerCase());
+                            }
+                        }
+                        return item.toString();
+                    })
+                    .collect(Collectors.toList());
+        }
+        return List.of();
+    }
 }

@@ -389,6 +389,9 @@ public class CampaignService {
                         grid != null ? grid.h() : 20,
                         grid != null ? grid.cellPx() : 48);
                 mapKeyToId.put(mapDto.key(), map.getId());
+                if (mapDto.movementMode() != null && !mapDto.movementMode().isBlank()) {
+                    gameMapService.updateMode(map.getId(), mapDto.movementMode(), mapDto.showGrid());
+                }
                 if (mapDto.document() != null) {
                     gameMapService.updateDocument(map.getId(),
                             objectMapper.writeValueAsString(mapDto.document()),

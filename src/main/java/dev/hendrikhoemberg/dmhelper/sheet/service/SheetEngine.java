@@ -59,6 +59,11 @@ public class SheetEngine {
         Map.entry("persuasion", "cha")
     );
 
+    private static final Map<String, String> SAVE_NAME_NORMALIZE = Map.of(
+        "strength", "str", "dexterity", "dex", "constitution", "con",
+        "intelligence", "int", "wisdom", "wis", "charisma", "cha"
+    );
+
     public SheetEngine(CharacterClassRepository classRepo, RuleSectionRepository ruleSectionRepo) {
         this.classRepo = classRepo;
         this.ruleSectionRepo = ruleSectionRepo;
@@ -116,8 +121,20 @@ public class SheetEngine {
         for (var cls : classes) {
             try {
                 @SuppressWarnings("unchecked")
-                List<String> saves = mapper.readValue(cls.getSavingThrows(), List.class);
-                if (saves != null) map.put(cls.getSourceKey(), new HashSet<>(saves));
+                List<Object> raw = mapper.readValue(cls.getSavingThrows(), List.class);
+                Set<String> saves = new HashSet<>();
+                for (Object item : raw) {
+                    if (item instanceof String s) {
+                        saves.add(s);
+                    } else if (item instanceof Map<?, ?> m) {
+                        String name = (String) m.get("name");
+                        if (name != null) {
+                            String normal = SAVE_NAME_NORMALIZE.getOrDefault(name.toLowerCase(), name.toLowerCase());
+                            saves.add(normal);
+                        }
+                    }
+                }
+                map.put(cls.getSourceKey(), saves);
             } catch (Exception e) {
                 log.debug("Failed to parse saving throws for {}", cls.getSourceKey(), e);
                 map.put(cls.getSourceKey(), Set.of());

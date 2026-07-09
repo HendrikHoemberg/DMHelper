@@ -11,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional(readOnly = true)
@@ -59,18 +61,23 @@ public class PlayerSafeProjectionService {
     }
 
     public List<LiveTableState.CombatantSnapshot> projectCombatants(List<Combatant> combatants,
-                                                                    int activeTurnIndex) {
+                                                                     int activeTurnIndex) {
         if (combatants == null) return List.of();
-        return combatants.stream()
+        var visible = combatants.stream()
                 .filter(c -> !c.isHidden())
-                .map(c -> new LiveTableState.CombatantSnapshot(
-                        c.getId().toString(),
-                        c.getName(),
-                        c.getInitiative(),
-                        c.isDefeated(),
-                        combatants.indexOf(c) == activeTurnIndex,
-                        parseConditions(c.getConditionsJson())
-                ))
+                .toList();
+        return visible.stream()
+                .map(c -> {
+                    int unfilteredIdx = combatants.indexOf(c);
+                    return new LiveTableState.CombatantSnapshot(
+                            c.getId().toString(),
+                            c.getName(),
+                            c.getInitiative(),
+                            c.isDefeated(),
+                            unfilteredIdx == activeTurnIndex,
+                            parseConditions(c.getConditionsJson())
+                    );
+                })
                 .toList();
     }
 
@@ -101,7 +108,14 @@ public class PlayerSafeProjectionService {
     private List<String> parseConditions(String json) {
         if (json == null || json.isBlank()) return List.of();
         try {
-            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
+            List<Map<String, Object>> raw = objectMapper.readValue(json,
+                    new TypeReference<List<Map<String, Object>>>() {});
+            List<String> names = new ArrayList<>();
+            for (Map<String, Object> cond : raw) {
+                Object sourceKey = cond.get("sourceKey");
+                if (sourceKey != null) names.add(sourceKey.toString());
+            }
+            return names;
         } catch (Exception e) {
             return List.of();
         }
