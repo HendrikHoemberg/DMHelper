@@ -11,6 +11,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Controller
 @RequestMapping("/library")
@@ -345,12 +347,30 @@ public class LibraryController {
     }
 
     private void enrichStatBlock(StatBlock sb) {
-        sb.setTraitsParsed(parseJsonArray(sb.getTraits()));
-        sb.setActionsParsed(parseJsonArray(sb.getActions()));
-        sb.setBonusActionsParsed(parseJsonArray(sb.getBonusActions()));
-        sb.setReactionsParsed(parseJsonArray(sb.getReactions()));
-        sb.setLegendaryActionsParsed(parseJsonArray(sb.getLegendaryActions()));
-        sb.setLairActionsParsed(parseJsonArray(sb.getLairActions()));
+        sb.setTraitsParsed(enrichWithRolls(parseJsonArray(sb.getTraits())));
+        sb.setActionsParsed(enrichWithRolls(parseJsonArray(sb.getActions())));
+        sb.setBonusActionsParsed(enrichWithRolls(parseJsonArray(sb.getBonusActions())));
+        sb.setReactionsParsed(enrichWithRolls(parseJsonArray(sb.getReactions())));
+        sb.setLegendaryActionsParsed(enrichWithRolls(parseJsonArray(sb.getLegendaryActions())));
+        sb.setLairActionsParsed(enrichWithRolls(parseJsonArray(sb.getLairActions())));
+    }
+
+    private static final Pattern ATK_PATTERN = Pattern.compile("\\+(\\d+) to hit");
+    private static final Pattern DMG_PATTERN = Pattern.compile("\\((\\d+d\\d+[-+]?\\d*)\\)");
+
+    private List<Map<String, String>> enrichWithRolls(List<Map<String, String>> parsed) {
+        for (Map<String, String> entry : parsed) {
+            String name = entry.getOrDefault("name", "");
+            Matcher atkM = ATK_PATTERN.matcher(name);
+            if (atkM.find()) {
+                entry.put("attackBonus", atkM.group(1));
+            }
+            Matcher dmgM = DMG_PATTERN.matcher(name);
+            if (dmgM.find()) {
+                entry.put("damageExpr", dmgM.group(1));
+            }
+        }
+        return parsed;
     }
 
     private List<Map<String, String>> parseJsonArray(String json) {

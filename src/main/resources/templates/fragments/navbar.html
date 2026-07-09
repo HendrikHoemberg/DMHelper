@@ -53,6 +53,49 @@
 <th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>
 
 <script>
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-roll]');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const expr = btn.dataset.roll;
+    const tooltip = document.createElement('div');
+    tooltip.className = 'roll-tooltip';
+    tooltip.textContent = '...';
+    document.body.appendChild(tooltip);
+
+    const rect = btn.getBoundingClientRect();
+    tooltip.style.left = rect.left + 'px';
+    tooltip.style.top = (rect.top - 32) + 'px';
+
+    try {
+        const body = { expression: expr };
+        const activeEnc = document.body.dataset.activeEncounterId || null;
+        if (activeEnc) body.encounterId = activeEnc;
+
+        const resp = await fetch('/api/v1/roll', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (!resp.ok) {
+            tooltip.textContent = 'Error';
+            setTimeout(() => tooltip.remove(), 1500);
+            return;
+        }
+
+        const result = await resp.json();
+        tooltip.textContent = expr + ' = ' + result.total;
+        window.dispatchEvent(new CustomEvent('dice-roll-result', { detail: result }));
+    } catch (e) {
+        tooltip.textContent = 'Error';
+    }
+
+    setTimeout(() => tooltip.remove(), 3000);
+});
+
 document.addEventListener('alpine:init', () => {
     Alpine.data('diceRoller', () => ({
         open: false,
