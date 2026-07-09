@@ -2,6 +2,10 @@ package dev.hendrikhoemberg.dmhelper;
 
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
+import dev.hendrikhoemberg.dmhelper.adventure.data.Adventure;
+import dev.hendrikhoemberg.dmhelper.adventure.data.AdventureRepository;
+import dev.hendrikhoemberg.dmhelper.adventure.data.Chapter;
+import dev.hendrikhoemberg.dmhelper.adventure.data.ChapterRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
@@ -28,6 +32,8 @@ class CoreSessionLoopSmokeTest {
     private int port;
 
     @Autowired private CampaignRepository campaignRepo;
+    @Autowired private AdventureRepository adventureRepo;
+    @Autowired private ChapterRepository chapterRepo;
     @Autowired private GameMapRepository mapRepo;
     @Autowired private TokenRepository tokenRepo;
     @Autowired private EncounterService encounterService;
@@ -86,6 +92,32 @@ class CoreSessionLoopSmokeTest {
 
     @Test
     @Order(2)
+    void createAdventureWithChapter() {
+        var campaign = campaignRepo.findById(campaignId).orElseThrow();
+
+        Adventure adv = new Adventure();
+        adv.setCampaign(campaign);
+        adv.setName("Test Module");
+        adventureRepo.save(adv);
+
+        Chapter ch = new Chapter();
+        ch.setAdventure(adv);
+        ch.setTitle("Chapter 1");
+        chapterRepo.save(ch);
+
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/adventures");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+
+        assertThat(dmPage.textContent("body")).contains("Test Module");
+
+        dmPage.click("text=Test Module");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+
+        assertThat(dmPage.textContent("body")).contains("Chapter 1");
+    }
+
+    @Test
+    @Order(3)
     void createMap() {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/maps");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
@@ -105,7 +137,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(3)
+    @Order(4)
     void placeTokenOnMap() {
         Token token = new Token();
         token.setMap(mapRepo.findById(mapId).orElseThrow());
@@ -124,7 +156,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     void startEncounterAndAdvanceTurns() {
         encounterId = encounterService.create(campaignId,
                 new EncounterService.CreateRequest("Smoke Encounter", mapId)).id();
@@ -143,7 +175,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(5)
+    @Order(6)
     void verifyPlayerViewPageLoads() {
         Page playerPage = browser.newContext().newPage();
         playerPage.navigate("http://localhost:" + port + "/player");
@@ -156,7 +188,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(6)
+    @Order(7)
     void verifyPlayerSafeProjectionStripsDmOnly() {
         presentationService.presentMap(mapId);
 
