@@ -45,7 +45,7 @@ public class PlayerSafeProjectionService {
                     .filter(l -> l.type() != MapLayerDto.LayerType.ANNOTATIONS)
                     .map(l -> l.visible() != null && l.visible() ? l : new MapLayerDto(
                             l.id(), l.name(), l.type(), false,
-                            l.locked(), l.cells(), l.shapes(), l.image()))
+                            l.locked(), List.of(), List.of(), null))
                     .toList();
 
             return new MapDocumentDto(
