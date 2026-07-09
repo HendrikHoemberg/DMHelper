@@ -17,6 +17,7 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import jakarta.persistence.EntityManager;
@@ -57,13 +58,15 @@ public class EncounterService {
     private final StatBlockRepository statBlockRepo;
     private final CombatDifficultyCalculator calculator;
     private final DiceEngine diceEngine;
+    private final TablePresentationService tablePresentationService;
 
     public EncounterService(EncounterRepository encounterRepo, CampaignRepository campaignRepo,
                             EntityManager em, GameMapRepository mapRepo,
                             CombatantRepository combatantRepo, CombatLogEntryRepository combatLogRepo,
                             TokenRepository tokenRepo,
                             PartyMemberRepository partyRepo, StatBlockRepository statBlockRepo,
-                            CombatDifficultyCalculator calculator, DiceEngine diceEngine) {
+                            CombatDifficultyCalculator calculator, DiceEngine diceEngine,
+                            TablePresentationService tablePresentationService) {
         this.encounterRepo = encounterRepo;
         this.campaignRepo = campaignRepo;
         this.em = em;
@@ -75,6 +78,7 @@ public class EncounterService {
         this.statBlockRepo = statBlockRepo;
         this.calculator = calculator;
         this.diceEngine = diceEngine;
+        this.tablePresentationService = tablePresentationService;
     }
 
     public record CreateRequest(String name, UUID mapId) {}
@@ -668,6 +672,7 @@ public class EncounterService {
                 "{\"activeTurnIndex\":" + idx + "}");
 
         List<RechargePrompt> prompts = checkRechargeAbilities(combatants.get(idx).getId());
+        tablePresentationService.broadcastCurrentState();
         return new EncounterDto(encounter.getId(), encounter.getCampaign().getId(),
                 encounter.getMap() != null ? encounter.getMap().getId() : null,
                 encounter.getName(), encounter.getStatus().name(), encounter.getRound(),
@@ -714,6 +719,7 @@ public class EncounterService {
 
         encounter.setActiveTurnIndex(idx);
         encounterRepo.save(encounter);
+        tablePresentationService.broadcastCurrentState();
         return toDto(encounter);
     }
 
