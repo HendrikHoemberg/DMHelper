@@ -3,14 +3,15 @@
      @click.self="open = false"
      @keydown.escape.window="if(open) { open = false; query = ''; results = []; }"
      x-cloak
+     role="dialog" aria-modal="true" aria-label="Command palette"
      x-init="$watch('open', v => { if(v) document.body.classList.add('palette-open'); else document.body.classList.remove('palette-open'); })">
     <div class="command-palette-box">
         <div class="command-palette-search">
             <span class="command-palette-icon">&#x2318;</span>
-            <input type="text" x-ref="input" x-model="query"
-                   @input="doSearch()" @keydown="onKeydown($event)"
-                   placeholder="Search notes, monsters, spells, maps..."
-                   class="command-palette-input">
+<input type="text" x-ref="input" x-model="query"
+               @input="onInput()" @keydown="onKeydown($event)"
+               placeholder="Search notes, monsters, spells, maps..."
+               class="command-palette-input" aria-label="Search">
             <span x-show="loading" class="command-palette-loading">…</span>
         </div>
         <div class="command-palette-results">

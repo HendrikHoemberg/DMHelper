@@ -10,6 +10,8 @@
       results: [],
       selectedIndex: -1,
       loading: false,
+      _debounceTimer: null,
+      _abortController: null,
 
       init() {
         window.addEventListener('command-palette-toggle', () => {
@@ -22,7 +24,22 @@
         });
       },
 
+      onInput() {
+        clearTimeout(this._debounceTimer);
+        if (this.query.trim().length < 2) {
+          this.results = [];
+          this.selectedIndex = -1;
+          return;
+        }
+        this._debounceTimer = setTimeout(() => this.doSearch(), 250);
+      },
+
       async doSearch() {
+        if (this._abortController) {
+          this._abortController.abort();
+        }
+        this._abortController = new AbortController();
+
         const q = this.query.trim();
         if (q.length < 2) {
           this.results = [];
@@ -37,26 +54,22 @@
           if (campaignId) {
             url += '&campaignId=' + encodeURIComponent(campaignId);
           }
-          const resp = await fetch(url);
+          const resp = await fetch(url, { signal: this._abortController.signal });
           if (resp.ok) {
             this.results = await resp.json();
           } else {
             this.results = [];
           }
         } catch (e) {
-          this.results = [];
+          if (e.name !== 'AbortError') {
+            this.results = [];
+          }
         } finally {
           this.loading = false;
         }
       },
 
       onKeydown(e) {
-        if (e.key === 'Escape') {
-          this.open = false;
-          this.query = '';
-          this.results = [];
-          return;
-        }
         if (e.key === 'ArrowDown') {
           e.preventDefault();
           this.selectedIndex = Math.min(this.selectedIndex + 1, this.results.length - 1);
