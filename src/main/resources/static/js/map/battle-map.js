@@ -360,6 +360,7 @@ export class BattleMap {
         token.positionX = x;
         token.positionY = y;
         this.emit('tokenupdate', { tokens: this.tokens });
+        this.emit('state-changed');
         try {
             await fetch(`/api/v1/tokens/${tokenId}/move`, {
                 method: 'PATCH',
@@ -381,6 +382,7 @@ export class BattleMap {
         this.addTokenNode(token);
         this.tokenLayer.batchDraw();
         this.emit('tokenupdate', { tokens: this.tokens });
+        this.emit('state-changed');
     }
 
     async deleteToken(id) {
@@ -391,6 +393,7 @@ export class BattleMap {
         this.tokenLayer.batchDraw();
         if (this.selectedTokenId === id) this.deselectToken();
         this.emit('tokenupdate', { tokens: this.tokens });
+        this.emit('state-changed');
     }
 
     async duplicateToken(id) {
@@ -401,6 +404,7 @@ export class BattleMap {
         this.addTokenNode(token);
         this.tokenLayer.batchDraw();
         this.emit('tokenupdate', { tokens: this.tokens });
+        this.emit('state-changed');
     }
 
     async markDead(id, dead) {
@@ -413,6 +417,7 @@ export class BattleMap {
         if (idx >= 0) this.tokens[idx] = updated;
         this.renderTokens();
         this.emit('tokenupdate', { tokens: this.tokens });
+        this.emit('state-changed');
         if (this.selectedTokenId === id) this.emit('tokenselect', { token: updated });
     }
 
@@ -488,6 +493,7 @@ export class BattleMap {
         if (idx >= 0) this.tokens[idx] = updated;
         this.renderTokens();
         this.emit('tokenupdate', { tokens: this.tokens });
+        this.emit('state-changed');
         if (this.selectedTokenId === id) this.emit('tokenselect', { token: updated });
     }
 
@@ -496,6 +502,7 @@ export class BattleMap {
         this.tokens = await resp.json();
         this.renderTokens();
         this.emit('tokenupdate', { tokens: this.tokens });
+        this.emit('state-changed');
     }
 
     /* ---- Tool & Mode Switching ---- */
@@ -914,6 +921,7 @@ export class BattleMap {
         this.renderTokens();
         this.emit('modestate', { movementMode: this.movementMode, showGrid: this.showGrid });
         this.emit('tokenupdate', { tokens: this.tokens });
+        this.emit('state-changed');
         this.emit('maploaded', { mapId, mapName: mapData.name });
     }
 }
