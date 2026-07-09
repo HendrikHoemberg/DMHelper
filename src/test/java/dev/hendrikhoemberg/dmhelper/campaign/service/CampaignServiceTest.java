@@ -227,6 +227,8 @@ class CampaignServiceTest {
         when(statBlockRepository.findBySourceKey("goblin"))
                 .thenReturn(Optional.of(sb));
 
+        when(encounterRepo.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
         String json = """
                 {
                   "formatVersion": 1,

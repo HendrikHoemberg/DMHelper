@@ -389,6 +389,8 @@ public class CampaignService {
         java.util.Map<String, UUID> mapKeyToId = new java.util.HashMap<>();
         java.util.Map<String, UUID> tokenOldToNewId = new java.util.HashMap<>();
         java.util.Map<String, UUID> statblockKeyToId = new java.util.HashMap<>();
+        java.util.Map<String, UUID> encounterNameToId = new java.util.HashMap<>();
+        java.util.Map<String, UUID> partyMemberNameToId = new java.util.HashMap<>();
 
         if (dto.party() != null) {
             for (var pmDto : dto.party()) {
@@ -404,6 +406,7 @@ public class CampaignService {
                 if (pmDto.sheet() != null) {
                     importSheet(member, pmDto.sheet());
                 }
+                partyMemberNameToId.put(pmDto.characterName(), member.getId());
             }
         }
         if (dto.statBlocks() != null) {
@@ -540,6 +543,7 @@ public class CampaignService {
                 encounter.setLairActionName(encDto.lairActionName());
                 encounter.setLairActionDescription(encDto.lairActionDescription());
                 encounter = encounterRepo.save(encounter);
+                encounterNameToId.put(encDto.name(), encounter.getId());
 
                 if (encDto.combatants() != null) {
                     for (var cDto : encDto.combatants()) {
@@ -638,6 +642,9 @@ public class CampaignService {
                                     .filter(h -> h.getTitle().equals(qnDto.targetRef()))
                                     .findFirst().map(h -> h.getId()).orElse(null);
                         }
+                        case "ENCOUNTER" -> encounterNameToId.get(qnDto.targetRef());
+                        case "PARTY_MEMBER" -> partyMemberNameToId.get(qnDto.targetRef());
+                        case "CAMPAIGN" -> saved.getId();
                         default -> {
                             try {
                                 yield java.util.UUID.fromString(qnDto.targetRef());
