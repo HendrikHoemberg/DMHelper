@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="|${scene.title} — ${adventure.name} — ${campaign.name}|">Scene Detail</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-layout">
+        <main>
+            <div class="page-header">
+                <div class="breadcrumb">
+                    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
+                    <span> / </span>
+                    <a th:href="@{/campaigns/{cid}/adventures/{aid}(cid=${campaignId},aid=${adventure.id})}" th:text="${adventure.name}">Adventure</a>
+                    <span> / </span>
+                    <span th:text="${scene.title}">Scene</span>
+                </div>
+                <h1 th:text="${scene.title}">Scene Title</h1>
+                <div class="page-header-actions">
+                    <button class="btn btn-ghost"
+                            hx-get="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/edit(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+                            hx-target="#sceneBody"
+                            hx-swap="innerHTML">Edit</button>
+                    <button class="btn btn-danger"
+                            hx-delete="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+                            hx-confirm="Delete this scene?"
+                            hx-target="body" hx-swap="outerHTML">Delete</button>
+                </div>
+            </div>
+
+            <div class="scene-layout" style="display: flex; gap: var(--space-lg);">
+                <div id="sceneBody" class="scene-body" style="flex: 1; min-width: 0;">
+                    <div class="detail-section">
+                        <div th:if="${scene.sceneKey}" class="detail-meta">
+                            <span class="badge" th:text="${scene.sceneKey}">KEY</span>
+                        </div>
+                        <div class="detail-description" th:if="${renderedBody != null and !renderedBody.isEmpty()}" th:utext="${renderedBody}">
+                            Rendered body
+                        </div>
+                        <div th:unless="${renderedBody != null and !renderedBody.isEmpty()}" style="color: var(--color-text-muted); font-style: italic;">
+                            No body content yet.
+                        </div>
+                    </div>
+                </div>
+                <div id="actionRail" style="width: 300px; flex-shrink: 0;">
+                    <th:block th:replace="~{adventure/_action-rail :: actionRail}"></th:block>
+                </div>
+            </div>
+        </main>
+        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
+    </div>
+</body>
+</html>

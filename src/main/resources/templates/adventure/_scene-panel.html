@@ -1,0 +1,48 @@
+<div th:fragment="scenePanel" xmlns:th="http://www.thymeleaf.org">
+  <div th:if="${currentScene != null}" class="scene-panel-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm);">
+      <h4 style="margin: 0;">
+        <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}
+                     (cid=${campaignId},aid=${currentScene.chapter.adventure.id},sid=${currentScene.id})}"
+           th:text="${currentScene.title}">Scene Title</a>
+      </h4>
+      <th:block th:replace="~{adventure/_action-rail :: statusBadge(scene=${currentScene})}"></th:block>
+    </div>
+    <div th:if="${currentScene.sceneKey}" style="margin-bottom: var(--space-sm);">
+      <span class="badge" th:text="${currentScene.sceneKey}">KEY</span>
+    </div>
+    <div th:if="${currentScene.body != null and !currentScene.body.isEmpty()}" style="margin-bottom: var(--space-sm);">
+      <details>
+        <summary style="cursor: pointer; font-size: var(--text-sm); color: var(--color-text-muted);">Read Aloud</summary>
+        <div class="detail-section" style="margin-top: var(--space-xs); font-size: var(--text-sm); max-height: 200px; overflow-y: auto;"
+             th:utext="${@markdownUtil.toHtml(currentScene.body)}">
+          Body preview
+        </div>
+      </details>
+    </div>
+    <div style="display: flex; gap: var(--space-xs); flex-wrap: wrap;">
+      <button class="btn btn-primary btn-sm"
+              hx-put="@{/campaigns/{cid}/current-scene/step(cid=${campaignId})}"
+              hx-vals='{"direction": -1}'
+              hx-target="body" hx-swap="outerHTML"
+              title="Previous scene">&larr;</button>
+      <button class="btn btn-primary btn-sm"
+              hx-put="@{/campaigns/{cid}/current-scene/step(cid=${campaignId})}"
+              hx-vals='{"direction": 1}'
+              hx-target="body" hx-swap="outerHTML"
+              title="Next scene">&rarr;</button>
+      <button class="btn btn-ghost btn-sm"
+              hx-post="@{/campaigns/{cid}/current-scene(cid=${campaignId})}"
+              hx-vals='{"sceneId": ""}'
+              hx-target="closest .scene-panel-card" hx-swap="outerHTML"
+              title="Clear current scene">&times;</button>
+    </div>
+    <div th:if="${currentScene.map != null}" style="margin-top: var(--space-sm);">
+      <a th:href="@{/campaigns/{cid}/maps/{mid}/play(cid=${campaignId},mid=${currentScene.map.id})}"
+         class="btn btn-sm" target="_blank">Go to Map</a>
+    </div>
+  </div>
+  <div th:unless="${currentScene != null}" class="scene-panel-card" style="color: var(--color-text-muted); font-style: italic; text-align: center; padding: var(--space-md);">
+    No current scene selected.
+  </div>
+</div>
