@@ -1,5 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.campaign.service;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.*;
+import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEvent;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEventRepository;
@@ -20,6 +22,8 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
+import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
@@ -43,7 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @Import({CampaignService.class, PartyMemberService.class, StatBlockService.class, GameMapService.class,
-         NoteService.class, WikiLinkParser.class, SceneRefCleaner.class})
+         NoteService.class, WikiLinkParser.class, SceneRefCleaner.class, AdventureService.class})
 class CampaignImportExportRoundTripTest {
 
     @Autowired private CampaignService campaignService;
@@ -59,6 +63,11 @@ class CampaignImportExportRoundTripTest {
     @Autowired private TokenRepository tokenRepo;
     @Autowired private NoteRepository noteRepository;
     @Autowired private QuickNoteRepository quickNoteRepository;
+    @Autowired private AdventureService adventureService;
+    @Autowired private AdventureRepository adventureRepo;
+    @Autowired private ChapterRepository chapterRepo;
+    @Autowired private SceneRepository sceneRepo;
+    @Autowired private HandoutRepository handoutRepo;
 
     @MockitoBean
     private HandoutService handoutService;
@@ -391,5 +400,84 @@ class CampaignImportExportRoundTripTest {
         QuickNote reSbQn = quicknotes.stream().filter(q -> q.getBody().equals("SB note")).findFirst().orElseThrow();
         assertThat(reSbQn.getTargetType()).isEqualTo("STATBLOCK");
         assertThat(reSbQn.getTargetId()).isNotNull();
+    }
+
+    @Test
+    void roundTripPreservesAdventuresAndEncounterMap() {
+        Campaign c = campaignService.create("Adventure Trip", "adventures + encounter map");
+
+        StatBlock sb = statBlockService.createCustom(c.getId(), "Goblin Archer", "1/4", "Humanoid",
+                15, "7 (2d6)", "30 ft.",
+                8, 14, 10, 10, 8, 8,
+                null, null, null, null, null, null,
+                null, null, null, null, null,
+                null, "Common",
+                null, null);
+        sb.setSourceKey("goblin-archer");
+        statBlockRepository.save(sb);
+
+        Handout handout = new Handout();
+        handout.setCampaign(c);
+        handout.setTitle("Dungeon Map Handout");
+        handout.setFileName("dungeon.jpg");
+        handout.setContentType("image/jpeg");
+        handout.setTags("map");
+        handout.setDmOnly(true);
+        handout.setPresented(false);
+        handoutRepo.save(handout);
+
+        GameMap map = gameMapService.create(c.getId(), "Dungeon Map", 30, 20, 48);
+
+        Encounter encounter = new Encounter();
+        encounter.setCampaign(c);
+        encounter.setName("Goblin Fight");
+        encounter.setEncounterKey("goblin-fight-key");
+        encounter.setMap(map);
+        encounter.setStatus(Encounter.Status.PLANNED);
+        encounter = encounterRepo.save(encounter);
+
+        Adventure adv = adventureService.createAdventure(c.getId(), "Test Adventure", "A test description", null);
+        Chapter ch = adventureService.createChapter(adv.getId(), "Chapter 1", "Intro text");
+        Scene scene = adventureService.createScene(ch.getId(), "First Scene", "scene-1", "Scene body");
+        adventureService.linkMap(scene.getId(), map.getId(), 5, 10);
+        adventureService.linkEncounter(scene.getId(), encounter.getId());
+        adventureService.addStatBlock(scene.getId(), sb.getId());
+        adventureService.addHandout(scene.getId(), handout.getId());
+        adventureService.setStatus(scene.getId(), SceneStatus.VISITED);
+
+        String json = campaignService.exportToJson(c.getId());
+        Campaign imported = campaignService.importFromJson(json);
+
+        var reAdventures = adventureRepo.findByCampaignIdOrderBySortOrderAsc(imported.getId());
+        assertThat(reAdventures).hasSize(1);
+        assertThat(reAdventures.get(0).getName()).isEqualTo("Test Adventure");
+
+        var reChapters = chapterRepo.findByAdventureIdOrderBySortOrderAsc(reAdventures.get(0).getId());
+        assertThat(reChapters).hasSize(1);
+        assertThat(reChapters.get(0).getTitle()).isEqualTo("Chapter 1");
+
+        var reScenes = sceneRepo.findByChapterIdOrderBySortOrderAsc(reChapters.get(0).getId());
+        assertThat(reScenes).hasSize(1);
+        Scene reScene = reScenes.get(0);
+        assertThat(reScene.getTitle()).isEqualTo("First Scene");
+        assertThat(reScene.getSceneKey()).isEqualTo("scene-1");
+        assertThat(reScene.getBody()).isEqualTo("Scene body");
+        assertThat(reScene.getStatus()).isEqualTo(SceneStatus.VISITED);
+        assertThat(reScene.getMap()).isNotNull();
+        assertThat(reScene.getMap().getName()).isEqualTo("Dungeon Map");
+        assertThat(reScene.getPinX()).isEqualTo(5);
+        assertThat(reScene.getPinY()).isEqualTo(10);
+        assertThat(reScene.getEncounter()).isNotNull();
+        assertThat(reScene.getEncounter().getName()).isEqualTo("Goblin Fight");
+        assertThat(reScene.getStatBlocks()).hasSize(1);
+        assertThat(reScene.getStatBlocks().get(0).getSourceKey()).isEqualTo("goblin-archer");
+        assertThat(reScene.getHandouts()).hasSize(1);
+        assertThat(reScene.getHandouts().get(0).getTitle()).isEqualTo("Dungeon Map Handout");
+
+        var reEncounters = encounterRepo.findByCampaignIdOrderByNameAsc(imported.getId());
+        assertThat(reEncounters).hasSize(1);
+        Encounter reEncounter = reEncounters.get(0);
+        assertThat(reEncounter.getMap()).isNotNull();
+        assertThat(reEncounter.getMap().getName()).isEqualTo("Dungeon Map");
     }
 }

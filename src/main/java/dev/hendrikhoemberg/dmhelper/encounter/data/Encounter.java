@@ -51,6 +51,12 @@ public class Encounter {
     @Column(nullable = false)
     private boolean lairActionTriggered = false;
 
+    @Column(name = "encounter_key", length = 100)
+    private String encounterKey;
+
+    public String getEncounterKey() { return encounterKey; }
+    public void setEncounterKey(String encounterKey) { this.encounterKey = encounterKey; }
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 

@@ -24,7 +24,8 @@ public record CampaignExportDto(
         List<QuickNoteExportDto> quicknotes,
         List<AssignmentExportDto> assignments,
         List<LedgerExportDto> ledger,
-        List<TimelineExportDto> timeline
+        List<TimelineExportDto> timeline,
+        List<AdventureExportDto> adventures
 ) {
     public static final int CURRENT_FORMAT_VERSION = 1;
 
@@ -39,7 +40,7 @@ public record CampaignExportDto(
                 party,
                 statBlocks,
                 List.of(), maps, List.of(), List.of(), List.of(),
-                List.of(), List.of(), List.of()
+                List.of(), List.of(), List.of(), List.of()
         );
     }
 
@@ -162,7 +163,9 @@ public record CampaignExportDto(
             int activeTurnIndex,
             long logSequence,
             String lairActionName,
-            String lairActionDescription
+            String lairActionDescription,
+            String encounterKey,
+            String map
     ) {
         public static EncounterExportDto from(
                 dev.hendrikhoemberg.dmhelper.encounter.data.Encounter enc,
@@ -170,7 +173,9 @@ public record CampaignExportDto(
             return new EncounterExportDto(
                     enc.getName(), combatants, enc.getStatus().name(),
                     enc.getRound(), enc.getActiveTurnIndex(), enc.getLogSequence(),
-                    enc.getLairActionName(), enc.getLairActionDescription());
+                    enc.getLairActionName(), enc.getLairActionDescription(),
+                    enc.getEncounterKey(),
+                    enc.getMap() != null ? enc.getMap().getName() : null);
         }
     }
 
@@ -311,5 +316,33 @@ public record CampaignExportDto(
     public record TimelineExportDto(
             UUID id, int inGameYear, int inGameMonth, int inGameDay,
             String title, String body, String noteTitle
+    ) {}
+
+    public record AdventureExportDto(
+            String name,
+            String description,
+            String sourceAttribution,
+            int sortOrder,
+            List<ChapterExportDto> chapters
+    ) {}
+
+    public record ChapterExportDto(
+            String title,
+            String intro,
+            int sortOrder,
+            List<SceneExportDto> scenes
+    ) {}
+
+    public record SceneExportDto(
+            String title,
+            String sceneKey,
+            String body,
+            String status,
+            int sortOrder,
+            String map,
+            @JsonInclude(JsonInclude.Include.NON_NULL) Map<String, Integer> pin,
+            String encounter,
+            List<String> statblocks,
+            List<String> handouts
     ) {}
 }

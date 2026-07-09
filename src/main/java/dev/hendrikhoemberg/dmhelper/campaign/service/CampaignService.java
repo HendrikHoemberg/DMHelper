@@ -73,6 +73,9 @@ public class CampaignService {
     private final HandoutService handoutService;
     private final HandoutRepository handoutRepo;
     private final TokenRepository tokenRepo;
+    private final dev.hendrikhoemberg.dmhelper.adventure.data.AdventureRepository adventureRepo;
+    private final dev.hendrikhoemberg.dmhelper.adventure.data.ChapterRepository chapterRepo;
+    private final dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository sceneRepo;
 
     public CampaignService(CampaignRepository repository,
                            PartyMemberRepository partyMemberRepository,
@@ -98,7 +101,10 @@ public class CampaignService {
                              CombatantRepository combatantRepo,
                              HandoutService handoutService,
                              HandoutRepository handoutRepo,
-                             TokenRepository tokenRepo) {
+                             TokenRepository tokenRepo,
+                             dev.hendrikhoemberg.dmhelper.adventure.data.AdventureRepository adventureRepo,
+                             dev.hendrikhoemberg.dmhelper.adventure.data.ChapterRepository chapterRepo,
+                             dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository sceneRepo) {
         this.repository = repository;
         this.partyMemberRepository = partyMemberRepository;
         this.statBlockRepository = statBlockRepository;
@@ -124,6 +130,9 @@ public class CampaignService {
         this.handoutService = handoutService;
         this.handoutRepo = handoutRepo;
         this.tokenRepo = tokenRepo;
+        this.adventureRepo = adventureRepo;
+        this.chapterRepo = chapterRepo;
+        this.sceneRepo = sceneRepo;
         this.objectMapper = JsonMapper.builder()
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -274,6 +283,45 @@ public class CampaignService {
                         te.getNoteRef() != null ? te.getNoteRef().getTitle() : null))
                 .toList();
 
+        var adventures = adventureRepo.findByCampaignIdOrderBySortOrderAsc(id).stream()
+                .map(adv -> {
+                    var chapters = chapterRepo.findByAdventureIdOrderBySortOrderAsc(adv.getId()).stream()
+                            .map(ch -> {
+                                var scenes = sceneRepo.findByChapterIdOrderBySortOrderAsc(ch.getId()).stream()
+                                        .map(scene -> {
+                                            java.util.Map<String, Integer> pin = null;
+                                            if (scene.getPinX() != null) {
+                                                pin = java.util.Map.of("x", scene.getPinX(), "y", scene.getPinY());
+                                            }
+                                            String encounterRef = null;
+                                            if (scene.getEncounter() != null) {
+                                                encounterRef = scene.getEncounter().getEncounterKey();
+                                                if (encounterRef == null || encounterRef.isBlank()) {
+                                                    encounterRef = scene.getEncounter().getName();
+                                                }
+                                            }
+                                            return new CampaignExportDto.SceneExportDto(
+                                                    scene.getTitle(), scene.getSceneKey(), scene.getBody(),
+                                                    scene.getStatus().name(), scene.getSortOrder(),
+                                                    scene.getMap() != null ? scene.getMap().getName() : null,
+                                                    pin,
+                                                    encounterRef,
+                                                    scene.getStatBlocks().stream()
+                                                            .map(sb -> sb.getSourceKey() != null ? sb.getSourceKey() : sb.getName())
+                                                            .toList(),
+                                                    scene.getHandouts().stream()
+                                                            .map(h -> h.getTitle())
+                                                            .toList()
+                                            );
+                                        }).toList();
+                                return new CampaignExportDto.ChapterExportDto(
+                                        ch.getTitle(), ch.getIntro(), ch.getSortOrder(), scenes);
+                            }).toList();
+                    return new CampaignExportDto.AdventureExportDto(
+                            adv.getName(), adv.getDescription(), adv.getSourceAttribution(),
+                            adv.getSortOrder(), chapters);
+                }).toList();
+
         CampaignExportDto dto = new CampaignExportDto(
                 CampaignExportDto.CURRENT_FORMAT_VERSION,
                 new CampaignExportDto.CampaignDto(campaign.getName(), campaign.getDescription()),
@@ -286,7 +334,8 @@ public class CampaignService {
                 quickNoteDtos,
                 assignments,
                 ledgerEntries,
-                timelineEvents
+                timelineEvents,
+                adventures
         );
         try {
             return objectMapper.writeValueAsString(dto);
@@ -393,10 +442,13 @@ public class CampaignService {
         Campaign saved = create(dto.campaign().name(), dto.campaign().description());
 
         java.util.Map<String, UUID> mapKeyToId = new java.util.HashMap<>();
+        java.util.Map<String, UUID> mapNameToId = new java.util.HashMap<>();
         java.util.Map<String, UUID> tokenOldToNewId = new java.util.HashMap<>();
         java.util.Map<String, UUID> statblockKeyToId = new java.util.HashMap<>();
+        java.util.Map<String, UUID> encounterKeyToId = new java.util.HashMap<>();
         java.util.Map<String, UUID> encounterNameToId = new java.util.HashMap<>();
         java.util.Map<String, UUID> partyMemberNameToId = new java.util.HashMap<>();
+        java.util.Map<String, UUID> handoutTitleToId = new java.util.HashMap<>();
 
         if (dto.party() != null) {
             for (var pmDto : dto.party()) {
@@ -454,6 +506,7 @@ public class CampaignService {
                         grid != null ? grid.h() : 20,
                         grid != null ? grid.cellPx() : 48);
                 mapKeyToId.put(mapDto.key(), map.getId());
+                mapNameToId.put(mapDto.name(), map.getId());
                 if (mapDto.movementMode() != null && !mapDto.movementMode().isBlank()) {
                     gameMapService.updateMode(map.getId(), mapDto.movementMode(), mapDto.showGrid());
                 }
@@ -532,7 +585,8 @@ public class CampaignService {
                 handout.setTags(hDto.tags() != null ? String.join(",", hDto.tags()) : null);
                 handout.setDmOnly(true);
                 handout.setPresented(false);
-                handoutRepo.save(handout);
+                handout = handoutRepo.save(handout);
+                handoutTitleToId.put(hDto.title(), handout.getId());
             }
         }
 
@@ -548,8 +602,24 @@ public class CampaignService {
                 encounter.setLogSequence(encDto.logSequence());
                 encounter.setLairActionName(encDto.lairActionName());
                 encounter.setLairActionDescription(encDto.lairActionDescription());
+                if (encDto.encounterKey() != null) {
+                    encounter.setEncounterKey(encDto.encounterKey());
+                }
+                if (encDto.map() != null) {
+                    UUID mapId = mapNameToId.get(encDto.map());
+                    if (mapId != null) {
+                        try {
+                            encounter.setMap(gameMapService.findById(mapId));
+                        } catch (Exception e) {
+                            System.err.println("WARNING: Could not resolve map '" + encDto.map() + "' for encounter");
+                        }
+                    }
+                }
                 encounter = encounterRepo.save(encounter);
                 encounterNameToId.put(encDto.name(), encounter.getId());
+                if (encounter.getEncounterKey() != null) {
+                    encounterKeyToId.put(encounter.getEncounterKey(), encounter.getId());
+                }
 
                 if (encDto.combatants() != null) {
                     for (var cDto : encDto.combatants()) {
@@ -603,6 +673,99 @@ public class CampaignService {
                         combatant.setRechargedAbilities(cDto.rechargedAbilities());
                         combatant.setNotes(cDto.notes());
                         combatantRepo.save(combatant);
+                    }
+                }
+            }
+        }
+
+        if (dto.adventures() != null) {
+            for (var advDto : dto.adventures()) {
+                var adv = new dev.hendrikhoemberg.dmhelper.adventure.data.Adventure();
+                adv.setCampaign(saved);
+                adv.setName(advDto.name());
+                adv.setDescription(advDto.description());
+                adv.setSourceAttribution(advDto.sourceAttribution());
+                adv.setSortOrder(advDto.sortOrder());
+                adv = adventureRepo.save(adv);
+                if (advDto.chapters() != null) {
+                    for (var chDto : advDto.chapters()) {
+                        var ch = new dev.hendrikhoemberg.dmhelper.adventure.data.Chapter();
+                        ch.setAdventure(adv);
+                        ch.setTitle(chDto.title());
+                        ch.setIntro(chDto.intro());
+                        ch.setSortOrder(chDto.sortOrder());
+                        ch = chapterRepo.save(ch);
+                        if (chDto.scenes() != null) {
+                            for (var scDto : chDto.scenes()) {
+                                var sc = new dev.hendrikhoemberg.dmhelper.adventure.data.Scene();
+                                sc.setChapter(ch);
+                                sc.setTitle(scDto.title());
+                                sc.setSceneKey(scDto.sceneKey());
+                                sc.setBody(scDto.body());
+                                sc.setStatus(scDto.status() != null ?
+                                        dev.hendrikhoemberg.dmhelper.adventure.data.SceneStatus.valueOf(scDto.status()) :
+                                        dev.hendrikhoemberg.dmhelper.adventure.data.SceneStatus.UNVISITED);
+                                sc.setSortOrder(scDto.sortOrder());
+                                if (scDto.map() != null) {
+                                    UUID mapId = mapNameToId.get(scDto.map());
+                                    if (mapId != null) {
+                                        try {
+                                            sc.setMap(gameMapService.findById(mapId));
+                                        } catch (Exception e) {
+                                            System.err.println("WARNING: Could not resolve map '" + scDto.map() + "' for scene '" + scDto.title() + "'");
+                                        }
+                                    }
+                                }
+                                if (scDto.pin() != null) {
+                                    sc.setPinX(scDto.pin().get("x"));
+                                    sc.setPinY(scDto.pin().get("y"));
+                                }
+                                if (scDto.encounter() != null) {
+                                    UUID encId = encounterKeyToId.get(scDto.encounter());
+                                    if (encId == null) {
+                                        encId = encounterNameToId.get(scDto.encounter());
+                                    }
+                                    if (encId != null) {
+                                        encounterRepo.findById(encId).ifPresent(sc::setEncounter);
+                                    } else {
+                                        System.err.println("WARNING: Could not resolve encounter '" + scDto.encounter() + "' for scene '" + scDto.title() + "'");
+                                    }
+                                }
+                                sceneRepo.save(sc);
+                                if (scDto.statblocks() != null) {
+                                    for (var sbKey : scDto.statblocks()) {
+                                        UUID sbId = statblockKeyToId.get(sbKey);
+                                        if (sbId != null) {
+                                            var sbOpt = statBlockRepository.findById(sbId);
+                                            if (sbOpt.isPresent()) {
+                                                sc.getStatBlocks().add(sbOpt.get());
+                                            }
+                                        } else {
+                                            System.err.println("WARNING: Could not resolve statblock key '" + sbKey + "' for scene '" + scDto.title() + "'");
+                                        }
+                                    }
+                                    if (!scDto.statblocks().isEmpty()) {
+                                        sceneRepo.save(sc);
+                                    }
+                                }
+                                if (scDto.handouts() != null) {
+                                    for (var hTitle : scDto.handouts()) {
+                                        UUID handoutId = handoutTitleToId.get(hTitle);
+                                        if (handoutId != null) {
+                                            var hOpt = handoutRepo.findById(handoutId);
+                                            if (hOpt.isPresent()) {
+                                                sc.getHandouts().add(hOpt.get());
+                                            }
+                                        } else {
+                                            System.err.println("WARNING: Could not resolve handout title '" + hTitle + "' for scene '" + scDto.title() + "'");
+                                        }
+                                    }
+                                    if (!scDto.handouts().isEmpty()) {
+                                        sceneRepo.save(sc);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
