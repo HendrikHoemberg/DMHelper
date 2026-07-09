@@ -9,6 +9,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.dice.DiceEngine;
 import dev.hendrikhoemberg.dmhelper.encounter.service.CombatDifficultyCalculator.DifficultyResult;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
@@ -54,13 +55,14 @@ public class EncounterService {
     private final PartyMemberRepository partyRepo;
     private final StatBlockRepository statBlockRepo;
     private final CombatDifficultyCalculator calculator;
+    private final DiceEngine diceEngine;
 
     public EncounterService(EncounterRepository encounterRepo, CampaignRepository campaignRepo,
                             EntityManager em, GameMapRepository mapRepo,
                             CombatantRepository combatantRepo, CombatLogEntryRepository combatLogRepo,
                             TokenRepository tokenRepo,
                             PartyMemberRepository partyRepo, StatBlockRepository statBlockRepo,
-                            CombatDifficultyCalculator calculator) {
+                            CombatDifficultyCalculator calculator, DiceEngine diceEngine) {
         this.encounterRepo = encounterRepo;
         this.campaignRepo = campaignRepo;
         this.em = em;
@@ -71,6 +73,7 @@ public class EncounterService {
         this.partyRepo = partyRepo;
         this.statBlockRepo = statBlockRepo;
         this.calculator = calculator;
+        this.diceEngine = diceEngine;
     }
 
     public record CreateRequest(String name, UUID mapId) {}
@@ -400,7 +403,7 @@ public class EncounterService {
                 if (c.getStatBlock() != null) {
                     dexMod = dexModifier(c.getStatBlock());
                 }
-                int roll = new java.util.Random().nextInt(20) + 1;
+                int roll = diceEngine.roll("d20").total();
                 c.setInitiative(roll + dexMod);
                 combatantRepo.save(c);
                 try {
@@ -817,6 +820,19 @@ public class EncounterService {
         return combatLogRepo.save(entry);
     }
 
+    public void logDiceRoll(UUID encounterId, String expression, int total, String rollsJson) {
+        String payload;
+        try {
+            payload = JSON_MAPPER.writeValueAsString(Map.of(
+                    "expression", expression,
+                    "total", total,
+                    "rolls", rollsJson));
+        } catch (Exception e) {
+            payload = "{\"expression\":\"" + expression + "\",\"total\":" + total + "}";
+        }
+        logEntry(encounterId, CombatLogEntry.EntryType.DICE_ROLL, "", payload);
+    }
+
     private CombatLogEntryDto toLogDto(CombatLogEntry entry) {
         String combatantName = "";
         try {
@@ -1040,7 +1056,7 @@ public class EncounterService {
             case GROUP_SPLIT -> {
                 if (c != null) c.setGroupId(null);
             }
-            case CONDITION_TICKED, TURN_END, LAIR_ACTION, NOTE,
+            case CONDITION_TICKED, TURN_END, LAIR_ACTION, NOTE, DICE_ROLL,
                  ENCOUNTER_ACTIVATED, ENCOUNTER_ENDED,
                  COMBATANT_ADDED, COMBATANT_REMOVED -> {
                 // No combatant state change to replay

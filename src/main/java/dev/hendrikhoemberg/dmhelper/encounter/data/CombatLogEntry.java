@@ -21,7 +21,7 @@ public class CombatLogEntry {
         COMBATANT_ADDED, COMBATANT_REMOVED, COMBATANT_REORDERED,
         GROUP_SPLIT, LAIR_ACTION,
         ENCOUNTER_ACTIVATED, ENCOUNTER_ENDED,
-        NOTE
+        DICE_ROLL, NOTE
     }
 
     @Id

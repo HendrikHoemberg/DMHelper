@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.encounter.service;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
+import dev.hendrikhoemberg.dmhelper.dice.DiceEngine;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
@@ -23,7 +24,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import({EncounterService.class, CombatDifficultyCalculator.class, GameMapService.class})
+@Import({EncounterService.class, CombatDifficultyCalculator.class, GameMapService.class, DiceEngine.class})
 class EncounterServiceTest {
 
     @Autowired private EncounterService service;
