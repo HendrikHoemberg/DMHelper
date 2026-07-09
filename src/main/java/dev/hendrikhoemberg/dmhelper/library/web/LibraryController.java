@@ -132,7 +132,8 @@ public class LibraryController {
                 strScore, dexScore, conScore, intScore, wisScore, chaScore,
                 strSave, dexSave, conSave, intSave, wisSave, chaSave,
                 skills, damageVulnerabilities, damageResistances,
-                damageImmunities, conditionImmunities, senses, languages);
+                damageImmunities, conditionImmunities, senses, languages,
+                null, null);
         if (size != null) sb.setSize(size);
         if (alignment != null) sb.setAlignment(alignment);
         if (traits != null) sb.setTraits(traits);

@@ -44,7 +44,8 @@ class StatBlockServiceTest {
                 10, 10, 10, 10, 10, 10,
                 null, null, null, null, null, null,
                 null, null, null, null, null,
-                "passive Perception 10", null);
+                "passive Perception 10", null,
+                null, null);
     }
 
     @Test
@@ -68,7 +69,8 @@ class StatBlockServiceTest {
                 10, 10, 10, 10, 10, 10,
                 null, null, null, null, null, null,
                 null, null, null, null, null,
-                "passive Perception 10", "Giant");
+                "passive Perception 10", "Giant",
+                null, null);
     }
 
     @Test

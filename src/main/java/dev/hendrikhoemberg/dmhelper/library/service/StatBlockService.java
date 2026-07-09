@@ -64,13 +64,14 @@ public class StatBlockService {
     }
 
     public StatBlock createCustom(UUID campaignId, String name, String cr, String type,
-                                  int ac, String hp, String speed,
-                                  int str, int dex, int con, int intel, int wis, int cha,
-                                   Integer strSave, Integer dexSave, Integer conSave,
-                                   Integer intSave, Integer wisSave, Integer chaSave,
-                                   String skills, String damageVuln, String damageRes,
-                                   String damageImm, String condImm,
-                                   String senses, String languages) {
+                                   int ac, String hp, String speed,
+                                   int str, int dex, int con, int intel, int wis, int cha,
+                                    Integer strSave, Integer dexSave, Integer conSave,
+                                    Integer intSave, Integer wisSave, Integer chaSave,
+                                    String skills, String damageVuln, String damageRes,
+                                    String damageImm, String condImm,
+                                    String senses, String languages,
+                                    String sourceKey, Integer xp) {
         StatBlock sb = new StatBlock();
         sb.setSource(StatBlock.Source.CUSTOM);
         if (campaignId != null) {
@@ -101,7 +102,35 @@ public class StatBlockService {
         sb.setConditionImmunities(condImm);
         sb.setSenses(senses);
         sb.setLanguages(languages);
+        if (sourceKey != null && !sourceKey.isBlank()) {
+            sb.setSourceKey(sourceKey);
+        } else {
+            sb.setSourceKey(name.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", ""));
+        }
+        if (xp != null) {
+            sb.setXp(xp);
+        } else {
+            sb.setXp(calculateXpFromCr(cr));
+        }
         return repository.save(sb);
+    }
+
+    private int calculateXpFromCr(String cr) {
+        return switch (cr) {
+            case "0" -> 10; case "1/8" -> 25; case "1/4" -> 50; case "1/2" -> 100;
+            case "1" -> 200; case "2" -> 450; case "3" -> 700; case "4" -> 1100;
+            case "5" -> 1800; case "6" -> 2300; case "7" -> 2900; case "8" -> 3900;
+            case "9" -> 5000; case "10" -> 5900; case "11" -> 7200; case "12" -> 8400;
+            case "13" -> 10000; case "14" -> 11500; case "15" -> 13000; case "16" -> 15000;
+            case "17" -> 18000; case "18" -> 20000; case "19" -> 22000; case "20" -> 25000;
+            case "21" -> 33000; case "22" -> 41000; case "23" -> 50000; case "24" -> 62000;
+            case "25" -> 75000; case "26" -> 90000; case "27" -> 105000; case "28" -> 120000;
+            case "29" -> 135000; case "30" -> 155000;
+            default -> {
+                try { yield Integer.parseInt(cr) * 200; }
+                catch (NumberFormatException e) { yield 0; }
+            }
+        };
     }
 
     public StatBlock updateCustom(UUID id, String name, String cr, String type,

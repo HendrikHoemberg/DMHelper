@@ -85,7 +85,7 @@ class LibraryControllerTest {
                 anyInt(), anyString(), anyString(),
                 anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(),
                 any(), any(), any(), any(), any(), any(),
-                any(), any(), any(), any(), any(), any(), any()))
+                any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(sb);
 
         mockMvc.perform(post("/library/statblocks")

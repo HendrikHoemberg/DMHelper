@@ -407,7 +407,8 @@ public class CampaignService {
                         sbDto.skills(),
                         sbDto.damageVulnerabilities(), sbDto.damageResistances(),
                         sbDto.damageImmunities(), sbDto.conditionImmunities(),
-                        sbDto.senses(), sbDto.languages());
+                        sbDto.senses(), sbDto.languages(),
+                        null, null);
                 if (sbDto.size() != null) sb.setSize(sbDto.size());
                 if (sbDto.sourceKey() != null) sb.setSourceKey(sbDto.sourceKey());
                 if (sbDto.alignment() != null) sb.setAlignment(sbDto.alignment());

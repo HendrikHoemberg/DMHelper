@@ -77,7 +77,8 @@ class CampaignImportExportRoundTripTest {
                 16, 12, 16, 10, 12, 14,
                 null, null, null, null, null, null,
                 null, null, null, null, null,
-                "passive Perception 12", "Common");
+                "passive Perception 12", "Common",
+                null, null);
         sb.setSourceKey("amber-knight");
         statBlockRepository.save(sb);
 
@@ -194,7 +195,8 @@ class CampaignImportExportRoundTripTest {
                 10, 14, 10, 10, 8, 8,
                 null, null, null, null, null, null,
                 null, null, null, null, null,
-                "darkvision 60 ft.", "Common, Goblin");
+                "darkvision 60 ft.", "Common, Goblin",
+                null, null);
         sb.setSourceKey("goblin-boss");
         statBlockRepository.save(sb);
 
@@ -345,7 +347,8 @@ class CampaignImportExportRoundTripTest {
                 8, 14, 10, 10, 8, 8,
                 null, null, null, null, null, null,
                 null, null, null, null, null,
-                null, "Common");
+                null, "Common",
+                null, null);
         sb.setSourceKey("goblin-ref");
         statBlockRepository.save(sb);
 
