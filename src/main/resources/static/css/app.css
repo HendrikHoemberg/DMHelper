@@ -810,6 +810,18 @@ body.dm-mode-off .navbar { border-bottom-color: var(--color-warning); }
 .note-body h2 { font-size: var(--text-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-xs); }
 .note-body h3 { font-size: var(--text-lg); }
 
+/* Read-aloud (boxed) text — adventure scenes */
+.read-aloud {
+    margin: var(--space-md) 0;
+    padding: var(--space-md) var(--space-lg);
+    border-left: 3px solid var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+    border-radius: 4px;
+    font-style: italic;
+}
+.read-aloud p { margin: 0 0 var(--space-sm) 0; }
+.read-aloud p:last-child { margin-bottom: 0; }
+
 .note-body p {
     margin-bottom: var(--space-md);
 }
