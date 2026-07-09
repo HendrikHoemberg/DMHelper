@@ -427,7 +427,6 @@ public class EncounterService {
         int previous = c.getInitiative();
         c.setInitiative(initiative);
         Combatant saved = combatantRepo.save(c);
-        resortCombatants(c.getEncounter().getId());
 
         try {
             String payload = JSON_MAPPER.writeValueAsString(
@@ -435,6 +434,8 @@ public class EncounterService {
             logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.INITIATIVE_SET,
                     combatantId.toString(), payload);
         } catch (Exception e) { /* log failure is non-fatal */ }
+
+        resortCombatants(c.getEncounter().getId());
 
         return toDto(saved);
     }

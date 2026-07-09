@@ -572,6 +572,33 @@ class EncounterServiceTest {
     }
 
     @Test
+    void undoDoesNotDiscardInitiativeBasedReordering() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        service.activate(enc.id());
+        CombatantDto a = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("A", 10, "NPC", null, null, null));
+        CombatantDto b = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("B", 10, "NPC", null, null, null));
+
+        // A initiative 5, B initiative 10 — A will be before B after resort
+        service.setInitiative(a.id(), 5);
+        service.setInitiative(b.id(), 10);
+        var before = service.getCombatants(enc.id());
+
+        // Now change B's initiative to 15 so it goes first
+        service.setInitiative(b.id(), 15);
+
+        // Undo the last initiative change (B=15 → should revert to B=10)
+        service.undo(enc.id());
+
+        // B should be back to initiative 10, order should match
+        var after = service.getCombatants(enc.id());
+        assertThat(after).hasSize(2);
+        assertThat(after.get(0).id()).isEqualTo(before.get(0).id());
+        assertThat(after.get(1).id()).isEqualTo(before.get(1).id());
+    }
+
+    @Test
     void shouldLogCombatantAdded() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         service.addCombatant(enc.id(),
