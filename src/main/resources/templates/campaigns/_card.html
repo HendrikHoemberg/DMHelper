@@ -12,7 +12,7 @@
     </div>
     <div class="card-actions">
         <button class="btn btn-danger"
-                hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
+                th:hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
                 hx-confirm="Delete this campaign?"
                 hx-target="closest .card"
                 hx-swap="outerHTML">

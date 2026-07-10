@@ -19,7 +19,7 @@
 
             <!-- Advance Days -->
             <div class="detail-section">
-                <form hx-post="@{/campaigns/{id}/calendar/advance(id=${campaignId})}"
+                <form th:hx-post="@{/campaigns/{id}/calendar/advance(id=${campaignId})}"
                       hx-target="#current-date-wrapper" hx-swap="outerHTML"
                       style="display:flex; gap: var(--space-sm); align-items:center;">
                     <label>Advance by</label>
@@ -33,7 +33,7 @@
             <div class="detail-section">
                 <details>
                     <summary style="cursor:pointer; margin-bottom: var(--space-sm);">Set Date</summary>
-                    <form hx-post="@{/campaigns/{id}/calendar/set-date(id=${campaignId})}"
+                    <form th:hx-post="@{/campaigns/{id}/calendar/set-date(id=${campaignId})}"
                           hx-target="body" hx-swap="outerHTML"
                           style="display:flex; gap: var(--space-sm); align-items:end;">
                         <div>
@@ -67,7 +67,7 @@
             <h2>Timeline</h2>
             <div class="detail-actions" style="margin-bottom: var(--space-sm);">
                 <button class="btn btn-primary"
-                        hx-get="@{/campaigns/{id}/calendar/events/new(id=${campaignId})}"
+                        th:hx-get="@{/campaigns/{id}/calendar/events/new(id=${campaignId})}"
                         hx-target="#event-form-area"
                         hx-swap="innerHTML">
                     + Add Event

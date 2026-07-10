@@ -19,11 +19,11 @@
                 <h1 th:text="${scene.title}">Scene Title</h1>
                 <div class="page-header-actions">
                     <button class="btn btn-ghost"
-                            hx-get="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/edit(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+                            th:hx-get="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/edit(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
                             hx-target="#sceneBody"
                             hx-swap="innerHTML">Edit</button>
                     <button class="btn btn-danger"
-                            hx-delete="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+                            th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
                             hx-confirm="Delete this scene?"
                             hx-target="body" hx-swap="outerHTML">Delete</button>
                 </div>

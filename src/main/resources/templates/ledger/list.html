@@ -16,7 +16,7 @@
 
             <div class="detail-actions" style="margin-bottom: var(--space-lg);">
                 <button class="btn btn-primary"
-                        hx-get="@{/campaigns/{id}/ledger/new(id=${campaignId})}"
+                        th:hx-get="@{/campaigns/{id}/ledger/new(id=${campaignId})}"
                         hx-target="#ledger-form-area"
                         hx-swap="innerHTML">
                     + Record Transaction

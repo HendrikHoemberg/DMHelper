@@ -42,7 +42,7 @@
         <div class="form-actions">
             <button type="submit" class="btn btn-primary" th:text="${event != null} ? 'Update Event' : 'Add Event'">Add Event</button>
             <button type="button" class="btn btn-ghost"
-                    hx-get="${event != null}
+                    th:hx-get="${event != null}
                         ? @{/campaigns/{cid}/calendar/events/new(cid=${event.campaignId()})}
                         : @{/campaigns/{id}/calendar/events/new(id=${campaignId})}"
                     hx-target="#event-form-area" hx-swap="innerHTML">

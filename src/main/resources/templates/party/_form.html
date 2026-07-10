@@ -26,7 +26,7 @@
         <div class="form-actions">
             <button type="button" class="btn btn-ghost"
                     th:if="${pm != null}"
-                    hx-get="@{/campaigns/{cid}/party(cid=${campaignId})}" hx-target="body" hx-swap="outerHTML">Cancel</button>
+                    th:hx-get="@{/campaigns/{cid}/party(cid=${campaignId})}" hx-target="body" hx-swap="outerHTML">Cancel</button>
             <button type="submit" class="btn btn-primary" th:text="${pm == null ? 'Add' : 'Save'}">Add</button>
         </div>
     </form>

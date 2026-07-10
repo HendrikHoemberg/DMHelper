@@ -21,7 +21,7 @@
     <div class="form-actions">
       <button type="submit" class="btn btn-primary" th:text="${editing} ? 'Update' : 'Create'">Create</button>
       <button type="button" class="btn btn-ghost"
-              hx-get="@{/campaigns/{cid}/adventures/{aid}(cid=${campaignId},aid=${adventure.id})}"
+              th:hx-get="@{/campaigns/{cid}/adventures/{aid}(cid=${campaignId},aid=${adventure.id})}"
               hx-target="closest .detail-section" hx-swap="outerHTML">Cancel</button>
     </div>
   </form>

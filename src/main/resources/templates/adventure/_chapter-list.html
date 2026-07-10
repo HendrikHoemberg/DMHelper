@@ -2,7 +2,7 @@
   <div class="detail-section">
     <h2>Chapters
       <button class="btn btn-primary btn-sm"
-              hx-get="@{/campaigns/{cid}/adventures/{aid}/chapters/new(cid=${campaignId},aid=${adventure.id})}"
+              th:hx-get="@{/campaigns/{cid}/adventures/{aid}/chapters/new(cid=${campaignId},aid=${adventure.id})}"
               hx-target="#chapter-form-placeholder"
               hx-swap="innerHTML">+ New Chapter</button>
     </h2>
@@ -33,21 +33,21 @@
 
       <div style="margin-top: var(--space-sm); display: flex; gap: var(--space-xs);">
         <button class="btn btn-ghost btn-sm"
-                hx-put="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}/move
+                th:hx-put="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}/move
                           (cid=${campaignId},aid=${adventure.id},chId=${ch.id})}"
                 hx-vals='{"direction": -1}'
                 hx-target="closest .detail-section" hx-swap="outerHTML">↑</button>
         <button class="btn btn-ghost btn-sm"
-                hx-put="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}/move
+                th:hx-put="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}/move
                           (cid=${campaignId},aid=${adventure.id},chId=${ch.id})}"
                 hx-vals='{"direction": 1}'
                 hx-target="closest .detail-section" hx-swap="outerHTML">↓</button>
         <button class="btn btn-ghost btn-sm"
-                hx-get="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}/edit
+                th:hx-get="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}/edit
                           (cid=${campaignId},aid=${adventure.id},chId=${ch.id})}"
                 hx-target="closest div[style*='border']" hx-swap="outerHTML">Edit</button>
         <button class="btn btn-danger btn-sm"
-                hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}
+                th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}
                              (cid=${campaignId},aid=${adventure.id},chId=${ch.id})}"
                 hx-confirm="Delete this chapter and all its scenes?"
                 hx-target="closest .detail-section" hx-swap="outerHTML">Delete</button>

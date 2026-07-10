@@ -5,7 +5,7 @@
 
     <form th:action="${sb == null} ? '/library/statblocks' : '/library/statblocks/' + ${sb.id}"
           th:method="${sb == null ? 'post' : 'put'}"
-          hx-target="${sb == null ? '#library-results' : '#statblock-form'}"
+          th:hx-target="${sb == null ? '#library-results' : '#statblock-form'}"
           th:hx-swap="${sb == null ? 'beforeend' : 'outerHTML'}">
 
         <input type="hidden" name="campaignId" th:value="${campaignId}">
@@ -65,7 +65,7 @@
         <div class="form-actions">
             <button type="button" class="btn btn-ghost"
                     th:if="${sb != null}"
-                    hx-get="@{/library/statblocks/{id}(id=${sb.id})}"
+                    th:hx-get="@{/library/statblocks/{id}(id=${sb.id})}"
                     hx-target="#statblock-form"
                     hx-swap="outerHTML">Cancel</button>
             <button type="submit" class="btn btn-primary" th:text="${sb == null ? 'Create' : 'Save'}">Create</button>

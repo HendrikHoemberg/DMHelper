@@ -19,7 +19,7 @@
                     <label for="noteSearch">Search</label>
                     <input type="text" id="noteSearch" name="search"
                            th:value="${search}"
-                           hx-get="@{/campaigns/{id}/notes(id=${campaignId})}"
+                           th:hx-get="@{/campaigns/{id}/notes(id=${campaignId})}"
                            hx-trigger="keyup changed delay:200ms"
                            hx-include="#noteTypeFilter"
                            hx-target="#notes-list"
@@ -29,7 +29,7 @@
                 <div class="form-group">
                     <label for="noteTypeFilter">Type</label>
                     <select id="noteTypeFilter" name="type"
-                            hx-get="@{/campaigns/{id}/notes(id=${campaignId})}"
+                            th:hx-get="@{/campaigns/{id}/notes(id=${campaignId})}"
                             hx-trigger="change"
                             hx-include="#noteSearch"
                             hx-target="#notes-list"

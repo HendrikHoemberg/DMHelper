@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <div th:fragment="form" class="card" style="padding: var(--space-md); margin-bottom: var(--space-md);">
     <h3 style="margin-top:0;">Add Item</h3>
-    <form hx-post="@{/campaigns/{id}/treasury(id=${campaignId})}"
+    <form th:hx-post="@{/campaigns/{id}/treasury(id=${campaignId})}"
           hx-target="body" hx-swap="outerHTML">
 
         <div class="form-group">

@@ -18,12 +18,12 @@
         </div>
         <div style="display:flex; gap: var(--space-xs); flex-shrink:0; margin-left: var(--space-md);">
             <button class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;"
-                    hx-get="@{/campaigns/{cid}/calendar/events/{eid}/edit(cid=${event.campaignId()}, eid=${event.id()})}"
+                    th:hx-get="@{/campaigns/{cid}/calendar/events/{eid}/edit(cid=${event.campaignId()}, eid=${event.id()})}"
                     hx-target="#event-form-area" hx-swap="innerHTML">
                 Edit
             </button>
             <button class="btn btn-danger" style="font-size: var(--text-sm); padding: 2px 8px;"
-                    hx-delete="@{/campaigns/{cid}/calendar/events/{eid}(cid=${event.campaignId()}, eid=${event.id()})}"
+                    th:hx-delete="@{/campaigns/{cid}/calendar/events/{eid}(cid=${event.campaignId()}, eid=${event.id()})}"
                     hx-target="closest .card" hx-swap="outerHTML"
                     hx-confirm="Delete this event?">
                 &times;

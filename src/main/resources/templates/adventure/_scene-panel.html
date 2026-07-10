@@ -22,17 +22,17 @@
     </div>
     <div style="display: flex; gap: var(--space-xs); flex-wrap: wrap;">
       <button class="btn btn-primary btn-sm"
-              hx-put="@{/campaigns/{cid}/current-scene/step(cid=${campaignId})}"
+              th:hx-put="@{/campaigns/{cid}/current-scene/step(cid=${campaignId})}"
               hx-vals='{"direction": -1}'
               hx-target="body" hx-swap="outerHTML"
               title="Previous scene">&larr;</button>
       <button class="btn btn-primary btn-sm"
-              hx-put="@{/campaigns/{cid}/current-scene/step(cid=${campaignId})}"
+              th:hx-put="@{/campaigns/{cid}/current-scene/step(cid=${campaignId})}"
               hx-vals='{"direction": 1}'
               hx-target="body" hx-swap="outerHTML"
               title="Next scene">&rarr;</button>
       <button class="btn btn-ghost btn-sm"
-              hx-post="@{/campaigns/{cid}/current-scene(cid=${campaignId})}"
+              th:hx-post="@{/campaigns/{cid}/current-scene(cid=${campaignId})}"
               hx-vals='{"sceneId": ""}'
               hx-target="closest .scene-panel-card" hx-swap="outerHTML"
               title="Clear current scene">&times;</button>

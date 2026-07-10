@@ -26,16 +26,16 @@
         <a th:href="@{/campaigns/{cid}/party/{pid}/edit(cid=${pm.campaign.id}, pid=${pm.id})}" class="btn btn-ghost">Edit</a>
         <th:block th:if="${pm.active}">
             <button class="btn btn-ghost"
-                    hx-put="@{/campaigns/{cid}/party/{pid}/toggle-active(cid=${pm.campaign.id}, pid=${pm.id})}"
+                    th:hx-put="@{/campaigns/{cid}/party/{pid}/toggle-active(cid=${pm.campaign.id}, pid=${pm.id})}"
                     hx-target="closest .party-member-card" hx-swap="outerHTML">Mark Inactive</button>
         </th:block>
         <th:block th:if="${!pm.active}">
             <button class="btn btn-ghost"
-                    hx-put="@{/campaigns/{cid}/party/{pid}/toggle-active(cid=${pm.campaign.id}, pid=${pm.id})}"
+                    th:hx-put="@{/campaigns/{cid}/party/{pid}/toggle-active(cid=${pm.campaign.id}, pid=${pm.id})}"
                     hx-target="closest .party-member-card" hx-swap="outerHTML">Mark Active</button>
         </th:block>
         <button class="btn btn-danger"
-                hx-delete="@{/campaigns/{cid}/party/{pid}(cid=${pm.campaign.id}, pid=${pm.id})}"
+                th:hx-delete="@{/campaigns/{cid}/party/{pid}(cid=${pm.campaign.id}, pid=${pm.id})}"
                 hx-confirm="Remove this party member?"
                 hx-target="closest .party-member-card" hx-swap="outerHTML">Remove</button>
     </div>

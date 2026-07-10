@@ -20,19 +20,19 @@
 
     <div style="display:flex; gap: var(--space-xs); flex-shrink:0; margin-left: var(--space-md);">
         <form th:method="'put'"
-              hx-put="@{/campaigns/{cid}/treasury/{id}/attune(cid=${assignment.campaignId()}, id=${assignment.id()})}"
+              th:hx-put="@{/campaigns/{cid}/treasury/{id}/attune(cid=${assignment.campaignId()}, id=${assignment.id()})}"
               hx-target="closest .card" hx-swap="outerHTML" style="display:inline;">
             <button class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;">Attune</button>
         </form>
         <form th:method="'put'"
-              hx-put="@{/campaigns/{cid}/treasury/{id}/quantity(cid=${assignment.campaignId()}, id=${assignment.id()})}"
+              th:hx-put="@{/campaigns/{cid}/treasury/{id}/quantity(cid=${assignment.campaignId()}, id=${assignment.id()})}"
               hx-target="closest .card" hx-swap="outerHTML" style="display:inline; display:flex; gap:4px; align-items:center;">
             <input type="number" name="quantity" th:value="${assignment.quantity()}" min="1"
                    style="width:50px; padding:2px 4px; font-size: var(--text-sm);" />
             <button class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;">Qty</button>
         </form>
         <button class="btn btn-danger"
-                hx-delete="@{/campaigns/{cid}/treasury/{id}(cid=${assignment.campaignId()}, id=${assignment.id()})}"
+                th:hx-delete="@{/campaigns/{cid}/treasury/{id}(cid=${assignment.campaignId()}, id=${assignment.id()})}"
                 hx-target="closest .card" hx-swap="outerHTML" hx-confirm="Remove this item?"
                 style="font-size: var(--text-sm); padding: 2px 8px;">
             &times;

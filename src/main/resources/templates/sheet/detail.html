@@ -120,7 +120,7 @@
             </div>
 
             <section id="sheet-loot"
-                     hx-get="@{/campaigns/{cid}/treasury/fragment/{mid}(cid=${campaign.id}, mid=${member.id})}"
+                     th:hx-get="@{/campaigns/{cid}/treasury/fragment/{mid}(cid=${campaign.id}, mid=${member.id})}"
                      hx-trigger="load">
                 <div class="detail-section">
                     <h2>Equipment &amp; Loot</h2>

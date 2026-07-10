@@ -16,7 +16,7 @@
 
             <div class="detail-actions" style="margin-bottom: var(--space-lg);">
                 <button class="btn btn-primary"
-                        hx-get="@{/campaigns/{id}/treasury/new(id=${campaignId})}"
+                        th:hx-get="@{/campaigns/{id}/treasury/new(id=${campaignId})}"
                         hx-target="#treasury-form-area"
                         hx-swap="innerHTML">
                     + Add Item

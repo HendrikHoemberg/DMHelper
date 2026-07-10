@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <div th:fragment="configForm" class="card" style="padding: var(--space-md);">
-    <form hx-post="@{/campaigns/{id}/calendar/config(id=${campaignId})}"
+    <form th:hx-post="@{/campaigns/{id}/calendar/config(id=${campaignId})}"
           hx-target="body" hx-swap="outerHTML">
 
         <div class="form-group">

@@ -16,7 +16,7 @@
         <a th:href="@{/campaigns/{cid}/notes/{nid}/edit(cid=${note.campaign.id}, nid=${note.id})}"
            class="btn btn-ghost">Edit</a>
         <button class="btn btn-danger"
-                hx-delete="@{/campaigns/{cid}/notes/{nid}(cid=${note.campaign.id}, nid=${note.id})}"
+                th:hx-delete="@{/campaigns/{cid}/notes/{nid}(cid=${note.campaign.id}, nid=${note.id})}"
                 hx-target="#notes-list" hx-swap="outerHTML"
                 hx-confirm="Delete this note?">
             Delete

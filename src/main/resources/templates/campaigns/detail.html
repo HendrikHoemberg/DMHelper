@@ -88,7 +88,7 @@
                 </div>
 
                 <h2>Edit</h2>
-                <form hx-put="@{/campaigns/{id}(id=${campaign.id})}"
+                <form th:hx-put="@{/campaigns/{id}(id=${campaign.id})}"
                       hx-target="body"
                       hx-swap="outerHTML">
                     <div class="form-group">
@@ -124,7 +124,7 @@
                     </form>
 
                     <button class="btn btn-danger"
-                            hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
+                            th:hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
                             hx-confirm="Delete this campaign?"
                             hx-target="body"
                             hx-swap="outerHTML">
