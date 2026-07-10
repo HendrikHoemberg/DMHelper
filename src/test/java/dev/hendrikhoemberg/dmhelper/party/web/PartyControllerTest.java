@@ -48,6 +48,30 @@ class PartyControllerTest {
     }
 
     @Test
+    void shouldRenderNewForm() throws Exception {
+        mockMvc.perform(get("/campaigns/{cid}/party/new", campaignId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/campaigns/" + campaignId + "/party")));
+    }
+
+    @Test
+    void shouldRenderEditForm() throws Exception {
+        UUID pid = UUID.randomUUID();
+        Campaign c = new Campaign();
+        c.setId(campaignId);
+        c.setName("Test");
+        PartyMember pm = new PartyMember();
+        pm.setId(pid);
+        pm.setCampaign(c);
+        pm.setCharacterName("Thia");
+        when(partyService.findById(pid)).thenReturn(pm);
+
+        mockMvc.perform(get("/campaigns/{cid}/party/{pid}/edit", campaignId, pid))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/campaigns/" + campaignId + "/party/" + pid)));
+    }
+
+    @Test
     void shouldCreatePartyMember() throws Exception {
         Campaign c = new Campaign();
         c.setId(campaignId);

@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <div class="inline-form" th:fragment="form(campaignId, pm)">
     <h3 th:text="${pm == null ? 'Add Party Member' : 'Edit ' + pm.characterName}">Add Party Member</h3>
-    <form th:action="${pm == null ? @{/campaigns/{cid}/party(cid=${campaignId})} : @{/campaigns/{cid}/party/{pid}(cid=${campaignId}, pid=${pm.id})}}"
+    <form th:action="${pm} == null ? @{/campaigns/{cid}/party(cid=${campaignId})} : @{/campaigns/{cid}/party/{pid}(cid=${campaignId}, pid=${pm.id})}"
           th:method="${pm == null ? 'post' : 'put'}"
           hx-target="#party-grid"
           th:hx-swap="${pm == null ? 'beforeend' : 'outerHTML'}">
