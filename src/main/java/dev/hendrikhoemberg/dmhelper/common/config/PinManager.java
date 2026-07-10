@@ -33,10 +33,10 @@ public class PinManager {
     @EventListener(ApplicationReadyEvent.class)
     public void announcePin() {
         log.info("");
-        log.info("╔══════════════════════════════════════════╗");
-        log.info("║  DMHelper session PIN generated ({} chars)       ║", pin.length());
+        log.info("╔══════════════════════════════════════════════╗");
+        log.info("║  DMHelper session PIN: {}                ║", pin);
         log.info("║  Player view:  http://<your-ip>:8081/player  ║");
-        log.info("╚══════════════════════════════════════════╝");
+        log.info("╚══════════════════════════════════════════════╝");
         log.info("");
     }
 

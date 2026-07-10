@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.campaign.data;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.ColumnDefault;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -21,6 +22,8 @@ public class Campaign {
     @Column(columnDefinition = "CLOB")
     private String settings;
 
+    // DB-level default so ddl-auto=update can add this column to non-empty tables
+    @ColumnDefault("false")
     @Column(nullable = false)
     private boolean milestoneLeveling = false;
 
