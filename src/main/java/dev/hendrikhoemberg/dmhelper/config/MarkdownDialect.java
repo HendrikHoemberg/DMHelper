@@ -23,8 +23,13 @@ public class MarkdownDialect extends AbstractDialect implements IExpressionObjec
 
     private final IExpressionObjectFactory factory;
 
-    public MarkdownDialect(MarkdownUtil markdownUtil) {
+    public MarkdownDialect() {
         super("markdown");
+        // MarkdownUtil is a stateless helper with no dependencies, so the dialect
+        // owns its own instance rather than requiring the Spring bean. This keeps the
+        // dialect self-contained and avoids failing in sliced contexts (e.g. @WebMvcTest)
+        // that auto-include IDialect beans but not arbitrary @Components.
+        MarkdownUtil markdownUtil = new MarkdownUtil();
         this.factory = new IExpressionObjectFactory() {
             @Override
             public Set<String> getAllExpressionObjectNames() {
