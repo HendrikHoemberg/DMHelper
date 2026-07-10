@@ -13,7 +13,7 @@
                     Session Plan Title
                 </a>
                 <div style="font-size: var(--text-sm); color: var(--color-text-muted); max-height: 150px; overflow-y: auto;"
-                     th:utext="${@markdownUtil.toHtml(#strings.abbreviate(sessionPlan.body != null ? sessionPlan.body : '', 300))}">
+                     th:utext="${#markdown.toHtml(#strings.abbreviate(sessionPlan.body != null ? sessionPlan.body : '', 300))}">
                     Session plan preview
                 </div>
             </div>

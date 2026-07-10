@@ -16,7 +16,7 @@
                 <a th:href="@{/campaigns/{id}/sheets(id=${campaign.id})}" class="btn btn-ghost">Character Sheets</a>
                 <button class="btn btn-primary"
                         hx-get="@{/campaigns/{cid}/party/new(cid=${campaign.id})}"
-                        hx-target="previous .card-grid"
+                        hx-target="#party-grid"
                         hx-swap="beforeend">+ Add Member</button>
             </div>
 

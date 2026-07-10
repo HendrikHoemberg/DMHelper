@@ -4,7 +4,7 @@
             <h3 class="card-title" th:text="${s.name}">Species Name</h3>
             <p th:if="${s.size != null}"><strong>Size:</strong> <span th:text="${s.size}">Size</span></p>
             <p th:if="${s.speed != null}"><strong>Speed:</strong> <span th:text="${s.speed}">Speed</span></p>
-            <p th:if="${s.description != null}" class="card-text" th:utext="${@markdownUtil.toHtml(s.description)}">Description</p>
+            <p th:if="${s.description != null}" class="card-text" th:utext="${#markdown.toHtml(s.description)}">Description</p>
         </div>
     </div>
     <div class="empty-state"><p>No species match your search.</p></div>

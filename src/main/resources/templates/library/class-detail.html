@@ -77,7 +77,7 @@
                 <!-- Description -->
                 <div th:if="${classDetail.description != null and !classDetail.description.isBlank()}">
                     <h2>Description</h2>
-                    <p th:utext="${@markdownUtil.toHtml(classDetail.description)}">Description</p>
+                    <p th:utext="${#markdown.toHtml(classDetail.description)}">Description</p>
                 </div>
 
                 <!-- Subclasses -->

@@ -6,7 +6,7 @@
                 <span class="badge badge-srd" th:if="${f.category != null}" th:text="${f.category}">Category</span>
             </div>
             <p th:if="${f.prerequisite != null}"><em th:text="${'Prerequisite: ' + f.prerequisite}">Prerequisite</em></p>
-            <p class="card-text" th:utext="${@markdownUtil.toHtml(f.benefit)}">Benefit</p>
+            <p class="card-text" th:utext="${#markdown.toHtml(f.benefit)}">Benefit</p>
         </div>
     </div>
     <div class="empty-state"><p>No feats match your search.</p></div>

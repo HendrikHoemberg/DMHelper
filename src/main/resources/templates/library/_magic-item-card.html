@@ -7,7 +7,7 @@
                 <span class="badge badge-srd" th:text="${m.category}">Category</span>
                 <span class="badge badge-attune" th:if="${m.requiresAttunement}">Attunement</span>
             </div>
-            <p class="card-text" th:utext="${@markdownUtil.toHtml(m.description)}">Description</p>
+            <p class="card-text" th:utext="${#markdown.toHtml(m.description)}">Description</p>
         </div>
     </div>
     <div class="empty-state"><p>No magic items match your search.</p></div>
