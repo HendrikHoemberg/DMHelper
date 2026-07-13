@@ -174,3 +174,7 @@
 }
 .cockpit-title { font-family: var(--font-display); font-size: var(--text-lg); color: var(--color-text); }
 .cockpit-spacer { flex: 1; }
+
+.cockpit-partybar { flex-shrink: 0; border-top: 1px solid var(--color-gold-soft); }
+.cockpit-partybar .party-summary-bar { margin-bottom: 0; border: none; border-radius: 0; }
+.cockpit-partybar .chip-stats { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }

@@ -246,6 +246,10 @@
             </div>
         </div>
 
+        <div class="cockpit-partybar">
+            <th:block th:replace="~{party/_summary-bar :: summary-bar(${partyMembers})}"></th:block>
+        </div>
+
         <div class="battle-statusbar">
             <span id="battleStatusMessage">Ready</span>
             <span id="battleCursorInfo" style="color: var(--color-text-muted);"></span>
