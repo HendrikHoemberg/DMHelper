@@ -38,6 +38,8 @@
   --color-warning: #d9993d;         /* amber */
   --color-border: #3a3125;          /* warm hairline */
 
+  --color-concentration: #966a9e;  /* concentration purple — table-wide recognition */
+
   /* new tokens */
   --color-ember: #a83a32;
   --color-gold-soft: rgba(201, 163, 92, 0.28);
