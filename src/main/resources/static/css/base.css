@@ -115,7 +115,22 @@ body.dm-mode-off .encounter-prep { display: none; }
 body.dm-mode-off .note-dm-only { display: none; }
 
 /* Toolbar visual indicator when DM Mode is off */
-body.dm-mode-off .navbar { border-bottom-color: var(--color-warning); }
+body.dm-mode-off .navbar {
+  border-bottom: 3px solid var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 6%, var(--color-surface));
+}
+/* DM Mode off = screen is player-safe. Must be readable from across the room. */
+.dm-shield-badge {
+  display: none;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  letter-spacing: 0.15em;
+  padding: 2px 10px;
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius);
+  color: var(--color-warning);
+}
+body.dm-mode-off .dm-shield-badge { display: inline-block; }
 
 .hidden { display: none !important; }
 [x-cloak] { display: none !important; }
