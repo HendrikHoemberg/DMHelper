@@ -38,6 +38,7 @@ public class PinManager {
         log.info("║  Player view:  http://<your-ip>:8081/player  ║");
         log.info("╚══════════════════════════════════════════════╝");
         log.info("");
+        System.out.println("DM PIN: " + pin);
     }
 
     private String generatePin() {
