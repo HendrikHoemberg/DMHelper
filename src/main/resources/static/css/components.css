@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -26,8 +19,7 @@
 }
 
 .card:hover {
-  border-color: var(--color-accent);
-  box-shadow: var(--shadow);
+  border-color: var(--color-gold-soft);
 }
 
 .card h3 {
@@ -93,12 +85,13 @@
 .btn-primary {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: #fff;
+  color: var(--color-bg);
 }
 
 .btn-primary:hover {
   background: var(--color-accent-hover);
   border-color: var(--color-accent-hover);
+  color: var(--color-bg);
 }
 
 .btn-danger {
@@ -107,7 +100,7 @@
 }
 
 .btn-danger:hover {
-  background: rgba(231, 76, 60, 0.15);
+  background: color-mix(in srgb, var(--color-danger) 15%, transparent);
   border-color: var(--color-danger);
 }
 
@@ -216,7 +209,7 @@
   font-size: var(--text-sm);
   border-radius: 4px;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-bg);
 }
 
 .alert {
@@ -227,13 +220,13 @@
 }
 
 .alert-error {
-  background: rgba(231, 76, 60, 0.15);
+  background: color-mix(in srgb, var(--color-danger) 15%, transparent);
   border: 1px solid var(--color-danger);
   color: var(--color-danger);
 }
 
 .alert-success {
-  background: rgba(46, 204, 113, 0.15);
+  background: color-mix(in srgb, var(--color-success) 15%, transparent);
   border: 1px solid var(--color-success);
   color: var(--color-success);
 }
@@ -260,7 +253,7 @@
   transition: border-color var(--transition), box-shadow var(--transition);
   display: flex; flex-direction: column; gap: var(--space-xs);
 }
-.statblock-card:hover { border-color: var(--color-accent); box-shadow: var(--shadow); }
+.statblock-card:hover { border-color: var(--color-gold-soft); }
 .statblock-card h3 { font-size: var(--text-lg); margin: 0; }
 .statblock-card h3 a { color: var(--color-text); text-decoration: none; }
 .statblock-card h3 a:hover { color: var(--color-accent); }
@@ -1058,4 +1051,21 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
     display: flex; gap: var(--space-md);
     font-size: var(--text-xs); color: var(--color-text-muted);
 }
+
+/* Tapered rule — the sourcebook divider (spec §2.3). Usage: <div class="rule-taper"></div> */
+.rule-taper {
+  height: 5px;
+  border: none;
+  background: var(--color-ember);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  margin: var(--space-sm) 0;
+}
+.rule-taper--gold { background: var(--color-accent); }
+
+/* Minimal utility classes — replacement targets for inline styles */
+.u-mb-lg { margin-bottom: var(--space-lg); }
+.u-mb-md { margin-bottom: var(--space-md); }
+.u-flex { display: flex; align-items: center; gap: var(--space-sm); }
+.u-text-sm { font-size: var(--text-sm); }
+.u-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
