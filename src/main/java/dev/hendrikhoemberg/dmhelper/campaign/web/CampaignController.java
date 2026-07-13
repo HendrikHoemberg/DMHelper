@@ -2,8 +2,10 @@ package dev.hendrikhoemberg.dmhelper.campaign.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
+import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
+import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
@@ -23,10 +25,12 @@ public class CampaignController {
 
     private final CampaignService service;
     private final NoteService noteService;
+    private final PartyMemberService partyMemberService;
 
-    public CampaignController(CampaignService service, NoteService noteService) {
+    public CampaignController(CampaignService service, NoteService noteService, PartyMemberService partyMemberService) {
         this.service = service;
         this.noteService = noteService;
+        this.partyMemberService = partyMemberService;
     }
 
     @GetMapping
@@ -63,6 +67,11 @@ public class CampaignController {
         if (!plans.isEmpty()) {
             model.addAttribute("sessionPlan", plans.get(0));
         }
+        model.addAttribute("partyMembers", partyMemberService.findActiveByCampaignId(id));
+        model.addAttribute("recentNotes", noteService.findByCampaignId(id).stream()
+                .sorted(java.util.Comparator.comparing(Note::getCreatedAt).reversed())
+                .limit(5)
+                .toList());
         return "campaigns/detail";
     }
 
@@ -73,6 +82,11 @@ public class CampaignController {
                          Model model) {
         Campaign campaign = service.update(id, name, description);
         model.addAttribute("campaign", campaign);
+        model.addAttribute("partyMembers", partyMemberService.findActiveByCampaignId(id));
+        model.addAttribute("recentNotes", noteService.findByCampaignId(id).stream()
+                .sorted(java.util.Comparator.comparing(Note::getCreatedAt).reversed())
+                .limit(5)
+                .toList());
         return "campaigns/detail";
     }
 

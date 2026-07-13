@@ -1103,6 +1103,26 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
 }
 .rule-taper--gold { background: var(--color-accent); }
 
+/* Campaign dashboard */
+.dash-header h1 { font-size: var(--text-2xl); margin-bottom: var(--space-xs); }
+.dash-header .rule-taper--gold { max-width: 320px; margin-bottom: var(--space-md); }
+.dash-desc { color: var(--color-text-muted); max-width: 68ch; margin-bottom: var(--space-md); font-family: var(--font-book); }
+.dash-actions { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-md); margin-top: var(--space-lg); }
+.dash-grid .card h3 { font-family: var(--font-display); font-size: var(--text-base); margin-bottom: var(--space-sm); }
+.dash-link { color: var(--color-accent); text-decoration: none; }
+.dash-link:hover { color: var(--color-accent-hover); }
+.dash-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-xs); }
+.dash-plan-preview { font-size: var(--text-sm); max-height: 180px; overflow-y: auto; }
+
+/* Campaign list — book cover treatment */
+.campaign-cover { text-align: center; padding: var(--space-xl) var(--space-md); position: relative; }
+.campaign-cover::before {
+  content: ''; position: absolute; inset: 6px;
+  border: 1px solid var(--color-gold-soft); border-radius: 4px; pointer-events: none;
+}
+.campaign-cover h3 { font-family: var(--font-display); font-size: var(--text-lg); }
+
 /* Minimal utility classes — replacement targets for inline styles */
 .u-mb-lg { margin-bottom: var(--space-lg); }
 .u-mb-md { margin-bottom: var(--space-md); }

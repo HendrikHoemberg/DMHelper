@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.campaign.web;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
+import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -33,6 +34,9 @@ class CampaignControllerTest {
 
     @MockitoBean
     private NoteService noteService;
+
+    @MockitoBean
+    private PartyMemberService partyMemberService;
 
     private Campaign sampleCampaign() {
         Campaign c = new Campaign();
@@ -81,6 +85,20 @@ class CampaignControllerTest {
                         .param("description", "")
                         .header("HX-Request", "true"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void detailProvidesDashboardModel() throws Exception {
+        Campaign c = sampleCampaign();
+        when(service.findById(c.getId())).thenReturn(c);
+        when(noteService.findByCampaignIdAndType(eq(c.getId()), any())).thenReturn(List.of());
+        when(noteService.findByCampaignId(c.getId())).thenReturn(List.of());
+        when(partyMemberService.findActiveByCampaignId(c.getId())).thenReturn(List.of());
+
+        mockMvc.perform(get("/campaigns/{id}", c.getId()))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("partyMembers"))
+                .andExpect(model().attributeExists("recentNotes"));
     }
 
     @Test

@@ -8,136 +8,68 @@
     <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
 
     <div class="app-shell">
-            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
         <main class="app-main">
-            <div class="page-header">
+            <div class="dash-header">
                 <h1 th:text="${campaign.name}">Campaign Name</h1>
-                <a href="/campaigns" class="btn btn-ghost">&larr; Back to Campaigns</a>
+                <div class="rule-taper rule-taper--gold"></div>
+                <p class="dash-desc" th:if="${campaign.description != null and !campaign.description.isBlank()}"
+                   th:text="${campaign.description}">Description</p>
             </div>
 
-            <div class="detail-section">
-                <div class="detail-meta"
-                     th:text="'Created ' + ${#temporals.format(campaign.createdAt, 'yyyy-MM-dd HH:mm')}">
-                    Created date
-                </div>
-
-                <div class="detail-description"
-                     th:if="${campaign.description != null and !campaign.description.isBlank()}"
-                     th:text="${campaign.description}">Description</div>
-
-                <h2>Party</h2>
-                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
-                    <a th:href="@{/campaigns/{id}/party(id=${campaign.id})}" class="btn btn-primary">
-                        Manage Party Roster
-                    </a>
-                </div>
-
-                <h2>Adventures</h2>
-                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
-                    <a th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}" class="btn btn-primary">
-                        Manage Adventures
-                    </a>
-                </div>
-
-                <h2>Maps</h2>
-                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
-                    <a th:href="@{/campaigns/{id}/maps(id=${campaign.id})}" class="btn btn-primary">
-                        Manage Maps
-                    </a>
-                </div>
-
-                <h2>Encounters</h2>
-                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
-                    <a th:href="@{/campaigns/{id}/encounters(id=${campaign.id})}" class="btn btn-primary">
-                        Manage Encounters
-                    </a>
-                </div>
-
-                <h2>Character Sheets</h2>
-                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
-                    <a th:href="@{/campaigns/{id}/sheets(id=${campaign.id})}" class="btn btn-primary">
-                        Open Sheets
-                    </a>
-                </div>
-
-                <h2>Notes</h2>
-                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
-                    <a th:href="@{/campaigns/{id}/notes(id=${campaign.id})}" class="btn btn-primary">
-                        Manage Notes
-                    </a>
-                </div>
-
-                <h2>Treasury & Loot</h2>
-                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
-                    <a th:href="@{/campaigns/{id}/treasury(id=${campaign.id})}" class="btn btn-primary">
-                        Manage Loot
-                    </a>
-                </div>
-
-                <h2>Ledger</h2>
-                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
-                    <a th:href="@{/campaigns/{id}/ledger(id=${campaign.id})}" class="btn btn-primary">
-                        View Ledger
-                    </a>
-                </div>
-
-                <h2>Calendar & Timeline</h2>
-                <div class="detail-actions" style="margin-bottom: var(--space-lg);">
-                    <a th:href="@{/campaigns/{id}/calendar(id=${campaign.id})}" class="btn btn-primary">
-                        Open Calendar
-                    </a>
-                </div>
-
-                <h2>Edit</h2>
-                <form th:hx-put="@{/campaigns/{id}(id=${campaign.id})}"
-                      hx-target="body"
-                      hx-swap="outerHTML">
-                    <div class="form-group">
-                        <label for="editName">Name</label>
-                        <input type="text" id="editName" name="name" required
-                               th:value="${campaign.name}">
-                    </div>
-                    <div class="form-group">
-                        <label for="editDescription">Description</label>
-                        <textarea id="editDescription" name="description"
-                                  th:text="${campaign.description}"></textarea>
-                    </div>
-                    <div class="detail-actions">
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                    </div>
+            <div class="dash-actions u-mb-lg">
+                <a class="btn btn-primary" th:href="@{/campaigns/{id}/session(id=${campaign.id})}">&#9876; Run Session</a>
+                <a class="btn" th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">Plan Adventures</a>
+                <a th:href="@{/campaigns/{id}/export(id=${campaign.id})}"
+                   class="btn" download>Export JSON</a>
+                <form hx-post="/campaigns/import"
+                      hx-encoding="multipart/form-data"
+                      style="display: contents;">
+                    <label class="btn">
+                        Import JSON
+                        <input type="file" name="file" accept=".json"
+                               onchange="this.form.requestSubmit()"
+                               style="display: none;">
+                    </label>
                 </form>
-
-                <hr style="border-color: var(--color-border); margin: var(--space-lg) 0;">
-
-                <div class="detail-actions">
-                    <a th:href="@{/campaigns/{id}/export(id=${campaign.id})}"
-                       class="btn" download>Export JSON</a>
-
-                    <form hx-post="/campaigns/import"
-                          hx-encoding="multipart/form-data"
-                          style="display: contents;">
-                        <label class="btn">
-                            Import JSON
-                            <input type="file" name="file" accept=".json"
-                                   onchange="this.form.requestSubmit()"
-                                   style="display: none;">
-                        </label>
-                    </form>
-
-                    <button class="btn btn-danger"
-                            th:hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
-                            hx-confirm="Delete this campaign?"
-                            hx-target="body"
-                            hx-swap="outerHTML">
-                        Delete Campaign
-                    </button>
-                </div>
+                <button class="btn btn-danger"
+                        th:hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
+                        hx-confirm="Delete this campaign?"
+                        hx-target="body"
+                        hx-swap="outerHTML">
+                    Delete Campaign
+                </button>
             </div>
-        <div style="margin-top: var(--space-lg);">
-            <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaign.id}, targetType='CAMPAIGN', targetId=${campaign.id})}"></th:block>
-        </div>
-        </main>
 
+            <th:block th:replace="~{party/_summary-bar :: summary-bar(${partyMembers})}"></th:block>
+
+            <div class="dash-grid">
+                <section class="card">
+                    <h3>Session Plan</h3>
+                    <th:block th:if="${sessionPlan != null}">
+                        <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaign.id}, nid=${sessionPlan.id})}"
+                           th:text="${sessionPlan.title}" class="dash-link">Plan title</a>
+                        <div class="note-body dash-plan-preview"
+                             th:utext="${#markdown.toHtml(#strings.abbreviate(sessionPlan.body != null ? sessionPlan.body : '', 400))}"></div>
+                    </th:block>
+                    <p th:unless="${sessionPlan != null}" class="text-muted u-text-sm">
+                        No session plan yet — create a SESSION_PLAN note.
+                    </p>
+                </section>
+
+                <section class="card">
+                    <h3>Recent Notes</h3>
+                    <ul class="dash-list">
+                        <li th:each="n : ${recentNotes}">
+                            <a class="dash-link" th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaign.id}, nid=${n.id})}"
+                               th:text="${n.title}">Note</a>
+                            <span class="text-muted u-text-sm" th:text="${n.type}">TYPE</span>
+                        </li>
+                        <li th:if="${recentNotes.isEmpty()}" class="text-muted u-text-sm">Nothing written yet.</li>
+                    </ul>
+                </section>
+            </div>
+        </main>
     </div>
 </body>
 </html>

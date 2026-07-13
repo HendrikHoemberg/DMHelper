@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="card" th:fragment="card(campaign)">
+<div class="card campaign-cover" th:fragment="card(campaign)">
     <h3>
         <a th:href="@{/campaigns/{id}(id=${campaign.id})}" th:text="${campaign.name}">Campaign Name</a>
     </h3>
