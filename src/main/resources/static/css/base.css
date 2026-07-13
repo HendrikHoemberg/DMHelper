@@ -1,0 +1,131 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  min-height: 100vh;
+}
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-brand {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-accent);
+  letter-spacing: 0.5px;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+.dm-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.dm-toggle input[type="checkbox"] {
+  accent-color: var(--color-warning);
+}
+.pin-display {
+  font-family: 'Cascadia Code', 'Fira Code', monospace;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+}
+.app-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  min-height: calc(100vh - 49px);
+}
+
+.app-layout > main {
+  padding: var(--space-lg);
+  overflow-y: auto;
+}
+.sidebar {
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  padding: var(--space-md);
+  overflow-y: auto;
+}
+
+.sidebar-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: var(--space-md);
+}
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+}
+
+.page-header h1 {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--space-xl) * 2);
+  color: var(--color-text-muted);
+  text-align: center;
+  grid-column: 1 / -1;
+}
+
+.empty-state p {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-md);
+}
+/* ==============================
+   DM Mode — player-safe indicator (M7)
+   ============================== */
+
+body.dm-mode-off {
+    border: 3px solid var(--color-warning);
+    border-top: none;
+}
+
+body.dm-mode-off .dm-only,
+body.dm-mode-off [data-dm-only] {
+    display: none !important;
+}
+
+body.dm-mode-off .party-summary-bar { display: none; }
+body.dm-mode-off .map-switcher-name { display: none; }
+body.dm-mode-off .statblock-full { display: none; }
+body.dm-mode-off .encounter-prep { display: none; }
+body.dm-mode-off .note-dm-only { display: none; }
+
+/* Toolbar visual indicator when DM Mode is off */
+body.dm-mode-off .navbar { border-bottom-color: var(--color-warning); }
+
+.hidden { display: none !important; }
+[x-cloak] { display: none !important; }

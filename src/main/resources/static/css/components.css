@@ -1,88 +1,9 @@
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
 
-body {
-  min-height: 100vh;
-}
 
-.navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-sm) var(--space-lg);
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
 
-.navbar-brand {
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--color-accent);
-  letter-spacing: 0.5px;
-}
 
-.navbar-right {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-}
 
-.dm-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  cursor: pointer;
-  user-select: none;
-}
 
-.dm-toggle input[type="checkbox"] {
-  accent-color: var(--color-warning);
-}
-
-.pin-display {
-  font-family: 'Cascadia Code', 'Fira Code', monospace;
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  background: var(--color-bg);
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--color-border);
-}
-
-.app-layout {
-  display: grid;
-  grid-template-columns: 1fr 280px;
-  min-height: calc(100vh - 49px);
-}
-
-.app-layout > main {
-  padding: var(--space-lg);
-  overflow-y: auto;
-}
-
-.sidebar {
-  background: var(--color-surface);
-  border-left: 1px solid var(--color-border);
-  padding: var(--space-md);
-  overflow-y: auto;
-}
-
-.sidebar-title {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: var(--space-md);
-}
 
 .card-grid {
   display: grid;
@@ -243,18 +164,6 @@ body {
   justify-content: flex-end;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-lg);
-}
-
-.page-header h1 {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-}
-
 .detail-section {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -287,21 +196,6 @@ body {
   flex-wrap: wrap;
 }
 
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: calc(var(--space-xl) * 2);
-  color: var(--color-text-muted);
-  text-align: center;
-  grid-column: 1 / -1;
-}
-
-.empty-state p {
-  font-size: var(--text-lg);
-  margin-bottom: var(--space-md);
-}
 
 .inline-form {
   background: var(--color-surface);
@@ -374,31 +268,6 @@ body {
 .badge-srd { background: var(--color-accent); color: #fff; font-size: var(--text-sm); padding: 1px 6px; border-radius: 4px; }
 .badge-custom { background: var(--color-success); color: #fff; font-size: var(--text-sm); padding: 1px 6px; border-radius: 4px; }
 
-/* Statblock Renderer (5.5e parchment style) */
-.statblock-render {
-  max-width: 500px; margin: 0 auto;
-  background: #f5f0e8; color: #2c1810;
-  border: 2px solid #8b7355; border-radius: 4px;
-  padding: var(--space-lg);
-  font-family: 'Bookman Old Style', Georgia, serif;
-  box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
-}
-.statblock-render h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; font-variant: small-caps; }
-.statblock-render .sb-subtitle { font-style: italic; font-size: 0.875rem; margin-bottom: var(--space-md); color: #5c3d2e; }
-.statblock-render .sb-rule { border: none; border-top: 2px solid #8b2e1c; margin: var(--space-sm) 0; }
-.statblock-render .sb-rule-thin { border: none; border-top: 1px solid #8b2e1c; margin: var(--space-xs) 0; }
-.statblock-render .sb-stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-xs); font-size: 0.875rem; margin-bottom: var(--space-sm); }
-.statblock-render .sb-stat-row span { font-weight: 600; }
-.statblock-render .sb-abilities { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--space-xs); text-align: center; margin-bottom: var(--space-sm); }
-.statblock-render .sb-abilities div { font-size: 0.75rem; }
-.statblock-render .sb-abilities .score { font-size: 1rem; font-weight: 700; }
-.statblock-render .sb-props { font-size: 0.875rem; margin-bottom: var(--space-sm); }
-.statblock-render .sb-props dt { font-weight: 700; display: inline; }
-.statblock-render .sb-props dd { display: inline; margin-right: 1em; }
-.statblock-render h3 { font-size: 1.1rem; font-weight: 700; font-variant: small-caps; margin-top: var(--space-md); margin-bottom: var(--space-xs); border-bottom: 1px solid #8b2e1c; padding-bottom: 2px; }
-.statblock-render .sb-ability { margin-bottom: var(--space-sm); }
-.statblock-render .sb-ability .sb-ability-name { font-weight: 700; font-style: italic; }
-.statblock-render .sb-ability .sb-ability-text { font-size: 0.875rem; line-height: 1.5; }
 
 /* Party Roster Styles */
 .party-summary-bar {
@@ -702,33 +571,9 @@ body {
 }
 
 /* ==============================
-   DM Mode — player-safe indicator (M7)
-   ============================== */
-
-body.dm-mode-off {
-    border: 3px solid var(--color-warning);
-    border-top: none;
-}
-
-body.dm-mode-off .dm-only,
-body.dm-mode-off [data-dm-only] {
-    display: none !important;
-}
-
-body.dm-mode-off .party-summary-bar { display: none; }
-body.dm-mode-off .map-switcher-name { display: none; }
-body.dm-mode-off .statblock-full { display: none; }
-body.dm-mode-off .encounter-prep { display: none; }
-body.dm-mode-off .note-dm-only { display: none; }
-
-/* Toolbar visual indicator when DM Mode is off */
-body.dm-mode-off .navbar { border-bottom-color: var(--color-warning); }
-
-/* ==============================
    QR Popover (M7)
    ============================== */
 
-.hidden { display: none !important; }
 
 #qrPopover {
     animation: slideIn 0.15s ease;
@@ -755,121 +600,6 @@ body.dm-mode-off .navbar { border-bottom-color: var(--color-warning); }
     50% { opacity: 0.6; }
 }
 
-/* ==============================
-   Notes & Wiki (M8)
-   ============================== */
-
-.note-body {
-    line-height: 1.8;
-    font-size: var(--text-base);
-}
-
-.note-body h1, .note-body h2, .note-body h3 {
-    color: var(--color-text);
-    margin-top: var(--space-lg);
-    margin-bottom: var(--space-sm);
-}
-
-.note-body h1 { font-size: var(--text-2xl); }
-.note-body h2 { font-size: var(--text-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-xs); }
-.note-body h3 { font-size: var(--text-lg); }
-
-/* Read-aloud (boxed) text — adventure scenes */
-.read-aloud {
-    margin: var(--space-md) 0;
-    padding: var(--space-md) var(--space-lg);
-    border-left: 3px solid var(--color-accent);
-    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
-    border-radius: 4px;
-    font-style: italic;
-}
-.read-aloud p { margin: 0 0 var(--space-sm) 0; }
-.read-aloud p:last-child { margin-bottom: 0; }
-
-.note-body p {
-    margin-bottom: var(--space-md);
-}
-
-.note-body ul, .note-body ol {
-    margin-bottom: var(--space-md);
-    padding-left: var(--space-lg);
-}
-
-.note-body li {
-    margin-bottom: var(--space-xs);
-}
-
-.note-body code {
-    background: var(--color-bg);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.9em;
-}
-
-.note-body pre {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    padding: var(--space-md);
-    overflow-x: auto;
-    margin-bottom: var(--space-md);
-}
-
-.note-body pre code {
-    background: none;
-    padding: 0;
-}
-
-.note-body blockquote {
-    border-left: 3px solid var(--color-accent);
-    padding-left: var(--space-md);
-    color: var(--color-text-muted);
-    margin-bottom: var(--space-md);
-}
-
-.note-body table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: var(--space-md);
-}
-
-.note-body th, .note-body td {
-    padding: var(--space-xs) var(--space-sm);
-    border: 1px solid var(--color-border);
-    text-align: left;
-}
-
-.note-body th {
-    background: var(--color-surface-hover);
-    font-weight: 600;
-}
-
-.note-body img {
-    max-width: 100%;
-    border-radius: var(--radius);
-}
-
-/* Wiki-link styles */
-.wiki-link {
-    color: var(--color-accent);
-    text-decoration: none;
-    border-bottom: 1px dashed var(--color-accent);
-}
-
-.wiki-link:hover {
-    color: var(--color-accent-hover);
-    border-bottom-style: solid;
-}
-
-.wiki-link-resolved {
-    /* default */
-}
-
-.wiki-link-broken {
-    color: var(--color-danger);
-    border-bottom-color: var(--color-danger);
-    cursor: help;
-}
 
 /* Quicknotes strip */
 .quicknotes-strip {
@@ -1329,4 +1059,3 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
     font-size: var(--text-xs); color: var(--color-text-muted);
 }
 
-[x-cloak] { display: none !important; }

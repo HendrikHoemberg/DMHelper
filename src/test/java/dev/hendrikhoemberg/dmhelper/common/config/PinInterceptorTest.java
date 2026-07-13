@@ -41,7 +41,7 @@ class PinInterceptorTest {
 
     @Test
     void shouldAllowStaticAssetsWithoutPin() throws Exception {
-        mvc.perform(get("/css/app.css"))
+        mvc.perform(get("/css/base.css"))
                 .andExpect(status().isOk());
     }
 
