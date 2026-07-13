@@ -7,8 +7,9 @@
 <body>
     <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
 
-    <div class="app-layout">
-        <main>
+    <div class="app-shell">
+            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
             <div class="page-header">
                 <div>
                     <a th:href="@{/campaigns/{id}(id=${campaign.id})}"
@@ -52,10 +53,6 @@
                 <span style="font-size: var(--text-sm);">Upload an image to share with your players.</span>
             </div>
         </main>
-
-        <aside class="sidebar">
-            <div class="sidebar-title">Quick Access</div>
-        </aside>
     </div>
 </body>
 </html>

@@ -66,31 +66,7 @@ h1, h2 {
   border-radius: 4px;
   border: 1px solid var(--color-border);
 }
-.app-layout {
-  display: grid;
-  grid-template-columns: 1fr 280px;
-  min-height: calc(100vh - 49px);
-}
 
-.app-layout > main {
-  padding: var(--space-lg);
-  overflow-y: auto;
-}
-.sidebar {
-  background: var(--color-surface);
-  border-left: 1px solid var(--color-border);
-  padding: var(--space-md);
-  overflow-y: auto;
-}
-
-.sidebar-title {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: var(--space-md);
-}
 .page-header {
   display: flex;
   align-items: center;

@@ -7,8 +7,9 @@
 <body>
     <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
 
-    <div class="app-layout">
-        <main>
+    <div class="app-shell">
+            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
             <div class="page-header">
                 <div>
                     <h1>Encounters</h1>
@@ -31,7 +32,6 @@
             </div>
         </main>
 
-        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
     </div>
 </body>
 </html>

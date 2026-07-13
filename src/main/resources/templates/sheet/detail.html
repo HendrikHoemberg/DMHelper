@@ -6,7 +6,8 @@
 </head>
 <body>
     <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-layout">
+    <div class="app-shell">
+            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
         <main class="app-main">
         <div class="page-header">
             <h1 th:text="${member.characterName} + ' — Character Sheet'">Character Sheet</h1>

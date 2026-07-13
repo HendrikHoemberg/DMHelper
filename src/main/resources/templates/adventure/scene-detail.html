@@ -6,8 +6,9 @@
 </head>
 <body>
     <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-layout">
-        <main>
+    <div class="app-shell">
+            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
             <div class="page-header">
                 <div class="breadcrumb">
                     <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
@@ -48,7 +49,6 @@
                 </div>
             </div>
         </main>
-        <th:block th:replace="~{fragments/sidebar :: sidebar}"></th:block>
     </div>
 </body>
 </html>

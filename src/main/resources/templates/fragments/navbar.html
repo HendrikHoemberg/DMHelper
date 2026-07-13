@@ -1,26 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <nav class="navbar" th:fragment="navbar">
-    <div style="display: flex; align-items: center; gap: var(--space-lg);">
-        <a href="/campaigns" class="navbar-brand">DMHelper</a>
-        <nav th:if="${campaignId != null}" style="display: flex; gap: var(--space-md);">
-            <a th:href="@{/campaigns/{id}(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Campaign</a>
-            <a th:href="@{/campaigns/{id}/party(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Party</a>
-            <a th:href="@{/campaigns/{id}/maps(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Maps</a>
-            <a th:href="@{/campaigns/{id}/encounters(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Encounters</a>
-            <a th:href="@{/campaigns/{id}/handouts(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Handouts</a>
-            <a th:href="@{/campaigns/{id}/sheets(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Sheets</a>
-            <a th:href="@{/campaigns/{id}/notes(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Notes</a>
-            <a th:href="@{/campaigns/{id}/treasury(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Treasury</a>
-            <a th:href="@{/campaigns/{id}/ledger(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Ledger</a>
-            <a th:href="@{/campaigns/{id}/calendar(id=${campaignId})}" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Calendar</a>
-        </nav>
-        <nav th:unless="${campaignId != null}" style="display: flex; gap: var(--space-md);">
-            <a href="/campaigns" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Campaigns</a>
-            <a href="/library" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">Library</a>
-            <a href="/library/about" style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">About</a>
-        </nav>
-    </div>
+    <a href="/campaigns" class="navbar-brand">DMHelper</a>
     <div class="navbar-right">
         <button class="dice-toggle-btn" id="diceToggle"
                 :class="{ active: open }"
