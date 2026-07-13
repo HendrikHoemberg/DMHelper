@@ -1,28 +1,64 @@
-/* Statblock Renderer (5.5e parchment style) */
+/* Statblock — Monster Manual anatomy, dark grimoire (spec §5.1) */
 .statblock-render {
-  max-width: 500px; margin: 0 auto;
-  background: #f5f0e8; color: #2c1810;
-  border: 2px solid #8b7355; border-radius: 4px;
+  max-width: 500px;
+  margin: 0 auto;
+  background: color-mix(in srgb, var(--color-surface) 85%, var(--color-accent));
+  color: var(--color-text);
+  border: 1px solid var(--color-gold-soft);
+  border-radius: var(--radius);
   padding: var(--space-lg);
-  font-family: 'Bookman Old Style', Georgia, serif;
-  box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+  font-family: var(--font-book);
 }
-.statblock-render h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; font-variant: small-caps; }
-.statblock-render .sb-subtitle { font-style: italic; font-size: 0.875rem; margin-bottom: var(--space-md); color: #5c3d2e; }
-.statblock-render .sb-rule { border: none; border-top: 2px solid #8b2e1c; margin: var(--space-sm) 0; }
-.statblock-render .sb-rule-thin { border: none; border-top: 1px solid #8b2e1c; margin: var(--space-xs) 0; }
-.statblock-render .sb-stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-xs); font-size: 0.875rem; margin-bottom: var(--space-sm); }
+.statblock-render h2 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+  color: var(--color-accent);
+}
+.statblock-render .sb-subtitle {
+  font-style: italic;
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-md);
+  color: var(--color-text-muted);
+}
+.statblock-render .sb-rule {
+  height: 5px; border: none;
+  background: var(--color-ember);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  margin: var(--space-sm) 0;
+}
+.statblock-render .sb-rule-thin {
+  border: none; border-top: 1px solid var(--color-ember);
+  opacity: 0.6; margin: var(--space-xs) 0;
+}
+.statblock-render .sb-stat-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-xs); font-size: var(--text-sm); margin-bottom: var(--space-sm);
+}
 .statblock-render .sb-stat-row span { font-weight: 600; }
-.statblock-render .sb-abilities { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--space-xs); text-align: center; margin-bottom: var(--space-sm); }
-.statblock-render .sb-abilities div { font-size: 0.75rem; }
-.statblock-render .sb-abilities .score { font-size: 1rem; font-weight: 700; }
-.statblock-render .sb-props { font-size: 0.875rem; margin-bottom: var(--space-sm); }
+.statblock-render .sb-abilities {
+  display: grid; grid-template-columns: repeat(6, 1fr);
+  gap: var(--space-xs); text-align: center; margin-bottom: var(--space-sm);
+  font-variant-numeric: tabular-nums;
+}
+.statblock-render .sb-abilities div { font-size: var(--text-xs); color: var(--color-text-muted); }
+.statblock-render .sb-abilities .score { font-size: 1rem; font-weight: 700; color: var(--color-text); }
+.statblock-render .sb-props { font-size: var(--text-sm); margin-bottom: var(--space-sm); }
 .statblock-render .sb-props dt { font-weight: 700; display: inline; }
 .statblock-render .sb-props dd { display: inline; margin-right: 1em; }
-.statblock-render h3 { font-size: 1.1rem; font-weight: 700; font-variant: small-caps; margin-top: var(--space-md); margin-bottom: var(--space-xs); border-bottom: 1px solid #8b2e1c; padding-bottom: 2px; }
+.statblock-render h3 {
+  font-family: var(--font-display);
+  font-size: 1rem; font-weight: 600;
+  color: var(--color-ember);
+  letter-spacing: 0.04em;
+  margin-top: var(--space-md); margin-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--color-ember);
+  padding-bottom: 2px;
+}
 .statblock-render .sb-ability { margin-bottom: var(--space-sm); }
 .statblock-render .sb-ability .sb-ability-name { font-weight: 700; font-style: italic; }
-.statblock-render .sb-ability .sb-ability-text { font-size: 0.875rem; line-height: 1.5; }
+.statblock-render .sb-ability .sb-ability-text { font-size: var(--text-sm); line-height: 1.55; }
 /* ==============================
    Notes & Wiki (M8)
    ============================== */
