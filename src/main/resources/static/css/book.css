@@ -59,118 +59,57 @@
 .statblock-render .sb-ability { margin-bottom: var(--space-sm); }
 .statblock-render .sb-ability .sb-ability-name { font-weight: 700; font-style: italic; }
 .statblock-render .sb-ability .sb-ability-text { font-size: var(--text-sm); line-height: 1.55; }
-/* ==============================
-   Notes & Wiki (M8)
-   ============================== */
-
+/* Book surfaces — anywhere rendered markdown appears (spec §5.2) */
 .note-body {
-    line-height: 1.8;
-    font-size: var(--text-base);
+  font-family: var(--font-book);
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  max-width: 68ch;
 }
-
 .note-body h1, .note-body h2, .note-body h3 {
-    color: var(--color-text);
-    margin-top: var(--space-lg);
-    margin-bottom: var(--space-sm);
+  font-family: var(--font-display);
+  color: var(--color-text);
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-sm);
+}
+.note-body h1 { font-size: var(--text-2xl); }
+.note-body h2 { font-size: var(--text-xl); border-bottom: 1px solid var(--color-gold-soft); padding-bottom: var(--space-xs); }
+.note-body h3 { font-size: var(--text-lg); }
+.note-body p { margin-bottom: var(--space-md); }
+.note-body ul, .note-body ol { margin-bottom: var(--space-md); padding-left: var(--space-lg); }
+.note-body li { margin-bottom: var(--space-xs); }
+.note-body code { background: var(--color-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; font-family: var(--font-mono); }
+.note-body pre { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius); padding: var(--space-md); overflow-x: auto; margin-bottom: var(--space-md); }
+.note-body pre code { background: none; padding: 0; }
+.note-body blockquote { border-left: 3px solid var(--color-accent); padding-left: var(--space-md); color: var(--color-text-muted); margin-bottom: var(--space-md); font-style: italic; }
+.note-body table { width: 100%; border-collapse: collapse; margin-bottom: var(--space-md); font-size: var(--text-sm); font-family: var(--font-ui); }
+.note-body th, .note-body td { padding: var(--space-xs) var(--space-sm); border: 1px solid var(--color-border); text-align: left; }
+.note-body th { background: var(--color-surface-hover); font-weight: 600; }
+.note-body img { max-width: 100%; border-radius: var(--radius); }
+
+/* Drop cap — adventure chapters & handouts ONLY (ornament budget) */
+.note-body.drop-cap > p:first-of-type::first-letter {
+  font-family: var(--font-display);
+  font-size: 3.1em;
+  line-height: 0.85;
+  float: left;
+  padding-right: 0.08em;
+  color: var(--color-ember);
 }
 
-.note-body h1 { font-size: var(--text-2xl); }
-.note-body h2 { font-size: var(--text-xl); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-xs); }
-.note-body h3 { font-size: var(--text-lg); }
-
-/* Read-aloud (boxed) text — adventure scenes */
+/* Read-aloud (boxed) text */
 .read-aloud {
-    margin: var(--space-md) 0;
-    padding: var(--space-md) var(--space-lg);
-    border-left: 3px solid var(--color-accent);
-    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
-    border-radius: 4px;
-    font-style: italic;
+  margin: var(--space-md) 0;
+  padding: var(--space-md) var(--space-lg);
+  border-left: 3px solid var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  border-radius: var(--radius);
+  font-style: italic;
 }
 .read-aloud p { margin: 0 0 var(--space-sm) 0; }
 .read-aloud p:last-child { margin-bottom: 0; }
 
-.note-body p {
-    margin-bottom: var(--space-md);
-}
-
-.note-body ul, .note-body ol {
-    margin-bottom: var(--space-md);
-    padding-left: var(--space-lg);
-}
-
-.note-body li {
-    margin-bottom: var(--space-xs);
-}
-
-.note-body code {
-    background: var(--color-bg);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.9em;
-}
-
-.note-body pre {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    padding: var(--space-md);
-    overflow-x: auto;
-    margin-bottom: var(--space-md);
-}
-
-.note-body pre code {
-    background: none;
-    padding: 0;
-}
-
-.note-body blockquote {
-    border-left: 3px solid var(--color-accent);
-    padding-left: var(--space-md);
-    color: var(--color-text-muted);
-    margin-bottom: var(--space-md);
-}
-
-.note-body table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: var(--space-md);
-}
-
-.note-body th, .note-body td {
-    padding: var(--space-xs) var(--space-sm);
-    border: 1px solid var(--color-border);
-    text-align: left;
-}
-
-.note-body th {
-    background: var(--color-surface-hover);
-    font-weight: 600;
-}
-
-.note-body img {
-    max-width: 100%;
-    border-radius: var(--radius);
-}
-
-/* Wiki-link styles */
-.wiki-link {
-    color: var(--color-accent);
-    text-decoration: none;
-    border-bottom: 1px dashed var(--color-accent);
-}
-
-.wiki-link:hover {
-    color: var(--color-accent-hover);
-    border-bottom-style: solid;
-}
-
-.wiki-link-resolved {
-    /* default */
-}
-
-.wiki-link-broken {
-    color: var(--color-danger);
-    border-bottom-color: var(--color-danger);
-    cursor: help;
-}
+/* Wiki links — gold ink */
+.wiki-link { color: var(--color-accent); text-decoration: none; border-bottom: 1px dashed var(--color-gold-soft); }
+.wiki-link:hover { color: var(--color-accent-hover); border-bottom-style: solid; }
+.wiki-link-broken { color: var(--color-danger); border-bottom-color: var(--color-danger); cursor: help; }

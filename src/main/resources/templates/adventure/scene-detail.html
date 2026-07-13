@@ -36,7 +36,7 @@
                         <div th:if="${scene.sceneKey}" class="detail-meta">
                             <span class="badge" th:text="${scene.sceneKey}">KEY</span>
                         </div>
-                        <div class="detail-description" th:if="${renderedBody != null and !renderedBody.isEmpty()}" th:utext="${renderedBody}">
+                        <div class="note-body drop-cap" th:if="${renderedBody != null and !renderedBody.isEmpty()}" th:utext="${renderedBody}">
                             Rendered body
                         </div>
                         <div th:unless="${renderedBody != null and !renderedBody.isEmpty()}" style="color: var(--color-text-muted); font-style: italic;">
