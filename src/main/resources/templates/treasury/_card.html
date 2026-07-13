@@ -10,7 +10,7 @@
             <div class="detail-meta" style="margin-top:2px;">
                 <span class="badge" th:text="${assignment.holderName()}">Holder</span>
                 <span th:if="${assignment.quantity() > 1}" class="badge" th:text="'x' + ${assignment.quantity()}">x1</span>
-                <span th:if="${assignment.attuned()}" class="badge" style="background: var(--color-accent); color: #000;">attuned</span>
+                <span th:if="${assignment.attuned()}" class="badge">attuned</span>
             </div>
             <th:block th:if="${assignment.attuned() and attunementCount != null and attunementCount >= 3}">
                 <div th:replace="~{treasury/_attunement-warn :: warning(count=${attunementCount})}"></div>

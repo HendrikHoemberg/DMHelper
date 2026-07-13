@@ -42,6 +42,8 @@
 
   /* new tokens */
   --color-ember: #a83a32;
+  --dice-high: #4ade80;   /* bright green — natural 20 / high roll */
+  --dice-low: #f87171;    /* salmon red — natural 1 / low roll */
   --color-gold-soft: rgba(201, 163, 92, 0.28);
   --color-overlay: rgba(10, 7, 4, 0.88);
 

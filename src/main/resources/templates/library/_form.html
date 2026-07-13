@@ -21,12 +21,12 @@
                 <label>Name *</label>
                 <input type="text" name="name" required th:value="${sb?.name}" placeholder="e.g. Goblin Boss">
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md);">
+            <div class="form-row-3">
                 <div class="form-group"><label>Size</label><input type="text" name="size" th:value="${sb?.size}" placeholder="Medium"></div>
                 <div class="form-group"><label>Type *</label><input type="text" name="type" required th:value="${sb?.type}" placeholder="Humanoid"></div>
                 <div class="form-group"><label>Alignment</label><input type="text" name="alignment" th:value="${sb?.alignment}" placeholder="Neutral Evil"></div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
+            <div class="form-row-2">
                 <div class="form-group"><label>CR *</label><input type="text" name="cr" required th:value="${sb?.cr}" placeholder="1/4" style="width: 120px;"></div>
                 <div class="form-group"><label>AC *</label><input type="number" name="ac" required th:value="${sb?.ac}" placeholder="15" style="width: 80px;"></div>
             </div>

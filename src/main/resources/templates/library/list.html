@@ -12,7 +12,7 @@
         <main class="app-main">
             <div class="page-header">
                 <h1>Monster Library</h1>
-                <div style="display: flex; gap: var(--space-md); align-items: center; flex-wrap: wrap;">
+                <div class="u-flex--md u-flex-wrap">
                     <button class="form-tab active" id="tab-monsters"
                             onclick="switchCompendiumTab('monsters')">Monsters</button>
                     <button class="form-tab" id="tab-spells"
@@ -122,7 +122,7 @@
                 </div>
             </div>
 
-            <div id="section-spells" class="compendium-section" style="display:none;">
+            <div id="section-spells" class="compendium-section hidden">
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
@@ -174,7 +174,7 @@
                 </div>
             </div>
 
-            <div id="section-conditions" class="compendium-section" style="display:none;">
+            <div id="section-conditions" class="compendium-section hidden">
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
@@ -189,7 +189,7 @@
                 </div>
             </div>
 
-            <div id="section-rules" class="compendium-section" style="display:none;">
+            <div id="section-rules" class="compendium-section hidden">
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
@@ -204,7 +204,7 @@
                 </div>
             </div>
 
-            <div id="section-equipment" class="compendium-section" style="display:none;">
+            <div id="section-equipment" class="compendium-section hidden">
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
@@ -233,7 +233,7 @@
                 </div>
             </div>
 
-            <div id="section-magic-items" class="compendium-section" style="display:none;">
+            <div id="section-magic-items" class="compendium-section hidden">
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
@@ -282,7 +282,7 @@
                 </div>
             </div>
 
-            <div id="section-classes" class="compendium-section" style="display:none;">
+            <div id="section-classes" class="compendium-section hidden">
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
@@ -297,7 +297,7 @@
                 </div>
             </div>
 
-            <div id="section-species" class="compendium-section" style="display:none;">
+            <div id="section-species" class="compendium-section hidden">
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
@@ -312,7 +312,7 @@
                 </div>
             </div>
 
-            <div id="section-backgrounds" class="compendium-section" style="display:none;">
+            <div id="section-backgrounds" class="compendium-section hidden">
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
@@ -327,7 +327,7 @@
                 </div>
             </div>
 
-            <div id="section-feats" class="compendium-section" style="display:none;">
+            <div id="section-feats" class="compendium-section hidden">
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
@@ -367,10 +367,10 @@
         }
         function switchCompendiumTab(tab) {
             document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.compendium-section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('.compendium-section').forEach(s => s.classList.add('hidden'));
             document.getElementById('tab-' + tab).classList.add('active');
             var section = document.getElementById('section-' + tab);
-            if (section) section.style.display = 'block';
+            if (section) section.classList.remove('hidden');
         }
     </script>
 </body>

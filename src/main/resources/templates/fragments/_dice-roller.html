@@ -55,8 +55,8 @@
                 <div x-show="result.modifier != 0">
                     <span x-text="result.modifier >= 0 ? '+ ' + result.modifier : '- ' + Math.abs(result.modifier)"></span>
                 </div>
-                <div x-show="result.advantage" style="color: #4ade80;">(advantage — higher of 2)</div>
-                <div x-show="result.disadvantage" style="color: #f87171;">(disadvantage — lower of 2)</div>
+                <div x-show="result.advantage" class="dice-adv">(advantage — higher of 2)</div>
+                <div x-show="result.disadvantage" class="dice-dis">(disadvantage — lower of 2)</div>
             </div>
             <div class="dice-result-details" x-show="result && (!result.rolls || result.rolls.length == 0)">
                 typed input
@@ -66,7 +66,7 @@
         <div class="dice-history-section">
             <h4>Recent Rolls</h4>
             <template x-if="history.length === 0">
-                <div style="color: var(--color-text-muted); font-size: var(--text-sm);">No rolls yet</div>
+                <div class="text-muted u-text-sm">No rolls yet</div>
             </template>
             <template x-for="item in history" :key="item.id">
                 <div class="dice-history-item">

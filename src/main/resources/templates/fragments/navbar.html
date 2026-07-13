@@ -7,17 +7,17 @@
                 :class="{ active: open }"
                 @click="open = !open"
                 title="Toggle Dice Roller (Ctrl+R)">&#x1F3B2;</button>
-        <a href="/player" target="_blank" class="btn btn-ghost" style="font-size: var(--text-sm);"
+        <a href="/player" target="_blank" class="btn btn-ghost u-text-sm"
            title="Open player view in a new tab">Player View</a>
-        <button class="btn btn-ghost" style="font-size: var(--text-sm);" id="qrToggle"
+        <button class="btn btn-ghost u-text-sm" id="qrToggle"
                 onclick="document.getElementById('qrPopover').classList.toggle('hidden')"
                 title="Show QR code for player view">QR</button>
         <div id="qrPopover" class="hidden" style="position: absolute; top: 100%; right: 60px;
                 background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius);
                 padding: var(--space-md); z-index: 200; box-shadow: var(--shadow);">
             <img th:src="@{/qr/player-view}" alt="Player View QR" width="180" height="180"
-                 style="display: block;">
-            <div style="text-align: center; margin-top: var(--space-xs); font-size: var(--text-sm); color: var(--color-text-muted);">
+                 class="u-block">
+            <div class="text-muted u-text-sm" style="text-align: center; margin-top: var(--space-xs);">
                 Scan to join
             </div>
         </div>

@@ -14,7 +14,7 @@
                 <h1 th:text="${classDetail.name}">Class Name</h1>
             </div>
 
-            <div th:if="${subclass != null}" class="card" style="margin-bottom: var(--space-md);">
+            <div th:if="${subclass != null}" class="card u-mb-md">
                 <p><strong>Subclass of:</strong>
                     <a th:href="@{/library/classes/__${classDetail.subclassOf}__}"
                        th:text="${subclass.name}">Base Class</a></p>

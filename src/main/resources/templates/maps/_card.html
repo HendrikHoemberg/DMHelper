@@ -5,7 +5,7 @@
         <a th:href="@{/campaigns/{cid}/maps/{mid}/edit(cid=${campaignId}, mid=${map.id})}"
            th:text="${map.name}">Map Name</a>
     </h3>
-    <div class="card-meta" style="color: var(--color-text-muted); font-size: var(--text-sm);">
+    <div class="card-meta">
         <span th:text="${map.gridWidth} + '×' + ${map.gridHeight} + ' · ' + ${map.cellSizePx} + 'px cells'">30×20 · 48px cells</span>
     </div>
     <div class="card-actions">

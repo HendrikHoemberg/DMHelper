@@ -24,12 +24,12 @@
                    class="btn" download>Export JSON</a>
                 <form hx-post="/campaigns/import"
                       hx-encoding="multipart/form-data"
-                      style="display: contents;">
+                      class="u-contents">
                     <label class="btn">
                         Import JSON
                         <input type="file" name="file" accept=".json"
                                onchange="this.form.requestSubmit()"
-                               style="display: none;">
+                               class="hidden">
                     </label>
                 </form>
                 <button class="btn btn-danger"

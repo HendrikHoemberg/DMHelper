@@ -40,7 +40,7 @@
         .editor-toolbar .tool-btn.active {
             background: var(--color-accent);
             border-color: var(--color-accent);
-            color: #fff;
+            color: var(--color-bg);
         }
         .editor-body {
             display: flex;
@@ -51,7 +51,7 @@
             flex: 1;
             overflow: hidden;
             position: relative;
-            background: #0a0a1a;
+            background: color-mix(in srgb, var(--color-bg), var(--color-text) 2%);
         }
         .editor-sidebar {
             width: 220px;
@@ -110,7 +110,7 @@
         }
         .layer-item .layer-name { cursor: pointer; }
         .layer-item:hover { background: var(--color-surface-hover); }
-        .layer-item.active { background: var(--color-accent); color: #fff; }
+        .layer-item.active { background: var(--color-accent); color: var(--color-bg); }
         .layer-item button {
             background: none;
             border: none;
@@ -123,10 +123,10 @@
             z-index: 20;
             font-size: 12px;
             padding: 2px 4px;
-            border: 1px solid #4a9eff;
+            border: 1px solid var(--color-accent);
             border-radius: 3px;
-            background: #1a1a2e;
-            color: #fff;
+            background: color-mix(in srgb, var(--color-bg), var(--color-text) 5%);
+            color: var(--color-text);
             min-width: 80px;
         }
         .terrain-swatch {
@@ -138,7 +138,7 @@
             padding: 0;
         }
         .terrain-swatch.active { border-color: var(--color-accent); }
-        .terrain-swatch.erase { background: repeating-linear-gradient(45deg, #444 0 4px, #222 4px 8px); }
+        .terrain-swatch.erase { background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--color-bg), var(--color-text) 18%) 0 4px, var(--color-bg) 4px 8px); }
         .terrain-swatch-sm {
             width: 14px;
             height: 14px;

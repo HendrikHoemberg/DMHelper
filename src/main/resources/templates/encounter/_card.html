@@ -5,7 +5,7 @@
         <a th:href="@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${encounter.id})}"
            th:text="${encounter.name}">Encounter Name</a>
     </h3>
-    <div class="card-meta" style="color: var(--color-text-muted); font-size: var(--text-sm);">
+    <div class="card-meta">
         <span th:if="${encounter.status == 'ACTIVE'}" style="color: var(--color-success);">ACTIVE</span>
         <span th:if="${encounter.status == 'PLANNED'}" style="color: var(--color-info);">PLANNED</span>
         <span th:if="${encounter.status == 'DONE'}" style="color: var(--color-text-muted);">DONE</span>

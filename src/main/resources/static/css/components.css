@@ -83,9 +83,9 @@
 }
 
 .btn-primary {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-bg);
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-bg);
 }
 
 .btn-primary:hover {
@@ -303,6 +303,10 @@
 .ability-grid .form-group { text-align: center; }
 .ability-grid .form-group input { text-align: center; width: 100%; }
 .ability-grid .form-group label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Form row grids */
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
 
 /* Compendium sections */
 .compendium-section { }
@@ -672,13 +676,13 @@
 .note-type-chip.active {
     background: var(--color-accent);
     border-color: var(--color-accent);
-    color: #fff;
+    color: var(--color-bg);
 }
 
 /* Character Sheet Styles */
 .badge-success {
     background: var(--color-success);
-    color: #fff;
+    color: var(--color-bg);
 }
 
 .sheet-ability-grid {
@@ -843,7 +847,7 @@
     background: var(--color-accent);
     border: none;
     border-radius: var(--radius);
-    color: #fff;
+    color: var(--color-bg);
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
@@ -883,10 +887,10 @@
     color: var(--color-accent);
 }
 .dice-result-total.high {
-    color: #4ade80;
+    color: var(--dice-high);
 }
 .dice-result-total.low {
-    color: #f87171;
+    color: var(--dice-low);
 }
 
 .dice-result-details {
@@ -927,10 +931,10 @@
     text-align: right;
 }
 .dice-history-item .value.high {
-    color: #4ade80;
+    color: var(--dice-high);
 }
 .dice-history-item .value.low {
-    color: #f87171;
+    color: var(--dice-low);
 }
 
 /* ── Dice Roller Toggle Button ── */
@@ -950,7 +954,7 @@
 .dice-toggle-btn.active {
     background: var(--color-accent);
     border-color: var(--color-accent);
-    color: #fff;
+    color: var(--color-bg);
 }
 
 /* ── Inline Roll Buttons ── */
@@ -975,7 +979,7 @@
 .roll-btn:hover {
     background: var(--color-accent);
     border-color: var(--color-accent);
-    color: #fff;
+    color: var(--color-bg);
 }
 
 /* ── Roll Result Tooltip ── */
@@ -1123,10 +1127,35 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
 }
 .campaign-cover h3 { font-family: var(--font-display); font-size: var(--text-lg); }
 
+.card-meta {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
 /* Minimal utility classes — replacement targets for inline styles */
 .u-mb-lg { margin-bottom: var(--space-lg); }
 .u-mb-md { margin-bottom: var(--space-md); }
+.u-mb-sm { margin-bottom: var(--space-sm); }
+.u-mt-lg { margin-top: var(--space-lg); }
+.u-mt-md { margin-top: var(--space-md); }
+.u-mt-sm { margin-top: var(--space-sm); }
+.u-mt-xs { margin-top: var(--space-xs); }
 .u-flex { display: flex; align-items: center; gap: var(--space-sm); }
+.u-flex--md { display: flex; align-items: center; gap: var(--space-md); }
+.u-flex-col { display: flex; flex-direction: column; }
+.u-gap-xs { gap: var(--space-xs); }
 .u-text-sm { font-size: var(--text-sm); }
+.u-flex-wrap { flex-wrap: wrap; }
+.u-flex-1 { flex: 1; }
+.u-mt-auto { margin-top: auto; }
+.u-contents { display: contents; }
+.u-text-lg { font-size: var(--text-lg); }
 .u-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.u-block { display: block; }
+.u-w-full { width: 100%; }
+.u-fw-600 { font-weight: 600; }
+
+/* Dice roller advantage/disadvantage labels */
+.dice-adv { color: var(--dice-high); }
+.dice-dis { color: var(--dice-low); }
 

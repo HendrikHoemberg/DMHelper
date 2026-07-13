@@ -12,7 +12,7 @@
             <div class="page-header">
                 <div>
                     <h1 th:text="${campaign.name + ' -- Party'}">Campaign -- Party</h1>
-                    <a th:href="@{/campaigns/{id}(id=${campaign.id})}" class="btn btn-ghost" style="margin-top: var(--space-xs);">&larr; Back to Campaign</a>
+                    <a th:href="@{/campaigns/{id}(id=${campaign.id})}" class="btn btn-ghost u-mt-xs">&larr; Back to Campaign</a>
                 </div>
                 <a th:href="@{/campaigns/{id}/sheets(id=${campaign.id})}" class="btn btn-ghost">Character Sheets</a>
                 <button class="btn btn-primary"

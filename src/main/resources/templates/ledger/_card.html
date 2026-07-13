@@ -2,15 +2,15 @@
 <div th:fragment="card(entry)" th:if="${entry != null}" class="card" style="padding: var(--space-sm) var(--space-md);">
     <div style="display:flex; align-items:center; gap: var(--space-md);">
         <div style="flex-shrink:0;">
-            <span th:if="${entry.direction() == 'GAIN'}" class="badge" style="background: #2a2;">GAIN</span>
-            <span th:if="${entry.direction() == 'SPEND'}" class="badge" style="background: #c44;">SPEND</span>
+            <span th:if="${entry.direction() == 'GAIN'}" class="badge" style="background: var(--color-success);">GAIN</span>
+            <span th:if="${entry.direction() == 'SPEND'}" class="badge" style="background: var(--color-danger);">SPEND</span>
             <span class="badge" th:text="${entry.kind()}" style="margin-left:4px;">GOLD</span>
         </div>
         <div style="flex:1; min-width:0;">
             <div style="display:flex; gap: var(--space-sm); align-items:baseline;">
-                <span style="font-weight:600;color:#2a2;" th:if="${entry.direction() == 'GAIN'}"
+                <span style="font-weight:600;color:var(--color-success);" th:if="${entry.direction() == 'GAIN'}"
                       th:text="'+' + ${entry.amount()} + ' ' + ${entry.currency()}">+100 GP</span>
-                <span style="font-weight:600;color:#c44;" th:if="${entry.direction() == 'SPEND'}"
+                <span style="font-weight:600;color:var(--color-danger);" th:if="${entry.direction() == 'SPEND'}"
                       th:text="'-' + ${entry.amount()} + ' ' + ${entry.currency()}">-30 GP</span>
                 <span class="badge" th:text="${entry.holder()}">Holder</span>
             </div>

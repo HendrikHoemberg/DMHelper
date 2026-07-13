@@ -11,7 +11,7 @@
         <span th:if="${sb.source.name() == 'SRD'}" class="badge-srd">SRD</span>
         <span th:if="${sb.source.name() == 'CUSTOM'}" class="badge-custom">Custom</span>
     </div>
-    <div class="card-actions" style="margin-top: auto;">
+    <div class="card-actions u-mt-auto">
         <th:block th:if="${sb.source.name() == 'SRD'}">
             <form th:hx-post="@{/library/statblocks/{id}/clone(id=${sb.id})}" hx-target="body" style="display:inline;">
                 <button type="submit" class="btn btn-ghost">Clone &amp; Edit</button>
