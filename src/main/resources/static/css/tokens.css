@@ -41,6 +41,7 @@
   --color-concentration: #966a9e;  /* concentration purple — table-wide recognition */
 
   /* new tokens */
+  --color-info: var(--color-accent);
   --color-ember: #a83a32;
   --dice-high: #4ade80;   /* bright green — natural 20 / high roll */
   --dice-low: #f87171;    /* salmon red — natural 1 / low roll */
