@@ -88,11 +88,20 @@ public class TreasuryController {
     @PutMapping("/{id}/attune")
     String toggleAttunement(@PathVariable UUID campaignId, @PathVariable UUID id, Model model) {
         var dto = treasuryService.toggleAttunement(id);
-        model.addAttribute("assignment", dto);
         if (dto.partyMemberId() != null) {
+            model.addAttribute("assignments", treasuryService.findByPartyMemberId(dto.partyMemberId()));
             model.addAttribute("attunementCount", treasuryService.countAttunements(dto.partyMemberId()));
+            var pm = partyMemberRepository.findById(dto.partyMemberId()).orElseThrow();
+            model.addAttribute("holderName", pm.getCharacterName());
+            model.addAttribute("balances", ledgerService.computeAllGoldBalances(campaignId));
+            return "treasury/_holder-section :: holderSection";
         }
-        return "treasury/_card :: card";
+        var assignments = treasuryService.findByCampaignId(campaignId).stream()
+                .filter(a -> a.partyMemberId() == null).toList();
+        model.addAttribute("assignments", assignments);
+        model.addAttribute("attunementCount", 0);
+        model.addAttribute("holderName", "Party Stash");
+        return "treasury/_holder-section :: holderSection";
     }
 
     @PutMapping("/{id}/quantity")

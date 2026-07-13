@@ -21,7 +21,7 @@
     <div style="display:flex; gap: var(--space-xs); flex-shrink:0; margin-left: var(--space-md);">
         <form th:method="'put'"
               th:hx-put="@{/campaigns/{cid}/treasury/{id}/attune(cid=${assignment.campaignId()}, id=${assignment.id()})}"
-              hx-target="closest .card" hx-swap="outerHTML" style="display:inline;">
+              hx-target="closest .detail-section" hx-swap="outerHTML" style="display:inline;">
             <button class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;">Attune</button>
         </form>
         <form th:method="'put'"

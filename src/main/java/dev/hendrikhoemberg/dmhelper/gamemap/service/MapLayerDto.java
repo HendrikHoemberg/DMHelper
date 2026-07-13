@@ -16,7 +16,6 @@ public record MapLayerDto(
         List<ShapeDto> shapes,
         ImageDto image
 ) {
-    /** IMAGE is reserved for the post-v1 image-background layer (SPEC §4.3) — no v1 renderer. */
     public enum LayerType { TERRAIN, OBJECTS, ANNOTATIONS, IMAGE }
 
     public MapLayerDto {

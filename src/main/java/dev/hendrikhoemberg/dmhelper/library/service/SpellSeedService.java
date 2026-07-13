@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.library.service;
 
 import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import dev.hendrikhoemberg.dmhelper.library.data.Spell;
 import dev.hendrikhoemberg.dmhelper.library.data.SpellRepository;
@@ -35,7 +36,8 @@ public class SpellSeedService {
         try {
             ClassPathResource resource = new ClassPathResource(SPELL_DATA_PATH);
             try (InputStream is = resource.getInputStream()) {
-                List<SpellEntry> entries = objectMapper.readValue(is,
+                JsonNode root = objectMapper.readTree(is);
+                List<SpellEntry> entries = objectMapper.convertValue(root.get("results"),
                         new TypeReference<List<SpellEntry>>() {});
                 int count = 0;
                 for (SpellEntry entry : entries) {

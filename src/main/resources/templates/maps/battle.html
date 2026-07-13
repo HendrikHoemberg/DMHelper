@@ -428,6 +428,7 @@
                 activeTab: 'tokens',
                 currentMapId: /*[[${map.id}]]*/ '',
                 maps: [],
+                visitedMapIds: new Set(),
                 tokens: [],
                 selectedToken: null,
                 sbSearch: '',
@@ -465,6 +466,7 @@
                     window.addEventListener('battle-maplist', (e) => {
                         this.maps = e.detail.maps;
                         this.currentMapId = e.detail.currentMapId;
+                        this.visitedMapIds.add(this.currentMapId);
                     });
                     window.addEventListener('tracker-encounter-state', (e) => {
                         this.activeEncounter = e.detail.encounter;
@@ -475,6 +477,7 @@
                     this.loadMaps();
                     this.loadPlannedEncounters();
                     this.loadActiveEncounter();
+                    this.visitedMapIds.add(this.currentMapId);
                 },
 
                 async newEncounter() {
@@ -606,6 +609,7 @@
                     const bm = window.battleMap;
                     if (bm && this.currentMapId !== bm.mapId) {
                         bm.switchToMap(this.currentMapId);
+                        this.visitedMapIds.add(this.currentMapId);
                         const cid = document.querySelector('.battle-container')?.dataset?.campaignId || '';
                         history.replaceState(null, '', `/campaigns/${cid}/maps/${this.currentMapId}/play`);
                     }

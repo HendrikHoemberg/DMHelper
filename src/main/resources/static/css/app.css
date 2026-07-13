@@ -634,7 +634,7 @@ body {
 }
 
 .hp-mini-fill.bloodied { background: var(--color-hp-bloodied); }
-.hp-mini-fill.dead { background: var(--color-hp-dead); }
+.hp-mini-fill.dead { background: var(--color-hp-bloodied); }
 
 .hp-delta-input {
     width: 50px;

@@ -38,8 +38,12 @@ public class SheetEngine {
     private static final Map<String, String> CASTER_TYPES = Map.of(
         "wizard", "FULL", "sorcerer", "FULL", "cleric", "FULL", "druid", "FULL",
         "bard", "FULL", "warlock", "PACT",
-        "paladin", "HALF", "ranger", "HALF",
-        "fighter", "THIRD", "rogue", "THIRD"
+        "paladin", "HALF", "ranger", "HALF"
+    );
+
+    private static final Set<String> THIRD_CASTER_KEYS = Set.of(
+        "srd-2024_fighter_eldritch_knight",
+        "srd-2024_rogue_arcane_trickster"
     );
 
     private static final Map<String, String> SKILL_ABILITY_MAP = Map.ofEntries(
@@ -763,6 +767,7 @@ public class SheetEngine {
 
     private String getCasterType(String classKey) {
         if (classKey == null) return "NONE";
+        if (THIRD_CASTER_KEYS.contains(classKey)) return "THIRD";
         for (var entry : CASTER_TYPES.entrySet()) {
             String prefix = "srd-2024_" + entry.getKey();
             if (classKey.equals(prefix) || classKey.startsWith(prefix + "_")) {

@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.library.service;
 
 import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
@@ -36,7 +37,8 @@ public class SrdSeedService {
         try {
             ClassPathResource resource = new ClassPathResource(SRD_DATA_PATH);
             try (InputStream is = resource.getInputStream()) {
-                List<SrdMonsterEntry> entries = objectMapper.readValue(is,
+                JsonNode root = objectMapper.readTree(is);
+                List<SrdMonsterEntry> entries = objectMapper.convertValue(root.get("results"),
                         new TypeReference<List<SrdMonsterEntry>>() {});
                 int count = 0;
                 for (SrdMonsterEntry entry : entries) {

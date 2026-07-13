@@ -11,6 +11,7 @@
             <span class="chip-stats">
                 <span th:text="'AC ' + ${pm.ac}">AC 16</span>
                 <span th:text="'PP ' + ${pm.passivePerception}">PP 17</span>
+                <span th:text="'Init ' + (${pm.initiativeBonus} >= 0 ? '+' : '') + ${pm.initiativeBonus}">Init +2</span>
             </span>
         </div>
     </th:block>

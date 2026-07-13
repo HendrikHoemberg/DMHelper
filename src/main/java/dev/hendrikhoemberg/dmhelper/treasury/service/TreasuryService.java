@@ -71,6 +71,9 @@ public class TreasuryService {
             && (req.customText == null || req.customText.isBlank())) {
             throw new IllegalArgumentException("At least one of magicItemId, equipmentItemId, or customText is required");
         }
+        if (req.magicItemId != null && req.equipmentItemId != null) {
+            throw new IllegalArgumentException("Cannot assign both a magic item and an equipment item to the same assignment");
+        }
         ItemAssignment a = new ItemAssignment();
         a.setCampaign(campaign);
         if (req.partyMemberId != null) {

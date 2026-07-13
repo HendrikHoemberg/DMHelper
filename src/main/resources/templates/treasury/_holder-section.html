@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <div th:fragment="holderSection" class="detail-section">
-    <h2 th:text="${holderName} + '&apos;s Equipment &amp; Loot'">Equipment & Loot</h2>
+    <h2 th:text="|${holderName}'s Equipment &amp; Loot|">Equipment & Loot</h2>
 
     <!-- Gold Balance -->
     <div th:each="b : ${balances}" th:if="${b.holder().equals(holderName)}"
