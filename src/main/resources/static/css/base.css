@@ -234,12 +234,13 @@ body.dm-mode-off .dm-shield-badge { display: inline-block; }
   text-decoration: none;
   font-size: var(--text-sm);
   border-left: 2px solid transparent;
+  transition: color var(--duration-micro) var(--ease-out), background var(--duration-micro) var(--ease-out), border-left-color var(--duration-micro) var(--ease-out), transform var(--duration-micro) var(--ease-out);
 }
-.appnav-link:hover { color: var(--color-text); background: var(--color-surface-hover); }
+.appnav-link:hover { color: var(--color-text); background: var(--elevation-floating-bg); border-left-color: var(--color-gold-soft); transform: translateX(2px); }
 .appnav-link[aria-current="page"] {
   color: var(--color-accent);
   border-left-color: var(--color-accent);
-  background: var(--color-surface-hover);
+  background: var(--elevation-floating-bg);
 }
 .appnav-home { font-family: var(--font-display); color: var(--color-text); }
 
