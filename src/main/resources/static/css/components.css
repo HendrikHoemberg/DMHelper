@@ -373,7 +373,6 @@
     --color-hp-bloodied: var(--color-warning);
     --color-hp-dead: var(--color-danger);
     --color-condition-active: var(--color-accent);
-    --color-concentration: var(--color-concentration);
     --color-legendary: var(--color-accent);
     --color-tracker-bg: var(--color-surface);
     --color-combatant-active: color-mix(in srgb, var(--color-accent) 12%, transparent);

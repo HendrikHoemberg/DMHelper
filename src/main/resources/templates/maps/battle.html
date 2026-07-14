@@ -409,6 +409,7 @@
                 },
                 toggleDmMode() {
                     this.dmMode = !this.dmMode;
+                    document.body.classList.toggle('dm-mode-off', !this.dmMode);
                     window.battleMap?.setDmMode(this.dmMode);
                     window.dispatchEvent(new CustomEvent('dm-mode-changed', { detail: { dmMode: this.dmMode } }));
                 },

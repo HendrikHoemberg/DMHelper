@@ -98,7 +98,8 @@ class CampaignControllerTest {
         mockMvc.perform(get("/campaigns/{id}", c.getId()))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeExists("partyMembers"))
-                .andExpect(model().attributeExists("recentNotes"));
+                .andExpect(model().attributeExists("recentNotes"))
+                .andExpect(model().attribute("campaignId", c.getId()));
     }
 
     @Test

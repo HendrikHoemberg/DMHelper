@@ -63,6 +63,7 @@ public class CampaignController {
     @GetMapping("/{id}")
     public String detail(@PathVariable UUID id, Model model) {
         model.addAttribute("campaign", service.findById(id));
+        model.addAttribute("campaignId", id);
         var plans = noteService.findByCampaignIdAndType(id, NoteType.SESSION_PLAN);
         if (!plans.isEmpty()) {
             model.addAttribute("sessionPlan", plans.get(0));

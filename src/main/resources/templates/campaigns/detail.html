@@ -68,6 +68,27 @@
                         <li th:if="${recentNotes.isEmpty()}" class="text-muted u-text-sm">Nothing written yet.</li>
                     </ul>
                 </section>
+
+                <section class="card">
+                    <h3>Edit Campaign</h3>
+                    <form th:hx-put="@{/campaigns/{id}(id=${campaign.id})}"
+                          hx-target="body"
+                          hx-swap="outerHTML">
+                        <div class="form-group">
+                            <label for="editName">Name</label>
+                            <input type="text" id="editName" name="name" required
+                                   th:value="${campaign.name}">
+                        </div>
+                        <div class="form-group">
+                            <label for="editDescription">Description</label>
+                            <textarea id="editDescription" name="description"
+                                      th:text="${campaign.description}"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </section>
             </div>
         </main>
     </div>
