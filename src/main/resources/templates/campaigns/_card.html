@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <a class="book-cover" th:fragment="card(campaign)"
-   th:href="@{/campaigns/{id}(id=${campaign.id})}">
+   data-view-transition
+   th:href="@{/campaigns/{id}(id=${campaign.id})}"
+   th:style="'view-transition-name: campaign-cover-' + ${campaign.id}">
     <h3 th:text="${campaign.name}">Campaign Name</h3>
     <div class="book-meta"
          th:text="${#temporals.format(campaign.createdAt, 'yyyy-MM-dd')}">Created date</div>

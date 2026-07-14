@@ -343,6 +343,11 @@ body.loading #loading-filament {
 .shortcut-close:hover { color: var(--color-text); background: var(--elevation-raised-bg); }
 .shortcut-close:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
+::view-transition-old(root) { animation: fade-out var(--duration-theatrical) var(--ease-out) forwards; }
+::view-transition-new(root) { animation: fade-in var(--duration-theatrical) var(--ease-out) forwards; }
+@keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

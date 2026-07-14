@@ -137,10 +137,25 @@
     window.toggleShortcutOverlay = toggle;
   }
 
+  function initViewTransitions() {
+    if (!document.startViewTransition) return;
+    document.addEventListener('click', (e) => {
+      const link = e.target.closest('[data-view-transition]');
+      if (!link) return;
+      if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+      if (link.origin !== location.origin) return;
+      e.preventDefault();
+      document.startViewTransition(() => {
+        location.href = link.href;
+      });
+    });
+  }
+
   function init() {
     initLoadingFilament();
     initToasts();
     initShortcutOverlay();
+    initViewTransitions();
   }
 
   if (document.readyState === 'loading') {
