@@ -42,6 +42,7 @@ public class PartyMemberService {
         pm.setClassAndLevel(classAndLevel);
         pm.setAc(ac);
         pm.setMaxHp(maxHp);
+        pm.setCurrentHp(maxHp);
         pm.setInitiativeBonus(initiativeBonus);
         pm.setSpeed(speed);
         pm.setPassivePerception(passivePerception);

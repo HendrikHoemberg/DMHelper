@@ -34,6 +34,9 @@ public class PartyMember {
     private int maxHp;
 
     @Column(nullable = false)
+    private int currentHp;
+
+    @Column(nullable = false)
     private int initiativeBonus;
 
     @Column(nullable = false)
@@ -74,6 +77,9 @@ public class PartyMember {
 
     public int getMaxHp() { return maxHp; }
     public void setMaxHp(int maxHp) { this.maxHp = maxHp; }
+
+    public int getCurrentHp() { return currentHp; }
+    public void setCurrentHp(int currentHp) { this.currentHp = currentHp; }
 
     public int getInitiativeBonus() { return initiativeBonus; }
     public void setInitiativeBonus(int initiativeBonus) { this.initiativeBonus = initiativeBonus; }

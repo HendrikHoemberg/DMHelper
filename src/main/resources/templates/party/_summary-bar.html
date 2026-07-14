@@ -8,10 +8,14 @@
     <th:block th:each="pm : ${members}">
         <div class="party-member-chip">
             <span class="chip-name" th:text="${pm.characterName}">Name</span>
+            <div class="chip-hp-bar">
+                <div class="chip-hp-fill"
+                     th:style="'width:' + (${pm.maxHp} > 0 ? (${pm.currentHp} * 100 / ${pm.maxHp}) : 0) + '%'"
+                     th:classappend="${pm.maxHp > 0 && pm.currentHp * 2 < pm.maxHp} ? 'low' : ''"></div>
+            </div>
             <span class="chip-stats">
                 <span th:text="'AC ' + ${pm.ac}">AC 16</span>
                 <span th:text="'PP ' + ${pm.passivePerception}">PP 17</span>
-                <span th:text="'Init ' + (${pm.initiativeBonus} >= 0 ? '+' : '') + ${pm.initiativeBonus}">Init +2</span>
             </span>
         </div>
     </th:block>
