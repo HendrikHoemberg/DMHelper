@@ -69,13 +69,49 @@
     };
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      initLoadingFilament();
-      initToasts();
+  function initShortcutOverlay() {
+    const overlay = document.createElement('div');
+    overlay.id = 'shortcut-overlay';
+    overlay.innerHTML = `
+      <div class="shortcut-overlay-backdrop"></div>
+      <div class="shortcut-panel">
+        <h2>Keyboard Shortcuts</h2>
+        <dl>
+          <dt>⌘ / Ctrl + K</dt><dd>Search everything</dd>
+          <dt>Ctrl + R</dt><dd>Toggle dice roller</dd>
+          <dt>?</dt><dd>Show this overlay</dd>
+          <dt>Esc</dt><dd>Close overlays</dd>
+        </dl>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    function toggle(show) {
+      overlay.classList.toggle('open', show);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const tag = document.activeElement?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        toggle(true);
+      }
+      if (e.key === 'Escape') toggle(false);
     });
-  } else {
+
+    overlay.addEventListener('click', () => toggle(false));
+    window.toggleShortcutOverlay = toggle;
+  }
+
+  function init() {
     initLoadingFilament();
     initToasts();
+    initShortcutOverlay();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
 })();
