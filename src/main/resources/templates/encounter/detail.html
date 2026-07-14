@@ -12,8 +12,12 @@
         <main class="app-main">
             <div class="page-header">
                 <div>
+                    <div class="page-header-eyebrow">Encounters</div>
                     <h1 th:text="${encounter.name}">Encounter Name</h1>
-                    <a th:href="@{/campaigns/{cid}/encounters(cid=${campaignId})}" class="btn btn-ghost u-mt-xs">&larr; Back to Encounters</a>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+                <div class="page-header-actions">
+                    <a th:href="@{/campaigns/{cid}/encounters(cid=${campaignId})}" class="btn btn-ghost">&larr; Back to Encounters</a>
                 </div>
             </div>
 
@@ -76,7 +80,7 @@
                             </tr>
                         </tbody>
                     </table>
-                    <p th:if="${#lists.isEmpty(combatants)}" class="text-muted">No combatants yet.</p>
+                    <th:block th:if="${#lists.isEmpty(combatants)}" th:replace="~{common/_empty-state :: empty-state('No combatants yet.', null, null)}"></th:block>
                 </div>
 
                 <div class="detail-actions u-mb-lg">

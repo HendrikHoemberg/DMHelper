@@ -11,8 +11,14 @@
             <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
         <main class="app-main">
             <div class="page-header">
-                <h1>Calendar & Timeline</h1>
-                <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
+                <div>
+                    <div class="page-header-eyebrow">Calendar</div>
+                    <h1>Calendar &amp; Timeline</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+                <div class="page-header-actions">
+                    <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
+                </div>
             </div>
 
             <!-- Current Date -->

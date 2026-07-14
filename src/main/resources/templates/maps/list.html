@@ -12,14 +12,17 @@
         <main class="app-main">
             <div class="page-header">
                 <div>
+                    <div class="page-header-eyebrow">Maps</div>
                     <h1>Maps</h1>
-                    <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost"
-                       style="margin-top: var(--space-xs);">&larr; Back to Campaign</a>
+                    <div class="rule-taper rule-taper--gold"></div>
                 </div>
-                <button class="btn btn-primary"
-                        th:attr="hx-get=@{/campaigns/{cid}/maps/new(cid=${campaignId})}"
-                        hx-target="#map-grid"
-                        hx-swap="beforeend">+ New Map</button>
+                <div class="page-header-actions">
+                    <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Back to Campaign</a>
+                    <button class="btn btn-primary"
+                            th:attr="hx-get=@{/campaigns/{cid}/maps/new(cid=${campaignId})}"
+                            hx-target="#map-grid"
+                            hx-swap="beforeend">+ New Map</button>
+                </div>
             </div>
 
             <div id="map-grid" class="card-grid">

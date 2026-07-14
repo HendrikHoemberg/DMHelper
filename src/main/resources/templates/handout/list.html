@@ -12,11 +12,12 @@
         <main class="app-main">
             <div class="page-header">
                 <div>
-                    <a th:href="@{/campaigns/{id}(id=${campaign.id})}"
-                       style="color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm);">
-                        &larr; Back to Campaign
-                    </a>
+                    <div class="page-header-eyebrow">Handouts</div>
                     <h1>Handouts</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+                <div class="page-header-actions">
+                    <a th:href="@{/campaigns/{id}(id=${campaign.id})}" class="btn btn-ghost">&larr; Back to Campaign</a>
                 </div>
             </div>
 
@@ -48,10 +49,7 @@
                 </th:block>
             </div>
 
-            <div class="empty-state" id="handoutEmpty" th:if="${#lists.isEmpty(handouts)}">
-                <p>No handouts yet.</p>
-                <span style="font-size: var(--text-sm);">Upload an image to share with your players.</span>
-            </div>
+            <th:block th:if="${#lists.isEmpty(handouts)}" th:replace="~{common/_empty-state :: empty-state('No handouts yet.', null, null)}"></th:block>
         </main>
     </div>
 </body>

@@ -11,8 +11,14 @@
             <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
         <main class="app-main">
             <div class="page-header">
-                <h1 th:text="${note.title}">Note Title</h1>
-                <a th:href="@{/campaigns/{id}/notes(id=${campaignId})}" class="btn btn-ghost">&larr; Notes</a>
+                <div>
+                    <div class="page-header-eyebrow">Notes</div>
+                    <h1 th:text="${note.title}">Note Title</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+                <div class="page-header-actions">
+                    <a th:href="@{/campaigns/{id}/notes(id=${campaignId})}" class="btn btn-ghost">&larr; Notes</a>
+                </div>
             </div>
 
             <div class="detail-section">

@@ -10,8 +10,14 @@
             <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
         <main class="app-main">
         <div class="page-header">
-            <h1 th:text="${campaign.name} + ' — Party Sheets'">Campaign — Party Sheets</h1>
-            <a th:href="@{/campaigns/{id}/party(id=${campaign.id})}" class="btn btn-ghost">&larr; Party Roster</a>
+            <div>
+                <div class="page-header-eyebrow">Sheets</div>
+                <h1 th:text="${campaign.name} + ' — Party Sheets'">Campaign — Party Sheets</h1>
+                <div class="rule-taper rule-taper--gold"></div>
+            </div>
+            <div class="page-header-actions">
+                <a th:href="@{/campaigns/{id}/party(id=${campaign.id})}" class="btn btn-ghost">&larr; Party Roster</a>
+            </div>
         </div>
         <div class="card-grid" th:if="${!members.isEmpty()}">
             <div class="card" th:each="pm : ${members}">
@@ -39,10 +45,7 @@
                 </div>
             </div>
         </div>
-        <div class="empty-state" th:unless="${!members.isEmpty()}">
-            <p>No party members yet. Add members in the Party roster first.</p>
-            <a th:href="@{/campaigns/{id}/party(id=${campaign.id})}" class="btn btn-primary">Party Roster</a>
-        </div>
+        <div th:unless="${!members.isEmpty()}" th:replace="~{common/_empty-state :: empty-state('No party members yet. Add members in the Party roster first.', 'Party Roster', @{/campaigns/{id}/party(id=${campaign.id})})}"></div>
     </main>
 </div>
 </body>

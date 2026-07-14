@@ -10,8 +10,14 @@
             <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
         <main class="app-main">
             <div class="page-header">
-                <h1 th:text="${campaign.name}">Campaign</h1>
-                <a href="/campaigns" class="btn btn-ghost">&larr; Back to Campaigns</a>
+                <div>
+                    <div class="page-header-eyebrow" th:text="${campaign.name}">Campaign</div>
+                    <h1>Adventures</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+                <div class="page-header-actions">
+                    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" class="btn btn-ghost">&larr; Back to Campaign</a>
+                </div>
             </div>
 
             <div th:if="${currentScene}" class="card" style="margin-bottom: var(--space-md); padding: var(--space-md);">

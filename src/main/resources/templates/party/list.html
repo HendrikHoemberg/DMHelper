@@ -11,21 +11,25 @@
         <main class="app-main">
             <div class="page-header">
                 <div>
+                    <div class="page-header-eyebrow">Party</div>
                     <h1 th:text="${campaign.name + ' -- Party'}">Campaign -- Party</h1>
-                    <a th:href="@{/campaigns/{id}(id=${campaign.id})}" class="btn btn-ghost u-mt-xs">&larr; Back to Campaign</a>
+                    <div class="rule-taper rule-taper--gold"></div>
                 </div>
-                <a th:href="@{/campaigns/{id}/sheets(id=${campaign.id})}" class="btn btn-ghost">Character Sheets</a>
-                <button class="btn btn-primary"
-                        th:hx-get="@{/campaigns/{cid}/party/new(cid=${campaign.id})}"
-                        hx-target="#party-grid"
-                        hx-swap="beforeend">+ Add Member</button>
+                <div class="page-header-actions">
+                    <a th:href="@{/campaigns/{id}(id=${campaign.id})}" class="btn btn-ghost">&larr; Back to Campaign</a>
+                    <a th:href="@{/campaigns/{id}/sheets(id=${campaign.id})}" class="btn btn-ghost">Character Sheets</a>
+                    <button class="btn btn-primary"
+                            th:hx-get="@{/campaigns/{cid}/party/new(cid=${campaign.id})}"
+                            hx-target="#party-grid"
+                            hx-swap="beforeend">+ Add Member</button>
+                </div>
             </div>
 
             <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${activeMembers})}"></th:block>
 
             <div id="party-grid" class="card-grid">
                 <th:block th:if="${members == null or members.isEmpty()}">
-                    <div class="empty-state"><p>No party members yet. Add your first player character!</p></div>
+                    <th:block th:replace="~{common/_empty-state :: empty-state('No party members yet. Add your first player character!', null, null)}"></th:block>
                 </th:block>
                 <th:block th:each="pm : ${members}">
                     <th:block th:replace="~{party/_card :: card(pm=${pm})}"></th:block>
