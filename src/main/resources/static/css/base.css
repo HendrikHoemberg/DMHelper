@@ -5,6 +5,18 @@
 }
 body {
   min-height: 100vh;
+  background-color: var(--elevation-base-bg);
+  background-image: var(--texture-paper);
+}
+
+/* subtle vignette on the app frame; sits below overlays */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 400;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(8, 5, 2, var(--vignette-intensity)) 100%);
 }
 
 h1, h2 {
@@ -13,7 +25,15 @@ h1, h2 {
   letter-spacing: 0.02em;
 }
 
-::selection { background: var(--color-gold-soft); }
+::selection {
+  background: rgba(201, 163, 92, 0.35);
+  color: #fff;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--elevation-base-bg); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 5px; border: 2px solid var(--elevation-base-bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
 
 summary { cursor: pointer; }
 
