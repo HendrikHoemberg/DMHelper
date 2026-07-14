@@ -165,3 +165,14 @@
     init();
   }
 })();
+
+window.tickNumber = function(element, to, duration = 300) {
+  const from = parseInt(element.textContent, 10) || 0;
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min(1, (now - start) / duration);
+    element.textContent = Math.round(from + (to - from) * t);
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+};

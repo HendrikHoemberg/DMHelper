@@ -468,7 +468,7 @@
             <div class="tracker-list">
                 <template x-for="(c, idx) in combatants" :key="c.id">
                     <div class="combatant-row"
-                         :class="{ active: c.id === activeCombatantId, defeated: c.defeated, hidden: c.hidden }"
+                         :class="{ active: c.id === activeCombatantId, defeated: c.defeated, hidden: c.hidden, bloodied: c.bloodied }"
                          x-show="dmMode || !c.hidden"
                          @click="selectCombatant(c.id)">
                         <!-- Initiative badge -->
@@ -529,11 +529,12 @@
             </div>
 
             <!-- Selected combatant detail — DM only -->
-            <div class="combatant-detail" x-show="selectedCombatantId && dmMode && selected">
+            <div class="combatant-detail" x-show="selectedCombatantId && dmMode && selected" x-effect="tickNumber($refs.hpDisplay, selected?.currentHp || 0, 300)">
                 <!-- HP section -->
                 <div class="detail-hp">
                     <label>HP</label>
                     <input type="number" x-model.number="editHp" @change="setHp()">
+                    <span class="hp-display" x-ref="hpDisplay" x-text="selected?.currentHp || 0"></span>
                     <span>/</span>
                     <span x-text="selected?.maxHp || '?'"></span>
                     <template x-if="selected?.tempHp > 0">
