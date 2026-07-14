@@ -140,6 +140,7 @@
   function initViewTransitions() {
     if (!document.startViewTransition) return;
     document.addEventListener('click', (e) => {
+      if (e.target.closest('[hx-delete],[hx-get],[hx-post],[hx-put],[hx-patch]')) return;
       const link = e.target.closest('[data-view-transition]');
       if (!link) return;
       if (e.ctrlKey || e.metaKey || e.shiftKey) return;

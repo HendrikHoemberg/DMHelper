@@ -7,8 +7,9 @@
     <h3 th:text="${campaign.name}">Campaign Name</h3>
     <div class="book-meta"
          th:text="${#temporals.format(campaign.createdAt, 'yyyy-MM-dd')}">Created date</div>
-    <div class="card-actions" onclick="event.preventDefault(); event.stopPropagation();">
+    <div class="card-actions">
         <button class="btn btn-ghost btn-xs"
+                aria-label="Delete campaign"
                 th:hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
                 hx-confirm="Delete this campaign?"
                 hx-target="closest .book-cover"
