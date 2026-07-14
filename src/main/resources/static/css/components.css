@@ -86,16 +86,12 @@
   background: var(--color-surface);
   color: var(--color-text);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: transform var(--duration-micro) var(--ease-out), background var(--duration-micro) var(--ease-out), border-color var(--duration-micro) var(--ease-out), box-shadow var(--duration-micro) var(--ease-out);
   text-decoration: none;
   line-height: 1.5;
 }
 
-.btn {
-  transition: transform var(--duration-micro) var(--ease-out), background var(--duration-micro) var(--ease-out), border-color var(--duration-micro) var(--ease-out), box-shadow var(--duration-micro) var(--ease-out);
-}
 .btn:active { transform: scale(0.97); }
-.btn-ghost:hover { color: var(--color-text); background: var(--elevation-floating-bg); border-color: var(--color-gold-soft); }
 
 .btn:hover {
   background: var(--color-surface-hover);
@@ -133,7 +129,8 @@
 
 .btn-ghost:hover {
   color: var(--color-text);
-  background: var(--color-surface-hover);
+  background: var(--elevation-floating-bg);
+  border-color: var(--color-gold-soft);
 }
 
 .btn-warning {
@@ -840,7 +837,7 @@
     color: var(--color-text-muted);
     cursor: pointer;
     text-decoration: none;
-    transition: all var(--transition);
+  transition: all var(--transition);
 }
 
 .note-type-chip:hover {
