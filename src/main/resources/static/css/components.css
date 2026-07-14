@@ -11,15 +11,22 @@
 }
 
 .card {
-  background: var(--color-surface);
+  background: var(--elevation-raised-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: var(--space-md);
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition: transform 160ms var(--ease-out), border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+  box-shadow: var(--highlight-candle);
 }
 
 .card:hover {
   border-color: var(--color-gold-soft);
+  box-shadow: var(--highlight-candle), var(--shadow-warm-sm);
+  transform: translateY(-2px);
+}
+
+.card:active {
+  transform: scale(0.985) translateY(0);
 }
 
 .card h3 {
@@ -90,15 +97,16 @@
 }
 
 .btn-primary {
-    background: var(--color-accent);
-    border-color: var(--color-accent);
-    color: var(--color-bg);
+  background: var(--gold-sheen);
+  background-size: 200% 100%;
+  border-color: var(--color-accent);
+  color: var(--color-bg);
+  transition: background-position 600ms ease, transform 120ms ease, box-shadow 120ms ease;
 }
 
 .btn-primary:hover {
-  background: var(--color-accent-hover);
-  border-color: var(--color-accent-hover);
-  color: var(--color-bg);
+  background-position: 100% 0;
+  box-shadow: 0 0 16px rgba(201, 163, 92, 0.25);
 }
 
 .btn-danger {
