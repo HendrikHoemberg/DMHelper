@@ -68,7 +68,7 @@
 
   --radius: 6px;
   --shadow: 0 8px 28px rgba(0, 0, 0, 0.5);   /* overlays/popovers only — not cards */
-  --transition: 150ms ease;
+  --transition: var(--duration-standard) var(--ease-out);
 
   font-family: var(--font-ui);
   font-size: 16px;
@@ -87,6 +87,15 @@
   --highlight-candle: inset 0 1px 0 rgba(255, 243, 210, 0.08);
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* motion */
+  --duration-micro: 120ms;
+  --duration-standard: 200ms;
+  --duration-structural: 320ms;
+  --duration-theatrical: 550ms;
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --stagger-step: 35ms;
 
   /* gold sheen */
   --gold-sheen: linear-gradient(110deg, #c9a35c 0%, #e3c68b 35%, #c9a35c 50%, #b08a4a 100%);
