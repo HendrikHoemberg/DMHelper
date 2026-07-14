@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title>DMHelper — New Campaign</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <div>
+                    <div class="page-header-eyebrow">The Grimoire</div>
+                    <h1>New Campaign</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+            </div>
+
+            <th:block th:replace="~{campaigns/_form :: form}"></th:block>
+        </main>
+    </div>
+</body>
+</html>

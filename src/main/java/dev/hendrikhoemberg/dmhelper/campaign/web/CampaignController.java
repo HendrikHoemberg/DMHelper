@@ -35,7 +35,7 @@ public class CampaignController {
 
     @GetMapping("/new")
     public String newForm() {
-        return "campaigns/_form";
+        return "campaigns/new";
     }
 
     @GetMapping
