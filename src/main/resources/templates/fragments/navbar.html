@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <nav class="navbar" th:fragment="navbar">
+    <div id="dm-shield-sweep"></div>
     <a href="/campaigns" class="navbar-brand">DMHelper</a>
     <div class="navbar-right">
         <button class="btn btn-ghost u-text-sm palette-hint" onclick="window.dispatchEvent(new CustomEvent('command-palette-toggle'))" title="Search everything">⌘K</button>
@@ -35,9 +36,13 @@
         (function() {
             const checkbox = document.getElementById('dmModeCheckbox');
             checkbox.addEventListener('change', () => {
-                document.body.classList.toggle('dm-mode-off', !checkbox.checked);
+                const on = checkbox.checked;
+                document.body.classList.toggle('dm-mode-off', !on);
+                document.body.classList.toggle('dm-mode-on', on);
+                window.dispatchEvent(new CustomEvent('dm-mode-changed', { detail: { dmMode: on } }));
             });
             checkbox.checked = true;
+            document.body.classList.add('dm-mode-on');
             window.addEventListener('dm-mode-toggle', () => {
                 checkbox.checked = !checkbox.checked;
                 checkbox.dispatchEvent(new Event('change'));
@@ -45,6 +50,7 @@
             window.addEventListener('tracker-dm-mode-grown', (e) => {
                 checkbox.checked = e.detail.dmMode;
                 document.body.classList.toggle('dm-mode-off', !e.detail.dmMode);
+                document.body.classList.toggle('dm-mode-on', e.detail.dmMode);
                 checkbox.dispatchEvent(new Event('change'));
             });
         })();

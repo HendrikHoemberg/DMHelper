@@ -348,6 +348,37 @@ body.loading #loading-filament {
 @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
+/* ── DM Mode shield sweep ── */
+#dm-shield-sweep {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, rgba(168, 58, 50, 0.35) 50%, transparent 100%);
+  transform: translateX(-100%);
+  opacity: 0;
+}
+body.dm-mode-off #dm-shield-sweep {
+  animation: shield-sweep var(--duration-theatrical) var(--ease-out) forwards;
+}
+body.dm-mode-on #dm-shield-sweep {
+  animation: shield-sweep-reverse var(--duration-theatrical) var(--ease-out) forwards;
+}
+@keyframes shield-sweep {
+  0% { transform: translateX(-100%); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+@keyframes shield-sweep-reverse {
+  0% { transform: translateX(100%); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateX(-100%); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #dm-shield-sweep { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
