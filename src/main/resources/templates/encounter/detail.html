@@ -19,24 +19,24 @@
 
             <div class="detail-section">
                 <div class="detail-meta">
-                    <span th:if="${encounter.status == 'ACTIVE'}" style="color: var(--color-success); font-weight: bold;">ACTIVE</span>
-                    <span th:if="${encounter.status == 'PLANNED'}" style="color: var(--color-info); font-weight: bold;">PLANNED</span>
-                    <span th:if="${encounter.status == 'DONE'}" style="color: var(--color-text-muted); font-weight: bold;">DONE</span>
+                    <span th:if="${encounter.status == 'ACTIVE'}" class="u-text-success u-fw-bold">ACTIVE</span>
+                    <span th:if="${encounter.status == 'PLANNED'}" class="u-text-info u-fw-bold">PLANNED</span>
+                    <span th:if="${encounter.status == 'DONE'}" class="text-muted u-fw-bold">DONE</span>
                     <span th:if="${encounter.round > 0}" th:text="' · Round ' + ${encounter.round}"> · Round 1</span>
                     <span th:if="${encounter.combatantCount > 0}" th:text="' · ' + ${encounter.combatantCount} + ' combatants'"> · 0 combatants</span>
                 </div>
 
-                <div class="detail-actions" style="margin: var(--space-lg) 0;">
+                <div class="detail-actions u-mt-lg u-mb-lg">
                     <th:block th:if="${encounter.status == 'PLANNED'}">
                         <form method="post" th:action="@{/campaigns/{cid}/encounters/{eid}/activate(cid=${campaignId}, eid=${encounter.id})}"
-                              style="display: inline;">
+                              class="u-inline">
                             <button type="submit" class="btn btn-primary">Activate</button>
                         </form>
                     </th:block>
                     <th:block th:if="${encounter.status == 'ACTIVE'}">
                         <form method="post" th:action="@{/campaigns/{cid}/encounters/{eid}/end(cid=${campaignId}, eid=${encounter.id})}"
-                              style="display: inline;">
-                            <button type="submit" class="btn" style="background: var(--color-warning);">End Encounter</button>
+                              class="u-inline">
+                            <button type="submit" class="btn btn-warning">End Encounter</button>
                         </form>
                     </th:block>
                     <a class="btn btn-ghost"
@@ -50,7 +50,7 @@
 
                 <h2>Combatants</h2>
 
-                <div style="margin-bottom: var(--space-lg);">
+                <div class="u-mb-lg">
                     <table class="data-table" th:if="${not #lists.isEmpty(combatants)}">
                         <thead>
                             <tr>
@@ -69,25 +69,23 @@
                                 <td th:text="${c.currentHp + ' / ' + c.maxHp}">HP</td>
                                 <td th:text="${c.initiative}">0</td>
                                 <td>
-                                    <span th:if="${c.defeated}" style="color: var(--color-danger);">Defeated</span>
-                                    <span th:if="${c.bloodied and !c.defeated}" style="color: var(--color-warning);">Bloodied</span>
-                                    <span th:if="${!c.bloodied and !c.defeated}" style="color: var(--color-success);">Healthy</span>
+                                    <span th:if="${c.defeated}" class="u-text-danger">Defeated</span>
+                                    <span th:if="${c.bloodied and !c.defeated}" class="u-text-warning">Bloodied</span>
+                                    <span th:if="${!c.bloodied and !c.defeated}" class="u-text-success">Healthy</span>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
-                    <p th:if="${#lists.isEmpty(combatants)}" style="color: var(--color-text-muted);">No combatants yet.</p>
+                    <p th:if="${#lists.isEmpty(combatants)}" class="text-muted">No combatants yet.</p>
                 </div>
 
-                <div class="detail-actions" style="margin-bottom: var(--space-lg); gap: var(--space-sm); display: flex; flex-wrap: wrap;">
+                <div class="detail-actions u-mb-lg">
                     <form method="post"
                           th:action="@{/campaigns/{cid}/encounters/{eid}/combatants(cid=${campaignId}, eid=${encounter.id})}"
-                          style="display: flex; gap: var(--space-sm); align-items: center;">
-                        <input type="text" name="name" placeholder="Name" required
-                               style="flex: 1; min-width: 120px; padding: 0.3em 0.5em;">
-                        <input type="number" name="maxHp" placeholder="HP" value="10"
-                               style="width: 60px; padding: 0.3em 0.5em;">
-                        <select name="kind" style="padding: 0.3em 0.5em;">
+                          class="combatant-quickadd u-flex">
+                        <input type="text" name="name" placeholder="Name" required>
+                        <input type="number" name="maxHp" placeholder="HP" value="10">
+                        <select name="kind">
                             <option value="NPC">NPC</option>
                             <option value="PC">PC</option>
                             <option value="MONSTER">Monster</option>
@@ -99,30 +97,29 @@
                     <th:block th:if="${encounter.mapId != null}">
                         <form method="post"
                               th:action="@{/campaigns/{cid}/encounters/{eid}/prefill/map(cid=${campaignId}, eid=${encounter.id})}"
-                              style="display: inline;">
+                              class="u-inline">
                             <button type="submit" class="btn btn-sm">Prefill from Map</button>
                         </form>
                     </th:block>
 
                     <form method="post"
                           th:action="@{/campaigns/{cid}/encounters/{eid}/prefill/party(cid=${campaignId}, eid=${encounter.id})}"
-                          style="display: inline;">
+                          class="u-inline">
                         <button type="submit" class="btn btn-sm">Prefill from Party</button>
                     </form>
                 </div>
 
                 <h2>Difficulty</h2>
-                <div class="detail-actions" style="margin-bottom: var(--space-lg); gap: var(--space-sm); display: flex; flex-wrap: wrap; align-items: center;">
+                <div class="detail-actions u-mb-lg u-items-center">
                     <th:block th:if="${difficulty.rating == 'N/A'}">
-                        <p style="color: var(--color-text-muted);">No party or monsters — add combatants to see difficulty.</p>
+                        <p class="text-muted">No party or monsters — add combatants to see difficulty.</p>
                     </th:block>
                     <th:block th:unless="${difficulty.rating == 'N/A'}">
-                        <span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(difficulty.rating)}"
-                              th:text="${difficulty.rating}"
-                              style="font-weight: bold; padding: 0.25em 0.75em; border-radius: 4px;">RATING</span>
-                        <span style="color: var(--color-text-muted);" th:text="'Adjusted XP: ' + ${difficulty.adjustedXp}">XP</span>
-                        <span style="color: var(--color-text-muted);" th:text="'Party Threshold: ' + ${difficulty.partyThreshold}">THRESHOLD</span>
-                        <span style="color: var(--color-text-muted); font-size: 0.85em;" th:text="${difficulty.details}">DETAILS</span>
+                        <span class="badge badge-rating" th:classappend="'badge-' + ${#strings.toLowerCase(difficulty.rating)}"
+                              th:text="${difficulty.rating}">RATING</span>
+                        <span class="text-muted" th:text="'Adjusted XP: ' + ${difficulty.adjustedXp}">XP</span>
+                        <span class="text-muted" th:text="'Party Threshold: ' + ${difficulty.partyThreshold}">THRESHOLD</span>
+                        <span class="text-muted u-text-sm" th:text="${difficulty.details}">DETAILS</span>
                     </th:block>
                 </div>
 
@@ -135,7 +132,7 @@
                 </th:block>
             </div>
 
-            <div style="margin-top: var(--space-lg);">
+            <div class="u-mt-lg">
                 <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='ENCOUNTER', targetId=${encounter.id})}"></th:block>
             </div>
         </main>

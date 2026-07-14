@@ -22,9 +22,9 @@
             <div class="detail-section">
                 <form th:hx-post="@{/campaigns/{id}/calendar/advance(id=${campaignId})}"
                       hx-target="#current-date-wrapper" hx-swap="outerHTML"
-                      style="display:flex; gap: var(--space-sm); align-items:center;">
+                      class="u-flex">
                     <label>Advance by</label>
-                    <input type="number" name="days" value="1" min="1" style="width:70px;" />
+                    <input type="number" name="days" value="1" min="1" class="calendar-days-input" />
                     <span>days</span>
                     <button type="submit" class="btn btn-primary">Advance</button>
                 </form>
@@ -32,22 +32,22 @@
 
             <!-- Set Date -->
             <div class="detail-section">
-                <details>
-                    <summary style="cursor:pointer; margin-bottom: var(--space-sm);">Set Date</summary>
+                <details class="calendar-collapsible">
+                    <summary>Set Date</summary>
                     <form th:hx-post="@{/campaigns/{id}/calendar/set-date(id=${campaignId})}"
                           hx-target="body" hx-swap="outerHTML"
-                          style="display:flex; gap: var(--space-sm); align-items:end;">
+                          class="calendar-setdate-form">
                         <div>
-                            <label style="font-size: var(--text-sm);">Year</label>
-                            <input type="number" name="year" th:value="${currentDate.year()}" required style="width:80px;" />
+                            <label class="u-text-sm">Year</label>
+                            <input type="number" name="year" th:value="${currentDate.year()}" required class="u-w-80" />
                         </div>
                         <div>
-                            <label style="font-size: var(--text-sm);">Month (0-indexed)</label>
-                            <input type="number" name="month" th:value="${currentDate.month()}" min="0" required style="width:80px;" />
+                            <label class="u-text-sm">Month (0-indexed)</label>
+                            <input type="number" name="month" th:value="${currentDate.month()}" min="0" required class="u-w-80" />
                         </div>
                         <div>
-                            <label style="font-size: var(--text-sm);">Day</label>
-                            <input type="number" name="day" th:value="${currentDate.day()}" min="1" required style="width:80px;" />
+                            <label class="u-text-sm">Day</label>
+                            <input type="number" name="day" th:value="${currentDate.day()}" min="1" required class="u-w-80" />
                         </div>
                         <button type="submit" class="btn btn-primary">Set Date</button>
                     </form>
@@ -56,8 +56,8 @@
 
             <!-- Calendar Config -->
             <div class="detail-section">
-                <details>
-                    <summary style="cursor:pointer; margin-bottom: var(--space-sm);">Calendar Configuration</summary>
+                <details class="calendar-collapsible">
+                    <summary>Calendar Configuration</summary>
                     <div id="config-form-area">
                         <div th:replace="~{calendar/_config-form :: configForm}"></div>
                     </div>
@@ -66,7 +66,7 @@
 
             <!-- Timeline -->
             <h2>Timeline</h2>
-            <div class="detail-actions" style="margin-bottom: var(--space-sm);">
+            <div class="detail-actions u-mb-sm">
                 <button class="btn btn-primary"
                         th:hx-get="@{/campaigns/{id}/calendar/events/new(id=${campaignId})}"
                         hx-target="#event-form-area"

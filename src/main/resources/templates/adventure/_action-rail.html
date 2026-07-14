@@ -2,7 +2,7 @@
   <div class="detail-section">
     <h3>Actions</h3>
 
-    <div style="display: flex; gap: var(--space-xs); margin-bottom: var(--space-md);">
+    <div class="u-flex u-gap-xs u-mb-md">
       <button class="btn btn-sm"
               th:classappend="${scene.status.name() == 'VISITED'} ? 'btn-primary' : 'btn-ghost'"
               th:hx-put="@{/scenes/{id}/status(id=${scene.id})}"
@@ -19,38 +19,38 @@
               hx-target="closest .status-badge-container" hx-swap="outerHTML">Unvisit</button>
     </div>
 
-    <div style="margin-bottom: var(--space-md);">
-      <button class="btn btn-primary btn-sm" style="width: 100%;"
+    <div class="u-mb-md">
+      <button class="btn btn-primary btn-sm u-w-full"
               th:hx-post="@{/campaigns/{cid}/current-scene(cid=${campaignId})}"
               th:attr="hx-vals='{&quot;sceneId&quot;: &quot;' + ${scene.id} + '&quot;}'"
               hx-target="#scenePanel"
               hx-swap="innerHTML">Set as Current Scene</button>
     </div>
 
-    <div th:if="${scene.map != null}" style="margin-bottom: var(--space-md);">
-      <h4 style="font-size: var(--text-sm); margin-bottom: var(--space-xs);">Linked Map</h4>
-      <div style="display: flex; align-items: center; gap: var(--space-xs);">
+    <div th:if="${scene.map != null}" class="u-mb-md">
+      <h4 class="u-text-sm u-mb-xs">Linked Map</h4>
+      <div class="u-flex u-gap-xs">
         <span th:text="${scene.map.name}">Map Name</span>
         <a th:href="@{/campaigns/{cid}/maps/{mid}/play(cid=${campaignId},mid=${scene.map.id})}"
            class="btn btn-sm" target="_blank">Open</a>
       </div>
-      <div th:if="${scene.pinX != null and scene.pinY != null}" style="font-size: var(--text-xs); color: var(--color-text-muted);">
+      <div th:if="${scene.pinX != null and scene.pinY != null}" class="u-text-xs text-muted">
         Pin: (<span th:text="${scene.pinX}">X</span>, <span th:text="${scene.pinY}">Y</span>)
       </div>
     </div>
 
-    <div th:if="${scene.encounter != null}" style="margin-bottom: var(--space-md);">
-      <h4 style="font-size: var(--text-sm); margin-bottom: var(--space-xs);">Linked Encounter</h4>
-      <div style="display: flex; align-items: center; gap: var(--space-xs);">
+    <div th:if="${scene.encounter != null}" class="u-mb-md">
+      <h4 class="u-text-sm u-mb-xs">Linked Encounter</h4>
+      <div class="u-flex u-gap-xs">
         <span th:text="${scene.encounter.name}">Encounter Name</span>
         <a th:href="@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId},eid=${scene.encounter.id})}"
            class="btn btn-sm">Activate</a>
       </div>
     </div>
 
-    <div th:if="${scene.statBlocks != null and !scene.statBlocks.isEmpty()}" style="margin-bottom: var(--space-md);">
-      <h4 style="font-size: var(--text-sm); margin-bottom: var(--space-xs);">Linked Statblocks</h4>
-      <div th:each="sb : ${scene.statBlocks}" class="card" style="padding: var(--space-xs); margin-bottom: var(--space-xs); font-size: var(--text-sm);">
+    <div th:if="${scene.statBlocks != null and !scene.statBlocks.isEmpty()}" class="u-mb-md">
+      <h4 class="u-text-sm u-mb-xs">Linked Statblocks</h4>
+      <div th:each="sb : ${scene.statBlocks}" class="card card--compact">
         <span th:text="${sb.name}">StatBlock</span>
         <button class="btn btn-danger btn-sm"
                 th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/remove-statblock(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
@@ -59,16 +59,16 @@
       </div>
     </div>
 
-    <div th:if="${scene.handouts != null and !scene.handouts.isEmpty()}" style="margin-bottom: var(--space-md);">
-      <h4 style="font-size: var(--text-sm); margin-bottom: var(--space-xs);">Linked Handouts</h4>
-      <div th:each="h : ${scene.handouts}" style="display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-xxs) 0; font-size: var(--text-sm);">
+    <div th:if="${scene.handouts != null and !scene.handouts.isEmpty()}" class="u-mb-md">
+      <h4 class="u-text-sm u-mb-xs">Linked Handouts</h4>
+      <div th:each="h : ${scene.handouts}" class="linked-handout-row">
         <span th:text="${h.title}">Handout</span>
         <a th:href="@{/campaigns/{cid}/handouts/{hid}/present(cid=${campaignId},hid=${h.id})}"
            class="btn btn-sm" target="_blank">Present</a>
       </div>
     </div>
 
-    <div style="display: flex; gap: var(--space-xs); margin-top: var(--space-md);">
+    <div class="u-flex u-gap-xs u-mt-md">
       <button class="btn btn-ghost btn-sm"
               th:hx-put="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/move(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
               hx-vals='{"direction": -1}'

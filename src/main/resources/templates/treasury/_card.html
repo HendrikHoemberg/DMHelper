@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div th:fragment="card(assignment, attunementCount)" class="card"
-     style="display:flex; align-items:center; justify-content:space-between; padding: var(--space-sm) var(--space-md);"
+<div th:fragment="card(assignment, attunementCount)" class="card assignment-card"
      th:id="'assignment-' + ${assignment.id()}">
 
-    <div style="display:flex; align-items:center; gap: var(--space-md); flex:1; min-width:0;">
-        <div style="min-width:0;">
-            <div style="font-weight:600;" th:text="${assignment.itemName()}">Item Name</div>
-            <div class="detail-meta" style="margin-top:2px;">
+    <div class="u-flex--md u-flex-1 u-min-w-0">
+        <div class="u-min-w-0">
+            <div class="u-fw-600" th:text="${assignment.itemName()}">Item Name</div>
+            <div class="detail-meta u-mt-xs">
                 <span class="badge" th:text="${assignment.holderName()}">Holder</span>
                 <span th:if="${assignment.quantity() > 1}" class="badge" th:text="'x' + ${assignment.quantity()}">x1</span>
                 <span th:if="${assignment.attuned()}" class="badge">attuned</span>
@@ -18,23 +17,22 @@
         </div>
     </div>
 
-    <div style="display:flex; gap: var(--space-xs); flex-shrink:0; margin-left: var(--space-md);">
+    <div class="u-flex u-gap-xs u-shrink-0 u-ml-md">
         <form th:method="'put'"
               th:hx-put="@{/campaigns/{cid}/treasury/{id}/attune(cid=${assignment.campaignId()}, id=${assignment.id()})}"
-              hx-target="closest .detail-section" hx-swap="outerHTML" style="display:inline;">
-            <button class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;">Attune</button>
+              hx-target="closest .detail-section" hx-swap="outerHTML" class="u-inline">
+            <button class="btn btn-ghost btn-xs">Attune</button>
         </form>
         <form th:method="'put'"
               th:hx-put="@{/campaigns/{cid}/treasury/{id}/quantity(cid=${assignment.campaignId()}, id=${assignment.id()})}"
-              hx-target="closest .card" hx-swap="outerHTML" style="display:inline; display:flex; gap:4px; align-items:center;">
+              hx-target="closest .card" hx-swap="outerHTML" class="u-flex u-gap-xs">
             <input type="number" name="quantity" th:value="${assignment.quantity()}" min="1"
-                   style="width:50px; padding:2px 4px; font-size: var(--text-sm);" />
-            <button class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;">Qty</button>
+                   class="qty-input" />
+            <button class="btn btn-ghost btn-xs">Qty</button>
         </form>
-        <button class="btn btn-danger"
+        <button class="btn btn-danger btn-xs"
                 th:hx-delete="@{/campaigns/{cid}/treasury/{id}(cid=${assignment.campaignId()}, id=${assignment.id()})}"
-                hx-target="closest .card" hx-swap="outerHTML" hx-confirm="Remove this item?"
-                style="font-size: var(--text-sm); padding: 2px 8px;">
+                hx-target="closest .card" hx-swap="outerHTML" hx-confirm="Remove this item?">
             &times;
         </button>
     </div>

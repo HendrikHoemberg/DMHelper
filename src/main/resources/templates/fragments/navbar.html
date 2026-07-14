@@ -12,12 +12,10 @@
         <button class="btn btn-ghost u-text-sm" id="qrToggle"
                 onclick="document.getElementById('qrPopover').classList.toggle('hidden')"
                 title="Show QR code for player view">QR</button>
-        <div id="qrPopover" class="hidden" style="position: absolute; top: 100%; right: 60px;
-                background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius);
-                padding: var(--space-md); z-index: 200; box-shadow: var(--shadow);">
+        <div id="qrPopover" class="hidden">
             <img th:src="@{/qr/player-view}" alt="Player View QR" width="180" height="180"
                  class="u-block">
-            <div class="text-muted u-text-sm" style="text-align: center; margin-top: var(--space-xs);">
+            <div class="text-muted u-text-sm u-text-center u-mt-xs">
                 Scan to join
             </div>
         </div>

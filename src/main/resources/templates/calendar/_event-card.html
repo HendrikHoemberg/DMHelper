@@ -1,28 +1,28 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div th:fragment="eventCard(event)" class="card" style="padding: var(--space-sm) var(--space-md);"
+<div th:fragment="eventCard(event)" class="card card--tight"
      th:id="'event-' + ${event.id()}">
-    <div style="display:flex; align-items:flex-start; justify-content:space-between;">
-        <div style="flex:1; min-width:0;">
-            <div style="display:flex; gap: var(--space-sm); align-items:baseline;">
+    <div class="event-card-row">
+        <div class="u-flex-1 u-min-w-0">
+            <div class="u-flex-baseline">
                 <span class="badge" th:text="${event.inGameYear() + '/' + (event.inGameMonth() + 1) + '/' + event.inGameDay()}">1492/3/15</span>
                 <span class="badge" th:text="${event.relativeLabel()}"
                       th:style="${event.relativeLabel() == 'today' ? 'background: var(--color-accent); color: var(--color-bg);' : ''}">in 12 days</span>
             </div>
-            <div style="font-weight:600; margin-top: 4px;" th:text="${event.title()}">Solar Eclipse</div>
+            <div class="u-fw-600 u-mt-xs" th:text="${event.title()}">Solar Eclipse</div>
             <div th:if="${event.body() != null and not event.body().isEmpty()}"
                  class="detail-meta" th:text="${event.body()}">The sky darkens</div>
             <div th:if="${event.noteId() != null}" class="detail-meta">
                 <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${event.campaignId()}, nid=${event.noteId()})}">Linked Note &rarr;</a>
             </div>
         </div>
-        <div style="display:flex; gap: var(--space-xs); flex-shrink:0; margin-left: var(--space-md);">
-            <button class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;"
+        <div class="u-flex u-gap-xs u-shrink-0 u-ml-md">
+            <button class="btn btn-ghost btn-xs"
                     th:hx-get="@{/campaigns/{cid}/calendar/events/{eid}/edit(cid=${event.campaignId()}, eid=${event.id()})}"
                     hx-target="#event-form-area" hx-swap="innerHTML">
                 Edit
             </button>
-            <button class="btn btn-danger" style="font-size: var(--text-sm); padding: 2px 8px;"
+            <button class="btn btn-danger btn-xs"
                     th:hx-delete="@{/campaigns/{cid}/calendar/events/{eid}(cid=${event.campaignId()}, eid=${event.id()})}"
                     hx-target="closest .card" hx-swap="outerHTML"
                     hx-confirm="Delete this event?">

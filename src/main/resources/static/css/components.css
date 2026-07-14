@@ -59,6 +59,13 @@
   justify-content: flex-end;
 }
 
+/* Compact card variant — nested chips (e.g. linked statblocks in a scene rail) */
+.card--compact {
+  padding: var(--space-xs);
+  margin-bottom: var(--space-xs);
+  font-size: var(--text-sm);
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -113,6 +120,23 @@
 .btn-ghost:hover {
   color: var(--color-text);
   background: var(--color-surface-hover);
+}
+
+.btn-warning {
+  background: var(--color-warning);
+  border-color: var(--color-warning);
+  color: var(--color-bg);
+}
+
+.btn-warning:hover {
+  background: color-mix(in srgb, var(--color-warning) 85%, white);
+  border-color: var(--color-warning);
+}
+
+/* Extra-small button — compact icon/action buttons in list rows */
+.btn-xs {
+  font-size: var(--text-sm);
+  padding: 2px 8px;
 }
 
 .form-group {
@@ -189,6 +213,19 @@
   flex-wrap: wrap;
 }
 
+/* Encounter detail — quick-add combatant row */
+.combatant-quickadd input,
+.combatant-quickadd select {
+  padding: 0.3em 0.5em;
+}
+.combatant-quickadd input[name="name"] {
+  flex: 1;
+  min-width: 120px;
+}
+.combatant-quickadd input[name="maxHp"] {
+  width: 60px;
+}
+
 
 .inline-form {
   background: var(--color-surface);
@@ -262,6 +299,39 @@
 .badge-custom { background: transparent; color: var(--color-success); border: 1px solid var(--color-success); font-size: var(--text-sm); padding: 1px 6px; border-radius: 4px; }
 
 
+/* Treasury assignment card */
+.assignment-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+}
+
+/* Tight card variant — list-row cards (ledger entries, calendar events) */
+.card--tight {
+  padding: var(--space-sm) var(--space-md);
+}
+
+/* Calendar event card row layout */
+.event-card-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.qty-input {
+  width: 50px;
+  padding: 2px 4px;
+  font-size: var(--text-sm);
+}
+
+/* Adventure scene action rail — linked handout row */
+.linked-handout-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+}
+
 /* Party Roster Styles */
 .party-summary-bar {
   display: flex; gap: var(--space-md); overflow-x: auto;
@@ -311,6 +381,17 @@
 /* Compendium sections */
 .compendium-section { }
 
+/* Calendar overview — collapsible sections & small forms */
+.calendar-collapsible > summary {
+  margin-bottom: var(--space-sm);
+}
+.calendar-setdate-form {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: end;
+}
+.calendar-days-input { width: 70px; }
+
 /* Rarity badges */
 .badge-common    { background: var(--color-text-muted); color: var(--color-bg); }
 .badge-uncommon  { background: var(--color-success); color: var(--color-bg); }
@@ -319,6 +400,9 @@
 .badge-legendary { background: var(--color-accent); color: var(--color-bg); }
 .badge-artifact  { background: var(--color-ember); color: var(--color-text); }
 .badge-attune    { background: transparent; color: var(--color-accent); border: 1px solid var(--color-gold-soft); }
+
+/* Encounter difficulty rating badge */
+.badge-rating { font-weight: bold; padding: 0.25em 0.75em; border-radius: 4px; }
 
 /* Badge group */
 .badge-group {
@@ -567,6 +651,31 @@
     transform: scale(1.05);
 }
 
+.handout-card-body {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: flex-start;
+}
+.handout-thumb {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--color-bg);
+}
+.handout-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.handout-badges {
+    display: flex;
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
+    flex-wrap: wrap;
+}
+
 .handout-overlay {
     position: fixed;
     inset: 0;
@@ -613,6 +722,15 @@
 
 
 #qrPopover {
+    position: absolute;
+    top: 100%;
+    right: 60px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: var(--space-md);
+    z-index: 200;
+    box-shadow: var(--shadow);
     animation: slideIn 0.15s ease;
 }
 @keyframes slideIn {
@@ -643,9 +761,53 @@
     padding: 0;
 }
 
+.quicknotes-strip h3 {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: var(--space-sm);
+}
+
+.quicknotes-form {
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-sm);
+}
+
+.quicknotes-form input {
+    flex: 1;
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+}
+
+.quicknotes-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.quicknote-row {
+    padding: var(--space-xs) 0;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-xs);
+}
+
 .quicknote-row:hover {
     background: var(--color-surface-hover);
 }
+
+.quicknote-body { font-size: var(--text-sm); white-space: pre-wrap; }
+.quicknote-time { font-size: 0.7rem; color: var(--color-text-muted); }
+.quicknote-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.btn-2xs { font-size: 0.7rem; padding: 1px 4px; }
+.quicknotes-empty { font-size: var(--text-sm); color: var(--color-text-muted); padding: var(--space-sm) 0; }
 
 /* Note type filter bar */
 .note-type-bar {
@@ -682,6 +844,21 @@
 .badge-success {
     background: var(--color-success);
     color: var(--color-bg);
+}
+
+.badge-danger {
+    background: var(--color-danger);
+    color: var(--color-bg);
+}
+
+.badge-warning {
+    background: var(--color-warning);
+    color: var(--color-bg);
+}
+
+.badge-tag {
+    background: var(--color-surface-hover);
+    font-size: 0.7rem;
 }
 
 .sheet-ability-grid {
@@ -817,6 +994,12 @@
     flex: 1;
     overflow-y: auto;
     padding: var(--space-md) var(--space-lg);
+}
+
+.dice-panel-close {
+    font-size: var(--text-lg);
+    line-height: 1;
+    padding: 0 var(--space-xs);
 }
 
 .dice-input-row {
@@ -1153,6 +1336,23 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
 .u-block { display: block; }
 .u-w-full { width: 100%; }
 .u-fw-600 { font-weight: 600; }
+.u-w-80 { width: 80px; }
+.u-flex-row { display: flex; gap: var(--space-sm); }
+.u-text-center { text-align: center; }
+.u-fw-bold { font-weight: bold; }
+.u-mb-xs { margin-bottom: var(--space-xs); }
+.u-ml-md { margin-left: var(--space-md); }
+.u-ml-xs { margin-left: var(--space-xs); }
+.u-flex-baseline { display: flex; gap: var(--space-sm); align-items: baseline; }
+.u-text-xs { font-size: var(--text-xs); }
+.u-text-success { color: var(--color-success); }
+.u-text-danger { color: var(--color-danger); }
+.u-text-warning { color: var(--color-warning); }
+.u-text-info { color: var(--color-info); }
+.u-inline { display: inline; }
+.u-min-w-0 { min-width: 0; }
+.u-shrink-0 { flex-shrink: 0; }
+.u-items-center { align-items: center; }
 
 /* Dice roller advantage/disadvantage labels */
 .dice-adv { color: var(--dice-high); }

@@ -3,42 +3,33 @@
 <th:block th:fragment="strip(campaignId, targetType, targetId)">
 <div x-data="quicknotes('[[${campaignId}]]', '[[${targetType}]]', '[[${targetId}]]')"
      class="quicknotes-strip">
-    <h3 style="font-size: var(--text-sm); color: var(--color-text-muted);
-               text-transform: uppercase; letter-spacing: 1px; margin-bottom: var(--space-sm);">
+    <h3>
         Quick Notes
     </h3>
 
-    <form @submit.prevent="add()" style="display: flex; gap: var(--space-xs); margin-bottom: var(--space-sm);">
-        <input type="text" x-model="newBody" placeholder="Jot a quick note..."
-               style="flex: 1; padding: var(--space-xs) var(--space-sm);
-                      background: var(--color-bg); border: 1px solid var(--color-border);
-                      border-radius: var(--radius); color: var(--color-text);
-                      font-size: var(--text-sm);">
-        <button type="submit" class="btn btn-primary" style="font-size: var(--text-sm); padding: 2px 8px;">
+    <form @submit.prevent="add()" class="quicknotes-form">
+        <input type="text" x-model="newBody" placeholder="Jot a quick note...">
+        <button type="submit" class="btn btn-primary btn-xs">
             Add
         </button>
     </form>
 
-    <div style="max-height: 200px; overflow-y: auto;">
+    <div class="quicknotes-list">
         <template x-for="qn in items" :key="qn.id">
-            <div class="quicknote-row" style="padding: var(--space-xs) 0;
-                     border-bottom: 1px solid var(--color-border);
-                     display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-xs);">
+            <div class="quicknote-row">
                 <div>
-                    <span x-text="qn.body" style="font-size: var(--text-sm); white-space: pre-wrap;"></span>
-                    <div style="font-size: 0.7rem; color: var(--color-text-muted);" x-text="formatTime(qn.createdAt)"></div>
+                    <span x-text="qn.body" class="quicknote-body"></span>
+                    <div class="quicknote-time" x-text="formatTime(qn.createdAt)"></div>
                 </div>
-                <div style="display: flex; gap: 4px; flex-shrink: 0;">
-                    <button @click="promote(qn)" class="btn btn-ghost"
-                            style="font-size: 0.7rem; padding: 1px 4px;"
+                <div class="quicknote-actions">
+                    <button @click="promote(qn)" class="btn btn-ghost btn-2xs"
                             title="Promote to full note">&#8593;</button>
-                    <button @click="remove(qn.id)" class="btn btn-ghost"
-                            style="font-size: 0.7rem; padding: 1px 4px; color: var(--color-danger);"
+                    <button @click="remove(qn.id)" class="btn btn-ghost btn-2xs u-text-danger"
                             title="Delete">&times;</button>
                 </div>
             </div>
         </template>
-        <div x-show="items.length === 0" style="font-size: var(--text-sm); color: var(--color-text-muted); padding: var(--space-sm) 0;">
+        <div x-show="items.length === 0" class="quicknotes-empty">
             No quick notes yet.
         </div>
     </div>

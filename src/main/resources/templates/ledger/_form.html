@@ -1,6 +1,6 @@
 <html xmlns:th="http://www.thymeleaf.org">
-<div th:fragment="form" class="card" style="padding: var(--space-md); margin-bottom: var(--space-md);">
-    <h3 style="margin-top:0;">Record Transaction</h3>
+<div th:fragment="form" class="card u-mb-md">
+    <h3>Record Transaction</h3>
     <form th:hx-post="@{/campaigns/{id}/ledger(id=${campaignId})}"
           hx-target="body" hx-swap="outerHTML">
 
@@ -46,20 +46,20 @@
             <textarea name="note" rows="2" placeholder="e.g. Quest reward"></textarea>
         </div>
 
-        <fieldset style="border: 1px solid var(--color-border); border-radius: var(--radius); padding: var(--space-sm); margin-bottom: var(--space-md);">
+        <fieldset>
             <legend>In-Game Date (optional)</legend>
-            <div style="display:flex; gap: var(--space-sm);">
+            <div class="u-flex-row">
                 <div>
-                    <label style="font-size: var(--text-sm);">Year</label>
-                    <input type="number" name="inGameYear" th:value="${currentYear}" style="width:80px;" />
+                    <label class="u-text-sm">Year</label>
+                    <input type="number" name="inGameYear" th:value="${currentYear}" class="u-w-80" />
                 </div>
                 <div>
-                    <label style="font-size: var(--text-sm);">Month</label>
-                    <input type="number" name="inGameMonth" th:value="${currentMonth}" min="0" style="width:80px;" />
+                    <label class="u-text-sm">Month</label>
+                    <input type="number" name="inGameMonth" th:value="${currentMonth}" min="0" class="u-w-80" />
                 </div>
                 <div>
-                    <label style="font-size: var(--text-sm);">Day</label>
-                    <input type="number" name="inGameDay" th:value="${currentDay}" min="1" style="width:80px;" />
+                    <label class="u-text-sm">Day</label>
+                    <input type="number" name="inGameDay" th:value="${currentDay}" min="1" class="u-w-80" />
                 </div>
             </div>
         </fieldset>
