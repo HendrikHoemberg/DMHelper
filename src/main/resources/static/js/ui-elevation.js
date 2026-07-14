@@ -164,13 +164,12 @@
   } else {
     init();
   }
+  window.dismissHandout = function(overlay) {
+    if (overlay.classList.contains('closing')) return;
+    overlay.classList.add('closing');
+    setTimeout(() => overlay.remove(), 600);
+  };
 })();
-
-window.dismissHandout = function(overlay) {
-  if (overlay.classList.contains('closing')) return;
-  overlay.classList.add('closing');
-  setTimeout(() => overlay.remove(), 320);
-};
 
   window.tickNumber = function(element, to, duration = 300) {
   const from = parseInt(element.textContent, 10) || 0;
