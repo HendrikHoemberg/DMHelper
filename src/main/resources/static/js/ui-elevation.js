@@ -70,11 +70,12 @@
   }
 
   function initShortcutOverlay() {
+    if (document.getElementById('shortcut-overlay')) return;
     const overlay = document.createElement('div');
     overlay.id = 'shortcut-overlay';
     overlay.innerHTML = `
       <div class="shortcut-overlay-backdrop"></div>
-      <div class="shortcut-panel">
+      <div class="shortcut-panel" tabindex="-1">
         <h2>Keyboard Shortcuts</h2>
         <dl>
           <dt>⌘ / Ctrl + K</dt><dd>Search everything</dd>
@@ -86,20 +87,30 @@
     `;
     document.body.appendChild(overlay);
 
+    let lastFocused = null;
     function toggle(show) {
+      if (show) {
+        lastFocused = document.activeElement;
+      }
       overlay.classList.toggle('open', show);
+      if (show) {
+        overlay.querySelector('.shortcut-panel').focus();
+      } else if (lastFocused) {
+        lastFocused.focus();
+      }
     }
 
     document.addEventListener('keydown', (e) => {
       if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const tag = document.activeElement?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        e.preventDefault();
         toggle(true);
       }
       if (e.key === 'Escape') toggle(false);
     });
 
-    overlay.addEventListener('click', () => toggle(false));
+    overlay.querySelector('.shortcut-overlay-backdrop').addEventListener('click', () => toggle(false));
     window.toggleShortcutOverlay = toggle;
   }
 
