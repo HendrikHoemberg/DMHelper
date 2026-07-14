@@ -311,9 +311,10 @@ body.loading #loading-filament {
   position: fixed; inset: 0; z-index: 1100;
   display: flex; align-items: center; justify-content: center;
   opacity: 0; pointer-events: none;
-  transition: opacity var(--duration-standard) var(--ease-out);
+  visibility: hidden;
+  transition: opacity var(--duration-standard) var(--ease-out), visibility var(--duration-standard);
 }
-#shortcut-overlay.open { opacity: 1; pointer-events: auto; }
+#shortcut-overlay.open { opacity: 1; pointer-events: auto; visibility: visible; }
 .shortcut-overlay-backdrop { position: absolute; inset: 0; background: rgba(10, 7, 4, 0.72); backdrop-filter: blur(4px); }
 .shortcut-panel {
   position: relative;
@@ -331,6 +332,7 @@ body.loading #loading-filament {
 .shortcut-panel dl { display: grid; grid-template-columns: auto 1fr; gap: var(--space-sm) var(--space-md); }
 .shortcut-panel dt { font-family: var(--font-mono); color: var(--color-accent); }
 .shortcut-panel dd { color: var(--color-text-muted); }
+.shortcut-panel:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

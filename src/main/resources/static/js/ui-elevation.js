@@ -79,6 +79,7 @@
     overlay.innerHTML = `
       <div class="shortcut-overlay-backdrop"></div>
       <div class="shortcut-panel" tabindex="-1">
+        <button class="shortcut-close" aria-label="Close shortcuts">✕</button>
         <h2>Keyboard Shortcuts</h2>
         <dl>
           <dt>⌘ / Ctrl + K</dt><dd>Search everything</dd>
@@ -114,6 +115,7 @@
     });
 
     overlay.querySelector('.shortcut-overlay-backdrop').addEventListener('click', () => toggle(false));
+    overlay.querySelector('.shortcut-close').addEventListener('click', () => toggle(false));
     window.toggleShortcutOverlay = toggle;
   }
 
