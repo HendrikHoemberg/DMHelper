@@ -1588,7 +1588,9 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
   100% { transform: rotate(360deg); }
 }
 .dice-result {
-  transition: transform var(--duration-standard) var(--ease-spring), box-shadow var(--duration-standard) var(--ease-out);
+  transition: opacity var(--duration-standard) var(--ease-out),
+              transform var(--duration-standard) var(--ease-spring),
+              box-shadow var(--duration-standard) var(--ease-out);
 }
 .dice-result.bounce { animation: result-bounce 350ms var(--ease-spring); }
 @keyframes result-bounce {
