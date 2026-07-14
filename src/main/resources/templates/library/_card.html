@@ -37,7 +37,7 @@
 
 <div class="card-grid" th:fragment="card-list(statblocks)" th:if="${statblocks != null}">
     <th:block th:if="${statblocks.isEmpty()}">
-        <div class="empty-state"><p>No statblocks match your search.</p></div>
+        <th:block th:replace="~{common/_empty-state :: empty-state('No statblocks match your search.', null, null)}"></th:block>
     </th:block>
     <th:block th:each="sb : ${statblocks}">
         <th:block th:replace="~{library/_card :: card(sb=${sb})}"></th:block>

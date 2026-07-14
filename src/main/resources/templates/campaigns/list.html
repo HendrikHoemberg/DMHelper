@@ -17,7 +17,7 @@
 
             <div class="card-grid" id="campaign-grid">
                 <th:block th:if="${campaigns == null || campaigns.isEmpty()}">
-                    <th:block th:replace="~{common/_empty-state :: empty-state('No campaigns yet. Create your first one!')}"></th:block>
+                    <th:block th:replace="~{common/_empty-state :: empty-state('No campaigns yet. Every saga starts with a blank page.', 'Create campaign', @{/campaigns/new})}"></th:block>
                 </th:block>
                 <th:block th:each="campaign : ${campaigns}">
                     <th:block th:replace="~{campaigns/_card :: card(campaign=${campaign})}"></th:block>
