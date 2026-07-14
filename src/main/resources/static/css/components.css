@@ -91,6 +91,12 @@
   line-height: 1.5;
 }
 
+.btn {
+  transition: transform var(--duration-micro) var(--ease-out), background var(--duration-micro) var(--ease-out), border-color var(--duration-micro) var(--ease-out), box-shadow var(--duration-micro) var(--ease-out);
+}
+.btn:active { transform: scale(0.97); }
+.btn-ghost:hover { color: var(--color-text); background: var(--elevation-floating-bg); border-color: var(--color-gold-soft); }
+
 .btn:hover {
   background: var(--color-surface-hover);
   border-color: var(--color-accent);
