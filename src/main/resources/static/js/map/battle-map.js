@@ -1,4 +1,5 @@
 import { drawGrid, setupPanAndZoom, cellPos, snapPixel, pixelToCell, expandPrimitives } from './shared.js';
+import { BUILTIN_TERRAIN } from './terrain-palette.js';
 
 /**
  * @typedef {{id: string, name: string, kind: string, positionX: number, positionY: number,
@@ -6,19 +7,19 @@ import { drawGrid, setupPanAndZoom, cellPos, snapPixel, pixelToCell, expandPrimi
  *            currentHp: number|null, maxHp: number|null, bloodied: boolean, dead: boolean}} TokenData
  */
 
-const TERRAIN_COLORS = {
-    floor: '#2a2a3e', wall: '#4a4a5e', water: '#1a3a6e',
-    difficult: '#3a4a1e', lava: '#6e2a1a', pit: '#1a1a1a', door: '#8a6a2e',
-};
+/* Single source of truth for terrain colors is terrain-palette.js */
+const TERRAIN_COLORS = Object.fromEntries(
+    Object.entries(BUILTIN_TERRAIN).map(([key, t]) => [key, t.fill]));
 const KIND_RING_COLORS = { PC: '#4a9eff', NPC: '#2ecc71', MONSTER: '#e74c3c', OBJECT: '#f39c12' };
-const HP_COLORS = { high: '#2ecc71', mid: '#f39c12', low: '#e74c3c' };
+const HP_COLORS = { high: '#7fa05f', mid: '#d9993d', low: '#a83a32' };
 
+/* Mirrors the warm condition palette in encounter/_tracker.html */
 const CONDITION_COLORS = {
-    blinded: '#95a5a6', charmed: '#e91e63', deafened: '#607d8b',
-    exhaustion: '#795548', frightened: '#9c27b0', grappled: '#ff5722',
-    incapacitated: '#9e9e9e', invisible: '#00bcd4', paralyzed: '#ff9800',
-    petrified: '#8d6e73', poisoned: '#4caf50', prone: '#2196f3',
-    restrained: '#ffeb3b', stunned: '#ff5722', unconscious: '#f44336',
+    blinded: '#8a8578', charmed: '#c25a7c', deafened: '#6e7a80',
+    exhaustion: '#7a5b48', frightened: '#8a5fa0', grappled: '#b06038',
+    incapacitated: '#85796a', invisible: '#5f9ea0', paralyzed: '#c98a3d',
+    petrified: '#8d7a6b', poisoned: '#6f9a4f', prone: '#5a7fa8',
+    restrained: '#c9b03d', stunned: '#b06038', unconscious: '#a83a32',
 };
 
 const AOE_PRESETS = {
@@ -236,7 +237,7 @@ export class BattleMap {
         const primitiveCells = expandPrimitives(doc).filter(c => !explicitKeys.has(`${c.col},${c.row}`));
         const s = this.cellSizePx;
         for (const cell of [...primitiveCells, ...explicitCells]) {
-            const color = TERRAIN_COLORS[cell.terrain] || '#2a2a3e';
+            const color = TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.floor;
             this.terrainLayer.add(new Konva.Rect({
                 x: cell.col * s, y: cell.row * s, width: s, height: s,
                 fill: color, stroke: '#222', strokeWidth: 0.5,
@@ -283,7 +284,7 @@ export class BattleMap {
 
         const body = new Konva.Rect({
             width: w, height: h,
-            fill: token.dead ? '#555' : (token.color || '#7b68ee'),
+            fill: token.dead ? '#555' : (token.color || '#c9a35c'),
             stroke: this.selectedTokenId === token.id ? '#ff0' : (KIND_RING_COLORS[token.kind] || '#fff'),
             strokeWidth: this.selectedTokenId === token.id ? 3 : 2,
             cornerRadius: 4,

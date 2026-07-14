@@ -184,7 +184,7 @@ const KIND_COLORS = { PC: '#4a9eff', NPC: '#2ecc71', MONSTER: '#e74c3c', OBJECT:
 
 function drawToken(token, cellPx) {
     const size = token.sizeCols * cellPx;
-    const color = KIND_COLORS[token.kind] || token.color || '#7b68ee';
+    const color = KIND_COLORS[token.kind] || token.color || '#c9a35c';
 
     let fill = color;
     let strokeWidth = 2;
@@ -322,7 +322,7 @@ function updateTokensOnly(state) {
             existing.position({ x: token.positionX, y: token.positionY });
             existing.children().forEach(c => {
                 if (c.getAttr('name') === 'tokenRect') {
-                    c.stroke(token.bloodied ? '#e74c3c' : (KIND_COLORS[token.kind] || '#7b68ee'));
+                    c.stroke(token.bloodied ? '#e74c3c' : (KIND_COLORS[token.kind] || '#c9a35c'));
                     c.strokeWidth(token.bloodied ? 3 : 2);
                 }
             });
