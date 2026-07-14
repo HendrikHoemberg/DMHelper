@@ -91,14 +91,32 @@
     `;
     document.body.appendChild(overlay);
 
+    const panel = overlay.querySelector('.shortcut-panel');
+    const closeBtn = overlay.querySelector('.shortcut-close');
+
+    overlay.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      const focusables = [closeBtn, panel].filter(el => el && el.tabIndex >= -1);
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
+
     let lastFocused = null;
     function toggle(show) {
       if (show) {
         lastFocused = document.activeElement;
       }
       overlay.classList.toggle('open', show);
+      document.body.classList.toggle('shortcut-open', show);
       if (show) {
-        overlay.querySelector('.shortcut-panel').focus();
+        panel.focus();
       } else if (lastFocused) {
         lastFocused.focus();
       }

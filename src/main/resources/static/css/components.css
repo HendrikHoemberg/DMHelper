@@ -1230,7 +1230,7 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
 .cmd-enter-start .command-palette-box { opacity: 0; transform: translateY(-12px) scale(0.98); }
 .cmd-enter-end .command-palette-box { opacity: 1; transform: translateY(0) scale(1); }
 .cmd-leave-start .command-palette-box { opacity: 1; transform: translateY(0) scale(1); }
-.cmd-leave-end .command-palette-box { opacity: 0; transform: translateY(-8px) scale(0.99); }
+.cmd-leave-end .command-palette-box { opacity: 0; transform: translateY(-8px) scale(0.99); transition-timing-function: var(--ease-in); }
 
 .command-palette-search {
     display: flex; align-items: center;

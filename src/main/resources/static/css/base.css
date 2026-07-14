@@ -11,6 +11,7 @@ body {
 
 /* subtle vignette on the app frame; sits below overlays */
 body.palette-open { overflow: hidden; }
+body.shortcut-open { overflow: hidden; }
 
 body::before {
   content: '';
