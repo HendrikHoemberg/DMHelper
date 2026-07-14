@@ -18,6 +18,7 @@
                 </div>
                 <div class="page-header-actions">
                     <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
+                    <a th:href="@{/campaigns/{id}/notes/new(id=${campaignId})}" class="btn btn-primary">+ New Note</a>
                 </div>
             </div>
 
@@ -48,11 +49,6 @@
                                 th:selected="${selectedType != null and selectedType.name() == t.name()}">Type</option>
                     </select>
                 </div>
-            </div>
-
-            <div style="margin-bottom: var(--space-md);">
-                <a th:href="@{/campaigns/{id}/notes/new(id=${campaignId})}"
-                   class="btn btn-primary">+ New Note</a>
             </div>
 
             <div id="notes-list" class="card-grid">
