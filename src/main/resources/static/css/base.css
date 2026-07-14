@@ -100,14 +100,36 @@ fieldset {
 
 .page-header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   margin-bottom: var(--space-lg);
+  gap: var(--space-md);
+  flex-wrap: wrap;
 }
 
 .page-header h1 {
   font-size: var(--text-2xl);
   font-weight: 700;
+  margin-bottom: var(--space-xs);
+}
+
+.page-header .page-header-eyebrow {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-text-muted);
+}
+
+.page-header .rule-taper--gold {
+  max-width: 320px;
+  transform-origin: left center;
+  animation: rule-draw var(--duration-theatrical) var(--ease-out) forwards;
+}
+
+@keyframes rule-draw {
+  from { transform: scaleX(0); opacity: 0; }
+  to { transform: scaleX(1); opacity: 1; }
 }
 
 .empty-state {
