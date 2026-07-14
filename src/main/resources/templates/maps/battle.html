@@ -283,6 +283,8 @@
                 playerViewUrl: window.location.origin + '/player',
 
                 init() {
+                    document.body.classList.toggle('dm-mode-on', this.dmMode);
+                    document.body.classList.toggle('dm-mode-off', !this.dmMode);
                     window.addEventListener('battle-state-changed', () => {
                         if (this.presentingMap) {
                             fetch('/api/v1/table/refresh', { method: 'POST' }).catch(() => {});
@@ -410,6 +412,7 @@
                 toggleDmMode() {
                     this.dmMode = !this.dmMode;
                     document.body.classList.toggle('dm-mode-off', !this.dmMode);
+                    document.body.classList.toggle('dm-mode-on', this.dmMode);
                     window.battleMap?.setDmMode(this.dmMode);
                     window.dispatchEvent(new CustomEvent('dm-mode-changed', { detail: { dmMode: this.dmMode } }));
                 },
