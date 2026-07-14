@@ -728,31 +728,52 @@
 }
 
 .handout-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 900;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-md);
-    background: radial-gradient(ellipse at center, var(--color-overlay) 60%, rgba(0,0,0,0.97) 100%);
-    animation: fadeIn 0.2s ease;
-    cursor: pointer;
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  background: radial-gradient(ellipse at center, rgba(20,14,8,0.94) 45%, rgba(0,0,0,0.98) 100%);
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity var(--duration-standard) var(--ease-out);
 }
+.handout-overlay.closing { opacity: 0; }
 .handout-overlay img {
-    max-width: 88vw;
-    max-height: 80vh;
-    border: 1px solid var(--color-gold-soft);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
+  max-width: 88vw;
+  max-height: 80vh;
+  border: 1px solid var(--color-gold-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-warm-lg);
+  background: #2a2218 var(--texture-parchment);
+  opacity: 0;
+  transform: scale(0.92) rotateX(8deg);
+  animation: handout-unfold var(--duration-theatrical) var(--ease-out) forwards;
+}
+.handout-overlay.closing img {
+  animation: handout-fold var(--duration-theatrical) var(--ease-in) forwards;
+}
+@keyframes handout-unfold {
+  to { opacity: 1; transform: scale(1) rotateX(0deg); }
+}
+@keyframes handout-fold {
+  from { opacity: 1; transform: scale(1) rotateX(0deg); }
+  to { opacity: 0; transform: scale(0.92) rotateX(8deg); }
 }
 .handout-overlay .handout-caption {
-    font-family: var(--font-book);
-    font-size: var(--text-lg);
-    color: var(--color-text);
-    max-width: 68ch;
-    text-align: center;
+  font-family: var(--font-book);
+  font-size: var(--text-lg);
+  color: var(--color-text);
+  max-width: 68ch;
+  text-align: center;
+  opacity: 0;
+  animation: fade-in var(--duration-standard) var(--ease-out) 250ms forwards;
+}
+.handout-overlay.closing .handout-caption {
+  animation: fade-out var(--duration-standard) var(--ease-in) forwards;
 }
 .overlay-close-hint {
     position: absolute;
@@ -761,10 +782,6 @@
     color: var(--color-text-muted);
     font-size: var(--text-sm);
     cursor: pointer;
-}
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
 }
 
 /* ==============================

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <div th:fragment="overlay" class="handout-overlay" id="handoutOverlay"
-     onclick="this.remove()">
+     onclick="dismissHandout(this)">
     <img th:src="@{/files/{id}(id=${handout.id})}" th:alt="${handout.title}"
          onclick="event.stopPropagation()">
     <div class="handout-caption" th:text="${handout.title}" onclick="event.stopPropagation()">Title</div>

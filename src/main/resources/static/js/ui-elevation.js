@@ -166,7 +166,13 @@
   }
 })();
 
-window.tickNumber = function(element, to, duration = 300) {
+window.dismissHandout = function(overlay) {
+  if (overlay.classList.contains('closing')) return;
+  overlay.classList.add('closing');
+  setTimeout(() => overlay.remove(), 320);
+};
+
+  window.tickNumber = function(element, to, duration = 300) {
   const from = parseInt(element.textContent, 10) || 0;
   const start = performance.now();
   function step(now) {
