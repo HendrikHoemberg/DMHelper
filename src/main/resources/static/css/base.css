@@ -10,6 +10,8 @@ body {
 }
 
 /* subtle vignette on the app frame; sits below overlays */
+body.palette-open { overflow: hidden; }
+
 body::before {
   content: '';
   position: fixed;
@@ -85,9 +87,6 @@ fieldset {
   user-select: none;
 }
 
-.dm-toggle input[type="checkbox"] {
-  accent-color: var(--color-warning);
-}
 .pin-display {
   font-family: 'Cascadia Code', 'Fira Code', monospace;
   font-size: var(--text-sm);

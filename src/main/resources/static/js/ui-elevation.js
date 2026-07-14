@@ -73,6 +73,9 @@
     if (document.getElementById('shortcut-overlay')) return;
     const overlay = document.createElement('div');
     overlay.id = 'shortcut-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Keyboard shortcuts');
     overlay.innerHTML = `
       <div class="shortcut-overlay-backdrop"></div>
       <div class="shortcut-panel" tabindex="-1">
