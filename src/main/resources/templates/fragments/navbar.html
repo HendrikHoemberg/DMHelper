@@ -3,6 +3,7 @@
 <nav class="navbar" th:fragment="navbar">
     <a href="/campaigns" class="navbar-brand">DMHelper</a>
     <div class="navbar-right">
+        <button class="btn btn-ghost u-text-sm palette-hint" onclick="window.dispatchEvent(new CustomEvent('command-palette-toggle'))" title="Search everything">⌘K</button>
         <button class="dice-toggle-btn" id="diceToggle"
                 :class="{ active: open }"
                 @click="open = !open"

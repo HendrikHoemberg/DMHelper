@@ -1200,26 +1200,37 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
 
 /* ── Command Palette ── */
 .command-palette-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-    z-index: 1000; display: flex; align-items: flex-start;
-    justify-content: center; padding-top: 15vh;
+  position: fixed; inset: 0;
+  background: rgba(10, 7, 4, 0.72);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
 }
+
+.cmd-enter { transition: opacity var(--duration-standard) var(--ease-out); }
+.cmd-enter-start { opacity: 0; }
+.cmd-enter-end { opacity: 1; }
+.cmd-leave { transition: opacity var(--duration-standard) var(--ease-in); }
+.cmd-leave-start { opacity: 1; }
+.cmd-leave-end { opacity: 0; }
 
 .command-palette-box {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    width: 560px; max-height: 70vh;
-    display: flex; flex-direction: column;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-    animation: paletteSlideIn 0.1s ease-out;
+  background: var(--elevation-floating-bg);
+  border: 1px solid var(--color-gold-soft);
+  border-radius: 10px;
+  width: 560px; max-height: 70vh;
+  display: flex; flex-direction: column;
+  box-shadow: var(--shadow-warm-lg), var(--highlight-candle);
+  overflow: hidden;
+  transition: transform var(--duration-standard) var(--ease-out), opacity var(--duration-standard) var(--ease-out);
 }
-
-@keyframes paletteSlideIn {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+.cmd-enter-start .command-palette-box { opacity: 0; transform: translateY(-12px) scale(0.98); }
+.cmd-enter-end .command-palette-box { opacity: 1; transform: translateY(0) scale(1); }
+.cmd-leave-start .command-palette-box { opacity: 1; transform: translateY(0) scale(1); }
+.cmd-leave-end .command-palette-box { opacity: 0; transform: translateY(-8px) scale(0.99); }
 
 .command-palette-search {
     display: flex; align-items: center;

@@ -1,5 +1,11 @@
 <div class="command-palette-overlay" th:fragment="command-palette"
      x-data="commandPalette" x-show="open"
+     x-transition:enter="cmd-enter"
+     x-transition:enter-start="cmd-enter-start"
+     x-transition:enter-end="cmd-enter-end"
+     x-transition:leave="cmd-leave"
+     x-transition:leave-start="cmd-leave-start"
+     x-transition:leave-end="cmd-leave-end"
      @click.self="open = false"
      @keydown.escape.window="if(open) { open = false; query = ''; results = []; }"
      x-cloak

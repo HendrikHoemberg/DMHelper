@@ -270,6 +270,9 @@ body.loading #loading-filament {
   opacity: 1;
 }
 
+.palette-hint { color: var(--color-text-muted); font-family: var(--font-mono); }
+.palette-hint:hover { color: var(--color-accent); }
+
 /* ── Switch control (DM Mode, settings toggles) ── */
 .switch-control {
   display: inline-flex;
