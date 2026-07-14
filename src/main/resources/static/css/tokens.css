@@ -86,6 +86,8 @@
 
   --highlight-candle: inset 0 1px 0 rgba(255, 243, 210, 0.08);
 
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
   /* gold sheen */
   --gold-sheen: linear-gradient(110deg, #c9a35c 0%, #e3c68b 35%, #c9a35c 50%, #b08a4a 100%);
   --gold-sweep: linear-gradient(105deg, transparent 40%, rgba(255, 243, 210, 0.35) 50%, transparent 60%);
