@@ -52,7 +52,7 @@
                         <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=${#lists.toList(holderItems).?[attuned()].size()})}"
                              th:each="a : ${holderItems}"></div>
                     </div>
-                    <th:block th:if="${#lists.isEmpty(holderItems)}" th:replace="~{common/_empty-state :: empty-state('No items assigned', null, null)}"></th:block>
+                    <th:block th:if="${#lists.isEmpty(holderItems)}" th:replace="~{common/_empty-state :: empty-state('No items assigned', null, null, null)}"></th:block>
                 </th:block>
             </div>
 
@@ -64,7 +64,7 @@
                         <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=0)}"
                              th:each="a : ${stashItems}"></div>
                     </div>
-                    <th:block th:if="${#lists.isEmpty(stashItems)}" th:replace="~{common/_empty-state :: empty-state('Party stash is empty', null, null)}"></th:block>
+                    <th:block th:if="${#lists.isEmpty(stashItems)}" th:replace="~{common/_empty-state :: empty-state('Party stash is empty', null, null, null)}"></th:block>
                 </th:block>
             </div>
         </main>

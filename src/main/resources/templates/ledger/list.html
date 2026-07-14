@@ -40,7 +40,7 @@
             <div style="display:flex; flex-direction:column; gap: var(--space-sm);" id="ledger-entries">
                 <div th:replace="~{ledger/_card :: card(entry=${e})}" th:each="e : ${entries}"></div>
             </div>
-            <th:block th:if="${#lists.isEmpty(entries)}" th:replace="~{common/_empty-state :: empty-state('No transactions recorded', null, null)}"></th:block>
+            <th:block th:if="${#lists.isEmpty(entries)}" th:replace="~{common/_empty-state :: empty-state('No transactions recorded', null, null, null)}"></th:block>
         </main>
     </div>
 </body>

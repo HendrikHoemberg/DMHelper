@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="empty-state" th:fragment="empty-state(message, actionText, actionHref)">
+<div class="empty-state" th:fragment="empty-state(message, actionText, actionHref, description)">
     <p th:text="${message}">No items yet.</p>
+    <p th:if="${description != null}" th:text="${description}" class="text-muted" style="font-size: var(--text-sm);"></p>
     <a th:if="${actionHref != null}" th:href="${actionHref}" th:text="${actionText}"
        class="btn btn-primary">Create</a>
 </div>

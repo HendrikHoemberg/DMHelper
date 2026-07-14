@@ -52,7 +52,7 @@
             </div>
 
             <div id="notes-list" class="card-grid">
-                <th:block th:if="${notes.isEmpty()}" th:replace="~{common/_empty-state :: empty-state('No notes yet', 'Create your first note', @{/campaigns/{id}/notes/new(id=${campaignId})})}"></th:block>
+                <th:block th:if="${notes.isEmpty()}" th:replace="~{common/_empty-state :: empty-state('No notes yet', 'Create your first note', @{/campaigns/{id}/notes/new(id=${campaignId})}, null)}"></th:block>
                 <th:block th:each="note : ${notes}">
                     <th:block th:replace="~{notes/_card :: card(note=${note})}"></th:block>
                 </th:block>

@@ -29,7 +29,7 @@
 
             <div id="party-grid" class="card-grid">
                 <th:block th:if="${members == null or members.isEmpty()}">
-                    <th:block th:replace="~{common/_empty-state :: empty-state('No party members yet. Add your first player character!', null, null)}"></th:block>
+                    <th:block th:replace="~{common/_empty-state :: empty-state('No party members yet. Add your first player character!', null, null, null)}"></th:block>
                 </th:block>
                 <th:block th:each="pm : ${members}">
                     <th:block th:replace="~{party/_card :: card(pm=${pm})}"></th:block>
