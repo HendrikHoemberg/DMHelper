@@ -1494,7 +1494,12 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
 .book-cover-plus { font-size: var(--text-2xl); line-height: 1; }
 .book-cover-label { font-size: var(--text-sm); }
 
-.book-cover .card-actions {
+.book-cover-wrapper {
+  position: relative;
+  display: contents;
+}
+
+.book-cover-wrapper .card-actions {
   position: absolute;
   top: var(--space-xs);
   right: var(--space-xs);
@@ -1502,8 +1507,14 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
   opacity: 0;
   transform: translateY(-4px);
   transition: opacity var(--duration-micro) var(--ease-out), transform var(--duration-micro) var(--ease-out);
+  z-index: 2;
 }
-.book-cover:hover .card-actions { opacity: 1; transform: translateY(0); }
+
+.book-cover-wrapper:hover .card-actions,
+.book-cover-wrapper:focus-within .card-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 .dash-card {
   opacity: 0;
