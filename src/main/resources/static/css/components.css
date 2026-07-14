@@ -1496,7 +1496,6 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
 
 .book-cover-wrapper {
   position: relative;
-  display: contents;
 }
 
 .book-cover-wrapper .card-actions {
