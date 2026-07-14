@@ -1580,3 +1580,28 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Dice roller theatrics ── */
+.die-icon { display: inline-block; transition: transform var(--duration-micro) var(--ease-out); }
+.die-icon.tumbling { animation: die-tumble 500ms linear infinite; }
+@keyframes die-tumble {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.dice-result {
+  transition: transform var(--duration-standard) var(--ease-spring), box-shadow var(--duration-standard) var(--ease-out);
+}
+.dice-result.bounce { animation: result-bounce 350ms var(--ease-spring); }
+@keyframes result-bounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.dice-history-item {
+  opacity: 0;
+  transform: translateX(-12px);
+  animation: history-slide var(--duration-standard) var(--ease-out) forwards;
+}
+@keyframes history-slide {
+  to { opacity: 1; transform: translateX(0); }
+}
+

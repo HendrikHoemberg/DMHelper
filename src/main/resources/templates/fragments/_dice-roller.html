@@ -22,6 +22,7 @@
                    :disabled="loading"
                    autofocus>
             <button @click="roll()" :disabled="loading || !expression">
+                <span class="die-icon" :class="{ tumbling: loading }">&#x2684;</span>
                 <span x-show="!loading">Roll</span>
                 <span x-show="loading">...</span>
             </button>
@@ -40,7 +41,7 @@
             </label>
         </div>
 
-        <div class="dice-result" x-show="result" x-transition>
+        <div class="dice-result" x-show="result" x-transition x-ref="resultBox">
             <div class="dice-result-total"
                  :class="{ high: result && result.disadvantage == false && result.advantage == false && result.total >= 15 && result.expression && result.expression.startsWith('d20'),
                            low: result && result.disadvantage == false && result.advantage == false && result.total <= 5 && result.expression && result.expression.startsWith('d20') }"

@@ -157,6 +157,14 @@ document.addEventListener('alpine:init', () => {
                 }
 
                 this.result = await resp.json();
+                this.$nextTick(() => {
+                  const el = this.$refs.resultBox;
+                  if (el) {
+                    el.classList.remove('bounce');
+                    void el.offsetWidth;
+                    el.classList.add('bounce');
+                  }
+                });
                 window.dispatchEvent(new CustomEvent('dice-roll-result', {
                     detail: this.result
                 }));
