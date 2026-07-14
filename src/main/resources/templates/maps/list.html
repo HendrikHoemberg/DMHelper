@@ -24,7 +24,9 @@
 
             <div id="map-grid" class="card-grid">
                 <th:block th:if="${maps == null or maps.isEmpty()}">
-                    <th:block th:replace="~{common/_empty-state :: empty-state('No maps yet. Create your first map!')}"></th:block>
+                    <div class="empty-state">
+                        <p>No maps yet. Create your first map!</p>
+                    </div>
                 </th:block>
                 <th:block th:each="map : ${maps}">
                     <th:block th:replace="~{maps/_card :: card(map=${map}, campaignId=${campaignId})}"></th:block>

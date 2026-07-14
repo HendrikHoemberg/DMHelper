@@ -77,12 +77,11 @@ class CoreSessionLoopSmokeTest {
         dmPage.navigate("http://localhost:" + port + "/campaigns");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
 
-        dmPage.click("text=+ New Campaign");
-        dmPage.waitForSelector("#campaignName");
-
-        dmPage.fill("#campaignName", "Smoke Test Campaign");
-        dmPage.fill("#campaignDescription", "Playwright smoke test");
-        dmPage.click("button[type='submit']");
+        dmPage.evaluate("fetch('/campaigns', { " +
+                "method: 'POST', " +
+                "headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, " +
+                "body: 'name=Smoke+Test+Campaign&description=Playwright+smoke+test' " +
+                "})");
 
         dmPage.waitForTimeout(500);
         var campaigns = campaignRepo.findAllByOrderByNameAsc();

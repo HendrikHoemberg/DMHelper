@@ -33,6 +33,11 @@ public class CampaignController {
         this.partyMemberService = partyMemberService;
     }
 
+    @GetMapping("/new")
+    public String newForm() {
+        return "campaigns/_form";
+    }
+
     @GetMapping
     public String list(Model model, HttpServletRequest request) {
         model.addAttribute("campaigns", service.findAll());
