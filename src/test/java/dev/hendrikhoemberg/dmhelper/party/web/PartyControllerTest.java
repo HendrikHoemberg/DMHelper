@@ -82,6 +82,7 @@ class PartyControllerTest {
         pm.setCharacterName("Thia");
         pm.setAc(16);
         pm.setMaxHp(38);
+        pm.setCurrentHp(38);
         pm.setPassivePerception(17);
 
         when(partyService.create(eq(campaignId), eq("Thia"), any(), any(), eq(16), eq(38), eq(4), eq(30),

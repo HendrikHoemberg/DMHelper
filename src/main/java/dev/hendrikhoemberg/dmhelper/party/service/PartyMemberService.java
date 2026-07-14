@@ -88,6 +88,7 @@ public class PartyMemberService {
             pm.setPassiveInvestigation(passiveInvestigation);
         }
         pm.setNotes(notes);
+        if (pm.getCurrentHp() > pm.getMaxHp()) pm.setCurrentHp(pm.getMaxHp());
         return repository.save(pm);
     }
 

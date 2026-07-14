@@ -33,7 +33,6 @@ public class PartyMember {
     @Column(nullable = false)
     private int maxHp;
 
-    @Column(nullable = false)
     private int currentHp;
 
     @Column(nullable = false)

@@ -41,6 +41,7 @@ class PartyMemberServiceTest {
         assertThat(pm.getCharacterName()).isEqualTo("Thia");
         assertThat(pm.getPassivePerception()).isEqualTo(17);
         assertThat(pm.isActive()).isTrue();
+        assertThat(pm.getCurrentHp()).isEqualTo(pm.getMaxHp());
     }
 
     @Test
