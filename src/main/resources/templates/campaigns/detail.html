@@ -44,7 +44,7 @@
             <th:block th:replace="~{party/_summary-bar :: summary-bar(${partyMembers})}"></th:block>
 
             <div class="dash-grid">
-                <section class="card">
+                <section class="card dash-card" style="--stagger: 0">
                     <h3>Session Plan</h3>
                     <th:block th:if="${sessionPlan != null}">
                         <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaign.id}, nid=${sessionPlan.id})}"
@@ -57,7 +57,7 @@
                     </p>
                 </section>
 
-                <section class="card">
+                <section class="card dash-card" style="--stagger: 1">
                     <h3>Recent Notes</h3>
                     <ul class="dash-list">
                         <li th:each="n : ${recentNotes}">
@@ -69,7 +69,7 @@
                     </ul>
                 </section>
 
-                <section class="card">
+                <section class="card dash-card" style="--stagger: 2">
                     <h3>Edit Campaign</h3>
                     <form th:hx-put="@{/campaigns/{id}(id=${campaign.id})}"
                           hx-target="body"
