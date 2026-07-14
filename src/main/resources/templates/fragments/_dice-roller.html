@@ -3,6 +3,7 @@
 <div th:fragment="dice-roller"
      x-data="diceRoller()"
      x-show="open"
+     x-cloak
      class="dice-panel"
      :class="{ closed: !open }"
      @keydown.escape.window="open = false">
@@ -43,21 +44,22 @@
 
         <div class="dice-result" x-show="result" x-transition x-ref="resultBox">
             <div class="dice-result-total"
-                 :class="{ high: result && result.disadvantage == false && result.advantage == false && result.total >= 15 && result.expression && result.expression.startsWith('d20'),
-                           low: result && result.disadvantage == false && result.advantage == false && result.total <= 5 && result.expression && result.expression.startsWith('d20') }"
+                 :class="result ? critClass(result.rolls, result.advantage, result.disadvantage) : ''"
                  x-text="result ? result.total : ''"></div>
+            <!-- x-show hides the element but still evaluates its children, so every expression
+                 in here has to survive `result` being null — which it is until the first roll. -->
             <div class="dice-result-details" x-show="result && result.rolls && result.rolls.length > 0">
-                <template x-for="dieRoll in result.rolls" :key="dieRoll.die">
+                <template x-for="dieRoll in (result?.rolls || [])" :key="dieRoll.die">
                     <div>
                         <span x-text="dieRoll.die + ': '"></span>
                         <span x-text="'[' + dieRoll.values.join('] [') + ']'"></span>
                     </div>
                 </template>
-                <div x-show="result.modifier != 0">
-                    <span x-text="result.modifier >= 0 ? '+ ' + result.modifier : '- ' + Math.abs(result.modifier)"></span>
+                <div x-show="result && result.modifier != 0">
+                    <span x-text="result ? (result.modifier >= 0 ? '+ ' + result.modifier : '- ' + Math.abs(result.modifier)) : ''"></span>
                 </div>
-                <div x-show="result.advantage" class="dice-adv">(advantage — higher of 2)</div>
-                <div x-show="result.disadvantage" class="dice-dis">(disadvantage — lower of 2)</div>
+                <div x-show="result?.advantage" class="dice-adv">(advantage — higher of 2)</div>
+                <div x-show="result?.disadvantage" class="dice-dis">(disadvantage — lower of 2)</div>
             </div>
             <div class="dice-result-details" x-show="result && (!result.rolls || result.rolls.length == 0)">
                 typed input
@@ -73,8 +75,7 @@
                 <div class="dice-history-item">
                     <span class="expr" x-text="item.expression"></span>
                     <span class="value"
-                          :class="{ high: item.total >= 15 && item.expression && item.expression.startsWith('d20') && !item.advantage && !item.disadvantage,
-                                    low: item.total <= 5 && item.expression && item.expression.startsWith('d20') && !item.advantage && !item.disadvantage }"
+                          :class="historyCritClass(item)"
                           x-text="item.total"></span>
                 </div>
             </template>

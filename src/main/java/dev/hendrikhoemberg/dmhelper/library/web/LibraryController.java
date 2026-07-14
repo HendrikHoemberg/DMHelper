@@ -70,6 +70,8 @@ public class LibraryController {
         }
         List<StatBlock> results = service.search(sourceEnum, cr, type, search);
         model.addAttribute("statblocks", results);
+        // When the source filter is on, every badge on screen says the same thing.
+        model.addAttribute("sourceFiltered", sourceEnum != null);
         return "library/_card :: card-list";
     }
 
@@ -79,6 +81,15 @@ public class LibraryController {
         enrichStatBlock(sb);
         model.addAttribute("sb", sb);
         return "library/detail";
+    }
+
+    /** The statblock as a side sheet over the library, so browsing never loses its place (§5.3). */
+    @GetMapping("/statblocks/{id}/sheet")
+    public String sheet(@PathVariable UUID id, Model model) {
+        StatBlock sb = service.findById(id);
+        enrichStatBlock(sb);
+        model.addAttribute("sb", sb);
+        return "library/_sheet :: sheet";
     }
 
     @GetMapping("/statblocks/new")

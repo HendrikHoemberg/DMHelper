@@ -283,8 +283,7 @@
                 playerViewUrl: window.location.origin + '/player',
 
                 init() {
-                    document.body.classList.toggle('dm-mode-on', this.dmMode);
-                    document.body.classList.toggle('dm-mode-off', !this.dmMode);
+                    window.setDmMode(this.dmMode, { animate: false });
                     window.addEventListener('battle-state-changed', () => {
                         if (this.presentingMap) {
                             fetch('/api/v1/table/refresh', { method: 'POST' }).catch(() => {});
@@ -411,8 +410,7 @@
                 },
                 toggleDmMode() {
                     this.dmMode = !this.dmMode;
-                    document.body.classList.toggle('dm-mode-off', !this.dmMode);
-                    document.body.classList.toggle('dm-mode-on', this.dmMode);
+                    window.setDmMode(this.dmMode);
                     window.battleMap?.setDmMode(this.dmMode);
                     window.dispatchEvent(new CustomEvent('dm-mode-changed', { detail: { dmMode: this.dmMode } }));
                 },
@@ -501,7 +499,6 @@
         window.battleMap = battleMap;
         battleMap.load();
     </script>
-    <script th:src="@{/vendor/alpine.min.js}" defer></script>
     <script>
         window.openSceneInPanel = function(sceneId) {
             const container = document.getElementById('scene-panel-container');

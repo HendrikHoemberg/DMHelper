@@ -16,6 +16,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,7 +42,9 @@ public class CampaignController {
 
     @GetMapping
     public String list(Model model, HttpServletRequest request) {
-        model.addAttribute("campaigns", service.findAll());
+        List<Campaign> campaigns = service.findAll();
+        campaigns.forEach(this::addAuthorLine);
+        model.addAttribute("campaigns", campaigns);
 
         String fragment = request.getParameter("fragment");
         if ("form".equals(fragment)) {
@@ -61,8 +65,20 @@ public class CampaignController {
             throw new IllegalArgumentException("Campaign name is required");
         }
         Campaign campaign = service.create(name, description);
+        addAuthorLine(campaign);
         model.addAttribute("campaign", campaign);
         return "campaigns/_card";
+    }
+
+    private static final DateTimeFormatter AUTHOR_LINE_DATE =
+            DateTimeFormatter.ofPattern("d MMMM").withZone(ZoneId.systemDefault());
+
+    private void addAuthorLine(Campaign campaign) {
+        int heroes = partyMemberService.findActiveByCampaignId(campaign.getId()).size();
+        String opened = AUTHOR_LINE_DATE.format(campaign.getCreatedAt());
+        campaign.setAuthorLine(heroes == 1
+                ? "1 hero · opened " + opened
+                : heroes + " heroes · opened " + opened);
     }
 
     @GetMapping("/{id}")

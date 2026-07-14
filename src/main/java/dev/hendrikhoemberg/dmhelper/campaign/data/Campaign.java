@@ -60,4 +60,11 @@ public class Campaign {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    /** Book-cover byline, e.g. "4 heroes · opened 8 July". Derived, never persisted. */
+    @Transient
+    private transient String authorLine;
+
+    public String getAuthorLine() { return authorLine; }
+    public void setAuthorLine(String authorLine) { this.authorLine = authorLine; }
 }

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="sheet" class="side-sheet" id="statblock-sheet" role="dialog" aria-modal="true"
+     th:aria-label="${sb.name}" tabindex="-1">
+    <div class="side-sheet-header">
+        <th:block th:if="${sb.source.name() == 'SRD'}">
+            <form th:hx-post="@{/library/statblocks/{id}/clone(id=${sb.id})}" hx-target="body">
+                <button type="submit" class="btn btn-ghost">Clone &amp; Edit</button>
+            </form>
+        </th:block>
+        <a th:if="${sb.source.name() == 'CUSTOM'}" class="btn btn-ghost"
+           th:href="@{/library/statblocks/{id}/edit(id=${sb.id})}">Edit</a>
+        <a class="btn btn-ghost" th:href="@{/library/statblocks/{id}(id=${sb.id})}">Open full page</a>
+        <button type="button" class="btn btn-ghost" data-sheet-close aria-label="Close statblock">&#x2715;</button>
+    </div>
+
+    <th:block th:replace="~{library/_statblock-renderer :: renderer(sb=${sb})}"></th:block>
+</div>
+</html>

@@ -20,7 +20,13 @@ body::before {
   pointer-events: none;
   z-index: 400;
   background: radial-gradient(ellipse at center, transparent 55%, rgba(8, 5, 2, var(--vignette-intensity)) 100%);
+  transition: background var(--duration-structural) var(--ease-out);
 }
+
+/* The candlelit study closes in at the table; prep screens stay open and bright. */
+body:has(.cockpit-topbar),
+body:has(.battle-container) { --vignette-intensity: 0.34; }
+body:has(.handout-overlay) { --vignette-intensity: 0.5; }
 
 h1, h2 {
   font-family: var(--font-display);
@@ -143,14 +149,28 @@ fieldset {
    DM Mode — player-safe indicator (M7)
    ============================== */
 
+/* Player-safe. The gold goes cold: every accent in the app becomes shielded
+   steel, so the state is legible from across the room long after the sweep. */
 body.dm-mode-off {
-    border: 3px solid var(--color-warning);
+    --color-accent: var(--color-shield);
+    --color-accent-hover: var(--color-shield-hover);
+    --color-gold-soft: var(--color-shield-soft);
+    --gold-sheen: linear-gradient(110deg, #8a9aa5 0%, #b6c3cb 35%, #8a9aa5 50%, #75858f 100%);
+    border: 3px solid var(--color-shield);
     border-top: none;
 }
 
 body.dm-mode-off .dm-only,
 body.dm-mode-off [data-dm-only] {
     display: none !important;
+}
+
+/* ...but they fade out behind the sweep first, rather than blinking away.
+   `dm-mode-off` (which hides them outright) lands only once this fade is done. */
+body.dm-fading .dm-only,
+body.dm-fading [data-dm-only] {
+    opacity: 0;
+    transition: opacity var(--duration-standard) var(--ease-out);
 }
 
 body.dm-mode-off .party-summary-bar { display: none; }
@@ -161,8 +181,8 @@ body.dm-mode-off .note-dm-only { display: none; }
 
 /* Toolbar visual indicator when DM Mode is off */
 body.dm-mode-off .navbar {
-  border-bottom: 3px solid var(--color-warning);
-  background: color-mix(in srgb, var(--color-warning) 6%, var(--color-surface));
+  border-bottom: 3px solid var(--color-shield);
+  background: color-mix(in srgb, var(--color-shield) 7%, var(--color-surface));
 }
 /* DM Mode off = screen is player-safe. Must be readable from across the room. */
 .dm-shield-badge {
@@ -171,9 +191,9 @@ body.dm-mode-off .navbar {
   font-size: var(--text-xs);
   letter-spacing: 0.15em;
   padding: 2px 10px;
-  border: 1px solid var(--color-warning);
+  border: 1px solid var(--color-shield);
   border-radius: var(--radius);
-  color: var(--color-warning);
+  color: var(--color-shield);
 }
 body.dm-mode-off .dm-shield-badge { display: inline-block; }
 
@@ -239,10 +259,85 @@ body.dm-mode-off .dm-shield-badge { display: inline-block; }
 .appnav-footer { margin-top: auto; padding: var(--space-sm); }
 .appnav-run { width: 100%; }
 
+/* The icon each link shows once the rail is collapsed. */
+.appnav-link::before {
+  content: attr(data-icon);
+  display: none;
+  width: 1.4em;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.appnav-collapse {
+  align-self: flex-end;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: var(--space-xs);
+  border-radius: var(--radius);
+  line-height: 1;
+  transition: color var(--duration-micro) var(--ease-out), background var(--duration-micro) var(--ease-out);
+}
+.appnav-collapse:hover { color: var(--color-accent); background: var(--elevation-floating-bg); }
+
+/* ── Collapsed rail: icons, labelled on hover (§3.6) ──
+   The label is a floating chip rather than a widening sidebar — nothing here
+   animates a layout property. */
+.app-shell--nav-collapsed { grid-template-columns: 56px 1fr; }
+.app-shell--nav-collapsed .appnav { padding: var(--space-md) var(--space-xs); overflow: visible; }
+.app-shell--nav-collapsed .appnav-label,
+.app-shell--nav-collapsed .appnav-run span,
+.app-shell--nav-collapsed .appnav-link .appnav-text { display: none; }
+.app-shell--nav-collapsed .appnav-collapse { align-self: center; transform: rotate(180deg); }
+
+.app-shell--nav-collapsed .appnav-group {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-sm);
+}
+.app-shell--nav-collapsed .appnav-group:first-of-type { border-top: none; }
+
+.app-shell--nav-collapsed .appnav-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 8px 0;
+}
+.app-shell--nav-collapsed .appnav-link::before { display: block; }
+.app-shell--nav-collapsed .appnav-link:hover { transform: none; }
+
+.app-shell--nav-collapsed .appnav-link::after {
+  content: attr(data-label);
+  position: absolute;
+  left: calc(100% + var(--space-sm));
+  top: 50%;
+  white-space: nowrap;
+  padding: 4px 10px;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  background: var(--elevation-floating-bg);
+  border: 1px solid var(--color-gold-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-warm-md);
+  opacity: 0;
+  transform: translate(-4px, -50%);
+  transition: opacity var(--duration-micro) var(--ease-out), transform var(--duration-micro) var(--ease-out);
+  pointer-events: none;
+  z-index: 300;
+}
+.app-shell--nav-collapsed .appnav-link:hover::after,
+.app-shell--nav-collapsed .appnav-link:focus-visible::after {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
 @media (max-width: 900px) {
-  .app-shell { grid-template-columns: 1fr; }
+  .app-shell,
+  .app-shell--nav-collapsed { grid-template-columns: 1fr; }
   .appnav { position: static; height: auto; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--color-border); }
   .appnav-footer { margin-top: 0; }
+  .appnav-collapse { display: none; }
 }
 
 /* ── Loading filament (htmx request indicator) ── */
@@ -343,26 +438,49 @@ body.loading #loading-filament {
 .shortcut-close:hover { color: var(--color-text); background: var(--elevation-raised-bg); }
 .shortcut-close:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
-::view-transition-old(root) { animation: fade-out var(--duration-theatrical) var(--ease-out) forwards; }
-::view-transition-new(root) { animation: fade-in var(--duration-theatrical) var(--ease-out) forwards; }
+/* ── View transitions ──
+   Cross-document navigation is the signature "opening the book" gesture: the
+   clicked campaign cover and the dashboard header share the `campaign-cover`
+   name, so the browser morphs one into the other. Browsers without support
+   simply navigate normally. */
+@view-transition { navigation: auto; }
+
+::view-transition-old(root) { animation: fade-out var(--duration-standard) var(--ease-in) forwards; }
+::view-transition-new(root) { animation: fade-in var(--duration-standard) var(--ease-out) forwards; }
 @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
-/* ── DM Mode shield sweep ── */
+/* The book opens: cover grows into the page it becomes. */
+::view-transition-group(campaign-cover) {
+  animation-duration: var(--duration-theatrical);
+  animation-timing-function: var(--ease-out);
+}
+::view-transition-old(campaign-cover),
+::view-transition-new(campaign-cover) {
+  animation-duration: var(--duration-theatrical);
+  animation-timing-function: var(--ease-out);
+}
+
+.dash-header { view-transition-name: campaign-cover; }
+
+/* ── DM Mode shield sweep ──
+   Driven by classes the toggle adds and then removes, so the wash plays on the
+   state *change* only — never on page load. */
 #dm-shield-sweep {
   position: fixed;
   inset: 0;
   z-index: 9998;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent 0%, rgba(168, 58, 50, 0.35) 50%, transparent 100%);
   transform: translateX(-100%);
   opacity: 0;
 }
-body.dm-mode-off #dm-shield-sweep {
-  animation: shield-sweep var(--duration-theatrical) var(--ease-out) forwards;
+body.dm-sweeping-off #dm-shield-sweep {
+  background: linear-gradient(90deg, transparent 0%, rgba(138, 154, 165, 0.4) 50%, transparent 100%);
+  animation: shield-sweep 600ms var(--ease-out) forwards;
 }
-body.dm-mode-on #dm-shield-sweep {
-  animation: shield-sweep-reverse var(--duration-theatrical) var(--ease-out) forwards;
+body.dm-sweeping-on #dm-shield-sweep {
+  background: linear-gradient(90deg, transparent 0%, rgba(201, 163, 92, 0.35) 50%, transparent 100%);
+  animation: shield-sweep-reverse 600ms var(--ease-out) forwards;
 }
 @keyframes shield-sweep {
   0% { transform: translateX(-100%); opacity: 0; }
@@ -375,6 +493,7 @@ body.dm-mode-on #dm-shield-sweep {
   100% { transform: translateX(-100%); opacity: 0; }
 }
 
+/* Reduced motion: instant swap, tint still applies (§6.3). */
 @media (prefers-reduced-motion: reduce) {
   #dm-shield-sweep { display: none; }
 }

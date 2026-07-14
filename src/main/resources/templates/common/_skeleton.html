@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!-- Warm shimmer while a panel loads. No spinners (§3.4). -->
+<div class="skeleton-grid" th:fragment="skeleton(count)" aria-hidden="true">
+    <div class="skeleton-card" th:each="i : ${#numbers.sequence(1, count)}"></div>
+</div>
+</html>

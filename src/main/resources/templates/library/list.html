@@ -3,7 +3,6 @@
 <head>
     <th:block th:replace="~{fragments/head :: head}"></th:block>
     <title>DMHelper -- Library</title>
-    <script th:src="@{/vendor/alpine.min.js}"></script>
 </head>
 <body>
     <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
@@ -118,7 +117,7 @@
                 </div>
 
                 <div id="library-results" hx-get="/library/statblocks" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="empty-state"><p>Loading...</p></div>
+                    <th:block th:replace="~{common/_skeleton :: skeleton(12)}"></th:block>
                 </div>
             </div>
 
@@ -170,7 +169,7 @@
                     </div>
                 </div>
                 <div id="spell-results" hx-get="/library/spells" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="empty-state"><p>Loading spells...</p></div>
+                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
                 </div>
             </div>
 
@@ -185,7 +184,7 @@
                     </div>
                 </div>
                 <div id="condition-results" hx-get="/library/conditions" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="empty-state"><p>Loading conditions...</p></div>
+                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
                 </div>
             </div>
 
@@ -200,7 +199,7 @@
                     </div>
                 </div>
                 <div id="rule-results" hx-get="/library/rules" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="empty-state"><p>Loading rules...</p></div>
+                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
                 </div>
             </div>
 
@@ -229,7 +228,7 @@
                     </div>
                 </div>
                 <div id="equipment-results" hx-get="/library/equipment" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="empty-state"><p>Loading equipment...</p></div>
+                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
                 </div>
             </div>
 
@@ -278,7 +277,7 @@
                     </div>
                 </div>
                 <div id="magic-item-results" hx-get="/library/magic-items" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="empty-state"><p>Loading magic items...</p></div>
+                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
                 </div>
             </div>
 
@@ -293,7 +292,7 @@
                     </div>
                 </div>
                 <div id="class-results" hx-get="/library/classes" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="empty-state"><p>Loading classes...</p></div>
+                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
                 </div>
             </div>
 
@@ -308,7 +307,7 @@
                     </div>
                 </div>
                 <div id="species-results" hx-get="/library/species" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="empty-state"><p>Loading species...</p></div>
+                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
                 </div>
             </div>
 
@@ -323,7 +322,7 @@
                     </div>
                 </div>
                 <div id="background-results" hx-get="/library/backgrounds" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="empty-state"><p>Loading backgrounds...</p></div>
+                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
                 </div>
             </div>
 
@@ -352,11 +351,15 @@
                     </div>
                 </div>
                 <div id="feat-results" hx-get="/library/feats" hx-trigger="load" hx-swap="innerHTML">
-                    <div class="empty-state"><p>Loading feats...</p></div>
+                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
                 </div>
             </div>
         </main>
     </div>
+
+    <!-- Statblock side sheet (§5.3): filled by ui-elevation.js when a card is clicked. -->
+    <div id="statblock-sheet-backdrop" class="sheet-backdrop"></div>
+    <div id="statblock-sheet-slot"></div>
 
     <script>
         function switchFormTab(event, tabId) {

@@ -11,5 +11,11 @@
     <script th:src="@{/js/keyboard.js}"></script>
     <script th:src="@{/js/command-palette.js}"></script>
     <script th:src="@{/js/ui-elevation.js}"></script>
+    <!-- App-wide: the top bar ships Alpine components (command palette, dice roller) on every
+         page, so loading it per-page left ⌘K and the dice roller dead everywhere else.
+         `defer` is not optional: Alpine starts itself in a microtask, so an eager script here
+         would run before the body is parsed and miss every `alpine:init` registration made by
+         an inline script further down the page — including the dice roller's. -->
+    <script th:src="@{/vendor/alpine.min.js}" defer></script>
 </head>
 </html>

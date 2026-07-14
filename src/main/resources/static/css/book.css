@@ -1,13 +1,17 @@
-/* Statblock — Monster Manual anatomy, dark grimoire (spec §5.1) */
+/* Statblock — Monster Manual anatomy, dark grimoire (spec §5.1)
+   An in-world artifact, so it gets material: parchment fibre plus a faint
+   upper-left tone. Tool chrome stays smooth (§3.2). */
 .statblock-render {
   max-width: 500px;
   margin: 0 auto;
-  background: color-mix(in srgb, var(--color-surface) 85%, var(--color-accent));
+  background-color: color-mix(in srgb, var(--color-surface) 85%, var(--color-accent));
+  background-image: var(--tone-parchment), var(--texture-parchment);
   color: var(--color-text);
   border: 1px solid var(--color-gold-soft);
   border-radius: var(--radius);
   padding: var(--space-lg);
   font-family: var(--font-book);
+  box-shadow: var(--highlight-candle);
 }
 .statblock-render h2 {
   font-family: var(--font-display);
@@ -109,7 +113,28 @@
 .read-aloud p { margin: 0 0 var(--space-sm) 0; }
 .read-aloud p:last-child { margin-bottom: 0; }
 
-/* Wiki links — gold ink */
-.wiki-link { color: var(--color-accent); text-decoration: none; border-bottom: 1px dashed var(--color-gold-soft); }
-.wiki-link:hover { color: var(--color-accent-hover); border-bottom-style: solid; }
+/* Wiki links — gold ink. Hovering draws the stroke in, left to right, as if
+   inked (§5.4). Scale, not width: the underline never touches layout. */
+.wiki-link {
+  position: relative;
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--color-gold-soft);
+}
+.wiki-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: var(--color-accent-hover);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--duration-standard) var(--ease-out);
+}
+.wiki-link:hover { color: var(--color-accent-hover); }
+.wiki-link:hover::after,
+.wiki-link:focus-visible::after { transform: scaleX(1); }
 .wiki-link-broken { color: var(--color-danger); border-bottom-color: var(--color-danger); cursor: help; }
+.wiki-link-broken::after { background: var(--color-danger); }

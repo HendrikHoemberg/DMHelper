@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <div class="statblock-card" th:fragment="card(sb)">
+    <!-- A plain link: the side sheet is an enhancement layered on top of it by
+         ui-elevation.js, and the full page still works without JS. -->
     <h3>
-        <a th:href="@{/library/statblocks/{id}(id=${sb.id})}" th:text="${sb.name}">Name</a>
+        <a th:href="@{/library/statblocks/{id}(id=${sb.id})}" th:text="${sb.name}"
+           data-statblock-link>Name</a>
     </h3>
     <div class="statblock-meta">
         <span th:text="'CR ' + ${sb.cr}">CR 1/4</span>
@@ -13,34 +16,39 @@
     </div>
     <div class="card-actions u-mt-auto">
         <th:block th:if="${sb.source.name() == 'SRD'}">
-            <form th:hx-post="@{/library/statblocks/{id}/clone(id=${sb.id})}" hx-target="body" style="display:inline;">
-                <button type="submit" class="btn btn-ghost">Clone &amp; Edit</button>
+            <form th:hx-post="@{/library/statblocks/{id}/clone(id=${sb.id})}" hx-target="body" class="u-inline">
+                <button type="submit" class="btn btn-ghost btn-xs">Clone &amp; Edit</button>
             </form>
         </th:block>
         <th:block th:if="${sb.source.name() == 'CUSTOM'}">
-            <a th:href="@{/library/statblocks/{id}/edit(id=${sb.id})}" class="btn btn-ghost">Edit</a>
-            <button class="btn btn-danger"
+            <a th:href="@{/library/statblocks/{id}/edit(id=${sb.id})}" class="btn btn-ghost btn-xs">Edit</a>
+            <th:block th:if="${sb.campaignId != null}">
+                <button class="btn btn-ghost btn-xs"
+                        th:hx-put="@{/library/statblocks/{id}/promote(id=${sb.id})}"
+                        hx-confirm="Promote to global? It will be available in all campaigns."
+                        hx-target="closest .statblock-card"
+                        hx-swap="outerHTML">Promote</button>
+            </th:block>
+            <button class="btn btn-danger btn-xs"
                     th:hx-delete="@{/library/statblocks/{id}(id=${sb.id})}"
                     hx-confirm="Delete this statblock?"
                     hx-target="closest .statblock-card"
                     hx-swap="outerHTML">Delete</button>
-            <th:block th:if="${sb.campaignId != null}">
-                <button class="btn btn-ghost"
-                        th:hx-put="@{/library/statblocks/{id}/promote(id=${sb.id})}"
-                        hx-confirm="Promote to global? It will be available in all campaigns."
-                        hx-target="closest .statblock-card"
-                        hx-swap="outerHTML">Promote to Global</button>
-            </th:block>
         </th:block>
     </div>
 </div>
 
-<div class="card-grid" th:fragment="card-list(statblocks)" th:if="${statblocks != null}">
-    <th:block th:if="${statblocks.isEmpty()}">
-        <th:block th:replace="~{common/_empty-state :: empty-state('No statblocks match your search.', null, null, null)}"></th:block>
-    </th:block>
-    <th:block th:each="sb : ${statblocks}">
-        <th:block th:replace="~{library/_card :: card(sb=${sb})}"></th:block>
-    </th:block>
+<div th:fragment="card-list(statblocks)" th:if="${statblocks != null}" class="settle-in">
+    <div class="result-count"
+         th:text="${statblocks.size()} + (${statblocks.size()} == 1 ? ' monster' : ' monsters')">312 monsters</div>
+    <div class="card-grid card-grid--library"
+         th:classappend="${sourceFiltered} ? 'card-grid--source-filtered'">
+        <th:block th:if="${statblocks.isEmpty()}">
+            <th:block th:replace="~{common/_empty-state :: empty-state('Nothing in the bestiary matches that.', null, null, 'Try a broader search, or clear a filter.')}"></th:block>
+        </th:block>
+        <th:block th:each="sb : ${statblocks}">
+            <th:block th:replace="~{library/_card :: card(sb=${sb})}"></th:block>
+        </th:block>
+    </div>
 </div>
 </html>

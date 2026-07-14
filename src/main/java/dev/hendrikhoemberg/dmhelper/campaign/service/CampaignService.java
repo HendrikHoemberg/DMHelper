@@ -76,6 +76,10 @@ public class CampaignService {
     private final dev.hendrikhoemberg.dmhelper.adventure.data.AdventureRepository adventureRepo;
     private final dev.hendrikhoemberg.dmhelper.adventure.data.ChapterRepository chapterRepo;
     private final dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository sceneRepo;
+    private final dev.hendrikhoemberg.dmhelper.dice.data.DiceRollRepository diceRollRepo;
+
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager em;
 
     public CampaignService(CampaignRepository repository,
                            PartyMemberRepository partyMemberRepository,
@@ -104,7 +108,8 @@ public class CampaignService {
                              TokenRepository tokenRepo,
                              dev.hendrikhoemberg.dmhelper.adventure.data.AdventureRepository adventureRepo,
                              dev.hendrikhoemberg.dmhelper.adventure.data.ChapterRepository chapterRepo,
-                             dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository sceneRepo) {
+                             dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository sceneRepo,
+                             dev.hendrikhoemberg.dmhelper.dice.data.DiceRollRepository diceRollRepo) {
         this.repository = repository;
         this.partyMemberRepository = partyMemberRepository;
         this.statBlockRepository = statBlockRepository;
@@ -133,6 +138,7 @@ public class CampaignService {
         this.adventureRepo = adventureRepo;
         this.chapterRepo = chapterRepo;
         this.sceneRepo = sceneRepo;
+        this.diceRollRepo = diceRollRepo;
         this.objectMapper = JsonMapper.builder()
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -164,8 +170,78 @@ public class CampaignService {
         return repository.save(campaign);
     }
 
+    /**
+     * Deleting a campaign takes its whole world with it.
+     *
+     * <p>Nothing in the schema cascades: every child row holds a foreign key back to the
+     * campaign, so any survivor blocks the delete outright. Order is load-bearing, and the
+     * flush between each stage is what makes it real — Hibernate is free to reorder queued
+     * deletes within a single flush, and a delete that reaches the database out of order
+     * trips the very constraint this method exists to respect.
+     */
     public void delete(UUID id) {
         Campaign campaign = findById(id);
+        UUID cid = campaign.getId();
+
+        // Adventures first: scenes point at maps, encounters, handouts and statblocks, and
+        // those references pin everything else in place until the story is gone.
+        for (var adventure : adventureRepo.findByCampaignIdOrderBySortOrderAsc(cid)) {
+            for (var chapter : chapterRepo.findByAdventureIdOrderBySortOrderAsc(adventure.getId())) {
+                sceneRepo.deleteAll(sceneRepo.findByChapterIdOrderBySortOrderAsc(chapter.getId()));
+                chapterRepo.delete(chapter);
+            }
+            adventureRepo.delete(adventure);
+        }
+        em.flush();
+
+        // Combatants reference party members, statblocks and tokens — all of which outlive them here.
+        var encounters = encounterRepo.findByCampaignIdOrderByNameAsc(cid);
+        for (var encounter : encounters) {
+            combatantRepo.deleteByEncounterId(encounter.getId());
+        }
+        em.flush();
+        encounterRepo.deleteAll(encounters);
+        em.flush();
+
+        for (var map : gameMapService.findByCampaignId(cid)) {
+            tokenRepo.deleteByMapId(map.getId());
+            em.flush();
+            gameMapService.delete(map.getId());
+        }
+        em.flush();
+
+        // Treasury assignments name party members, so they go before the party does.
+        assignmentRepo.deleteAll(assignmentRepo.findByCampaignIdOrderByPartyMemberAsc(cid));
+        em.flush();
+
+        // Character sheets ride along on the party member (cascade + orphanRemoval).
+        for (var member : partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(cid)) {
+            partyMemberService.delete(member.getId());
+        }
+        em.flush();
+
+        statBlockRepository.deleteAll(statBlockRepository.findByCampaignIdOrderByNameAsc(cid));
+        em.flush();
+
+        // noteService.delete also clears the wiki links leaving each note.
+        for (var note : noteRepository.findByCampaignIdOrderByCreatedAtDesc(cid)) {
+            noteService.delete(note.getId());
+        }
+        quickNoteRepository.deleteAll(quickNoteRepository.findByCampaignIdOrderByCreatedAtDesc(cid));
+        em.flush();
+
+        // handoutService.delete takes the uploaded file with the row.
+        for (var handout : handoutRepo.findByCampaignIdOrderByTitleAsc(cid)) {
+            handoutService.delete(handout.getId());
+        }
+        em.flush();
+
+        ledgerEntryRepo.deleteAll(ledgerEntryRepo.findByCampaignIdOrderByTimestampDesc(cid));
+        timelineEventRepo.deleteAll(
+                timelineEventRepo.findByCampaignIdOrderByInGameYearAscInGameMonthAscInGameDayAsc(cid));
+        diceRollRepo.deleteAll(diceRollRepo.findByCampaignId(cid));
+        em.flush();
+
         repository.delete(campaign);
     }
 

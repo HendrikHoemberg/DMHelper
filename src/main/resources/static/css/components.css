@@ -532,7 +532,25 @@
     flex: 1;
     overflow-y: auto;
     padding: var(--space-xs) 0;
+    position: relative;
 }
+
+/* The gold turn marker. One element for the whole list: it slides to whoever is
+   up, rather than a border switching off one row and on at another (§6.1). */
+.turn-marker {
+    position: absolute;
+    left: 0;
+    width: 3px;
+    background: var(--gold-sheen);
+    border-radius: 0 2px 2px 0;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+    transform: translateY(0);
+    transition: transform 250ms var(--ease-spring),
+                opacity var(--duration-micro) var(--ease-out);
+}
+.turn-marker.visible { opacity: 1; }
 
 .combatant-row {
     display: flex;
@@ -545,10 +563,32 @@
 }
 
 .combatant-row:hover { background: var(--color-combatant-hover); }
-.combatant-row.active { background: var(--color-combatant-active); border-left-color: var(--color-accent); box-shadow: inset 0 0 0 1px var(--color-gold-soft), var(--shadow-warm-sm); transform: translateX(4px); }
+.combatant-row.active { background: var(--color-combatant-active); box-shadow: inset 0 0 0 1px var(--color-gold-soft), var(--shadow-warm-sm); transform: translateX(4px); }
+/* Bloodied keeps its own hairline — readable at a glance across the table, and
+   it must survive the row also being active. */
 .combatant-row.bloodied { border-left-color: var(--color-danger); }
 .combatant-row.defeated { opacity: 0.5; text-decoration: line-through; }
 .combatant-row.hidden { opacity: 0.4; }
+
+/* Damage feels dealt, healing feels granted. */
+.combatant-row.hp-damage { animation: hp-tint-damage 700ms var(--ease-out); }
+.combatant-row.hp-heal { animation: hp-tint-heal 700ms var(--ease-out); }
+@keyframes hp-tint-damage {
+    0% { background: color-mix(in srgb, var(--color-danger) 32%, transparent); }
+    100% { background: transparent; }
+}
+@keyframes hp-tint-heal {
+    0% { background: color-mix(in srgb, var(--color-success) 32%, transparent); }
+    100% { background: transparent; }
+}
+
+.round-counter { display: inline-block; }
+.round-counter.pulse { animation: round-pulse 400ms var(--ease-spring); }
+@keyframes round-pulse {
+    0% { transform: scale(1); color: var(--color-text); }
+    40% { transform: scale(1.35); color: var(--color-accent); }
+    100% { transform: scale(1); color: var(--color-text); }
+}
 
 .init-badge {
     width: 28px;
@@ -1061,6 +1101,7 @@
 .dice-panel-body {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: var(--space-md) var(--space-lg);
 }
 
@@ -1078,6 +1119,9 @@
 
 .dice-input-row input[type="text"] {
     flex: 1;
+    /* Without this a flex item refuses to shrink below its content, and the long
+       placeholder pushes the Roll button off the edge of a 320px panel. */
+    min-width: 0;
     padding: var(--space-sm) var(--space-md);
     background: var(--color-bg);
     border: 1px solid var(--color-border);
@@ -1136,13 +1180,6 @@
     font-family: var(--font-mono, monospace);
     color: var(--color-accent);
 }
-.dice-result-total.high {
-    color: var(--dice-high);
-}
-.dice-result-total.low {
-    color: var(--dice-low);
-}
-
 .dice-result-details {
     font-size: var(--text-sm);
     color: var(--color-text-muted);
@@ -1179,12 +1216,6 @@
     font-family: var(--font-mono, monospace);
     min-width: 2em;
     text-align: right;
-}
-.dice-history-item .value.high {
-    color: var(--dice-high);
-}
-.dice-history-item .value.low {
-    color: var(--dice-low);
 }
 
 /* ── Dice Roller Toggle Button ── */
@@ -1605,5 +1636,161 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
 }
 @keyframes history-slide {
   to { opacity: 1; transform: translateX(0); }
+}
+
+/* Natural 20 flashes gold, natural 1 flashes ember (§6.5). Warm, both of them —
+   the palette has no cool colours to spend here. */
+.dice-result-total.crit-high,
+.dice-history-item .value.crit-high { color: var(--color-accent); }
+.dice-result-total.crit-low,
+.dice-history-item .value.crit-low { color: var(--color-ember); }
+.dice-result-total.crit-high { animation: crit-flash-gold 400ms var(--ease-out); }
+.dice-result-total.crit-low { animation: crit-flash-ember 400ms var(--ease-out); }
+@keyframes crit-flash-gold {
+  0% { text-shadow: 0 0 0 rgba(201, 163, 92, 0); }
+  35% { text-shadow: 0 0 18px rgba(227, 198, 139, 0.9); }
+  100% { text-shadow: 0 0 0 rgba(201, 163, 92, 0); }
+}
+@keyframes crit-flash-ember {
+  0% { text-shadow: 0 0 0 rgba(168, 58, 50, 0); }
+  35% { text-shadow: 0 0 18px rgba(194, 86, 74, 0.9); }
+  100% { text-shadow: 0 0 0 rgba(168, 58, 50, 0); }
+}
+
+/* ── htmx settle (§3.3) ──
+   Swapped-in content arrives offset and transparent, then settles. A transition
+   (not an animation) so it still completes after htmx strips .htmx-added. */
+.card-grid,
+.settle-in {
+  transition: opacity var(--duration-standard) var(--ease-out),
+              transform var(--duration-standard) var(--ease-out);
+}
+.card-grid.htmx-added,
+.settle-in.htmx-added {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.htmx-swapping {
+  opacity: 0;
+  transition: opacity var(--duration-micro) var(--ease-in);
+}
+
+/* ── Skeletons — warm shimmer, never gray (§3.4) ── */
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--space-md);
+}
+.skeleton-card {
+  height: 104px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background-color: var(--elevation-raised-bg);
+  background-image: linear-gradient(100deg,
+    transparent 30%,
+    rgba(201, 163, 92, 0.07) 50%,
+    transparent 70%);
+  background-size: 220% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer {
+  from { background-position: 220% 0; }
+  to { background-position: -120% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-card { animation: none; }
+}
+
+/* ── Library (§5.3) — speed and focus, not decoration ──
+   Resting state is pure information: six columns of names and stats. The actions
+   only exist once you point at a card. */
+.result-count {
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.card-grid--library {
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+
+.statblock-card {
+  box-shadow: var(--highlight-candle);
+  transition: transform 160ms var(--ease-out),
+              border-color 160ms var(--ease-out),
+              box-shadow 160ms var(--ease-out);
+}
+.statblock-card:hover,
+.statblock-card:focus-within {
+  border-color: var(--color-gold-soft);
+  box-shadow: var(--highlight-candle), var(--shadow-warm-sm);
+  transform: translateY(-2px);
+}
+.statblock-card:active { transform: scale(0.985) translateY(0); }
+
+.statblock-card .card-actions {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-micro) var(--ease-out);
+}
+.statblock-card:hover .card-actions,
+.statblock-card:focus-within .card-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* The source filter already says these are all SRD — the badge stops earning
+   its ink, so it mutes to a hairline chip. */
+.card-grid--source-filtered .badge-srd,
+.card-grid--source-filtered .badge-custom {
+  opacity: 0;
+}
+
+/* ── Statblock side sheet (§5.3) — the payoff of every click ── */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  background: rgba(10, 7, 4, 0.55);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-standard) var(--ease-out);
+}
+.sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+
+.side-sheet {
+  view-transition-name: statblock-sheet;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(560px, 100vw);
+  z-index: 801;
+  overflow-y: auto;
+  padding: var(--space-lg);
+  background: var(--elevation-floating-bg);
+  border-left: 1px solid var(--color-gold-soft);
+  box-shadow: var(--shadow-warm-lg);
+  transform: translateX(100%);
+  transition: transform var(--duration-structural) var(--ease-out);
+}
+.side-sheet.open { transform: translateX(0); }
+
+.side-sheet .statblock-render { max-width: none; margin: 0; }
+
+.side-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side-sheet { transition: opacity var(--duration-micro) linear; transform: none; opacity: 0; }
+  .side-sheet.open { opacity: 1; }
 }
 

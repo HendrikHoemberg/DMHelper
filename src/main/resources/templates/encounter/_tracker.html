@@ -69,6 +69,8 @@
             async init() {
                 window.addEventListener('dm-mode-changed', (e) => {
                     this.dmMode = e.detail.dmMode;
+                    // Hidden combatants appear or vanish, so the rows move under the marker.
+                    this._positionTurnMarker();
                 });
                 window.addEventListener('battle-tokenselect', (e) => {
                     const token = e.detail.token;
@@ -127,14 +129,98 @@
                 try {
                     const resp = await fetch(`/api/v1/encounters/${this._encounterId}/combatants`);
                     if (resp.ok) {
+                        const before = this._capturePositions();
                         this.combatants = await resp.json();
                         this.deriveActiveCombatant();
                         if (this.selected) {
                             this.editHp = this.selected.currentHp;
                             this.editTempHp = this.selected.tempHp || 0;
                         }
+                        this._playFlip(before);
+                        this._positionTurnMarker();
                     }
                 } catch (e) {}
+            },
+
+            _reducedMotion() {
+                return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            },
+
+            _rows() {
+                return this.$root.querySelectorAll('.combatant-row[data-cid]');
+            },
+
+            /* Rows reorder when initiative changes. FLIP: remember where each row
+               was, let Alpine re-render, then animate each row from where it used
+               to be to where it now is — so the list rearranges instead of
+               teleporting (§6.1). */
+            _capturePositions() {
+                const positions = new Map();
+                if (this._reducedMotion()) return positions;
+                this._rows().forEach(row => {
+                    positions.set(row.dataset.cid, row.getBoundingClientRect().top);
+                });
+                return positions;
+            },
+
+            _playFlip(before) {
+                if (!before.size || this._reducedMotion()) return;
+                this.$nextTick(() => {
+                    this._rows().forEach(row => {
+                        const wasAt = before.get(row.dataset.cid);
+                        if (wasAt == null) return;
+                        const delta = wasAt - row.getBoundingClientRect().top;
+                        if (!delta) return;
+                        row.animate(
+                            [{ transform: `translateY(${delta}px)` }, { transform: 'none' }],
+                            { duration: 250, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
+                        );
+                    });
+                });
+            },
+
+            /* The gold marker slides to whoever is up. */
+            _positionTurnMarker() {
+                this.$nextTick(() => {
+                    const marker = this.$refs.turnMarker;
+                    if (!marker) return;
+                    const row = this.activeCombatantId
+                        ? this.$root.querySelector(`.combatant-row[data-cid="${this.activeCombatantId}"]`)
+                        : null;
+                    if (!row) {
+                        marker.classList.remove('visible');
+                        return;
+                    }
+                    marker.style.height = row.offsetHeight + 'px';
+                    marker.style.transform = `translateY(${row.offsetTop}px)`;
+                    marker.classList.add('visible');
+                });
+            },
+
+            /* Damage feels dealt, healing feels granted. */
+            _flashHp(combatantId, amount) {
+                if (!amount || this._reducedMotion()) return;
+                this.$nextTick(() => {
+                    const row = this.$root.querySelector(`.combatant-row[data-cid="${combatantId}"]`);
+                    if (!row) return;
+                    const cls = amount < 0 ? 'hp-damage' : 'hp-heal';
+                    row.classList.remove('hp-damage', 'hp-heal');
+                    void row.offsetWidth;   // restart the animation if it is already running
+                    row.classList.add(cls);
+                    setTimeout(() => row.classList.remove(cls), 700);
+                });
+            },
+
+            _pulseRound() {
+                if (this._reducedMotion()) return;
+                this.$nextTick(() => {
+                    const counter = this.$refs.roundCounter;
+                    if (!counter) return;
+                    counter.classList.remove('pulse');
+                    void counter.offsetWidth;
+                    counter.classList.add('pulse');
+                    setTimeout(() => counter.classList.remove('pulse'), 400);
+                });
             },
 
             deriveActiveCombatant() {
@@ -149,6 +235,7 @@
             async nextTurn() {
                 if (!this._encounterId) return;
                 try {
+                    const roundBefore = this.encounter?.round;
                     const resp = await fetch(`/api/v1/encounters/${this._encounterId}/next-turn`, { method: 'POST' });
                     if (resp.ok) {
                         this.encounter = await resp.json();
@@ -156,6 +243,7 @@
                         if (this.encounter.rechargePrompts) {
                             this.rechargePrompts = this.encounter.rechargePrompts;
                         }
+                        if (this.encounter.round !== roundBefore) this._pulseRound();
                         this.dispatchTurnEvent();
                         this.dispatchState();
                     }
@@ -214,6 +302,7 @@
                     });
                     if (resp.ok) {
                         await this.reloadCombatants();
+                        this._flashHp(combatantId, amount);
                         this.dispatchState();
                     }
                 } catch (e) {}
@@ -260,13 +349,16 @@
                 if (!this.selected || !this._encounterId) return;
                 const hp = parseInt(this.editHp, 10);
                 if (isNaN(hp)) return;
+                const combatantId = this.selected.id;
+                const delta = hp - this.selected.currentHp;
                 try {
-                    await fetch(`/api/v1/combatants/${this.selected.id}/hp`, {
+                    await fetch(`/api/v1/combatants/${combatantId}/hp`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ currentHp: hp, tempHp: this.editTempHp }),
                     });
                     await this.reloadCombatants();
+                    this._flashHp(combatantId, delta);
                     this.dispatchState();
                 } catch (e) {}
             },
@@ -440,7 +532,8 @@
             <!-- Encounter header -->
             <div class="tracker-header">
                 <h3 x-text="encounter?.name || 'Combat'"></h3>
-                <span>Round <strong x-text="encounter?.round || 0"></strong></span>
+                <span>Round <strong class="round-counter" x-ref="roundCounter"
+                                    x-text="encounter?.round || 0"></strong></span>
                 <button class="btn btn-danger" style="padding: 2px 8px; font-size: 0.75rem;" @click="endEncounter()">End</button>
             </div>
 
@@ -466,8 +559,10 @@
 
             <!-- Initiative list -->
             <div class="tracker-list">
+                <div class="turn-marker" x-ref="turnMarker" aria-hidden="true"></div>
                 <template x-for="(c, idx) in combatants" :key="c.id">
                     <div class="combatant-row"
+                         :data-cid="c.id"
                          :class="{ active: c.id === activeCombatantId, defeated: c.defeated, hidden: c.hidden, bloodied: c.bloodied }"
                          x-show="dmMode || !c.hidden"
                          @click="selectCombatant(c.id)">

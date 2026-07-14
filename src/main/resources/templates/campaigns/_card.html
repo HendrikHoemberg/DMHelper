@@ -2,12 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <div class="book-cover-wrapper" th:fragment="card(campaign)">
     <a class="book-cover"
-       data-view-transition
-       th:href="@{/campaigns/{id}(id=${campaign.id})}"
-       th:style="'view-transition-name: campaign-cover-' + ${campaign.id}">
+       th:href="@{/campaigns/{id}(id=${campaign.id})}">
         <h3 th:text="${campaign.name}">Campaign Name</h3>
-        <div class="book-meta"
-             th:text="${#temporals.format(campaign.createdAt, 'yyyy-MM-dd')}">Created date</div>
+        <div class="book-meta" th:text="${campaign.authorLine}">14 sessions · last played July 8</div>
     </a>
     <div class="card-actions">
         <button class="btn btn-ghost btn-xs"

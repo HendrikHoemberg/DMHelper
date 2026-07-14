@@ -11,6 +11,7 @@ import { BUILTIN_TERRAIN } from './terrain-palette.js';
 const TERRAIN_COLORS = Object.fromEntries(
     Object.entries(BUILTIN_TERRAIN).map(([key, t]) => [key, t.fill]));
 const KIND_RING_COLORS = { PC: '#4a9eff', NPC: '#2ecc71', MONSTER: '#e74c3c', OBJECT: '#f39c12' };
+const SELECTION_GOLD = '#c9a35c';   // --color-accent; the canvas can't read CSS tokens
 const HP_COLORS = { high: '#7fa05f', mid: '#d9993d', low: '#a83a32' };
 
 /* Mirrors the warm condition palette in encounter/_tracker.html */
@@ -262,13 +263,45 @@ export class BattleMap {
         this.tokens = await resp.json();
     }
 
+    _reducedMotion() {
+        return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
     renderTokens() {
-        for (const nodes of Object.values(this.tokenNodes)) nodes.group.destroy();
+        // Remember where every token was, so a token that has moved slides to its
+        // new square instead of teleporting there (§6.6).
+        const previous = {};
+        for (const [id, nodes] of Object.entries(this.tokenNodes)) {
+            previous[id] = { x: nodes.group.x(), y: nodes.group.y() };
+            nodes.group.destroy();
+        }
         this.tokenNodes = {};
+        this._stopSelectionPulse();
         this.tokenLayer.destroyChildren();
 
-        for (const token of this.tokens) this.addTokenNode(token);
+        const animate = !this._reducedMotion();
+        for (const token of this.tokens) {
+            const group = this.addTokenNode(token);
+            const was = previous[token.id];
+            if (!animate || !was) continue;
+            if (was.x === token.positionX && was.y === token.positionY) continue;
+
+            group.position(was);
+            group.to({
+                x: token.positionX,
+                y: token.positionY,
+                duration: 0.2,
+                easing: Konva.Easings.EaseOut,
+            });
+        }
         this.tokenLayer.batchDraw();
+    }
+
+    _stopSelectionPulse() {
+        if (this._selectionPulse) {
+            this._selectionPulse.stop();
+            this._selectionPulse = null;
+        }
     }
 
     addTokenNode(token) {
@@ -282,15 +315,34 @@ export class BattleMap {
         const group = new Konva.Group({ x: px, y: py, draggable: !token.dead, name: 'token' });
         group._tokenId = token.id;
 
+        const selected = this.selectedTokenId === token.id;
+
         const body = new Konva.Rect({
             width: w, height: h,
             fill: token.dead ? '#555' : (token.color || '#c9a35c'),
-            stroke: this.selectedTokenId === token.id ? '#ff0' : (KIND_RING_COLORS[token.kind] || '#fff'),
-            strokeWidth: this.selectedTokenId === token.id ? 3 : 2,
+            stroke: selected ? SELECTION_GOLD : (KIND_RING_COLORS[token.kind] || '#fff'),
+            strokeWidth: selected ? 3 : 2,
             cornerRadius: 4,
             opacity: (!isDm && token.hidden) ? 0.3 : (token.dead ? 0.6 : 1),
         });
         group.add(body);
+
+        // The selected token breathes, so it stays findable on a busy map (§6.6).
+        if (selected) {
+            const selectRing = new Konva.Rect({
+                x: -4, y: -4, width: w + 8, height: h + 8,
+                stroke: SELECTION_GOLD, strokeWidth: 2, cornerRadius: 6,
+                fillEnabled: false, listening: false, opacity: 0.8,
+            });
+            group.add(selectRing);
+
+            if (!this._reducedMotion()) {
+                this._selectionPulse = new Konva.Animation((frame) => {
+                    selectRing.opacity(0.45 + 0.35 * Math.sin(frame.time / 400));
+                }, this.tokenLayer);
+                this._selectionPulse.start();
+            }
+        }
 
         const ring = new Konva.Rect({
             width: w + 4, height: h + 4, x: -2, y: -2,
@@ -348,8 +400,13 @@ export class BattleMap {
             if (this.movementMode === 'GRID') {
                 nx = snapPixel(nx, s, true);
                 ny = snapPixel(ny, s, true);
-                group.x(nx);
-                group.y(ny);
+                if (this._reducedMotion()) {
+                    group.x(nx);
+                    group.y(ny);
+                } else {
+                    // The token settles into its square rather than snapping to it.
+                    group.to({ x: nx, y: ny, duration: 0.12, easing: Konva.Easings.EaseOut });
+                }
             }
             this.tokenLayer.batchDraw();
             this.saveTokenMove(token.id, Math.round(nx), Math.round(ny));

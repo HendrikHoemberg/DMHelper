@@ -1,42 +1,61 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <aside class="appnav" th:fragment="appnav" id="appnav">
+    <button type="button" class="appnav-collapse" id="appnavCollapse"
+            aria-label="Collapse sidebar" aria-expanded="true" title="Collapse sidebar">&#x00AB;</button>
+
     <th:block th:if="${campaignId != null}">
-        <a class="appnav-link appnav-home" th:href="@{/campaigns/{id}(id=${campaignId})}">Campaign Home</a>
+        <a class="appnav-link appnav-home" data-icon="&#x1F3F0;" data-label="Campaign Home"
+           th:href="@{/campaigns/{id}(id=${campaignId})}"><span class="appnav-text">Campaign Home</span></a>
 
         <div class="appnav-group">
             <div class="appnav-label">Prep</div>
-            <a class="appnav-link" th:href="@{/campaigns/{id}/adventures(id=${campaignId})}">Adventures</a>
-            <a class="appnav-link" th:href="@{/campaigns/{id}/encounters(id=${campaignId})}">Encounters</a>
-            <a class="appnav-link" th:href="@{/campaigns/{id}/maps(id=${campaignId})}">Maps</a>
-            <a class="appnav-link" th:href="@{/campaigns/{id}/handouts(id=${campaignId})}">Handouts</a>
-            <a class="appnav-link" th:href="@{/campaigns/{id}/notes(id=${campaignId})}">Notes &amp; Wiki</a>
+            <a class="appnav-link" data-icon="&#x2694;" data-label="Adventures"
+               th:href="@{/campaigns/{id}/adventures(id=${campaignId})}"><span class="appnav-text">Adventures</span></a>
+            <a class="appnav-link" data-icon="&#x1F409;" data-label="Encounters"
+               th:href="@{/campaigns/{id}/encounters(id=${campaignId})}"><span class="appnav-text">Encounters</span></a>
+            <a class="appnav-link" data-icon="&#x1F5FA;" data-label="Maps"
+               th:href="@{/campaigns/{id}/maps(id=${campaignId})}"><span class="appnav-text">Maps</span></a>
+            <a class="appnav-link" data-icon="&#x1F4DC;" data-label="Handouts"
+               th:href="@{/campaigns/{id}/handouts(id=${campaignId})}"><span class="appnav-text">Handouts</span></a>
+            <a class="appnav-link" data-icon="&#x1F4D6;" data-label="Notes &amp; Wiki"
+               th:href="@{/campaigns/{id}/notes(id=${campaignId})}"><span class="appnav-text">Notes &amp; Wiki</span></a>
         </div>
         <div class="appnav-group">
             <div class="appnav-label">Party</div>
-            <a class="appnav-link" th:href="@{/campaigns/{id}/party(id=${campaignId})}">Roster</a>
-            <a class="appnav-link" th:href="@{/campaigns/{id}/sheets(id=${campaignId})}">Sheets</a>
-            <a class="appnav-link" th:href="@{/campaigns/{id}/treasury(id=${campaignId})}">Treasury</a>
-            <a class="appnav-link" th:href="@{/campaigns/{id}/ledger(id=${campaignId})}">Ledger</a>
+            <a class="appnav-link" data-icon="&#x1F6E1;" data-label="Roster"
+               th:href="@{/campaigns/{id}/party(id=${campaignId})}"><span class="appnav-text">Roster</span></a>
+            <a class="appnav-link" data-icon="&#x1F464;" data-label="Sheets"
+               th:href="@{/campaigns/{id}/sheets(id=${campaignId})}"><span class="appnav-text">Sheets</span></a>
+            <a class="appnav-link" data-icon="&#x1F48E;" data-label="Treasury"
+               th:href="@{/campaigns/{id}/treasury(id=${campaignId})}"><span class="appnav-text">Treasury</span></a>
+            <a class="appnav-link" data-icon="&#x1F4B0;" data-label="Ledger"
+               th:href="@{/campaigns/{id}/ledger(id=${campaignId})}"><span class="appnav-text">Ledger</span></a>
         </div>
         <div class="appnav-group">
             <div class="appnav-label">World</div>
-            <a class="appnav-link" th:href="@{/campaigns/{id}/calendar(id=${campaignId})}">Calendar</a>
-            <a class="appnav-link" href="/library">Library</a>
+            <a class="appnav-link" data-icon="&#x1F319;" data-label="Calendar"
+               th:href="@{/campaigns/{id}/calendar(id=${campaignId})}"><span class="appnav-text">Calendar</span></a>
+            <a class="appnav-link" data-icon="&#x1F4DA;" data-label="Library"
+               href="/library"><span class="appnav-text">Library</span></a>
         </div>
 
         <div class="appnav-footer">
-            <a class="btn btn-primary appnav-run" th:href="@{/campaigns/{id}/session(id=${campaignId})}">
-                Run Session
+            <a class="btn btn-primary appnav-run" title="Run Session"
+               th:href="@{/campaigns/{id}/session(id=${campaignId})}">
+                &#x1F56F; <span>Run Session</span>
             </a>
         </div>
     </th:block>
 
     <th:block th:unless="${campaignId != null}">
         <div class="appnav-group">
-            <a class="appnav-link" href="/campaigns">Campaigns</a>
-            <a class="appnav-link" href="/library">Library</a>
-            <a class="appnav-link" href="/library/about">About</a>
+            <a class="appnav-link" data-icon="&#x1F3F0;" data-label="Campaigns"
+               href="/campaigns"><span class="appnav-text">Campaigns</span></a>
+            <a class="appnav-link" data-icon="&#x1F4DA;" data-label="Library"
+               href="/library"><span class="appnav-text">Library</span></a>
+            <a class="appnav-link" data-icon="&#x2753;" data-label="About"
+               href="/library/about"><span class="appnav-text">About</span></a>
         </div>
     </th:block>
 
@@ -50,6 +69,25 @@
             if (!best || href.length > best.getAttribute('href').length) best = a;
         });
         if (best) best.setAttribute('aria-current', 'page');
+
+        const shell = document.querySelector('.app-shell');
+        const toggle = document.getElementById('appnavCollapse');
+        if (!shell || !toggle) return;
+
+        function apply(collapsed) {
+            shell.classList.toggle('app-shell--nav-collapsed', collapsed);
+            toggle.setAttribute('aria-expanded', String(!collapsed));
+            toggle.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+            toggle.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+        }
+
+        apply(localStorage.getItem('dmhelper.navCollapsed') === '1');
+
+        toggle.addEventListener('click', () => {
+            const collapsed = !shell.classList.contains('app-shell--nav-collapsed');
+            localStorage.setItem('dmhelper.navCollapsed', collapsed ? '1' : '0');
+            apply(collapsed);
+        });
     })();
     </script>
 </aside>
