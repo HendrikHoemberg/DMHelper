@@ -8,22 +8,24 @@
 
     let progress = 0;
     let raf = null;
-    let active = false;
+    let pendingCount = 0;
     let showTimer = null;
+    let hideTimer = null;
 
     function frame() {
-      if (!active) return;
+      if (pendingCount <= 0) return;
       progress += (95 - progress) * 0.08;
       bar.style.width = progress + '%';
       raf = requestAnimationFrame(frame);
     }
 
     document.body.addEventListener('htmx:beforeRequest', () => {
-      active = true;
+      pendingCount++;
+      clearTimeout(hideTimer);
       progress = 0;
       bar.style.width = '0%';
       showTimer = setTimeout(() => {
-        if (!active) return;
+        if (pendingCount <= 0) return;
         document.body.classList.add('loading');
         bar.style.opacity = '1';
         raf = requestAnimationFrame(frame);
@@ -31,11 +33,12 @@
     });
 
     document.body.addEventListener('htmx:afterRequest', () => {
-      active = false;
+      pendingCount = Math.max(0, pendingCount - 1);
+      if (pendingCount > 0) return;
       clearTimeout(showTimer);
       cancelAnimationFrame(raf);
       bar.style.width = '100%';
-      setTimeout(() => {
+      hideTimer = setTimeout(() => {
         document.body.classList.remove('loading');
         bar.style.width = '0%';
         bar.style.opacity = '0';
@@ -48,6 +51,8 @@
     if (!container) {
       container = document.createElement('div');
       container.id = 'toast-container';
+      container.setAttribute('role', 'status');
+      container.setAttribute('aria-live', 'polite');
       document.body.appendChild(container);
     }
 
@@ -57,10 +62,10 @@
       toast.textContent = message;
       container.appendChild(toast);
       requestAnimationFrame(() => toast.classList.add('show'));
-      setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 220);
-      }, duration);
+        setTimeout(() => {
+          toast.classList.remove('show');
+          toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+        }, duration);
     };
   }
 
