@@ -27,7 +27,7 @@
 
         <div class="appnav-footer">
             <a class="btn btn-primary appnav-run" th:href="@{/campaigns/{id}/session(id=${campaignId})}">
-                &#9876; Run Session
+                Run Session
             </a>
         </div>
     </th:block>
@@ -43,10 +43,13 @@
     <script>
     (function () {
         const path = location.pathname;
+        let best = null;
         document.querySelectorAll('#appnav .appnav-link').forEach(a => {
             const href = a.getAttribute('href');
-            if (href !== '/' && path.startsWith(href)) a.setAttribute('aria-current', 'page');
+            if (href === '/' || !(path === href || path.startsWith(href + '/'))) return;
+            if (!best || href.length > best.getAttribute('href').length) best = a;
         });
+        if (best) best.setAttribute('aria-current', 'page');
     })();
     </script>
 </aside>

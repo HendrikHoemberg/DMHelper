@@ -21,7 +21,7 @@
   padding-right: var(--space-md);
   border-right: 1px solid var(--color-border);
 }
-.battle-toolbar .tool-btn {
+.tool-btn {
   padding: 6px 10px;
   font-size: var(--text-sm);
   border: 1px solid var(--color-border);
@@ -30,8 +30,8 @@
   color: var(--color-text);
   cursor: pointer;
 }
-.battle-toolbar .tool-btn:hover { background: var(--color-surface-hover); }
-.battle-toolbar .tool-btn.active {
+.tool-btn:hover { background: var(--color-surface-hover); }
+.tool-btn.active {
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: var(--color-bg);

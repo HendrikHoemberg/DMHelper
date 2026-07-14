@@ -499,7 +499,7 @@
     align-items: center;
     justify-content: center;
     font-size: 0.625rem;
-    color: white;
+    color: var(--color-text);
     cursor: pointer;
     background: var(--color-accent);
 }
@@ -509,7 +509,7 @@
     height: 18px;
     border-radius: 50%;
     background: var(--color-concentration);
-    color: white;
+    color: var(--color-text);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -541,8 +541,8 @@
 .hp-quick { display: flex; gap: var(--space-xs); margin-bottom: var(--space-sm); }
 .hp-quick button { padding: 2px 8px; font-size: var(--text-sm); }
 .hp-flag { font-size: 0.75rem; padding: 1px 6px; border-radius: 4px; }
-.hp-flag.bloodied { background: var(--color-hp-bloodied); color: white; }
-.hp-flag.dead { background: var(--color-hp-dead); color: white; }
+.hp-flag.bloodied { background: var(--color-hp-bloodied); color: var(--color-bg); }
+.hp-flag.dead { background: var(--color-hp-dead); color: var(--color-text); }
 
 .detail-conditions { margin-bottom: var(--space-sm); }
 .detail-conditions h4 { margin: 0 0 var(--space-xs); font-size: var(--text-sm); color: var(--color-text-muted); }
@@ -833,7 +833,7 @@
     border-radius: var(--radius);
     color: var(--color-text);
     font-family: var(--font-mono, monospace);
-    font-size: var(--text-md);
+    font-size: var(--text-base);
 }
 
 .dice-input-row input[type="text"]:focus {
@@ -944,7 +944,7 @@
     border-radius: var(--radius);
     padding: var(--space-xs) var(--space-sm);
     color: var(--color-text-muted);
-    font-size: var(--text-md);
+    font-size: var(--text-base);
 }
 .dice-toggle-btn:hover {
     background: var(--color-bg);

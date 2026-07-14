@@ -37,11 +37,11 @@
         <div class="sb-ability" th:each="trait : ${sb.traitsParsed}">
             <div class="sb-ability-name">
                 <span th:text="${trait.name}">Trait Name</span>
-                <th:block th:if="${trait.attackBonus != null}">
+                <th:block th:if="${trait['attackBonus'] != null}">
                     <button class="roll-btn" th:attr="data-roll='d20+${trait.attackBonus}'"
                             type="button" th:title="Attack roll (d20+${trait.attackBonus})">d20</button>
                 </th:block>
-                <th:block th:if="${trait.damageExpr != null}">
+                <th:block th:if="${trait['damageExpr'] != null}">
                     <button class="roll-btn" th:attr="data-roll=${trait.damageExpr}"
                             type="button" th:title="Damage roll (${trait.damageExpr})">&#x1F3B2;</button>
                 </th:block>
@@ -55,11 +55,11 @@
         <div class="sb-ability" th:each="action : ${sb.actionsParsed}">
             <div class="sb-ability-name">
                 <span th:text="${action.name}">Action Name</span>
-                <th:block th:if="${action.attackBonus != null}">
+                <th:block th:if="${action['attackBonus'] != null}">
                     <button class="roll-btn" th:attr="data-roll='d20+${action.attackBonus}'"
                             type="button" th:title="Attack roll (d20+${action.attackBonus})">d20</button>
                 </th:block>
-                <th:block th:if="${action.damageExpr != null}">
+                <th:block th:if="${action['damageExpr'] != null}">
                     <button class="roll-btn" th:attr="data-roll=${action.damageExpr}"
                             type="button" th:title="Damage roll (${action.damageExpr})">&#x1F3B2;</button>
                 </th:block>
@@ -73,11 +73,11 @@
         <div class="sb-ability" th:each="ba : ${sb.bonusActionsParsed}">
             <div class="sb-ability-name">
                 <span th:text="${ba.name}"></span>
-                <th:block th:if="${ba.attackBonus != null}">
+                <th:block th:if="${ba['attackBonus'] != null}">
                     <button class="roll-btn" th:attr="data-roll='d20+${ba.attackBonus}'"
                             type="button" th:title="Attack roll (d20+${ba.attackBonus})">d20</button>
                 </th:block>
-                <th:block th:if="${ba.damageExpr != null}">
+                <th:block th:if="${ba['damageExpr'] != null}">
                     <button class="roll-btn" th:attr="data-roll=${ba.damageExpr}"
                             type="button" th:title="Damage roll (${ba.damageExpr})">&#x1F3B2;</button>
                 </th:block>
@@ -91,11 +91,11 @@
         <div class="sb-ability" th:each="r : ${sb.reactionsParsed}">
             <div class="sb-ability-name">
                 <span th:text="${r.name}"></span>
-                <th:block th:if="${r.attackBonus != null}">
+                <th:block th:if="${r['attackBonus'] != null}">
                     <button class="roll-btn" th:attr="data-roll='d20+${r.attackBonus}'"
                             type="button" th:title="Attack roll (d20+${r.attackBonus})">d20</button>
                 </th:block>
-                <th:block th:if="${r.damageExpr != null}">
+                <th:block th:if="${r['damageExpr'] != null}">
                     <button class="roll-btn" th:attr="data-roll=${r.damageExpr}"
                             type="button" th:title="Damage roll (${r.damageExpr})">&#x1F3B2;</button>
                 </th:block>
@@ -110,11 +110,11 @@
         <div class="sb-ability" th:each="la : ${sb.legendaryActionsParsed}">
             <div class="sb-ability-name">
                 <span th:text="${la.name}"></span>
-                <th:block th:if="${la.attackBonus != null}">
+                <th:block th:if="${la['attackBonus'] != null}">
                     <button class="roll-btn" th:attr="data-roll='d20+${la.attackBonus}'"
                             type="button" th:title="Attack roll (d20+${la.attackBonus})">d20</button>
                 </th:block>
-                <th:block th:if="${la.damageExpr != null}">
+                <th:block th:if="${la['damageExpr'] != null}">
                     <button class="roll-btn" th:attr="data-roll=${la.damageExpr}"
                             type="button" th:title="Damage roll (${la.damageExpr})">&#x1F3B2;</button>
                 </th:block>
@@ -128,11 +128,11 @@
         <div class="sb-ability" th:each="la : ${sb.lairActionsParsed}">
             <div class="sb-ability-name">
                 <span th:text="${la.name}"></span>
-                <th:block th:if="${la.attackBonus != null}">
+                <th:block th:if="${la['attackBonus'] != null}">
                     <button class="roll-btn" th:attr="data-roll='d20+${la.attackBonus}'"
                             type="button" th:title="Attack roll (d20+${la.attackBonus})">d20</button>
                 </th:block>
-                <th:block th:if="${la.damageExpr != null}">
+                <th:block th:if="${la['damageExpr'] != null}">
                     <button class="roll-btn" th:attr="data-roll=${la.damageExpr}"
                             type="button" th:title="Damage roll (${la.damageExpr})">&#x1F3B2;</button>
                 </th:block>
