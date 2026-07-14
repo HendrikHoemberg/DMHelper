@@ -1417,3 +1417,91 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
 .toast.toast-error { border-left-color: var(--color-danger); }
 .toast.toast-success { border-left-color: var(--color-success); }
 
+.bookshelf { display: flex; flex-direction: column; gap: var(--space-xl); }
+.shelf-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-lg);
+  padding: var(--space-md) var(--space-md) var(--space-xl);
+  border-bottom: 2px solid var(--color-border);
+  box-shadow: 0 2px 0 rgba(255, 243, 210, 0.04);
+  align-items: end;
+}
+
+.book-cover {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: 4px 8px 8px 4px;
+  background: linear-gradient(105deg, rgba(30,24,17,1) 0%, rgba(48,38,27,1) 45%, rgba(24,19,14,1) 55%, rgba(30,24,17,1) 100%);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+  text-align: center;
+  text-decoration: none;
+  color: var(--color-text);
+  box-shadow: var(--highlight-candle), 3px 4px 10px rgba(0,0,0,0.45);
+  transition: transform var(--duration-standard) var(--ease-out), box-shadow var(--duration-standard) var(--ease-out), border-color var(--duration-standard) var(--ease-out);
+  transform-origin: bottom center;
+  overflow: hidden;
+}
+.book-cover::before {
+  content: '';
+  position: absolute; inset: 6px;
+  border: 1px solid var(--color-gold-soft);
+  border-radius: 2px 6px 6px 2px;
+  pointer-events: none;
+}
+.book-cover h3 {
+  font-family: var(--font-display);
+  color: var(--color-accent);
+  font-size: var(--text-lg);
+  line-height: 1.3;
+  margin-bottom: var(--space-sm);
+  z-index: 1;
+}
+.book-cover .book-meta {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  z-index: 1;
+}
+.book-cover:hover {
+  transform: perspective(800px) rotateY(-6deg) translateY(-6px);
+  border-color: var(--color-gold-soft);
+  box-shadow: var(--highlight-candle), var(--shadow-warm-md);
+}
+.book-cover:hover h3 {
+  background: var(--gold-sweep);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 200% 100%;
+  animation: gold-sweep 700ms ease forwards;
+}
+@keyframes gold-sweep {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+.book-cover--blank {
+  border-style: dashed;
+  background: transparent;
+  color: var(--color-text-muted);
+}
+.book-cover--blank:hover { color: var(--color-accent); border-color: var(--color-accent); }
+.book-cover-plus { font-size: var(--text-2xl); line-height: 1; }
+.book-cover-label { font-size: var(--text-sm); }
+
+.book-cover .card-actions {
+  position: absolute;
+  top: var(--space-xs);
+  right: var(--space-xs);
+  margin: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity var(--duration-micro) var(--ease-out), transform var(--duration-micro) var(--ease-out);
+}
+.book-cover:hover .card-actions { opacity: 1; transform: translateY(0); }
+

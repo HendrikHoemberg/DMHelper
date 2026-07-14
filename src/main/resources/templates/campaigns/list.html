@@ -11,17 +11,26 @@
             <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
         <main class="app-main">
             <div class="page-header">
-                <h1>Campaigns</h1>
-                <th:block th:replace="~{campaigns/_new-button :: new-button}"></th:block>
+                <div>
+                    <div class="page-header-eyebrow">The Grimoire</div>
+                    <h1>Campaigns</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
             </div>
 
-            <div class="card-grid" id="campaign-grid">
-                <th:block th:if="${campaigns == null || campaigns.isEmpty()}">
-                    <th:block th:replace="~{common/_empty-state :: empty-state('No campaigns yet. Every saga starts with a blank page.', 'Create campaign', @{/campaigns/new})}"></th:block>
-                </th:block>
-                <th:block th:each="campaign : ${campaigns}">
-                    <th:block th:replace="~{campaigns/_card :: card(campaign=${campaign})}"></th:block>
-                </th:block>
+            <div class="bookshelf" id="campaign-grid">
+                <div class="shelf-row">
+                    <th:block th:if="${campaigns == null || campaigns.isEmpty()}">
+                        <th:block th:replace="~{common/_empty-state :: empty-state('No campaigns yet. Every saga starts with a blank page.', 'Create campaign', @{/campaigns/new})}"></th:block>
+                    </th:block>
+                    <th:block th:each="campaign : ${campaigns}">
+                        <th:block th:replace="~{campaigns/_card :: card(campaign=${campaign})}"></th:block>
+                    </th:block>
+                    <a th:href="@{/campaigns/new}" class="book-cover book-cover--blank">
+                        <span class="book-cover-plus">+</span>
+                        <span class="book-cover-label">Blank Tome</span>
+                    </a>
+                </div>
             </div>
         </main>
 
