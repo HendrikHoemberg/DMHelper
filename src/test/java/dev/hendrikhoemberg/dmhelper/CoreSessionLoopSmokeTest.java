@@ -74,6 +74,10 @@ class CoreSessionLoopSmokeTest {
     @Test
     @Order(1)
     void createCampaign() {
+        dmPage.navigate("http://localhost:" + port + "/campaigns/new");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(dmPage.evaluate("document.querySelector('form')")).isNotNull();
+
         dmPage.navigate("http://localhost:" + port + "/campaigns");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
 

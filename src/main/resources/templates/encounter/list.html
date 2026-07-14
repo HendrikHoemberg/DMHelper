@@ -24,7 +24,7 @@
 
             <div id="encounter-grid" class="card-grid">
                 <th:block th:if="${encounters == null or encounters.isEmpty()}">
-                    <th:block th:replace="~{common/_empty-state :: empty-state('No encounters yet. Create your first encounter!')}"></th:block>
+                    <th:block th:replace="~{common/_empty-state :: empty-state('No encounters yet. Create your first encounter!', null, null)}"></th:block>
                 </th:block>
                 <th:block th:each="e : ${encounters}">
                     <th:block th:replace="~{encounter/_card :: card(encounter=${e}, campaignId=${campaignId})}"></th:block>
