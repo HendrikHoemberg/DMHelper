@@ -2,6 +2,9 @@ package dev.hendrikhoemberg.dmhelper.campaign.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignValidationResult;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import org.junit.jupiter.api.Test;
@@ -14,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
@@ -185,5 +189,46 @@ class CampaignControllerTest {
                 .andExpect(model().attributeExists("sigil"))
                 .andExpect(content().string(containsString("campaign-sigil")))
                 .andExpect(content().string(containsString("Imported")));
+    }
+
+    @Test
+    void dryRunReturnsBlockedForInvalidJson() throws Exception {
+        String json = "invalid";
+        CampaignValidationResult result = new CampaignValidationResult(
+                Optional.empty(),
+                List.of(new CampaignImportProblem(ImportSeverity.ERROR, "INVALID_JSON", "/",
+                        "Campaign file is not valid JSON.", "Fix the JSON syntax.")));
+        when(service.validateImport(json)).thenReturn(result);
+
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "test.dmcampaign.json", "application/json", json.getBytes());
+
+        mockMvc.perform(multipart("/campaigns/import")
+                        .file(file)
+                        .param("dryRun", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(false))
+                .andExpect(jsonPath("$.status").value("BLOCKED"))
+                .andExpect(jsonPath("$.problems").isNotEmpty());
+    }
+
+    @Test
+    void dryRunReturnsReadyForValidJson() throws Exception {
+        String json = "{\"valid\":true}";
+        CampaignValidationResult result = new CampaignValidationResult(
+                Optional.empty(),
+                List.of());
+        when(service.validateImport(json)).thenReturn(result);
+
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "test.dmcampaign.json", "application/json", json.getBytes());
+
+        mockMvc.perform(multipart("/campaigns/import")
+                        .file(file)
+                        .param("dryRun", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(true))
+                .andExpect(jsonPath("$.status").value("READY"))
+                .andExpect(jsonPath("$.problems").isEmpty());
     }
 }

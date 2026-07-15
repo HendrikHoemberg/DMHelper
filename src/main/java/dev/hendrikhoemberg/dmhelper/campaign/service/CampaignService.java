@@ -32,6 +32,8 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignValidationResult;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import org.springframework.stereotype.Service;
@@ -77,6 +79,7 @@ public class CampaignService {
     private final dev.hendrikhoemberg.dmhelper.adventure.data.ChapterRepository chapterRepo;
     private final dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository sceneRepo;
     private final dev.hendrikhoemberg.dmhelper.dice.data.DiceRollRepository diceRollRepo;
+    private final CampaignImportValidator importValidator;
 
     @jakarta.persistence.PersistenceContext
     private jakarta.persistence.EntityManager em;
@@ -108,8 +111,9 @@ public class CampaignService {
                              TokenRepository tokenRepo,
                              dev.hendrikhoemberg.dmhelper.adventure.data.AdventureRepository adventureRepo,
                              dev.hendrikhoemberg.dmhelper.adventure.data.ChapterRepository chapterRepo,
-                             dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository sceneRepo,
-                             dev.hendrikhoemberg.dmhelper.dice.data.DiceRollRepository diceRollRepo) {
+                              dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository sceneRepo,
+                              dev.hendrikhoemberg.dmhelper.dice.data.DiceRollRepository diceRollRepo,
+                              CampaignImportValidator importValidator) {
         this.repository = repository;
         this.partyMemberRepository = partyMemberRepository;
         this.statBlockRepository = statBlockRepository;
@@ -139,6 +143,7 @@ public class CampaignService {
         this.chapterRepo = chapterRepo;
         this.sceneRepo = sceneRepo;
         this.diceRollRepo = diceRollRepo;
+        this.importValidator = importValidator;
         this.objectMapper = JsonMapper.builder()
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -421,162 +426,12 @@ public class CampaignService {
     }
 
     @Transactional(readOnly = true)
-    public List<String> validateImport(String json) {
-        List<String> warnings = new ArrayList<>();
-        CampaignExportDto dto;
-        try {
-            dto = objectMapper.readValue(json, CampaignExportDto.class);
-        } catch (Exception e) {
-            return List.of("Failed to parse JSON: " + e.getMessage());
-        }
-
-        if (dto.formatVersion() != CampaignExportDto.CURRENT_FORMAT_VERSION) {
-            warnings.add("Unsupported formatVersion: " + dto.formatVersion() +
-                    ". Expected: " + CampaignExportDto.CURRENT_FORMAT_VERSION);
-        }
-        if (dto.campaign() == null || dto.campaign().name() == null || dto.campaign().name().isBlank()) {
-            warnings.add("Campaign name is required");
-        }
-
-        if (dto.maps() != null) {
-            for (var mapDto : dto.maps()) {
-                var grid = mapDto.grid();
-                if (grid == null) {
-                    warnings.add("Map '" + mapDto.name() + "' has no grid config");
-                } else {
-                    if (grid.w() < 1) warnings.add("Map '" + mapDto.name() + "' grid width must be >= 1");
-                    if (grid.h() < 1) warnings.add("Map '" + mapDto.name() + "' grid height must be >= 1");
-                    if (mapDto.tokens() != null) {
-                        for (var tDto : mapDto.tokens()) {
-                            if (tDto.positionX() < 0 || tDto.positionX() >= grid.w() ||
-                                tDto.positionY() < 0 || tDto.positionY() >= grid.h()) {
-                                warnings.add("Map '" + mapDto.name() + "': token '" + tDto.name() +
-                                        "' at (" + tDto.positionX() + "," + tDto.positionY() + ") is outside grid bounds");
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (dto.statBlocks() != null) {
-            for (var sbDto : dto.statBlocks()) {
-                if (sbDto.name() == null || sbDto.name().isBlank()) {
-                    warnings.add("StatBlock has no name");
-                }
-            }
-        }
-
-        if (dto.encounters() != null) {
-            for (var encDto : dto.encounters()) {
-                if (encDto.name() == null || encDto.name().isBlank()) {
-                    warnings.add("Encounter has no name");
-                }
-                if (encDto.combatants() != null) {
-                    for (int i = 0; i < encDto.combatants().size(); i++) {
-                        var c = encDto.combatants().get(i);
-                        if (c.name() == null || c.name().isBlank()) {
-                            warnings.add("Combatant #" + (i + 1) + " in encounter '" +
-                                    encDto.name() + "' has no name");
-                        }
-                        if (c.statBlockKey() != null) {
-                            var resolved = statBlockRepository.findByCampaignIdAndSourceKey(null, c.statBlockKey())
-                                    .or(() -> statBlockRepository.findBySourceKey(c.statBlockKey()));
-                            if (resolved.isEmpty()) {
-                                warnings.add("Statblock key '" + c.statBlockKey() + "' not found in library");
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (dto.adventures() != null) {
-            for (var advDto : dto.adventures()) {
-                if (advDto.chapters() == null) continue;
-                for (var chDto : advDto.chapters()) {
-                    if (chDto.scenes() == null) continue;
-                    for (var scDto : chDto.scenes()) {
-                        if (scDto.map() != null) {
-                            boolean mapFound = dto.maps() != null &&
-                                    dto.maps().stream().anyMatch(m -> scDto.map().equals(m.name()));
-                            if (!mapFound) {
-                                warnings.add("Scene '" + scDto.title() + "': map '" + scDto.map() + "' not found in campaign maps");
-                            }
-                        }
-                        if (scDto.encounter() != null) {
-                            boolean encFound = dto.encounters() != null &&
-                                    dto.encounters().stream()
-                                            .anyMatch(e -> scDto.encounter().equals(e.encounterKey())
-                                                    || scDto.encounter().equals(e.name()));
-                            if (!encFound) {
-                                warnings.add("Scene '" + scDto.title() + "': encounter '" + scDto.encounter() + "' not found in campaign encounters");
-                            }
-                        }
-                        if (scDto.handouts() != null) {
-                            for (var hTitle : scDto.handouts()) {
-                                boolean hFound = dto.handouts() != null &&
-                                        dto.handouts().stream().anyMatch(h -> hTitle.equals(h.title()));
-                                if (!hFound) {
-                                    warnings.add("Scene '" + scDto.title() + "': handout '" + hTitle + "' not found in campaign handouts");
-                                }
-                            }
-                        }
-                        if (scDto.statblocks() != null) {
-                            for (var sbKey : scDto.statblocks()) {
-                                boolean sbFound = dto.statBlocks() != null &&
-                                        dto.statBlocks().stream()
-                                                .anyMatch(sb -> sbKey.equals(sb.sourceKey()) || sbKey.equals(sb.name()));
-                                if (!sbFound) {
-                                    warnings.add("Scene '" + scDto.title() + "': statblock key '" + sbKey + "' not found in campaign statblocks");
-                                }
-                            }
-                        }
-                        if (scDto.pin() != null && scDto.map() != null) {
-                            for (var mapDto : dto.maps() != null ? dto.maps() : List.<CampaignExportDto.MapExportDto>of()) {
-                                if (scDto.map().equals(mapDto.name())) {
-                                    var grid = mapDto.grid();
-                                    if (grid != null) {
-                                        int maxW = grid.w() * grid.cellPx();
-                                        int maxH = grid.h() * grid.cellPx();
-                                        int px = scDto.pin().get("x");
-                                        int py = scDto.pin().get("y");
-                                        if (px < 0 || py < 0 || px >= maxW || py >= maxH) {
-                                            warnings.add("Scene '" + scDto.title() + "': pin (" + px + "," + py + ") is out of bounds for map '" + scDto.map() + "' (" + maxW + "x" + maxH + "px)");
-                                        }
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (warnings.isEmpty()) {
-            warnings.add("Validation passed — campaign is ready for import.");
-        }
-
-        return warnings;
+    public CampaignValidationResult validateImport(String json) {
+        return importValidator.validate(json);
     }
 
     public Campaign importFromJson(String json) {
-        CampaignExportDto dto;
-        try {
-            dto = objectMapper.readValue(json, CampaignExportDto.class);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to parse import JSON: " + e.getMessage(), e);
-        }
-
-        if (dto.formatVersion() != 1) {
-            throw new IllegalArgumentException(
-                    "Unsupported formatVersion: " + dto.formatVersion() + ". Expected: 1");
-        }
-
-        if (dto.campaign() == null || dto.campaign().name() == null || dto.campaign().name().isBlank()) {
-            throw new IllegalArgumentException("Campaign name is required");
-        }
+        CampaignExportDto dto = importValidator.validate(json).requireImportable();
 
         Campaign saved = create(dto.campaign().name(), dto.campaign().description());
 

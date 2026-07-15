@@ -2,6 +2,8 @@ package dev.hendrikhoemberg.dmhelper.campaign.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignValidationResult;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
@@ -167,8 +169,8 @@ public class CampaignController {
         try {
             String json = new String(file.getBytes(), StandardCharsets.UTF_8);
             if (dryRun) {
-                List<String> report = service.validateImport(json);
-                return ResponseEntity.ok(new DryRunResult(report));
+                CampaignValidationResult result = service.validateImport(json);
+                return ResponseEntity.ok(DryRunResult.from(result));
             }
             Campaign campaign = service.importFromJson(json);
             model.addAttribute("campaign", campaign);
@@ -179,5 +181,16 @@ public class CampaignController {
         }
     }
 
-    public record DryRunResult(List<String> messages) {}
+    public record DryRunResult(
+            boolean valid,
+            String status,
+            List<CampaignImportProblem> problems
+    ) {
+        static DryRunResult from(CampaignValidationResult result) {
+            return new DryRunResult(
+                    result.valid(),
+                    result.valid() ? "READY" : "BLOCKED",
+                    result.problems());
+        }
+    }
 }

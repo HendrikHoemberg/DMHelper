@@ -3,6 +3,10 @@ package dev.hendrikhoemberg.dmhelper.campaign.service;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignValidationResult;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +26,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import org.mockito.ArgumentCaptor;
+import java.util.List;
 import java.util.Optional;
 import tools.jackson.databind.ObjectMapper;
 
@@ -65,6 +70,9 @@ class CampaignServiceTest {
 
     @MockitoBean
     private HandoutRepository handoutRepo;
+
+    @MockitoBean
+    private CampaignImportValidator importValidator;
 
     private ObjectMapper objectMapper;
 
@@ -163,6 +171,10 @@ class CampaignServiceTest {
                 }
                 """;
 
+        CampaignExportDto dto = objectMapper.readValue(json, CampaignExportDto.class);
+        when(importValidator.validate(json)).thenReturn(
+                new CampaignValidationResult(Optional.of(dto), List.of()));
+
         Campaign imported = service.importFromJson(json);
 
         assertThat(imported.getId()).isNotNull();
@@ -175,6 +187,10 @@ class CampaignServiceTest {
         Campaign original = service.create("Round Trip", "Round trip test");
         String exported = service.exportToJson(original.getId());
 
+        CampaignExportDto dto = objectMapper.readValue(exported, CampaignExportDto.class);
+        when(importValidator.validate(exported)).thenReturn(
+                new CampaignValidationResult(Optional.of(dto), List.of()));
+
         Campaign reimported = service.importFromJson(exported);
 
         assertThat(reimported.getName()).isEqualTo("Round Trip");
@@ -183,12 +199,19 @@ class CampaignServiceTest {
     }
 
     @Test
-    void shouldRejectInvalidFormatVersion() {
+    void shouldRejectInvalidFormatVersion() throws Exception {
         String json = """
                 { "formatVersion": 99, "campaign": { "name": "Bad" },
                   "party": [], "statBlocks": [], "handouts": [],
                   "maps": [], "encounters": [], "notes": [] }
                 """;
+
+        CampaignExportDto dto = objectMapper.readValue(json, CampaignExportDto.class);
+        when(importValidator.validate(json)).thenReturn(
+                new CampaignValidationResult(Optional.of(dto), List.of(
+                        new CampaignImportProblem(ImportSeverity.ERROR, "INVALID_FORMAT", "/",
+                                "Unsupported formatVersion: 99. Expected: 1",
+                                "Use format version 1"))));
 
         assertThatThrownBy(() -> service.importFromJson(json))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -197,18 +220,30 @@ class CampaignServiceTest {
 
     @Test
     void shouldRejectMalformedJson() {
+        when(importValidator.validate("not json")).thenReturn(
+                new CampaignValidationResult(Optional.empty(), List.of(
+                        new CampaignImportProblem(ImportSeverity.ERROR, "INVALID_JSON", "/",
+                                "Campaign file is not valid JSON.",
+                                "Fix the JSON syntax near line 1."))));
+
         assertThatThrownBy(() -> service.importFromJson("not json"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Failed to parse");
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    void shouldRejectMissingCampaignName() {
+    void shouldRejectMissingCampaignName() throws Exception {
         String json = """
                 { "formatVersion": 1, "campaign": { "description": "nope" },
                   "party": [], "statBlocks": [], "handouts": [],
                   "maps": [], "encounters": [], "notes": [] }
                 """;
+
+        CampaignExportDto dto = objectMapper.readValue(json, CampaignExportDto.class);
+        when(importValidator.validate(json)).thenReturn(
+                new CampaignValidationResult(Optional.of(dto), List.of(
+                        new CampaignImportProblem(ImportSeverity.ERROR, "MISSING_NAME", "/campaign/name",
+                                "Campaign name is required",
+                                "Provide a campaign name"))));
 
         assertThatThrownBy(() -> service.importFromJson(json))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -217,7 +252,7 @@ class CampaignServiceTest {
 
     @Test
     void importResolvesSrdStatBlock() throws Exception {
-        Campaign saved = service.create("SRD Import Test", null);
+        service.create("SRD Import Test", null);
 
         StatBlock sb = mock(StatBlock.class);
         when(sb.getSourceKey()).thenReturn("goblin");
@@ -267,6 +302,10 @@ class CampaignServiceTest {
                 }
                 """;
 
+        CampaignExportDto dto = objectMapper.readValue(json, CampaignExportDto.class);
+        when(importValidator.validate(json)).thenReturn(
+                new CampaignValidationResult(Optional.of(dto), List.of()));
+
         service.importFromJson(json);
 
         ArgumentCaptor<Combatant> captor = ArgumentCaptor.forClass(Combatant.class);
@@ -274,5 +313,29 @@ class CampaignServiceTest {
         Combatant importedCombatant = captor.getValue();
         assertThat(importedCombatant.getStatBlock()).isNotNull();
         assertThat(importedCombatant.getStatBlock().getSourceKey()).isEqualTo("goblin");
+    }
+
+    @Test
+    void invalidImportDoesNotPersist() {
+        when(importValidator.validate(anyString())).thenReturn(
+                new CampaignValidationResult(Optional.empty(), List.of(
+                        new CampaignImportProblem(ImportSeverity.ERROR, "INVALID_JSON", "/",
+                                "Invalid", "Fix"))));
+
+        long countBefore = repository.count();
+        assertThatThrownBy(() -> service.importFromJson("bad json"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(repository.count()).isEqualTo(countBefore);
+    }
+
+    @Test
+    void invalidDirectImportThrows() {
+        when(importValidator.validate(anyString())).thenReturn(
+                new CampaignValidationResult(Optional.empty(), List.of(
+                        new CampaignImportProblem(ImportSeverity.ERROR, "INVALID_JSON", "/",
+                                "Invalid", "Fix"))));
+
+        assertThatThrownBy(() -> service.importFromJson("bad json"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
