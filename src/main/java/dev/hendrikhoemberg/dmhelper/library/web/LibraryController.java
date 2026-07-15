@@ -54,7 +54,13 @@ public class LibraryController {
     }
 
     @GetMapping
-    public String list() {
+    public String list(@RequestParam(defaultValue = "monsters") String tab,
+                       @RequestParam(required = false, defaultValue = "") String search,
+                       Model model) {
+        Set<String> tabs = Set.of("monsters", "spells", "conditions", "rules", "equipment",
+                "magic-items", "classes", "species", "backgrounds", "feats");
+        model.addAttribute("initialTab", tabs.contains(tab) ? tab : "monsters");
+        model.addAttribute("initialSearch", search);
         return "library/list";
     }
 

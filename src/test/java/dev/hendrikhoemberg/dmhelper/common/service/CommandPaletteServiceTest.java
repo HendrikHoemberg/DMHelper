@@ -7,10 +7,16 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
+import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.*;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
+import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +26,7 @@ import org.springframework.context.annotation.Import;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import(CommandPaletteService.class)
+@Import({CommandPaletteService.class, ContentDestinationRegistry.class})
 class CommandPaletteServiceTest {
 
     @Autowired private CommandPaletteService commandPaletteService;
@@ -33,6 +39,9 @@ class CommandPaletteServiceTest {
     @Autowired private AdventureRepository adventureRepository;
     @Autowired private ChapterRepository chapterRepository;
     @Autowired private SceneRepository sceneRepository;
+    @Autowired private HandoutRepository handoutRepository;
+    @Autowired private PartyMemberRepository partyMemberRepository;
+    @Autowired private CharacterSheetRepository characterSheetRepository;
 
     private Campaign campaign;
 
@@ -146,5 +155,87 @@ class CommandPaletteServiceTest {
     void emptyQueryReturnsEmptyList() {
         var results = commandPaletteService.search("   ", campaign.getId());
         assertThat(results).isEmpty();
+    }
+
+    @Test
+    void mapResultUsesPlayRoute() {
+        var result = commandPaletteService.search("Tavern Map", campaign.getId()).stream()
+                .filter(item -> item.type().equals("map"))
+                .findFirst().orElseThrow();
+        assertThat(result.url()).endsWith("/play");
+        assertThat(result.url()).doesNotContain("/battle");
+    }
+
+    @Test
+    void spellResultUsesFilteredLibraryTab() {
+        var result = commandPaletteService.search("Fireball", null).stream()
+                .filter(item -> item.type().equals("spell"))
+                .findFirst().orElseThrow();
+        assertThat(result.url()).isEqualTo("/library?tab=spells&search=Fireball");
+    }
+
+    @Test
+    void handoutResultUsesTheGalleryCardAnchor() {
+        Handout handout = new Handout();
+        handout.setCampaign(campaign);
+        handout.setTitle("Royal Invitation");
+        handout.setFileName("invitation.png");
+        handout = handoutRepository.save(handout);
+
+        var result = commandPaletteService.search("Royal Invitation", campaign.getId()).stream()
+                .filter(item -> item.type().equals("handout"))
+                .findFirst().orElseThrow();
+        assertThat(result.url()).isEqualTo(
+                "/campaigns/" + campaign.getId() + "/handouts#handout-" + handout.getId());
+    }
+
+    @Test
+    void partyMemberUsesRosterUntilASheetExists() {
+        PartyMember member = new PartyMember();
+        member.setCampaign(campaign);
+        member.setCharacterName("Arannis");
+        member = partyMemberRepository.save(member);
+
+        var rosterResult = commandPaletteService.search("Arannis", campaign.getId()).stream()
+                .filter(item -> item.type().equals("party-member"))
+                .findFirst().orElseThrow();
+        assertThat(rosterResult.url()).isEqualTo(
+                "/campaigns/" + campaign.getId() + "/party#pm-card-" + member.getId());
+
+        CharacterSheet sheet = new CharacterSheet();
+        sheet.setPartyMember(member);
+        characterSheetRepository.save(sheet);
+
+        var sheetResult = commandPaletteService.search("Arannis", campaign.getId()).stream()
+                .filter(item -> item.type().equals("party-member"))
+                .findFirst().orElseThrow();
+        assertThat(sheetResult.url()).isEqualTo(
+                "/campaigns/" + campaign.getId() + "/party/" + member.getId() + "/sheet");
+    }
+
+    @Test
+    void resultsAreGloballyCapped() {
+        for (int index = 0; index < 30; index++) {
+            Note note = new Note();
+            note.setCampaign(campaign);
+            note.setTitle("Shared Result " + index);
+            note.setType(NoteType.GENERIC);
+            note.setBody("shared result body");
+            noteRepository.save(note);
+        }
+        assertThat(commandPaletteService.search("shared result", campaign.getId())).hasSize(20);
+    }
+
+    @Test
+    void exactCampaignTitleRanksAheadOfEqualGlobalTitle() {
+        Note note = new Note();
+        note.setCampaign(campaign);
+        note.setTitle("Goblin");
+        note.setType(NoteType.NPC);
+        note.setBody("");
+        noteRepository.save(note);
+
+        var results = commandPaletteService.search("Goblin", campaign.getId());
+        assertThat(results.getFirst().type()).isEqualTo("note");
     }
 }

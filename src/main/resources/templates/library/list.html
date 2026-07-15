@@ -8,7 +8,9 @@
     <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
     <div class="app-shell">
             <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
+        <main class="app-main"
+              th:attr="data-initial-tab=${initialTab},data-initial-search=${initialSearch}"
+              id="library-root">
             <div class="page-header">
                 <h1>Monster Library</h1>
                 <div class="u-flex--md u-flex-wrap">
@@ -371,10 +373,21 @@
         function switchCompendiumTab(tab) {
             document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.compendium-section').forEach(s => s.classList.add('hidden'));
-            document.getElementById('tab-' + tab).classList.add('active');
-            var section = document.getElementById('section-' + tab);
-            if (section) section.classList.remove('hidden');
+            document.getElementById('tab-' + tab)?.classList.add('active');
+            document.getElementById('section-' + tab)?.classList.remove('hidden');
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const root = document.getElementById('library-root');
+            const tab = root?.dataset.initialTab || 'monsters';
+            const search = root?.dataset.initialSearch || '';
+            switchCompendiumTab(tab);
+            if (!search) return;
+            const input = document.querySelector('#section-' + tab + ' input[name="search"]');
+            if (!input) return;
+            input.value = search;
+            input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'a' }));
+        });
     </script>
 </body>
 </html>

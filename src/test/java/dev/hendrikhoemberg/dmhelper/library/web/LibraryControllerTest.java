@@ -201,4 +201,14 @@ class LibraryControllerTest {
         mockMvc.perform(get("/library/feats"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void listExposesRequestedInitialTabAndSearch() throws Exception {
+        mockMvc.perform(get("/library")
+                        .param("tab", "spells")
+                        .param("search", "Fireball"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("initialTab", "spells"))
+                .andExpect(model().attribute("initialSearch", "Fireball"));
+    }
 }
