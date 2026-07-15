@@ -1,34 +1,101 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="inline-form" th:fragment="form(campaignId, pm)">
-    <h3 th:text="${pm == null ? 'Add Party Member' : 'Edit ' + pm.characterName}">Add Party Member</h3>
-    <form th:action="${pm} == null ? @{/campaigns/{cid}/party(cid=${campaignId})} : @{/campaigns/{cid}/party/{pid}(cid=${campaignId}, pid=${pm.id})}"
+<div th:fragment="form(campaignId, pm, classNames)" class="modal-panel">
+    <div class="modal-header">
+        <h3 th:text="${pm == null ? 'Add Party Member' : 'Edit ' + pm.characterName}">Add Party Member</h3>
+        <button type="button" class="modal-close" aria-label="Close"
+                onclick="this.closest('dialog').close()">&times;</button>
+    </div>
+    <form class="pm-form"
+          th:action="${pm} == null ? @{/campaigns/{cid}/party(cid=${campaignId})} : @{/campaigns/{cid}/party/{pid}(cid=${campaignId}, pid=${pm.id})}"
           th:method="${pm == null ? 'post' : 'put'}"
-          hx-target="#party-grid"
-          th:hx-swap="${pm == null ? 'beforeend' : 'outerHTML'}">
-        <div class="form-group"><label>Character Name *</label><input type="text" name="characterName" required th:value="${pm?.characterName}" placeholder="e.g. Thia"></div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
-            <div class="form-group"><label>Player Name</label><input type="text" name="playerName" th:value="${pm?.playerName}" placeholder="Anna"></div>
-            <div class="form-group"><label>Class &amp; Level</label><input type="text" name="classAndLevel" th:value="${pm?.classAndLevel}" placeholder="Rogue 5"></div>
+          th:hx-target="${pm == null ? '#party-grid' : '#pm-card-' + pm.id}"
+          th:hx-swap="${pm == null ? 'beforeend' : 'outerHTML'}"
+          hx-on::after-request="if(event.detail.successful){ this.closest('dialog').close(); }">
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Character Name *</label>
+                <input type="text" name="characterName" required th:value="${pm?.characterName}" placeholder="e.g. Thia">
+            </div>
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label>Player Name</label>
+                    <input type="text" name="playerName" th:value="${pm?.playerName}" placeholder="Anna">
+                </div>
+                <div class="form-group">
+                    <label>Class</label>
+                    <select id="pm-class" onchange="pmSyncClassLevel()">
+                        <option value="">&mdash;</option>
+                        <option th:each="cn : ${classNames}" th:value="${cn}" th:text="${cn}">Rogue</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Level</label>
+                    <input type="number" id="pm-level" min="1" class="pm-num" placeholder="5" oninput="pmSyncClassLevel()">
+                </div>
+            </div>
+            <input type="hidden" name="classAndLevel" id="pm-classlevel" th:value="${pm?.classAndLevel}">
+            <fieldset class="form-fieldset">
+                <legend class="form-legend">Combat</legend>
+                <div class="form-row-4">
+                    <div class="form-group"><label>AC *</label><input type="number" name="ac" required class="pm-num" th:value="${pm?.ac}" placeholder="16"></div>
+                    <div class="form-group"><label>Max HP *</label><input type="number" name="maxHp" required class="pm-num" th:value="${pm?.maxHp}" placeholder="38"></div>
+                    <div class="form-group"><label>Init *</label><input type="number" name="initiativeBonus" required class="pm-num" th:value="${pm?.initiativeBonus}" placeholder="4"></div>
+                    <div class="form-group"><label>Speed *</label><input type="number" name="speed" required class="pm-num" th:value="${pm?.speed}" placeholder="30"></div>
+                </div>
+            </fieldset>
+            <fieldset class="form-fieldset">
+                <legend class="form-legend">Passive Senses</legend>
+                <div class="form-row-3">
+                    <div class="form-group"><label>Perception *</label><input type="number" name="passivePerception" required class="pm-num" th:value="${pm?.passivePerception}" placeholder="17"></div>
+                    <div class="form-group"><label>Insight *</label><input type="number" name="passiveInsight" required class="pm-num" th:value="${pm?.passiveInsight}" placeholder="12"></div>
+                    <div class="form-group"><label>Investigation *</label><input type="number" name="passiveInvestigation" required class="pm-num" th:value="${pm?.passiveInvestigation}" placeholder="14"></div>
+                </div>
+            </fieldset>
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea name="notes" rows="3" th:text="${pm?.notes}" placeholder="e.g. darkvision, fey ancestry"></textarea>
+            </div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md);">
-            <div class="form-group"><label>AC *</label><input type="number" name="ac" required th:value="${pm?.ac}" placeholder="16"></div>
-            <div class="form-group"><label>Max HP *</label><input type="number" name="maxHp" required th:value="${pm?.maxHp}" placeholder="38"></div>
-            <div class="form-group"><label>Init Bonus *</label><input type="number" name="initiativeBonus" required th:value="${pm?.initiativeBonus}" placeholder="4"></div>
-            <div class="form-group"><label>Speed *</label><input type="number" name="speed" required th:value="${pm?.speed}" placeholder="30"></div>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md);">
-            <div class="form-group"><label>Passive Perception *</label><input type="number" name="passivePerception" required th:value="${pm?.passivePerception}" placeholder="17"></div>
-            <div class="form-group"><label>Passive Insight *</label><input type="number" name="passiveInsight" required th:value="${pm?.passiveInsight}" placeholder="12"></div>
-            <div class="form-group"><label>Passive Investigation *</label><input type="number" name="passiveInvestigation" required th:value="${pm?.passiveInvestigation}" placeholder="14"></div>
-        </div>
-        <div class="form-group"><label>Notes</label><textarea name="notes" rows="3" th:text="${pm?.notes}" placeholder="e.g. darkvision, fey ancestry"></textarea></div>
-        <div class="form-actions">
-            <button type="button" class="btn btn-ghost"
-                    th:if="${pm != null}"
-                    th:hx-get="@{/campaigns/{cid}/party(cid=${campaignId})}" hx-target="body" hx-swap="outerHTML">Cancel</button>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
             <button type="submit" class="btn btn-primary" th:text="${pm == null ? 'Add' : 'Save'}">Add</button>
         </div>
     </form>
+    <script>
+    (function () {
+        var sel = document.getElementById('pm-class');
+        var lvl = document.getElementById('pm-level');
+        var hidden = document.getElementById('pm-classlevel');
+        if (!sel || !lvl || !hidden) return;
+
+        // Combine class + level into the hidden field that actually submits.
+        window.pmSyncClassLevel = function () {
+            var c = sel.value.trim();
+            var l = lvl.value.trim();
+            hidden.value = c ? (l ? c + ' ' + l : c) : (l ? l : '');
+        };
+
+        // Prefill on edit: split a "Class Level" string into the dropdown + level.
+        var raw = (hidden.value || '').trim();
+        if (raw) {
+            var m = raw.match(/^(.*?)(?:\s+(\d+))?$/);
+            var cls = m ? m[1].trim() : raw;
+            var num = m ? m[2] : null;
+            var matched = false;
+            for (var i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].value.toLowerCase() === cls.toLowerCase()) {
+                    sel.selectedIndex = i;
+                    matched = true;
+                    break;
+                }
+            }
+            if (num) lvl.value = num;
+            // If the class didn't match a known option (legacy/freeform), leave the
+            // hidden field as the original string so an untouched save preserves it.
+            if (matched) window.pmSyncClassLevel();
+        }
+    })();
+    </script>
 </div>
 </html>

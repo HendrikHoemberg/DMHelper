@@ -86,6 +86,22 @@ class PartyControllerTest {
     }
 
     @Test
+    void shouldRenderClassDropdownOptions() throws Exception {
+        CharacterClass rogue = new CharacterClass();
+        rogue.setName("Rogue");
+        CharacterClass wizard = new CharacterClass();
+        wizard.setName("Wizard");
+        when(classRepository.findBySubclassOfIsNullOrderByNameAsc())
+                .thenReturn(List.of(rogue, wizard));
+
+        mockMvc.perform(get("/campaigns/{cid}/party/new", campaignId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("<select")))
+                .andExpect(content().string(containsString("Rogue")))
+                .andExpect(content().string(containsString("Wizard")));
+    }
+
+    @Test
     void shouldCreatePartyMember() throws Exception {
         Campaign c = new Campaign();
         c.setId(campaignId);
