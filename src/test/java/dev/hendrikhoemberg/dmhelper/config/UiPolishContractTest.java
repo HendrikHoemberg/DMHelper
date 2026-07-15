@@ -40,4 +40,32 @@ class UiPolishContractTest {
                 .doesNotContain("checkbox", "radio", "range", "file", "color\"]")
                 .doesNotContain("padding:", "width:", "font-size:");
     }
+
+    @Test
+    void emptyStateKeepsCompatibilityAndAddsIconAwareVariant() throws IOException {
+        String fragment = read("templates/common/_empty-state.html");
+
+        assertThat(fragment)
+                .contains("th:fragment=\"empty-state(message, actionText, actionHref, description)\"")
+                .contains("th:fragment=\"empty-state-with-icon(message, actionText, actionHref, description, icon)\"")
+                .contains("empty-state__icon", "empty-state__title")
+                .contains("empty-state__desc", "empty-state__cta")
+                .contains("aria-hidden=\"true\"");
+    }
+
+    @Test
+    void primaryEmptySectionsExposeSpecifiedActions() throws IOException {
+        assertThat(read("templates/encounter/list.html"))
+                .contains("No encounters yet", "New encounter", "⚔");
+        assertThat(read("templates/treasury/list.html"))
+                .contains("The party stash is empty", "Add item", "◇");
+        assertThat(read("templates/calendar/_timeline-list.html"))
+                .contains("No events on the timeline", "Add event", "✦");
+        assertThat(read("templates/maps/list.html"))
+                .contains("No maps yet", "New map", "⌖");
+        assertThat(read("templates/handout/list.html"))
+                .contains("No handouts yet", "Upload handout", "▧");
+        assertThat(read("templates/party/list.html"))
+                .contains("No heroes yet", "Add member", "♜");
+    }
 }

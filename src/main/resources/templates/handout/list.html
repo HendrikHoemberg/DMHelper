@@ -21,7 +21,7 @@
                 </div>
             </div>
 
-            <div class="inline-form" style="margin-bottom: var(--space-lg);">
+            <div id="handout-upload" class="inline-form" style="margin-bottom: var(--space-lg);">
                 <h3>Upload New Handout</h3>
                 <form th:action="@{/campaigns/{cid}/handouts(cid=${campaignId})}"
                       method="post" enctype="multipart/form-data">
@@ -49,7 +49,11 @@
                 </th:block>
             </div>
 
-            <th:block th:if="${#lists.isEmpty(handouts)}"><th:block th:replace="~{common/_empty-state :: empty-state('No handouts yet.', null, null, 'Upload an image to share with your players.')}"></th:block></th:block>
+            <div class="empty-state-host" th:if="${#lists.isEmpty(handouts)}">
+                <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
+                    'No handouts yet', 'Upload handout', '#handout-upload',
+                    'Upload images or documents to reveal to players during a session.', '▧')}"></th:block>
+            </div>
         </main>
     </div>
 </body>

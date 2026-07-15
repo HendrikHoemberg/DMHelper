@@ -57,14 +57,19 @@
             </div>
 
             <!-- Party Stash -->
-            <div class="detail-section">
+            <div class="detail-section empty-state-host">
                 <th:block th:with="stashItems=${#lists.toList(assignments).?[partyMemberId() == null]}">
                     <h2>Party Stash</h2>
                     <div th:if="${not #lists.isEmpty(stashItems)}" style="display:flex; flex-direction:column; gap: var(--space-sm);">
                         <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=0)}"
                              th:each="a : ${stashItems}"></div>
                     </div>
-                    <th:block th:if="${#lists.isEmpty(stashItems)}"><th:block th:replace="~{common/_empty-state :: empty-state('Party stash is empty', null, null, null)}"></th:block></th:block>
+                    <th:block th:if="${#lists.isEmpty(stashItems)}">
+                        <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
+                            'The party stash is empty', 'Add item',
+                            @{/campaigns/{id}/treasury/new(id=${campaignId})},
+                            'Track coin, gems, and magic items the party is carrying.', '◇')}"></th:block>
+                    </th:block>
                 </th:block>
             </div>
         </main>

@@ -25,12 +25,16 @@
                 </div>
             </div>
 
-            <div id="encounter-grid" class="card-grid">
+            <div id="encounter-grid" class="card-grid card-grid--bounded empty-state-host">
                 <th:block th:if="${encounters == null or encounters.isEmpty()}">
-                    <th:block th:replace="~{common/_empty-state :: empty-state('No encounters yet. Create your first encounter!', null, null, null)}"></th:block>
+                    <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
+                        'No encounters yet', 'New encounter',
+                        @{/campaigns/{id}/encounters/new(id=${campaignId})},
+                        'Build one ahead of the session so initiative is one click away.', '⚔')}"></th:block>
                 </th:block>
                 <th:block th:each="e : ${encounters}">
-                    <th:block th:replace="~{encounter/_card :: card(encounter=${e}, campaignId=${campaignId})}"></th:block>
+                    <th:block th:replace="~{encounter/_card :: card(
+                        encounter=${e}, campaignId=${campaignId})}"></th:block>
                 </th:block>
             </div>
         </main>

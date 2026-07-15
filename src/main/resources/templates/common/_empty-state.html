@@ -1,9 +1,19 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="empty-state" th:fragment="empty-state(message, actionText, actionHref, description)">
-    <p th:text="${message}">No items yet.</p>
-    <p th:if="${description != null}" th:text="${description}" class="text-muted" style="font-size: var(--text-sm);"></p>
+<th:block th:fragment="empty-state(message, actionText, actionHref, description)">
+    <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
+        message=${message}, actionText=${actionText}, actionHref=${actionHref},
+        description=${description}, icon=${null})}"></th:block>
+</th:block>
+
+<div class="empty-state"
+     th:fragment="empty-state-with-icon(message, actionText, actionHref, description, icon)">
+    <div th:if="${icon != null}" class="empty-state__icon" aria-hidden="true"
+         th:text="${icon}">✦</div>
+    <p class="empty-state__title" th:text="${message}">No items yet.</p>
+    <p th:if="${description != null}" class="empty-state__desc text-muted"
+       th:text="${description}">A short explanation.</p>
     <a th:if="${actionHref != null}" th:href="${actionHref}" th:text="${actionText}"
-       class="btn btn-primary">Create</a>
+       class="btn btn-primary empty-state__cta">Create</a>
 </div>
 </html>

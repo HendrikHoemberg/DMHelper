@@ -27,9 +27,11 @@
 
             <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${activeMembers}, oob=null)}"></th:block>
 
-            <div id="party-grid" class="card-grid">
+            <div id="party-grid" class="card-grid empty-state-host">
                 <th:block th:if="${members == null or members.isEmpty()}">
-                    <th:block th:replace="~{common/_empty-state :: empty-state('No party members yet. Add your first player character!', null, null, null)}"></th:block>
+                    <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
+                        'No heroes yet', 'Add member', @{/campaigns/{id}/party/new(id=${campaign.id})},
+                        'Add the player characters so combat, passive senses, and difficulty math work.', '♜')}"></th:block>
                 </th:block>
                 <th:block th:each="pm : ${members}">
                     <th:block th:replace="~{party/_card :: card(pm=${pm})}"></th:block>
