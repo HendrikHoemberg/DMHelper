@@ -1,0 +1,458 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dmhelper/campaign-format-v2.schema.json",
+  "title": "DMHelper Campaign Export Format v2",
+  "description": "Schema for the .dmcampaign.json v2 export/import format. All coordinate positions use grid-cell units. Grid coordinates use [col, row] order (zero-indexed from top-left). Currency amounts are in the units specified by the currency field (cp, sp, ep, gp, pp). Dates use ISO-8601 format.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "metadata", "campaign", "assets", "party", "customStatBlocks", "handouts", "maps", "encounters", "notes", "quickNotes", "assignments", "ledgerEntries", "timelineEvents", "adventures"],
+  "properties": {
+    "formatVersion": { "type": "integer", "const": 2 },
+    "metadata": { "$ref": "#/$defs/metadata" },
+    "campaign": { "$ref": "#/$defs/campaign" },
+    "assets": { "type": "array", "items": { "$ref": "#/$defs/asset" } },
+    "party": { "type": "array", "items": { "$ref": "#/$defs/partyMember" } },
+    "customStatBlocks": { "type": "array", "items": { "$ref": "#/$defs/statBlock" } },
+    "handouts": { "type": "array", "items": { "$ref": "#/$defs/handout" } },
+    "maps": { "type": "array", "items": { "$ref": "#/$defs/map" } },
+    "encounters": { "type": "array", "items": { "$ref": "#/$defs/encounter" } },
+    "notes": { "type": "array", "items": { "$ref": "#/$defs/note" } },
+    "quickNotes": { "type": "array", "items": { "$ref": "#/$defs/quickNote" } },
+    "assignments": { "type": "array", "items": { "$ref": "#/$defs/assignment" } },
+    "ledgerEntries": { "type": "array", "items": { "$ref": "#/$defs/ledgerEntry" } },
+    "timelineEvents": { "type": "array", "items": { "$ref": "#/$defs/timelineEvent" } },
+    "adventures": { "type": "array", "items": { "$ref": "#/$defs/adventure" } }
+  },
+  "$defs": {
+    "key": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,99}$",
+      "maxLength": 100
+    },
+    "packageReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "type", "key"],
+      "properties": {
+        "scope": { "type": "string", "const": "PACKAGE" },
+        "type": { "$ref": "#/$defs/contentType" },
+        "key": { "$ref": "#/$defs/key" }
+      }
+    },
+    "catalogReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "type", "ruleset", "sourceKey"],
+      "properties": {
+        "scope": { "type": "string", "const": "CATALOG" },
+        "type": { "$ref": "#/$defs/contentType" },
+        "ruleset": { "type": "string", "minLength": 1 },
+        "sourceKey": { "type": "string", "minLength": 1 }
+      }
+    },
+    "contentReference": {
+      "oneOf": [
+        { "$ref": "#/$defs/packageReference" },
+        { "$ref": "#/$defs/catalogReference" }
+      ]
+    },
+    "contentType": {
+      "type": "string",
+      "enum": [
+        "CAMPAIGN", "ADVENTURE", "CHAPTER", "SCENE",
+        "MAP", "TOKEN",
+        "ENCOUNTER", "COMBATANT",
+        "PARTY_MEMBER", "CHARACTER_SHEET", "SHEET_RESOURCE",
+        "NOTE", "QUICK_NOTE", "HANDOUT",
+        "ASSIGNMENT", "LEDGER_ENTRY", "TIMELINE_EVENT",
+        "STATBLOCK", "SPELL", "CONDITION", "RULE", "EQUIPMENT_ITEM", "MAGIC_ITEM",
+        "CLASS", "SPECIES", "BACKGROUND", "FEAT"
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packageKey", "createdAt", "generator", "catalogVersion", "catalogSha256", "exclusions"],
+      "properties": {
+        "packageKey": { "$ref": "#/$defs/key" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "generator": { "type": "string", "minLength": 1 },
+        "catalogVersion": { "type": "string", "minLength": 1 },
+        "catalogSha256": { "type": "string", "minLength": 1 },
+        "exclusions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "campaign": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "path", "mediaType", "sizeBytes", "sha256"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "path": { "type": "string", "minLength": 1 },
+        "mediaType": { "type": "string", "minLength": 1 },
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "sha256": { "type": "string", "minLength": 1 },
+        "originalName": { "type": "string" }
+      }
+    },
+    "partyMember": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "characterName", "playerName", "classAndLevel", "ac", "maxHp", "initiativeBonus", "speed", "passivePerception", "passiveInsight", "passiveInvestigation", "active"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "characterName": { "type": "string" },
+        "playerName": { "type": "string" },
+        "classAndLevel": { "type": "string" },
+        "ac": { "type": "integer", "minimum": 0 },
+        "maxHp": { "type": "integer", "minimum": 1 },
+        "initiativeBonus": { "type": "integer" },
+        "speed": { "type": "integer", "minimum": 0 },
+        "passivePerception": { "type": "integer" },
+        "passiveInsight": { "type": "integer" },
+        "passiveInvestigation": { "type": "integer" },
+        "notes": { "type": "string" },
+        "active": { "type": "boolean" },
+        "sheet": { "$ref": "#/$defs/sheet" }
+      }
+    },
+    "sheet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["xp", "hitDiceUsed"],
+      "properties": {
+        "abilityScores": { "type": "object" },
+        "classLevels": { "type": "array", "items": { "$ref": "#/$defs/classLevel" } },
+        "proficiencies": { "type": "object" },
+        "speciesRef": { "$ref": "#/$defs/contentReference" },
+        "backgroundRef": { "$ref": "#/$defs/contentReference" },
+        "featRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
+        "xp": { "type": "integer", "minimum": 0 },
+        "overrides": { "type": "object" },
+        "hitDiceUsed": { "type": "integer", "minimum": 0 },
+        "resources": { "type": "array", "items": { "$ref": "#/$defs/resource" } },
+        "spells": { "type": "array", "items": { "$ref": "#/$defs/spellRef" } },
+        "spellSlotsUsed": { "type": "object" }
+      }
+    },
+    "classLevel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classRef", "level"],
+      "properties": {
+        "classRef": { "$ref": "#/$defs/contentReference" },
+        "level": { "type": "integer", "minimum": 1 },
+        "hitDieRolls": { "type": "array", "items": { "type": "integer", "minimum": 1 } }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "maxUses", "currentUses", "resetRule"],
+      "properties": {
+        "name": { "type": "string" },
+        "maxUses": { "type": "integer", "minimum": 0 },
+        "currentUses": { "type": "integer", "minimum": 0 },
+        "resetRule": { "type": "string", "enum": ["SHORT_REST", "LONG_REST", "DAWN", "DUSK", "MANUAL"] }
+      }
+    },
+    "spellRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spellRef", "prepared", "sourceClassRef"],
+      "properties": {
+        "spellRef": { "$ref": "#/$defs/contentReference" },
+        "prepared": { "type": "boolean" },
+        "sourceClassRef": { "$ref": "#/$defs/contentReference" }
+      }
+    },
+    "statBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "ac", "strScore", "dexScore", "conScore", "intScore", "wisScore", "chaScore", "xp"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "sourceKey": { "type": "string" },
+        "name": { "type": "string" },
+        "cr": { "type": "string" },
+        "type": { "type": "string" },
+        "size": { "type": "string" },
+        "alignment": { "type": "string" },
+        "ac": { "type": "integer" },
+        "hp": { "type": "string" },
+        "speed": { "type": "string" },
+        "strScore": { "type": "integer" },
+        "dexScore": { "type": "integer" },
+        "conScore": { "type": "integer" },
+        "intScore": { "type": "integer" },
+        "wisScore": { "type": "integer" },
+        "chaScore": { "type": "integer" },
+        "strSave": { "type": "integer" },
+        "dexSave": { "type": "integer" },
+        "conSave": { "type": "integer" },
+        "intSave": { "type": "integer" },
+        "wisSave": { "type": "integer" },
+        "chaSave": { "type": "integer" },
+        "skills": { "type": "string" },
+        "damageVulnerabilities": { "type": "string" },
+        "damageResistances": { "type": "string" },
+        "damageImmunities": { "type": "string" },
+        "conditionImmunities": { "type": "string" },
+        "senses": { "type": "string" },
+        "languages": { "type": "string" },
+        "traits": { "type": "string" },
+        "actions": { "type": "string" },
+        "bonusActions": { "type": "string" },
+        "reactions": { "type": "string" },
+        "legendaryActions": { "type": "string" },
+        "legendaryDescription": { "type": "string" },
+        "lairActions": { "type": "string" },
+        "xp": { "type": "integer" }
+      }
+    },
+    "handout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "title", "assetRef", "contentType"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "title": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "assetRef": { "$ref": "#/$defs/key" },
+        "contentType": { "type": "string", "enum": ["image/png", "image/jpeg", "image/gif", "image/webp"] }
+      }
+    },
+    "map": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "grid", "document"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "name": { "type": "string" },
+        "grid": { "$ref": "#/$defs/mapGrid" },
+        "movementMode": { "type": "string", "enum": ["GRID", "FREEFORM"] },
+        "showGrid": { "type": "boolean" },
+        "document": { "$ref": "https://dmhelper/map-document-v2.schema.json" },
+        "tokens": { "type": "array", "items": { "$ref": "#/$defs/token" } }
+      }
+    },
+    "mapGrid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["w", "h", "cellPx"],
+      "properties": {
+        "w": { "type": "integer", "minimum": 1 },
+        "h": { "type": "integer", "minimum": 1 },
+        "cellPx": { "type": "integer", "minimum": 1 },
+        "gridType": { "type": "string", "enum": ["SQUARE"] }
+      }
+    },
+    "token": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "positionX", "positionY", "sizeCols", "sizeRows", "hidden", "dead"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "name": { "type": "string" },
+        "kind": { "type": "string", "enum": ["creature", "character", "hazard", "effect"] },
+        "color": { "type": "string" },
+        "positionX": { "type": "integer", "minimum": 0 },
+        "positionY": { "type": "integer", "minimum": 0 },
+        "sizeCols": { "type": "integer", "minimum": 1 },
+        "sizeRows": { "type": "integer", "minimum": 1 },
+        "hidden": { "type": "boolean" },
+        "statBlockRef": { "$ref": "#/$defs/contentReference" },
+        "partyMemberRef": { "$ref": "#/$defs/contentReference" },
+        "currentHp": { "type": "integer" },
+        "maxHp": { "type": "integer" },
+        "dead": { "type": "boolean" },
+        "notes": { "type": "string" }
+      }
+    },
+    "encounter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "status", "combatants"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "name": { "type": "string" },
+        "combatants": { "type": "array", "items": { "$ref": "#/$defs/combatant" } },
+        "status": { "type": "string", "enum": ["PLANNED", "ACTIVE", "DONE"] },
+        "round": { "type": "integer", "minimum": 0 },
+        "activeTurnIndex": { "type": "integer" },
+        "logSequence": { "type": "integer", "minimum": 0 },
+        "lairActionName": { "type": "string" },
+        "lairActionDescription": { "type": "string" },
+        "mapRef": { "$ref": "#/$defs/contentReference" }
+      }
+    },
+    "combatant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "initiative", "tieBreaker", "sortOrder", "maxHp", "currentHp", "tempHp", "kind", "groupLeader", "defeated", "hidden", "concentrationCheckPending", "legendaryActionsUsed", "legendaryResistancesUsed", "legendaryActionsMax", "legendaryResistancesMax"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "name": { "type": "string" },
+        "initiative": { "type": "integer" },
+        "tieBreaker": { "type": "integer" },
+        "sortOrder": { "type": "integer" },
+        "maxHp": { "type": "integer", "minimum": 0 },
+        "currentHp": { "type": "integer", "minimum": 0 },
+        "tempHp": { "type": "integer", "minimum": 0 },
+        "kind": { "type": "string", "enum": ["player", "creature"] },
+        "groupId": { "type": "string" },
+        "groupLeader": { "type": "boolean" },
+        "tokenRef": { "$ref": "#/$defs/contentReference" },
+        "statBlockRef": { "$ref": "#/$defs/contentReference" },
+        "partyMemberRef": { "$ref": "#/$defs/contentReference" },
+        "defeated": { "type": "boolean" },
+        "hidden": { "type": "boolean" },
+        "conditionsJson": { "type": "string" },
+        "concentratingOn": { "type": "string" },
+        "concentrationCheckPending": { "type": "boolean" },
+        "legendaryActionsUsed": { "type": "integer", "minimum": 0 },
+        "legendaryResistancesUsed": { "type": "integer", "minimum": 0 },
+        "legendaryActionsMax": { "type": "integer", "minimum": 0 },
+        "legendaryResistancesMax": { "type": "integer", "minimum": 0 },
+        "rechargedAbilities": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "type", "title"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "type": { "type": "string", "enum": ["NPC", "LOCATION", "QUEST", "SESSION_LOG", "SESSION_PLAN", "GENERIC"] },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "tags": { "type": "string" },
+        "dmOnly": { "type": "boolean" }
+      }
+    },
+    "quickNote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "targetRef", "body"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "targetRef": { "$ref": "#/$defs/contentReference" },
+        "body": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "assignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "holderRef": { "$ref": "#/$defs/contentReference" },
+        "magicItemRef": { "$ref": "#/$defs/contentReference" },
+        "equipmentItemRef": { "$ref": "#/$defs/contentReference" },
+        "customText": { "type": "string" },
+        "quantity": { "type": "integer", "minimum": 0 },
+        "attuned": { "type": "boolean" }
+      }
+    },
+    "ledgerEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "timestamp", "kind", "direction"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "inGameYear": { "type": "integer" },
+        "inGameMonth": { "type": "integer", "minimum": 1, "maximum": 12 },
+        "inGameDay": { "type": "integer", "minimum": 1, "maximum": 31 },
+        "kind": { "type": "string", "enum": ["GOLD", "ITEM"] },
+        "direction": { "type": "string", "enum": ["GAIN", "SPEND"] },
+        "amount": { "type": "number" },
+        "currency": { "type": "string" },
+        "holder": { "type": "string" },
+        "note": { "type": "string" },
+        "itemAssignmentRef": { "$ref": "#/$defs/contentReference" }
+      }
+    },
+    "timelineEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "inGameYear", "inGameMonth", "inGameDay"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "inGameYear": { "type": "integer" },
+        "inGameMonth": { "type": "integer", "minimum": 1, "maximum": 12 },
+        "inGameDay": { "type": "integer", "minimum": 1, "maximum": 31 },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "noteRef": { "$ref": "#/$defs/contentReference" }
+      }
+    },
+    "adventure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "sortOrder", "chapters"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "sourceAttribution": { "type": "string" },
+        "sortOrder": { "type": "integer" },
+        "chapters": { "type": "array", "items": { "$ref": "#/$defs/chapter" } }
+      }
+    },
+    "chapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "title", "sortOrder", "scenes"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "title": { "type": "string" },
+        "intro": { "type": "string" },
+        "sortOrder": { "type": "integer" },
+        "scenes": { "type": "array", "items": { "$ref": "#/$defs/scene" } }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "title", "sortOrder"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "status": { "type": "string", "enum": ["UNVISITED", "VISITED", "DONE"] },
+        "sortOrder": { "type": "integer" },
+        "mapRef": { "$ref": "#/$defs/contentReference" },
+        "pin": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["x", "y"],
+          "properties": {
+            "x": { "type": "integer" },
+            "y": { "type": "integer" }
+          }
+        },
+        "encounterRef": { "$ref": "#/$defs/contentReference" },
+        "statblockRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
+        "handoutRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } }
+      }
+    }
+  }
+}

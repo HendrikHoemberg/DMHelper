@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.common.web;
 
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignManifestV2SchemaValidator;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSchemaValidator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,5 +43,21 @@ class SchemaControllerTest {
     void traversalLikeNamesReturn404() throws Exception {
         mockMvc.perform(get("/api/v1/schemas/../application.properties"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void servesCampaignV2SchemaWithCorrectContentTypeAndId() throws Exception {
+        mockMvc.perform(get("/api/v1/schemas/campaign-format-v2"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/schema+json"))
+                .andExpect(jsonPath("$['$schema']").value("https://json-schema.org/draft/2020-12/schema"))
+                .andExpect(jsonPath("$['$id']").value(CampaignManifestV2SchemaValidator.CAMPAIGN_V2_ID));
+    }
+
+    @Test
+    void servesMapDocumentV2SchemaWithCorrectId() throws Exception {
+        mockMvc.perform(get("/api/v1/schemas/map-document-v2.schema.json"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$['$id']").value(CampaignManifestV2SchemaValidator.MAP_V2_ID));
     }
 }
