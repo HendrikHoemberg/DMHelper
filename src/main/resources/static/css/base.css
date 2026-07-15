@@ -368,8 +368,25 @@ body.loading #loading-filament {
   opacity: 1;
 }
 
-.palette-hint { color: var(--color-text-muted); font-family: var(--font-mono); }
+.palette-hint {
+  color: var(--color-text-muted);
+  font-family: var(--font-ui);
+  white-space: nowrap;
+}
 .palette-hint:hover { color: var(--color-accent); }
+.palette-hint__icon {
+  font-size: var(--text-base);
+  line-height: 1;
+}
+.palette-hint__key {
+  padding: 1px var(--space-xs);
+  color: var(--color-text-muted);
+  background: var(--elevation-floating-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
 
 /* ── Switch control (DM Mode, settings toggles) ── */
 .switch-control {

@@ -133,6 +133,13 @@ class UiPolishContractTest {
     }
 
     @Test
+    void navbarSearchAffordanceKeepsPaletteEvent() throws IOException {
+        assertThat(read("templates/fragments/navbar.html"))
+                .contains("palette-hint__icon", "palette-hint__label", "palette-hint__key",
+                        ">Search</span>", ">⌘K</kbd>", "command-palette-toggle");
+    }
+
+    @Test
     void mutedTokenClearsAaOnBothAppBackgrounds() {
         assertThat(contrast(0xb3a88f, 0x17120c)).isGreaterThanOrEqualTo(4.5);
         assertThat(contrast(0xb3a88f, 0x211a12)).isGreaterThanOrEqualTo(4.5);

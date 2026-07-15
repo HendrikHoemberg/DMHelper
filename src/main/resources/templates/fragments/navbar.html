@@ -7,7 +7,7 @@
 <nav class="navbar">
     <a href="/campaigns" class="navbar-brand">DMHelper</a>
     <div class="navbar-right">
-        <button class="btn btn-ghost u-text-sm palette-hint" onclick="window.dispatchEvent(new CustomEvent('command-palette-toggle'))" title="Search everything">⌘K</button>
+        <button class="btn btn-ghost u-text-sm palette-hint" onclick="window.dispatchEvent(new CustomEvent('command-palette-toggle'))" title="Search everything" aria-label="Search everything"><span class="palette-hint__icon" aria-hidden="true">⌕</span><span class="palette-hint__label">Search</span><kbd class="palette-hint__key">⌘K</kbd></button>
         <!-- Rolls are logged to a campaign's history, so the roller only exists inside one.
              The panel is a sibling of the bar, not a child, so the two never share an Alpine
              scope; they talk through an event instead — same as the command palette. -->
