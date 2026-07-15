@@ -1,6 +1,8 @@
 package dev.hendrikhoemberg.dmhelper.party.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
+import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
+import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @Controller
@@ -16,10 +19,13 @@ public class PartyController {
 
     private final CampaignService campaignService;
     private final PartyMemberService partyService;
+    private final CharacterClassRepository classRepository;
 
-    public PartyController(CampaignService campaignService, PartyMemberService partyService) {
+    public PartyController(CampaignService campaignService, PartyMemberService partyService,
+                           CharacterClassRepository classRepository) {
         this.campaignService = campaignService;
         this.partyService = partyService;
+        this.classRepository = classRepository;
     }
 
     @GetMapping
@@ -35,6 +41,7 @@ public class PartyController {
     public String newForm(@PathVariable UUID campaignId, Model model) {
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("pm", null);
+        model.addAttribute("classNames", baseClassNames());
         return "party/_form :: form";
     }
 
@@ -42,7 +49,13 @@ public class PartyController {
     public String editForm(@PathVariable UUID campaignId, @PathVariable UUID id, Model model) {
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("pm", partyService.findById(id));
+        model.addAttribute("classNames", baseClassNames());
         return "party/_form :: form";
+    }
+
+    private List<String> baseClassNames() {
+        return classRepository.findBySubclassOfIsNullOrderByNameAsc()
+                .stream().map(CharacterClass::getName).toList();
     }
 
     @PostMapping
@@ -72,11 +85,13 @@ public class PartyController {
                          @RequestParam int initiativeBonus, @RequestParam int speed,
                          @RequestParam int passivePerception, @RequestParam int passiveInsight,
                          @RequestParam int passiveInvestigation,
-                         @RequestParam(required = false) String notes) {
-        partyService.update(id, characterName, playerName, classAndLevel,
+                         @RequestParam(required = false) String notes,
+                         Model model) {
+        PartyMember pm = partyService.update(id, characterName, playerName, classAndLevel,
                 ac, maxHp, initiativeBonus, speed,
                 passivePerception, passiveInsight, passiveInvestigation, notes);
-        return "redirect:/campaigns/" + campaignId + "/party";
+        model.addAttribute("pm", pm);
+        return "party/_card :: card";
     }
 
     @PutMapping("/{id}/toggle-active")

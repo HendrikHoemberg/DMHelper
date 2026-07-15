@@ -2,6 +2,8 @@ package dev.hendrikhoemberg.dmhelper.party.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
+import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
+import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,9 @@ class PartyControllerTest {
     @MockitoBean
     private PartyMemberService partyService;
 
+    @MockitoBean
+    private CharacterClassRepository classRepository;
+
     private UUID campaignId = UUID.randomUUID();
 
     @Test
@@ -49,9 +54,14 @@ class PartyControllerTest {
 
     @Test
     void shouldRenderNewForm() throws Exception {
+        CharacterClass rogue = new CharacterClass();
+        rogue.setName("Rogue");
+        when(classRepository.findBySubclassOfIsNullOrderByNameAsc()).thenReturn(List.of(rogue));
+
         mockMvc.perform(get("/campaigns/{cid}/party/new", campaignId))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("/campaigns/" + campaignId + "/party")));
+                .andExpect(content().string(containsString("/campaigns/" + campaignId + "/party")))
+                .andExpect(model().attributeExists("classNames"));
     }
 
     @Test
@@ -60,15 +70,19 @@ class PartyControllerTest {
         Campaign c = new Campaign();
         c.setId(campaignId);
         c.setName("Test");
+        CharacterClass rogue = new CharacterClass();
+        rogue.setName("Rogue");
         PartyMember pm = new PartyMember();
         pm.setId(pid);
         pm.setCampaign(c);
         pm.setCharacterName("Thia");
         when(partyService.findById(pid)).thenReturn(pm);
+        when(classRepository.findBySubclassOfIsNullOrderByNameAsc()).thenReturn(List.of(rogue));
 
         mockMvc.perform(get("/campaigns/{cid}/party/{pid}/edit", campaignId, pid))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("/campaigns/" + campaignId + "/party/" + pid)));
+                .andExpect(content().string(containsString("/campaigns/" + campaignId + "/party/" + pid)))
+                .andExpect(model().attributeExists("classNames"));
     }
 
     @Test
@@ -90,6 +104,32 @@ class PartyControllerTest {
 
         mockMvc.perform(post("/campaigns/{cid}/party", campaignId)
                         .param("characterName", "Thia")
+                        .param("ac", "16").param("maxHp", "38")
+                        .param("initiativeBonus", "4").param("speed", "30")
+                        .param("passivePerception", "17").param("passiveInsight", "12")
+                        .param("passiveInvestigation", "14")
+                        .header("HX-Request", "true"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Thia")));
+    }
+
+    @Test
+    void shouldUpdateReturnCardFragment() throws Exception {
+        UUID pid = UUID.randomUUID();
+        Campaign c = new Campaign();
+        c.setId(campaignId);
+        c.setName("Test");
+        PartyMember pm = new PartyMember();
+        pm.setId(pid);
+        pm.setCampaign(c);
+        pm.setCharacterName("Thia");
+        pm.setActive(true);
+        when(partyService.update(eq(pid), eq("Thia"), any(), any(), eq(16), eq(38), eq(4), eq(30),
+                eq(17), eq(12), eq(14), any())).thenReturn(pm);
+
+        mockMvc.perform(put("/campaigns/{cid}/party/{pid}", campaignId, pid)
+                        .param("characterName", "Thia")
+                        .param("classAndLevel", "Rogue 5")
                         .param("ac", "16").param("maxHp", "38")
                         .param("initiativeBonus", "4").param("speed", "30")
                         .param("passivePerception", "17").param("passiveInsight", "12")
