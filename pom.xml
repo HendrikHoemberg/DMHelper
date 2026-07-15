@@ -29,6 +29,7 @@
 	<properties>
 		<java.version>25</java.version>
 		<commonmark.version>0.22.0</commonmark.version>
+		<json-schema-validator.version>3.0.2</json-schema-validator.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -80,6 +81,12 @@
 			<groupId>org.commonmark</groupId>
 			<artifactId>commonmark-ext-gfm-tables</artifactId>
 			<version>${commonmark.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.networknt</groupId>
+			<artifactId>json-schema-validator</artifactId>
+			<version>${json-schema-validator.version}</version>
 		</dependency>
 
 		<dependency>
