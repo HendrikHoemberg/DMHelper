@@ -10,6 +10,11 @@
   display: none;
 }
 
+/* Party cards use .party-member-card (not .card); hide the empty-state for them too. */
+.card-grid:has(.party-member-card) .empty-state {
+  display: none;
+}
+
 .card {
   background: var(--elevation-raised-bg);
   border: 1px solid var(--color-border);
@@ -1839,6 +1844,8 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
   background: transparent;
   max-width: 620px;
   width: calc(100vw - 2 * var(--space-lg));
+  /* Global reset (* { margin: 0 }) clobbers the UA's dialog:modal centering; restore it. */
+  margin: auto;
 }
 .modal::backdrop {
   background: var(--color-overlay);
