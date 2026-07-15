@@ -34,6 +34,31 @@ h1, h2 {
   letter-spacing: 0.02em;
 }
 
+/* Global fallback theme for any form control not covered by a component rule.
+   :where() keeps specificity 0 so .form-group/.dice-input-row rules still win. */
+:where(
+  input[type="text"], input[type="number"], input[type="search"],
+  input[type="email"], input[type="password"], input[type="url"],
+  input[type="tel"], input[type="date"], input[type="time"],
+  select, textarea
+) {
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-family: inherit;
+}
+
+:where(
+  input[type="text"], input[type="number"], input[type="search"],
+  input[type="email"], input[type="password"], input[type="url"],
+  input[type="tel"], input[type="date"], input[type="time"],
+  select, textarea
+):where(:focus) {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
 ::selection {
   background: rgba(201, 163, 92, 0.35);
   color: #fff;
@@ -60,30 +85,6 @@ fieldset {
   transition: outline-offset var(--duration-micro) var(--ease-out);
 }
 
-/* Global fallback theme for any form control not covered by a component rule.
-   :where() keeps specificity 0 so .form-group/.dice-input-row rules still win. */
-:where(
-  input[type="text"], input[type="number"], input[type="search"],
-  input[type="email"], input[type="password"], input[type="url"],
-  input[type="tel"], input[type="date"], input[type="time"],
-  select, textarea
-) {
-  color: var(--color-text);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  font-family: inherit;
-}
-
-:where(
-  input[type="text"], input[type="number"], input[type="search"],
-  input[type="email"], input[type="password"], input[type="url"],
-  input[type="tel"], input[type="date"], input[type="time"],
-  select, textarea
-):focus {
-  outline: none;
-  border-color: var(--color-accent);
-}
 .navbar {
   display: flex;
   align-items: center;

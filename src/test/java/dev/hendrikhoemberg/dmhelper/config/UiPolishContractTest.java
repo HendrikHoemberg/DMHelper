@@ -18,7 +18,14 @@ class UiPolishContractTest {
     void globalFormFallbackThemesOnlyTextLikeControls() throws IOException {
         String css = read("static/css/base.css");
 
-        assertThat(css)
+        int fallbackStart = css.indexOf("/* Global fallback theme");
+        int fallbackEnd = css.indexOf("::selection");
+        assertThat(fallbackStart).isGreaterThanOrEqualTo(0);
+        assertThat(fallbackEnd).isGreaterThan(fallbackStart);
+
+        String fallback = css.substring(fallbackStart, fallbackEnd);
+
+        assertThat(fallback)
                 .contains(":where(")
                 .contains("input[type=\"text\"]", "input[type=\"number\"]")
                 .contains("input[type=\"search\"]", "input[type=\"email\"]")
@@ -26,10 +33,9 @@ class UiPolishContractTest {
                 .contains("input[type=\"tel\"]", "input[type=\"date\"]")
                 .contains("input[type=\"time\"]", "select, textarea")
                 .contains("background: var(--color-bg)")
-                .contains("border-color: var(--color-accent)");
-
-        String fallback = css.substring(css.indexOf("/* Global fallback theme"),
-                css.indexOf(".navbar"));
+                .contains("border-color: var(--color-accent)")
+                .contains(":where(:focus)")
+                .doesNotContain("):focus");
         assertThat(fallback)
                 .doesNotContain("checkbox", "radio", "range", "file", "color\"]")
                 .doesNotContain("padding:", "width:", "font-size:");
