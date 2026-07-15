@@ -26,6 +26,6 @@ public record CampaignValidationResult(
                     .orElse("Campaign import did not produce a validated document");
             throw new IllegalArgumentException(summary);
         }
-        return campaign.orElseThrow();
+        return campaign.get();
     }
 }

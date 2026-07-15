@@ -1,11 +1,18 @@
 package dev.hendrikhoemberg.dmhelper.campaign.service.validation;
 
-import com.networknt.schema.*;
+import com.networknt.schema.InputFormat;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaLocation;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 @Component
 public final class CampaignSchemaValidator {
