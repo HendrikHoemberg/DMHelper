@@ -60,6 +60,7 @@ public record MapDocumentDto(
      *  painted cells; primitives exist chiefly so generated maps can say
      *  "room from (2,2) to (10,8)" instead of hundreds of coordinates. Coordinates are
      *  grid cells, origin top-left, col before row. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record PrimitiveDto(
             @JsonProperty(required = true) String type,   // ROOM | CORRIDOR | DOOR | REGION
             int startCol, int startRow,

@@ -4,34 +4,40 @@
   "title": "DMHelper Map Document Format",
   "description": "Internal schema for the MapDocument JSON blob. Grid coordinates use [col, row] order (zero-indexed from top-left). Token positions are pixel coordinates relative to the canvas origin (top-left).",
   "type": "object",
+  "additionalProperties": false,
   "required": ["schemaVersion", "grid", "layers"],
   "properties": {
     "schemaVersion": { "type": "integer", "const": 1 },
     "grid": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["width", "height", "cellSizePx", "gridType"],
       "properties": {
         "width": { "type": "integer", "minimum": 1 },
         "height": { "type": "integer", "minimum": 1 },
         "cellSizePx": { "type": "integer", "minimum": 1 },
-        "gridType": { "type": "string", "enum": ["square"] }
+        "gridType": { "type": "string", "enum": ["square"] },
+        "movementMode": { "type": "string", "enum": ["GRID", "FREEFORM"] },
+        "showGrid": { "type": "boolean" }
       }
     },
     "layers": {
       "type": "array",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": ["id", "name", "type"],
         "properties": {
           "id": { "type": "string" },
           "name": { "type": "string" },
-          "type": { "type": "string", "enum": ["TERRAIN", "OBJECTS", "ANNOTATIONS"] },
+          "type": { "type": "string", "enum": ["TERRAIN", "OBJECTS", "ANNOTATIONS", "IMAGE"] },
           "visible": { "type": "boolean" },
           "locked": { "type": "boolean" },
           "cells": {
             "type": "array",
             "items": {
               "type": "object",
+              "additionalProperties": false,
               "required": ["col", "row"],
               "properties": {
                 "col": { "type": "integer", "minimum": 0 },
@@ -42,24 +48,9 @@
           },
           "shapes": {
             "type": "array",
-            "items": {
-              "type": "object",
-              "required": ["type"],
-              "properties": {
-                "type": { "type": "string", "enum": ["RECT", "CIRCLE", "LINE", "POLYGON"] },
-                "x": { "type": "number" },
-                "y": { "type": "number" },
-                "width": { "type": "number" },
-                "height": { "type": "number" },
-                "radius": { "type": "number" },
-                "points": { "type": "array", "items": { "type": "array", "items": { "type": "number" } } },
-                "fill": { "type": "string" },
-                "stroke": { "type": "string" },
-                "label": { "type": "string" }
-              }
-            }
+            "items": { "$ref": "#/$defs/shape" }
           },
-          "image": { "type": "string" }
+          "image": { "$ref": "#/$defs/image" }
         }
       }
     },
@@ -67,9 +58,10 @@
       "type": "array",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": ["type"],
         "properties": {
-          "type": { "type": "string", "enum": ["ROOM", "DOOR", "REGION", "CORRIDOR"] },
+          "type": { "type": "string", "enum": ["ROOM", "CORRIDOR", "DOOR", "REGION"] },
           "startCol": { "type": "integer", "minimum": 0 },
           "startRow": { "type": "integer", "minimum": 0 },
           "endCol": { "type": "integer", "minimum": 0 },
@@ -82,6 +74,7 @@
       "type": "array",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": ["key", "name", "fill"],
         "properties": {
           "key": { "type": "string" },
@@ -89,6 +82,33 @@
           "fill": { "type": "string" },
           "walkable": { "type": "boolean" }
         }
+      }
+    }
+  },
+  "$defs": {
+    "shape": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "points"],
+      "properties": {
+        "type": { "type": "string", "enum": ["rect", "circle", "line", "polygon"] },
+        "points": { "type": "array", "items": { "type": "number" } },
+        "fill": { "type": "string" },
+        "stroke": { "type": "string" },
+        "strokeWidth": { "type": "number", "minimum": 0 },
+        "label": { "type": "string" }
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dataUrl", "x", "y", "width", "height"],
+      "properties": {
+        "dataUrl": { "type": "string", "pattern": "^data:image/(png|jpeg|gif|webp);base64," },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
       }
     }
   }

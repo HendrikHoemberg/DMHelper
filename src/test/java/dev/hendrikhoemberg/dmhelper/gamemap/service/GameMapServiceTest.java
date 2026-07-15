@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.gamemap.service;
 
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSchemaValidator;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,7 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.OptimisticLockingFailureException;
+import tools.jackson.databind.json.JsonMapper;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
@@ -222,5 +225,40 @@ class GameMapServiceTest {
         assertThatThrownBy(() -> service.updateMode(map.getId(), "HEX", null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid movementMode");
+    }
+
+    @Test
+    void dtoSerializationMatchesMapDocumentSchema() throws Exception {
+        var mapper = JsonMapper.builder().build();
+        CampaignSchemaValidator val = new CampaignSchemaValidator();
+
+        MapDocumentDto defaultDoc = MapDocumentDto.createDefault(30, 20, 48);
+        String defaultJson = mapper.writeValueAsString(defaultDoc);
+        String defaultCampaign = """
+                {"formatVersion":1,"campaign":{"name":"DTO test"},"maps":[{"key":"map-1","name":"Map","movementMode":"GRID","showGrid":true,"grid":{"w":30,"h":20,"cellPx":48,"gridType":"square"},"document":%s,"tokens":[]}]}""".formatted(defaultJson);
+        assertThat(val.validate(defaultCampaign)).isEmpty();
+
+        MapDocumentDto richDoc = new MapDocumentDto(
+                1,
+                new MapDocumentDto.GridDto(10, 10, 48, "square", "GRID", true),
+                List.of(
+                        MapLayerDto.createTerrainLayer(),
+                        MapLayerDto.createObjectsLayer(),
+                        MapLayerDto.createAnnotationsLayer(),
+                        new MapLayerDto("bg", "Background", MapLayerDto.LayerType.IMAGE, true, false, List.of(),
+                                List.of(new MapLayerDto.ShapeDto("rect", List.of(0.0, 0.0, 5.0, 5.0), "#ff0000", "#000", 1.0, "box")),
+                                new MapLayerDto.ImageDto("data:image/png;base64,AAAA", 0, 0, 10, 10))
+                ),
+                List.of(
+                        new MapDocumentDto.PrimitiveDto("ROOM", 2, 2, 10, 8, null)
+                ),
+                List.of(
+                        new MapDocumentDto.TerrainDefDto("moss", "Moss", "#2a6e3a", true)
+                )
+        );
+        String richJson = mapper.writeValueAsString(richDoc);
+        String richCampaign = """
+                {"formatVersion":1,"campaign":{"name":"DTO test"},"maps":[{"key":"map-1","name":"Map","movementMode":"GRID","showGrid":true,"grid":{"w":10,"h":10,"cellPx":48,"gridType":"square"},"document":%s,"tokens":[]}]}""".formatted(richJson);
+        assertThat(val.validate(richCampaign)).isEmpty();
     }
 }
