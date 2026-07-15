@@ -164,6 +164,11 @@ No P3 work should displace an unfinished P0 or P1 release gate.
 
 ## 6. Workstream A — Existing-path reliability
 
+> **Implementation status:** The interaction-integrity checkpoint commit completed quick-note
+> rendering/mutations, browser failure guards, shared content destinations, palette ranking/cap,
+> library deep links, and wiki route reuse. Asset import safety, tracker/map mutation feedback,
+> difficulty labeling, and correlation identifiers remain open P0 work.
+
 ### 6.1 Quick notes
 
 The quick-note fragment must receive real campaign and target values in its Alpine component. The

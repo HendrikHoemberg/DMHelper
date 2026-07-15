@@ -234,6 +234,44 @@ class CoreSessionLoopSmokeTest {
 
     @Test
     @Order(9)
+    void quickNotesWorkOnAFirstPartyMemberInsertedByHtmx() {
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/party");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        dmPage.getByText("+ Add Member").click();
+        dmPage.locator("#party-form-modal .pm-form").waitFor();
+        dmPage.locator("#party-form-modal [name='characterName']").fill("Dynamic Hero");
+        dmPage.locator("#party-form-modal [name='ac']").fill("16");
+        dmPage.locator("#party-form-modal [name='maxHp']").fill("32");
+        dmPage.locator("#party-form-modal [name='initiativeBonus']").fill("3");
+        dmPage.locator("#party-form-modal [name='speed']").fill("30");
+        dmPage.locator("#party-form-modal [name='passivePerception']").fill("14");
+        dmPage.locator("#party-form-modal [name='passiveInsight']").fill("12");
+        dmPage.locator("#party-form-modal [name='passiveInvestigation']").fill("11");
+        dmPage.locator("#party-form-modal button[type='submit']").click();
+
+        Locator card = dmPage.locator(".party-member-card", new Page.LocatorOptions().setHasText("Dynamic Hero"));
+        card.waitFor();
+        card.locator(".quicknotes-form input").fill("Added after the card appeared.");
+        card.locator(".quicknotes-form button[type='submit']").click();
+        card.locator(".quicknote-row").waitFor();
+
+        assertThat(card.locator(".quicknote-body").textContent())
+                .isEqualTo("Added after the card appeared.");
+    }
+
+    @Test
+    @Order(10)
+    void libraryDeepLinkActivatesAndFiltersTheRequestedTab() {
+        dmPage.navigate("http://localhost:" + port + "/library?tab=spells&search=Fireball");
+        dmPage.locator("#tab-spells.active").waitFor();
+        dmPage.locator("#spell-results").getByText("Fireball").first().waitFor();
+
+        assertThat(dmPage.locator("#spellSearch").inputValue()).isEqualTo("Fireball");
+        assertThat(dmPage.locator("#section-spells").getAttribute("class")).doesNotContain("hidden");
+    }
+
+    @Test
+    @Order(11)
     void commandPaletteOpensTheRealMapPlayRoute() {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/maps");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);

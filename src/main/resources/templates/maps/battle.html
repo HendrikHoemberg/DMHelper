@@ -177,47 +177,49 @@
                         </template>
                     </div>
 
-                    <div class="sidebar-section" x-show="selectedToken" style="display: none;">
-                        <h3>Selected</h3>
-                        <div style="font-size: var(--text-sm);">
-                            <div style="margin-bottom: var(--space-xs);">
-                                <label style="display: block; color: var(--color-text-muted);">Name</label>
-                                <input type="text" x-model="selectedToken.name" @change="updateToken()" style="width: 100%;">
-                            </div>
-                            <div style="margin-bottom: var(--space-xs);">
-                                <label style="display: block; color: var(--color-text-muted);">HP</label>
-                                <div style="display: flex; gap: 4px; align-items: center;">
-                                    <input type="number" class="hp-input" x-model="selectedToken.currentHp" @change="updateToken()">
-                                    <span>/</span>
-                                    <input type="number" class="hp-input" x-model="selectedToken.maxHp" @change="updateToken()">
+                    <template x-if="selectedToken">
+                        <div class="sidebar-section">
+                            <h3>Selected</h3>
+                            <div style="font-size: var(--text-sm);">
+                                <div style="margin-bottom: var(--space-xs);">
+                                    <label style="display: block; color: var(--color-text-muted);">Name</label>
+                                    <input type="text" x-model="selectedToken.name" @change="updateToken()" style="width: 100%;">
+                                </div>
+                                <div style="margin-bottom: var(--space-xs);">
+                                    <label style="display: block; color: var(--color-text-muted);">HP</label>
+                                    <div style="display: flex; gap: 4px; align-items: center;">
+                                        <input type="number" class="hp-input" x-model="selectedToken.currentHp" @change="updateToken()">
+                                        <span>/</span>
+                                        <input type="number" class="hp-input" x-model="selectedToken.maxHp" @change="updateToken()">
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: var(--space-xs);">
+                                    <label style="display: block; color: var(--color-text-muted);">Size (W×H)</label>
+                                    <select x-model="selectedToken.sizeCols" @change="updateToken()" style="font-size: var(--text-sm);">
+                                        <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                                    </select>
+                                    <span style="margin: 0 2px;">×</span>
+                                    <select x-model="selectedToken.sizeRows" @change="updateToken()" style="font-size: var(--text-sm);">
+                                        <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                                    </select>
+                                </div>
+                                <div style="margin-bottom: var(--space-xs);">
+                                    <label style="display: flex; align-items: center; gap: 4px;">
+                                        <input type="checkbox" x-model="selectedToken.hidden" @change="updateToken()"> Hidden
+                                    </label>
+                                </div>
+                                <div style="margin-bottom: var(--space-xs);">
+                                    <label style="display: flex; align-items: center; gap: 4px;">
+                                        <input type="checkbox" x-model="selectedToken.dead" @change="toggleDead()"> Dead
+                                    </label>
+                                </div>
+                                <div style="margin-bottom: var(--space-xs);">
+                                    <label style="display: block; color: var(--color-text-muted);">Color</label>
+                                    <input type="color" x-model="selectedToken.color" @change="updateToken()">
                                 </div>
                             </div>
-                            <div style="margin-bottom: var(--space-xs);">
-                                <label style="display: block; color: var(--color-text-muted);">Size (W×H)</label>
-                                <select x-model="selectedToken.sizeCols" @change="updateToken()" style="font-size: var(--text-sm);">
-                                    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
-                                </select>
-                                <span style="margin: 0 2px;">×</span>
-                                <select x-model="selectedToken.sizeRows" @change="updateToken()" style="font-size: var(--text-sm);">
-                                    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
-                                </select>
-                            </div>
-                            <div style="margin-bottom: var(--space-xs);">
-                                <label style="display: flex; align-items: center; gap: 4px;">
-                                    <input type="checkbox" x-model="selectedToken.hidden" @change="updateToken()"> Hidden
-                                </label>
-                            </div>
-                            <div style="margin-bottom: var(--space-xs);">
-                                <label style="display: flex; align-items: center; gap: 4px;">
-                                    <input type="checkbox" x-model="selectedToken.dead" @change="toggleDead()"> Dead
-                                </label>
-                            </div>
-                            <div style="margin-bottom: var(--space-xs);">
-                                <label style="display: block; color: var(--color-text-muted);">Color</label>
-                                <input type="color" x-model="selectedToken.color" @change="updateToken()">
-                            </div>
                         </div>
-                    </div>
+                    </template>
                 </div>
 
                 <!-- Tracker panel (shown when toggled) -->
@@ -258,7 +260,7 @@
     </div>
 
     <script th:src="@{/vendor/konva.min.js}"></script>
-    <script>
+    <script th:inline="javascript">
         function battleToolbar() {
             return {
                 tool: 'select',
@@ -444,7 +446,8 @@
 
                 async loadMaps() {
                     try {
-                        const resp = await fetch(`/api/v1/campaigns/${/*[[${campaignId}]]*/ ''}/maps`);
+                        const cid = document.querySelector('.battle-container')?.dataset?.campaignId || '';
+                        const resp = await fetch(`/api/v1/campaigns/${cid}/maps`);
                         if (resp.ok) this.maps = await resp.json();
                     } catch (e) {}
                 },

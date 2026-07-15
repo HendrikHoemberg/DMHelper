@@ -86,6 +86,7 @@ public class LibraryController {
         StatBlock sb = service.findById(id);
         enrichStatBlock(sb);
         model.addAttribute("sb", sb);
+        model.addAttribute("campaignId", sb.getCampaignId());
         return "library/detail";
     }
 

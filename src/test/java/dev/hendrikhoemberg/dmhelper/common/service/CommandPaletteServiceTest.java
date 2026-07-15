@@ -238,4 +238,25 @@ class CommandPaletteServiceTest {
         var results = commandPaletteService.search("Goblin", campaign.getId());
         assertThat(results.getFirst().type()).isEqualTo("note");
     }
+
+    @Test
+    void noteBodyMatchesUseBodyRelevance() {
+        Note note = new Note();
+        note.setCampaign(campaign);
+        note.setTitle("Zeta Chronicle");
+        note.setType(NoteType.GENERIC);
+        note.setBody("The hidden needle is behind the altar.");
+        noteRepository.save(note);
+
+        PartyMember member = new PartyMember();
+        member.setCampaign(campaign);
+        member.setCharacterName("Alpha Hero");
+        member.setPlayerName("Hidden Needle");
+        partyMemberRepository.save(member);
+
+        var results = commandPaletteService.search("hidden needle", campaign.getId());
+
+        assertThat(results).extracting(CommandPaletteService.SearchResultItem::type)
+                .startsWith("note", "party-member");
+    }
 }

@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.library.web;
 
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.service.*;
 import org.junit.jupiter.api.Test;
@@ -74,6 +75,23 @@ class LibraryControllerTest {
         mockMvc.perform(get("/library/statblocks/{id}", sb.getId()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Armor Class")));
+    }
+
+    @Test
+    void customStatblockDetailRendersQuickNotesForItsCampaign() throws Exception {
+        Campaign campaign = new Campaign();
+        campaign.setId(UUID.randomUUID());
+        campaign.setName("Test Campaign");
+        StatBlock sb = sampleSb();
+        sb.setSource(StatBlock.Source.CUSTOM);
+        sb.setCampaign(campaign);
+        when(service.findById(sb.getId())).thenReturn(sb);
+
+        mockMvc.perform(get("/library/statblocks/{id}", sb.getId()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(
+                        "data-campaign-id=\"" + campaign.getId() + "\"")))
+                .andExpect(content().string(containsString("data-target-type=\"STATBLOCK\"")));
     }
 
     @Test

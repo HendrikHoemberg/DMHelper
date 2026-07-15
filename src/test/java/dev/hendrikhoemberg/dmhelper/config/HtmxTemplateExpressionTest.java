@@ -28,6 +28,9 @@ class HtmxTemplateExpressionTest {
     private static final Pattern UNPREFIXED_HX_EXPRESSION =
             Pattern.compile("(?<!th:)hx-(get|post|put|delete|patch|swap|target|vals|confirm)=\"([^\"]*)\"");
 
+    private static final Pattern SCRIPT_TAG =
+            Pattern.compile("<script([^>]*)>(.*?)</script>", Pattern.DOTALL);
+
     @Test
     void noHtmxAttributeCarriesAnUnprocessedThymeleafExpression() throws IOException {
         List<String> violations = new ArrayList<>();
@@ -69,6 +72,28 @@ class HtmxTemplateExpressionTest {
 
         assertThat(violations)
                 .as("fragment parameters must use th:* attributes or data attributes, not literal [[${...}]] syntax")
+                .isEmpty();
+    }
+
+    @Test
+    void thymeleafJavascriptPlaceholdersRequireInlineProcessing() throws IOException {
+        List<String> violations = new ArrayList<>();
+
+        try (Stream<Path> paths = Files.walk(TEMPLATES)) {
+            for (Path file : (Iterable<Path>) paths.filter(p -> p.toString().endsWith(".html"))::iterator) {
+                Matcher scripts = SCRIPT_TAG.matcher(Files.readString(file));
+                while (scripts.find()) {
+                    String attributes = scripts.group(1);
+                    String body = scripts.group(2);
+                    if (body.contains("/*[[${") && !attributes.contains("th:inline=\"javascript\"")) {
+                        violations.add(TEMPLATES.relativize(file).toString());
+                    }
+                }
+            }
+        }
+
+        assertThat(violations)
+                .as("comment-style Thymeleaf JavaScript expressions require th:inline=\"javascript\"")
                 .isEmpty();
     }
 }

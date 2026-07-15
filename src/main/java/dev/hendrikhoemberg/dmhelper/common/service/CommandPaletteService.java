@@ -87,10 +87,13 @@ public class CommandPaletteService {
         if (campaignId != null) {
             noteRepo.findByCampaignIdOrderByCreatedAtDesc(campaignId).stream()
                     .filter(n -> matches(n.getTitle(), q) || matches(n.getBody(), q))
-                    .map(n -> new SearchResultItem(n.getId().toString(), n.getTitle(), "note",
-                            n.getType().name(),
-                            destinations.campaign(ContentDestinationRegistry.CampaignType.NOTE, campaignId, n.getId(), null)))
-                    .forEach(item -> add(results, item, item.title() + " " + item.subtype(), q, true));
+                    .forEach(n -> {
+                        SearchResultItem item = new SearchResultItem(n.getId().toString(), n.getTitle(), "note",
+                                n.getType().name(),
+                                destinations.campaign(ContentDestinationRegistry.CampaignType.NOTE,
+                                        campaignId, n.getId(), null));
+                        add(results, item, n.getBody(), q, true);
+                    });
 
             quickNoteRepo.findByCampaignIdOrderByCreatedAtDesc(campaignId).stream()
                     .filter(qn -> matches(qn.getBody(), q))

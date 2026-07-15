@@ -84,6 +84,21 @@ class SceneControllerTest {
     }
 
     @Test
+    void detailRendersQuickNotesForTheSceneTarget() throws Exception {
+        when(adventureService.findAdventureById(adventureId)).thenReturn(scene.getChapter().getAdventure());
+        when(adventureService.findSceneById(sceneId)).thenReturn(scene);
+        when(adventureService.getCurrentScene(campaignId)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/campaigns/{cid}/adventures/{aid}/scenes/{sid}",
+                        campaignId, adventureId, sceneId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "data-target-type=\"SCENE\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "data-target-id=\"" + sceneId + "\"")));
+    }
+
+    @Test
     void setStatusUpdatesAndReturnsBadge() throws Exception {
         scene.setStatus(SceneStatus.VISITED);
         when(adventureService.setStatus(sceneId, SceneStatus.VISITED)).thenReturn(scene);
