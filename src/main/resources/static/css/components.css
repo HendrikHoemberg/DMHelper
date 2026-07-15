@@ -39,7 +39,7 @@
   transform: scale(0.985) translateY(0);
 }
 
-.card h3 {
+.card h3:not(.library-card__title) {
   font-size: var(--text-lg);
   margin-bottom: var(--space-xs);
   font-family: var(--font-ui);
@@ -191,7 +191,6 @@
 
 .form-group input:focus,
 .form-group textarea:focus {
-  outline: none;
   border-color: var(--color-accent);
 }
 
@@ -307,7 +306,7 @@
   font-size: var(--text-base); font-family: inherit; color: var(--color-text);
   background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius);
 }
-.search-bar select:focus { outline: none; border-color: var(--color-accent); }
+.search-bar select:focus { border-color: var(--color-accent); }
 
 .statblock-card {
   background: var(--color-surface); border: 1px solid var(--color-border);
@@ -1199,7 +1198,6 @@
 }
 
 .dice-input-row input[type="text"]:focus {
-    outline: none;
     border-color: var(--color-accent);
 }
 
@@ -1400,7 +1398,7 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
 .command-palette-input {
     flex: 1; background: transparent; border: none;
     color: var(--color-text); font-size: 1.1rem;
-    outline: none; padding: 4px 0;
+    padding: 4px 0;
 }
 
 .command-palette-loading {
@@ -2054,7 +2052,7 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
 }
-.form-group select:focus { outline: none; border-color: var(--color-accent); }
+.form-group select:focus { border-color: var(--color-accent); }
 
 /* Remove native number spinners that overlap the value */
 .pm-num::-webkit-outer-spin-button,

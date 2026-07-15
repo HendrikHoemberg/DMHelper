@@ -123,6 +123,28 @@ class UiPolishContractTest {
     }
 
     @Test
+    void componentFocusRulesPreserveGlobalFocusVisibleRing() throws IOException {
+        String css = read("static/css/components.css");
+
+        assertThat(css)
+                .doesNotContain("outline: none")
+                .contains(
+                        ".form-group input:focus",
+                        ".search-bar select:focus",
+                        ".dice-input-row input[type=\"text\"]:focus",
+                        ".form-group select:focus",
+                        ".command-palette-input",
+                        "border-color: var(--color-accent)");
+    }
+
+    @Test
+    void genericCardHeadingRuleExcludesSharedLibraryTitles() throws IOException {
+        assertThat(read("static/css/components.css"))
+                .contains(".card h3:not(.library-card__title)")
+                .doesNotContain("\n.card h3 {");
+    }
+
+    @Test
     void focusVisibleTargetsInteractiveElementsWithTokenizedRing() throws IOException {
         String css = read("static/css/base.css");
         assertThat(css).contains(
