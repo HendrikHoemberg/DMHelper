@@ -1,7 +1,7 @@
 # DMHelper All-in-One DM Readiness — Master Design Specification
 
 **Date:** 2026-07-15
-**Status:** Proposed master design — awaiting user review
+**Status:** Approved master design
 **Product premise:** A D&D DM can prepare and run a complete campaign using DMHelper alone,
 without consulting PDFs, books, spreadsheets, or separate map, initiative, notes, handout, and
 character-management tools.
