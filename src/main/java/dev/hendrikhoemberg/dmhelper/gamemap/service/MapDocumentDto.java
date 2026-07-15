@@ -37,6 +37,7 @@ public record MapDocumentDto(
     }
 
     /** gridType is reserved for post-v1 hex support (SPEC §9); always "square" in v1. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record GridDto(int width, int height, int cellSizePx, String gridType, String movementMode, boolean showGrid) {
         public GridDto(int width, int height, int cellSizePx, String gridType) {
             this(width, height, cellSizePx, gridType, "GRID", true);

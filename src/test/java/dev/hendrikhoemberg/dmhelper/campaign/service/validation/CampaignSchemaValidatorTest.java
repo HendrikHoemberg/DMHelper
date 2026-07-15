@@ -75,6 +75,14 @@ class CampaignSchemaValidatorTest {
     }
 
     @Test
+    void rejectsUnknownTopLevelCampaignProperty() throws Exception {
+        String json = resource("campaigns/v1/invalid-unknown-property.dmcampaign.json");
+        assertThat(validator.validate(json))
+                .extracting(CampaignImportProblem::code)
+                .contains("SCHEMA_ADDITIONAL_PROPERTIES");
+    }
+
+    @Test
     void rejectsUnknownNestedMapProperty() {
         String json = """
                 {

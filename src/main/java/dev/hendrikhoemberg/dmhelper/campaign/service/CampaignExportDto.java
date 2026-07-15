@@ -59,7 +59,7 @@ public record CampaignExportDto(
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record CampaignDto(
             String name,
-            @JsonInclude(JsonInclude.Include.NON_DEFAULT) String description
+            String description
     ) {
         public CampaignDto {
             if (description != null && description.isBlank()) {
