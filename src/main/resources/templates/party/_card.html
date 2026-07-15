@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="party-member-card" th:fragment="card(pm)" th:classappend="${!pm.active} ? 'pm-inactive'">
+<div class="party-member-card" th:fragment="card(pm)"
+     th:id="'pm-card-' + ${pm.id}"
+     th:classappend="${!pm.active} ? 'pm-inactive'">
     <h3 th:text="${pm.characterName}">Character Name</h3>
     <div class="pm-player">
         <span th:if="${pm.playerName != null and !pm.playerName.isBlank()}">
@@ -23,7 +25,9 @@
         <a th:if="${pm.characterSheet != null}"
            th:href="@{/campaigns/{cid}/party/{pid}/sheet(cid=${pm.campaign.id}, pid=${pm.id})}"
            class="btn btn-ghost">Sheet</a>
-        <a th:href="@{/campaigns/{cid}/party/{pid}/edit(cid=${pm.campaign.id}, pid=${pm.id})}" class="btn btn-ghost">Edit</a>
+        <button class="btn btn-ghost"
+                th:hx-get="@{/campaigns/{cid}/party/{pid}/edit(cid=${pm.campaign.id}, pid=${pm.id})}"
+                hx-target="#party-form-modal" hx-swap="innerHTML">Edit</button>
         <th:block th:if="${pm.active}">
             <button class="btn btn-ghost"
                     th:hx-put="@{/campaigns/{cid}/party/{pid}/toggle-active(cid=${pm.campaign.id}, pid=${pm.id})}"

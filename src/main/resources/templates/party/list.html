@@ -20,8 +20,8 @@
                     <a th:href="@{/campaigns/{id}/sheets(id=${campaign.id})}" class="btn btn-ghost">Character Sheets</a>
                     <button class="btn btn-primary"
                             th:hx-get="@{/campaigns/{cid}/party/new(cid=${campaign.id})}"
-                            hx-target="#party-grid"
-                            hx-swap="beforeend">+ Add Member</button>
+                            hx-target="#party-form-modal"
+                            hx-swap="innerHTML">+ Add Member</button>
                 </div>
             </div>
 
@@ -35,6 +35,9 @@
                     <th:block th:replace="~{party/_card :: card(pm=${pm})}"></th:block>
                 </th:block>
             </div>
+            <dialog id="party-form-modal" class="modal"
+                    hx-on::after-swap="this.showModal()"
+                    onclick="if (event.target === this) this.close();"></dialog>
         </main>
     </div>
 </body>

@@ -49,7 +49,8 @@ class PartyControllerTest {
 
         mockMvc.perform(get("/campaigns/{cid}/party", campaignId))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Party")));
+                .andExpect(content().string(containsString("Party")))
+                .andExpect(content().string(containsString("id=\"party-form-modal\"")));
     }
 
     @Test
