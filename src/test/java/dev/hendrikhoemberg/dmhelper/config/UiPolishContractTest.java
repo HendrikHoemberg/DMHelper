@@ -68,4 +68,40 @@ class UiPolishContractTest {
         assertThat(read("templates/party/list.html"))
                 .contains("No heroes yet", "Add member", "♜");
     }
+
+    @Test
+    void focusVisibleTargetsInteractiveElementsWithTokenizedRing() throws IOException {
+        String css = read("static/css/base.css");
+        assertThat(css).contains(
+                ":where(a, button, input, select, textarea, [tabindex]):focus-visible",
+                "outline: 2px solid var(--color-accent)",
+                "outline-offset: 2px",
+                "border-radius: var(--radius)");
+    }
+
+    @Test
+    void mutedTokenClearsAaOnBothAppBackgrounds() {
+        assertThat(contrast(0xb3a88f, 0x17120c)).isGreaterThanOrEqualTo(4.5);
+        assertThat(contrast(0xb3a88f, 0x211a12)).isGreaterThanOrEqualTo(4.5);
+    }
+
+    private static double contrast(int foreground, int background) {
+        double lighter = Math.max(luminance(foreground), luminance(background));
+        double darker = Math.min(luminance(foreground), luminance(background));
+        return (lighter + 0.05) / (darker + 0.05);
+    }
+
+    private static double luminance(int rgb) {
+        double red = channel((rgb >> 16) & 0xff);
+        double green = channel((rgb >> 8) & 0xff);
+        double blue = channel(rgb & 0xff);
+        return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    }
+
+    private static double channel(int value) {
+        double normalized = value / 255.0;
+        return normalized <= 0.04045
+                ? normalized / 12.92
+                : Math.pow((normalized + 0.055) / 1.055, 2.4);
+    }
 }
