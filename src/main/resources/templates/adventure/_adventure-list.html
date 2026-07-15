@@ -5,7 +5,7 @@
             hx-target="#adventure-form-placeholder"
             hx-swap="innerHTML">+ New</button></h2>
     <div id="adventure-form-placeholder"></div>
-    <th:block th:if="${adventures.isEmpty()}" th:replace="~{common/_empty-state :: empty-state('No adventures yet.', null, null, null)}"></th:block>
+    <th:block th:if="${adventures.isEmpty()}"><th:block th:replace="~{common/_empty-state :: empty-state('No adventures yet.', null, null, null)}"></th:block></th:block>
     <div th:each="a : ${adventures}" class="card">
       <div class="card-header">
         <h3>

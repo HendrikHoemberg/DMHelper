@@ -49,7 +49,7 @@
                 </th:block>
             </div>
 
-            <th:block th:if="${#lists.isEmpty(handouts)}" th:replace="~{common/_empty-state :: empty-state('No handouts yet.', null, null, 'Upload an image to share with your players.')}"></th:block>
+            <th:block th:if="${#lists.isEmpty(handouts)}"><th:block th:replace="~{common/_empty-state :: empty-state('No handouts yet.', null, null, 'Upload an image to share with your players.')}"></th:block></th:block>
         </main>
     </div>
 </body>

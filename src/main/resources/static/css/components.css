@@ -109,6 +109,8 @@
 }
 
 .btn-primary:hover {
+  background-image: var(--gold-sheen);
+  background-size: 200% 100%;
   background-position: 100% 0;
   box-shadow: 0 0 16px rgba(201, 163, 92, 0.25);
 }
@@ -1559,11 +1561,11 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
   box-shadow: var(--highlight-candle), var(--shadow-warm-md);
 }
 .book-cover:hover h3 {
-  background: var(--gold-sweep);
+  background: linear-gradient(105deg, var(--color-accent) 42%, #fff3d2 50%, var(--color-accent) 58%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  background-size: 200% 100%;
+  background-size: 220% 100%;
   animation: gold-sweep 700ms ease forwards;
 }
 @keyframes gold-sweep {
@@ -1794,3 +1796,38 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
   .side-sheet.open { opacity: 1; }
 }
 
+
+/* Full-page error view (404/403/500), rendered by Spring's error controller.
+   Self-contained: no navbar/appnav, so it never depends on request-scoped model
+   attributes that may be absent when an error short-circuits normal rendering. */
+.error-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+}
+.error-page-card {
+  max-width: 32rem;
+  width: 100%;
+  text-align: center;
+}
+.error-page-status {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  line-height: 1;
+  color: var(--color-accent);
+  letter-spacing: 0.05em;
+}
+.error-page-title {
+  margin-top: var(--space-sm);
+}
+.error-page-card .rule-taper {
+  margin: var(--space-md) auto;
+}
+.error-page-message {
+  margin-bottom: var(--space-lg);
+}
+.error-page-action {
+  display: inline-block;
+}

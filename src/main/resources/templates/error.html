@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="|DMHelper — ${status != null ? status : 'Error'}|">DMHelper — Error</title>
+</head>
+<body>
+    <main class="app-main error-page">
+        <div class="error-page-card detail-section">
+            <div class="error-page-status" th:text="${status != null ? status : '—'}">404</div>
+            <h1 class="error-page-title"
+                th:text="${status == 404 ? 'This page has wandered off the map'
+                          : (status == 403 ? 'That door is warded'
+                          : 'Something went wrong')}">Something went wrong</h1>
+            <div class="rule-taper rule-taper--gold"></div>
+            <p class="error-page-message text-muted"
+               th:text="${status == 404
+                          ? 'The page you were looking for does not exist, or the link has crumbled to dust.'
+                          : 'The request could not be completed. Try again, or head back to safe ground.'}">
+                The page you were looking for does not exist.
+            </p>
+            <a href="/campaigns" class="btn btn-primary error-page-action">&#x1F3F0; Back to Campaigns</a>
+        </div>
+    </main>
+</body>
+</html>

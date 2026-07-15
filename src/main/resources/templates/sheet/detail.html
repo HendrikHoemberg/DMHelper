@@ -136,7 +136,7 @@
             </section>
         </div>
 
-        <div th:unless="${hasSheet}" th:replace="~{common/_empty-state :: empty-state('No character sheet yet.', 'Create Sheet', @{/campaigns/{cid}/party/{pid}/sheet/create(cid=${campaign.id}, pid=${member.id})}, null)}"></div>
+        <th:block th:unless="${hasSheet}"><div th:replace="~{common/_empty-state :: empty-state('No character sheet yet.', 'Create Sheet', @{/campaigns/{cid}/party/{pid}/sheet/create(cid=${campaign.id}, pid=${member.id})}, null)}"></div></th:block>
     </main>
 </div>
 
