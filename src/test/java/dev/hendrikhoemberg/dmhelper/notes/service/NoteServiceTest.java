@@ -23,7 +23,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@Import({NoteService.class, WikiLinkParser.class, StatBlockService.class, SceneRefCleaner.class})
+@Import({NoteService.class, WikiLinkParser.class, StatBlockService.class, SceneRefCleaner.class, dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class})
 class NoteServiceTest {
 
     @Autowired private NoteRepository noteRepository;
@@ -186,5 +186,10 @@ class NoteServiceTest {
         var mapLink = links.stream().filter(l -> "MAP".equals(l.getTargetType())).findFirst().orElseThrow();
         assertTrue(mapLink.isResolved());
         assertEquals(dungeon.getId(), mapLink.getTargetId());
+
+        String rendered = noteService.renderBody(note);
+        assertTrue(rendered.contains("/campaigns/" + campaign.getId() + "/maps/" + dungeon.getId() + "/play"));
+        assertTrue(rendered.contains("/campaigns/" + campaign.getId() + "/handouts#handout-" + letter.getId()));
+        assertFalse(rendered.contains("/battle"));
     }
 }

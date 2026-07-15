@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -28,6 +30,7 @@ public class QuickNoteService {
     private final HandoutRepository handoutRepository;
     private final PartyMemberRepository partyMemberRepository;
     private final SceneRepository sceneRepository;
+    private final EncounterRepository encounterRepository;
 
     public QuickNoteService(QuickNoteRepository quickNoteRepository,
                             CampaignRepository campaignRepository,
@@ -37,7 +40,8 @@ public class QuickNoteService {
                             GameMapRepository gameMapRepository,
                             HandoutRepository handoutRepository,
                             PartyMemberRepository partyMemberRepository,
-                            SceneRepository sceneRepository) {
+                            SceneRepository sceneRepository,
+                            EncounterRepository encounterRepository) {
         this.quickNoteRepository = quickNoteRepository;
         this.campaignRepository = campaignRepository;
         this.noteService = noteService;
@@ -47,17 +51,39 @@ public class QuickNoteService {
         this.handoutRepository = handoutRepository;
         this.partyMemberRepository = partyMemberRepository;
         this.sceneRepository = sceneRepository;
+        this.encounterRepository = encounterRepository;
+    }
+
+    private enum TargetType {
+        CAMPAIGN, PARTY_MEMBER, MAP, ENCOUNTER, NOTE, HANDOUT, STATBLOCK, SCENE
+    }
+
+    private TargetType parseTargetType(String raw) {
+        try {
+            return TargetType.valueOf(raw == null ? "" : raw.strip().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Unsupported quick-note target type: " + raw);
+        }
+    }
+
+    private QuickNote findByCampaignAndId(UUID campaignId, UUID id) {
+        return quickNoteRepository.findByIdAndCampaignId(id, campaignId)
+                .orElseThrow(() -> new NotFoundException("QuickNote not found"));
     }
 
     public QuickNote create(UUID campaignId, String targetType, UUID targetId, String body) {
         Campaign campaign = campaignRepository.findById(campaignId)
                 .orElseThrow(() -> new NotFoundException("Campaign not found"));
 
+        if (body == null || body.isBlank()) {
+            throw new IllegalArgumentException("Quick-note body is required");
+        }
+
         QuickNote qn = new QuickNote();
         qn.setCampaign(campaign);
-        qn.setTargetType(targetType);
+        qn.setTargetType(parseTargetType(targetType).name());
         qn.setTargetId(targetId);
-        qn.setBody(body);
+        qn.setBody(body.strip());
         return quickNoteRepository.save(qn);
     }
 
@@ -73,30 +99,26 @@ public class QuickNoteService {
                 .orElseThrow(() -> new NotFoundException("QuickNote not found"));
     }
 
-    public Note promoteToNote(UUID quickNoteId) {
-        QuickNote qn = findById(quickNoteId);
+    public Note promoteToNote(UUID campaignId, UUID quickNoteId) {
+        QuickNote qn = findByCampaignAndId(campaignId, quickNoteId);
         String targetLink = resolveTargetLink(qn);
-        Note note = noteService.create(qn.getCampaign().getId(),
-            NoteType.GENERIC,
-            qn.getBody().length() > 80 ? qn.getBody().substring(0, 77) + "..." : qn.getBody(),
-            targetLink + qn.getBody(),
-            "");
+        String title = qn.getBody().length() > 80
+                ? qn.getBody().substring(0, 77) + "..."
+                : qn.getBody();
+        Note note = noteService.create(qn.getCampaign().getId(), NoteType.GENERIC, title, targetLink + qn.getBody(), "");
         quickNoteRepository.delete(qn);
         return note;
     }
 
-    public Note promoteToNote(UUID quickNoteId, String title, NoteType type) {
-        QuickNote qn = findById(quickNoteId);
-        String targetLink = resolveTargetLink(qn);
-        Note note = noteService.create(qn.getCampaign().getId(), type, title,
-            targetLink + qn.getBody(), "");
+    public Note promoteToNote(UUID campaignId, UUID quickNoteId, String title, NoteType type) {
+        QuickNote qn = findByCampaignAndId(campaignId, quickNoteId);
+        Note note = noteService.create(qn.getCampaign().getId(), type, title, resolveTargetLink(qn) + qn.getBody(), "");
         quickNoteRepository.delete(qn);
         return note;
     }
 
-    public void delete(UUID id) {
-        QuickNote qn = findById(id);
-        quickNoteRepository.delete(qn);
+    public void delete(UUID campaignId, UUID id) {
+        quickNoteRepository.delete(findByCampaignAndId(campaignId, id));
     }
 
     private String resolveTargetLink(QuickNote qn) {
@@ -130,6 +152,9 @@ public class QuickNoteService {
                 var scene = sceneRepository.findById(targetId);
                 yield scene.map(s -> "[[scene:" + s.getTitle() + "]]\n\n").orElse("");
             }
+            case "ENCOUNTER" -> encounterRepository.findById(targetId)
+                    .map(encounter -> "[[encounter:" + encounter.getName() + "]]\n\n")
+                    .orElse("");
             default -> "";
         };
         return link;

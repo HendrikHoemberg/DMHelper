@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface QuickNoteRepository extends JpaRepository<QuickNote, UUID> {
@@ -21,4 +22,6 @@ public interface QuickNoteRepository extends JpaRepository<QuickNote, UUID> {
                                        @Param("search") String search);
 
     void deleteByTargetTypeAndTargetId(String targetType, UUID targetId);
+
+    Optional<QuickNote> findByIdAndCampaignId(UUID id, UUID campaignId);
 }

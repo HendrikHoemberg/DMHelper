@@ -4,10 +4,13 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 import dev.hendrikhoemberg.dmhelper.notes.data.*;
+import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +22,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@Import({QuickNoteService.class, NoteService.class, WikiLinkParser.class, StatBlockService.class, SceneRefCleaner.class})
+@Import({QuickNoteService.class, NoteService.class, WikiLinkParser.class, StatBlockService.class, SceneRefCleaner.class, dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class})
 class QuickNoteServiceTest {
 
     @Autowired private QuickNoteRepository quickNoteRepository;
@@ -30,6 +33,7 @@ class QuickNoteServiceTest {
     @Autowired private AdventureRepository adventureRepository;
     @Autowired private ChapterRepository chapterRepository;
     @Autowired private SceneRepository sceneRepository;
+    @Autowired private EncounterRepository encounterRepository;
 
     private Campaign campaign;
 
@@ -61,7 +65,7 @@ class QuickNoteServiceTest {
     @Test
     void promotesQuickNoteToNote() {
         QuickNote qn = quickNoteService.create(campaign.getId(), "STATBLOCK", UUID.randomUUID(), "This goblin has a secret lair.");
-        Note note = quickNoteService.promoteToNote(qn.getId());
+        Note note = quickNoteService.promoteToNote(campaign.getId(), qn.getId());
 
         assertNotNull(note.getId());
         assertEquals("This goblin has a secret lair.", note.getBody());
@@ -72,7 +76,7 @@ class QuickNoteServiceTest {
     @Test
     void promotesQuickNoteWithTitle() {
         QuickNote qn = quickNoteService.create(campaign.getId(), "CAMPAIGN", campaign.getId(), "The party must find the crystal.");
-        Note note = quickNoteService.promoteToNote(qn.getId(), "The Crystal Quest", NoteType.QUEST);
+        Note note = quickNoteService.promoteToNote(campaign.getId(), qn.getId(), "The Crystal Quest", NoteType.QUEST);
 
         assertEquals("The Crystal Quest", note.getTitle());
         assertEquals(NoteType.QUEST, note.getType());
@@ -81,7 +85,7 @@ class QuickNoteServiceTest {
     @Test
     void deletesQuickNote() {
         QuickNote qn = quickNoteService.create(campaign.getId(), "ENCOUNTER", UUID.randomUUID(), "Temp note.");
-        quickNoteService.delete(qn.getId());
+        quickNoteService.delete(campaign.getId(), qn.getId());
         assertTrue(quickNoteRepository.findById(qn.getId()).isEmpty());
     }
 
@@ -103,7 +107,7 @@ class QuickNoteServiceTest {
         sceneRepository.save(scene);
 
         QuickNote qn = quickNoteService.create(campaign.getId(), "SCENE", scene.getId(), "The king sits here.");
-        Note note = quickNoteService.promoteToNote(qn.getId(), "Throne Room Notes", NoteType.LOCATION);
+        Note note = quickNoteService.promoteToNote(campaign.getId(), qn.getId(), "Throne Room Notes", NoteType.LOCATION);
 
         assertTrue(note.getBody().startsWith("[[scene:Throne Room]]"));
         assertTrue(note.getBody().contains("The king sits here."));
@@ -121,9 +125,42 @@ class QuickNoteServiceTest {
         statBlockRepository.save(sb);
 
         QuickNote qn = quickNoteService.create(campaign.getId(), "STATBLOCK", sb.getId(), "This goblin has a secret lair.");
-        Note note = quickNoteService.promoteToNote(qn.getId(), "Goblin Secrets", NoteType.LOCATION);
+        Note note = quickNoteService.promoteToNote(campaign.getId(), qn.getId(), "Goblin Secrets", NoteType.LOCATION);
 
         assertTrue(note.getBody().startsWith("[[statblock:Goblin]]"));
         assertTrue(note.getBody().contains("This goblin has a secret lair."));
+    }
+
+    @Test
+    void rejectsUnknownTargetType() {
+        assertThrows(IllegalArgumentException.class,
+                () -> quickNoteService.create(campaign.getId(), "UNKNOWN", UUID.randomUUID(), "No target"));
+    }
+
+    @Test
+    void refusesMutationThroughAnotherCampaign() {
+        Campaign other = new Campaign();
+        other.setName("Other Campaign");
+        campaignRepository.save(other);
+        QuickNote note = quickNoteService.create(campaign.getId(), "CAMPAIGN", campaign.getId(), "Private note");
+
+        assertThrows(NotFoundException.class,
+                () -> quickNoteService.delete(other.getId(), note.getId()));
+        assertTrue(quickNoteRepository.findById(note.getId()).isPresent());
+    }
+
+    @Test
+    void promotesQuickNoteWithEncounterLink() {
+        Encounter encounter = new Encounter();
+        encounter.setCampaign(campaign);
+        encounter.setName("Crypt Ambush");
+        encounter.setStatus(Encounter.Status.PLANNED);
+        encounterRepository.save(encounter);
+
+        QuickNote qn = quickNoteService.create(
+                campaign.getId(), "ENCOUNTER", encounter.getId(), "The ghouls arrive in round two.");
+        Note promoted = quickNoteService.promoteToNote(campaign.getId(), qn.getId());
+
+        assertTrue(promoted.getBody().startsWith("[[encounter:Crypt Ambush]]"));
     }
 }

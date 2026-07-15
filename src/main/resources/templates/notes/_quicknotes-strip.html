@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <th:block th:fragment="strip(campaignId, targetType, targetId)">
-<div x-data="quicknotes('[[${campaignId}]]', '[[${targetType}]]', '[[${targetId}]]')"
+<div x-data="quicknotes"
+     th:attr="data-campaign-id=${campaignId},data-target-type=${targetType},data-target-id=${targetId}"
      class="quicknotes-strip">
     <h3>
         Quick Notes
@@ -37,67 +38,84 @@
 
 <script>
 document.addEventListener('alpine:init', () => {
-    Alpine.data('quicknotes', (campaignId, targetType, targetId) => ({
+    Alpine.data('quicknotes', () => ({
         items: [],
         newBody: '',
-        campaignId: campaignId,
-        targetType: targetType,
-        targetId: targetId,
+        campaignId: '',
+        targetType: '',
+        targetId: '',
 
         async init() {
+            this.campaignId = this.$el.dataset.campaignId;
+            this.targetType = this.$el.dataset.targetType;
+            this.targetId = this.$el.dataset.targetId;
             await this.load();
+        },
+
+        async request(url, options = {}) {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response;
+        },
+
+        reportFailure(message, error) {
+            console.error(message, error);
+            window.showToast?.(message, 'error', 5000);
         },
 
         async load() {
             try {
-                const resp = await fetch(
+                const resp = await this.request(
                     '/api/v1/campaigns/' + this.campaignId + '/quicknotes?targetType='
                     + this.targetType + '&targetId=' + this.targetId);
                 this.items = await resp.json();
-            } catch (e) {
-                console.error('Failed to load quicknotes', e);
+            } catch (error) {
+                this.reportFailure('Could not load quick notes.', error);
             }
         },
 
         async add() {
-            if (!this.newBody.trim()) return;
             const body = this.newBody.trim();
-            this.newBody = '';
+            if (!body) return;
             try {
                 const formData = new FormData();
                 formData.append('targetType', this.targetType);
                 formData.append('targetId', this.targetId);
                 formData.append('body', body);
-                const resp = await fetch(
+                const response = await this.request(
                     '/api/v1/campaigns/' + this.campaignId + '/quicknotes',
                     { method: 'POST', body: formData });
-                const qn = await resp.json();
-                this.items.push(qn);
-            } catch (e) {
-                console.error('Failed to create quicknote', e);
+                this.items.push(await response.json());
+                this.newBody = '';
+            } catch (error) {
+                this.newBody = body;
+                this.reportFailure('Could not save the quick note. Your text has been kept.', error);
             }
         },
 
         async remove(id) {
             try {
-                await fetch('/api/v1/campaigns/' + this.campaignId + '/quicknotes/' + id,
+                await this.request(
+                    '/api/v1/campaigns/' + this.campaignId + '/quicknotes/' + id,
                     { method: 'DELETE' });
                 this.items = this.items.filter(i => i.id !== id);
-            } catch (e) {
-                console.error('Failed to delete quicknote', e);
+            } catch (error) {
+                this.reportFailure('Could not delete the quick note. Nothing was changed.', error);
             }
         },
 
         async promote(qn) {
             try {
-                const resp = await fetch(
+                const resp = await this.request(
                     '/api/v1/campaigns/' + this.campaignId + '/quicknotes/' + qn.id + '/promote',
                     { method: 'POST' });
                 const result = await resp.json();
                 this.items = this.items.filter(i => i.id !== qn.id);
                 window.location = result.url;
-            } catch (e) {
-                console.error('Failed to promote quicknote', e);
+            } catch (error) {
+                this.reportFailure('Could not promote the quick note. Nothing was changed.', error);
             }
         },
 

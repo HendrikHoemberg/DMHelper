@@ -41,7 +41,7 @@ public class QuickNoteApiController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID campaignId,
                                        @PathVariable UUID id) {
-        quickNoteService.delete(id);
+        quickNoteService.delete(campaignId, id);
         return ResponseEntity.noContent().build();
     }
 
@@ -51,8 +51,8 @@ public class QuickNoteApiController {
                                     @RequestParam(required = false) String title,
                                     @RequestParam(required = false) NoteType type) {
         Note note = (title != null && type != null)
-                ? quickNoteService.promoteToNote(id, title, type)
-                : quickNoteService.promoteToNote(id);
+                ? quickNoteService.promoteToNote(campaignId, id, title, type)
+                : quickNoteService.promoteToNote(campaignId, id);
         return PromoteResultDto.from(note, campaignId);
     }
 

@@ -50,4 +50,25 @@ class HtmxTemplateExpressionTest {
                         + "(e.g. th:hx-get=\"@{...}\") so the expression is evaluated server-side")
                 .isEmpty();
     }
+
+    @Test
+    void noTemplateContainsLiteralThymeleafInlinePlaceholder() throws IOException {
+        List<String> violations = new ArrayList<>();
+
+        try (Stream<Path> paths = Files.walk(TEMPLATES)) {
+            for (Path file : (Iterable<Path>) paths.filter(p -> p.toString().endsWith(".html"))::iterator) {
+                String content = Files.readString(file);
+                if (content.contains("[[${")) {
+                    String stripped = content.replaceAll("/\\*\\[\\[\\$.+?]]\\*/", "");
+                    if (stripped.contains("[[${")) {
+                        violations.add(TEMPLATES.relativize(file).toString());
+                    }
+                }
+            }
+        }
+
+        assertThat(violations)
+                .as("fragment parameters must use th:* attributes or data attributes, not literal [[${...}]] syntax")
+                .isEmpty();
+    }
 }

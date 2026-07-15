@@ -59,7 +59,7 @@ class NoteIntegrationTest {
         UUID targetId = UUID.randomUUID();
         QuickNote qn = quickNoteService.create(campaign.getId(), "ENCOUNTER", targetId, "Secret door in the north wall.");
 
-        Note promoted = quickNoteService.promoteToNote(qn.getId(), "Secret Door Discovery", NoteType.LOCATION);
+        Note promoted = quickNoteService.promoteToNote(campaign.getId(), qn.getId(), "Secret Door Discovery", NoteType.LOCATION);
         assertNotNull(promoted.getId());
         assertEquals("Secret Door Discovery", promoted.getTitle());
         assertEquals("Secret door in the north wall.", promoted.getBody());

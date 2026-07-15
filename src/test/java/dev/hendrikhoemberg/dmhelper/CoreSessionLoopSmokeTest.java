@@ -43,6 +43,13 @@ class CoreSessionLoopSmokeTest {
     private static Browser browser;
     private BrowserContext dmContext;
     private Page dmPage;
+    private final BrowserFailureCollector browserFailures = new BrowserFailureCollector();
+
+    private Page guardedPage(BrowserContext context) {
+        Page page = context.newPage();
+        browserFailures.attach(page);
+        return page;
+    }
 
     private UUID campaignId;
     private UUID mapId;
@@ -62,13 +69,18 @@ class CoreSessionLoopSmokeTest {
 
     @BeforeEach
     void setUp() {
+        browserFailures.clear();
         dmContext = browser.newContext();
-        dmPage = dmContext.newPage();
+        dmPage = guardedPage(dmContext);
     }
 
     @AfterEach
     void tearDown() {
-        if (dmContext != null) dmContext.close();
+        try {
+            browserFailures.assertNoFailures();
+        } finally {
+            if (dmContext != null) dmContext.close();
+        }
     }
 
     @Test
@@ -180,14 +192,15 @@ class CoreSessionLoopSmokeTest {
     @Test
     @Order(6)
     void verifyPlayerViewPageLoads() {
-        Page playerPage = browser.newContext().newPage();
+        BrowserContext playerContext = browser.newContext();
+        Page playerPage = guardedPage(playerContext);
         playerPage.navigate("http://localhost:" + port + "/player");
         playerPage.waitForLoadState(LoadState.NETWORKIDLE);
 
         String title = playerPage.title();
         assertThat(title).isNotEmpty();
 
-        playerPage.context().close();
+        playerContext.close();
     }
 
     @Test
@@ -195,13 +208,41 @@ class CoreSessionLoopSmokeTest {
     void verifyPlayerSafeProjectionStripsDmOnly() {
         presentationService.presentMap(mapId);
 
-        Page playerPage = browser.newContext().newPage();
+        BrowserContext playerContext = browser.newContext();
+        Page playerPage = guardedPage(playerContext);
         playerPage.navigate("http://localhost:" + port + "/player");
         playerPage.waitForLoadState(LoadState.NETWORKIDLE);
 
         String pageContent = playerPage.content();
         assertThat(pageContent).doesNotContain("dm-only", "dmMode");
 
-        playerPage.context().close();
+        playerContext.close();
+    }
+
+    @Test
+    @Order(8)
+    void createQuickNoteWithoutTemplateOrRequestErrors() {
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/adventures");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        dmPage.locator(".quicknotes-form input").first().fill("Remember the hidden stair.");
+        dmPage.locator(".quicknotes-form button[type='submit']").first().click();
+        dmPage.locator(".quicknote-row").first().waitFor();
+
+        assertThat(dmPage.locator(".quicknote-body").first().textContent())
+                .isEqualTo("Remember the hidden stair.");
+    }
+
+    @Test
+    @Order(9)
+    void commandPaletteOpensTheRealMapPlayRoute() {
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/maps");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        dmPage.evaluate("window.dispatchEvent(new CustomEvent('command-palette-toggle'))");
+        dmPage.locator(".command-palette-input").fill("Test Battle Map");
+        dmPage.locator(".palette-result", new Page.LocatorOptions().setHasText("Test Battle Map")).waitFor();
+        dmPage.locator(".palette-result", new Page.LocatorOptions().setHasText("Test Battle Map")).click();
+        dmPage.waitForURL(url -> url.endsWith("/play"));
+
+        assertThat(dmPage.url()).endsWith("/play");
     }
 }
