@@ -67,6 +67,7 @@ public record CampaignManifestV2(
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record SheetDto(
+            String key,
             Map<String, Object> abilityScores,
             List<ClassLevelDto> classLevels,
             Map<String, Object> proficiencies,
@@ -90,6 +91,7 @@ public record CampaignManifestV2(
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ResourceDto(
+            String key,
             String name,
             int maxUses,
             int currentUses,

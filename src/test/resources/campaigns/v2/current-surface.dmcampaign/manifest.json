@@ -28,18 +28,18 @@
   "assets": [
     {
       "key": "asset-crypt-map",
-      "path": "maps/crypt.png",
+      "path": "assets/maps/crypt.png",
       "mediaType": "image/png",
       "sizeBytes": 204800,
-      "sha256": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b",
+      "sha256": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b0",
       "originalName": "crypt-map.png"
     },
     {
       "key": "asset-warning-plaque",
-      "path": "handouts/warning-plaque.png",
+      "path": "assets/handouts/warning-plaque.png",
       "mediaType": "image/png",
       "sizeBytes": 102400,
-      "sha256": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c",
+      "sha256": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c0",
       "originalName": "warning-plaque.png"
     }
   ],
@@ -59,31 +59,32 @@
       "notes": "Sneaky",
       "active": true,
       "sheet": {
+        "key": "sheet-aria",
         "abilityScores": { "str": 10, "dex": 18, "con": 14, "int": 12, "wis": 13, "cha": 8 },
         "classLevels": [
           {
-            "classRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_1", "sourceKey": "rogue" },
+            "classRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_rogue" },
             "level": 5,
             "hitDieRolls": [8, 5, 6, 7, 4]
           }
         ],
         "proficiencies": { "stealth": "expertise", "perception": "proficient" },
-        "speciesRef": { "scope": "CATALOG", "type": "SPECIES", "ruleset": "SRD_5_1", "sourceKey": "human" },
-        "backgroundRef": { "scope": "CATALOG", "type": "BACKGROUND", "ruleset": "SRD_5_1", "sourceKey": "criminal" },
+        "speciesRef": { "scope": "CATALOG", "type": "SPECIES", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_human" },
+        "backgroundRef": { "scope": "CATALOG", "type": "BACKGROUND", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_criminal" },
         "featRefs": [
-          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_1", "sourceKey": "alert" }
+          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_alert" }
         ],
         "xp": 6500,
         "overrides": { "speed": 35 },
         "hitDiceUsed": 2,
         "resources": [
-          { "name": "Cunning Action", "maxUses": 1, "currentUses": 1, "resetRule": "SHORT_REST" }
+          { "key": "resource-aria-cunning-action", "name": "Cunning Action", "maxUses": 1, "currentUses": 1, "resetRule": "SHORT_REST" }
         ],
         "spells": [
           {
-            "spellRef": { "scope": "CATALOG", "type": "SPELL", "ruleset": "SRD_5_1", "sourceKey": "cure-wounds" },
+            "spellRef": { "scope": "CATALOG", "type": "SPELL", "ruleset": "SRD_5_2", "sourceKey": "cure-wounds" },
             "prepared": true,
-            "sourceClassRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_1", "sourceKey": "cleric" }
+            "sourceClassRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_cleric" }
           }
         ],
         "spellSlotsUsed": { "1": 2, "2": 1 }

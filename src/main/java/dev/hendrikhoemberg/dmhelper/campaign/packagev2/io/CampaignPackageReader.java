@@ -4,15 +4,19 @@ import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportPr
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.text.Normalizer;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class CampaignPackageReader {
@@ -32,207 +36,157 @@ public final class CampaignPackageReader {
     public StagedCampaignPackage read(InputStream input, String originalFilename, String mediaType) throws IOException {
         Files.createDirectories(stagingRoot);
         Path stageDir = stagingRoot.resolve(UUID.randomUUID().toString());
-        Files.createDirectories(stageDir);
-
+        Files.createDirectory(stageDir);
         try {
-            if ("application/vnd.dmhelper.campaign+zip".equals(mediaType)
-                    || (originalFilename != null && originalFilename.toLowerCase().endsWith(".dmcampaign")
-                    && !originalFilename.toLowerCase().endsWith(".dmcampaign.json"))) {
-                return readZip(input, stageDir);
+            if (isZip(originalFilename, mediaType)) return readZip(input, stageDir);
+            if (!"application/json".equals(mediaType)) {
+                throw problem("UNSUPPORTED_MEDIA_TYPE", "Only campaign JSON or ZIP packages are supported");
             }
-            return readJson(input, stageDir, originalFilename);
+            return readJson(input, stageDir);
         } catch (CampaignPackageException e) {
             cleanup(stageDir);
             throw e;
         } catch (Exception e) {
             cleanup(stageDir);
-            throw new CampaignPackageException(
-                    new CampaignImportProblem(ImportSeverity.ERROR, "PACKAGE_READ_ERROR", "",
-                            "Failed to read package: " + e.getMessage(), null));
+            throw problem("PACKAGE_READ_ERROR", "The campaign package could not be read");
         }
     }
 
-    private StagedCampaignPackage readJson(InputStream input, Path stageDir, String originalFilename) throws IOException {
-        Path manifestPath = stageDir.resolve("manifest.json");
-        long bytesCopied = Files.copy(input, manifestPath, StandardCopyOption.REPLACE_EXISTING);
-        if (bytesCopied > limits.maxManifestBytes()) {
-            cleanup(stageDir);
-            throw new CampaignPackageException(new CampaignImportProblem(
-                    ImportSeverity.ERROR, "MANIFEST_TOO_LARGE", "",
-                    "Manifest exceeds " + limits.maxManifestBytes() + " bytes", null));
+    private static boolean isZip(String filename, String mediaType) {
+        return "application/vnd.dmhelper.campaign+zip".equals(mediaType)
+                || filename != null && filename.toLowerCase(Locale.ROOT).endsWith(".dmcampaign")
+                && !filename.toLowerCase(Locale.ROOT).endsWith(".dmcampaign.json");
+    }
+
+    private StagedCampaignPackage readJson(InputStream input, Path stageDir) throws IOException {
+        Path manifest = stageDir.resolve("manifest.json");
+        long bytes = copyBounded(input, manifest, limits.maxManifestBytes(), "MANIFEST_TOO_LARGE");
+        int version;
+        try (var in = Files.newInputStream(manifest)) {
+            var root = JsonMapper.builder().build().readTree(in);
+            version = root != null && root.has("formatVersion") && root.get("formatVersion").isIntegralNumber()
+                    ? root.get("formatVersion").intValue() : -1;
+        } catch (Exception e) {
+            throw problem("INVALID_JSON", "Manifest is not valid JSON");
         }
-
-        StagedCampaignPackage.ContainerKind kind = originalFilename != null
-                && originalFilename.toLowerCase().endsWith(".dmcampaign.json")
-                ? StagedCampaignPackage.ContainerKind.V1_JSON
-                : StagedCampaignPackage.ContainerKind.V2_JSON;
-
-        return new StagedCampaignPackage(stageDir, manifestPath, Map.of(), bytesCopied, bytesCopied, kind);
+        var kind = switch (version) {
+            case 1 -> StagedCampaignPackage.ContainerKind.V1_JSON;
+            case 2 -> StagedCampaignPackage.ContainerKind.V2_JSON;
+            default -> throw problem("UNSUPPORTED_FORMAT_VERSION", "Unsupported or missing formatVersion");
+        };
+        return new StagedCampaignPackage(stageDir, manifest, Map.of(), bytes, bytes, kind);
     }
 
     private StagedCampaignPackage readZip(InputStream input, Path stageDir) throws IOException {
-        Path uploadPath = stageDir.resolve("upload.zip");
-        byte[] buffer = new byte[8192];
-        long total = 0;
-        try (var out = Files.newOutputStream(uploadPath, StandardOpenOption.CREATE_NEW)) {
-            int n;
-            while ((n = input.read(buffer)) != -1) {
-                total += n;
-                if (total > limits.maxUploadBytes()) {
-                    cleanup(stageDir);
-                    throw new CampaignPackageException(new CampaignImportProblem(
-                            ImportSeverity.ERROR, "PACKAGE_TOO_LARGE", "",
-                            "Upload exceeds " + limits.maxUploadBytes() + " bytes", null));
-                }
-                out.write(buffer, 0, n);
-            }
-        }
-        if (total > limits.maxUploadBytes()) {
-            cleanup(stageDir);
-            throw new CampaignPackageException(new CampaignImportProblem(
-                    ImportSeverity.ERROR, "PACKAGE_TOO_LARGE", "",
-                    "Upload exceeds " + limits.maxUploadBytes() + " bytes", null));
-        }
-
-        try (ZipFile zip = ZipFile.builder().setPath(uploadPath).get()) {
+        Path upload = stageDir.resolve("upload.zip");
+        long uploaded = copyBounded(input, upload, limits.maxUploadBytes(), "PACKAGE_TOO_LARGE");
+        try (ZipFile zip = ZipFile.builder().setPath(upload).get()) {
             var entries = zip.getEntries();
-            int entryCount = 0;
-            Path manifestPath = null;
+            int count = 0;
+            long expanded = 0;
+            Path manifest = null;
             Map<String, Path> assets = new LinkedHashMap<>();
-            long expandedBytes = 0;
+            Set<String> foldedPaths = new HashSet<>();
 
             while (entries.hasMoreElements()) {
                 ZipArchiveEntry entry = entries.nextElement();
-                entryCount++;
-                if (entryCount > limits.maxEntries()) {
-                    cleanup(stageDir);
-                    throw new CampaignPackageException(new CampaignImportProblem(
-                            ImportSeverity.ERROR, "TOO_MANY_ENTRIES", "",
-                            "ZIP contains more than " + limits.maxEntries() + " entries", null));
-                }
-                if (entry.getGeneralPurposeBit().usesEncryption()) {
-                    cleanup(stageDir);
-                    throw new CampaignPackageException(new CampaignImportProblem(
-                            ImportSeverity.ERROR, "ENCRYPTED_ENTRY", "",
-                            "ZIP contains encrypted entry: " + entry.getName(), null));
-                }
-                if (entry.isDirectory()) {
-                    continue;
-                }
-                String name = entry.getName();
-                String normalized = normalizePath(name);
-                if (normalized == null) {
-                    cleanup(stageDir);
-                    throw new CampaignPackageException(new CampaignImportProblem(
-                            ImportSeverity.ERROR, "TRAVERSAL_ASSET_PATH", "",
-                            "Invalid path: " + name, null));
-                }
-                if (normalized.length() > limits.maxNormalizedPathLength()) {
-                    cleanup(stageDir);
-                    throw new CampaignPackageException(new CampaignImportProblem(
-                            ImportSeverity.ERROR, "PATH_TOO_LONG", "",
-                            "Path exceeds " + limits.maxNormalizedPathLength() + " chars: " + normalized, null));
+                if (++count > limits.maxEntries()) throw problem("TOO_MANY_ENTRIES", "ZIP entry limit exceeded");
+                if (entry.getGeneralPurposeBit().usesEncryption()) throw problem("ENCRYPTED_ENTRY", "Encrypted ZIP entries are not supported");
+                if (entry.isUnixSymlink()) throw problem("SYMLINK_ENTRY", "Symbolic-link ZIP entries are not supported");
+                if (entry.isDirectory()) continue;
+
+                String normalized = normalizePath(entry.getName());
+                if (normalized == null) throw problem("TRAVERSAL_ASSET_PATH", "ZIP contains an invalid path");
+                if (normalized.length() > limits.maxNormalizedPathLength()) throw problem("PATH_TOO_LONG", "ZIP path is too long");
+                if (!foldedPaths.add(normalized.toLowerCase(Locale.ROOT))) {
+                    throw problem("DUPLICATE_NORMALIZED_PATH", "ZIP contains duplicate normalized paths");
                 }
 
-                if (normalized.equals("manifest.json")) {
-                    if (manifestPath != null) {
-                        cleanup(stageDir);
-                        throw new CampaignPackageException(new CampaignImportProblem(
-                                ImportSeverity.ERROR, "DUPLICATE_MANIFEST", "",
-                                "Multiple manifest.json entries", null));
-                    }
-                    manifestPath = extractEntry(zip, entry, stageDir.resolve(normalized));
-                } else if (normalized.startsWith("assets/")) {
-                    if (assets.containsKey(normalized)) {
-                        cleanup(stageDir);
-                        throw new CampaignPackageException(new CampaignImportProblem(
-                                ImportSeverity.ERROR, "DUPLICATE_NORMALIZED_PATH", "",
-                                "Duplicate asset path: " + normalized, null));
-                    }
-                    long size = entry.getSize();
-                    if (size > limits.maxAssetBytes()) {
-                        cleanup(stageDir);
-                        throw new CampaignPackageException(new CampaignImportProblem(
-                                ImportSeverity.ERROR, "ASSET_TOO_LARGE", "",
-                                "Asset exceeds " + limits.maxAssetBytes() + " bytes: " + normalized, null));
-                    }
-                    long compressedSize = entry.getCompressedSize();
-                    if (compressedSize > 0 && (double) size / compressedSize > limits.maxCompressionRatio()) {
-                        cleanup(stageDir);
-                        throw new CampaignPackageException(new CampaignImportProblem(
-                                ImportSeverity.ERROR, "COMPRESSION_RATIO_EXCEEDED", "",
-                                "Unreasonable compression ratio for: " + normalized, null));
-                    }
-                    expandedBytes += size;
-                    if (expandedBytes > limits.maxExpandedBytes()) {
-                        cleanup(stageDir);
-                        throw new CampaignPackageException(new CampaignImportProblem(
-                                ImportSeverity.ERROR, "PACKAGE_EXPANDED_TOO_LARGE", "",
-                                "Expanded content exceeds " + limits.maxExpandedBytes() + " bytes", null));
-                    }
-                    Path dest = stageDir.resolve(normalized);
-                    Files.createDirectories(dest.getParent());
-                    extractEntry(zip, entry, dest);
-                    assets.put(normalized, dest);
+                long maximum;
+                String limitCode;
+                if ("manifest.json".equals(normalized)) {
+                    if (manifest != null) throw problem("DUPLICATE_MANIFEST", "ZIP contains multiple manifests");
+                    maximum = limits.maxManifestBytes();
+                    limitCode = "MANIFEST_TOO_LARGE";
+                } else if (isAllowedAssetPath(normalized)) {
+                    maximum = limits.maxAssetBytes();
+                    limitCode = "ASSET_TOO_LARGE";
                 } else {
-                    cleanup(stageDir);
-                    throw new CampaignPackageException(new CampaignImportProblem(
-                            ImportSeverity.ERROR, "UNEXPECTED_ROOT_ENTRY", "",
-                            "Unexpected root entry: " + normalized, null));
+                    throw problem("UNEXPECTED_ROOT_ENTRY", "ZIP contains an unsupported entry");
                 }
-            }
 
-            if (manifestPath == null) {
-                cleanup(stageDir);
-                throw new CampaignPackageException(new CampaignImportProblem(
-                        ImportSeverity.ERROR, "MANIFEST_MISSING", "",
-                        "No manifest.json in ZIP", null));
-            }
+                long declared = entry.getSize();
+                long compressed = entry.getCompressedSize();
+                if (declared > maximum) throw problem(limitCode, "ZIP entry exceeds its size limit");
+                if (compressed > 0 && declared >= 0 && (double) declared / compressed > limits.maxCompressionRatio()) {
+                    throw problem("COMPRESSION_RATIO_EXCEEDED", "ZIP entry compression ratio is unsafe");
+                }
 
-            byte[] manifestBytes = Files.readAllBytes(manifestPath);
-            if (manifestBytes.length > limits.maxManifestBytes()) {
-                cleanup(stageDir);
-                throw new CampaignPackageException(new CampaignImportProblem(
-                        ImportSeverity.ERROR, "MANIFEST_TOO_LARGE", "",
-                        "Manifest exceeds " + limits.maxManifestBytes() + " bytes", null));
+                Path destination = stageDir.resolve(normalized).normalize();
+                if (!destination.startsWith(stageDir)) throw problem("TRAVERSAL_ASSET_PATH", "ZIP path escapes staging");
+                if (destination.getParent() != null) Files.createDirectories(destination.getParent());
+                long actual;
+                try (var entryInput = zip.getInputStream(entry)) {
+                    actual = copyBounded(entryInput, destination, maximum, limitCode);
+                }
+                if (compressed > 0 && (double) actual / compressed > limits.maxCompressionRatio()) {
+                    throw problem("COMPRESSION_RATIO_EXCEEDED", "ZIP entry compression ratio is unsafe");
+                }
+                expanded += actual;
+                if (expanded > limits.maxExpandedBytes()) {
+                    throw problem("PACKAGE_EXPANDED_TOO_LARGE", "Expanded package exceeds its size limit");
+                }
+                if ("manifest.json".equals(normalized)) manifest = destination;
+                else assets.put(normalized, destination);
             }
-
-            return new StagedCampaignPackage(stageDir, manifestPath, assets,
-                    total, expandedBytes, StagedCampaignPackage.ContainerKind.V2_ZIP);
+            if (manifest == null) throw problem("MANIFEST_MISSING", "ZIP does not contain manifest.json");
+            return new StagedCampaignPackage(stageDir, manifest, assets, uploaded, expanded,
+                    StagedCampaignPackage.ContainerKind.V2_ZIP);
         }
     }
 
-    private static Path extractEntry(ZipFile zip, ZipArchiveEntry entry, Path dest) throws IOException {
-        try (var in = zip.getInputStream(entry)) {
-            Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
-        }
-        return dest;
+    private static boolean isAllowedAssetPath(String value) {
+        return value.startsWith("assets/maps/")
+                || value.startsWith("assets/handouts/")
+                || value.startsWith("assets/portraits/");
     }
 
-    static String normalizePath(String name) {
-        if (name == null) return null;
-        String s = name.replace('\\', '/');
-        s = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFC);
-        if (s.startsWith("/") || s.contains("/../") || s.contains("/./") || s.startsWith("../")) return null;
-        if (s.equals("..") || s.endsWith("/..")) return null;
-        while (s.startsWith("./")) s = s.substring(2);
-        if (s.contains("/")) {
-            for (String part : s.split("/")) {
-                if (part.equals(".") || part.equals("..")) return null;
-                if (part.isEmpty()) return null;
+    private static long copyBounded(InputStream input, Path destination, long maximum, String code) throws IOException {
+        long total = 0;
+        byte[] buffer = new byte[8192];
+        try (var output = Files.newOutputStream(destination, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
+            int read;
+            while ((read = input.read(buffer)) != -1) {
+                total += read;
+                if (total > maximum) throw problem(code, "Content exceeds its size limit");
+                output.write(buffer, 0, read);
             }
+        } catch (IOException | RuntimeException e) {
+            Files.deleteIfExists(destination);
+            throw e;
         }
-        return s;
+        return total;
     }
 
-    private static void cleanup(Path dir) {
-        if (Files.exists(dir)) {
-            try (var files = Files.walk(dir)) {
-                files.sorted(java.util.Comparator.reverseOrder())
-                        .forEach(p -> {
-                            try { Files.deleteIfExists(p); } catch (IOException ignored) {}
-                        });
-            } catch (IOException ignored) {}
-        }
+    public static String normalizePath(String name) {
+        if (name == null || name.indexOf('\\') >= 0) return null;
+        String value = Normalizer.normalize(name, Normalizer.Form.NFC);
+        if (value.startsWith("/") || value.matches("^[A-Za-z]:.*")) return null;
+        String[] parts = value.split("/", -1);
+        for (String part : parts) if (part.isEmpty() || ".".equals(part) || "..".equals(part)) return null;
+        return value;
+    }
+
+    private static CampaignPackageException problem(String code, String message) {
+        return new CampaignPackageException(new CampaignImportProblem(ImportSeverity.ERROR, code, "", message, null));
+    }
+
+    private static void cleanup(Path directory) {
+        if (!Files.exists(directory)) return;
+        try (var paths = Files.walk(directory)) {
+            paths.sorted(java.util.Comparator.reverseOrder()).forEach(path -> {
+                try { Files.deleteIfExists(path); } catch (IOException ignored) { }
+            });
+        } catch (IOException ignored) { }
     }
 }

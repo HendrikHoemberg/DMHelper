@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.migration;
 
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.catalog.CampaignCatalogService;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.AssetSignatureValidator;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.StagedCampaignPackage;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
@@ -13,8 +14,10 @@ import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignExportDto;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.MapLayerDto;
 import org.springframework.stereotype.Component;
-import tools.jackson.databind.json.JsonMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -23,196 +26,414 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.*;
-import java.util.stream.IntStream;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class LegacyV1ToV2Migration implements CampaignFormatMigration {
 
-    private static final JsonMapper MAPPER = JsonMapper.builder().build();
-    static final List<String> EXCLUSIONS = List.of(
+    @FunctionalInterface
+    public interface PackageKeyResolver {
+        String resolve(CampaignContentType type, String pointer, String displayName, String generatedKey);
+    }
+
+    private static final Logger log = LoggerFactory.getLogger(LegacyV1ToV2Migration.class);
+
+    public static final List<String> EXCLUSIONS = List.of(
             "CAMPAIGN_SETTINGS", "CURRENT_SCENE", "PARTY_CURRENT_HP",
             "HANDOUT_PRESENTATION_STATE", "COMBAT_LOG", "DICE_HISTORY",
             "CALENDAR_CONFIGURATION", "CALENDAR_CURRENT_DATE",
             "CUSTOM_COMPENDIUM_NON_STATBLOCK", "STRUCTURED_SCENE_TRANSITIONS",
             "QUESTS_AND_OBJECTIVES");
 
-    @Override
-    public int sourceVersion() { return 1; }
+    private final CampaignCatalogService catalogService;
+
+    public LegacyV1ToV2Migration(CampaignCatalogService catalogService) {
+        this.catalogService = catalogService;
+    }
+
+    @Override public int sourceVersion() { return 1; }
 
     @Override
-    public CampaignPackageValidationResult migrate(StagedCampaignPackage source,
-                                                     CampaignImportValidator v1Validator) {
+    public CampaignPackageValidationResult migrate(StagedCampaignPackage source, CampaignImportValidator validator) {
         try {
             String json = Files.readString(source.manifestPath(), StandardCharsets.UTF_8);
-            var v1Result = v1Validator.validate(json);
-            if (!v1Result.valid()) {
-                return new CampaignPackageValidationResult(source, null, 1,
-                        Map.of(), v1Result.problems(), List.of());
+            var validated = validator.validate(json);
+            if (!validated.valid()) {
+                return new CampaignPackageValidationResult(source, null, 1, Map.of(), validated.problems(), List.of());
             }
-            CampaignExportDto v1 = v1Result.requireImportable();
-
-            List<CampaignImportProblem> warnings = new ArrayList<>();
-            List<String> migrations = List.of("MIGRATED_FROM_V1");
-            Map<String, Path> assetsByKey = new LinkedHashMap<>();
-            List<AssetDescriptor> assetDescriptors = new ArrayList<>();
-
-            var metadata = new CampaignManifestV2.Metadata(
-                    "migrated-" + UUID.randomUUID().toString().substring(0, 12),
-                    Instant.now(), "DMHelper/0.0.1-SNAPSHOT",
-                    "srd-5.2-dmhelper-1",
-                    "placeholder-hash",
-                    EXCLUSIONS);
-
-            String campaignKey = PackageKeyGenerator.generate(
-                    CampaignContentType.CAMPAIGN, v1.campaign().name(), "/campaign");
-            var campaign = new CampaignManifestV2.CampaignDto(campaignKey,
-                    v1.campaign().name(), v1.campaign().description());
-
-            List<CampaignManifestV2.PartyMemberDto> party = IntStream.range(0, v1.party() != null ? v1.party().size() : 0)
-                    .mapToObj(i -> toPartyMember(v1.party().get(i), i)).toList();
-
-            List<CampaignManifestV2.StatBlockDto> statBlocks = IntStream.range(0, v1.statBlocks() != null ? v1.statBlocks().size() : 0)
-                    .mapToObj(i -> toStatBlock(v1.statBlocks().get(i), i)).toList();
-
-            List<CampaignManifestV2.HandoutDto> handouts = new ArrayList<>();
-            if (v1.handouts() != null) {
-                for (int i = 0; i < v1.handouts().size(); i++) {
-                    var h = v1.handouts().get(i);
-                    String key = PackageKeyGenerator.generate(
-                            CampaignContentType.HANDOUT, h.title(), "/handouts/" + i);
-                    String assetKey = "handout-" + i;
-                    assetDescriptors.add(new AssetDescriptor(assetKey,
-                            "assets/handouts/" + assetKey + "." + extensionFor(h.contentType()),
-                            h.contentType(), 0, "", h.fileName()));
-                    handouts.add(new CampaignManifestV2.HandoutDto(key, h.title(),
-                            h.tags(), assetKey, h.contentType()));
-
-                    if (h.imageData() != null && !h.imageData().isEmpty()) {
-                        byte[] decoded = decodeDataUrl(h.imageData());
-                        if (decoded != null) {
-                            String ext = extensionFor(h.contentType());
-                            Path assetPath = source.stagingDirectory().resolve("assets").resolve("handouts")
-                                    .resolve(assetKey + "." + ext);
-                            Files.createDirectories(assetPath.getParent());
-                            Files.write(assetPath, decoded);
-                            assetsByKey.put(assetKey, assetPath);
-                            assetDescriptors.set(assetDescriptors.size() - 1,
-                                    new AssetDescriptor(assetKey,
-                                            "assets/handouts/" + assetKey + "." + ext,
-                                            h.contentType(), decoded.length, sha256(decoded), h.fileName()));
-                        }
-                    }
-                }
-            }
-
-            List<CampaignManifestV2.MapDto> maps = new ArrayList<>();
-            List<CampaignManifestV2.EncounterDto> encounters = new ArrayList<>();
-            List<CampaignManifestV2.NoteDto> notes = new ArrayList<>();
-            List<CampaignManifestV2.QuickNoteDto> quickNotes = new ArrayList<>();
-            List<CampaignManifestV2.AssignmentDto> assignments = new ArrayList<>();
-            List<CampaignManifestV2.LedgerEntryDto> ledgerEntries = new ArrayList<>();
-            List<CampaignManifestV2.TimelineEventDto> timelineEvents = new ArrayList<>();
-            List<CampaignManifestV2.AdventureDto> adventures = new ArrayList<>();
-
-            var manifest = new CampaignManifestV2(2, metadata, campaign,
-                    assetDescriptors, party, statBlocks, handouts, maps,
-                    encounters, notes, quickNotes, assignments,
-                    ledgerEntries, timelineEvents, adventures);
-
-            return new CampaignPackageValidationResult(source, manifest, 1,
-                    assetsByKey, warnings, migrations);
-        } catch (IOException e) {
+            return convert(source, validated.requireImportable(), json);
+        } catch (Exception e) {
+            log.warn("Legacy campaign migration failed", e);
             return new CampaignPackageValidationResult(source, null, 1, Map.of(),
-                    List.of(new CampaignImportProblem(ImportSeverity.ERROR,
-                            "MIGRATION_ERROR", "", e.getMessage(), null)),
+                    List.of(problem(ImportSeverity.ERROR, "MIGRATION_ERROR", "", "Legacy package migration failed")),
                     List.of());
         }
     }
 
-    private CampaignManifestV2.PartyMemberDto toPartyMember(CampaignExportDto.PartyMemberExportDto p, int idx) {
-        String key = PackageKeyGenerator.generate(CampaignContentType.PARTY_MEMBER,
-                p.characterName(), "/party/" + idx);
-        CampaignManifestV2.SheetDto sheet = null;
-        if (p.sheet() != null) {
-            var s = p.sheet();
-            List<CampaignManifestV2.ClassLevelDto> classes = IntStream.range(0, s.classLevels() != null ? s.classLevels().size() : 0)
-                    .mapToObj(i -> toClassLevel(s.classLevels().get(i), idx, i)).toList();
-            List<CampaignManifestV2.ResourceDto> resources = IntStream.range(0, s.resources() != null ? s.resources().size() : 0)
-                    .mapToObj(i -> toResource(s.resources().get(i), idx, i)).toList();
-            List<CampaignManifestV2.SpellRefDto> spells = IntStream.range(0, s.spells() != null ? s.spells().size() : 0)
-                    .mapToObj(i -> toSpellRef(s.spells().get(i))).toList();
-            ContentReference speciesRef = s.speciesKey() != null
-                    ? ContentReference.catalogRef(CampaignContentType.SPECIES, "SRD_5_2", s.speciesKey()) : null;
-            ContentReference backgroundRef = s.backgroundKey() != null
-                    ? ContentReference.catalogRef(CampaignContentType.BACKGROUND, "SRD_5_2", s.backgroundKey()) : null;
-            List<ContentReference> featRefs = s.featRefs() != null
-                    ? s.featRefs().stream().map(f -> ContentReference.catalogRef(CampaignContentType.FEAT, "SRD_5_2", f)).toList()
-                    : List.of();
-            String sheetKey = PackageKeyGenerator.generate(CampaignContentType.CHARACTER_SHEET,
-                    key, "/party/" + idx + "/sheet");
-            sheet = new CampaignManifestV2.SheetDto(s.abilityScores(), classes, s.proficiencies(),
-                    speciesRef, backgroundRef, featRefs, s.xp(), s.overrides(),
-                    s.hitDiceUsed(), resources, spells, s.spellSlotsUsed());
+    public CampaignPackageValidationResult convert(StagedCampaignPackage source, CampaignExportDto v1,
+                                                     String stableSource) throws IOException {
+        return convert(source, v1, stableSource, (type, pointer, displayName, generatedKey) -> generatedKey);
+    }
+
+    public CampaignPackageValidationResult convert(StagedCampaignPackage source, CampaignExportDto v1,
+                                                     String stableSource, PackageKeyResolver keyResolver) throws IOException {
+        var catalog = catalogService.snapshot();
+        List<CampaignImportProblem> warnings = new ArrayList<>();
+        Map<String, Path> assetsByKey = new LinkedHashMap<>();
+        List<AssetDescriptor> assets = new ArrayList<>();
+
+        String sourceHash = sha256(stableSource.getBytes(StandardCharsets.UTF_8));
+        var metadata = new CampaignManifestV2.Metadata("migrated-" + sourceHash.substring(0, 12), Instant.EPOCH,
+                "DMHelper/0.0.1-SNAPSHOT", catalog.version(), catalog.sha256(), EXCLUSIONS);
+        String campaignKey = key(keyResolver, CampaignContentType.CAMPAIGN, "/campaign", v1.campaign().name(), sourceHash);
+        var campaign = new CampaignManifestV2.CampaignDto(campaignKey, v1.campaign().name(), v1.campaign().description());
+
+        Map<String, String> partyKeys = new LinkedHashMap<>();
+        List<CampaignManifestV2.PartyMemberDto> party = new ArrayList<>();
+        for (int i = 0; i < size(v1.party()); i++) {
+            var value = v1.party().get(i);
+            String memberKey = key(keyResolver, CampaignContentType.PARTY_MEMBER, "/party/" + i,
+                    value.characterName(), "/party/" + i);
+            partyKeys.put(value.characterName(), memberKey);
+            CampaignManifestV2.SheetDto sheet = null;
+            if (value.sheet() != null) {
+                var s = value.sheet();
+                String sheetKey = key(keyResolver, CampaignContentType.CHARACTER_SHEET, "/party/" + i + "/sheet",
+                        value.characterName(), "/party/" + i + "/sheet");
+                List<CampaignManifestV2.ClassLevelDto> classes = new ArrayList<>();
+                for (int j = 0; j < size(s.classLevels()); j++) {
+                    var c = s.classLevels().get(j);
+                    classes.add(new CampaignManifestV2.ClassLevelDto(catalog(CampaignContentType.CLASS, c.classSourceKey()),
+                            c.level(), list(c.hitDieRolls())));
+                }
+                List<CampaignManifestV2.ResourceDto> resources = new ArrayList<>();
+                for (int j = 0; j < size(s.resources()); j++) {
+                    var r = s.resources().get(j);
+                    resources.add(new CampaignManifestV2.ResourceDto(
+                            key(keyResolver, CampaignContentType.SHEET_RESOURCE,
+                                    "/party/" + i + "/sheet/resources/" + j, r.name(),
+                                    "/party/" + i + "/sheet/resources/" + j),
+                            r.name(), r.maxUses(), r.currentUses(), r.resetRule()));
+                }
+                List<CampaignManifestV2.SpellRefDto> spells = list(s.spells()).stream()
+                        .map(spell -> new CampaignManifestV2.SpellRefDto(catalog(CampaignContentType.SPELL, spell.spellKey()),
+                                spell.prepared(), spell.sourceClass() == null ? null
+                                : catalog(CampaignContentType.CLASS, spell.sourceClass()))).toList();
+                sheet = new CampaignManifestV2.SheetDto(sheetKey, map(s.abilityScores()), classes, map(s.proficiencies()),
+                        nullableCatalog(CampaignContentType.SPECIES, s.speciesKey()),
+                        nullableCatalog(CampaignContentType.BACKGROUND, s.backgroundKey()),
+                        list(s.featRefs()).stream().map(ref -> catalog(CampaignContentType.FEAT, ref)).toList(),
+                        s.xp(), map(s.overrides()), s.hitDiceUsed(), resources, spells, map(s.spellSlotsUsed()));
+            }
+            party.add(new CampaignManifestV2.PartyMemberDto(memberKey, value.characterName(), value.playerName(),
+                    value.classAndLevel(), value.ac(), value.maxHp(), value.initiativeBonus(), value.speed(),
+                    value.passivePerception(), value.passiveInsight(), value.passiveInvestigation(), value.notes(),
+                    value.active(), sheet));
         }
-        return new CampaignManifestV2.PartyMemberDto(key, p.characterName(), p.playerName(),
-                p.classAndLevel(), p.ac(), p.maxHp(), p.initiativeBonus(), p.speed(),
-                p.passivePerception(), p.passiveInsight(), p.passiveInvestigation(),
-                p.notes(), p.active(), sheet);
+
+        Map<String, String> statKeys = new LinkedHashMap<>();
+        List<CampaignManifestV2.StatBlockDto> statBlocks = new ArrayList<>();
+        for (int i = 0; i < size(v1.statBlocks()); i++) {
+            var s = v1.statBlocks().get(i);
+            String statKey = key(keyResolver, CampaignContentType.STATBLOCK, "/statBlocks/" + i, s.name(),
+                    s.sourceKey() != null ? s.sourceKey() : "/statBlocks/" + i);
+            if (s.sourceKey() != null) statKeys.put(s.sourceKey(), statKey);
+            statKeys.put(s.name(), statKey);
+            statBlocks.add(new CampaignManifestV2.StatBlockDto(statKey, s.sourceKey(), s.name(), s.cr(), s.type(),
+                    s.size(), s.alignment(), s.ac(), s.hp(), s.speed(), s.strScore(), s.dexScore(), s.conScore(),
+                    s.intScore(), s.wisScore(), s.chaScore(), s.strSave(), s.dexSave(), s.conSave(), s.intSave(),
+                    s.wisSave(), s.chaSave(), s.skills(), s.damageVulnerabilities(), s.damageResistances(),
+                    s.damageImmunities(), s.conditionImmunities(), s.senses(), s.languages(), s.traits(), s.actions(),
+                    s.bonusActions(), s.reactions(), s.legendaryActions(), s.legendaryDescription(), s.lairActions(), s.xp()));
+        }
+
+        Map<String, String> handoutKeys = new LinkedHashMap<>();
+        List<CampaignManifestV2.HandoutDto> handouts = new ArrayList<>();
+        for (int i = 0; i < size(v1.handouts()); i++) {
+            var h = v1.handouts().get(i);
+            String handoutKey = key(keyResolver, CampaignContentType.HANDOUT, "/handouts/" + i,
+                    h.title(), "/handouts/" + i);
+            handoutKeys.put(h.title(), handoutKey);
+            String assetKey = null;
+            if (h.imageData() != null && !h.imageData().isBlank()) {
+                assetKey = addAsset(source, assets, assetsByKey, "handout-" + i,
+                        "assets/handouts/handout-" + i + "." + extension(h.contentType()), h.contentType(),
+                        h.fileName(), h.imageData());
+            }
+            handouts.add(new CampaignManifestV2.HandoutDto(handoutKey, h.title(), list(h.tags()), assetKey, h.contentType()));
+        }
+
+        Map<String, String> mapKeys = new LinkedHashMap<>();
+        Map<String, String> tokenKeys = new LinkedHashMap<>();
+        List<CampaignManifestV2.MapDto> maps = new ArrayList<>();
+        for (int i = 0; i < size(v1.maps()); i++) {
+            var m = v1.maps().get(i);
+            String mapKey = key(keyResolver, CampaignContentType.MAP, "/maps/" + i, m.name(),
+                    m.key() != null ? m.key() : "/maps/" + i);
+            mapKeys.put(m.name(), mapKey);
+            if (m.key() != null) mapKeys.put(m.key(), mapKey);
+            List<CampaignManifestV2.MapDto.TokenDto> tokens = new ArrayList<>();
+            for (int j = 0; j < size(m.tokens()); j++) {
+                var t = m.tokens().get(j);
+                String tokenKey = key(keyResolver, CampaignContentType.TOKEN, "/maps/" + i + "/tokens/" + j,
+                        t.name(), t.id() != null ? t.id() : "/maps/" + i + "/tokens/" + j);
+                if (t.id() != null) tokenKeys.put(t.id(), tokenKey);
+                tokens.add(new CampaignManifestV2.MapDto.TokenDto(tokenKey, t.name(), t.kind(), t.color(),
+                        t.positionX(), t.positionY(), t.sizeCols(), t.sizeRows(), t.hidden(),
+                        ref(CampaignContentType.STATBLOCK, statKeys, t.statBlockKey()),
+                        ref(CampaignContentType.PARTY_MEMBER, partyKeys, t.partyMemberName()),
+                        t.currentHp(), t.maxHp(), t.dead(), t.notes()));
+            }
+            List<CampaignManifestV2.MapDto.LayerDto> layers = new ArrayList<>();
+            if (m.document() != null) {
+                for (int j = 0; j < size(m.document().layers()); j++) {
+                    MapLayerDto layer = m.document().layers().get(j);
+                    CampaignManifestV2.MapDto.ImageDto image = null;
+                    if (layer.image() != null) {
+                        String imageType = mediaType(layer.image().dataUrl());
+                        String imageName = "map-" + i + "-image-" + j + "." + extension(imageType);
+                        String assetKey = addAsset(source, assets, assetsByKey, "map-" + i + "-image-" + j,
+                                "assets/maps/" + imageName, imageType, imageName, layer.image().dataUrl());
+                        image = new CampaignManifestV2.MapDto.ImageDto(assetKey, layer.image().x(), layer.image().y(),
+                                layer.image().width(), layer.image().height());
+                    }
+                    layers.add(new CampaignManifestV2.MapDto.LayerDto(layer.id(), layer.name(), layer.type(), layer.visible(),
+                            layer.locked(), list(layer.cells()), list(layer.shapes()), image));
+                }
+            }
+            var document = m.document() == null ? null : new CampaignManifestV2.MapDto.MapDocumentV2(2,
+                    m.document().grid(), layers, list(m.document().primitives()), list(m.document().customTerrain()));
+            maps.add(new CampaignManifestV2.MapDto(mapKey, m.name(),
+                    new CampaignManifestV2.MapDto.GridDto(m.grid().w(), m.grid().h(), m.grid().cellPx(), m.grid().gridType()),
+                    m.movementMode(), m.showGrid(), document, tokens));
+        }
+
+        Map<String, String> encounterKeys = new LinkedHashMap<>();
+        for (int i = 0; i < size(v1.encounters()); i++) {
+            var e = v1.encounters().get(i);
+            String value = key(keyResolver, CampaignContentType.ENCOUNTER, "/encounters/" + i, e.name(),
+                    e.encounterKey() != null ? e.encounterKey() : "/encounters/" + i);
+            encounterKeys.put(e.name(), value);
+            if (e.encounterKey() != null) encounterKeys.put(e.encounterKey(), value);
+        }
+        List<CampaignManifestV2.EncounterDto> encounters = new ArrayList<>();
+        for (int i = 0; i < size(v1.encounters()); i++) {
+            var e = v1.encounters().get(i);
+            List<CampaignManifestV2.CombatantDto> combatants = new ArrayList<>();
+            for (int j = 0; j < size(e.combatants()); j++) {
+                var c = e.combatants().get(j);
+                combatants.add(new CampaignManifestV2.CombatantDto(
+                        key(keyResolver, CampaignContentType.COMBATANT, "/encounters/" + i + "/combatants/" + j,
+                                c.name(), "/encounters/" + i + "/combatants/" + j),
+                        c.name(), c.initiative(), c.tieBreaker(), c.sortOrder(), c.maxHp(), c.currentHp(), c.tempHp(),
+                        c.kind(), c.groupId(), c.groupLeader(), ref(CampaignContentType.TOKEN, tokenKeys, c.tokenId()),
+                        ref(CampaignContentType.STATBLOCK, statKeys, c.statBlockKey()),
+                        ref(CampaignContentType.PARTY_MEMBER, partyKeys, c.partyMemberName()), c.defeated(), c.hidden(),
+                        c.conditionsJson(), c.concentratingOn(), c.concentrationCheckPending(), c.legendaryActionsUsed(),
+                        c.legendaryResistancesUsed(), c.legendaryActionsMax(), c.legendaryResistancesMax(),
+                        c.rechargedAbilities(), c.notes()));
+            }
+            if (e.map() != null) warning(warnings, "/encounters/" + i + "/map", e.map());
+            encounters.add(new CampaignManifestV2.EncounterDto(encounterKeys.get(e.name()), e.name(), combatants, e.status(),
+                    e.round(), e.activeTurnIndex(), e.logSequence(), e.lairActionName(), e.lairActionDescription(),
+                    ref(CampaignContentType.MAP, mapKeys, e.map())));
+        }
+
+        Map<String, String> noteKeys = new LinkedHashMap<>();
+        List<CampaignManifestV2.NoteDto> notes = new ArrayList<>();
+        for (int i = 0; i < size(v1.notes()); i++) {
+            var n = v1.notes().get(i);
+            String noteKey = key(keyResolver, CampaignContentType.NOTE, "/notes/" + i,
+                    n.title(), "/notes/" + i);
+            noteKeys.put(n.title(), noteKey);
+            notes.add(new CampaignManifestV2.NoteDto(noteKey, n.type(), n.title(), n.body(), n.tags(), n.dmOnly()));
+        }
+
+        Map<String, String> assignmentKeys = new LinkedHashMap<>();
+        List<CampaignManifestV2.AssignmentDto> assignments = new ArrayList<>();
+        for (int i = 0; i < size(v1.assignments()); i++) {
+            var a = v1.assignments().get(i);
+            String assignmentKey = key(keyResolver, CampaignContentType.ASSIGNMENT, "/assignments/" + i,
+                    a.customText(), a.id().toString());
+            assignmentKeys.put(a.id().toString(), assignmentKey);
+            if (a.holderName() != null) warning(warnings, "/assignments/" + i + "/holderName", a.holderName());
+            assignments.add(new CampaignManifestV2.AssignmentDto(assignmentKey,
+                    ref(CampaignContentType.PARTY_MEMBER, partyKeys, a.holderName()),
+                    nullableCatalog(CampaignContentType.MAGIC_ITEM, a.magicItemKey()),
+                    nullableCatalog(CampaignContentType.EQUIPMENT_ITEM, a.equipmentItemKey()),
+                    a.customText(), a.quantity(), a.attuned()));
+        }
+
+        List<CampaignManifestV2.LedgerEntryDto> ledger = new ArrayList<>();
+        for (int i = 0; i < size(v1.ledger()); i++) {
+            var l = v1.ledger().get(i);
+            ledger.add(new CampaignManifestV2.LedgerEntryDto(key(keyResolver, CampaignContentType.LEDGER_ENTRY,
+                    "/ledger/" + i, l.note(), l.id().toString()),
+                    l.timestamp(), l.inGameYear(), l.inGameMonth(), l.inGameDay(), l.kind(), l.direction(), l.amount(),
+                    l.currency(), l.holder(), l.note(), ref(CampaignContentType.ASSIGNMENT, assignmentKeys, l.itemAssignmentRef())));
+        }
+
+        List<CampaignManifestV2.TimelineEventDto> timeline = new ArrayList<>();
+        for (int i = 0; i < size(v1.timeline()); i++) {
+            var t = v1.timeline().get(i);
+            if (t.noteTitle() != null) warning(warnings, "/timeline/" + i + "/noteTitle", t.noteTitle());
+            timeline.add(new CampaignManifestV2.TimelineEventDto(key(keyResolver, CampaignContentType.TIMELINE_EVENT,
+                    "/timeline/" + i, t.title(), t.id().toString()),
+                    t.inGameYear(), t.inGameMonth(), t.inGameDay(), t.title(), t.body(),
+                    ref(CampaignContentType.NOTE, noteKeys, t.noteTitle())));
+        }
+
+        Map<String, String> sceneKeys = new LinkedHashMap<>();
+        for (int ai = 0; ai < size(v1.adventures()); ai++) {
+            var a = v1.adventures().get(ai);
+            for (int ci = 0; ci < size(a.chapters()); ci++) {
+                var c = a.chapters().get(ci);
+                for (int si = 0; si < size(c.scenes()); si++) {
+                    var s = c.scenes().get(si);
+                    String pointer = "/adventures/" + ai + "/chapters/" + ci + "/scenes/" + si;
+                    String sceneKey = key(keyResolver, CampaignContentType.SCENE, pointer, s.title(),
+                            s.sceneKey() != null ? s.sceneKey() : pointer);
+                    sceneKeys.put(s.sceneKey(), sceneKey);
+                    sceneKeys.put(a.name() + "/" + c.title() + "/" + s.sceneKey(), sceneKey);
+                }
+            }
+        }
+        List<CampaignManifestV2.AdventureDto> adventures = new ArrayList<>();
+        for (int ai = 0; ai < size(v1.adventures()); ai++) {
+            var a = v1.adventures().get(ai);
+            List<CampaignManifestV2.ChapterDto> chapters = new ArrayList<>();
+            for (int ci = 0; ci < size(a.chapters()); ci++) {
+                var c = a.chapters().get(ci);
+                List<CampaignManifestV2.SceneDto> scenes = new ArrayList<>();
+                for (int si = 0; si < size(c.scenes()); si++) {
+                    var s = c.scenes().get(si);
+                    String path = "/adventures/" + ai + "/chapters/" + ci + "/scenes/" + si;
+                    if (s.map() != null) warning(warnings, path + "/map", s.map());
+                    if (s.encounter() != null) warning(warnings, path + "/encounter", s.encounter());
+                    scenes.add(new CampaignManifestV2.SceneDto(sceneKeys.get(s.sceneKey()), s.title(), s.body(), s.status(),
+                            s.sortOrder(), ref(CampaignContentType.MAP, mapKeys, s.map()), s.pin(),
+                            ref(CampaignContentType.ENCOUNTER, encounterKeys, s.encounter()),
+                            list(s.statblocks()).stream().map(value -> ref(CampaignContentType.STATBLOCK, statKeys, value)).toList(),
+                            list(s.handouts()).stream().map(value -> ref(CampaignContentType.HANDOUT, handoutKeys, value)).toList()));
+                }
+                chapters.add(new CampaignManifestV2.ChapterDto(
+                        key(keyResolver, CampaignContentType.CHAPTER,
+                                "/adventures/" + ai + "/chapters/" + ci, c.title(),
+                                "/adventures/" + ai + "/chapters/" + ci),
+                        c.title(), c.intro(), c.sortOrder(), scenes));
+            }
+            adventures.add(new CampaignManifestV2.AdventureDto(
+                    key(keyResolver, CampaignContentType.ADVENTURE, "/adventures/" + ai,
+                            a.name(), "/adventures/" + ai), a.name(), a.description(),
+                    a.sourceAttribution(), a.sortOrder(), chapters));
+        }
+
+        List<CampaignManifestV2.QuickNoteDto> quickNotes = new ArrayList<>();
+        for (int i = 0; i < size(v1.quicknotes()); i++) {
+            var q = v1.quicknotes().get(i);
+            CampaignContentType type = CampaignContentType.valueOf(q.targetType());
+            Map<String, String> index = switch (type) {
+                case CAMPAIGN -> Map.of("CAMPAIGN", campaignKey);
+                case MAP -> mapKeys;
+                case PARTY_MEMBER -> partyKeys;
+                case STATBLOCK -> statKeys;
+                case NOTE -> noteKeys;
+                case HANDOUT -> handoutKeys;
+                case ENCOUNTER -> encounterKeys;
+                case SCENE -> sceneKeys;
+                default -> Map.of();
+            };
+            warning(warnings, "/quicknotes/" + i + "/targetRef", q.targetRef());
+            quickNotes.add(new CampaignManifestV2.QuickNoteDto(
+                    key(keyResolver, CampaignContentType.QUICK_NOTE, "/quicknotes/" + i,
+                            q.body(), "/quicknotes/" + i),
+                    ref(type, index, q.targetRef()), q.body(), Instant.parse(q.createdAt())));
+        }
+
+        var manifest = new CampaignManifestV2(2, metadata, campaign, assets, party, statBlocks, handouts, maps,
+                encounters, notes, quickNotes, assignments, ledger, timeline, adventures);
+        return new CampaignPackageValidationResult(source, manifest, 1, assetsByKey, warnings, List.of("MIGRATED_FROM_V1"));
     }
 
-    private CampaignManifestV2.ClassLevelDto toClassLevel(CampaignExportDto.ClassLevelExportDto c, int pm, int ci) {
-        ContentReference ref = ContentReference.catalogRef(CampaignContentType.CLASS, "SRD_5_2", c.classSourceKey());
-        return new CampaignManifestV2.ClassLevelDto(ref, c.level(), c.hitDieRolls());
+    private static String addAsset(StagedCampaignPackage source, List<AssetDescriptor> descriptors,
+                                   Map<String, Path> assets, String key, String path, String type,
+                                   String originalName, String dataUrl) throws IOException {
+        byte[] bytes = decodeDataUrl(dataUrl);
+        Path destination = source.stagingDirectory().resolve(path).normalize();
+        if (!destination.startsWith(source.stagingDirectory())) throw new IOException("Unsafe asset path");
+        Files.createDirectories(destination.getParent());
+        Files.write(destination, bytes);
+        var descriptor = new AssetDescriptor(key, path, type, bytes.length, sha256(bytes), originalName);
+        CampaignImportProblem signature = AssetSignatureValidator.validate(destination, descriptor);
+        if (signature != null) throw new IOException(signature.message());
+        descriptors.add(descriptor);
+        assets.put(key, destination);
+        return key;
     }
 
-    private CampaignManifestV2.ResourceDto toResource(CampaignExportDto.ResourceExportDto r, int pm, int ri) {
-        return new CampaignManifestV2.ResourceDto(r.name(), r.maxUses(), r.currentUses(), r.resetRule());
+    private static ContentReference ref(CampaignContentType type, Map<String, String> index, String legacy) {
+        if (legacy == null) return null;
+        String key = index.get(legacy);
+        if (key == null) throw new IllegalArgumentException("Unresolved validated legacy reference");
+        return ContentReference.packageRef(type, key);
     }
 
-    private CampaignManifestV2.SpellRefDto toSpellRef(CampaignExportDto.SpellRefExportDto s) {
-        ContentReference spellRef = ContentReference.catalogRef(CampaignContentType.SPELL, "SRD_5_2", s.spellKey());
-        ContentReference sourceClassRef = s.sourceClass() != null
-                ? ContentReference.catalogRef(CampaignContentType.CLASS, "SRD_5_2", s.sourceClass()) : null;
-        return new CampaignManifestV2.SpellRefDto(spellRef, s.prepared(), sourceClassRef);
+    private static ContentReference catalog(CampaignContentType type, String sourceKey) {
+        return ContentReference.catalogRef(type, CampaignCatalogService.RULESET, sourceKey);
     }
 
-    private CampaignManifestV2.StatBlockDto toStatBlock(CampaignExportDto.StatBlockExportDto s, int idx) {
-        String key = PackageKeyGenerator.generate(CampaignContentType.STATBLOCK,
-                s.name(), "/statBlocks/" + idx);
-        return new CampaignManifestV2.StatBlockDto(key, s.sourceKey(), s.name(), s.cr(), s.type(),
-                s.size(), s.alignment(), s.ac(), s.hp(), s.speed(),
-                s.strScore(), s.dexScore(), s.conScore(), s.intScore(), s.wisScore(), s.chaScore(),
-                s.strSave(), s.dexSave(), s.conSave(), s.intSave(), s.wisSave(), s.chaSave(),
-                s.skills(), s.damageVulnerabilities(), s.damageResistances(),
-                s.damageImmunities(), s.conditionImmunities(), s.senses(), s.languages(),
-                s.traits(), s.actions(), s.bonusActions(), s.reactions(),
-                s.legendaryActions(), s.legendaryDescription(), s.lairActions(), s.xp());
+    private static ContentReference nullableCatalog(CampaignContentType type, String sourceKey) {
+        return sourceKey == null ? null : catalog(type, sourceKey);
+    }
+
+    private static String key(PackageKeyResolver resolver, CampaignContentType type, String pointer,
+                              String name, String identity) {
+        String generated = PackageKeyGenerator.generate(type, name, identity);
+        return resolver.resolve(type, pointer, name, generated);
+    }
+
+    private static void warning(List<CampaignImportProblem> warnings, String path, String value) {
+        warnings.add(problem(ImportSeverity.WARNING, "LEGACY_REFERENCE_MIGRATED", path,
+                "Legacy reference '" + value + "' was migrated to an immutable package key"));
+    }
+
+    private static CampaignImportProblem problem(ImportSeverity severity, String code, String path, String message) {
+        return new CampaignImportProblem(severity, code, path, message, null);
+    }
+
+    private static String mediaType(String dataUrl) {
+        int separator = dataUrl == null ? -1 : dataUrl.indexOf(';');
+        if (dataUrl == null || !dataUrl.startsWith("data:") || separator < 5) throw new IllegalArgumentException("Invalid data URL");
+        return dataUrl.substring(5, separator);
     }
 
     private static byte[] decodeDataUrl(String dataUrl) {
-        if (dataUrl == null || !dataUrl.startsWith("data:")) return null;
-        int commaIdx = dataUrl.indexOf(',');
-        if (commaIdx < 0) return null;
-        return Base64.getDecoder().decode(dataUrl.substring(commaIdx + 1));
+        int comma = dataUrl == null ? -1 : dataUrl.indexOf(',');
+        if (comma < 0 || !dataUrl.substring(0, comma).endsWith(";base64")) throw new IllegalArgumentException("Invalid data URL");
+        return Base64.getDecoder().decode(dataUrl.substring(comma + 1));
     }
 
-    private static String extensionFor(String mediaType) {
+    private static String extension(String mediaType) {
         return switch (mediaType) {
             case "image/png" -> "png";
             case "image/jpeg" -> "jpg";
             case "image/gif" -> "gif";
             case "image/webp" -> "webp";
-            default -> "bin";
+            default -> throw new IllegalArgumentException("Unsupported asset type");
         };
     }
 
     private static String sha256(byte[] bytes) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            return java.util.HexFormat.of().formatHex(md.digest(bytes));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
+        try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)); }
+        catch (NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
     }
+
+    private static int size(List<?> values) { return values == null ? 0 : values.size(); }
+    private static <T> List<T> list(List<T> values) { return values == null ? List.of() : values; }
+    private static <K,V> Map<K,V> map(Map<K,V> values) { return values == null ? Map.of() : values; }
 }

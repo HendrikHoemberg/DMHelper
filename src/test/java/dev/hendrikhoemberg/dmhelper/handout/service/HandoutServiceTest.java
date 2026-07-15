@@ -10,12 +10,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.core.io.ByteArrayResource;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.security.MessageDigest;
+import java.util.HexFormat;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -134,6 +137,39 @@ class HandoutServiceTest {
                 "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.(png|jpg|gif|webp)$");
         assertThat(h1.getFileName()).matches(uuidPattern);
         assertThat(h2.getFileName()).matches(uuidPattern);
+    }
+
+    @Test
+    void createImportedStreamsValidatedSourceAndExposesFileSource() throws Exception {
+        byte[] bytes = "validated-stream".getBytes();
+        String digest = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
+
+        Handout handout = service.createImported(campaignId, "Stream", "", "display.png", "image/png",
+                new ByteArrayResource(bytes), bytes.length, digest);
+
+        assertThat(service.getFileSource(handout.getId()).getInputStream().readAllBytes()).isEqualTo(bytes);
+    }
+
+    @Test
+    void createImportedDeletesStreamWhenDescriptorDoesNotMatch() throws Exception {
+        byte[] bytes = "changed".getBytes();
+        Path filesDir = Path.of(System.getProperty("user.home"), ".dmhelper", "files");
+        long before = countFiles(filesDir);
+
+        assertThatThrownBy(() -> service.createImported(campaignId, "Mismatch", "", "display.png", "image/png",
+                new ByteArrayResource(bytes), bytes.length, "0".repeat(64)))
+                .isInstanceOf(IOException.class)
+                .hasMessageContaining("validated descriptor");
+
+        long after = countFiles(filesDir);
+        assertThat(after).isEqualTo(before);
+    }
+
+    private static long countFiles(Path directory) throws IOException {
+        if (!Files.exists(directory)) return 0;
+        try (var files = Files.list(directory)) {
+            return files.count();
+        }
     }
 
     @Test

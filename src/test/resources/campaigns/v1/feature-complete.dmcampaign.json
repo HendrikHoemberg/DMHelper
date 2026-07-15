@@ -21,12 +21,12 @@
       "sheet": {
         "abilityScores": { "str": 10, "dex": 18, "con": 14, "int": 12, "wis": 13, "cha": 8 },
         "classLevels": [
-          { "classSourceKey": "rogue", "level": 5, "hitDieRolls": [8, 5, 6, 7, 4] }
+          { "classSourceKey": "srd-2024_rogue", "level": 5, "hitDieRolls": [8, 5, 6, 7, 4] }
         ],
         "proficiencies": { "stealth": "expertise", "perception": "proficient" },
-        "speciesKey": "human",
-        "backgroundKey": "criminal",
-        "featRefs": ["alert"],
+        "speciesKey": "srd-2024_human",
+        "backgroundKey": "srd-2024_criminal",
+        "featRefs": ["srd-2024_alert"],
         "xp": 6500,
         "overrides": { "speed": 35 },
         "hitDiceUsed": 2,
@@ -34,7 +34,7 @@
           { "name": "Cunning Action", "maxUses": 1, "currentUses": 1, "resetRule": "SHORT_REST" }
         ],
         "spells": [
-          { "spellKey": "cure-wounds", "prepared": true, "sourceClass": "cleric" }
+          { "spellKey": "cure-wounds", "prepared": true, "sourceClass": "srd-2024_cleric" }
         ],
         "spellSlotsUsed": { "1": 2, "2": 1 }
       }
@@ -202,7 +202,7 @@
     {
       "id": "00000000-0000-0000-0000-000000000101",
       "holderName": "Aria",
-      "magicItemKey": "bag-of-holding",
+      "magicItemKey": "srd-2024_bag-of-holding",
       "quantity": 1,
       "attuned": false
     }

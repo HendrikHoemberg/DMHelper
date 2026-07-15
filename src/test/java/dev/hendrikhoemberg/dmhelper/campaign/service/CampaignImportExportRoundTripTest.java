@@ -120,22 +120,22 @@ class CampaignImportExportRoundTripTest {
     @BeforeEach
     void seedCatalog() {
         Species human = new Species();
-        human.setSourceKey("human");
+        human.setSourceKey("srd-2024_human");
         human.setName("Human");
         speciesRepo.save(human);
 
         Background criminal = new Background();
-        criminal.setSourceKey("criminal");
+        criminal.setSourceKey("srd-2024_criminal");
         criminal.setName("Criminal");
         backgroundRepo.save(criminal);
 
         CharacterClass rogue = new CharacterClass();
-        rogue.setSourceKey("rogue");
+        rogue.setSourceKey("srd-2024_rogue");
         rogue.setName("Rogue");
         classRepo.save(rogue);
 
         Feat alert = new Feat();
-        alert.setSourceKey("alert");
+        alert.setSourceKey("srd-2024_alert");
         alert.setName("Alert");
         featRepo.save(alert);
 
@@ -146,7 +146,7 @@ class CampaignImportExportRoundTripTest {
         spellRepo.save(cureWounds);
 
         MagicItem bagOfHolding = new MagicItem();
-        bagOfHolding.setSourceKey("bag-of-holding");
+        bagOfHolding.setSourceKey("srd-2024_bag-of-holding");
         bagOfHolding.setName("Bag of Holding");
         magicItemRepo.save(bagOfHolding);
     }
@@ -619,7 +619,7 @@ class CampaignImportExportRoundTripTest {
         String source = resource("campaigns/v1/feature-complete.dmcampaign.json");
 
         CampaignValidationResult firstDryRun = campaignService.validateImport(source);
-        assertThat(firstDryRun.valid()).isTrue();
+        assertThat(firstDryRun.valid()).as(firstDryRun.problems().toString()).isTrue();
         assertThat(firstDryRun.problems()).isEmpty();
 
         Campaign firstImport = campaignService.importFromJson(source);
@@ -651,7 +651,8 @@ class CampaignImportExportRoundTripTest {
         ((ObjectNode) tree.get("quicknotes").get(3)).put("targetRef", global.getSourceKey());
         String json = objectMapper.writeValueAsString(tree);
 
-        assertThat(campaignService.validateImport(json).valid()).isTrue();
+        CampaignValidationResult dryRun = campaignService.validateImport(json);
+        assertThat(dryRun.valid()).as(dryRun.problems().toString()).isTrue();
         Campaign imported = campaignService.importFromJson(json);
 
         Scene importedScene = sceneRepo.findByChapterAdventureCampaignId(imported.getId()).get(0);

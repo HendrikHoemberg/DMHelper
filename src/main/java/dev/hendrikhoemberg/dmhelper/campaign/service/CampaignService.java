@@ -8,6 +8,8 @@ import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEvent;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEventRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignPersistenceReceipt;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.HandoutImportSource;
 import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntry;
 import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntryRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.*;
@@ -216,6 +218,12 @@ public class CampaignService {
         }
         em.flush();
 
+        // Ledger rows reference assignments, and timeline rows may reference notes.
+        ledgerEntryRepo.deleteAll(ledgerEntryRepo.findByCampaignIdOrderByTimestampDesc(cid));
+        timelineEventRepo.deleteAll(
+                timelineEventRepo.findByCampaignIdOrderByInGameYearAscInGameMonthAscInGameDayAsc(cid));
+        em.flush();
+
         // Treasury assignments name party members, so they go before the party does.
         assignmentRepo.deleteAll(assignmentRepo.findByCampaignIdOrderByPartyMemberAsc(cid));
         em.flush();
@@ -242,9 +250,6 @@ public class CampaignService {
         }
         em.flush();
 
-        ledgerEntryRepo.deleteAll(ledgerEntryRepo.findByCampaignIdOrderByTimestampDesc(cid));
-        timelineEventRepo.deleteAll(
-                timelineEventRepo.findByCampaignIdOrderByInGameYearAscInGameMonthAscInGameDayAsc(cid));
         diceRollRepo.deleteAll(diceRollRepo.findByCampaignId(cid));
         em.flush();
 
@@ -453,6 +458,69 @@ public class CampaignService {
         }
     }
 
+    /** Returns the local entity IDs in the same stable pointer order used by {@link #exportToJson(UUID)}. */
+    @Transactional(readOnly = true)
+    public Map<String, UUID> exportEntityIds(UUID campaignId) {
+        Map<String, UUID> ids = new java.util.LinkedHashMap<>();
+        ids.put("/campaign", findById(campaignId).getId());
+
+        var party = partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(campaignId);
+        for (int i = 0; i < party.size(); i++) {
+            var member = party.get(i);
+            String pointer = "/party/" + i;
+            ids.put(pointer, member.getId());
+            sheetRepo.findByPartyMemberId(member.getId()).ifPresent(sheet -> {
+                ids.put(pointer + "/sheet", sheet.getId());
+                var resources = resourceRepo.findBySheetId(sheet.getId());
+                for (int j = 0; j < resources.size(); j++) {
+                    ids.put(pointer + "/sheet/resources/" + j, resources.get(j).getId());
+                }
+            });
+        }
+        putIds(ids, "/statBlocks/", statBlockRepository.findByCampaignIdOrderByNameAsc(campaignId));
+
+        var maps = gameMapService.findByCampaignId(campaignId);
+        for (int i = 0; i < maps.size(); i++) {
+            ids.put("/maps/" + i, maps.get(i).getId());
+            putIds(ids, "/maps/" + i + "/tokens/", tokenRepo.findByMapIdOrderByNameAsc(maps.get(i).getId()));
+        }
+        var encounters = encounterRepo.findByCampaignIdOrderByNameAsc(campaignId);
+        for (int i = 0; i < encounters.size(); i++) {
+            ids.put("/encounters/" + i, encounters.get(i).getId());
+            putIds(ids, "/encounters/" + i + "/combatants/",
+                    combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounters.get(i).getId()));
+        }
+        putIds(ids, "/handouts/", handoutRepo.findByCampaignIdOrderByTitleAsc(campaignId));
+        putIds(ids, "/notes/", noteRepository.findByCampaignIdOrderByCreatedAtDesc(campaignId));
+        putIds(ids, "/quicknotes/", quickNoteRepository.findByCampaignIdOrderByCreatedAtDesc(campaignId));
+        putIds(ids, "/assignments/", assignmentRepo.findByCampaignIdOrderByPartyMemberAsc(campaignId));
+        putIds(ids, "/ledger/", ledgerEntryRepo.findByCampaignIdOrderByTimestampDesc(campaignId));
+        putIds(ids, "/timeline/",
+                timelineEventRepo.findByCampaignIdOrderByInGameYearAscInGameMonthAscInGameDayAsc(campaignId));
+
+        var adventures = adventureRepo.findByCampaignIdOrderBySortOrderAsc(campaignId);
+        for (int ai = 0; ai < adventures.size(); ai++) {
+            var adventure = adventures.get(ai);
+            ids.put("/adventures/" + ai, adventure.getId());
+            var chapters = chapterRepo.findByAdventureIdOrderBySortOrderAsc(adventure.getId());
+            for (int ci = 0; ci < chapters.size(); ci++) {
+                var chapter = chapters.get(ci);
+                String chapterPointer = "/adventures/" + ai + "/chapters/" + ci;
+                ids.put(chapterPointer, chapter.getId());
+                putIds(ids, chapterPointer + "/scenes/",
+                        sceneRepo.findByChapterIdOrderBySortOrderAsc(chapter.getId()));
+            }
+        }
+        return Map.copyOf(ids);
+    }
+
+    private void putIds(Map<String, UUID> target, String pointerPrefix, List<?> entities) {
+        for (int i = 0; i < entities.size(); i++) {
+            UUID id = (UUID) em.getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(entities.get(i));
+            target.put(pointerPrefix + i, id);
+        }
+    }
+
     @Transactional(readOnly = true)
     public CampaignValidationResult validateImport(String json) {
         return importValidator.validate(json);
@@ -461,7 +529,25 @@ public class CampaignService {
     public Campaign importFromJson(String json) {
         CampaignExportDto dto = importValidator.validate(json).requireImportable();
 
+        return importValidated(dto).campaign();
+    }
+
+    /**
+     * Persists an already validated v1 compatibility document and returns the local IDs for every
+     * addressable entity. The pointer map lets the package-v2 coordinator bind immutable imported
+     * keys inside the same transaction without rediscovering rows by mutable display values.
+     */
+    public CampaignPersistenceReceipt importValidated(CampaignExportDto dto) {
+        return importValidated(dto, Map.of());
+    }
+
+    public CampaignPersistenceReceipt importValidated(CampaignExportDto dto,
+                                                        Map<String, HandoutImportSource> externalHandouts) {
+        validateExternalHandouts(dto, externalHandouts);
+        Map<String, UUID> persistedIds = new java.util.LinkedHashMap<>();
+
         Campaign saved = create(dto.campaign().name(), dto.campaign().description());
+        putPersistedId(persistedIds, "/campaign", saved.getId());
 
         java.util.Map<String, UUID> mapKeyToId = new java.util.HashMap<>();
         java.util.Map<String, UUID> mapNameToId = new java.util.HashMap<>();
@@ -473,24 +559,28 @@ public class CampaignService {
         java.util.Map<String, UUID> scenePathToId = new java.util.HashMap<>();
 
         if (dto.party() != null) {
-            for (var pmDto : dto.party()) {
+            for (int partyIndex = 0; partyIndex < dto.party().size(); partyIndex++) {
+                var pmDto = dto.party().get(partyIndex);
                 var member = partyMemberService.create(saved.getId(),
                         pmDto.characterName(), pmDto.playerName(),
                         pmDto.classAndLevel(), pmDto.ac(), pmDto.maxHp(),
                         pmDto.initiativeBonus(), pmDto.speed(),
                         pmDto.passivePerception(), pmDto.passiveInsight(),
                         pmDto.passiveInvestigation(), pmDto.notes());
+                String partyPointer = "/party/" + partyIndex;
+                putPersistedId(persistedIds, partyPointer, member.getId());
                 if (!pmDto.active()) {
                     partyMemberService.setActive(member.getId(), false);
                 }
                 if (pmDto.sheet() != null) {
-                    importSheet(member, pmDto.sheet());
+                    importSheet(member, pmDto.sheet(), partyPointer + "/sheet", persistedIds);
                 }
                 partyMemberNameToId.put(pmDto.characterName(), member.getId());
             }
         }
         if (dto.statBlocks() != null) {
-            for (var sbDto : dto.statBlocks()) {
+            for (int statIndex = 0; statIndex < dto.statBlocks().size(); statIndex++) {
+                var sbDto = dto.statBlocks().get(statIndex);
                 StatBlock sb = statBlockService.createCustom(saved.getId(),
                         sbDto.name(), sbDto.cr(), sbDto.type(),
                         sbDto.ac(), sbDto.hp(), sbDto.speed(),
@@ -514,11 +604,13 @@ public class CampaignService {
                 if (sbDto.legendaryDescription() != null) sb.setLegendaryDescription(sbDto.legendaryDescription());
                 if (sbDto.lairActions() != null) sb.setLairActions(sbDto.lairActions());
                 sb.setXp(sbDto.xp());
+                putPersistedId(persistedIds, "/statBlocks/" + statIndex, sb.getId());
             }
         }
 
         if (dto.maps() != null) {
-            for (var mapDto : dto.maps()) {
+            for (int mapIndex = 0; mapIndex < dto.maps().size(); mapIndex++) {
+                var mapDto = dto.maps().get(mapIndex);
                 var grid = mapDto.grid();
                 var map = gameMapService.create(saved.getId(), mapDto.name(),
                         grid != null ? grid.w() : 30,
@@ -526,6 +618,7 @@ public class CampaignService {
                         grid != null ? grid.cellPx() : 48);
                 mapKeyToId.put(mapDto.key(), map.getId());
                 mapNameToId.put(mapDto.name(), map.getId());
+                putPersistedId(persistedIds, "/maps/" + mapIndex, map.getId());
                 if (mapDto.movementMode() != null && !mapDto.movementMode().isBlank()) {
                     gameMapService.updateMode(map.getId(), mapDto.movementMode(), mapDto.showGrid());
                 }
@@ -535,7 +628,8 @@ public class CampaignService {
                             map.getVersion());
                 }
                 if (mapDto.tokens() != null) {
-                    for (var tDto : mapDto.tokens()) {
+                    for (int tokenIndex = 0; tokenIndex < mapDto.tokens().size(); tokenIndex++) {
+                        var tDto = mapDto.tokens().get(tokenIndex);
                         var token = new dev.hendrikhoemberg.dmhelper.gamemap.data.Token();
                         token.setMap(map);
                         token.setName(tDto.name());
@@ -565,6 +659,7 @@ public class CampaignService {
                             token.setPartyMember(pm);
                         }
                         token = tokenRepo.save(token);
+                        putPersistedId(persistedIds, "/maps/" + mapIndex + "/tokens/" + tokenIndex, token.getId());
                         if (tDto.id() != null) {
                             tokenOldToNewId.put(tDto.id(), token.getId());
                         }
@@ -574,48 +669,54 @@ public class CampaignService {
         }
 
         if (dto.handouts() != null) {
-            for (var hDto : dto.handouts()) {
-                String base64Data = hDto.imageData();
-                if (base64Data == null) {
-                    throw new IllegalStateException(
-                            "Handout '" + hDto.title() + "' has no image data");
-                }
-                if (base64Data.startsWith("data:")) {
-                    int commaIdx = base64Data.indexOf(',');
-                    if (commaIdx > 0) {
-                        String prefix = base64Data.substring(0, commaIdx);
-                        String expectedPrefix = "data:" + hDto.contentType() + ";base64";
-                        if (!prefix.equals(expectedPrefix)) {
-                            throw new IllegalStateException(
-                                    "Handout '" + hDto.title() + "' content type mismatch: " + prefix);
-                        }
-                        base64Data = base64Data.substring(commaIdx + 1);
-                    }
-                }
-                byte[] imageBytes;
-                try {
-                    imageBytes = java.util.Base64.getDecoder().decode(base64Data);
-                } catch (IllegalArgumentException e) {
-                    throw new IllegalStateException(
-                            "Handout '" + hDto.title() + "' has invalid base64 image data", e);
-                }
-                String tagStr = hDto.tags() != null ? String.join(",", hDto.tags()) : null;
+            for (int handoutIndex = 0; handoutIndex < dto.handouts().size(); handoutIndex++) {
+                var hDto = dto.handouts().get(handoutIndex);
+                String pointer = "/handouts/" + handoutIndex;
+                HandoutImportSource external = externalHandouts.get(pointer);
                 Handout handout;
                 try {
-                    handout = handoutService.createImported(
-                            saved.getId(), hDto.title(), tagStr,
-                            hDto.fileName(), hDto.contentType(), imageBytes);
+                    String tagStr = hDto.tags() != null ? String.join(",", hDto.tags()) : null;
+                    if (external != null) {
+                        handout = handoutService.createImported(saved.getId(), hDto.title(), tagStr,
+                                external.originalDisplayName(), external.contentType(), external.content(),
+                                external.expectedSize(), external.expectedSha256());
+                    } else {
+                        String base64Data = hDto.imageData();
+                        if (base64Data.startsWith("data:")) {
+                            int commaIdx = base64Data.indexOf(',');
+                            if (commaIdx > 0) {
+                                String prefix = base64Data.substring(0, commaIdx);
+                                String expectedPrefix = "data:" + hDto.contentType() + ";base64";
+                                if (!prefix.equals(expectedPrefix)) {
+                                    throw new IllegalStateException(
+                                            "Handout '" + hDto.title() + "' content type mismatch: " + prefix);
+                                }
+                                base64Data = base64Data.substring(commaIdx + 1);
+                            }
+                        }
+                        byte[] imageBytes;
+                        try {
+                            imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+                        } catch (IllegalArgumentException e) {
+                            throw new IllegalStateException(
+                                    "Handout '" + hDto.title() + "' has invalid base64 image data", e);
+                        }
+                        handout = handoutService.createImported(saved.getId(), hDto.title(), tagStr,
+                                hDto.fileName(), hDto.contentType(), imageBytes);
+                    }
                 } catch (IOException e) {
                     throw new IllegalStateException(
                             "Failed to import handout '" + hDto.title() + "'", e);
                 }
                 handoutTitleToId.put(hDto.title(), handout.getId());
+                putPersistedId(persistedIds, "/handouts/" + handoutIndex, handout.getId());
             }
         }
 
         List<PartyMember> partyMembers = partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(saved.getId());
         if (dto.encounters() != null) {
-            for (var encDto : dto.encounters()) {
+            for (int encounterIndex = 0; encounterIndex < dto.encounters().size(); encounterIndex++) {
+                var encDto = dto.encounters().get(encounterIndex);
                 var encounter = new dev.hendrikhoemberg.dmhelper.encounter.data.Encounter();
                 encounter.setCampaign(saved);
                 encounter.setName(encDto.name());
@@ -639,13 +740,15 @@ public class CampaignService {
                     }
                 }
                 encounter = encounterRepo.save(encounter);
+                putPersistedId(persistedIds, "/encounters/" + encounterIndex, encounter.getId());
                 encounterNameToId.put(encDto.name(), encounter.getId());
                 if (encounter.getEncounterKey() != null) {
                     encounterKeyToId.put(encounter.getEncounterKey(), encounter.getId());
                 }
 
                 if (encDto.combatants() != null) {
-                    for (var cDto : encDto.combatants()) {
+                    for (int combatantIndex = 0; combatantIndex < encDto.combatants().size(); combatantIndex++) {
+                        var cDto = encDto.combatants().get(combatantIndex);
                         var combatant = new dev.hendrikhoemberg.dmhelper.encounter.data.Combatant();
                         combatant.setEncounter(encounter);
                         combatant.setName(cDto.name());
@@ -695,14 +798,20 @@ public class CampaignService {
                         combatant.setLegendaryResistancesMax(cDto.legendaryResistancesMax());
                         combatant.setRechargedAbilities(cDto.rechargedAbilities());
                         combatant.setNotes(cDto.notes());
-                        combatantRepo.save(combatant);
+                        var persistedCombatant = combatantRepo.save(combatant);
+                        if (persistedCombatant != null && persistedCombatant.getId() != null) {
+                            putPersistedId(persistedIds,
+                                    "/encounters/" + encounterIndex + "/combatants/" + combatantIndex,
+                                    persistedCombatant.getId());
+                        }
                     }
                 }
             }
         }
 
         if (dto.adventures() != null) {
-            for (var advDto : dto.adventures()) {
+            for (int adventureIndex = 0; adventureIndex < dto.adventures().size(); adventureIndex++) {
+                var advDto = dto.adventures().get(adventureIndex);
                 var adv = new dev.hendrikhoemberg.dmhelper.adventure.data.Adventure();
                 adv.setCampaign(saved);
                 adv.setName(advDto.name());
@@ -710,16 +819,21 @@ public class CampaignService {
                 adv.setSourceAttribution(advDto.sourceAttribution());
                 adv.setSortOrder(advDto.sortOrder());
                 adv = adventureRepo.save(adv);
+                putPersistedId(persistedIds, "/adventures/" + adventureIndex, adv.getId());
                 if (advDto.chapters() != null) {
-                    for (var chDto : advDto.chapters()) {
+                    for (int chapterIndex = 0; chapterIndex < advDto.chapters().size(); chapterIndex++) {
+                        var chDto = advDto.chapters().get(chapterIndex);
                         var ch = new dev.hendrikhoemberg.dmhelper.adventure.data.Chapter();
                         ch.setAdventure(adv);
                         ch.setTitle(chDto.title());
                         ch.setIntro(chDto.intro());
                         ch.setSortOrder(chDto.sortOrder());
                         ch = chapterRepo.save(ch);
+                        putPersistedId(persistedIds,
+                                "/adventures/" + adventureIndex + "/chapters/" + chapterIndex, ch.getId());
                         if (chDto.scenes() != null) {
-                            for (var scDto : chDto.scenes()) {
+                            for (int sceneIndex = 0; sceneIndex < chDto.scenes().size(); sceneIndex++) {
+                                var scDto = chDto.scenes().get(sceneIndex);
                                 var sc = new dev.hendrikhoemberg.dmhelper.adventure.data.Scene();
                                 sc.setChapter(ch);
                                 sc.setTitle(scDto.title());
@@ -757,7 +871,9 @@ public class CampaignService {
                                                 "Validated reference disappeared: encounter '" + scDto.encounter() + "' for scene '" + scDto.title() + "'");
                                     }
                                 }
-                                sceneRepo.save(sc);
+                                sc = sceneRepo.save(sc);
+                                putPersistedId(persistedIds, "/adventures/" + adventureIndex + "/chapters/"
+                                        + chapterIndex + "/scenes/" + sceneIndex, sc.getId());
                                 scenePathToId.put(advDto.name() + "/" + chDto.title() + "/" + sc.getSceneKey(), sc.getId());
                                 if (scDto.statblocks() != null) {
                                     for (var sbKey : scDto.statblocks()) {
@@ -798,7 +914,8 @@ public class CampaignService {
 
         List<Note> importedNotes = new ArrayList<>();
         if (dto.notes() != null) {
-            for (var noteDto : dto.notes()) {
+            for (int noteIndex = 0; noteIndex < dto.notes().size(); noteIndex++) {
+                var noteDto = dto.notes().get(noteIndex);
                 Note note = new Note();
                 note.setCampaign(saved);
                 note.setType(NoteType.valueOf(noteDto.type()));
@@ -808,6 +925,7 @@ public class CampaignService {
                 note.setDmOnly(noteDto.dmOnly());
                 note = noteRepository.save(note);
                 importedNotes.add(note);
+                putPersistedId(persistedIds, "/notes/" + noteIndex, note.getId());
             }
         }
         for (var note : importedNotes) {
@@ -815,7 +933,8 @@ public class CampaignService {
         }
 
         if (dto.quicknotes() != null) {
-            for (var qnDto : dto.quicknotes()) {
+            for (int quickNoteIndex = 0; quickNoteIndex < dto.quicknotes().size(); quickNoteIndex++) {
+                var qnDto = dto.quicknotes().get(quickNoteIndex);
                 dev.hendrikhoemberg.dmhelper.notes.data.QuickNote qn =
                         new dev.hendrikhoemberg.dmhelper.notes.data.QuickNote();
                 qn.setCampaign(saved);
@@ -861,13 +980,17 @@ public class CampaignService {
                 if (qnDto.createdAt() != null) {
                     qn.setCreatedAt(java.time.Instant.parse(qnDto.createdAt()));
                 }
-                quickNoteRepository.save(qn);
+                var persistedQuickNote = quickNoteRepository.save(qn);
+                if (persistedQuickNote != null && persistedQuickNote.getId() != null) {
+                    putPersistedId(persistedIds, "/quicknotes/" + quickNoteIndex, persistedQuickNote.getId());
+                }
             }
         }
 
         java.util.Map<String, UUID> assignmentIdMap = new java.util.HashMap<>();
         if (dto.assignments() != null) {
-            for (var aDto : dto.assignments()) {
+            for (int assignmentIndex = 0; assignmentIndex < dto.assignments().size(); assignmentIndex++) {
+                var aDto = dto.assignments().get(assignmentIndex);
                 ItemAssignment ia = new ItemAssignment();
                 ia.setCampaign(saved);
                 if (aDto.holderName() != null) {
@@ -893,11 +1016,13 @@ public class CampaignService {
                 ia.setAttuned(aDto.attuned());
                 ia = assignmentRepo.save(ia);
                 assignmentIdMap.put(aDto.id().toString(), ia.getId());
+                putPersistedId(persistedIds, "/assignments/" + assignmentIndex, ia.getId());
             }
         }
 
         if (dto.ledger() != null) {
-            for (var leDto : dto.ledger()) {
+            for (int ledgerIndex = 0; ledgerIndex < dto.ledger().size(); ledgerIndex++) {
+                var leDto = dto.ledger().get(ledgerIndex);
                 LedgerEntry le = new LedgerEntry();
                 le.setCampaign(saved);
                 le.setTimestamp(leDto.timestamp());
@@ -921,12 +1046,16 @@ public class CampaignService {
                                 "Validated reference disappeared: assignment '" + leDto.itemAssignmentRef() + "' in ledger entry");
                     }
                 }
-                ledgerEntryRepo.save(le);
+                var persistedLedgerEntry = ledgerEntryRepo.save(le);
+                if (persistedLedgerEntry != null && persistedLedgerEntry.getId() != null) {
+                    putPersistedId(persistedIds, "/ledger/" + ledgerIndex, persistedLedgerEntry.getId());
+                }
             }
         }
 
         if (dto.timeline() != null) {
-            for (var teDto : dto.timeline()) {
+            for (int timelineIndex = 0; timelineIndex < dto.timeline().size(); timelineIndex++) {
+                var teDto = dto.timeline().get(timelineIndex);
                 TimelineEvent te = new TimelineEvent();
                 te.setCampaign(saved);
                 te.setInGameYear(teDto.inGameYear());
@@ -940,11 +1069,38 @@ public class CampaignService {
                         .orElseThrow(() -> new IllegalStateException(
                                 "Validated reference disappeared: note '" + teDto.noteTitle() + "' in timeline event")));
                 }
-                timelineEventRepo.save(te);
+                var persistedTimelineEvent = timelineEventRepo.save(te);
+                if (persistedTimelineEvent != null && persistedTimelineEvent.getId() != null) {
+                    putPersistedId(persistedIds, "/timeline/" + timelineIndex, persistedTimelineEvent.getId());
+                }
             }
         }
 
-        return saved;
+        return new CampaignPersistenceReceipt(saved, Map.copyOf(persistedIds));
+    }
+
+    private static void validateExternalHandouts(CampaignExportDto dto,
+                                                  Map<String, HandoutImportSource> externalHandouts) {
+        java.util.Set<String> expected = new java.util.HashSet<>();
+        for (int i = 0; i < (dto.handouts() == null ? 0 : dto.handouts().size()); i++) {
+            var handout = dto.handouts().get(i);
+            String pointer = "/handouts/" + i;
+            if (handout.imageData() == null) {
+                expected.add(pointer);
+                if (!externalHandouts.containsKey(pointer)) {
+                    throw new IllegalStateException("External handout source is missing for " + pointer);
+                }
+            } else if (externalHandouts.containsKey(pointer)) {
+                throw new IllegalStateException("Handout has both embedded and external content at " + pointer);
+            }
+        }
+        if (!externalHandouts.keySet().equals(expected)) {
+            throw new IllegalStateException("External handout sources do not match the import document");
+        }
+    }
+
+    private static void putPersistedId(Map<String, UUID> persistedIds, String pointer, UUID id) {
+        if (id != null) persistedIds.put(pointer, id);
     }
 
     private CampaignExportDto.PartyMemberExportDto toPartyMemberExport(PartyMember pm) {
@@ -984,7 +1140,8 @@ public class CampaignService {
         );
     }
 
-    private void importSheet(PartyMember member, CampaignExportDto.SheetExportDto sheetDto) {
+    private void importSheet(PartyMember member, CampaignExportDto.SheetExportDto sheetDto,
+                             String pointer, Map<String, UUID> persistedIds) {
         CharacterSheet sheet = new CharacterSheet();
         sheet.setPartyMember(member);
 
@@ -1028,16 +1185,21 @@ public class CampaignService {
         }
 
         sheet = sheetRepo.save(sheet);
+        putPersistedId(persistedIds, pointer, sheet.getId());
 
         if (sheetDto.resources() != null) {
-            for (var resDto : sheetDto.resources()) {
+            for (int resourceIndex = 0; resourceIndex < sheetDto.resources().size(); resourceIndex++) {
+                var resDto = sheetDto.resources().get(resourceIndex);
                 SheetResource sr = new SheetResource();
                 sr.setSheet(sheet);
                 sr.setName(resDto.name());
                 sr.setMaxUses(resDto.maxUses());
                 sr.setCurrentUses(resDto.currentUses());
                 sr.setResetRule(SheetResource.ResetRule.valueOf(resDto.resetRule()));
-                resourceRepo.save(sr);
+                var persistedResource = resourceRepo.save(sr);
+                if (persistedResource != null && persistedResource.getId() != null) {
+                    putPersistedId(persistedIds, pointer + "/resources/" + resourceIndex, persistedResource.getId());
+                }
             }
         }
 

@@ -1,7 +1,9 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageReader;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageException;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageWriter;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.StagedCampaignPackage;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.CampaignImportPreview;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.CampaignImportPreviewStore;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportCoordinator;
@@ -15,11 +17,16 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.NoSuchElementException;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/campaigns")
 public class CampaignPackageController {
+
+    private static final Logger log = LoggerFactory.getLogger(CampaignPackageController.class);
 
     private final CampaignPackageReader reader;
     private final CampaignPackageValidationPipeline pipeline;
@@ -42,19 +49,37 @@ public class CampaignPackageController {
     }
 
     @PostMapping("/package-imports/previews")
-    public ResponseEntity<CampaignImportPreview> createPreview(HttpServletRequest request) {
+    public ResponseEntity<?> createPreview(HttpServletRequest request) {
+        StagedCampaignPackage staged = null;
         try {
             String contentType = request.getContentType();
             String filename = request.getHeader("X-DMHelper-Filename");
-            if (filename == null) filename = "unknown";
-            if (contentType == null) contentType = "application/json";
+            if (filename == null || filename.isBlank()) {
+                return problem(HttpStatus.BAD_REQUEST, "MISSING_FILENAME",
+                        "X-DMHelper-Filename is required");
+            }
+            if (contentType == null || contentType.isBlank()) {
+                return problem(HttpStatus.BAD_REQUEST, "MISSING_CONTENT_TYPE", "Content-Type is required");
+            }
 
-            var staged = reader.read(request.getInputStream(), filename, contentType);
+            staged = reader.read(request.getInputStream(), filename, contentType);
             var result = pipeline.validate(staged);
             var preview = previewStore.retain(result);
+            staged = null; // ownership was consumed by the preview store
             return ResponseEntity.ok(preview);
+        } catch (CampaignPackageException e) {
+            var response = problem(HttpStatus.BAD_REQUEST, e.problem().code(), e.problem().message());
+            response.getBody().setProperty("path", e.problem().path());
+            if (e.problem().suggestion() != null) {
+                response.getBody().setProperty("suggestion", e.problem().suggestion());
+            }
+            return response;
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            log.warn("Campaign package preview failed", e);
+            return problem(HttpStatus.BAD_REQUEST, "PACKAGE_PREVIEW_FAILED",
+                    "Campaign package could not be previewed");
+        } finally {
+            if (staged != null) staged.close();
         }
     }
 
@@ -67,8 +92,13 @@ public class CampaignPackageController {
                     .location(java.net.URI.create("/campaigns/" + campaign.getId()))
                     .build();
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_PROBLEM_JSON)
-                    .body(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage()));
+            return problem(HttpStatus.BAD_REQUEST, "CONFIRMATION_REJECTED", e.getMessage());
+        } catch (NoSuchElementException e) {
+            return problem(HttpStatus.NOT_FOUND, "PREVIEW_NOT_FOUND", "Preview not found or expired");
+        } catch (Exception e) {
+            log.error("Campaign package confirmation failed", e);
+            return problem(HttpStatus.INTERNAL_SERVER_ERROR, "IMPORT_FAILED",
+                    "Campaign import failed; the preview remains available for retry");
         }
     }
 
@@ -104,7 +134,16 @@ public class CampaignPackageController {
                         .body(bytes);
             }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            log.error("Campaign package export failed", e);
+            return problem(HttpStatus.INTERNAL_SERVER_ERROR, "EXPORT_FAILED",
+                    "Campaign package could not be exported");
         }
+    }
+
+    private static ResponseEntity<ProblemDetail> problem(HttpStatus status, String code, String detail) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
+        problem.setTitle("Campaign package error");
+        problem.setProperty("code", code);
+        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_PROBLEM_JSON).body(problem);
     }
 }

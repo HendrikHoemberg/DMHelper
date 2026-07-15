@@ -95,14 +95,16 @@ Earlier-stage errors prevent later calls.
 
 Preview statuses:
 - `BLOCKED` — import cannot proceed (errors present, no `previewId`)
-- `READY` — confirmed automatically
+- `READY` — validation passed; the DM may confirm without accepting warnings
 - `CONFIRM_WARNINGS` — warnings require explicit acceptance
 
 **`POST /campaigns/package-imports/{previewId}/confirm?acceptWarnings={boolean}`** — confirms import.
 
 **`DELETE /campaigns/package-imports/{previewId}`** — discards staged preview.
 
-Previews expire after 30 minutes. On expiry or discard, staging data is cleaned.
+Previews expire after 30 minutes. On expiry or discard, staging data is cleaned. A failed confirmation
+keeps the preview available for retry; a committed import removes it. Missing/expired previews and
+malformed container requests return `application/problem+json` with a stable `code`.
 
 ## Export
 
@@ -141,7 +143,10 @@ These are declared in `metadata.exclusions`. The next **Complete Round-trip** mi
 
 ## Atomicity
 
-Import persists nothing until validation passes and the DM confirms. Campaign persistence, key binding, and asset installation share one transaction. On rollback, no campaign row, key row, or installed asset survives.
+Import persists nothing until validation passes and the DM confirms. Campaign persistence, key binding,
+and asset installation share one transaction. All package keys, including nested sheet/resource, token,
+combatant, chapter, and scene keys, bind through persistence receipts in that transaction. On rollback,
+no campaign row, key row, or installed asset survives.
 
 ## Fixture Locations
 

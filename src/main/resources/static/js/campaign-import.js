@@ -12,6 +12,7 @@ document.addEventListener('alpine:init', () => {
         error: null,
         acceptWarnings: false,
         confirming: false,
+        returnFocus: null,
 
         init() {
             window.addEventListener('keydown', (e) => {
@@ -20,6 +21,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         async openDialog() {
+            this.returnFocus = document.activeElement;
             this.open = true;
             this.file = null;
             this.preview = null;
@@ -30,12 +32,23 @@ document.addEventListener('alpine:init', () => {
             setTimeout(() => document.getElementById('import-dialog-title')?.focus(), 50);
         },
 
-        close() {
+        async close() {
             if (this.preview && this.preview.previewId) {
-                fetch('/campaigns/package-imports/' + this.preview.previewId, { method: 'DELETE' })
-                    .catch(() => {});
+                try {
+                    const response = await fetch('/campaigns/package-imports/' + this.preview.previewId,
+                        { method: 'DELETE' });
+                    if (!response.ok) {
+                        this.error = await this.responseError(response, 'Could not discard the staged import.');
+                        return;
+                    }
+                } catch (err) {
+                    this.error = 'Could not discard the staged import: ' + err.message;
+                    return;
+                }
             }
             this.open = false;
+            this.preview = null;
+            setTimeout(() => this.returnFocus?.focus(), 0);
         },
 
         fileSelected(e) {
@@ -61,6 +74,10 @@ document.addEventListener('alpine:init', () => {
                     },
                     body: this.file
                 });
+                if (!resp.ok) {
+                    this.error = await this.responseError(resp, 'Package preview failed.');
+                    return;
+                }
                 this.preview = await resp.json();
                 if (this.preview.status === 'BLOCKED') {
                     this.error = 'Import blocked due to validation errors.';
@@ -82,16 +99,27 @@ document.addEventListener('alpine:init', () => {
                 );
                 if (resp.ok) {
                     window.location.href = resp.headers.get('Location') || '/campaigns';
-                } else if (resp.status === 400) {
-                    const data = await resp.json();
-                    this.error = data.detail || 'Confirmation failed.';
                 } else {
-                    this.error = 'Confirmation failed.';
+                    this.error = await this.responseError(resp, 'Confirmation failed.');
                 }
             } catch (err) {
                 this.error = 'Network error: ' + err.message;
+            } finally {
                 this.confirming = false;
             }
+        },
+
+        async responseError(response, fallback) {
+            const contentType = response.headers.get('Content-Type') || '';
+            if (contentType.includes('json')) {
+                try {
+                    const data = await response.json();
+                    return data.detail || data.message || fallback;
+                } catch (_) {
+                    return fallback;
+                }
+            }
+            return fallback;
         }
     }));
 });

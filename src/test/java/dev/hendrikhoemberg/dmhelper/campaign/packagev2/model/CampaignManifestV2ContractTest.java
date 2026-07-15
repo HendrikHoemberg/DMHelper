@@ -43,6 +43,19 @@ class CampaignManifestV2ContractTest {
     }
 
     @Test
+    void nestedSheetsAndResourcesRequirePackageKeys() throws Exception {
+        JsonNode root = mapper.readTree(currentSurfaceManifest());
+        JsonNode sheet = root.get("party").get(0).get("sheet");
+        assertThat(sheet.get("key")).isNotNull();
+        assertThat(sheet.get("resources").get(0).get("key")).isNotNull();
+
+        ((tools.jackson.databind.node.ObjectNode) sheet).remove("key");
+        assertThat(schema.validate(mapper.writeValueAsString(root)))
+                .extracting(CampaignImportProblem::code)
+                .contains("SCHEMA_VIOLATION");
+    }
+
+    @Test
     void packageAndCatalogReferenceBranchesAreClosed() {
         assertThat(schema.validate(minimalWithReference("""
                 {"scope":"PACKAGE","type":"MAP","key":"crypt","sourceKey":"not-allowed"}
