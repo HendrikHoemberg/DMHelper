@@ -365,6 +365,12 @@
 .library-chip--danger { --library-chip-color: var(--color-danger); }
 .library-chip--warning { --library-chip-color: var(--color-warning); }
 .library-chip--shield { --library-chip-color: var(--color-shield); }
+.library-table__name {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+.library-table__meta { color: var(--color-text-muted); }
 .statblock-card > h3 { font-size: var(--text-lg); margin: 0; font-family: var(--font-ui); font-weight: 600; }
 .statblock-card > h3 a { color: var(--color-text); text-decoration: none; }
 .statblock-card > h3 a:hover { color: var(--color-accent); }

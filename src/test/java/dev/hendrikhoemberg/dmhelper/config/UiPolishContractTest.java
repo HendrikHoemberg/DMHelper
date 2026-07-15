@@ -105,6 +105,18 @@ class UiPolishContractTest {
     }
 
     @Test
+    void siblingLibraryResultsReuseTitleAndMetadataHierarchy() throws IOException {
+        assertThat(read("templates/library/_spell-card.html"))
+                .contains("library-card__title", "library-card__meta");
+        assertThat(read("templates/library/_magic-item-card.html"))
+                .contains("library-card__title", "library-card__meta");
+        assertThat(read("templates/library/_class-card.html"))
+                .contains("library-card__title", "library-card__meta");
+        assertThat(read("templates/library/_equipment-card.html"))
+                .contains("library-table__name", "library-table__meta");
+    }
+
+    @Test
     void focusVisibleTargetsInteractiveElementsWithTokenizedRing() throws IOException {
         String css = read("static/css/base.css");
         assertThat(css).contains(

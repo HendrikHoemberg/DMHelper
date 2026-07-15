@@ -11,13 +11,15 @@
         </thead>
         <tbody>
             <tr th:each="e : ${equipment}">
-                <td th:text="${e.name}">Name</td>
-                <td th:text="${e.category}">Category</td>
+                <td class="library-table__name" th:text="${e.name}">Name</td>
+                <td class="library-table__meta" th:text="${e.category}">Category</td>
                 <td th:text="${e.cost}">Cost</td>
-                <td th:text="${e.weight}">Weight</td>
-                <td th:text="${e.properties}">Properties</td>
+                <td class="library-table__meta" th:text="${e.weight}">Weight</td>
+                <td class="library-table__meta" th:text="${e.properties}">Properties</td>
             </tr>
         </tbody>
     </table>
-    <div class="empty-state"><p>No equipment matches your search.</p></div>
+    <div class="empty-state" th:if="${equipment == null or equipment.isEmpty()}">
+        <p class="empty-state__title">No equipment matches your search.</p>
+    </div>
 </th:block>

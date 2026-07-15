@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <div class="statblock-card" th:fragment="spell-card(spell)">
-    <h3 th:text="${spell.name}">Spell Name</h3>
-    <div class="statblock-meta">
-        <span th:if="${spell.level == 0}" class="badge-srd">Cantrip</span>
-        <span th:unless="${spell.level == 0}" class="badge-srd" th:text="'Level ' + ${spell.level}"></span>
+    <h3 class="library-card__title" th:text="${spell.name}">Spell Name</h3>
+    <div class="library-card__meta">
+        <span th:if="${spell.level == 0}" class="library-chip library-chip--accent">Cantrip</span>
+        <span th:unless="${spell.level == 0}" class="library-chip library-chip--accent" th:text="'Level ' + ${spell.level}"></span>
         <span th:text="${spell.school}">School</span>
         <span th:if="${spell.ritual}">Ritual</span>
         <span th:if="${spell.concentration}">Concentration</span>
