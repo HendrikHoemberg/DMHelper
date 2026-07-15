@@ -11,7 +11,11 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -84,5 +88,70 @@ class HandoutServiceTest {
     void shouldThrowWhenHandoutNotFound() {
         assertThatThrownBy(() -> service.findById(UUID.randomUUID()))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void createImportedRejectsUnsupportedContentType() {
+        assertThatThrownBy(() ->
+                service.createImported(campaignId, "Bad", "", "f.svg", "image/svg+xml", "x".getBytes()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unsupported handout content type");
+    }
+
+    @Test
+    void createImportedOriginalFileNameNeverBecomesStoragePath() throws Exception {
+        Handout h = service.createImported(campaignId, "Path Traversal", "",
+                "../../outside.png", "image/png", "data".getBytes());
+        assertThat(h.getFileName()).doesNotContain("..").doesNotContain("/");
+        // Verify the file was stored inside the files directory
+        Path stored = Path.of(System.getProperty("user.home"), ".dmhelper", "files", h.getFileName());
+        assertThat(stored).exists();
+        assertThat(stored.toAbsolutePath().normalize().startsWith(
+                Path.of(System.getProperty("user.home"), ".dmhelper", "files"))).isTrue();
+    }
+
+    @Test
+    void createImportedAbsolutePathNeverBecomesStoragePath() throws Exception {
+        Handout h = service.createImported(campaignId, "Absolute", "",
+                "/tmp/absolute.png", "image/png", "data".getBytes());
+        assertThat(h.getFileName()).doesNotContain("/");
+        Path stored = Path.of(System.getProperty("user.home"), ".dmhelper", "files", h.getFileName());
+        assertThat(stored).exists();
+        assertThat(stored.toAbsolutePath().normalize().startsWith(
+                Path.of(System.getProperty("user.home"), ".dmhelper", "files"))).isTrue();
+    }
+
+    @Test
+    void createImportedDuplicateOriginalNamesProduceDistinctStorageNames() throws Exception {
+        String title = "Duplicate";
+        String data = "same-name-data";
+        Handout h1 = service.createImported(campaignId, title, "", "duplicate.png", "image/png", data.getBytes());
+        Handout h2 = service.createImported(campaignId, title, "", "duplicate.png", "image/png", data.getBytes());
+
+        assertThat(h1.getFileName()).isNotEqualTo(h2.getFileName());
+
+        Pattern uuidPattern = Pattern.compile(
+                "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\.(png|jpg|gif|webp)$");
+        assertThat(h1.getFileName()).matches(uuidPattern);
+        assertThat(h2.getFileName()).matches(uuidPattern);
+    }
+
+    @Test
+    void createImportedRollsBackOnWriteFailure() throws Exception {
+        Path filesDir = Path.of(System.getProperty("user.home"), ".dmhelper", "files");
+        Files.createDirectories(filesDir);
+        filesDir.toFile().setWritable(false);
+        try {
+            assertThatThrownBy(() ->
+                    service.createImported(campaignId, "Rollback", "", "img.png", "image/png", "content".getBytes()))
+                    .isInstanceOf(IOException.class);
+
+            em.flush();
+            em.clear();
+
+            assertThat(service.findByCampaignId(campaignId)).isEmpty();
+        } finally {
+            filesDir.toFile().setWritable(true);
+        }
     }
 }

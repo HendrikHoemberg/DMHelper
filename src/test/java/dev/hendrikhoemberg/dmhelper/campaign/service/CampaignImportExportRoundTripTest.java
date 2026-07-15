@@ -6,6 +6,8 @@ import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEvent;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEventRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignValidationResult;
 import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntry;
 import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntryRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
@@ -34,22 +36,30 @@ import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import dev.hendrikhoemberg.dmhelper.notes.service.WikiLinkParser;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @DataJpaTest
 @Import({CampaignService.class, PartyMemberService.class, StatBlockService.class, GameMapService.class,
          NoteService.class, WikiLinkParser.class, SceneRefCleaner.class, AdventureService.class,
+         HandoutService.class,
          dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class})
 class CampaignImportExportRoundTripTest {
 
@@ -71,9 +81,25 @@ class CampaignImportExportRoundTripTest {
     @Autowired private ChapterRepository chapterRepo;
     @Autowired private SceneRepository sceneRepo;
     @Autowired private HandoutRepository handoutRepo;
+    @Autowired private HandoutService handoutService;
+    @MockitoBean private CampaignImportValidator importValidator;
 
-    @MockitoBean
-    private HandoutService handoutService;
+    private final ObjectMapper objectMapper = JsonMapper.builder()
+            .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .build();
+
+    @BeforeEach
+    void setUpValidator() {
+        when(importValidator.validate(anyString())).thenAnswer(invocation -> {
+            String json = invocation.getArgument(0);
+            try {
+                CampaignExportDto dto = objectMapper.readValue(json, CampaignExportDto.class);
+                return new CampaignValidationResult(Optional.of(dto), List.of());
+            } catch (Exception e) {
+                return new CampaignValidationResult(Optional.empty(), List.of());
+            }
+        });
+    }
 
     @Test
     void roundTripPreservesPartyActiveAndStatblockSourceKey() {
@@ -335,14 +361,8 @@ class CampaignImportExportRoundTripTest {
         sb.setSourceKey("test-monster");
         statBlockRepository.save(sb);
 
-        Handout handout = new Handout();
-        handout.setCampaign(c);
-        handout.setTitle("Handout A");
-        handout.setFileName("handout_a.jpg");
-        handout.setContentType("image/jpeg");
-        handout.setDmOnly(true);
-        handout.setPresented(false);
-        handoutRepo.save(handout);
+        Handout handout = handoutService.create(c.getId(), "Handout A", "",
+                new MockMultipartFile("file", "handout_a.jpg", "image/jpeg", "handout-data".getBytes()));
 
         GameMap map = gameMapService.create(c.getId(), "Test Map", 20, 15, 48);
 
@@ -473,7 +493,7 @@ class CampaignImportExportRoundTripTest {
     }
 
     @Test
-    void roundTripPreservesAdventuresAndEncounterMap() {
+    void roundTripPreservesAdventuresAndEncounterMap() throws Exception {
         Campaign c = campaignService.create("Adventure Trip", "adventures + encounter map");
 
         StatBlock sb = statBlockService.createCustom(c.getId(), "Goblin Archer", "1/4", "Humanoid",
@@ -486,15 +506,8 @@ class CampaignImportExportRoundTripTest {
         sb.setSourceKey("goblin-archer");
         statBlockRepository.save(sb);
 
-        Handout handout = new Handout();
-        handout.setCampaign(c);
-        handout.setTitle("Dungeon Map Handout");
-        handout.setFileName("dungeon.jpg");
-        handout.setContentType("image/jpeg");
-        handout.setTags("map");
-        handout.setDmOnly(true);
-        handout.setPresented(false);
-        handoutRepo.save(handout);
+        Handout handout = handoutService.create(c.getId(), "Dungeon Map Handout", "map",
+                new MockMultipartFile("file", "dungeon.jpg", "image/jpeg", "map-data".getBytes()));
 
         GameMap map = gameMapService.create(c.getId(), "Dungeon Map", 30, 20, 48);
 

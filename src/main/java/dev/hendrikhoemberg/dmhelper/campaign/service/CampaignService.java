@@ -30,6 +30,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator;
@@ -39,10 +40,10 @@ import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -310,8 +311,9 @@ public class CampaignService {
                         byte[] bytes = java.nio.file.Files.readAllBytes(filePath);
                         imageBase64 = "data:" + h.getContentType() + ";base64," +
                                 java.util.Base64.getEncoder().encodeToString(bytes);
-                    } catch (Exception e) {
-                        System.err.println("WARNING: Could not read handout image: " + h.getFileName());
+                    } catch (IOException e) {
+                        throw new IllegalStateException(
+                                "Cannot export campaign because handout '" + h.getTitle() + "' has no readable asset.", e);
                     }
                     return CampaignExportDto.HandoutExportDto.from(h, imageBase64);
                 })
@@ -333,6 +335,15 @@ public class CampaignService {
         for (var handout : handoutEntities) {
             quickNoteIdMappings.put(handout.getId(), handout.getTitle());
         }
+        for (var adv : adventureRepo.findByCampaignIdOrderBySortOrderAsc(id)) {
+            for (var ch : chapterRepo.findByAdventureIdOrderBySortOrderAsc(adv.getId())) {
+                for (var scene : sceneRepo.findByChapterIdOrderBySortOrderAsc(ch.getId())) {
+                    quickNoteIdMappings.put(scene.getId(),
+                            adv.getName() + "/" + ch.getTitle() + "/" + scene.getSceneKey());
+                }
+            }
+        }
+        quickNoteIdMappings.put(id, "CAMPAIGN");
         var quickNoteDtos = quickNoteRepository.findByCampaignIdOrderByCreatedAtDesc(id).stream()
                 .map(qn -> CampaignExportDto.QuickNoteExportDto.from(qn, quickNoteIdMappings))
                 .toList();
@@ -443,6 +454,7 @@ public class CampaignService {
         java.util.Map<String, UUID> encounterNameToId = new java.util.HashMap<>();
         java.util.Map<String, UUID> partyMemberNameToId = new java.util.HashMap<>();
         java.util.Map<String, UUID> handoutTitleToId = new java.util.HashMap<>();
+        java.util.Map<String, UUID> scenePathToId = new java.util.HashMap<>();
 
         if (dto.party() != null) {
             for (var pmDto : dto.party()) {
@@ -528,15 +540,16 @@ public class CampaignService {
                         if (tDto.statBlockKey() != null) {
                             var resolved = statBlockRepository.findByCampaignIdAndSourceKey(saved.getId(), tDto.statBlockKey())
                                     .or(() -> statBlockRepository.findBySourceKey(tDto.statBlockKey()));
-                            resolved.ifPresentOrElse(token::setStatBlock,
-                                    () -> System.err.println("WARNING: Unknown statblock key: " + tDto.statBlockKey()));
+                            token.setStatBlock(resolved.orElseThrow(() -> new IllegalStateException(
+                                    "Validated reference disappeared: statblock key '" + tDto.statBlockKey() + "' for token '" + tDto.name() + "'")));
                         }
                         if (tDto.partyMemberName() != null) {
-                            partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(saved.getId()).stream()
-                                    .filter(pm -> tDto.partyMemberName().equals(pm.getCharacterName()))
+                            var pm = partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(saved.getId()).stream()
+                                    .filter(p -> tDto.partyMemberName().equals(p.getCharacterName()))
                                     .findFirst()
-                                    .ifPresentOrElse(token::setPartyMember,
-                                            () -> System.err.println("WARNING: Unknown party member '" + tDto.partyMemberName() + "' in token '" + tDto.name() + "'"));
+                                    .orElseThrow(() -> new IllegalStateException(
+                                            "Validated reference disappeared: party member '" + tDto.partyMemberName() + "' for token '" + tDto.name() + "'"));
+                            token.setPartyMember(pm);
                         }
                         token = tokenRepo.save(token);
                         if (tDto.id() != null) {
@@ -549,37 +562,34 @@ public class CampaignService {
 
         if (dto.handouts() != null) {
             for (var hDto : dto.handouts()) {
-                if (hDto.imageData() != null) {
-                    try {
-                        String base64Data = hDto.imageData();
-                        if (base64Data.startsWith("data:")) {
-                            int commaIdx = base64Data.indexOf(',');
-                            if (commaIdx > 0) {
-                                base64Data = base64Data.substring(commaIdx + 1);
-                            }
-                        }
-                        byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
-                        java.nio.file.Path filesDir = java.nio.file.Path.of(
-                                System.getProperty("user.home"), ".dmhelper", "files");
-                        java.nio.file.Path targetPath = filesDir.resolve(hDto.fileName());
-                        java.nio.file.Files.createDirectories(targetPath.getParent());
-                        java.nio.file.Files.write(targetPath, imageBytes);
-                    } catch (Exception e) {
-                        System.err.println("WARNING: Failed to import handout image '" + hDto.title() + "': " + e.getMessage());
-                    }
-                } else {
-                    System.err.println("WARNING: Handout '" + hDto.title() + "' has no image data");
+                String base64Data = hDto.imageData();
+                if (base64Data == null) {
+                    throw new IllegalStateException(
+                            "Handout '" + hDto.title() + "' has no image data");
                 }
-                dev.hendrikhoemberg.dmhelper.handout.data.Handout handout =
-                        new dev.hendrikhoemberg.dmhelper.handout.data.Handout();
-                handout.setCampaign(saved);
-                handout.setTitle(hDto.title());
-                handout.setFileName(hDto.fileName());
-                handout.setContentType(hDto.contentType());
-                handout.setTags(hDto.tags() != null ? String.join(",", hDto.tags()) : null);
-                handout.setDmOnly(true);
-                handout.setPresented(false);
-                handout = handoutRepo.save(handout);
+                if (base64Data.startsWith("data:")) {
+                    int commaIdx = base64Data.indexOf(',');
+                    if (commaIdx > 0) {
+                        String prefix = base64Data.substring(0, commaIdx);
+                        String expectedPrefix = "data:" + hDto.contentType() + ";base64";
+                        if (!prefix.equals(expectedPrefix)) {
+                            throw new IllegalStateException(
+                                    "Handout '" + hDto.title() + "' content type mismatch: " + prefix);
+                        }
+                        base64Data = base64Data.substring(commaIdx + 1);
+                    }
+                }
+                byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+                String tagStr = hDto.tags() != null ? String.join(",", hDto.tags()) : null;
+                Handout handout;
+                try {
+                    handout = handoutService.createImported(
+                            saved.getId(), hDto.title(), tagStr,
+                            hDto.fileName(), hDto.contentType(), imageBytes);
+                } catch (IOException e) {
+                    throw new IllegalStateException(
+                            "Failed to import handout '" + hDto.title() + "'", e);
+                }
                 handoutTitleToId.put(hDto.title(), handout.getId());
             }
         }
@@ -602,11 +612,10 @@ public class CampaignService {
                 if (encDto.map() != null) {
                     UUID mapId = mapNameToId.get(encDto.map());
                     if (mapId != null) {
-                        try {
-                            encounter.setMap(gameMapService.findById(mapId));
-                        } catch (Exception e) {
-                            System.err.println("WARNING: Could not resolve map '" + encDto.map() + "' for encounter");
-                        }
+                        encounter.setMap(gameMapService.findById(mapId));
+                    } else {
+                        throw new IllegalStateException(
+                                "Validated reference disappeared: map '" + encDto.map() + "' for encounter '" + encDto.name() + "'");
                     }
                 }
                 encounter = encounterRepo.save(encounter);
@@ -632,28 +641,28 @@ public class CampaignService {
                         if (cDto.tokenId() != null) {
                             UUID newTokenId = tokenOldToNewId.get(cDto.tokenId());
                             if (newTokenId != null) {
-                                tokenRepo.findById(newTokenId).ifPresent(combatant::setToken);
+                                combatant.setToken(tokenRepo.findById(newTokenId)
+                                        .orElseThrow(() -> new IllegalStateException(
+                                                "Validated reference disappeared: token '" + cDto.tokenId() + "' in combatant '" + cDto.name() + "'")));
                             } else {
-                                try {
-                                    tokenRepo.findById(java.util.UUID.fromString(cDto.tokenId()))
-                                            .ifPresent(combatant::setToken);
-                                } catch (Exception e) {
-                                    System.err.println("WARNING: Invalid token ID: " + cDto.tokenId());
-                                }
+                                combatant.setToken(tokenRepo.findById(java.util.UUID.fromString(cDto.tokenId()))
+                                        .orElseThrow(() -> new IllegalStateException(
+                                                "Validated reference disappeared: token '" + cDto.tokenId() + "' in combatant '" + cDto.name() + "'")));
                             }
                         }
                         if (cDto.statBlockKey() != null) {
                             var resolved = statBlockRepository.findByCampaignIdAndSourceKey(saved.getId(), cDto.statBlockKey())
                                     .or(() -> statBlockRepository.findBySourceKey(cDto.statBlockKey()));
-                            resolved.ifPresentOrElse(combatant::setStatBlock,
-                                    () -> System.err.println("WARNING: Unknown statblock key: " + cDto.statBlockKey()));
+                            combatant.setStatBlock(resolved.orElseThrow(() -> new IllegalStateException(
+                                    "Validated reference disappeared: statblock key '" + cDto.statBlockKey() + "' for combatant '" + cDto.name() + "'")));
                         }
                         if (cDto.partyMemberName() != null) {
-                            partyMembers.stream()
-                                    .filter(pm -> pm.getCharacterName().equals(cDto.partyMemberName()))
+                            var pm = partyMembers.stream()
+                                    .filter(p -> p.getCharacterName().equals(cDto.partyMemberName()))
                                     .findFirst()
-                                    .ifPresentOrElse(combatant::setPartyMember,
-                                            () -> System.err.println("WARNING: Unknown party member '" + cDto.partyMemberName() + "' in combatant '" + cDto.name() + "'"));
+                                    .orElseThrow(() -> new IllegalStateException(
+                                            "Validated reference disappeared: party member '" + cDto.partyMemberName() + "' in combatant '" + cDto.name() + "'"));
+                            combatant.setPartyMember(pm);
                         }
                         combatant.setDefeated(cDto.defeated());
                         combatant.setHidden(cDto.hidden());
@@ -703,11 +712,10 @@ public class CampaignService {
                                 if (scDto.map() != null) {
                                     UUID mapId = mapNameToId.get(scDto.map());
                                     if (mapId != null) {
-                                        try {
-                                            sc.setMap(gameMapService.findById(mapId));
-                                        } catch (Exception e) {
-                                            System.err.println("WARNING: Could not resolve map '" + scDto.map() + "' for scene '" + scDto.title() + "'");
-                                        }
+                                        sc.setMap(gameMapService.findById(mapId));
+                                    } else {
+                                        throw new IllegalStateException(
+                                                "Validated reference disappeared: map '" + scDto.map() + "' for scene '" + scDto.title() + "'");
                                     }
                                 }
                                 if (scDto.pin() != null) {
@@ -720,22 +728,26 @@ public class CampaignService {
                                         encId = encounterNameToId.get(scDto.encounter());
                                     }
                                     if (encId != null) {
-                                        encounterRepo.findById(encId).ifPresent(sc::setEncounter);
+                                        sc.setEncounter(encounterRepo.findById(encId)
+                                                .orElseThrow(() -> new IllegalStateException(
+                                                        "Validated reference disappeared: encounter '" + scDto.encounter() + "' for scene '" + scDto.title() + "'")));
                                     } else {
-                                        System.err.println("WARNING: Could not resolve encounter '" + scDto.encounter() + "' for scene '" + scDto.title() + "'");
+                                        throw new IllegalStateException(
+                                                "Validated reference disappeared: encounter '" + scDto.encounter() + "' for scene '" + scDto.title() + "'");
                                     }
                                 }
                                 sceneRepo.save(sc);
+                                scenePathToId.put(advDto.name() + "/" + chDto.title() + "/" + sc.getSceneKey(), sc.getId());
                                 if (scDto.statblocks() != null) {
                                     for (var sbKey : scDto.statblocks()) {
                                         UUID sbId = statblockKeyToId.get(sbKey);
                                         if (sbId != null) {
-                                            var sbOpt = statBlockRepository.findById(sbId);
-                                            if (sbOpt.isPresent()) {
-                                                sc.getStatBlocks().add(sbOpt.get());
-                                            }
+                                            sc.getStatBlocks().add(statBlockRepository.findById(sbId)
+                                                    .orElseThrow(() -> new IllegalStateException(
+                                                            "Validated reference disappeared: statblock key '" + sbKey + "' for scene '" + scDto.title() + "'")));
                                         } else {
-                                            System.err.println("WARNING: Could not resolve statblock key '" + sbKey + "' for scene '" + scDto.title() + "'");
+                                            throw new IllegalStateException(
+                                                    "Validated reference disappeared: statblock key '" + sbKey + "' for scene '" + scDto.title() + "'");
                                         }
                                     }
                                     if (!scDto.statblocks().isEmpty()) {
@@ -746,12 +758,12 @@ public class CampaignService {
                                     for (var hTitle : scDto.handouts()) {
                                         UUID handoutId = handoutTitleToId.get(hTitle);
                                         if (handoutId != null) {
-                                            var hOpt = handoutRepo.findById(handoutId);
-                                            if (hOpt.isPresent()) {
-                                                sc.getHandouts().add(hOpt.get());
-                                            }
+                                            sc.getHandouts().add(handoutRepo.findById(handoutId)
+                                                    .orElseThrow(() -> new IllegalStateException(
+                                                            "Validated reference disappeared: handout '" + hTitle + "' for scene '" + scDto.title() + "'")));
                                         } else {
-                                            System.err.println("WARNING: Could not resolve handout title '" + hTitle + "' for scene '" + scDto.title() + "'");
+                                            throw new IllegalStateException(
+                                                    "Validated reference disappeared: handout '" + hTitle + "' for scene '" + scDto.title() + "'");
                                         }
                                     }
                                     if (!scDto.handouts().isEmpty()) {
@@ -808,6 +820,7 @@ public class CampaignService {
                         case "ENCOUNTER" -> encounterNameToId.get(qnDto.targetRef());
                         case "PARTY_MEMBER" -> partyMemberNameToId.get(qnDto.targetRef());
                         case "CAMPAIGN" -> saved.getId();
+                        case "SCENE" -> scenePathToId.get(qnDto.targetRef());
                         default -> {
                             try {
                                 yield java.util.UUID.fromString(qnDto.targetRef());
@@ -822,11 +835,12 @@ public class CampaignService {
                         } catch (Exception e) { /* leave null */ }
                     }
                 }
-                if (resolvedId != null) {
-                    qn.setTargetId(resolvedId);
-                } else {
-                    System.err.println("WARNING: Could not resolve target reference '" + qnDto.targetRef() + "' for quicknote of type " + qnDto.targetType());
+                if (resolvedId == null) {
+                    throw new IllegalStateException(
+                            "Validated reference disappeared: target reference '" + qnDto.targetRef()
+                            + "' for quicknote of type " + qnDto.targetType());
                 }
+                qn.setTargetId(resolvedId);
                 quickNoteRepository.save(qn);
             }
         }
@@ -837,21 +851,22 @@ public class CampaignService {
                 ItemAssignment ia = new ItemAssignment();
                 ia.setCampaign(saved);
                 if (aDto.holderName() != null) {
-                    partyMembers.stream()
-                        .filter(pm -> pm.getCharacterName().equals(aDto.holderName()))
+                    var pm = partyMembers.stream()
+                        .filter(p -> p.getCharacterName().equals(aDto.holderName()))
                         .findFirst()
-                        .ifPresentOrElse(ia::setPartyMember,
-                                () -> System.err.println("WARNING: Unknown party member '" + aDto.holderName() + "' in assignment"));
+                        .orElseThrow(() -> new IllegalStateException(
+                                "Validated reference disappeared: party member '" + aDto.holderName() + "' in assignment"));
+                    ia.setPartyMember(pm);
                 }
                 if (aDto.magicItemKey() != null) {
-                    magicItemRepo.findBySourceKey(aDto.magicItemKey())
-                        .ifPresentOrElse(ia::setMagicItem,
-                                () -> System.err.println("WARNING: Unknown magic item key '" + aDto.magicItemKey() + "' in assignment"));
+                    ia.setMagicItem(magicItemRepo.findBySourceKey(aDto.magicItemKey())
+                        .orElseThrow(() -> new IllegalStateException(
+                                "Validated reference disappeared: magic item key '" + aDto.magicItemKey() + "' in assignment")));
                 }
                 if (aDto.equipmentItemKey() != null) {
-                    equipmentItemRepo.findBySourceKey(aDto.equipmentItemKey())
-                        .ifPresentOrElse(ia::setEquipmentItem,
-                                () -> System.err.println("WARNING: Unknown equipment item key '" + aDto.equipmentItemKey() + "' in assignment"));
+                    ia.setEquipmentItem(equipmentItemRepo.findBySourceKey(aDto.equipmentItemKey())
+                        .orElseThrow(() -> new IllegalStateException(
+                                "Validated reference disappeared: equipment item key '" + aDto.equipmentItemKey() + "' in assignment")));
                 }
                 ia.setCustomText(aDto.customText());
                 ia.setQuantity(aDto.quantity());
@@ -878,8 +893,12 @@ public class CampaignService {
                 if (leDto.itemAssignmentRef() != null) {
                     UUID newAssignmentId = assignmentIdMap.get(leDto.itemAssignmentRef());
                     if (newAssignmentId != null) {
-                        assignmentRepo.findById(newAssignmentId)
-                                .ifPresent(le::setItemAssignmentRef);
+                        le.setItemAssignmentRef(assignmentRepo.findById(newAssignmentId)
+                                .orElseThrow(() -> new IllegalStateException(
+                                        "Validated reference disappeared: assignment '" + leDto.itemAssignmentRef() + "' in ledger entry")));
+                    } else {
+                        throw new IllegalStateException(
+                                "Validated reference disappeared: assignment '" + leDto.itemAssignmentRef() + "' in ledger entry");
                     }
                 }
                 ledgerEntryRepo.save(le);
@@ -896,9 +915,10 @@ public class CampaignService {
                 te.setTitle(teDto.title());
                 te.setBody(teDto.body());
                 if (teDto.noteTitle() != null) {
-                    Optional<Note> note = noteRepository.findByCampaignIdAndTitle(saved.getId(), teDto.noteTitle())
-                        .stream().findFirst();
-                    note.ifPresent(te::setNoteRef);
+                    te.setNoteRef(noteRepository.findByCampaignIdAndTitle(saved.getId(), teDto.noteTitle())
+                        .stream().findFirst()
+                        .orElseThrow(() -> new IllegalStateException(
+                                "Validated reference disappeared: note '" + teDto.noteTitle() + "' in timeline event")));
                 }
                 timelineEventRepo.save(te);
             }
@@ -973,7 +993,8 @@ public class CampaignService {
             if (species != null) {
                 sheet.setSpecies(species);
             } else {
-                System.err.println("WARNING: Unknown species key: " + sheetDto.speciesKey());
+                throw new IllegalStateException(
+                        "Validated reference disappeared: species key '" + sheetDto.speciesKey() + "' in sheet");
             }
         }
         if (sheetDto.backgroundKey() != null) {
@@ -981,7 +1002,8 @@ public class CampaignService {
             if (background != null) {
                 sheet.setBackground(background);
             } else {
-                System.err.println("WARNING: Unknown background key: " + sheetDto.backgroundKey());
+                throw new IllegalStateException(
+                        "Validated reference disappeared: background key '" + sheetDto.backgroundKey() + "' in sheet");
             }
         }
 
@@ -1011,7 +1033,8 @@ public class CampaignService {
                         ref.setSourceClass(spellDto.sourceClass());
                         spellRefRepo.save(ref);
                     } else {
-                        System.err.println("WARNING: Unknown spell key: " + spellDto.spellKey());
+                        throw new IllegalStateException(
+                                "Validated reference disappeared: spell key '" + spellDto.spellKey() + "' in sheet");
                     }
                 }
             }

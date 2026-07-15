@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.UUID;
 
@@ -67,6 +68,39 @@ public class HandoutService {
         storeFile(file, fileName);
 
         return handoutRepository.save(handout);
+    }
+
+    public Handout createImported(UUID campaignId,
+                                  String title,
+                                  String tags,
+                                  String originalFileName,
+                                  String contentType,
+                                  byte[] bytes) throws IOException {
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new NotFoundException("Campaign not found: " + campaignId));
+        String extension = extensionFor(contentType);
+        String storageName = UUID.randomUUID() + extension;
+
+        Handout handout = new Handout();
+        handout.setCampaign(campaign);
+        handout.setTitle(title.trim());
+        handout.setTags(tags == null ? "" : tags.trim());
+        handout.setContentType(contentType);
+        handout.setFileName(storageName);
+
+        Files.createDirectories(filesDir);
+        Files.write(filesDir.resolve(storageName), bytes, StandardOpenOption.CREATE_NEW);
+        return handoutRepository.save(handout);
+    }
+
+    private static String extensionFor(String contentType) {
+        return switch (contentType) {
+            case "image/png" -> ".png";
+            case "image/jpeg" -> ".jpg";
+            case "image/gif" -> ".gif";
+            case "image/webp" -> ".webp";
+            default -> throw new IllegalArgumentException("Unsupported handout content type: " + contentType);
+        };
     }
 
     public Handout update(UUID id, String title, String tags) {
