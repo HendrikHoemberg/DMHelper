@@ -21,13 +21,13 @@
                 <a class="btn btn-primary" th:href="@{/campaigns/{id}/session(id=${campaign.id})}">Run Session</a>
                 <a class="btn" th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">Plan Adventures</a>
                 <a th:href="@{/campaigns/{id}/export(id=${campaign.id})}"
-                   class="btn" download>Export JSON</a>
+                   class="btn" download>Export v1 JSON</a>
                 <form hx-post="/campaigns/import"
                       hx-encoding="multipart/form-data"
                       class="u-contents">
                     <label class="btn">
-                        Import JSON
-                        <input type="file" name="file" accept=".json"
+                        Import v1 JSON
+                        <input type="file" name="file" accept=".dmcampaign.json,application/json"
                                onchange="this.form.requestSubmit()"
                                class="hidden">
                     </label>

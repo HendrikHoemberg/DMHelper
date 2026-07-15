@@ -6,12 +6,15 @@ import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEvent;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEventRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSchemaValidator;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSemanticValidator;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignValidationResult;
 import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntry;
 import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntryRepository;
-import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
-import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.*;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
@@ -40,28 +43,42 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 @Import({CampaignService.class, PartyMemberService.class, StatBlockService.class, GameMapService.class,
          NoteService.class, WikiLinkParser.class, SceneRefCleaner.class, AdventureService.class,
          HandoutService.class,
+         CampaignImportValidator.class, CampaignSchemaValidator.class, CampaignSemanticValidator.class,
+         CampaignImportExportRoundTripTest.TestObjectMapperConfig.class,
          dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class})
 class CampaignImportExportRoundTripTest {
+
+    @TestConfiguration
+    static class TestObjectMapperConfig {
+        @Bean
+        ObjectMapper objectMapper() {
+            return JsonMapper.builder()
+                    .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                    .build();
+        }
+    }
 
     @Autowired private CampaignService campaignService;
     @Autowired private PartyMemberService partyMemberService;
@@ -82,23 +99,52 @@ class CampaignImportExportRoundTripTest {
     @Autowired private SceneRepository sceneRepo;
     @Autowired private HandoutRepository handoutRepo;
     @Autowired private HandoutService handoutService;
-    @MockitoBean private CampaignImportValidator importValidator;
+    @Autowired private CampaignRepository campaignRepo;
+    @Autowired private SpeciesRepository speciesRepo;
+    @Autowired private BackgroundRepository backgroundRepo;
+    @Autowired private CharacterClassRepository classRepo;
+    @Autowired private FeatRepository featRepo;
+    @Autowired private SpellRepository spellRepo;
+    @Autowired private MagicItemRepository magicItemRepo;
+    @Autowired private EquipmentItemRepository equipmentItemRepo;
+    @Autowired private CampaignSchemaValidator schemaValidator;
 
     private final ObjectMapper objectMapper = JsonMapper.builder()
             .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .build();
 
     @BeforeEach
-    void setUpValidator() {
-        when(importValidator.validate(anyString())).thenAnswer(invocation -> {
-            String json = invocation.getArgument(0);
-            try {
-                CampaignExportDto dto = objectMapper.readValue(json, CampaignExportDto.class);
-                return new CampaignValidationResult(Optional.of(dto), List.of());
-            } catch (Exception e) {
-                return new CampaignValidationResult(Optional.empty(), List.of());
-            }
-        });
+    void seedCatalog() {
+        Species human = new Species();
+        human.setSourceKey("human");
+        human.setName("Human");
+        speciesRepo.save(human);
+
+        Background criminal = new Background();
+        criminal.setSourceKey("criminal");
+        criminal.setName("Criminal");
+        backgroundRepo.save(criminal);
+
+        CharacterClass rogue = new CharacterClass();
+        rogue.setSourceKey("rogue");
+        rogue.setName("Rogue");
+        classRepo.save(rogue);
+
+        Feat alert = new Feat();
+        alert.setSourceKey("alert");
+        alert.setName("Alert");
+        featRepo.save(alert);
+
+        Spell cureWounds = new Spell();
+        cureWounds.setSourceKey("cure-wounds");
+        cureWounds.setName("Cure Wounds");
+        cureWounds.setLevel(1);
+        spellRepo.save(cureWounds);
+
+        MagicItem bagOfHolding = new MagicItem();
+        bagOfHolding.setSourceKey("bag-of-holding");
+        bagOfHolding.setName("Bag of Holding");
+        magicItemRepo.save(bagOfHolding);
     }
 
     @Test
@@ -257,7 +303,7 @@ class CampaignImportExportRoundTripTest {
         pcCombatant.setSortOrder(0);
         pcCombatant.setMaxHp(38);
         pcCombatant.setCurrentHp(30);
-        pcCombatant.setKind("PC");
+        pcCombatant.setKind("player");
         pcCombatant.setConditionsJson("[blinded]");
         combatantRepo.save(pcCombatant);
 
@@ -269,7 +315,7 @@ class CampaignImportExportRoundTripTest {
         npcCombatant.setSortOrder(1);
         npcCombatant.setMaxHp(21);
         npcCombatant.setCurrentHp(10);
-        npcCombatant.setKind("NPC");
+        npcCombatant.setKind("creature");
         npcCombatant.setHidden(true);
         combatantRepo.save(npcCombatant);
 
@@ -306,7 +352,7 @@ class CampaignImportExportRoundTripTest {
         Token token = new Token();
         token.setMap(map);
         token.setName("Goblin Token");
-        token.setKind("NPC");
+        token.setKind("creature");
         token.setColor("#ff0000");
         token.setPositionX(5);
         token.setPositionY(3);
@@ -329,7 +375,7 @@ class CampaignImportExportRoundTripTest {
         combatant.setSortOrder(0);
         combatant.setMaxHp(10);
         combatant.setCurrentHp(10);
-        combatant.setKind("NPC");
+        combatant.setKind("creature");
         combatantRepo.save(combatant);
 
         String json = campaignService.exportToJson(c.getId());
@@ -562,5 +608,154 @@ class CampaignImportExportRoundTripTest {
         Encounter reEncounter = reEncounters.get(0);
         assertThat(reEncounter.getMap()).isNotNull();
         assertThat(reEncounter.getMap().getName()).isEqualTo("Dungeon Map");
+    }
+
+    @Test
+    void flagshipFixturePipeline() throws Exception {
+        String source = resource("campaigns/v1/feature-complete.dmcampaign.json");
+
+        CampaignValidationResult firstDryRun = campaignService.validateImport(source);
+        assertThat(firstDryRun.valid()).isTrue();
+        assertThat(firstDryRun.problems()).isEmpty();
+
+        Campaign firstImport = campaignService.importFromJson(source);
+        String exported = campaignService.exportToJson(firstImport.getId());
+        assertThat(schemaValidator.validate(exported)).isEmpty();
+
+        CampaignValidationResult secondDryRun = campaignService.validateImport(exported);
+        assertThat(secondDryRun.valid()).isTrue();
+
+        Campaign secondImport = campaignService.importFromJson(exported);
+        assertCurrentV1SemanticsEqual(firstImport.getId(), secondImport.getId());
+    }
+
+    @Test
+    void unknownPropertyFixtureIsRejectedByBothPaths() throws Exception {
+        String source = resource("campaigns/v1/invalid-unknown-property.dmcampaign.json");
+        long campaignCount = campaignRepo.count();
+
+        CampaignValidationResult dryRun = campaignService.validateImport(source);
+        assertThat(dryRun.valid()).isFalse();
+        assertThat(dryRun.problems())
+                .anyMatch(p -> p.code().equals("SCHEMA_ADDITIONAL_PROPERTIES"));
+
+        assertThatThrownBy(() -> campaignService.importFromJson(source))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        assertThat(campaignRepo.count()).isEqualTo(campaignCount);
+    }
+
+    @Test
+    void unresolvedReferenceIsRejectedByBothPaths() {
+        String json = """
+                {"formatVersion":1,"campaign":{"name":"Unresolved Ref"},"statBlocks":[],"adventures":[{"name":"Test","sortOrder":1,"chapters":[{"title":"Ch1","sortOrder":1,"scenes":[{"title":"S1","sortOrder":1,"statblocks":["nonexistent-key"]}]}]}]}
+                """;
+        long campaignCount = campaignRepo.count();
+
+        CampaignValidationResult dryRun = campaignService.validateImport(json);
+        assertThat(dryRun.valid()).isFalse();
+        assertThat(dryRun.problems())
+                .anyMatch(p -> p.code().equals("UNRESOLVED_REFERENCE"));
+
+        assertThatThrownBy(() -> campaignService.importFromJson(json))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        assertThat(campaignRepo.count()).isEqualTo(campaignCount);
+    }
+
+    @Test
+    void minimalValidFixtureIsAcceptedByBothPaths() throws Exception {
+        String source = resource("campaigns/v1/minimal.dmcampaign.json");
+        long campaignCount = campaignRepo.count();
+
+        CampaignValidationResult dryRun = campaignService.validateImport(source);
+        assertThat(dryRun.valid()).isTrue();
+
+        campaignService.importFromJson(source);
+        assertThat(campaignRepo.count()).isEqualTo(campaignCount + 1);
+    }
+
+    private void assertCurrentV1SemanticsEqual(UUID id1, UUID id2) throws Exception {
+        String json1 = campaignService.exportToJson(id1);
+        String json2 = campaignService.exportToJson(id2);
+
+        CampaignExportDto dto1 = objectMapper.readValue(json1, CampaignExportDto.class);
+        CampaignExportDto dto2 = objectMapper.readValue(json2, CampaignExportDto.class);
+
+        assertThat(normalizeDto(dto1)).isEqualTo(normalizeDto(dto2));
+    }
+
+    private CampaignExportDto normalizeDto(CampaignExportDto dto) {
+        return new CampaignExportDto(
+                dto.formatVersion(),
+                dto.campaign(),
+                dto.party(),
+                dto.statBlocks(),
+                dto.handouts() != null ? dto.handouts().stream()
+                        .map(h -> new CampaignExportDto.HandoutExportDto(
+                                h.title(), h.tags(), null, h.contentType(), h.imageData()))
+                        .toList() : null,
+                dto.maps() != null ? dto.maps().stream()
+                        .map(m -> new CampaignExportDto.MapExportDto(
+                                null, m.name(), m.grid(), m.movementMode(), m.showGrid(), m.document(),
+                                m.tokens() != null ? m.tokens().stream()
+                                        .map(t -> new CampaignExportDto.MapExportDto.TokenExportDto(
+                                                null, t.name(), t.kind(), t.color(),
+                                                t.positionX(), t.positionY(), t.sizeCols(), t.sizeRows(),
+                                                t.hidden(), t.statBlockKey(), t.partyMemberName(),
+                                                t.currentHp(), t.maxHp(), t.dead(), t.notes()))
+                                        .toList() : null))
+                        .toList() : null,
+                dto.encounters() != null ? dto.encounters().stream()
+                        .map(e -> new CampaignExportDto.EncounterExportDto(
+                                e.name(),
+                                e.combatants() != null ? e.combatants().stream()
+                                        .map(c -> new CampaignExportDto.CombatantExportDto(
+                                                c.name(), c.initiative(), c.tieBreaker(), c.sortOrder(),
+                                                c.maxHp(), c.currentHp(), c.tempHp(),
+                                                c.kind(), c.groupId(), c.groupLeader(),
+                                                null, c.statBlockKey(), c.partyMemberName(),
+                                                c.defeated(), c.hidden(),
+                                                c.conditionsJson(), c.concentratingOn(), c.concentrationCheckPending(),
+                                                c.legendaryActionsUsed(), c.legendaryResistancesUsed(),
+                                                c.legendaryActionsMax(), c.legendaryResistancesMax(),
+                                                c.rechargedAbilities(), c.notes()))
+                                        .toList() : null,
+                                e.status(), e.round(), e.activeTurnIndex(), e.logSequence(),
+                                e.lairActionName(), e.lairActionDescription(),
+                                e.encounterKey(), e.map()))
+                        .toList() : null,
+                dto.notes(),
+                dto.quicknotes() != null ? dto.quicknotes().stream()
+                        .map(q -> new CampaignExportDto.QuickNoteExportDto(
+                                q.targetType(),
+                                "MAP".equals(q.targetType()) ? null : q.targetRef(),
+                                q.body(), q.createdAt()))
+                        .toList() : null,
+                dto.assignments() != null ? dto.assignments().stream()
+                        .map(a -> new CampaignExportDto.AssignmentExportDto(
+                                null, a.holderName(), a.magicItemKey(), a.equipmentItemKey(),
+                                a.customText(), a.quantity(), a.attuned()))
+                        .toList() : null,
+                dto.ledger() != null ? dto.ledger().stream()
+                        .map(l -> new CampaignExportDto.LedgerExportDto(
+                                null, l.timestamp(),
+                                l.inGameYear(), l.inGameMonth(), l.inGameDay(),
+                                l.kind(), l.direction(), l.amount(), l.currency(),
+                                l.holder(), l.note(), null))
+                        .toList() : null,
+                dto.timeline() != null ? dto.timeline().stream()
+                        .map(t -> new CampaignExportDto.TimelineExportDto(
+                                null, t.inGameYear(), t.inGameMonth(), t.inGameDay(),
+                                t.title(), t.body(), t.noteTitle()))
+                        .toList() : null,
+                dto.adventures()
+        );
+    }
+
+    private static String resource(String path) throws Exception {
+        try (var in = new ClassPathResource(path).getInputStream()) {
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
     }
 }

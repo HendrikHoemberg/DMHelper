@@ -335,6 +335,14 @@ public class CampaignService {
         for (var handout : handoutEntities) {
             quickNoteIdMappings.put(handout.getId(), handout.getTitle());
         }
+        for (var enc : encounterRepo.findByCampaignIdOrderByNameAsc(id)) {
+            String ref = enc.getEncounterKey() != null && !enc.getEncounterKey().isBlank()
+                    ? enc.getEncounterKey() : enc.getName();
+            quickNoteIdMappings.put(enc.getId(), ref);
+        }
+        for (var pm : partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(id)) {
+            quickNoteIdMappings.put(pm.getId(), pm.getCharacterName());
+        }
         for (var adv : adventureRepo.findByCampaignIdOrderBySortOrderAsc(id)) {
             for (var ch : chapterRepo.findByAdventureIdOrderBySortOrderAsc(adv.getId())) {
                 for (var scene : sceneRepo.findByChapterIdOrderBySortOrderAsc(ch.getId())) {
@@ -579,7 +587,13 @@ public class CampaignService {
                         base64Data = base64Data.substring(commaIdx + 1);
                     }
                 }
-                byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+                byte[] imageBytes;
+                try {
+                    imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalStateException(
+                            "Handout '" + hDto.title() + "' has invalid base64 image data", e);
+                }
                 String tagStr = hDto.tags() != null ? String.join(",", hDto.tags()) : null;
                 Handout handout;
                 try {
@@ -738,6 +752,9 @@ public class CampaignService {
                                 }
                                 sceneRepo.save(sc);
                                 scenePathToId.put(advDto.name() + "/" + chDto.title() + "/" + sc.getSceneKey(), sc.getId());
+                                if (scDto.sceneKey() != null) {
+                                    scenePathToId.putIfAbsent(scDto.sceneKey(), sc.getId());
+                                }
                                 if (scDto.statblocks() != null) {
                                     for (var sbKey : scDto.statblocks()) {
                                         UUID sbId = statblockKeyToId.get(sbKey);
@@ -817,7 +834,11 @@ public class CampaignService {
                                     .filter(h -> h.getTitle().equals(qnDto.targetRef()))
                                     .findFirst().map(h -> h.getId()).orElse(null);
                         }
-                        case "ENCOUNTER" -> encounterNameToId.get(qnDto.targetRef());
+                        case "ENCOUNTER" -> {
+                            UUID encId = encounterKeyToId.get(qnDto.targetRef());
+                            if (encId == null) encId = encounterNameToId.get(qnDto.targetRef());
+                            yield encId;
+                        }
                         case "PARTY_MEMBER" -> partyMemberNameToId.get(qnDto.targetRef());
                         case "CAMPAIGN" -> saved.getId();
                         case "SCENE" -> scenePathToId.get(qnDto.targetRef());
@@ -841,6 +862,9 @@ public class CampaignService {
                             + "' for quicknote of type " + qnDto.targetType());
                 }
                 qn.setTargetId(resolvedId);
+                if (qnDto.createdAt() != null) {
+                    qn.setCreatedAt(java.time.Instant.parse(qnDto.createdAt()));
+                }
                 quickNoteRepository.save(qn);
             }
         }

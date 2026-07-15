@@ -215,6 +215,12 @@ Acceptance criteria:
 
 ## 7. Workstream B — Campaign package version 2 and authoring SDK
 
+> **Implementation status:** The campaign-contract-v1 checkpoint made the published v1 campaign
+> and map schemas executable, closed them against unknown fields, unified dry-run and import
+> validation, blocked unresolved v1 references before persistence, and added checked-in contract
+> fixtures. ZIP packaging, stable version-2 keys, preview confirmation, migrations, and complete
+> persistent-state round-trip remain open in delivery items 3 and 4.
+
 ### 7.1 Package container
 
 The canonical external format becomes a `.dmcampaign` ZIP package:

@@ -235,7 +235,7 @@ class GameMapServiceTest {
         MapDocumentDto defaultDoc = MapDocumentDto.createDefault(30, 20, 48);
         String defaultJson = mapper.writeValueAsString(defaultDoc);
         String defaultCampaign = """
-                {"formatVersion":1,"campaign":{"name":"DTO test"},"maps":[{"key":"map-1","name":"Map","movementMode":"GRID","showGrid":true,"grid":{"w":30,"h":20,"cellPx":48,"gridType":"square"},"document":%s,"tokens":[]}]}""".formatted(defaultJson);
+                {"formatVersion":1,"campaign":{"name":"DTO test"},"maps":[{"key":"map-1","name":"Map","movementMode":"GRID","showGrid":true,"grid":{"w":30,"h":20,"cellPx":48,"gridType":"SQUARE"},"document":%s,"tokens":[]}]}""".formatted(defaultJson);
         assertThat(val.validate(defaultCampaign)).isEmpty();
 
         MapDocumentDto richDoc = new MapDocumentDto(
@@ -258,7 +258,7 @@ class GameMapServiceTest {
         );
         String richJson = mapper.writeValueAsString(richDoc);
         String richCampaign = """
-                {"formatVersion":1,"campaign":{"name":"DTO test"},"maps":[{"key":"map-1","name":"Map","movementMode":"GRID","showGrid":true,"grid":{"w":10,"h":10,"cellPx":48,"gridType":"square"},"document":%s,"tokens":[]}]}""".formatted(richJson);
+                {"formatVersion":1,"campaign":{"name":"DTO test"},"maps":[{"key":"map-1","name":"Map","movementMode":"GRID","showGrid":true,"grid":{"w":10,"h":10,"cellPx":48,"gridType":"SQUARE"},"document":%s,"tokens":[]}]}""".formatted(richJson);
         assertThat(val.validate(richCampaign)).isEmpty();
     }
 }

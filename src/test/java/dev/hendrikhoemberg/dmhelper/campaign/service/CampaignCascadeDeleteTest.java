@@ -37,7 +37,13 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.context.TestConfiguration;
+
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -53,8 +59,23 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 @DataJpaTest
 @Import({CampaignService.class, PartyMemberService.class, StatBlockService.class, GameMapService.class,
          NoteService.class, WikiLinkParser.class, SceneRefCleaner.class, AdventureService.class,
-         HandoutService.class, dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class})
+         HandoutService.class,
+         CampaignCascadeDeleteTest.TestObjectMapperConfig.class,
+         dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class,
+         dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator.class,
+         dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSchemaValidator.class,
+         dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSemanticValidator.class})
 class CampaignCascadeDeleteTest {
+
+    @TestConfiguration
+    static class TestObjectMapperConfig {
+        @Bean
+        ObjectMapper objectMapper() {
+            return JsonMapper.builder()
+                    .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                    .build();
+        }
+    }
 
     @Autowired private CampaignService campaignService;
     @Autowired private PartyMemberService partyMemberService;
