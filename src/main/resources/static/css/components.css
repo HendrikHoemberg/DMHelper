@@ -4,6 +4,11 @@
   gap: var(--space-md);
 }
 
+.card-grid--bounded {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 360px));
+  align-items: start;
+}
+
 /* The empty-state lives inside the grid so a freshly appended card
    (htmx beforeend) hides it with no page refresh. */
 .card-grid:has(.card) .empty-state {

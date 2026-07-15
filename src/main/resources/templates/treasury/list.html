@@ -48,7 +48,7 @@
             <div th:each="pm : ${partyMembers}" class="detail-section">
                 <th:block th:with="holderItems=${#lists.toList(assignments).?[partyMemberId() != null && partyMemberId().equals(pm.id)]}">
                     <h2 th:text="${pm.characterName} + '&apos;s Items'">PC's Items</h2>
-                    <div th:if="${not #lists.isEmpty(holderItems)}" style="display:flex; flex-direction:column; gap: var(--space-sm);">
+                    <div th:if="${not #lists.isEmpty(holderItems)}" class="card-grid card-grid--bounded">
                         <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=${#lists.toList(holderItems).?[attuned()].size()})}"
                              th:each="a : ${holderItems}"></div>
                     </div>
@@ -60,7 +60,7 @@
             <div class="detail-section empty-state-host">
                 <th:block th:with="stashItems=${#lists.toList(assignments).?[partyMemberId() == null]}">
                     <h2>Party Stash</h2>
-                    <div th:if="${not #lists.isEmpty(stashItems)}" style="display:flex; flex-direction:column; gap: var(--space-sm);">
+                    <div th:if="${not #lists.isEmpty(stashItems)}" class="card-grid card-grid--bounded">
                         <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=0)}"
                              th:each="a : ${stashItems}"></div>
                     </div>

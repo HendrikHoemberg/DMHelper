@@ -70,6 +70,20 @@ class UiPolishContractTest {
     }
 
     @Test
+    void denseListsUseTheSharedBoundedGrid() throws IOException {
+        assertThat(read("static/css/components.css"))
+                .contains(".card-grid--bounded")
+                .contains("repeat(auto-fill, minmax(300px, 360px))");
+        assertThat(read("templates/encounter/list.html"))
+                .contains("card-grid card-grid--bounded empty-state-host");
+        assertThat(read("templates/maps/list.html"))
+                .contains("card-grid card-grid--bounded empty-state-host");
+        assertThat(read("templates/treasury/list.html"))
+                .contains("card-grid card-grid--bounded")
+                .doesNotContain("flex-direction:column; gap: var(--space-sm)");
+    }
+
+    @Test
     void focusVisibleTargetsInteractiveElementsWithTokenizedRing() throws IOException {
         String css = read("static/css/base.css");
         assertThat(css).contains(
