@@ -13,11 +13,15 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 class CampaignSemanticValidatorTest {
 
     private final ObjectMapper mapper = new ObjectMapper();
-    private final CampaignSemanticValidator validator = new CampaignSemanticValidator();
+    private final CampaignCatalogResolver catalog = permissiveCatalog();
+    private final CampaignSemanticValidator validator = new CampaignSemanticValidator(catalog);
 
     @Test
     void validFeatureCompleteFixtureProducesNoProblems() throws Exception {
@@ -133,6 +137,88 @@ class CampaignSemanticValidatorTest {
     }
 
     @Test
+    void campaignQuickNoteRequiresExactSentinel() throws Exception {
+        var problems = validate(tree ->
+                ((ObjectNode) tree.get("quicknotes").get(0)).put("targetRef", "campaign-ref"));
+
+        assertThat(problems).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("UNRESOLVED_REFERENCE");
+            assertThat(problem.path()).isEqualTo("/quicknotes/0/targetRef");
+        });
+    }
+
+    @Test
+    void sceneQuickNoteRequiresFullScenePath() throws Exception {
+        var problems = validate(tree ->
+                ((ObjectNode) tree.get("quicknotes").get(7)).put("targetRef", "crypt-entry"));
+
+        assertThat(problems).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("UNRESOLVED_REFERENCE");
+            assertThat(problem.path()).isEqualTo("/quicknotes/7/targetRef");
+        });
+    }
+
+    @Test
+    void duplicatePartyNameMakesConsumerAmbiguous() throws Exception {
+        var problems = validate(tree -> {
+            ObjectNode duplicate = (ObjectNode) tree.get("party").get(0).deepCopy();
+            ((ArrayNode) tree.get("party")).add(duplicate);
+        });
+
+        assertThat(problems).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("DUPLICATE_REFERENCE");
+            assertThat(problem.path()).isEqualTo("/party/1/characterName");
+        });
+        assertThat(problems).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("AMBIGUOUS_REFERENCE");
+            assertThat(problem.path()).isEqualTo("/quicknotes/2/targetRef");
+        });
+    }
+
+    @Test
+    void duplicateNoteTitleMakesConsumerAmbiguous() throws Exception {
+        var problems = validate(tree -> {
+            ObjectNode duplicate = (ObjectNode) tree.get("notes").get(0).deepCopy();
+            ((ArrayNode) tree.get("notes")).add(duplicate);
+        });
+
+        assertThat(problems).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("DUPLICATE_REFERENCE");
+            assertThat(problem.path()).isEqualTo("/notes/1/title");
+        });
+        assertThat(problems).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("AMBIGUOUS_REFERENCE");
+            assertThat(problem.path()).isEqualTo("/quicknotes/4/targetRef");
+        });
+    }
+
+    @Test
+    void duplicateSceneKeyWithinChapterMakesFullPathAmbiguous() throws Exception {
+        var problems = validate(tree -> {
+            ArrayNode scenes = (ArrayNode) tree.get("adventures").get(0).get("chapters").get(0).get("scenes");
+            scenes.add(scenes.get(0).deepCopy());
+        });
+
+        assertThat(problems).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("DUPLICATE_REFERENCE");
+            assertThat(problem.path()).isEqualTo("/adventures/0/chapters/0/scenes/1/sceneKey");
+        });
+        assertThat(problems).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("AMBIGUOUS_REFERENCE");
+            assertThat(problem.path()).isEqualTo("/quicknotes/7/targetRef");
+        });
+    }
+
+    @Test
+    void globalStatBlockKeyIsAcceptedForToken() throws Exception {
+        var problems = validate(tree ->
+                ((ObjectNode) tree.get("maps").get(0).get("tokens").get(0))
+                        .put("statBlockKey", "srd-global-goblin"));
+
+        assertThat(problems).isEmpty();
+    }
+
+    @Test
     void outOfBoundsTokenPositionX() throws Exception {
         var problems = validate(tree -> {
             ((ObjectNode) tree.get("maps").get(0).get("tokens").get(0)).put("positionX", 960);
@@ -142,6 +228,67 @@ class CampaignSemanticValidatorTest {
                 "Token positionX (960) with sizeCols=1, cellPx=48 exceeds map width of 960 px.",
                 "Ensure x + sizeCols * cellPx <= map width in pixels."
         ));
+    }
+
+    @Test
+    void negativeTokenPositionX() throws Exception {
+        var problems = validate(tree ->
+                ((ObjectNode) tree.get("maps").get(0).get("tokens").get(0)).put("positionX", -1));
+
+        assertThat(problems).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("OUT_OF_BOUNDS");
+            assertThat(problem.path()).isEqualTo("/maps/0/tokens/0/positionX");
+        });
+    }
+
+    @Test
+    void embeddedMapCellMustRemainInsideGrid() throws Exception {
+        var problems = validate(tree ->
+                ((ObjectNode) tree.get("maps").get(0).get("document").get("layers").get(0)
+                        .get("cells").get(0)).put("col", 20));
+
+        assertThat(problems).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("OUT_OF_BOUNDS");
+            assertThat(problem.path()).isEqualTo("/maps/0/document/layers/0/cells/0/col");
+        });
+    }
+
+    @Test
+    void embeddedMapPrimitiveMustRemainInsideGrid() throws Exception {
+        var problems = validate(tree ->
+                ((ObjectNode) tree.get("maps").get(0).get("document").get("primitives").get(0))
+                        .put("endCol", 20));
+
+        assertThat(problems).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("OUT_OF_BOUNDS");
+            assertThat(problem.path()).isEqualTo("/maps/0/document/primitives/0/endCol");
+        });
+    }
+
+    @Test
+    void embeddedMapShapeExtentMustRemainInsideGrid() throws Exception {
+        var problems = validate(tree -> {
+            ArrayNode points = ((ObjectNode) tree.get("maps").get(0).get("document").get("layers").get(1)
+                    .get("shapes").get(0)).putArray("points");
+            points.add(18).add(0).add(3).add(1);
+        });
+
+        assertThat(problems).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("OUT_OF_BOUNDS");
+            assertThat(problem.path()).isEqualTo("/maps/0/document/layers/1/shapes/0/points");
+        });
+    }
+
+    @Test
+    void embeddedMapImageExtentMustRemainInsideGrid() throws Exception {
+        var problems = validate(tree ->
+                ((ObjectNode) tree.get("maps").get(0).get("document").get("layers").get(3)
+                        .get("image")).put("x", 1));
+
+        assertThat(problems).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("OUT_OF_BOUNDS");
+            assertThat(problem.path()).isEqualTo("/maps/0/document/layers/3/image");
+        });
     }
 
     @Test
@@ -200,5 +347,18 @@ class CampaignSemanticValidatorTest {
         try (var in = new ClassPathResource(path).getInputStream()) {
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
+    }
+
+    private static CampaignCatalogResolver permissiveCatalog() {
+        CampaignCatalogResolver catalog = mock(CampaignCatalogResolver.class);
+        lenient().when(catalog.hasStatBlock(anyString())).thenReturn(true);
+        lenient().when(catalog.hasSpecies(anyString())).thenReturn(true);
+        lenient().when(catalog.hasBackground(anyString())).thenReturn(true);
+        lenient().when(catalog.hasCharacterClass(anyString())).thenReturn(true);
+        lenient().when(catalog.hasFeat(anyString())).thenReturn(true);
+        lenient().when(catalog.hasSpell(anyString())).thenReturn(true);
+        lenient().when(catalog.hasMagicItem(anyString())).thenReturn(true);
+        lenient().when(catalog.hasEquipmentItem(anyString())).thenReturn(true);
+        return catalog;
     }
 }

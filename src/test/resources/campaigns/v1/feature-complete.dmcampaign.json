@@ -189,14 +189,14 @@
     }
   ],
   "quicknotes": [
-    { "targetType": "CAMPAIGN", "targetRef": "campaign-ref", "body": "Campaign note", "createdAt": "2024-01-15T10:30:00Z" },
+    { "targetType": "CAMPAIGN", "targetRef": "CAMPAIGN", "body": "Campaign note", "createdAt": "2024-01-15T10:30:00Z" },
     { "targetType": "MAP", "targetRef": "map-crypt", "body": "Map note", "createdAt": "2024-01-15T10:31:00Z" },
     { "targetType": "PARTY_MEMBER", "targetRef": "Aria", "body": "Party note", "createdAt": "2024-01-15T10:32:00Z" },
     { "targetType": "STATBLOCK", "targetRef": "custom_goblin-captain", "body": "Statblock note", "createdAt": "2024-01-15T10:33:00Z" },
     { "targetType": "NOTE", "targetRef": "Crypt Lore", "body": "Note about note", "createdAt": "2024-01-15T10:34:00Z" },
     { "targetType": "HANDOUT", "targetRef": "Warning Plaque", "body": "Handout note", "createdAt": "2024-01-15T10:35:00Z" },
     { "targetType": "ENCOUNTER", "targetRef": "crypt-guardians", "body": "Encounter note", "createdAt": "2024-01-15T10:36:00Z" },
-    { "targetType": "SCENE", "targetRef": "crypt-entry", "body": "Scene note", "createdAt": "2024-01-15T10:37:00Z" }
+    { "targetType": "SCENE", "targetRef": "Crypt Descent/Chapter 1/crypt-entry", "body": "Scene note", "createdAt": "2024-01-15T10:37:00Z" }
   ],
   "assignments": [
     {
@@ -232,13 +232,13 @@
   ],
   "adventures": [
     {
-      "name": "The Lost Crypt",
+      "name": "Crypt Descent",
       "description": "An adventure into the ancient dwarven crypt.",
       "sourceAttribution": "Homebrew",
       "sortOrder": 1,
       "chapters": [
         {
-          "title": "Chapter 1: The Entrance",
+          "title": "Chapter 1",
           "intro": "The party stands before the ancient doors.",
           "sortOrder": 1,
           "scenes": [

@@ -107,6 +107,30 @@ class CampaignSchemaValidatorTest {
     }
 
     @Test
+    void rejectsNegativeTokenCoordinates() {
+        String json = """
+                {
+                  "formatVersion":1,
+                  "campaign":{"name":"Negative token"},
+                  "maps":[{
+                    "key":"map-1","name":"Map","movementMode":"GRID","showGrid":true,
+                    "grid":{"w":10,"h":8,"cellPx":48,"gridType":"SQUARE"},
+                    "document":{"schemaVersion":1,
+                      "grid":{"width":10,"height":8,"cellSizePx":48,"gridType":"square"},
+                      "layers":[]},
+                    "tokens":[{"id":"t-1","name":"Token","positionX":-1,"positionY":0,
+                               "sizeCols":1,"sizeRows":1,"hidden":false,"dead":false}]
+                  }]
+                }
+                """;
+
+        assertThat(validator.validate(json)).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("SCHEMA_MINIMUM");
+            assertThat(problem.path()).isEqualTo("/maps/0/tokens/0/positionX");
+        });
+    }
+
+    @Test
     void bothSchemaDocumentsValidateAgainstDraft202012MetaSchema() throws Exception {
         SchemaRegistry registry = SchemaRegistry.withDialect(Dialects.getDraft202012());
         Schema metaSchema = registry.getSchema(SchemaLocation.of(Dialects.getDraft202012().getId()));

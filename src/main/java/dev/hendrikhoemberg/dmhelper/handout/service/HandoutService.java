@@ -9,6 +9,8 @@ import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -89,8 +91,34 @@ public class HandoutService {
         handout.setFileName(storageName);
 
         Files.createDirectories(filesDir);
-        Files.write(filesDir.resolve(storageName), bytes, StandardOpenOption.CREATE_NEW);
-        return handoutRepository.save(handout);
+        Path storedFile = filesDir.resolve(storageName);
+        Files.write(storedFile, bytes, StandardOpenOption.CREATE_NEW);
+        try {
+            registerRollbackCleanup(storedFile);
+            return handoutRepository.save(handout);
+        } catch (RuntimeException | Error failure) {
+            try {
+                Files.deleteIfExists(storedFile);
+            } catch (IOException cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+            throw failure;
+        }
+    }
+
+    private static void registerRollbackCleanup(Path storedFile) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) return;
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_COMMITTED) return;
+                try {
+                    Files.deleteIfExists(storedFile);
+                } catch (IOException ignored) {
+                    // Transaction completion cannot be retried here; retain the database rollback.
+                }
+            }
+        });
     }
 
     private static String extensionFor(String contentType) {

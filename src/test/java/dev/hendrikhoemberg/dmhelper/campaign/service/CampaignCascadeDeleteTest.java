@@ -64,6 +64,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
          dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class,
          dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator.class,
          dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSchemaValidator.class,
+         dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignCatalogResolver.class,
          dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSemanticValidator.class})
 class CampaignCascadeDeleteTest {
 

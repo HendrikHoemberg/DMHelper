@@ -31,13 +31,14 @@ The import pipeline validates in this exact order:
 ### Dry-run response
 
 ```
-POST /campaigns/import (with dry-run parameter)
+POST /campaigns/import?dryRun=true
 ```
 
 If valid:
 ```json
 {
   "valid": true,
+  "status": "READY",
   "problems": []
 }
 ```
@@ -46,7 +47,7 @@ If invalid (schema error):
 ```json
 {
   "valid": false,
-  "campaign": null,
+  "status": "BLOCKED",
   "problems": [
     {
       "severity": "ERROR",
@@ -63,6 +64,7 @@ If invalid (semantic error):
 ```json
 {
   "valid": false,
+  "status": "BLOCKED",
   "problems": [
     {
       "severity": "ERROR",
@@ -92,15 +94,15 @@ If invalid (semantic error):
 
 ## 5. Name/Key Reference Table
 
-Version 1 uses display names as cross-references (not stable keys). The following table shows which name/key type each reference field uses:
+Version 1 uses a mixture of document-local keys, names, and catalog source keys. The following table shows the exact representation for each reference field:
 
 | Source field | Refers to | Key type |
 |---|---|---|
-| `scene.map` | `map.name` | Display name |
+| `scene.map` | `map.key` or `map.name` | Key (preferred), unique-name fallback |
 | `scene.encounter` | `encounter.encounterKey` or `encounter.name` | Key (preferred), fallback to name |
 | `scene.statblocks[i]` | `statBlock.sourceKey` | Source key |
 | `scene.handouts[i]` | `handout.title` | Display title |
-| `encounter.map` | `map.name` | Display name |
+| `encounter.map` | `map.key` or `map.name` | Key (preferred), unique-name fallback |
 | `combatant.tokenId` | `token.id` | Token ID string |
 | `combatant.statBlockKey` | `statBlock.sourceKey` | Source key |
 | `combatant.partyMemberName` | `partyMember.characterName` | Character name |
@@ -109,13 +111,14 @@ Version 1 uses display names as cross-references (not stable keys). The followin
 | `assignment.holderName` | `partyMember.characterName` | Character name |
 | `assignment.magicItemKey` | Magic item `sourceKey` | Compendium source key |
 | `assignment.equipmentItemKey` | Equipment item `sourceKey` | Compendium source key |
-| `quicknote.targetRef` (type MAP) | `map.key` | Map key (UUID string) |
+| `quicknote.targetRef` (type CAMPAIGN) | Exact sentinel `CAMPAIGN` | Sentinel |
+| `quicknote.targetRef` (type MAP) | `map.key` | Map key |
 | `quicknote.targetRef` (type STATBLOCK) | `statBlock.sourceKey` | Source key |
 | `quicknote.targetRef` (type NOTE) | `note.title` | Display title |
 | `quicknote.targetRef` (type HANDOUT) | `handout.title` | Display title |
 | `quicknote.targetRef` (type PARTY_MEMBER) | `partyMember.characterName` | Character name |
 | `quicknote.targetRef` (type ENCOUNTER) | `encounter.encounterKey` | Encounter key |
-| `quicknote.targetRef` (type SCENE) | `scene.sceneKey` | Scene key |
+| `quicknote.targetRef` (type SCENE) | `Adventure name/Chapter title/sceneKey` | Full scene path |
 | `ledger.itemAssignmentRef` | `assignment.id` | UUID |
 | `timeline.noteTitle` | `note.title` | Display title |
 | `sheet.speciesKey` | Species `sourceKey` | Compendium source key |
@@ -124,9 +127,21 @@ Version 1 uses display names as cross-references (not stable keys). The followin
 | `classLevel.classSourceKey` | Class `sourceKey` | Compendium source key |
 | `spellRef.spellKey` | Spell `sourceKey` | Compendium source key |
 
+Package statblocks are resolved by their unique `sourceKey`; references may also target an existing
+global SRD or custom statblock without copying it into `statBlocks`. Species, background, class,
+feat, spell, magic-item, and equipment-item keys are resolved against their exact typed catalog—an
+existing key from a different catalog type is not accepted.
+
+Each assignment must name an existing, unambiguous party member and contain exactly one item source:
+`magicItemKey`, `equipmentItemKey`, or non-blank `customText`.
+
 ### Ambiguity behavior
 
-When a display name matches multiple entities, the semantic validator emits an `AMBIGUOUS_REFERENCE` warning (not an error). Import proceeds using the first match. Version 2 will require stable keys and reject ambiguous references.
+When a referenced display name or path matches multiple entities, the semantic validator emits an
+`AMBIGUOUS_REFERENCE` error and blocks import. Version 1 never selects the first match silently.
+Package statblock source keys, party names, handout and note titles, assignment IDs, adventure names,
+chapter titles within an adventure, and scene keys within a chapter must be unique wherever the v1
+reference vocabulary depends on them.
 
 ## 6. Embedded Handout Rules
 
@@ -155,7 +170,8 @@ On import, the original `fileName` value is used as metadata only. The actual fi
 
 ```bash
 # Dry-run a campaign file
-curl -X POST -F "file=@path/to/campaign.dmcampaign.json" http://localhost:8080/campaigns/dry-run
+curl -X POST -F "file=@path/to/campaign.dmcampaign.json" \
+  "http://localhost:8080/campaigns/import?dryRun=true"
 
 # Import a campaign file
 curl -X POST -F "file=@path/to/campaign.dmcampaign.json" http://localhost:8080/campaigns/import

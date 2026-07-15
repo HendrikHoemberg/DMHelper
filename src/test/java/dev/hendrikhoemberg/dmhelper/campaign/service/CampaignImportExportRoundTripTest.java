@@ -8,6 +8,7 @@ import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEventRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignCatalogResolver;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSchemaValidator;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSemanticValidator;
@@ -53,10 +54,12 @@ import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -66,6 +69,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
          NoteService.class, WikiLinkParser.class, SceneRefCleaner.class, AdventureService.class,
          HandoutService.class,
          CampaignImportValidator.class, CampaignSchemaValidator.class, CampaignSemanticValidator.class,
+         CampaignCatalogResolver.class,
          CampaignImportExportRoundTripTest.TestObjectMapperConfig.class,
          dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class})
 class CampaignImportExportRoundTripTest {
@@ -630,6 +634,43 @@ class CampaignImportExportRoundTripTest {
     }
 
     @Test
+    void globalStatBlockReferencesValidateImportAndExportConsistently() throws Exception {
+        StatBlock global = statBlockService.createCustom(null, "Global Goblin", "1/4", "Humanoid",
+                15, "7 (2d6)", "30 ft.",
+                8, 14, 10, 10, 8, 8,
+                null, null, null, null, null, null,
+                null, null, null, null, null,
+                null, "Common",
+                "srd-global-goblin", 50);
+
+        JsonNode tree = objectMapper.readTree(resource("campaigns/v1/feature-complete.dmcampaign.json"));
+        ((ObjectNode) tree.get("maps").get(0).get("tokens").get(0))
+                .put("statBlockKey", global.getSourceKey());
+        ((tools.jackson.databind.node.ArrayNode) tree.get("adventures").get(0).get("chapters").get(0)
+                .get("scenes").get(0).get("statblocks")).set(0, global.getSourceKey());
+        ((ObjectNode) tree.get("quicknotes").get(3)).put("targetRef", global.getSourceKey());
+        String json = objectMapper.writeValueAsString(tree);
+
+        assertThat(campaignService.validateImport(json).valid()).isTrue();
+        Campaign imported = campaignService.importFromJson(json);
+
+        Scene importedScene = sceneRepo.findByChapterAdventureCampaignId(imported.getId()).get(0);
+        assertThat(importedScene.getStatBlocks()).extracting(StatBlock::getId).containsExactly(global.getId());
+        assertThat(quickNoteRepository.findByCampaignIdOrderByCreatedAtDesc(imported.getId()))
+                .filteredOn(note -> "STATBLOCK".equals(note.getTargetType()))
+                .extracting(QuickNote::getTargetId)
+                .containsExactly(global.getId());
+
+        String exported = campaignService.exportToJson(imported.getId());
+        assertThat(campaignService.validateImport(exported).valid()).isTrue();
+        assertThat(objectMapper.readTree(exported).get("quicknotes"))
+                .anySatisfy(note -> {
+                    assertThat(note.get("targetType").asText()).isEqualTo("STATBLOCK");
+                    assertThat(note.get("targetRef").asText()).isEqualTo(global.getSourceKey());
+                });
+    }
+
+    @Test
     void unknownPropertyFixtureIsRejectedByBothPaths() throws Exception {
         String source = resource("campaigns/v1/invalid-unknown-property.dmcampaign.json");
         long campaignCount = campaignRepo.count();
@@ -664,6 +705,54 @@ class CampaignImportExportRoundTripTest {
     }
 
     @Test
+    void dryRunRejectsUnknownKeysFromEveryTypedCatalog() throws Exception {
+        assertUnresolvedCatalogKey(tree ->
+                        ((ObjectNode) tree.get("party").get(0).get("sheet"))
+                                .put("speciesKey", "missing-species"),
+                "/party/0/sheet/speciesKey");
+        assertUnresolvedCatalogKey(tree ->
+                        ((ObjectNode) tree.get("party").get(0).get("sheet"))
+                                .put("backgroundKey", "missing-background"),
+                "/party/0/sheet/backgroundKey");
+        assertUnresolvedCatalogKey(tree ->
+                        ((ObjectNode) tree.get("party").get(0).get("sheet")
+                                .get("classLevels").get(0)).put("classSourceKey", "missing-class"),
+                "/party/0/sheet/classLevels/0/classSourceKey");
+        assertUnresolvedCatalogKey(tree ->
+                        ((tools.jackson.databind.node.ArrayNode) tree.get("party").get(0).get("sheet")
+                                .get("featRefs")).set(0, "missing-feat"),
+                "/party/0/sheet/featRefs/0");
+        assertUnresolvedCatalogKey(tree ->
+                        ((ObjectNode) tree.get("party").get(0).get("sheet")
+                                .get("spells").get(0)).put("spellKey", "missing-spell"),
+                "/party/0/sheet/spells/0/spellKey");
+        assertUnresolvedCatalogKey(tree ->
+                        ((ObjectNode) tree.get("assignments").get(0))
+                                .put("magicItemKey", "missing-magic-item"),
+                "/assignments/0/magicItemKey");
+        assertUnresolvedCatalogKey(tree -> {
+                    ObjectNode assignment = (ObjectNode) tree.get("assignments").get(0);
+                    assignment.remove("magicItemKey");
+                    assignment.put("equipmentItemKey", "missing-equipment-item");
+                },
+                "/assignments/0/equipmentItemKey");
+    }
+
+    @Test
+    void dryRunRejectsAssignmentWithMoreThanOneItemSource() throws Exception {
+        JsonNode tree = objectMapper.readTree(resource("campaigns/v1/feature-complete.dmcampaign.json"));
+        ((ObjectNode) tree.get("assignments").get(0)).put("customText", "A second source");
+
+        CampaignValidationResult result = campaignService.validateImport(objectMapper.writeValueAsString(tree));
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.problems()).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("INVALID_ASSIGNMENT_SOURCE");
+            assertThat(problem.path()).isEqualTo("/assignments/0");
+        });
+    }
+
+    @Test
     void minimalValidFixtureIsAcceptedByBothPaths() throws Exception {
         String source = resource("campaigns/v1/minimal.dmcampaign.json");
         long campaignCount = campaignRepo.count();
@@ -683,6 +772,19 @@ class CampaignImportExportRoundTripTest {
         CampaignExportDto dto2 = objectMapper.readValue(json2, CampaignExportDto.class);
 
         assertThat(normalizeDto(dto1)).isEqualTo(normalizeDto(dto2));
+    }
+
+    private void assertUnresolvedCatalogKey(Consumer<JsonNode> mutation, String expectedPath) throws Exception {
+        JsonNode tree = objectMapper.readTree(resource("campaigns/v1/feature-complete.dmcampaign.json"));
+        mutation.accept(tree);
+
+        CampaignValidationResult result = campaignService.validateImport(objectMapper.writeValueAsString(tree));
+
+        assertThat(result.valid()).as(expectedPath).isFalse();
+        assertThat(result.problems()).as(expectedPath).anySatisfy(problem -> {
+            assertThat(problem.code()).isEqualTo("UNRESOLVED_REFERENCE");
+            assertThat(problem.path()).isEqualTo(expectedPath);
+        });
     }
 
     private CampaignExportDto normalizeDto(CampaignExportDto dto) {

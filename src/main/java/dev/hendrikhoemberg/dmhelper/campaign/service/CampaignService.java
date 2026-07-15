@@ -322,12 +322,21 @@ public class CampaignService {
         var noteEntities = noteRepository.findByCampaignIdOrderByCreatedAtDesc(id);
         var noteDtos = noteEntities.stream()
                 .map(CampaignExportDto.NoteExportDto::from).toList();
+        var quickNoteEntities = quickNoteRepository.findByCampaignIdOrderByCreatedAtDesc(id);
         java.util.Map<java.util.UUID, String> quickNoteIdMappings = new java.util.HashMap<>();
         for (var gm : gameMaps) {
             quickNoteIdMappings.put(gm.getId(), gm.getId().toString());
         }
         for (var sb : statBlockEntities) {
             if (sb.getSourceKey() != null) quickNoteIdMappings.put(sb.getId(), sb.getSourceKey());
+        }
+        for (var quickNote : quickNoteEntities) {
+            if ("STATBLOCK".equals(quickNote.getTargetType())) {
+                statBlockRepository.findById(quickNote.getTargetId())
+                        .filter(statBlock -> statBlock.getSourceKey() != null)
+                        .ifPresent(statBlock -> quickNoteIdMappings.put(
+                                statBlock.getId(), statBlock.getSourceKey()));
+            }
         }
         for (var note : noteEntities) {
             quickNoteIdMappings.put(note.getId(), note.getTitle());
@@ -352,7 +361,7 @@ public class CampaignService {
             }
         }
         quickNoteIdMappings.put(id, "CAMPAIGN");
-        var quickNoteDtos = quickNoteRepository.findByCampaignIdOrderByCreatedAtDesc(id).stream()
+        var quickNoteDtos = quickNoteEntities.stream()
                 .map(qn -> CampaignExportDto.QuickNoteExportDto.from(qn, quickNoteIdMappings))
                 .toList();
 
@@ -457,7 +466,6 @@ public class CampaignService {
         java.util.Map<String, UUID> mapKeyToId = new java.util.HashMap<>();
         java.util.Map<String, UUID> mapNameToId = new java.util.HashMap<>();
         java.util.Map<String, UUID> tokenOldToNewId = new java.util.HashMap<>();
-        java.util.Map<String, UUID> statblockKeyToId = new java.util.HashMap<>();
         java.util.Map<String, UUID> encounterKeyToId = new java.util.HashMap<>();
         java.util.Map<String, UUID> encounterNameToId = new java.util.HashMap<>();
         java.util.Map<String, UUID> partyMemberNameToId = new java.util.HashMap<>();
@@ -506,9 +514,6 @@ public class CampaignService {
                 if (sbDto.legendaryDescription() != null) sb.setLegendaryDescription(sbDto.legendaryDescription());
                 if (sbDto.lairActions() != null) sb.setLairActions(sbDto.lairActions());
                 sb.setXp(sbDto.xp());
-                if (sbDto.sourceKey() != null) {
-                    statblockKeyToId.put(sbDto.sourceKey(), sb.getId());
-                }
             }
         }
 
@@ -624,7 +629,8 @@ public class CampaignService {
                     encounter.setEncounterKey(encDto.encounterKey());
                 }
                 if (encDto.map() != null) {
-                    UUID mapId = mapNameToId.get(encDto.map());
+                    UUID mapId = mapKeyToId.get(encDto.map());
+                    if (mapId == null) mapId = mapNameToId.get(encDto.map());
                     if (mapId != null) {
                         encounter.setMap(gameMapService.findById(mapId));
                     } else {
@@ -724,7 +730,8 @@ public class CampaignService {
                                         dev.hendrikhoemberg.dmhelper.adventure.data.SceneStatus.UNVISITED);
                                 sc.setSortOrder(scDto.sortOrder());
                                 if (scDto.map() != null) {
-                                    UUID mapId = mapNameToId.get(scDto.map());
+                                    UUID mapId = mapKeyToId.get(scDto.map());
+                                    if (mapId == null) mapId = mapNameToId.get(scDto.map());
                                     if (mapId != null) {
                                         sc.setMap(gameMapService.findById(mapId));
                                     } else {
@@ -752,20 +759,15 @@ public class CampaignService {
                                 }
                                 sceneRepo.save(sc);
                                 scenePathToId.put(advDto.name() + "/" + chDto.title() + "/" + sc.getSceneKey(), sc.getId());
-                                if (scDto.sceneKey() != null) {
-                                    scenePathToId.putIfAbsent(scDto.sceneKey(), sc.getId());
-                                }
                                 if (scDto.statblocks() != null) {
                                     for (var sbKey : scDto.statblocks()) {
-                                        UUID sbId = statblockKeyToId.get(sbKey);
-                                        if (sbId != null) {
-                                            sc.getStatBlocks().add(statBlockRepository.findById(sbId)
-                                                    .orElseThrow(() -> new IllegalStateException(
-                                                            "Validated reference disappeared: statblock key '" + sbKey + "' for scene '" + scDto.title() + "'")));
-                                        } else {
-                                            throw new IllegalStateException(
-                                                    "Validated reference disappeared: statblock key '" + sbKey + "' for scene '" + scDto.title() + "'");
-                                        }
+                                        StatBlock resolved = statBlockRepository
+                                                .findByCampaignIdAndSourceKey(saved.getId(), sbKey)
+                                                .or(() -> statBlockRepository.findBySourceKey(sbKey))
+                                                .orElseThrow(() -> new IllegalStateException(
+                                                        "Validated reference disappeared: statblock key '" + sbKey
+                                                                + "' for scene '" + scDto.title() + "'"));
+                                        sc.getStatBlocks().add(resolved);
                                     }
                                     if (!scDto.statblocks().isEmpty()) {
                                         sceneRepo.save(sc);
@@ -823,7 +825,10 @@ public class CampaignService {
                 if (qnDto.targetRef() != null) {
                     resolvedId = switch (qnDto.targetType()) {
                         case "MAP" -> mapKeyToId.get(qnDto.targetRef());
-                        case "STATBLOCK" -> statblockKeyToId.get(qnDto.targetRef());
+                        case "STATBLOCK" -> statBlockRepository
+                                .findByCampaignIdAndSourceKey(saved.getId(), qnDto.targetRef())
+                                .or(() -> statBlockRepository.findBySourceKey(qnDto.targetRef()))
+                                .map(StatBlock::getId).orElse(null);
                         case "NOTE" -> {
                             var notes = noteRepository.findByCampaignIdAndTitle(saved.getId(), qnDto.targetRef());
                             yield notes.isEmpty() ? null : notes.get(0).getId();
@@ -842,19 +847,10 @@ public class CampaignService {
                         case "PARTY_MEMBER" -> partyMemberNameToId.get(qnDto.targetRef());
                         case "CAMPAIGN" -> saved.getId();
                         case "SCENE" -> scenePathToId.get(qnDto.targetRef());
-                        default -> {
-                            try {
-                                yield java.util.UUID.fromString(qnDto.targetRef());
-                            } catch (Exception e) {
-                                yield null;
-                            }
-                        }
+                        default -> throw new IllegalStateException(
+                                "Validated quicknote target type disappeared from the v1 contract: "
+                                        + qnDto.targetType());
                     };
-                    if (resolvedId == null) {
-                        try {
-                            resolvedId = java.util.UUID.fromString(qnDto.targetRef());
-                        } catch (Exception e) { /* leave null */ }
-                    }
                 }
                 if (resolvedId == null) {
                     throw new IllegalStateException(
