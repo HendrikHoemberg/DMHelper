@@ -44,7 +44,6 @@ public final class CampaignSemanticValidator {
         validateBounds(dto, index, problems);
         validateGrid(dto, index, problems);
         validateEncounterState(dto, index, problems);
-        validateSheetCatalog(dto, index, problems);
 
         return problems.stream()
                 .sorted(Comparator.comparing(CampaignImportProblem::path)
@@ -507,7 +506,7 @@ public final class CampaignSemanticValidator {
                     SceneExportDto sc = ch.scenes().get(si);
                     if (sc.pin() == null || sc.map() == null) continue;
                     MapExportDto map = resolveMapByName(sc.map(), index);
-                    if (map == null) continue;
+                    if (map == null || map.grid() == null) continue;
                     int mapW = map.grid().w() * map.grid().cellPx();
                     int mapH = map.grid().h() * map.grid().cellPx();
                     Map<String, Integer> pin = sc.pin();
@@ -597,6 +596,8 @@ public final class CampaignSemanticValidator {
     }
 
     private void validateSheetCatalog(CampaignExportDto dto, V1Index index, List<CampaignImportProblem> problems) {
+        // v1 checkpoint: sheet catalog lookups require repository injection.
+        // This will be enabled when package-v2 typed catalog resolution is added.
     }
 
     private <T> void resolveUniqueName(String basePath, String typeLabel, String value, String thingLabel,
