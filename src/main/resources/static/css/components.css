@@ -1860,6 +1860,9 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   overflow: hidden;
+  /* Native <dialog> UA style forces color:CanvasText (black); restore the app's text color
+     so unstyled children (e.g. the header h3) don't render black. */
+  color: var(--color-text);
 }
 .modal-header {
   display: flex;
@@ -1871,6 +1874,8 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
 .modal-header h3 {
   font-size: var(--text-lg);
   margin: 0;
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
 }
 .modal-close {
   background: none;

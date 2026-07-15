@@ -247,7 +247,7 @@
         </div>
 
         <div class="cockpit-partybar">
-            <th:block th:replace="~{party/_summary-bar :: summary-bar(${partyMembers})}"></th:block>
+            <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${partyMembers}, oob=null)}"></th:block>
         </div>
 
         <div class="battle-statusbar">

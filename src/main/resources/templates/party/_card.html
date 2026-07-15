@@ -4,12 +4,10 @@
      th:id="'pm-card-' + ${pm.id}"
      th:classappend="${!pm.active} ? 'pm-inactive'">
     <h3 th:text="${pm.characterName}">Character Name</h3>
-    <div class="pm-player">
-        <span th:if="${pm.playerName != null and !pm.playerName.isBlank()}">
-            Played by <span th:text="${pm.playerName}"></span>
-        </span>
+    <div class="pm-player" th:with="hasPlayer=${pm.playerName != null and !pm.playerName.isBlank()}">
+        <span th:if="${hasPlayer}" th:text="'Played by ' + ${pm.playerName}">Played by X</span>
         <span th:if="${pm.classAndLevel != null and !pm.classAndLevel.isBlank()}"
-              th:text="' | ' + ${pm.classAndLevel}"></span>
+              th:text="${hasPlayer} ? ' | ' + ${pm.classAndLevel} : ${pm.classAndLevel}">Class</span>
     </div>
     <dl class="pm-stats">
         <div><dt>AC</dt><dd th:text="${pm.ac}">16</dd></div>
@@ -47,4 +45,9 @@
         <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${pm.campaign.id}, targetType='PARTY_MEMBER', targetId=${pm.id})}"></th:block>
     </div>
 </div>
+<!-- Card plus an out-of-band refresh of the top summary bar (kept in sync after add/edit/toggle). -->
+<th:block th:fragment="cardWithSummary(pm, activeMembers)">
+    <th:block th:replace="~{party/_card :: card(pm=${pm})}"></th:block>
+    <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${activeMembers}, oob='true')}"></th:block>
+</th:block>
 </html>

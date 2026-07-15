@@ -41,7 +41,7 @@
                 </button>
             </div>
 
-            <th:block th:replace="~{party/_summary-bar :: summary-bar(${partyMembers})}"></th:block>
+            <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${partyMembers}, oob=null)}"></th:block>
 
             <div class="dash-grid">
                 <section class="card dash-card" style="--stagger: 0">

@@ -25,7 +25,7 @@
                 </div>
             </div>
 
-            <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${activeMembers})}"></th:block>
+            <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${activeMembers}, oob=null)}"></th:block>
 
             <div id="party-grid" class="card-grid">
                 <th:block th:if="${members == null or members.isEmpty()}">
