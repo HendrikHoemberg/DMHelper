@@ -36,7 +36,7 @@
                 </th:block>
             </div>
             <dialog id="party-form-modal" class="modal"
-                    hx-on::after-swap="this.showModal()"
+                    hx-on::after-swap="if(!this.open) this.showModal()"
                     onclick="if (event.target === this) this.close();"></dialog>
         </main>
     </div>
