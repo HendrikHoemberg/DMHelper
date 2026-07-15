@@ -16,6 +16,9 @@
                     <h1>Campaigns</h1>
                     <div class="rule-taper rule-taper--gold"></div>
                 </div>
+                <button class="btn" onclick="Alpine.$data(document.querySelector('[x-data=\'campaignImport\']')).openDialog()">
+                    Import Campaign Package
+                </button>
             </div>
 
             <div class="bookshelf" id="campaign-grid">
@@ -35,5 +38,6 @@
         </main>
 
     </div>
+    <th:block th:replace="~{campaigns/_import-dialog :: import-dialog}"></th:block>
 </body>
 </html>
