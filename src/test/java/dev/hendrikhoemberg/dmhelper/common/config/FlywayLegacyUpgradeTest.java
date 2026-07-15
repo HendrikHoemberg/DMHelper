@@ -71,4 +71,20 @@ class FlywayLegacyUpgradeTest {
                 .extracting(Campaign::getName)
                 .contains("Curse of Strahd");
     }
+
+    @Test
+    void appliesV3AfterBaseline() {
+        Integer appliedV3 = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '3' AND \"success\" = TRUE",
+                Integer.class);
+        assertThat(appliedV3).isEqualTo(1);
+    }
+
+    @Test
+    void v3TableExistsAfterUpgrade() {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'CAMPAIGN_PACKAGE_KEY'",
+                Integer.class);
+        assertThat(count).isEqualTo(1);
+    }
 }

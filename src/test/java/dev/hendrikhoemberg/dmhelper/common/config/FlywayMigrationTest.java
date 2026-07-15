@@ -36,4 +36,22 @@ class FlywayMigrationTest {
 
         assertThat(campaignTables).isEqualTo(1);
     }
+
+    @Test
+    void v3CreatesCampaignPackageKeyTable() {
+        Integer appliedV3 = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '3' AND \"success\" = TRUE",
+                Integer.class);
+        assertThat(appliedV3).isEqualTo(1);
+    }
+
+    @Test
+    void packageKeyTableHasExpectedConstraints() {
+        String sql = """
+                SELECT COUNT(*) FROM information_schema.table_constraints
+                WHERE table_name = 'CAMPAIGN_PACKAGE_KEY'
+                AND constraint_name IN ('UQ_PACKAGE_KEY_ENTITY', 'UQ_PACKAGE_KEY_VALUE', 'FK_PACKAGE_KEY_CAMPAIGN')""";
+        Integer constraints = jdbc.queryForObject(sql, Integer.class);
+        assertThat(constraints).isEqualTo(3);
+    }
 }
