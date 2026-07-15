@@ -53,7 +53,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 @DataJpaTest
 @Import({CampaignService.class, PartyMemberService.class, StatBlockService.class, GameMapService.class,
          NoteService.class, WikiLinkParser.class, SceneRefCleaner.class, AdventureService.class,
-         HandoutService.class})
+         HandoutService.class, dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class})
 class CampaignCascadeDeleteTest {
 
     @Autowired private CampaignService campaignService;

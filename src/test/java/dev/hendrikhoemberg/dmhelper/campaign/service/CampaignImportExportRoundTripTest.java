@@ -49,7 +49,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @Import({CampaignService.class, PartyMemberService.class, StatBlockService.class, GameMapService.class,
-         NoteService.class, WikiLinkParser.class, SceneRefCleaner.class, AdventureService.class})
+         NoteService.class, WikiLinkParser.class, SceneRefCleaner.class, AdventureService.class,
+         dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class})
 class CampaignImportExportRoundTripTest {
 
     @Autowired private CampaignService campaignService;

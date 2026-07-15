@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
@@ -29,6 +30,7 @@ public class NoteService {
     private final EncounterRepository encounterRepository;
     private final WikiLinkParser wikiLinkParser;
     private final SceneRepository sceneRepository;
+    private final ContentDestinationRegistry destinations;
 
     public NoteService(NoteRepository noteRepository,
                        NoteLinkRepository noteLinkRepository,
@@ -38,7 +40,8 @@ public class NoteService {
                        HandoutRepository handoutRepository,
                        EncounterRepository encounterRepository,
                        WikiLinkParser wikiLinkParser,
-                       SceneRepository sceneRepository) {
+                       SceneRepository sceneRepository,
+                       ContentDestinationRegistry destinations) {
         this.noteRepository = noteRepository;
         this.noteLinkRepository = noteLinkRepository;
         this.campaignRepository = campaignRepository;
@@ -48,6 +51,7 @@ public class NoteService {
         this.encounterRepository = encounterRepository;
         this.wikiLinkParser = wikiLinkParser;
         this.sceneRepository = sceneRepository;
+        this.destinations = destinations;
     }
 
     public Note create(UUID campaignId, NoteType type, String title, String body, String tags, boolean dmOnly) {
@@ -139,14 +143,16 @@ public class NoteService {
                     var notes = noteRepository.findByCampaignIdAndTitle(
                             note.getCampaign().getId(), target.title());
                     if (!notes.isEmpty()) {
-                        url = "/campaigns/" + note.getCampaign().getId() + "/notes/" + notes.get(0).getId();
+                        url = destinations.campaign(ContentDestinationRegistry.CampaignType.NOTE,
+                                note.getCampaign().getId(), notes.getFirst().getId(), null);
                         resolved = true;
                     }
                 }
                 case "STATBLOCK" -> {
                     var hits = statBlockService.search(null, null, null, target.title());
                     if (!hits.isEmpty()) {
-                        url = "/library/statblocks/" + hits.get(0).getId();
+                        url = destinations.library(ContentDestinationRegistry.LibraryType.STATBLOCK,
+                                hits.getFirst().getId(), hits.getFirst().getSourceKey(), hits.getFirst().getName());
                         resolved = true;
                     }
                 }
@@ -157,7 +163,8 @@ public class NoteService {
                             .filter(h -> h.getTitle().equalsIgnoreCase(target.title()))
                             .findFirst();
                     if (match.isPresent()) {
-                        url = "/campaigns/" + note.getCampaign().getId() + "/handouts";
+                        url = destinations.campaign(ContentDestinationRegistry.CampaignType.HANDOUT,
+                                note.getCampaign().getId(), match.get().getId(), null);
                         resolved = true;
                     }
                 }
@@ -168,7 +175,8 @@ public class NoteService {
                             .filter(m -> m.getName().equalsIgnoreCase(target.title()))
                             .findFirst();
                     if (match.isPresent()) {
-                        url = "/campaigns/" + note.getCampaign().getId() + "/maps/" + match.get().getId() + "/battle";
+                        url = destinations.campaign(ContentDestinationRegistry.CampaignType.MAP,
+                                note.getCampaign().getId(), match.get().getId(), null);
                         resolved = true;
                     }
                 }
@@ -179,7 +187,8 @@ public class NoteService {
                             .filter(enc -> enc.getName().equalsIgnoreCase(target.title()))
                             .findFirst();
                     if (match.isPresent()) {
-                        url = "/campaigns/" + note.getCampaign().getId() + "/encounters/" + match.get().getId();
+                        url = destinations.campaign(ContentDestinationRegistry.CampaignType.ENCOUNTER,
+                                note.getCampaign().getId(), match.get().getId(), null);
                         resolved = true;
                     }
                 }
@@ -188,8 +197,8 @@ public class NoteService {
                             note.getCampaign().getId(), target.title());
                     if (!scenes.isEmpty()) {
                         var s = scenes.getFirst();
-                        url = "/campaigns/" + note.getCampaign().getId() + "/adventures/"
-                                + s.getChapter().getAdventure().getId() + "/scenes/" + s.getId();
+                        url = destinations.campaign(ContentDestinationRegistry.CampaignType.SCENE,
+                                note.getCampaign().getId(), s.getId(), s.getChapter().getAdventure().getId());
                         resolved = true;
                     }
                 }
