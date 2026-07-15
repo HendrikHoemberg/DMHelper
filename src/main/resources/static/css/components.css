@@ -371,7 +371,7 @@
   font-weight: 700;
 }
 .library-table__meta { color: var(--color-text-muted); }
-.statblock-card > h3 { font-size: var(--text-lg); margin: 0; font-family: var(--font-ui); font-weight: 600; }
+.statblock-card > h3:not(.library-card__title) { font-size: var(--text-lg); margin: 0; font-family: var(--font-ui); font-weight: 600; }
 .statblock-card > h3 a { color: var(--color-text); text-decoration: none; }
 .statblock-card > h3 a:hover { color: var(--color-accent); }
 .statblock-card > .statblock-meta { display: flex; gap: var(--space-sm); font-size: var(--text-sm); color: var(--color-text-muted); flex-wrap: wrap; }

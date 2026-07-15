@@ -117,6 +117,12 @@ class UiPolishContractTest {
     }
 
     @Test
+    void spellTitleKeepsSharedDisplayHierarchySpecificity() throws IOException {
+        assertThat(read("static/css/components.css"))
+                .contains(".statblock-card > h3:not(.library-card__title)");
+    }
+
+    @Test
     void focusVisibleTargetsInteractiveElementsWithTokenizedRing() throws IOException {
         String css = read("static/css/base.css");
         assertThat(css).contains(

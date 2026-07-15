@@ -65,3 +65,38 @@ Applied the required scoped substitutions:
   Thymeleaf-expression tests cover the changed fragment structure.
 - The full suite remains blocked by the Java 26/Mockito inline-agent runtime
   limitation described above; the focused Task 6 suites pass.
+
+## Fix Report
+
+### Changed files
+
+- `src/main/resources/static/css/components.css`: narrowed the legacy
+  `.statblock-card > h3` rule to
+  `.statblock-card > h3:not(.library-card__title)`, preserving legacy direct
+  statblock headings while allowing the shared display-title rule to style the
+  spell title.
+- `src/test/java/dev/hendrikhoemberg/dmhelper/config/UiPolishContractTest.java`:
+  added the specificity contract that requires the narrowed selector.
+
+### Verification
+
+Command:
+
+`./mvnw test -Dtest=UiPolishContractTest,HtmxTemplateExpressionTest`
+
+Relevant output:
+
+`Tests run: 1, Failures: 0, Errors: 0, Skipped: 0` for
+`HtmxTemplateExpressionTest`;
+`Tests run: 9, Failures: 0, Errors: 0, Skipped: 0` for
+`UiPolishContractTest`;
+`Tests run: 10, Failures: 0, Errors: 0, Skipped: 0`;
+`BUILD SUCCESS`.
+
+`git diff --check` also passed.
+
+### Concerns
+
+The known full-suite Java 26/Mockito inline-agent failure remains unchanged;
+test infrastructure was not modified. No browser scan was added for this CSS
+specificity fix.
