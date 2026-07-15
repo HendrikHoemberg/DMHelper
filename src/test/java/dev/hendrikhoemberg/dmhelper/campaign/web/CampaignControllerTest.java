@@ -57,6 +57,18 @@ class CampaignControllerTest {
     }
 
     @Test
+    void listProvidesDeterministicCampaignSigils() throws Exception {
+        Campaign campaign = sampleCampaign();
+        when(service.findAll()).thenReturn(List.of(campaign));
+        when(partyMemberService.findActiveByCampaignId(campaign.getId())).thenReturn(List.of());
+
+        mockMvc.perform(get("/campaigns"))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("campaignSigils"))
+                .andExpect(content().string(containsString("campaign-sigil")));
+    }
+
+    @Test
     void shouldRenderEmptyList() throws Exception {
         when(service.findAll()).thenReturn(List.of());
 
@@ -75,6 +87,8 @@ class CampaignControllerTest {
                         .param("description", "A test")
                         .header("HX-Request", "true"))
                 .andExpect(status().isOk())
+                .andExpect(model().attributeExists("sigil"))
+                .andExpect(content().string(containsString("campaign-sigil")))
                 .andExpect(content().string(containsString("Test Campaign")));
     }
 
@@ -168,6 +182,8 @@ class CampaignControllerTest {
         mockMvc.perform(multipart("/campaigns/import")
                         .file(file))
                 .andExpect(status().isOk())
+                .andExpect(model().attributeExists("sigil"))
+                .andExpect(content().string(containsString("campaign-sigil")))
                 .andExpect(content().string(containsString("Imported")));
     }
 }

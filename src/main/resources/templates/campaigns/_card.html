@@ -1,8 +1,13 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="book-cover-wrapper" th:fragment="card(campaign)">
+<div class="book-cover-wrapper" th:fragment="card(campaign, sigil)">
     <a class="book-cover"
        th:href="@{/campaigns/{id}(id=${campaign.id})}">
+        <svg class="campaign-sigil" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+            <circle class="campaign-sigil__ring" cx="50" cy="50" r="39"></circle>
+            <path class="campaign-sigil__mark"
+                  th:attr="d=${sigil.path},transform=|rotate(${sigil.rotation} 50 50)|"></path>
+        </svg>
         <h3 th:text="${campaign.name}">Campaign Name</h3>
         <div class="book-meta" th:text="${campaign.authorLine}">14 sessions · last played July 8</div>
     </a>

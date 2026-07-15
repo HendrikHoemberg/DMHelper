@@ -1665,6 +1665,27 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
   color: var(--color-text-muted);
   z-index: 1;
 }
+.campaign-sigil {
+  width: 72px;
+  height: 72px;
+  margin-bottom: var(--space-md);
+  color: var(--color-accent);
+  opacity: .82;
+  z-index: 1;
+}
+.campaign-sigil__ring,
+.campaign-sigil__mark {
+  fill: none;
+  stroke: currentColor;
+  vector-effect: non-scaling-stroke;
+}
+.campaign-sigil__ring { stroke-width: 1; }
+.campaign-sigil__mark {
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.book-cover:hover .campaign-sigil { opacity: 1; }
 .book-cover:hover {
   transform: perspective(800px) rotateY(-6deg) translateY(-6px);
   border-color: var(--color-gold-soft);

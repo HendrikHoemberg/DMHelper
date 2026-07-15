@@ -24,7 +24,7 @@
                         <th:block th:replace="~{common/_empty-state :: empty-state('No campaigns yet. Every saga starts with a blank page.', 'Create campaign', @{/campaigns/new}, null)}"></th:block>
                     </th:block>
                     <th:block th:each="campaign : ${campaigns}">
-                        <th:block th:replace="~{campaigns/_card :: card(campaign=${campaign})}"></th:block>
+                        <th:block th:replace="~{campaigns/_card :: card(campaign=${campaign}, sigil=${campaignSigils[campaign.id]})}"></th:block>
                     </th:block>
                     <a th:href="@{/campaigns/new}" class="book-cover book-cover--blank">
                         <span class="book-cover-plus">+</span>

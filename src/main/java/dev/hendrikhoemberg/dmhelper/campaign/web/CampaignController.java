@@ -19,7 +19,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/campaigns")
@@ -45,6 +47,7 @@ public class CampaignController {
         List<Campaign> campaigns = service.findAll();
         campaigns.forEach(this::addAuthorLine);
         model.addAttribute("campaigns", campaigns);
+        model.addAttribute("campaignSigils", sigilsFor(campaigns));
 
         String fragment = request.getParameter("fragment");
         if ("form".equals(fragment)) {
@@ -67,7 +70,14 @@ public class CampaignController {
         Campaign campaign = service.create(name, description);
         addAuthorLine(campaign);
         model.addAttribute("campaign", campaign);
+        model.addAttribute("sigil", CampaignSigil.from(campaign.getId()));
         return "campaigns/_card";
+    }
+
+    private Map<UUID, CampaignSigil> sigilsFor(List<Campaign> campaigns) {
+        return campaigns.stream().collect(Collectors.toMap(
+                Campaign::getId,
+                campaign -> CampaignSigil.from(campaign.getId())));
     }
 
     private static final DateTimeFormatter AUTHOR_LINE_DATE =
@@ -162,6 +172,7 @@ public class CampaignController {
             }
             Campaign campaign = service.importFromJson(json);
             model.addAttribute("campaign", campaign);
+            model.addAttribute("sigil", CampaignSigil.from(campaign.getId()));
             return "campaigns/_card";
         } catch (IOException e) {
             throw new IllegalArgumentException("Failed to read uploaded file: " + e.getMessage());
