@@ -274,7 +274,7 @@ public record CampaignManifestV2(
             String key,
             ContentReference targetRef,
             String body,
-            String createdAt
+            Instant createdAt
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
