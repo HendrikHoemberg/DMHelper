@@ -84,6 +84,27 @@ class UiPolishContractTest {
     }
 
     @Test
+    void bestiaryCardsExposeAlignedCrAndSemanticTypeChips() throws IOException {
+        String card = read("templates/library/_card.html");
+        String css = read("static/css/components.css");
+
+        assertThat(card).contains(
+                "library-card__header",
+                "library-card__title",
+                "library-card__cr",
+                "library-card__meta",
+                "library-chip library-chip--",
+                "data-statblock-link");
+        assertThat(css).contains(
+                "font-variant-numeric: tabular-nums",
+                ".library-chip--accent { --library-chip-color: var(--color-accent); }",
+                ".library-chip--success { --library-chip-color: var(--color-success); }",
+                ".library-chip--danger { --library-chip-color: var(--color-danger); }",
+                ".library-chip--warning { --library-chip-color: var(--color-warning); }",
+                ".library-chip--shield { --library-chip-color: var(--color-shield); }");
+    }
+
+    @Test
     void focusVisibleTargetsInteractiveElementsWithTokenizedRing() throws IOException {
         String css = read("static/css/base.css");
         assertThat(css).contains(

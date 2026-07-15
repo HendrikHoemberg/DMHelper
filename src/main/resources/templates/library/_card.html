@@ -3,16 +3,19 @@
 <div class="statblock-card" th:fragment="card(sb)">
     <!-- A plain link: the side sheet is an enhancement layered on top of it by
          ui-elevation.js, and the full page still works without JS. -->
-    <h3>
-        <a th:href="@{/library/statblocks/{id}(id=${sb.id})}" th:text="${sb.name}"
-           data-statblock-link>Name</a>
-    </h3>
-    <div class="statblock-meta">
-        <span th:text="'CR ' + ${sb.cr}">CR 1/4</span>
-        <span th:text="${sb.type}">Type</span>
+    <div class="library-card__header">
+        <h3 class="library-card__title">
+            <a th:href="@{/library/statblocks/{id}(id=${sb.id})}" th:text="${sb.name}"
+               data-statblock-link>Name</a>
+        </h3>
+        <span class="library-card__cr">CR <span class="u-num" th:text="${sb.cr}">1/4</span></span>
+    </div>
+    <div class="library-card__meta">
+        <span th:class="${sb.type == 'Celestial' or sb.type == 'Fey' or sb.type == 'Plant'} ? 'library-chip library-chip--success' : (${sb.type == 'Fiend' or sb.type == 'Undead' or sb.type == 'Aberration'} ? 'library-chip library-chip--danger' : (${sb.type == 'Dragon' or sb.type == 'Elemental' or sb.type == 'Giant'} ? 'library-chip library-chip--warning' : (${sb.type == 'Construct' or sb.type == 'Ooze'} ? 'library-chip library-chip--shield' : 'library-chip library-chip--accent')))"
+              th:text="${sb.type}">Type</span>
         <span th:if="${sb.size != null}" th:text="${sb.size}"></span>
-        <span th:if="${sb.source.name() == 'SRD'}" class="badge-srd">SRD</span>
-        <span th:if="${sb.source.name() == 'CUSTOM'}" class="badge-custom">Custom</span>
+        <span th:if="${sb.source.name() == 'SRD'}" class="library-chip library-chip--accent library-chip--source">SRD</span>
+        <span th:if="${sb.source.name() == 'CUSTOM'}" class="library-chip library-chip--success library-chip--source">Custom</span>
     </div>
     <div class="card-actions u-mt-auto">
         <th:block th:if="${sb.source.name() == 'SRD'}">
