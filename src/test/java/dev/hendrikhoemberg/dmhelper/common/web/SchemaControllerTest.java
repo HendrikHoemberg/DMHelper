@@ -1,0 +1,46 @@
+package dev.hendrikhoemberg.dmhelper.common.web;
+
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSchemaValidator;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(SchemaController.class)
+class SchemaControllerTest {
+
+    @Autowired private MockMvc mockMvc;
+
+    @Test
+    void servesCampaignSchemaWithCorrectContentTypeAndId() throws Exception {
+        mockMvc.perform(get("/api/v1/schemas/campaign-format"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/schema+json"))
+                .andExpect(jsonPath("$['$schema']").value("https://json-schema.org/draft/2020-12/schema"))
+                .andExpect(jsonPath("$['$id']").value(CampaignSchemaValidator.CAMPAIGN_ID));
+    }
+
+    @Test
+    void servesMapDocumentSchemaWithCorrectId() throws Exception {
+        mockMvc.perform(get("/api/v1/schemas/map-document.schema.json"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$['$id']").value(CampaignSchemaValidator.MAP_ID));
+    }
+
+    @Test
+    void nonexistentSchemaReturns404() throws Exception {
+        mockMvc.perform(get("/api/v1/schemas/nonexistent"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void traversalLikeNamesReturn404() throws Exception {
+        mockMvc.perform(get("/api/v1/schemas/../application.properties"))
+                .andExpect(status().isNotFound());
+    }
+}

@@ -38,11 +38,13 @@ public record MapLayerDto(
     }
 
     /** A single painted cell on a terrain layer. Cells not present in the array are "floor" / default. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record CellDto(int col, int row, String terrain) {}
 
     /** A shape on a layer. Coordinates are in grid-cell units, origin top-left, col (x) before row (y).
      *  rect: [x, y, width, height] · circle: [cx, cy, radius] · line: [x1, y1, x2, y2] ·
      *  polygon: flat [x1, y1, x2, y2, x3, y3, …]. strokeWidth is in screen pixels. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ShapeDto(
             @JsonProperty(required = true) String type,   // rect | circle | line | polygon
             List<Double> points,

@@ -1,9 +1,16 @@
 package dev.hendrikhoemberg.dmhelper.campaign.service.validation;
 
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaLocation;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.dialect.Dialects;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,7 +46,7 @@ class CampaignSchemaValidatorTest {
                   "campaign": {"name": "Closed map"},
                   "maps": [{
                     "key":"map-1", "name":"Map", "movementMode":"GRID", "showGrid":true,
-                    "grid":{"w":10,"h":8,"cellPx":48,"gridType":"square"},
+                    "grid":{"w":10,"h":8,"cellPx":48,"gridType":"SQUARE"},
                     "document":{
                       "schemaVersion":1,
                       "grid":{"width":10,"height":8,"cellSizePx":48,"gridType":"square","movementMode":"GRID","showGrid":true},
@@ -75,7 +82,7 @@ class CampaignSchemaValidatorTest {
                   "campaign": {"name": "Closed map"},
                   "maps": [{
                     "key":"map-1", "name":"Map", "movementMode":"GRID", "showGrid":true,
-                    "grid":{"w":10,"h":8,"cellPx":48,"gridType":"square"},
+                    "grid":{"w":10,"h":8,"cellPx":48,"gridType":"SQUARE"},
                     "document":{
                       "schemaVersion":1,
                       "grid":{"width":10,"height":8,"cellSizePx":48,"gridType":"square","movementMode":"GRID","showGrid":true,"mystery":1},
@@ -89,6 +96,20 @@ class CampaignSchemaValidatorTest {
         assertThat(validator.validate(json))
                 .extracting(CampaignImportProblem::code)
                 .containsExactly("SCHEMA_ADDITIONAL_PROPERTIES");
+    }
+
+    @Test
+    void bothSchemaDocumentsValidateAgainstDraft202012MetaSchema() throws Exception {
+        SchemaRegistry registry = SchemaRegistry.withDialect(Dialects.getDraft202012());
+        Schema metaSchema = registry.getSchema(SchemaLocation.of(Dialects.getDraft202012().getId()));
+        ObjectMapper mapper = new ObjectMapper();
+
+        for (String resource : List.of(
+                "schemas/campaign-format.schema.json",
+                "schemas/map-document.schema.json")) {
+            JsonNode schemaNode = mapper.readTree(resource(resource));
+            assertThat(metaSchema.validate(schemaNode)).as(resource).isEmpty();
+        }
     }
 
     private static String resource(String path) throws Exception {

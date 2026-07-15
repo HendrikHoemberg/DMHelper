@@ -8,7 +8,13 @@
   "required": ["schemaVersion", "grid", "layers"],
   "properties": {
     "schemaVersion": { "type": "integer", "const": 1 },
-    "grid": {
+    "grid": { "$ref": "#/$defs/documentGrid" },
+    "layers": { "type": "array", "items": { "$ref": "#/$defs/layer" } },
+    "primitives": { "type": "array", "items": { "$ref": "#/$defs/primitive" } },
+    "customTerrain": { "type": "array", "items": { "$ref": "#/$defs/terrain" } }
+  },
+  "$defs": {
+    "documentGrid": {
       "type": "object",
       "additionalProperties": false,
       "required": ["width", "height", "cellSizePx", "gridType"],
@@ -21,71 +27,31 @@
         "showGrid": { "type": "boolean" }
       }
     },
-    "layers": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["id", "name", "type"],
-        "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "type": { "type": "string", "enum": ["TERRAIN", "OBJECTS", "ANNOTATIONS", "IMAGE"] },
-          "visible": { "type": "boolean" },
-          "locked": { "type": "boolean" },
-          "cells": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["col", "row"],
-              "properties": {
-                "col": { "type": "integer", "minimum": 0 },
-                "row": { "type": "integer", "minimum": 0 },
-                "terrain": { "type": "string" }
-              }
-            }
-          },
-          "shapes": {
-            "type": "array",
-            "items": { "$ref": "#/$defs/shape" }
-          },
-          "image": { "$ref": "#/$defs/image" }
-        }
+    "layer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "type"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["TERRAIN", "OBJECTS", "ANNOTATIONS", "IMAGE"] },
+        "visible": { "type": "boolean" },
+        "locked": { "type": "boolean" },
+        "cells": { "type": "array", "items": { "$ref": "#/$defs/cell" } },
+        "shapes": { "type": "array", "items": { "$ref": "#/$defs/shape" } },
+        "image": { "$ref": "#/$defs/image" }
       }
     },
-    "primitives": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["type"],
-        "properties": {
-          "type": { "type": "string", "enum": ["ROOM", "CORRIDOR", "DOOR", "REGION"] },
-          "startCol": { "type": "integer", "minimum": 0 },
-          "startRow": { "type": "integer", "minimum": 0 },
-          "endCol": { "type": "integer", "minimum": 0 },
-          "endRow": { "type": "integer", "minimum": 0 },
-          "terrain": { "type": "string" }
-        }
+    "cell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["col", "row"],
+      "properties": {
+        "col": { "type": "integer", "minimum": 0 },
+        "row": { "type": "integer", "minimum": 0 },
+        "terrain": { "type": "string" }
       }
     },
-    "customTerrain": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["key", "name", "fill"],
-        "properties": {
-          "key": { "type": "string" },
-          "name": { "type": "string" },
-          "fill": { "type": "string" },
-          "walkable": { "type": "boolean" }
-        }
-      }
-    }
-  },
-  "$defs": {
     "shape": {
       "type": "object",
       "additionalProperties": false,
@@ -109,6 +75,30 @@
         "y": { "type": "number" },
         "width": { "type": "number", "exclusiveMinimum": 0 },
         "height": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "primitive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "enum": ["ROOM", "CORRIDOR", "DOOR", "REGION"] },
+        "startCol": { "type": "integer", "minimum": 0 },
+        "startRow": { "type": "integer", "minimum": 0 },
+        "endCol": { "type": "integer", "minimum": 0 },
+        "endRow": { "type": "integer", "minimum": 0 },
+        "terrain": { "type": "string" }
+      }
+    },
+    "terrain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "fill"],
+      "properties": {
+        "key": { "type": "string" },
+        "name": { "type": "string" },
+        "fill": { "type": "string" },
+        "walkable": { "type": "boolean" }
       }
     }
   }

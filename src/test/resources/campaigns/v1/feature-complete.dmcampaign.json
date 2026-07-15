@@ -1,0 +1,262 @@
+{
+  "formatVersion": 1,
+  "campaign": {
+    "name": "Feature Complete Fixture",
+    "description": "Tests every DTO section and nested record"
+  },
+  "party": [
+    {
+      "characterName": "Aria",
+      "playerName": "Player1",
+      "classAndLevel": "Rogue 5",
+      "ac": 15,
+      "maxHp": 38,
+      "initiativeBonus": 4,
+      "speed": 30,
+      "passivePerception": 14,
+      "passiveInsight": 12,
+      "passiveInvestigation": 10,
+      "notes": "Sneaky",
+      "active": true,
+      "sheet": {
+        "abilityScores": { "str": 10, "dex": 18, "con": 14, "int": 12, "wis": 13, "cha": 8 },
+        "classLevels": [
+          { "classSourceKey": "rogue", "level": 5, "hitDieRolls": [8, 5, 6, 7, 4] }
+        ],
+        "proficiencies": { "stealth": "expertise", "perception": "proficient" },
+        "speciesKey": "human",
+        "backgroundKey": "criminal",
+        "featRefs": ["alert"],
+        "xp": 6500,
+        "overrides": { "speed": 35 },
+        "hitDiceUsed": 2,
+        "resources": [
+          { "name": "Cunning Action", "maxUses": 1, "currentUses": 1, "resetRule": "SHORT_REST" }
+        ],
+        "spells": [
+          { "spellKey": "cure-wounds", "prepared": true, "sourceClass": "cleric" }
+        ],
+        "spellSlotsUsed": { "1": 2, "2": 1 }
+      }
+    }
+  ],
+  "statBlocks": [
+    {
+      "sourceKey": "custom_goblin-captain",
+      "name": "Goblin Captain",
+      "cr": "1",
+      "type": "humanoid",
+      "size": "Small",
+      "alignment": "neutral evil",
+      "ac": 15,
+      "hp": "21 (6d6)",
+      "speed": "30 ft.",
+      "strScore": 10, "dexScore": 14, "conScore": 12, "intScore": 10, "wisScore": 10, "chaScore": 8,
+      "strSave": 2, "dexSave": 4, "conSave": 3,
+      "skills": "Stealth +6, Perception +2",
+      "damageVulnerabilities": "radiant",
+      "damageResistances": "",
+      "damageImmunities": "",
+      "conditionImmunities": "",
+      "senses": "darkvision 60 ft., passive Perception 12",
+      "languages": "Common, Goblin",
+      "traits": "Nimble Escape",
+      "actions": "Scimitar +4 1d6+2",
+      "bonusActions": "Hide",
+      "reactions": "",
+      "legendaryActions": "",
+      "legendaryDescription": "",
+      "lairActions": "",
+      "xp": 200
+    }
+  ],
+  "handouts": [
+    {
+      "title": "Warning Plaque",
+      "tags": ["lore", "crypt"],
+      "fileName": "warning-plaque.png",
+      "contentType": "image/png",
+      "imageData": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+    }
+  ],
+  "maps": [
+    {
+      "key": "map-crypt",
+      "name": "The Crypt",
+      "movementMode": "GRID",
+      "showGrid": true,
+      "grid": { "w": 20, "h": 15, "cellPx": 48, "gridType": "SQUARE" },
+      "document": {
+        "schemaVersion": 1,
+        "grid": { "width": 20, "height": 15, "cellSizePx": 48, "gridType": "square", "movementMode": "GRID", "showGrid": true },
+        "layers": [
+          {
+            "id": "terrain", "name": "Terrain", "type": "TERRAIN",
+            "visible": true, "locked": false,
+            "cells": [{"col": 5, "row": 5, "terrain": "wall"}],
+            "shapes": []
+          },
+          {
+            "id": "objects", "name": "Objects", "type": "OBJECTS",
+            "visible": true, "locked": false,
+            "cells": [],
+            "shapes": [
+              { "type": "rect", "points": [0, 0, 5, 5], "fill": "#ff0000", "stroke": "#000", "strokeWidth": 1, "label": "altar" },
+              { "type": "circle", "points": [10, 10, 3], "fill": "#00ff00", "stroke": "#000", "strokeWidth": 1 },
+              { "type": "line", "points": [0, 0, 15, 10], "stroke": "#fff", "strokeWidth": 2 },
+              { "type": "polygon", "points": [0, 0, 5, 0, 5, 5, 0, 5], "fill": "#0000ff", "stroke": "#000", "strokeWidth": 1 }
+            ]
+          },
+          {
+            "id": "annotations", "name": "Annotations (DM only)", "type": "ANNOTATIONS",
+            "visible": true, "locked": true,
+            "cells": [],
+            "shapes": [
+              { "type": "rect", "points": [2, 2, 3, 3], "fill": "#ffff00", "stroke": "#000", "strokeWidth": 1, "label": "trap" }
+            ]
+          },
+          {
+            "id": "bg", "name": "Background", "type": "IMAGE",
+            "visible": true, "locked": true,
+            "cells": [], "shapes": [],
+            "image": { "dataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "x": 0, "y": 0, "width": 20, "height": 15 }
+          }
+        ],
+        "primitives": [
+          { "type": "ROOM", "startCol": 2, "startRow": 2, "endCol": 10, "endRow": 8 },
+          { "type": "CORRIDOR", "startCol": 10, "startRow": 4, "endCol": 15, "endRow": 4 },
+          { "type": "DOOR", "startCol": 10, "startRow": 5, "endCol": 10, "endRow": 5 },
+          { "type": "REGION", "startCol": 0, "startRow": 0, "endCol": 1, "endRow": 1, "terrain": "moss" }
+        ],
+        "customTerrain": [
+          { "key": "moss", "name": "Moss", "fill": "#2a6e3a", "walkable": true }
+        ]
+      },
+      "tokens": [
+        {
+          "id": "token-goblin-1", "name": "Goblin Scout", "kind": "creature", "color": "#ff0000",
+          "positionX": 100, "positionY": 200, "sizeCols": 1, "sizeRows": 1,
+          "hidden": false, "statBlockKey": "custom_goblin-captain",
+          "currentHp": 21, "maxHp": 21, "dead": false, "notes": "scout"
+        }
+      ]
+    }
+  ],
+  "encounters": [
+    {
+      "name": "Crypt Guardians",
+      "combatants": [
+        {
+          "name": "Goblin Scout", "initiative": 12, "tieBreaker": 1, "sortOrder": 0,
+          "maxHp": 21, "currentHp": 21, "tempHp": 0,
+          "kind": "creature", "groupLeader": false,
+          "tokenId": "token-goblin-1", "statBlockKey": "custom_goblin-captain",
+          "defeated": false, "hidden": false,
+          "conditionsJson": "[]",
+          "concentrationCheckPending": false,
+          "legendaryActionsUsed": 0, "legendaryResistancesUsed": 0,
+          "legendaryActionsMax": 0, "legendaryResistancesMax": 0,
+          "rechargedAbilities": "", "notes": ""
+        },
+        {
+          "name": "Aria", "initiative": 18, "tieBreaker": 0, "sortOrder": 1,
+          "maxHp": 38, "currentHp": 38, "tempHp": 5,
+          "kind": "player", "groupLeader": true,
+          "partyMemberName": "Aria",
+          "defeated": false, "hidden": false,
+          "conditionsJson": "[]",
+          "concentrationCheckPending": false,
+          "legendaryActionsUsed": 0, "legendaryResistancesUsed": 0,
+          "legendaryActionsMax": 0, "legendaryResistancesMax": 0,
+          "rechargedAbilities": "", "notes": ""
+        }
+      ],
+      "status": "PLANNED",
+      "round": 0,
+      "activeTurnIndex": -1,
+      "logSequence": 0,
+      "encounterKey": "crypt-guardians",
+      "map": "The Crypt"
+    }
+  ],
+  "notes": [
+    {
+      "type": "LOCATION",
+      "title": "Crypt Lore",
+      "body": "This crypt was built by ancient dwarves.",
+      "tags": "dwarf,crypt,ancient",
+      "dmOnly": true
+    }
+  ],
+  "quicknotes": [
+    { "targetType": "CAMPAIGN", "targetRef": "campaign-ref", "body": "Campaign note", "createdAt": "2024-01-15T10:30:00Z" },
+    { "targetType": "MAP", "targetRef": "map-crypt", "body": "Map note", "createdAt": "2024-01-15T10:31:00Z" },
+    { "targetType": "PARTY_MEMBER", "targetRef": "Aria", "body": "Party note", "createdAt": "2024-01-15T10:32:00Z" },
+    { "targetType": "STATBLOCK", "targetRef": "custom_goblin-captain", "body": "Statblock note", "createdAt": "2024-01-15T10:33:00Z" },
+    { "targetType": "NOTE", "targetRef": "Crypt Lore", "body": "Note about note", "createdAt": "2024-01-15T10:34:00Z" },
+    { "targetType": "HANDOUT", "targetRef": "Warning Plaque", "body": "Handout note", "createdAt": "2024-01-15T10:35:00Z" },
+    { "targetType": "ENCOUNTER", "targetRef": "crypt-guardians", "body": "Encounter note", "createdAt": "2024-01-15T10:36:00Z" },
+    { "targetType": "SCENE", "targetRef": "crypt-entry", "body": "Scene note", "createdAt": "2024-01-15T10:37:00Z" }
+  ],
+  "assignments": [
+    {
+      "id": "00000000-0000-0000-0000-000000000101",
+      "holderName": "Aria",
+      "magicItemKey": "bag-of-holding",
+      "quantity": 1,
+      "attuned": false
+    }
+  ],
+  "ledger": [
+    {
+      "id": "00000000-0000-0000-0000-000000000102",
+      "timestamp": "2024-01-15T10:00:00Z",
+      "inGameYear": 1492, "inGameMonth": 3, "inGameDay": 15,
+      "kind": "reward",
+      "direction": "in",
+      "amount": 100.0,
+      "currency": "gp",
+      "holder": "party",
+      "note": "Crypt treasure",
+      "itemAssignmentRef": "00000000-0000-0000-0000-000000000101"
+    }
+  ],
+  "timeline": [
+    {
+      "id": "00000000-0000-0000-0000-000000000103",
+      "inGameYear": 1492, "inGameMonth": 3, "inGameDay": 15,
+      "title": "Entered the Crypt",
+      "body": "The party discovered the hidden entrance.",
+      "noteTitle": "Crypt Lore"
+    }
+  ],
+  "adventures": [
+    {
+      "name": "The Lost Crypt",
+      "description": "An adventure into the ancient dwarven crypt.",
+      "sourceAttribution": "Homebrew",
+      "sortOrder": 1,
+      "chapters": [
+        {
+          "title": "Chapter 1: The Entrance",
+          "intro": "The party stands before the ancient doors.",
+          "sortOrder": 1,
+          "scenes": [
+            {
+              "title": "Crypt Entry",
+              "sceneKey": "crypt-entry",
+              "body": "The hallway is dark.",
+              "status": "UNVISITED",
+              "sortOrder": 1,
+              "map": "The Crypt",
+              "pin": { "x": 200, "y": 150 },
+              "encounter": "crypt-guardians",
+              "statblocks": ["custom_goblin-captain"],
+              "handouts": ["Warning Plaque"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

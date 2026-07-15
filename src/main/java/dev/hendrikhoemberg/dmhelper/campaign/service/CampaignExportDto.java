@@ -12,6 +12,7 @@ import java.util.UUID;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record CampaignExportDto(
         int formatVersion,
         CampaignDto campaign,
@@ -55,6 +56,7 @@ public record CampaignExportDto(
         return from(campaign, List.of(), List.of(), List.of());
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record CampaignDto(
             String name,
             @JsonInclude(JsonInclude.Include.NON_DEFAULT) String description
@@ -66,6 +68,7 @@ public record CampaignExportDto(
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record PartyMemberExportDto(
             String characterName, String playerName, String classAndLevel,
             int ac, int maxHp, int initiativeBonus, int speed,
@@ -85,6 +88,7 @@ public record CampaignExportDto(
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record SheetExportDto(
             Map<String, Object> abilityScores,
             List<ClassLevelExportDto> classLevels,
@@ -100,12 +104,14 @@ public record CampaignExportDto(
             @JsonInclude(JsonInclude.Include.NON_NULL) Map<String, Object> spellSlotsUsed
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ClassLevelExportDto(
             String classSourceKey,
             int level,
             List<Integer> hitDieRolls
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ResourceExportDto(
             String name,
             int maxUses,
@@ -113,12 +119,14 @@ public record CampaignExportDto(
             String resetRule
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record SpellRefExportDto(
             String spellKey,
             boolean prepared,
             String sourceClass
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record StatBlockExportDto(
             String sourceKey, String name, String cr, String type,
             String size, String alignment,
@@ -155,6 +163,7 @@ public record CampaignExportDto(
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record EncounterExportDto(
             String name,
             List<CombatantExportDto> combatants,
@@ -179,6 +188,7 @@ public record CampaignExportDto(
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record CombatantExportDto(
             String name, int initiative, int tieBreaker, int sortOrder,
             int maxHp, int currentHp, int tempHp,
@@ -209,6 +219,7 @@ public record CampaignExportDto(
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record MapExportDto(
             String key,
             String name,
@@ -218,8 +229,10 @@ public record CampaignExportDto(
             MapDocumentDto document,
             List<TokenExportDto> tokens
     ) {
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         public record GridDto(int w, int h, int cellPx, String gridType) {}
 
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         public record TokenExportDto(String id, String name, String kind, String color,
                                       int positionX, int positionY, int sizeCols, int sizeRows,
                                       boolean hidden, String statBlockKey, String partyMemberName,
@@ -239,6 +252,7 @@ public record CampaignExportDto(
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record NoteExportDto(
             String type,
             String title,
@@ -257,6 +271,7 @@ public record CampaignExportDto(
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record QuickNoteExportDto(
             String targetType,
             String targetRef,
@@ -276,6 +291,7 @@ public record CampaignExportDto(
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record HandoutExportDto(
             String title,
             List<String> tags,
@@ -298,12 +314,14 @@ public record CampaignExportDto(
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record AssignmentExportDto(
             UUID id, String holderName,
             String magicItemKey, String equipmentItemKey,
             String customText, int quantity, boolean attuned
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record LedgerExportDto(
             UUID id, Instant timestamp,
             Integer inGameYear, Integer inGameMonth, Integer inGameDay,
@@ -313,11 +331,13 @@ public record CampaignExportDto(
             String itemAssignmentRef
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record TimelineExportDto(
             UUID id, int inGameYear, int inGameMonth, int inGameDay,
             String title, String body, String noteTitle
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record AdventureExportDto(
             String name,
             String description,
@@ -326,6 +346,7 @@ public record CampaignExportDto(
             List<ChapterExportDto> chapters
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ChapterExportDto(
             String title,
             String intro,
@@ -333,6 +354,7 @@ public record CampaignExportDto(
             List<SceneExportDto> scenes
     ) {}
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record SceneExportDto(
             String title,
             String sceneKey,
