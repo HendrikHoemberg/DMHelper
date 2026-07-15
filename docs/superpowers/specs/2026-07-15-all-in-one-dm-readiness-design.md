@@ -164,10 +164,10 @@ No P3 work should displace an unfinished P0 or P1 release gate.
 
 ## 6. Workstream A — Existing-path reliability
 
-> **Implementation status:** The interaction-integrity checkpoint commit completed quick-note
-> rendering/mutations, browser failure guards, shared content destinations, palette ranking/cap,
-> library deep links, and wiki route reuse. Asset import safety, tracker/map mutation feedback,
-> difficulty labeling, and correlation identifiers remain open P0 work.
+> **Implementation status (2026-07-15):** Package v2 foundation complete. Container safety, key registry,
+> current-surface schema, typed catalog, v1 migration, preview/confirmation, and atomic staged assets are
+> implemented. Delivery item 3 (Package v2 foundation) is done. Delivery item 4 (Complete round-trip),
+> session cockpit, and all deeper features remain open.
 
 ### 6.1 Quick notes
 
