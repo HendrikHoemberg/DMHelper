@@ -67,6 +67,38 @@ public class Scene {
     @OrderColumn(name = "position")
     private List<Handout> handouts = new ArrayList<>();
 
+    @Column(length = 2000)
+    private String summary;
+
+    @Column(length = 500)
+    private String sourceLocator;
+
+    @Column(length = 1000)
+    private String tags;
+
+    @Column(length = 100)
+    private String mapRegionKey;
+
+    @OneToMany(mappedBy = "scene", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC")
+    private List<SceneSection> sections = new ArrayList<>();
+
+    @OneToMany(mappedBy = "scene", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC")
+    private List<SceneCheck> checks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "scene", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC")
+    private List<SceneParticipant> participants = new ArrayList<>();
+
+    @OneToMany(mappedBy = "scene", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC")
+    private List<SceneTransition> transitions = new ArrayList<>();
+
+    @OneToMany(mappedBy = "scene", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC")
+    private List<SceneLink> links = new ArrayList<>();
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -105,4 +137,31 @@ public class Scene {
 
     public List<Handout> getHandouts() { return handouts; }
     public void setHandouts(List<Handout> handouts) { this.handouts = handouts; }
+
+    public String getSummary() { return summary; }
+    public void setSummary(String summary) { this.summary = summary; }
+
+    public String getSourceLocator() { return sourceLocator; }
+    public void setSourceLocator(String sourceLocator) { this.sourceLocator = sourceLocator; }
+
+    public String getTags() { return tags; }
+    public void setTags(String tags) { this.tags = tags; }
+
+    public String getMapRegionKey() { return mapRegionKey; }
+    public void setMapRegionKey(String mapRegionKey) { this.mapRegionKey = mapRegionKey; }
+
+    public List<SceneSection> getSections() { return sections; }
+    public void setSections(List<SceneSection> sections) { this.sections = sections; }
+
+    public List<SceneCheck> getChecks() { return checks; }
+    public void setChecks(List<SceneCheck> checks) { this.checks = checks; }
+
+    public List<SceneParticipant> getParticipants() { return participants; }
+    public void setParticipants(List<SceneParticipant> participants) { this.participants = participants; }
+
+    public List<SceneTransition> getTransitions() { return transitions; }
+    public void setTransitions(List<SceneTransition> transitions) { this.transitions = transitions; }
+
+    public List<SceneLink> getLinks() { return links; }
+    public void setLinks(List<SceneLink> links) { this.links = links; }
 }

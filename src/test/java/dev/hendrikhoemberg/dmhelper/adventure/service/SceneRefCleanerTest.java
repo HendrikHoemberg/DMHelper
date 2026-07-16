@@ -1,7 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.adventure.service;
 
-import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
-import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
+import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
@@ -21,6 +20,8 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
@@ -36,6 +37,12 @@ class SceneRefCleanerTest {
     @Autowired private StatBlockRepository statBlockRepository;
     @Autowired private HandoutRepository handoutRepository;
     @Autowired private SceneRepository sceneRepository;
+    @Autowired private ChapterRepository chapterRepository;
+    @Autowired private SceneSectionRepository sceneSectionRepository;
+    @Autowired private SceneCheckRepository sceneCheckRepository;
+    @Autowired private SceneParticipantRepository sceneParticipantRepository;
+    @Autowired private SceneTransitionRepository sceneTransitionRepository;
+    @Autowired private SceneLinkRepository sceneLinkRepository;
     @Autowired private EntityManager em;
 
     private Campaign campaign;
@@ -114,5 +121,109 @@ class SceneRefCleanerTest {
         Scene reloaded = sceneRepository.findById(scene.getId()).orElseThrow();
         assertThat(reloaded.getStatBlocks()).isEmpty();
         assertThat(reloaded.getHandouts()).isEmpty();
+    }
+
+    @Test
+    void deletingSceneCascadesOwnedSections() {
+        var s = buildSceneWithChildren(newScene());
+        var section = new SceneSection();
+        section.setScene(s);
+        section.setKind(SceneSectionKind.READ_ALOUD);
+        section.setSortOrder(0);
+        s.getSections().add(section);
+        em.flush();
+
+        UUID sectionId = section.getId();
+        adventureService.deleteScene(s.getId());
+        em.flush();
+
+        assertThat(sceneSectionRepository.findById(sectionId)).isEmpty();
+        assertThat(sceneRepository.findById(s.getId())).isEmpty();
+    }
+
+    @Test
+    void deletingSceneCascadesChecks() {
+        var s = buildSceneWithChildren(newScene());
+        var check = new SceneCheck();
+        check.setScene(s);
+        check.setSortOrder(0);
+        s.getChecks().add(check);
+        em.flush();
+
+        UUID checkId = check.getId();
+        adventureService.deleteScene(s.getId());
+        em.flush();
+
+        assertThat(sceneCheckRepository.findById(checkId)).isEmpty();
+    }
+
+    @Test
+    void deletingSceneCascadesParticipants() {
+        var s = buildSceneWithChildren(newScene());
+        var participant = new SceneParticipant();
+        participant.setScene(s);
+        participant.setDisplayName("Goblin");
+        participant.setQuantity(1);
+        participant.setSortOrder(0);
+        s.getParticipants().add(participant);
+        em.flush();
+
+        UUID pId = participant.getId();
+        adventureService.deleteScene(s.getId());
+        em.flush();
+
+        assertThat(sceneParticipantRepository.findById(pId)).isEmpty();
+    }
+
+    @Test
+    void deletingSceneCascadesTransitions() {
+        var s = buildSceneWithChildren(newScene());
+        var transition = new SceneTransition();
+        transition.setScene(s);
+        transition.setKind(SceneTransitionKind.CHOICE);
+        transition.setSortOrder(0);
+        s.getTransitions().add(transition);
+        em.flush();
+
+        UUID tId = transition.getId();
+        adventureService.deleteScene(s.getId());
+        em.flush();
+
+        assertThat(sceneTransitionRepository.findById(tId)).isEmpty();
+    }
+
+    @Test
+    void deletingSceneCascadesLinks() {
+        var s = buildSceneWithChildren(newScene());
+        var link = new SceneLink();
+        link.setScene(s);
+        link.setRole(SceneLinkRole.REFERENCE);
+        link.setTargetScope(SceneLinkTargetScope.PACKAGE);
+        link.setTargetType("HANDOUT");
+        link.setTargetId(UUID.randomUUID());
+        link.setSortOrder(0);
+        s.getLinks().add(link);
+        em.flush();
+
+        UUID linkId = link.getId();
+        adventureService.deleteScene(s.getId());
+        em.flush();
+
+        assertThat(sceneLinkRepository.findById(linkId)).isEmpty();
+    }
+
+
+
+    private Scene newScene() {
+        var s = new Scene();
+        s.setChapter(scene.getChapter());
+        s.setTitle("CascadeScene");
+        s.setSortOrder(99);
+        return s;
+    }
+
+    private Scene buildSceneWithChildren(Scene s) {
+        sceneRepository.saveAndFlush(s);
+        return s;
     }
 }

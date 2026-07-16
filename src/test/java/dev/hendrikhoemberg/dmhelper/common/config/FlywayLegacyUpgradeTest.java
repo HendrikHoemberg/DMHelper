@@ -54,6 +54,12 @@ class FlywayLegacyUpgradeTest {
             stmt.execute(ddl);
             stmt.execute("INSERT INTO campaign (id, name, created_at, milestone_leveling) VALUES "
                     + "(RANDOM_UUID(), 'Curse of Strahd', CURRENT_TIMESTAMP, FALSE)");
+            stmt.execute("INSERT INTO adventure (id, campaign_id, name, sort_order, created_at) "
+                    + "SELECT RANDOM_UUID(), id, 'Castle Ravenloft', 0, CURRENT_TIMESTAMP FROM campaign WHERE name = 'Curse of Strahd'");
+            stmt.execute("INSERT INTO adventure_chapter (id, adventure_id, title, sort_order) "
+                    + "SELECT RANDOM_UUID(), a.id, 'Chapter 1', 0 FROM adventure a WHERE a.name = 'Castle Ravenloft'");
+            stmt.execute("INSERT INTO adventure_scene (id, chapter_id, title, sort_order, status) "
+                    + "SELECT RANDOM_UUID(), ac.id, 'The Gate', 0, 'UNVISITED' FROM adventure_chapter ac WHERE ac.title = 'Chapter 1'");
         }
     }
 
@@ -102,5 +108,31 @@ class FlywayLegacyUpgradeTest {
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'CAMPAIGN_SESSION'",
                 Integer.class);
         assertThat(count).isEqualTo(1);
+    }
+
+    @Test
+    void appliesV5AfterBaseline() {
+        Integer appliedV5 = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '5' AND \"success\" = TRUE",
+                Integer.class);
+        assertThat(appliedV5).isEqualTo(1);
+    }
+
+    @Test
+    void v5TablesExistAfterUpgrade() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'QUEST'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'SCENE_SECTION'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void legacySceneHasNullStructuredFieldsAfterV5() {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM adventure_scene WHERE summary IS NULL AND source_locator IS NULL AND tags IS NULL AND map_region_key IS NULL",
+                Integer.class);
+        assertThat(count).isGreaterThanOrEqualTo(1);
     }
 }

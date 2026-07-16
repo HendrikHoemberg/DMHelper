@@ -33,11 +33,9 @@ import dev.hendrikhoemberg.dmhelper.notes.service.WikiLinkParser;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
+import dev.hendrikhoemberg.dmhelper.quest.data.*;
+import dev.hendrikhoemberg.dmhelper.session.data.*;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
-import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
-import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
-import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
-import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import jakarta.persistence.EntityManager;
@@ -111,6 +109,11 @@ class CampaignCascadeDeleteTest {
     @Autowired private CampaignSessionRepository sessionRepo;
     @Autowired private SessionSceneVisitRepository sessionVisitRepo;
     @Autowired private AdventureRepository adventureRepo;
+    @Autowired private QuestRepository questRepo;
+    @Autowired private QuestObjectiveRepository questObjectiveRepo;
+    @Autowired private QuestObjectiveDependencyRepository questDepRepo;
+    @Autowired private QuestLinkRepository questLinkRepo;
+    @Autowired private SessionObjectiveChangeRepository sessionObjChangeRepo;
     @Autowired private EntityManager em;
 
     /** A campaign with one of everything hanging off it. */
@@ -297,4 +300,41 @@ class CampaignCascadeDeleteTest {
         assertThat(detached.getAttendees()).isEmpty();
         assertThat(detached.getPlanNote()).isNull();
     }
+
+    @Test
+    void deletingQuestCascadesObjectives() {
+        Campaign c = campaignService.create("QuestCascade", null);
+        em.flush();
+        Quest q = new Quest();
+        q.setCampaign(c);
+        q.setTitle("Quest With Objectives");
+
+        QuestObjective obj = new QuestObjective();
+        obj.setQuest(q);
+        obj.setTitle("Step 1");
+        obj.setSortOrder(0);
+        q.getObjectives().add(obj);
+
+        QuestLink link = new QuestLink();
+        link.setQuest(q);
+        link.setRole(QuestLinkRole.REFERENCE);
+        link.setTargetScope(dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkTargetScope.PACKAGE);
+        link.setTargetType("NOTE");
+        link.setTargetId(UUID.randomUUID());
+        link.setSortOrder(0);
+        q.getLinks().add(link);
+
+        questRepo.save(q);
+        questRepo.flush();
+
+        UUID qId = q.getId();
+        questRepo.delete(q);
+        questRepo.flush();
+
+        assertThat(questRepo.findById(qId)).isEmpty();
+        assertThat(questObjectiveRepo.findByQuestIdOrderBySortOrderAsc(qId)).isEmpty();
+        assertThat(questLinkRepo.findByQuestIdOrderBySortOrderAsc(qId)).isEmpty();
+    }
+
+
 }
