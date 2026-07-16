@@ -4,9 +4,10 @@ import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEvent;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEventRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignSettings;
+import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignSettingsCodec;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
-import tools.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,16 +27,16 @@ public class CalendarService {
     private final CampaignRepository campaignRepository;
     private final TimelineEventRepository timelineEventRepository;
     private final NoteRepository noteRepository;
-    private final ObjectMapper objectMapper;
+    private final CampaignSettingsCodec settingsCodec;
 
     public CalendarService(CampaignRepository campaignRepository,
                            TimelineEventRepository timelineEventRepository,
                            NoteRepository noteRepository,
-                           ObjectMapper objectMapper) {
+                           CampaignSettingsCodec settingsCodec) {
         this.campaignRepository = campaignRepository;
         this.timelineEventRepository = timelineEventRepository;
         this.noteRepository = noteRepository;
-        this.objectMapper = objectMapper;
+        this.settingsCodec = settingsCodec;
     }
 
     public record CalendarConfig(int[] monthLengths, String[] monthNames, String[] weekdayNames) {
@@ -68,56 +69,35 @@ public class CalendarService {
     // --- Calendar Config ---
 
     public CalendarConfig getCalendarConfig(UUID campaignId) {
-        Map<String, Object> settings = readSettings(campaignId);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> cfg = (Map<String, Object>) settings.get("calendarConfig");
-        if (cfg == null) return DEFAULT_CALENDAR;
-
-        @SuppressWarnings("unchecked")
-        List<Integer> mlRaw = (List<Integer>) cfg.get("monthLengths");
-        @SuppressWarnings("unchecked")
-        List<String> mnRaw = (List<String>) cfg.get("monthNames");
-        @SuppressWarnings("unchecked")
-        List<String> wnRaw = (List<String>) cfg.get("weekdayNames");
-
-        int[] monthLengths = mlRaw != null ? mlRaw.stream().mapToInt(i -> i).toArray() : DEFAULT_CALENDAR.monthLengths();
-        String[] monthNames = mnRaw != null ? mnRaw.toArray(String[]::new) : DEFAULT_CALENDAR.monthNames();
-        String[] weekdayNames = wnRaw != null ? wnRaw.toArray(String[]::new) : DEFAULT_CALENDAR.weekdayNames();
-        return new CalendarConfig(monthLengths, monthNames, weekdayNames);
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new NotFoundException("Campaign not found"));
+        return settingsCodec.read(campaign).calendar();
     }
 
     public void updateCalendarConfig(UUID campaignId, CalendarConfig config) {
-        Map<String, Object> settings = readSettings(campaignId);
-        Map<String, Object> cfg = new LinkedHashMap<>();
-        cfg.put("monthLengths", Arrays.asList(Arrays.stream(config.monthLengths()).boxed().toArray(Integer[]::new)));
-        cfg.put("monthNames", List.of(config.monthNames()));
-        cfg.put("weekdayNames", List.of(config.weekdayNames()));
-        settings.put("calendarConfig", cfg);
-        writeSettings(campaignId, settings);
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new NotFoundException("Campaign not found"));
+        CampaignSettings settings = settingsCodec.read(campaign);
+        CampaignSettings updated = new CampaignSettings(settings.levelingMode(), config, settings.currentDate());
+        settingsCodec.write(campaign, updated);
+        campaignRepository.save(campaign);
     }
 
     // --- Current Date ---
 
     public InGameDate getCurrentDate(UUID campaignId) {
-        Map<String, Object> settings = readSettings(campaignId);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> date = (Map<String, Object>) settings.get("currentInGameDate");
-        if (date == null) return new InGameDate(1492, 0, 1);
-        return new InGameDate(
-            ((Number) date.getOrDefault("year", 1492)).intValue(),
-            ((Number) date.getOrDefault("month", 0)).intValue(),
-            ((Number) date.getOrDefault("day", 1)).intValue()
-        );
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new NotFoundException("Campaign not found"));
+        return settingsCodec.read(campaign).currentDate();
     }
 
     public void setCurrentDate(UUID campaignId, InGameDate date) {
-        Map<String, Object> settings = readSettings(campaignId);
-        Map<String, Object> dateObj = new LinkedHashMap<>();
-        dateObj.put("year", date.year());
-        dateObj.put("month", date.month());
-        dateObj.put("day", date.day());
-        settings.put("currentInGameDate", dateObj);
-        writeSettings(campaignId, settings);
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new NotFoundException("Campaign not found"));
+        CampaignSettings settings = settingsCodec.read(campaign);
+        CampaignSettings updated = new CampaignSettings(settings.levelingMode(), settings.calendar(), date);
+        settingsCodec.write(campaign, updated);
+        campaignRepository.save(campaign);
     }
 
     public InGameDate advanceDays(UUID campaignId, int days) {
@@ -239,28 +219,4 @@ public class CalendarService {
         return total;
     }
 
-    // --- Settings JSON helpers ---
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> readSettings(UUID campaignId) {
-        Campaign c = campaignRepository.findById(campaignId)
-                .orElseThrow(() -> new NotFoundException("Campaign not found"));
-        if (c.getSettings() == null || c.getSettings().isBlank()) return new LinkedHashMap<>();
-        try {
-            return objectMapper.readValue(c.getSettings(), Map.class);
-        } catch (Exception e) {
-            return new LinkedHashMap<>();
-        }
-    }
-
-    private void writeSettings(UUID campaignId, Map<String, Object> settings) {
-        Campaign c = campaignRepository.findById(campaignId)
-                .orElseThrow(() -> new NotFoundException("Campaign not found"));
-        try {
-            c.setSettings(objectMapper.writeValueAsString(settings));
-            campaignRepository.save(c);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to save settings", e);
-        }
-    }
 }

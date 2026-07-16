@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.calendar.service;
 import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService.CalendarConfig;
 import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService.InGameDate;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignSettingsCodec;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,7 +17,7 @@ import tools.jackson.databind.ObjectMapper;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import(CalendarService.class)
+@Import({CalendarService.class, CampaignSettingsCodec.class})
 class CalendarServiceTest {
 
     @Autowired private CalendarService service;

@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.sheet.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
+import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignSettingsCodec;
 import dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
@@ -12,7 +13,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import tools.jackson.databind.ObjectMapper;
 
 import java.util.Arrays;
 import java.util.*;
@@ -26,17 +26,19 @@ public class SheetController {
     private final PartyMemberRepository partyMemberRepo;
     private final SpeciesRepository speciesRepo;
     private final BackgroundRepository backgroundRepo;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final CampaignSettingsCodec settingsCodec;
 
     public SheetController(CampaignService campaignService, SheetService sheetService,
                            PartyMemberRepository partyMemberRepo,
                            SpeciesRepository speciesRepo,
-                           BackgroundRepository backgroundRepo) {
+                           BackgroundRepository backgroundRepo,
+                           CampaignSettingsCodec settingsCodec) {
         this.campaignService = campaignService;
         this.sheetService = sheetService;
         this.partyMemberRepo = partyMemberRepo;
         this.speciesRepo = speciesRepo;
         this.backgroundRepo = backgroundRepo;
+        this.settingsCodec = settingsCodec;
     }
 
     @ModelAttribute("campaign")
@@ -66,16 +68,7 @@ public class SheetController {
         model.addAttribute("hasSheet", hasSheet);
 
         Campaign campaign = campaignService.findById(campaignId);
-        String levelingMode = "XP";
-        if (campaign.getSettings() != null && !campaign.getSettings().isBlank()) {
-            try {
-                Map<String, Object> settings = mapper.readValue(campaign.getSettings(), Map.class);
-                levelingMode = (String) settings.getOrDefault("levelingMode", "XP");
-            } catch (Exception e) {
-                // use default
-            }
-        }
-        model.addAttribute("levelingMode", levelingMode);
+        model.addAttribute("levelingMode", settingsCodec.read(campaign).levelingMode().name());
         return "sheet/detail";
     }
 
