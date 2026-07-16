@@ -11,6 +11,8 @@ public interface NoteRepository extends JpaRepository<Note, UUID> {
 
     List<Note> findByCampaignIdOrderByCreatedAtDesc(UUID campaignId);
 
+    List<Note> findByCampaignIdOrderByCreatedAtAscIdAsc(UUID campaignId);
+
     List<Note> findByCampaignIdAndTypeOrderByCreatedAtDesc(UUID campaignId, NoteType type);
 
     @Query("SELECT n FROM Note n WHERE n.campaign.id = :campaignId " +

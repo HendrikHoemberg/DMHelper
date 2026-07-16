@@ -9,4 +9,6 @@ import java.util.UUID;
 @Repository
 public interface TimelineEventRepository extends JpaRepository<TimelineEvent, UUID> {
     List<TimelineEvent> findByCampaignIdOrderByInGameYearAscInGameMonthAscInGameDayAsc(UUID campaignId);
+
+    List<TimelineEvent> findByCampaignIdOrderByInGameYearAscInGameMonthAscInGameDayAscIdAsc(UUID campaignId);
 }

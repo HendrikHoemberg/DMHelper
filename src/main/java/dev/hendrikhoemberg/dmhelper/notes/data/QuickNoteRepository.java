@@ -10,6 +10,8 @@ import java.util.UUID;
 
 public interface QuickNoteRepository extends JpaRepository<QuickNote, UUID> {
 
+    List<QuickNote> findByCampaignIdOrderByCreatedAtAscIdAsc(UUID campaignId);
+
     List<QuickNote> findByCampaignIdAndTargetTypeAndTargetIdOrderByCreatedAtAsc(
             UUID campaignId, String targetType, UUID targetId);
 

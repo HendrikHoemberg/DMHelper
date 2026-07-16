@@ -9,6 +9,8 @@ public interface NoteLinkRepository extends JpaRepository<NoteLink, UUID> {
 
     List<NoteLink> findBySourceNoteId(UUID sourceNoteId);
 
+    List<NoteLink> findBySourceNoteIdOrderByIdAsc(UUID sourceNoteId);
+
     List<NoteLink> findByTargetTypeAndTargetId(String targetType, UUID targetId);
 
     void deleteBySourceNoteId(UUID sourceNoteId);

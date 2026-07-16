@@ -13,6 +13,8 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID> 
 
     List<LedgerEntry> findByCampaignIdOrderByTimestampDesc(UUID campaignId);
 
+    List<LedgerEntry> findByCampaignIdOrderByTimestampAscIdAsc(UUID campaignId);
+
     List<LedgerEntry> findByCampaignIdAndHolderOrderByTimestampDesc(UUID campaignId, String holder);
 
     @Query("SELECT COALESCE(SUM(CASE WHEN le.direction = 'GAIN' THEN le.amount ELSE le.amount * -1 END), 0) " +
