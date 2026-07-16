@@ -16,10 +16,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionEx
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionImporter;
 import dev.hendrikhoemberg.dmhelper.library.data.Background;
 import dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository;
-import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
-import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
-import dev.hendrikhoemberg.dmhelper.library.data.Feat;
-import dev.hendrikhoemberg.dmhelper.library.data.FeatRepository;
+
 import dev.hendrikhoemberg.dmhelper.library.data.Species;
 import dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.Spell;
@@ -49,8 +46,6 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
     private final SheetSpellReferenceRepository sheetSpellReferenceRepository;
     private final SpeciesRepository speciesRepository;
     private final BackgroundRepository backgroundRepository;
-    private final FeatRepository featRepository;
-    private final CharacterClassRepository classRepository;
     private final SpellRepository spellRepository;
     private final ObjectMapper objectMapper;
 
@@ -60,17 +55,13 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
                                SheetSpellReferenceRepository sheetSpellReferenceRepository,
                                SpeciesRepository speciesRepository,
                                BackgroundRepository backgroundRepository,
-                               FeatRepository featRepository,
-                               CharacterClassRepository classRepository,
-                               SpellRepository spellRepository) {
+                                SpellRepository spellRepository) {
         this.partyMemberRepository = partyMemberRepository;
         this.characterSheetRepository = characterSheetRepository;
         this.sheetResourceRepository = sheetResourceRepository;
         this.sheetSpellReferenceRepository = sheetSpellReferenceRepository;
         this.speciesRepository = speciesRepository;
         this.backgroundRepository = backgroundRepository;
-        this.featRepository = featRepository;
-        this.classRepository = classRepository;
         this.spellRepository = spellRepository;
         this.objectMapper = new ObjectMapper();
     }

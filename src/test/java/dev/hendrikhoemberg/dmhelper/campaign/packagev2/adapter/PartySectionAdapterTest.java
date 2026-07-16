@@ -14,10 +14,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportCon
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
 import dev.hendrikhoemberg.dmhelper.library.data.Background;
 import dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository;
-import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
-import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
-import dev.hendrikhoemberg.dmhelper.library.data.Feat;
-import dev.hendrikhoemberg.dmhelper.library.data.FeatRepository;
+
 import dev.hendrikhoemberg.dmhelper.library.data.Species;
 import dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.Spell;
@@ -53,8 +50,6 @@ class PartySectionAdapterTest {
     private SheetSpellReferenceRepository spellRefRepo;
     private SpeciesRepository speciesRepo;
     private BackgroundRepository backgroundRepo;
-    private FeatRepository featRepo;
-    private CharacterClassRepository classRepo;
     private SpellRepository spellRepo;
     private Campaign campaign;
 
@@ -66,11 +61,9 @@ class PartySectionAdapterTest {
         spellRefRepo = mock(SheetSpellReferenceRepository.class);
         speciesRepo = mock(SpeciesRepository.class);
         backgroundRepo = mock(BackgroundRepository.class);
-        featRepo = mock(FeatRepository.class);
-        classRepo = mock(CharacterClassRepository.class);
         spellRepo = mock(SpellRepository.class);
         adapter = new PartySectionAdapter(partyRepo, sheetRepo, resourceRepo, spellRefRepo,
-                speciesRepo, backgroundRepo, featRepo, classRepo, spellRepo);
+                speciesRepo, backgroundRepo, spellRepo);
         campaign = new Campaign();
         campaign.setId(UUID.randomUUID());
         campaign.setName("Test Campaign");
