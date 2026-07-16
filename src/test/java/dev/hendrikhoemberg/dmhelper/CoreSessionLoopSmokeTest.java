@@ -19,7 +19,11 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -50,6 +54,23 @@ class CoreSessionLoopSmokeTest {
         Page page = context.newPage();
         browserFailures.attach(page);
         return page;
+    }
+
+    private void failOnce(Page page, String glob, String method, Pattern url, String correlationId) {
+        browserFailures.expectHttpFailure(method, url, 503);
+        AtomicBoolean failed = new AtomicBoolean();
+        page.route(glob, route -> {
+            if (failed.compareAndSet(false, true)) {
+                route.fulfill(new Route.FulfillOptions()
+                        .setStatus(503)
+                        .setContentType("application/problem+json")
+                        .setHeaders(Map.of("X-Correlation-ID", correlationId))
+                        .setBody("{\"title\":\"Unavailable\",\"detail\":\"Try the action again.\","
+                                + "\"correlationId\":\"" + correlationId + "\"}"));
+            } else {
+                route.resume();
+            }
+        });
     }
 
     private UUID campaignId;
@@ -357,5 +378,113 @@ class CoreSessionLoopSmokeTest {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + restoredId + "/party");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
         assertThat(dmPage.textContent("body")).contains("Dynamic Hero");
+    }
+
+    @Test
+    @Order(13)
+    void failedTokenMoveRollsBackAndRetryPersists() {
+        Token before = tokenRepo.findByMapIdOrderByNameAsc(mapId).getFirst();
+        int oldX = before.getPositionX();
+        int oldY = before.getPositionY();
+        String corr = "move-failure-1234";
+        failOnce(dmPage, "**/api/v1/tokens/*/move", "PATCH",
+                Pattern.compile(".*/api/v1/tokens/.+/move"), corr);
+
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
+                + "/maps/" + mapId + "/play");
+        dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");
+        dmPage.evaluate("([id]) => window.battleMap.saveTokenMove(id, 333, 222)",
+                List.of(before.getId().toString()));
+
+        dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(corr)).waitFor();
+        assertThat(tokenRepo.findById(before.getId()).orElseThrow().getPositionX()).isEqualTo(oldX);
+        assertThat(tokenRepo.findById(before.getId()).orElseThrow().getPositionY()).isEqualTo(oldY);
+        assertThat(((Number) dmPage.evaluate("([id]) => window.battleMap.tokens.find(t => t.id === id).positionX",
+                List.of(before.getId().toString()))).intValue()).isEqualTo(oldX);
+
+        dmPage.locator(".toast-error .toast-action").click();
+        dmPage.waitForFunction("([id]) => window.battleMap.tokens.find(t => t.id === id).positionX === 333",
+                List.of(before.getId().toString()));
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(tokenRepo.findById(before.getId()).orElseThrow().getPositionX()).isEqualTo(333);
+    }
+
+    @Test
+    @Order(14)
+    void failedNextTurnKeepsTrackerStateAndRetryAdvances() {
+        String corr = "turn-failure-1234";
+        failOnce(dmPage, "**/api/v1/encounters/*/next-turn", "POST",
+                Pattern.compile(".*/api/v1/encounters/.+/next-turn"), corr);
+        var before = encounterService.getById(encounterId);
+
+        // Use a page that has the app's failure/reporting machinery loaded
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId);
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+
+        // Trigger the next-turn failure and retry via the app's own failure UI
+        dmPage.evaluate("([eid, corr]) => {"
+                + " return window.dmRequest('/api/v1/encounters/' + eid + '/next-turn', { method: 'POST' })"
+                + "  .catch(error => {"
+                + "    window.reportActionFailure('Could not advance the turn.', error,"
+                + "      () => window.dmRequest('/api/v1/encounters/' + eid + '/next-turn', { method: 'POST' }));"
+                + "    return error; }); }",
+                Arrays.asList(encounterId.toString(), corr));
+
+        dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(corr)).waitFor();
+
+        var unchanged = encounterService.getById(encounterId);
+        assertThat(unchanged.round()).isEqualTo(before.round());
+        assertThat(unchanged.activeTurnIndex()).isEqualTo(before.activeTurnIndex());
+
+        dmPage.locator(".toast-error .toast-action").click();
+        dmPage.waitForFunction("([eid, round, turn]) => fetch('/api/v1/encounters/' + eid)"
+                + ".then(r => r.json())"
+                + ".then(e => e.round !== round || e.activeTurnIndex !== turn)"
+                + ".catch(() => false)",
+                Arrays.asList(encounterId.toString(), before.round(), before.activeTurnIndex()));
+
+        var advanced = encounterService.getById(encounterId);
+        assertThat(advanced.round() != before.round()
+                || advanced.activeTurnIndex() != before.activeTurnIndex()).isTrue();
+    }
+
+    @Test
+    @Order(15)
+    void failedPresentationKeepsCurtainAndRetryShowsMap() {
+        presentationService.curtain();
+        String corr = "present-failure-1234";
+        failOnce(dmPage, "**/api/v1/table/presentation", "PUT",
+                Pattern.compile(".*/api/v1/table/presentation"), corr);
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
+                + "/maps/" + mapId + "/play");
+        dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");
+
+        dmPage.locator("button[title='Send current map to player view']").click();
+        dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(corr)).waitFor();
+        assertThat(presentationService.getCurrentState().mode()).isEqualTo("CURTAIN");
+
+        dmPage.locator(".toast-error .toast-action").click();
+        dmPage.waitForFunction("document.querySelector('.battle-container')._x_dataStack[0].presentingMap");
+        assertThat(presentationService.getCurrentState().mode()).isEqualTo("MAP");
+    }
+
+    @Test
+    @Order(16)
+    void failedDiceRollKeepsExpressionAndRetryCompletes() {
+        String corr = "dice-failure-1234";
+        failOnce(dmPage, "**/api/v1/roll", "POST",
+                Pattern.compile(".*/api/v1/roll"), corr);
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId);
+        dmPage.locator("#diceToggle").click();
+        Locator expression = dmPage.locator(".dice-panel input[type='text']");
+        expression.fill("2d6+4");
+        dmPage.locator(".dice-panel .dice-input-row button").click();
+
+        dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(corr)).waitFor();
+        assertThat(expression.inputValue()).isEqualTo("2d6+4");
+
+        dmPage.locator(".toast-error .toast-action").click();
+        dmPage.locator(".dice-result-total").waitFor();
+        assertThat(expression.inputValue()).isEmpty();
     }
 }
