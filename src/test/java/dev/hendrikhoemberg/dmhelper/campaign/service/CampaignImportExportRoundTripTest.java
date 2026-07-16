@@ -38,6 +38,7 @@ import dev.hendrikhoemberg.dmhelper.notes.data.QuickNote;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import dev.hendrikhoemberg.dmhelper.notes.service.WikiLinkParser;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,6 +48,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mock.web.MockMultipartFile;
 
@@ -98,6 +100,7 @@ class CampaignImportExportRoundTripTest {
     @Autowired private NoteRepository noteRepository;
     @Autowired private QuickNoteRepository quickNoteRepository;
     @Autowired private AdventureService adventureService;
+    @MockitoBean private SessionActivityRecorder sessionActivity;
     @Autowired private AdventureRepository adventureRepo;
     @Autowired private ChapterRepository chapterRepo;
     @Autowired private SceneRepository sceneRepo;

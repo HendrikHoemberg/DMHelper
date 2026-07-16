@@ -12,12 +12,14 @@ import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,6 +29,7 @@ class SceneRefCleanerTest {
 
     @Autowired private AdventureService adventureService;
     @Autowired private SceneRefCleaner cleaner;
+    @MockitoBean private SessionActivityRecorder sessionActivity;
     @Autowired private CampaignRepository campaignRepository;
     @Autowired private GameMapRepository gameMapRepository;
     @Autowired private EncounterRepository encounterRepository;

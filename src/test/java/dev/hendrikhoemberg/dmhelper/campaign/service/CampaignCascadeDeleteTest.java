@@ -33,6 +33,7 @@ import dev.hendrikhoemberg.dmhelper.notes.service.WikiLinkParser;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import jakarta.persistence.EntityManager;
@@ -42,6 +43,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
@@ -84,6 +86,7 @@ class CampaignCascadeDeleteTest {
     @Autowired private PartyMemberService partyMemberService;
     @Autowired private GameMapService gameMapService;
     @Autowired private AdventureService adventureService;
+    @MockitoBean private SessionActivityRecorder sessionActivity;
     @Autowired private NoteService noteService;
 
     @Autowired private CampaignRepository campaignRepo;

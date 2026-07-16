@@ -7,16 +7,20 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @DataJpaTest
 @Import(AdventureService.class)
@@ -28,6 +32,7 @@ class AdventureServiceTest {
     @Autowired private EncounterRepository encounterRepository;
     @Autowired private SceneRepository sceneRepository;
     @Autowired private EntityManager em;
+    @MockitoBean private SessionActivityRecorder sessionActivity;
 
     private Campaign campaign;
 
@@ -194,6 +199,9 @@ class AdventureServiceTest {
         service.setStatus(s.getId(), SceneStatus.DONE);
         service.setCurrentScene(campaign.getId(), s.getId());
         assertThat(service.findSceneById(s.getId()).getStatus()).isEqualTo(SceneStatus.DONE);
+
+        verify(sessionActivity, times(2)).sceneSelected(eq(campaign.getId()), any());
+        verify(sessionActivity, times(1)).sceneCompleted(any());
     }
 
     @Test
@@ -218,6 +226,8 @@ class AdventureServiceTest {
         var back = service.stepCurrentScene(campaign.getId(), -1);
         assertThat(back).isPresent();
         assertThat(back.get().getId()).isEqualTo(s1.getId());
+
+        verify(sessionActivity, times(3)).sceneSelected(eq(campaign.getId()), any());
     }
 
     @Test
@@ -229,5 +239,8 @@ class AdventureServiceTest {
         assertThat(service.getCurrentScene(campaign.getId())).isEmpty();
         assertThat(campaignRepository.findById(campaign.getId()).orElseThrow()
                 .getCurrentSceneId()).isNull();
+
+        verify(sessionActivity, never()).sceneSelected(any(), any());
+        verify(sessionActivity, never()).sceneCompleted(any());
     }
 }

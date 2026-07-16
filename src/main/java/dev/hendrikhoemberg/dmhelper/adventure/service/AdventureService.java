@@ -8,6 +8,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,7 @@ public class AdventureService {
     private final EncounterRepository encounterRepository;
     private final StatBlockRepository statBlockRepository;
     private final HandoutRepository handoutRepository;
+    private final SessionActivityRecorder sessionActivity;
 
     public AdventureService(AdventureRepository adventureRepository,
                             ChapterRepository chapterRepository,
@@ -36,7 +38,8 @@ public class AdventureService {
                             GameMapRepository gameMapRepository,
                             EncounterRepository encounterRepository,
                             StatBlockRepository statBlockRepository,
-                            HandoutRepository handoutRepository) {
+                            HandoutRepository handoutRepository,
+                            SessionActivityRecorder sessionActivity) {
         this.adventureRepository = adventureRepository;
         this.chapterRepository = chapterRepository;
         this.sceneRepository = sceneRepository;
@@ -45,6 +48,7 @@ public class AdventureService {
         this.encounterRepository = encounterRepository;
         this.statBlockRepository = statBlockRepository;
         this.handoutRepository = handoutRepository;
+        this.sessionActivity = sessionActivity;
     }
 
     // ---- Adventures ----
@@ -230,7 +234,9 @@ public class AdventureService {
     public Scene setStatus(UUID sceneId, SceneStatus status) {
         Scene s = findSceneById(sceneId);
         s.setStatus(status);
-        return sceneRepository.save(s);
+        Scene saved = sceneRepository.save(s);
+        if (status == SceneStatus.DONE) sessionActivity.sceneCompleted(saved);
+        return saved;
     }
 
     public Scene setCurrentScene(UUID campaignId, UUID sceneId) {
@@ -243,6 +249,7 @@ public class AdventureService {
             s.setStatus(SceneStatus.VISITED);
             s = sceneRepository.save(s);
         }
+        sessionActivity.sceneSelected(campaignId, s);
         return s;
     }
 
