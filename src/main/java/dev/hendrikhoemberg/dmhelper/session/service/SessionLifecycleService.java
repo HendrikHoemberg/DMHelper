@@ -3,16 +3,23 @@ package dev.hendrikhoemberg.dmhelper.session.service;
 import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
+import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
+import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +42,10 @@ public class SessionLifecycleService {
     private final PartyMemberRepository party;
     private final NoteRepository notes;
     private final CalendarService calendar;
+    private final SessionDraftService drafts;
+    private final NoteService noteService;
+    private final CampaignPackageKeyService packageKeys;
+    private final TablePresentationService presentation;
 
     public SessionLifecycleService(Clock clock,
                                    CampaignRepository campaigns,
@@ -43,7 +54,11 @@ public class SessionLifecycleService {
                                    GameMapRepository maps,
                                    PartyMemberRepository party,
                                    NoteRepository notes,
-                                   CalendarService calendar) {
+                                   CalendarService calendar,
+                                   SessionDraftService drafts,
+                                   NoteService noteService,
+                                   CampaignPackageKeyService packageKeys,
+                                   @Lazy TablePresentationService presentation) {
         this.clock = clock;
         this.campaigns = campaigns;
         this.sessions = sessions;
@@ -52,6 +67,10 @@ public class SessionLifecycleService {
         this.party = party;
         this.notes = notes;
         this.calendar = calendar;
+        this.drafts = drafts;
+        this.noteService = noteService;
+        this.packageKeys = packageKeys;
+        this.presentation = presentation;
     }
 
     public CampaignSession start(UUID campaignId, UUID requestedMapId) {
@@ -126,6 +145,50 @@ public class SessionLifecycleService {
         CampaignSession session = requireOpenSession(campaignId);
         session.setWorkspaceMap(mapId == null ? null : requireCampaignMap(campaignId, mapId));
         return sessions.save(session);
+    }
+
+    public CampaignSession beginReview(UUID campaignId) {
+        CampaignSession session = requireSession(campaignId);
+        if (session.getStatus() != CampaignSession.Status.RUNNING && session.getStatus() != CampaignSession.Status.PAUSED)
+            throw new IllegalStateException("Only a running or paused session can be reviewed.");
+        Instant now = clock.instant();
+        session.setStatus(CampaignSession.Status.REVIEW);
+        session.setReviewStartedAt(now);
+        session.setDraftBody(drafts.generate(session, now));
+        return sessions.save(session);
+    }
+
+    public Note complete(UUID campaignId, String title, String body) {
+        CampaignSession session = requireSession(campaignId);
+        requireStatus(session, CampaignSession.Status.REVIEW, "Review the session draft before saving it.");
+        if (title == null || title.isBlank()) throw new IllegalArgumentException("Session log title is required.");
+        if (body == null || body.isBlank()) throw new IllegalArgumentException("Session log body is required.");
+        Note note = noteService.create(campaignId, NoteType.SESSION_LOG, title.strip(), body, "session-log", true);
+        presentation.curtain(campaignId);
+        List<UUID> visitIds = visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId()).stream()
+                .map(SessionSceneVisit::getId).toList();
+        resetToIdle(session);
+        visits.deleteBySessionId(session.getId());
+        packageKeys.deleteBindings(campaignId, CampaignContentType.SESSION_SCENE_VISIT, visitIds);
+        sessions.save(session);
+        return note;
+    }
+
+    private void resetToIdle(CampaignSession session) {
+        session.setStatus(CampaignSession.Status.IDLE);
+        session.setStartedAt(null);
+        session.setPausedAt(null);
+        session.setReviewStartedAt(null);
+        session.setStartInGameYear(null);
+        session.setStartInGameMonth(null);
+        session.setStartInGameDay(null);
+        session.setPlanNote(null);
+        session.setWorkspaceMap(null);
+        session.setPresentationMode(CampaignSession.PresentationMode.CURTAIN);
+        session.setPresentedMap(null);
+        session.setPresentedHandout(null);
+        session.setDraftBody(null);
+        session.getAttendees().clear();
     }
 
     private Campaign requireCampaign(UUID campaignId) {

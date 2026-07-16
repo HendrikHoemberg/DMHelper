@@ -23,7 +23,8 @@
       x-data="sessionCockpit(window.sessionCockpitConfig)"
       th:attr="data-campaign-id=${campaignId}"
       @session-next-turn.window="nextTurn()"
-      @session-scene-step.window="stepScene($event.detail.direction)">
+      @session-scene-step.window="stepScene($event.detail.direction)"
+      @keydown.window="handleKeyboard($event)">
   <header class="cockpit-topbar">
     <h1 style="font-family: var(--font-display); font-size: var(--text-lg); margin: 0;" th:text="${workspace.campaign.name}">Campaign</h1>
     <span class="badge" th:text="${workspace.session.status}">IDLE</span>
@@ -55,6 +56,7 @@
     <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${workspace.partyMembers}, oob=null)}"></th:block>
   </footer>
 </main>
+<th:block th:replace="~{session/_lifecycle-dialog :: lifecycle-dialog}"></th:block>
 <th:block th:replace="~{fragments/_command-palette :: command-palette}"></th:block>
 <th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>
 <script th:src="@{/vendor/konva.min.js}"></script>
@@ -63,7 +65,8 @@ window.sessionCockpitConfig = {
     campaignId: /*[[${campaignId}]]*/ '',
     mapId: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.id : null}]]*/ null,
     sessionStatus: /*[[${workspace.session.status}]]*/ 'IDLE',
-    presentationMode: /*[[${workspace.session.presentationMode}]]*/ 'CURTAIN'
+    presentationMode: /*[[${workspace.session.presentationMode}]]*/ 'CURTAIN',
+    draftBody: /*[[${workspace.session.draftBody}]]*/ null
 };
 </script>
 <script type="module" th:src="@{/js/session-cockpit.js}"></script>

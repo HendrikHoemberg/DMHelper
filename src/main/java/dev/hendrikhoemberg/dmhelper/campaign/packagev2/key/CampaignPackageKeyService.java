@@ -54,6 +54,11 @@ public class CampaignPackageKeyService {
         repository.save(row);
     }
 
+    public void deleteBindings(UUID campaignId, CampaignContentType type, java.util.Collection<UUID> entityIds) {
+        if (!entityIds.isEmpty())
+            repository.deleteByCampaignIdAndEntityTypeAndEntityIdIn(campaignId, type.name(), entityIds);
+    }
+
     @Transactional(readOnly = true)
     public Optional<String> find(UUID campaignId, CampaignContentType type, UUID entityId) {
         return repository.findByCampaignIdAndEntityTypeAndEntityId(

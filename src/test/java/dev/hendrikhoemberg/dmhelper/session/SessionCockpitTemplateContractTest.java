@@ -14,6 +14,8 @@ class SessionCockpitTemplateContractTest {
     void cockpitOwnsOneRuntimeIslandAndAccessibleRailControls() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
         String rail = Files.readString(Path.of("src/main/resources/templates/session/_encounter-rail.html"));
+        String story = Files.readString(Path.of("src/main/resources/templates/session/_story-rail.html"));
+        String plan = Files.readString(Path.of("src/main/resources/templates/session/_session-plan.html"));
         String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
         assertThat(count(html, "id=\"battleCanvasWrap\"")).isEqualTo(1);
         assertThat(count(rail, "encounter/_tracker :: tracker")).isEqualTo(1);
@@ -22,6 +24,12 @@ class SessionCockpitTemplateContractTest {
         assertThat(js).doesNotContain("nextTurn(id)", "applyDamage(combatant", "projectTokens(");
         assertThat(html).contains("aria-label=\"Story rail\"", "aria-label=\"Encounter rail\"",
                 "aria-label=\"Session plan\"", "aria-live=\"polite\"");
+        assertThat(html).contains("@keydown.window=\"handleKeyboard($event)\"");
+        assertThat(story).contains("scene-actions");
+        assertThat(plan).contains("Present");
+        assertThat(js).contains("sessionStatus", "presentationMode", "handleKeyboard");
+        assertThat(js).contains("startSession", "pauseSession", "resumeSession",
+                "cancelReview", "beginReview", "completeSession");
     }
 
     private static int count(String s, String substring) {

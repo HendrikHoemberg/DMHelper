@@ -16,6 +16,17 @@
           <button class="btn btn-ghost" th:if="${workspace.nextScene != null}"
                   @click="stepScene(1)" title="Next scene">Next &rarr;</button>
         </div>
+        <div class="scene-actions" th:if="${workspace.currentScene != null}">
+          <button class="btn btn-ghost"
+                  th:attr="data-scene-id=${workspace.currentScene.id}"
+                  @click="presentScene($el.dataset.sceneId)"
+                  title="Jump to this scene">Open</button>
+          <button class="btn btn-ghost"
+                  th:if="${workspace.currentScene.map != null}"
+                  th:attr="data-map-id=${workspace.currentScene.map.id}"
+                  @click="switchMap($el.dataset.mapId)"
+                  title="Switch to scene map">Map</button>
+        </div>
         <div class="scene-links">
           <span th:if="${workspace.currentScene.map != null}">
             Map: <span th:text="${workspace.currentScene.map.name}">Map name</span>

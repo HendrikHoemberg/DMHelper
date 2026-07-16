@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="lifecycle-dialog">
+<div class="dialog-overlay" x-show="lifecycleOpen" x-cloak
+     @click.away="lifecycleOpen = false" role="dialog" aria-label="Session lifecycle">
+  <div class="dialog-panel">
+    <div x-show="sessionStatus === 'IDLE'">
+      <h3>Start Session</h3>
+      <p>Choose a starting map (optional):</p>
+      <select x-model="startMapId" class="form-input">
+        <option value="">No map</option>
+        <template x-for="m in maps" :key="m.id">
+          <option :value="m.id" x-text="m.name"></option>
+        </template>
+      </select>
+      <div style="margin-top: var(--space-md); display: flex; gap: var(--space-sm);">
+        <button class="btn btn-primary" @click="startSession()">Start</button>
+        <button class="btn btn-ghost" @click="lifecycleOpen = false">Cancel</button>
+      </div>
+    </div>
+
+    <div x-show="sessionStatus === 'RUNNING' || sessionStatus === 'PAUSED'">
+      <h3>Session Running</h3>
+      <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
+        <button class="btn btn-primary" x-show="sessionStatus === 'RUNNING'"
+                @click="pauseSession()">Pause</button>
+        <button class="btn btn-primary" x-show="sessionStatus === 'PAUSED'"
+                @click="resumeSession()">Resume</button>
+        <button class="btn btn-ghost" @click="beginReview()"
+                :disabled="sessionStatus === 'PAUSED'">Review &amp; Complete</button>
+        <button class="btn btn-ghost" @click="lifecycleOpen = false">Close</button>
+      </div>
+    </div>
+
+    <div x-show="sessionStatus === 'REVIEW'">
+      <h3>Review Session</h3>
+      <div>
+        <label>Title</label>
+        <input type="text" x-model="draftTitle" class="form-input" placeholder="Session log title" required>
+      </div>
+      <div style="margin-top: var(--space-sm);">
+        <label>Draft</label>
+        <textarea x-model="draftBody" class="form-input" rows="12"
+                  placeholder="Session draft will appear here..."></textarea>
+      </div>
+      <div style="margin-top: var(--space-md); display: flex; gap: var(--space-sm);">
+        <button class="btn btn-primary" @click="completeSession()">Save &amp; Complete</button>
+        <button class="btn btn-ghost" @click="cancelReview()">Cancel Review</button>
+        <button class="btn btn-ghost" @click="lifecycleOpen = false">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+</th:block>
+</html>

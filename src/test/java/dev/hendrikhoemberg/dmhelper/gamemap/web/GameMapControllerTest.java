@@ -2,7 +2,6 @@ package dev.hendrikhoemberg.dmhelper.gamemap.web;
 
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
-import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -22,7 +21,6 @@ class GameMapControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private GameMapService service;
-    @MockitoBean private PartyMemberService partyMemberService;
 
     private GameMap map(String name) {
         GameMap m = new GameMap();
@@ -81,26 +79,12 @@ class GameMapControllerTest {
     }
 
     @Test
-    void shouldRenderBattlePage() throws Exception {
-        GameMap m = map("Tavern");
-        when(service.findById(m.getId())).thenReturn(m);
-
-        mockMvc.perform(get("/campaigns/{campaignId}/maps/{mapId}/play", UUID.randomUUID(), m.getId()))
-                .andExpect(status().isOk())
-                .andExpect(view().name("maps/battle"));
-    }
-
-    @Test
-    void playAddsPartyMembersToModel() throws Exception {
+    void shouldRedirectPlayToSessionCockpit() throws Exception {
         UUID campaignId = UUID.randomUUID();
         UUID mapId = UUID.randomUUID();
-        GameMap map = new GameMap();
-        map.setId(mapId);
-        when(service.findById(mapId)).thenReturn(map);
-        when(partyMemberService.findActiveByCampaignId(campaignId)).thenReturn(List.of());
 
-        mockMvc.perform(get("/campaigns/{cid}/maps/{mid}/play", campaignId, mapId))
-                .andExpect(status().isOk())
-                .andExpect(model().attributeExists("partyMembers"));
+        mockMvc.perform(get("/campaigns/{campaignId}/maps/{mapId}/play", campaignId, mapId))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/campaigns/" + campaignId + "/session?mapId=" + mapId));
     }
 }

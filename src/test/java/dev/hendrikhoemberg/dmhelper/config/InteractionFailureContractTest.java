@@ -23,6 +23,8 @@ class InteractionFailureContractTest {
                 .doesNotContain("catch (e) {}", "catch (e) { /* non-critical */ }");
         assertThat(read("static/js/session-cockpit.js"))
                 .doesNotContain("catch (e) {}", ".catch(() => {})");
+        assertThat(read("static/js/session-cockpit.js"))
+                .doesNotContain("fetch(");
     }
 
     @Test

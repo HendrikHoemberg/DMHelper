@@ -28,6 +28,236 @@ function sessionCockpit(config) {
         playerViewUrl: window.location.origin + '/player',
         lifecycleOpen: false,
         campaignId: config.campaignId || '',
+        sessionStatus: config.sessionStatus || 'IDLE',
+        presentationMode: config.presentationMode || 'CURTAIN',
+        startMapId: '',
+        draftTitle: '',
+        draftBody: config.draftBody || '',
+
+        async mutateSession(path, options, summary, retry) {
+            try {
+                const response = await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/session${path}`, options);
+                const state = await response.json();
+                this.sessionStatus = state.status;
+                this.presentationMode = state.presentationMode;
+                return state;
+            } catch (error) {
+                window.reportActionFailure(summary, error, retry);
+                throw error;
+            }
+        },
+
+        async startSession() {
+            try {
+                const resp = await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/session/start`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mapId: this.startMapId || null }),
+                    });
+                const state = await resp.json();
+                this.sessionStatus = state.status;
+                this.presentationMode = state.presentationMode;
+                this.lifecycleOpen = false;
+            } catch (error) {
+                window.reportActionFailure('Could not start the session.', error,
+                    () => this.startSession());
+            }
+        },
+
+        async pauseSession() {
+            try {
+                const resp = await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/session/pause`, { method: 'POST' });
+                const state = await resp.json();
+                this.sessionStatus = state.status;
+            } catch (error) {
+                window.reportActionFailure('Could not pause the session.', error,
+                    () => this.pauseSession());
+            }
+        },
+
+        async resumeSession() {
+            try {
+                const resp = await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/session/resume`, { method: 'POST' });
+                const state = await resp.json();
+                this.sessionStatus = state.status;
+            } catch (error) {
+                window.reportActionFailure('Could not resume the session.', error,
+                    () => this.resumeSession());
+            }
+        },
+
+        async cancelReview() {
+            try {
+                const resp = await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/session/cancel-review`, { method: 'POST' });
+                const state = await resp.json();
+                this.sessionStatus = state.status;
+                this.draftBody = '';
+                this.draftTitle = '';
+                this.lifecycleOpen = false;
+            } catch (error) {
+                window.reportActionFailure('Could not cancel the review.', error,
+                    () => this.cancelReview());
+            }
+        },
+
+        async beginReview() {
+            try {
+                const resp = await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/session/review`, { method: 'POST' });
+                const state = await resp.json();
+                this.sessionStatus = state.status;
+                this.draftBody = state.draftBody || '';
+            } catch (error) {
+                window.reportActionFailure('Could not begin the review.', error,
+                    () => this.beginReview());
+            }
+        },
+
+        async completeSession(title, body) {
+            const t = title || this.draftTitle;
+            const b = body || this.draftBody;
+            if (!t || !t.trim()) {
+                window.reportActionFailure('A session log title is required.', null, null);
+                return;
+            }
+            if (!b || !b.trim()) {
+                window.reportActionFailure('A session log body is required.', null, null);
+                return;
+            }
+            try {
+                const resp = await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/session/complete`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: t.trim(), body: b.trim() }),
+                    });
+                const result = await resp.json();
+                this.sessionStatus = 'IDLE';
+                this.presentationMode = 'CURTAIN';
+                this.draftBody = '';
+                this.draftTitle = '';
+                this.lifecycleOpen = false;
+                window.location.href = result.url;
+            } catch (error) {
+                window.reportActionFailure('Could not complete the session.', error,
+                    () => this.completeSession(t, b));
+            }
+        },
+
+        async setCurrentScene(sceneId) {
+            try {
+                const resp = await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/session/current-scene`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sceneId }),
+                    });
+                const scene = await resp.json();
+                if (scene.mapId) {
+                    this.switchMap(scene.mapId);
+                }
+            } catch (error) {
+                window.reportActionFailure('Could not set the current scene.', error,
+                    () => this.setCurrentScene(sceneId));
+            }
+        },
+
+        async stepScene(direction) {
+            try {
+                await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/session/current-scene/step`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ direction }),
+                    });
+                window.location.reload();
+            } catch (error) {
+                window.reportActionFailure('Could not step the scene.', error,
+                    () => this.stepScene(direction));
+            }
+        },
+
+        async switchWorkspaceMap(mapId) {
+            try {
+                await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/session/workspace-map`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mapId }),
+                    });
+            } catch (error) {
+                window.reportActionFailure('Could not switch the workspace map.', error,
+                    () => this.switchWorkspaceMap(mapId));
+            }
+        },
+
+        async sendToTableWithMap(mapId) {
+            try {
+                await window.dmRequest(`/api/v1/campaigns/${this.campaignId}/table/presentation`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: 'MAP', ref: mapId }),
+                });
+                this.presentingMap = true;
+            } catch (error) {
+                this.presentingMap = false;
+                window.reportActionFailure('Could not show this map to the table.', error,
+                    () => this.sendToTableWithMap(mapId));
+            }
+        },
+
+        async presentScene(sceneId) {
+            try {
+                const resp = await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/session/current-scene`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sceneId }),
+                    });
+                const scene = await resp.json();
+                if (scene.mapId) {
+                    this.sendToTableWithMap(scene.mapId);
+                }
+            } catch (error) {
+                window.reportActionFailure('Could not present the scene.', error,
+                    () => this.presentScene(sceneId));
+            }
+        },
+
+        handleKeyboard(event) {
+            if (event.ctrlKey || event.metaKey) return;
+            const tag = event.target.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+            switch (event.key) {
+                case '[':
+                    event.preventDefault();
+                    this.stepScene(-1);
+                    break;
+                case ']':
+                    event.preventDefault();
+                    this.stepScene(1);
+                    break;
+                case 'n':
+                    event.preventDefault();
+                    this.nextTurn();
+                    break;
+                case 'q':
+                    event.preventDefault();
+                    const qn = document.querySelector('[x-data="quickNotes()"]');
+                    if (qn && qn.__x) qn.__x.$data.open = true;
+                    break;
+                case 'h':
+                    event.preventDefault();
+                    const palette = document.querySelector('[x-data="commandPalette"]');
+                    if (palette && palette.__x) palette.__x.$data.open = true;
+                    break;
+            }
+        },
 
         request(url, options = {}) {
             return window.dmRequest(url, options);
@@ -37,6 +267,9 @@ function sessionCockpit(config) {
         },
 
         init() {
+            this.sessionStatus = config.sessionStatus || 'IDLE';
+            this.presentationMode = config.presentationMode || 'CURTAIN';
+            this.draftBody = config.draftBody || '';
             window.setDmMode(this.dmMode, { animate: false });
             window.addEventListener('battle-state-changed', () => {
                 if (this.presentingMap) {

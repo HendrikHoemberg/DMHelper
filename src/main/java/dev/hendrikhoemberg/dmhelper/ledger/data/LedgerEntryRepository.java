@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,6 +17,8 @@ public interface LedgerEntryRepository extends JpaRepository<LedgerEntry, UUID> 
     List<LedgerEntry> findByCampaignIdOrderByTimestampAscIdAsc(UUID campaignId);
 
     List<LedgerEntry> findByCampaignIdAndHolderOrderByTimestampDesc(UUID campaignId, String holder);
+
+    List<LedgerEntry> findByCampaignIdAndTimestampBetweenOrderByTimestampAscIdAsc(UUID campaignId, Instant from, Instant to);
 
     @Query("SELECT COALESCE(SUM(CASE WHEN le.direction = 'GAIN' THEN le.amount ELSE le.amount * -1 END), 0) " +
            "FROM LedgerEntry le WHERE le.campaign.id = :campaignId AND le.kind = 'GOLD' AND le.holder = :holder " +
