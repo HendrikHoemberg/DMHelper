@@ -81,7 +81,16 @@
         button.textContent = action.label;
         button.addEventListener('click', () => {
           toast.remove();
-          action.handler();
+          Promise.resolve()
+            .then(() => action.handler())
+            .catch(error => {
+              if (window.reportActionFailure) {
+                window.reportActionFailure(
+                  'The retry did not complete.', error, action.handler);
+              } else {
+                window.showToast('The retry did not complete.', 'error', 7000);
+              }
+            });
         });
         toast.appendChild(button);
       }

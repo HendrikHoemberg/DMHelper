@@ -5,18 +5,22 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.util.HtmlUtils;
 
 import java.net.URI;
 
 @ControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
@@ -79,18 +83,44 @@ public class GlobalExceptionHandler {
                 request));
     }
 
-    @ExceptionHandler(NoResourceFoundException.class)
-    public Object handleNoResource(NoResourceFoundException ex, HttpServletRequest request) {
-        String message = "The requested item could not be found. Reload and try again.";
+    @Override
+    protected ResponseEntity<Object> createResponseEntity(Object body, HttpHeaders headers,
+                                                           HttpStatusCode statusCode,
+                                                           WebRequest request) {
+        HttpStatus status = HttpStatus.valueOf(statusCode.value());
+        String detail = safeFrameworkDetail(status);
+        ProblemDetail safeBody = ProblemDetail.forStatusAndDetail(status, detail);
+        safeBody.setTitle(status.getReasonPhrase());
+        safeBody.setType(URI.create("urn:dmhelper:http-" + status.value()));
+        Object correlationId = request.getAttribute(
+                CorrelationIdFilter.ATTRIBUTE, WebRequest.SCOPE_REQUEST);
+        String reference = correlationId == null ? "unavailable" : correlationId.toString();
+        safeBody.setProperty(CorrelationIdFilter.ATTRIBUTE, reference);
         if ("true".equals(request.getHeader("HX-Request"))) {
-            return htmxError(HttpStatus.NOT_FOUND, message, request);
+            HttpHeaders fragmentHeaders = new HttpHeaders();
+            fragmentHeaders.putAll(headers);
+            fragmentHeaders.setContentType(org.springframework.http.MediaType.TEXT_HTML);
+            String fragment = "<div class=\"alert alert-error\" role=\"alert\">"
+                    + "<span>" + HtmlUtils.htmlEscape(detail) + "</span>"
+                    + "<span class=\"u-text-sm\"> Reference: "
+                    + HtmlUtils.htmlEscape(reference) + "</span></div>";
+            return new ResponseEntity<>(fragment, fragmentHeaders, statusCode);
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem(
-                HttpStatus.NOT_FOUND,
-                "urn:dmhelper:not-found",
-                "Not Found",
-                message,
-                request));
+        return new ResponseEntity<>(safeBody, headers, statusCode);
+    }
+
+    private String safeFrameworkDetail(HttpStatus status) {
+        return switch (status) {
+            case BAD_REQUEST -> "The request was not valid. Check the entered values and try again.";
+            case NOT_FOUND -> "The requested item could not be found. Reload and try again.";
+            case METHOD_NOT_ALLOWED -> "That action is not supported at this address.";
+            case NOT_ACCEPTABLE -> "The requested response format is not available.";
+            case CONTENT_TOO_LARGE -> "The uploaded content is too large.";
+            case UNSUPPORTED_MEDIA_TYPE -> "The submitted content type is not supported.";
+            default -> status.is4xxClientError()
+                    ? "The request could not be accepted. Check it and try again."
+                    : "The request could not be completed.";
+        };
     }
 
     @ExceptionHandler(Exception.class)

@@ -417,18 +417,12 @@ class CoreSessionLoopSmokeTest {
                 Pattern.compile(".*/api/v1/encounters/.+/next-turn"), corr);
         var before = encounterService.getById(encounterId);
 
-        // Use a page that has the app's failure/reporting machinery loaded
-        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId);
-        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
+                + "/maps/" + mapId + "/play");
+        dmPage.waitForFunction("window.battleMap && document.querySelector(\"[data-action='next-turn']\")");
 
-        // Trigger the next-turn failure and retry via the app's own failure UI
-        dmPage.evaluate("([eid, corr]) => {"
-                + " return window.dmRequest('/api/v1/encounters/' + eid + '/next-turn', { method: 'POST' })"
-                + "  .catch(error => {"
-                + "    window.reportActionFailure('Could not advance the turn.', error,"
-                + "      () => window.dmRequest('/api/v1/encounters/' + eid + '/next-turn', { method: 'POST' }));"
-                + "    return error; }); }",
-                Arrays.asList(encounterId.toString(), corr));
+        // Exercise the real Alpine tracker action rather than the request helper in isolation.
+        dmPage.locator("[data-action='next-turn']").click();
 
         dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(corr)).waitFor();
 
@@ -486,5 +480,89 @@ class CoreSessionLoopSmokeTest {
         dmPage.locator(".toast-error .toast-action").click();
         dmPage.locator(".dice-result-total").waitFor();
         assertThat(expression.inputValue()).isEmpty();
+    }
+
+    @Test
+    @Order(17)
+    void failedDefeatedToggleRestoresThePersistedAndVisibleState() {
+        Token before = tokenRepo.findByMapIdOrderByNameAsc(mapId).getFirst();
+        boolean originalDead = before.isDead();
+        String corr = "dead-failure-1234";
+        failOnce(dmPage, "**/api/v1/tokens/*/dead", "PATCH",
+                Pattern.compile(".*/api/v1/tokens/.+/dead"), corr);
+
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
+                + "/maps/" + mapId + "/play");
+        dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");
+        dmPage.locator("[data-action='show-tokens']").click();
+        dmPage.evaluate("([id]) => window.battleMap.selectToken(id)",
+                List.of(before.getId().toString()));
+
+        Locator checkbox = dmPage.locator("input[x-model='selectedToken.dead']");
+        checkbox.click();
+        dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(corr)).waitFor();
+
+        assertThat(tokenRepo.findById(before.getId()).orElseThrow().isDead()).isEqualTo(originalDead);
+        assertThat(checkbox.isChecked()).isEqualTo(originalDead);
+        assertThat(dmPage.evaluate("([id]) => window.battleMap.tokens.find(t => t.id === id).dead",
+                List.of(before.getId().toString()))).isEqualTo(originalDead);
+    }
+
+    @Test
+    @Order(18)
+    void failedStatblockTokenCreationRetainsTheSearchForRetry() {
+        String corr = "statblock-failure-1234";
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
+                + "/maps/" + mapId + "/play");
+        dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");
+        dmPage.locator("[data-action='show-tokens']").click();
+
+        Locator search = dmPage.locator(".statblock-search input");
+        search.fill("Goblin");
+        dmPage.locator(".sb-result-item").first().waitFor();
+        failOnce(dmPage, "**/api/v1/library/statblocks/*", "GET",
+                Pattern.compile(".*/api/v1/library/statblocks/[^/?]+$"), corr);
+        dmPage.locator(".sb-result-item").first().click();
+        dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(corr)).waitFor();
+
+        assertThat(search.inputValue()).isEqualTo("Goblin");
+        assertThat(dmPage.locator(".sb-result-item").count()).isGreaterThan(0);
+    }
+
+    @Test
+    @Order(19)
+    void aRejectedRetryRemainsVisibleAndDoesNotBecomeAnUnhandledPageError() {
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId);
+        dmPage.evaluate("() => window.showToast('Initial failure', 'error', 15000, {"
+                + " label: 'Retry',"
+                + " handler: () => Promise.reject(new window.DmRequestError("
+                + "   'Still unavailable.', 503, 'retry-failure-1234'))"
+                + "})");
+
+        dmPage.locator(".toast-error .toast-action").click();
+
+        dmPage.locator(".toast-error",
+                new Page.LocatorOptions().setHasText("retry-failure-1234")).waitFor();
+        assertThat(dmPage.locator(".toast-error .toast-action").count()).isEqualTo(1);
+    }
+
+    @Test
+    @Order(20)
+    void failedQuickNoteAddRetainsTextAndRetrySavesIt() {
+        String corr = "quicknote-failure-1234";
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/adventures");
+        failOnce(dmPage, "**/api/v1/campaigns/*/quicknotes", "POST",
+                Pattern.compile(".*/api/v1/campaigns/.+/quicknotes"), corr);
+
+        Locator input = dmPage.locator(".quicknotes-form input").first();
+        input.fill("Keep this unsaved clue.");
+        dmPage.locator(".quicknotes-form button[type='submit']").first().click();
+        dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(corr)).waitFor();
+
+        assertThat(input.inputValue()).isEqualTo("Keep this unsaved clue.");
+        dmPage.locator(".toast-error .toast-action").click();
+        dmPage.locator(".quicknote-row",
+                new Page.LocatorOptions().setHasText("Keep this unsaved clue.")).waitFor();
+        assertThat(input.inputValue()).isEmpty();
     }
 }

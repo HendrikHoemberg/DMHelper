@@ -478,6 +478,7 @@ export class BattleMap {
             this.tokenLayer.batchDraw();
             this.emit('tokenupdate', { tokens: this.tokens });
             this.emit('state-changed');
+            return true;
         } catch (error) {
             this._failure('Could not add the token. Nothing was changed.', error,
                 () => this.createToken(req));
@@ -519,7 +520,8 @@ export class BattleMap {
         }
     }
 
-    async markDead(id, dead) {
+    async markDead(id, dead, previousDead = !dead) {
+        const token = this.tokens.find(t => t.id === id);
         try {
             const resp = await this._request(`/api/v1/tokens/${id}/dead`, {
                 method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -533,8 +535,17 @@ export class BattleMap {
             this.emit('state-changed');
             if (this.selectedTokenId === id) this.emit('tokenselect', { token: updated });
         } catch (error) {
+            if (token) {
+                token.dead = previousDead;
+                this.renderTokens();
+                this.emit('tokenupdate', { tokens: this.tokens });
+                this.emit('state-changed');
+                if (this.selectedTokenId === id) {
+                    this.emit('tokenselect', { token: { ...token } });
+                }
+            }
             this._failure('Could not change the defeated state. The previous state was restored.', error,
-                () => this.markDead(id, dead));
+                () => this.markDead(id, dead, previousDead));
             return false;
         }
     }
@@ -557,7 +568,7 @@ export class BattleMap {
             const hpMatch = sb.hp ? sb.hp.match(/(\d+)/) : null;
             const hp = hpMatch ? parseInt(hpMatch[1], 10) : null;
 
-            await this.createToken({
+            return await this.createToken({
                 name: sb.name, kind: 'MONSTER',
                 positionX: px, positionY: py,
                 sizeCols: 1, sizeRows: 1,

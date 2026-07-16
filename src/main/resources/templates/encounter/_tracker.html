@@ -582,7 +582,8 @@
     }
 </script>
 
-<div x-data="combatTracker({ campaignId: /*[[${campaignId}]]*/ '' })"
+<div x-data="combatTracker({ campaignId: '' })"
+     th:attr="x-data=|combatTracker({ campaignId: '${campaignId}' })|"
      x-init="init()"
      class="tracker-panel">
 
@@ -605,11 +606,13 @@
 
             <!-- Turn controls -->
             <div class="tracker-turns">
-                <button class="btn btn-ghost" style="padding: 2px 8px;" @click="previousTurn()">◀ Prev</button>
+                <button class="btn btn-ghost" style="padding: 2px 8px;" @click="previousTurn()"
+                        data-action="previous-turn">◀ Prev</button>
                 <span style="font-size: var(--text-sm);">
                     Active: <strong x-text="activeCombatant?.name || '—'"></strong>
                 </span>
-                <button class="btn btn-ghost" style="padding: 2px 8px;" @click="nextTurn()">Next ▶</button>
+                <button class="btn btn-ghost" style="padding: 2px 8px;" @click="nextTurn()"
+                        data-action="next-turn">Next ▶</button>
             </div>
 
             <!-- Recharge banner -->

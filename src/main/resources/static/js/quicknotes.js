@@ -17,15 +17,14 @@
       },
 
       async request(url, options = {}) {
-        const response = await fetch(url, options);
-        if (!response.ok) {
-          throw new Error('HTTP ' + response.status);
-        }
-        return response;
+        return window.dmRequest(url, options);
       },
 
-      reportFailure(message, error) {
-        console.error(message, error);
+      reportFailure(message, error, retry = null) {
+        if (window.reportActionFailure) {
+          window.reportActionFailure(message, error, retry);
+          return;
+        }
         window.showToast?.(message, 'error', 5000);
       },
 
@@ -37,7 +36,7 @@
           );
           this.items = await response.json();
         } catch (error) {
-          this.reportFailure('Could not load quick notes.', error);
+          this.reportFailure('Could not load quick notes.', error, () => this.load());
         }
       },
 
@@ -57,7 +56,8 @@
           this.newBody = '';
         } catch (error) {
           this.newBody = body;
-          this.reportFailure('Could not save the quick note. Your text has been kept.', error);
+          this.reportFailure('Could not save the quick note. Your text has been kept.', error,
+            () => this.add());
         }
       },
 
@@ -69,7 +69,8 @@
           );
           this.items = this.items.filter(item => item.id !== id);
         } catch (error) {
-          this.reportFailure('Could not delete the quick note. Nothing was changed.', error);
+          this.reportFailure('Could not delete the quick note. Nothing was changed.', error,
+            () => this.remove(id));
         }
       },
 
@@ -83,7 +84,8 @@
           this.items = this.items.filter(item => item.id !== quicknote.id);
           window.location = result.url;
         } catch (error) {
-          this.reportFailure('Could not promote the quick note. Nothing was changed.', error);
+          this.reportFailure('Could not promote the quick note. Nothing was changed.', error,
+            () => this.promote(quicknote));
         }
       },
 

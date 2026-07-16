@@ -124,7 +124,8 @@
             <div class="battle-sidebar">
                 <div style="display: flex; gap: 4px; margin-bottom: var(--space-sm); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-xs);">
                     <button class="tool-btn" :class="{ active: activeTab === 'tokens' }"
-                            @click="showTracker = false; activeTab = 'tokens'">Tokens</button>
+                            @click="showTracker = false; activeTab = 'tokens'"
+                            data-action="show-tokens">Tokens</button>
                     <button class="tool-btn" :class="{ active: activeTab === 'tracker' }"
                             @click="showTracker = true; activeTab = 'tracker'">Tracker</button>
                     <button class="tool-btn" :class="{ active: activeTab === 'scene' }"
@@ -326,6 +327,7 @@
                         this.activeEncounter = e.detail.encounter;
                         if (this.activeEncounter) {
                             this.showTracker = true;
+                            this.activeTab = 'tracker';
                         }
                     });
                     this.loadMaps();
@@ -378,6 +380,7 @@
                         this.activeEncounter = await resp.json();
                         if (this.activeEncounter) {
                             this.showTracker = true;
+                            this.activeTab = 'tracker';
                         }
                     } catch (error) {
                         this.failure('Could not load the active encounter.', error,
@@ -408,7 +411,9 @@
                 async duplicateToken(id) { await window.battleMap?.duplicateToken(id); },
                 async toggleDead() {
                     if (this.selectedToken) {
-                        await window.battleMap?.markDead(this.selectedToken.id, this.selectedToken.dead);
+                        const requestedDead = this.selectedToken.dead;
+                        await window.battleMap?.markDead(
+                            this.selectedToken.id, requestedDead, !requestedDead);
                     }
                 },
                 focusToken(id) { window.battleMap?.focusToken(id); },
@@ -498,9 +503,11 @@
                     }
                 },
                 async addStatblockToken(id) {
-                    await window.battleMap?.createTokenFromStatblock(id);
-                    this.sbSearch = '';
-                    this.sbResults = [];
+                    const created = await window.battleMap?.createTokenFromStatblock(id);
+                    if (created) {
+                        this.sbSearch = '';
+                        this.sbResults = [];
+                    }
                 },
             };
         }
