@@ -11,5 +11,7 @@ public interface GameMapRepository extends JpaRepository<GameMap, UUID> {
 
     List<GameMap> findByCampaignIdOrderBySortOrderAsc(UUID campaignId);
 
+    List<GameMap> findByCampaignIdOrderBySortOrderAscIdAsc(UUID campaignId);
+
     long countByCampaignId(UUID campaignId);
 }
