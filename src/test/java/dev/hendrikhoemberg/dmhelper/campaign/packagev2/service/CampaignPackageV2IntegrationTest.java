@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.campaign.packagev2.service;
 
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageReader;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageWriter;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignExportExclusion;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.CampaignImportPreviewStore;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignPackageValidationPipeline;
 import org.junit.jupiter.api.Test;
@@ -42,8 +43,7 @@ class CampaignPackageV2IntegrationTest {
         assertThat(artifact.manifest().maps()).hasSize(1);
         assertThat(artifact.manifest().encounters()).hasSize(1);
         assertThat(artifact.manifest().adventures()).hasSize(1);
-        assertThat(artifact.manifest().metadata().exclusions()).containsExactlyElementsOf(
-                dev.hendrikhoemberg.dmhelper.campaign.packagev2.migration.LegacyV1ToV2Migration.EXCLUSIONS);
+        assertThat(artifact.manifest().metadata().exclusions()).isEmpty();
 
         assertThat(artifact.manifest().campaign().key()).isEqualTo(initial.manifest().campaign().key());
         assertThat(artifact.manifest().party().getFirst().key()).isEqualTo(initial.manifest().party().getFirst().key());

@@ -6,6 +6,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.StagedCampaignPackage;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.PackageKeyGenerator;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.AssetDescriptor;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignExportExclusion;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignFormatMigration;
@@ -42,13 +43,6 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
     }
 
     private static final Logger log = LoggerFactory.getLogger(LegacyV1ToV2Migration.class);
-
-    public static final List<String> EXCLUSIONS = List.of(
-            "CAMPAIGN_SETTINGS", "CURRENT_SCENE", "PARTY_CURRENT_HP",
-            "HANDOUT_PRESENTATION_STATE", "COMBAT_LOG", "DICE_HISTORY",
-            "CALENDAR_CONFIGURATION", "CALENDAR_CURRENT_DATE",
-            "CUSTOM_COMPENDIUM_NON_STATBLOCK", "STRUCTURED_SCENE_TRANSITIONS",
-            "QUESTS_AND_OBJECTIVES");
 
     private final CampaignCatalogService catalogService;
 
@@ -89,9 +83,15 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
 
         String sourceHash = sha256(stableSource.getBytes(StandardCharsets.UTF_8));
         var metadata = new CampaignManifestV2.Metadata("migrated-" + sourceHash.substring(0, 12), Instant.EPOCH,
-                "DMHelper/0.0.1-SNAPSHOT", catalog.version(), catalog.sha256(), EXCLUSIONS);
+                "DMHelper/0.0.1-SNAPSHOT", catalog.version(), catalog.sha256(), List.of());
         String campaignKey = key(keyResolver, CampaignContentType.CAMPAIGN, "/campaign", v1.campaign().name(), sourceHash);
-        var campaign = new CampaignManifestV2.CampaignDto(campaignKey, v1.campaign().name(), v1.campaign().description());
+        var defaultSettings = new CampaignManifestV2.CampaignSettingsDto(
+                CampaignManifestV2.LevelingMode.XP, null, null);
+        var campaign = new CampaignManifestV2.CampaignDto(campaignKey, v1.campaign().name(), v1.campaign().description(),
+                Instant.EPOCH, defaultSettings, null);
+        warning(warnings, "LEGACY_STATE_DEFAULTED", "/campaign/settings", "Campaign settings defaulted to XP leveling");
+        warning(warnings, "LEGACY_STATE_DEFAULTED", "/campaign/createdAt", "Campaign createdAt defaulted to epoch");
+        warning(warnings, "LEGACY_STATE_DEFAULTED", "/campaign/currentSceneRef", "Current scene ref defaulted to null");
 
         Map<String, String> partyKeys = new LinkedHashMap<>();
         List<CampaignManifestV2.PartyMemberDto> party = new ArrayList<>();
@@ -130,8 +130,11 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                         list(s.featRefs()).stream().map(ref -> catalog(CampaignContentType.FEAT, ref)).toList(),
                         s.xp(), map(s.overrides()), s.hitDiceUsed(), resources, spells, map(s.spellSlotsUsed()));
             }
+            int currentHp = value.maxHp();
+            warning(warnings, "LEGACY_STATE_DEFAULTED", "/party/" + i + "/currentHp",
+                    "Party member currentHp defaulted to maxHp");
             party.add(new CampaignManifestV2.PartyMemberDto(memberKey, value.characterName(), value.playerName(),
-                    value.classAndLevel(), value.ac(), value.maxHp(), value.initiativeBonus(), value.speed(),
+                    value.classAndLevel(), value.ac(), value.maxHp(), currentHp, value.initiativeBonus(), value.speed(),
                     value.passivePerception(), value.passiveInsight(), value.passiveInvestigation(), value.notes(),
                     value.active(), sheet));
         }
@@ -144,12 +147,15 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                     s.sourceKey() != null ? s.sourceKey() : "/statBlocks/" + i);
             if (s.sourceKey() != null) statKeys.put(s.sourceKey(), statKey);
             statKeys.put(s.name(), statKey);
+            warning(warnings, "LEGACY_STATE_DEFAULTED", "/statBlocks/" + i + "/createdAt",
+                    "StatBlock createdAt defaulted to epoch");
             statBlocks.add(new CampaignManifestV2.StatBlockDto(statKey, s.sourceKey(), s.name(), s.cr(), s.type(),
                     s.size(), s.alignment(), s.ac(), s.hp(), s.speed(), s.strScore(), s.dexScore(), s.conScore(),
                     s.intScore(), s.wisScore(), s.chaScore(), s.strSave(), s.dexSave(), s.conSave(), s.intSave(),
                     s.wisSave(), s.chaSave(), s.skills(), s.damageVulnerabilities(), s.damageResistances(),
                     s.damageImmunities(), s.conditionImmunities(), s.senses(), s.languages(), s.traits(), s.actions(),
-                    s.bonusActions(), s.reactions(), s.legendaryActions(), s.legendaryDescription(), s.lairActions(), s.xp()));
+                    s.bonusActions(), s.reactions(), s.legendaryActions(), s.legendaryDescription(), s.lairActions(), s.xp(),
+                    Instant.EPOCH));
         }
 
         Map<String, String> handoutKeys = new LinkedHashMap<>();
@@ -165,7 +171,8 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                         "assets/handouts/handout-" + i + "." + extension(h.contentType()), h.contentType(),
                         h.fileName(), h.imageData());
             }
-            handouts.add(new CampaignManifestV2.HandoutDto(handoutKey, h.title(), list(h.tags()), assetKey, h.contentType()));
+            handouts.add(new CampaignManifestV2.HandoutDto(handoutKey, h.title(), list(h.tags()), assetKey, h.contentType(),
+                    true, false));
         }
 
         Map<String, String> mapKeys = new LinkedHashMap<>();
@@ -183,11 +190,16 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                 String tokenKey = key(keyResolver, CampaignContentType.TOKEN, "/maps/" + i + "/tokens/" + j,
                         t.name(), t.id() != null ? t.id() : "/maps/" + i + "/tokens/" + j);
                 if (t.id() != null) tokenKeys.put(t.id(), tokenKey);
-                tokens.add(new CampaignManifestV2.MapDto.TokenDto(tokenKey, t.name(), t.kind(), t.color(),
+                String kind = normalizeKind(t.kind());
+                tokens.add(new CampaignManifestV2.MapDto.TokenDto(tokenKey, t.name(), kind, t.color(),
                         t.positionX(), t.positionY(), t.sizeCols(), t.sizeRows(), t.hidden(),
                         ref(CampaignContentType.STATBLOCK, statKeys, t.statBlockKey()),
                         ref(CampaignContentType.PARTY_MEMBER, partyKeys, t.partyMemberName()),
-                        t.currentHp(), t.maxHp(), t.dead(), t.notes()));
+                        t.currentHp(), t.maxHp(), t.dead(), t.notes(), null));
+            }
+            if (!tokens.isEmpty()) {
+                warning(warnings, "LEGACY_STATE_DEFAULTED", "/maps/" + i + "/tokens/kind",
+                        "Token kinds normalized to runtime vocabulary");
             }
             List<CampaignManifestV2.MapDto.LayerDto> layers = new ArrayList<>();
             if (m.document() != null) {
@@ -210,7 +222,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                     m.document().grid(), layers, list(m.document().primitives()), list(m.document().customTerrain()));
             maps.add(new CampaignManifestV2.MapDto(mapKey, m.name(),
                     new CampaignManifestV2.MapDto.GridDto(m.grid().w(), m.grid().h(), m.grid().cellPx(), m.grid().gridType()),
-                    m.movementMode(), m.showGrid(), document, tokens));
+                    m.movementMode(), m.showGrid(), document, tokens, i));
         }
 
         Map<String, String> encounterKeys = new LinkedHashMap<>();
@@ -227,21 +239,30 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
             List<CampaignManifestV2.CombatantDto> combatants = new ArrayList<>();
             for (int j = 0; j < size(e.combatants()); j++) {
                 var c = e.combatants().get(j);
+                String kind = normalizeKind(c.kind());
                 combatants.add(new CampaignManifestV2.CombatantDto(
                         key(keyResolver, CampaignContentType.COMBATANT, "/encounters/" + i + "/combatants/" + j,
                                 c.name(), "/encounters/" + i + "/combatants/" + j),
                         c.name(), c.initiative(), c.tieBreaker(), c.sortOrder(), c.maxHp(), c.currentHp(), c.tempHp(),
-                        c.kind(), c.groupId(), c.groupLeader(), ref(CampaignContentType.TOKEN, tokenKeys, c.tokenId()),
+                        kind, c.groupId(), c.groupLeader(), ref(CampaignContentType.TOKEN, tokenKeys, c.tokenId()),
                         ref(CampaignContentType.STATBLOCK, statKeys, c.statBlockKey()),
                         ref(CampaignContentType.PARTY_MEMBER, partyKeys, c.partyMemberName()), c.defeated(), c.hidden(),
                         c.conditionsJson(), c.concentratingOn(), c.concentrationCheckPending(), c.legendaryActionsUsed(),
                         c.legendaryResistancesUsed(), c.legendaryActionsMax(), c.legendaryResistancesMax(),
                         c.rechargedAbilities(), c.notes()));
             }
-            if (e.map() != null) warning(warnings, "/encounters/" + i + "/map", e.map());
+            if (e.map() != null) warning(warnings, "LEGACY_REFERENCE_MIGRATED", "/encounters/" + i + "/map", e.map());
+            if (!combatants.isEmpty()) {
+                warning(warnings, "LEGACY_STATE_DEFAULTED", "/encounters/" + i + "/combatants/kind",
+                        "Combatant kinds normalized to runtime vocabulary");
+            }
+            warning(warnings, "LEGACY_STATE_DEFAULTED", "/encounters/" + i + "/combatLog",
+                    "Combat log defaulted to empty");
+            warning(warnings, "LEGACY_STATE_DEFAULTED", "/encounters/" + i + "/lairActionTriggered",
+                    "Lair action triggered defaulted to false");
             encounters.add(new CampaignManifestV2.EncounterDto(encounterKeys.get(e.name()), e.name(), combatants, e.status(),
                     e.round(), e.activeTurnIndex(), e.logSequence(), e.lairActionName(), e.lairActionDescription(),
-                    ref(CampaignContentType.MAP, mapKeys, e.map())));
+                    ref(CampaignContentType.MAP, mapKeys, e.map()), false, List.of()));
         }
 
         Map<String, String> noteKeys = new LinkedHashMap<>();
@@ -251,7 +272,12 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
             String noteKey = key(keyResolver, CampaignContentType.NOTE, "/notes/" + i,
                     n.title(), "/notes/" + i);
             noteKeys.put(n.title(), noteKey);
-            notes.add(new CampaignManifestV2.NoteDto(noteKey, n.type(), n.title(), n.body(), n.tags(), n.dmOnly()));
+            warning(warnings, "LEGACY_STATE_DEFAULTED", "/notes/" + i + "/createdAt",
+                    "Note createdAt defaulted to epoch");
+            warning(warnings, "LEGACY_STATE_DEFAULTED", "/notes/" + i + "/links",
+                    "Note links defaulted to empty");
+            notes.add(new CampaignManifestV2.NoteDto(noteKey, n.type(), n.title(), n.body(), n.tags(), n.dmOnly(),
+                    Instant.EPOCH, List.of()));
         }
 
         Map<String, String> assignmentKeys = new LinkedHashMap<>();
@@ -261,7 +287,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
             String assignmentKey = key(keyResolver, CampaignContentType.ASSIGNMENT, "/assignments/" + i,
                     a.customText(), a.id().toString());
             assignmentKeys.put(a.id().toString(), assignmentKey);
-            if (a.holderName() != null) warning(warnings, "/assignments/" + i + "/holderName", a.holderName());
+            if (a.holderName() != null) warning(warnings, "LEGACY_REFERENCE_MIGRATED", "/assignments/" + i + "/holderName", a.holderName());
             assignments.add(new CampaignManifestV2.AssignmentDto(assignmentKey,
                     ref(CampaignContentType.PARTY_MEMBER, partyKeys, a.holderName()),
                     nullableCatalog(CampaignContentType.MAGIC_ITEM, a.magicItemKey()),
@@ -281,7 +307,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
         List<CampaignManifestV2.TimelineEventDto> timeline = new ArrayList<>();
         for (int i = 0; i < size(v1.timeline()); i++) {
             var t = v1.timeline().get(i);
-            if (t.noteTitle() != null) warning(warnings, "/timeline/" + i + "/noteTitle", t.noteTitle());
+            if (t.noteTitle() != null) warning(warnings, "LEGACY_REFERENCE_MIGRATED", "/timeline/" + i + "/noteTitle", t.noteTitle());
             timeline.add(new CampaignManifestV2.TimelineEventDto(key(keyResolver, CampaignContentType.TIMELINE_EVENT,
                     "/timeline/" + i, t.title(), t.id().toString()),
                     t.inGameYear(), t.inGameMonth(), t.inGameDay(), t.title(), t.body(),
@@ -313,8 +339,8 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                 for (int si = 0; si < size(c.scenes()); si++) {
                     var s = c.scenes().get(si);
                     String path = "/adventures/" + ai + "/chapters/" + ci + "/scenes/" + si;
-                    if (s.map() != null) warning(warnings, path + "/map", s.map());
-                    if (s.encounter() != null) warning(warnings, path + "/encounter", s.encounter());
+                    if (s.map() != null) warning(warnings, "LEGACY_REFERENCE_MIGRATED", path + "/map", s.map());
+                    if (s.encounter() != null) warning(warnings, "LEGACY_REFERENCE_MIGRATED", path + "/encounter", s.encounter());
                     scenes.add(new CampaignManifestV2.SceneDto(sceneKeys.get(s.sceneKey()), s.title(), s.body(), s.status(),
                             s.sortOrder(), ref(CampaignContentType.MAP, mapKeys, s.map()), s.pin(),
                             ref(CampaignContentType.ENCOUNTER, encounterKeys, s.encounter()),
@@ -327,10 +353,12 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                                 "/adventures/" + ai + "/chapters/" + ci),
                         c.title(), c.intro(), c.sortOrder(), scenes));
             }
+            warning(warnings, "LEGACY_STATE_DEFAULTED", "/adventures/" + ai + "/createdAt",
+                    "Adventure createdAt defaulted to epoch");
             adventures.add(new CampaignManifestV2.AdventureDto(
                     key(keyResolver, CampaignContentType.ADVENTURE, "/adventures/" + ai,
                             a.name(), "/adventures/" + ai), a.name(), a.description(),
-                    a.sourceAttribution(), a.sortOrder(), chapters));
+                    a.sourceAttribution(), a.sortOrder(), chapters, Instant.EPOCH));
         }
 
         List<CampaignManifestV2.QuickNoteDto> quickNotes = new ArrayList<>();
@@ -348,7 +376,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                 case SCENE -> sceneKeys;
                 default -> Map.of();
             };
-            warning(warnings, "/quicknotes/" + i + "/targetRef", q.targetRef());
+            warning(warnings, "LEGACY_REFERENCE_MIGRATED", "/quicknotes/" + i + "/targetRef", q.targetRef());
             quickNotes.add(new CampaignManifestV2.QuickNoteDto(
                     key(keyResolver, CampaignContentType.QUICK_NOTE, "/quicknotes/" + i,
                             q.body(), "/quicknotes/" + i),
@@ -356,8 +384,18 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
         }
 
         var manifest = new CampaignManifestV2(2, metadata, campaign, assets, party, statBlocks, handouts, maps,
-                encounters, notes, quickNotes, assignments, ledger, timeline, adventures);
+                encounters, notes, quickNotes, assignments, ledger, timeline, adventures, List.of());
         return new CampaignPackageValidationResult(source, manifest, 1, assetsByKey, warnings, List.of("MIGRATED_FROM_V1"));
+    }
+
+    private static String normalizeKind(String kind) {
+        if (kind == null) return "MONSTER";
+        return switch (kind) {
+            case "character", "player" -> "PC";
+            case "creature" -> "MONSTER";
+            case "hazard", "effect" -> "OBJECT";
+            default -> kind;
+        };
     }
 
     private static String addAsset(StagedCampaignPackage source, List<AssetDescriptor> descriptors,
@@ -397,9 +435,8 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
         return resolver.resolve(type, pointer, name, generated);
     }
 
-    private static void warning(List<CampaignImportProblem> warnings, String path, String value) {
-        warnings.add(problem(ImportSeverity.WARNING, "LEGACY_REFERENCE_MIGRATED", path,
-                "Legacy reference '" + value + "' was migrated to an immutable package key"));
+    private static void warning(List<CampaignImportProblem> warnings, String code, String path, String value) {
+        warnings.add(problem(ImportSeverity.WARNING, code, path, value));
     }
 
     private static CampaignImportProblem problem(ImportSeverity severity, String code, String path, String message) {

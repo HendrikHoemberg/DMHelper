@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview;
 
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignExportExclusion;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignPackageValidationResult;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
@@ -107,7 +108,7 @@ public class CampaignImportPreviewStore {
                 + (int) m.adventures().stream().filter(a -> a.sourceAttribution() != null && !a.sourceAttribution().isBlank()).count();
     }
 
-    private static java.util.List<String> exclusions(CampaignManifestV2 m) {
+    private static java.util.List<CampaignExportExclusion> exclusions(CampaignManifestV2 m) {
         return m == null || m.metadata() == null || m.metadata().exclusions() == null
                 ? java.util.List.of() : m.metadata().exclusions();
     }

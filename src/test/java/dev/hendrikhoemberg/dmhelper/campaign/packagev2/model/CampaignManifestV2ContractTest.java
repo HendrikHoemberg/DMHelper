@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 class CampaignManifestV2ContractTest {
 
@@ -25,6 +26,11 @@ class CampaignManifestV2ContractTest {
         CampaignManifestV2 manifest = mapper.readValue(json, CampaignManifestV2.class);
         assertThat(manifest.formatVersion()).isEqualTo(2);
         assertThat(manifest.campaign().key()).isEqualTo("campaign-minimal");
+        assertThat(manifest.metadata().exclusions()).isEmpty();
+        assertThat(manifest.campaign().settings()).isNotNull();
+        assertThat(manifest.campaign().settings().levelingMode()).isEqualTo(CampaignManifestV2.LevelingMode.XP);
+        assertThat(manifest.diceRolls()).isEmpty();
+        assertThat(schema.validate(mapper.writeValueAsString(manifest))).isEmpty();
     }
 
     @Test
@@ -49,7 +55,7 @@ class CampaignManifestV2ContractTest {
         assertThat(sheet.get("key")).isNotNull();
         assertThat(sheet.get("resources").get(0).get("key")).isNotNull();
 
-        ((tools.jackson.databind.node.ObjectNode) sheet).remove("key");
+        ((ObjectNode) sheet).remove("key");
         assertThat(schema.validate(mapper.writeValueAsString(root)))
                 .extracting(CampaignImportProblem::code)
                 .contains("SCHEMA_VIOLATION");
@@ -73,6 +79,62 @@ class CampaignManifestV2ContractTest {
         assertThat(schema.validate(json)).isNotEmpty();
     }
 
+    @Test
+    void unknownExclusionRejectedBySchema() {
+        String json = currentSurfaceManifest().replaceAll(
+                "\"exclusions\"\\s*:\\s*\\[\\]",
+                "\"exclusions\":[\"UNKNOWN_EXCLUSION\"]");
+        assertThat(schema.validate(json))
+                .extracting(CampaignImportProblem::code)
+                .contains("SCHEMA_VIOLATION");
+    }
+
+    @Test
+    void nonRuntimeTokenKindRejectedBySchema() {
+        String json = currentSurfaceManifest().replaceAll(
+                "\"kind\"\\s*:\\s*\"MONSTER\"",
+                "\"kind\":\"creature\"");
+        assertThat(schema.validate(json))
+                .extracting(CampaignImportProblem::code)
+                .contains("SCHEMA_VIOLATION");
+    }
+
+    @Test
+    void nonRuntimeCombatantKindRejectedBySchema() {
+        String json = currentSurfaceManifest().replaceAll(
+                "\"kind\"\\s*:\\s*\"MONSTER\"",
+                "\"kind\":\"player\"");
+        assertThat(schema.validate(json))
+                .extracting(CampaignImportProblem::code)
+                .contains("SCHEMA_VIOLATION");
+    }
+
+    @Test
+    void oneBasedOutOfRangeCalendarMonthRejectedBySchema() {
+        String json = currentSurfaceManifest().replaceAll(
+                "\"inGameMonth\"\\s*:\\s*3",
+                "\"inGameMonth\":0");
+        assertThat(schema.validate(json))
+                .extracting(CampaignImportProblem::code)
+                .contains("SCHEMA_VIOLATION");
+    }
+
+    @Test
+    void brokenNoteLinkTargetRejectedBySemanticValidator() {
+        String json = currentSurfaceManifest().replaceAll(
+                "\"links\"\\s*:\\s*\\[\\]",
+                "\"links\":[{\"targetType\":\"NOTE\",\"targetRef\":{\"scope\":\"PACKAGE\",\"type\":\"NOTE\",\"key\":\"missing-note\"},\"displayText\":\"Broken\",\"resolved\":false}]");
+        assertThat(schema.validate(json)).isEmpty();
+    }
+
+    @Test
+    void schemaAcceptsValidExclusionValues() {
+        String json = currentSurfaceManifest().replaceAll(
+                "\"exclusions\"\\s*:\\s*\\[\\]",
+                "\"exclusions\":[\"COMBAT_LOG\",\"DICE_HISTORY\"]");
+        assertThat(schema.validate(json)).isEmpty();
+    }
+
     private String fixture(String path) throws Exception {
         try (var in = new ClassPathResource(path).getInputStream()) {
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
@@ -89,17 +151,15 @@ class CampaignManifestV2ContractTest {
                     "generator": "DMHelper",
                     "catalogVersion": "1.0",
                     "catalogSha256": "abc123",
-                    "exclusions": [
-                      "CAMPAIGN_SETTINGS","CURRENT_SCENE","PARTY_CURRENT_HP",
-                      "HANDOUT_PRESENTATION_STATE","COMBAT_LOG","DICE_HISTORY",
-                      "CALENDAR_CONFIGURATION","CALENDAR_CURRENT_DATE",
-                      "CUSTOM_COMPENDIUM_NON_STATBLOCK","STRUCTURED_SCENE_TRANSITIONS",
-                      "QUESTS_AND_OBJECTIVES"
-                    ]
+                    "exclusions": []
                   },
                   "campaign": {
                     "key": "campaign-minimal",
-                    "name": "Test Campaign"
+                    "name": "Test Campaign",
+                    "createdAt": "2025-01-01T00:00:00Z",
+                    "settings": {
+                      "levelingMode": "XP"
+                    }
                   },
                   "assets": [],
                   "party": [],
@@ -111,6 +171,8 @@ class CampaignManifestV2ContractTest {
                     "name": "Test",
                     "combatants": [],
                     "status": "PLANNED",
+                    "lairActionTriggered": false,
+                    "combatLog": [],
                     "mapRef": %s
                   }],
                   "notes": [],
@@ -118,7 +180,8 @@ class CampaignManifestV2ContractTest {
                   "assignments": [],
                   "ledgerEntries": [],
                   "timelineEvents": [],
-                  "adventures": []
+                  "adventures": [],
+                  "diceRolls": []
                 }
                 """.formatted(referenceJson);
     }

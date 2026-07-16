@@ -2,8 +2,10 @@ package dev.hendrikhoemberg.dmhelper.campaign.packagev2.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
+import dev.hendrikhoemberg.dmhelper.dice.DiceResult;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapLayerDto;
+import tools.jackson.databind.JsonNode;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -26,7 +28,8 @@ public record CampaignManifestV2(
         List<AssignmentDto> assignments,
         List<LedgerEntryDto> ledgerEntries,
         List<TimelineEventDto> timelineEvents,
-        List<AdventureDto> adventures
+        List<AdventureDto> adventures,
+        List<DiceRollDto> diceRolls
 ) {
     public static final int CURRENT_FORMAT_VERSION = 2;
 
@@ -37,15 +40,37 @@ public record CampaignManifestV2(
             String generator,
             String catalogVersion,
             String catalogSha256,
-            List<String> exclusions
+            List<CampaignExportExclusion> exclusions
     ) {}
+
+    public enum LevelingMode { XP, MILESTONE }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record CampaignDto(
             String key,
             String name,
-            String description
+            String description,
+            Instant createdAt,
+            CampaignSettingsDto settings,
+            ContentReference currentSceneRef
     ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CampaignSettingsDto(
+            LevelingMode levelingMode,
+            CalendarConfigDto calendar,
+            InGameDateDto currentDate
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CalendarConfigDto(
+            List<Integer> monthLengths,
+            List<String> monthNames,
+            List<String> weekdayNames
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record InGameDateDto(int year, int month, int day) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record PartyMemberDto(
@@ -55,6 +80,7 @@ public record CampaignManifestV2(
             String classAndLevel,
             int ac,
             int maxHp,
+            int currentHp,
             int initiativeBonus,
             int speed,
             int passivePerception,
@@ -143,7 +169,8 @@ public record CampaignManifestV2(
             String legendaryActions,
             String legendaryDescription,
             String lairActions,
-            int xp
+            int xp,
+            Instant createdAt
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -152,7 +179,9 @@ public record CampaignManifestV2(
             String title,
             List<String> tags,
             String assetRef,
-            String contentType
+            String contentType,
+            boolean dmOnly,
+            boolean presented
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -163,7 +192,8 @@ public record CampaignManifestV2(
             String movementMode,
             boolean showGrid,
             MapDocumentV2 document,
-            List<TokenDto> tokens
+            List<TokenDto> tokens,
+            int sortOrder
     ) {
         @JsonInclude(JsonInclude.Include.NON_NULL)
         public record GridDto(int w, int h, int cellPx, String gridType) {}
@@ -214,7 +244,8 @@ public record CampaignManifestV2(
                 Integer currentHp,
                 Integer maxHp,
                 boolean dead,
-                String notes
+                String notes,
+                String icon
         ) {}
     }
 
@@ -229,7 +260,9 @@ public record CampaignManifestV2(
             long logSequence,
             String lairActionName,
             String lairActionDescription,
-            ContentReference mapRef
+            ContentReference mapRef,
+            boolean lairActionTriggered,
+            List<CombatLogEntryDto> combatLog
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -268,7 +301,9 @@ public record CampaignManifestV2(
             String title,
             String body,
             String tags,
-            boolean dmOnly
+            boolean dmOnly,
+            Instant createdAt,
+            List<NoteLinkDto> links
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -324,7 +359,8 @@ public record CampaignManifestV2(
             String description,
             String sourceAttribution,
             int sortOrder,
-            List<ChapterDto> chapters
+            List<ChapterDto> chapters,
+            Instant createdAt
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -348,5 +384,37 @@ public record CampaignManifestV2(
             ContentReference encounterRef,
             List<ContentReference> statblockRefs,
             List<ContentReference> handoutRefs
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CombatLogEntryDto(
+            String key,
+            int round,
+            long sequence,
+            String type,
+            ContentReference combatantRef,
+            JsonNode payload,
+            Instant createdAt
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record DiceRollDto(
+            String key,
+            String expression,
+            List<DiceResult.DieRoll> rolls,
+            int modifier,
+            int total,
+            boolean advantage,
+            boolean disadvantage,
+            ContentReference encounterRef,
+            Instant createdAt
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record NoteLinkDto(
+            String targetType,
+            ContentReference targetRef,
+            String displayText,
+            boolean resolved
     ) {}
 }

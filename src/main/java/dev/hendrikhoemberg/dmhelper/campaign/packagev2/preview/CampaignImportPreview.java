@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview;
 
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignExportExclusion;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignPackageValidationResult;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
 
@@ -17,7 +18,7 @@ public record CampaignImportPreview(
         long installedSizeBytes,
         int provenanceEntries,
         int missingProvenanceEntries,
-        List<String> exclusions,
+        List<CampaignExportExclusion> exclusions,
         List<String> migrations,
         List<CampaignImportProblem> problems,
         Instant expiresAt

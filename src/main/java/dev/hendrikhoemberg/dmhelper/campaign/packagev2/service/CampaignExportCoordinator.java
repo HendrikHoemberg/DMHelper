@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -67,12 +68,12 @@ public class CampaignExportCoordinator {
             var metadata = new CampaignManifestV2.Metadata(
                     converted.campaign().key(), Instant.now(), "DMHelper/0.0.1-SNAPSHOT",
                     converted.metadata().catalogVersion(), converted.metadata().catalogSha256(),
-                    LegacyV1ToV2Migration.EXCLUSIONS);
+                    List.of());
             var manifest = new CampaignManifestV2(converted.formatVersion(), metadata, converted.campaign(),
                     converted.assets(), converted.party(), converted.customStatBlocks(), converted.handouts(),
                     converted.maps(), converted.encounters(), converted.notes(), converted.quickNotes(),
                     converted.assignments(), converted.ledgerEntries(), converted.timelineEvents(),
-                    converted.adventures());
+                    converted.adventures(), converted.diceRolls());
 
             Map<String, InputStreamSource> sources = new LinkedHashMap<>();
             result.assetsByKey().forEach((key, path) -> {

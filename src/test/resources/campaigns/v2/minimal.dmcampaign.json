@@ -6,24 +6,16 @@
     "generator": "DMHelper",
     "catalogVersion": "2025.1",
     "catalogSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "exclusions": [
-      "CAMPAIGN_SETTINGS",
-      "CURRENT_SCENE",
-      "PARTY_CURRENT_HP",
-      "HANDOUT_PRESENTATION_STATE",
-      "COMBAT_LOG",
-      "DICE_HISTORY",
-      "CALENDAR_CONFIGURATION",
-      "CALENDAR_CURRENT_DATE",
-      "CUSTOM_COMPENDIUM_NON_STATBLOCK",
-      "STRUCTURED_SCENE_TRANSITIONS",
-      "QUESTS_AND_OBJECTIVES"
-    ]
+    "exclusions": []
   },
   "campaign": {
     "key": "campaign-minimal",
     "name": "Minimal Campaign",
-    "description": "A minimal valid v2 campaign manifest"
+    "description": "A minimal valid v2 campaign manifest",
+    "createdAt": "2025-01-01T00:00:00Z",
+    "settings": {
+      "levelingMode": "XP"
+    }
   },
   "assets": [],
   "party": [],
@@ -36,5 +28,6 @@
   "assignments": [],
   "ledgerEntries": [],
   "timelineEvents": [],
-  "adventures": []
+  "adventures": [],
+  "diceRolls": []
 }

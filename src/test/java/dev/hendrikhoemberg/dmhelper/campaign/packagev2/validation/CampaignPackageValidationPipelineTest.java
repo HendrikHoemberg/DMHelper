@@ -67,4 +67,62 @@ class CampaignPackageValidationPipelineTest {
                 .noneMatch(problem -> problem.severity()
                         == dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity.ERROR);
     }
+
+    @Test
+    void rejectsPartyMemberCurrentHpExceedingMaxHp() throws Exception {
+        var resource = new ClassPathResource("campaigns/v2/current-surface.dmcampaign/manifest.json");
+        ObjectNode root = (ObjectNode) mapper.readTree(resource.getInputStream());
+        ((ObjectNode) root.get("party").get(0)).put("currentHp", 999);
+        byte[] json = mapper.writeValueAsBytes(root);
+        var staged = new CampaignPackageReader(temp).read(new ByteArrayInputStream(json),
+                "fixture.json", "application/json");
+
+        var result = pipeline.validate(staged);
+
+        assertThat(result.problems()).extracting(p -> p.code()).contains("INVALID_PARTY_CURRENT_HP");
+    }
+
+    @Test
+    void rejectsNonRuntimeTokenKindViaSchema() throws Exception {
+        var resource = new ClassPathResource("campaigns/v2/current-surface.dmcampaign/manifest.json");
+        ObjectNode root = (ObjectNode) mapper.readTree(resource.getInputStream());
+        ((ObjectNode) root.get("maps").get(0).get("tokens").get(0)).put("kind", "creature");
+        byte[] json = mapper.writeValueAsBytes(root);
+        var staged = new CampaignPackageReader(temp).read(new ByteArrayInputStream(json),
+                "fixture.json", "application/json");
+
+        var result = pipeline.validate(staged);
+
+        assertThat(result.problems()).extracting(p -> p.code()).contains("SCHEMA_VIOLATION");
+    }
+
+    @Test
+    void rejectsNonRuntimeCombatantKindViaSchema() throws Exception {
+        var resource = new ClassPathResource("campaigns/v2/current-surface.dmcampaign/manifest.json");
+        ObjectNode root = (ObjectNode) mapper.readTree(resource.getInputStream());
+        ((ObjectNode) root.get("encounters").get(0).get("combatants").get(0)).put("kind", "player");
+        byte[] json = mapper.writeValueAsBytes(root);
+        var staged = new CampaignPackageReader(temp).read(new ByteArrayInputStream(json),
+                "fixture.json", "application/json");
+
+        var result = pipeline.validate(staged);
+
+        assertThat(result.problems()).extracting(p -> p.code()).contains("SCHEMA_VIOLATION");
+    }
+
+    @Test
+    void rejectsDuplicateEncounterKeys() throws Exception {
+        var resource = new ClassPathResource("campaigns/v2/current-surface.dmcampaign/manifest.json");
+        ObjectNode root = (ObjectNode) mapper.readTree(resource.getInputStream());
+        var encounter = root.get("encounters").get(0).deepCopy();
+        root.withArray("encounters").add(encounter);
+        byte[] json = mapper.writeValueAsBytes(root);
+        var staged = new CampaignPackageReader(temp).read(new ByteArrayInputStream(json),
+                "fixture.json", "application/json");
+
+        var result = pipeline.validate(staged);
+
+        assertThat(result.problems()).extracting(p -> p.code()).contains("DUPLICATE_KEY");
+    }
+
 }

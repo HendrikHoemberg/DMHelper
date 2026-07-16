@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.migration;
 
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageReader;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -41,6 +42,12 @@ class LegacyV1ToV2MigrationTest {
         assertThat(manifest.timelineEvents()).isNotEmpty();
         assertThat(manifest.adventures()).isNotEmpty();
         assertThat(first.problems()).anyMatch(p -> p.code().equals("LEGACY_REFERENCE_MIGRATED"));
+        assertThat(first.problems()).anyMatch(p -> p.code().equals("LEGACY_STATE_DEFAULTED"));
         assertThat(manifest.metadata().catalogSha256()).doesNotContain("placeholder");
+        assertThat(manifest.metadata().exclusions()).isEmpty();
+        assertThat(manifest.campaign().settings()).isNotNull();
+        assertThat(manifest.campaign().settings().levelingMode()).isEqualTo(CampaignManifestV2.LevelingMode.XP);
+        assertThat(manifest.campaign().createdAt()).isEqualTo(java.time.Instant.EPOCH);
+        assertThat(manifest.diceRolls()).isEmpty();
     }
 }

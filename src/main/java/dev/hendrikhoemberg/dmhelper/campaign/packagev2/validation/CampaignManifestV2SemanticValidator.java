@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.catalog.CampaignCatalogService;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageReader;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignExportExclusion;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
@@ -32,6 +33,10 @@ public class CampaignManifestV2SemanticValidator {
         for (int i = 0; i < size(m.party()); i++) {
             var p = m.party().get(i);
             add(keys, CampaignContentType.PARTY_MEMBER, p.key(), "/party/" + i + "/key", problems);
+            if (p.currentHp() < 0 || p.currentHp() > p.maxHp()) {
+                error(problems, "INVALID_PARTY_CURRENT_HP", "/party/" + i + "/currentHp",
+                        "Party member currentHp must be between 0 and maxHp");
+            }
             if (p.sheet() != null) {
                 add(keys, CampaignContentType.CHARACTER_SHEET, p.sheet().key(), "/party/" + i + "/sheet/key", problems);
                 for (int j = 0; j < size(p.sheet().resources()); j++) {
@@ -49,16 +54,50 @@ public class CampaignManifestV2SemanticValidator {
         for (int i = 0; i < size(m.maps()); i++) {
             var map = m.maps().get(i);
             add(keys, CampaignContentType.MAP, map.key(), "/maps/" + i + "/key", problems);
-            for (int j = 0; j < size(map.tokens()); j++) add(keys, CampaignContentType.TOKEN,
-                    map.tokens().get(j).key(), "/maps/" + i + "/tokens/" + j + "/key", problems);
+            for (int j = 0; j < size(map.tokens()); j++) {
+                add(keys, CampaignContentType.TOKEN,
+                        map.tokens().get(j).key(), "/maps/" + i + "/tokens/" + j + "/key", problems);
+                validateTokenKind(map.tokens().get(j).kind(), "/maps/" + i + "/tokens/" + j + "/kind", problems);
+            }
         }
         for (int i = 0; i < size(m.encounters()); i++) {
             var encounter = m.encounters().get(i);
             add(keys, CampaignContentType.ENCOUNTER, encounter.key(), "/encounters/" + i + "/key", problems);
-            for (int j = 0; j < size(encounter.combatants()); j++) add(keys, CampaignContentType.COMBATANT,
-                    encounter.combatants().get(j).key(), "/encounters/" + i + "/combatants/" + j + "/key", problems);
+            List<Long> sequences = new ArrayList<>();
+            for (int j = 0; j < size(encounter.combatants()); j++) {
+                add(keys, CampaignContentType.COMBATANT,
+                        encounter.combatants().get(j).key(), "/encounters/" + i + "/combatants/" + j + "/key", problems);
+                validateCombatantKind(encounter.combatants().get(j).kind(), "/encounters/" + i + "/combatants/" + j + "/kind", problems);
+            }
+            for (int j = 0; j < size(encounter.combatLog()); j++) {
+                var log = encounter.combatLog().get(j);
+                add(keys, CampaignContentType.COMBAT_LOG_ENTRY, log.key(),
+                        "/encounters/" + i + "/combatLog/" + j + "/key", problems);
+                if (log.sequence() > encounter.logSequence()) {
+                    error(problems, "COMBAT_LOG_SEQUENCE_EXCEEDS_ENCOUNTER",
+                            "/encounters/" + i + "/combatLog/" + j + "/sequence",
+                            "Log sequence exceeds encounter logSequence");
+                }
+                if (j > 0 && log.sequence() <= encounter.combatLog().get(j - 1).sequence()) {
+                    error(problems, "COMBAT_LOG_SEQUENCE_NOT_STRICTLY_INCREASING",
+                            "/encounters/" + i + "/combatLog/" + j + "/sequence",
+                            "Log sequences must be strictly increasing");
+                }
+                if (log.combatantRef() != null) {
+                    check(log.combatantRef(), "/encounters/" + i + "/combatLog/" + j + "/combatantRef", keys, problems);
+                }
+            }
         }
-        for (int i = 0; i < size(m.notes()); i++) add(keys, CampaignContentType.NOTE, m.notes().get(i).key(), "/notes/" + i + "/key", problems);
+        for (int i = 0; i < size(m.notes()); i++) {
+            var note = m.notes().get(i);
+            add(keys, CampaignContentType.NOTE, note.key(), "/notes/" + i + "/key", problems);
+            for (int j = 0; j < size(note.links()); j++) {
+                var link = note.links().get(j);
+                if (link.targetRef() != null) {
+                    check(link.targetRef(), "/notes/" + i + "/links/" + j + "/targetRef", keys, problems);
+                }
+            }
+        }
         for (int i = 0; i < size(m.quickNotes()); i++) add(keys, CampaignContentType.QUICK_NOTE, m.quickNotes().get(i).key(), "/quickNotes/" + i + "/key", problems);
         for (int i = 0; i < size(m.assignments()); i++) add(keys, CampaignContentType.ASSIGNMENT, m.assignments().get(i).key(), "/assignments/" + i + "/key", problems);
         for (int i = 0; i < size(m.ledgerEntries()); i++) add(keys, CampaignContentType.LEDGER_ENTRY, m.ledgerEntries().get(i).key(), "/ledgerEntries/" + i + "/key", problems);
@@ -73,11 +112,128 @@ public class CampaignManifestV2SemanticValidator {
                         chapter.scenes().get(si).key(), "/adventures/" + ai + "/chapters/" + ci + "/scenes/" + si + "/key", problems);
             }
         }
+        for (int i = 0; i < size(m.diceRolls()); i++) {
+            var roll = m.diceRolls().get(i);
+            add(keys, CampaignContentType.DICE_ROLL, roll.key(), "/diceRolls/" + i + "/key", problems);
+            if (roll.encounterRef() != null) {
+                check(roll.encounterRef(), "/diceRolls/" + i + "/encounterRef", keys, problems);
+            }
+        }
 
         validateReferences(m, keys, problems);
         validateSpatialAndState(m, problems);
         validateAssets(m, problems);
+        validateCalendar(m, problems);
+        validateExclusionSemantics(m, problems);
+        validateCurrentSceneRef(m, keys, problems);
         return problems;
+    }
+
+    private void validateCurrentSceneRef(CampaignManifestV2 m, Map<CampaignContentType, Set<String>> keys,
+                                         List<CampaignImportProblem> problems) {
+        var ref = m.campaign().currentSceneRef();
+        if (ref == null) return;
+        if (ref.scope() != ContentReference.Scope.PACKAGE || ref.type() != CampaignContentType.SCENE) {
+            error(problems, "INVALID_CURRENT_SCENE_REF", "/campaign/currentSceneRef",
+                    "Current scene ref must be a package SCENE reference");
+        }
+        check(ref, "/campaign/currentSceneRef", keys, problems);
+    }
+
+    private void validateCalendar(CampaignManifestV2 m, List<CampaignImportProblem> problems) {
+        var settings = m.campaign().settings();
+        if (settings == null) return;
+        var calendar = settings.calendar();
+        if (calendar != null) {
+            if (calendar.monthLengths() == null || calendar.monthLengths().isEmpty()) {
+                error(problems, "CALENDAR_MONTH_LENGTHS_EMPTY", "/campaign/settings/calendar/monthLengths",
+                        "Month lengths must be non-empty");
+            } else {
+                for (int i = 0; i < calendar.monthLengths().size(); i++) {
+                    if (calendar.monthLengths().get(i) <= 0) {
+                        error(problems, "CALENDAR_MONTH_LENGTH_NOT_POSITIVE",
+                                "/campaign/settings/calendar/monthLengths/" + i,
+                                "Each month length must be positive");
+                    }
+                }
+            }
+            if (calendar.monthNames() == null || calendar.monthNames().isEmpty()) {
+                error(problems, "CALENDAR_MONTH_NAMES_EMPTY", "/campaign/settings/calendar/monthNames",
+                        "Month names must be non-empty");
+            }
+            if (calendar.weekdayNames() == null || calendar.weekdayNames().isEmpty()) {
+                error(problems, "CALENDAR_WEEKDAY_NAMES_EMPTY", "/campaign/settings/calendar/weekdayNames",
+                        "Weekday names must be non-empty");
+            }
+            int numMonths = calendar.monthLengths() == null ? 0 : calendar.monthLengths().size();
+            if (calendar.monthNames() != null && numMonths > 0 && calendar.monthNames().size() != numMonths) {
+                error(problems, "CALENDAR_MONTH_ARRAYS_DIFFERENT_LENGTH",
+                        "/campaign/settings/calendar", "monthLengths and monthNames must have same length");
+            }
+        }
+        var currentDate = settings.currentDate();
+        if (currentDate != null && calendar != null && calendar.monthLengths() != null
+                && !calendar.monthLengths().isEmpty()) {
+            int month = currentDate.month();
+            int day = currentDate.day();
+            if (month < 0 || month >= calendar.monthLengths().size()) {
+                error(problems, "CALENDAR_CURRENT_DATE_MONTH_OUT_OF_RANGE",
+                        "/campaign/settings/currentDate/month",
+                        "Month index is outside the configured calendar range");
+            } else if (day < 1 || day > calendar.monthLengths().get(month)) {
+                error(problems, "CALENDAR_CURRENT_DATE_DAY_OUT_OF_RANGE",
+                        "/campaign/settings/currentDate/day",
+                        "Day is outside the configured month length");
+            }
+        }
+        for (int i = 0; i < size(m.ledgerEntries()); i++) {
+            var e = m.ledgerEntries().get(i);
+            if (e.inGameMonth() != null && e.inGameDay() != null && calendar != null
+                    && calendar.monthLengths() != null && !calendar.monthLengths().isEmpty()) {
+                int calMonth = e.inGameMonth() - 1;
+                if (calMonth >= 0 && calMonth < calendar.monthLengths().size()
+                        && (e.inGameDay() < 1 || e.inGameDay() > calendar.monthLengths().get(calMonth))) {
+                    error(problems, "LEDGER_DATE_OUT_OF_RANGE",
+                            "/ledgerEntries/" + i, "Ledger entry date outside configured calendar range");
+                }
+            }
+        }
+        for (int i = 0; i < size(m.timelineEvents()); i++) {
+            var e = m.timelineEvents().get(i);
+            if (calendar != null && calendar.monthLengths() != null && !calendar.monthLengths().isEmpty()) {
+                int calMonth = e.inGameMonth() - 1;
+                if (calMonth >= 0 && calMonth < calendar.monthLengths().size()
+                        && (e.inGameDay() < 1 || e.inGameDay() > calendar.monthLengths().get(calMonth))) {
+                    error(problems, "TIMELINE_DATE_OUT_OF_RANGE",
+                            "/timelineEvents/" + i, "Timeline event date outside configured calendar range");
+                }
+            }
+        }
+    }
+
+    private void validateExclusionSemantics(CampaignManifestV2 m, List<CampaignImportProblem> problems) {
+        var exclusions = m.metadata().exclusions();
+        if (exclusions == null) return;
+        boolean hasCombatLogExclusion = exclusions.contains(CampaignExportExclusion.COMBAT_LOG);
+        boolean hasDiceHistoryExclusion = exclusions.contains(CampaignExportExclusion.DICE_HISTORY);
+
+        if (hasCombatLogExclusion) {
+            for (int i = 0; i < size(m.encounters()); i++) {
+                if (size(m.encounters().get(i).combatLog()) > 0) {
+                    error(problems, "COMBAT_LOG_EXCLUDED_BUT_NON_EMPTY",
+                            "/encounters/" + i + "/combatLog",
+                            "COMBAT_LOG exclusion is set but encounter has non-empty combat log");
+                }
+            }
+        }
+
+        if (hasDiceHistoryExclusion) {
+            if (size(m.diceRolls()) > 0) {
+                error(problems, "DICE_HISTORY_EXCLUDED_BUT_NON_EMPTY",
+                        "/diceRolls",
+                        "DICE_HISTORY exclusion is set but diceRolls is non-empty");
+            }
+        }
     }
 
     private void validateReferences(CampaignManifestV2 m, Map<CampaignContentType, Set<String>> keys,
@@ -191,6 +347,18 @@ public class CampaignManifestV2SemanticValidator {
                 if (image != null && !keys.contains(image.assetRef())) error(problems, "UNRESOLVED_ASSET_REFERENCE",
                         "/maps/" + i + "/document/layers/" + j + "/image/assetRef", "Map image asset does not resolve");
             }
+    }
+
+    private static void validateTokenKind(String kind, String path, List<CampaignImportProblem> problems) {
+        if (kind != null && !List.of("PC", "NPC", "MONSTER", "OBJECT").contains(kind)) {
+            error(problems, "INVALID_TOKEN_KIND", path, "Token kind must be one of PC, NPC, MONSTER, OBJECT");
+        }
+    }
+
+    private static void validateCombatantKind(String kind, String path, List<CampaignImportProblem> problems) {
+        if (kind != null && !List.of("PC", "NPC", "MONSTER", "OBJECT").contains(kind)) {
+            error(problems, "INVALID_COMBATANT_KIND", path, "Combatant kind must be one of PC, NPC, MONSTER, OBJECT");
+        }
     }
 
     private static void add(Map<CampaignContentType, Set<String>> keys, CampaignContentType type, String key,

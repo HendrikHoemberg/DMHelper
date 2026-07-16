@@ -6,24 +6,16 @@
     "generator": "DMHelper",
     "catalogVersion": "2025.1",
     "catalogSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "exclusions": [
-      "CAMPAIGN_SETTINGS",
-      "CURRENT_SCENE",
-      "PARTY_CURRENT_HP",
-      "HANDOUT_PRESENTATION_STATE",
-      "COMBAT_LOG",
-      "DICE_HISTORY",
-      "CALENDAR_CONFIGURATION",
-      "CALENDAR_CURRENT_DATE",
-      "CUSTOM_COMPENDIUM_NON_STATBLOCK",
-      "STRUCTURED_SCENE_TRANSITIONS",
-      "QUESTS_AND_OBJECTIVES"
-    ]
+    "exclusions": []
   },
   "campaign": {
     "key": "current-surface-campaign",
     "name": "Current Surface Campaign",
-    "description": "A comprehensive v2 fixture covering all entity types"
+    "description": "A comprehensive v2 fixture covering all entity types",
+    "createdAt": "2025-06-15T14:30:00Z",
+    "settings": {
+      "levelingMode": "XP"
+    }
   },
   "assets": [
     {
@@ -51,6 +43,7 @@
       "classAndLevel": "Rogue 5",
       "ac": 15,
       "maxHp": 38,
+      "currentHp": 38,
       "initiativeBonus": 4,
       "speed": 30,
       "passivePerception": 14,
@@ -119,7 +112,8 @@
       "legendaryActions": "",
       "legendaryDescription": "",
       "lairActions": "",
-      "xp": 200
+      "xp": 200,
+      "createdAt": "2025-06-15T14:30:00Z"
     }
   ],
   "handouts": [
@@ -128,7 +122,9 @@
       "title": "Warning Plaque",
       "tags": ["lore", "crypt"],
       "assetRef": "asset-warning-plaque",
-      "contentType": "image/png"
+      "contentType": "image/png",
+      "dmOnly": false,
+      "presented": false
     }
   ],
   "maps": [
@@ -137,6 +133,7 @@
       "name": "The Crypt",
       "movementMode": "GRID",
       "showGrid": true,
+      "sortOrder": 0,
       "grid": { "w": 20, "h": 15, "cellPx": 48, "gridType": "SQUARE" },
       "document": {
         "schemaVersion": 2,
@@ -185,7 +182,7 @@
         {
           "key": "token-goblin-1",
           "name": "Goblin Scout",
-          "kind": "creature",
+          "kind": "MONSTER",
           "color": "#ff0000",
           "positionX": 100,
           "positionY": 200,
@@ -215,7 +212,7 @@
           "maxHp": 21,
           "currentHp": 21,
           "tempHp": 0,
-          "kind": "creature",
+          "kind": "MONSTER",
           "groupLeader": false,
           "tokenRef": { "scope": "PACKAGE", "type": "TOKEN", "key": "token-goblin-1" },
           "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
@@ -239,7 +236,7 @@
           "maxHp": 38,
           "currentHp": 38,
           "tempHp": 5,
-          "kind": "player",
+          "kind": "PC",
           "groupLeader": true,
           "partyMemberRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-aria" },
           "defeated": false,
@@ -258,6 +255,8 @@
       "round": 0,
       "activeTurnIndex": -1,
       "logSequence": 0,
+      "lairActionTriggered": false,
+      "combatLog": [],
       "mapRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-crypt" }
     }
   ],
@@ -268,7 +267,9 @@
       "title": "Crypt Lore",
       "body": "This crypt was built by ancient dwarves.",
       "tags": "dwarf,crypt,ancient",
-      "dmOnly": true
+      "dmOnly": true,
+      "createdAt": "2025-06-15T14:30:00Z",
+      "links": []
     }
   ],
   "quickNotes": [
@@ -328,6 +329,7 @@
       "description": "An adventure into the ancient dwarven crypt.",
       "sourceAttribution": "Homebrew",
       "sortOrder": 1,
+      "createdAt": "2025-06-15T14:30:00Z",
       "chapters": [
         {
           "key": "chapter-1",
@@ -355,5 +357,6 @@
         }
       ]
     }
-  ]
+  ],
+  "diceRolls": []
 }
