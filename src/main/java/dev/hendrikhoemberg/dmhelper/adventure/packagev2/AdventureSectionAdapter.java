@@ -165,12 +165,14 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                         }
                         if (scDto.statblockRefs() != null) {
                             for (ContentReference ref : scDto.statblockRefs()) {
+                                if (ref.scope() == ContentReference.Scope.CATALOG) continue;
                                 StatBlock sb = context.require(ref, CampaignContentType.STATBLOCK, StatBlock.class);
                                 scene.getStatBlocks().add(sb);
                             }
                         }
                         if (scDto.handoutRefs() != null) {
                             for (ContentReference ref : scDto.handoutRefs()) {
+                                if (ref.scope() == ContentReference.Scope.CATALOG) continue;
                                 Handout h = context.require(ref, CampaignContentType.HANDOUT, Handout.class);
                                 scene.getHandouts().add(h);
                             }

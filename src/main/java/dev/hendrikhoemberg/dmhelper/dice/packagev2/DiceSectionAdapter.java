@@ -19,6 +19,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class DiceSectionAdapter implements CampaignSectionExporter, CampaignSectionImporter {
@@ -49,7 +50,7 @@ public class DiceSectionAdapter implements CampaignSectionExporter, CampaignSect
         if (includeDiceHistory) {
             var rolls = diceRollRepository.findByCampaignIdOrderByCreatedAtAscIdAsc(context.campaignId());
             dtos = rolls.stream()
-                    .map(this::exportDiceRoll)
+                    .map(roll -> exportDiceRoll(roll, context))
                     .toList();
         } else {
             dtos = List.of();
@@ -57,12 +58,15 @@ public class DiceSectionAdapter implements CampaignSectionExporter, CampaignSect
         target.diceRolls(dtos);
     }
 
-    private DiceRollDto exportDiceRoll(DiceRoll roll) {
+    private DiceRollDto exportDiceRoll(DiceRoll roll, CampaignExportContext context) {
         List<DiceResult.DieRoll> dieRolls = parseRolls(roll.getRolls());
 
         ContentReference encounterRef = null;
         if (roll.getEncounterId() != null && !roll.getEncounterId().isBlank()) {
-            encounterRef = ContentReference.packageRef(CampaignContentType.ENCOUNTER, roll.getEncounterId());
+            String encounterKey = context.keyService()
+                    .getOrCreate(context.campaignId(), CampaignContentType.ENCOUNTER,
+                            UUID.fromString(roll.getEncounterId()), "");
+            encounterRef = ContentReference.packageRef(CampaignContentType.ENCOUNTER, encounterKey);
         }
 
         return new DiceRollDto(

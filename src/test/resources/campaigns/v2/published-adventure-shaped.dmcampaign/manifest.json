@@ -1,0 +1,882 @@
+{
+  "formatVersion": 2,
+  "metadata": {
+    "packageKey": "published-adventure-campaign",
+    "createdAt": "2025-07-01T10:00:00Z",
+    "generator": "DMHelper",
+    "catalogVersion": "2025.1",
+    "catalogSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "exclusions": []
+  },
+  "campaign": {
+    "key": "published-adventure-campaign",
+    "name": "Published Adventure Campaign",
+    "description": "Multi-adventure fixture testing source-attribution, repeated catalog refs, and rich cross-linking",
+    "createdAt": "2025-07-01T10:00:00Z",
+    "settings": {
+      "levelingMode": "XP"
+    }
+  },
+  "assets": [
+    {
+      "key": "asset-inscription",
+      "path": "assets/handouts/inscription.png",
+      "mediaType": "image/png",
+      "sizeBytes": 68,
+      "sha256": "5b3fd0521337cad9f1b86c01e326f1601e641ac3294cbc0d277e61b04b3914e6",
+      "originalName": "inscription.png"
+    },
+    {
+      "key": "asset-ruins-map",
+      "path": "assets/maps/ruins.webp",
+      "mediaType": "image/webp",
+      "sizeBytes": 92,
+      "sha256": "98dbfe8826bb5c1c7b2bff4db9f648d3da1acd5c6cd9d643c639c340a593955e",
+      "originalName": "ruins.webp"
+    }
+  ],
+  "party": [
+    {
+      "key": "party-member-aria",
+      "characterName": "Aria",
+      "playerName": "Player1",
+      "classAndLevel": "Rogue 5",
+      "ac": 15,
+      "maxHp": 38,
+      "currentHp": 38,
+      "initiativeBonus": 4,
+      "speed": 30,
+      "passivePerception": 14,
+      "passiveInsight": 12,
+      "passiveInvestigation": 10,
+      "notes": "Sneaky",
+      "active": true,
+      "sheet": {
+        "key": "sheet-aria",
+        "abilityScores": { "str": 10, "dex": 18, "con": 14, "int": 12, "wis": 13, "cha": 8 },
+        "classLevels": [
+          {
+            "classRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_rogue" },
+            "level": 5,
+            "hitDieRolls": [8, 5, 6, 7, 4]
+          }
+        ],
+        "proficiencies": { "stealth": "expertise", "perception": "proficient" },
+        "speciesRef": { "scope": "CATALOG", "type": "SPECIES", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_human" },
+        "backgroundRef": { "scope": "CATALOG", "type": "BACKGROUND", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_criminal" },
+        "featRefs": [
+          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_alert" }
+        ],
+        "xp": 6500,
+        "overrides": { "speed": 35 },
+        "hitDiceUsed": 2,
+        "resources": [
+          { "key": "resource-aria-cunning-action", "name": "Cunning Action", "maxUses": 1, "currentUses": 1, "resetRule": "SHORT_REST" }
+        ],
+        "spells": [],
+        "spellSlotsUsed": {}
+      }
+    },
+    {
+      "key": "party-member-borin",
+      "characterName": "Borin",
+      "playerName": "Player2",
+      "classAndLevel": "Fighter 6",
+      "ac": 18,
+      "maxHp": 58,
+      "currentHp": 58,
+      "initiativeBonus": 2,
+      "speed": 25,
+      "passivePerception": 12,
+      "passiveInsight": 10,
+      "passiveInvestigation": 9,
+      "notes": "Tank",
+      "active": true,
+      "sheet": {
+        "key": "sheet-borin",
+        "abilityScores": { "str": 18, "dex": 12, "con": 16, "int": 8, "wis": 10, "cha": 10 },
+        "classLevels": [
+          {
+            "classRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_fighter" },
+            "level": 6,
+            "hitDieRolls": [10, 8, 9, 7, 10, 6]
+          }
+        ],
+        "proficiencies": { "athletics": "proficient", "survival": "proficient" },
+        "speciesRef": { "scope": "CATALOG", "type": "SPECIES", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_dwarf" },
+        "backgroundRef": { "scope": "CATALOG", "type": "BACKGROUND", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_soldier" },
+        "featRefs": [
+          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_tough" }
+        ],
+        "xp": 14000,
+        "overrides": {},
+        "hitDiceUsed": 0,
+        "resources": [],
+        "spells": [],
+        "spellSlotsUsed": {}
+      }
+    },
+    {
+      "key": "party-member-elara",
+      "characterName": "Elara",
+      "playerName": "Player3",
+      "classAndLevel": "Wizard 5",
+      "ac": 12,
+      "maxHp": 32,
+      "currentHp": 32,
+      "initiativeBonus": 3,
+      "speed": 30,
+      "passivePerception": 11,
+      "passiveInsight": 13,
+      "passiveInvestigation": 16,
+      "notes": "Bookworm",
+      "active": true,
+      "sheet": {
+        "key": "sheet-elara",
+        "abilityScores": { "str": 8, "dex": 14, "con": 12, "int": 18, "wis": 13, "cha": 10 },
+        "classLevels": [
+          {
+            "classRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_wizard" },
+            "level": 5,
+            "hitDieRolls": [6, 4, 6, 5, 4]
+          }
+        ],
+        "proficiencies": { "arcana": "proficient", "investigation": "proficient" },
+        "speciesRef": { "scope": "CATALOG", "type": "SPECIES", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_elf" },
+        "backgroundRef": { "scope": "CATALOG", "type": "BACKGROUND", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_sage" },
+        "featRefs": [
+          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_war-caster" }
+        ],
+        "xp": 6500,
+        "overrides": {},
+        "hitDiceUsed": 1,
+        "resources": [
+          { "key": "resource-elara-arcane-recovery", "name": "Arcane Recovery", "maxUses": 1, "currentUses": 1, "resetRule": "LONG_REST" }
+        ],
+        "spells": [
+          {
+            "spellRef": { "scope": "CATALOG", "type": "SPELL", "ruleset": "SRD_5_2", "sourceKey": "magic-missile" },
+            "prepared": true,
+            "sourceClassRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_wizard" }
+          },
+          {
+            "spellRef": { "scope": "CATALOG", "type": "SPELL", "ruleset": "SRD_5_2", "sourceKey": "shield" },
+            "prepared": true,
+            "sourceClassRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_wizard" }
+          },
+          {
+            "spellRef": { "scope": "CATALOG", "type": "SPELL", "ruleset": "SRD_5_2", "sourceKey": "mage-armor" },
+            "prepared": true,
+            "sourceClassRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_wizard" }
+          }
+        ],
+        "spellSlotsUsed": { "1": 1, "2": 0, "3": 0 }
+      }
+    }
+  ],
+  "customStatBlocks": [
+    {
+      "key": "statblock-goblin-captain",
+      "sourceKey": "custom_goblin-captain",
+      "name": "Goblin Captain",
+      "cr": "1",
+      "type": "humanoid",
+      "size": "Small",
+      "alignment": "neutral evil",
+      "ac": 15,
+      "hp": "21 (6d6)",
+      "speed": "30 ft.",
+      "strScore": 10, "dexScore": 14, "conScore": 12, "intScore": 10, "wisScore": 10, "chaScore": 8,
+      "strSave": 2, "dexSave": 4, "conSave": 3,
+      "skills": "Stealth +6, Perception +2",
+      "damageVulnerabilities": "radiant",
+      "damageResistances": "",
+      "damageImmunities": "",
+      "conditionImmunities": "",
+      "senses": "darkvision 60 ft., passive Perception 12",
+      "languages": "Common, Goblin",
+      "traits": "Nimble Escape",
+      "actions": "Scimitar +4 1d6+2",
+      "bonusActions": "Hide",
+      "reactions": "",
+      "legendaryActions": "",
+      "legendaryDescription": "",
+      "lairActions": "",
+      "xp": 200,
+      "createdAt": "2025-07-01T10:00:00Z"
+    },
+    {
+      "key": "statblock-skeleton",
+      "sourceKey": "",
+      "name": "Skeleton",
+      "cr": "1/4",
+      "type": "undead",
+      "size": "Medium",
+      "alignment": "lawful evil",
+      "ac": 13,
+      "hp": "13 (2d8+4)",
+      "speed": "30 ft.",
+      "strScore": 10, "dexScore": 14, "conScore": 15, "intScore": 6, "wisScore": 8, "chaScore": 5,
+      "strSave": 0, "dexSave": 2, "conSave": 2,
+      "skills": "",
+      "damageVulnerabilities": "bludgeoning",
+      "damageResistances": "",
+      "damageImmunities": "poison",
+      "conditionImmunities": "exhaustion, poisoned",
+      "senses": "darkvision 60 ft., passive Perception 9",
+      "languages": "",
+      "traits": "",
+      "actions": "Shortsword +4 1d6+2, Shortbow +4 1d6+2",
+      "bonusActions": "",
+      "reactions": "",
+      "legendaryActions": "",
+      "legendaryDescription": "",
+      "lairActions": "",
+      "xp": 50,
+      "createdAt": "2025-07-01T10:00:00Z"
+    },
+    {
+      "key": "statblock-zombie",
+      "sourceKey": "",
+      "name": "Zombie",
+      "cr": "1/4",
+      "type": "undead",
+      "size": "Medium",
+      "alignment": "neutral evil",
+      "ac": 8,
+      "hp": "22 (3d8+9)",
+      "speed": "20 ft.",
+      "strScore": 13, "dexScore": 6, "conScore": 16, "intScore": 3, "wisScore": 6, "chaScore": 5,
+      "strSave": 1, "dexSave": -2, "conSave": 3,
+      "skills": "",
+      "damageVulnerabilities": "",
+      "damageResistances": "",
+      "damageImmunities": "poison",
+      "conditionImmunities": "poisoned",
+      "senses": "darkvision 60 ft., passive Perception 8",
+      "languages": "",
+      "traits": "Undead Fortitude",
+      "actions": "Slam +3 1d6+1",
+      "bonusActions": "",
+      "reactions": "",
+      "legendaryActions": "",
+      "legendaryDescription": "",
+      "lairActions": "",
+      "xp": 50,
+      "createdAt": "2025-07-01T10:00:00Z"
+    }
+  ],
+  "handouts": [
+    {
+      "key": "handout-inscription",
+      "title": "Ancient Inscription",
+      "tags": ["lore", "ruins"],
+      "assetRef": "asset-inscription",
+      "contentType": "image/png",
+      "dmOnly": false,
+      "presented": true
+    },
+    {
+      "key": "handout-dm-backstory",
+      "title": "DM Backstory Notes",
+      "tags": ["dm", "secret"],
+      "assetRef": "asset-inscription",
+      "contentType": "image/png",
+      "dmOnly": true,
+      "presented": false
+    },
+    {
+      "key": "handout-player-journal",
+      "title": "Player Journal Entry",
+      "tags": ["journal"],
+      "assetRef": "asset-inscription",
+      "contentType": "image/png",
+      "dmOnly": false,
+      "presented": false
+    }
+  ],
+  "maps": [
+    {
+      "key": "map-ruins",
+      "name": "The Ruins",
+      "movementMode": "GRID",
+      "showGrid": true,
+      "sortOrder": 0,
+      "grid": { "w": 30, "h": 20, "cellPx": 48, "gridType": "SQUARE" },
+      "document": {
+        "schemaVersion": 2,
+        "grid": { "width": 30, "height": 20, "cellSizePx": 48, "gridType": "square", "movementMode": "GRID", "showGrid": true },
+        "layers": [
+          {
+            "id": "terrain", "name": "Terrain", "type": "TERRAIN",
+            "visible": true, "locked": false,
+            "cells": [
+              { "col": 10, "row": 5, "terrain": "wall" },
+              { "col": 10, "row": 6, "terrain": "wall" },
+              { "col": 10, "row": 7, "terrain": "wall" }
+            ],
+            "shapes": []
+          },
+          {
+            "id": "bg", "name": "Background", "type": "IMAGE",
+            "visible": true, "locked": true,
+            "cells": [], "shapes": [],
+            "image": { "assetRef": "asset-ruins-map", "x": 0, "y": 0, "width": 30, "height": 20 }
+          }
+        ],
+        "primitives": [],
+        "customTerrain": []
+      },
+      "tokens": [
+        {
+          "key": "token-goblin-1",
+          "name": "Goblin Scout",
+          "kind": "MONSTER",
+          "color": "#ff0000",
+          "positionX": 200,
+          "positionY": 150,
+          "sizeCols": 1,
+          "sizeRows": 1,
+          "hidden": false,
+          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
+          "currentHp": 21,
+          "maxHp": 21,
+          "dead": false,
+          "notes": "patrol"
+        },
+        {
+          "key": "token-goblin-2",
+          "name": "Goblin Scout 2",
+          "kind": "MONSTER",
+          "color": "#ff0000",
+          "positionX": 220,
+          "positionY": 150,
+          "sizeCols": 1,
+          "sizeRows": 1,
+          "hidden": false,
+          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
+          "currentHp": 21,
+          "maxHp": 21,
+          "dead": false,
+          "notes": "patrol"
+        },
+        {
+          "key": "token-skeleton-1",
+          "name": "Skeleton",
+          "kind": "MONSTER",
+          "color": "#888888",
+          "positionX": 300,
+          "positionY": 200,
+          "sizeCols": 1,
+          "sizeRows": 1,
+          "hidden": true,
+          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-skeleton" },
+          "currentHp": 13,
+          "maxHp": 13,
+          "dead": false,
+          "notes": "ambush"
+        }
+      ]
+    }
+  ],
+  "encounters": [
+    {
+      "key": "encounter-ruins-patrol",
+      "name": "Ruins Patrol",
+      "combatants": [
+        {
+          "key": "combatant-goblin-1",
+          "name": "Goblin Scout",
+          "initiative": 14,
+          "tieBreaker": 1,
+          "sortOrder": 0,
+          "maxHp": 21,
+          "currentHp": 21,
+          "tempHp": 0,
+          "kind": "MONSTER",
+          "groupId": "goblins",
+          "groupLeader": false,
+          "tokenRef": { "scope": "PACKAGE", "type": "TOKEN", "key": "token-goblin-1" },
+          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
+          "defeated": false,
+          "hidden": false,
+          "conditionsJson": "[]",
+          "concentrationCheckPending": false,
+          "legendaryActionsUsed": 0,
+          "legendaryResistancesUsed": 0,
+          "legendaryActionsMax": 0,
+          "legendaryResistancesMax": 0,
+          "rechargedAbilities": "",
+          "notes": ""
+        },
+        {
+          "key": "combatant-goblin-2",
+          "name": "Goblin Scout 2",
+          "initiative": 7,
+          "tieBreaker": 2,
+          "sortOrder": 1,
+          "maxHp": 21,
+          "currentHp": 21,
+          "tempHp": 0,
+          "kind": "MONSTER",
+          "groupId": "goblins",
+          "groupLeader": false,
+          "tokenRef": { "scope": "PACKAGE", "type": "TOKEN", "key": "token-goblin-2" },
+          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
+          "defeated": false,
+          "hidden": false,
+          "conditionsJson": "[]",
+          "concentrationCheckPending": false,
+          "legendaryActionsUsed": 0,
+          "legendaryResistancesUsed": 0,
+          "legendaryActionsMax": 0,
+          "legendaryResistancesMax": 0,
+          "rechargedAbilities": "",
+          "notes": ""
+        },
+        {
+          "key": "combatant-skeleton-1",
+          "name": "Skeleton",
+          "initiative": 10,
+          "tieBreaker": 0,
+          "sortOrder": 2,
+          "maxHp": 13,
+          "currentHp": 13,
+          "tempHp": 0,
+          "kind": "MONSTER",
+          "groupId": "",
+          "groupLeader": false,
+          "tokenRef": { "scope": "PACKAGE", "type": "TOKEN", "key": "token-skeleton-1" },
+          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-skeleton" },
+          "defeated": false,
+          "hidden": true,
+          "conditionsJson": "[]",
+          "concentrationCheckPending": false,
+          "legendaryActionsUsed": 0,
+          "legendaryResistancesUsed": 0,
+          "legendaryActionsMax": 0,
+          "legendaryResistancesMax": 0,
+          "rechargedAbilities": "",
+          "notes": "hidden"
+        }
+      ],
+      "status": "PLANNED",
+      "round": 0,
+      "activeTurnIndex": -1,
+      "logSequence": 0,
+      "mapRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-ruins" },
+      "lairActionTriggered": false,
+      "combatLog": []
+    },
+    {
+      "key": "encounter-tomb-guardians",
+      "name": "Tomb Guardians",
+      "combatants": [
+        {
+          "key": "combatant-zombie-1",
+          "name": "Zombie",
+          "initiative": 3,
+          "tieBreaker": 0,
+          "sortOrder": 0,
+          "maxHp": 22,
+          "currentHp": 22,
+          "tempHp": 0,
+          "kind": "MONSTER",
+          "groupId": "",
+          "groupLeader": false,
+          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-zombie" },
+          "defeated": false,
+          "hidden": false,
+          "conditionsJson": "[]",
+          "concentrationCheckPending": false,
+          "legendaryActionsUsed": 0,
+          "legendaryResistancesUsed": 0,
+          "legendaryActionsMax": 0,
+          "legendaryResistancesMax": 0,
+          "rechargedAbilities": "",
+          "notes": ""
+        },
+        {
+          "key": "combatant-zombie-2",
+          "name": "Zombie",
+          "initiative": 3,
+          "tieBreaker": 1,
+          "sortOrder": 1,
+          "maxHp": 22,
+          "currentHp": 22,
+          "tempHp": 0,
+          "kind": "MONSTER",
+          "groupId": "",
+          "groupLeader": false,
+          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-zombie" },
+          "defeated": false,
+          "hidden": false,
+          "conditionsJson": "[]",
+          "concentrationCheckPending": false,
+          "legendaryActionsUsed": 0,
+          "legendaryResistancesUsed": 0,
+          "legendaryActionsMax": 0,
+          "legendaryResistancesMax": 0,
+          "rechargedAbilities": "",
+          "notes": ""
+        }
+      ],
+      "status": "PLANNED",
+      "round": 0,
+      "activeTurnIndex": -1,
+      "logSequence": 0,
+      "lairActionTriggered": false,
+      "combatLog": []
+    }
+  ],
+  "notes": [
+    {
+      "key": "note-ruins-lore",
+      "type": "LOCATION",
+      "title": "Ruins Lore",
+      "body": "These ruins date back to an ancient civilization.",
+      "tags": "ruins,ancient,lore",
+      "dmOnly": false,
+      "createdAt": "2025-07-01T10:00:00Z",
+      "links": [
+        {
+          "targetType": "HANDOUT",
+          "targetRef": { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-inscription" },
+          "displayText": "See inscription",
+          "resolved": true
+        }
+      ]
+    },
+    {
+      "key": "note-goblin-tactics",
+      "type": "QUEST",
+      "title": "Goblin Tactics",
+      "body": "Goblins in this area use hit-and-run tactics.",
+      "tags": "goblin,tactics",
+      "dmOnly": true,
+      "createdAt": "2025-07-01T10:00:00Z",
+      "links": [
+        {
+          "targetType": "STATBLOCK",
+          "targetRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
+          "displayText": "Goblin statblock",
+          "resolved": true
+        }
+      ]
+    },
+    {
+      "key": "note-tomb-riddle",
+      "type": "LOCATION",
+      "title": "Tomb Riddle",
+      "body": "The door to the tomb requires a riddle answer.",
+      "tags": "tomb,riddle",
+      "dmOnly": false,
+      "createdAt": "2025-07-01T10:00:00Z",
+      "links": []
+    },
+    {
+      "key": "note-hidden-passage",
+      "type": "LOCATION",
+      "title": "Hidden Passage",
+      "body": "A hidden passage leads to the treasure chamber.",
+      "tags": "secret,passage",
+      "dmOnly": true,
+      "createdAt": "2025-07-01T10:00:00Z",
+      "links": []
+    }
+  ],
+  "quickNotes": [
+    {
+      "key": "quicknote-ruins",
+      "targetRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-ruins" },
+      "body": "Reminder: describe the eerie silence",
+      "createdAt": "2025-07-01T10:05:00Z"
+    },
+    {
+      "key": "quicknote-tomb-riddle",
+      "targetRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-tomb-riddle" },
+      "body": "Answer: 'time'",
+      "createdAt": "2025-07-01T10:06:00Z"
+    },
+    {
+      "key": "quicknote-party-aria",
+      "targetRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-aria" },
+      "body": "Aria found a secret door",
+      "createdAt": "2025-07-01T10:07:00Z"
+    }
+  ],
+  "assignments": [
+    {
+      "key": "assignment-bag-of-holding",
+      "holderRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-aria" },
+      "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_1", "sourceKey": "bag-of-holding" },
+      "quantity": 1,
+      "attuned": false
+    },
+    {
+      "key": "assignment-gauntlets",
+      "holderRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-borin" },
+      "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_1", "sourceKey": "gauntlets-of-ogre-power" },
+      "quantity": 1,
+      "attuned": true
+    }
+  ],
+  "ledgerEntries": [
+    {
+      "key": "ledger-ruins-treasure",
+      "timestamp": "2025-07-01T10:00:00Z",
+      "inGameYear": 1492,
+      "inGameMonth": 5,
+      "inGameDay": 1,
+      "kind": "GOLD",
+      "direction": "GAIN",
+      "amount": 250.0,
+      "currency": "gp",
+      "holder": "party",
+      "note": "Ruins treasure hoard",
+      "itemAssignmentRef": { "scope": "PACKAGE", "type": "ASSIGNMENT", "key": "assignment-bag-of-holding" }
+    },
+    {
+      "key": "ledger-tomb-gems",
+      "timestamp": "2025-07-01T11:00:00Z",
+      "inGameYear": 1492,
+      "inGameMonth": 5,
+      "inGameDay": 1,
+      "kind": "GOLD",
+      "direction": "GAIN",
+      "amount": 500.0,
+      "currency": "gp",
+      "holder": "party",
+      "note": "Gems from the tomb"
+    }
+  ],
+  "timelineEvents": [
+    {
+      "key": "timeline-arrived-ruins",
+      "inGameYear": 1492,
+      "inGameMonth": 5,
+      "inGameDay": 1,
+      "title": "Arrived at the Ruins",
+      "body": "The party reached the ancient ruins at dawn.",
+      "noteRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-ruins-lore" }
+    },
+    {
+      "key": "timeline-defeated-patrol",
+      "inGameYear": 1492,
+      "inGameMonth": 5,
+      "inGameDay": 1,
+      "title": "Defeated the Patrol",
+      "body": "The party fought through the goblin patrol.",
+      "noteRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-goblin-tactics" }
+    },
+    {
+      "key": "timeline-entered-tomb",
+      "inGameYear": 1492,
+      "inGameMonth": 5,
+      "inGameDay": 1,
+      "title": "Entered the Tomb",
+      "body": "The party solved the riddle and entered the tomb.",
+      "noteRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-tomb-riddle" }
+    },
+    {
+      "key": "timeline-found-passage",
+      "inGameYear": 1492,
+      "inGameMonth": 5,
+      "inGameDay": 1,
+      "title": "Found the Hidden Passage",
+      "body": "Elara discovered the hidden passage behind the statue.",
+      "noteRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-hidden-passage" }
+    }
+  ],
+  "adventures": [
+    {
+      "key": "adventure-ruins-of-destiny",
+      "name": "Ruins of Destiny",
+      "description": "A published adventure exploring the ancient ruins.",
+      "sourceAttribution": "Published by Adventure Guild",
+      "sortOrder": 1,
+      "createdAt": "2025-07-01T10:00:00Z",
+      "chapters": [
+        {
+          "key": "ch-ruins-1",
+          "title": "Chapter 1: Approaching the Ruins",
+          "intro": "The party travels through the forest to reach the ruins.",
+          "sortOrder": 1,
+          "scenes": [
+            {
+              "key": "sc-ruins-forest-path",
+              "title": "Forest Path",
+              "body": "A winding path leads through the dark forest.",
+              "status": "DONE",
+              "sortOrder": 1,
+              "statblockRefs": [
+                { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" }
+              ],
+              "handoutRefs": [
+                { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-inscription" }
+              ]
+            },
+            {
+              "key": "sc-ruins-entrance",
+              "title": "Ruins Entrance",
+              "body": "The crumbling entrance to the ruins.",
+              "status": "VISITED",
+              "sortOrder": 2,
+              "mapRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-ruins" },
+              "pin": { "x": 150, "y": 100 },
+              "encounterRef": { "scope": "PACKAGE", "type": "ENCOUNTER", "key": "encounter-ruins-patrol" },
+              "statblockRefs": [
+                { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
+                { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-skeleton" }
+              ],
+              "handoutRefs": [
+                { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-inscription" },
+                { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-dm-backstory" }
+              ]
+            }
+          ]
+        },
+        {
+          "key": "ch-ruins-2",
+          "title": "Chapter 2: The Tomb",
+          "intro": "Deep within the ruins lies the ancient tomb.",
+          "sortOrder": 2,
+          "scenes": [
+            {
+              "key": "sc-tomb-riddle-door",
+              "title": "Riddle Door",
+              "body": "A stone door with a riddle carved into it.",
+              "status": "UNVISITED",
+              "sortOrder": 1,
+              "handoutRefs": [
+                { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-inscription" }
+              ]
+            },
+            {
+              "key": "sc-tomb-guardian-chamber",
+              "title": "Guardian Chamber",
+              "body": "The chamber where the tomb guardians reside.",
+              "status": "UNVISITED",
+              "sortOrder": 2,
+              "encounterRef": { "scope": "PACKAGE", "type": "ENCOUNTER", "key": "encounter-tomb-guardians" },
+              "statblockRefs": [
+                { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-zombie" }
+              ],
+              "handoutRefs": []
+            },
+            {
+              "key": "sc-tomb-treasure",
+              "title": "Treasure Chamber",
+              "body": "The final chamber containing the treasure.",
+              "status": "UNVISITED",
+              "sortOrder": 3,
+              "handoutRefs": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "adventure-forsaken-temple",
+      "name": "The Forsaken Temple",
+      "description": "A side quest to a forgotten temple.",
+      "sourceAttribution": "Published by Adventure Guild",
+      "sortOrder": 2,
+      "createdAt": "2025-07-01T10:00:00Z",
+      "chapters": [
+        {
+          "key": "ch-temple-1",
+          "title": "Chapter 1: Temple Approach",
+          "intro": "The temple is hidden in the mountains.",
+          "sortOrder": 1,
+          "scenes": [
+            {
+              "key": "sc-temple-mountain-path",
+              "title": "Mountain Path",
+              "body": "A treacherous mountain path leads to the temple.",
+              "status": "UNVISITED",
+              "sortOrder": 1,
+              "statblockRefs": [],
+              "handoutRefs": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "adventure-homebrew-session",
+      "name": "Homebrew Session",
+      "description": "A custom session with no source attribution.",
+      "sourceAttribution": "",
+      "sortOrder": 3,
+      "createdAt": "2025-07-01T10:00:00Z",
+      "chapters": [
+        {
+          "key": "ch-homebrew-1",
+          "title": "Session 1",
+          "intro": "Starting the homebrew content.",
+          "sortOrder": 1,
+          "scenes": [
+            {
+              "key": "sc-homebrew-town",
+              "title": "Town Encounter",
+              "body": "The party arrives in a small town.",
+              "status": "UNVISITED",
+              "sortOrder": 1,
+              "statblockRefs": [
+                { "scope": "CATALOG", "type": "STATBLOCK", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_bandit" },
+                { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" }
+              ],
+              "handoutRefs": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "diceRolls": [
+    {
+      "key": "dice-init-goblin-1",
+      "expression": "1d20+2",
+      "rolls": [{ "die": "d20", "values": [12] }],
+      "modifier": 2,
+      "total": 14,
+      "advantage": false,
+      "disadvantage": false,
+      "encounterRef": { "scope": "PACKAGE", "type": "ENCOUNTER", "key": "encounter-ruins-patrol" },
+      "createdAt": "2025-07-01T10:02:00Z"
+    },
+    {
+      "key": "dice-init-goblin-2",
+      "expression": "1d20+2",
+      "rolls": [{ "die": "d20", "values": [5] }],
+      "modifier": 2,
+      "total": 7,
+      "advantage": false,
+      "disadvantage": false,
+      "encounterRef": { "scope": "PACKAGE", "type": "ENCOUNTER", "key": "encounter-ruins-patrol" },
+      "createdAt": "2025-07-01T10:02:01Z"
+    },
+    {
+      "key": "dice-init-skeleton-1",
+      "expression": "1d20",
+      "rolls": [{ "die": "d20", "values": [10] }],
+      "modifier": 0,
+      "total": 10,
+      "advantage": false,
+      "disadvantage": false,
+      "encounterRef": { "scope": "PACKAGE", "type": "ENCOUNTER", "key": "encounter-ruins-patrol" },
+      "createdAt": "2025-07-01T10:02:02Z"
+    },
+    {
+      "key": "dice-perception-aria",
+      "expression": "1d20+4",
+      "rolls": [{ "die": "d20", "values": [17] }],
+      "modifier": 4,
+      "total": 21,
+      "advantage": true,
+      "disadvantage": false,
+      "createdAt": "2025-07-01T10:03:00Z"
+    }
+  ]
+}

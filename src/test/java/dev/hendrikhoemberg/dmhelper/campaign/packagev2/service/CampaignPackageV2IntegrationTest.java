@@ -63,9 +63,10 @@ class CampaignPackageV2IntegrationTest {
         var reparsed = pipeline.validate(reread);
 
         assertThat(reparsed.valid()).as(reparsed.problems().toString()).isTrue();
-        assertThat(reparsed.manifest()).usingRecursiveComparison()
-                .ignoringFields("metadata.createdAt")
-                .isEqualTo(artifact.manifest());
+        assertThat(reparsed.manifest().metadata().exclusions()).isEmpty();
+        CampaignSemanticComparator.assertEquivalent(
+                CampaignSemanticSnapshot.from(artifact.manifest()),
+                CampaignSemanticSnapshot.from(reparsed.manifest()));
         reread.close();
         campaigns.delete(campaign.getId());
     }

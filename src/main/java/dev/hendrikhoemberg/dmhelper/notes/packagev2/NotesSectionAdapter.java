@@ -126,10 +126,8 @@ public class NotesSectionAdapter implements CampaignSectionExporter, CampaignSec
                 link.setTargetType(linkDto.targetType());
                 link.setDisplayText(linkDto.displayText());
                 link.setResolved(linkDto.resolved());
-                noteLinkRepository.save(link);
-                pendingLinks.add(link);
 
-                if (linkDto.targetRef() != null) {
+                if (linkDto.targetRef() != null && linkDto.targetRef().scope() != ContentReference.Scope.CATALOG) {
                     ContentReference ref = linkDto.targetRef();
                     CampaignContentType targetType = CampaignContentType.valueOf(linkDto.targetType());
                     linkDeferred.add(() -> {
@@ -137,11 +135,15 @@ public class NotesSectionAdapter implements CampaignSectionExporter, CampaignSec
                         try {
                             UUID targetId = (UUID) resolved.getClass().getMethod("getId").invoke(resolved);
                             link.setTargetId(targetId);
+                            noteLinkRepository.save(link);
                         } catch (Exception e) {
                             throw new RuntimeException("Cannot resolve ID for " + resolved.getClass(), e);
                         }
                     });
+                } else {
+                    noteLinkRepository.save(link);
                 }
+                pendingLinks.add(link);
             }
         }
 
@@ -164,7 +166,7 @@ public class NotesSectionAdapter implements CampaignSectionExporter, CampaignSec
             }
             context.defer("quick note " + dto.key() + " save", () -> {
                 ContentReference ref = dto.targetRef();
-                if (ref != null) {
+                if (ref != null && ref.scope() != ContentReference.Scope.CATALOG) {
                     Object resolved = context.require(ref, ref.type(), Object.class);
                     try {
                         UUID targetId = (UUID) resolved.getClass().getMethod("getId").invoke(resolved);

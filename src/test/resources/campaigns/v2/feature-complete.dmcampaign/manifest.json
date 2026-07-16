@@ -1,7 +1,7 @@
 {
   "formatVersion": 2,
   "metadata": {
-    "packageKey": "current-surface-campaign",
+    "packageKey": "feature-complete-campaign",
     "createdAt": "2025-06-15T14:30:00Z",
     "generator": "DMHelper",
     "catalogVersion": "2025.1",
@@ -9,12 +9,12 @@
     "exclusions": []
   },
   "campaign": {
-    "key": "current-surface-campaign",
-    "name": "Current Surface Campaign",
-    "description": "A comprehensive v2 fixture covering all entity types",
+    "key": "feature-complete-campaign",
+    "name": "Feature Complete Campaign",
+    "description": "A comprehensive v2 fixture exercising every persistent-exported field",
     "createdAt": "2025-06-15T14:30:00Z",
     "settings": {
-      "levelingMode": "XP",
+      "levelingMode": "MILESTONE",
       "calendar": {
         "monthLengths": [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
         "monthNames": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
@@ -26,20 +26,20 @@
   },
   "assets": [
     {
-      "key": "asset-crypt-map",
-      "path": "assets/maps/crypt.png",
+      "key": "asset-players-map",
+      "path": "assets/handouts/players-map.png",
       "mediaType": "image/png",
-      "sizeBytes": 204800,
-      "sha256": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b0",
-      "originalName": "crypt-map.png"
+      "sizeBytes": 68,
+      "sha256": "5b3fd0521337cad9f1b86c01e326f1601e641ac3294cbc0d277e61b04b3914e6",
+      "originalName": "players-map.png"
     },
     {
-      "key": "asset-warning-plaque",
-      "path": "assets/handouts/warning-plaque.png",
-      "mediaType": "image/png",
-      "sizeBytes": 102400,
-      "sha256": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c0",
-      "originalName": "warning-plaque.png"
+      "key": "asset-crypt-map",
+      "path": "assets/maps/crypt-map.webp",
+      "mediaType": "image/webp",
+      "sizeBytes": 92,
+      "sha256": "98dbfe8826bb5c1c7b2bff4db9f648d3da1acd5c6cd9d643c639c340a593955e",
+      "originalName": "crypt-map.webp"
     }
   ],
   "party": [
@@ -50,7 +50,7 @@
       "classAndLevel": "Rogue 5",
       "ac": 15,
       "maxHp": 38,
-      "currentHp": 38,
+      "currentHp": 28,
       "initiativeBonus": 4,
       "speed": 30,
       "passivePerception": 14,
@@ -89,6 +89,48 @@
         ],
         "spellSlotsUsed": { "1": 2, "2": 1 }
       }
+    },
+    {
+      "key": "party-member-borin",
+      "characterName": "Borin",
+      "playerName": "Player2",
+      "classAndLevel": "Fighter 6",
+      "ac": 18,
+      "maxHp": 58,
+      "currentHp": 42,
+      "initiativeBonus": 2,
+      "speed": 25,
+      "passivePerception": 12,
+      "passiveInsight": 10,
+      "passiveInvestigation": 9,
+      "notes": "Tank",
+      "active": true,
+      "sheet": {
+        "key": "sheet-borin",
+        "abilityScores": { "str": 18, "dex": 12, "con": 16, "int": 8, "wis": 10, "cha": 10 },
+        "classLevels": [
+          {
+            "classRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_fighter" },
+            "level": 6,
+            "hitDieRolls": [10, 8, 9, 7, 10, 6]
+          }
+        ],
+        "proficiencies": { "athletics": "proficient", "survival": "proficient" },
+        "speciesRef": { "scope": "CATALOG", "type": "SPECIES", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_dwarf" },
+        "backgroundRef": { "scope": "CATALOG", "type": "BACKGROUND", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_soldier" },
+        "featRefs": [
+          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_tough" }
+        ],
+        "xp": 14000,
+        "overrides": {},
+        "hitDiceUsed": 1,
+        "resources": [
+          { "key": "resource-borin-action-surge", "name": "Action Surge", "maxUses": 1, "currentUses": 0, "resetRule": "SHORT_REST" },
+          { "key": "resource-borin-second-wind", "name": "Second Wind", "maxUses": 1, "currentUses": 1, "resetRule": "SHORT_REST" }
+        ],
+        "spells": [],
+        "spellSlotsUsed": {}
+      }
     }
   ],
   "customStatBlocks": [
@@ -121,16 +163,55 @@
       "lairActions": "",
       "xp": 200,
       "createdAt": "2025-06-15T14:30:00Z"
+    },
+    {
+      "key": "statblock-skeleton",
+      "sourceKey": "",
+      "name": "Skeleton",
+      "cr": "1/4",
+      "type": "undead",
+      "size": "Medium",
+      "alignment": "lawful evil",
+      "ac": 13,
+      "hp": "13 (2d8+4)",
+      "speed": "30 ft.",
+      "strScore": 10, "dexScore": 14, "conScore": 15, "intScore": 6, "wisScore": 8, "chaScore": 5,
+      "strSave": 0, "dexSave": 2, "conSave": 2,
+      "skills": "",
+      "damageVulnerabilities": "bludgeoning",
+      "damageResistances": "",
+      "damageImmunities": "poison",
+      "conditionImmunities": "exhaustion, poisoned",
+      "senses": "darkvision 60 ft., passive Perception 9",
+      "languages": "",
+      "traits": "",
+      "actions": "Shortsword +4 1d6+2, Shortbow +4 1d6+2",
+      "bonusActions": "",
+      "reactions": "",
+      "legendaryActions": "",
+      "legendaryDescription": "",
+      "lairActions": "",
+      "xp": 50,
+      "createdAt": "2025-06-15T14:30:00Z"
     }
   ],
   "handouts": [
     {
-      "key": "handout-warning-plaque",
-      "title": "Warning Plaque",
-      "tags": ["lore", "crypt"],
-      "assetRef": "asset-warning-plaque",
+      "key": "handout-players-map",
+      "title": "Players Map",
+      "tags": ["map", "overview"],
+      "assetRef": "asset-players-map",
       "contentType": "image/png",
       "dmOnly": false,
+      "presented": true
+    },
+    {
+      "key": "handout-dm-notes",
+      "title": "DM Notes",
+      "tags": ["dm", "secret"],
+      "assetRef": "asset-players-map",
+      "contentType": "image/png",
+      "dmOnly": true,
       "presented": false
     }
   ],
@@ -201,6 +282,23 @@
           "maxHp": 21,
           "dead": false,
           "notes": "scout"
+        },
+        {
+          "key": "token-aria",
+          "name": "Aria",
+          "kind": "PC",
+          "color": "#00ff00",
+          "positionX": 150,
+          "positionY": 250,
+          "sizeCols": 1,
+          "sizeRows": 1,
+          "hidden": false,
+          "partyMemberRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-aria" },
+          "currentHp": 38,
+          "maxHp": 38,
+          "dead": false,
+          "notes": "",
+          "icon": "dagger"
         }
       ]
     }
@@ -217,22 +315,24 @@
           "tieBreaker": 1,
           "sortOrder": 0,
           "maxHp": 21,
-          "currentHp": 21,
+          "currentHp": 14,
           "tempHp": 0,
           "kind": "MONSTER",
+          "groupId": "goblins",
           "groupLeader": false,
           "tokenRef": { "scope": "PACKAGE", "type": "TOKEN", "key": "token-goblin-1" },
           "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
           "defeated": false,
           "hidden": false,
-          "conditionsJson": "[]",
+          "conditionsJson": "[{\"name\":\"poisoned\"}]",
+          "concentratingOn": "",
           "concentrationCheckPending": false,
           "legendaryActionsUsed": 0,
           "legendaryResistancesUsed": 0,
           "legendaryActionsMax": 0,
           "legendaryResistancesMax": 0,
           "rechargedAbilities": "",
-          "notes": ""
+          "notes": "wounded"
         },
         {
           "key": "combatant-aria",
@@ -241,14 +341,16 @@
           "tieBreaker": 0,
           "sortOrder": 1,
           "maxHp": 38,
-          "currentHp": 38,
+          "currentHp": 28,
           "tempHp": 5,
           "kind": "PC",
+          "groupId": "party",
           "groupLeader": true,
           "partyMemberRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-aria" },
           "defeated": false,
           "hidden": false,
           "conditionsJson": "[]",
+          "concentratingOn": "cure-wounds",
           "concentrationCheckPending": false,
           "legendaryActionsUsed": 0,
           "legendaryResistancesUsed": 0,
@@ -258,13 +360,34 @@
           "notes": ""
         }
       ],
-      "status": "PLANNED",
-      "round": 0,
-      "activeTurnIndex": -1,
-      "logSequence": 0,
-      "lairActionTriggered": false,
-      "combatLog": [],
-      "mapRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-crypt" }
+      "status": "ACTIVE",
+      "round": 3,
+      "activeTurnIndex": 1,
+      "logSequence": 5,
+      "lairActionName": "Cryptic Whispers",
+      "lairActionDescription": "Whispers fill the crypt, forcing a WIS save",
+      "mapRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-crypt" },
+      "lairActionTriggered": true,
+      "combatLog": [
+        {
+          "key": "log-round-1-1",
+          "round": 1,
+          "sequence": 1,
+          "type": "DAMAGE",
+          "combatantRef": { "scope": "PACKAGE", "type": "COMBATANT", "key": "combatant-aria" },
+          "payload": { "damage": 5, "source": "Shortsword" },
+          "createdAt": "2025-06-15T14:31:00Z"
+        },
+        {
+          "key": "log-round-1-2",
+          "round": 1,
+          "sequence": 2,
+          "type": "HEAL",
+          "combatantRef": { "scope": "PACKAGE", "type": "COMBATANT", "key": "combatant-goblin-scout" },
+          "payload": { "healing": 3, "source": "Second Wind" },
+          "createdAt": "2025-06-15T14:31:30Z"
+        }
+      ]
     }
   ],
   "notes": [
@@ -279,17 +402,33 @@
       "links": [
         {
           "targetType": "HANDOUT",
-          "targetRef": { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-warning-plaque" },
-          "displayText": "See warning plaque",
+          "targetRef": { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-players-map" },
+          "displayText": "See map",
+          "resolved": true
+        },
+        {
+          "targetType": "MAP",
+          "targetRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-crypt" },
+          "displayText": "Crypt map",
           "resolved": true
         }
       ]
+    },
+    {
+      "key": "note-quest-log",
+      "type": "QUEST",
+      "title": "Find the Lost Relic",
+      "body": "The party must find the lost relic in the crypt.",
+      "tags": "quest,main",
+      "dmOnly": false,
+      "createdAt": "2025-06-15T14:30:00Z",
+      "links": []
     }
   ],
   "quickNotes": [
     {
       "key": "quicknote-campaign",
-      "targetRef": { "scope": "PACKAGE", "type": "CAMPAIGN", "key": "current-surface-campaign" },
+      "targetRef": { "scope": "PACKAGE", "type": "CAMPAIGN", "key": "feature-complete-campaign" },
       "body": "Campaign level quick note",
       "createdAt": "2025-06-15T14:35:00Z"
     },
@@ -298,6 +437,12 @@
       "targetRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-crypt" },
       "body": "Map note about the crypt",
       "createdAt": "2025-06-15T14:36:00Z"
+    },
+    {
+      "key": "quicknote-note",
+      "targetRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-crypt-lore" },
+      "body": "Reminder to describe the carvings",
+      "createdAt": "2025-06-15T14:37:00Z"
     }
   ],
   "assignments": [
@@ -307,6 +452,20 @@
       "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_1", "sourceKey": "bag-of-holding" },
       "quantity": 1,
       "attuned": false
+    },
+    {
+      "key": "assignment-potion",
+      "holderRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-borin" },
+      "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_1", "sourceKey": "potion-of-healing" },
+      "quantity": 2,
+      "attuned": false
+    },
+    {
+      "key": "assignment-custom-item",
+      "holderRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-aria" },
+      "customText": "Mysterious Amulet",
+      "quantity": 1,
+      "attuned": true
     }
   ],
   "ledgerEntries": [
@@ -323,6 +482,20 @@
       "holder": "party",
       "note": "Crypt treasure",
       "itemAssignmentRef": { "scope": "PACKAGE", "type": "ASSIGNMENT", "key": "assignment-bag-of-holding" }
+    },
+    {
+      "key": "ledger-potion-purchase",
+      "timestamp": "2025-06-14T10:00:00Z",
+      "inGameYear": 1492,
+      "inGameMonth": 3,
+      "inGameDay": 14,
+      "kind": "GOLD",
+      "direction": "SPEND",
+      "amount": 50.0,
+      "currency": "gp",
+      "holder": "party",
+      "note": "Bought potions",
+      "itemAssignmentRef": { "scope": "PACKAGE", "type": "ASSIGNMENT", "key": "assignment-potion" }
     }
   ],
   "timelineEvents": [
@@ -334,6 +507,15 @@
       "title": "Entered the Crypt",
       "body": "The party discovered the hidden entrance.",
       "noteRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-crypt-lore" }
+    },
+    {
+      "key": "timeline-found-relic",
+      "inGameYear": 1492,
+      "inGameMonth": 3,
+      "inGameDay": 16,
+      "title": "Found the Lost Relic",
+      "body": "After defeating the crypt guardians, the party found the relic.",
+      "noteRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-quest-log" }
     }
   ],
   "adventures": [
@@ -347,7 +529,7 @@
       "chapters": [
         {
           "key": "chapter-1",
-          "title": "Chapter 1",
+          "title": "Chapter 1: The Entrance",
           "intro": "The party stands before the ancient doors.",
           "sortOrder": 1,
           "scenes": [
@@ -364,8 +546,39 @@
                 { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" }
               ],
               "handoutRefs": [
-                { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-warning-plaque" }
+                { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-players-map" }
               ]
+            },
+            {
+              "key": "scene-burial-chamber",
+              "title": "Burial Chamber",
+              "body": "A large chamber with sarcophagi lining the walls.",
+              "status": "UNVISITED",
+              "sortOrder": 2,
+              "pin": { "x": 400, "y": 300 },
+              "statblockRefs": [
+                { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-skeleton" }
+              ],
+              "handoutRefs": []
+            }
+          ]
+        },
+        {
+          "key": "chapter-2",
+          "title": "Chapter 2: The Depths",
+          "intro": "Deeper into the darkness.",
+          "sortOrder": 2,
+          "scenes": [
+            {
+              "key": "scene-underground-river",
+              "title": "Underground River",
+              "body": "An underground river blocks the path.",
+              "status": "UNVISITED",
+              "sortOrder": 1,
+              "mapRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-crypt" },
+              "pin": { "x": 600, "y": 450 },
+              "statblockRefs": [],
+              "handoutRefs": []
             }
           ]
         }
@@ -374,15 +587,25 @@
   ],
   "diceRolls": [
     {
-      "key": "dice-init-aria",
+      "key": "dice-initiative-aria",
       "expression": "1d20+4",
-      "rolls": [{ "die": "d20", "values": [15] }],
+      "rolls": [{ "die": "d20", "values": [18] }],
       "modifier": 4,
-      "total": 19,
+      "total": 22,
       "advantage": false,
       "disadvantage": false,
       "encounterRef": { "scope": "PACKAGE", "type": "ENCOUNTER", "key": "encounter-crypt-guardians" },
       "createdAt": "2025-06-15T14:31:00Z"
+    },
+    {
+      "key": "dice-perception-borin",
+      "expression": "1d20+2",
+      "rolls": [{ "die": "d20", "values": [15] }],
+      "modifier": 2,
+      "total": 17,
+      "advantage": false,
+      "disadvantage": true,
+      "createdAt": "2025-06-15T14:32:00Z"
     }
   ]
 }

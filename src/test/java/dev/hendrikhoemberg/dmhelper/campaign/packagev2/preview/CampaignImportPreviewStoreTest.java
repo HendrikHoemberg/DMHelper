@@ -66,6 +66,16 @@ class CampaignImportPreviewStoreTest {
         assertThat(preview.counts().adventures()).isEqualTo(manifest.adventures().size());
         assertThat(preview.counts().chapters()).isEqualTo(1);
         assertThat(preview.counts().scenes()).isEqualTo(1);
+        assertThat(preview.counts().combatLogEntries()).isEqualTo(0);
+        assertThat(preview.counts().diceRolls()).isEqualTo(1);
+        assertThat(preview.counts().noteLinks()).isEqualTo(1);
+        assertThat(preview.counts().assets()).isEqualTo(manifest.assets().size());
+        assertThat(preview.counts().partyMembers()).isEqualTo(manifest.party().size());
+        assertThat(preview.counts().customStatBlocks()).isEqualTo(manifest.customStatBlocks().size());
+        assertThat(preview.counts().handouts()).isEqualTo(manifest.handouts().size());
+        assertThat(preview.counts().maps()).isEqualTo(manifest.maps().size());
+        assertThat(preview.counts().tokens()).isEqualTo(1);
+        assertThat(preview.counts().combatants()).isEqualTo(2);
     }
 
     private CampaignManifestV2 minimal() throws Exception {
