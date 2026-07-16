@@ -23,7 +23,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@Import({NoteService.class, WikiLinkParser.class, StatBlockService.class, SceneRefCleaner.class, dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class})
+@Import({NoteService.class, WikiLinkParser.class, StatBlockService.class, SceneRefCleaner.class,
+        dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
+        dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class})
 class NoteServiceTest {
 
     @Autowired private NoteRepository noteRepository;

@@ -11,6 +11,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
 import org.springframework.stereotype.Component;
 
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.MAP;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.HANDOUT;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.NOTE;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.PARTY_MEMBER;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SCENE;
@@ -23,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.time.Instant;
 
 @Component
 public class CampaignManifestV2SemanticValidator {
@@ -128,13 +130,40 @@ public class CampaignManifestV2SemanticValidator {
             if ("CURTAIN".equals(m.session().presentationMode()) && m.session().presentedRef() != null)
                 error(problems, "INVALID_SESSION_PRESENTATION", "/session/presentedRef",
                         "Curtain presentation cannot reference content.");
+            if ("MAP".equals(m.session().presentationMode()))
+                requireRefType(m.session().presentedRef(), MAP, "/session/presentedRef", problems);
+            if ("HANDOUT".equals(m.session().presentationMode()))
+                requireRefType(m.session().presentedRef(), HANDOUT, "/session/presentedRef", problems);
             if ("REVIEW".equals(m.session().status()) &&
                     (m.session().draftBody() == null || m.session().draftBody().isBlank()))
                 error(problems, "MISSING_SESSION_DRAFT", "/session/draftBody",
                         "A session under review requires its persisted draft.");
-            for (var visit : m.session().sceneVisits()) {
+            if (!"REVIEW".equals(m.session().status()) && m.session().draftBody() != null)
+                error(problems, "UNEXPECTED_SESSION_DRAFT", "/session/draftBody",
+                        "Only a session under review can carry a draft.");
+            Set<ContentReference> attendeeRefs = new HashSet<>();
+            for (int i = 0; i < m.session().attendeeRefs().size(); i++) {
+                var ref = m.session().attendeeRefs().get(i);
+                if (!attendeeRefs.add(ref))
+                    error(problems, "DUPLICATE_SESSION_ATTENDEE", "/session/attendeeRefs/" + i,
+                            "A party member can appear in session attendance only once.");
+            }
+            Instant previousVisit = null;
+            Set<ContentReference> visitedScenes = new HashSet<>();
+            for (int i = 0; i < m.session().sceneVisits().size(); i++) {
+                var visit = m.session().sceneVisits().get(i);
                 uniqueKey(SESSION_SCENE_VISIT, visit.key(), "/session/sceneVisits", keys, problems);
                 requireRefType(visit.sceneRef(), SCENE, "/session/sceneVisits", problems);
+                if (!visitedScenes.add(visit.sceneRef()))
+                    error(problems, "DUPLICATE_SESSION_SCENE_VISIT", "/session/sceneVisits/" + i + "/sceneRef",
+                            "A scene can be visited only once per session.");
+                if (previousVisit != null && visit.visitedAt().isBefore(previousVisit))
+                    error(problems, "SESSION_VISITS_NOT_MONOTONIC", "/session/sceneVisits/" + i + "/visitedAt",
+                            "Session scene visits must be ordered by visitedAt.");
+                if (visit.completedAt() != null && visit.completedAt().isBefore(visit.visitedAt()))
+                    error(problems, "SESSION_VISIT_COMPLETES_BEFORE_VISIT", "/session/sceneVisits/" + i + "/completedAt",
+                            "A scene visit cannot complete before it starts.");
+                previousVisit = visit.visitedAt();
             }
         }
         for (int i = 0; i < size(m.diceRolls()); i++) {
@@ -263,6 +292,16 @@ public class CampaignManifestV2SemanticValidator {
 
     private void validateReferences(CampaignManifestV2 m, Map<CampaignContentType, Set<String>> keys,
                                     List<CampaignImportProblem> problems) {
+        if (m.session() != null) {
+            check(m.session().planNoteRef(), "/session/planNoteRef", keys, problems);
+            check(m.session().workspaceMapRef(), "/session/workspaceMapRef", keys, problems);
+            check(m.session().presentedRef(), "/session/presentedRef", keys, problems);
+            for (int i = 0; i < size(m.session().attendeeRefs()); i++)
+                check(m.session().attendeeRefs().get(i), "/session/attendeeRefs/" + i, keys, problems);
+            for (int i = 0; i < size(m.session().sceneVisits()); i++)
+                check(m.session().sceneVisits().get(i).sceneRef(),
+                        "/session/sceneVisits/" + i + "/sceneRef", keys, problems);
+        }
         for (int i = 0; i < size(m.party()); i++) {
             var sheet = m.party().get(i).sheet();
             if (sheet == null) continue;

@@ -165,6 +165,13 @@
 
   function initShortcutOverlay() {
     if (document.getElementById('shortcut-overlay')) return;
+    const sessionShortcuts = document.querySelector('.session-cockpit') ? `
+          <dt>[ / ]</dt><dd>Previous / next scene</dd>
+          <dt>N</dt><dd>Advance combat turn</dd>
+          <dt>Q</dt><dd>Focus quick note</dd>
+          <dt>H</dt><dd>Focus handouts</dd>
+          <dt>P</dt><dd>Present the current map</dd>
+    ` : '';
     const overlay = document.createElement('div');
     overlay.id = 'shortcut-overlay';
     overlay.setAttribute('role', 'dialog');
@@ -180,6 +187,7 @@
           <dt>Ctrl + R</dt><dd>Toggle dice roller</dd>
           <dt>?</dt><dd>Show this overlay</dd>
           <dt>Esc</dt><dd>Close overlays</dd>
+          ${sessionShortcuts}
         </dl>
       </div>
     `;
@@ -220,6 +228,13 @@
       if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const tag = document.activeElement?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        const visibleModal = Array.from(document.querySelectorAll('[aria-modal="true"]'))
+          .some(modal => {
+            const style = window.getComputedStyle(modal);
+            return !modal.hidden && style.display !== 'none' && style.visibility !== 'hidden'
+              && modal.getClientRects().length > 0;
+          });
+        if (visibleModal) return;
         e.preventDefault();
         toggle(true);
       }

@@ -19,7 +19,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import({GameMapService.class, SceneRefCleaner.class})
+@Import({GameMapService.class, SceneRefCleaner.class,
+        dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
 class GameMapServiceTest {
 
     @Autowired private GameMapService service;

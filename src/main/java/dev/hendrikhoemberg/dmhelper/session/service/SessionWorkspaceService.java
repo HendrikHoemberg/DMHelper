@@ -102,7 +102,7 @@ public class SessionWorkspaceService {
 
     private Selection select(CampaignSession session, Encounter active, Scene current,
                              SessionPlanService.SessionPlan plan, UUID requestedMapId, UUID campaignId) {
-        if (session.isOpen() && session.getWorkspaceMap() != null)
+        if (session.isOpen())
             return new Selection(session.getWorkspaceMap(), SelectionSource.STORED_SESSION);
         if (active != null && active.getMap() != null)
             return new Selection(active.getMap(), SelectionSource.ACTIVE_ENCOUNTER);

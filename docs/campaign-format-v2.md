@@ -68,7 +68,7 @@ The manifest carries the current open session when one is active (nullable — `
 | `session` | object \| null | `null` when no session is open; otherwise contains the fields below |
 | `session.status` | `"RUNNING"` \| `"PAUSED"` \| `"REVIEW"` | Session lifecycle status |
 | `session.presentationMode` | `"CURTAIN"` \| `"MAP"` \| `"HANDOUT"` | What is shown on the player view |
-| `session.startDate` | string (ISO-8601) | Real-world timestamp when the session started |
+| `session.startedAt` | string (ISO-8601) | Real-world timestamp when the session started |
 | `session.planNoteRef` | ContentReference \| null | Typed ref to a session-plan note |
 | `session.workspaceMapRef` | ContentReference \| null | Typed ref to the current workspace map |
 | `session.attendeeRefs` | ContentReference[] | Typed refs to attending party members |
@@ -80,12 +80,15 @@ The manifest carries the current open session when one is active (nullable — `
 
 - `presentationMode` must be consistent with `presentedRef`: `CURTAIN` → `null`, `MAP` → map ref, `HANDOUT` → handout ref.
 - `draftBody` must be `null` unless `status` is `REVIEW`.
-- `attendeeRefs` must reference active party members in the campaign.
+- `attendeeRefs` reference campaign party members captured for that session; later roster deactivation does not rewrite historical attendance.
 - `sceneVisits` timestamps must be monotonic within a session.
 
 ### Deterministic recovery on import
 
-When a session is open at export time, the import recreates it in the `IDLE` state. The session-plan note is imported normally (with its full body preserved). Runtime state (presentation mode, PIN, workspace map, drafts, visit timestamps) is discarded on import — it is intentionally transient state that must be re-established by the DM.
+When a session is open at export time, import recreates its lifecycle status, timestamps, start
+date, plan, workspace map, attendance, scene visits, review draft, and presentation selection using
+stable package references. The receiving process restores the latest open presentation after
+startup. The generated player PIN remains process-local and is intentionally not exported.
 
 ## Schema URLs
 

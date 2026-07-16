@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.session.web;
 import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionPlanService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService.SessionWorkspace;
@@ -45,6 +46,23 @@ class SessionControllerTest {
         mvc.perform(get("/campaigns/{id}/session", campaignId).param("mapId", mapId.toString()))
                 .andExpect(status().isOk());
         verify(workspaces).load(campaignId, mapId);
+    }
+
+    @Test
+    void attendanceEditorIncludesAnInactiveStoredAttendee() throws Exception {
+        SessionWorkspace ws = emptyWorkspace();
+        PartyMember inactive = new PartyMember();
+        inactive.setId(UUID.randomUUID());
+        inactive.setCharacterName("Retired Hero");
+        inactive.setActive(false);
+        ws.session().setStatus(CampaignSession.Status.RUNNING);
+        ws.session().getAttendees().add(inactive);
+        when(workspaces.load(campaignId, null)).thenReturn(ws);
+
+        mvc.perform(get("/campaigns/{id}/session", campaignId))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("attendanceMembers", List.of(inactive)))
+                .andExpect(model().attribute("attendeeIds", List.of(inactive.getId().toString())));
     }
 
     static SessionWorkspace emptyWorkspace() {

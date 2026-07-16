@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @DataJpaTest
-@Import(AdventureService.class)
+@Import({AdventureService.class, dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
 class AdventureServiceTest {
 
     @Autowired private AdventureService service;

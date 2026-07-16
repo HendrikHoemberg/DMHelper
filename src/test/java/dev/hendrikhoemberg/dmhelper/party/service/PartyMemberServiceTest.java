@@ -14,7 +14,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import(PartyMemberService.class)
+@Import({PartyMemberService.class, dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
 class PartyMemberServiceTest {
 
     @Autowired private PartyMemberRepository repository;

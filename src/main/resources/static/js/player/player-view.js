@@ -289,29 +289,38 @@ function showHandout(state) {
         return;
     }
     const content = document.getElementById('playerContent');
-    content.innerHTML = `
-        <div class="pv-handout">
-            <img src="/files/${state.handout.id}" alt="${state.handout.title}">
-        </div>`;
+    content.replaceChildren();
+    const wrapper = document.createElement('div');
+    wrapper.className = 'pv-handout';
+    const image = document.createElement('img');
+    image.src = `/player/files/${encodeURIComponent(state.handout.id)}`;
+    image.alt = state.handout.title || '';
+    wrapper.appendChild(image);
+    content.appendChild(wrapper);
 }
 
 function showInitiative(state) {
-    let html = '';
-    if (state.initiative && state.initiative.length > 0) {
-        html += '<div class="pv-initiative" id="pvInitiative">';
-        for (let i = 0; i < state.initiative.length; i++) {
-            const c = state.initiative[i];
-            const classes = ['combatant-chip'];
-            if (c.defeated) classes.push('defeated');
-            if (c.active || i === state.activeTurnIndex) classes.push('active');
-            html += `<div class="${classes.join(' ')}">
-                <span>${c.name}</span>
-                ${(c.conditions || []).map(cd => `<span class="cond-dot">${cd.charAt(0).toUpperCase()}</span>`).join('')}
-            </div>`;
-        }
-        html += '</div>';
-    }
-    document.getElementById('playerContent').insertAdjacentHTML('beforeend', html);
+    if (!state.initiative || state.initiative.length === 0) return;
+    const initiative = document.createElement('div');
+    initiative.className = 'pv-initiative';
+    initiative.id = 'pvInitiative';
+    state.initiative.forEach((combatant, index) => {
+        const chip = document.createElement('div');
+        chip.className = 'combatant-chip';
+        if (combatant.defeated) chip.classList.add('defeated');
+        if (combatant.active || index === state.activeTurnIndex) chip.classList.add('active');
+        const name = document.createElement('span');
+        name.textContent = combatant.name || '';
+        chip.appendChild(name);
+        (combatant.conditions || []).forEach(condition => {
+            const dot = document.createElement('span');
+            dot.className = 'cond-dot';
+            dot.textContent = String(condition).charAt(0).toUpperCase();
+            chip.appendChild(dot);
+        });
+        initiative.appendChild(chip);
+    });
+    document.getElementById('playerContent').appendChild(initiative);
 }
 
 function updateTokensOnly(state) {

@@ -35,14 +35,14 @@ public class CampaignTableController {
 
     @PostMapping("/refresh")
     public LiveTableState refresh(@PathVariable UUID campaignId) {
-        return presentationService.broadcastCurrentState();
+        return presentationService.broadcastCurrentState(campaignId);
     }
 
     @PostMapping("/aoes")
     public LiveTableState updateAoEs(@PathVariable UUID campaignId,
                                       @RequestBody List<LiveTableState.AoeTemplateSnapshot> aoes) {
-        presentationService.updateAoEs(aoes);
-        return presentationService.broadcastCurrentState();
+        presentationService.updateAoEs(campaignId, aoes);
+        return presentationService.broadcastCurrentState(campaignId);
     }
 
     public record PresentationRequest(String mode, String ref) {}

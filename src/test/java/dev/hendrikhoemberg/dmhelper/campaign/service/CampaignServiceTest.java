@@ -35,7 +35,8 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @DataJpaTest
-@Import({CampaignService.class, GameMapService.class, SceneRefCleaner.class})
+@Import({CampaignService.class, GameMapService.class, SceneRefCleaner.class,
+        dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
 class CampaignServiceTest {
 
     @Autowired

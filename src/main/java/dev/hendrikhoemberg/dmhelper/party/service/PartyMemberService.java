@@ -1,10 +1,14 @@
 package dev.hendrikhoemberg.dmhelper.party.service;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResourceRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReferenceRepository;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
+import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,14 +24,26 @@ public class PartyMemberService {
     private final EntityManager em;
     private final SheetResourceRepository sheetResourceRepo;
     private final SheetSpellReferenceRepository sheetSpellRefRepo;
+    private final SessionReferenceCleaner sessionRefCleaner;
+    private final ItemAssignmentRepository itemAssignmentRepository;
+    private final CombatantRepository combatantRepository;
+    private final TokenRepository tokenRepository;
 
     public PartyMemberService(PartyMemberRepository repository, EntityManager em,
                               SheetResourceRepository sheetResourceRepo,
-                              SheetSpellReferenceRepository sheetSpellRefRepo) {
+                              SheetSpellReferenceRepository sheetSpellRefRepo,
+                              SessionReferenceCleaner sessionRefCleaner,
+                              ItemAssignmentRepository itemAssignmentRepository,
+                              CombatantRepository combatantRepository,
+                              TokenRepository tokenRepository) {
         this.repository = repository;
         this.em = em;
         this.sheetResourceRepo = sheetResourceRepo;
         this.sheetSpellRefRepo = sheetSpellRefRepo;
+        this.sessionRefCleaner = sessionRefCleaner;
+        this.itemAssignmentRepository = itemAssignmentRepository;
+        this.combatantRepository = combatantRepository;
+        this.tokenRepository = tokenRepository;
     }
 
     public PartyMember create(UUID campaignId, String characterName, String playerName,
@@ -93,7 +109,20 @@ public class PartyMemberService {
     }
 
     public void delete(UUID id) {
+        sessionRefCleaner.detachAttendee(id);
         PartyMember pm = findById(id);
+        for (var assignment : itemAssignmentRepository.findByPartyMemberId(id)) {
+            assignment.setPartyMember(null);
+            itemAssignmentRepository.save(assignment);
+        }
+        for (var combatant : combatantRepository.findByPartyMemberId(id)) {
+            combatant.setPartyMember(null);
+            combatantRepository.save(combatant);
+        }
+        for (var token : tokenRepository.findByPartyMemberId(id)) {
+            token.setPartyMember(null);
+            tokenRepository.save(token);
+        }
         if (pm.getCharacterSheet() != null) {
             UUID sheetId = pm.getCharacterSheet().getId();
             sheetResourceRepo.deleteBySheetId(sheetId);

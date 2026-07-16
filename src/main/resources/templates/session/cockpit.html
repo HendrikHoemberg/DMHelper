@@ -97,20 +97,117 @@
       @keydown.window="handleKeyboard($event)">
   <header class="cockpit-topbar">
     <h1 style="font-family: var(--font-display); font-size: var(--text-lg); margin: 0;" th:text="${workspace.campaign.name}">Campaign</h1>
-    <span class="badge" th:text="${workspace.session.status}">IDLE</span>
+    <span class="badge" x-text="sessionStatus" th:attr="data-session-status=${workspace.session.status}">IDLE</span>
     <span th:text="${workspace.currentDate.year + '-' + (workspace.currentDate.month + 1) + '-' + workspace.currentDate.day}">1492-7-12</span>
     <span style="flex: 1"></span>
     <button class="btn btn-ghost" @click="openSearch()">Search</button>
     <button class="btn btn-ghost" @click="openDice()">Dice</button>
-    <button class="btn btn-ghost" @click="lifecycleOpen = true">Session</button>
+    <a class="btn btn-ghost" target="_blank"
+       th:href="@{/campaigns/{id}/handouts(id=${campaignId})}">Handouts</a>
+    <select id="cockpitHandoutPicker" class="form-input" aria-label="Present handout"
+            :disabled="sessionStatus === 'IDLE'"
+            @change="presentHandout($event.target.value); $event.target.value = ''">
+      <option value="">Present handout…</option>
+      <option th:each="handout : ${workspace.handouts}" th:unless="${handout.dmOnly}"
+              th:value="${handout.id}" th:text="${handout.title}">Handout</option>
+    </select>
+    <a class="btn btn-ghost" target="_blank" href="/library?tab=rules">Rules</a>
+    <a class="btn btn-ghost" target="_blank"
+       th:href="@{/campaigns/{id}/calendar(id=${campaignId})}">Calendar</a>
+    <button class="btn btn-ghost" x-ref="sessionButton" @click="openLifecycle()">Session</button>
   </header>
   <section class="cockpit-grid">
     <aside class="cockpit-story" aria-label="Story rail"
            th:replace="~{session/_story-rail :: story(workspace=${workspace})}"></aside>
-    <section class="cockpit-table" aria-label="Table surface">
-      <div th:if="${workspace.workspaceMap != null}" id="battleCanvasWrap"></div>
-      <th:block th:unless="${workspace.workspaceMap != null}"
-                th:replace="~{session/_empty-table :: empty(workspace=${workspace})}"></th:block>
+    <section class="cockpit-table" aria-label="Table surface"
+             th:attr="data-selection-source=${workspace.selectionSource}">
+      <div class="battle-toolbar" aria-label="Battle map controls">
+        <div class="tool-group map-switcher">
+          <label for="cockpitMapPicker" class="sr-only">Workspace map</label>
+          <select id="cockpitMapPicker" aria-label="Workspace map" :value="currentMapId"
+                  @change="switchMap($event.target.value)">
+            <option value="" :disabled="sessionStatus === 'IDLE' && !!currentMapId">No map</option>
+            <template x-for="m in maps" :key="m.id">
+              <option :value="m.id" x-text="m.name"></option>
+            </template>
+          </select>
+        </div>
+        <div class="tool-group">
+          <button class="tool-btn" :class="{ active: tool === 'select' }"
+                  @click="setTool('select')" :disabled="!currentMapId">Select</button>
+          <button class="tool-btn" :class="{ active: tool === 'measure' }"
+                  @click="setTool('measure')" :disabled="!currentMapId">Measure</button>
+          <button class="tool-btn" @click="addToken()" :disabled="!currentMapId">+ Token</button>
+          <button class="tool-btn" @click="addParty()" :disabled="!currentMapId">Add Party</button>
+        </div>
+        <div class="tool-group">
+          <button class="tool-btn" :class="{ active: movementMode === 'GRID' }"
+                  @click="toggleMovementMode()" :disabled="!currentMapId"
+                  x-text="movementMode === 'GRID' ? 'Grid movement' : 'Free movement'">Grid movement</button>
+          <button class="tool-btn" :class="{ active: showGrid }"
+                  @click="toggleShowGrid()" :disabled="!currentMapId">Grid lines</button>
+        </div>
+        <div class="tool-group table-presentation-controls">
+          <span class="badge" th:attr="data-presentation-mode=${workspace.session.presentationMode}"
+                :data-presentation-mode="presentationMode"
+                x-text="presentationMode === 'CURTAIN' ? 'Table: Curtain' : (presentationMode === 'MAP' ? 'Table: Map' : 'Table: Handout')">
+            Table: Curtain
+          </span>
+          <button class="tool-btn" :class="{ active: presentingMap }" @click="sendToTable()"
+                  :disabled="sessionStatus === 'IDLE' || !currentMapId">Present current map</button>
+          <button class="tool-btn" @click="curtain()" :disabled="sessionStatus === 'IDLE'">Curtain</button>
+          <a class="tool-btn" href="/player" target="_blank">Preview table</a>
+        </div>
+      </div>
+      <div class="battle-body">
+        <div th:if="${workspace.workspaceMap != null}" id="battleCanvasWrap"></div>
+        <th:block th:unless="${workspace.workspaceMap != null}"
+                  th:replace="~{session/_empty-table :: empty(workspace=${workspace})}"></th:block>
+        <aside class="battle-sidebar" th:if="${workspace.workspaceMap != null}" aria-label="Map tokens">
+          <section class="sidebar-section">
+            <h3>From Library</h3>
+            <div class="statblock-search">
+              <input type="search" placeholder="Search statblocks…" aria-label="Search statblocks"
+                     x-model="sbSearch" @input="searchStatblocks()">
+              <div class="sb-results" x-show="sbResults.length > 0 && sbSearch.length > 0" x-cloak>
+                <template x-for="sb in sbResults" :key="sb.id">
+                  <button type="button" class="sb-result-item" @click="addStatblockToken(sb.id)">
+                    <strong x-text="sb.name"></strong>
+                    <span class="sb-cr" x-text="'CR ' + sb.cr"></span>
+                  </button>
+                </template>
+              </div>
+            </div>
+          </section>
+          <section class="sidebar-section">
+            <h3>Tokens (<span x-text="tokens.length">0</span>)</h3>
+            <template x-for="t in tokens" :key="t.id">
+              <div class="token-list-item" @click="focusToken(t.id)">
+                <span class="token-swatch" :style="{ background: t.color }"></span>
+                <span :class="{ 'token-dead': t.dead }" x-text="t.name" style="flex: 1;"></span>
+                <span x-show="t.currentHp != null && t.maxHp != null"
+                      x-text="t.currentHp + '/' + t.maxHp"></span>
+                <button type="button" class="btn btn-ghost" title="Duplicate token"
+                        @click.stop="duplicateToken(t.id)">Copy</button>
+                <button type="button" class="btn btn-ghost" title="Delete token"
+                        @click.stop="deleteToken(t.id)">Delete</button>
+              </div>
+            </template>
+          </section>
+          <template x-if="selectedToken">
+            <section class="sidebar-section">
+              <h3>Selected token</h3>
+              <label>Name <input type="text" x-model="selectedToken.name" @change="updateToken()"></label>
+              <label>Current HP <input type="number" class="hp-input"
+                                       x-model="selectedToken.currentHp" @change="updateToken()"></label>
+              <label>Max HP <input type="number" class="hp-input"
+                                   x-model="selectedToken.maxHp" @change="updateToken()"></label>
+              <label><input type="checkbox" x-model="selectedToken.hidden" @change="updateToken()"> Hidden</label>
+              <label><input type="checkbox" x-model="selectedToken.dead" @change="toggleDead()"> Dead</label>
+            </section>
+          </template>
+        </aside>
+      </div>
       <div class="battle-statusbar" aria-live="polite">
         <span id="battleStatusMessage">Ready</span>
         <span id="battleCursorInfo"></span>
@@ -125,8 +222,8 @@
   <footer class="cockpit-partybar">
     <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${workspace.partyMembers}, oob=null)}"></th:block>
   </footer>
+  <th:block th:replace="~{session/_lifecycle-dialog :: lifecycle-dialog}"></th:block>
 </main>
-<th:block th:replace="~{session/_lifecycle-dialog :: lifecycle-dialog}"></th:block>
 <th:block th:replace="~{fragments/_command-palette :: command-palette}"></th:block>
 <th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>
 <script th:src="@{/vendor/konva.min.js}"></script>
@@ -136,6 +233,8 @@ window.sessionCockpitConfig = {
     mapId: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.id : null}]]*/ null,
     sessionStatus: /*[[${workspace.session.status}]]*/ 'IDLE',
     presentationMode: /*[[${workspace.session.presentationMode}]]*/ 'CURTAIN',
+    presentedMapId: /*[[${workspace.session.presentedMap != null ? workspace.session.presentedMap.id : null}]]*/ null,
+    attendeeIds: /*[[${attendeeIds}]]*/ [],
     draftBody: /*[[${workspace.session.draftBody}]]*/ null
 };
 </script>

@@ -24,7 +24,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import({AdventureService.class, SceneRefCleaner.class})
+@Import({AdventureService.class, SceneRefCleaner.class, dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
 class SceneRefCleanerTest {
 
     @Autowired private AdventureService adventureService;

@@ -6,6 +6,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.Metadata;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SessionDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SessionSceneVisitDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.PendingCampaignImport;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
@@ -17,6 +18,7 @@ import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
 import dev.hendrikhoemberg.dmhelper.session.packagev2.SessionSectionAdapter;
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +29,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -136,6 +139,41 @@ class SessionSectionAdapterTest {
 
         assertThat(keys.bindings)
                 .containsEntry(CampaignContentType.SESSION.name() + ":" + sessionId, "session");
+    }
+
+    @Test
+    void importDoesNotRestoreDmOnlyHandoutToPlayerPresentation() {
+        var sessionId = UUID.randomUUID();
+        AtomicReference<CampaignSession> imported = new AtomicReference<>();
+        when(sessionRepository.save(any())).thenAnswer(invocation -> {
+            var saved = invocation.getArgument(0, CampaignSession.class);
+            saved.setId(sessionId);
+            imported.set(saved);
+            return saved;
+        });
+        Handout secret = new Handout();
+        secret.setId(UUID.randomUUID());
+        secret.setCampaign(campaign);
+        secret.setDmOnly(true);
+        ContentReference secretRef = ContentReference.packageRef(CampaignContentType.HANDOUT, "secret");
+        var dto = new SessionDto("session", "PAUSED",
+                Instant.parse("2025-07-16T18:00:00Z"), null, null,
+                null, null, null, "HANDOUT",
+                secretRef, List.of(), List.of(), null);
+        var manifest = new CampaignManifestV2(
+                2, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, dto, List.of());
+        var keys = new CampaignSectionAdapterTest.FakeKeyService();
+        var context = new CampaignImportContext(
+                campaignId, keys, new PendingCampaignImport(UUID.randomUUID(), null, null, null));
+        context.setCampaign(campaign);
+        context.register(CampaignContentType.HANDOUT, "secret", secret, secret.getId());
+
+        adapter.importSection(manifest, context);
+        context.runDeferred();
+
+        assertThat(imported.get().getPresentationMode()).isEqualTo(CampaignSession.PresentationMode.CURTAIN);
+        assertThat(imported.get().getPresentedHandout()).isNull();
     }
 
     private CampaignExportContext exportContext() {

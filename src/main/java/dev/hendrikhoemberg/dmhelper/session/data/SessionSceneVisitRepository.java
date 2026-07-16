@@ -14,5 +14,9 @@ public interface SessionSceneVisitRepository extends JpaRepository<SessionSceneV
 
     List<SessionSceneVisit> findBySessionIdOrderByVisitedAtAscIdAsc(UUID sessionId);
 
+    List<SessionSceneVisit> findBySceneId(UUID sceneId);
+
     void deleteBySessionId(UUID sessionId);
+
+    void deleteBySceneId(UUID sceneId);
 }

@@ -11,10 +11,15 @@ import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.PresentationInvalidated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 import java.util.Optional;
@@ -61,8 +66,41 @@ public class TablePresentationService {
         return currentState;
     }
 
-    public void updateAoEs(List<LiveTableState.AoeTemplateSnapshot> aoes) {
-        this.currentAoEs = List.copyOf(aoes);
+    public boolean isCurrentlyPresentedHandout(UUID handoutId) {
+        return "HANDOUT".equals(currentState.mode()) && currentState.handout() != null
+                && handoutId.toString().equals(currentState.handout().id());
+    }
+
+    public void curtainIfCurrentContent(UUID campaignId, UUID contentId) {
+        if (!campaignId.equals(currentCampaignId)) return;
+        boolean currentMap = "MAP".equals(currentState.mode()) && currentState.map() != null
+                && contentId.toString().equals(currentState.map().mapId());
+        boolean currentHandout = "HANDOUT".equals(currentState.mode()) && currentState.handout() != null
+                && contentId.toString().equals(currentState.handout().id());
+        if (currentMap || currentHandout) {
+            currentAoEs = List.of();
+            currentState = LiveTableState.curtain();
+            broadcast();
+        }
+    }
+
+    public void curtainIfCurrentCampaign(UUID campaignId) {
+        if (!campaignId.equals(currentCampaignId)) return;
+        currentAoEs = List.of();
+        currentState = LiveTableState.curtain();
+        broadcast();
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onPresentationInvalidated(PresentationInvalidated event) {
+        if (event.wholeCampaign()) curtainIfCurrentCampaign(event.campaignId());
+        else curtainIfCurrentContent(event.campaignId(), event.contentId());
+    }
+
+    public void updateAoEs(UUID campaignId, List<LiveTableState.AoeTemplateSnapshot> aoes) {
+        if (campaignId.equals(currentCampaignId) && "MAP".equals(currentState.mode())) {
+            this.currentAoEs = List.copyOf(aoes);
+        }
     }
 
     @Transactional
@@ -75,6 +113,10 @@ public class TablePresentationService {
         session.setPresentedMap(map);
         session.setPresentedHandout(null);
         sessionRepository.saveAndFlush(session);
+        if (!campaignId.equals(currentCampaignId) || currentState.map() == null
+                || !mapId.toString().equals(currentState.map().mapId())) {
+            currentAoEs = List.of();
+        }
         currentCampaignId = campaignId;
         currentState = projectMap(map);
         broadcast();
@@ -129,7 +171,7 @@ public class TablePresentationService {
                     yield currentState;
                 }
                 case HANDOUT -> {
-                    if (session.getPresentedHandout() == null)
+                    if (session.getPresentedHandout() == null || session.getPresentedHandout().isDmOnly())
                         throw new IllegalStateException("Missing handout");
                     currentCampaignId = campaignId;
                     currentState = projectHandout(session.getPresentedHandout());
@@ -168,13 +210,16 @@ public class TablePresentationService {
         return restorePresentation(latest.getCampaign().getId());
     }
 
-    @Transactional(readOnly = true)
-    public LiveTableState broadcastCurrentState() {
-        if (currentCampaignId == null) {
-            if (currentState == null) return LiveTableState.curtain();
-            return currentState;
-        }
-        return restorePresentation(currentCampaignId);
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void restoreOnStartup() {
+        restoreLatestPresentation();
+    }
+
+    @Transactional
+    public LiveTableState broadcastCurrentState(UUID campaignId) {
+        if (!campaignId.equals(currentCampaignId)) return currentState;
+        return restorePresentation(campaignId);
     }
 
     private LiveTableState projectMap(GameMap gameMap) {

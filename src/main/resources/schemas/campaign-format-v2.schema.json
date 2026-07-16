@@ -136,7 +136,7 @@
     "session": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["key", "status", "presentationMode", "attendeeRefs", "sceneVisits"],
+      "required": ["key", "status", "startedAt", "presentationMode", "attendeeRefs", "sceneVisits"],
       "properties": {
         "key": { "$ref": "#/$defs/key" },
         "status": { "type": "string", "enum": ["RUNNING", "PAUSED", "REVIEW"] },
@@ -152,8 +152,37 @@
         "sceneVisits": { "type": "array", "items": { "$ref": "#/$defs/sessionSceneVisit" } },
         "draftBody": { "type": "string" }
       },
-      "if": { "properties": { "presentationMode": { "const": "MAP" } } },
-      "then": { "required": ["presentedRef"] }
+      "allOf": [
+        {
+          "if": { "properties": { "presentationMode": { "const": "CURTAIN" } }, "required": ["presentationMode"] },
+          "then": { "not": { "required": ["presentedRef"] } }
+        },
+        {
+          "if": { "properties": { "presentationMode": { "const": "MAP" } }, "required": ["presentationMode"] },
+          "then": {
+            "required": ["presentedRef"],
+            "properties": { "presentedRef": { "allOf": [
+              { "$ref": "#/$defs/contentReference" },
+              { "properties": { "type": { "const": "MAP" } } }
+            ] } }
+          }
+        },
+        {
+          "if": { "properties": { "presentationMode": { "const": "HANDOUT" } }, "required": ["presentationMode"] },
+          "then": {
+            "required": ["presentedRef"],
+            "properties": { "presentedRef": { "allOf": [
+              { "$ref": "#/$defs/contentReference" },
+              { "properties": { "type": { "const": "HANDOUT" } } }
+            ] } }
+          }
+        },
+        {
+          "if": { "properties": { "status": { "const": "REVIEW" } }, "required": ["status"] },
+          "then": { "required": ["draftBody"], "properties": { "draftBody": { "minLength": 1 } } },
+          "else": { "not": { "required": ["draftBody"] } }
+        }
+      ]
     },
     "sessionSceneVisit": {
       "type": "object",

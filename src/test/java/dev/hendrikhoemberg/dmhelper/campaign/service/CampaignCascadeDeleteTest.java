@@ -34,6 +34,10 @@ import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
+import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
+import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import jakarta.persistence.EntityManager;
@@ -63,7 +67,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 @DataJpaTest
 @Import({CampaignService.class, PartyMemberService.class, StatBlockService.class, GameMapService.class,
          NoteService.class, WikiLinkParser.class, SceneRefCleaner.class, AdventureService.class,
-         HandoutService.class,
+         HandoutService.class, dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
          CampaignCascadeDeleteTest.TestObjectMapperConfig.class,
          dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class,
          dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator.class,
@@ -86,6 +90,7 @@ class CampaignCascadeDeleteTest {
     @Autowired private PartyMemberService partyMemberService;
     @Autowired private GameMapService gameMapService;
     @Autowired private AdventureService adventureService;
+    @Autowired private HandoutService handoutService;
     @MockitoBean private SessionActivityRecorder sessionActivity;
     @Autowired private NoteService noteService;
 
@@ -103,6 +108,8 @@ class CampaignCascadeDeleteTest {
     @Autowired private TimelineEventRepository timelineRepo;
     @Autowired private ItemAssignmentRepository assignmentRepo;
     @Autowired private DiceRollRepository diceRollRepo;
+    @Autowired private CampaignSessionRepository sessionRepo;
+    @Autowired private SessionSceneVisitRepository sessionVisitRepo;
     @Autowired private AdventureRepository adventureRepo;
     @Autowired private EntityManager em;
 
@@ -136,6 +143,7 @@ class CampaignCascadeDeleteTest {
         Encounter enc = new Encounter();
         enc.setCampaign(c);
         enc.setName("Ambush");
+        enc.setMap(map);
         encounterRepo.save(enc);
 
         Combatant cb = new Combatant();
@@ -143,6 +151,7 @@ class CampaignCascadeDeleteTest {
         cb.setName("Bugbear");
         cb.setMaxHp(27);
         cb.setCurrentHp(27);
+        cb.setToken(token);
         combatantRepo.save(cb);
 
         CombatLogEntry log = new CombatLogEntry();
@@ -152,7 +161,7 @@ class CampaignCascadeDeleteTest {
         log.setCombatantId("");
         combatLogEntryRepo.save(log);
 
-        noteService.create(cid, NoteType.SESSION_LOG, "Session One", "The party arrives.", null, false);
+        Note plan = noteService.create(cid, NoteType.SESSION_PLAN, "Session One", "The party arrives.", null, false);
 
         QuickNote qn = new QuickNote();
         qn.setCampaign(c);
@@ -194,7 +203,22 @@ class CampaignCascadeDeleteTest {
 
         Adventure adv = adventureService.createAdventure(cid, "The Sunken Crown", null, null);
         Chapter ch = adventureService.createChapter(adv.getId(), "Chapter One", null);
-        adventureService.createScene(ch.getId(), "The Ford", null, null);
+        Scene scene = adventureService.createScene(ch.getId(), "The Ford", null, null);
+
+        CampaignSession session = CampaignSession.idle(c);
+        session.setStatus(CampaignSession.Status.RUNNING);
+        session.setStartedAt(java.time.Instant.parse("2026-07-16T18:00:00Z"));
+        session.setPlanNote(plan);
+        session.setWorkspaceMap(map);
+        session.setPresentationMode(CampaignSession.PresentationMode.HANDOUT);
+        session.setPresentedHandout(h);
+        session.getAttendees().add(pm);
+        session = sessionRepo.save(session);
+        SessionSceneVisit visit = new SessionSceneVisit();
+        visit.setSession(session);
+        visit.setScene(scene);
+        visit.setVisitedAt(java.time.Instant.parse("2026-07-16T18:15:00Z"));
+        sessionVisitRepo.save(visit);
 
         em.flush();
         return c;
@@ -224,6 +248,8 @@ class CampaignCascadeDeleteTest {
         assertThat(diceRollRepo.findByCampaignId(cid)).isEmpty();
         assertThat(adventureRepo.findByCampaignIdOrderBySortOrderAsc(cid)).isEmpty();
         assertThat(gameMapService.findByCampaignId(cid)).isEmpty();
+        assertThat(sessionRepo.findByCampaignId(cid)).isEmpty();
+        assertThat(sessionVisitRepo.count()).isZero();
 
         // grandchildren must go too, not just the rows that name the campaign directly
         assertThat(combatantRepo.count()).isZero();
@@ -239,5 +265,36 @@ class CampaignCascadeDeleteTest {
         em.flush();
 
         assertThat(campaignRepo.findById(c.getId())).isEmpty();
+    }
+
+    @Test
+    void deletingReferencedContentSafelyDetachesAnOpenSession() {
+        Campaign campaign = seedFullCampaign();
+        UUID campaignId = campaign.getId();
+        CampaignSession initial = sessionRepo.findByCampaignId(campaignId).orElseThrow();
+        UUID sceneId = sessionVisitRepo.findBySessionIdOrderByVisitedAtAscIdAsc(initial.getId())
+                .getFirst().getScene().getId();
+        UUID mapId = initial.getWorkspaceMap().getId();
+        UUID handoutId = initial.getPresentedHandout().getId();
+        UUID attendeeId = initial.getAttendees().getFirst().getId();
+        UUID planId = initial.getPlanNote().getId();
+
+        adventureService.deleteScene(sceneId);
+        em.flush();
+        assertThat(sessionVisitRepo.findBySessionIdOrderByVisitedAtAscIdAsc(initial.getId())).isEmpty();
+
+        gameMapService.delete(mapId);
+        handoutService.delete(handoutId);
+        partyMemberService.delete(attendeeId);
+        noteService.delete(planId);
+        em.flush();
+        em.clear();
+
+        CampaignSession detached = sessionRepo.findByCampaignId(campaignId).orElseThrow();
+        assertThat(detached.getWorkspaceMap()).isNull();
+        assertThat(detached.getPresentationMode()).isEqualTo(CampaignSession.PresentationMode.CURTAIN);
+        assertThat(detached.getPresentedHandout()).isNull();
+        assertThat(detached.getAttendees()).isEmpty();
+        assertThat(detached.getPlanNote()).isNull();
     }
 }

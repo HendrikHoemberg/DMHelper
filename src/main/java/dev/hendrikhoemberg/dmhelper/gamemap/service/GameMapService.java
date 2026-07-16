@@ -3,8 +3,12 @@ package dev.hendrikhoemberg.dmhelper.gamemap.service;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,13 +25,23 @@ public class GameMapService {
     private final GameMapRepository repository;
     private final CampaignRepository campaignRepository;
     private final SceneRefCleaner sceneRefCleaner;
+    private final SessionReferenceCleaner sessionRefCleaner;
+    private final EncounterRepository encounterRepository;
+    private final CombatantRepository combatantRepository;
+    private final TokenRepository tokenRepository;
     private final ObjectMapper objectMapper;
 
     public GameMapService(GameMapRepository repository, CampaignRepository campaignRepository,
-                          SceneRefCleaner sceneRefCleaner) {
+                          SceneRefCleaner sceneRefCleaner, SessionReferenceCleaner sessionRefCleaner,
+                          EncounterRepository encounterRepository, CombatantRepository combatantRepository,
+                          TokenRepository tokenRepository) {
         this.repository = repository;
         this.campaignRepository = campaignRepository;
         this.sceneRefCleaner = sceneRefCleaner;
+        this.sessionRefCleaner = sessionRefCleaner;
+        this.encounterRepository = encounterRepository;
+        this.combatantRepository = combatantRepository;
+        this.tokenRepository = tokenRepository;
         this.objectMapper = JsonMapper.builder().build();
     }
 
@@ -121,9 +135,22 @@ public class GameMapService {
     }
 
     public void delete(UUID mapId) {
+        sessionRefCleaner.detachMap(mapId);
         sceneRefCleaner.detachMap(mapId);
         GameMap map = findById(mapId);
         UUID campaignId = map.getCampaign().getId();
+
+        for (var encounter : encounterRepository.findByMapIdOrderByNameAsc(mapId)) {
+            encounter.setMap(null);
+            encounterRepository.save(encounter);
+        }
+        for (var token : tokenRepository.findByMapIdOrderByNameAsc(mapId)) {
+            for (var combatant : combatantRepository.findByTokenId(token.getId())) {
+                combatant.setToken(null);
+                combatantRepository.save(combatant);
+            }
+            tokenRepository.delete(token);
+        }
         repository.delete(map);
 
         var remaining = repository.findByCampaignIdOrderBySortOrderAsc(campaignId);

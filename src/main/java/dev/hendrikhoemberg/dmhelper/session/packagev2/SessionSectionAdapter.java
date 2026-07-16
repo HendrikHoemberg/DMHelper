@@ -118,7 +118,11 @@ public class SessionSectionAdapter implements CampaignSectionExporter, CampaignS
             saved.setPresentedMap(map);
         } else if ("HANDOUT".equals(dto.presentationMode()) && dto.presentedRef() != null) {
             Handout handout = context.require(dto.presentedRef(), HANDOUT, Handout.class);
-            saved.setPresentedHandout(handout);
+            if (handout.isDmOnly()) {
+                saved.setPresentationMode(CampaignSession.PresentationMode.CURTAIN);
+            } else {
+                saved.setPresentedHandout(handout);
+            }
         }
         saved.getAttendees().clear();
         for (ContentReference ref : dto.attendeeRefs()) {

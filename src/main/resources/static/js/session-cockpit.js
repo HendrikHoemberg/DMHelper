@@ -24,13 +24,16 @@ function sessionCockpit(config) {
         encounterDropdownOpen: false,
         activeEncounter: null,
         plannedEncounters: [],
-        presentingMap: false,
+        presentingMap: config.presentationMode === 'MAP'
+            && config.presentedMapId === config.mapId,
         playerViewUrl: window.location.origin + '/player',
         lifecycleOpen: false,
         campaignId: config.campaignId || '',
         sessionStatus: config.sessionStatus || 'IDLE',
         presentationMode: config.presentationMode || 'CURTAIN',
-        startMapId: '',
+        presentedMapId: config.presentedMapId || '',
+        startMapId: config.mapId || '',
+        attendeeIds: config.attendeeIds || [],
         draftTitle: '',
         draftBody: config.draftBody || '',
 
@@ -41,6 +44,8 @@ function sessionCockpit(config) {
                 const state = await response.json();
                 this.sessionStatus = state.status;
                 this.presentationMode = state.presentationMode;
+                this.presentedMapId = '';
+                this.presentingMap = false;
                 return state;
             } catch (error) {
                 window.reportActionFailure(summary, error, retry);
@@ -59,7 +64,11 @@ function sessionCockpit(config) {
                 const state = await resp.json();
                 this.sessionStatus = state.status;
                 this.presentationMode = state.presentationMode;
+                this.presentedMapId = '';
+                this.presentingMap = false;
+                this.attendeeIds = state.attendeeIds || [];
                 this.lifecycleOpen = false;
+                window.location.reload();
             } catch (error) {
                 window.reportActionFailure('Could not start the session.', error,
                     () => this.startSession());
@@ -98,7 +107,7 @@ function sessionCockpit(config) {
                 this.sessionStatus = state.status;
                 this.draftBody = '';
                 this.draftTitle = '';
-                this.lifecycleOpen = false;
+                this.closeLifecycle();
             } catch (error) {
                 window.reportActionFailure('Could not cancel the review.', error,
                     () => this.cancelReview());
@@ -139,6 +148,8 @@ function sessionCockpit(config) {
                 const result = await resp.json();
                 this.sessionStatus = 'IDLE';
                 this.presentationMode = 'CURTAIN';
+                this.presentedMapId = '';
+                this.presentingMap = false;
                 this.draftBody = '';
                 this.draftTitle = '';
                 this.lifecycleOpen = false;
@@ -156,11 +167,9 @@ function sessionCockpit(config) {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ sceneId }),
-                    });
-                const scene = await resp.json();
-                if (scene.mapId) {
-                    this.switchMap(scene.mapId);
-                }
+                });
+                await resp.json();
+                window.location.reload();
             } catch (error) {
                 window.reportActionFailure('Could not set the current scene.', error,
                     () => this.setCurrentScene(sceneId));
@@ -182,17 +191,35 @@ function sessionCockpit(config) {
             }
         },
 
-        async switchWorkspaceMap(mapId) {
+        async switchWorkspaceMap(mapId, retry = () => this.switchMap(mapId)) {
             try {
                 await window.dmRequest(
                     `/api/v1/campaigns/${this.campaignId}/session/workspace-map`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ mapId }),
+                        body: JSON.stringify({ mapId: mapId || null }),
                     });
+                return true;
             } catch (error) {
                 window.reportActionFailure('Could not switch the workspace map.', error,
-                    () => this.switchWorkspaceMap(mapId));
+                    retry);
+                return false;
+            }
+        },
+
+        async updateAttendance() {
+            try {
+                const response = await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/session/attendance`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ partyMemberIds: this.attendeeIds }),
+                });
+                const state = await response.json();
+                this.attendeeIds = state.attendeeIds || [];
+            } catch (error) {
+                window.reportActionFailure('Could not update session attendance.', error,
+                    () => this.updateAttendance());
             }
         },
 
@@ -203,7 +230,9 @@ function sessionCockpit(config) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ mode: 'MAP', ref: mapId }),
                 });
-                this.presentingMap = true;
+                this.presentedMapId = mapId;
+                this.presentingMap = mapId === this.currentMapId;
+                this.presentationMode = 'MAP';
             } catch (error) {
                 this.presentingMap = false;
                 window.reportActionFailure('Could not show this map to the table.', error,
@@ -211,28 +240,74 @@ function sessionCockpit(config) {
             }
         },
 
-        async presentScene(sceneId) {
+        async presentHandout(handoutId) {
+            if (!handoutId) return;
             try {
-                const resp = await window.dmRequest(
-                    `/api/v1/campaigns/${this.campaignId}/session/current-scene`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sceneId }),
-                    });
-                const scene = await resp.json();
-                if (scene.mapId) {
-                    this.sendToTableWithMap(scene.mapId);
-                }
+                await window.dmRequest(`/api/v1/campaigns/${this.campaignId}/table/presentation`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: 'HANDOUT', ref: handoutId }),
+                });
+                this.presentingMap = false;
+                this.presentedMapId = '';
+                this.presentationMode = 'HANDOUT';
             } catch (error) {
-                window.reportActionFailure('Could not present the scene.', error,
-                    () => this.presentScene(sceneId));
+                window.reportActionFailure('Could not show this handout to the table.', error,
+                    () => this.presentHandout(handoutId));
+            }
+        },
+
+        closeLifecycle() {
+            this.lifecycleOpen = false;
+            this.$nextTick(() => this.$refs.sessionButton?.focus());
+        },
+
+        lifecycleFocusable(container) {
+            return Array.from(container.querySelectorAll(
+                'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])'))
+                .filter(element => {
+                    const style = window.getComputedStyle(element);
+                    return !element.hidden && style.display !== 'none'
+                        && style.visibility !== 'hidden' && element.getClientRects().length > 0;
+                });
+        },
+
+        openLifecycle() {
+            this.lifecycleOpen = true;
+            this.$nextTick(() => {
+                const dialog = document.querySelector('[aria-label="Session lifecycle"]');
+                if (dialog) this.lifecycleFocusable(dialog)[0]?.focus();
+            });
+        },
+
+        trapLifecycleFocus(event) {
+            const focusable = this.lifecycleFocusable(event.currentTarget);
+            if (!focusable.length) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
             }
         },
 
         handleKeyboard(event) {
             if (event.ctrlKey || event.metaKey) return;
             const tag = event.target.tagName;
-            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+            const visibleModal = Array.from(document.querySelectorAll('[aria-modal="true"]'))
+                .some(element => {
+                    const style = window.getComputedStyle(element);
+                    return !element.hidden
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden'
+                        && element.getClientRects().length > 0;
+                });
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+                || event.target.isContentEditable || this.lifecycleOpen
+                || visibleModal) return;
             switch (event.key) {
                 case '[':
                     event.preventDefault();
@@ -248,13 +323,16 @@ function sessionCockpit(config) {
                     break;
                 case 'q':
                     event.preventDefault();
-                    const qn = document.querySelector('[x-data="quickNotes()"]');
-                    if (qn && qn.__x) qn.__x.$data.open = true;
+                    document.querySelector('.quicknotes-form input')?.focus();
                     break;
                 case 'h':
                     event.preventDefault();
-                    const palette = document.querySelector('[x-data="commandPalette"]');
-                    if (palette && palette.__x) palette.__x.$data.open = true;
+                    document.getElementById('cockpitHandoutPicker')?.focus();
+                    break;
+                case 'p':
+                    if (!this.currentMapId) break;
+                    event.preventDefault();
+                    this.sendToTable();
                     break;
             }
         },
@@ -269,6 +347,9 @@ function sessionCockpit(config) {
         init() {
             this.sessionStatus = config.sessionStatus || 'IDLE';
             this.presentationMode = config.presentationMode || 'CURTAIN';
+            this.presentingMap = config.presentationMode === 'MAP'
+                && config.presentedMapId === config.mapId;
+            this.presentedMapId = config.presentedMapId || '';
             this.draftBody = config.draftBody || '';
             window.setDmMode(this.dmMode, { animate: false });
             window.addEventListener('battle-state-changed', () => {
@@ -308,10 +389,10 @@ function sessionCockpit(config) {
                     this.activeTab = 'tracker';
                 }
             });
+            this.loadMaps();
+            this.loadPlannedEncounters();
+            this.loadActiveEncounter();
             if (config.mapId) {
-                this.loadMaps();
-                this.loadPlannedEncounters();
-                this.loadActiveEncounter();
                 this.visitedMapIds.add(this.currentMapId);
                 this.initBattleMap();
             }
@@ -355,6 +436,7 @@ function sessionCockpit(config) {
         async activateEncounter(id) {
             try {
                 await this.request(`/api/v1/encounters/${id}/activate`, { method: 'POST' });
+                window.location.reload();
             } catch (error) {
                 this.failure('Could not activate the encounter.', error,
                     () => this.activateEncounter(id));
@@ -376,7 +458,7 @@ function sessionCockpit(config) {
             try {
                 const cid = this.campaignId;
                 const resp = await this.request(`/api/v1/campaigns/${cid}/encounters/active`);
-                this.activeEncounter = await resp.json();
+                this.activeEncounter = resp.status === 204 ? null : await resp.json();
                 if (this.activeEncounter) {
                     this.showTracker = true;
                     this.activeTab = 'tracker';
@@ -445,6 +527,8 @@ function sessionCockpit(config) {
                     body: JSON.stringify({ mode: 'MAP', ref: this.currentMapId }),
                 });
                 this.presentingMap = true;
+                this.presentedMapId = this.currentMapId;
+                this.presentationMode = 'MAP';
             } catch (error) {
                 this.presentingMap = false;
                 this.failure('Could not show this map to the table.', error,
@@ -461,6 +545,8 @@ function sessionCockpit(config) {
                     body: JSON.stringify({ mode: 'CURTAIN', ref: '' }),
                 });
                 this.presentingMap = false;
+                this.presentedMapId = '';
+                this.presentationMode = 'CURTAIN';
             } catch (error) {
                 this.presentingMap = wasPresenting;
                 this.failure('Could not lower the curtain.', error, () => this.curtain());
@@ -482,14 +568,54 @@ function sessionCockpit(config) {
                     () => this.loadMaps());
             }
         },
-        switchMap(mapId) {
+        async switchMap(mapId) {
             const bm = window.battleMap;
-            if (bm && mapId !== bm.mapId) {
-                bm.switchToMap(mapId);
-                this.currentMapId = mapId;
-                this.visitedMapIds.add(mapId);
+            const previousMapId = bm?.mapId || this.currentMapId;
+            if (!mapId) {
+                if (this.sessionStatus === 'IDLE') {
+                    this.restoreMapPicker(previousMapId);
+                    return;
+                }
+                if (!await this.switchWorkspaceMap(null, () => this.switchMap(null))) {
+                    this.restoreMapPicker(previousMapId);
+                    return;
+                }
+                window.location.href = `/campaigns/${this.campaignId}/session`;
+                return;
             }
+            if (bm && mapId !== bm.mapId) {
+                const switched = await bm.switchToMap(mapId, () => this.switchMap(mapId));
+                if (!switched) {
+                    this.restoreMapPicker(previousMapId);
+                    return;
+                }
+            }
+            if (this.sessionStatus !== 'IDLE'
+                && !await this.switchWorkspaceMap(mapId, () => this.switchMap(mapId))) {
+                if (bm && previousMapId && bm.mapId !== previousMapId) {
+                    await bm.switchToMap(previousMapId);
+                }
+                this.restoreMapPicker(previousMapId);
+                return;
+            }
+            if (!bm) {
+                window.location.href = `/campaigns/${this.campaignId}/session?mapId=${mapId}`;
+                return;
+            }
+            this.currentMapId = mapId;
+            if (this.sessionStatus === 'IDLE') this.startMapId = mapId;
+            this.visitedMapIds.add(mapId);
+            this.presentingMap = this.presentationMode === 'MAP'
+                && this.presentedMapId === mapId;
             history.replaceState(null, '', `/campaigns/${this.campaignId}/session?mapId=${mapId}`);
+        },
+
+        restoreMapPicker(mapId) {
+            this.currentMapId = mapId || '';
+            this.$nextTick(() => {
+                const picker = document.getElementById('cockpitMapPicker');
+                if (picker) picker.value = this.currentMapId;
+            });
         },
 
         async searchStatblocks() {
@@ -514,18 +640,12 @@ function sessionCockpit(config) {
             window.dispatchEvent(new CustomEvent('tracker-next-turn'));
         },
 
-        stepScene(direction) {
-            window.dispatchEvent(new CustomEvent('scene-step', { detail: { direction } }));
-        },
-
         openSearch() {
-            const palette = document.querySelector('[x-data="commandPalette"]');
-            if (palette && palette.__x) palette.__x.$data.open = true;
+            window.dispatchEvent(new CustomEvent('command-palette-toggle'));
         },
 
         openDice() {
-            const dice = document.querySelector('[x-data="diceRoller()"]');
-            if (dice && dice.__x) dice.__x.$data.open = true;
+            window.dispatchEvent(new CustomEvent('dice-roller-toggle'));
         },
     };
 }

@@ -17,7 +17,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import({TokenService.class, GameMapService.class, SceneRefCleaner.class})
+@Import({TokenService.class, GameMapService.class, SceneRefCleaner.class,
+        dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
 class TokenServiceTest {
 
     @Autowired private TokenService tokenService;

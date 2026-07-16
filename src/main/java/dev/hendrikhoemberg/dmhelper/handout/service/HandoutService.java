@@ -6,6 +6,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.FileSystemResource;
@@ -34,15 +35,18 @@ public class HandoutService {
     private final HandoutRepository handoutRepository;
     private final CampaignRepository campaignRepository;
     private final SceneRefCleaner sceneRefCleaner;
+    private final SessionReferenceCleaner sessionRefCleaner;
     private final Path filesDir;
 
     public HandoutService(HandoutRepository handoutRepository,
                           CampaignRepository campaignRepository,
                           SceneRefCleaner sceneRefCleaner,
+                          SessionReferenceCleaner sessionRefCleaner,
                           @Value("${user.home}") String userHome) {
         this.handoutRepository = handoutRepository;
         this.campaignRepository = campaignRepository;
         this.sceneRefCleaner = sceneRefCleaner;
+        this.sessionRefCleaner = sessionRefCleaner;
         this.filesDir = Path.of(userHome, ".dmhelper", "files");
     }
 
@@ -188,20 +192,40 @@ public class HandoutService {
 
     public Handout setDmOnly(UUID id, boolean dmOnly) {
         Handout handout = findById(id);
+        if (dmOnly) {
+            sessionRefCleaner.detachHandout(id);
+            handout.setPresented(false);
+        }
         handout.setDmOnly(dmOnly);
         return handoutRepository.save(handout);
     }
 
     public void delete(UUID id) {
+        sessionRefCleaner.detachHandout(id);
         sceneRefCleaner.detachHandout(id);
         Handout handout = findById(id);
-        try {
-            Path filePath = filesDir.resolve(handout.getFileName());
-            Files.deleteIfExists(filePath);
-        } catch (IOException e) {
-            // log and continue — orphaned file is harmless
-        }
         handoutRepository.delete(handout);
+        deleteAfterCommit(filesDir.resolve(handout.getFileName()));
+    }
+
+    private static void deleteAfterCommit(Path filePath) {
+        Runnable delete = () -> {
+            try {
+                Files.deleteIfExists(filePath);
+            } catch (IOException ignored) {
+                // An orphaned file is harmless and can be cleaned up independently.
+            }
+        };
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            delete.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                delete.run();
+            }
+        });
     }
 
     public byte[] getFileContent(UUID id) throws IOException {

@@ -3,11 +3,13 @@ package dev.hendrikhoemberg.dmhelper.session.service;
 import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
+import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
@@ -18,7 +20,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -43,6 +47,10 @@ class SessionLifecycleServiceTest {
     @Mock private PartyMemberRepository party;
     @Mock private NoteRepository notes;
     @Mock private CalendarService calendar;
+    @Mock private SessionDraftService drafts;
+    @Mock private NoteService noteService;
+    @Mock private CampaignPackageKeyService packageKeys;
+    @Mock private ApplicationEventPublisher events;
 
     @InjectMocks private SessionLifecycleService service;
 
@@ -206,5 +214,29 @@ class SessionLifecycleServiceTest {
         when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(session));
         assertThatThrownBy(() -> service.pause(campaignId))
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void completionDefersPlayerCurtainThroughAfterCommitEvent() {
+        session.setStatus(CampaignSession.Status.REVIEW);
+        session.setId(UUID.randomUUID());
+        Note log = new Note();
+        log.setId(UUID.randomUUID());
+        when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(session));
+        when(noteService.create(campaignId, NoteType.SESSION_LOG, "Finale", "Saved body",
+                "session-log", true)).thenReturn(log);
+        when(visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId())).thenReturn(List.of());
+        when(sessions.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        assertThat(service.complete(campaignId, "Finale", "Saved body")).isSameAs(log);
+
+        ArgumentCaptor<Object> event = ArgumentCaptor.forClass(Object.class);
+        verify(events).publishEvent(event.capture());
+        assertThat(event.getValue()).isInstanceOfSatisfying(
+                SessionReferenceCleaner.PresentationInvalidated.class,
+                invalidated -> {
+                    assertThat(invalidated.wholeCampaign()).isTrue();
+                    assertThat(invalidated.campaignId()).isEqualTo(campaignId);
+                });
     }
 }

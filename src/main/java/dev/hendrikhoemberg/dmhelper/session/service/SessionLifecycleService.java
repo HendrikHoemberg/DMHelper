@@ -8,7 +8,6 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeySer
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
-import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
@@ -19,7 +18,7 @@ import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,7 +44,7 @@ public class SessionLifecycleService {
     private final SessionDraftService drafts;
     private final NoteService noteService;
     private final CampaignPackageKeyService packageKeys;
-    private final TablePresentationService presentation;
+    private final ApplicationEventPublisher events;
 
     public SessionLifecycleService(Clock clock,
                                    CampaignRepository campaigns,
@@ -58,7 +57,7 @@ public class SessionLifecycleService {
                                    SessionDraftService drafts,
                                    NoteService noteService,
                                    CampaignPackageKeyService packageKeys,
-                                   @Lazy TablePresentationService presentation) {
+                                   ApplicationEventPublisher events) {
         this.clock = clock;
         this.campaigns = campaigns;
         this.sessions = sessions;
@@ -70,7 +69,7 @@ public class SessionLifecycleService {
         this.drafts = drafts;
         this.noteService = noteService;
         this.packageKeys = packageKeys;
-        this.presentation = presentation;
+        this.events = events;
     }
 
     public CampaignSession start(UUID campaignId, UUID requestedMapId) {
@@ -164,7 +163,8 @@ public class SessionLifecycleService {
         if (title == null || title.isBlank()) throw new IllegalArgumentException("Session log title is required.");
         if (body == null || body.isBlank()) throw new IllegalArgumentException("Session log body is required.");
         Note note = noteService.create(campaignId, NoteType.SESSION_LOG, title.strip(), body, "session-log", true);
-        presentation.curtain(campaignId);
+        events.publishEvent(new SessionReferenceCleaner.PresentationInvalidated(
+                campaignId, null, true));
         List<UUID> visitIds = visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId()).stream()
                 .map(SessionSceneVisit::getId).toList();
         resetToIdle(session);

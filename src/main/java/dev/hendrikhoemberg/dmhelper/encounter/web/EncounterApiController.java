@@ -71,7 +71,9 @@ public class EncounterApiController {
 
     @GetMapping("/campaigns/{campaignId}/encounters/active")
     public ResponseEntity<EncounterDto> getActive(@PathVariable UUID campaignId) {
-        return ResponseEntity.of(service.findActiveByCampaignId(campaignId));
+        return service.findActiveByCampaignId(campaignId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @GetMapping("/encounters/{id}/combatants")

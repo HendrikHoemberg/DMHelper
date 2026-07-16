@@ -2,7 +2,10 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <th:block th:fragment="lifecycle-dialog">
 <div class="dialog-overlay" x-show="lifecycleOpen" x-cloak
-     @click.away="lifecycleOpen = false" role="dialog" aria-label="Session lifecycle">
+     :hidden="!lifecycleOpen" @click.away="closeLifecycle()" role="dialog"
+     @keydown.tab="trapLifecycleFocus($event)"
+     @keydown.escape.window="if (lifecycleOpen) closeLifecycle()"
+     aria-modal="true" aria-label="Session lifecycle">
   <div class="dialog-panel">
     <div x-show="sessionStatus === 'IDLE'">
       <h3>Start Session</h3>
@@ -15,40 +18,49 @@
       </select>
       <div style="margin-top: var(--space-md); display: flex; gap: var(--space-sm);">
         <button class="btn btn-primary" @click="startSession()">Start</button>
-        <button class="btn btn-ghost" @click="lifecycleOpen = false">Cancel</button>
+        <button class="btn btn-ghost" @click="closeLifecycle()">Cancel</button>
       </div>
     </div>
 
     <div x-show="sessionStatus === 'RUNNING' || sessionStatus === 'PAUSED'">
       <h3>Session Running</h3>
+      <fieldset style="margin-bottom: var(--space-md);">
+        <legend>Attendance</legend>
+        <label th:each="member : ${attendanceMembers}" style="display: block;">
+          <input type="checkbox" x-model="attendeeIds" th:value="${member.id}">
+          <span th:text="${member.characterName}">Character</span>
+          <span th:unless="${member.active}" class="text-muted"> (inactive)</span>
+        </label>
+        <button class="btn btn-ghost" type="button" @click="updateAttendance()">Save attendance</button>
+      </fieldset>
       <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
         <button class="btn btn-primary" x-show="sessionStatus === 'RUNNING'"
                 @click="pauseSession()">Pause</button>
         <button class="btn btn-primary" x-show="sessionStatus === 'PAUSED'"
                 @click="resumeSession()">Resume</button>
         <button class="btn btn-ghost" @click="beginReview()"
-                :disabled="sessionStatus === 'PAUSED'">Review &amp; Complete</button>
-        <button class="btn btn-ghost" @click="lifecycleOpen = false">Close</button>
+                >Review &amp; Complete</button>
+        <button class="btn btn-ghost" @click="closeLifecycle()">Close</button>
       </div>
     </div>
 
-    <div x-show="sessionStatus === 'REVIEW'">
+    <form x-show="sessionStatus === 'REVIEW'" @submit.prevent="completeSession()">
       <h3>Review Session</h3>
       <div>
-        <label>Title</label>
-        <input type="text" x-model="draftTitle" class="form-input" placeholder="Session log title" required>
+        <label for="sessionDraftTitle">Title</label>
+        <input id="sessionDraftTitle" type="text" x-model="draftTitle" class="form-input" placeholder="Session log title" required>
       </div>
       <div style="margin-top: var(--space-sm);">
-        <label>Draft</label>
-        <textarea x-model="draftBody" class="form-input" rows="12"
+        <label for="sessionDraftBody">Draft</label>
+        <textarea id="sessionDraftBody" x-model="draftBody" class="form-input" rows="12"
                   placeholder="Session draft will appear here..."></textarea>
       </div>
       <div style="margin-top: var(--space-md); display: flex; gap: var(--space-sm);">
-        <button class="btn btn-primary" @click="completeSession()">Save &amp; Complete</button>
-        <button class="btn btn-ghost" @click="cancelReview()">Cancel Review</button>
-        <button class="btn btn-ghost" @click="lifecycleOpen = false">Close</button>
+        <button type="submit" class="btn btn-primary">Save &amp; Complete</button>
+        <button type="button" class="btn btn-ghost" @click="cancelReview()">Cancel Review</button>
+        <button type="button" class="btn btn-ghost" @click="closeLifecycle()">Close</button>
       </div>
-    </div>
+    </form>
   </div>
 </div>
 </th:block>

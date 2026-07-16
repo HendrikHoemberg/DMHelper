@@ -2,6 +2,8 @@ package dev.hendrikhoemberg.dmhelper.campaign.packagev2.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.CampaignImportPreviewStore;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignPackageArtifact;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportCoordinator;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportOptions;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignImportCoordinator;
@@ -10,11 +12,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.NoSuchElementException;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -22,6 +29,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -33,6 +41,58 @@ class CampaignPackageControllerTest {
     @MockitoBean CampaignImportPreviewStore previews;
     @MockitoBean CampaignImportCoordinator importer;
     @MockitoBean CampaignExportCoordinator exporter;
+
+    @Test
+    void assetBearingExportStreamsAValidZipResponse() throws Exception {
+        UUID campaignId = UUID.randomUUID();
+        ClassPathResource manifestResource = new ClassPathResource(
+                "campaigns/v2/feature-complete.dmcampaign/manifest.json");
+        CampaignManifestV2 manifest = JsonMapper.builder().build()
+                .readValue(manifestResource.getInputStream(), CampaignManifestV2.class);
+        Map<String, org.springframework.core.io.InputStreamSource> assets = manifest.assets().stream()
+                .collect(Collectors.toMap(
+                        asset -> asset.key(),
+                        asset -> new ClassPathResource(
+                                "campaigns/v2/feature-complete.dmcampaign/" + asset.path())));
+        CampaignPackageArtifact artifact = new CampaignPackageArtifact(
+                "campaign.dmcampaign", MediaType.parseMediaType("application/zip"), manifest, assets);
+        when(exporter.export(eq(campaignId), any(CampaignExportOptions.class))).thenReturn(artifact);
+
+        MvcResult initial = mvc.perform(get("/campaigns/{id}/package", campaignId))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        MvcResult completed = mvc.perform(asyncDispatch(initial))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/zip"))
+                .andExpect(header().string("Content-Disposition",
+                        org.hamcrest.Matchers.containsString("campaign.dmcampaign")))
+                .andReturn();
+        org.assertj.core.api.Assertions.assertThat(completed.getResponse().getContentAsByteArray())
+                .isNotEmpty();
+    }
+
+    @Test
+    void assetFreeExportStreamsJsonWithTheJsonMediaType() throws Exception {
+        UUID campaignId = UUID.randomUUID();
+        CampaignManifestV2 manifest = JsonMapper.builder().build().readValue(
+                new ClassPathResource("campaigns/v2/minimal.dmcampaign.json").getInputStream(),
+                CampaignManifestV2.class);
+        CampaignPackageArtifact artifact = new CampaignPackageArtifact(
+                "campaign.dmcampaign.json", MediaType.APPLICATION_JSON, manifest, Map.of());
+        when(exporter.export(eq(campaignId), any(CampaignExportOptions.class))).thenReturn(artifact);
+
+        MvcResult initial = mvc.perform(get("/campaigns/{id}/package", campaignId))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mvc.perform(asyncDispatch(initial))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(header().string("Content-Disposition",
+                        org.hamcrest.Matchers.containsString("campaign.dmcampaign.json")))
+                .andExpect(jsonPath("$.formatVersion").value(2));
+    }
 
     @Test
     void previewRequiresExplicitFilename() throws Exception {

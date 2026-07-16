@@ -7,6 +7,7 @@ import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.*;
@@ -119,6 +120,22 @@ public class QuickNoteService {
 
     public void delete(UUID campaignId, UUID id) {
         quickNoteRepository.delete(findByCampaignAndId(campaignId, id));
+    }
+
+    @Transactional(readOnly = true)
+    public String targetLabel(QuickNote qn) {
+        UUID targetId = qn.getTargetId();
+        return (switch (qn.getTargetType()) {
+            case "STATBLOCK" -> statBlockRepository.findById(targetId).map(StatBlock::getName);
+            case "MAP" -> gameMapRepository.findById(targetId).map(map -> map.getName());
+            case "HANDOUT" -> handoutRepository.findById(targetId).map(handout -> handout.getTitle());
+            case "NOTE" -> noteRepository.findById(targetId).map(Note::getTitle);
+            case "PARTY_MEMBER" -> partyMemberRepository.findById(targetId).map(member -> member.getCharacterName());
+            case "CAMPAIGN" -> campaignRepository.findById(targetId).map(Campaign::getName);
+            case "SCENE" -> sceneRepository.findById(targetId).map(scene -> scene.getTitle());
+            case "ENCOUNTER" -> encounterRepository.findById(targetId).map(encounter -> encounter.getName());
+            default -> java.util.Optional.<String>empty();
+        }).orElse(targetId.toString());
     }
 
     private String resolveTargetLink(QuickNote qn) {

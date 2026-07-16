@@ -257,8 +257,8 @@ public class EncounterService {
         logEntry(id, CombatLogEntry.EntryType.ENCOUNTER_ENDED, "", "");
         logEntry(id, CombatLogEntry.EntryType.SESSION_END, "",
                 "{\"endedAt\":\"" + Instant.now().toString() + "\"}");
-        tablePresentationService.updateAoEs(List.of());
-        tablePresentationService.broadcastCurrentState();
+        tablePresentationService.updateAoEs(e.getCampaign().getId(), List.of());
+        tablePresentationService.broadcastCurrentState(e.getCampaign().getId());
         return dto;
     }
 
@@ -705,7 +705,7 @@ public class EncounterService {
                 "{\"activeTurnIndex\":" + idx + "}");
 
         List<RechargePrompt> prompts = checkRechargeAbilities(combatants.get(idx).getId());
-        tablePresentationService.broadcastCurrentState();
+        tablePresentationService.broadcastCurrentState(encounter.getCampaign().getId());
         return new EncounterDto(encounter.getId(), encounter.getCampaign().getId(),
                 encounter.getMap() != null ? encounter.getMap().getId() : null,
                 encounter.getName(), encounter.getStatus().name(), encounter.getRound(),
@@ -759,7 +759,7 @@ public class EncounterService {
 
         encounter.setActiveTurnIndex(idx);
         encounterRepo.save(encounter);
-        tablePresentationService.broadcastCurrentState();
+        tablePresentationService.broadcastCurrentState(encounter.getCampaign().getId());
         return toDto(encounter);
     }
 

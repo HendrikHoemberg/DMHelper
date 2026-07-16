@@ -5,6 +5,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class HandoutServiceRollbackTest {
@@ -30,6 +32,7 @@ class HandoutServiceRollbackTest {
     private final HandoutRepository handoutRepository = mock(HandoutRepository.class);
     private final CampaignRepository campaignRepository = mock(CampaignRepository.class);
     private final SceneRefCleaner sceneRefCleaner = mock(SceneRefCleaner.class);
+    private final SessionReferenceCleaner sessionRefCleaner = mock(SessionReferenceCleaner.class);
     private final UUID campaignId = UUID.randomUUID();
     private HandoutService service;
 
@@ -38,7 +41,7 @@ class HandoutServiceRollbackTest {
         Campaign campaign = new Campaign();
         campaign.setName("Rollback campaign");
         when(campaignRepository.findById(campaignId)).thenReturn(Optional.of(campaign));
-        service = new HandoutService(handoutRepository, campaignRepository, sceneRefCleaner,
+        service = new HandoutService(handoutRepository, campaignRepository, sceneRefCleaner, sessionRefCleaner,
                 tempDir.toString());
     }
 
@@ -76,6 +79,44 @@ class HandoutServiceRollbackTest {
                 synchronization.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
 
         assertThat(storedFile).doesNotExist();
+    }
+
+    @Test
+    void retainsDeletedFileWhenDatabaseTransactionRollsBack() throws Exception {
+        Handout handout = storedHandout();
+        TransactionSynchronizationManager.initSynchronization();
+
+        service.delete(handout.getId());
+        TransactionSynchronizationManager.getSynchronizations().forEach(synchronization ->
+                synchronization.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
+
+        assertThat(filesDir().resolve(handout.getFileName())).exists();
+        verify(handoutRepository).delete(handout);
+    }
+
+    @Test
+    void removesDeletedFileOnlyAfterDatabaseCommit() throws Exception {
+        Handout handout = storedHandout();
+        TransactionSynchronizationManager.initSynchronization();
+
+        service.delete(handout.getId());
+        Path storedFile = filesDir().resolve(handout.getFileName());
+        assertThat(storedFile).exists();
+
+        TransactionSynchronizationManager.getSynchronizations()
+                .forEach(TransactionSynchronization::afterCommit);
+
+        assertThat(storedFile).doesNotExist();
+    }
+
+    private Handout storedHandout() throws Exception {
+        Handout handout = new Handout();
+        handout.setId(UUID.randomUUID());
+        handout.setFileName("delete.png");
+        when(handoutRepository.findById(handout.getId())).thenReturn(Optional.of(handout));
+        Files.createDirectories(filesDir());
+        Files.writeString(filesDir().resolve(handout.getFileName()), "content");
+        return handout;
     }
 
     private Path filesDir() {

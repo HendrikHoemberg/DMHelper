@@ -9,5 +9,6 @@ import java.util.UUID;
 @Repository
 public interface TokenRepository extends JpaRepository<Token, UUID> {
     List<Token> findByMapIdOrderByNameAsc(UUID mapId);
+    List<Token> findByPartyMemberId(UUID partyMemberId);
     void deleteByMapId(UUID mapId);
 }

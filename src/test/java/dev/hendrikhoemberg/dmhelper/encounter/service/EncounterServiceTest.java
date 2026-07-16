@@ -32,7 +32,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import({EncounterService.class, CombatDifficultyCalculator.class, GameMapService.class, DiceEngine.class, SceneRefCleaner.class, EncounterServiceTest.MockConfig.class})
+@Import({EncounterService.class, CombatDifficultyCalculator.class, GameMapService.class, DiceEngine.class, SceneRefCleaner.class,
+        dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class, EncounterServiceTest.MockConfig.class})
 class EncounterServiceTest {
 
     @TestConfiguration

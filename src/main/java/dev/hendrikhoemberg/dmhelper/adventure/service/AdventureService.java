@@ -9,6 +9,7 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,7 @@ public class AdventureService {
     private final StatBlockRepository statBlockRepository;
     private final HandoutRepository handoutRepository;
     private final SessionActivityRecorder sessionActivity;
+    private final SessionReferenceCleaner sessionRefCleaner;
 
     public AdventureService(AdventureRepository adventureRepository,
                             ChapterRepository chapterRepository,
@@ -39,7 +41,8 @@ public class AdventureService {
                             EncounterRepository encounterRepository,
                             StatBlockRepository statBlockRepository,
                             HandoutRepository handoutRepository,
-                            SessionActivityRecorder sessionActivity) {
+                            SessionActivityRecorder sessionActivity,
+                            SessionReferenceCleaner sessionRefCleaner) {
         this.adventureRepository = adventureRepository;
         this.chapterRepository = chapterRepository;
         this.sceneRepository = sceneRepository;
@@ -49,6 +52,7 @@ public class AdventureService {
         this.statBlockRepository = statBlockRepository;
         this.handoutRepository = handoutRepository;
         this.sessionActivity = sessionActivity;
+        this.sessionRefCleaner = sessionRefCleaner;
     }
 
     // ---- Adventures ----
@@ -187,6 +191,7 @@ public class AdventureService {
     }
 
     public void deleteScene(UUID id) {
+        sessionRefCleaner.detachScene(id);
         Scene s = findSceneById(id);
         UUID chapterId = s.getChapter().getId();
         clearCursorIfCurrent(s);
@@ -353,6 +358,7 @@ public class AdventureService {
 
     private void deleteChapterInternal(Chapter ch) {
         for (Scene s : sceneRepository.findByChapterIdOrderBySortOrderAsc(ch.getId())) {
+            sessionRefCleaner.detachScene(s.getId());
             clearCursorIfCurrent(s);
             sceneRepository.delete(s);
         }

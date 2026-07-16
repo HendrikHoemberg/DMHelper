@@ -14,8 +14,8 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignPackag
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.NoSuchElementException;
@@ -110,38 +110,38 @@ public class CampaignPackageController {
     }
 
     @GetMapping("/{campaignId}/package")
-    public ResponseEntity<?> exportV2(@PathVariable UUID campaignId,
-                                      @RequestParam(defaultValue = "true") boolean includeCombatLog,
-                                      @RequestParam(defaultValue = "true") boolean includeDiceHistory) {
+    public ResponseEntity<StreamingResponseBody> exportV2(
+            @PathVariable UUID campaignId,
+            @RequestParam(defaultValue = "true") boolean includeCombatLog,
+            @RequestParam(defaultValue = "true") boolean includeDiceHistory) {
         try {
             var options = new CampaignExportOptions(includeCombatLog, includeDiceHistory);
             CampaignPackageArtifact artifact = exportCoordinator.export(campaignId, options);
-            if (artifact.zipped()) {
-                return ResponseEntity.ok()
-                        .contentType(artifact.mediaType())
-                        .header(HttpHeaders.CONTENT_DISPOSITION,
-                                ContentDisposition.attachment()
-                                        .filename(artifact.filename(), StandardCharsets.UTF_8)
-                                        .build().toString())
-                        .body((org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody)
-                                out -> writer.write(artifact.writeRequest(), out));
-            } else {
-                tools.jackson.databind.json.JsonMapper mapper = tools.jackson.databind.json.JsonMapper.builder().build();
-                String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(artifact.manifest());
-                byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-                return ResponseEntity.ok()
-                        .contentType(artifact.mediaType())
-                        .header(HttpHeaders.CONTENT_DISPOSITION,
-                                ContentDisposition.attachment()
-                                        .filename(artifact.filename(), StandardCharsets.UTF_8)
-                                        .build().toString())
-                        .body(bytes);
-            }
+            StreamingResponseBody body = out -> writer.write(artifact.writeRequest(), out);
+            return ResponseEntity.ok()
+                    .contentType(artifact.mediaType())
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            ContentDisposition.attachment()
+                                    .filename(artifact.filename(), StandardCharsets.UTF_8)
+                                    .build().toString())
+                    .body(body);
         } catch (Exception e) {
             log.error("Campaign package export failed", e);
-            return problem(HttpStatus.INTERNAL_SERVER_ERROR, "EXPORT_FAILED",
-                    "Campaign package could not be exported");
+            throw new CampaignPackageExportException(e);
         }
+    }
+
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    private static final class CampaignPackageExportException extends RuntimeException {
+        private CampaignPackageExportException(Throwable cause) {
+            super("Campaign package could not be exported", cause);
+        }
+    }
+
+    @ExceptionHandler(CampaignPackageExportException.class)
+    private ResponseEntity<ProblemDetail> exportProblem() {
+        return problem(HttpStatus.INTERNAL_SERVER_ERROR, "EXPORT_FAILED",
+                "Campaign package could not be exported");
     }
 
     private static ResponseEntity<ProblemDetail> problem(HttpStatus status, String code, String detail) {

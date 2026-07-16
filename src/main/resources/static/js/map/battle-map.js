@@ -1110,26 +1110,30 @@ export class BattleMap {
     }
 
     /* ---- Map Switching ---- */
-    async switchToMap(mapId) {
+    async switchToMap(mapId, retry = null) {
         try {
             const resp = await this._request(`/api/v1/maps/${mapId}`);
             const mapData = await resp.json();
+            const documentResponse = await this._request(`/api/v1/maps/${mapId}/document`);
+            const documentData = await documentResponse.json();
+            const tokenResponse = await this._request(`/api/v1/maps/${mapId}/tokens`);
+            const tokens = await tokenResponse.json();
 
             this.mapId = mapId;
             this.gridWidth = mapData.gridWidth;
             this.gridHeight = mapData.gridHeight;
             this.movementMode = mapData.movementMode;
             this.showGrid = mapData.showGrid;
+            this.docVersion = documentData.version;
 
             this.clearAoeNodes();
             this.clearMeasure();
             this.clearAnnotations();
             this.deselectToken();
-            this.tokens = [];
+            this.tokens = tokens;
             this.tokenNodes = {};
 
-            await this.fetchMapDocument();
-            await this.fetchTokens();
+            this.renderTerrain(documentData.document);
             this.renderGrid();
             this.renderTokens();
             await this.loadPins(mapData.id);
@@ -1137,9 +1141,11 @@ export class BattleMap {
             this.emit('tokenupdate', { tokens: this.tokens });
             this.emit('state-changed');
             this.emit('maploaded', { mapId, mapName: mapData.name });
+            return true;
         } catch (error) {
             this._failure('Could not switch to that map. The current map was kept.', error,
-                () => this.switchToMap(mapId));
+                retry || (() => this.switchToMap(mapId)));
+            return false;
         }
     }
 }

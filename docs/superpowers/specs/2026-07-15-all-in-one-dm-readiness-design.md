@@ -1002,8 +1002,8 @@ Recommended sequence:
 | 11 | P3 expansion | `PLANNED` |
 
 Each item receives a separate design, implementation plan, migration analysis, and verification
-report. Items 1–5 form the minimum coherent readiness program. Items 6–11 are post-readiness
-but tracked in the same delivery structure.
+report. Items 1–5 form the first coherent readiness baseline. Items 6–11 remain part of the
+readiness program; the product must not claim all-in-one readiness until the definition below is met.
 
 ## 23. Definition of all-in-one readiness
 

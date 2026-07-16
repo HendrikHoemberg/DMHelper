@@ -6,6 +6,8 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
@@ -22,7 +24,9 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@Import({QuickNoteService.class, NoteService.class, WikiLinkParser.class, StatBlockService.class, SceneRefCleaner.class, dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class})
+@Import({QuickNoteService.class, NoteService.class, WikiLinkParser.class, StatBlockService.class, SceneRefCleaner.class,
+        dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
+        dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class})
 class QuickNoteServiceTest {
 
     @Autowired private QuickNoteRepository quickNoteRepository;
@@ -34,6 +38,7 @@ class QuickNoteServiceTest {
     @Autowired private ChapterRepository chapterRepository;
     @Autowired private SceneRepository sceneRepository;
     @Autowired private EncounterRepository encounterRepository;
+    @Autowired private GameMapRepository gameMapRepository;
 
     private Campaign campaign;
 
@@ -60,6 +65,17 @@ class QuickNoteServiceTest {
 
         var notes = quickNoteService.findByTarget(campaign.getId(), "MAP", targetId);
         assertEquals(2, notes.size());
+    }
+
+    @Test
+    void resolvesHumanReadableTargetLabel() {
+        GameMap map = new GameMap();
+        map.setCampaign(campaign);
+        map.setName("Lower Crypt");
+        gameMapRepository.save(map);
+        QuickNote note = quickNoteService.create(campaign.getId(), "MAP", map.getId(), "Check the door.");
+
+        assertEquals("Lower Crypt", quickNoteService.targetLabel(note));
     }
 
     @Test

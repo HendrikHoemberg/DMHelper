@@ -134,6 +134,32 @@ class CampaignManifestV2ContractTest {
         assertThat(schema.validate(mapper.writeValueAsString(root))).isEmpty();
     }
 
+    @Test
+    void sessionPresentationAndDraftInvariantsAreEnforcedBySchema() throws Exception {
+        ObjectNode root = (ObjectNode) mapper.readTree(
+                fixture("campaigns/v2/feature-complete.dmcampaign/manifest.json"));
+        ObjectNode session = (ObjectNode) root.get("session");
+        session.set("presentedRef", mapper.readTree(
+                "{\"scope\":\"PACKAGE\",\"type\":\"MAP\",\"key\":\"lower-crypt\"}"));
+        assertThat(schema.validate(mapper.writeValueAsString(root)))
+                .extracting(CampaignImportProblem::code).contains("SCHEMA_VIOLATION");
+
+        session.remove("presentedRef");
+        session.put("presentationMode", "HANDOUT");
+        assertThat(schema.validate(mapper.writeValueAsString(root)))
+                .extracting(CampaignImportProblem::code).contains("SCHEMA_VIOLATION");
+
+        session.put("presentationMode", "CURTAIN");
+        session.put("draftBody", "Draft must only exist during review");
+        assertThat(schema.validate(mapper.writeValueAsString(root)))
+                .extracting(CampaignImportProblem::code).contains("SCHEMA_VIOLATION");
+
+        session.put("status", "REVIEW");
+        session.remove("draftBody");
+        assertThat(schema.validate(mapper.writeValueAsString(root)))
+                .extracting(CampaignImportProblem::code).contains("SCHEMA_VIOLATION");
+    }
+
     private String fixture(String path) throws Exception {
         try (var in = new ClassPathResource(path).getInputStream()) {
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);

@@ -125,4 +125,37 @@ class CampaignPackageValidationPipelineTest {
         assertThat(result.problems()).extracting(p -> p.code()).contains("DUPLICATE_KEY");
     }
 
+    @Test
+    void rejectsUnresolvedAndDuplicateSessionReferencesDuringPreview() throws Exception {
+        var resource = new ClassPathResource("campaigns/v2/current-surface.dmcampaign/manifest.json");
+        ObjectNode root = (ObjectNode) mapper.readTree(resource.getInputStream());
+        ObjectNode session = root.putObject("session");
+        session.put("key", "session-current");
+        session.put("status", "RUNNING");
+        session.put("startedAt", "2026-07-16T18:00:00Z");
+        session.put("presentationMode", "CURTAIN");
+        session.putObject("planNoteRef").put("scope", "PACKAGE").put("type", "NOTE")
+                .put("key", "missing-plan");
+        var attendees = session.putArray("attendeeRefs");
+        attendees.addObject().put("scope", "PACKAGE").put("type", "PARTY_MEMBER")
+                .put("key", "party-member-aria");
+        attendees.add(attendees.get(0).deepCopy());
+        var visits = session.putArray("sceneVisits");
+        visits.addObject().put("key", "visit-one").put("visitedAt", "2026-07-16T18:10:00Z")
+                .putObject("sceneRef").put("scope", "PACKAGE").put("type", "SCENE")
+                .put("key", "scene-crypt-entry");
+        visits.addObject().put("key", "visit-two").put("visitedAt", "2026-07-16T18:20:00Z")
+                .putObject("sceneRef").put("scope", "PACKAGE").put("type", "SCENE")
+                .put("key", "scene-crypt-entry");
+        var staged = new CampaignPackageReader(temp).read(
+                new ByteArrayInputStream(mapper.writeValueAsBytes(root)),
+                "fixture.json", "application/json");
+
+        var result = pipeline.validate(staged);
+
+        assertThat(result.problems()).extracting(p -> p.code()).contains(
+                "UNRESOLVED_REFERENCE", "DUPLICATE_SESSION_ATTENDEE",
+                "DUPLICATE_SESSION_SCENE_VISIT");
+    }
+
 }

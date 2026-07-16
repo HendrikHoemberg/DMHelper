@@ -1,0 +1,142 @@
+package dev.hendrikhoemberg.dmhelper.live;
+
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
+import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
+import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
+import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class TablePresentationServiceTest {
+
+    @Mock PlayerSafeProjectionService projection;
+    @Mock GameMapRepository maps;
+    @Mock EncounterRepository encounters;
+    @Mock CombatantRepository combatants;
+    @Mock HandoutRepository handouts;
+    @Mock CampaignSessionRepository sessions;
+
+    private TablePresentationService service;
+    private UUID campaignId;
+    private CampaignSession session;
+    private GameMap map;
+
+    @BeforeEach
+    void setUp() {
+        service = new TablePresentationService(projection, maps, encounters, combatants, handouts, sessions);
+        campaignId = UUID.randomUUID();
+        Campaign campaign = new Campaign();
+        campaign.setId(campaignId);
+        session = CampaignSession.idle(campaign);
+        session.setStatus(CampaignSession.Status.RUNNING);
+        map = new GameMap();
+        map.setId(UUID.randomUUID());
+        map.setCampaign(campaign);
+        map.setName("Lower Crypt");
+        session.setPresentationMode(CampaignSession.PresentationMode.MAP);
+        session.setPresentedMap(map);
+    }
+
+    @Test
+    void restoresTheLatestOpenPresentationOnApplicationStartup() {
+        when(sessions.findFirstByStatusNotOrderByUpdatedAtDesc(CampaignSession.Status.IDLE))
+                .thenReturn(Optional.of(session));
+        when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(session));
+        when(encounters.findByCampaignIdAndStatus(campaignId,
+                dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.ACTIVE))
+                .thenReturn(Optional.empty());
+        when(projection.projectTokens(map)).thenReturn(List.of());
+
+        service.restoreOnStartup();
+
+        assertThat(service.getCurrentState().mode()).isEqualTo("MAP");
+        assertThat(service.getCurrentState().map().mapId()).isEqualTo(map.getId().toString());
+    }
+
+    @Test
+    void refreshFromAnotherCampaignCannotReplaceTheCurrentTable() {
+        UUID otherCampaignId = UUID.randomUUID();
+        when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(session));
+        when(maps.findById(map.getId())).thenReturn(Optional.of(map));
+        when(encounters.findByCampaignIdAndStatus(campaignId,
+                dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.ACTIVE))
+                .thenReturn(Optional.empty());
+        when(projection.projectTokens(map)).thenReturn(List.of());
+        service.presentMap(campaignId, map.getId());
+
+        LiveTableState unchanged = service.broadcastCurrentState(otherCampaignId);
+
+        assertThat(unchanged.map().mapId()).isEqualTo(map.getId().toString());
+        verify(sessions, never()).findByCampaignId(otherCampaignId);
+    }
+
+    @Test
+    void deletingThePresentedContentCurtainsAndBroadcastsImmediately() {
+        when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(session));
+        when(maps.findById(map.getId())).thenReturn(Optional.of(map));
+        when(encounters.findByCampaignIdAndStatus(campaignId,
+                dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.ACTIVE))
+                .thenReturn(Optional.empty());
+        when(projection.projectTokens(map)).thenReturn(List.of());
+        service.presentMap(campaignId, map.getId());
+        AtomicInteger broadcasts = new AtomicInteger();
+        service.setOnStateChange(broadcasts::incrementAndGet);
+
+        service.onPresentationInvalidated(
+                new dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.PresentationInvalidated(
+                        campaignId, map.getId(), false));
+
+        assertThat(service.getCurrentState().mode()).isEqualTo("CURTAIN");
+        assertThat(broadcasts).hasValue(1);
+    }
+
+    @Test
+    void deletionInvalidationIsAppliedOnlyAfterTheDatabaseCommit() throws NoSuchMethodException {
+        var listener = TablePresentationService.class.getMethod(
+                "onPresentationInvalidated",
+                dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.PresentationInvalidated.class);
+
+        assertThat(listener.getAnnotation(TransactionalEventListener.class).phase())
+                .isEqualTo(TransactionPhase.AFTER_COMMIT);
+    }
+
+    @Test
+    void restoringDmOnlyHandoutLowersCurtainAndClearsPersistedPresentation() {
+        Handout handout = new Handout();
+        handout.setId(UUID.randomUUID());
+        handout.setCampaign(session.getCampaign());
+        handout.setDmOnly(true);
+        session.setPresentationMode(CampaignSession.PresentationMode.HANDOUT);
+        session.setPresentedMap(null);
+        session.setPresentedHandout(handout);
+        when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(session));
+
+        LiveTableState restored = service.restorePresentation(campaignId);
+
+        assertThat(restored.mode()).isEqualTo("CURTAIN");
+        assertThat(session.getPresentationMode()).isEqualTo(CampaignSession.PresentationMode.CURTAIN);
+        assertThat(session.getPresentedHandout()).isNull();
+        verify(sessions).save(session);
+    }
+}

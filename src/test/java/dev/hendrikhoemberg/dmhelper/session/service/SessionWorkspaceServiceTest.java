@@ -88,6 +88,22 @@ class SessionWorkspaceServiceTest {
     }
 
     @Test
+    void openSessionWithNoWorkspaceMapDoesNotSilentlyAdoptEncounterMap() {
+        GameMap encounterMap = gameMap("encounter-map");
+        Encounter active = new Encounter();
+        active.setMap(encounterMap);
+        session.setStatus(CampaignSession.Status.RUNNING);
+        session.setWorkspaceMap(null);
+        when(encounters.findByCampaignIdAndStatus(campaignId, Encounter.Status.ACTIVE))
+                .thenReturn(Optional.of(active));
+
+        SessionWorkspaceService.SessionWorkspace result = service.load(campaignId, null);
+
+        assertThat(result.selectionSource()).isEqualTo(SessionWorkspaceService.SelectionSource.STORED_SESSION);
+        assertThat(result.workspaceMap()).isNull();
+    }
+
+    @Test
     void activeEncounterMapTakesPriorityWhenNoStoredMap() {
         GameMap encounterMap = gameMap("encounter-map");
         Encounter active = new Encounter();

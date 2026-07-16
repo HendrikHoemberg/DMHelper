@@ -23,7 +23,8 @@ import java.util.HexFormat;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import({HandoutService.class, SceneRefCleaner.class})
+@Import({HandoutService.class, SceneRefCleaner.class,
+        dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
 class HandoutServiceTest {
 
     @Autowired private HandoutService service;
@@ -74,6 +75,18 @@ class HandoutServiceTest {
         Handout presented = service.setPresented(h.getId(), true);
         assertThat(presented.isPresented()).isTrue();
         assertThat(presented.isDmOnly()).isFalse();
+    }
+
+    @Test
+    void markingPresentedHandoutDmOnlyAlsoUnpublishesIt() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("f", "test.png", "image/png", "data".getBytes());
+        Handout handout = service.create(campaignId, "Test", "", file);
+        service.setPresented(handout.getId(), true);
+
+        Handout secret = service.setDmOnly(handout.getId(), true);
+
+        assertThat(secret.isDmOnly()).isTrue();
+        assertThat(secret.isPresented()).isFalse();
     }
 
     @Test

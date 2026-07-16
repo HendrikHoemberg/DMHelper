@@ -21,6 +21,8 @@ import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
+import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResource;
@@ -84,6 +86,9 @@ public class CampaignService {
     private final dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository sceneRepo;
     private final dev.hendrikhoemberg.dmhelper.dice.data.DiceRollRepository diceRollRepo;
     private final CampaignImportValidator importValidator;
+    private final CampaignSessionRepository campaignSessionRepository;
+    private final SessionSceneVisitRepository sessionSceneVisitRepository;
+    private final dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner sessionReferenceCleaner;
 
     @jakarta.persistence.PersistenceContext
     private jakarta.persistence.EntityManager em;
@@ -118,7 +123,10 @@ public class CampaignService {
                              dev.hendrikhoemberg.dmhelper.adventure.data.ChapterRepository chapterRepo,
                               dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository sceneRepo,
                               dev.hendrikhoemberg.dmhelper.dice.data.DiceRollRepository diceRollRepo,
-                              CampaignImportValidator importValidator) {
+                              CampaignImportValidator importValidator,
+                              CampaignSessionRepository campaignSessionRepository,
+                              SessionSceneVisitRepository sessionSceneVisitRepository,
+                              dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner sessionReferenceCleaner) {
         this.repository = repository;
         this.partyMemberRepository = partyMemberRepository;
         this.statBlockRepository = statBlockRepository;
@@ -150,6 +158,9 @@ public class CampaignService {
         this.sceneRepo = sceneRepo;
         this.diceRollRepo = diceRollRepo;
         this.importValidator = importValidator;
+        this.campaignSessionRepository = campaignSessionRepository;
+        this.sessionSceneVisitRepository = sessionSceneVisitRepository;
+        this.sessionReferenceCleaner = sessionReferenceCleaner;
         this.objectMapper = JsonMapper.builder()
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -198,6 +209,15 @@ public class CampaignService {
     public void delete(UUID id) {
         Campaign campaign = findById(id);
         UUID cid = campaign.getId();
+        sessionReferenceCleaner.detachCampaign(cid);
+
+        // The coordination aggregate points back into scenes, maps, notes, handouts, and party.
+        // Remove it first so those established child-deletion paths remain valid.
+        campaignSessionRepository.findByCampaignId(cid).ifPresent(session -> {
+            sessionSceneVisitRepository.deleteBySessionId(session.getId());
+            campaignSessionRepository.delete(session);
+        });
+        em.flush();
 
         // Adventures first: scenes point at maps, encounters, handouts and statblocks, and
         // those references pin everything else in place until the story is gone.

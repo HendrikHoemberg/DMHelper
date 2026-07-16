@@ -10,6 +10,7 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 import dev.hendrikhoemberg.dmhelper.notes.data.*;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ public class NoteService {
     private final WikiLinkParser wikiLinkParser;
     private final SceneRepository sceneRepository;
     private final ContentDestinationRegistry destinations;
+    private final SessionReferenceCleaner sessionRefCleaner;
 
     public NoteService(NoteRepository noteRepository,
                        NoteLinkRepository noteLinkRepository,
@@ -41,7 +43,8 @@ public class NoteService {
                        EncounterRepository encounterRepository,
                        WikiLinkParser wikiLinkParser,
                        SceneRepository sceneRepository,
-                       ContentDestinationRegistry destinations) {
+                       ContentDestinationRegistry destinations,
+                       SessionReferenceCleaner sessionRefCleaner) {
         this.noteRepository = noteRepository;
         this.noteLinkRepository = noteLinkRepository;
         this.campaignRepository = campaignRepository;
@@ -52,6 +55,7 @@ public class NoteService {
         this.wikiLinkParser = wikiLinkParser;
         this.sceneRepository = sceneRepository;
         this.destinations = destinations;
+        this.sessionRefCleaner = sessionRefCleaner;
     }
 
     public Note create(UUID campaignId, NoteType type, String title, String body, String tags, boolean dmOnly) {
@@ -113,6 +117,7 @@ public class NoteService {
     }
 
     public void delete(UUID id) {
+        sessionRefCleaner.detachPlanNote(id);
         Note note = findById(id);
         noteLinkRepository.deleteBySourceNoteId(id);
         noteRepository.delete(note);

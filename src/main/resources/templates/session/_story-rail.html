@@ -5,7 +5,7 @@
   <div class="sidebar-section">
     <h3>Story</h3>
     <th:block th:if="${workspace.currentScene != null}">
-      <div class="scene-card">
+      <div class="scene-card" data-current-scene>
         <span class="scene-status-badge" th:text="${workspace.currentScene.status}">UNVISITED</span>
         <h4 th:text="${workspace.currentScene.title}">Scene Title</h4>
         <span class="scene-key" th:if="${workspace.currentScene.sceneKey}" th:text="${workspace.currentScene.sceneKey}">key</span>
@@ -17,15 +17,19 @@
                   @click="stepScene(1)" title="Next scene">Next &rarr;</button>
         </div>
         <div class="scene-actions" th:if="${workspace.currentScene != null}">
-          <button class="btn btn-ghost"
-                  th:attr="data-scene-id=${workspace.currentScene.id}"
-                  @click="presentScene($el.dataset.sceneId)"
-                  title="Jump to this scene">Open</button>
+          <a class="btn btn-ghost" target="_blank"
+             th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${workspace.campaign.id},aid=${workspace.currentScene.chapter.adventure.id},sid=${workspace.currentScene.id})}"
+             title="Open scene details">Open</a>
           <button class="btn btn-ghost"
                   th:if="${workspace.currentScene.map != null}"
                   th:attr="data-map-id=${workspace.currentScene.map.id}"
                   @click="switchMap($el.dataset.mapId)"
                   title="Switch to scene map">Map</button>
+          <button class="btn btn-ghost"
+                  th:if="${workspace.currentScene.map != null}"
+                  th:attr="data-map-id=${workspace.currentScene.map.id}"
+                  @click="sendToTableWithMap($el.dataset.mapId)"
+                  title="Present scene map">Present map</button>
         </div>
         <div class="scene-links">
           <span th:if="${workspace.currentScene.map != null}">
@@ -41,10 +45,12 @@
             Handouts: <span th:text="${#lists.size(workspace.currentScene.handouts)} + ' linked'"></span>
           </span>
         </div>
+        <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${workspace.campaign.id}, targetType='SCENE', targetId=${workspace.currentScene.id})}"></th:block>
       </div>
     </th:block>
     <th:block th:if="${workspace.currentScene == null}">
       <div class="empty-state">No current scene. Set one from an adventure.</div>
+      <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${workspace.campaign.id}, targetType='CAMPAIGN', targetId=${workspace.campaign.id})}"></th:block>
     </th:block>
   </div>
 </div>

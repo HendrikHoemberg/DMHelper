@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import dev.hendrikhoemberg.dmhelper.handout.web.FileServeController;
+import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import java.util.UUID;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(FileServeController.class)
@@ -21,6 +23,7 @@ class FileServeControllerSecurityTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private HandoutService handoutService;
+    @MockitoBean private TablePresentationService tablePresentationService;
 
     private UUID handoutId;
     private Handout unpublished;
@@ -47,12 +50,23 @@ class FileServeControllerSecurityTest {
 
     @Test
     void playerFileEndpointReturns200ForPresentedHandout() throws Exception {
-        unpublished.setPresented(true);
+        unpublished.setDmOnly(false);
         when(handoutService.findById(handoutId)).thenReturn(unpublished);
         when(handoutService.getFileContent(handoutId)).thenReturn(new byte[]{1,2,3});
+        when(tablePresentationService.isCurrentlyPresentedHandout(handoutId)).thenReturn(true);
 
         mockMvc.perform(get("/player/files/" + handoutId))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")));
+    }
+
+    @Test
+    void playerFileEndpointReturns404ForPresentedDmOnlyHandout() throws Exception {
+        when(handoutService.findById(handoutId)).thenReturn(unpublished);
+        when(tablePresentationService.isCurrentlyPresentedHandout(handoutId)).thenReturn(true);
+
+        mockMvc.perform(get("/player/files/" + handoutId))
+                .andExpect(status().isNotFound());
     }
 
     @Test

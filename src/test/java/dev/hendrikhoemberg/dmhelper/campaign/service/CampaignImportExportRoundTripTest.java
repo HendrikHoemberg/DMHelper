@@ -68,6 +68,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 @Import({CampaignService.class, PartyMemberService.class, StatBlockService.class, GameMapService.class,
+         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
          NoteService.class, WikiLinkParser.class, SceneRefCleaner.class, AdventureService.class,
          HandoutService.class,
          CampaignImportValidator.class, CampaignSchemaValidator.class, CampaignSemanticValidator.class,

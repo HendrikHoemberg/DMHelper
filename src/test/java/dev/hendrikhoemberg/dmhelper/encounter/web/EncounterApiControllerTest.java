@@ -121,6 +121,15 @@ class EncounterApiControllerTest {
     }
 
     @Test
+    void noActiveEncounterIsANormalEmptyResponse() throws Exception {
+        UUID campId = UUID.randomUUID();
+        when(service.findActiveByCampaignId(campId)).thenReturn(java.util.Optional.empty());
+
+        mockMvc.perform(get("/api/v1/campaigns/{campaignId}/encounters/active", campId))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
     void shouldGetCombatants() throws Exception {
         UUID encId = UUID.randomUUID();
         when(service.getCombatants(encId)).thenReturn(List.of(

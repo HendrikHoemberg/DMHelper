@@ -2,30 +2,49 @@ package dev.hendrikhoemberg.dmhelper;
 
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
+import com.microsoft.playwright.options.WaitForSelectorState;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Adventure;
 import dev.hendrikhoemberg.dmhelper.adventure.data.AdventureRepository;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Chapter;
 import dev.hendrikhoemberg.dmhelper.adventure.data.ChapterRepository;
+import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
+import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportCoordinator;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageWriteRequest;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageWriter;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
+import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
+import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
+import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionLifecycleService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.InputStreamSource;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
+import java.io.ByteArrayOutputStream;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -39,13 +58,20 @@ class CoreSessionLoopSmokeTest {
     private int port;
 
     @Autowired private CampaignRepository campaignRepo;
+    @Autowired private CampaignExportCoordinator exportCoordinator;
     @Autowired private AdventureRepository adventureRepo;
     @Autowired private ChapterRepository chapterRepo;
+    @Autowired private SceneRepository sceneRepo;
+    @Autowired private AdventureService adventureService;
     @Autowired private GameMapRepository mapRepo;
+    @Autowired private GameMapService gameMapService;
     @Autowired private TokenRepository tokenRepo;
     @Autowired private EncounterService encounterService;
     @Autowired private TablePresentationService presentationService;
     @Autowired private CampaignSessionRepository sessionRepository;
+    @Autowired private SessionLifecycleService sessionLifecycleService;
+    @Autowired private HandoutService handoutService;
+    @Autowired private NoteRepository noteRepository;
 
     private static Playwright playwright;
     private static Browser browser;
@@ -78,7 +104,10 @@ class CoreSessionLoopSmokeTest {
 
     private UUID campaignId;
     private UUID mapId;
+    private UUID secondMapId;
     private UUID encounterId;
+    private UUID chapterId;
+    private UUID handoutId;
 
     @BeforeAll
     static void launchBrowser() {
@@ -143,7 +172,7 @@ class CoreSessionLoopSmokeTest {
         Chapter ch = new Chapter();
         ch.setAdventure(adv);
         ch.setTitle("Chapter 1");
-        chapterRepo.save(ch);
+        chapterId = chapterRepo.save(ch).getId();
 
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/adventures");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
@@ -174,6 +203,24 @@ class CoreSessionLoopSmokeTest {
         var maps = mapRepo.findAll();
         assertThat(maps).isNotEmpty();
         mapId = maps.getFirst().getId();
+
+        secondMapId = gameMapService.create(campaignId, "Fallback Map", 30, 20, 48).getId();
+
+        Scene entry = new Scene();
+        entry.setChapter(chapterRepo.findById(chapterId).orElseThrow());
+        entry.setTitle("Upper Crypt");
+        entry.setBody("The stair descends into cold stone.");
+        entry.setSortOrder(1);
+        entry.setMap(mapRepo.findById(mapId).orElseThrow());
+        entry = sceneRepo.save(entry);
+        Scene lower = new Scene();
+        lower.setChapter(entry.getChapter());
+        lower.setTitle("Lower Crypt");
+        lower.setBody("Guardians wait beyond the western seal.");
+        lower.setSortOrder(2);
+        lower.setMap(entry.getMap());
+        sceneRepo.save(lower);
+        adventureService.setCurrentScene(campaignId, entry.getId());
     }
 
     @Test
@@ -229,16 +276,11 @@ class CoreSessionLoopSmokeTest {
     }
 
     private void startSession() {
-        var campaign = campaignRepo.findById(campaignId).orElseThrow();
-        CampaignSession session = sessionRepository.findByCampaignId(campaignId)
-                .orElseGet(() -> {
-                    CampaignSession s = CampaignSession.idle(campaign);
-                    s.setStatus(CampaignSession.Status.RUNNING);
-                    return sessionRepository.save(s);
-                });
-        if (!session.isOpen()) {
-            session.setStatus(CampaignSession.Status.RUNNING);
-            sessionRepository.save(session);
+        boolean sessionAlreadyOpen = sessionRepository.findByCampaignId(campaignId)
+                .map(CampaignSession::isOpen)
+                .orElse(false);
+        if (!sessionAlreadyOpen) {
+            sessionLifecycleService.start(campaignId, mapId);
         }
     }
 
@@ -312,7 +354,18 @@ class CoreSessionLoopSmokeTest {
 
     @Test
     @Order(11)
-    void commandPaletteOpensTheRealMapPlayRoute() {
+    void runsTheCompleteCockpitFlowThroughVisibleControls() throws Exception {
+        encounterService.endEncounter(encounterId);
+        UUID plannedEncounterId = encounterService.create(campaignId,
+                new EncounterService.CreateRequest("Crypt Guardians", mapId)).id();
+        encounterService.prefillFromMap(plannedEncounterId, mapId);
+        var handout = handoutService.createImported(campaignId,
+                "<img src=x onerror=window.playerXss=true>", "",
+                "seal.png", "image/png", Base64.getDecoder().decode(
+                        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="));
+        handoutId = handout.getId();
+        handoutService.setDmOnly(handoutId, false);
+
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/maps");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
         dmPage.evaluate("window.dispatchEvent(new CustomEvent('command-palette-toggle'))");
@@ -322,11 +375,142 @@ class CoreSessionLoopSmokeTest {
         dmPage.waitForURL(url -> url.contains("/session"));
 
         assertThat(dmPage.url()).contains("/session");
+        dmPage.locator("[aria-label='Battle map controls']").waitFor();
+        Number domContentLoaded = (Number) dmPage.evaluate(
+                "performance.getEntriesByType('navigation')[0].domContentLoadedEventEnd");
+        assertThat(domContentLoaded.doubleValue()).isLessThan(2_000);
+        assertThat(dmPage.locator("button", new Page.LocatorOptions().setHasText("Present current map")).count())
+                .isEqualTo(1);
+        assertThat(dmPage.locator("[data-presentation-mode]").count()).isEqualTo(1);
+
+        dmPage.keyboard().press("]");
+        dmPage.locator("[data-current-scene]",
+                new Page.LocatorOptions().setHasText("Lower Crypt")).waitFor();
+        Locator planned = dmPage.locator(".planned-encounter-row",
+                new Page.LocatorOptions().setHasText("Crypt Guardians"));
+        planned.locator("button", new Locator.LocatorOptions().setHasText("Activate")).click();
+        dmPage.locator("[data-action='next-turn']").waitFor();
+        encounterId = plannedEncounterId;
+        var beforeTurn = encounterService.getById(encounterId);
+        dmPage.keyboard().press("n");
+        dmPage.waitForFunction("([eid, round, turn]) => fetch('/api/v1/encounters/' + eid)"
+                        + ".then(r => r.json()).then(e => e.round !== round || e.activeTurnIndex !== turn)",
+                Arrays.asList(encounterId.toString(), beforeTurn.round(), beforeTurn.activeTurnIndex()));
+
+        String mapCorrelation = "map-switch-failure-1234";
+        failOnce(dmPage, "**/api/v1/maps/*", "GET",
+                Pattern.compile(".*/api/v1/maps/" + secondMapId), mapCorrelation);
+        Locator mapPicker = dmPage.locator("#cockpitMapPicker");
+        mapPicker.selectOption(secondMapId.toString());
+        dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(mapCorrelation)).waitFor();
+        assertThat(dmPage.evaluate("window.battleMap.mapId")).isEqualTo(mapId.toString());
+        assertThat(mapPicker.inputValue()).isEqualTo(mapId.toString());
+        assertThat(sessionRepository.findByCampaignId(campaignId).orElseThrow()
+                .getWorkspaceMap().getId()).isEqualTo(mapId);
+        dmPage.locator(".toast-error .toast-action").click();
+        dmPage.waitForFunction("([id]) => window.battleMap.mapId === id", List.of(secondMapId.toString()));
+        mapPicker.selectOption(mapId.toString());
+        dmPage.waitForFunction("([id]) => window.battleMap.mapId === id", List.of(mapId.toString()));
+
+        BrowserContext playerContext = browser.newContext();
+        Page playerPage = guardedPage(playerContext);
+        playerPage.navigate("http://localhost:" + port + "/player");
+        playerPage.locator("#pvStatus", new Page.LocatorOptions().setHasText("Connected")).waitFor();
+        dmPage.locator("button", new Page.LocatorOptions().setHasText("Present current map")).click();
+        playerPage.locator("#pvCanvas").waitFor(
+                new Locator.WaitForOptions().setState(WaitForSelectorState.ATTACHED));
+        assertThat(presentationService.getCurrentState().mode()).isEqualTo("MAP");
+        dmPage.locator("#cockpitHandoutPicker").selectOption(handoutId.toString());
+        Locator playerHandout = playerPage.locator(".pv-handout img");
+        playerHandout.waitFor();
+        assertThat(playerHandout.getAttribute("alt"))
+                .isEqualTo("<img src=x onerror=window.playerXss=true>");
+        assertThat(playerPage.evaluate("window.playerXss")).isNull();
+        dmPage.locator("button", new Page.LocatorOptions().setHasText("Curtain")).click();
+        playerPage.locator(".pv-curtain").waitFor();
+        playerContext.close();
+
+        dmPage.locator("button", new Page.LocatorOptions().setHasText("Search")).click();
+        dmPage.locator(".command-palette-overlay").waitFor();
+        dmPage.keyboard().press("Escape");
+        dmPage.locator(".command-palette-overlay").waitFor(
+                new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
+
+        dmPage.locator("button", new Page.LocatorOptions().setHasText("Dice")).click();
+        dmPage.locator(".dice-panel").waitFor();
+        dmPage.keyboard().press("Escape");
+        dmPage.locator(".dice-panel").waitFor(
+                new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
+
+        dmPage.keyboard().press("q");
+        Object shortcutDiagnostics = dmPage.evaluate("""
+                ({active: document.activeElement?.outerHTML,
+                  notes: document.querySelectorAll('.quicknotes-form input').length,
+                  modals: Array.from(document.querySelectorAll('[aria-modal=true]')).map(e => ({
+                    label: e.getAttribute('aria-label'), hidden: e.hidden,
+                    rects: e.getClientRects().length, display: getComputedStyle(e).display
+                  }))})
+                """);
+        assertThat(dmPage.evaluate("document.activeElement?.matches('.quicknotes-form input')"))
+                .as("shortcut diagnostics: %s", shortcutDiagnostics)
+                .isEqualTo(true);
+        dmPage.locator("button[x-ref='sessionButton']").click();
+        Locator lifecycle = dmPage.locator("[aria-label='Session lifecycle']");
+        lifecycle.waitFor();
+        dmPage.keyboard().press("Control+K");
+        dmPage.keyboard().press("Control+R");
+        dmPage.keyboard().press("?");
+        assertThat(lifecycle.isVisible()).isTrue();
+        assertThat(dmPage.locator(".command-palette-overlay").isVisible()).isFalse();
+        assertThat(dmPage.locator(".dice-panel").isVisible()).isFalse();
+        assertThat(dmPage.locator("#shortcut-overlay").isVisible()).isFalse();
+        dmPage.keyboard().press("q");
+        assertThat(dmPage.evaluate("document.activeElement?.matches('.quicknotes-form input')"))
+                .isEqualTo(false);
+        lifecycle.locator("button", new Locator.LocatorOptions().setHasText("Pause")).click();
+        dmPage.waitForFunction("document.querySelector('[data-session-status]').textContent === 'PAUSED'");
+        lifecycle.locator("button", new Locator.LocatorOptions().setHasText("Resume")).click();
+        dmPage.waitForFunction("document.querySelector('[data-session-status]').textContent === 'RUNNING'");
+
+        lifecycle.locator("button", new Locator.LocatorOptions().setHasText("Review & Complete")).click();
+        Locator draftTitle = lifecycle.locator("#sessionDraftTitle");
+        Locator draftBody = lifecycle.locator("#sessionDraftBody");
+        draftTitle.waitFor();
+        draftTitle.fill("Crypt session");
+        draftBody.fill(draftBody.inputValue() + "\nThe western seal remains unresolved.\n");
+        String completeCorrelation = "session-complete-failure-1234";
+        failOnce(dmPage, "**/api/v1/campaigns/*/session/complete", "POST",
+                Pattern.compile(".*/api/v1/campaigns/.+/session/complete"), completeCorrelation);
+        lifecycle.locator("button[type='submit']").click();
+        dmPage.locator(".toast-error",
+                new Page.LocatorOptions().setHasText(completeCorrelation)).waitFor();
+        assertThat(draftBody.inputValue()).contains("western seal remains unresolved");
+        dmPage.locator(".toast-error .toast-action").click();
+        dmPage.waitForURL(url -> url.contains("/notes"));
+        assertThat(noteRepository.findByCampaignIdAndTypeOrderByCreatedAtDesc(
+                campaignId, NoteType.SESSION_LOG)).singleElement()
+                .satisfies(note -> assertThat(note.getBody()).contains("western seal remains unresolved"));
+
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.locator("button[x-ref='sessionButton']").click();
+        lifecycle = dmPage.locator("[aria-label='Session lifecycle']");
+        lifecycle.locator("button", new Locator.LocatorOptions().setHasText("Start")).click();
+        dmPage.waitForFunction("document.querySelector('[data-session-status]').textContent === 'RUNNING'");
+        dmPage.reload();
+        assertThat(dmPage.locator("[data-session-status]").textContent()).isEqualTo("RUNNING");
+
+        dmPage.keyboard().press("?");
+        Locator shortcutHelp = dmPage.locator("[aria-label='Keyboard shortcuts']");
+        shortcutHelp.waitFor();
+        assertThat(shortcutHelp.textContent()).contains("Focus quick note", "Present the current map");
+        dmPage.keyboard().press("Escape");
     }
 
     @Test
     @Order(12)
-    void exportAndReimportRoundTrip() {
+    void exportAndReimportRoundTrip() throws Exception {
+        var directArtifact = exportCoordinator.export(campaignId);
+        new CampaignPackageWriter().write(directArtifact.writeRequest(), new ByteArrayOutputStream());
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId);
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
 
@@ -339,12 +523,17 @@ class CoreSessionLoopSmokeTest {
         String redirect = (String) dmPage.evaluate("""
             async ([baseUrl, cid]) => {
                 const exp = await fetch(baseUrl + '/campaigns/' + cid + '/package?includeCombatLog=true&includeDiceHistory=true');
-                if (!exp.ok) throw new Error('Export failed: ' + exp.status);
-                const body = await exp.text();
+                if (!exp.ok) throw new Error('Export failed: ' + exp.status + ' ' + await exp.text());
+                const contentType = exp.headers.get('Content-Type') || 'application/octet-stream';
+                const zipped = contentType.includes('zip');
+                const body = await exp.arrayBuffer();
 
                 const prv = await fetch(baseUrl + '/campaigns/package-imports/previews', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-DMHelper-Filename': 'rt.dmcampaign.json' },
+                    headers: {
+                        'Content-Type': contentType,
+                        'X-DMHelper-Filename': zipped ? 'rt.dmcampaign' : 'rt.dmcampaign.json'
+                    },
                     body: body
                 });
                 if (!prv.ok) throw new Error('Preview failed: ' + await prv.text());
@@ -396,6 +585,50 @@ class CoreSessionLoopSmokeTest {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + restoredId + "/party");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
         assertThat(dmPage.textContent("body")).contains("Dynamic Hero");
+
+        CampaignSession restoredSession = sessionRepository
+                .findByCampaignId(UUID.fromString(restoredId)).orElseThrow();
+        assertThat(restoredSession.getStatus()).isEqualTo(CampaignSession.Status.RUNNING);
+        UUID restoredMapId = restoredSession.getWorkspaceMap().getId();
+        assertThat(mapRepo.findById(restoredMapId).orElseThrow().getName())
+                .isEqualTo("Test Battle Map");
+
+        String referenceRoot = "campaigns/v2/published-adventure-shaped.dmcampaign/";
+        CampaignManifestV2 referenceManifest = JsonMapper.builder().build().readValue(
+                new ClassPathResource(referenceRoot + "manifest.json").getInputStream(),
+                CampaignManifestV2.class);
+        Map<String, InputStreamSource> referenceAssets = new HashMap<>();
+        for (var asset : referenceManifest.assets()) {
+            referenceAssets.put(asset.key(), new ClassPathResource(referenceRoot + asset.path()));
+        }
+        ByteArrayOutputStream referencePackage = new ByteArrayOutputStream();
+        new CampaignPackageWriter().write(new CampaignPackageWriteRequest(
+                "published-adventure-shaped.dmcampaign", referenceManifest, referenceAssets), referencePackage);
+        String referencePackageBase64 = Base64.getEncoder().encodeToString(referencePackage.toByteArray());
+        String referenceRedirect = (String) dmPage.evaluate("""
+            async ([baseUrl, encodedPackage]) => {
+                const raw = atob(encodedPackage);
+                const packageBytes = Uint8Array.from(raw, ch => ch.charCodeAt(0));
+                const previewResponse = await fetch(baseUrl + '/campaigns/package-imports/previews', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/zip',
+                               'X-DMHelper-Filename': 'published-adventure-shaped.dmcampaign' },
+                    body: packageBytes
+                });
+                if (!previewResponse.ok) throw new Error('Preview failed: ' + await previewResponse.text());
+                const preview = await previewResponse.json();
+                if (preview.status === 'BLOCKED') throw new Error(JSON.stringify(preview.problems));
+                const confirm = await fetch(baseUrl + '/campaigns/package-imports/' + preview.previewId
+                        + '/confirm?acceptWarnings=true', { method: 'POST' });
+                if (!confirm.ok) throw new Error('Confirm failed: ' + await confirm.text());
+                return confirm.headers.get('Location');
+            }
+            """, Arrays.asList("http://localhost:" + port, referencePackageBase64));
+        dmPage.navigate("http://localhost:" + port + referenceRedirect + "/session");
+        dmPage.locator("[data-session-status]").waitFor();
+        Number referenceRender = (Number) dmPage.evaluate(
+                "performance.getEntriesByType('navigation')[0].domContentLoadedEventEnd");
+        assertThat(referenceRender.doubleValue()).isLessThan(2_000);
     }
 
     @Test
