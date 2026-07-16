@@ -12,14 +12,27 @@ import java.util.regex.Pattern;
 @Component
 public class CombatDifficultyCalculator {
 
-    public record DifficultyResult(String rating, int adjustedXp, int partyThreshold, String details) {}
+    public record DifficultyResult(
+            String rating,
+            int adjustedXp,
+            int partyThreshold,
+            String details,
+            boolean estimate,
+            String source,
+            List<String> assumptions) {}
 
-    // XP thresholds per character level for Moderate difficulty.
+    private static final String ESTIMATE_SOURCE = "2014 DMG encounter XP thresholds";
+    private static final List<String> ESTIMATE_ASSUMPTIONS = List.of(
+            "2014 Medium thresholds stand in for 2024 Moderate thresholds.",
+            "High begins at twice the proxy Moderate threshold.",
+            "Monster XP uses stored XP, then the CR table, then a 200 XP fallback.");
+
+    // XP thresholds per character level for Moderate difficulty — using 2014 Medium table as proxy.
     // Source: 2014 DMG pg. 82 "Encounter Difficulty XP Per Character" table.
     // TODO: Replace with 2024 DMG values when available from authoritative source (open5e srd-2024 or SRD 5.2) per §2.3.8.
     // The 2024 DMG uses Low/Moderate/High categories instead of Easy/Medium/Hard/Deadly.
-    // Currently using 2014 Hard threshold as a reasonable approximation for prep-time guidance.
-    private static final int[] MODERATE_XP = {50, 100, 150, 250, 500, 600, 750, 900, 1100, 1200, 1600, 2000, 2200, 2500, 2800, 3200, 3900, 4100, 4900, 5700};
+    // Currently using 2014 Medium threshold as a reasonable approximation for 2024 Moderate.
+    private static final int[] PROXY_MODERATE_XP = {50, 100, 150, 250, 500, 600, 750, 900, 1100, 1200, 1600, 2000, 2200, 2500, 2800, 3200, 3900, 4100, 4900, 5700};
     // High uses 2× Moderate as a rough heuristic
     private static final int HIGH_MULTIPLIER = 2;
 
@@ -33,7 +46,8 @@ public class CombatDifficultyCalculator {
 
     public DifficultyResult calculate(List<PartyMember> party, List<CombatantDto> monsters) {
         if (party.isEmpty() || monsters.isEmpty()) {
-            return new DifficultyResult("N/A", 0, 0, "No party or monsters");
+            return new DifficultyResult("N/A", 0, 0, "No party or monsters",
+                    true, ESTIMATE_SOURCE, ESTIMATE_ASSUMPTIONS);
         }
 
         int partyThreshold = computePartyThreshold(party);
@@ -49,7 +63,8 @@ public class CombatDifficultyCalculator {
         }
 
         return new DifficultyResult(rating, totalXp, partyThreshold,
-                "Party threshold: " + partyThreshold + " XP, Monster total: " + totalXp + " XP");
+                "Proxy threshold: " + partyThreshold + " XP, Monster total: " + totalXp + " XP",
+                true, ESTIMATE_SOURCE, ESTIMATE_ASSUMPTIONS);
     }
 
     private int computePartyThreshold(List<PartyMember> party) {
@@ -57,7 +72,7 @@ public class CombatDifficultyCalculator {
         for (PartyMember pm : party) {
             int level = extractLevel(pm.getClassAndLevel());
             int idx = Math.max(0, Math.min(level - 1, 19));
-            total += MODERATE_XP[idx];
+            total += PROXY_MODERATE_XP[idx];
         }
         return total;
     }

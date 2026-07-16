@@ -127,10 +127,18 @@ class EncounterControllerTest {
         when(encounterService.getCombatants(encId)).thenReturn(List.of());
         when(encounterService.calculateDifficulty(campaignId, encId))
                 .thenReturn(new dev.hendrikhoemberg.dmhelper.encounter.service.CombatDifficultyCalculator.DifficultyResult(
-                        "LOW", 0, 3000, "Test"));
+                        "LOW", 0, 3000, "Test", true,
+                        "2014 DMG encounter XP thresholds",
+                        List.of(
+                                "2014 Medium thresholds stand in for 2024 Moderate thresholds.",
+                                "High begins at twice the proxy Moderate threshold.",
+                                "Monster XP uses stored XP, then the CR table, then a 200 XP fallback.")));
 
         mockMvc.perform(get("/campaigns/{campaignId}/encounters/{id}", campaignId, encId))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Detail View")));
+                .andExpect(content().string(containsString("Detail View")))
+                .andExpect(content().string(containsString("Difficulty estimate")))
+                .andExpect(content().string(containsString("2014 DMG encounter XP thresholds")))
+                .andExpect(content().string(containsString("High begins at twice the proxy Moderate threshold.")));
     }
 }

@@ -120,6 +120,28 @@ class CombatDifficultyCalculatorTest {
         assertThat(result.rating()).isEqualTo("LOW");
     }
 
+    @Test
+    void labelsTheCurrentCalculationAsAnEstimateWithSourceAndAssumptions() {
+        PartyMember hero = pc("Fighter 5");
+        CombatantDto monster = new CombatantDto(
+                UUID.randomUUID(), UUID.randomUUID(), "Ogre", 0, 0,
+                0, 0, 0, "MONSTER", null, false,
+                null, UUID.randomUUID(), null,
+                false, false, false, List.of(),
+                null, false, 0, 0, 0, 0, null);
+        when(statBlockRepo.findById(monster.statBlockId()))
+                .thenReturn(Optional.of(statBlock("Ogre", "2", 450)));
+
+        var result = calculator.calculate(List.of(hero), List.of(monster));
+
+        assertThat(result.estimate()).isTrue();
+        assertThat(result.source()).isEqualTo("2014 DMG encounter XP thresholds");
+        assertThat(result.assumptions()).containsExactly(
+                "2014 Medium thresholds stand in for 2024 Moderate thresholds.",
+                "High begins at twice the proxy Moderate threshold.",
+                "Monster XP uses stored XP, then the CR table, then a 200 XP fallback.");
+    }
+
     private dev.hendrikhoemberg.dmhelper.library.data.StatBlock statBlock(String name, String cr, int xp) {
         var sb = new dev.hendrikhoemberg.dmhelper.library.data.StatBlock();
         sb.setName(name);

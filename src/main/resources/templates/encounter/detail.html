@@ -113,19 +113,28 @@
                     </form>
                 </div>
 
-                <h2>Difficulty</h2>
+                <h2>Difficulty estimate</h2>
                 <div class="detail-actions u-mb-lg u-items-center">
                     <th:block th:if="${difficulty.rating == 'N/A'}">
-                        <p class="text-muted">No party or monsters — add combatants to see difficulty.</p>
+                        <p class="text-muted">No party or monsters — add combatants to see an estimate.</p>
                     </th:block>
                     <th:block th:unless="${difficulty.rating == 'N/A'}">
-                        <span class="badge badge-rating" th:classappend="'badge-' + ${#strings.toLowerCase(difficulty.rating)}"
-                              th:text="${difficulty.rating}">RATING</span>
-                        <span class="text-muted" th:text="'Adjusted XP: ' + ${difficulty.adjustedXp}">XP</span>
-                        <span class="text-muted" th:text="'Party Threshold: ' + ${difficulty.partyThreshold}">THRESHOLD</span>
-                        <span class="text-muted u-text-sm" th:text="${difficulty.details}">DETAILS</span>
+                        <span class="badge badge-rating"
+                              th:classappend="'badge-' + ${#strings.toLowerCase(difficulty.rating)}"
+                              th:text="'Estimate: ' + ${difficulty.rating}">Estimate: LOW</span>
+                        <span class="text-muted" th:text="'Monster XP: ' + ${difficulty.adjustedXp}">XP</span>
+                        <span class="text-muted" th:text="'Proxy threshold: ' + ${difficulty.partyThreshold}">Threshold</span>
+                        <span class="text-muted u-text-sm" th:text="${difficulty.details}">Details</span>
                     </th:block>
                 </div>
+                <details class="detail-description u-mb-lg">
+                    <summary>Estimate source and assumptions</summary>
+                    <p th:text="${difficulty.source}">2014 DMG encounter XP thresholds</p>
+                    <ul>
+                        <li th:each="assumption : ${difficulty.assumptions}"
+                            th:text="${assumption}">Assumption</li>
+                    </ul>
+                </details>
 
                 <th:block th:if="${encounter.lairActionName != null and !encounter.lairActionName.isBlank()}">
                     <h2>Lair Actions</h2>
