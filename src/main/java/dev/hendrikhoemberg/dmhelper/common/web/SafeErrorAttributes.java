@@ -6,7 +6,6 @@ import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.webmvc.error.DefaultErrorAttributes;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.context.request.RequestAttributes;
 
 /**
  * Keeps framework internals out of error responses.
