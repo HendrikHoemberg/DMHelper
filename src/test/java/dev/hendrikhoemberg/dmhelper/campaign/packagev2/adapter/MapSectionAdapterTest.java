@@ -285,7 +285,7 @@ class MapSectionAdapterTest {
                         )),
                         0
                 )),
-                null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null
         );
 
         var freshCampaign = new Campaign();
@@ -378,7 +378,7 @@ class MapSectionAdapterTest {
                         List.of(),
                         0
                 )),
-                null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null
         );
 
         // Stage asset file
@@ -543,6 +543,7 @@ class MapSectionAdapterTest {
         a.ledgerEntries(List.of());
         a.timelineEvents(List.of());
         a.adventures(List.of());
+        a.session(null);
         a.diceRolls(List.of());
     }
 

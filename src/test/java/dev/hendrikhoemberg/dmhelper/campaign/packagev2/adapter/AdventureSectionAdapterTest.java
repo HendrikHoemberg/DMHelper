@@ -201,7 +201,7 @@ class AdventureSectionAdapterTest {
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null,
-                adventures, null
+                adventures, null, null
         );
 
         when(adventureRepo.save(any())).thenAnswer(inv -> {
@@ -263,7 +263,7 @@ class AdventureSectionAdapterTest {
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null,
-                adventures, null
+                adventures, null, null
         );
 
         when(adventureRepo.save(any())).thenAnswer(inv -> {
@@ -418,6 +418,7 @@ class AdventureSectionAdapterTest {
         a.assignments(List.of());
         a.ledgerEntries(List.of());
         a.timelineEvents(List.of());
+        a.session(null);
         a.diceRolls(List.of());
     }
 

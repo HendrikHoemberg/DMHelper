@@ -10,6 +10,8 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKey;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyRepository;
 import dev.hendrikhoemberg.dmhelper.dice.data.DiceRoll;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntry;
+import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
@@ -261,7 +263,8 @@ public class CampaignSemanticSnapshotService {
                 && !Modifier.isTransient(field.getModifiers())
                 && field.getAnnotation(Id.class) == null
                 && field.getAnnotation(Version.class) == null
-                && field.getAnnotation(Transient.class) == null;
+                && field.getAnnotation(Transient.class) == null
+                && !"updatedAt".equals(field.getName());
     }
 
     private static boolean relation(Field field) {
@@ -314,5 +317,8 @@ public class CampaignSemanticSnapshotService {
             new OwnershipQuery(CampaignContentType.LEDGER_ENTRY, LedgerEntry.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.TIMELINE_EVENT, TimelineEvent.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.STATBLOCK, StatBlock.class, "campaign.id"),
-            new OwnershipQuery(CampaignContentType.DICE_ROLL, DiceRoll.class, "campaign.id"));
+            new OwnershipQuery(CampaignContentType.DICE_ROLL, DiceRoll.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.SESSION, CampaignSession.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.SESSION_SCENE_VISIT, SessionSceneVisit.class,
+                    "session.campaign.id"));
 }

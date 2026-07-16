@@ -209,7 +209,7 @@ class PartySectionAdapterTest {
                                 Map.of("1", 2, "2", 1)
                         )
                 )),
-                null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null, null, null
         );
 
         var importContext = new CampaignImportContext(
@@ -275,6 +275,7 @@ class PartySectionAdapterTest {
         a.ledgerEntries(List.of());
         a.timelineEvents(List.of());
         a.adventures(List.of());
+        a.session(null);
         a.diceRolls(List.of());
     }
 

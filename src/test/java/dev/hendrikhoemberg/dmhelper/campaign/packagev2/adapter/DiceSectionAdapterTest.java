@@ -106,7 +106,7 @@ class DiceSectionAdapterTest {
                 false, false, null, Instant.parse("2025-06-01T12:00:00Z"));
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, List.of(dto));
+                null, null, null, null, null, List.of(dto));
         var keys = new CampaignSectionAdapterTest.FakeKeyService();
         var context = new CampaignImportContext(
                 campaignId, keys, new PendingCampaignImport(UUID.randomUUID(), null, null, null));
@@ -140,6 +140,7 @@ class DiceSectionAdapterTest {
         a.ledgerEntries(List.of());
         a.timelineEvents(List.of());
         a.adventures(List.of());
+        a.session(null);
         return a;
     }
 

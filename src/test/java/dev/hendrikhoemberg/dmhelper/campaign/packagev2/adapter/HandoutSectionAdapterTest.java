@@ -144,7 +144,7 @@ class HandoutSectionAdapterTest {
                         "handout-map", "Map", List.of("quest", "important"),
                         assetKey, "image/png", false, true
                 )),
-                null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null
         );
 
         Path assetFile = tempDir.resolve(assetKey + ".png");
@@ -202,8 +202,9 @@ class HandoutSectionAdapterTest {
                         new HandoutDto("h2", "Presented", List.of(), assetKey, "image/png", false, true),
                         new HandoutDto("h3", "Both False", List.of(), assetKey, "image/png", false, false),
                         new HandoutDto("h4", "Both True", List.of(), assetKey, "image/png", true, true)
+
                 ),
-                null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null
         );
 
         Path assetFile = tempDir.resolve(assetKey + ".png");
@@ -311,6 +312,7 @@ class HandoutSectionAdapterTest {
         a.ledgerEntries(List.of());
         a.timelineEvents(List.of());
         a.adventures(List.of());
+        a.session(null);
         a.diceRolls(List.of());
     }
 

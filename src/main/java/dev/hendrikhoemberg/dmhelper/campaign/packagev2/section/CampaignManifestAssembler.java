@@ -13,6 +13,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.NoteDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.PartyMemberDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.QuickNoteDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SessionDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.StatBlockDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.TimelineEventDto;
 
@@ -33,6 +34,7 @@ public class CampaignManifestAssembler {
     private List<LedgerEntryDto> ledgerEntries;
     private List<TimelineEventDto> timelineEvents;
     private List<AdventureDto> adventures;
+    private SessionDto session;
     private List<DiceRollDto> diceRolls;
     private boolean built;
 
@@ -101,6 +103,11 @@ public class CampaignManifestAssembler {
         adventures = List.copyOf(value);
     }
 
+    public void session(SessionDto value) {
+        checkNotAlreadySet("session", session);
+        session = value;
+    }
+
     public void diceRolls(List<DiceRollDto> value) {
         checkNotAlreadySet("diceRolls", diceRolls);
         diceRolls = List.copyOf(value);
@@ -141,6 +148,7 @@ public class CampaignManifestAssembler {
                 ledgerEntries,
                 timelineEvents,
                 adventures,
+                session,
                 diceRolls
         );
     }

@@ -29,6 +29,7 @@ public record CampaignManifestV2(
         List<LedgerEntryDto> ledgerEntries,
         List<TimelineEventDto> timelineEvents,
         List<AdventureDto> adventures,
+        SessionDto session,
         List<DiceRollDto> diceRolls
 ) {
     public static final int CURRENT_FORMAT_VERSION = 2;
@@ -385,6 +386,29 @@ public record CampaignManifestV2(
             List<ContentReference> statblockRefs,
             List<ContentReference> handoutRefs
     ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SessionDto(
+            String key,
+            String status,
+            Instant startedAt,
+            Instant pausedAt,
+            Instant reviewStartedAt,
+            InGameDateDto startInGameDate,
+            ContentReference planNoteRef,
+            ContentReference workspaceMapRef,
+            String presentationMode,
+            ContentReference presentedRef,
+            List<ContentReference> attendeeRefs,
+            List<SessionSceneVisitDto> sceneVisits,
+            String draftBody) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SessionSceneVisitDto(
+            String key,
+            ContentReference sceneRef,
+            Instant visitedAt,
+            Instant completedAt) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record CombatLogEntryDto(

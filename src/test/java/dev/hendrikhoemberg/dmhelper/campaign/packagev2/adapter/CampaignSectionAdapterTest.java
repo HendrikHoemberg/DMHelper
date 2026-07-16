@@ -79,6 +79,7 @@ class CampaignSectionAdapterTest {
         assembler.ledgerEntries(List.of());
         assembler.timelineEvents(List.of());
         assembler.adventures(List.of());
+        assembler.session(null);
         assembler.diceRolls(List.of());
 
         var metadata = new Metadata("pkg-key", null, "test", null, null, List.of());
@@ -97,7 +98,7 @@ class CampaignSectionAdapterTest {
                 2, null,
                 new CampaignDto("campaign-key", "Imported Campaign", "Imported description",
                         Instant.parse("2025-01-01T00:00:00Z"), null, null),
-                null, null, null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null
         );
         var context = new CampaignImportContext(
                 UUID.randomUUID(), new FakeKeyService(), pendingImport());
@@ -121,7 +122,7 @@ class CampaignSectionAdapterTest {
         var manifest = new CampaignManifestV2(
                 2, null,
                 new CampaignDto("campaign-key", "Test", "desc", Instant.now(), null, sceneRef),
-                null, null, null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null
         );
 
         var context = new CampaignImportContext(

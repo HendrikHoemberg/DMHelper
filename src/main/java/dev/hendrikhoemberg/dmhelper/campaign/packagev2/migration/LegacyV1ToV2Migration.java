@@ -384,7 +384,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
         }
 
         var manifest = new CampaignManifestV2(2, metadata, campaign, assets, party, statBlocks, handouts, maps,
-                encounters, notes, quickNotes, assignments, ledger, timeline, adventures, List.of());
+                encounters, notes, quickNotes, assignments, ledger, timeline, adventures, null, List.of());
         return new CampaignPackageValidationResult(source, manifest, 1, assetsByKey, warnings, List.of("MIGRATED_FROM_V1"));
     }
 

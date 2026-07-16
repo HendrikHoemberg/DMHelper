@@ -35,5 +35,6 @@
   "ledgerEntries": [],
   "timelineEvents": [],
   "adventures": [],
+  "session": null,
   "diceRolls": []
 }

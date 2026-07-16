@@ -23,7 +23,7 @@ class CampaignSemanticComparatorTest {
                         base.campaign().createdAt(), base.campaign().settings(), base.campaign().currentSceneRef()),
                 base.assets(), base.party(), base.customStatBlocks(), base.handouts(), base.maps(),
                 base.encounters(), base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(),
-                base.timelineEvents(), base.adventures(), base.diceRolls());
+                base.timelineEvents(), base.adventures(), base.session(), base.diceRolls());
 
         assertThatThrownBy(() -> CampaignSemanticComparator.assertEquivalent(
                 CampaignSemanticSnapshot.from(base), CampaignSemanticSnapshot.from(changed)))
@@ -42,7 +42,7 @@ class CampaignSemanticComparatorTest {
                 base.formatVersion(), metadata, base.campaign(), base.assets(), base.party(),
                 base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(), base.notes(),
                 base.quickNotes(), base.assignments(), base.ledgerEntries(), base.timelineEvents(),
-                base.adventures(), base.diceRolls());
+                base.adventures(), base.session(), base.diceRolls());
 
         assertThatCode(() -> CampaignSemanticComparator.assertEquivalent(
                 CampaignSemanticSnapshot.from(base), CampaignSemanticSnapshot.from(changed)))
@@ -101,7 +101,7 @@ class CampaignSemanticComparatorTest {
                 base.formatVersion(), base.metadata(), base.campaign(), base.assets(), base.party(),
                 base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(), base.notes(),
                 base.quickNotes(), base.assignments(), base.ledgerEntries(), base.timelineEvents(),
-                java.util.List.of(adventure), base.diceRolls());
+                java.util.List.of(adventure), base.session(), base.diceRolls());
     }
 
     private CampaignManifestV2 withLedgerAmount(CampaignManifestV2 base, java.math.BigDecimal amount) {
@@ -112,7 +112,7 @@ class CampaignSemanticComparatorTest {
                 base.formatVersion(), base.metadata(), base.campaign(), base.assets(), base.party(),
                 base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(), base.notes(),
                 base.quickNotes(), base.assignments(), java.util.List.of(entry), base.timelineEvents(),
-                base.adventures(), base.diceRolls());
+                base.adventures(), base.session(), base.diceRolls());
     }
 
     private CampaignManifestV2 minimal() throws Exception {

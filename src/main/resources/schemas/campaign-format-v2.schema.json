@@ -22,6 +22,7 @@
     "ledgerEntries": { "type": "array", "items": { "$ref": "#/$defs/ledgerEntry" } },
     "timelineEvents": { "type": "array", "items": { "$ref": "#/$defs/timelineEvent" } },
     "adventures": { "type": "array", "items": { "$ref": "#/$defs/adventure" } },
+    "session": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/session" }] },
     "diceRolls": { "type": "array", "items": { "$ref": "#/$defs/diceRoll" } }
   },
   "$defs": {
@@ -66,6 +67,7 @@
         "PARTY_MEMBER", "CHARACTER_SHEET", "SHEET_RESOURCE",
         "NOTE", "QUICK_NOTE", "HANDOUT",
         "ASSIGNMENT", "LEDGER_ENTRY", "TIMELINE_EVENT",
+        "SESSION", "SESSION_SCENE_VISIT",
         "STATBLOCK", "SPELL", "CONDITION", "RULE", "EQUIPMENT_ITEM", "MAGIC_ITEM",
         "CLASS", "SPECIES", "BACKGROUND", "FEAT",
         "DICE_ROLL"
@@ -129,6 +131,39 @@
         "year": { "type": "integer" },
         "month": { "type": "integer", "minimum": 0 },
         "day": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "status", "presentationMode", "attendeeRefs", "sceneVisits"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "status": { "type": "string", "enum": ["RUNNING", "PAUSED", "REVIEW"] },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "pausedAt": { "type": "string", "format": "date-time" },
+        "reviewStartedAt": { "type": "string", "format": "date-time" },
+        "startInGameDate": { "type": "object", "additionalProperties": false, "required": ["year", "month", "day"], "properties": { "year": { "type": "integer" }, "month": { "type": "integer" }, "day": { "type": "integer" } } },
+        "planNoteRef": { "$ref": "#/$defs/contentReference" },
+        "workspaceMapRef": { "$ref": "#/$defs/contentReference" },
+        "presentationMode": { "type": "string", "enum": ["CURTAIN", "MAP", "HANDOUT"] },
+        "presentedRef": { "$ref": "#/$defs/contentReference" },
+        "attendeeRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
+        "sceneVisits": { "type": "array", "items": { "$ref": "#/$defs/sessionSceneVisit" } },
+        "draftBody": { "type": "string" }
+      },
+      "if": { "properties": { "presentationMode": { "const": "MAP" } } },
+      "then": { "required": ["presentedRef"] }
+    },
+    "sessionSceneVisit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "sceneRef", "visitedAt"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "sceneRef": { "$ref": "#/$defs/contentReference" },
+        "visitedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" }
       }
     },
     "asset": {

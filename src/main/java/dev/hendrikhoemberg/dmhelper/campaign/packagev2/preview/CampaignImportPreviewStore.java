@@ -90,7 +90,7 @@ public class CampaignImportPreviewStore {
     }
 
     private static CampaignEntityCounts counts(CampaignManifestV2 m) {
-        if (m == null) return new CampaignEntityCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        if (m == null) return new CampaignEntityCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         int tokens = m.maps().stream().mapToInt(map -> size(map.tokens())).sum();
         int combatants = m.encounters().stream().mapToInt(encounter -> size(encounter.combatants())).sum();
         int chapters = m.adventures().stream().mapToInt(adventure -> size(adventure.chapters())).sum();
@@ -98,10 +98,12 @@ public class CampaignImportPreviewStore {
                 .mapToInt(chapter -> size(chapter.scenes())).sum();
         int combatLogEntries = m.encounters().stream().mapToInt(encounter -> size(encounter.combatLog())).sum();
         int noteLinks = m.notes().stream().mapToInt(note -> size(note.links())).sum();
+        int sessionSceneVisits = m.session() != null ? size(m.session().sceneVisits()) : 0;
         return new CampaignEntityCounts(size(m.party()), size(m.customStatBlocks()), size(m.handouts()),
                 size(m.maps()), tokens, size(m.encounters()), combatants, size(m.notes()), size(m.quickNotes()),
                 size(m.assignments()), size(m.ledgerEntries()), size(m.timelineEvents()), size(m.adventures()),
-                chapters, scenes, size(m.assets()), combatLogEntries, size(m.diceRolls()), noteLinks);
+                chapters, scenes, size(m.assets()), combatLogEntries, size(m.diceRolls()), noteLinks,
+                m.session() != null ? 1 : 0, sessionSceneVisits);
     }
 
     private static int provenanceCount(CampaignManifestV2 m) {

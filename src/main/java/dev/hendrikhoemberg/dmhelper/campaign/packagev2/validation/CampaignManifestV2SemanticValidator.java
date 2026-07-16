@@ -10,6 +10,13 @@ import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportPr
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
 import org.springframework.stereotype.Component;
 
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.MAP;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.NOTE;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.PARTY_MEMBER;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SCENE;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SESSION;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SESSION_SCENE_VISIT;
+
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -109,6 +116,25 @@ public class CampaignManifestV2SemanticValidator {
                 add(keys, CampaignContentType.CHAPTER, chapter.key(), "/adventures/" + ai + "/chapters/" + ci + "/key", problems);
                 for (int si = 0; si < size(chapter.scenes()); si++) add(keys, CampaignContentType.SCENE,
                         chapter.scenes().get(si).key(), "/adventures/" + ai + "/chapters/" + ci + "/scenes/" + si + "/key", problems);
+            }
+        }
+        if (m.session() != null) {
+            uniqueKey(SESSION, m.session().key(), "/session/key", keys, problems);
+            if (m.session().planNoteRef() != null)
+                requireRefType(m.session().planNoteRef(), NOTE, "/session/planNoteRef", problems);
+            if (m.session().workspaceMapRef() != null)
+                requireRefType(m.session().workspaceMapRef(), MAP, "/session/workspaceMapRef", problems);
+            requireAllRefType(m.session().attendeeRefs(), PARTY_MEMBER, "/session/attendeeRefs", problems);
+            if ("CURTAIN".equals(m.session().presentationMode()) && m.session().presentedRef() != null)
+                error(problems, "INVALID_SESSION_PRESENTATION", "/session/presentedRef",
+                        "Curtain presentation cannot reference content.");
+            if ("REVIEW".equals(m.session().status()) &&
+                    (m.session().draftBody() == null || m.session().draftBody().isBlank()))
+                error(problems, "MISSING_SESSION_DRAFT", "/session/draftBody",
+                        "A session under review requires its persisted draft.");
+            for (var visit : m.session().sceneVisits()) {
+                uniqueKey(SESSION_SCENE_VISIT, visit.key(), "/session/sceneVisits", keys, problems);
+                requireRefType(visit.sceneRef(), SCENE, "/session/sceneVisits", problems);
             }
         }
         for (int i = 0; i < size(m.diceRolls()); i++) {
@@ -374,4 +400,29 @@ public class CampaignManifestV2SemanticValidator {
     }
 
     private static int size(List<?> values) { return values == null ? 0 : values.size(); }
+
+    private static void uniqueKey(CampaignContentType type, String key, String path,
+                                   Map<CampaignContentType, Set<String>> keys,
+                                   List<CampaignImportProblem> problems) {
+        if (!keys.computeIfAbsent(type, ignored -> new HashSet<>()).add(key)) {
+            error(problems, "DUPLICATE_KEY", path, "Duplicate key within content type");
+        }
+    }
+
+    private static void requireRefType(ContentReference ref, CampaignContentType expectedType,
+                                       String path, List<CampaignImportProblem> problems) {
+        if (ref == null) return;
+        if (ref.type() != expectedType) {
+            error(problems, "INVALID_REFERENCE_TYPE", path,
+                    "Expected reference type " + expectedType + " but got " + ref.type());
+        }
+    }
+
+    private static void requireAllRefType(List<ContentReference> refs, CampaignContentType expectedType,
+                                          String path, List<CampaignImportProblem> problems) {
+        if (refs == null) return;
+        for (int i = 0; i < refs.size(); i++) {
+            requireRefType(refs.get(i), expectedType, path + "/" + i, problems);
+        }
+    }
 }

@@ -1,9 +1,11 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.service;
 
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SessionDto;
 import tools.jackson.databind.JsonNode;
 
 import java.util.Comparator;
+import java.util.List;
 
 public record CampaignSemanticSnapshot(CampaignManifestV2 manifest, JsonNode persistenceProjection) {
 

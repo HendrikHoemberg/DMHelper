@@ -155,6 +155,7 @@ class NotesSectionAdapterTest {
         a.ledgerEntries(List.of());
         a.timelineEvents(List.of());
         a.adventures(List.of());
+        a.session(null);
         a.diceRolls(List.of());
         return a;
     }

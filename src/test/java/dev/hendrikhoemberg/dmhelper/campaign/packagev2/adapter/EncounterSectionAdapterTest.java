@@ -201,7 +201,7 @@ class EncounterSectionAdapterTest {
                 1, 0, 1, null, null, null, false, List.of(logDto));
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null, null, null,
-                List.of(encounterDto), null, null, null, null, null, null, null);
+                List.of(encounterDto), null, null, null, null, null, null, null, null);
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var encounter = invocation.getArgument(0, Encounter.class);
@@ -241,7 +241,7 @@ class EncounterSectionAdapterTest {
                 0, -1, 0, null, null, null, false, List.of());
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null, null, null,
-                List.of(encounterDto), null, null, null, null, null, null, null);
+                List.of(encounterDto), null, null, null, null, null, null, null, null);
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var encounter = invocation.getArgument(0, Encounter.class);
@@ -298,6 +298,7 @@ class EncounterSectionAdapterTest {
         a.ledgerEntries(List.of());
         a.timelineEvents(List.of());
         a.adventures(List.of());
+        a.session(null);
         a.diceRolls(List.of());
         a.campaign(new CampaignManifestV2.CampaignDto("key", "test", null, null, null, null));
         return a;

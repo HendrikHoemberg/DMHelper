@@ -132,7 +132,7 @@ class LibrarySectionAdapterTest {
         var importManifest = new CampaignManifestV2(
                 2, null, null, null,
                 null, manifest2.customStatBlocks(),
-                null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null, null
         );
 
         var importContext = new CampaignImportContext(
@@ -228,6 +228,7 @@ class LibrarySectionAdapterTest {
         a.ledgerEntries(List.of());
         a.timelineEvents(List.of());
         a.adventures(List.of());
+        a.session(null);
         a.diceRolls(List.of());
     }
 
