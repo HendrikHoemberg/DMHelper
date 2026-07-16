@@ -257,7 +257,7 @@ public class SceneController {
 
     // ---- Structured content: metadata ----
 
-    @PutMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/metadata")
+    @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/metadata")
     public String updateMetadata(@PathVariable UUID campaignId,
                                  @PathVariable UUID adventureId,
                                  @PathVariable UUID chapterId,
@@ -267,9 +267,13 @@ public class SceneController {
                                  @RequestParam(required = false) String tags,
                                  @RequestParam(required = false) String mapRegionKey,
                                  Model model) {
-        structuredService.updateMetadata(campaignId, sceneId,
-                new SceneStructuredContentService.SceneMetadataCommand(
-                        summary, sourceLocator, tags, mapRegionKey));
+        try {
+            structuredService.updateMetadata(campaignId, sceneId,
+                    new SceneStructuredContentService.SceneMetadataCommand(
+                            summary, sourceLocator, tags, mapRegionKey));
+        } catch (IllegalArgumentException | NotFoundException e) {
+            model.addAttribute("error", e.getMessage());
+        }
         return loadActionRail(campaignId, adventureId, sceneId, model);
     }
 
@@ -286,9 +290,13 @@ public class SceneController {
                              @RequestParam(required = false) String sourceLocator,
                              @RequestParam(defaultValue = "0") int sortOrder,
                              Model model) {
-        structuredService.addSection(campaignId, sceneId,
-                new SceneStructuredContentService.SceneSectionCommand(
-                        kind, label, body, sourceLocator, sortOrder));
+        try {
+            structuredService.addSection(campaignId, sceneId,
+                    new SceneStructuredContentService.SceneSectionCommand(
+                            kind, label, body, sourceLocator, sortOrder));
+        } catch (IllegalArgumentException | NotFoundException e) {
+            model.addAttribute("error", e.getMessage());
+        }
         return loadActionRail(campaignId, adventureId, sceneId, model);
     }
 
@@ -343,11 +351,15 @@ public class SceneController {
                            @RequestParam(required = false) String sourceLocator,
                            @RequestParam(defaultValue = "0") int sortOrder,
                            Model model) {
-        structuredService.addCheck(campaignId, sceneId,
-                new SceneStructuredContentService.SceneCheckCommand(
-                        label, ability, skill, dc, visibility,
-                        success, failure, partial,
-                        null, null, null, sourceLocator, sortOrder));
+        try {
+            structuredService.addCheck(campaignId, sceneId,
+                    new SceneStructuredContentService.SceneCheckCommand(
+                            label, ability, skill, dc, visibility,
+                            success, failure, partial,
+                            null, null, null, sourceLocator, sortOrder));
+        } catch (IllegalArgumentException | NotFoundException e) {
+            model.addAttribute("error", e.getMessage());
+        }
         return loadActionRail(campaignId, adventureId, sceneId, model);
     }
 
@@ -405,10 +417,14 @@ public class SceneController {
                                  @RequestParam(required = false) String sourceLocator,
                                  @RequestParam(defaultValue = "0") int sortOrder,
                                  Model model) {
-        structuredService.addParticipant(campaignId, sceneId,
-                new SceneStructuredContentService.SceneParticipantCommand(
-                        displayName, quantity, disposition, placementHint,
-                        null, null, sourceLocator, sortOrder));
+        try {
+            structuredService.addParticipant(campaignId, sceneId,
+                    new SceneStructuredContentService.SceneParticipantCommand(
+                            displayName, quantity, disposition, placementHint,
+                            null, null, sourceLocator, sortOrder));
+        } catch (IllegalArgumentException | NotFoundException e) {
+            model.addAttribute("error", e.getMessage());
+        }
         return loadActionRail(campaignId, adventureId, sceneId, model);
     }
 
@@ -462,10 +478,14 @@ public class SceneController {
                           @RequestParam(required = false) String condition,
                           @RequestParam(defaultValue = "0") int sortOrder,
                           Model model) {
-        structuredService.addLink(campaignId, sceneId,
-                new SceneStructuredContentService.SceneLinkCommand(
-                        role, targetScope, targetType, targetId,
-                        null, null, displayText, condition, sortOrder));
+        try {
+            structuredService.addLink(campaignId, sceneId,
+                    new SceneStructuredContentService.SceneLinkCommand(
+                            role, targetScope, targetType, targetId,
+                            null, null, displayText, condition, sortOrder));
+        } catch (IllegalArgumentException | NotFoundException e) {
+            model.addAttribute("error", e.getMessage());
+        }
         return loadActionRail(campaignId, adventureId, sceneId, model);
     }
 
@@ -521,10 +541,14 @@ public class SceneController {
                                 @RequestParam(required = false) String sourceLocator,
                                 @RequestParam(defaultValue = "0") int sortOrder,
                                 Model model) {
-        structuredService.addTransition(campaignId, sceneId,
-                new SceneStructuredContentService.SceneTransitionCommand(
-                        kind, label, targetSceneId, externalDestination,
-                        condition, dmNote, sourceLocator, sortOrder));
+        try {
+            structuredService.addTransition(campaignId, sceneId,
+                    new SceneStructuredContentService.SceneTransitionCommand(
+                            kind, label, targetSceneId, externalDestination,
+                            condition, dmNote, sourceLocator, sortOrder));
+        } catch (IllegalArgumentException | NotFoundException e) {
+            model.addAttribute("error", e.getMessage());
+        }
         return loadActionRail(campaignId, adventureId, sceneId, model);
     }
 

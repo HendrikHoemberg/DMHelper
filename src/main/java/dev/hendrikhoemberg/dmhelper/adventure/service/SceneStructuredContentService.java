@@ -66,9 +66,7 @@ public class SceneStructuredContentService {
             int sortOrder) {}
 
     private Scene findSceneInCampaign(UUID campaignId, UUID sceneId) {
-        return sceneRepository.findByChapterAdventureCampaignId(campaignId).stream()
-                .filter(s -> s.getId().equals(sceneId))
-                .findFirst()
+        return sceneRepository.findByIdAndCampaignId(campaignId, sceneId)
                 .orElseThrow(() -> new NotFoundException("Scene not found in campaign"));
     }
 
