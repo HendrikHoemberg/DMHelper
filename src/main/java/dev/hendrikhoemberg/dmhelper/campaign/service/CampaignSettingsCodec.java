@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.json.JsonMapper;
 
 @Component
 public class CampaignSettingsCodec {
@@ -14,7 +13,7 @@ public class CampaignSettingsCodec {
     private final ObjectMapper objectMapper;
 
     public CampaignSettingsCodec(ObjectMapper objectMapper) {
-        this.objectMapper = JsonMapper.builder()
+        this.objectMapper = objectMapper.rebuild()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
                 .build();
     }

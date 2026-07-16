@@ -107,23 +107,18 @@ public class CampaignSectionAdapter implements CampaignSectionExporter, Campaign
     }
 
     static CampaignSettings fromSettingsDto(CampaignSettingsDto dto) {
+        CampaignSettings defaults = CampaignSettings.defaults();
         return new CampaignSettings(
-                dto.levelingMode() != null ? dto.levelingMode() : LevelingMode.XP,
-                new CalendarConfig(
-                        dto.calendar() != null
-                                ? dto.calendar().monthLengths().stream().mapToInt(i -> i).toArray()
-                                : new int[]{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
-                        dto.calendar() != null
-                                ? dto.calendar().monthNames().toArray(String[]::new)
-                                : new String[]{"January", "February", "March", "April", "May", "June",
-                                "July", "August", "September", "October", "November", "December"},
-                        dto.calendar() != null
-                                ? dto.calendar().weekdayNames().toArray(String[]::new)
-                                : new String[]{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
-                ),
+                dto.levelingMode() != null ? dto.levelingMode() : defaults.levelingMode(),
+                dto.calendar() != null
+                        ? new CalendarConfig(
+                                dto.calendar().monthLengths().stream().mapToInt(i -> i).toArray(),
+                                dto.calendar().monthNames().toArray(String[]::new),
+                                dto.calendar().weekdayNames().toArray(String[]::new))
+                        : defaults.calendar(),
                 dto.currentDate() != null
                         ? new InGameDate(dto.currentDate().year(), dto.currentDate().month(), dto.currentDate().day())
-                        : new InGameDate(1492, 0, 1)
+                        : defaults.currentDate()
         );
     }
 }
