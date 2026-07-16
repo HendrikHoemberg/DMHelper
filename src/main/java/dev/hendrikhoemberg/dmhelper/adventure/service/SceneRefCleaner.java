@@ -1,12 +1,17 @@
 package dev.hendrikhoemberg.dmhelper.adventure.service;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotation;
 import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 @Transactional
@@ -16,17 +21,20 @@ public class SceneRefCleaner {
     private final SceneTransitionRepository transitionRepository;
     private final SceneLinkRepository linkRepository;
     private final SourceAnnotationRepository sourceAnnotationRepository;
+    private final CampaignPackageKeyService packageKeyService;
     private final EntityManager em;
 
     public SceneRefCleaner(SceneRepository sceneRepository,
                            SceneTransitionRepository transitionRepository,
                            SceneLinkRepository linkRepository,
                            SourceAnnotationRepository sourceAnnotationRepository,
+                           CampaignPackageKeyService packageKeyService,
                            EntityManager em) {
         this.sceneRepository = sceneRepository;
         this.transitionRepository = transitionRepository;
         this.linkRepository = linkRepository;
         this.sourceAnnotationRepository = sourceAnnotationRepository;
+        this.packageKeyService = packageKeyService;
         this.em = em;
     }
 
@@ -70,10 +78,19 @@ public class SceneRefCleaner {
         for (SceneLink l : linkRepository.findByTargetId(sceneId)) {
             linkRepository.delete(l);
         }
-        sourceAnnotationRepository.deleteByOwnerTypeAndOwnerId("SCENE", sceneId);
+        cleanSourceAnnotations("SCENE", sceneId);
         for (SceneTransition t : transitionRepository.findBySceneIdOrderBySortOrderAsc(sceneId)) {
-            sourceAnnotationRepository.deleteByOwnerTypeAndOwnerId("SCENE_TRANSITION", t.getId());
+            cleanSourceAnnotations("SCENE_TRANSITION", t.getId());
         }
         em.flush();
+    }
+
+    private void cleanSourceAnnotations(String ownerType, UUID ownerId) {
+        List<SourceAnnotation> annotations = sourceAnnotationRepository.findByOwnerTypeAndOwnerId(ownerType, ownerId);
+        if (!annotations.isEmpty()) {
+            List<UUID> ids = annotations.stream().map(SourceAnnotation::getId).collect(Collectors.toList());
+            packageKeyService.deleteBindings(annotations.get(0).getCampaign().getId(), CampaignContentType.SOURCE_ANNOTATION, ids);
+            sourceAnnotationRepository.deleteByOwnerTypeAndOwnerId(ownerType, ownerId);
+        }
     }
 }

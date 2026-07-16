@@ -104,6 +104,7 @@ class CampaignImportExportRoundTripTest {
     @Autowired private QuickNoteRepository quickNoteRepository;
     @Autowired private AdventureService adventureService;
     @MockitoBean private SessionActivityRecorder sessionActivity;
+    @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
     @Autowired private AdventureRepository adventureRepo;
     @Autowired private ChapterRepository chapterRepo;
     @Autowired private SceneRepository sceneRepo;

@@ -92,6 +92,7 @@ class CampaignCascadeDeleteTest {
     @Autowired private AdventureService adventureService;
     @Autowired private HandoutService handoutService;
     @MockitoBean private SessionActivityRecorder sessionActivity;
+    @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
     @Autowired private NoteService noteService;
 
     @Autowired private CampaignRepository campaignRepo;

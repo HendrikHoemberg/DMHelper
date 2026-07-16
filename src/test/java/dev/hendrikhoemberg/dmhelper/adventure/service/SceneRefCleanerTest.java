@@ -7,6 +7,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotation;
 import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationConfidence;
 import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationStatus;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
@@ -35,6 +36,7 @@ class SceneRefCleanerTest {
     @Autowired private AdventureService adventureService;
     @Autowired private SceneRefCleaner cleaner;
     @MockitoBean private SessionActivityRecorder sessionActivity;
+    @MockitoBean private CampaignPackageKeyService packageKeyService;
     @Autowired private CampaignRepository campaignRepository;
     @Autowired private GameMapRepository gameMapRepository;
     @Autowired private EncounterRepository encounterRepository;
