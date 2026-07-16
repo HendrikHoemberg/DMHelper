@@ -59,6 +59,34 @@ import. Campaign-owned custom statblocks use package references and are included
 `customStatBlocks`. A sheet spell's `sourceClassRef` is optional because runtime spell records may
 legitimately have no originating class; when present it must be a valid class reference.
 
+## Open Session State
+
+The manifest carries the current open session when one is active (nullable — `null` means IDLE):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `session` | object \| null | `null` when no session is open; otherwise contains the fields below |
+| `session.status` | `"RUNNING"` \| `"PAUSED"` \| `"REVIEW"` | Session lifecycle status |
+| `session.presentationMode` | `"CURTAIN"` \| `"MAP"` \| `"HANDOUT"` | What is shown on the player view |
+| `session.startDate` | string (ISO-8601) | Real-world timestamp when the session started |
+| `session.planNoteRef` | ContentReference \| null | Typed ref to a session-plan note |
+| `session.workspaceMapRef` | ContentReference \| null | Typed ref to the current workspace map |
+| `session.attendeeRefs` | ContentReference[] | Typed refs to attending party members |
+| `session.presentedRef` | ContentReference \| null | Typed ref to the presented map or handout |
+| `session.sceneVisits` | object[] | Ordered visit records: `{sceneRef, visitedAt}` timestamps |
+| `session.draftBody` | string \| null | Session-log draft body; only present when `status` is `REVIEW` |
+
+### Invariant checks
+
+- `presentationMode` must be consistent with `presentedRef`: `CURTAIN` → `null`, `MAP` → map ref, `HANDOUT` → handout ref.
+- `draftBody` must be `null` unless `status` is `REVIEW`.
+- `attendeeRefs` must reference active party members in the campaign.
+- `sceneVisits` timestamps must be monotonic within a session.
+
+### Deterministic recovery on import
+
+When a session is open at export time, the import recreates it in the `IDLE` state. The session-plan note is imported normally (with its full body preserved). Runtime state (presentation mode, PIN, workspace map, drafts, visit timestamps) is discarded on import — it is intentionally transient state that must be re-established by the DM.
+
 ## Schema URLs
 
 - Campaign manifest: `GET /api/v1/schemas/campaign-format-v2`

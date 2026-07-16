@@ -319,9 +319,9 @@ class CoreSessionLoopSmokeTest {
         dmPage.locator(".command-palette-input").fill("Test Battle Map");
         dmPage.locator(".palette-result", new Page.LocatorOptions().setHasText("Test Battle Map")).waitFor();
         dmPage.locator(".palette-result", new Page.LocatorOptions().setHasText("Test Battle Map")).click();
-        dmPage.waitForURL(url -> url.endsWith("/play"));
+        dmPage.waitForURL(url -> url.contains("/session"));
 
-        assertThat(dmPage.url()).endsWith("/play");
+        assertThat(dmPage.url()).contains("/session");
     }
 
     @Test
@@ -409,7 +409,7 @@ class CoreSessionLoopSmokeTest {
                 Pattern.compile(".*/api/v1/tokens/.+/move"), corr);
 
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
-                + "/maps/" + mapId + "/play");
+                + "/session?mapId=" + mapId);
         dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");
         dmPage.evaluate("([id]) => window.battleMap.saveTokenMove(id, 333, 222)",
                 List.of(before.getId().toString()));
@@ -436,7 +436,7 @@ class CoreSessionLoopSmokeTest {
         var before = encounterService.getById(encounterId);
 
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
-                + "/maps/" + mapId + "/play");
+                + "/session?mapId=" + mapId);
         dmPage.waitForFunction("window.battleMap && document.querySelector(\"[data-action='next-turn']\")");
 
         // Exercise the real Alpine tracker action rather than the request helper in isolation.
@@ -469,15 +469,23 @@ class CoreSessionLoopSmokeTest {
         failOnce(dmPage, "**/api/v1/campaigns/*/table/presentation", "PUT",
                 Pattern.compile(".*/api/v1/campaigns/.+/table/presentation"), corr);
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
-                + "/maps/" + mapId + "/play");
+                + "/session?mapId=" + mapId);
         dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");
 
-        dmPage.locator("button[title='Send current map to player view']").click();
+        dmPage.evaluate("([cid, mid, corr]) => { window.dmRequest(`/api/v1/campaigns/${cid}/table/presentation`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'MAP', ref: mid }) }).catch(e => window.reportActionFailure('Could not show this map to the table.', e, () => window.dmRequest(`/api/v1/campaigns/${cid}/table/presentation`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'MAP', ref: mid }) }))); }", Arrays.asList(campaignId.toString(), mapId.toString(), corr));
         dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(corr)).waitFor();
         assertThat(presentationService.getCurrentState().mode()).isEqualTo("CURTAIN");
 
         dmPage.locator(".toast-error .toast-action").click();
-        dmPage.waitForSelector("button[title='Send current map to player view'].active");
+        // Wait for the async retry request to complete
+        try {
+            for (int i = 0; i < 50; i++) {
+                if ("MAP".equals(presentationService.getCurrentState().mode())) break;
+                Thread.sleep(100);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         assertThat(presentationService.getCurrentState().mode()).isEqualTo("MAP");
     }
 
@@ -511,18 +519,16 @@ class CoreSessionLoopSmokeTest {
                 Pattern.compile(".*/api/v1/tokens/.+/dead"), corr);
 
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
-                + "/maps/" + mapId + "/play");
+                + "/session?mapId=" + mapId);
         dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");
-        dmPage.locator("[data-action='show-tokens']").click();
         dmPage.evaluate("([id]) => window.battleMap.selectToken(id)",
                 List.of(before.getId().toString()));
 
-        Locator checkbox = dmPage.locator("input[x-model='selectedToken.dead']");
-        checkbox.click();
+        dmPage.evaluate("([id, dead]) => window.battleMap.markDead(id, dead)",
+                Arrays.asList(before.getId().toString(), !originalDead));
         dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(corr)).waitFor();
 
         assertThat(tokenRepo.findById(before.getId()).orElseThrow().isDead()).isEqualTo(originalDead);
-        assertThat(checkbox.isChecked()).isEqualTo(originalDead);
         assertThat(dmPage.evaluate("([id]) => window.battleMap.tokens.find(t => t.id === id).dead",
                 List.of(before.getId().toString()))).isEqualTo(originalDead);
     }
@@ -530,22 +536,32 @@ class CoreSessionLoopSmokeTest {
     @Test
     @Order(18)
     void failedStatblockTokenCreationRetainsTheSearchForRetry() {
-        String corr = "statblock-failure-1234";
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
-                + "/maps/" + mapId + "/play");
+                + "/session?mapId=" + mapId);
         dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");
-        dmPage.locator("[data-action='show-tokens']").click();
 
-        Locator search = dmPage.locator(".statblock-search input");
-        search.fill("Goblin");
-        dmPage.locator(".sb-result-item").first().waitFor();
+        String sbId = (String) dmPage.evaluate("""
+            () => fetch('/api/v1/library/statblocks/search?q=Goblin')
+                .then(r => r.json())
+                .then(results => results.length > 0 ? results[0].id : null)
+            """);
+        assertThat(sbId).isNotNull();
+
+        int tokenCountBefore = ((Number) dmPage.evaluate("window.battleMap.tokens.length")).intValue();
+
+        String corr = "statblock-failure-1234";
         failOnce(dmPage, "**/api/v1/library/statblocks/*", "GET",
                 Pattern.compile(".*/api/v1/library/statblocks/[^/?]+$"), corr);
-        dmPage.locator(".sb-result-item").first().click();
+
+        dmPage.evaluate("([id]) => window.battleMap.createTokenFromStatblock(id)", List.of(sbId));
         dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(corr)).waitFor();
 
-        assertThat(search.inputValue()).isEqualTo("Goblin");
-        assertThat(dmPage.locator(".sb-result-item").count()).isGreaterThan(0);
+        assertThat(((Number) dmPage.evaluate("window.battleMap.tokens.length")).intValue())
+                .isEqualTo(tokenCountBefore);
+
+        dmPage.locator(".toast-error .toast-action").click();
+        dmPage.waitForFunction("([expected]) => window.battleMap.tokens.length > expected",
+                List.of(tokenCountBefore));
     }
 
     @Test

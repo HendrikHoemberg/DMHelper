@@ -7,7 +7,7 @@
 | Campaign package v2 foundation | `SUPPORTED` | ZIP/JSON containers, stable keys, typed catalog, preview, migrations, staged assets, and atomic import are implemented. |
 | Current persisted campaign state recovery | `SUPPORTED` | Default export/import preserves all currently persisted campaign meaning. |
 | Combat log/dice recovery | `SUPPORTED` | Included by default and explicitly excludable. |
-| Session cockpit | `UNSUPPORTED` | Delivery item 5; `/session` still redirects to the first map. |
-| Structured scene transitions | `UNSUPPORTED` | Delivery item 6. |
+| Session cockpit | `SUPPORTED` | Durable start/resume/pause/end coordination across existing modules; deterministic reviewed session logs and v2 recovery. |
+| Structured scene transitions | `UNSUPPORTED` | Delivery item 6; cockpit previous/next remains editorial order. |
 | Structured quests/objectives | `UNSUPPORTED` | Delivery item 6. |
 | Campaign-scoped non-statblock custom content | `UNSUPPORTED` | Delivery item 7. |

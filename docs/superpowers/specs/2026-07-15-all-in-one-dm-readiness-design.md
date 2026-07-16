@@ -987,8 +987,23 @@ Recommended sequence:
 10. **Documentation/agent SDK release:** generated references, catalogs, fixtures, and playbook.
 11. **P3 expansion:** world graph, travel, tables, clocks, fog, audio, optional players.
 
+| # | Delivery Item | Status |
+|---|--------------|--------|
+| 1 | P0 runtime reliability | `IMPLEMENTED` |
+| 2 | Campaign contract v1 repair | `IMPLEMENTED` |
+| 3 | Package v2 foundation | `IMPLEMENTED` |
+| 4 | Complete round-trip | `IMPLEMENTED` |
+| 5 | Session cockpit | `IMPLEMENTED` |
+| 6 | Structured adventure/quest model | `PLANNED` |
+| 7 | Custom compendium expansion | `PLANNED` |
+| 8 | Character-sheet completion | `PLANNED` |
+| 9 | Encounter and map depth | `PLANNED` |
+| 10 | Documentation/agent SDK release | `PLANNED` |
+| 11 | P3 expansion | `PLANNED` |
+
 Each item receives a separate design, implementation plan, migration analysis, and verification
-report. Items 1–5 form the minimum coherent readiness program.
+report. Items 1–5 form the minimum coherent readiness program. Items 6–11 are post-readiness
+but tracked in the same delivery structure.
 
 ## 23. Definition of all-in-one readiness
 
