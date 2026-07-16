@@ -53,6 +53,7 @@ class SessionLifecycleServiceTest {
     @Mock private CampaignPackageKeyService packageKeys;
     @Mock private ApplicationEventPublisher events;
     @Mock private SessionObjectiveChangeRepository objectiveChanges;
+    @Mock private SessionReferenceCleaner sessionRefCleaner;
 
     @InjectMocks private SessionLifecycleService service;
 

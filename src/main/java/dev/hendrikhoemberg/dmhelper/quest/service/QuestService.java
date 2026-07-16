@@ -3,11 +3,13 @@ package dev.hendrikhoemberg.dmhelper.quest.service;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkTargetScope;
 import dev.hendrikhoemberg.dmhelper.adventure.data.TagCodec;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.quest.data.*;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,29 +38,37 @@ public class QuestService {
     private final QuestObjectiveRepository objectiveRepository;
     private final QuestObjectiveDependencyRepository dependencyRepository;
     private final QuestLinkRepository linkRepository;
+    private final CampaignRepository campaignRepository;
     private final SessionActivityRecorder activityRecorder;
     private final QuestObjectiveDependencyValidator dependencyValidator;
     private final CampaignPackageKeyService packageKeys;
+    private final SessionReferenceCleaner sessionRefCleaner;
 
     public QuestService(QuestRepository questRepository,
                         QuestObjectiveRepository objectiveRepository,
                         QuestObjectiveDependencyRepository dependencyRepository,
                         QuestLinkRepository linkRepository,
+                        CampaignRepository campaignRepository,
                         SessionActivityRecorder activityRecorder,
                         QuestObjectiveDependencyValidator dependencyValidator,
-                        CampaignPackageKeyService packageKeys) {
+                        CampaignPackageKeyService packageKeys,
+                        SessionReferenceCleaner sessionRefCleaner) {
         this.questRepository = questRepository;
         this.objectiveRepository = objectiveRepository;
         this.dependencyRepository = dependencyRepository;
         this.linkRepository = linkRepository;
+        this.campaignRepository = campaignRepository;
         this.activityRecorder = activityRecorder;
         this.dependencyValidator = dependencyValidator;
         this.packageKeys = packageKeys;
+        this.sessionRefCleaner = sessionRefCleaner;
     }
 
     // ---- Quest CRUD ----
 
     public Quest createQuest(UUID campaignId, QuestCommand cmd) {
+        campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new NotFoundException("Campaign not found"));
         Campaign campaign = new Campaign();
         campaign.setId(campaignId);
         Quest quest = new Quest();
@@ -110,6 +120,9 @@ public class QuestService {
     public void deleteObjective(UUID campaignId, UUID questId, UUID objectiveId) {
         Quest quest = findQuestInCampaign(campaignId, questId);
         QuestObjective objective = findObjectiveInQuest(quest, objectiveId);
+        sessionRefCleaner.detachObjective(objectiveId);
+        dependencyRepository.deleteByObjectiveId(objectiveId);
+        dependencyRepository.deleteByPrerequisiteObjectiveId(objectiveId);
         objectiveRepository.delete(objective);
         quest.getObjectives().remove(objective);
         renumberObjectives(quest);
@@ -220,32 +233,32 @@ public class QuestService {
     private void applyQuestCommand(Quest quest, QuestCommand cmd) {
         if (cmd.title() != null) quest.setTitle(cmd.title());
         if (cmd.status() != null) quest.setStatus(cmd.status());
-        quest.setSummary(cmd.summary());
-        quest.setSourceLocator(cmd.sourceLocator());
+        if (cmd.summary() != null) quest.setSummary(cmd.summary());
+        if (cmd.sourceLocator() != null) quest.setSourceLocator(cmd.sourceLocator());
         quest.setTags(normalizeTags(cmd.tags()));
-        quest.setRewards(cmd.rewards());
-        quest.setPrerequisites(cmd.prerequisites());
-        quest.setOutcomeNotes(cmd.outcomeNotes());
+        if (cmd.rewards() != null) quest.setRewards(cmd.rewards());
+        if (cmd.prerequisites() != null) quest.setPrerequisites(cmd.prerequisites());
+        if (cmd.outcomeNotes() != null) quest.setOutcomeNotes(cmd.outcomeNotes());
     }
 
     private void applyObjectiveCommand(QuestObjective objective, QuestObjectiveCommand cmd) {
         if (cmd.title() != null) objective.setTitle(cmd.title());
-        objective.setDescription(cmd.description());
+        if (cmd.description() != null) objective.setDescription(cmd.description());
         if (cmd.status() != null) objective.setStatus(cmd.status());
         if (cmd.completionMode() != null) objective.setCompletionMode(cmd.completionMode());
         objective.setSortOrder(cmd.sortOrder());
-        objective.setSourceLocator(cmd.sourceLocator());
+        if (cmd.sourceLocator() != null) objective.setSourceLocator(cmd.sourceLocator());
     }
 
     private void applyLinkCommand(QuestLink link, QuestLinkCommand cmd) {
         if (cmd.role() != null) link.setRole(cmd.role());
         if (cmd.targetScope() != null) link.setTargetScope(cmd.targetScope());
-        link.setTargetType(cmd.targetType());
-        link.setTargetId(cmd.targetId());
-        link.setCatalogRuleset(cmd.catalogRuleset());
-        link.setCatalogSourceKey(cmd.catalogSourceKey());
-        link.setDisplayText(cmd.displayText());
-        link.setCondition(cmd.condition());
+        if (cmd.targetType() != null) link.setTargetType(cmd.targetType());
+        if (cmd.targetId() != null) link.setTargetId(cmd.targetId());
+        if (cmd.catalogRuleset() != null) link.setCatalogRuleset(cmd.catalogRuleset());
+        if (cmd.catalogSourceKey() != null) link.setCatalogSourceKey(cmd.catalogSourceKey());
+        if (cmd.displayText() != null) link.setDisplayText(cmd.displayText());
+        if (cmd.condition() != null) link.setCondition(cmd.condition());
         link.setSortOrder(cmd.sortOrder());
     }
 

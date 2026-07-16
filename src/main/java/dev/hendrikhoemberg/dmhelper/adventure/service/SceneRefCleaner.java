@@ -76,7 +76,9 @@ public class SceneRefCleaner {
             transitionRepository.save(t);
         }
         for (SceneLink l : linkRepository.findByTargetId(sceneId)) {
-            linkRepository.delete(l);
+            if ("SCENE".equals(l.getTargetType())) {
+                linkRepository.delete(l);
+            }
         }
         cleanSourceAnnotations("SCENE", sceneId);
         for (SceneTransition t : transitionRepository.findBySceneIdOrderBySortOrderAsc(sceneId)) {

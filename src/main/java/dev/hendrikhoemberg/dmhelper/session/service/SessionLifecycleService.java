@@ -48,6 +48,7 @@ public class SessionLifecycleService {
     private final CampaignPackageKeyService packageKeys;
     private final ApplicationEventPublisher events;
     private final SessionObjectiveChangeRepository objectiveChanges;
+    private final SessionReferenceCleaner sessionRefCleaner;
 
     public SessionLifecycleService(Clock clock,
                                    CampaignRepository campaigns,
@@ -61,7 +62,8 @@ public class SessionLifecycleService {
                                    NoteService noteService,
                                     CampaignPackageKeyService packageKeys,
                                     ApplicationEventPublisher events,
-                                    SessionObjectiveChangeRepository objectiveChanges) {
+                                    SessionObjectiveChangeRepository objectiveChanges,
+                                    SessionReferenceCleaner sessionRefCleaner) {
         this.clock = clock;
         this.campaigns = campaigns;
         this.sessions = sessions;
@@ -75,6 +77,7 @@ public class SessionLifecycleService {
         this.packageKeys = packageKeys;
         this.events = events;
         this.objectiveChanges = objectiveChanges;
+        this.sessionRefCleaner = sessionRefCleaner;
     }
 
     public CampaignSession start(UUID campaignId, UUID requestedMapId) {
@@ -172,14 +175,9 @@ public class SessionLifecycleService {
                 campaignId, null, true));
         List<UUID> visitIds = visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId()).stream()
                 .map(SessionSceneVisit::getId).toList();
-        List<UUID> changeIds = objectiveChanges.findBySessionIdOrderByChangedAtAscIdAsc(session.getId())
-                .stream().map(SessionObjectiveChange::getId).toList();
+        sessionRefCleaner.detachSessionObjectiveChanges(session.getId(), campaignId);
         resetToIdle(session);
         visits.deleteBySessionId(session.getId());
-        if (!changeIds.isEmpty()) {
-            packageKeys.deleteBindings(campaignId, CampaignContentType.SESSION_OBJECTIVE_CHANGE, changeIds);
-        }
-        objectiveChanges.deleteBySessionId(session.getId());
         packageKeys.deleteBindings(campaignId, CampaignContentType.SESSION_SCENE_VISIT, visitIds);
         sessions.save(session);
         return note;

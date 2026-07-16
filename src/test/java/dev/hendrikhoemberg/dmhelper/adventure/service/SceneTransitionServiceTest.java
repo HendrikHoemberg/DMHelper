@@ -35,6 +35,7 @@ class SceneTransitionServiceTest {
     @Autowired private SceneTransitionRepository transitionRepository;
     @Autowired private EntityManager em;
     @MockitoBean private SessionActivityRecorder sessionActivity;
+    @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
 
     private Campaign campaign;
     private Campaign otherCampaign;

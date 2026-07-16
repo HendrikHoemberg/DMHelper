@@ -1,11 +1,13 @@
 package dev.hendrikhoemberg.dmhelper.quest.service;
 
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkTargetScope;
 import dev.hendrikhoemberg.dmhelper.quest.data.*;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,9 +34,11 @@ class QuestServiceTest {
     @Mock private QuestObjectiveRepository objectiveRepository;
     @Mock private QuestObjectiveDependencyRepository dependencyRepository;
     @Mock private QuestLinkRepository linkRepository;
+    @Mock private CampaignRepository campaignRepository;
     @Mock private SessionActivityRecorder activityRecorder;
     @Mock private QuestObjectiveDependencyValidator dependencyValidator;
     @Mock private CampaignPackageKeyService packageKeys;
+    @Mock private SessionReferenceCleaner sessionRefCleaner;
 
     @InjectMocks private QuestService service;
 
@@ -66,6 +70,7 @@ class QuestServiceTest {
     void createsQuest() {
         var cmd = new QuestService.QuestCommand("New Quest", QuestStatus.NOT_STARTED, "Summary",
                 "src:test", "tag1, tag2", "xp", "lvl5+", "notes");
+        when(campaignRepository.findById(campaignId)).thenReturn(Optional.of(new dev.hendrikhoemberg.dmhelper.campaign.data.Campaign()));
         when(questRepository.save(any())).thenAnswer(invocation -> {
             Quest q = invocation.getArgument(0);
             q.setId(questId);
@@ -86,6 +91,7 @@ class QuestServiceTest {
     void normalizesTagsOnCreate() {
         var cmd = new QuestService.QuestCommand("Tags", QuestStatus.NOT_STARTED,
                 null, null, "  messy ,  tags ,, here ", null, null, null);
+        when(campaignRepository.findById(campaignId)).thenReturn(Optional.of(new dev.hendrikhoemberg.dmhelper.campaign.data.Campaign()));
         when(questRepository.save(any())).thenAnswer(inv -> {
             Quest q = inv.getArgument(0);
             q.setId(UUID.randomUUID());
@@ -482,9 +488,9 @@ class QuestServiceTest {
     @Test
     void throwsNotFoundOnCreateQuestForMissingCampaign() {
         var cmd = new QuestService.QuestCommand("X", QuestStatus.NOT_STARTED, null, null, null, null, null, null);
-        when(questRepository.save(any())).thenThrow(new RuntimeException("FK violation"));
+        when(campaignRepository.findById(campaignId)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.createQuest(campaignId, cmd))
-                .isInstanceOf(RuntimeException.class);
+                .isInstanceOf(NotFoundException.class);
     }
 
     private QuestService.QuestLinkCommand giverCmd(UUID targetId) {
