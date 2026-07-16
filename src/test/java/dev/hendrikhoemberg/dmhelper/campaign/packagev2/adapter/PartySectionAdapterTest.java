@@ -90,7 +90,7 @@ class PartySectionAdapterTest {
     void keyStableAfterRenameOnPartyMember() {
         UUID pmId = UUID.randomUUID();
         var pm = partyMember(pmId, "Legolas");
-        when(partyRepo.findByCampaignIdOrderByCharacterNameAsc(campaign.getId()))
+        when(partyRepo.findByCampaignIdOrderByCharacterNameAscIdAsc(campaign.getId()))
                 .thenReturn(List.of(pm));
 
         var keyService = new CampaignSectionAdapterTest.FakeKeyService();

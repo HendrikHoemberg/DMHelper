@@ -35,7 +35,7 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
 
     @Override
     public void exportSection(CampaignExportContext context, CampaignManifestAssembler target) {
-        List<StatBlock> customBlocks = repository.findByCampaignIdOrderByNameAsc(context.campaignId())
+        List<StatBlock> customBlocks = repository.findByCampaignIdOrderByNameAscIdAsc(context.campaignId())
                 .stream()
                 .filter(sb -> sb.getSource() == StatBlock.Source.CUSTOM)
                 .toList();

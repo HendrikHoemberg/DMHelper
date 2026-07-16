@@ -55,7 +55,7 @@ class LibrarySectionAdapterTest {
         var sb2 = statBlock(UUID.randomUUID(), "Goblin King", "3", "humanoid", 15, "65", 700,
                 Instant.parse("2025-02-01T00:00:00Z"));
 
-        when(repository.findByCampaignIdOrderByNameAsc(campaign.getId()))
+        when(repository.findByCampaignIdOrderByNameAscIdAsc(campaign.getId()))
                 .thenReturn(List.of(sb1, sb2));
 
         var ctx = new CampaignExportContext(
@@ -88,7 +88,7 @@ class LibrarySectionAdapterTest {
         UUID sbId = UUID.randomUUID();
         var sb = fullStatBlock(sbId);
 
-        when(repository.findByCampaignIdOrderByNameAsc(campaign.getId()))
+        when(repository.findByCampaignIdOrderByNameAscIdAsc(campaign.getId()))
                 .thenReturn(List.of(sb));
 
         var keyService = new CampaignSectionAdapterTest.FakeKeyService();

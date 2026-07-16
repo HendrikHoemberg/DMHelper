@@ -87,7 +87,7 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
 
     @Override
     public void exportSection(CampaignExportContext context, CampaignManifestAssembler target) {
-        var members = partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(context.campaignId());
+        var members = partyMemberRepository.findByCampaignIdOrderByCharacterNameAscIdAsc(context.campaignId());
 
         List<PartyMemberDto> dtos = members.stream()
                 .map(pm -> exportPartyMember(pm, context))
