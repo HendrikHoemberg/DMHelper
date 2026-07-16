@@ -464,7 +464,7 @@ class CoreSessionLoopSmokeTest {
         assertThat(presentationService.getCurrentState().mode()).isEqualTo("CURTAIN");
 
         dmPage.locator(".toast-error .toast-action").click();
-        dmPage.waitForFunction("document.querySelector('.battle-container')._x_dataStack[0].presentingMap");
+        dmPage.waitForSelector("button[title='Send current map to player view'].active");
         assertThat(presentationService.getCurrentState().mode()).isEqualTo("MAP");
     }
 
