@@ -10,6 +10,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.PendingCampaignImport;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignAssetCollector;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportOptions;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignPackageValidationResult;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -385,6 +386,29 @@ class CampaignSectionRegistryTest {
             context.runDeferred();
             assertThat(holder[0]).isEqualTo(1);
         }
+
+        @Test
+        void requireAssetResolvesFromValidationResult() {
+            var result = new CampaignPackageValidationResult(
+                    null, null, 0, Map.of("img-1", Path.of("maps/img.png")), List.of(), List.of());
+            var pending = new PendingCampaignImport(
+                    UUID.randomUUID(), result, null, null);
+            var context = new CampaignImportContext(
+                    UUID.randomUUID(), new FakeKeyService(), pending);
+            context.setCampaign(new Campaign());
+
+            Path path = context.requireAsset("img-1");
+            assertThat(path).isEqualTo(Path.of("maps/img.png"));
+        }
+
+        @Test
+        void requireAssetFailsWhenResultNotAvailable() {
+            var context = new CampaignImportContext(
+                    UUID.randomUUID(), new FakeKeyService(), pendingImport());
+            assertThatThrownBy(() -> context.requireAsset("img-1"))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("validation result is not available");
+        }
     }
 
     @Nested
@@ -522,6 +546,11 @@ class CampaignSectionRegistryTest {
                 throw new IllegalArgumentException("Entity already bound");
             }
             bindings.put(mapKey, packageKey);
+        }
+
+        @Override
+        public java.util.Optional<String> find(UUID campaignId, CampaignContentType type, UUID entityId) {
+            return java.util.Optional.empty();
         }
     }
 }

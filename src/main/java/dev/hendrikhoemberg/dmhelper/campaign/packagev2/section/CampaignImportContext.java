@@ -83,7 +83,12 @@ public class CampaignImportContext {
     }
 
     public Path requireAsset(String assetKey) {
-        Path path = pending.result().assetsByKey().get(assetKey);
+        var result = pending.result();
+        if (result == null) {
+            throw new IllegalStateException(
+                    "Package validation result is not available; cannot resolve asset: " + assetKey);
+        }
+        Path path = result.assetsByKey().get(assetKey);
         if (path == null) {
             throw new IllegalStateException("Asset not found: " + assetKey);
         }
