@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="plan(workspace)">
+<div class="session-plan-inner" th:if="${workspace.sessionPlan != null}">
+  <h3 style="margin: 0 var(--space-md); font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-text-muted);"
+      th:text="${workspace.sessionPlan.title}">Session Plan</h3>
+  <div class="plan-beats">
+    <th:block th:each="beat : ${workspace.sessionPlan.beats()}">
+      <div class="plan-beat" th:classappend="${!beat.resolved()} ? 'beat-broken' : ''">
+        <span class="beat-position" th:text="${beat.position() + 1}">1</span>
+        <span class="beat-type" th:text="${beat.type()}">SCENE</span>
+        <span class="beat-label" th:text="${beat.label()}">Label</span>
+        <th:block th:if="${beat.resolved()}">
+          <a class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;"
+             th:href="${beat.url()}" target="_blank">Open</a>
+          <button class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;"
+                  th:if="${beat.mapId() != null}"
+                  th:attr="data-map-id=${beat.mapId()}"
+                  @click="switchMap($el.dataset.mapId)">Switch map</button>
+        </th:block>
+        <th:block th:unless="${beat.resolved()}">
+          <span class="beat-broken-label">Broken link</span>
+        </th:block>
+      </div>
+    </th:block>
+  </div>
+</div>
+<div class="session-plan-inner empty-state" th:if="${workspace.sessionPlan == null}">
+  <p>No session plan yet. Create one from a note.</p>
+</div>
+</th:block>
+</html>

@@ -1,7 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.gamemap.web;
 
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
-import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,11 +13,9 @@ import java.util.UUID;
 public class GameMapController {
 
     private final GameMapService service;
-    private final PartyMemberService partyMemberService;
 
-    public GameMapController(GameMapService service, PartyMemberService partyMemberService) {
+    public GameMapController(GameMapService service) {
         this.service = service;
-        this.partyMemberService = partyMemberService;
     }
 
     @GetMapping
@@ -61,12 +58,8 @@ public class GameMapController {
 
     @GetMapping("/{mapId}/play")
     public String play(@PathVariable UUID campaignId,
-                       @PathVariable UUID mapId,
-                       Model model) {
-        model.addAttribute("campaignId", campaignId);
-        model.addAttribute("map", service.findById(mapId));
-        model.addAttribute("partyMembers", partyMemberService.findActiveByCampaignId(campaignId));
-        return "maps/battle";
+                       @PathVariable UUID mapId) {
+        return "redirect:/campaigns/" + campaignId + "/session?mapId=" + mapId;
     }
 
     @DeleteMapping("/{mapId}")

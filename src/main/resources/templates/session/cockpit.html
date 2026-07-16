@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/tokens.css}">
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+    <link rel="stylesheet" th:href="@{/css/book.css}">
+    <link rel="stylesheet" th:href="@{/css/cockpit.css}">
+    <script th:src="@{/vendor/htmx.min.js}"></script>
+    <script th:src="@{/js/dm-request.js}"></script>
+    <script th:src="@{/js/keyboard.js}"></script>
+    <script th:src="@{/js/command-palette.js}"></script>
+    <script th:src="@{/js/quicknotes.js}"></script>
+    <script th:src="@{/js/ui-elevation.js}"></script>
+    <script th:src="@{/js/campaign-import.js}" defer></script>
+    <script th:src="@{/vendor/alpine.min.js}" defer></script>
+    <title th:text="${workspace.campaign.name + ' — Session'}">Campaign — Session</title>
+</head>
+<body>
+<main class="session-cockpit"
+      x-data="sessionCockpit(window.sessionCockpitConfig)"
+      th:attr="data-campaign-id=${campaignId}"
+      @session-next-turn.window="nextTurn()"
+      @session-scene-step.window="stepScene($event.detail.direction)">
+  <header class="cockpit-topbar">
+    <h1 style="font-family: var(--font-display); font-size: var(--text-lg); margin: 0;" th:text="${workspace.campaign.name}">Campaign</h1>
+    <span class="badge" th:text="${workspace.session.status}">IDLE</span>
+    <span th:text="${workspace.currentDate.year + '-' + (workspace.currentDate.month + 1) + '-' + workspace.currentDate.day}">1492-7-12</span>
+    <span style="flex: 1"></span>
+    <button class="btn btn-ghost" @click="openSearch()">Search</button>
+    <button class="btn btn-ghost" @click="openDice()">Dice</button>
+    <button class="btn btn-ghost" @click="lifecycleOpen = true">Session</button>
+  </header>
+  <section class="cockpit-grid">
+    <aside class="cockpit-story" aria-label="Story rail"
+           th:replace="~{session/_story-rail :: story(workspace=${workspace})}"></aside>
+    <section class="cockpit-table" aria-label="Table surface">
+      <div th:if="${workspace.workspaceMap != null}" id="battleCanvasWrap"></div>
+      <th:block th:unless="${workspace.workspaceMap != null}"
+                th:replace="~{session/_empty-table :: empty(workspace=${workspace})}"></th:block>
+      <div class="battle-statusbar" aria-live="polite">
+        <span id="battleStatusMessage">Ready</span>
+        <span id="battleCursorInfo"></span>
+        <span id="battleSaveIndicator" class="save-indicator save-saved">Saved</span>
+      </div>
+    </section>
+    <aside class="cockpit-encounter" aria-label="Encounter rail"
+           th:replace="~{session/_encounter-rail :: encounters(workspace=${workspace})}"></aside>
+  </section>
+  <section class="cockpit-plan" aria-label="Session plan"
+           th:replace="~{session/_session-plan :: plan(workspace=${workspace})}"></section>
+  <footer class="cockpit-partybar">
+    <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${workspace.partyMembers}, oob=null)}"></th:block>
+  </footer>
+</main>
+<th:block th:replace="~{fragments/_command-palette :: command-palette}"></th:block>
+<th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>
+<script th:src="@{/vendor/konva.min.js}"></script>
+<script th:inline="javascript">
+window.sessionCockpitConfig = {
+    campaignId: /*[[${campaignId}]]*/ '',
+    mapId: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.id : null}]]*/ null,
+    sessionStatus: /*[[${workspace.session.status}]]*/ 'IDLE',
+    presentationMode: /*[[${workspace.session.presentationMode}]]*/ 'CURTAIN'
+};
+</script>
+<script type="module" th:src="@{/js/session-cockpit.js}"></script>
+</body>
+</html>

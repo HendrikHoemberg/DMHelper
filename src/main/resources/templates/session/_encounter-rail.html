@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="encounters(workspace)">
+<div class="encounter-rail-inner">
+  <div class="sidebar-section">
+    <h3>Active Encounter</h3>
+    <th:block th:if="${workspace.activeEncounter != null}">
+      <div th:replace="~{encounter/_tracker :: tracker}"></div>
+    </th:block>
+    <th:block th:if="${workspace.activeEncounter == null}">
+      <div class="empty-state">No active encounter</div>
+    </th:block>
+  </div>
+  <div class="sidebar-section">
+    <h3>Planned Encounters</h3>
+    <th:block th:if="${!workspace.plannedEncounters.isEmpty()}">
+      <th:block th:each="enc : ${workspace.plannedEncounters}">
+        <div class="planned-encounter-row">
+          <span th:text="${enc.name}">Encounter name</span>
+          <button class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;"
+                  th:attr="data-encounter-id=${enc.id}"
+                  @click="activateEncounter($el.dataset.encounterId)">Activate</button>
+        </div>
+      </th:block>
+    </th:block>
+    <th:block th:if="${workspace.plannedEncounters.isEmpty()}">
+      <div class="empty-state" style="font-size: var(--text-sm); color: var(--color-text-muted);">No planned encounters</div>
+    </th:block>
+  </div>
+</div>
+</th:block>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="story(workspace)">
+<div class="story-rail-inner">
+  <div class="sidebar-section">
+    <h3>Story</h3>
+    <th:block th:if="${workspace.currentScene != null}">
+      <div class="scene-card">
+        <span class="scene-status-badge" th:text="${workspace.currentScene.status}">UNVISITED</span>
+        <h4 th:text="${workspace.currentScene.title}">Scene Title</h4>
+        <span class="scene-key" th:if="${workspace.currentScene.sceneKey}" th:text="${workspace.currentScene.sceneKey}">key</span>
+        <div class="scene-body" th:if="${workspace.currentScene.body}" th:text="${workspace.currentScene.body}">Scene notes</div>
+        <div class="scene-editorial">
+          <button class="btn btn-ghost" th:if="${workspace.previousScene != null}"
+                  @click="stepScene(-1)" title="Previous scene">&larr; Prev</button>
+          <button class="btn btn-ghost" th:if="${workspace.nextScene != null}"
+                  @click="stepScene(1)" title="Next scene">Next &rarr;</button>
+        </div>
+        <div class="scene-links">
+          <span th:if="${workspace.currentScene.map != null}">
+            Map: <span th:text="${workspace.currentScene.map.name}">Map name</span>
+          </span>
+          <span th:if="${workspace.currentScene.encounter != null}">
+            Encounter: <span th:text="${workspace.currentScene.encounter.name}">Encounter name</span>
+          </span>
+          <span th:if="${!workspace.currentScene.statBlocks.isEmpty()}">
+            Statblocks: <span th:text="${#lists.size(workspace.currentScene.statBlocks)} + ' linked'"></span>
+          </span>
+          <span th:if="${!workspace.currentScene.handouts.isEmpty()}">
+            Handouts: <span th:text="${#lists.size(workspace.currentScene.handouts)} + ' linked'"></span>
+          </span>
+        </div>
+      </div>
+    </th:block>
+    <th:block th:if="${workspace.currentScene == null}">
+      <div class="empty-state">No current scene. Set one from an adventure.</div>
+    </th:block>
+  </div>
+</div>
+</th:block>
+</html>

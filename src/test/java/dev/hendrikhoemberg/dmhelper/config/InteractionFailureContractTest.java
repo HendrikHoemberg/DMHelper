@@ -17,10 +17,12 @@ class InteractionFailureContractTest {
     @Test
     void timeCriticalMutationSurfacesHaveNoEmptyCatchBlocks() throws IOException {
         assertThat(read("templates/encounter/_tracker.html")).doesNotContain("catch (e) {}");
-        assertThat(read("templates/maps/battle.html"))
+        assertThat(read("templates/session/cockpit.html"))
                 .doesNotContain("catch (e) {}", ".catch(() => {})");
         assertThat(read("static/js/map/battle-map.js"))
                 .doesNotContain("catch (e) {}", "catch (e) { /* non-critical */ }");
+        assertThat(read("static/js/session-cockpit.js"))
+                .doesNotContain("catch (e) {}", ".catch(() => {})");
     }
 
     @Test
@@ -29,9 +31,9 @@ class InteractionFailureContractTest {
                 .contains("window.dmRequest", "window.reportActionFailure");
         assertThat(read("templates/fragments/navbar.html"))
                 .contains("window.dmRequest", "window.reportActionFailure");
-        assertThat(read("templates/maps/battle.html"))
-                .contains("window.dmRequest", "window.reportActionFailure");
         assertThat(read("static/js/map/battle-map.js"))
+                .contains("window.dmRequest", "window.reportActionFailure");
+        assertThat(read("static/js/session-cockpit.js"))
                 .contains("window.dmRequest", "window.reportActionFailure");
     }
 }
