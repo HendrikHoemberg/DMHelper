@@ -64,16 +64,34 @@
 
     toastContainer();
 
-    window.showToast = function(message, type = 'info', duration = 3000) {
+    window.showToast = function(message, type = 'info', duration = 3000, action = null) {
       const toast = document.createElement('div');
       toast.className = 'toast toast-' + type;
-      toast.textContent = message;
+      if (type === 'error') {
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+      }
+      const text = document.createElement('span');
+      text.textContent = message;
+      toast.appendChild(text);
+      if (action) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'toast-action';
+        button.textContent = action.label;
+        button.addEventListener('click', () => {
+          toast.remove();
+          action.handler();
+        });
+        toast.appendChild(button);
+      }
       toastContainer().appendChild(toast);
       requestAnimationFrame(() => toast.classList.add('show'));
-        setTimeout(() => {
-          toast.classList.remove('show');
-          toast.addEventListener('transitionend', () => toast.remove(), { once: true });
-        }, duration);
+      setTimeout(() => {
+        if (!toast.isConnected) return;
+        toast.classList.remove('show');
+        toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+      }, duration);
     };
 
     /* Every mutation gets an acknowledgement (§3.4). Reads stay silent; anything

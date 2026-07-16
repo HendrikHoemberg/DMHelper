@@ -1613,6 +1613,18 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
 .toast.toast-error { border-left-color: var(--color-danger); }
 .toast.toast-success { border-left-color: var(--color-success); }
 
+.toast-action {
+    margin-left: var(--space-sm);
+    border: 1px solid currentColor;
+    border-radius: var(--radius);
+    background: transparent;
+    color: inherit;
+    padding: var(--space-xs) var(--space-sm);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
 .bookshelf { display: flex; flex-direction: column; gap: var(--space-xl); }
 .shelf-row {
   display: grid;

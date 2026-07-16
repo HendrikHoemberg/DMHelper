@@ -6,6 +6,7 @@ import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.webmvc.error.DefaultErrorAttributes;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.context.request.RequestAttributes;
 
 /**
  * Keeps framework internals out of error responses.
@@ -22,8 +23,14 @@ public class SafeErrorAttributes extends DefaultErrorAttributes {
     @Override
     public Map<String, Object> getErrorAttributes(WebRequest webRequest, ErrorAttributeOptions options) {
         Map<String, Object> attributes = super.getErrorAttributes(webRequest, options);
+        Object correlationId = webRequest.getAttribute(
+                CorrelationIdFilter.ATTRIBUTE, WebRequest.SCOPE_REQUEST);
+        if (correlationId != null) {
+            attributes.put(CorrelationIdFilter.ATTRIBUTE, correlationId);
+        }
         attributes.remove("trace");
         attributes.remove("exception");
+        attributes.remove("message");
         return attributes;
     }
 }
