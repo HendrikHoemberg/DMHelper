@@ -142,9 +142,16 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
                 + "-img-" + (int) image.x() + "x" + (int) image.y();
         String sha256 = sha256(bytes);
 
+        String ext = switch (mediaType) {
+            case "image/png" -> "png";
+            case "image/jpeg" -> "jpg";
+            case "image/gif" -> "gif";
+            case "image/webp" -> "webp";
+            default -> "bin";
+        };
         var descriptor = new AssetDescriptor(
                 assetKey, "assets/maps/" + assetKey,
-                mediaType, bytes.length, sha256, null
+                mediaType, bytes.length, sha256, assetKey + "." + ext
         );
         context.assets().add(descriptor, bytes);
 

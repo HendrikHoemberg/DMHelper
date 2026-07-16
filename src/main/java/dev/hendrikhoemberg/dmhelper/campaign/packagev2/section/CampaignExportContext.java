@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.section;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.catalog.CampaignCatalogService;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
@@ -25,6 +26,6 @@ public record CampaignExportContext(
     }
 
     public ContentReference catalogRef(CampaignContentType type, String sourceKey) {
-        return ContentReference.catalogRef(type, null, sourceKey);
+        return ContentReference.catalogRef(type, CampaignCatalogService.RULESET, sourceKey);
     }
 }

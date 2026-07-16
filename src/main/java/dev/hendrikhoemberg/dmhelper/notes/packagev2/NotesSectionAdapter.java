@@ -162,22 +162,21 @@ public class NotesSectionAdapter implements CampaignSectionExporter, CampaignSec
             if (dto.createdAt() != null) {
                 qn.setCreatedAt(dto.createdAt());
             }
-            ContentReference ref = dto.targetRef();
-            if (ref != null) {
-                CampaignContentType targetType = ref.type();
-                context.defer("quick note " + dto.key() + " target", () -> {
-                    Object resolved = context.require(ref, targetType, Object.class);
+            context.defer("quick note " + dto.key() + " save", () -> {
+                ContentReference ref = dto.targetRef();
+                if (ref != null) {
+                    Object resolved = context.require(ref, ref.type(), Object.class);
                     try {
                         UUID targetId = (UUID) resolved.getClass().getMethod("getId").invoke(resolved);
-                        qn.setTargetType(targetType.name());
+                        qn.setTargetType(ref.type().name());
                         qn.setTargetId(targetId);
                     } catch (Exception e) {
                         throw new RuntimeException("Cannot resolve ID for " + resolved.getClass(), e);
                     }
-                });
-            }
-            quickNoteRepository.save(qn);
-            context.register(CampaignContentType.QUICK_NOTE, dto.key(), qn, qn.getId());
+                }
+                quickNoteRepository.save(qn);
+                context.register(CampaignContentType.QUICK_NOTE, dto.key(), qn, qn.getId());
+            });
         }
     }
 }

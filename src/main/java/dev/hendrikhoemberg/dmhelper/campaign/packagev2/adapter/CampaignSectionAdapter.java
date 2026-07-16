@@ -69,7 +69,7 @@ public class CampaignSectionAdapter implements CampaignSectionExporter, Campaign
     public void importSection(CampaignManifestV2 source, CampaignImportContext context) {
         CampaignDto campaignDto = source.campaign();
 
-        Campaign campaign = new Campaign();
+        Campaign campaign = resolveCampaign(context);
         campaign.setName(campaignDto.name());
         campaign.setDescription(campaignDto.description());
 
@@ -78,16 +78,26 @@ public class CampaignSectionAdapter implements CampaignSectionExporter, Campaign
             codec.write(campaign, settings);
         }
 
-        context.setCampaign(campaign);
-
         context.register(CampaignContentType.CAMPAIGN, campaignDto.key(), campaign, campaign.getId());
 
         if (campaignDto.currentSceneRef() != null) {
+            Campaign captured = campaign;
             context.defer("currentSceneId", () -> {
                 var scene = context.require(campaignDto.currentSceneRef(), CampaignContentType.SCENE, Scene.class);
-                campaign.setCurrentSceneId(scene.getId());
+                captured.setCurrentSceneId(scene.getId());
             });
         }
+    }
+
+    private static Campaign resolveCampaign(CampaignImportContext context) {
+        Campaign campaign;
+        try {
+            campaign = context.campaign();
+        } catch (IllegalStateException e) {
+            campaign = new Campaign();
+            context.setCampaign(campaign);
+        }
+        return campaign;
     }
 
     static CampaignSettingsDto toSettingsDto(CampaignSettings settings) {

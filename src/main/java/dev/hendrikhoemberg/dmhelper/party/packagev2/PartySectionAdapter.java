@@ -114,8 +114,8 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
         Map<String, Object> spellSlotsUsed = parseJsonMap(cs.getSpellSlotsUsed());
 
         List<ClassLevelDto> classLevels = exportClassLevels(cs, context);
-        List<ContentReference> featRefs = exportFeatRefs(cs);
-        List<ResourceDto> resources = exportResources(cs);
+        List<ContentReference> featRefs = exportFeatRefs(cs, context);
+        List<ResourceDto> resources = exportResources(cs, context);
         List<SpellRefDto> spells = exportSpells(cs, context);
 
         ContentReference speciesRef = null;
@@ -159,25 +159,25 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
         }
     }
 
-    private List<ContentReference> exportFeatRefs(CharacterSheet cs) {
+    private List<ContentReference> exportFeatRefs(CharacterSheet cs, CampaignExportContext context) {
         String raw = cs.getFeatRefs();
         if (raw == null || raw.isBlank()) return List.of();
 
         try {
             var sourceKeys = objectMapper.readValue(raw, new TypeReference<List<String>>() {});
             return sourceKeys.stream()
-                    .map(sk -> ContentReference.catalogRef(CampaignContentType.FEAT, null, sk))
+                    .map(sk -> context.catalogRef(CampaignContentType.FEAT, sk))
                     .toList();
         } catch (Exception e) {
             return List.of();
         }
     }
 
-    private List<ResourceDto> exportResources(CharacterSheet cs) {
+    private List<ResourceDto> exportResources(CharacterSheet cs, CampaignExportContext context) {
         return sheetResourceRepository.findBySheetIdOrderByIdAsc(cs.getId())
                 .stream()
                 .map(r -> {
-                    String key = "resource-" + r.getId().toString().substring(0, 8);
+                    String key = context.key(CampaignContentType.SHEET_RESOURCE, r.getId(), r.getName());
                     return new ResourceDto(key, r.getName(), r.getMaxUses(), r.getCurrentUses(),
                             r.getResetRule().name());
                 })
@@ -268,6 +268,7 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
                 res.setCurrentUses(resDto.currentUses());
                 res.setResetRule(SheetResource.ResetRule.valueOf(resDto.resetRule()));
                 sheetResourceRepository.save(res);
+                context.register(CampaignContentType.SHEET_RESOURCE, resDto.key(), res, res.getId());
             }
 
             // Spell refs

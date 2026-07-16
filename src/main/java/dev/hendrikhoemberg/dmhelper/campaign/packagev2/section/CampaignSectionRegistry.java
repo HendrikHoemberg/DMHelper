@@ -1,10 +1,13 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.section;
 
+import org.springframework.stereotype.Component;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
+@Component
 public class CampaignSectionRegistry {
 
     private final List<CampaignSectionExporter> exporters;

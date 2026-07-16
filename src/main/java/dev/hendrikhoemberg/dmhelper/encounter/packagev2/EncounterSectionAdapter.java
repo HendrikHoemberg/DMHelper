@@ -172,6 +172,7 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
             var encounter = new Encounter();
             encounter.setCampaign(campaign);
             encounter.setName(dto.name());
+            encounter.setEncounterKey(dto.key());
             encounter.setStatus(dto.status() != null ? Encounter.Status.valueOf(dto.status()) : Encounter.Status.PLANNED);
             encounter.setRound(dto.round());
             encounter.setActiveTurnIndex(dto.activeTurnIndex());

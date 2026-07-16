@@ -8,8 +8,7 @@ import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEvent;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEventRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
-import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignPersistenceReceipt;
-import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.HandoutImportSource;
+
 import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntry;
 import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntryRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.*;
@@ -529,21 +528,14 @@ public class CampaignService {
     public Campaign importFromJson(String json) {
         CampaignExportDto dto = importValidator.validate(json).requireImportable();
 
-        return importValidated(dto).campaign();
+        return importValidated(dto);
     }
 
     /**
      * Persists an already validated v1 compatibility document and returns the local IDs for every
-     * addressable entity. The pointer map lets the package-v2 coordinator bind immutable imported
-     * keys inside the same transaction without rediscovering rows by mutable display values.
+     * addressable entity.
      */
-    public CampaignPersistenceReceipt importValidated(CampaignExportDto dto) {
-        return importValidated(dto, Map.of());
-    }
-
-    public CampaignPersistenceReceipt importValidated(CampaignExportDto dto,
-                                                        Map<String, HandoutImportSource> externalHandouts) {
-        validateExternalHandouts(dto, externalHandouts);
+    public Campaign importValidated(CampaignExportDto dto) {
         Map<String, UUID> persistedIds = new java.util.LinkedHashMap<>();
 
         Campaign saved = create(dto.campaign().name(), dto.campaign().description());
@@ -671,39 +663,31 @@ public class CampaignService {
         if (dto.handouts() != null) {
             for (int handoutIndex = 0; handoutIndex < dto.handouts().size(); handoutIndex++) {
                 var hDto = dto.handouts().get(handoutIndex);
-                String pointer = "/handouts/" + handoutIndex;
-                HandoutImportSource external = externalHandouts.get(pointer);
                 Handout handout;
                 try {
                     String tagStr = hDto.tags() != null ? String.join(",", hDto.tags()) : null;
-                    if (external != null) {
-                        handout = handoutService.createImported(saved.getId(), hDto.title(), tagStr,
-                                external.originalDisplayName(), external.contentType(), external.content(),
-                                external.expectedSize(), external.expectedSha256());
-                    } else {
-                        String base64Data = hDto.imageData();
-                        if (base64Data.startsWith("data:")) {
-                            int commaIdx = base64Data.indexOf(',');
-                            if (commaIdx > 0) {
-                                String prefix = base64Data.substring(0, commaIdx);
-                                String expectedPrefix = "data:" + hDto.contentType() + ";base64";
-                                if (!prefix.equals(expectedPrefix)) {
-                                    throw new IllegalStateException(
-                                            "Handout '" + hDto.title() + "' content type mismatch: " + prefix);
-                                }
-                                base64Data = base64Data.substring(commaIdx + 1);
+                    String base64Data = hDto.imageData();
+                    if (base64Data.startsWith("data:")) {
+                        int commaIdx = base64Data.indexOf(',');
+                        if (commaIdx > 0) {
+                            String prefix = base64Data.substring(0, commaIdx);
+                            String expectedPrefix = "data:" + hDto.contentType() + ";base64";
+                            if (!prefix.equals(expectedPrefix)) {
+                                throw new IllegalStateException(
+                                        "Handout '" + hDto.title() + "' content type mismatch: " + prefix);
                             }
+                            base64Data = base64Data.substring(commaIdx + 1);
                         }
-                        byte[] imageBytes;
-                        try {
-                            imageBytes = java.util.Base64.getDecoder().decode(base64Data);
-                        } catch (IllegalArgumentException e) {
-                            throw new IllegalStateException(
-                                    "Handout '" + hDto.title() + "' has invalid base64 image data", e);
-                        }
-                        handout = handoutService.createImported(saved.getId(), hDto.title(), tagStr,
-                                hDto.fileName(), hDto.contentType(), imageBytes);
                     }
+                    byte[] imageBytes;
+                    try {
+                        imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+                    } catch (IllegalArgumentException e) {
+                        throw new IllegalStateException(
+                                "Handout '" + hDto.title() + "' has invalid base64 image data", e);
+                    }
+                    handout = handoutService.createImported(saved.getId(), hDto.title(), tagStr,
+                            hDto.fileName(), hDto.contentType(), imageBytes);
                 } catch (IOException e) {
                     throw new IllegalStateException(
                             "Failed to import handout '" + hDto.title() + "'", e);
@@ -1076,27 +1060,7 @@ public class CampaignService {
             }
         }
 
-        return new CampaignPersistenceReceipt(saved, Map.copyOf(persistedIds));
-    }
-
-    private static void validateExternalHandouts(CampaignExportDto dto,
-                                                  Map<String, HandoutImportSource> externalHandouts) {
-        java.util.Set<String> expected = new java.util.HashSet<>();
-        for (int i = 0; i < (dto.handouts() == null ? 0 : dto.handouts().size()); i++) {
-            var handout = dto.handouts().get(i);
-            String pointer = "/handouts/" + i;
-            if (handout.imageData() == null) {
-                expected.add(pointer);
-                if (!externalHandouts.containsKey(pointer)) {
-                    throw new IllegalStateException("External handout source is missing for " + pointer);
-                }
-            } else if (externalHandouts.containsKey(pointer)) {
-                throw new IllegalStateException("Handout has both embedded and external content at " + pointer);
-            }
-        }
-        if (!externalHandouts.keySet().equals(expected)) {
-            throw new IllegalStateException("External handout sources do not match the import document");
-        }
+        return saved;
     }
 
     private static void putPersistedId(Map<String, UUID> persistedIds, String pointer, UUID id) {
