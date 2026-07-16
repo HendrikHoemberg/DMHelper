@@ -27,6 +27,8 @@ class InteractionFailureContractTest {
     void mutationSurfacesUseCheckedRequests() throws IOException {
         assertThat(read("templates/encounter/_tracker.html"))
                 .contains("window.dmRequest", "window.reportActionFailure");
+        assertThat(read("templates/fragments/navbar.html"))
+                .contains("window.dmRequest", "window.reportActionFailure");
         assertThat(read("templates/maps/battle.html"))
                 .contains("window.dmRequest", "window.reportActionFailure");
         assertThat(read("static/js/map/battle-map.js"))

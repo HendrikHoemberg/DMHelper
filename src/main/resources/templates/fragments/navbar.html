@@ -104,23 +104,19 @@ document.addEventListener('click', async (e) => {
         const activeEnc = document.body.dataset.activeEncounterId || null;
         if (activeEnc) body.encounterId = activeEnc;
 
-        const resp = await fetch('/api/v1/roll', {
+        const resp = await window.dmRequest('/api/v1/roll', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
         });
 
-        if (!resp.ok) {
-            tooltip.textContent = 'Error';
-            setTimeout(() => tooltip.remove(), 1500);
-            return;
-        }
-
         const result = await resp.json();
         tooltip.textContent = expr + ' = ' + result.total;
         window.dispatchEvent(new CustomEvent('dice-roll-result', { detail: result }));
-    } catch (e) {
-        tooltip.textContent = 'Error';
+    } catch (error) {
+        tooltip.textContent = 'Roll failed';
+        window.reportActionFailure('Could not roll the dice.', error,
+            () => btn.click());
     }
 
     setTimeout(() => tooltip.remove(), 3000);
@@ -167,17 +163,11 @@ document.addEventListener('alpine:init', () => {
                 const body = { expression: expr, campaignId: campId };
                 if (this._encounterId) body.encounterId = this._encounterId;
 
-                const resp = await fetch('/api/v1/roll', {
+                const resp = await window.dmRequest('/api/v1/roll', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
-
-                if (!resp.ok) {
-                    const err = await resp.json();
-                    window.showToast(err.detail || 'That expression did not parse. Try something like 2d6+4.', 'error', 5000);
-                    return;
-                }
 
                 this.result = await resp.json();
                 this.$nextTick(() => {
@@ -195,8 +185,8 @@ document.addEventListener('alpine:init', () => {
                 this.expression = '';
                 this.advantage = false;
                 this.disadvantage = false;
-            } catch (e) {
-                window.showToast('The dice never landed — the server did not answer.', 'error', 5000);
+            } catch (error) {
+                window.reportActionFailure('The dice roll was not saved.', error, () => this.roll());
             } finally {
                 this.loading = false;
             }
@@ -237,10 +227,10 @@ document.addEventListener('alpine:init', () => {
         async loadHistory() {
             try {
                 const campId = document.body.dataset.campaignId;
-                const resp = await fetch('/api/v1/roll/history?campaignId=' + encodeURIComponent(campId));
-                if (resp.ok) this.history = await resp.json();
-            } catch (e) {
-                // silently ignore
+                const resp = await window.dmRequest('/api/v1/roll/history?campaignId=' + encodeURIComponent(campId));
+                this.history = await resp.json();
+            } catch (error) {
+                window.reportActionFailure('Could not refresh dice history.', error, () => this.loadHistory());
             }
         }
     }));

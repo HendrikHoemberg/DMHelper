@@ -43,6 +43,26 @@
             showConditionMenu: null,
             conditionDuration: '',
 
+            request(url, options = {}) {
+                return window.dmRequest(url, options);
+            },
+
+            failure(summary, error, retry) {
+                window.reportActionFailure(summary, error, retry);
+            },
+
+            async mutate(summary, url, options, afterSuccess) {
+                try {
+                    const response = await this.request(url, options);
+                    if (afterSuccess) await afterSuccess(response);
+                    return true;
+                } catch (error) {
+                    this.failure(summary, error,
+                        () => this.mutate(summary, url, options, afterSuccess));
+                    return false;
+                }
+            },
+
             campaignId: options.campaignId || '',
             _encounterId: null,
 
@@ -86,8 +106,8 @@
             },
 
             loadConditionsCatalog() {
-                fetch('/api/v1/library/conditions')
-                    .then(resp => resp.ok ? resp.json() : Promise.reject())
+                this.request('/api/v1/library/conditions')
+                    .then(response => response.json())
                     .then(data => {
                         this.conditionsCatalog = data.map(c => ({
                             sourceKey: c.sourceKey,
@@ -96,50 +116,52 @@
                             defaultDuration: 1,
                         }));
                     })
-                    .catch(() => {
-                        this.conditionsCatalog = COMMON_CONDITIONS;
-                    });
+                    .catch(() => { this.conditionsCatalog = COMMON_CONDITIONS; });
             },
 
             async loadActiveEncounter() {
                 try {
-                    const resp = await fetch(`/api/v1/campaigns/${this.campaignId}/encounters/active`);
-                    if (resp.ok) {
-                        const data = await resp.json();
-                        await this.loadEncounter(data.id);
-                    }
-                } catch (e) {}
+                    const resp = await this.request(`/api/v1/campaigns/${this.campaignId}/encounters/active`);
+                    const data = await resp.json();
+                    await this.loadEncounter(data.id);
+                } catch (error) {
+                    if (error?.status === 404) return;
+                    this.failure('Could not load the active encounter.', error,
+                        () => this.loadActiveEncounter());
+                }
             },
 
             async loadEncounter(encounterId) {
                 this._encounterId = encounterId;
                 try {
-                    const resp = await fetch(`/api/v1/encounters/${encounterId}`);
-                    if (resp.ok) {
-                        this.encounter = await resp.json();
-                        await this.reloadCombatants();
-                        this.dispatchState();
-                        this.dispatchTurnEvent();
-                    }
-                } catch (e) {}
+                    const resp = await this.request(`/api/v1/encounters/${encounterId}`);
+                    this.encounter = await resp.json();
+                    await this.reloadCombatants();
+                    this.dispatchState();
+                    this.dispatchTurnEvent();
+                } catch (error) {
+                    this.failure('Could not load the encounter.', error,
+                        () => this.loadEncounter(encounterId));
+                }
             },
 
             async reloadCombatants() {
                 if (!this._encounterId) return;
                 try {
-                    const resp = await fetch(`/api/v1/encounters/${this._encounterId}/combatants`);
-                    if (resp.ok) {
-                        const before = this._capturePositions();
-                        this.combatants = await resp.json();
-                        this.deriveActiveCombatant();
-                        if (this.selected) {
-                            this.editHp = this.selected.currentHp;
-                            this.editTempHp = this.selected.tempHp || 0;
-                        }
-                        this._playFlip(before);
-                        this._positionTurnMarker();
+                    const resp = await this.request(`/api/v1/encounters/${this._encounterId}/combatants`);
+                    const before = this._capturePositions();
+                    this.combatants = await resp.json();
+                    this.deriveActiveCombatant();
+                    if (this.selected) {
+                        this.editHp = this.selected.currentHp;
+                        this.editTempHp = this.selected.tempHp || 0;
                     }
-                } catch (e) {}
+                    this._playFlip(before);
+                    this._positionTurnMarker();
+                } catch (error) {
+                    this.failure('Could not reload combatants.', error,
+                        () => this.reloadCombatants());
+                }
             },
 
             _reducedMotion() {
@@ -234,115 +256,129 @@
 
             async nextTurn() {
                 if (!this._encounterId) return;
-                try {
-                    const roundBefore = this.encounter?.round;
-                    const resp = await fetch(`/api/v1/encounters/${this._encounterId}/next-turn`, { method: 'POST' });
-                    if (resp.ok) {
-                        this.encounter = await resp.json();
+                const roundBefore = this.encounter?.round;
+                await this.mutate(
+                    'Could not advance the turn. Initiative was not changed.',
+                    `/api/v1/encounters/${this._encounterId}/next-turn`,
+                    { method: 'POST' },
+                    async response => {
+                        this.encounter = await response.json();
                         await this.reloadCombatants();
-                        if (this.encounter.rechargePrompts) {
-                            this.rechargePrompts = this.encounter.rechargePrompts;
-                        }
+                        this.rechargePrompts = this.encounter.rechargePrompts || [];
                         if (this.encounter.round !== roundBefore) this._pulseRound();
                         this.dispatchTurnEvent();
                         this.dispatchState();
-                    }
-                } catch (e) {}
+                    });
             },
 
             async previousTurn() {
                 if (!this._encounterId) return;
-                try {
-                    const resp = await fetch(`/api/v1/encounters/${this._encounterId}/previous-turn`, { method: 'POST' });
-                    if (resp.ok) {
-                        this.encounter = await resp.json();
+                await this.mutate(
+                    'Could not move to the previous turn. Initiative was not changed.',
+                    `/api/v1/encounters/${this._encounterId}/previous-turn`,
+                    { method: 'POST' },
+                    async response => {
+                        this.encounter = await response.json();
                         await this.reloadCombatants();
                         this.dispatchTurnEvent();
                         this.dispatchState();
-                    }
-                } catch (e) {}
+                    });
             },
 
             async setInitiative(combatantId, init) {
                 if (!this._encounterId) return;
-                try {
-                    await fetch(`/api/v1/combatants/${combatantId}/initiative`, {
+                await this.mutate(
+                    'Could not save initiative. The previous order was kept.',
+                    `/api/v1/combatants/${combatantId}/initiative`,
+                    {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ initiative: init }),
+                    },
+                    async () => {
+                        await this.reloadCombatants();
+                        this.dispatchState();
                     });
-                    await this.reloadCombatants();
-                    this.dispatchState();
-                } catch (e) {}
             },
 
             async autoRoll() {
                 if (!this._encounterId) return;
-                try {
-                    await fetch(`/api/v1/encounters/${this._encounterId}/auto-roll`, { method: 'POST' });
-                    await this.reloadCombatants();
-                    this.dispatchState();
-                } catch (e) {}
+                await this.mutate(
+                    'Could not roll initiative. The previous order was kept.',
+                    `/api/v1/encounters/${this._encounterId}/auto-roll`,
+                    { method: 'POST' },
+                    async () => {
+                        await this.reloadCombatants();
+                        this.dispatchState();
+                    });
             },
 
             async applyHpDelta(combatantId) {
                 const amount = parseInt(this.hpDelta, 10);
                 if (isNaN(amount) || amount === 0) return;
-                this.hpDelta = '';
-                await this.quickHp(combatantId, amount);
+                const succeeded = await this.quickHp(combatantId, amount);
+                if (succeeded) this.hpDelta = '';
             },
 
             async quickHp(combatantId, amount) {
-                if (!this._encounterId) return;
-                try {
-                    const resp = await fetch(`/api/v1/combatants/${combatantId}/damage`, {
+                if (!this._encounterId) return false;
+                return this.mutate(
+                    'Could not change hit points. The previous value was kept.',
+                    `/api/v1/combatants/${combatantId}/damage`,
+                    {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ amount }),
-                    });
-                    if (resp.ok) {
+                    },
+                    async () => {
                         await this.reloadCombatants();
                         this._flashHp(combatantId, amount);
                         this.dispatchState();
-                    }
-                } catch (e) {}
+                    });
             },
 
             async markDefeated(combatantId, defeated) {
                 if (!this._encounterId) return;
-                try {
-                    await fetch(`/api/v1/combatants/${combatantId}/defeated`, {
+                await this.mutate(
+                    'Could not change the defeated status. The tracker was kept unchanged.',
+                    `/api/v1/combatants/${combatantId}/defeated`,
+                    {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ defeated }),
+                    },
+                    async () => {
+                        await this.reloadCombatants();
+                        this.dispatchState();
                     });
-                    await this.reloadCombatants();
-                    this.dispatchState();
-                } catch (e) {}
             },
 
             async toggleCondition(combatantId, sourceKey, duration) {
                 if (!this._encounterId) return;
-                try {
-                    await fetch(`/api/v1/combatants/${combatantId}/conditions`, {
+                await this.mutate(
+                    'Could not toggle the condition. The tracker was kept unchanged.',
+                    `/api/v1/combatants/${combatantId}/conditions`,
+                    {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ sourceKey, durationRounds: duration || 1 }),
+                    },
+                    async () => {
+                        await this.reloadCombatants();
+                        this.dispatchState();
                     });
-                    await this.reloadCombatants();
-                    this.dispatchState();
-                } catch (e) {}
             },
 
             async removeCondition(combatantId, sourceKey) {
                 if (!this._encounterId) return;
-                try {
-                    await fetch(`/api/v1/combatants/${combatantId}/conditions/${sourceKey}/remove`, {
-                        method: 'POST',
+                await this.mutate(
+                    'Could not remove the condition. The tracker was kept unchanged.',
+                    `/api/v1/combatants/${combatantId}/conditions/${sourceKey}/remove`,
+                    { method: 'POST' },
+                    async () => {
+                        await this.reloadCombatants();
+                        this.dispatchState();
                     });
-                    await this.reloadCombatants();
-                    this.dispatchState();
-                } catch (e) {}
             },
 
             async setHp() {
@@ -351,57 +387,72 @@
                 if (isNaN(hp)) return;
                 const combatantId = this.selected.id;
                 const delta = hp - this.selected.currentHp;
-                try {
-                    await fetch(`/api/v1/combatants/${combatantId}/hp`, {
+                await this.mutate(
+                    'Could not save hit points. The previous value was kept.',
+                    `/api/v1/combatants/${combatantId}/hp`,
+                    {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ currentHp: hp, tempHp: this.editTempHp }),
+                    },
+                    async () => {
+                        await this.reloadCombatants();
+                        this._flashHp(combatantId, delta);
+                        this.dispatchState();
                     });
-                    await this.reloadCombatants();
-                    this._flashHp(combatantId, delta);
-                    this.dispatchState();
-                } catch (e) {}
             },
 
             async removeCombatant(combatantId) {
                 if (!this._encounterId) return;
-                try {
-                    await fetch(`/api/v1/combatants/${combatantId}`, { method: 'DELETE' });
-                    if (this.selectedCombatantId === combatantId) {
-                        this.selectedCombatantId = null;
-                    }
-                    await this.reloadCombatants();
-                    this.dispatchState();
-                } catch (e) {}
+                await this.mutate(
+                    'Could not remove the combatant. The tracker was kept unchanged.',
+                    `/api/v1/combatants/${combatantId}`,
+                    { method: 'DELETE' },
+                    async () => {
+                        if (this.selectedCombatantId === combatantId) {
+                            this.selectedCombatantId = null;
+                        }
+                        await this.reloadCombatants();
+                        this.dispatchState();
+                    });
             },
 
             async activateLairAction() {
                 if (!this._encounterId) return;
-                try {
-                    await fetch(`/api/v1/encounters/${this._encounterId}/lair-action`, { method: 'POST' });
-                    await this.loadEncounter(this._encounterId);
-                } catch (e) {}
+                await this.mutate(
+                    'Could not record the lair action.',
+                    `/api/v1/encounters/${this._encounterId}/lair-action`,
+                    { method: 'POST' },
+                    async () => {
+                        await this.loadEncounter(this._encounterId);
+                    });
             },
 
             async undo() {
                 if (!this._encounterId) return;
-                try {
-                    await fetch(`/api/v1/encounters/${this._encounterId}/undo`, { method: 'POST' });
-                    await this.loadEncounter(this._encounterId);
-                } catch (e) {}
+                await this.mutate(
+                    'Could not undo the last action. The tracker was kept unchanged.',
+                    `/api/v1/encounters/${this._encounterId}/undo`,
+                    { method: 'POST' },
+                    async () => {
+                        await this.loadEncounter(this._encounterId);
+                    });
             },
 
             async endEncounter() {
                 if (!this._encounterId) return;
-                try {
-                    await fetch(`/api/v1/encounters/${this._encounterId}/end`, { method: 'POST' });
-                    this.encounter = null;
-                    this.combatants = [];
-                    this.activeCombatantId = null;
-                    this.selectedCombatantId = null;
-                    this._encounterId = null;
-                    this.dispatchState();
-                } catch (e) {}
+                await this.mutate(
+                    'Could not end the encounter. It remains active.',
+                    `/api/v1/encounters/${this._encounterId}/end`,
+                    { method: 'POST' },
+                    async () => {
+                        this.encounter = null;
+                        this.combatants = [];
+                        this.activeCombatantId = null;
+                        this.selectedCombatantId = null;
+                        this._encounterId = null;
+                        this.dispatchState();
+                    });
             },
 
             hpPercent(c) {
@@ -442,58 +493,73 @@
 
             async setConcentration(combatantId, spellName) {
                 if (!this._encounterId) return;
-                try {
-                    await fetch(`/api/v1/combatants/${combatantId}/concentration`, {
+                await this.mutate(
+                    'Could not set concentration. The previous value was kept.',
+                    `/api/v1/combatants/${combatantId}/concentration`,
+                    {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ spellName: spellName || null }),
+                    },
+                    async () => {
+                        await this.reloadCombatants();
+                        this.dispatchState();
                     });
-                    await this.reloadCombatants();
-                    this.dispatchState();
-                } catch (e) {}
             },
 
             async resolveConcentrationCheck(combatantId, passed) {
                 if (!this._encounterId) return;
-                try {
-                    await fetch(`/api/v1/combatants/${combatantId}/concentration-check`, {
+                await this.mutate(
+                    'Could not record the concentration check.',
+                    `/api/v1/combatants/${combatantId}/concentration-check`,
+                    {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ passed }),
+                    },
+                    async () => {
+                        await this.reloadCombatants();
+                        this.dispatchState();
                     });
-                    await this.reloadCombatants();
-                    this.dispatchState();
-                } catch (e) {}
             },
 
             async useLegendaryAction(combatantId) {
                 if (!this._encounterId) return;
-                try {
-                    await fetch(`/api/v1/combatants/${combatantId}/legendary-action`, { method: 'POST' });
-                    await this.reloadCombatants();
-                    this.dispatchState();
-                } catch (e) {}
+                await this.mutate(
+                    'Could not record the legendary action.',
+                    `/api/v1/combatants/${combatantId}/legendary-action`,
+                    { method: 'POST' },
+                    async () => {
+                        await this.reloadCombatants();
+                        this.dispatchState();
+                    });
             },
 
             async useLegendaryResistance(combatantId) {
                 if (!this._encounterId) return;
-                try {
-                    await fetch(`/api/v1/combatants/${combatantId}/legendary-resistance`, { method: 'POST' });
-                    await this.reloadCombatants();
-                    this.dispatchState();
-                } catch (e) {}
+                await this.mutate(
+                    'Could not record the legendary resistance.',
+                    `/api/v1/combatants/${combatantId}/legendary-resistance`,
+                    { method: 'POST' },
+                    async () => {
+                        await this.reloadCombatants();
+                        this.dispatchState();
+                    });
             },
 
             async resolveRecharge(combatantId, abilityName, rollResult) {
                 if (!this._encounterId) return;
-                try {
-                    await fetch(`/api/v1/combatants/${combatantId}/recharge-check`, {
+                await this.mutate(
+                    'Could not record the recharge check.',
+                    `/api/v1/combatants/${combatantId}/recharge-check`,
+                    {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ abilityName, rollResult }),
+                    },
+                    async () => {
+                        this.rechargePrompts = this.rechargePrompts.filter(p => p.abilityName !== abilityName);
                     });
-                    this.rechargePrompts = this.rechargePrompts.filter(p => p.abilityName !== abilityName);
-                } catch (e) {}
             },
 
             dispatchState() {
