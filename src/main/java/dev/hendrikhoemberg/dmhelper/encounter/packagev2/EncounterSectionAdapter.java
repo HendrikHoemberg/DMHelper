@@ -260,6 +260,7 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                 logEntry.setSequence(logDto.sequence());
                 logEntry.setType(CombatLogEntry.EntryType.valueOf(logDto.type()));
                 logEntry.setCreatedAt(logDto.createdAt());
+                logEntry.setCombatantId("");
 
                 if (logDto.combatantRef() != null) {
                     UUID combatantId = keyToId.get(logDto.combatantRef().key());

@@ -114,7 +114,7 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
         }
 
         return new CampaignManifestV2.MapDto.MapDocumentV2(
-                doc.schemaVersion(), doc.grid(), layers,
+                2, doc.grid(), layers,
                 doc.primitives(), doc.customTerrain()
         );
     }

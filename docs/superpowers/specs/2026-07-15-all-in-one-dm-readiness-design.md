@@ -165,9 +165,9 @@ No P3 work should displace an unfinished P0 or P1 release gate.
 ## 6. Workstream A — Existing-path reliability
 
 > **Implementation status (2026-07-15):** Package v2 foundation complete. Container safety, key registry,
-> current-surface schema, typed catalog, v1 migration, preview/confirmation, and atomic staged assets are
-> implemented. Delivery item 3 (Package v2 foundation) is done. Delivery item 4 (Complete round-trip),
-> session cockpit, and all deeper features remain open.
+> current-surface schema, typed catalog, v1 migration, preview/confirmation, atomic staged assets, and
+> complete round-trip are implemented. Delivery items 3 and 4 (Package v2 foundation, Complete round-trip)
+> are done. Session cockpit and all deeper features remain open.
 
 ### 6.1 Quick notes
 
@@ -219,7 +219,7 @@ Acceptance criteria:
 > and map schemas executable, closed them against unknown fields, unified dry-run and import
 > validation, blocked unresolved v1 references before persistence, and added checked-in contract
 > fixtures. ZIP packaging, stable version-2 keys, preview confirmation, migrations, and complete
-> persistent-state round-trip remain open in delivery items 3 and 4.
+> persistent-state round-trip (delivery items 3 and 4) are finished.
 
 ### 7.1 Package container
 

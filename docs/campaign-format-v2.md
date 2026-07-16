@@ -109,6 +109,7 @@ malformed container requests return `application/problem+json` with a stable `co
 ## Export
 
 **`GET /campaigns/{campaignId}/package`** — canonical v2 export (JSON for asset-free, ZIP for assets).
+Supports `includeCombatLog` and `includeDiceHistory` query params (both default `true`).
 
 **`GET /campaigns/{campaignId}/export`** — legacy v1 JSON export.
 
@@ -121,25 +122,85 @@ Legacy v1 packages are migrated with:
 - Warning `LEGACY_REFERENCE_MIGRATED` per migrated reference
 - Label `MIGRATED_FROM_V1`
 
-## Foundation Exclusions
+## Campaign Settings
 
-The following persistent fields are not yet represented in the v2 export:
+The v2 manifest carries full campaign settings:
 
+| Field | Type | Description |
+|-------|------|-------------|
+| `levelingMode` | `"XP"` \| `"MILESTONE"` | Advancement method |
+| `calendarConfig` | object | Custom month names/lengths, week days, epoch |
+| `currentDate` | object | In-game year, month, day |
+| `settings` | object | Arbitrary key-value settings (e.g. `difficulty`, `maxLevel`) |
+
+All settings fields are persistent and included in the default export.
+
+## Runtime Kind Enums
+
+Tokens, combatants, and party members use the following `kind` values:
+
+| Value | Usage |
+|-------|-------|
+| `PC` | Player character |
+| `NPC` | Non-player character (friendly/neutral) |
+| `MONSTER` | Hostile creature |
+| `OBJECT` | Inanimate object (door, trap, hazard) |
+
+These are stored as strings in the manifest. The importer preserves the exact value.
+
+## Persistent vs Transient Classification
+
+Every campaign-owned field is classified as either:
+
+- **Persistent-exported** — included in v2 export and preserved on import. All fields not listed
+  below are persistent-exported.
+- **Intentionally transient** — excluded by design. Currently transient:
+  - Runtime presentation state (curtain, map projection, handout presentation)
+  - WebSocket connection state
+  - In-memory caches and computed aggregates
+  - Session PIN
+  - Browser-local UI state
+
+The manifest includes `metadata.exclusions` listing any persistent fields that are intentionally
+omitted from the current export. An empty list means full coverage.
+
+## Module Adapter Architecture
+
+Export and import are decomposed into ordered section adapters:
+
+```text
+Adapters (order):
+  SettingsSectionAdapter       (100) — campaign metadata, options, calendar
+  MapSectionAdapter            (400) — maps, tokens, documents
+  PartyMemberSectionAdapter    (450) — party roster, sheets, resources
+  NoteSectionAdapter           (470) — notes, wiki links, quick notes
+  HandoutSectionAdapter        (500) — handouts, presentation state
+  EncounterSectionAdapter      (600) — encounters, combatants, combat log
+  AdventureSectionAdapter      (700) — adventures, chapters, scenes
 ```
-CAMPAIGN_SETTINGS
-CURRENT_SCENE
-PARTY_CURRENT_HP
-HANDOUT_PRESENTATION_STATE
-COMBAT_LOG
-DICE_HISTORY
-CALENDAR_CONFIGURATION
-CALENDAR_CURRENT_DATE
-CUSTOM_COMPENDIUM_NON_STATBLOCK
-STRUCTURED_SCENE_TRANSITIONS
-QUESTS_AND_OBJECTIVES
-```
 
-These are declared in `metadata.exclusions`. The next **Complete Round-trip** milestone will remove them.
+Each adapter implements `CampaignSectionExporter` and `CampaignSectionImporter`.
+The `CampaignExportCoordinator` and `CampaignImportCoordinator` call them in order
+and manage the shared key registry, asset store, and transaction boundary.
+
+## Default-Complete Export
+
+The `/campaigns/{id}/package` endpoint exports **all** persistent-exported fields by default.
+No explicit opt-in is required. The manifest is self-contained — every entity, reference, and
+asset needed to restore the campaign is included.
+
+## Explicit History Opt-Outs
+
+Two query parameters control optional history inclusion:
+
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| `includeCombatLog` | `true` | When `false`, combat log entries are omitted from the manifest and `metadata.exclusions` lists `COMBAT_LOG` |
+| `includeDiceHistory` | `true` | When `false`, dice history is omitted from the manifest and `metadata.exclusions` lists `DICE_HISTORY` |
+
+Both default to `true`, matching the default-complete behavior. The UI presents both as
+pre-checked checkboxes. The export manifest records exclusions so re-import knows what
+was intentionally omitted.
 
 ## Atomicity
 
@@ -150,9 +211,16 @@ no campaign row, key row, or installed asset survives.
 
 ## Fixture Locations
 
-- Minimal v2: `src/test/resources/campaigns/v2/minimal.dmcampaign.json`
-- Current-surface manifest: `src/test/resources/campaigns/v2/current-surface.dmcampaign/manifest.json`
-- Feature-complete v1: `src/test/resources/campaigns/v1/feature-complete.dmcampaign.json`
+Three flagship fixtures verify the round-trip contract:
+
+| Fixture | Path | Purpose |
+|---------|------|---------|
+| Minimal v2 | `src/test/resources/campaigns/v2/minimal.dmcampaign.json` | Asset-free, single entity — validates structural schema |
+| Current-surface v2 | `src/test/resources/campaigns/v2/current-surface.dmcampaign/manifest.json` | Exercises every persistent field in a realistic synthetic campaign |
+| Feature-complete v1 | `src/test/resources/campaigns/v1/feature-complete.dmcampaign.json` | Legacy format — validates v1→v2 migration path |
+
+Each fixture follows schema validate → dry-run → import → export → re-import → semantic
+deep-compare. If any fixture fails to round-trip correctly, the build fails.
 
 ## curl Examples
 

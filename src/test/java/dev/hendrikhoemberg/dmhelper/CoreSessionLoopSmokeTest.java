@@ -18,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
@@ -282,5 +283,79 @@ class CoreSessionLoopSmokeTest {
         dmPage.waitForURL(url -> url.endsWith("/play"));
 
         assertThat(dmPage.url()).endsWith("/play");
+    }
+
+    @Test
+    @Order(12)
+    void exportAndReimportRoundTrip() {
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId);
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+
+        // Verify export form has both history checkboxes checked by default
+        assertThat(dmPage.locator("#includeCombatLog").inputValue()).isEqualTo("true");
+        assertThat(dmPage.locator("#includeDiceHistory").inputValue()).isEqualTo("true");
+
+        // Export the campaign, create preview, confirm import — all via fetch from the page
+        // so both history options are transmitted as request params.
+        String redirect = (String) dmPage.evaluate("""
+            async ([baseUrl, cid]) => {
+                const exp = await fetch(baseUrl + '/campaigns/' + cid + '/package?includeCombatLog=true&includeDiceHistory=true');
+                if (!exp.ok) throw new Error('Export failed: ' + exp.status);
+                const body = await exp.text();
+
+                const prv = await fetch(baseUrl + '/campaigns/package-imports/previews', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-DMHelper-Filename': 'rt.dmcampaign.json' },
+                    body: body
+                });
+                if (!prv.ok) throw new Error('Preview failed: ' + await prv.text());
+                const preview = await prv.json();
+                if (preview.status === 'BLOCKED') {
+                    throw new Error('Import blocked: ' + JSON.stringify(preview.problems));
+                }
+
+                const conf = await fetch(baseUrl + '/campaigns/package-imports/' + preview.previewId + '/confirm?acceptWarnings=true', {
+                    method: 'POST'
+                });
+                if (!conf.ok) throw new Error('Confirm failed: ' + await conf.text());
+                return conf.headers.get('Location');
+            }
+        """, Arrays.asList("http://localhost:" + port, campaignId.toString()));
+
+        assertThat(redirect).isNotNull();
+        String restoredId = redirect.replaceAll("/campaigns/", "");
+
+        // Campaign detail page
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + restoredId);
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(dmPage.textContent("body")).contains("Smoke Test Campaign");
+
+        // Maps page
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + restoredId + "/maps");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(dmPage.textContent("body")).contains("Test Battle Map");
+
+        // Encounters page
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + restoredId + "/encounters");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(dmPage.textContent("body")).contains("Smoke Encounter");
+
+        // Adventures page (notes/quick notes)
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + restoredId + "/adventures");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(dmPage.textContent("body")).contains("Test Module");
+
+        // Notes list page
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + restoredId + "/notes");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+
+        // Handouts list page
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + restoredId + "/handouts");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+
+        // Party page
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + restoredId + "/party");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(dmPage.textContent("body")).contains("Dynamic Hero");
     }
 }
