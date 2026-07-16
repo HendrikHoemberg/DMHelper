@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.adapter;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
@@ -83,7 +84,8 @@ public class CampaignSectionAdapter implements CampaignSectionExporter, Campaign
 
         if (campaignDto.currentSceneRef() != null) {
             context.defer("currentSceneId", () -> {
-                context.require(campaignDto.currentSceneRef(), CampaignContentType.SCENE, Object.class);
+                var scene = context.require(campaignDto.currentSceneRef(), CampaignContentType.SCENE, Scene.class);
+                campaign.setCurrentSceneId(scene.getId());
             });
         }
     }
