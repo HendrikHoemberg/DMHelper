@@ -86,6 +86,15 @@ export class BattleMap {
         this.previewLayer = null;
     }
 
+    async _request(url, options = {}) {
+        return window.dmRequest(url, options);
+    }
+
+    _failure(summary, error, retry) {
+        this._setError();
+        window.reportActionFailure(summary, error, retry);
+    }
+
     async load() {
         this.stage = new Konva.Stage({
             container: this.container,
@@ -223,10 +232,14 @@ export class BattleMap {
 
     /* ---- Map Document & Grid ---- */
     async fetchMapDocument() {
-        const resp = await fetch(`/api/v1/maps/${this.mapId}/document`);
-        const data = await resp.json();
-        this.docVersion = data.version;
-        this.renderTerrain(data.document);
+        try {
+            const resp = await this._request(`/api/v1/maps/${this.mapId}/document`);
+            const data = await resp.json();
+            this.docVersion = data.version;
+            this.renderTerrain(data.document);
+        } catch (error) {
+            this._failure('Could not load the map document.', error, null);
+        }
     }
 
     renderTerrain(doc) {
@@ -259,8 +272,13 @@ export class BattleMap {
 
     /* ---- Tokens: fetch, render, drag ---- */
     async fetchTokens() {
-        const resp = await fetch(`/api/v1/maps/${this.mapId}/tokens`);
-        this.tokens = await resp.json();
+        try {
+            const resp = await this._request(`/api/v1/maps/${this.mapId}/tokens`);
+            this.tokens = await resp.json();
+        } catch (error) {
+            this._failure('Could not load map tokens.', error, () => this.fetchTokens());
+            return false;
+        }
     }
 
     _reducedMotion() {
@@ -422,95 +440,135 @@ export class BattleMap {
     async saveTokenMove(tokenId, x, y) {
         const token = this.tokens.find(t => t.id === tokenId);
         if (!token) return;
+        const previous = { x: token.positionX, y: token.positionY };
         token.positionX = x;
         token.positionY = y;
         this.emit('tokenupdate', { tokens: this.tokens });
         this.emit('state-changed');
         try {
-            await fetch(`/api/v1/tokens/${tokenId}/move`, {
+            await this._request(`/api/v1/tokens/${tokenId}/move`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ positionX: x, positionY: y }),
             });
             this._setSaved();
-        } catch (e) { this._setError(); }
+        } catch (error) {
+            token.positionX = previous.x;
+            token.positionY = previous.y;
+            const node = this.tokenNodes[tokenId]?.group;
+            if (node) node.position(previous);
+            this.tokenLayer.batchDraw();
+            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emit('state-changed');
+            this._failure('Could not move the token. Its previous position was restored.', error,
+                () => this.saveTokenMove(tokenId, x, y));
+        }
     }
 
     /* ---- Token CRUD ---- */
     async createToken(req) {
-        const resp = await fetch(`/api/v1/maps/${this.mapId}/tokens`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(req),
-        });
-        const token = await resp.json();
-        this.tokens.push(token);
-        this.addTokenNode(token);
-        this.tokenLayer.batchDraw();
-        this.emit('tokenupdate', { tokens: this.tokens });
-        this.emit('state-changed');
+        try {
+            const resp = await this._request(`/api/v1/maps/${this.mapId}/tokens`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(req),
+            });
+            const token = await resp.json();
+            this.tokens.push(token);
+            this.addTokenNode(token);
+            this.tokenLayer.batchDraw();
+            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emit('state-changed');
+        } catch (error) {
+            this._failure('Could not add the token. Nothing was changed.', error,
+                () => this.createToken(req));
+            return false;
+        }
     }
 
     async deleteToken(id) {
-        await fetch(`/api/v1/tokens/${id}`, { method: 'DELETE' });
-        const node = this.tokenNodes[id];
-        if (node) { node.group.destroy(); delete this.tokenNodes[id]; }
-        this.tokens = this.tokens.filter(t => t.id !== id);
-        this.tokenLayer.batchDraw();
-        if (this.selectedTokenId === id) this.deselectToken();
-        this.emit('tokenupdate', { tokens: this.tokens });
-        this.emit('state-changed');
+        try {
+            await this._request(`/api/v1/tokens/${id}`, { method: 'DELETE' });
+            const node = this.tokenNodes[id];
+            if (node) { node.group.destroy(); delete this.tokenNodes[id]; }
+            this.tokens = this.tokens.filter(t => t.id !== id);
+            this.tokenLayer.batchDraw();
+            if (this.selectedTokenId === id) this.deselectToken();
+            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emit('state-changed');
+        } catch (error) {
+            this._failure('Could not delete the token. Nothing was changed.', error,
+                () => this.deleteToken(id));
+            return false;
+        }
     }
 
     async duplicateToken(id) {
         const s = this.cellSizePx;
-        const resp = await fetch(`/api/v1/tokens/${id}/duplicate?offsetX=${s}&offsetY=${s}`, { method: 'POST' });
-        const token = await resp.json();
-        this.tokens.push(token);
-        this.addTokenNode(token);
-        this.tokenLayer.batchDraw();
-        this.emit('tokenupdate', { tokens: this.tokens });
-        this.emit('state-changed');
+        try {
+            const resp = await this._request(`/api/v1/tokens/${id}/duplicate?offsetX=${s}&offsetY=${s}`, { method: 'POST' });
+            const token = await resp.json();
+            this.tokens.push(token);
+            this.addTokenNode(token);
+            this.tokenLayer.batchDraw();
+            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emit('state-changed');
+        } catch (error) {
+            this._failure('Could not duplicate the token. Nothing was changed.', error,
+                () => this.duplicateToken(id));
+            return false;
+        }
     }
 
     async markDead(id, dead) {
-        const resp = await fetch(`/api/v1/tokens/${id}/dead`, {
-            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dead }),
-        });
-        const updated = await resp.json();
-        const idx = this.tokens.findIndex(t => t.id === id);
-        if (idx >= 0) this.tokens[idx] = updated;
-        this.renderTokens();
-        this.emit('tokenupdate', { tokens: this.tokens });
-        this.emit('state-changed');
-        if (this.selectedTokenId === id) this.emit('tokenselect', { token: updated });
+        try {
+            const resp = await this._request(`/api/v1/tokens/${id}/dead`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dead }),
+            });
+            const updated = await resp.json();
+            const idx = this.tokens.findIndex(t => t.id === id);
+            if (idx >= 0) this.tokens[idx] = updated;
+            this.renderTokens();
+            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emit('state-changed');
+            if (this.selectedTokenId === id) this.emit('tokenselect', { token: updated });
+        } catch (error) {
+            this._failure('Could not change the defeated state. The previous state was restored.', error,
+                () => this.markDead(id, dead));
+            return false;
+        }
     }
 
     async createTokenFromStatblock(statblockId) {
         const s = this.cellSizePx;
-        const resp = await fetch(`/api/v1/library/statblocks/${statblockId}`);
-        if (!resp.ok) return;
-        const sb = await resp.json();
+        try {
+            const resp = await this._request(`/api/v1/library/statblocks/${statblockId}`);
+            const sb = await resp.json();
 
-        const centerX = (-this.stage.x() + this.container.clientWidth / 2) / this.stage.scaleX();
-        const centerY = (-this.stage.y() + this.container.clientHeight / 2) / this.stage.scaleY();
-        let px = Math.round(centerX);
-        let py = Math.round(centerY);
-        if (this.movementMode === 'GRID') {
-            px = snapPixel(px, s, true);
-            py = snapPixel(py, s, true);
+            const centerX = (-this.stage.x() + this.container.clientWidth / 2) / this.stage.scaleX();
+            const centerY = (-this.stage.y() + this.container.clientHeight / 2) / this.stage.scaleY();
+            let px = Math.round(centerX);
+            let py = Math.round(centerY);
+            if (this.movementMode === 'GRID') {
+                px = snapPixel(px, s, true);
+                py = snapPixel(py, s, true);
+            }
+
+            const hpMatch = sb.hp ? sb.hp.match(/(\d+)/) : null;
+            const hp = hpMatch ? parseInt(hpMatch[1], 10) : null;
+
+            await this.createToken({
+                name: sb.name, kind: 'MONSTER',
+                positionX: px, positionY: py,
+                sizeCols: 1, sizeRows: 1,
+                color: '#e74c3c', hidden: false,
+                currentHp: hp, maxHp: hp,
+            });
+        } catch (error) {
+            this._failure('Could not load that statblock. Nothing was changed.', error,
+                () => this.createTokenFromStatblock(statblockId));
+            return false;
         }
-
-        const hpMatch = sb.hp ? sb.hp.match(/(\d+)/) : null;
-        const hp = hpMatch ? parseInt(hpMatch[1], 10) : null;
-
-        await this.createToken({
-            name: sb.name, kind: 'MONSTER',
-            positionX: px, positionY: py,
-            sizeCols: 1, sizeRows: 1,
-            color: '#e74c3c', hidden: false,
-            currentHp: hp, maxHp: hp,
-        });
     }
 
     selectToken(id) {
@@ -549,25 +607,37 @@ export class BattleMap {
     }
 
     async updateToken(id, data) {
-        const resp = await fetch(`/api/v1/tokens/${id}`, {
-            method: 'PUT', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
-        const updated = await resp.json();
-        const idx = this.tokens.findIndex(t => t.id === id);
-        if (idx >= 0) this.tokens[idx] = updated;
-        this.renderTokens();
-        this.emit('tokenupdate', { tokens: this.tokens });
-        this.emit('state-changed');
-        if (this.selectedTokenId === id) this.emit('tokenselect', { token: updated });
+        try {
+            const resp = await this._request(`/api/v1/tokens/${id}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            const updated = await resp.json();
+            const idx = this.tokens.findIndex(t => t.id === id);
+            if (idx >= 0) this.tokens[idx] = updated;
+            this.renderTokens();
+            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emit('state-changed');
+            if (this.selectedTokenId === id) this.emit('tokenselect', { token: updated });
+        } catch (error) {
+            this._failure('Could not save the token. Your edits are still visible for retry.', error,
+                () => this.updateToken(id, data));
+            return false;
+        }
     }
 
     async addPartyToMap() {
-        const resp = await fetch(`/api/v1/maps/${this.mapId}/tokens/add-party`, { method: 'POST' });
-        this.tokens = await resp.json();
-        this.renderTokens();
-        this.emit('tokenupdate', { tokens: this.tokens });
-        this.emit('state-changed');
+        try {
+            const resp = await this._request(`/api/v1/maps/${this.mapId}/tokens/add-party`, { method: 'POST' });
+            this.tokens = await resp.json();
+            this.renderTokens();
+            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emit('state-changed');
+        } catch (error) {
+            this._failure('Could not add the party. Nothing was changed.', error,
+                () => this.addPartyToMap());
+            return false;
+        }
     }
 
     /* ---- Tool & Mode Switching ---- */
@@ -587,25 +657,40 @@ export class BattleMap {
     }
 
     async setMovementMode(mode) {
+        const previous = this.movementMode;
         this.movementMode = mode;
-        this._patchMode(mode, null);
         this.emit('modestate', { movementMode: mode, showGrid: this.showGrid });
+        try {
+            await this._patchMode(mode, null);
+        } catch (error) {
+            this.movementMode = previous;
+            this.emit('modestate', { movementMode: previous, showGrid: this.showGrid });
+            this._failure('Could not change movement mode. The previous mode was restored.', error,
+                () => this.setMovementMode(mode));
+        }
     }
 
     async setShowGrid(show) {
+        const previous = this.showGrid;
         this.showGrid = show;
         this.renderGrid();
-        this._patchMode(null, show);
         this.emit('modestate', { movementMode: this.movementMode, showGrid: show });
+        try {
+            await this._patchMode(null, show);
+        } catch (error) {
+            this.showGrid = previous;
+            this.renderGrid();
+            this.emit('modestate', { movementMode: this.movementMode, showGrid: previous });
+            this._failure('Could not change grid visibility. The previous setting was restored.', error,
+                () => this.setShowGrid(show));
+        }
     }
 
     async _patchMode(movementMode, showGrid) {
-        try {
-            await fetch(`/api/v1/maps/${this.mapId}`, {
-                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ movementMode, showGrid }),
-            });
-        } catch (e) { /* non-critical */ }
+        await this._request(`/api/v1/maps/${this.mapId}`, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ movementMode, showGrid }),
+        });
     }
 
     setDmMode(dm) {
@@ -808,12 +893,15 @@ export class BattleMap {
     async syncAoEs() {
         try {
             const templates = this.buildAoeTemplates();
-            await fetch('/api/v1/table/aoes', {
+            await this._request('/api/v1/table/aoes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(templates),
             });
-        } catch (e) {}
+        } catch (error) {
+            this._failure('Could not update the player AoE overlay. The DM map was kept.', error,
+                () => this.syncAoEs());
+        }
     }
 
     /* ---- Measurement ---- */
@@ -967,33 +1055,36 @@ export class BattleMap {
     async loadPins(mapId) {
         this.pinLayer.destroyChildren();
         if (!this.dmMode) return;
-        const res = await fetch(`/api/v1/maps/${mapId}/pins`);
-        if (!res.ok) return;
-        const pins = await res.json();
-        for (const pin of pins) {
-            const circle = new Konva.Circle({
-                x: pin.x, y: pin.y, radius: 14,
-                fill: '#b45309', stroke: '#fff', strokeWidth: 2,
-                draggable: false
-            });
-            const label = new Konva.Text({
-                x: pin.x - 8, y: pin.y - 8,
-                text: pin.sceneKey || '\u2022',
-                fontSize: 12, fill: '#fff',
-                fontStyle: 'bold', align: 'center',
-                width: 16
-            });
-            const group = new Konva.Group({ listening: true });
-            group.add(circle);
-            group.add(label);
-            group.on('click', () => {
-                if (window.openSceneInPanel) {
-                    window.openSceneInPanel(pin.sceneId);
-                }
-            });
-            this.pinLayer.add(group);
+        try {
+            const res = await this._request(`/api/v1/maps/${mapId}/pins`);
+            const pins = await res.json();
+            for (const pin of pins) {
+                const circle = new Konva.Circle({
+                    x: pin.x, y: pin.y, radius: 14,
+                    fill: '#b45309', stroke: '#fff', strokeWidth: 2,
+                    draggable: false
+                });
+                const label = new Konva.Text({
+                    x: pin.x - 8, y: pin.y - 8,
+                    text: pin.sceneKey || '\u2022',
+                    fontSize: 12, fill: '#fff',
+                    fontStyle: 'bold', align: 'center',
+                    width: 16
+                });
+                const group = new Konva.Group({ listening: true });
+                group.add(circle);
+                group.add(label);
+                group.on('click', () => {
+                    if (window.openSceneInPanel) {
+                        window.openSceneInPanel(pin.sceneId);
+                    }
+                });
+                this.pinLayer.add(group);
+            }
+            this.pinLayer.draw();
+        } catch (error) {
+            this._failure('Could not load pins.', error, null);
         }
-        this.pinLayer.draw();
     }
 
     showPins() {
@@ -1008,8 +1099,7 @@ export class BattleMap {
 
     /* ---- Map Switching ---- */
     async switchToMap(mapId) {
-        const resp = await fetch(`/api/v1/maps/${mapId}`);
-        if (!resp.ok) return;
+        const resp = await this._request(`/api/v1/maps/${mapId}`);
         const mapData = await resp.json();
 
         this.mapId = mapId;
