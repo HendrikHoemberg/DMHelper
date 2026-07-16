@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.campaign.packagev2.web;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.CampaignImportPreviewStore;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportCoordinator;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportOptions;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignImportCoordinator;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignPackageValidationPipeline;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -86,12 +91,69 @@ class CampaignPackageControllerTest {
     @Test
     void exportFailureDoesNotLeakInternalException() throws Exception {
         UUID campaignId = UUID.randomUUID();
-        when(exporter.export(campaignId)).thenThrow(new IllegalStateException("secret filesystem path"));
+        when(exporter.export(eq(campaignId), any(CampaignExportOptions.class)))
+                .thenThrow(new IllegalStateException("secret filesystem path"));
 
         mvc.perform(get("/campaigns/{id}/package", campaignId))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.code").value("EXPORT_FAILED"))
                 .andExpect(content().string(org.hamcrest.Matchers.not(
                         org.hamcrest.Matchers.containsString("secret filesystem path"))));
+    }
+
+    @Test
+    void exportDefaultsToIncludeCombatLogAndDiceHistory() throws Exception {
+        UUID campaignId = UUID.randomUUID();
+        when(exporter.export(eq(campaignId), any(CampaignExportOptions.class)))
+                .thenThrow(new IllegalStateException("expected"));
+
+        mvc.perform(get("/campaigns/{id}/package", campaignId))
+                .andExpect(status().isInternalServerError());
+
+        verify(exporter).export(eq(campaignId),
+                argThat(opts -> opts.includeCombatLog() && opts.includeDiceHistory()));
+    }
+
+    @Test
+    void exportRespectsExcludeCombatLog() throws Exception {
+        UUID campaignId = UUID.randomUUID();
+        when(exporter.export(eq(campaignId), any(CampaignExportOptions.class)))
+                .thenThrow(new IllegalStateException("expected"));
+
+        mvc.perform(get("/campaigns/{id}/package", campaignId)
+                        .param("includeCombatLog", "false"))
+                .andExpect(status().isInternalServerError());
+
+        verify(exporter).export(eq(campaignId),
+                argThat(opts -> !opts.includeCombatLog() && opts.includeDiceHistory()));
+    }
+
+    @Test
+    void exportRespectsExcludeDiceHistory() throws Exception {
+        UUID campaignId = UUID.randomUUID();
+        when(exporter.export(eq(campaignId), any(CampaignExportOptions.class)))
+                .thenThrow(new IllegalStateException("expected"));
+
+        mvc.perform(get("/campaigns/{id}/package", campaignId)
+                        .param("includeDiceHistory", "false"))
+                .andExpect(status().isInternalServerError());
+
+        verify(exporter).export(eq(campaignId),
+                argThat(opts -> opts.includeCombatLog() && !opts.includeDiceHistory()));
+    }
+
+    @Test
+    void exportRespectsExcludeBoth() throws Exception {
+        UUID campaignId = UUID.randomUUID();
+        when(exporter.export(eq(campaignId), any(CampaignExportOptions.class)))
+                .thenThrow(new IllegalStateException("expected"));
+
+        mvc.perform(get("/campaigns/{id}/package", campaignId)
+                        .param("includeCombatLog", "false")
+                        .param("includeDiceHistory", "false"))
+                .andExpect(status().isInternalServerError());
+
+        verify(exporter).export(eq(campaignId),
+                argThat(opts -> !opts.includeCombatLog() && !opts.includeDiceHistory()));
     }
 }

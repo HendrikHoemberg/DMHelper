@@ -20,8 +20,24 @@
             <div class="dash-actions u-mb-lg">
                 <a class="btn btn-primary" th:href="@{/campaigns/{id}/session(id=${campaign.id})}">Run Session</a>
                 <a class="btn" th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">Plan Adventures</a>
-                <a th:href="@{/campaigns/{id}/package(id=${campaign.id})}"
-                   class="btn" download>Export Campaign Package</a>
+                <div class="export-package-group">
+                    <form th:action="@{/campaigns/{id}/package(id=${campaign.id})}"
+                          method="GET">
+                        <input type="hidden" name="includeCombatLog" value="true" id="includeCombatLog">
+                        <input type="hidden" name="includeDiceHistory" value="true" id="includeDiceHistory">
+                        <label class="checkbox-label">
+                            <input type="checkbox" checked
+                                   onchange="document.getElementById('includeCombatLog').value=this.checked">
+                            Combat Log
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" checked
+                                   onchange="document.getElementById('includeDiceHistory').value=this.checked">
+                            Dice History
+                        </label>
+                        <button type="submit" class="btn">Export Campaign Package</button>
+                    </form>
+                </div>
                 <a th:href="@{/campaigns/{id}/export(id=${campaign.id})}"
                    class="btn" download>Export Legacy v1 JSON</a>
                 <button class="btn"

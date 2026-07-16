@@ -11,4 +11,6 @@ public interface DiceRollRepository extends JpaRepository<DiceRoll, UUID> {
     List<DiceRoll> findTop20ByCampaignIdOrderByCreatedAtDesc(UUID campaignId);
 
     List<DiceRoll> findByCampaignId(UUID campaignId);
+
+    List<DiceRoll> findByCampaignIdOrderByCreatedAtAscIdAsc(UUID campaignId);
 }

@@ -41,6 +41,10 @@ public class CampaignExportCoordinator {
     }
 
     public CampaignPackageArtifact export(UUID campaignId) {
+        return export(campaignId, CampaignExportOptions.complete());
+    }
+
+    public CampaignPackageArtifact export(UUID campaignId, CampaignExportOptions options) {
         var campaign = campaignService.findById(campaignId);
         String v1Json = campaignService.exportToJson(campaignId);
         CampaignExportDto v1 = MAPPER.readValue(v1Json, CampaignExportDto.class);
@@ -68,7 +72,7 @@ public class CampaignExportCoordinator {
             var metadata = new CampaignManifestV2.Metadata(
                     converted.campaign().key(), Instant.now(), "DMHelper/0.0.1-SNAPSHOT",
                     converted.metadata().catalogVersion(), converted.metadata().catalogSha256(),
-                    List.of());
+                    options.exclusions());
             var manifest = new CampaignManifestV2(converted.formatVersion(), metadata, converted.campaign(),
                     converted.assets(), converted.party(), converted.customStatBlocks(), converted.handouts(),
                     converted.maps(), converted.encounters(), converted.notes(), converted.quickNotes(),

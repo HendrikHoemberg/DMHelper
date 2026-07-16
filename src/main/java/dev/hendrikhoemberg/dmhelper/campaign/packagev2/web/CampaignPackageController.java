@@ -7,6 +7,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.StagedCampaignPackage;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.CampaignImportPreview;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.CampaignImportPreviewStore;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportCoordinator;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportOptions;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignImportCoordinator;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignPackageArtifact;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignPackageValidationPipeline;
@@ -109,9 +110,12 @@ public class CampaignPackageController {
     }
 
     @GetMapping("/{campaignId}/package")
-    public ResponseEntity<?> exportV2(@PathVariable UUID campaignId) {
+    public ResponseEntity<?> exportV2(@PathVariable UUID campaignId,
+                                      @RequestParam(defaultValue = "true") boolean includeCombatLog,
+                                      @RequestParam(defaultValue = "true") boolean includeDiceHistory) {
         try {
-            CampaignPackageArtifact artifact = exportCoordinator.export(campaignId);
+            var options = new CampaignExportOptions(includeCombatLog, includeDiceHistory);
+            CampaignPackageArtifact artifact = exportCoordinator.export(campaignId, options);
             if (artifact.zipped()) {
                 return ResponseEntity.ok()
                         .contentType(artifact.mediaType())
