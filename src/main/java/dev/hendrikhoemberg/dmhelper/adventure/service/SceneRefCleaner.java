@@ -1,7 +1,8 @@
 package dev.hendrikhoemberg.dmhelper.adventure.service;
 
-import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
-import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
+import dev.hendrikhoemberg.dmhelper.adventure.data.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationRepository;
+import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,9 +13,21 @@ import java.util.UUID;
 public class SceneRefCleaner {
 
     private final SceneRepository sceneRepository;
+    private final SceneTransitionRepository transitionRepository;
+    private final SceneLinkRepository linkRepository;
+    private final SourceAnnotationRepository sourceAnnotationRepository;
+    private final EntityManager em;
 
-    public SceneRefCleaner(SceneRepository sceneRepository) {
+    public SceneRefCleaner(SceneRepository sceneRepository,
+                           SceneTransitionRepository transitionRepository,
+                           SceneLinkRepository linkRepository,
+                           SourceAnnotationRepository sourceAnnotationRepository,
+                           EntityManager em) {
         this.sceneRepository = sceneRepository;
+        this.transitionRepository = transitionRepository;
+        this.linkRepository = linkRepository;
+        this.sourceAnnotationRepository = sourceAnnotationRepository;
+        this.em = em;
     }
 
     public void detachEncounter(UUID encounterId) {
@@ -47,5 +60,20 @@ public class SceneRefCleaner {
                 sceneRepository.save(s);
             }
         }
+    }
+
+    public void detachScene(UUID sceneId) {
+        for (SceneTransition t : transitionRepository.findByTargetSceneId(sceneId)) {
+            t.setTargetScene(null);
+            transitionRepository.save(t);
+        }
+        for (SceneLink l : linkRepository.findByTargetId(sceneId)) {
+            linkRepository.delete(l);
+        }
+        sourceAnnotationRepository.deleteByOwnerTypeAndOwnerId("SCENE", sceneId);
+        for (SceneTransition t : transitionRepository.findBySceneIdOrderBySortOrderAsc(sceneId)) {
+            sourceAnnotationRepository.deleteByOwnerTypeAndOwnerId("SCENE_TRANSITION", t.getId());
+        }
+        em.flush();
     }
 }

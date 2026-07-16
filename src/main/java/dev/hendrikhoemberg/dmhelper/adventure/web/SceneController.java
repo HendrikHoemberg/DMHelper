@@ -1,8 +1,9 @@
 package dev.hendrikhoemberg.dmhelper.adventure.web;
 
-import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
-import dev.hendrikhoemberg.dmhelper.adventure.data.SceneStatus;
+import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneStructuredContentService;
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneTransitionService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
@@ -28,6 +29,8 @@ public class SceneController {
     private final StatBlockRepository statBlockRepository;
     private final HandoutRepository handoutRepository;
     private final MarkdownUtil markdownUtil;
+    private final SceneStructuredContentService structuredService;
+    private final SceneTransitionService transitionService;
 
     public SceneController(AdventureService adventureService,
                            CampaignRepository campaignRepository,
@@ -35,7 +38,9 @@ public class SceneController {
                            EncounterRepository encounterRepository,
                            StatBlockRepository statBlockRepository,
                            HandoutRepository handoutRepository,
-                           MarkdownUtil markdownUtil) {
+                           MarkdownUtil markdownUtil,
+                           SceneStructuredContentService structuredService,
+                           SceneTransitionService transitionService) {
         this.adventureService = adventureService;
         this.campaignRepository = campaignRepository;
         this.gameMapRepository = gameMapRepository;
@@ -43,6 +48,8 @@ public class SceneController {
         this.statBlockRepository = statBlockRepository;
         this.handoutRepository = handoutRepository;
         this.markdownUtil = markdownUtil;
+        this.structuredService = structuredService;
+        this.transitionService = transitionService;
     }
 
     @GetMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}")
@@ -246,6 +253,330 @@ public class SceneController {
                 .map(s -> "redirect:/campaigns/" + campaignId + "/adventures/"
                         + s.getChapter().getAdventure().getId() + "/scenes/" + s.getId())
                 .orElse("redirect:/campaigns/" + campaignId + "/adventures");
+    }
+
+    // ---- Structured content: metadata ----
+
+    @PutMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/metadata")
+    public String updateMetadata(@PathVariable UUID campaignId,
+                                 @PathVariable UUID adventureId,
+                                 @PathVariable UUID chapterId,
+                                 @PathVariable UUID sceneId,
+                                 @RequestParam(required = false) String summary,
+                                 @RequestParam(required = false) String sourceLocator,
+                                 @RequestParam(required = false) String tags,
+                                 @RequestParam(required = false) String mapRegionKey,
+                                 Model model) {
+        structuredService.updateMetadata(campaignId, sceneId,
+                new SceneStructuredContentService.SceneMetadataCommand(
+                        summary, sourceLocator, tags, mapRegionKey));
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    // ---- Sections ----
+
+    @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/sections")
+    public String addSection(@PathVariable UUID campaignId,
+                             @PathVariable UUID adventureId,
+                             @PathVariable UUID chapterId,
+                             @PathVariable UUID sceneId,
+                             @RequestParam SceneSectionKind kind,
+                             @RequestParam String label,
+                             @RequestParam String body,
+                             @RequestParam(required = false) String sourceLocator,
+                             @RequestParam(defaultValue = "0") int sortOrder,
+                             Model model) {
+        structuredService.addSection(campaignId, sceneId,
+                new SceneStructuredContentService.SceneSectionCommand(
+                        kind, label, body, sourceLocator, sortOrder));
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/sections/{sectionId}")
+    public String updateSection(@PathVariable UUID campaignId,
+                                @PathVariable UUID adventureId,
+                                @PathVariable UUID chapterId,
+                                @PathVariable UUID sceneId,
+                                @PathVariable UUID sectionId,
+                                @RequestParam SceneSectionKind kind,
+                                @RequestParam String label,
+                                @RequestParam String body,
+                                @RequestParam(required = false) String sourceLocator,
+                                @RequestParam(defaultValue = "0") int sortOrder,
+                                Model model) {
+        try {
+            structuredService.updateSection(campaignId, sceneId, sectionId,
+                    new SceneStructuredContentService.SceneSectionCommand(
+                            kind, label, body, sourceLocator, sortOrder));
+        } catch (IllegalArgumentException | NotFoundException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    @DeleteMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/sections/{sectionId}")
+    public String deleteSection(@PathVariable UUID campaignId,
+                                @PathVariable UUID adventureId,
+                                @PathVariable UUID chapterId,
+                                @PathVariable UUID sceneId,
+                                @PathVariable UUID sectionId,
+                                Model model) {
+        structuredService.deleteSection(campaignId, sceneId, sectionId);
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    // ---- Checks ----
+
+    @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/checks")
+    public String addCheck(@PathVariable UUID campaignId,
+                           @PathVariable UUID adventureId,
+                           @PathVariable UUID chapterId,
+                           @PathVariable UUID sceneId,
+                           @RequestParam(required = false) String label,
+                           @RequestParam(required = false) String ability,
+                           @RequestParam(required = false) String skill,
+                           @RequestParam(required = false) Integer dc,
+                           @RequestParam(required = false) SceneCheckVisibility visibility,
+                           @RequestParam(required = false) String success,
+                           @RequestParam(required = false) String failure,
+                           @RequestParam(required = false) String partial,
+                           @RequestParam(required = false) String sourceLocator,
+                           @RequestParam(defaultValue = "0") int sortOrder,
+                           Model model) {
+        structuredService.addCheck(campaignId, sceneId,
+                new SceneStructuredContentService.SceneCheckCommand(
+                        label, ability, skill, dc, visibility,
+                        success, failure, partial,
+                        null, null, null, sourceLocator, sortOrder));
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/checks/{checkId}")
+    public String updateCheck(@PathVariable UUID campaignId,
+                              @PathVariable UUID adventureId,
+                              @PathVariable UUID chapterId,
+                              @PathVariable UUID sceneId,
+                              @PathVariable UUID checkId,
+                              @RequestParam(required = false) String label,
+                              @RequestParam(required = false) String ability,
+                              @RequestParam(required = false) String skill,
+                              @RequestParam(required = false) Integer dc,
+                              @RequestParam(required = false) SceneCheckVisibility visibility,
+                              @RequestParam(required = false) String success,
+                              @RequestParam(required = false) String failure,
+                              @RequestParam(required = false) String partial,
+                              @RequestParam(required = false) String sourceLocator,
+                              @RequestParam(defaultValue = "0") int sortOrder,
+                              Model model) {
+        try {
+            structuredService.updateCheck(campaignId, sceneId, checkId,
+                    new SceneStructuredContentService.SceneCheckCommand(
+                            label, ability, skill, dc, visibility,
+                            success, failure, partial,
+                            null, null, null, sourceLocator, sortOrder));
+        } catch (IllegalArgumentException | NotFoundException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    @DeleteMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/checks/{checkId}")
+    public String deleteCheck(@PathVariable UUID campaignId,
+                              @PathVariable UUID adventureId,
+                              @PathVariable UUID chapterId,
+                              @PathVariable UUID sceneId,
+                              @PathVariable UUID checkId,
+                              Model model) {
+        structuredService.deleteCheck(campaignId, sceneId, checkId);
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    // ---- Participants ----
+
+    @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/participants")
+    public String addParticipant(@PathVariable UUID campaignId,
+                                 @PathVariable UUID adventureId,
+                                 @PathVariable UUID chapterId,
+                                 @PathVariable UUID sceneId,
+                                 @RequestParam(required = false) String displayName,
+                                 @RequestParam(defaultValue = "1") int quantity,
+                                 @RequestParam(required = false) SceneParticipantDisposition disposition,
+                                 @RequestParam(required = false) String placementHint,
+                                 @RequestParam(required = false) String sourceLocator,
+                                 @RequestParam(defaultValue = "0") int sortOrder,
+                                 Model model) {
+        structuredService.addParticipant(campaignId, sceneId,
+                new SceneStructuredContentService.SceneParticipantCommand(
+                        displayName, quantity, disposition, placementHint,
+                        null, null, sourceLocator, sortOrder));
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/participants/{participantId}")
+    public String updateParticipant(@PathVariable UUID campaignId,
+                                    @PathVariable UUID adventureId,
+                                    @PathVariable UUID chapterId,
+                                    @PathVariable UUID sceneId,
+                                    @PathVariable UUID participantId,
+                                    @RequestParam(required = false) String displayName,
+                                    @RequestParam(defaultValue = "1") int quantity,
+                                    @RequestParam(required = false) SceneParticipantDisposition disposition,
+                                    @RequestParam(required = false) String placementHint,
+                                    @RequestParam(required = false) String sourceLocator,
+                                    @RequestParam(defaultValue = "0") int sortOrder,
+                                    Model model) {
+        try {
+            structuredService.updateParticipant(campaignId, sceneId, participantId,
+                    new SceneStructuredContentService.SceneParticipantCommand(
+                            displayName, quantity, disposition, placementHint,
+                            null, null, sourceLocator, sortOrder));
+        } catch (IllegalArgumentException | NotFoundException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    @DeleteMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/participants/{participantId}")
+    public String deleteParticipant(@PathVariable UUID campaignId,
+                                    @PathVariable UUID adventureId,
+                                    @PathVariable UUID chapterId,
+                                    @PathVariable UUID sceneId,
+                                    @PathVariable UUID participantId,
+                                    Model model) {
+        structuredService.deleteParticipant(campaignId, sceneId, participantId);
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    // ---- Links ----
+
+    @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/links")
+    public String addLink(@PathVariable UUID campaignId,
+                          @PathVariable UUID adventureId,
+                          @PathVariable UUID chapterId,
+                          @PathVariable UUID sceneId,
+                          @RequestParam SceneLinkRole role,
+                          @RequestParam SceneLinkTargetScope targetScope,
+                          @RequestParam String targetType,
+                          @RequestParam UUID targetId,
+                          @RequestParam(required = false) String displayText,
+                          @RequestParam(required = false) String condition,
+                          @RequestParam(defaultValue = "0") int sortOrder,
+                          Model model) {
+        structuredService.addLink(campaignId, sceneId,
+                new SceneStructuredContentService.SceneLinkCommand(
+                        role, targetScope, targetType, targetId,
+                        null, null, displayText, condition, sortOrder));
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/links/{linkId}")
+    public String updateLink(@PathVariable UUID campaignId,
+                             @PathVariable UUID adventureId,
+                             @PathVariable UUID chapterId,
+                             @PathVariable UUID sceneId,
+                             @PathVariable UUID linkId,
+                             @RequestParam SceneLinkRole role,
+                             @RequestParam SceneLinkTargetScope targetScope,
+                             @RequestParam String targetType,
+                             @RequestParam UUID targetId,
+                             @RequestParam(required = false) String displayText,
+                             @RequestParam(required = false) String condition,
+                             @RequestParam(defaultValue = "0") int sortOrder,
+                             Model model) {
+        try {
+            structuredService.updateLink(campaignId, sceneId, linkId,
+                    new SceneStructuredContentService.SceneLinkCommand(
+                            role, targetScope, targetType, targetId,
+                            null, null, displayText, condition, sortOrder));
+        } catch (IllegalArgumentException | NotFoundException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    @DeleteMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/links/{linkId}")
+    public String deleteLink(@PathVariable UUID campaignId,
+                             @PathVariable UUID adventureId,
+                             @PathVariable UUID chapterId,
+                             @PathVariable UUID sceneId,
+                             @PathVariable UUID linkId,
+                             Model model) {
+        structuredService.deleteLink(campaignId, sceneId, linkId);
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    // ---- Transitions ----
+
+    @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/transitions")
+    public String addTransition(@PathVariable UUID campaignId,
+                                @PathVariable UUID adventureId,
+                                @PathVariable UUID chapterId,
+                                @PathVariable UUID sceneId,
+                                @RequestParam SceneTransitionKind kind,
+                                @RequestParam(required = false) String label,
+                                @RequestParam(required = false) UUID targetSceneId,
+                                @RequestParam(required = false) String externalDestination,
+                                @RequestParam(required = false) String condition,
+                                @RequestParam(required = false) String dmNote,
+                                @RequestParam(required = false) String sourceLocator,
+                                @RequestParam(defaultValue = "0") int sortOrder,
+                                Model model) {
+        structuredService.addTransition(campaignId, sceneId,
+                new SceneStructuredContentService.SceneTransitionCommand(
+                        kind, label, targetSceneId, externalDestination,
+                        condition, dmNote, sourceLocator, sortOrder));
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/transitions/{transitionId}")
+    public String updateTransition(@PathVariable UUID campaignId,
+                                   @PathVariable UUID adventureId,
+                                   @PathVariable UUID chapterId,
+                                   @PathVariable UUID sceneId,
+                                   @PathVariable UUID transitionId,
+                                   @RequestParam SceneTransitionKind kind,
+                                   @RequestParam(required = false) String label,
+                                   @RequestParam(required = false) UUID targetSceneId,
+                                   @RequestParam(required = false) String externalDestination,
+                                   @RequestParam(required = false) String condition,
+                                   @RequestParam(required = false) String dmNote,
+                                   @RequestParam(required = false) String sourceLocator,
+                                   @RequestParam(defaultValue = "0") int sortOrder,
+                                   Model model) {
+        try {
+            structuredService.updateTransition(campaignId, sceneId, transitionId,
+                    new SceneStructuredContentService.SceneTransitionCommand(
+                            kind, label, targetSceneId, externalDestination,
+                            condition, dmNote, sourceLocator, sortOrder));
+        } catch (IllegalArgumentException | NotFoundException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    @DeleteMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/transitions/{transitionId}")
+    public String deleteTransition(@PathVariable UUID campaignId,
+                                   @PathVariable UUID adventureId,
+                                   @PathVariable UUID chapterId,
+                                   @PathVariable UUID sceneId,
+                                   @PathVariable UUID transitionId,
+                                   Model model) {
+        structuredService.deleteTransition(campaignId, sceneId, transitionId);
+        return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    // ---- Follow transition ----
+
+    @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/transitions/{transitionId}/follow")
+    public String followTransition(@PathVariable UUID campaignId,
+                                   @PathVariable UUID adventureId,
+                                   @PathVariable UUID chapterId,
+                                   @PathVariable UUID sceneId,
+                                   @PathVariable UUID transitionId,
+                                   Model model) {
+        Scene target = adventureService.followTransition(campaignId, transitionId);
+        return "redirect:/campaigns/" + campaignId + "/adventures/"
+                + target.getChapter().getAdventure().getId() + "/scenes/" + target.getId();
     }
 
     private String loadActionRail(UUID campaignId, UUID adventureId, UUID sceneId, Model model) {

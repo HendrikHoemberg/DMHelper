@@ -3,6 +3,10 @@ package dev.hendrikhoemberg.dmhelper.adventure.service;
 import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotation;
+import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationConfidence;
+import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationStatus;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
@@ -25,7 +29,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import({AdventureService.class, SceneRefCleaner.class, dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
+@Import({AdventureService.class, SceneTransitionService.class, SceneRefCleaner.class, SceneStructuredContentService.class, dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
 class SceneRefCleanerTest {
 
     @Autowired private AdventureService adventureService;
@@ -43,6 +47,7 @@ class SceneRefCleanerTest {
     @Autowired private SceneParticipantRepository sceneParticipantRepository;
     @Autowired private SceneTransitionRepository sceneTransitionRepository;
     @Autowired private SceneLinkRepository sceneLinkRepository;
+    @Autowired private SourceAnnotationRepository sourceAnnotationRepository;
     @Autowired private EntityManager em;
 
     private Campaign campaign;
@@ -212,7 +217,54 @@ class SceneRefCleanerTest {
         assertThat(sceneLinkRepository.findById(linkId)).isEmpty();
     }
 
+    @Test
+    void detachSceneRemovesSourceAnnotationsForSceneAndTransitions() {
+        var s = buildSceneWithChildren(newScene());
+        var transition = new SceneTransition();
+        transition.setScene(s);
+        transition.setKind(SceneTransitionKind.CHOICE);
+        transition.setLabel("Go to tavern");
+        transition.setSortOrder(0);
+        s.getTransitions().add(transition);
+        em.flush();
 
+        SourceAnnotation sceneAnnotation = new SourceAnnotation();
+        sceneAnnotation.setCampaign(campaign);
+        sceneAnnotation.setOwnerType("SCENE");
+        sceneAnnotation.setOwnerId(s.getId());
+        sceneAnnotation.setMessage("Scene annotation");
+        sceneAnnotation.setConfidence(SourceAnnotationConfidence.UNKNOWN);
+        sceneAnnotation.setStatus(SourceAnnotationStatus.OPEN);
+        sourceAnnotationRepository.save(sceneAnnotation);
+
+        SourceAnnotation transitionAnnotation = new SourceAnnotation();
+        transitionAnnotation.setCampaign(campaign);
+        transitionAnnotation.setOwnerType("SCENE_TRANSITION");
+        transitionAnnotation.setOwnerId(transition.getId());
+        transitionAnnotation.setMessage("Transition annotation");
+        transitionAnnotation.setConfidence(SourceAnnotationConfidence.UNKNOWN);
+        transitionAnnotation.setStatus(SourceAnnotationStatus.OPEN);
+        sourceAnnotationRepository.save(transitionAnnotation);
+
+        SourceAnnotation otherAnnotation = new SourceAnnotation();
+        otherAnnotation.setCampaign(campaign);
+        otherAnnotation.setOwnerType("OTHER");
+        otherAnnotation.setOwnerId(s.getId());
+        otherAnnotation.setMessage("Other annotation");
+        otherAnnotation.setConfidence(SourceAnnotationConfidence.UNKNOWN);
+        otherAnnotation.setStatus(SourceAnnotationStatus.OPEN);
+        sourceAnnotationRepository.save(otherAnnotation);
+
+        em.flush();
+
+        cleaner.detachScene(s.getId());
+        em.flush();
+        em.clear();
+
+        assertThat(sourceAnnotationRepository.findByOwnerTypeAndOwnerId("SCENE", s.getId())).isEmpty();
+        assertThat(sourceAnnotationRepository.findByOwnerTypeAndOwnerId("SCENE_TRANSITION", transition.getId())).isEmpty();
+        assertThat(sourceAnnotationRepository.findByOwnerTypeAndOwnerId("OTHER", s.getId())).isNotEmpty();
+    }
 
     private Scene newScene() {
         var s = new Scene();

@@ -32,6 +32,8 @@ public class AdventureService {
     private final HandoutRepository handoutRepository;
     private final SessionActivityRecorder sessionActivity;
     private final SessionReferenceCleaner sessionRefCleaner;
+    private final SceneTransitionService sceneTransitionService;
+    private final SceneRefCleaner sceneRefCleaner;
 
     public AdventureService(AdventureRepository adventureRepository,
                             ChapterRepository chapterRepository,
@@ -42,7 +44,9 @@ public class AdventureService {
                             StatBlockRepository statBlockRepository,
                             HandoutRepository handoutRepository,
                             SessionActivityRecorder sessionActivity,
-                            SessionReferenceCleaner sessionRefCleaner) {
+                            SessionReferenceCleaner sessionRefCleaner,
+                            SceneTransitionService sceneTransitionService,
+                            SceneRefCleaner sceneRefCleaner) {
         this.adventureRepository = adventureRepository;
         this.chapterRepository = chapterRepository;
         this.sceneRepository = sceneRepository;
@@ -53,6 +57,8 @@ public class AdventureService {
         this.handoutRepository = handoutRepository;
         this.sessionActivity = sessionActivity;
         this.sessionRefCleaner = sessionRefCleaner;
+        this.sceneTransitionService = sceneTransitionService;
+        this.sceneRefCleaner = sceneRefCleaner;
     }
 
     // ---- Adventures ----
@@ -192,6 +198,7 @@ public class AdventureService {
 
     public void deleteScene(UUID id) {
         sessionRefCleaner.detachScene(id);
+        sceneRefCleaner.detachScene(id);
         Scene s = findSceneById(id);
         UUID chapterId = s.getChapter().getId();
         clearCursorIfCurrent(s);
@@ -286,6 +293,10 @@ public class AdventureService {
         int target = idx + direction;
         if (target < 0 || target >= flat.size()) return Optional.of(current);
         return Optional.of(setCurrentScene(campaignId, flat.get(target).getId()));
+    }
+
+    public Scene followTransition(UUID campaignId, UUID transitionId) {
+        return sceneTransitionService.followTransition(campaignId, transitionId);
     }
 
     // ---- Scene links ----

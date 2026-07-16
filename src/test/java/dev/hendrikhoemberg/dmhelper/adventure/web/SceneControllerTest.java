@@ -2,8 +2,11 @@ package dev.hendrikhoemberg.dmhelper.adventure.web;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneStructuredContentService;
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneTransitionService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.config.MarkdownUtil;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
@@ -30,6 +33,8 @@ class SceneControllerTest {
     @Autowired private MockMvc mockMvc;
 
     @MockitoBean private AdventureService adventureService;
+    @MockitoBean private SceneStructuredContentService structuredService;
+    @MockitoBean private SceneTransitionService transitionService;
     @MockitoBean private CampaignRepository campaignRepository;
     @MockitoBean private GameMapRepository gameMapRepository;
     @MockitoBean private EncounterRepository encounterRepository;
@@ -133,5 +138,91 @@ class SceneControllerTest {
         mockMvc.perform(put("/campaigns/{cid}/current-scene/step", campaignId)
                         .param("direction", "1"))
                 .andExpect(redirectedUrlPattern("/campaigns/" + campaignId + "/adventures/" + adventureId + "/scenes/" + sceneId + "*"));
+    }
+
+    private void setupSceneDetailMocks() {
+        when(adventureService.findAdventureById(adventureId)).thenReturn(scene.getChapter().getAdventure());
+        when(adventureService.findSceneById(sceneId)).thenReturn(scene);
+        when(adventureService.getCurrentScene(campaignId)).thenReturn(Optional.empty());
+    }
+
+    @Test
+    void updateSectionReturnsErrorOnValidationFailure() throws Exception {
+        setupSceneDetailMocks();
+        doThrow(new IllegalArgumentException("Section label and body are required"))
+                .when(structuredService).updateSection(any(), any(), any(), any());
+
+        mockMvc.perform(post("/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/sections/{sectionId}",
+                        campaignId, adventureId, chapterId, sceneId, UUID.randomUUID())
+                        .param("kind", "READ_ALOUD")
+                        .param("label", "")
+                        .param("body", "")
+                        .param("sortOrder", "0"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("error", "Section label and body are required"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Section label and body are required")));
+    }
+
+    @Test
+    void updateCheckReturnsErrorOnValidationFailure() throws Exception {
+        setupSceneDetailMocks();
+        doThrow(new NotFoundException("Check not found in scene"))
+                .when(structuredService).updateCheck(any(), any(), any(), any());
+
+        mockMvc.perform(post("/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/checks/{checkId}",
+                        campaignId, adventureId, chapterId, sceneId, UUID.randomUUID())
+                        .param("sortOrder", "0"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("error", "Check not found in scene"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Check not found in scene")));
+    }
+
+    @Test
+    void updateParticipantReturnsErrorOnValidationFailure() throws Exception {
+        setupSceneDetailMocks();
+        doThrow(new NotFoundException("Participant not found in scene"))
+                .when(structuredService).updateParticipant(any(), any(), any(), any());
+
+        mockMvc.perform(post("/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/participants/{participantId}",
+                        campaignId, adventureId, chapterId, sceneId, UUID.randomUUID())
+                        .param("displayName", "Goblin")
+                        .param("quantity", "1")
+                        .param("sortOrder", "0"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("error", "Participant not found in scene"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Participant not found in scene")));
+    }
+
+    @Test
+    void updateLinkReturnsErrorOnValidationFailure() throws Exception {
+        setupSceneDetailMocks();
+        doThrow(new NotFoundException("Link not found in scene"))
+                .when(structuredService).updateLink(any(), any(), any(), any());
+
+        mockMvc.perform(post("/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/links/{linkId}",
+                        campaignId, adventureId, chapterId, sceneId, UUID.randomUUID())
+                        .param("role", "REFERENCE")
+                        .param("targetScope", "PACKAGE")
+                        .param("targetType", "HANDOUT")
+                        .param("targetId", UUID.randomUUID().toString())
+                        .param("sortOrder", "0"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("error", "Link not found in scene"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Link not found in scene")));
+    }
+
+    @Test
+    void updateTransitionReturnsErrorOnValidationFailure() throws Exception {
+        setupSceneDetailMocks();
+        doThrow(new IllegalArgumentException("CHOICE transition requires a target scene"))
+                .when(structuredService).updateTransition(any(), any(), any(), any());
+
+        mockMvc.perform(post("/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/transitions/{transitionId}",
+                        campaignId, adventureId, chapterId, sceneId, UUID.randomUUID())
+                        .param("kind", "CHOICE")
+                        .param("sortOrder", "0"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("error", "CHOICE transition requires a target scene"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("CHOICE transition requires a target scene")));
     }
 }

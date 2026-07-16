@@ -1,4 +1,5 @@
 <div th:fragment="actionRail" xmlns:th="http://www.thymeleaf.org">
+  <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
   <div class="detail-section">
     <h3>Actions</h3>
 

@@ -6,4 +6,5 @@ import java.util.UUID;
 
 public interface SceneLinkRepository extends JpaRepository<SceneLink, UUID> {
     List<SceneLink> findBySceneIdOrderBySortOrderAsc(UUID sceneId);
+    List<SceneLink> findByTargetId(UUID targetId);
 }
