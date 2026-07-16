@@ -904,7 +904,8 @@ export class BattleMap {
     async syncAoEs() {
         try {
             const templates = this.buildAoeTemplates();
-            await this._request('/api/v1/table/aoes', {
+            const cid = this.campaignId || '';
+            await this._request(`/api/v1/campaigns/${cid}/table/aoes`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(templates),

@@ -12,6 +12,8 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
+import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
+import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -43,6 +45,7 @@ class CoreSessionLoopSmokeTest {
     @Autowired private TokenRepository tokenRepo;
     @Autowired private EncounterService encounterService;
     @Autowired private TablePresentationService presentationService;
+    @Autowired private CampaignSessionRepository sessionRepository;
 
     private static Playwright playwright;
     private static Browser browser;
@@ -225,10 +228,25 @@ class CoreSessionLoopSmokeTest {
         playerContext.close();
     }
 
+    private void startSession() {
+        var campaign = campaignRepo.findById(campaignId).orElseThrow();
+        CampaignSession session = sessionRepository.findByCampaignId(campaignId)
+                .orElseGet(() -> {
+                    CampaignSession s = CampaignSession.idle(campaign);
+                    s.setStatus(CampaignSession.Status.RUNNING);
+                    return sessionRepository.save(s);
+                });
+        if (!session.isOpen()) {
+            session.setStatus(CampaignSession.Status.RUNNING);
+            sessionRepository.save(session);
+        }
+    }
+
     @Test
     @Order(7)
     void verifyPlayerSafeProjectionStripsDmOnly() {
-        presentationService.presentMap(mapId);
+        startSession();
+        presentationService.presentMap(campaignId, mapId);
 
         BrowserContext playerContext = browser.newContext();
         Page playerPage = guardedPage(playerContext);
@@ -445,10 +463,11 @@ class CoreSessionLoopSmokeTest {
     @Test
     @Order(15)
     void failedPresentationKeepsCurtainAndRetryShowsMap() {
-        presentationService.curtain();
+        startSession();
+        presentationService.curtain(campaignId);
         String corr = "present-failure-1234";
-        failOnce(dmPage, "**/api/v1/table/presentation", "PUT",
-                Pattern.compile(".*/api/v1/table/presentation"), corr);
+        failOnce(dmPage, "**/api/v1/campaigns/*/table/presentation", "PUT",
+                Pattern.compile(".*/api/v1/campaigns/.+/table/presentation"), corr);
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
                 + "/maps/" + mapId + "/play");
         dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");

@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.live;
 
+import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
@@ -8,6 +9,8 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
+import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
+import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -27,8 +30,10 @@ public class TablePresentationService {
     private final EncounterRepository encounterRepository;
     private final CombatantRepository combatantRepository;
     private final HandoutRepository handoutRepository;
+    private final CampaignSessionRepository sessionRepository;
 
     private volatile LiveTableState currentState;
+    private volatile UUID currentCampaignId;
     private Runnable onStateChange;
 
     private volatile List<LiveTableState.AoeTemplateSnapshot> currentAoEs = List.of();
@@ -37,12 +42,14 @@ public class TablePresentationService {
                                     GameMapRepository gameMapRepository,
                                     EncounterRepository encounterRepository,
                                     CombatantRepository combatantRepository,
-                                    HandoutRepository handoutRepository) {
+                                    HandoutRepository handoutRepository,
+                                    CampaignSessionRepository sessionRepository) {
         this.projectionService = projectionService;
         this.gameMapRepository = gameMapRepository;
         this.encounterRepository = encounterRepository;
         this.combatantRepository = combatantRepository;
         this.handoutRepository = handoutRepository;
+        this.sessionRepository = sessionRepository;
         this.currentState = LiveTableState.curtain();
     }
 
@@ -58,86 +65,145 @@ public class TablePresentationService {
         this.currentAoEs = List.copyOf(aoes);
     }
 
-    @Transactional(readOnly = true)
-    public LiveTableState presentMap(UUID mapId) {
-        GameMap gameMap = gameMapRepository.findById(mapId).orElse(null);
-        if (gameMap == null) {
-            log.warn("Map not found for presentation: {}", mapId);
-            return currentState;
-        }
-
-        var document = projectionService.projectMapDocument(gameMap);
-        var tokens = projectionService.projectTokens(gameMap);
-        UUID campaignId = gameMap.getCampaign().getId();
-        var combatants = getActiveCombatants(campaignId);
-        int activeTurnIndex = getActiveTurnIndex(campaignId);
-
-        currentState = LiveTableState.full("MAP",
-                new LiveTableState.MapSnapshot(
-                        gameMap.getId().toString(), gameMap.getName(),
-                        gameMap.getGridWidth(), gameMap.getGridHeight(), gameMap.getCellSizePx(),
-                        gameMap.getMovementMode(), gameMap.isShowGrid(),
-                        document, tokens, currentAoEs
-                ),
-                null,
-                combatants,
-                activeTurnIndex
-        );
+    @Transactional
+    public LiveTableState presentMap(UUID campaignId, UUID mapId) {
+        CampaignSession session = requireOpenSession(campaignId);
+        GameMap map = gameMapRepository.findById(mapId)
+                .filter(value -> value.getCampaign().getId().equals(campaignId))
+                .orElseThrow(() -> new NotFoundException("Map not found in campaign"));
+        session.setPresentationMode(CampaignSession.PresentationMode.MAP);
+        session.setPresentedMap(map);
+        session.setPresentedHandout(null);
+        sessionRepository.saveAndFlush(session);
+        currentCampaignId = campaignId;
+        currentState = projectMap(map);
         broadcast();
         return currentState;
     }
 
-    @Transactional(readOnly = true)
-    public LiveTableState presentHandout(UUID handoutId) {
-        Handout handout = handoutRepository.findById(handoutId).orElse(null);
-        if (handout == null) {
-            log.warn("Handout not found for presentation: {}", handoutId);
-            return currentState;
-        }
-
-        currentState = LiveTableState.full("HANDOUT", null,
-                new LiveTableState.HandoutRef(handoutId.toString(), handout.getTitle(), handout.getContentType()),
-                null, null);
+    @Transactional
+    public LiveTableState presentHandout(UUID campaignId, UUID handoutId) {
+        CampaignSession session = requireOpenSession(campaignId);
+        Handout handout = handoutRepository.findById(handoutId)
+                .filter(value -> value.getCampaign().getId().equals(campaignId) && !value.isDmOnly())
+                .orElseThrow(() -> new NotFoundException("Presentable handout not found in campaign"));
+        session.setPresentationMode(CampaignSession.PresentationMode.HANDOUT);
+        session.setPresentedMap(null);
+        session.setPresentedHandout(handout);
+        sessionRepository.saveAndFlush(session);
+        currentCampaignId = campaignId;
+        currentState = projectHandout(handout);
         broadcast();
         return currentState;
     }
 
-    public LiveTableState curtain() {
+    @Transactional
+    public LiveTableState curtain(UUID campaignId) {
+        CampaignSession session = requireOpenSession(campaignId);
+        session.setPresentationMode(CampaignSession.PresentationMode.CURTAIN);
+        session.setPresentedMap(null);
+        session.setPresentedHandout(null);
+        sessionRepository.saveAndFlush(session);
+        currentCampaignId = campaignId;
         currentState = LiveTableState.curtain();
         broadcast();
         return currentState;
     }
 
-    @Transactional(readOnly = true)
-    public LiveTableState broadcastCurrentState() {
-        if (currentState == null || "CURTAIN".equals(currentState.mode())) {
+    @Transactional
+    public LiveTableState restorePresentation(UUID campaignId) {
+        CampaignSession session = sessionRepository.findByCampaignId(campaignId).orElse(null);
+        if (session == null || !session.isOpen()) {
+            currentCampaignId = campaignId;
+            currentState = LiveTableState.curtain();
             return currentState;
         }
-        if ("MAP".equals(currentState.mode()) && currentState.map() != null) {
-            UUID mapId = UUID.fromString(currentState.map().mapId());
-            GameMap gameMap = gameMapRepository.findById(mapId).orElse(null);
-            if (gameMap != null) {
-                UUID campaignId = gameMap.getCampaign().getId();
-                var tokens = projectionService.projectTokens(gameMap);
-                var combatants = getActiveCombatants(campaignId);
-                int activeTurnIndex = getActiveTurnIndex(campaignId);
-                currentState = LiveTableState.full("MAP",
-                        new LiveTableState.MapSnapshot(
-                                currentState.map().mapId(), currentState.map().mapName(),
-                                currentState.map().gridWidth(), currentState.map().gridHeight(),
-                                currentState.map().cellSizePx(), currentState.map().movementMode(),
-                                currentState.map().showGrid(),
-                                projectionService.projectMapDocument(gameMap), tokens,
-                                currentAoEs
-                        ),
-                        null,
-                        combatants,
-                        activeTurnIndex
-                );
-                broadcast();
-            }
+        try {
+            return switch (session.getPresentationMode()) {
+                case MAP -> {
+                    if (session.getPresentedMap() == null)
+                        throw new IllegalStateException("Missing map");
+                    currentCampaignId = campaignId;
+                    currentState = projectMap(session.getPresentedMap());
+                    broadcast();
+                    yield currentState;
+                }
+                case HANDOUT -> {
+                    if (session.getPresentedHandout() == null)
+                        throw new IllegalStateException("Missing handout");
+                    currentCampaignId = campaignId;
+                    currentState = projectHandout(session.getPresentedHandout());
+                    broadcast();
+                    yield currentState;
+                }
+                case CURTAIN -> {
+                    currentCampaignId = campaignId;
+                    currentState = LiveTableState.curtain();
+                    broadcast();
+                    yield currentState;
+                }
+            };
+        } catch (Exception e) {
+            log.warn("Could not restore presentation for campaign {}", campaignId, e);
+            session.setPresentationMode(CampaignSession.PresentationMode.CURTAIN);
+            session.setPresentedMap(null);
+            session.setPresentedHandout(null);
+            sessionRepository.save(session);
+            currentCampaignId = campaignId;
+            currentState = LiveTableState.curtain();
+            broadcast();
+            return currentState;
         }
-        return currentState;
+    }
+
+    @Transactional
+    public LiveTableState restoreLatestPresentation() {
+        CampaignSession latest = sessionRepository
+                .findFirstByStatusNotOrderByUpdatedAtDesc(CampaignSession.Status.IDLE)
+                .orElse(null);
+        if (latest == null) {
+            currentState = LiveTableState.curtain();
+            return currentState;
+        }
+        return restorePresentation(latest.getCampaign().getId());
+    }
+
+    @Transactional(readOnly = true)
+    public LiveTableState broadcastCurrentState() {
+        if (currentCampaignId == null) {
+            if (currentState == null) return LiveTableState.curtain();
+            return currentState;
+        }
+        return restorePresentation(currentCampaignId);
+    }
+
+    private LiveTableState projectMap(GameMap gameMap) {
+        var document = projectionService.projectMapDocument(gameMap);
+        var tokens = projectionService.projectTokens(gameMap);
+        UUID campaignId = gameMap.getCampaign().getId();
+        var combatants = getActiveCombatants(campaignId);
+        int activeTurnIndex = getActiveTurnIndex(campaignId);
+        return LiveTableState.full("MAP",
+                new LiveTableState.MapSnapshot(
+                        gameMap.getId().toString(), gameMap.getName(),
+                        gameMap.getGridWidth(), gameMap.getGridHeight(), gameMap.getCellSizePx(),
+                        gameMap.getMovementMode(), gameMap.isShowGrid(),
+                        document, tokens, currentAoEs
+                ), null, combatants, activeTurnIndex);
+    }
+
+    private LiveTableState projectHandout(Handout handout) {
+        return LiveTableState.full("HANDOUT", null,
+                new LiveTableState.HandoutRef(handout.getId().toString(), handout.getTitle(), handout.getContentType()),
+                null, null);
+    }
+
+    private CampaignSession requireOpenSession(UUID campaignId) {
+        CampaignSession session = sessionRepository.findByCampaignId(campaignId)
+                .orElseThrow(() -> new IllegalStateException("No session found for this campaign"));
+        if (!session.isOpen())
+            throw new IllegalStateException("The campaign session must be open to present content.");
+        return session;
     }
 
     private List<LiveTableState.CombatantSnapshot> getActiveCombatants(UUID campaignId) {

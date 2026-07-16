@@ -296,10 +296,11 @@
                     window.setDmMode(this.dmMode, { animate: false });
                     window.addEventListener('battle-state-changed', () => {
                         if (this.presentingMap) {
-                            window.dmRequest('/api/v1/table/refresh', { method: 'POST' })
+                            const cid = document.querySelector('.battle-container')?.dataset?.campaignId || '';
+                            window.dmRequest(`/api/v1/campaigns/${cid}/table/refresh`, { method: 'POST' })
                                 .catch(error => window.reportActionFailure(
                                     'The player display could not refresh.', error,
-                                    () => window.dmRequest('/api/v1/table/refresh', { method: 'POST' })));
+                                    () => window.dmRequest(`/api/v1/campaigns/${cid}/table/refresh`, { method: 'POST' })));
                         }
                     });
                     window.addEventListener('battle-toolchange', (e) => {
@@ -439,7 +440,8 @@
                 },
                 async sendToTable() {
                     try {
-                        await this.request('/api/v1/table/presentation', {
+                        const cid = document.querySelector('.battle-container')?.dataset?.campaignId || '';
+                        await this.request(`/api/v1/campaigns/${cid}/table/presentation`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ mode: 'MAP', ref: this.currentMapId }),
@@ -454,7 +456,8 @@
                 async curtain() {
                     const wasPresenting = this.presentingMap;
                     try {
-                        await this.request('/api/v1/table/presentation', {
+                        const cid = document.querySelector('.battle-container')?.dataset?.campaignId || '';
+                        await this.request(`/api/v1/campaigns/${cid}/table/presentation`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ mode: 'CURTAIN', ref: '' }),
