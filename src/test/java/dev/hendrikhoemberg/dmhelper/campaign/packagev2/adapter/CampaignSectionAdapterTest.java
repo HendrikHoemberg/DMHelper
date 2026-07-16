@@ -151,9 +151,15 @@ class CampaignSectionAdapterTest {
 
         @Override
         public String getOrCreate(UUID campaignId, CampaignContentType type, UUID entityId, String displayName) {
+            String mapKey = type.name() + ":" + entityId;
+            if (bindings.containsKey(mapKey)) {
+                return bindings.get(mapKey);
+            }
             String slug = displayName.isBlank() ? "item"
                     : displayName.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-");
-            return slug + "-" + entityId.toString().substring(0, 8);
+            String key = slug + "-" + entityId.toString().substring(0, 8);
+            bindings.put(mapKey, key);
+            return key;
         }
 
         @Override

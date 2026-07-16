@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface SheetResourceRepository extends JpaRepository<SheetResource, UUID> {
     List<SheetResource> findBySheetId(UUID sheetId);
     void deleteBySheetId(UUID sheetId);
+
+    List<SheetResource> findBySheetIdOrderByIdAsc(UUID sheetId);
 }

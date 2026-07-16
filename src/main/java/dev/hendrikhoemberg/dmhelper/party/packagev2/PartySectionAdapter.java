@@ -1,0 +1,355 @@
+package dev.hendrikhoemberg.dmhelper.party.packagev2;
+
+import tools.jackson.core.type.TypeReference;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.ClassLevelDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.PartyMemberDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.ResourceDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SheetDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SpellRefDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionExporter;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionImporter;
+import dev.hendrikhoemberg.dmhelper.library.data.Background;
+import dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
+import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.Feat;
+import dev.hendrikhoemberg.dmhelper.library.data.FeatRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.Species;
+import dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.Spell;
+import dev.hendrikhoemberg.dmhelper.library.data.SpellRepository;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
+import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
+import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResource;
+import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResourceRepository;
+import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReference;
+import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReferenceRepository;
+import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+@Component
+public class PartySectionAdapter implements CampaignSectionExporter, CampaignSectionImporter {
+
+    private final PartyMemberRepository partyMemberRepository;
+    private final CharacterSheetRepository characterSheetRepository;
+    private final SheetResourceRepository sheetResourceRepository;
+    private final SheetSpellReferenceRepository sheetSpellReferenceRepository;
+    private final SpeciesRepository speciesRepository;
+    private final BackgroundRepository backgroundRepository;
+    private final FeatRepository featRepository;
+    private final CharacterClassRepository classRepository;
+    private final SpellRepository spellRepository;
+    private final ObjectMapper objectMapper;
+
+    public PartySectionAdapter(PartyMemberRepository partyMemberRepository,
+                               CharacterSheetRepository characterSheetRepository,
+                               SheetResourceRepository sheetResourceRepository,
+                               SheetSpellReferenceRepository sheetSpellReferenceRepository,
+                               SpeciesRepository speciesRepository,
+                               BackgroundRepository backgroundRepository,
+                               FeatRepository featRepository,
+                               CharacterClassRepository classRepository,
+                               SpellRepository spellRepository) {
+        this.partyMemberRepository = partyMemberRepository;
+        this.characterSheetRepository = characterSheetRepository;
+        this.sheetResourceRepository = sheetResourceRepository;
+        this.sheetSpellReferenceRepository = sheetSpellReferenceRepository;
+        this.speciesRepository = speciesRepository;
+        this.backgroundRepository = backgroundRepository;
+        this.featRepository = featRepository;
+        this.classRepository = classRepository;
+        this.spellRepository = spellRepository;
+        this.objectMapper = new ObjectMapper();
+    }
+
+    @Override
+    public String sectionName() {
+        return "Party";
+    }
+
+    @Override
+    public int order() {
+        return 300;
+    }
+
+    @Override
+    public void exportSection(CampaignExportContext context, CampaignManifestAssembler target) {
+        var members = partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(context.campaignId());
+
+        List<PartyMemberDto> dtos = members.stream()
+                .map(pm -> exportPartyMember(pm, context))
+                .toList();
+
+        target.party(dtos);
+    }
+
+    private PartyMemberDto exportPartyMember(PartyMember pm, CampaignExportContext context) {
+        String key = context.key(CampaignContentType.PARTY_MEMBER, pm.getId(), pm.getCharacterName());
+
+        SheetDto sheetDto = null;
+        var cs = pm.getCharacterSheet();
+        if (cs != null) {
+            sheetDto = exportSheet(cs, context);
+        }
+
+        return new PartyMemberDto(
+                key, pm.getCharacterName(), pm.getPlayerName(), pm.getClassAndLevel(),
+                pm.getAc(), pm.getMaxHp(), pm.getCurrentHp(), pm.getInitiativeBonus(),
+                pm.getSpeed(), pm.getPassivePerception(), pm.getPassiveInsight(),
+                pm.getPassiveInvestigation(), pm.getNotes(), pm.isActive(), sheetDto
+        );
+    }
+
+    private SheetDto exportSheet(CharacterSheet cs, CampaignExportContext context) {
+        String sheetKey = context.key(CampaignContentType.CHARACTER_SHEET, cs.getId(),
+                cs.getPartyMember().getCharacterName() + " sheet");
+
+        Map<String, Object> abilityScores = parseJsonMap(cs.getAbilityScores());
+        Map<String, Object> proficiencies = parseJsonMap(cs.getProficiencies());
+        Map<String, Object> overrides = parseJsonMap(cs.getOverrides());
+        Map<String, Object> spellSlotsUsed = parseJsonMap(cs.getSpellSlotsUsed());
+
+        List<ClassLevelDto> classLevels = exportClassLevels(cs, context);
+        List<ContentReference> featRefs = exportFeatRefs(cs);
+        List<ResourceDto> resources = exportResources(cs);
+        List<SpellRefDto> spells = exportSpells(cs, context);
+
+        ContentReference speciesRef = null;
+        if (cs.getSpecies() != null) {
+            speciesRef = context.catalogRef(CampaignContentType.SPECIES, cs.getSpecies().getSourceKey());
+        }
+
+        ContentReference backgroundRef = null;
+        if (cs.getBackground() != null) {
+            backgroundRef = context.catalogRef(CampaignContentType.BACKGROUND, cs.getBackground().getSourceKey());
+        }
+
+        return new SheetDto(
+                sheetKey, abilityScores, classLevels, proficiencies,
+                speciesRef, backgroundRef, featRefs,
+                cs.getXp(), overrides, cs.getHitDiceUsed(),
+                resources, spells, spellSlotsUsed
+        );
+    }
+
+    private List<ClassLevelDto> exportClassLevels(CharacterSheet cs, CampaignExportContext context) {
+        String raw = cs.getClassLevels();
+        if (raw == null || raw.isBlank()) return List.of();
+
+        try {
+            var list = objectMapper.readValue(raw, new TypeReference<List<Map<String, Object>>>() {});
+            List<ClassLevelDto> result = new ArrayList<>();
+            for (var entry : list) {
+                String classSourceKey = (String) entry.get("classRef");
+                int level = ((Number) entry.get("level")).intValue();
+                @SuppressWarnings("unchecked")
+                List<Integer> hitDieRolls = entry.containsKey("hitDieRolls")
+                        ? ((List<Number>) entry.get("hitDieRolls")).stream().map(Number::intValue).toList()
+                        : List.of();
+                ContentReference classRef = context.catalogRef(CampaignContentType.CLASS, classSourceKey);
+                result.add(new ClassLevelDto(classRef, level, hitDieRolls));
+            }
+            return result;
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    private List<ContentReference> exportFeatRefs(CharacterSheet cs) {
+        String raw = cs.getFeatRefs();
+        if (raw == null || raw.isBlank()) return List.of();
+
+        try {
+            var sourceKeys = objectMapper.readValue(raw, new TypeReference<List<String>>() {});
+            return sourceKeys.stream()
+                    .map(sk -> ContentReference.catalogRef(CampaignContentType.FEAT, null, sk))
+                    .toList();
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    private List<ResourceDto> exportResources(CharacterSheet cs) {
+        return sheetResourceRepository.findBySheetIdOrderByIdAsc(cs.getId())
+                .stream()
+                .map(r -> {
+                    String key = "resource-" + r.getId().toString().substring(0, 8);
+                    return new ResourceDto(key, r.getName(), r.getMaxUses(), r.getCurrentUses(),
+                            r.getResetRule().name());
+                })
+                .toList();
+    }
+
+    private List<SpellRefDto> exportSpells(CharacterSheet cs, CampaignExportContext context) {
+        return sheetSpellReferenceRepository.findBySheetIdOrderByIdAsc(cs.getId())
+                .stream()
+                .map(sr -> {
+                    ContentReference spellRef = context.catalogRef(CampaignContentType.SPELL,
+                            sr.getSpell().getSourceKey());
+                    ContentReference sourceClassRef = null;
+                    if (sr.getSourceClass() != null && !sr.getSourceClass().isBlank()) {
+                        sourceClassRef = context.catalogRef(CampaignContentType.CLASS, sr.getSourceClass());
+                    }
+                    return new SpellRefDto(spellRef, sr.isPrepared(), sourceClassRef);
+                })
+                .toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseJsonMap(String json) {
+        if (json == null || json.isBlank()) return Map.of();
+        try {
+            return objectMapper.readValue(json, LinkedHashMap.class);
+        } catch (Exception e) {
+            return Map.of();
+        }
+    }
+
+    @Override
+    public void importSection(CampaignManifestV2 source, CampaignImportContext context) {
+        List<PartyMemberDto> dtos = source.party();
+        if (dtos == null) return;
+
+        var campaign = context.campaign();
+
+        // Pass 1: save and register party members
+        List<ImportedPartyMember> imported = new ArrayList<>();
+        for (PartyMemberDto dto : dtos) {
+            var pm = new PartyMember();
+            pm.setCampaign(campaign);
+            pm.setCharacterName(dto.characterName());
+            pm.setPlayerName(dto.playerName());
+            pm.setClassAndLevel(dto.classAndLevel());
+            pm.setAc(dto.ac());
+            pm.setMaxHp(dto.maxHp());
+            pm.setCurrentHp(dto.currentHp());
+            pm.setInitiativeBonus(dto.initiativeBonus());
+            pm.setSpeed(dto.speed());
+            pm.setPassivePerception(dto.passivePerception());
+            pm.setPassiveInsight(dto.passiveInsight());
+            pm.setPassiveInvestigation(dto.passiveInvestigation());
+            pm.setNotes(dto.notes());
+            pm.setActive(dto.active());
+            partyMemberRepository.save(pm);
+            context.register(CampaignContentType.PARTY_MEMBER, dto.key(), pm, pm.getId());
+            imported.add(new ImportedPartyMember(pm, dto));
+        }
+
+        // Pass 2: save sheets, resources, spell refs
+        for (var entry : imported) {
+            var sheetDto = entry.dto.sheet();
+            if (sheetDto == null) continue;
+
+            var cs = new CharacterSheet();
+            cs.setPartyMember(entry.pm);
+            cs.setAbilityScores(toJson(sheetDto.abilityScores()));
+            cs.setClassLevels(importClassLevels(sheetDto));
+            cs.setProficiencies(toJson(sheetDto.proficiencies()));
+            cs.setSpecies(resolveSpecies(sheetDto.speciesRef()));
+            cs.setBackground(resolveBackground(sheetDto.backgroundRef()));
+            cs.setFeatRefs(importFeatRefs(sheetDto));
+            cs.setXp(sheetDto.xp());
+            cs.setOverrides(toJson(sheetDto.overrides()));
+            cs.setHitDiceUsed(sheetDto.hitDiceUsed());
+            cs.setSpellSlotsUsed(toJson(sheetDto.spellSlotsUsed()));
+            characterSheetRepository.save(cs);
+            context.register(CampaignContentType.CHARACTER_SHEET, sheetDto.key(), cs, cs.getId());
+
+            // Resources
+            for (ResourceDto resDto : sheetDto.resources()) {
+                var res = new SheetResource();
+                res.setSheet(cs);
+                res.setName(resDto.name());
+                res.setMaxUses(resDto.maxUses());
+                res.setCurrentUses(resDto.currentUses());
+                res.setResetRule(SheetResource.ResetRule.valueOf(resDto.resetRule()));
+                sheetResourceRepository.save(res);
+            }
+
+            // Spell refs
+            for (SpellRefDto spellDto : sheetDto.spells()) {
+                var spell = resolveSpell(spellDto.spellRef());
+                if (spell == null) continue;
+
+                var sr = new SheetSpellReference();
+                sr.setSheet(cs);
+                sr.setSpell(spell);
+                sr.setPrepared(spellDto.prepared());
+                if (spellDto.sourceClassRef() != null) {
+                    sr.setSourceClass(spellDto.sourceClassRef().sourceKey());
+                }
+                sheetSpellReferenceRepository.save(sr);
+            }
+        }
+    }
+
+    private String importClassLevels(SheetDto sheetDto) {
+        if (sheetDto.classLevels() == null || sheetDto.classLevels().isEmpty()) return null;
+        try {
+            List<Map<String, Object>> list = new ArrayList<>();
+            for (ClassLevelDto cl : sheetDto.classLevels()) {
+                Map<String, Object> entry = new LinkedHashMap<>();
+                entry.put("classRef", cl.classRef().sourceKey());
+                entry.put("level", cl.level());
+                if (cl.hitDieRolls() != null && !cl.hitDieRolls().isEmpty()) {
+                    entry.put("hitDieRolls", cl.hitDieRolls());
+                }
+                list.add(entry);
+            }
+            return objectMapper.writeValueAsString(list);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String importFeatRefs(SheetDto sheetDto) {
+        if (sheetDto.featRefs() == null || sheetDto.featRefs().isEmpty()) return null;
+        try {
+            List<String> sourceKeys = sheetDto.featRefs().stream()
+                    .map(ContentReference::sourceKey)
+                    .toList();
+            return objectMapper.writeValueAsString(sourceKeys);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Species resolveSpecies(ContentReference ref) {
+        if (ref == null) return null;
+        return speciesRepository.findBySourceKey(ref.sourceKey());
+    }
+
+    private Background resolveBackground(ContentReference ref) {
+        if (ref == null) return null;
+        return backgroundRepository.findBySourceKey(ref.sourceKey());
+    }
+
+    private Spell resolveSpell(ContentReference ref) {
+        if (ref == null) return null;
+        return spellRepository.findBySourceKey(ref.sourceKey());
+    }
+
+    private String toJson(Map<String, Object> map) {
+        if (map == null || map.isEmpty()) return null;
+        try {
+            return objectMapper.writeValueAsString(map);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private record ImportedPartyMember(PartyMember pm, PartyMemberDto dto) {}
+}

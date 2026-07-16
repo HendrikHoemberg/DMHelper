@@ -11,4 +11,6 @@ public interface SheetSpellReferenceRepository extends JpaRepository<SheetSpellR
     List<SheetSpellReference> findBySheetId(UUID sheetId);
     List<SheetSpellReference> findBySheetIdAndSourceClass(UUID sheetId, String sourceClass);
     void deleteBySheetId(UUID sheetId);
+
+    List<SheetSpellReference> findBySheetIdOrderByIdAsc(UUID sheetId);
 }

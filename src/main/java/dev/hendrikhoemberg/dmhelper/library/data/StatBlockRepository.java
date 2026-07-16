@@ -21,6 +21,9 @@ public interface StatBlockRepository extends JpaRepository<StatBlock, UUID>,
     @Query("SELECT sb FROM StatBlock sb WHERE sb.campaign.id = :campaignId ORDER BY sb.name ASC")
     List<StatBlock> findByCampaignIdOrderByNameAsc(@Param("campaignId") UUID campaignId);
 
+    @Query("SELECT sb FROM StatBlock sb WHERE sb.campaign.id = :campaignId ORDER BY sb.name ASC, sb.id ASC")
+    List<StatBlock> findByCampaignIdOrderByNameAscIdAsc(@Param("campaignId") UUID campaignId);
+
     Optional<StatBlock> findBySourceAndSourceKey(StatBlock.Source source, String sourceKey);
 
     boolean existsBySource(StatBlock.Source source);
