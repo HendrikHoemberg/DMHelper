@@ -63,7 +63,6 @@ public class CampaignManifestV2SemanticValidator {
         for (int i = 0; i < size(m.encounters()); i++) {
             var encounter = m.encounters().get(i);
             add(keys, CampaignContentType.ENCOUNTER, encounter.key(), "/encounters/" + i + "/key", problems);
-            List<Long> sequences = new ArrayList<>();
             for (int j = 0; j < size(encounter.combatants()); j++) {
                 add(keys, CampaignContentType.COMBATANT,
                         encounter.combatants().get(j).key(), "/encounters/" + i + "/combatants/" + j + "/key", problems);
@@ -349,14 +348,16 @@ public class CampaignManifestV2SemanticValidator {
             }
     }
 
+    private static final Set<String> VALID_KINDS = Set.of("PC", "NPC", "MONSTER", "OBJECT");
+
     private static void validateTokenKind(String kind, String path, List<CampaignImportProblem> problems) {
-        if (kind != null && !List.of("PC", "NPC", "MONSTER", "OBJECT").contains(kind)) {
+        if (kind != null && !VALID_KINDS.contains(kind)) {
             error(problems, "INVALID_TOKEN_KIND", path, "Token kind must be one of PC, NPC, MONSTER, OBJECT");
         }
     }
 
     private static void validateCombatantKind(String kind, String path, List<CampaignImportProblem> problems) {
-        if (kind != null && !List.of("PC", "NPC", "MONSTER", "OBJECT").contains(kind)) {
+        if (kind != null && !VALID_KINDS.contains(kind)) {
             error(problems, "INVALID_COMBATANT_KIND", path, "Combatant kind must be one of PC, NPC, MONSTER, OBJECT");
         }
     }
