@@ -14,7 +14,13 @@
     "description": "A minimal valid v2 campaign manifest",
     "createdAt": "2025-01-01T00:00:00Z",
     "settings": {
-      "levelingMode": "XP"
+      "levelingMode": "XP",
+      "calendar": {
+        "monthLengths": [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+        "monthNames": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+        "weekdayNames": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+      },
+      "currentDate": { "year": 1492, "month": 0, "day": 1 }
     }
   },
   "assets": [],

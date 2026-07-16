@@ -28,6 +28,7 @@ import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResourceRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReference;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReferenceRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntryRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
@@ -74,6 +75,7 @@ public class CampaignService {
     private final EquipmentItemRepository equipmentItemRepo;
     private final EncounterRepository encounterRepo;
     private final CombatantRepository combatantRepo;
+    private final CombatLogEntryRepository combatLogEntryRepo;
     private final HandoutService handoutService;
     private final HandoutRepository handoutRepo;
     private final TokenRepository tokenRepo;
@@ -108,6 +110,7 @@ public class CampaignService {
                             EquipmentItemRepository equipmentItemRepo,
                              EncounterRepository encounterRepo,
                              CombatantRepository combatantRepo,
+                             CombatLogEntryRepository combatLogEntryRepo,
                              HandoutService handoutService,
                              HandoutRepository handoutRepo,
                              TokenRepository tokenRepo,
@@ -138,6 +141,7 @@ public class CampaignService {
         this.equipmentItemRepo = equipmentItemRepo;
         this.encounterRepo = encounterRepo;
         this.combatantRepo = combatantRepo;
+        this.combatLogEntryRepo = combatLogEntryRepo;
         this.handoutService = handoutService;
         this.handoutRepo = handoutRepo;
         this.tokenRepo = tokenRepo;
@@ -153,9 +157,14 @@ public class CampaignService {
     }
 
     public Campaign create(String name, String description) {
+        return create(name, description, null);
+    }
+
+    public Campaign create(String name, String description, java.time.Instant createdAt) {
         Campaign campaign = new Campaign();
         campaign.setName(name);
         campaign.setDescription(description);
+        campaign.setCreatedAt(createdAt);
         return repository.save(campaign);
     }
 
@@ -204,6 +213,7 @@ public class CampaignService {
         // Combatants reference party members, statblocks and tokens — all of which outlive them here.
         var encounters = encounterRepo.findByCampaignIdOrderByNameAsc(cid);
         for (var encounter : encounters) {
+            combatLogEntryRepo.deleteByEncounterId(encounter.getId());
             combatantRepo.deleteByEncounterId(encounter.getId());
         }
         em.flush();

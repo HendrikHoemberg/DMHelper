@@ -11,6 +11,8 @@ import dev.hendrikhoemberg.dmhelper.dice.data.DiceRoll;
 import dev.hendrikhoemberg.dmhelper.dice.data.DiceRollRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntry;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntryRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
@@ -91,6 +93,7 @@ class CampaignCascadeDeleteTest {
     @Autowired private StatBlockRepository statBlockRepo;
     @Autowired private EncounterRepository encounterRepo;
     @Autowired private CombatantRepository combatantRepo;
+    @Autowired private CombatLogEntryRepository combatLogEntryRepo;
     @Autowired private TokenRepository tokenRepo;
     @Autowired private HandoutRepository handoutRepo;
     @Autowired private LedgerEntryRepository ledgerRepo;
@@ -138,6 +141,13 @@ class CampaignCascadeDeleteTest {
         cb.setMaxHp(27);
         cb.setCurrentHp(27);
         combatantRepo.save(cb);
+
+        CombatLogEntry log = new CombatLogEntry();
+        log.setEncounter(enc);
+        log.setSequence(1);
+        log.setType(CombatLogEntry.EntryType.TURN_START);
+        log.setCombatantId("");
+        combatLogEntryRepo.save(log);
 
         noteService.create(cid, NoteType.SESSION_LOG, "Session One", "The party arrives.", null, false);
 
@@ -214,6 +224,7 @@ class CampaignCascadeDeleteTest {
 
         // grandchildren must go too, not just the rows that name the campaign directly
         assertThat(combatantRepo.count()).isZero();
+        assertThat(combatLogEntryRepo.count()).isZero();
         assertThat(tokenRepo.count()).isZero();
     }
 

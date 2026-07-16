@@ -19,6 +19,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -36,13 +37,16 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
     private final EncounterRepository encounterRepository;
     private final CombatantRepository combatantRepository;
     private final CombatLogEntryRepository combatLogEntryRepository;
+    private final StatBlockReferenceResolver statBlockResolver;
 
     public EncounterSectionAdapter(EncounterRepository encounterRepository,
                                     CombatantRepository combatantRepository,
-                                    CombatLogEntryRepository combatLogEntryRepository) {
+                                    CombatLogEntryRepository combatLogEntryRepository,
+                                    StatBlockReferenceResolver statBlockResolver) {
         this.encounterRepository = encounterRepository;
         this.combatantRepository = combatantRepository;
         this.combatLogEntryRepository = combatLogEntryRepository;
+        this.statBlockResolver = statBlockResolver;
     }
 
     @Override
@@ -108,7 +112,7 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                 ? context.packageRef(CampaignContentType.TOKEN, combatant.getToken().getId(), combatant.getToken().getName())
                 : null;
         ContentReference statBlockRef = combatant.getStatBlock() != null
-                ? context.packageRef(CampaignContentType.STATBLOCK, combatant.getStatBlock().getId(), combatant.getStatBlock().getName())
+                ? statBlockResolver.referenceFor(combatant.getStatBlock(), context)
                 : null;
         ContentReference partyMemberRef = combatant.getPartyMember() != null
                 ? context.packageRef(CampaignContentType.PARTY_MEMBER, combatant.getPartyMember().getId(), combatant.getPartyMember().getCharacterName())
@@ -228,9 +232,7 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                 }
                 if (cDto.statBlockRef() != null) {
                     context.defer("combatant statblock " + cDto.key(), () -> {
-                        var sb = context.require(cDto.statBlockRef(), CampaignContentType.STATBLOCK,
-                                dev.hendrikhoemberg.dmhelper.library.data.StatBlock.class);
-                        combatant.setStatBlock(sb);
+                        combatant.setStatBlock(statBlockResolver.resolve(cDto.statBlockRef(), context));
                     });
                 }
                 if (cDto.partyMemberRef() != null) {
@@ -275,7 +277,9 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                     logEntry.setPayload(localPayload.toString());
                 }
 
-                combatLogEntryRepository.save(logEntry);
+                var savedLogEntry = combatLogEntryRepository.save(logEntry);
+                context.register(CampaignContentType.COMBAT_LOG_ENTRY, logDto.key(),
+                        savedLogEntry, savedLogEntry.getId());
             }
         }
     }

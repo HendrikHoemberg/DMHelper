@@ -54,6 +54,11 @@ Two scopes:
 
 The union is closed — providing `key` on a catalog reference or `sourceKey` on a package reference is a schema error.
 
+SRD statblocks use catalog references and are resolved from the installed `SRD_5_2` catalog during
+import. Campaign-owned custom statblocks use package references and are included in
+`customStatBlocks`. A sheet spell's `sourceClassRef` is optional because runtime spell records may
+legitimately have no originating class; when present it must be a valid class reference.
+
 ## Schema URLs
 
 - Campaign manifest: `GET /api/v1/schemas/campaign-format-v2`
@@ -155,7 +160,7 @@ Every campaign-owned field is classified as either:
 - **Persistent-exported** — included in v2 export and preserved on import. All fields not listed
   below are persistent-exported.
 - **Intentionally transient** — excluded by design. Currently transient:
-  - Runtime presentation state (curtain, map projection, handout presentation)
+  - Runtime presentation state (curtain and map projection)
   - WebSocket connection state
   - In-memory caches and computed aggregates
   - Session PIN
@@ -170,13 +175,18 @@ Export and import are decomposed into ordered section adapters:
 
 ```text
 Adapters (order):
-  SettingsSectionAdapter       (100) — campaign metadata, options, calendar
-  MapSectionAdapter            (400) — maps, tokens, documents
-  PartyMemberSectionAdapter    (450) — party roster, sheets, resources
-  NoteSectionAdapter           (470) — notes, wiki links, quick notes
-  HandoutSectionAdapter        (500) — handouts, presentation state
+  CampaignSectionAdapter       (100) — campaign metadata and settings
+  LibrarySectionAdapter        (200) — custom statblocks
+  PartySectionAdapter          (300) — party roster, sheets, resources, spells
+  MapSectionAdapter            (400) — maps, tokens, documents, map assets
+  HandoutSectionAdapter        (500) — handouts, flags, and assets
   EncounterSectionAdapter      (600) — encounters, combatants, combat log
-  AdventureSectionAdapter      (700) — adventures, chapters, scenes
+  TreasurySectionAdapter       (700) — item assignments
+  LedgerSectionAdapter         (800) — ledger entries
+  AdventureSectionAdapter      (900) — adventures, chapters, scenes
+  NotesSectionAdapter         (1000) — notes, links, quick notes
+  CalendarSectionAdapter      (1100) — timeline events
+  DiceSectionAdapter          (1200) — dice history
 ```
 
 Each adapter implements `CampaignSectionExporter` and `CampaignSectionImporter`.
@@ -216,11 +226,14 @@ Three flagship fixtures verify the round-trip contract:
 | Fixture | Path | Purpose |
 |---------|------|---------|
 | Minimal v2 | `src/test/resources/campaigns/v2/minimal.dmcampaign.json` | Asset-free, single entity — validates structural schema |
-| Current-surface v2 | `src/test/resources/campaigns/v2/current-surface.dmcampaign/manifest.json` | Exercises every persistent field in a realistic synthetic campaign |
-| Feature-complete v1 | `src/test/resources/campaigns/v1/feature-complete.dmcampaign.json` | Legacy format — validates v1→v2 migration path |
+| Feature-complete v2 | `src/test/resources/campaigns/v2/feature-complete.dmcampaign/manifest.json` | Exercises every current section, relationship, history, and asset type |
+| Published-adventure-shaped v2 | `src/test/resources/campaigns/v2/published-adventure-shaped.dmcampaign/manifest.json` | Exercises larger ordered adventure content and repeated references |
 
 Each fixture follows schema validate → dry-run → import → export → re-import → semantic
-deep-compare. If any fixture fails to round-trip correctly, the build fails.
+deep-compare. Imported database snapshots also receive a normalized, repository-backed projection
+that is independent of the package-v2 adapters. The feature-complete fixture additionally runs the
+combat-log opt-out, dice-history opt-out, and combined opt-out variants. If any fixture loses meaning,
+changes an unrelated section, or violates rollback atomicity, the build fails.
 
 ## curl Examples
 

@@ -10,6 +10,8 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestA
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionExporter;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionImporter;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import org.springframework.stereotype.Component;
@@ -20,9 +22,15 @@ import java.util.List;
 public class TreasurySectionAdapter implements CampaignSectionExporter, CampaignSectionImporter {
 
     private final ItemAssignmentRepository assignmentRepository;
+    private final MagicItemRepository magicItemRepository;
+    private final EquipmentItemRepository equipmentItemRepository;
 
-    public TreasurySectionAdapter(ItemAssignmentRepository assignmentRepository) {
+    public TreasurySectionAdapter(ItemAssignmentRepository assignmentRepository,
+                                  MagicItemRepository magicItemRepository,
+                                  EquipmentItemRepository equipmentItemRepository) {
         this.assignmentRepository = assignmentRepository;
+        this.magicItemRepository = magicItemRepository;
+        this.equipmentItemRepository = equipmentItemRepository;
     }
 
     @Override
@@ -83,6 +91,18 @@ public class TreasurySectionAdapter implements CampaignSectionExporter, Campaign
             assignment.setCustomText(dto.customText());
             assignment.setQuantity(dto.quantity());
             assignment.setAttuned(dto.attuned());
+
+            if (dto.magicItemRef() != null) {
+                assignment.setMagicItem(magicItemRepository.findBySourceKey(dto.magicItemRef().sourceKey())
+                        .orElseThrow(() -> new IllegalStateException(
+                                "No catalog magic item for " + dto.magicItemRef().sourceKey())));
+            }
+            if (dto.equipmentItemRef() != null) {
+                assignment.setEquipmentItem(equipmentItemRepository.findBySourceKey(
+                                dto.equipmentItemRef().sourceKey())
+                        .orElseThrow(() -> new IllegalStateException(
+                                "No catalog equipment item for " + dto.equipmentItemRef().sourceKey())));
+            }
 
             if (dto.holderRef() != null) {
                 ContentReference ref = dto.holderRef();

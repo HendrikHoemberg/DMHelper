@@ -18,6 +18,7 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapLayerDto;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
@@ -40,11 +41,15 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
 
     private final GameMapRepository gameMapRepository;
     private final TokenRepository tokenRepository;
+    private final StatBlockReferenceResolver statBlockResolver;
     private final ObjectMapper objectMapper;
 
-    public MapSectionAdapter(GameMapRepository gameMapRepository, TokenRepository tokenRepository) {
+    public MapSectionAdapter(GameMapRepository gameMapRepository,
+                             TokenRepository tokenRepository,
+                             StatBlockReferenceResolver statBlockResolver) {
         this.gameMapRepository = gameMapRepository;
         this.tokenRepository = tokenRepository;
+        this.statBlockResolver = statBlockResolver;
         this.objectMapper = JsonMapper.builder().build();
     }
 
@@ -78,7 +83,7 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
         if (map.getDocument() != null) {
             try {
                 MapDocumentDto doc = objectMapper.readValue(map.getDocument(), MapDocumentDto.class);
-                docV2 = toManifestDocument(doc, map, context);
+                docV2 = toManifestDocument(doc, key, context);
             } catch (Exception e) {
                 throw new RuntimeException("Failed to parse map document for " + map.getId(), e);
             }
@@ -98,13 +103,14 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
     }
 
     private CampaignManifestV2.MapDto.MapDocumentV2 toManifestDocument(
-            MapDocumentDto doc, GameMap map, CampaignExportContext context) {
+            MapDocumentDto doc, String mapKey, CampaignExportContext context) {
 
         List<CampaignManifestV2.MapDto.LayerDto> layers = new ArrayList<>();
-        for (MapLayerDto layer : doc.layers()) {
+        for (int layerIndex = 0; layerIndex < doc.layers().size(); layerIndex++) {
+            MapLayerDto layer = doc.layers().get(layerIndex);
             CampaignManifestV2.MapDto.ImageDto imageDto = null;
             if (layer.image() != null && layer.image().dataUrl() != null) {
-                imageDto = exportImage(layer.image(), map, context);
+                imageDto = exportImage(layer.image(), mapKey, layer.id(), layerIndex, context);
             }
             layers.add(new CampaignManifestV2.MapDto.LayerDto(
                     layer.id(), layer.name(), layer.type(),
@@ -120,7 +126,8 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
     }
 
     private CampaignManifestV2.MapDto.ImageDto exportImage(
-            MapLayerDto.ImageDto image, GameMap map, CampaignExportContext context) {
+            MapLayerDto.ImageDto image, String mapKey, String layerId, int layerIndex,
+            CampaignExportContext context) {
 
         String dataUrl = image.dataUrl();
         if (!dataUrl.startsWith("data:")) {
@@ -138,9 +145,9 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
         byte[] bytes = isBase64 ? Base64.getDecoder().decode(encoded)
                 : encoded.getBytes(StandardCharsets.UTF_8);
 
-        String assetKey = "map-" + map.getId().toString().substring(0, 8)
-                + "-img-" + (int) image.x() + "x" + (int) image.y();
         String sha256 = sha256(bytes);
+        String identity = mapKey + "\u0000" + layerIndex + "\u0000" + layerId + "\u0000" + sha256;
+        String assetKey = "map-img-" + sha256(identity.getBytes(StandardCharsets.UTF_8));
 
         String ext = switch (mediaType) {
             case "image/png" -> "png";
@@ -150,7 +157,7 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
             default -> "bin";
         };
         var descriptor = new AssetDescriptor(
-                assetKey, "assets/maps/" + assetKey,
+                assetKey, "assets/maps/" + assetKey + "." + ext,
                 mediaType, bytes.length, sha256, assetKey + "." + ext
         );
         context.assets().add(descriptor, bytes);
@@ -163,8 +170,7 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
 
         ContentReference statBlockRef = null;
         if (token.getStatBlock() != null) {
-            statBlockRef = context.packageRef(CampaignContentType.STATBLOCK,
-                    token.getStatBlock().getId(), token.getStatBlock().getName());
+            statBlockRef = statBlockResolver.referenceFor(token.getStatBlock(), context);
         }
 
         ContentReference partyMemberRef = null;
@@ -236,8 +242,7 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
                 token.setIcon(tokenDto.icon());
 
                 if (tokenDto.statBlockRef() != null) {
-                    var sb = context.require(tokenDto.statBlockRef(), CampaignContentType.STATBLOCK, StatBlock.class);
-                    token.setStatBlock(sb);
+                    token.setStatBlock(statBlockResolver.resolve(tokenDto.statBlockRef(), context));
                 }
                 if (tokenDto.partyMemberRef() != null) {
                     var pm = context.require(tokenDto.partyMemberRef(), CampaignContentType.PARTY_MEMBER, PartyMember.class);

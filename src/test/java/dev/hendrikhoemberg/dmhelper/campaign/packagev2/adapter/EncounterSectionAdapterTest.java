@@ -20,6 +20,9 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.packagev2.EncounterSectionAdapter;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +43,8 @@ class EncounterSectionAdapterTest {
     @Mock EncounterRepository encounterRepository;
     @Mock CombatantRepository combatantRepository;
     @Mock CombatLogEntryRepository combatLogEntryRepository;
+    @Mock StatBlockRepository statBlockRepository;
+    StatBlockReferenceResolver statBlockResolver;
 
     private EncounterSectionAdapter adapter;
     private Campaign campaign;
@@ -47,7 +52,9 @@ class EncounterSectionAdapterTest {
 
     @BeforeEach
     void setUp() {
-        adapter = new EncounterSectionAdapter(encounterRepository, combatantRepository, combatLogEntryRepository);
+        statBlockResolver = new StatBlockReferenceResolver(statBlockRepository);
+        adapter = new EncounterSectionAdapter(
+                encounterRepository, combatantRepository, combatLogEntryRepository, statBlockResolver);
         campaign = new Campaign();
         campaignId = UUID.randomUUID();
         campaign.setId(campaignId);
@@ -98,6 +105,12 @@ class EncounterSectionAdapterTest {
         combatant.setMaxHp(7);
         combatant.setCurrentHp(7);
         combatant.setKind("MONSTER");
+        var srd = new StatBlock();
+        srd.setId(UUID.randomUUID());
+        srd.setSource(StatBlock.Source.SRD);
+        srd.setSourceKey("srd-2024_goblin");
+        srd.setName("Goblin");
+        combatant.setStatBlock(srd);
 
         when(encounterRepository.findByCampaignIdOrderByNameAsc(campaignId))
                 .thenReturn(List.of(encounter));
@@ -113,6 +126,9 @@ class EncounterSectionAdapterTest {
         var dto = manifest.encounters().get(0);
         assertThat(dto.combatants()).hasSize(1);
         assertThat(dto.combatants().get(0).name()).isEqualTo("Goblin");
+        assertThat(dto.combatants().get(0).statBlockRef()).isEqualTo(
+                dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference.catalogRef(
+                        CampaignContentType.STATBLOCK, "SRD_5_2", "srd-2024_goblin"));
     }
 
     @Test
@@ -172,6 +188,82 @@ class EncounterSectionAdapterTest {
 
         var manifest = buildManifest(assembler);
         assertThat(manifest.encounters().get(0).combatLog()).isEmpty();
+    }
+
+    @Test
+    void importBindsThePackageKeyForThePersistedCombatLogEntry() {
+        var logDto = new CombatLogEntryDto(
+                "opening-turn", 1, 1, "TURN_START", null,
+                tools.jackson.databind.json.JsonMapper.builder().build().createObjectNode(),
+                Instant.parse("2025-06-01T12:00:00Z"));
+        var encounterDto = new EncounterDto(
+                "ambush", "Ambush", List.of(), "ACTIVE",
+                1, 0, 1, null, null, null, false, List.of(logDto));
+        var manifest = new CampaignManifestV2(
+                2, null, null, null, null, null, null, null,
+                List.of(encounterDto), null, null, null, null, null, null, null);
+
+        when(encounterRepository.save(any())).thenAnswer(invocation -> {
+            var encounter = invocation.getArgument(0, Encounter.class);
+            encounter.setId(UUID.randomUUID());
+            return encounter;
+        });
+        when(combatLogEntryRepository.save(any())).thenAnswer(invocation -> {
+            var log = invocation.getArgument(0, CombatLogEntry.class);
+            log.setId(UUID.randomUUID());
+            return log;
+        });
+
+        var keys = new CampaignSectionAdapterTest.FakeKeyService();
+        var context = new CampaignImportContext(campaignId, keys, pendingImport());
+        context.setCampaign(campaign);
+        adapter.importSection(manifest, context);
+
+        assertThat(keys.bindings).containsValue("opening-turn");
+    }
+
+    @Test
+    void importsCatalogStatBlockReference() {
+        var srdRef = dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference.catalogRef(
+                CampaignContentType.STATBLOCK, "SRD_5_2", "srd-2024_goblin");
+        var srd = new StatBlock();
+        srd.setId(UUID.randomUUID());
+        srd.setSource(StatBlock.Source.SRD);
+        srd.setSourceKey("srd-2024_goblin");
+
+        var combatantDto = new CombatantDto(
+                "goblin", "Goblin", 12, 0, 0, 7, 7, 0,
+                "MONSTER", null, false, null, srdRef, null,
+                false, false, null, null, false,
+                0, 0, 0, 0, null, null);
+        var encounterDto = new EncounterDto(
+                "ambush", "Ambush", List.of(combatantDto), "PLANNED",
+                0, -1, 0, null, null, null, false, List.of());
+        var manifest = new CampaignManifestV2(
+                2, null, null, null, null, null, null, null,
+                List.of(encounterDto), null, null, null, null, null, null, null);
+
+        when(encounterRepository.save(any())).thenAnswer(invocation -> {
+            var encounter = invocation.getArgument(0, Encounter.class);
+            encounter.setId(UUID.randomUUID());
+            return encounter;
+        });
+        when(combatantRepository.save(any())).thenAnswer(invocation -> {
+            var combatant = invocation.getArgument(0, Combatant.class);
+            combatant.setId(UUID.randomUUID());
+            return combatant;
+        });
+        when(statBlockRepository.findBySourceAndSourceKey(
+                StatBlock.Source.SRD, "srd-2024_goblin")).thenReturn(java.util.Optional.of(srd));
+
+        var context = new CampaignImportContext(
+                campaignId, new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
+        context.setCampaign(campaign);
+        adapter.importSection(manifest, context);
+        context.runDeferred();
+
+        org.mockito.Mockito.verify(combatantRepository).save(org.mockito.ArgumentMatchers.argThat(
+                combatant -> combatant.getStatBlock() == srd));
     }
 
     private Encounter createEncounter(String name, Encounter.Status status, int round, int activeTurnIndex) {

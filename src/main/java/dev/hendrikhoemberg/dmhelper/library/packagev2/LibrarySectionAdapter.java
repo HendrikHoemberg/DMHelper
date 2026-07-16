@@ -109,6 +109,7 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
             sb.setLegendaryDescription(dto.legendaryDescription());
             sb.setLairActions(dto.lairActions());
             sb.setXp(dto.xp());
+            sb.setCreatedAt(dto.createdAt());
             if (dto.sourceKey() != null && !dto.sourceKey().isBlank()) {
                 sb.setSourceKey(dto.sourceKey());
             }

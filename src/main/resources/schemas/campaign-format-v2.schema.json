@@ -211,7 +211,7 @@
     "spellRef": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["spellRef", "prepared", "sourceClassRef"],
+      "required": ["spellRef", "prepared"],
       "properties": {
         "spellRef": { "$ref": "#/$defs/contentReference" },
         "prepared": { "type": "boolean" },

@@ -26,6 +26,8 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +44,7 @@ class AdventureSectionAdapterTest {
     private AdventureRepository adventureRepo;
     private ChapterRepository chapterRepo;
     private SceneRepository sceneRepo;
+    private StatBlockRepository statBlockRepository;
     private AdventureSectionAdapter adapter;
     private Campaign campaign;
 
@@ -50,7 +53,10 @@ class AdventureSectionAdapterTest {
         adventureRepo = mock(AdventureRepository.class);
         chapterRepo = mock(ChapterRepository.class);
         sceneRepo = mock(SceneRepository.class);
-        adapter = new AdventureSectionAdapter(adventureRepo, chapterRepo, sceneRepo);
+        statBlockRepository = mock(StatBlockRepository.class);
+        adapter = new AdventureSectionAdapter(
+                adventureRepo, chapterRepo, sceneRepo,
+                new StatBlockReferenceResolver(statBlockRepository));
         campaign = new Campaign();
         campaign.setId(UUID.randomUUID());
         campaign.setName("Test Campaign");
@@ -138,6 +144,8 @@ class AdventureSectionAdapterTest {
         StatBlock sb = mock(StatBlock.class);
         when(sb.getId()).thenReturn(sbId);
         when(sb.getName()).thenReturn("Goblin");
+        when(sb.getSource()).thenReturn(StatBlock.Source.SRD);
+        when(sb.getSourceKey()).thenReturn("srd-2024_goblin");
 
         UUID hId = UUID.randomUUID();
         Handout h = mock(Handout.class);
@@ -178,7 +186,8 @@ class AdventureSectionAdapterTest {
         assertThat(scDto.encounterRef().type()).isEqualTo(CampaignContentType.ENCOUNTER);
         assertThat(scDto.pin()).containsEntry("x", 100).containsEntry("y", 200);
         assertThat(scDto.statblockRefs()).hasSize(1);
-        assertThat(scDto.statblockRefs().get(0).type()).isEqualTo(CampaignContentType.STATBLOCK);
+        assertThat(scDto.statblockRefs().get(0)).isEqualTo(
+                ContentReference.catalogRef(CampaignContentType.STATBLOCK, "SRD_5_2", "srd-2024_goblin"));
         assertThat(scDto.handoutRefs()).hasSize(1);
         assertThat(scDto.handoutRefs().get(0).type()).isEqualTo(CampaignContentType.HANDOUT);
     }

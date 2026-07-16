@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.campaign.packagev2.adapter;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.Metadata;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.PendingCampaignImport;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
@@ -24,6 +25,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 class DiceSectionAdapterTest {
@@ -89,6 +91,31 @@ class DiceSectionAdapterTest {
 
         var manifest = buildManifest(assembler);
         assertThat(manifest.diceRolls()).isEmpty();
+    }
+
+    @Test
+    void importBindsThePackageKeyForThePersistedDiceRoll() {
+        var rollId = UUID.randomUUID();
+        when(diceRollRepository.save(any())).thenAnswer(invocation -> {
+            var roll = invocation.getArgument(0, DiceRoll.class);
+            roll.setId(rollId);
+            return roll;
+        });
+        var dto = new CampaignManifestV2.DiceRollDto(
+                "roll-important", "1d20+5", List.of(), 5, 20,
+                false, false, null, Instant.parse("2025-06-01T12:00:00Z"));
+        var manifest = new CampaignManifestV2(
+                2, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, List.of(dto));
+        var keys = new CampaignSectionAdapterTest.FakeKeyService();
+        var context = new CampaignImportContext(
+                campaignId, keys, new PendingCampaignImport(UUID.randomUUID(), null, null, null));
+        context.setCampaign(campaign);
+
+        adapter.importSection(manifest, context);
+
+        assertThat(keys.bindings)
+                .containsEntry(CampaignContentType.DICE_ROLL.name() + ":" + rollId, "roll-important");
     }
 
     private CampaignExportContext exportContext(CampaignExportOptions options) {

@@ -3,12 +3,18 @@ package dev.hendrikhoemberg.dmhelper.campaign.packagev2.adapter;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.Metadata;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.PendingCampaignImport;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignAssetCollector;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportOptions;
 import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItem;
 import dev.hendrikhoemberg.dmhelper.library.data.MagicItem;
+import dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
@@ -21,14 +27,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 
 @ExtendWith(MockitoExtension.class)
 class TreasurySectionAdapterTest {
 
     @Mock ItemAssignmentRepository assignmentRepository;
+    @Mock MagicItemRepository magicItemRepository;
+    @Mock EquipmentItemRepository equipmentItemRepository;
 
     private TreasurySectionAdapter adapter;
     private Campaign campaign;
@@ -36,7 +48,8 @@ class TreasurySectionAdapterTest {
 
     @BeforeEach
     void setUp() {
-        adapter = new TreasurySectionAdapter(assignmentRepository);
+        adapter = new TreasurySectionAdapter(
+                assignmentRepository, magicItemRepository, equipmentItemRepository);
         campaign = new Campaign();
         campaignId = UUID.randomUUID();
         campaign.setId(campaignId);
@@ -135,6 +148,47 @@ class TreasurySectionAdapterTest {
 
         var manifest = buildManifest(assembler);
         assertThat(manifest.assignments()).isEmpty();
+    }
+
+    @Test
+    void importsCatalogItemReferences() {
+        var magicItem = new MagicItem();
+        magicItem.setId(UUID.randomUUID());
+        magicItem.setSourceKey("srd-2024_bag-of-holding");
+        var equipmentItem = new EquipmentItem();
+        equipmentItem.setId(UUID.randomUUID());
+        equipmentItem.setSourceKey("srd-2024_chain-mail");
+        when(magicItemRepository.findBySourceKey("srd-2024_bag-of-holding"))
+                .thenReturn(Optional.of(magicItem));
+        when(equipmentItemRepository.findBySourceKey("srd-2024_chain-mail"))
+                .thenReturn(Optional.of(equipmentItem));
+        when(assignmentRepository.save(any())).thenAnswer(invocation -> {
+            var assignment = invocation.getArgument(0, ItemAssignment.class);
+            assignment.setId(UUID.randomUUID());
+            return assignment;
+        });
+
+        var manifest = new CampaignManifestV2(
+                2, null, null, null, null, null, null, null, null, null, null,
+                List.of(
+                        new CampaignManifestV2.AssignmentDto(
+                                "bag", null,
+                                ContentReference.catalogRef(CampaignContentType.MAGIC_ITEM, "SRD_5_2", "srd-2024_bag-of-holding"),
+                                null, null, 1, false),
+                        new CampaignManifestV2.AssignmentDto(
+                                "armor", null, null,
+                                ContentReference.catalogRef(CampaignContentType.EQUIPMENT_ITEM, "SRD_5_2", "srd-2024_chain-mail"),
+                                null, 1, false)),
+                null, null, null, null);
+        var context = new CampaignImportContext(
+                campaignId, new CampaignSectionAdapterTest.FakeKeyService(),
+                new PendingCampaignImport(UUID.randomUUID(), null, null, null));
+        context.setCampaign(campaign);
+
+        adapter.importSection(manifest, context);
+
+        verify(assignmentRepository).save(argThat(a -> a.getMagicItem() == magicItem));
+        verify(assignmentRepository).save(argThat(a -> a.getEquipmentItem() == equipmentItem));
     }
 
     private CampaignExportContext exportContext() {

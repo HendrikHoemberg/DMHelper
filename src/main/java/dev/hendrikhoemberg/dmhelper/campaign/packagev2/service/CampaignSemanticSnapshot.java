@@ -1,13 +1,14 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.service;
 
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
+import tools.jackson.databind.JsonNode;
 
 import java.util.Comparator;
 
-public record CampaignSemanticSnapshot(CampaignManifestV2 manifest) {
+public record CampaignSemanticSnapshot(CampaignManifestV2 manifest, JsonNode persistenceProjection) {
 
     public static CampaignSemanticSnapshot from(CampaignManifestV2 source) {
-        return new CampaignSemanticSnapshot(source);
+        return new CampaignSemanticSnapshot(source, null);
     }
 
     static CampaignManifestV2.Metadata withoutCreatedAt(CampaignManifestV2.Metadata md) {

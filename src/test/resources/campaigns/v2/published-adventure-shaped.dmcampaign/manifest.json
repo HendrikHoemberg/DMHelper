@@ -14,7 +14,13 @@
     "description": "Multi-adventure fixture testing source-attribution, repeated catalog refs, and rich cross-linking",
     "createdAt": "2025-07-01T10:00:00Z",
     "settings": {
-      "levelingMode": "XP"
+      "levelingMode": "XP",
+      "calendar": {
+        "monthLengths": [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+        "monthNames": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+        "weekdayNames": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+      },
+      "currentDate": { "year": 1492, "month": 0, "day": 1 }
     }
   },
   "assets": [
@@ -106,7 +112,7 @@
         "speciesRef": { "scope": "CATALOG", "type": "SPECIES", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_dwarf" },
         "backgroundRef": { "scope": "CATALOG", "type": "BACKGROUND", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_soldier" },
         "featRefs": [
-          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_tough" }
+          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_alert" }
         ],
         "xp": 14000,
         "overrides": {},
@@ -145,7 +151,7 @@
         "speciesRef": { "scope": "CATALOG", "type": "SPECIES", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_elf" },
         "backgroundRef": { "scope": "CATALOG", "type": "BACKGROUND", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_sage" },
         "featRefs": [
-          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_war-caster" }
+          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_alert" }
         ],
         "xp": 6500,
         "overrides": {},
@@ -207,7 +213,6 @@
     },
     {
       "key": "statblock-skeleton",
-      "sourceKey": "",
       "name": "Skeleton",
       "cr": "1/4",
       "type": "undead",
@@ -237,7 +242,6 @@
     },
     {
       "key": "statblock-zombie",
-      "sourceKey": "",
       "name": "Zombie",
       "cr": "1/4",
       "type": "undead",
@@ -609,14 +613,14 @@
     {
       "key": "assignment-bag-of-holding",
       "holderRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-aria" },
-      "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_1", "sourceKey": "bag-of-holding" },
+      "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_bag-of-holding" },
       "quantity": 1,
       "attuned": false
     },
     {
       "key": "assignment-gauntlets",
       "holderRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-borin" },
-      "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_1", "sourceKey": "gauntlets-of-ogre-power" },
+      "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_gauntlets-of-ogre-power" },
       "quantity": 1,
       "attuned": true
     }
@@ -824,7 +828,7 @@
               "status": "UNVISITED",
               "sortOrder": 1,
               "statblockRefs": [
-                { "scope": "CATALOG", "type": "STATBLOCK", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_bandit" },
+                { "scope": "CATALOG", "type": "STATBLOCK", "ruleset": "SRD_5_2", "sourceKey": "bandit" },
                 { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" }
               ],
               "handoutRefs": []

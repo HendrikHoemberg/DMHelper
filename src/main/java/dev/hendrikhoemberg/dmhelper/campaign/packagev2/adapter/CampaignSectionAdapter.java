@@ -72,6 +72,7 @@ public class CampaignSectionAdapter implements CampaignSectionExporter, Campaign
         Campaign campaign = resolveCampaign(context);
         campaign.setName(campaignDto.name());
         campaign.setDescription(campaignDto.description());
+        campaign.setCreatedAt(campaignDto.createdAt());
 
         if (campaignDto.settings() != null) {
             CampaignSettings settings = fromSettingsDto(campaignDto.settings());

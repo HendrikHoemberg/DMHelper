@@ -119,7 +119,7 @@
         "speciesRef": { "scope": "CATALOG", "type": "SPECIES", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_dwarf" },
         "backgroundRef": { "scope": "CATALOG", "type": "BACKGROUND", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_soldier" },
         "featRefs": [
-          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_tough" }
+          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_alert" }
         ],
         "xp": 14000,
         "overrides": {},
@@ -166,7 +166,6 @@
     },
     {
       "key": "statblock-skeleton",
-      "sourceKey": "",
       "name": "Skeleton",
       "cr": "1/4",
       "type": "undead",
@@ -449,14 +448,14 @@
     {
       "key": "assignment-bag-of-holding",
       "holderRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-aria" },
-      "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_1", "sourceKey": "bag-of-holding" },
+      "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_bag-of-holding" },
       "quantity": 1,
       "attuned": false
     },
     {
       "key": "assignment-potion",
       "holderRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-borin" },
-      "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_1", "sourceKey": "potion-of-healing" },
+      "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_gauntlets-of-ogre-power" },
       "quantity": 2,
       "attuned": false
     },

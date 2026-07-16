@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.campaign.packagev2.key;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 public interface CampaignPackageKeyRepository extends JpaRepository<CampaignPackageKey, UUID> {
@@ -12,4 +13,6 @@ public interface CampaignPackageKeyRepository extends JpaRepository<CampaignPack
 
     boolean existsByCampaignIdAndEntityTypeAndPackageKey(
             UUID campaignId, String entityType, String packageKey);
+
+    List<CampaignPackageKey> findByCampaignIdOrderByEntityTypeAscPackageKeyAsc(UUID campaignId);
 }

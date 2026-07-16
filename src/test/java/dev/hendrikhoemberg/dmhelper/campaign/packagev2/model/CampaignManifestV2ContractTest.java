@@ -125,6 +125,15 @@ class CampaignManifestV2ContractTest {
         assertThat(schema.validate(json)).isEmpty();
     }
 
+    @Test
+    void spellSourceClassReferenceIsOptional() throws Exception {
+        JsonNode root = mapper.readTree(currentSurfaceManifest());
+        ObjectNode spell = (ObjectNode) root.get("party").get(0).get("sheet").get("spells").get(0);
+        spell.remove("sourceClassRef");
+
+        assertThat(schema.validate(mapper.writeValueAsString(root))).isEmpty();
+    }
+
     private String fixture(String path) throws Exception {
         try (var in = new ClassPathResource(path).getInputStream()) {
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);

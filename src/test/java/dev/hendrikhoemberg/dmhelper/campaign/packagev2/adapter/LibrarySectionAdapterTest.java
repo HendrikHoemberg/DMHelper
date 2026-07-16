@@ -152,6 +152,7 @@ class LibrarySectionAdapterTest {
         assertThat(imported.getDexSave()).isEqualTo(6);
         assertThat(imported.getSkills()).isEqualTo("Perception +5");
         assertThat(imported.getTraits()).isEqualTo("[{\"name\":\"Fire Form\"}]");
+        assertThat(imported.getCreatedAt()).isEqualTo(Instant.parse("2025-03-15T12:00:00Z"));
     }
 
     private StatBlock statBlock(UUID id, String name, String cr, String type, int ac, String hp, int xp, Instant createdAt) {

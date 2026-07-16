@@ -21,6 +21,9 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.packagev2.MapSectionAdapter;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapLayerDto;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +45,8 @@ class MapSectionAdapterTest {
 
     private GameMapRepository gameMapRepo;
     private TokenRepository tokenRepo;
+    private StatBlockReferenceResolver statBlockResolver;
+    private StatBlockRepository statBlockRepository;
     private MapSectionAdapter adapter;
     private Campaign campaign;
 
@@ -49,7 +54,9 @@ class MapSectionAdapterTest {
     void setUp() {
         gameMapRepo = mock(GameMapRepository.class);
         tokenRepo = mock(TokenRepository.class);
-        adapter = new MapSectionAdapter(gameMapRepo, tokenRepo);
+        statBlockRepository = mock(StatBlockRepository.class);
+        statBlockResolver = new StatBlockReferenceResolver(statBlockRepository);
+        adapter = new MapSectionAdapter(gameMapRepo, tokenRepo, statBlockResolver);
         campaign = new Campaign();
         campaign.setId(UUID.randomUUID());
         campaign.setName("Test Campaign");
@@ -213,9 +220,49 @@ class MapSectionAdapterTest {
     }
 
     @Test
+    void imageAssetKeysRemainUniqueForLayersAtTheSameCoordinates() throws Exception {
+        GameMap map = map(UUID.fromString("12345678-0000-0000-0000-000000000001"), "World", 0);
+        var image = new MapLayerDto.ImageDto(imageDataUrl(), 0.5, 0.5, 30, 20);
+        var document = new MapDocumentDto(
+                1,
+                new MapDocumentDto.GridDto(30, 20, 48, "square", "GRID", true),
+                List.of(
+                        new MapLayerDto("background-a", "A", MapLayerDto.LayerType.IMAGE,
+                                true, false, List.of(), List.of(), image),
+                        new MapLayerDto("background-b", "B", MapLayerDto.LayerType.IMAGE,
+                                true, false, List.of(), List.of(), image)),
+                List.of(), List.of());
+        map.setDocument(new tools.jackson.databind.json.JsonMapper().writeValueAsString(document));
+
+        when(gameMapRepo.findByCampaignIdOrderBySortOrderAsc(campaign.getId())).thenReturn(List.of(map));
+        when(tokenRepo.findByMapIdOrderByNameAsc(map.getId())).thenReturn(List.of());
+
+        var collector = new CampaignAssetCollector();
+        var context = new CampaignExportContext(
+                campaign.getId(), campaign, CampaignExportOptions.complete(),
+                new CampaignSectionAdapterTest.FakeKeyService(), collector);
+        var assembler = new CampaignManifestAssembler();
+        assembler.assets(List.of());
+
+        adapter.exportSection(context, assembler);
+
+        assertThat(collector.assetDescriptors())
+                .hasSize(2)
+                .extracting(AssetDescriptor::key)
+                .doesNotHaveDuplicates();
+    }
+
+    @Test
     void importsMapsWithTokens(@TempDir Path tempDir) throws IOException {
         UUID mapId = UUID.randomUUID();
         UUID tokenId = UUID.randomUUID();
+
+        var srdRef = ContentReference.catalogRef(
+                CampaignContentType.STATBLOCK, "SRD_5_2", "srd-2024_goblin");
+        var srd = new StatBlock();
+        srd.setId(UUID.randomUUID());
+        srd.setSource(StatBlock.Source.SRD);
+        srd.setSourceKey("srd-2024_goblin");
 
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null, null,
@@ -233,7 +280,7 @@ class MapSectionAdapterTest {
                         ),
                         List.of(new CampaignManifestV2.MapDto.TokenDto(
                                 "token-goblin", "Goblin", "MONSTER", "#ff0000",
-                                100, 200, 1, 1, true, null, null,
+                                100, 200, 1, 1, true, srdRef, null,
                                 12, 20, false, "sneaky", "dagger"
                         )),
                         0
@@ -254,6 +301,8 @@ class MapSectionAdapterTest {
             if (t.getId() == null) t.setId(tokenId);
             return t;
         });
+        when(statBlockRepository.findBySourceAndSourceKey(
+                StatBlock.Source.SRD, "srd-2024_goblin")).thenReturn(java.util.Optional.of(srd));
 
         var importContext = new CampaignImportContext(
                 freshCampaign.getId(), new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
@@ -295,6 +344,7 @@ class MapSectionAdapterTest {
                 !t.isDead() &&
                 t.getCurrentHp() == 12 &&
                 t.getMaxHp() == 20 &&
+                t.getStatBlock() == srd &&
                 t.getIcon().equals("dagger") &&
                 t.getNotes().equals("sneaky")
         ));
@@ -389,6 +439,12 @@ class MapSectionAdapterTest {
                 .thenReturn(List.of(map));
 
         Token token = token(UUID.randomUUID(), "Frodo", "PC", map, 0, 0, 1, 1, false, false, null);
+        var srd = new StatBlock();
+        srd.setId(UUID.randomUUID());
+        srd.setSource(StatBlock.Source.SRD);
+        srd.setSourceKey("srd-2024_goblin");
+        srd.setName("Goblin");
+        token.setStatBlock(srd);
         when(tokenRepo.findByMapIdOrderByNameAsc(map.getId())).thenReturn(List.of(token));
 
         var keyService = new CampaignSectionAdapterTest.FakeKeyService();
@@ -400,7 +456,8 @@ class MapSectionAdapterTest {
         var manifest = buildManifest(assembler);
 
         var tokenDto = manifest.maps().get(0).tokens().get(0);
-        assertThat(tokenDto.statBlockRef()).isNull();
+        assertThat(tokenDto.statBlockRef()).isEqualTo(
+                ContentReference.catalogRef(CampaignContentType.STATBLOCK, "SRD_5_2", "srd-2024_goblin"));
         assertThat(tokenDto.partyMemberRef()).isNull();
     }
 

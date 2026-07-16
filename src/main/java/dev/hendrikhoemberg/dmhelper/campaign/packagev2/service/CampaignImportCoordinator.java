@@ -6,9 +6,11 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeySer
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.CampaignImportPreviewStore;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.PendingCampaignImport;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportObserver;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionRegistry;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
+import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -24,15 +26,21 @@ public class CampaignImportCoordinator {
     private final CampaignService campaignService;
     private final CampaignPackageKeyService packageKeyService;
     private final CampaignSectionRegistry registry;
+    private final CampaignImportObserver observer;
+    private final EntityManager entityManager;
 
     public CampaignImportCoordinator(CampaignImportPreviewStore previewStore,
                                       CampaignService campaignService,
                                       CampaignPackageKeyService packageKeyService,
-                                      CampaignSectionRegistry registry) {
+                                      CampaignSectionRegistry registry,
+                                      CampaignImportObserver observer,
+                                      EntityManager entityManager) {
         this.previewStore = previewStore;
         this.campaignService = campaignService;
         this.packageKeyService = packageKeyService;
         this.registry = registry;
+        this.observer = observer;
+        this.entityManager = entityManager;
     }
 
     public Campaign confirm(UUID previewId, boolean acceptWarnings) {
@@ -48,16 +56,19 @@ public class CampaignImportCoordinator {
 
         var manifest = pending.result().manifest();
         Campaign campaign = campaignService.create(
-                manifest.campaign().name(), manifest.campaign().description());
+                manifest.campaign().name(), manifest.campaign().description(),
+                manifest.campaign().createdAt());
 
-        var context = new CampaignImportContext(campaign.getId(), packageKeyService, pending);
+        var context = new CampaignImportContext(campaign.getId(), packageKeyService, pending, observer);
         context.setCampaign(campaign);
 
         for (var importer : registry.importers()) {
             importer.importSection(manifest, context);
+            observer.afterSection(importer.sectionName());
         }
 
         context.runDeferred();
+        entityManager.flush();
 
         discardAfterCommit(previewId);
         return context.campaign();

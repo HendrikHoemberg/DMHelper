@@ -70,7 +70,7 @@ public class DiceSectionAdapter implements CampaignSectionExporter, CampaignSect
         }
 
         return new DiceRollDto(
-                roll.getId().toString(),
+                context.key(CampaignContentType.DICE_ROLL, roll.getId(), roll.getExpression()),
                 roll.getExpression(),
                 dieRolls,
                 roll.getModifier(),
@@ -112,6 +112,7 @@ public class DiceSectionAdapter implements CampaignSectionExporter, CampaignSect
             }
 
             diceRollRepository.save(roll);
+            context.register(CampaignContentType.DICE_ROLL, dto.key(), roll, roll.getId());
         }
     }
 

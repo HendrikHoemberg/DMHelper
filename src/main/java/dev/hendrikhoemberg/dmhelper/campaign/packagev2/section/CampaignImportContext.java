@@ -20,13 +20,23 @@ public class CampaignImportContext {
     private final UUID campaignId;
     private final CampaignPackageKeyService keyService;
     private final PendingCampaignImport pending;
+    private final CampaignImportObserver observer;
     private final Map<String, Object> entities = new LinkedHashMap<>();
     private final List<DeferredTask> deferred = new ArrayList<>();
 
     public CampaignImportContext(UUID campaignId, CampaignPackageKeyService keyService, PendingCampaignImport pending) {
+        this(campaignId, keyService, pending, new CampaignImportObserver() {
+            @Override public void afterSection(String sectionName) { }
+            @Override public void beforeDeferredSetter(String description) { }
+        });
+    }
+
+    public CampaignImportContext(UUID campaignId, CampaignPackageKeyService keyService,
+                                 PendingCampaignImport pending, CampaignImportObserver observer) {
         this.campaignId = campaignId;
         this.keyService = keyService;
         this.pending = pending;
+        this.observer = observer;
     }
 
     public Campaign campaign() {
@@ -101,6 +111,7 @@ public class CampaignImportContext {
 
     public void runDeferred() {
         for (var task : deferred) {
+            observer.beforeDeferredSetter(task.description);
             task.setter.run();
         }
         deferred.clear();

@@ -6,7 +6,11 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionRegistry;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignManifestV2SchemaValidator;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignManifestV2SemanticValidator;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.InputStreamSource;
 import org.springframework.http.MediaType;
@@ -15,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 
@@ -26,15 +31,21 @@ public class CampaignExportCoordinator {
     private final CampaignPackageKeyService keyService;
     private final CampaignSectionRegistry registry;
     private final CampaignCatalogService catalogService;
+    private final CampaignManifestV2SchemaValidator schemaValidator;
+    private final CampaignManifestV2SemanticValidator semanticValidator;
 
     public CampaignExportCoordinator(CampaignService campaignService,
                                       CampaignPackageKeyService keyService,
                                       CampaignSectionRegistry registry,
-                                      CampaignCatalogService catalogService) {
+                                      CampaignCatalogService catalogService,
+                                      CampaignManifestV2SchemaValidator schemaValidator,
+                                      CampaignManifestV2SemanticValidator semanticValidator) {
         this.campaignService = campaignService;
         this.keyService = keyService;
         this.registry = registry;
         this.catalogService = catalogService;
+        this.schemaValidator = schemaValidator;
+        this.semanticValidator = semanticValidator;
     }
 
     public CampaignPackageArtifact export(UUID campaignId) {
@@ -61,6 +72,7 @@ public class CampaignExportCoordinator {
                 catalog.version(), catalog.sha256(),
                 options.exclusions());
         var manifest = assembler.build(metadata);
+        validate(manifest);
 
         Map<String, InputStreamSource> sources = new LinkedHashMap<>();
         context.assets().assetSources().forEach((key, data) ->
@@ -73,6 +85,28 @@ public class CampaignExportCoordinator {
                 hasAssets ? MediaType.valueOf("application/vnd.dmhelper.campaign+zip")
                         : MediaType.APPLICATION_JSON,
                 manifest, Map.copyOf(sources));
+    }
+
+    private void validate(CampaignManifestV2 manifest) {
+        var problems = new ArrayList<CampaignImportProblem>();
+        try {
+            String json = tools.jackson.databind.json.JsonMapper.builder().build()
+                    .writeValueAsString(manifest);
+            problems.addAll(schemaValidator.validate(json));
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to serialize assembled campaign manifest", e);
+        }
+        problems.addAll(semanticValidator.validate(manifest));
+
+        var errors = problems.stream()
+                .filter(problem -> problem.severity() == ImportSeverity.ERROR)
+                .toList();
+        if (!errors.isEmpty()) {
+            String details = errors.stream()
+                    .map(problem -> problem.path() + ": " + problem.code() + " - " + problem.message())
+                    .collect(java.util.stream.Collectors.joining("; "));
+            throw new IllegalStateException("Assembled campaign manifest is invalid: " + details);
+        }
     }
 
     private static String sanitizeFilename(String name) {

@@ -107,6 +107,7 @@ class CampaignSectionAdapterTest {
         var campaign = context.campaign();
         assertThat(campaign.getName()).isEqualTo("Imported Campaign");
         assertThat(campaign.getDescription()).isEqualTo("Imported description");
+        assertThat(campaign.getCreatedAt()).isEqualTo(Instant.parse("2025-01-01T00:00:00Z"));
     }
 
     @Test

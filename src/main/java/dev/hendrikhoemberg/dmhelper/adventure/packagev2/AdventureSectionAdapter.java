@@ -22,6 +22,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -33,13 +34,16 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
     private final AdventureRepository adventureRepo;
     private final ChapterRepository chapterRepo;
     private final SceneRepository sceneRepo;
+    private final StatBlockReferenceResolver statBlockResolver;
 
     public AdventureSectionAdapter(AdventureRepository adventureRepo,
                                     ChapterRepository chapterRepo,
-                                    SceneRepository sceneRepo) {
+                                    SceneRepository sceneRepo,
+                                    StatBlockReferenceResolver statBlockResolver) {
         this.adventureRepo = adventureRepo;
         this.chapterRepo = chapterRepo;
         this.sceneRepo = sceneRepo;
+        this.statBlockResolver = statBlockResolver;
     }
 
     @Override
@@ -80,7 +84,7 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                                                     ? context.packageRef(CampaignContentType.ENCOUNTER, sc.getEncounter().getId(), sc.getEncounter().getName())
                                                     : null;
                                             List<ContentReference> statblockRefs = sc.getStatBlocks().stream()
-                                                    .map(sb -> context.packageRef(CampaignContentType.STATBLOCK, sb.getId(), sb.getName()))
+                                                    .map(sb -> statBlockResolver.referenceFor(sb, context))
                                                     .toList();
                                             List<ContentReference> handoutRefs = sc.getHandouts().stream()
                                                     .map(h -> context.packageRef(CampaignContentType.HANDOUT, h.getId(), h.getTitle()))
@@ -165,9 +169,7 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                         }
                         if (scDto.statblockRefs() != null) {
                             for (ContentReference ref : scDto.statblockRefs()) {
-                                if (ref.scope() == ContentReference.Scope.CATALOG) continue;
-                                StatBlock sb = context.require(ref, CampaignContentType.STATBLOCK, StatBlock.class);
-                                scene.getStatBlocks().add(sb);
+                                scene.getStatBlocks().add(statBlockResolver.resolve(ref, context));
                             }
                         }
                         if (scDto.handoutRefs() != null) {
