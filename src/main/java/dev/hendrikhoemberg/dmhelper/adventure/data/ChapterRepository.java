@@ -6,4 +6,5 @@ import java.util.UUID;
 
 public interface ChapterRepository extends JpaRepository<Chapter, UUID> {
     List<Chapter> findByAdventureIdOrderBySortOrderAsc(UUID adventureId);
+    List<Chapter> findByAdventureIdOrderBySortOrderAscIdAsc(UUID adventureId);
 }

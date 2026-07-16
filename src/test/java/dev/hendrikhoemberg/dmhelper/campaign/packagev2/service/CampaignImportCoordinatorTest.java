@@ -53,6 +53,27 @@ class CampaignImportCoordinatorTest {
         assertThat(exported.ledger()).hasSize(1);
         assertThat(exported.timeline()).hasSize(1);
         assertThat(exported.adventures()).hasSize(1);
+        var adv = exported.adventures().get(0);
+        assertThat(adv.name()).isEqualTo("Crypt Descent");
+        assertThat(adv.description()).isEqualTo("An adventure into the ancient dwarven crypt.");
+        assertThat(adv.sourceAttribution()).isEqualTo("Homebrew");
+        assertThat(adv.sortOrder()).isOne();
+        assertThat(adv.chapters()).hasSize(1);
+        var ch = adv.chapters().get(0);
+        assertThat(ch.title()).isEqualTo("Chapter 1");
+        assertThat(ch.intro()).isEqualTo("The party stands before the ancient doors.");
+        assertThat(ch.sortOrder()).isOne();
+        assertThat(ch.scenes()).hasSize(1);
+        var sc = ch.scenes().get(0);
+        assertThat(sc.title()).isEqualTo("Crypt Entry");
+        assertThat(sc.body()).isEqualTo("The hallway is dark.");
+        assertThat(sc.status()).isEqualTo("UNVISITED");
+        assertThat(sc.sortOrder()).isOne();
+        assertThat(sc.map()).isEqualTo("The Crypt");
+        assertThat(sc.encounter()).startsWith("crypt-guardians");
+        assertThat(sc.statblocks()).containsExactly("custom_goblin-captain");
+        assertThat(sc.handouts()).containsExactly("Warning Plaque");
+        assertThat(sc.pin()).containsEntry("x", 200).containsEntry("y", 150);
         assertThat(keys.find(campaign.getId(), CampaignContentType.CAMPAIGN, campaign.getId()))
                 .contains(result.manifest().campaign().key());
         assertThat(staged.stagingDirectory()).doesNotExist();
