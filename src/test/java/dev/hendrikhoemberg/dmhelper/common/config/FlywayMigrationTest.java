@@ -54,4 +54,25 @@ class FlywayMigrationTest {
         Integer constraints = jdbc.queryForObject(sql, Integer.class);
         assertThat(constraints).isEqualTo(3);
     }
+
+    @Test
+    void v4CreatesCampaignSessionTable() {
+        Integer appliedV4 = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '4' AND \"success\" = TRUE",
+                Integer.class);
+        assertThat(appliedV4).isEqualTo(1);
+    }
+
+    @Test
+    void v4CreatesExpectedTables() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'CAMPAIGN_SESSION'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'CAMPAIGN_SESSION_ATTENDEE'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'SESSION_SCENE_VISIT'",
+                Integer.class)).isEqualTo(1);
+    }
 }

@@ -87,4 +87,20 @@ class FlywayLegacyUpgradeTest {
                 Integer.class);
         assertThat(count).isEqualTo(1);
     }
+
+    @Test
+    void appliesV4AfterBaseline() {
+        Integer appliedV4 = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '4' AND \"success\" = TRUE",
+                Integer.class);
+        assertThat(appliedV4).isEqualTo(1);
+    }
+
+    @Test
+    void v4TableExistsAfterUpgrade() {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'CAMPAIGN_SESSION'",
+                Integer.class);
+        assertThat(count).isEqualTo(1);
+    }
 }
