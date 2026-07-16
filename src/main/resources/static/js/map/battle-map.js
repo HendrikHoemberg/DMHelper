@@ -1099,30 +1099,35 @@ export class BattleMap {
 
     /* ---- Map Switching ---- */
     async switchToMap(mapId) {
-        const resp = await this._request(`/api/v1/maps/${mapId}`);
-        const mapData = await resp.json();
+        try {
+            const resp = await this._request(`/api/v1/maps/${mapId}`);
+            const mapData = await resp.json();
 
-        this.mapId = mapId;
-        this.gridWidth = mapData.gridWidth;
-        this.gridHeight = mapData.gridHeight;
-        this.movementMode = mapData.movementMode;
-        this.showGrid = mapData.showGrid;
+            this.mapId = mapId;
+            this.gridWidth = mapData.gridWidth;
+            this.gridHeight = mapData.gridHeight;
+            this.movementMode = mapData.movementMode;
+            this.showGrid = mapData.showGrid;
 
-        this.clearAoeNodes();
-        this.clearMeasure();
-        this.clearAnnotations();
-        this.deselectToken();
-        this.tokens = [];
-        this.tokenNodes = {};
+            this.clearAoeNodes();
+            this.clearMeasure();
+            this.clearAnnotations();
+            this.deselectToken();
+            this.tokens = [];
+            this.tokenNodes = {};
 
-        await this.fetchMapDocument();
-        await this.fetchTokens();
-        this.renderGrid();
-        this.renderTokens();
-        await this.loadPins(mapData.id);
-        this.emit('modestate', { movementMode: this.movementMode, showGrid: this.showGrid });
-        this.emit('tokenupdate', { tokens: this.tokens });
-        this.emit('state-changed');
-        this.emit('maploaded', { mapId, mapName: mapData.name });
+            await this.fetchMapDocument();
+            await this.fetchTokens();
+            this.renderGrid();
+            this.renderTokens();
+            await this.loadPins(mapData.id);
+            this.emit('modestate', { movementMode: this.movementMode, showGrid: this.showGrid });
+            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emit('state-changed');
+            this.emit('maploaded', { mapId, mapName: mapData.name });
+        } catch (error) {
+            this._failure('Could not switch to that map. The current map was kept.', error,
+                () => this.switchToMap(mapId));
+        }
     }
 }
