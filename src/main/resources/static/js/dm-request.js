@@ -12,7 +12,7 @@
 
   async function responseError(response) {
     let detail = response.status === 409
-      ? 'The item changed first. Reload and try again.'
+      ? 'The item changed before this request completed. Reload and try again.'
       : `The server refused that request (${response.status}).`;
     let correlationId = response.headers.get('X-Correlation-ID');
     const contentType = response.headers.get('Content-Type') || '';
