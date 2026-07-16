@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.campaign.service;
 import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneTransitionService;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEvent;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEventRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
@@ -70,6 +71,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Import({CampaignService.class, PartyMemberService.class, StatBlockService.class, GameMapService.class,
          dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
          NoteService.class, WikiLinkParser.class, SceneRefCleaner.class, AdventureService.class,
+         SceneTransitionService.class,
          HandoutService.class,
          CampaignImportValidator.class, CampaignSchemaValidator.class, CampaignSemanticValidator.class,
          CampaignCatalogResolver.class,

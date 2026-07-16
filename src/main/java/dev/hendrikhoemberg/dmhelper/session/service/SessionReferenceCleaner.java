@@ -2,6 +2,8 @@ package dev.hendrikhoemberg.dmhelper.session.service;
 
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChangeRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyRepository;
@@ -9,6 +11,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -19,17 +22,20 @@ public class SessionReferenceCleaner {
     private final SessionSceneVisitRepository visits;
     private final CampaignPackageKeyRepository packageKeys;
     private final ApplicationEventPublisher events;
+    private final SessionObjectiveChangeRepository objectiveChanges;
 
     public record PresentationInvalidated(UUID campaignId, UUID contentId, boolean wholeCampaign) {}
 
     public SessionReferenceCleaner(CampaignSessionRepository sessions,
                                    SessionSceneVisitRepository visits,
                                    CampaignPackageKeyRepository packageKeys,
-                                   ApplicationEventPublisher events) {
+                                   ApplicationEventPublisher events,
+                                   SessionObjectiveChangeRepository objectiveChanges) {
         this.sessions = sessions;
         this.visits = visits;
         this.packageKeys = packageKeys;
         this.events = events;
+        this.objectiveChanges = objectiveChanges;
     }
 
     public void detachMap(UUID mapId) {
@@ -86,6 +92,26 @@ public class SessionReferenceCleaner {
                     CampaignContentType.SESSION_SCENE_VISIT.name(), java.util.List.of(visit.getId()));
         }
         visits.deleteBySceneId(sceneId);
+    }
+
+    public void detachObjective(UUID objectiveId) {
+        List<SessionObjectiveChange> changes = objectiveChanges.findByObjectiveId(objectiveId);
+        if (changes.isEmpty()) return;
+        UUID campaignId = changes.getFirst().getSession().getCampaign().getId();
+        List<UUID> changeIds = changes.stream().map(SessionObjectiveChange::getId).toList();
+        packageKeys.deleteByCampaignIdAndEntityTypeAndEntityIdIn(
+                campaignId, CampaignContentType.SESSION_OBJECTIVE_CHANGE.name(), changeIds);
+        objectiveChanges.deleteByObjectiveId(objectiveId);
+    }
+
+    public void detachSessionObjectiveChanges(UUID sessionId, UUID campaignId) {
+        List<SessionObjectiveChange> changes = objectiveChanges
+                .findBySessionIdOrderByChangedAtAscIdAsc(sessionId);
+        if (changes.isEmpty()) return;
+        List<UUID> changeIds = changes.stream().map(SessionObjectiveChange::getId).toList();
+        packageKeys.deleteByCampaignIdAndEntityTypeAndEntityIdIn(
+                campaignId, CampaignContentType.SESSION_OBJECTIVE_CHANGE.name(), changeIds);
+        objectiveChanges.deleteBySessionId(sessionId);
     }
 
     public void detachCampaign(UUID campaignId) {

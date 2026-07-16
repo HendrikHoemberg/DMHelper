@@ -14,8 +14,15 @@ import dev.hendrikhoemberg.dmhelper.notes.data.QuickNote;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.service.QuickNoteService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.quest.data.Quest;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveRepository;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestRepository;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChangeRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +53,9 @@ class SessionDraftServiceTest {
     @Mock private QuickNoteRepository quickNotes;
     @Mock private QuickNoteService quickNoteService;
     @Mock private CalendarService calendar;
+    @Mock private SessionObjectiveChangeRepository objectiveChanges;
+    @Mock private QuestRepository questRepository;
+    @Mock private QuestObjectiveRepository questObjectiveRepository;
 
     @InjectMocks private SessionDraftService service;
 
@@ -194,9 +204,152 @@ class SessionDraftServiceTest {
                 .thenReturn(List.of());
         when(quickNotes.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
                 .thenReturn(List.of());
+        when(objectiveChanges.findBySessionIdOrderByChangedAtAscIdAsc(session.getId())).thenReturn(List.of());
 
         String draft = service.generate(session, endedAt);
 
         assertThat(draft).contains("\u2014");
+    }
+
+    @Test
+    void includesQuestProgressSectionAfterScenes() {
+        UUID questId = UUID.randomUUID();
+        Quest quest = new Quest();
+        quest.setId(questId);
+        quest.setTitle("Find the Artifact");
+
+        UUID objId = UUID.randomUUID();
+        QuestObjective obj = new QuestObjective();
+        obj.setId(objId);
+        obj.setTitle("Talk to the sage");
+
+        SessionObjectiveChange change = new SessionObjectiveChange();
+        change.setId(UUID.randomUUID());
+        change.setObjective(obj);
+        change.setPreviousStatus(QuestObjectiveStatus.NOT_STARTED);
+        change.setNewStatus(QuestObjectiveStatus.ACTIVE);
+        change.setChangedAt(Instant.parse("2026-07-16T19:00:00Z"));
+
+        when(calendar.getCurrentDate(campaignId)).thenReturn(new CalendarService.InGameDate(1492, 6, 12));
+        when(visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId())).thenReturn(List.of());
+        when(combatLogs.findSessionEvidence(campaignId, startedAt, endedAt)).thenReturn(List.of());
+        when(ledgers.findByCampaignIdAndTimestampBetweenOrderByTimestampAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(quickNotes.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(objectiveChanges.findBySessionIdOrderByChangedAtAscIdAsc(session.getId())).thenReturn(List.of(change));
+        when(questObjectiveRepository.findById(objId)).thenReturn(java.util.Optional.of(obj));
+        lenient().when(questRepository.findById(questId)).thenReturn(java.util.Optional.of(quest));
+        lenient().when(questObjectiveRepository.findByQuestIdOrderBySortOrderAsc(any())).thenReturn(List.of(obj));
+
+        obj.setQuest(quest);
+
+        String draft = service.generate(session, endedAt);
+
+        assertThat(draft).contains("## Scenes");
+        assertThat(draft).contains("## Quest Progress");
+        assertThat(draft).contains("## Encounters");
+        int scenesIdx = draft.indexOf("## Scenes");
+        int questProgressIdx = draft.indexOf("## Quest Progress");
+        int encountersIdx = draft.indexOf("## Encounters");
+        assertThat(scenesIdx).isLessThan(questProgressIdx);
+        assertThat(questProgressIdx).isLessThan(encountersIdx);
+        assertThat(draft).contains("Find the Artifact | Talk to the sage | NOT_STARTED \u2192 ACTIVE");
+    }
+
+    @Test
+    void showsObjectiveChangesInChronologicalOrder() {
+        UUID questId = UUID.randomUUID();
+        Quest quest = new Quest();
+        quest.setId(questId);
+        quest.setTitle("Test Quest");
+
+        UUID objId = UUID.randomUUID();
+        QuestObjective obj = new QuestObjective();
+        obj.setId(objId);
+        obj.setTitle("Step one");
+        obj.setQuest(quest);
+
+        SessionObjectiveChange first = new SessionObjectiveChange();
+        first.setId(UUID.randomUUID());
+        first.setObjective(obj);
+        first.setPreviousStatus(QuestObjectiveStatus.NOT_STARTED);
+        first.setNewStatus(QuestObjectiveStatus.ACTIVE);
+        first.setChangedAt(Instant.parse("2026-07-16T18:30:00Z"));
+
+        SessionObjectiveChange second = new SessionObjectiveChange();
+        second.setId(UUID.randomUUID());
+        second.setObjective(obj);
+        second.setPreviousStatus(QuestObjectiveStatus.ACTIVE);
+        second.setNewStatus(QuestObjectiveStatus.COMPLETED);
+        second.setChangedAt(Instant.parse("2026-07-16T19:00:00Z"));
+
+        when(calendar.getCurrentDate(campaignId)).thenReturn(new CalendarService.InGameDate(1492, 6, 12));
+        when(visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId())).thenReturn(List.of());
+        when(combatLogs.findSessionEvidence(campaignId, startedAt, endedAt)).thenReturn(List.of());
+        when(ledgers.findByCampaignIdAndTimestampBetweenOrderByTimestampAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(quickNotes.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(objectiveChanges.findBySessionIdOrderByChangedAtAscIdAsc(session.getId())).thenReturn(List.of(first, second));
+        when(questObjectiveRepository.findById(objId)).thenReturn(java.util.Optional.of(obj));
+        lenient().when(questRepository.findById(questId)).thenReturn(java.util.Optional.of(quest));
+        lenient().when(questObjectiveRepository.findByQuestIdOrderBySortOrderAsc(any())).thenReturn(List.of(obj));
+
+        String draft = service.generate(session, endedAt);
+
+        assertThat(draft.indexOf("NOT_STARTED")).isLessThan(draft.indexOf("ACTIVE \u2192 COMPLETED"));
+    }
+
+    @Test
+    void repeatedChangesToSameObjectiveAppearInOrder() {
+        UUID questId = UUID.randomUUID();
+        Quest quest = new Quest();
+        quest.setId(questId);
+        quest.setTitle("Multi Step");
+
+        UUID objId = UUID.randomUUID();
+        QuestObjective obj = new QuestObjective();
+        obj.setId(objId);
+        obj.setTitle("The objective");
+        obj.setQuest(quest);
+
+        SessionObjectiveChange change1 = new SessionObjectiveChange();
+        change1.setId(UUID.randomUUID());
+        change1.setObjective(obj);
+        change1.setPreviousStatus(null);
+        change1.setNewStatus(QuestObjectiveStatus.NOT_STARTED);
+        change1.setChangedAt(Instant.parse("2026-07-16T18:00:00Z"));
+
+        SessionObjectiveChange change2 = new SessionObjectiveChange();
+        change2.setId(UUID.randomUUID());
+        change2.setObjective(obj);
+        change2.setPreviousStatus(QuestObjectiveStatus.NOT_STARTED);
+        change2.setNewStatus(QuestObjectiveStatus.ACTIVE);
+        change2.setChangedAt(Instant.parse("2026-07-16T18:30:00Z"));
+
+        SessionObjectiveChange change3 = new SessionObjectiveChange();
+        change3.setId(UUID.randomUUID());
+        change3.setObjective(obj);
+        change3.setPreviousStatus(QuestObjectiveStatus.ACTIVE);
+        change3.setNewStatus(QuestObjectiveStatus.COMPLETED);
+        change3.setChangedAt(Instant.parse("2026-07-16T19:00:00Z"));
+
+        when(calendar.getCurrentDate(campaignId)).thenReturn(new CalendarService.InGameDate(1492, 6, 12));
+        when(visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId())).thenReturn(List.of());
+        when(combatLogs.findSessionEvidence(campaignId, startedAt, endedAt)).thenReturn(List.of());
+        when(ledgers.findByCampaignIdAndTimestampBetweenOrderByTimestampAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(quickNotes.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(objectiveChanges.findBySessionIdOrderByChangedAtAscIdAsc(session.getId())).thenReturn(List.of(change1, change2, change3));
+        when(questObjectiveRepository.findById(objId)).thenReturn(java.util.Optional.of(obj));
+        lenient().when(questRepository.findById(questId)).thenReturn(java.util.Optional.of(quest));
+        lenient().when(questObjectiveRepository.findByQuestIdOrderBySortOrderAsc(any())).thenReturn(List.of(obj));
+
+        String draft = service.generate(session, endedAt);
+
+        assertThat(draft.indexOf("null \u2192 NOT_STARTED")).isLessThan(draft.indexOf("NOT_STARTED \u2192 ACTIVE"));
+        assertThat(draft.indexOf("NOT_STARTED \u2192 ACTIVE")).isLessThan(draft.indexOf("ACTIVE \u2192 COMPLETED"));
     }
 }

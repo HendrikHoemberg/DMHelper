@@ -10,7 +10,13 @@ import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntry;
 import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntryRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.service.QuickNoteService;
+import dev.hendrikhoemberg.dmhelper.quest.data.Quest;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveRepository;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChangeRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +54,9 @@ public class SessionDraftService {
     private final QuickNoteRepository quickNotes;
     private final QuickNoteService quickNoteService;
     private final CalendarService calendar;
+    private final SessionObjectiveChangeRepository objectiveChanges;
+    private final QuestRepository questRepository;
+    private final QuestObjectiveRepository questObjectiveRepository;
 
     public SessionDraftService(SessionSceneVisitRepository visits,
                                CombatLogEntryRepository combatLogs,
@@ -55,7 +64,10 @@ public class SessionDraftService {
                                LedgerEntryRepository ledgers,
                                QuickNoteRepository quickNotes,
                                QuickNoteService quickNoteService,
-                               CalendarService calendar) {
+                               CalendarService calendar,
+                               SessionObjectiveChangeRepository objectiveChanges,
+                               QuestRepository questRepository,
+                               QuestObjectiveRepository questObjectiveRepository) {
         this.visits = visits;
         this.combatLogs = combatLogs;
         this.combatants = combatants;
@@ -63,6 +75,9 @@ public class SessionDraftService {
         this.quickNotes = quickNotes;
         this.quickNoteService = quickNoteService;
         this.calendar = calendar;
+        this.objectiveChanges = objectiveChanges;
+        this.questRepository = questRepository;
+        this.questObjectiveRepository = questObjectiveRepository;
     }
 
     public String generate(CampaignSession session, Instant endedAt) {
@@ -73,6 +88,7 @@ public class SessionDraftService {
         section(out, "In-Game Date", formatGameDates(session, calendar.getCurrentDate(campaignId)));
         listSection(out, "Attendance", attendanceLines(session));
         listSection(out, "Scenes", sceneLines(session));
+        listSection(out, "Quest Progress", questProgressLines(session));
         listSection(out, "Encounters", encounterLines(campaignId, startedAt, endedAt));
         listSection(out, "Loot & Ledger Changes", ledgerLines(campaignId, startedAt, endedAt));
         listSection(out, "Unresolved Quick Notes", quickNoteLines(campaignId, startedAt, endedAt));
@@ -121,6 +137,20 @@ public class SessionDraftService {
                     String title = v.getScene().getTitle();
                     return v.getCompletedAt() != null ? title + " \u2014 visited, completed" : title + " \u2014 visited";
                 }).toList();
+    }
+
+    private List<String> questProgressLines(CampaignSession session) {
+        List<SessionObjectiveChange> changes = objectiveChanges
+                .findBySessionIdOrderByChangedAtAscIdAsc(session.getId());
+        return changes.stream().map(change -> {
+            QuestObjective obj = questObjectiveRepository.findById(change.getObjective().getId()).orElse(null);
+            if (obj == null) return null;
+            Quest quest = questRepository.findById(obj.getQuest().getId()).orElse(null);
+            if (quest == null) return null;
+            String previous = change.getPreviousStatus() != null ? change.getPreviousStatus().name() : "none";
+            return quest.getTitle() + " | " + obj.getTitle()
+                    + " | " + previous + " \u2192 " + change.getNewStatus().name();
+        }).filter(java.util.Objects::nonNull).toList();
     }
 
     private List<String> encounterLines(UUID campaignId, Instant from, Instant to) {

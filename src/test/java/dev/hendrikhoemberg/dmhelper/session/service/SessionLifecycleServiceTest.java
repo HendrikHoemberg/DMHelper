@@ -14,6 +14,7 @@ import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChangeRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,6 +52,7 @@ class SessionLifecycleServiceTest {
     @Mock private NoteService noteService;
     @Mock private CampaignPackageKeyService packageKeys;
     @Mock private ApplicationEventPublisher events;
+    @Mock private SessionObjectiveChangeRepository objectiveChanges;
 
     @InjectMocks private SessionLifecycleService service;
 

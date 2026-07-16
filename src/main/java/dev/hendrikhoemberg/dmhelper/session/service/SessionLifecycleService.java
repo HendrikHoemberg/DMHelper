@@ -16,6 +16,8 @@ import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChangeRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -45,6 +47,7 @@ public class SessionLifecycleService {
     private final NoteService noteService;
     private final CampaignPackageKeyService packageKeys;
     private final ApplicationEventPublisher events;
+    private final SessionObjectiveChangeRepository objectiveChanges;
 
     public SessionLifecycleService(Clock clock,
                                    CampaignRepository campaigns,
@@ -56,8 +59,9 @@ public class SessionLifecycleService {
                                    CalendarService calendar,
                                    SessionDraftService drafts,
                                    NoteService noteService,
-                                   CampaignPackageKeyService packageKeys,
-                                   ApplicationEventPublisher events) {
+                                    CampaignPackageKeyService packageKeys,
+                                    ApplicationEventPublisher events,
+                                    SessionObjectiveChangeRepository objectiveChanges) {
         this.clock = clock;
         this.campaigns = campaigns;
         this.sessions = sessions;
@@ -70,6 +74,7 @@ public class SessionLifecycleService {
         this.noteService = noteService;
         this.packageKeys = packageKeys;
         this.events = events;
+        this.objectiveChanges = objectiveChanges;
     }
 
     public CampaignSession start(UUID campaignId, UUID requestedMapId) {
@@ -167,8 +172,14 @@ public class SessionLifecycleService {
                 campaignId, null, true));
         List<UUID> visitIds = visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId()).stream()
                 .map(SessionSceneVisit::getId).toList();
+        List<UUID> changeIds = objectiveChanges.findBySessionIdOrderByChangedAtAscIdAsc(session.getId())
+                .stream().map(SessionObjectiveChange::getId).toList();
         resetToIdle(session);
         visits.deleteBySessionId(session.getId());
+        if (!changeIds.isEmpty()) {
+            packageKeys.deleteBindings(campaignId, CampaignContentType.SESSION_OBJECTIVE_CHANGE, changeIds);
+        }
+        objectiveChanges.deleteBySessionId(session.getId());
         packageKeys.deleteBindings(campaignId, CampaignContentType.SESSION_SCENE_VISIT, visitIds);
         sessions.save(session);
         return note;

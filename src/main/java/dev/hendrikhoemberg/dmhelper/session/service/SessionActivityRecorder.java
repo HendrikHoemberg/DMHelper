@@ -1,8 +1,12 @@
 package dev.hendrikhoemberg.dmhelper.session.service;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChangeRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
 import org.springframework.stereotype.Service;
@@ -18,13 +22,16 @@ public class SessionActivityRecorder {
     private final Clock clock;
     private final CampaignSessionRepository sessions;
     private final SessionSceneVisitRepository visits;
+    private final SessionObjectiveChangeRepository objectiveChanges;
 
     public SessionActivityRecorder(Clock clock,
                                    CampaignSessionRepository sessions,
-                                   SessionSceneVisitRepository visits) {
+                                   SessionSceneVisitRepository visits,
+                                   SessionObjectiveChangeRepository objectiveChanges) {
         this.clock = clock;
         this.sessions = sessions;
         this.visits = visits;
+        this.objectiveChanges = objectiveChanges;
     }
 
     public void sceneSelected(UUID campaignId, Scene scene) {
@@ -38,6 +45,25 @@ public class SessionActivityRecorder {
                             visit.setVisitedAt(clock.instant());
                             return visits.save(visit);
                         }));
+    }
+
+    public void recordObjectiveChange(UUID campaignId, UUID objectiveId,
+                                       QuestObjectiveStatus previousStatus,
+                                       QuestObjectiveStatus newStatus) {
+        if (previousStatus == newStatus) return;
+        sessions.findByCampaignId(campaignId)
+                .filter(session -> session.getStatus() == CampaignSession.Status.RUNNING)
+                .ifPresent(session -> {
+                    SessionObjectiveChange change = new SessionObjectiveChange();
+                    change.setSession(session);
+                    QuestObjective objective = new QuestObjective();
+                    objective.setId(objectiveId);
+                    change.setObjective(objective);
+                    change.setPreviousStatus(previousStatus);
+                    change.setNewStatus(newStatus);
+                    change.setChangedAt(clock.instant());
+                    objectiveChanges.save(change);
+                });
     }
 
     public void sceneCompleted(Scene scene) {
