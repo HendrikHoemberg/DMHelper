@@ -517,6 +517,12 @@ public class EncounterService {
         return c.getWave().getStatus() == WaveStatus.ACTIVE;
     }
 
+    private List<Combatant> getActiveCombatants(UUID encounterId) {
+        return combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).stream()
+                .filter(this::isOnActiveWave)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public CombatantDto getCombatant(UUID combatantId) {
         return toDto(findCombatantById(combatantId));
@@ -663,8 +669,12 @@ public class EncounterService {
         }
         wave.setStatus(WaveStatus.ACTIVE);
         waveRepo.save(wave);
-        logEntry(encounterId, CombatLogEntry.EntryType.WAVE_SPAWNED, "",
-                "{\"waveKey\":\"" + wave.getWaveKey() + "\"}");
+        try {
+            String payload = JSON_MAPPER.writeValueAsString(Map.of("waveKey", wave.getWaveKey()));
+            logEntry(encounterId, CombatLogEntry.EntryType.WAVE_SPAWNED, "", payload);
+        } catch (Exception ex) {
+            logEntry(encounterId, CombatLogEntry.EntryType.WAVE_SPAWNED, "", "{}");
+        }
         return toDto(e);
     }
 
@@ -861,7 +871,7 @@ public class EncounterService {
 
     public EncounterDto nextTurn(UUID encounterId) {
         Encounter encounter = findEntityById(encounterId);
-        List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+        List<Combatant> combatants = getActiveCombatants(encounterId);
 
         if (combatants.isEmpty()) {
             throw new IllegalStateException("No combatants in encounter");
@@ -923,7 +933,7 @@ public class EncounterService {
 
     public EncounterDto previousTurn(UUID encounterId) {
         Encounter encounter = findEntityById(encounterId);
-        List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+        List<Combatant> combatants = getActiveCombatants(encounterId);
 
         if (combatants.isEmpty() || encounter.getActiveTurnIndex() < 0) {
             return toDto(encounter);
@@ -971,7 +981,7 @@ public class EncounterService {
 
     public EncounterDto setActiveTurn(UUID encounterId, UUID combatantId) {
         Encounter encounter = findEntityById(encounterId);
-        List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+        List<Combatant> combatants = getActiveCombatants(encounterId);
 
         for (int i = 0; i < combatants.size(); i++) {
             if (combatants.get(i).getId().equals(combatantId)) {
