@@ -1,0 +1,14 @@
+# DMHelper Documentation
+
+Welcome to the DMHelper documentation. This directory contains:
+
+- [Product Status](product/) — Format compatibility, known limitations, release notes.
+- [DM Manual](dm-manual/) — User-facing guide for running campaigns with DMHelper.
+- [Authoring Guide](authoring/) — Guide for writing campaign content (JSON, schemas, agent workflows).
+- [Architecture Reference](architecture/) — Module ownership, import/export flow, security boundaries, testing strategy.
+- [Agent SDK](agent/) — SDK reference for programmatic campaign generation.
+
+## Key Reference Files
+
+- [Campaign Capabilities](campaign-capabilities.md) — Implemented capability matrix.
+- [Campaign Format V2](campaign-format-v2.md) — V2 campaign format specification.

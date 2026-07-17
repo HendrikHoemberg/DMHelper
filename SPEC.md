@@ -1,5 +1,11 @@
 # DMHelper — Specification
 
+> **Implementation status (readiness program):** Delivery items 1–9 of
+> `docs/superpowers/specs/2026-07-15-all-in-one-dm-readiness-design.md` are implemented.
+> Item 10 (documentation/agent SDK) is the current gate. Item 11 (P3 expansion) is not
+> started. This file remains the original product vision; for **implemented** capability
+> status see `docs/campaign-capabilities.md` and `GET /api/v1/capabilities`.
+
 A local-first web application that replaces the "multiple PDFs and 7 spreadsheets" workflow of running
 D&D 5.5e (2024 rules) campaigns with one integrated tool: campaign planning, rules-aware character sheets
 for the party, an interactive battle map with a built-in map editor, combat tracking, a monster library
