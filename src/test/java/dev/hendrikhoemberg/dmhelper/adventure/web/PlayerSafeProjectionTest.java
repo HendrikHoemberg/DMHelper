@@ -66,6 +66,33 @@ class PlayerSafeProjectionTest {
     }
 
     @Test
+    void tableStateJsonDoesNotLeakSheetFields() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/table/state"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String body = result.getResponse().getContentAsString();
+        assertThat(body)
+                .doesNotContain("overridesMeta")
+                .doesNotContain("deathSaveSuccesses")
+                .doesNotContain("deathSaveFailures")
+                .doesNotContain("hitDiceUsed")
+                .doesNotContain("provenance")
+                .doesNotContain("\"notes\"")
+                .doesNotContain("playerName");
+    }
+
+    @Test
+    void tableStateJsonDoesNotLeakRawConditionsJson() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/table/state"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String body = result.getResponse().getContentAsString();
+        assertThat(body)
+                .doesNotContain("conditionsJson")
+                .doesNotContain("concentratingOn");
+    }
+
+    @Test
     void pinApiReturns403WithoutValidPin() throws Exception {
         mockMvc.perform(get("/api/v1/maps/{id}/pins", UUID.randomUUID()))
                 .andExpect(status().isForbidden());

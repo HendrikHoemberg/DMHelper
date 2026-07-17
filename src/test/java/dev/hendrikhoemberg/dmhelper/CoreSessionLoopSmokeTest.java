@@ -24,6 +24,8 @@ import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionLifecycleService;
@@ -72,6 +74,7 @@ class CoreSessionLoopSmokeTest {
     @Autowired private SessionLifecycleService sessionLifecycleService;
     @Autowired private HandoutService handoutService;
     @Autowired private NoteRepository noteRepository;
+    @Autowired private PartyMemberRepository partyMemberRepository;
 
     private static Playwright playwright;
     private static Browser browser;
@@ -832,5 +835,61 @@ class CoreSessionLoopSmokeTest {
         dmPage.locator(".quicknote-row",
                 new Page.LocatorOptions().setHasText("Keep this unsaved clue.")).waitFor();
         assertThat(input.inputValue()).isEmpty();
+    }
+
+    @Test
+    @Order(21)
+    void sheetDetailAndLiveStateEditing() {
+        PartyMember member = partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(campaignId)
+                .stream().filter(m -> "Dynamic Hero".equals(m.getCharacterName()))
+                .findFirst().orElseThrow();
+        UUID memberId = member.getId();
+
+        dmPage.evaluate("""
+            async ([baseUrl, cid, mid]) => {
+                const resp = await fetch(baseUrl + '/api/v1/campaigns/' + cid + '/party/' + mid + '/sheet', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        partyMemberId: mid,
+                        abilityScores: {str:15,dex:14,con:13,int:10,wis:12,cha:8},
+                        classLevels: [{classSourceKey:'srd-2024_fighter',level:1,hitDieRolls:[]}],
+                        proficiencies: {skills:[],expertise:[],tools:[],languages:[]},
+                        xp: 0
+                    })
+                });
+                if (!resp.ok) throw new Error('Sheet creation failed: ' + await resp.text());
+            }
+        """, Arrays.asList("http://localhost:" + port, campaignId.toString(), memberId.toString()));
+
+        dmPage.waitForTimeout(500);
+
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/party/" + memberId + "/sheet");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(dmPage.textContent("body")).contains("Character Sheet");
+        assertThat(dmPage.textContent("body")).contains("Fighter 1");
+        assertThat(dmPage.textContent("body")).contains("Temp HP");
+        assertThat(dmPage.textContent("body")).contains("Short Rest");
+
+        dmPage.evaluate("""
+            async ([baseUrl, cid, mid]) => {
+                const resp = await fetch(baseUrl + '/api/v1/campaigns/' + cid + '/party/' + mid + '/live-state', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tempHp: 7, inspiration: false, exhaustion: 0,
+                        deathSaveSuccesses: 0, deathSaveFailures: 0,
+                        concentratingOn: null, conditionsJson: '[]'
+                    })
+                });
+                if (!resp.ok) throw new Error('Live state update failed: ' + await resp.text());
+            }
+        """, Arrays.asList("http://localhost:" + port, campaignId.toString(), memberId.toString()));
+        dmPage.waitForTimeout(300);
+
+        dmPage.locator("button:has-text('Short Rest')").first().click();
+        dmPage.locator("#rest-preview-dialog").waitFor();
+        assertThat(dmPage.textContent("body")).contains("Short Rest Preview");
+        dmPage.locator("#rest-preview-dialog button:has-text('Cancel')").click();
     }
 }
