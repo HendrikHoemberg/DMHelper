@@ -1163,7 +1163,7 @@
     "factionClock": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["key", "title", "segments"],
+      "required": ["key", "factionRef", "title", "segments"],
       "properties": {
         "key": { "$ref": "#/$defs/key" },
         "factionRef": { "$ref": "#/$defs/contentReference" },

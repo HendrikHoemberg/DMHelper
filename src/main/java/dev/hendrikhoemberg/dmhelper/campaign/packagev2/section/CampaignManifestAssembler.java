@@ -184,34 +184,29 @@ public class CampaignManifestAssembler {
         annotations = value == null ? List.of() : List.copyOf(value);
     }
 
-    public CampaignManifestAssembler worldNpcs(List<CampaignManifestV2.WorldNpcDto> value) {
+    public void worldNpcs(List<CampaignManifestV2.WorldNpcDto> value) {
         checkNotAlreadySet("worldNpcs", worldNpcs);
-        this.worldNpcs = List.copyOf(value);
-        return this;
+        this.worldNpcs = value == null ? List.of() : List.copyOf(value);
     }
 
-    public CampaignManifestAssembler worldLocations(List<CampaignManifestV2.WorldLocationDto> value) {
+    public void worldLocations(List<CampaignManifestV2.WorldLocationDto> value) {
         checkNotAlreadySet("worldLocations", worldLocations);
-        this.worldLocations = List.copyOf(value);
-        return this;
+        this.worldLocations = value == null ? List.of() : List.copyOf(value);
     }
 
-    public CampaignManifestAssembler factions(List<CampaignManifestV2.FactionDto> value) {
+    public void factions(List<CampaignManifestV2.FactionDto> value) {
         checkNotAlreadySet("factions", factions);
-        this.factions = List.copyOf(value);
-        return this;
+        this.factions = value == null ? List.of() : List.copyOf(value);
     }
 
-    public CampaignManifestAssembler worldRelationships(List<CampaignManifestV2.WorldRelationshipDto> value) {
+    public void worldRelationships(List<CampaignManifestV2.WorldRelationshipDto> value) {
         checkNotAlreadySet("worldRelationships", worldRelationships);
-        this.worldRelationships = List.copyOf(value);
-        return this;
+        this.worldRelationships = value == null ? List.of() : List.copyOf(value);
     }
 
-    public CampaignManifestAssembler factionClocks(List<CampaignManifestV2.FactionClockDto> value) {
+    public void factionClocks(List<CampaignManifestV2.FactionClockDto> value) {
         checkNotAlreadySet("factionClocks", factionClocks);
-        this.factionClocks = List.copyOf(value);
-        return this;
+        this.factionClocks = value == null ? List.of() : List.copyOf(value);
     }
 
     public CampaignManifestV2 build(CampaignManifestV2.Metadata metadata) {
@@ -271,11 +266,11 @@ public class CampaignManifestAssembler {
                 diceRolls,
                 quests == null ? List.of() : quests,
                 annotations == null ? List.of() : annotations,
-                worldNpcs != null ? worldNpcs : List.of(),
-                worldLocations != null ? worldLocations : List.of(),
-                factions != null ? factions : List.of(),
-                worldRelationships != null ? worldRelationships : List.of(),
-                factionClocks != null ? factionClocks : List.of()
+                worldNpcs == null ? List.of() : worldNpcs,
+                worldLocations == null ? List.of() : worldLocations,
+                factions == null ? List.of() : factions,
+                worldRelationships == null ? List.of() : worldRelationships,
+                factionClocks == null ? List.of() : factionClocks
         );
     }
 
