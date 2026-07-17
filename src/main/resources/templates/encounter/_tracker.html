@@ -42,6 +42,8 @@
             conditionsCatalog: [],
             showConditionMenu: null,
             conditionDuration: '',
+            waves: [],
+            spawnError: '',
 
             request(url, options = {}) {
                 return window.dmRequest(url, options);
@@ -76,6 +78,10 @@
 
             get selected() {
                 return this.combatants.find(c => c.id === this.selectedCombatantId) || null;
+            },
+
+            get pendingWaves() {
+                return (this.waves || []).filter(w => w.status === 'PENDING' || w.status === 'RESERVE');
             },
 
             get canUndo() {
@@ -137,6 +143,7 @@
                     const resp = await this.request(`/api/v1/encounters/${encounterId}`);
                     this.encounter = await resp.json();
                     await this.reloadCombatants();
+                    await this.loadWaves();
                     this.dispatchState();
                     this.dispatchTurnEvent();
                 } catch (error) {
@@ -161,6 +168,27 @@
                 } catch (error) {
                     this.failure('Could not reload combatants.', error,
                         () => this.reloadCombatants());
+                }
+            },
+
+            async loadWaves() {
+                if (!this._encounterId) return;
+                try {
+                    const resp = await this.request(`/api/v1/encounters/${this._encounterId}/waves`);
+                    this.waves = await resp.json();
+                } catch (error) {
+                    // waves are optional; ignore loading failure
+                }
+            },
+
+            async spawnWave(waveId) {
+                this.spawnError = '';
+                try {
+                    await this.request(`/api/v1/encounters/${this._encounterId}/waves/${waveId}/spawn`, { method: 'POST' });
+                    await this.reloadCombatants();
+                    await this.loadWaves();
+                } catch (error) {
+                    this.spawnError = error?.message || 'Failed to spawn wave';
                 }
             },
 
@@ -624,6 +652,19 @@
                         <button @click="resolveRecharge(activeCombatantId, prompt.abilityName, null)">Skip</button>
                     </div>
                 </template>
+            </div>
+
+            <!-- Wave banner -->
+            <div class="wave-banner" x-show="pendingWaves.length > 0" style="background: var(--yellow-950, #3d3100); padding: 8px 12px; border-radius: 4px; margin: 8px 0;">
+                <template x-for="wave in pendingWaves" :key="wave.id">
+                    <div style="display: flex; align-items: center; gap: 8px; margin: 4px 0;">
+                        <span style="color: var(--yellow-400); font-weight: 600;" x-text="'Wave ready: ' + wave.name"></span>
+                        <span class="text-muted" x-text="wave.triggerKind + (wave.triggerValue ? ' @ ' + wave.triggerValue : '')"></span>
+                        <span class="text-muted" x-text="wave.combatantCount + ' combatants'"></span>
+                        <button class="btn btn-sm btn-warning" @click="spawnWave(wave.id)">Spawn</button>
+                    </div>
+                </template>
+                <div x-show="spawnError" class="u-text-danger" x-text="spawnError"></div>
             </div>
 
             <!-- Initiative list -->

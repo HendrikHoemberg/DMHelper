@@ -478,6 +478,11 @@ public class EncounterService {
             c.setPartyMember(pm);
         }
 
+        if ("HAZARD".equals(kind) && maxHp == 10) {
+            maxHp = 1;
+            currentHp = 1;
+        }
+
         c.setName(name);
         c.setKind(kind);
         c.setMaxHp(maxHp);
