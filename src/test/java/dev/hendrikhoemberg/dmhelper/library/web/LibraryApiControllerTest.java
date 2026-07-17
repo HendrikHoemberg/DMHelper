@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.library.web;
 
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.service.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,7 @@ class LibraryApiControllerTest {
 
     private StatBlock srd(String key) {
         StatBlock sb = new StatBlock();
-        sb.setSource(StatBlock.Source.SRD);
+        sb.setSource(ContentSource.SRD);
         sb.setSourceKey(key);
         return sb;
     }

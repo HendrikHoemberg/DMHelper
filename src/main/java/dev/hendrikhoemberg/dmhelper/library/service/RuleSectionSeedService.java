@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.library.service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.RuleSection;
 import dev.hendrikhoemberg.dmhelper.library.data.RuleSectionRepository;
 import org.slf4j.Logger;
@@ -45,6 +46,7 @@ public class RuleSectionSeedService {
                 int count = 0;
                 for (RuleEntry entry : entries) {
                     RuleSection r = new RuleSection();
+                    r.setSource(ContentSource.SRD);
                     r.setSourceKey(entry.key());
                     r.setName(entry.name());
                     r.setBody(entry.desc());

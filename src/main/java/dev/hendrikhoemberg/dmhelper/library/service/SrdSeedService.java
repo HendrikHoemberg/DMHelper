@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.library.service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import org.slf4j.Logger;
@@ -28,7 +29,7 @@ public class SrdSeedService {
     }
 
     public void seedIfEmpty() {
-        if (repository.existsBySource(StatBlock.Source.SRD)) {
+        if (repository.existsBySource(ContentSource.SRD)) {
             log.info("SRD data already seeded -- skipping");
             return;
         }
@@ -70,7 +71,7 @@ public class SrdSeedService {
     ) {
         public StatBlock toStatBlock() {
             StatBlock sb = new StatBlock();
-            sb.setSource(StatBlock.Source.SRD);
+            sb.setSource(ContentSource.SRD);
             sb.setSourceKey(sourceKey);
             sb.setName(name);
             sb.setSize(size);

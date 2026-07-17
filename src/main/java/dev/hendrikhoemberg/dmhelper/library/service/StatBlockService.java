@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.library.service;
 
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import jakarta.persistence.criteria.Predicate;
@@ -28,7 +29,7 @@ public class StatBlockService {
     }
 
     @Transactional(readOnly = true)
-    public List<StatBlock> search(StatBlock.Source source, String cr, String type, String search) {
+    public List<StatBlock> search(ContentSource source, String cr, String type, String search) {
         return repository.findAll((root, query, cb) -> {
             var predicates = new ArrayList<Predicate>();
 
@@ -77,7 +78,7 @@ public class StatBlockService {
                                     String senses, String languages,
                                     String sourceKey, Integer xp) {
         StatBlock sb = new StatBlock();
-        sb.setSource(StatBlock.Source.CUSTOM);
+        sb.setSource(ContentSource.CUSTOM);
         if (campaignId != null) {
             campaignRepo.findById(campaignId).ifPresent(sb::setCampaign);
         }
@@ -146,7 +147,7 @@ public class StatBlockService {
                                    String damageImm, String condImm,
                                    String senses, String languages) {
         StatBlock sb = findById(id);
-        if (sb.getSource() != StatBlock.Source.CUSTOM) {
+        if (sb.getSource() != ContentSource.CUSTOM) {
             throw new IllegalArgumentException("Cannot edit SRD statblocks");
         }
         sb.setName(name);
@@ -180,7 +181,7 @@ public class StatBlockService {
     public void delete(UUID id) {
         sceneRefCleaner.detachStatBlock(id);
         StatBlock sb = findById(id);
-        if (sb.getSource() != StatBlock.Source.CUSTOM) {
+        if (sb.getSource() != ContentSource.CUSTOM) {
             throw new IllegalArgumentException("Cannot delete SRD statblocks");
         }
         repository.delete(sb);
@@ -189,7 +190,7 @@ public class StatBlockService {
     public StatBlock cloneAsCustom(UUID sourceId, UUID targetCampaignId, String newName) {
         StatBlock original = findById(sourceId);
         StatBlock clone = new StatBlock();
-        clone.setSource(StatBlock.Source.CUSTOM);
+        clone.setSource(ContentSource.CUSTOM);
         if (targetCampaignId != null) {
             campaignRepo.findById(targetCampaignId).ifPresent(clone::setCampaign);
         }
@@ -233,7 +234,7 @@ public class StatBlockService {
 
     public StatBlock promoteToGlobal(UUID id) {
         StatBlock sb = findById(id);
-        if (sb.getSource() != StatBlock.Source.CUSTOM) {
+        if (sb.getSource() != ContentSource.CUSTOM) {
             throw new IllegalArgumentException("Only custom statblocks can be promoted");
         }
         sb.setCampaign(null);

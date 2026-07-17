@@ -17,4 +17,14 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, UUID>,
     List<MagicItem> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 
     Optional<MagicItem> findBySourceKey(String sourceKey);
+
+    Optional<MagicItem> findBySourceAndSourceKey(ContentSource source, String sourceKey);
+
+    List<MagicItem> findByCampaignIdOrderByNameAsc(UUID campaignId);
+
+    List<MagicItem> findBySourceAndCampaignIsNullOrderByNameAsc(ContentSource source);
+
+    boolean existsBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
+
+    boolean existsByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
 }

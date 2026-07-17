@@ -26,6 +26,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
 import org.junit.jupiter.api.BeforeEach;
@@ -144,7 +145,7 @@ class AdventureSectionAdapterTest {
         StatBlock sb = mock(StatBlock.class);
         when(sb.getId()).thenReturn(sbId);
         when(sb.getName()).thenReturn("Goblin");
-        when(sb.getSource()).thenReturn(StatBlock.Source.SRD);
+        when(sb.getSource()).thenReturn(ContentSource.SRD);
         when(sb.getSourceKey()).thenReturn("srd-2024_goblin");
 
         UUID hId = UUID.randomUUID();

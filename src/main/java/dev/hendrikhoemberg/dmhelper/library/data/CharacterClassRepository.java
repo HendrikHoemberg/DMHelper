@@ -21,4 +21,14 @@ public interface CharacterClassRepository extends JpaRepository<CharacterClass, 
     Optional<CharacterClass> findBySourceKey(String sourceKey);
 
     List<CharacterClass> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
+
+    Optional<CharacterClass> findBySourceAndSourceKey(ContentSource source, String sourceKey);
+
+    List<CharacterClass> findByCampaignIdOrderByNameAsc(UUID campaignId);
+
+    List<CharacterClass> findBySourceAndCampaignIsNullOrderByNameAsc(ContentSource source);
+
+    boolean existsBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
+
+    boolean existsByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
 }

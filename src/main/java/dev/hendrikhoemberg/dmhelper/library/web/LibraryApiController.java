@@ -71,7 +71,7 @@ public class LibraryApiController {
     @GetMapping("/srd-keys")
     public List<String> srdKeys() {
         var statblocks = statBlockService.findAll().stream()
-                .filter(sb -> sb.getSource() == StatBlock.Source.SRD)
+                .filter(sb -> sb.getSource() == ContentSource.SRD)
                 .map(StatBlock::getSourceKey);
         var spells = spellService.findAll().stream().map(Spell::getSourceKey);
         var conditions = conditionService.findAll().stream().map(Condition::getSourceKey);

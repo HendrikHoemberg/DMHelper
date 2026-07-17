@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.library.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.service.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +37,7 @@ class LibraryControllerTest {
     private StatBlock sampleSb() {
         StatBlock sb = new StatBlock();
         sb.setId(UUID.randomUUID());
-        sb.setSource(StatBlock.Source.SRD);
+        sb.setSource(ContentSource.SRD);
         sb.setName("Goblin");
         sb.setCr("1/4");
         sb.setType("Humanoid");
@@ -83,7 +84,7 @@ class LibraryControllerTest {
         campaign.setId(UUID.randomUUID());
         campaign.setName("Test Campaign");
         StatBlock sb = sampleSb();
-        sb.setSource(StatBlock.Source.CUSTOM);
+        sb.setSource(ContentSource.CUSTOM);
         sb.setCampaign(campaign);
         when(service.findById(sb.getId())).thenReturn(sb);
 
@@ -97,7 +98,7 @@ class LibraryControllerTest {
     @Test
     void shouldCreateCustom() throws Exception {
         StatBlock sb = sampleSb();
-        sb.setSource(StatBlock.Source.CUSTOM);
+        sb.setSource(ContentSource.CUSTOM);
         sb.setName("Custom Goblin");
         when(service.createCustom(any(), anyString(), anyString(), anyString(),
                 anyInt(), anyString(), anyString(),
@@ -138,10 +139,10 @@ class LibraryControllerTest {
     @Test
     void shouldPromoteStatBlockToGlobal() throws Exception {
         StatBlock sb = sampleSb();
-        sb.setSource(StatBlock.Source.CUSTOM);
+        sb.setSource(ContentSource.CUSTOM);
         sb.setCampaignId(UUID.randomUUID());
         StatBlock promoted = sampleSb();
-        promoted.setSource(StatBlock.Source.CUSTOM);
+        promoted.setSource(ContentSource.CUSTOM);
         promoted.setCampaignId(null);
         when(service.promoteToGlobal(sb.getId())).thenReturn(promoted);
 

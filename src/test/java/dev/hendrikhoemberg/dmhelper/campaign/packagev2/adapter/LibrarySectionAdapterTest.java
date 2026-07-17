@@ -11,6 +11,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportCon
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.LibrarySectionAdapter;
 import org.junit.jupiter.api.BeforeEach;
@@ -144,7 +145,7 @@ class LibrarySectionAdapterTest {
 
         var imported = captured[0];
         assertThat(imported).isNotNull();
-        assertThat(imported.getSource()).isEqualTo(StatBlock.Source.CUSTOM);
+        assertThat(imported.getSource()).isEqualTo(ContentSource.CUSTOM);
         assertThat(imported.getName()).isEqualTo("Fire Elemental Renamed");
         assertThat(imported.getCr()).isEqualTo("7");
         assertThat(imported.getXp()).isEqualTo(2900);
@@ -158,7 +159,7 @@ class LibrarySectionAdapterTest {
     private StatBlock statBlock(UUID id, String name, String cr, String type, int ac, String hp, int xp, Instant createdAt) {
         var sb = new StatBlock();
         sb.setId(id);
-        sb.setSource(StatBlock.Source.CUSTOM);
+        sb.setSource(ContentSource.CUSTOM);
         sb.setCampaign(campaign);
         sb.setName(name);
         sb.setCr(cr);
@@ -182,7 +183,7 @@ class LibrarySectionAdapterTest {
     private StatBlock fullStatBlock(UUID id) {
         var sb = new StatBlock();
         sb.setId(id);
-        sb.setSource(StatBlock.Source.CUSTOM);
+        sb.setSource(ContentSource.CUSTOM);
         sb.setCampaign(campaign);
         sb.setName("Fire Elemental");
         sb.setCr("7");

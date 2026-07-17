@@ -5,6 +5,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import org.springframework.stereotype.Component;
@@ -19,7 +20,7 @@ public class StatBlockReferenceResolver {
     }
 
     public ContentReference referenceFor(StatBlock statBlock, CampaignExportContext context) {
-        return statBlock.getSource() == StatBlock.Source.SRD
+        return statBlock.getSource() == ContentSource.SRD
                 ? context.catalogRef(CampaignContentType.STATBLOCK, statBlock.getSourceKey())
                 : context.packageRef(CampaignContentType.STATBLOCK,
                         statBlock.getId(), statBlock.getName());
@@ -35,7 +36,7 @@ public class StatBlockReferenceResolver {
         if (!CampaignCatalogService.RULESET.equals(reference.ruleset())) {
             throw new IllegalArgumentException("Unsupported statblock ruleset: " + reference.ruleset());
         }
-        return repository.findBySourceAndSourceKey(StatBlock.Source.SRD, reference.sourceKey())
+        return repository.findBySourceAndSourceKey(ContentSource.SRD, reference.sourceKey())
                 .orElseThrow(() -> new IllegalStateException(
                         "No SRD statblock for catalog key " + reference.sourceKey()));
     }

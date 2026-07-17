@@ -9,6 +9,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 import dev.hendrikhoemberg.dmhelper.notes.data.*;
@@ -136,7 +137,7 @@ class QuickNoteServiceTest {
     void promotesQuickNoteWithPrefixedLink() {
         var sb = new StatBlock();
         sb.setName("Goblin");
-        sb.setSource(StatBlock.Source.SRD);
+        sb.setSource(ContentSource.SRD);
         sb.setSourceKey("goblin");
         sb.setCr("1/4");
         sb.setType("humanoid");

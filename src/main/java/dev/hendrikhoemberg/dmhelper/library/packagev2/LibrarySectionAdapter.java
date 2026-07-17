@@ -8,6 +8,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportCon
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionExporter;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionImporter;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import org.springframework.stereotype.Component;
@@ -37,7 +38,7 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
     public void exportSection(CampaignExportContext context, CampaignManifestAssembler target) {
         List<StatBlock> customBlocks = repository.findByCampaignIdOrderByNameAscIdAsc(context.campaignId())
                 .stream()
-                .filter(sb -> sb.getSource() == StatBlock.Source.CUSTOM)
+                .filter(sb -> sb.getSource() == ContentSource.CUSTOM)
                 .toList();
 
         List<StatBlockDto> dtos = customBlocks.stream()
@@ -72,7 +73,7 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
 
         for (StatBlockDto dto : dtos) {
             var sb = new StatBlock();
-            sb.setSource(StatBlock.Source.CUSTOM);
+            sb.setSource(ContentSource.CUSTOM);
             sb.setCampaign(campaign);
             sb.setName(dto.name());
             sb.setCr(dto.cr());

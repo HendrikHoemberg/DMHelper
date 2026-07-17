@@ -9,6 +9,7 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 import dev.hendrikhoemberg.dmhelper.notes.data.*;
@@ -55,7 +56,7 @@ class NoteServiceTest {
 
         goblin = new StatBlock();
         goblin.setName("Goblin");
-        goblin.setSource(StatBlock.Source.SRD);
+        goblin.setSource(ContentSource.SRD);
         goblin.setSourceKey("goblin");
         goblin.setCr("1/4");
         goblin.setType("humanoid");

@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.library.service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.Spell;
 import dev.hendrikhoemberg.dmhelper.library.data.SpellRepository;
 import org.slf4j.Logger;
@@ -42,6 +43,7 @@ public class SpellSeedService {
                 int count = 0;
                 for (SpellEntry entry : entries) {
                     Spell s = new Spell();
+                    s.setSource(ContentSource.SRD);
                     s.setSourceKey(entry.sourceKey());
                     s.setName(entry.name());
                     s.setLevel(entry.level());

@@ -19,4 +19,14 @@ public interface EquipmentItemRepository extends JpaRepository<EquipmentItem, UU
     List<EquipmentItem> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 
     Optional<EquipmentItem> findBySourceKey(String sourceKey);
+
+    Optional<EquipmentItem> findBySourceAndSourceKey(ContentSource source, String sourceKey);
+
+    List<EquipmentItem> findByCampaignIdOrderByNameAsc(UUID campaignId);
+
+    List<EquipmentItem> findBySourceAndCampaignIsNullOrderByNameAsc(ContentSource source);
+
+    boolean existsBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
+
+    boolean existsByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
 }

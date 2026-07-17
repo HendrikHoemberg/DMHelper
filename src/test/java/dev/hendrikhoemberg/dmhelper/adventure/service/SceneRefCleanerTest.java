@@ -14,6 +14,7 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
@@ -105,7 +106,7 @@ class SceneRefCleanerTest {
     void detachStatBlockAndHandoutRemoveFromLists() {
         StatBlock sb = new StatBlock();
         sb.setName("Goblin Custom");
-        sb.setSource(StatBlock.Source.CUSTOM);
+        sb.setSource(ContentSource.CUSTOM);
         sb.setCr("1");
         sb.setType("humanoid");
         sb.setHp("10");

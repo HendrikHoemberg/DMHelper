@@ -70,9 +70,9 @@ public class LibraryController {
                          @RequestParam(required = false) String type,
                          @RequestParam(required = false) String source,
                          Model model) {
-        StatBlock.Source sourceEnum = null;
+        ContentSource sourceEnum = null;
         if (source != null && !source.isBlank()) {
-            sourceEnum = StatBlock.Source.valueOf(source);
+            sourceEnum = ContentSource.valueOf(source);
         }
         List<StatBlock> results = service.search(sourceEnum, cr, type, search);
         model.addAttribute("statblocks", results);

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -22,4 +23,14 @@ public interface SpellRepository extends JpaRepository<Spell, UUID>,
     long countWithSchool();
 
     List<Spell> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
+
+    Optional<Spell> findBySourceAndSourceKey(ContentSource source, String sourceKey);
+
+    List<Spell> findByCampaignIdOrderByNameAsc(UUID campaignId);
+
+    List<Spell> findBySourceAndCampaignIsNullOrderByNameAsc(ContentSource source);
+
+    boolean existsBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
+
+    boolean existsByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
 }

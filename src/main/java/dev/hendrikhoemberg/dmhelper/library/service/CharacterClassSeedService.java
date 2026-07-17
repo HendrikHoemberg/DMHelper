@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.library.service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
 import org.slf4j.Logger;
@@ -52,6 +53,7 @@ public class CharacterClassSeedService {
                 int count = 0;
                 for (ClassEntry entry : entries) {
                     CharacterClass c = new CharacterClass();
+                    c.setSource(ContentSource.SRD);
                     c.setSourceKey(entry.key());
                     c.setName(entry.name());
                     c.setHitDie(entry.hit_dice());

@@ -127,6 +127,24 @@ class FlywayLegacyUpgradeTest {
     }
 
     @Test
+    void appliesV7AfterBaseline() {
+        Integer appliedV7 = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '7' AND \"success\" = TRUE",
+                Integer.class);
+        assertThat(appliedV7).isEqualTo(1);
+    }
+
+    @Test
+    void v7ProvenanceAndOwnershipColumnsExistOnSpell() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'SPELL' AND column_name = 'SOURCE'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'SPELL' AND column_name = 'CAMPAIGN_ID_FK'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
     void v5TablesExistAfterUpgrade() {
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'QUEST'",

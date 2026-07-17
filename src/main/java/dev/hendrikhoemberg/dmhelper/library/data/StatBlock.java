@@ -18,20 +18,21 @@ import java.util.UUID;
 })
 public class StatBlock {
 
-    public enum Source { SRD, CUSTOM }
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
-    private Source source;
+    private ContentSource source;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "campaign_id_fk")
     @JsonIgnore
     private Campaign campaign;
+
+    @Embedded
+    private ContentProvenance provenance;
 
     @Deprecated(forRemoval = true)
     @Column(name = "campaign_id")
@@ -135,11 +136,14 @@ public class StatBlock {
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
-    public Source getSource() { return source; }
-    public void setSource(Source source) { this.source = source; }
+    public ContentSource getSource() { return source; }
+    public void setSource(ContentSource source) { this.source = source; }
 
     public Campaign getCampaign() { return campaign; }
     public void setCampaign(Campaign campaign) { this.campaign = campaign; }
+
+    public ContentProvenance getProvenance() { return provenance; }
+    public void setProvenance(ContentProvenance provenance) { this.provenance = provenance; }
 
     @Deprecated(forRemoval = true)
     public UUID getCampaignId() { return campaign != null ? campaign.getId() : campaignId; }

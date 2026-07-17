@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.library.service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.Background;
 import dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository;
 import org.slf4j.Logger;
@@ -45,6 +46,7 @@ public class BackgroundSeedService {
                 int count = 0;
                 for (BackgroundEntry entry : entries) {
                     Background b = new Background();
+                    b.setSource(ContentSource.SRD);
                     b.setSourceKey(entry.key());
                     b.setName(entry.name());
                     b.setDescription(entry.desc());

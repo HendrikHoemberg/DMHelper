@@ -9,6 +9,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignAssetColl
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportOptions;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import org.junit.jupiter.api.Test;
@@ -33,9 +34,9 @@ class StatBlockReferenceResolverTest {
                 campaign.getId(), campaign, CampaignExportOptions.complete(),
                 keyService, new CampaignAssetCollector());
         var resolver = new StatBlockReferenceResolver(mock(StatBlockRepository.class));
-        var srd = statBlock(StatBlock.Source.SRD, "srd-2024_goblin");
+        var srd = statBlock(ContentSource.SRD, "srd-2024_goblin");
         srd.setId(UUID.randomUUID());
-        var custom = statBlock(StatBlock.Source.CUSTOM, "custom-dragon");
+        var custom = statBlock(ContentSource.CUSTOM, "custom-dragon");
         custom.setId(UUID.randomUUID());
 
         assertThat(resolver.referenceFor(srd, context)).isEqualTo(
@@ -48,8 +49,8 @@ class StatBlockReferenceResolverTest {
     void resolvesCatalogStatBlockBySrdSourceKey() {
         var repository = mock(StatBlockRepository.class);
         var resolver = new StatBlockReferenceResolver(repository);
-        var goblin = statBlock(StatBlock.Source.SRD, "srd-2024_goblin");
-        when(repository.findBySourceAndSourceKey(StatBlock.Source.SRD, "srd-2024_goblin"))
+        var goblin = statBlock(ContentSource.SRD, "srd-2024_goblin");
+        when(repository.findBySourceAndSourceKey(ContentSource.SRD, "srd-2024_goblin"))
                 .thenReturn(Optional.of(goblin));
 
         var resolved = resolver.resolve(
@@ -63,7 +64,7 @@ class StatBlockReferenceResolverTest {
     void resolvesCampaignStatBlockFromPackageRegistry() {
         var resolver = new StatBlockReferenceResolver(mock(StatBlockRepository.class));
         var context = importContext();
-        var custom = statBlock(StatBlock.Source.CUSTOM, "custom-dragon");
+        var custom = statBlock(ContentSource.CUSTOM, "custom-dragon");
         custom.setId(UUID.randomUUID());
         context.register(CampaignContentType.STATBLOCK, "custom-dragon", custom, custom.getId());
 
@@ -72,7 +73,7 @@ class StatBlockReferenceResolverTest {
                 .isSameAs(custom);
     }
 
-    private static StatBlock statBlock(StatBlock.Source source, String sourceKey) {
+    private static StatBlock statBlock(ContentSource source, String sourceKey) {
         var statBlock = new StatBlock();
         statBlock.setSource(source);
         statBlock.setSourceKey(sourceKey);

@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.library.service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItem;
 import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository;
 import org.slf4j.Logger;
@@ -45,6 +46,7 @@ public class EquipmentItemSeedService {
                 int count = 0;
                 for (EquipmentEntry entry : entries) {
                     EquipmentItem e = new EquipmentItem();
+                    e.setSource(ContentSource.SRD);
                     e.setSourceKey(entry.sourceKey());
                     e.setName(entry.name());
                     e.setCategory(EquipmentItem.Category.valueOf(entry.category()));

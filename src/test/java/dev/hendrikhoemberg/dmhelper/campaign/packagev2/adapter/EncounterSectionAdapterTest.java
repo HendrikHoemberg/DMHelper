@@ -21,6 +21,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.packagev2.EncounterSectionAdapter;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
 import org.junit.jupiter.api.BeforeEach;
@@ -107,7 +108,7 @@ class EncounterSectionAdapterTest {
         combatant.setKind("MONSTER");
         var srd = new StatBlock();
         srd.setId(UUID.randomUUID());
-        srd.setSource(StatBlock.Source.SRD);
+        srd.setSource(ContentSource.SRD);
         srd.setSourceKey("srd-2024_goblin");
         srd.setName("Goblin");
         combatant.setStatBlock(srd);
@@ -228,7 +229,7 @@ class EncounterSectionAdapterTest {
                 CampaignContentType.STATBLOCK, "SRD_5_2", "srd-2024_goblin");
         var srd = new StatBlock();
         srd.setId(UUID.randomUUID());
-        srd.setSource(StatBlock.Source.SRD);
+        srd.setSource(ContentSource.SRD);
         srd.setSourceKey("srd-2024_goblin");
 
         var combatantDto = new CombatantDto(
@@ -254,7 +255,7 @@ class EncounterSectionAdapterTest {
             return combatant;
         });
         when(statBlockRepository.findBySourceAndSourceKey(
-                StatBlock.Source.SRD, "srd-2024_goblin")).thenReturn(java.util.Optional.of(srd));
+                ContentSource.SRD, "srd-2024_goblin")).thenReturn(java.util.Optional.of(srd));
 
         var context = new CampaignImportContext(
                 campaignId, new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());

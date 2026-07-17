@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.library.service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.Feat;
 import dev.hendrikhoemberg.dmhelper.library.data.FeatRepository;
 import org.slf4j.Logger;
@@ -45,6 +46,7 @@ public class FeatSeedService {
                 int count = 0;
                 for (FeatEntry entry : entries) {
                     Feat f = new Feat();
+                    f.setSource(ContentSource.SRD);
                     f.setSourceKey(entry.key());
                     f.setName(entry.name());
                     f.setCategory(entry.type());

@@ -61,7 +61,7 @@ class CommandPaletteServiceTest {
         StatBlock sb = new StatBlock();
         sb.setName("Goblin");
         sb.setSourceKey("goblin");
-        sb.setSource(StatBlock.Source.SRD);
+        sb.setSource(ContentSource.SRD);
         sb.setCr("1/4");
         sb.setType("Humanoid");
         sb.setAc(15);

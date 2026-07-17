@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.campaign.packagev2.catalog;
 
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CatalogSnapshot;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.service.BackgroundService;
 import dev.hendrikhoemberg.dmhelper.library.service.CharacterClassService;
@@ -71,7 +72,7 @@ public class CampaignCatalogService {
     public CatalogSnapshot snapshot() {
         List<CatalogSnapshot.Entry> entries = new ArrayList<>();
         statBlockService.findAll().stream()
-                .filter(sb -> sb.getSource() == StatBlock.Source.SRD)
+                .filter(sb -> sb.getSource() == ContentSource.SRD)
                 .sorted(Comparator.comparing(StatBlock::getSourceKey))
                 .map(sb -> new CatalogSnapshot.Entry(
                         CampaignContentType.STATBLOCK,

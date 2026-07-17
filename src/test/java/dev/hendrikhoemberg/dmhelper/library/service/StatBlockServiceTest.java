@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,7 +57,7 @@ class StatBlockServiceTest {
     void shouldCreateCustomStatBlock() {
         StatBlock sb = createCustom("Amber Knight", "5", "Humanoid", 18, "75 (10d8 + 30)");
         assertThat(sb.getId()).isNotNull();
-        assertThat(sb.getSource()).isEqualTo(StatBlock.Source.CUSTOM);
+        assertThat(sb.getSource()).isEqualTo(ContentSource.CUSTOM);
         assertThat(sb.getCampaignId()).isEqualTo(campaignId);
         assertThat(sb.getName()).isEqualTo("Amber Knight");
     }
@@ -127,7 +128,7 @@ class StatBlockServiceTest {
     @Test
     void shouldNotDeleteSrdStatBlock() {
         StatBlock srd = new StatBlock();
-        srd.setSource(StatBlock.Source.SRD);
+        srd.setSource(ContentSource.SRD);
         srd.setName("Protected Goblin");
         srd.setCr("1/4");
         srd.setType("Humanoid");
@@ -145,13 +146,13 @@ class StatBlockServiceTest {
         assertThat(custom.getCampaignId()).isNotNull();
         StatBlock promoted = service.promoteToGlobal(custom.getId());
         assertThat(promoted.getCampaignId()).isNull();
-        assertThat(promoted.getSource()).isEqualTo(StatBlock.Source.CUSTOM);
+        assertThat(promoted.getSource()).isEqualTo(ContentSource.CUSTOM);
     }
 
     @Test
     void shouldNotPromoteSrdToGlobal() {
         StatBlock srd = new StatBlock();
-        srd.setSource(StatBlock.Source.SRD);
+        srd.setSource(ContentSource.SRD);
         srd.setName("SRD Monster");
         srd.setCr("1");
         srd.setType("Beast");
@@ -165,7 +166,7 @@ class StatBlockServiceTest {
     @Test
     void shouldCloneSrdAsCustom() {
         StatBlock srd = new StatBlock();
-        srd.setSource(StatBlock.Source.SRD);
+        srd.setSource(ContentSource.SRD);
         srd.setName("Goblin");
         srd.setCr("1/4");
         srd.setType("Humanoid");
@@ -184,7 +185,7 @@ class StatBlockServiceTest {
 
         StatBlock cloned = service.cloneAsCustom(srd.getId(), campaignId, "Goblin Boss");
         assertThat(cloned.getId()).isNotEqualTo(srd.getId());
-        assertThat(cloned.getSource()).isEqualTo(StatBlock.Source.CUSTOM);
+        assertThat(cloned.getSource()).isEqualTo(ContentSource.CUSTOM);
         assertThat(cloned.getCampaignId()).isEqualTo(campaignId);
         assertThat(cloned.getName()).isEqualTo("Goblin Boss");
         assertThat(cloned.getTraits()).isEqualTo(srd.getTraits());

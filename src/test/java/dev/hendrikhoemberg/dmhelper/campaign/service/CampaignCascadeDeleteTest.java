@@ -26,6 +26,7 @@ import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntry;
 import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntryRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 import dev.hendrikhoemberg.dmhelper.notes.data.*;
@@ -137,7 +138,7 @@ class CampaignCascadeDeleteTest {
 
         StatBlock sb = new StatBlock();
         sb.setCampaign(c);
-        sb.setSource(StatBlock.Source.CUSTOM);
+        sb.setSource(ContentSource.CUSTOM);
         sb.setName("Homebrew Horror");
         sb.setCr("3");
         sb.setType("Aberration");

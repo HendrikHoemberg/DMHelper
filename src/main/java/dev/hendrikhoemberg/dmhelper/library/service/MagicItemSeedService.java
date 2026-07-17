@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.library.service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.MagicItem;
 import dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository;
 import org.slf4j.Logger;
@@ -46,6 +47,7 @@ public class MagicItemSeedService {
                 int count = 0;
                 for (MagicItemEntry entry : entries) {
                     MagicItem m = new MagicItem();
+                    m.setSource(ContentSource.SRD);
                     m.setSourceKey(entry.key());
                     m.setName(entry.name());
                     m.setDescription(entry.desc());

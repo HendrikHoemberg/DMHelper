@@ -148,7 +148,7 @@ class CombatDifficultyCalculatorTest {
         sb.setCr(cr);
         sb.setXp(xp);
         sb.setType("monstrosity");
-        sb.setSource(dev.hendrikhoemberg.dmhelper.library.data.StatBlock.Source.SRD);
+        sb.setSource(dev.hendrikhoemberg.dmhelper.library.data.ContentSource.SRD);
         return sb;
     }
 }

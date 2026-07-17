@@ -22,6 +22,7 @@ import dev.hendrikhoemberg.dmhelper.gamemap.packagev2.MapSectionAdapter;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapLayerDto;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
@@ -261,7 +262,7 @@ class MapSectionAdapterTest {
                 CampaignContentType.STATBLOCK, "SRD_5_2", "srd-2024_goblin");
         var srd = new StatBlock();
         srd.setId(UUID.randomUUID());
-        srd.setSource(StatBlock.Source.SRD);
+        srd.setSource(ContentSource.SRD);
         srd.setSourceKey("srd-2024_goblin");
 
         var manifest = new CampaignManifestV2(
@@ -302,7 +303,7 @@ class MapSectionAdapterTest {
             return t;
         });
         when(statBlockRepository.findBySourceAndSourceKey(
-                StatBlock.Source.SRD, "srd-2024_goblin")).thenReturn(java.util.Optional.of(srd));
+                ContentSource.SRD, "srd-2024_goblin")).thenReturn(java.util.Optional.of(srd));
 
         var importContext = new CampaignImportContext(
                 freshCampaign.getId(), new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
@@ -441,7 +442,7 @@ class MapSectionAdapterTest {
         Token token = token(UUID.randomUUID(), "Frodo", "PC", map, 0, 0, 1, 1, false, false, null);
         var srd = new StatBlock();
         srd.setId(UUID.randomUUID());
-        srd.setSource(StatBlock.Source.SRD);
+        srd.setSource(ContentSource.SRD);
         srd.setSourceKey("srd-2024_goblin");
         srd.setName("Goblin");
         token.setStatBlock(srd);

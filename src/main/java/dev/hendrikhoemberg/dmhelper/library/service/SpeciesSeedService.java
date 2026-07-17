@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.library.service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.Species;
 import dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository;
 import org.slf4j.Logger;
@@ -46,6 +47,7 @@ public class SpeciesSeedService {
                 int count = 0;
                 for (SpeciesEntry entry : entries) {
                     Species s = new Species();
+                    s.setSource(ContentSource.SRD);
                     s.setSourceKey(entry.key());
                     s.setName(entry.name());
                     s.setDescription(entry.desc());

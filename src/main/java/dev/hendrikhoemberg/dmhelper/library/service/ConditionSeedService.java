@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.library.service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.Condition;
 import dev.hendrikhoemberg.dmhelper.library.data.ConditionRepository;
 import org.slf4j.Logger;
@@ -45,6 +46,7 @@ public class ConditionSeedService {
                 int count = 0;
                 for (ConditionEntry entry : entries) {
                     Condition c = new Condition();
+                    c.setSource(ContentSource.SRD);
                     c.setSourceKey(entry.sourceKey());
                     c.setName(entry.name());
                     c.setDescription(entry.description());
