@@ -1,0 +1,78 @@
+{
+  "formatVersion": 2,
+  "metadata": {
+    "packageKey": "docs-semantic-error",
+    "createdAt": "2025-01-01T00:00:00Z",
+    "generator": "DMHelper",
+    "catalogVersion": "2025.1",
+    "catalogSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "exclusions": []
+  },
+  "campaign": {
+    "key": "docs-semantic-error",
+    "name": "Semantic Error Campaign",
+    "description": "A schema-valid campaign with a deliberate semantic error for documentation examples",
+    "createdAt": "2025-01-01T00:00:00Z",
+    "settings": {
+      "levelingMode": "XP",
+      "calendar": {
+        "monthLengths": [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+        "monthNames": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+        "weekdayNames": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+      },
+      "currentDate": { "year": 1492, "month": 0, "day": 1 }
+    }
+  },
+  "assets": [],
+  "party": [
+    {
+      "key": "test-character",
+      "characterName": "Test Character",
+      "playerName": "Test Player",
+      "classAndLevel": "Fighter 1",
+      "ac": 10,
+      "maxHp": 10,
+      "currentHp": 10,
+      "initiativeBonus": 0,
+      "speed": 30,
+      "passivePerception": 10,
+      "passiveInsight": 10,
+      "passiveInvestigation": 10,
+      "active": true,
+      "sheet": {
+        "key": "test-character-sheet",
+        "xp": 0,
+        "hitDiceUsed": 0,
+        "speciesRef": {
+          "scope": "CATALOG",
+          "type": "SPECIES",
+          "ruleset": "SRD_5_2",
+          "sourceKey": "definitely-not-a-real-species"
+        }
+      }
+    }
+  ],
+  "customStatBlocks": [],
+  "handouts": [],
+  "maps": [],
+  "encounters": [],
+  "notes": [],
+  "quickNotes": [],
+  "assignments": [],
+  "ledgerEntries": [],
+  "timelineEvents": [],
+  "adventures": [],
+  "session": null,
+  "diceRolls": [],
+  "customSpells": [],
+  "customConditions": [],
+  "customRules": [],
+  "customEquipment": [],
+  "customMagicItems": [],
+  "customClasses": [],
+  "customSpecies": [],
+  "customBackgrounds": [],
+  "customFeats": [],
+  "quests": [],
+  "annotations": []
+}

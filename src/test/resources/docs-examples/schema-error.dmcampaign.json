@@ -1,0 +1,52 @@
+{
+  "formatVersion": 2,
+  "metadata": {
+    "packageKey": "docs-schema-error",
+    "createdAt": "2025-01-01T00:00:00Z",
+    "generator": "DMHelper",
+    "catalogVersion": "2025.1",
+    "catalogSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "exclusions": []
+  },
+  "campaign": {
+    "key": "docs-schema-error",
+    "name": "Schema Error Campaign",
+    "description": "A campaign with a deliberate schema violation for documentation examples",
+    "createdAt": "2025-01-01T00:00:00Z",
+    "settings": {
+      "levelingMode": "XP",
+      "calendar": {
+        "monthLengths": [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+        "monthNames": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+        "weekdayNames": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+      },
+      "currentDate": { "year": 1492, "month": 0, "day": 1 }
+    }
+  },
+  "assets": [],
+  "party": [],
+  "customStatBlocks": [],
+  "handouts": [],
+  "maps": [],
+  "encounters": [],
+  "notes": [],
+  "quickNotes": [],
+  "assignments": [],
+  "ledgerEntries": [],
+  "timelineEvents": [],
+  "adventures": [],
+  "session": null,
+  "diceRolls": [],
+  "customSpells": [],
+  "customConditions": [],
+  "customRules": [],
+  "customEquipment": [],
+  "customMagicItems": [],
+  "customClasses": [],
+  "customSpecies": [],
+  "customBackgrounds": [],
+  "customFeats": [],
+  "quests": [],
+  "annotations": [],
+  "extraUnknownField": true
+}
