@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -329,5 +330,13 @@ class WorldControllerTest {
                         campaignId, factionId, clockId))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/campaigns/" + campaignId + "/world/factions/" + factionId));
+    }
+
+    @Test
+    void worldRoutesArePinGated() {
+        var mapping = WorldController.class.getAnnotation(
+                org.springframework.web.bind.annotation.RequestMapping.class);
+        assertThat(mapping).isNotNull();
+        assertThat(mapping.value()).anyMatch(v -> v.startsWith("/campaigns/"));
     }
 }

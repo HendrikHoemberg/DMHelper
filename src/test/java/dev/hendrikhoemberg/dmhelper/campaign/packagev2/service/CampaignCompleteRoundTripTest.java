@@ -51,7 +51,9 @@ class CampaignCompleteRoundTripTest {
                 Arguments.of("published-adventure", "campaigns/v2/published-adventure-shaped.dmcampaign/manifest.json",
                         "campaigns/v2/published-adventure-shaped.dmcampaign/"),
                 Arguments.of("structured-adventure-quest", "campaigns/v2/structured-adventure-quest.dmcampaign/manifest.json",
-                        "campaigns/v2/structured-adventure-quest.dmcampaign/")
+                        "campaigns/v2/structured-adventure-quest.dmcampaign/"),
+                Arguments.of("world-graph", "campaigns/v2/world-graph.dmcampaign/manifest.json",
+                        "campaigns/v2/world-graph.dmcampaign/")
         );
     }
 
@@ -138,7 +140,8 @@ class CampaignCompleteRoundTripTest {
                 source.handouts(), source.maps(), encounters, source.notes(),
                 source.quickNotes(), source.assignments(), source.ledgerEntries(), source.timelineEvents(),
                 source.adventures(), source.session(), includeDiceHistory ? source.diceRolls() : List.of(),
-                source.quests(), source.annotations(), List.of(), List.of(), List.of(), List.of(), List.of());
+                source.quests(), source.annotations(), source.worldNpcs(), source.worldLocations(),
+                source.factions(), source.worldRelationships(), source.factionClocks());
     }
 
     private CampaignManifestV2 readManifest(String path) throws Exception {

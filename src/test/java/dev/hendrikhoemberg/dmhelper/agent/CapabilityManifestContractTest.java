@@ -50,7 +50,7 @@ class CapabilityManifestContractTest {
     void p3ItemsAreNotFalselySupported() {
         var byId = service.capabilities().capabilities().stream()
                 .collect(Collectors.toMap(CapabilityManifest.Capability::id, c -> c));
-        assertThat(byId.get("world.graph").status()).isEqualTo("UNSUPPORTED");
+        assertThat(byId.get("world.graph").status()).isEqualTo("SUPPORTED");
         assertThat(byId.get("map.fog_of_war").status()).isEqualTo("UNSUPPORTED");
         assertThat(byId.get("agent.sdk").status()).isIn("PARTIAL", "SUPPORTED");
     }

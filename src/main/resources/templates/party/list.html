@@ -54,7 +54,7 @@
                 <th:block th:if="${members == null or members.isEmpty()}">
                     <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
                         'No heroes yet', 'Add member', @{/campaigns/{id}/party/new(id=${campaign.id})},
-                        'Add the player characters so combat, passive senses, and difficulty math work.', '\u265C')}"></th:block>
+                        'Add the player characters so combat, passive senses, and difficulty math work.', '♜')}"></th:block>
                 </th:block>
                 <th:block th:each="pm : ${members}">
                     <th:block th:replace="~{party/_card :: card(pm=${pm})}"></th:block>

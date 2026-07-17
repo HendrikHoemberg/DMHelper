@@ -29,7 +29,7 @@
 | DM/player map layer split (shared tokens) | `SUPPORTED` | playerVisible flags |
 | Authoritative 2024 encounter difficulty | `PARTIAL` | Still labeled estimate |
 | Agent SDK | `SUPPORTED` | PIN-free capability manifest, validation error catalog, typed catalog snapshot, schemas, conversion playbook, and executable documentation examples |
-| World graph | `UNSUPPORTED` | P3 - Deferred |
+| World graph | `SUPPORTED` | NPCs, locations, factions, relationships, faction clocks; P3 slices deferred |
 | Travel weather | `UNSUPPORTED` | P3 - Deferred |
 | Player interaction | `UNSUPPORTED` | P3 - Deferred |
 | Full fog of war gameplay | `UNSUPPORTED` | Deferred P3 |

@@ -286,27 +286,22 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
         List<WorldRelationshipDto> relDtos = source.worldRelationships();
         if (relDtos != null) {
             for (WorldRelationshipDto dto : relDtos) {
-                WorldRelationship entity = new WorldRelationship();
-                entity.setCampaign(context.campaign());
-                if (dto.kind() != null) {
-                    entity.setKind(dev.hendrikhoemberg.dmhelper.world.data.RelationshipKind.valueOf(dto.kind()));
-                }
-                entity.setDirected(dto.directed());
-                if (dto.knowledge() != null) {
-                    entity.setKnowledge(dev.hendrikhoemberg.dmhelper.world.data.RelationshipKnowledge.valueOf(dto.knowledge()));
-                }
-                if (dto.status() != null) {
-                    entity.setStatus(dev.hendrikhoemberg.dmhelper.world.data.RelationshipStatus.valueOf(dto.status()));
-                }
-                entity.setNotes(dto.notes());
-                entity.setSourceLocator(dto.sourceLocator());
-                entity.setSortOrder(dto.sortOrder());
-                relationshipRepo.save(entity);
-                context.register(CampaignContentType.WORLD_RELATIONSHIP, dto.key(), entity, entity.getId());
-                context.defer("relationship-refs:" + dto.key(), () -> {
-                    WorldRelationship r = context.require(
-                            ContentReference.packageRef(CampaignContentType.WORLD_RELATIONSHIP, dto.key()),
-                            CampaignContentType.WORLD_RELATIONSHIP, WorldRelationship.class);
+                context.defer("relationship-create:" + dto.key(), () -> {
+                    WorldRelationship r = new WorldRelationship();
+                    r.setCampaign(context.campaign());
+                    if (dto.kind() != null) {
+                        r.setKind(dev.hendrikhoemberg.dmhelper.world.data.RelationshipKind.valueOf(dto.kind()));
+                    }
+                    r.setDirected(dto.directed());
+                    if (dto.knowledge() != null) {
+                        r.setKnowledge(dev.hendrikhoemberg.dmhelper.world.data.RelationshipKnowledge.valueOf(dto.knowledge()));
+                    }
+                    if (dto.status() != null) {
+                        r.setStatus(dev.hendrikhoemberg.dmhelper.world.data.RelationshipStatus.valueOf(dto.status()));
+                    }
+                    r.setNotes(dto.notes());
+                    r.setSourceLocator(dto.sourceLocator());
+                    r.setSortOrder(dto.sortOrder());
                     if (dto.fromRef() != null) {
                         Object from = context.require(dto.fromRef(), dto.fromRef().type(), Object.class);
                         r.setFromType(dto.fromRef().type().name());
@@ -317,6 +312,8 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
                         r.setToType(dto.toRef().type().name());
                         r.setToId(entityId(to));
                     }
+                    relationshipRepo.save(r);
+                    context.register(CampaignContentType.WORLD_RELATIONSHIP, dto.key(), r, r.getId());
                 });
             }
         }
@@ -324,20 +321,15 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
         List<FactionClockDto> clockDtos = source.factionClocks();
         if (clockDtos != null) {
             for (FactionClockDto dto : clockDtos) {
-                FactionClock entity = new FactionClock();
-                entity.setCampaign(context.campaign());
-                entity.setTitle(dto.title());
-                entity.setSegments(dto.segments());
-                entity.setFilled(dto.filled());
-                entity.setNotes(dto.notes());
-                entity.setSourceLocator(dto.sourceLocator());
-                entity.setSortOrder(dto.sortOrder());
-                clockRepo.save(entity);
-                context.register(CampaignContentType.FACTION_CLOCK, dto.key(), entity, entity.getId());
-                context.defer("clock-refs:" + dto.key(), () -> {
-                    FactionClock c = context.require(
-                            ContentReference.packageRef(CampaignContentType.FACTION_CLOCK, dto.key()),
-                            CampaignContentType.FACTION_CLOCK, FactionClock.class);
+                context.defer("clock-create:" + dto.key(), () -> {
+                    FactionClock c = new FactionClock();
+                    c.setCampaign(context.campaign());
+                    c.setTitle(dto.title());
+                    c.setSegments(dto.segments());
+                    c.setFilled(dto.filled());
+                    c.setNotes(dto.notes());
+                    c.setSourceLocator(dto.sourceLocator());
+                    c.setSortOrder(dto.sortOrder());
                     if (dto.factionRef() != null) {
                         Faction f = context.require(dto.factionRef(), CampaignContentType.FACTION, Faction.class);
                         c.setFaction(f);
@@ -352,6 +344,8 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
                                 dto.sceneRef(), CampaignContentType.SCENE, dev.hendrikhoemberg.dmhelper.adventure.data.Scene.class);
                         c.setScene(scene);
                     }
+                    clockRepo.save(c);
+                    context.register(CampaignContentType.FACTION_CLOCK, dto.key(), c, c.getId());
                 });
             }
         }

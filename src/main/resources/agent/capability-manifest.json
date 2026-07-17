@@ -106,8 +106,9 @@
     {
       "id": "world.graph",
       "name": "World graph",
-      "status": "UNSUPPORTED",
-      "notes": "P3 - Deferred"
+      "status": "SUPPORTED",
+      "deliveryItem": 11,
+      "notes": "NPCs, locations, factions, relationships, faction clocks; travel/fog/audio/players remain deferred P3 slices"
     },
     {
       "id": "map.fog_of_war",
@@ -150,6 +151,7 @@
     "classpath:campaigns/v2/feature-complete.dmcampaign/manifest.json",
     "classpath:campaigns/v2/published-adventure-shaped.dmcampaign/manifest.json",
     "classpath:campaigns/v2/structured-adventure-quest.dmcampaign/manifest.json",
-    "classpath:campaigns/v2/current-surface.dmcampaign/manifest.json"
+    "classpath:campaigns/v2/current-surface.dmcampaign/manifest.json",
+    "classpath:campaigns/v2/world-graph.dmcampaign/manifest.json"
   ]
 }

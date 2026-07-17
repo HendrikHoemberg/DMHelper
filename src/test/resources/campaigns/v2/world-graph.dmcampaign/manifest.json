@@ -55,6 +55,7 @@
     "kind": "SETTLEMENT",
     "summary": "Busy docks",
     "secrets": "Smuggler tunnels",
+    "tags": [],
     "travelLocationRefs": [],
     "encounterRefs": [],
     "createdAt": "2026-01-01T00:00:00Z"
@@ -63,6 +64,7 @@
     "key": "faction-iron-ring",
     "name": "Iron Ring",
     "goals": "Control docks",
+    "tags": [],
     "createdAt": "2026-01-01T00:00:00Z"
   }],
   "worldRelationships": [{

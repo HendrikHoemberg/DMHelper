@@ -2,6 +2,8 @@ package dev.hendrikhoemberg.dmhelper.common.config;
 
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
+
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -50,4 +52,18 @@ class PinInterceptorTest {
         mvc.perform(get("/player"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void worldRoutesRequirePin() throws Exception {
+        mvc.perform(get("/campaigns/" + UUID.randomUUID() + "/world/npcs"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void playerRouteDoesNotExposeWorldData() throws Exception {
+        mvc.perform(get("/player"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("player/view"));
+    }
+
 }

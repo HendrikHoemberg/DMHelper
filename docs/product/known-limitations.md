@@ -10,7 +10,7 @@ Based on the [capability matrix](../campaign-capabilities.md):
 
 ## UNSUPPORTED
 
-- **World graph** — P3, deferred.
+- **World graph (P3 slices)** — NPCs, locations, factions, relationships, and faction clocks are SUPPORTED; travel/routing, fog of war integration, audio cues, and player-facing world views remain deferred P3 slices.
 - **Travel weather** — P3, deferred.
 - **Player interaction** — P3, deferred (players cannot move tokens or edit sheets directly).
 - **Full fog of war gameplay** — P3, deferred.

@@ -534,8 +534,9 @@ All content references in the item-6 DTOs follow the same `ContentReference` str
 
 The union is closed: providing `key` on a catalog reference or `sourceKey`/`ruleset` on a package reference is a schema error.
 
-For item-6, the following `CampaignContentType` values appear in references:
-`ADVENTURE`, `CHAPTER`, `SCENE`, `TRANSITION`, `QUEST`, `OBJECTIVE`, `STATBLOCK`, `NOTE`, `HANDOUT`, `RULE`, `PARTY_MEMBER`, `SOURCE_ANNOTATION`, `SESSION_OBJECTIVE_CHANGE`.
+For item-6 and world-graph, the following `CampaignContentType` values appear in references:
+`ADVENTURE`, `CHAPTER`, `SCENE`, `TRANSITION`, `QUEST`, `OBJECTIVE`, `STATBLOCK`, `NOTE`, `HANDOUT`, `RULE`, `PARTY_MEMBER`, `SOURCE_ANNOTATION`, `SESSION_OBJECTIVE_CHANGE`,
+`WORLD_NPC`, `WORLD_LOCATION`, `FACTION`, `WORLD_RELATIONSHIP`, `FACTION_CLOCK`.
 
 ## Quest DTO Fields
 
@@ -647,6 +648,121 @@ Session objective changes record the history of objective status transitions dur
 
 These are nested inside the `session` object under `session.objectiveChanges[]`.
 
+## World Graph Arrays
+
+The manifest carries five optional arrays for world graph entities. These represent the campaign's
+world-building state — NPCs, locations, factions, relationships, and faction progress clocks.
+
+| Array | Description |
+|-------|-------------|
+| `worldNpcs` | NPCs with faction/location affiliations, appearance, voice, motivation, secrets |
+| `worldLocations` | Named locations with kind, parent hierarchy, travel/encounter refs, secrets |
+| `factions` | Faction organizations with goals, resources, reputation notes |
+| `worldRelationships` | Typed directed relationships between NPCs, factions, and locations |
+| `factionClocks` | Progress clocks tracking faction goals, with segment count and filled amount |
+
+### WorldNpcDto
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | string | Package key |
+| `name` | string | NPC display name |
+| `role` | string \| null | Role or title (e.g. "Harbor contact") |
+| `disposition` | string \| null | `WorldDisposition` enum: `HOSTILE`, `UNFRIENDLY`, `NEUTRAL`, `FRIENDLY`, `ALLY` |
+| `factionRef` | ContentReference \| null | Package reference to an entry in `factions` |
+| `locationRef` | ContentReference \| null | Package reference to an entry in `worldLocations` |
+| `noteRef` | ContentReference \| null | Package reference to an entry in `notes` |
+| `statblockRef` | ContentReference \| null | Package or catalog reference to a statblock |
+| `appearance` | string \| null | Physical description |
+| `voice` | string \| null | Voice description |
+| `motivation` | string \| null | What drives the NPC |
+| `secret` | string \| null | DM-only secret (not exposed to player endpoints) |
+| `inventoryText` | string \| null | Free-text inventory |
+| `status` | string \| null | `WorldNpcStatus` enum: `ALIVE`, `DEAD`, `UNKNOWN` |
+| `tags` | string[] | Free-text tags |
+| `sourceLocator` | string \| null | Page/book reference |
+| `createdAt` | string (ISO-8601) | Creation timestamp |
+
+### WorldLocationDto
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | string | Package key |
+| `name` | string | Location display name |
+| `kind` | string \| null | `LocationKind` enum: `CONTINENT`, `REGION`, `SETTLEMENT`, `DUNGEON`, `LANDMARK`, `ROOM`, `OTHER` |
+| `parentLocationRef` | ContentReference \| null | Package reference to a parent location |
+| `mapRef` | ContentReference \| null | Package reference to a map |
+| `mapRegionKey` | string \| null | Free-text map region key |
+| `noteRef` | ContentReference \| null | Package reference to a note |
+| `summary` | string \| null | Short public summary |
+| `services` | string \| null | Available services (shops, temples, etc.) |
+| `secrets` | string \| null | DM-only secrets (not exposed to player endpoints) |
+| `occupantNpcRefs` | ContentReference[] | Package references to NPCs at this location |
+| `encounterRefs` | ContentReference[] | Package references to encounters at this location |
+| `travelLocationRefs` | ContentReference[] | Package references to reachable locations |
+| `tags` | string[] | Free-text tags |
+| `sourceLocator` | string \| null | Page/book reference |
+| `createdAt` | string (ISO-8601) | Creation timestamp |
+
+### FactionDto
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | string | Package key |
+| `name` | string | Faction display name |
+| `goals` | string \| null | Faction's current goals |
+| `resources` | string \| null | Faction's available resources |
+| `reputationNotes` | string \| null | Notes on faction reputation |
+| `noteRef` | ContentReference \| null | Package reference to a note |
+| `tags` | string[] | Free-text tags |
+| `sourceLocator` | string \| null | Page/book reference |
+| `createdAt` | string (ISO-8601) | Creation timestamp |
+
+### WorldRelationshipDto
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | string | Package key |
+| `kind` | string | `RelationshipKind` enum: `MEMBER_OF`, `ALLY`, `RIVAL`, `ENEMY`, `CONTACTS`, `LOCATED_AT`, `TRAVEL_TO` |
+| `fromRef` | ContentReference | Source entity reference (WORLD_NPC, FACTION, WORLD_LOCATION) |
+| `toRef` | ContentReference | Target entity reference |
+| `directed` | boolean | Whether the relationship has a direction |
+| `knowledge` | string | `RelationshipKnowledge` enum: `PUBLIC`, `KNOWN`, `SECRET` |
+| `status` | string | `RelationshipStatus` enum: `ACTIVE`, `DORMANT`, `BROKEN` |
+| `notes` | string \| null | DM-only notes |
+| `sourceLocator` | string \| null | Page/book reference |
+| `sortOrder` | int | Editorial sorting |
+
+### FactionClockDto
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | string | Package key |
+| `factionRef` | ContentReference | Package reference to the owning faction |
+| `title` | string | Clock display title |
+| `segments` | int | Total segments (typically 4, 6, or 8) |
+| `filled` | int | Number of filled segments |
+| `objectiveRef` | ContentReference \| null | Package reference to a quest objective |
+| `sceneRef` | ContentReference \| null | Package reference to a scene |
+| `notes` | string \| null | DM-only notes |
+| `sourceLocator` | string \| null | Page/book reference |
+| `sortOrder` | int | Editorial sorting |
+
+### Content Types
+
+World graph entities use the following `CampaignContentType` values in references:
+`WORLD_NPC`, `WORLD_LOCATION`, `FACTION`, `WORLD_RELATIONSHIP`, `FACTION_CLOCK`.
+
+World entity references follow the same typed-reference rules as other sections. NPC `factionRef`
+must reference a `FACTION`, `locationRef` must reference a `WORLD_LOCATION`, and relationship
+`fromRef`/`toRef` must use the correct entity type for the relationship kind.
+
+### Player Safety
+
+World graph routes are DM-only (PIN-gated under `/campaigns/{campaignId}/world/`). The `/player`
+endpoint and WebSocket table state do not include world entity data. NPC secrets and location
+secrets are never exposed to player-facing endpoints.
+
 ## V1 Compatibility
 
 Legacy v1 scenes (created before the item-6 structured scene migration) receive `null` or empty values for all new item-6 fields:
@@ -708,6 +824,7 @@ Adapters (order):
   EncounterSectionAdapter      (600) — encounters, combatants, combat log
   TreasurySectionAdapter       (700) — item assignments
   LedgerSectionAdapter         (800) — ledger entries
+  WorldSectionAdapter          (850) — world NPCs, locations, factions, relationships, faction clocks
   AdventureSectionAdapter      (900) — adventures, chapters, scenes
   QuestSectionAdapter          (950) — quests, objectives, dependencies
   SourceAnnotationSectionAdapter (980) — source annotations
@@ -749,7 +866,7 @@ no campaign row, key row, or installed asset survives.
 
 ## Fixture Locations
 
-Four flagship fixtures verify the round-trip contract:
+Five flagship fixtures verify the round-trip contract:
 
 | Fixture | Path | Purpose |
 |---------|------|---------|
@@ -757,6 +874,7 @@ Four flagship fixtures verify the round-trip contract:
 | Feature-complete v2 | `src/test/resources/campaigns/v2/feature-complete.dmcampaign/manifest.json` | Exercises every current section, relationship, history, and asset type |
 | Published-adventure-shaped v2 | `src/test/resources/campaigns/v2/published-adventure-shaped.dmcampaign/manifest.json` | Exercises larger ordered adventure content and repeated references |
 | Structured-adventure-quest v2 | `src/test/resources/campaigns/v2/structured-adventure-quest.dmcampaign/manifest.json` | Exercises structured scenes (sections, checks, participants, transitions, links), quests with objectives and dependencies, source annotations, and session objective changes |
+| World-graph v2 | `src/test/resources/campaigns/v2/world-graph.dmcampaign/manifest.json` | Exercises world NPCs, locations, factions, relationships, and faction clocks |
 
 Each fixture follows schema validate → dry-run → import → export → re-import → semantic
 deep-compare. Imported database snapshots also receive a normalized, repository-backed projection
