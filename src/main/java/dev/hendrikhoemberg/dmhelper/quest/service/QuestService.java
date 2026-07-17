@@ -10,6 +10,9 @@ import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.quest.data.*;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldNpcRepository;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldLocationRepository;
+import dev.hendrikhoemberg.dmhelper.world.data.FactionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +46,9 @@ public class QuestService {
     private final QuestObjectiveDependencyValidator dependencyValidator;
     private final CampaignPackageKeyService packageKeys;
     private final SessionReferenceCleaner sessionRefCleaner;
+    private final WorldNpcRepository worldNpcRepository;
+    private final WorldLocationRepository worldLocationRepository;
+    private final FactionRepository factionRepository;
 
     public QuestService(QuestRepository questRepository,
                         QuestObjectiveRepository objectiveRepository,
@@ -52,7 +58,10 @@ public class QuestService {
                         SessionActivityRecorder activityRecorder,
                         QuestObjectiveDependencyValidator dependencyValidator,
                         CampaignPackageKeyService packageKeys,
-                        SessionReferenceCleaner sessionRefCleaner) {
+                        SessionReferenceCleaner sessionRefCleaner,
+                        WorldNpcRepository worldNpcRepository,
+                        WorldLocationRepository worldLocationRepository,
+                        FactionRepository factionRepository) {
         this.questRepository = questRepository;
         this.objectiveRepository = objectiveRepository;
         this.dependencyRepository = dependencyRepository;
@@ -62,6 +71,9 @@ public class QuestService {
         this.dependencyValidator = dependencyValidator;
         this.packageKeys = packageKeys;
         this.sessionRefCleaner = sessionRefCleaner;
+        this.worldNpcRepository = worldNpcRepository;
+        this.worldLocationRepository = worldLocationRepository;
+        this.factionRepository = factionRepository;
     }
 
     // ---- Quest CRUD ----
@@ -185,6 +197,7 @@ public class QuestService {
     public QuestLink addLink(UUID campaignId, UUID questId, QuestLinkCommand cmd) {
         Quest quest = findQuestInCampaign(campaignId, questId);
         validateGiverContract(quest, null, cmd);
+        validateLinkTarget(campaignId, cmd);
         QuestLink link = new QuestLink();
         link.setQuest(quest);
         applyLinkCommand(link, cmd);
@@ -196,6 +209,7 @@ public class QuestService {
         Quest quest = findQuestInCampaign(campaignId, questId);
         QuestLink link = findLinkInQuest(quest, linkId);
         validateGiverContract(quest, linkId, cmd);
+        validateLinkTarget(campaignId, cmd);
         applyLinkCommand(link, cmd);
         return linkRepository.save(link);
     }
@@ -204,15 +218,70 @@ public class QuestService {
         if (cmd.role() != QuestLinkRole.GIVER) {
             return;
         }
-        String targetType = cmd.targetType();
-        if (targetType == null || !(targetType.equals("NOTE") || targetType.equals("STATBLOCK"))) {
-            throw new IllegalArgumentException("GIVER link must target a NOTE or STATBLOCK");
-        }
         boolean hasOtherGiver = quest.getLinks().stream()
                 .anyMatch(l -> l.getRole() == QuestLinkRole.GIVER
                         && (updatingLinkId == null || !updatingLinkId.equals(l.getId())));
         if (hasOtherGiver) {
             throw new IllegalArgumentException("Quest already has a GIVER link");
+        }
+    }
+
+    private void validateLinkTarget(UUID campaignId, QuestLinkCommand cmd) {
+        String targetType = cmd.targetType();
+        if (targetType == null) return;
+
+        switch (cmd.role()) {
+            case GIVER -> {
+                if (!"NOTE".equals(targetType) && !"STATBLOCK".equals(targetType) && !"WORLD_NPC".equals(targetType)) {
+                    throw new IllegalArgumentException("GIVER link must target a NOTE, STATBLOCK, or WORLD_NPC");
+                }
+                if ("WORLD_NPC".equals(targetType)) {
+                    validateWorldNpcExists(campaignId, cmd.targetId());
+                }
+            }
+            case NPC -> {
+                if (!"NOTE".equals(targetType) && !"WORLD_NPC".equals(targetType)) {
+                    throw new IllegalArgumentException("NPC link must target a NOTE or WORLD_NPC");
+                }
+                if ("WORLD_NPC".equals(targetType)) {
+                    validateWorldNpcExists(campaignId, cmd.targetId());
+                }
+            }
+            case LOCATION -> {
+                if (!"NOTE".equals(targetType) && !"WORLD_LOCATION".equals(targetType)) {
+                    throw new IllegalArgumentException("LOCATION link must target a NOTE or WORLD_LOCATION");
+                }
+                if ("WORLD_LOCATION".equals(targetType)) {
+                    validateWorldLocationExists(campaignId, cmd.targetId());
+                }
+            }
+            case FACTION -> {
+                if (!"NOTE".equals(targetType) && !"FACTION".equals(targetType)) {
+                    throw new IllegalArgumentException("FACTION link must target a NOTE or FACTION");
+                }
+                if ("FACTION".equals(targetType)) {
+                    validateFactionExists(campaignId, cmd.targetId());
+                }
+            }
+            default -> { /* REFERENCE, REWARD, etc. accept any type */ }
+        }
+    }
+
+    private void validateWorldNpcExists(UUID campaignId, UUID targetId) {
+        if (targetId != null && worldNpcRepository.findByIdAndCampaignId(targetId, campaignId).isEmpty()) {
+            throw new IllegalArgumentException("WORLD_NPC target not found in campaign");
+        }
+    }
+
+    private void validateWorldLocationExists(UUID campaignId, UUID targetId) {
+        if (targetId != null && worldLocationRepository.findByIdAndCampaignId(targetId, campaignId).isEmpty()) {
+            throw new IllegalArgumentException("WORLD_LOCATION target not found in campaign");
+        }
+    }
+
+    private void validateFactionExists(UUID campaignId, UUID targetId) {
+        if (targetId != null && factionRepository.findByIdAndCampaignId(targetId, campaignId).isEmpty()) {
+            throw new IllegalArgumentException("FACTION target not found in campaign");
         }
     }
 

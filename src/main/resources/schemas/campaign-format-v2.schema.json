@@ -943,6 +943,7 @@
         "placementHint": { "type": "string" },
         "statblockRef": { "$ref": "#/$defs/contentReference" },
         "noteRef": { "$ref": "#/$defs/contentReference" },
+        "worldNpcRef": { "$ref": "#/$defs/contentReference" },
         "sourceLocator": { "type": "string" },
         "sortOrder": { "type": "integer" }
       }

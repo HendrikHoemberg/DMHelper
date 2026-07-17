@@ -129,10 +129,13 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                                                         ContentReference noteRef = p.getNote() != null
                                                                 ? context.packageRef(CampaignContentType.NOTE, p.getNote().getId(), p.getNote().getTitle())
                                                                 : null;
+                                                        ContentReference worldNpcRef = p.getWorldNpc() != null
+                                                                ? context.packageRef(CampaignContentType.WORLD_NPC, p.getWorldNpc().getId(), p.getWorldNpc().getName())
+                                                                : null;
                                                         return new SceneParticipantDto(
                                                                 p.getDisplayName(), p.getQuantity(),
                                                                 p.getDisposition() != null ? p.getDisposition().name() : null,
-                                                                p.getPlacementHint(), statblockRef, noteRef,
+                                                                p.getPlacementHint(), statblockRef, noteRef, worldNpcRef,
                                                                 p.getSourceLocator(), p.getSortOrder());
                                                     })
                                                     .toList();
@@ -364,7 +367,7 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                                 scene.getHandouts().add(h);
                             }
                         }
-                        // Restore participant statblock/note references
+                        // Restore participant statblock/note/worldNpc references
                         if (scDto.participants() != null) {
                             for (int i = 0; i < scDto.participants().size() && i < scene.getParticipants().size(); i++) {
                                 var pDto = scDto.participants().get(i);
@@ -375,6 +378,11 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                                 if (pDto.noteRef() != null) {
                                     Note note = context.require(pDto.noteRef(), CampaignContentType.NOTE, Note.class);
                                     p.setNote(note);
+                                }
+                                if (pDto.worldNpcRef() != null) {
+                                    dev.hendrikhoemberg.dmhelper.world.data.WorldNpc worldNpc = context.require(
+                                            pDto.worldNpcRef(), CampaignContentType.WORLD_NPC, dev.hendrikhoemberg.dmhelper.world.data.WorldNpc.class);
+                                    p.setWorldNpc(worldNpc);
                                 }
                             }
                         }

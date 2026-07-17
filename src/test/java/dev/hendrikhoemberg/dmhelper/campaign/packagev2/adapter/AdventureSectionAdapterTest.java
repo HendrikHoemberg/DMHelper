@@ -29,6 +29,7 @@ import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldNpc;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -382,6 +383,106 @@ class AdventureSectionAdapterTest {
         assertThat(manifest2.adventures().get(0).key()).isEqualTo(exportedAdvKey);
         assertThat(manifest2.adventures().get(0).chapters().get(0).key()).isEqualTo(exportedChKey);
         assertThat(manifest2.adventures().get(0).chapters().get(0).scenes().get(0).key()).isEqualTo(exportedScKey);
+    }
+
+    @Test
+    void exportsSceneParticipantWithWorldNpcRef() {
+        UUID advId = UUID.randomUUID();
+        Adventure adv = adventure(advId, "Adv", null, null, 0, null);
+
+        UUID chId = UUID.randomUUID();
+        Chapter ch = chapter(chId, adv, "Ch1", null, 0);
+
+        UUID npcId = UUID.randomUUID();
+        WorldNpc npc = mock(WorldNpc.class);
+        when(npc.getId()).thenReturn(npcId);
+        when(npc.getName()).thenReturn("Villain");
+
+        UUID scId = UUID.randomUUID();
+        Scene sc = scene(scId, ch, "Scene 1", null, SceneStatus.UNVISITED, 0);
+        var participant = new dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipant();
+        participant.setDisplayName("Boss");
+        participant.setQuantity(1);
+        participant.setWorldNpc(npc);
+        sc.getParticipants().add(participant);
+
+        when(adventureRepo.findByCampaignIdOrderBySortOrderAscIdAsc(campaign.getId()))
+                .thenReturn(List.of(adv));
+        when(chapterRepo.findByAdventureIdOrderBySortOrderAscIdAsc(advId))
+                .thenReturn(List.of(ch));
+        when(sceneRepo.findByChapterIdOrderBySortOrderAscIdAsc(chId))
+                .thenReturn(List.of(sc));
+
+        var keyService = new CampaignSectionAdapterTest.FakeKeyService();
+        var ctx = new CampaignExportContext(
+                campaign.getId(), campaign, CampaignExportOptions.complete(),
+                keyService, new CampaignAssetCollector());
+        var assembler = new CampaignManifestAssembler();
+        assembler.assets(List.of());
+        adapter.exportSection(ctx, assembler);
+        fillRest(assembler);
+        var manifest = buildManifest(assembler);
+
+        var participantDto = manifest.adventures().get(0).chapters().get(0).scenes().get(0).participants().get(0);
+        assertThat(participantDto.worldNpcRef()).isNotNull();
+        assertThat(participantDto.worldNpcRef().type()).isEqualTo(CampaignContentType.WORLD_NPC);
+        assertThat(participantDto.displayName()).isEqualTo("Boss");
+    }
+
+    @Test
+    void importsSceneParticipantWithWorldNpcRef() {
+        var npcKey = "npc-villain-key";
+        var worldNpcRef = ContentReference.packageRef(CampaignContentType.WORLD_NPC, npcKey);
+        var participants = List.of(new CampaignManifestV2.SceneParticipantDto(
+                "Boss", 1, null, null, null, null, worldNpcRef, null, 0));
+        var scenes = List.of(new SceneDto("sc-key", "Room 1", null, null, 0,
+                null, null, null, null, null,
+                null, null, null, null, null, null, participants, null, null));
+        var chapters = List.of(new ChapterDto("ch-key", "Ch1", null, 0, scenes));
+        var adventures = List.of(new AdventureDto("adv-key", "Adv", null, null, 0, chapters, null));
+        var manifest = new CampaignManifestV2(
+                2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null,
+                adventures, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+
+        when(adventureRepo.save(any())).thenAnswer(inv -> {
+            Adventure a = inv.getArgument(0);
+            if (a.getId() == null) a.setId(UUID.randomUUID());
+            return a;
+        });
+        when(chapterRepo.save(any())).thenAnswer(inv -> {
+            Chapter c = inv.getArgument(0);
+            if (c.getId() == null) c.setId(UUID.randomUUID());
+            return c;
+        });
+        when(sceneRepo.save(any())).thenAnswer(inv -> {
+            Scene s = inv.getArgument(0);
+            if (s.getId() == null) s.setId(UUID.randomUUID());
+            return s;
+        });
+
+        UUID npcId = UUID.randomUUID();
+        WorldNpc npc = mock(WorldNpc.class);
+        when(npc.getId()).thenReturn(npcId);
+        when(npc.getName()).thenReturn("Villain");
+
+        var freshCampaign = new Campaign();
+        freshCampaign.setId(UUID.randomUUID());
+
+        var context = new CampaignImportContext(
+                freshCampaign.getId(), new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
+        context.setCampaign(freshCampaign);
+        context.register(CampaignContentType.CAMPAIGN, "campaign-key", freshCampaign, freshCampaign.getId());
+        context.register(CampaignContentType.WORLD_NPC, npcKey, npc, npcId);
+
+        adapter.importSection(manifest, context);
+        context.runDeferred();
+
+        verify(sceneRepo, atLeastOnce()).save(argThat(s ->
+                !s.getParticipants().isEmpty() &&
+                        s.getParticipants().get(0).getWorldNpc() == npc
+        ));
     }
 
     private Adventure adventure(UUID id, String name, String description,

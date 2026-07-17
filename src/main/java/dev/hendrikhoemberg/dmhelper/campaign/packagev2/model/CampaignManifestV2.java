@@ -569,6 +569,7 @@ public record CampaignManifestV2(
             String placementHint,
             ContentReference statblockRef,
             ContentReference noteRef,
+            ContentReference worldNpcRef,
             String sourceLocator,
             int sortOrder
     ) {}

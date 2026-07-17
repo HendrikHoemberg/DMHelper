@@ -8,6 +8,9 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkTargetScope;
 import dev.hendrikhoemberg.dmhelper.quest.data.*;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldNpcRepository;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldLocationRepository;
+import dev.hendrikhoemberg.dmhelper.world.data.FactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +42,9 @@ class QuestServiceTest {
     @Mock private QuestObjectiveDependencyValidator dependencyValidator;
     @Mock private CampaignPackageKeyService packageKeys;
     @Mock private SessionReferenceCleaner sessionRefCleaner;
+    @Mock private WorldNpcRepository worldNpcRepository;
+    @Mock private WorldLocationRepository worldLocationRepository;
+    @Mock private FactionRepository factionRepository;
 
     @InjectMocks private QuestService service;
 
@@ -515,7 +521,7 @@ class QuestServiceTest {
                 "PARTY_MEMBER", UUID.randomUUID(), null, null, "Bad", null, 0);
         assertThatThrownBy(() -> service.addLink(campaignId, questId, cmd))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("NOTE or STATBLOCK");
+                .hasMessageContaining("NOTE, STATBLOCK, or WORLD_NPC");
     }
 
     @Test
@@ -558,6 +564,113 @@ class QuestServiceTest {
                 "PARTY_MEMBER", UUID.randomUUID(), null, null, "Bad", null, 0);
         assertThatThrownBy(() -> service.updateLink(campaignId, questId, existingId, cmd))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("NOTE or STATBLOCK");
+                .hasMessageContaining("NOTE, STATBLOCK, or WORLD_NPC");
+    }
+
+    // ---- World entity target type rules ----
+
+    @Test
+    void giverAcceptsWorldNpcTarget() {
+        UUID npcId = UUID.randomUUID();
+        when(questRepository.findByIdAndCampaignId(questId, campaignId)).thenReturn(Optional.of(quest));
+        when(worldNpcRepository.findByIdAndCampaignId(npcId, campaignId)).thenReturn(Optional.of(new dev.hendrikhoemberg.dmhelper.world.data.WorldNpc()));
+        when(linkRepository.save(any())).thenAnswer(inv -> {
+            QuestLink l = inv.getArgument(0);
+            l.setId(UUID.randomUUID());
+            return l;
+        });
+
+        var cmd = new QuestService.QuestLinkCommand(QuestLinkRole.GIVER,
+                SceneLinkTargetScope.PACKAGE,
+                "WORLD_NPC", npcId, null, null, "World NPC Giver", null, 0);
+        QuestLink result = service.addLink(campaignId, questId, cmd);
+
+        assertThat(result.getRole()).isEqualTo(QuestLinkRole.GIVER);
+        assertThat(result.getTargetType()).isEqualTo("WORLD_NPC");
+    }
+
+    @Test
+    void npcRoleAcceptsWorldNpcTarget() {
+        UUID npcId = UUID.randomUUID();
+        when(questRepository.findByIdAndCampaignId(questId, campaignId)).thenReturn(Optional.of(quest));
+        when(worldNpcRepository.findByIdAndCampaignId(npcId, campaignId)).thenReturn(Optional.of(new dev.hendrikhoemberg.dmhelper.world.data.WorldNpc()));
+        when(linkRepository.save(any())).thenAnswer(inv -> {
+            QuestLink l = inv.getArgument(0);
+            l.setId(UUID.randomUUID());
+            return l;
+        });
+
+        var cmd = new QuestService.QuestLinkCommand(QuestLinkRole.NPC,
+                SceneLinkTargetScope.PACKAGE,
+                "WORLD_NPC", npcId, null, null, "World NPC", null, 0);
+        QuestLink result = service.addLink(campaignId, questId, cmd);
+
+        assertThat(result.getRole()).isEqualTo(QuestLinkRole.NPC);
+        assertThat(result.getTargetType()).isEqualTo("WORLD_NPC");
+    }
+
+    @Test
+    void locationRoleAcceptsWorldLocationTarget() {
+        UUID locId = UUID.randomUUID();
+        when(questRepository.findByIdAndCampaignId(questId, campaignId)).thenReturn(Optional.of(quest));
+        when(worldLocationRepository.findByIdAndCampaignId(locId, campaignId)).thenReturn(Optional.of(new dev.hendrikhoemberg.dmhelper.world.data.WorldLocation()));
+        when(linkRepository.save(any())).thenAnswer(inv -> {
+            QuestLink l = inv.getArgument(0);
+            l.setId(UUID.randomUUID());
+            return l;
+        });
+
+        var cmd = new QuestService.QuestLinkCommand(QuestLinkRole.LOCATION,
+                SceneLinkTargetScope.PACKAGE,
+                "WORLD_LOCATION", locId, null, null, "World Location", null, 0);
+        QuestLink result = service.addLink(campaignId, questId, cmd);
+
+        assertThat(result.getRole()).isEqualTo(QuestLinkRole.LOCATION);
+        assertThat(result.getTargetType()).isEqualTo("WORLD_LOCATION");
+    }
+
+    @Test
+    void factionRoleAcceptsFactionTarget() {
+        UUID factionId = UUID.randomUUID();
+        when(questRepository.findByIdAndCampaignId(questId, campaignId)).thenReturn(Optional.of(quest));
+        when(factionRepository.findByIdAndCampaignId(factionId, campaignId)).thenReturn(Optional.of(new dev.hendrikhoemberg.dmhelper.world.data.Faction()));
+        when(linkRepository.save(any())).thenAnswer(inv -> {
+            QuestLink l = inv.getArgument(0);
+            l.setId(UUID.randomUUID());
+            return l;
+        });
+
+        var cmd = new QuestService.QuestLinkCommand(QuestLinkRole.FACTION,
+                SceneLinkTargetScope.PACKAGE,
+                "FACTION", factionId, null, null, "Faction", null, 0);
+        QuestLink result = service.addLink(campaignId, questId, cmd);
+
+        assertThat(result.getRole()).isEqualTo(QuestLinkRole.FACTION);
+        assertThat(result.getTargetType()).isEqualTo("FACTION");
+    }
+
+    @Test
+    void rejectsWorldNpcTargetWhenNpcNotFound() {
+        UUID npcId = UUID.randomUUID();
+        when(questRepository.findByIdAndCampaignId(questId, campaignId)).thenReturn(Optional.of(quest));
+        when(worldNpcRepository.findByIdAndCampaignId(npcId, campaignId)).thenReturn(Optional.empty());
+
+        var cmd = new QuestService.QuestLinkCommand(QuestLinkRole.NPC,
+                SceneLinkTargetScope.PACKAGE,
+                "WORLD_NPC", npcId, null, null, "Missing NPC", null, 0);
+        assertThatThrownBy(() -> service.addLink(campaignId, questId, cmd))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("WORLD_NPC");
+    }
+
+    @Test
+    void rejectsNpcRoleWithInvalidTargetType() {
+        when(questRepository.findByIdAndCampaignId(questId, campaignId)).thenReturn(Optional.of(quest));
+        var cmd = new QuestService.QuestLinkCommand(QuestLinkRole.NPC,
+                SceneLinkTargetScope.PACKAGE,
+                "PARTY_MEMBER", UUID.randomUUID(), null, null, "Bad NPC", null, 0);
+        assertThatThrownBy(() -> service.addLink(campaignId, questId, cmd))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("NPC");
     }
 }

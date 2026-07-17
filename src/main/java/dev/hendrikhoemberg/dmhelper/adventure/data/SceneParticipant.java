@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.adventure.data;
 
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldNpc;
 import jakarta.persistence.*;
 import java.util.UUID;
 
@@ -38,6 +39,10 @@ public class SceneParticipant {
     @JoinColumn(name = "note_id")
     private Note note;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "world_npc_id")
+    private WorldNpc worldNpc;
+
     @Column(length = 500)
     private String sourceLocator;
 
@@ -67,6 +72,9 @@ public class SceneParticipant {
 
     public Note getNote() { return note; }
     public void setNote(Note note) { this.note = note; }
+
+    public WorldNpc getWorldNpc() { return worldNpc; }
+    public void setWorldNpc(WorldNpc worldNpc) { this.worldNpc = worldNpc; }
 
     public String getSourceLocator() { return sourceLocator; }
     public void setSourceLocator(String sourceLocator) { this.sourceLocator = sourceLocator; }
