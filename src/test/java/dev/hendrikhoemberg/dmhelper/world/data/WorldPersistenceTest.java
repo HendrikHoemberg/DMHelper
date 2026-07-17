@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.world.data;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +22,7 @@ class WorldPersistenceTest {
     @Autowired WorldLocationRepository locations;
     @Autowired WorldRelationshipRepository relationships;
     @Autowired FactionClockRepository clocks;
+    @Autowired EntityManager entityManager;
 
     @Test
     void persistsNpcLocationFactionRelationshipAndClock() {
@@ -72,7 +74,15 @@ class WorldPersistenceTest {
         clock.setFilled(2);
         clocks.save(clock);
 
-        assertThat(npcs.findByCampaignIdOrderByNameAscIdAsc(c.getId())).hasSize(1);
+        entityManager.clear();
+
+        var reloadedNpcs = npcs.findByCampaignIdOrderByNameAscIdAsc(c.getId());
+        assertThat(reloadedNpcs).hasSize(1);
+        assertThat(reloadedNpcs.getFirst().getName()).isEqualTo("Mira");
+        assertThat(reloadedNpcs.getFirst().getDisposition()).isEqualTo(WorldDisposition.FRIENDLY);
+        assertThat(reloadedNpcs.getFirst().getStatus()).isEqualTo(WorldNpcStatus.ALIVE);
+        assertThat(reloadedNpcs.getFirst().getSecret()).isEqualTo("Works for the Ring");
+
         assertThat(relationships.findByCampaignIdOrderBySortOrderAscIdAsc(c.getId())).hasSize(1);
         assertThat(clocks.findByFactionIdOrderBySortOrderAscIdAsc(f.getId())).hasSize(1);
     }

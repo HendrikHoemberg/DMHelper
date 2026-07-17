@@ -244,5 +244,13 @@ class FlywayMigrationTest {
                     Integer.class, table);
             assertThat(count).as(table).isEqualTo(1);
         }
+
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'SCENE_PARTICIPANT' AND column_name = 'WORLD_NPC_ID'",
+                Integer.class)).isEqualTo(1);
+
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.table_constraints WHERE table_name = 'SCENE_PARTICIPANT' AND constraint_name = 'FK_SCENE_PARTICIPANT_WORLD_NPC'",
+                Integer.class)).isEqualTo(1);
     }
 }
