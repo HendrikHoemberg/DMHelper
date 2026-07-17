@@ -38,6 +38,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
                             "/css/**", "/js/**", "/vendor/**", "/fonts/**",
                             "/api/v1/schemas/**",
                             "/api/v1/table/state",
+                            "/api/v1/catalog/**",
+                            "/api/v1/capabilities",
+                            "/api/v1/validation-errors",
                             "/error",
                             "/favicon.ico"
                     );

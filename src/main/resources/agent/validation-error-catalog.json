@@ -1,0 +1,876 @@
+{
+  "catalogVersion": "1",
+  "errors": [
+    {
+      "code": "AMBIGUOUS_REFERENCE",
+      "defaultSeverity": "WARNING",
+      "summary": "A reference matches more than one target.",
+      "when": "Semantic validation after schema validation.",
+      "suggestionTemplate": "Use a more specific reference or remove the ambiguity.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "ASSET_DIGEST_MISMATCH",
+      "defaultSeverity": "ERROR",
+      "summary": "The computed digest of an asset does not match the declared digest.",
+      "when": "Asset integrity check during package extraction.",
+      "suggestionTemplate": "Re-export the package to regenerate digests.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "ASSET_EXTENSION_MISMATCH",
+      "defaultSeverity": "ERROR",
+      "summary": "The file extension of an asset does not match its declared media type.",
+      "when": "Asset processing after extraction.",
+      "suggestionTemplate": "Rename the asset file to match its declared media type.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "ASSET_NOT_FOUND",
+      "defaultSeverity": "ERROR",
+      "summary": "A referenced asset file could not be found in the package.",
+      "when": "Asset resolution during package extraction.",
+      "suggestionTemplate": "Ensure the referenced asset file exists in the package.",
+      "repairHints": [
+        "Verify the asset path matches a file inside the package archive.",
+        "Re-export the package with all referenced assets included."
+      ]
+    },
+    {
+      "code": "ASSET_PATH_INVALID",
+      "defaultSeverity": "ERROR",
+      "summary": "An asset path contains illegal characters or structure.",
+      "when": "Asset path normalization during package reading.",
+      "suggestionTemplate": "Correct the asset path to use only allowed characters.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "ASSET_READ_ERROR",
+      "defaultSeverity": "ERROR",
+      "summary": "An asset file could not be read.",
+      "when": "Asset I/O during package extraction.",
+      "suggestionTemplate": "Check file permissions and integrity of the package.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "ASSET_SIGNATURE_MISMATCH",
+      "defaultSeverity": "ERROR",
+      "summary": "The cryptographic signature of an asset does not verify.",
+      "when": "Cryptographic verification when signature is present.",
+      "suggestionTemplate": "Re-sign the asset or obtain a valid signature.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "ASSET_SIZE_MISMATCH",
+      "defaultSeverity": "ERROR",
+      "summary": "The declared size of an asset does not match its actual size.",
+      "when": "Asset integrity check during package extraction.",
+      "suggestionTemplate": "Update the declared size or re-export the asset.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "ASSET_TOO_LARGE",
+      "defaultSeverity": "ERROR",
+      "summary": "An individual asset exceeds the maximum allowed size.",
+      "when": "Asset registration during package extraction.",
+      "suggestionTemplate": "Reduce the asset file size or split it into smaller parts.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "CALENDAR_CURRENT_DATE_DAY_OUT_OF_RANGE",
+      "defaultSeverity": "ERROR",
+      "summary": "The calendar current-date day is outside the valid range for its month.",
+      "when": "Calendar validation when current-date is set.",
+      "suggestionTemplate": "Set the day to a value within the month's day range.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "CALENDAR_CURRENT_DATE_MONTH_OUT_OF_RANGE",
+      "defaultSeverity": "ERROR",
+      "summary": "The calendar current-date month index is outside the valid range.",
+      "when": "Calendar validation when current-date is set.",
+      "suggestionTemplate": "Set the month index to a value between 0 and month-count minus 1.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "CALENDAR_MONTH_ARRAYS_DIFFERENT_LENGTH",
+      "defaultSeverity": "ERROR",
+      "summary": "The month-lengths and month-names arrays have different lengths.",
+      "when": "Calendar structure validation.",
+      "suggestionTemplate": "Ensure month-lengths and month-names arrays have the same length.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "CALENDAR_MONTH_LENGTHS_EMPTY",
+      "defaultSeverity": "ERROR",
+      "summary": "The month-lengths array is empty.",
+      "when": "Calendar structure validation.",
+      "suggestionTemplate": "Provide at least one month length.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "CALENDAR_MONTH_LENGTH_NOT_POSITIVE",
+      "defaultSeverity": "ERROR",
+      "summary": "A month length value is not positive.",
+      "when": "Calendar structure validation.",
+      "suggestionTemplate": "All month lengths must be positive integers.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "CALENDAR_MONTH_NAMES_EMPTY",
+      "defaultSeverity": "ERROR",
+      "summary": "The month-names array is empty.",
+      "when": "Calendar structure validation.",
+      "suggestionTemplate": "Provide at least one month name.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "CALENDAR_WEEKDAY_NAMES_EMPTY",
+      "defaultSeverity": "ERROR",
+      "summary": "The weekday-names array is empty.",
+      "when": "Calendar structure validation.",
+      "suggestionTemplate": "Provide at least one weekday name.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "CATALOG_SNAPSHOT_MISMATCH",
+      "defaultSeverity": "ERROR",
+      "summary": "The catalog snapshot referenced in the package differs from the current server catalog.",
+      "when": "Catalog resolution during semantic validation.",
+      "suggestionTemplate": "Re-import after updating the catalog snapshot to match the server.",
+      "repairHints": [
+        "Fetch the current catalog snapshot via GET /api/v1/catalog.",
+        "Re-export the package using the updated catalog snapshot."
+      ]
+    },
+    {
+      "code": "COMBAT_LOG_EXCLUDED_BUT_NON_EMPTY",
+      "defaultSeverity": "WARNING",
+      "summary": "Combat log data is present even though the import excluded it.",
+      "when": "Combat log processing when combat data is excluded.",
+      "suggestionTemplate": "Remove combat log data from the package or do not exclude it.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "COMBAT_LOG_SEQUENCE_EXCEEDS_ENCOUNTER",
+      "defaultSeverity": "ERROR",
+      "summary": "A combat log sequence number exceeds the number of rounds in the encounter.",
+      "when": "Combat log validation.",
+      "suggestionTemplate": "Correct the combat log sequence numbers.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "COMBAT_LOG_SEQUENCE_NOT_STRICTLY_INCREASING",
+      "defaultSeverity": "ERROR",
+      "summary": "Combat log sequence numbers are not strictly increasing.",
+      "when": "Combat log validation.",
+      "suggestionTemplate": "Ensure combat log sequence numbers strictly increase by 1.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "COMPRESSION_RATIO_EXCEEDED",
+      "defaultSeverity": "ERROR",
+      "summary": "The compression ratio of an entry exceeds the allowed maximum.",
+      "when": "Entry decompression during package reading.",
+      "suggestionTemplate": "Reduce compression or split the entry into smaller parts.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "CROSS_QUEST_DEPENDENCY",
+      "defaultSeverity": "ERROR",
+      "summary": "A quest depends on a quest in a different campaign.",
+      "when": "Quest dependency resolution during semantic validation.",
+      "suggestionTemplate": "Remove dependencies that cross campaign boundaries.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "DEPENDENCY_CYCLE",
+      "defaultSeverity": "ERROR",
+      "summary": "A circular dependency was detected between entities.",
+      "when": "Dependency graph validation during import.",
+      "suggestionTemplate": "Break the circular dependency chain.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "DICE_HISTORY_EXCLUDED_BUT_NON_EMPTY",
+      "defaultSeverity": "WARNING",
+      "summary": "Dice history data is present even though the import excluded it.",
+      "when": "Dice history processing when dice data is excluded.",
+      "suggestionTemplate": "Remove dice history data from the package or do not exclude it.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "DTO_SCHEMA_DRIFT",
+      "defaultSeverity": "WARNING",
+      "summary": "The internal DTO structure does not match the expected schema.",
+      "when": "Internal consistency check during deserialization.",
+      "suggestionTemplate": "Re-export the package with an up-to-date tool version.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "DUPLICATE_DEPENDENCY",
+      "defaultSeverity": "WARNING",
+      "summary": "A dependency is declared more than once.",
+      "when": "Dependency normalization during semantic validation.",
+      "suggestionTemplate": "Remove the duplicate dependency declaration.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "DUPLICATE_KEY",
+      "defaultSeverity": "ERROR",
+      "summary": "A key appears more than once in the same namespace.",
+      "when": "Key uniqueness check during entity registration.",
+      "suggestionTemplate": "Remove or rename the duplicate key.",
+      "repairHints": [
+        "Search the package for the conflicting key value.",
+        "Rename one occurrence to a unique key or remove the duplicate entry."
+      ]
+    },
+    {
+      "code": "DUPLICATE_MANIFEST",
+      "defaultSeverity": "ERROR",
+      "summary": "More than one manifest entry maps to the same key.",
+      "when": "Manifest parsing during package reading.",
+      "suggestionTemplate": "Remove the duplicate manifest entry.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "DUPLICATE_NORMALIZED_PATH",
+      "defaultSeverity": "ERROR",
+      "summary": "Two entries resolve to the same normalized path.",
+      "when": "Path normalization during package reading.",
+      "suggestionTemplate": "Rename one of the entries to avoid the path collision.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "DUPLICATE_REFERENCE",
+      "defaultSeverity": "WARNING",
+      "summary": "A reference value appears more than once where uniqueness is required.",
+      "when": "Reference uniqueness check during semantic validation.",
+      "suggestionTemplate": "Remove the duplicate reference.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "DUPLICATE_REGION_KEY",
+      "defaultSeverity": "ERROR",
+      "summary": "A placement region key appears more than once.",
+      "when": "Placement region registration during semantic validation.",
+      "suggestionTemplate": "Remove or rename the duplicate region key.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "DUPLICATE_SESSION_ATTENDEE",
+      "defaultSeverity": "WARNING",
+      "summary": "The same attendee appears more than once in a session.",
+      "when": "Session attendee processing.",
+      "suggestionTemplate": "Remove the duplicate attendee entry.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "DUPLICATE_SESSION_SCENE_VISIT",
+      "defaultSeverity": "WARNING",
+      "summary": "The same scene visit appears more than once in a session.",
+      "when": "Session scene visit processing.",
+      "suggestionTemplate": "Remove the duplicate scene visit entry.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "ENCRYPTED_ENTRY",
+      "defaultSeverity": "ERROR",
+      "summary": "A package entry is encrypted and cannot be processed.",
+      "when": "Entry extraction during package reading.",
+      "suggestionTemplate": "Decrypt the entry before packaging.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "GRID_MISMATCH",
+      "defaultSeverity": "WARNING",
+      "summary": "The grid configuration in the package does not match the target map.",
+      "when": "Map overlay validation during encounter import.",
+      "suggestionTemplate": "Update the package grid configuration to match the target map.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_ACTIVE_TURN",
+      "defaultSeverity": "ERROR",
+      "summary": "The active turn reference does not point at a valid combatant.",
+      "when": "Encounter state validation.",
+      "suggestionTemplate": "Correct the active turn reference to point at a valid combatant.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_ASSIGNMENT_SOURCE",
+      "defaultSeverity": "ERROR",
+      "summary": "The source of an assignment is not valid.",
+      "when": "Assignment processing during semantic validation.",
+      "suggestionTemplate": "Correct the assignment source reference.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_COMBATANT_KIND",
+      "defaultSeverity": "ERROR",
+      "summary": "The combatant kind value is not one of the recognized types.",
+      "when": "Combatant parsing during encounter import.",
+      "suggestionTemplate": "Use a valid combatant kind value.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_COMPLETION_MODE",
+      "defaultSeverity": "ERROR",
+      "summary": "The completion mode value is not valid.",
+      "when": "Quest completion mode validation.",
+      "suggestionTemplate": "Use a valid completion mode value.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_CURRENT_SCENE_REF",
+      "defaultSeverity": "ERROR",
+      "summary": "The current-scene reference does not match any known scene.",
+      "when": "Session state validation.",
+      "suggestionTemplate": "Correct the current scene reference to point at a valid scene.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_GEOMETRY",
+      "defaultSeverity": "ERROR",
+      "summary": "A geometric shape has invalid or degenerate coordinates.",
+      "when": "Map feature validation during import.",
+      "suggestionTemplate": "Correct the geometric coordinates to valid values.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_GIVER",
+      "defaultSeverity": "ERROR",
+      "summary": "The giver reference in a quest is not valid.",
+      "when": "Quest giver validation during semantic validation.",
+      "suggestionTemplate": "Correct the giver reference in the quest.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_JSON",
+      "defaultSeverity": "ERROR",
+      "summary": "The content is not valid JSON.",
+      "when": "JSON parsing during package reading.",
+      "suggestionTemplate": "Fix the JSON syntax and re-export.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_PARTY_CURRENT_HP",
+      "defaultSeverity": "ERROR",
+      "summary": "The party member current HP value is invalid.",
+      "when": "Party member HP validation during import.",
+      "suggestionTemplate": "Correct the current HP value for the party member.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_REFERENCE_TYPE",
+      "defaultSeverity": "ERROR",
+      "summary": "A reference points at an entity of the wrong type.",
+      "when": "Reference type checking during semantic validation.",
+      "suggestionTemplate": "Correct the reference to point at the expected entity type.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_RESOURCE_STATE",
+      "defaultSeverity": "ERROR",
+      "summary": "A resource is in an unexpected state for the requested operation.",
+      "when": "Resource state validation during import.",
+      "suggestionTemplate": "Update the resource state to a valid value.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_SESSION_PRESENTATION",
+      "defaultSeverity": "ERROR",
+      "summary": "The session presentation mode is not valid.",
+      "when": "Session presentation mode validation.",
+      "suggestionTemplate": "Use a valid session presentation mode.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_STATE",
+      "defaultSeverity": "ERROR",
+      "summary": "An entity is in an invalid state for the requested operation.",
+      "when": "Entity state validation during import.",
+      "suggestionTemplate": "Update the entity state to a valid value.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_TOKEN_KIND",
+      "defaultSeverity": "ERROR",
+      "summary": "The token kind value is not recognized.",
+      "when": "Token parsing during map import.",
+      "suggestionTemplate": "Use a valid token kind value.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "INVALID_TRANSITION_TARGET",
+      "defaultSeverity": "ERROR",
+      "summary": "The target of a scene transition is not valid.",
+      "when": "Scene transition validation.",
+      "suggestionTemplate": "Correct the transition target reference.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "LEDGER_DATE_OUT_OF_RANGE",
+      "defaultSeverity": "ERROR",
+      "summary": "A ledger entry date falls outside the campaign timeline.",
+      "when": "Ledger entry validation during import.",
+      "suggestionTemplate": "Correct the ledger entry date to fall within the campaign timeline.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "LEGACY_REFERENCE_MIGRATED",
+      "defaultSeverity": "INFO",
+      "summary": "A legacy-format reference was automatically migrated.",
+      "when": "Reference migration during package reading.",
+      "suggestionTemplate": "Update the export tool to write modern references.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "LEGACY_STATE_DEFAULTED",
+      "defaultSeverity": "INFO",
+      "summary": "A legacy state field was defaulted because its value is no longer valid.",
+      "when": "State normalization during import.",
+      "suggestionTemplate": "Update the export tool to write explicit state values.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "MANIFEST_MISSING",
+      "defaultSeverity": "ERROR",
+      "summary": "The package does not contain a manifest entry.",
+      "when": "Package structure validation during reading.",
+      "suggestionTemplate": "Add a manifest entry to the package.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "MANIFEST_TOO_LARGE",
+      "defaultSeverity": "ERROR",
+      "summary": "The manifest entry exceeds the maximum allowed size.",
+      "when": "Manifest size check during package reading.",
+      "suggestionTemplate": "Reduce the manifest size.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "MAP_GRID_MISMATCH",
+      "defaultSeverity": "WARNING",
+      "summary": "The map grid dimensions in the package differ from the target map.",
+      "when": "Map grid validation during map import.",
+      "suggestionTemplate": "Update the package map grid to match the target map dimensions.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "MIGRATION_ERROR",
+      "defaultSeverity": "ERROR",
+      "summary": "An error occurred during data migration.",
+      "when": "Schema migration during import.",
+      "suggestionTemplate": "Re-export the package with a compatible tool version.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "MISSING_SESSION_DRAFT",
+      "defaultSeverity": "ERROR",
+      "summary": "A session references a draft that does not exist.",
+      "when": "Session draft resolution.",
+      "suggestionTemplate": "Create the missing session draft or correct the reference.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "MISSING_SOURCE_ANNOTATION",
+      "defaultSeverity": "ERROR",
+      "summary": "A required source annotation is missing.",
+      "when": "Annotation processing during semantic validation.",
+      "suggestionTemplate": "Add the required source annotation.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "MULTIPLE_ACTIVE_ENCOUNTERS",
+      "defaultSeverity": "ERROR",
+      "summary": "More than one encounter is active at the same time.",
+      "when": "Encounter state validation.",
+      "suggestionTemplate": "Deactivate extra encounters before importing.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "MULTIPLE_GIVERS",
+      "defaultSeverity": "ERROR",
+      "summary": "A quest has more than one giver.",
+      "when": "Quest giver validation.",
+      "suggestionTemplate": "Remove extra givers from the quest.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "NON_CAMPAIGN_CUSTOM_DEPENDENCY",
+      "defaultSeverity": "WARNING",
+      "summary": "A custom dependency references content outside the campaign.",
+      "when": "Dependency validation during semantic validation.",
+      "suggestionTemplate": "Remove or inline the external custom dependency.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "OUT_OF_BOUNDS",
+      "defaultSeverity": "ERROR",
+      "summary": "A numeric value is outside its expected range.",
+      "when": "Range validation of numeric fields.",
+      "suggestionTemplate": "Correct the numeric value to fall within the valid range.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "PACKAGE_EXPANDED_TOO_LARGE",
+      "defaultSeverity": "ERROR",
+      "summary": "The expanded package exceeds the maximum allowed size.",
+      "when": "Decompression size check during package reading.",
+      "suggestionTemplate": "Reduce the total size of content in the package.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "PACKAGE_TOO_LARGE",
+      "defaultSeverity": "ERROR",
+      "summary": "The compressed package exceeds the maximum allowed size.",
+      "when": "Package size check before processing.",
+      "suggestionTemplate": "Reduce the package size by removing or compressing content.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "PACKAGE_READ_ERROR",
+      "defaultSeverity": "ERROR",
+      "summary": "The package could not be read.",
+      "when": "Package I/O during reading.",
+      "suggestionTemplate": "Check the package file integrity and format.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "PATH_TOO_LONG",
+      "defaultSeverity": "ERROR",
+      "summary": "A path within the package exceeds the maximum allowed length.",
+      "when": "Path length check during package reading.",
+      "suggestionTemplate": "Shorten the path within the package.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "SCHEMA_VIOLATION",
+      "defaultSeverity": "ERROR",
+      "summary": "The content does not conform to the expected JSON schema.",
+      "when": "JSON Schema validation after JSON parsing.",
+      "suggestionTemplate": "Fix the content to conform to the expected schema.",
+      "repairHints": [
+        "Inspect the schema-violation path and expected type in the validation error.",
+        "Compare the offending value against the schema definition at GET /api/v1/schemas/{entity-type}.",
+        "Re-export from the source tool after correcting the field."
+      ]
+    },
+    {
+      "code": "SELF_DEPENDENCY",
+      "defaultSeverity": "ERROR",
+      "summary": "An entity depends on itself.",
+      "when": "Dependency graph validation during import.",
+      "suggestionTemplate": "Remove the self-referencing dependency.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "SESSION_VISITS_NOT_MONOTONIC",
+      "defaultSeverity": "ERROR",
+      "summary": "Session scene visits are not in monotonic order.",
+      "when": "Session scene visit sequence validation.",
+      "suggestionTemplate": "Ensure scene visit timestamps are in increasing order.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "SESSION_VISIT_COMPLETES_BEFORE_VISIT",
+      "defaultSeverity": "ERROR",
+      "summary": "A session scene visit is completed before it was visited.",
+      "when": "Session scene visit order validation.",
+      "suggestionTemplate": "Correct the visit timestamp so completion occurs after the visit.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "SYMLINK_ENTRY",
+      "defaultSeverity": "ERROR",
+      "summary": "The package contains a symbolic link entry.",
+      "when": "Package entry type validation during reading.",
+      "suggestionTemplate": "Replace symbolic links with the actual files.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "TIMELINE_DATE_OUT_OF_RANGE",
+      "defaultSeverity": "ERROR",
+      "summary": "A timeline event date falls outside the campaign timeline range.",
+      "when": "Timeline event validation during import.",
+      "suggestionTemplate": "Correct the timeline event date.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "TOKEN_OUT_OF_BOUNDS",
+      "defaultSeverity": "ERROR",
+      "summary": "A token is positioned outside the map boundaries.",
+      "when": "Token position validation during map import.",
+      "suggestionTemplate": "Move the token within the map boundaries.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "TOO_MANY_ENTRIES",
+      "defaultSeverity": "ERROR",
+      "summary": "The package contains more entries than the allowed maximum.",
+      "when": "Package entry count check during reading.",
+      "suggestionTemplate": "Reduce the number of entries in the package.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "TRAVERSAL_ASSET_PATH",
+      "defaultSeverity": "ERROR",
+      "summary": "An asset path attempts directory traversal outside the package.",
+      "when": "Path sanitization during package extraction.",
+      "suggestionTemplate": "Remove directory traversal components from asset paths.",
+      "repairHints": [
+        "Remove '..' or absolute-path segments from the asset path.",
+        "Ensure all asset paths are relative to the package root."
+      ]
+    },
+    {
+      "code": "UNEXPECTED_ROOT_ENTRY",
+      "defaultSeverity": "ERROR",
+      "summary": "An unexpected entry was found at the package root.",
+      "when": "Package structure validation during reading.",
+      "suggestionTemplate": "Move the unexpected entry into an appropriate subdirectory.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "UNEXPECTED_SESSION_DRAFT",
+      "defaultSeverity": "WARNING",
+      "summary": "A session draft entry was found where it was not expected.",
+      "when": "Session draft processing.",
+      "suggestionTemplate": "Remove the unexpected session draft entry.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "UNRESOLVED_ASSET_REFERENCE",
+      "defaultSeverity": "ERROR",
+      "summary": "A reference to an asset could not be resolved.",
+      "when": "Asset reference resolution during semantic validation.",
+      "suggestionTemplate": "Ensure the referenced asset exists in the package.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "UNRESOLVED_CATALOG_REFERENCE",
+      "defaultSeverity": "ERROR",
+      "summary": "A reference to a catalog key could not be resolved.",
+      "when": "Catalog reference resolution during semantic validation.",
+      "suggestionTemplate": "Use a catalog key that exists in the target catalog.",
+      "repairHints": [
+        "List available catalog keys via GET /api/v1/catalog.",
+        "Ensure the referenced catalog entry is present in the server's catalog snapshot."
+      ]
+    },
+    {
+      "code": "UNRESOLVED_PLACEMENT_REGION",
+      "defaultSeverity": "ERROR",
+      "summary": "A placement region reference could not be resolved.",
+      "when": "Placement region resolution during semantic validation.",
+      "suggestionTemplate": "Create the referenced placement region or correct the key.",
+      "repairHints": [
+        "Verify the region key exists in the map's placement-regions list.",
+        "Create the missing region or correct the reference key."
+      ]
+    },
+    {
+      "code": "UNRESOLVED_REFERENCE",
+      "defaultSeverity": "ERROR",
+      "summary": "A typed reference points at a missing package or catalog key.",
+      "when": "Semantic validation after schema validation.",
+      "suggestionTemplate": "Create the missing entity or correct the key.",
+      "repairHints": [
+        "Use package keys, never display names, for version-2 references.",
+        "Resolve catalog keys via GET /api/v1/catalog."
+      ]
+    },
+    {
+      "code": "UNRESOLVED_WAVE_REFERENCE",
+      "defaultSeverity": "ERROR",
+      "summary": "A wave reference in an encounter could not be resolved.",
+      "when": "Encounter wave resolution during semantic validation.",
+      "suggestionTemplate": "Create the referenced wave or correct the key.",
+      "repairHints": [
+        "Ensure the wave key exists in the encounter's wave definitions.",
+        "Correct the reference to match an existing wave key."
+      ]
+    },
+    {
+      "code": "UNSUPPORTED_FORMAT_VERSION",
+      "defaultSeverity": "ERROR",
+      "summary": "The package format version is not supported by this server.",
+      "when": "Version check during package reading.",
+      "suggestionTemplate": "Use a compatible tool version to export the package.",
+      "repairHints": [
+        "Check the required format version in the server documentation.",
+        "Re-export the package using an up-to-date compatible tool."
+      ]
+    },
+    {
+      "code": "UNSUPPORTED_MEDIA_TYPE",
+      "defaultSeverity": "ERROR",
+      "summary": "The media type of an entry is not supported.",
+      "when": "Media type validation during package reading.",
+      "suggestionTemplate": "Use a supported media type for the entry.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "VALIDATION_ERROR",
+      "defaultSeverity": "ERROR",
+      "summary": "A generic validation error occurred.",
+      "when": "General validation pipeline.",
+      "suggestionTemplate": "Review the validation error details and correct the data.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    }
+  ]
+}
