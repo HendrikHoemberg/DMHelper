@@ -55,17 +55,17 @@ class CombatDifficultyCalculatorTest {
                         0, 0, 0, "MONSTER", null, false,
                         null, UUID.randomUUID(), null,
                         false, false, false, List.of(),
-                        null, false, 0, 0, 0, 0, null),
+                        null, false, 0, 0, 0, 0, null, null, null, null, null),
                 new CombatantDto(UUID.randomUUID(), UUID.randomUUID(), "Goblin", 0, 0,
                         0, 0, 0, "MONSTER", null, false,
                         null, UUID.randomUUID(), null,
                         false, false, false, List.of(),
-                        null, false, 0, 0, 0, 0, null),
+                        null, false, 0, 0, 0, 0, null, null, null, null, null),
                 new CombatantDto(UUID.randomUUID(), UUID.randomUUID(), "Bugbear", 0, 0,
                         0, 0, 0, "MONSTER", null, false,
                         null, UUID.randomUUID(), null,
                         false, false, false, List.of(),
-                        null, false, 0, 0, 0, 0, null)
+                        null, false, 0, 0, 0, 0, null, null, null, null, null)
         );
 
         when(statBlockRepo.findById(monsters.get(0).statBlockId()))
@@ -92,7 +92,7 @@ class CombatDifficultyCalculatorTest {
                         0, 0, 0, "MONSTER", null, false,
                         null, UUID.randomUUID(), null,
                         false, false, false, List.of(),
-                        null, false, 0, 0, 0, 0, null)
+                        null, false, 0, 0, 0, 0, null, null, null, null, null)
         );
         when(statBlockRepo.findById(monsters.get(0).statBlockId()))
                 .thenReturn(Optional.of(statBlock("Rat", "0", 10)));
@@ -109,7 +109,7 @@ class CombatDifficultyCalculatorTest {
                         0, 0, 0, "MONSTER", null, false,
                         null, UUID.randomUUID(), null,
                         false, false, false, List.of(),
-                        null, false, 0, 0, 0, 0, null)
+                        null, false, 0, 0, 0, 0, null, null, null, null, null)
         );
         when(statBlockRepo.findById(monsters.get(0).statBlockId()))
                 .thenReturn(Optional.of(statBlock("Rat", "0", 10)));
@@ -128,7 +128,7 @@ class CombatDifficultyCalculatorTest {
                 0, 0, 0, "MONSTER", null, false,
                 null, UUID.randomUUID(), null,
                 false, false, false, List.of(),
-                null, false, 0, 0, 0, 0, null);
+                null, false, 0, 0, 0, 0, null, null, null, null, null);
         when(statBlockRepo.findById(monster.statBlockId()))
                 .thenReturn(Optional.of(statBlock("Ogre", "2", 450)));
 

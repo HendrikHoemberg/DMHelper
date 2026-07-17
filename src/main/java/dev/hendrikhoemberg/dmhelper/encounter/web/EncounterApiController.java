@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.encounter.web;
 import dev.hendrikhoemberg.dmhelper.encounter.service.CombatDifficultyCalculator.DifficultyResult;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatLogEntryDto;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.AddFromLibraryRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantUpdateRequest;
@@ -85,6 +86,12 @@ public class EncounterApiController {
     public ResponseEntity<CombatantDto> addCombatant(@PathVariable UUID id,
                                                      @RequestBody CombatantCreateRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.addCombatant(id, req));
+    }
+
+    @PostMapping("/encounters/{id}/combatants/from-library")
+    public ResponseEntity<List<CombatantDto>> addFromLibrary(
+            @PathVariable UUID id, @RequestBody AddFromLibraryRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.addFromLibrary(id, req));
     }
 
     @PutMapping("/combatants/{id}")

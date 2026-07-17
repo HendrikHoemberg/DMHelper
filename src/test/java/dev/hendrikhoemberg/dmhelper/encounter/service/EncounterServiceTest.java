@@ -272,7 +272,7 @@ class EncounterServiceTest {
         CombatantDto c = service.addCombatant(enc.id(),
                 new CombatantCreateRequest("Monster", 20, "MONSTER", null, null, null));
         service.updateCombatant(c.id(),                 new EncounterService.CombatantUpdateRequest(null, null, null, null, null, 5,
-                null, null, null, null, null, null, null, null, null, null, null, null));
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null));
 
         CombatantDto damaged = service.applyDamage(c.id(), -8);
         assertThat(damaged.tempHp()).isEqualTo(0);
@@ -343,7 +343,7 @@ class EncounterServiceTest {
         CombatantDto c = service.addCombatant(enc.id(),
                 new CombatantCreateRequest("Dragon", 100, "MONSTER", null, null, null));
         service.updateCombatant(c.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, 2, null, null, null));
+                null, null, null, null, null, null, null, null, 2, null, null, null, null, null, null, null));
 
         CombatantDto after = service.useLegendaryAction(c.id());
         assertThat(after.legendaryActionsUsed()).isEqualTo(1);
@@ -355,7 +355,7 @@ class EncounterServiceTest {
         CombatantDto c = service.addCombatant(enc.id(),
                 new CombatantCreateRequest("Dragon", 100, "MONSTER", null, null, null));
         service.updateCombatant(c.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null, 2, null));
+                null, null, null, null, null, null, null, null, null, null, 2, null, null, null, null, null));
 
         CombatantDto after = service.useLegendaryResistance(c.id());
         assertThat(after.legendaryResistancesUsed()).isEqualTo(1);
@@ -387,7 +387,7 @@ class EncounterServiceTest {
         service.setInitiative(d.id(), 10);
 
         service.updateCombatant(c.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
-                null, null, null, null, null, null, null, 3, null, 2, null, null));
+                null, null, null, null, null, null, null, 3, null, 2, null, null, null, null, null, null));
 
         CombatantDto afterUpdate = service.getCombatant(c.id());
         assertThat(afterUpdate.legendaryActionsUsed()).isEqualTo(3);
@@ -653,11 +653,11 @@ class EncounterServiceTest {
 
         String groupId = "goblin-group";
         service.updateCombatant(leader.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
-                null, groupId, true, null, null, null, null, null, null, null, null, null));
+                null, groupId, true, null, null, null, null, null, null, null, null, null, null, null, null, null));
         service.updateCombatant(goblin1.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
-                null, groupId, false, null, null, null, null, null, null, null, null, null));
+                null, groupId, false, null, null, null, null, null, null, null, null, null, null, null, null, null));
         service.updateCombatant(goblin2.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
-                null, groupId, false, null, null, null, null, null, null, null, null, null));
+                null, groupId, false, null, null, null, null, null, null, null, null, null, null, null, null, null));
 
         service.setActiveTurn(enc.id(), leader.id());
 

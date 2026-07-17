@@ -309,7 +309,7 @@ class EncounterPartyHpSyncTest {
 
         var updateReq = new EncounterService.CombatantUpdateRequest(null, null, null,
                 15, null, 3, null, null, null, null, null,
-                null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null);
         encounterService.updateCombatant(combatant.id(), updateReq);
 
         PartyMember updated = partyRepo.findById(pm.getId()).orElseThrow();

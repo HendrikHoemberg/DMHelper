@@ -36,7 +36,8 @@ class EncounterApiControllerTest {
                 20, 20, 0, "MONSTER", null, false,
                 null, null, null,
                 false, false, false, List.of(),
-                null, false, 0, 0, 0, 0, null);
+                null, false, 0, 0, 0, 0, null,
+                null, null, null, null);
     }
 
     @Test

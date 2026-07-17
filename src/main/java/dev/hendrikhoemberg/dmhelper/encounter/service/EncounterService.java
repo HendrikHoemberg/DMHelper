@@ -10,6 +10,10 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWave;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWaveRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.WaveStatus;
+import dev.hendrikhoemberg.dmhelper.encounter.data.WaveTriggerKind;
 import dev.hendrikhoemberg.dmhelper.dice.DiceEngine;
 import dev.hendrikhoemberg.dmhelper.encounter.service.CombatDifficultyCalculator.DifficultyResult;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
@@ -58,6 +62,7 @@ public class EncounterService {
     private final TokenRepository tokenRepo;
     private final PartyMemberRepository partyRepo;
     private final StatBlockRepository statBlockRepo;
+    private final EncounterWaveRepository waveRepo;
     private final CombatDifficultyCalculator calculator;
     private final DiceEngine diceEngine;
     private final TablePresentationService tablePresentationService;
@@ -68,6 +73,7 @@ public class EncounterService {
                             CombatantRepository combatantRepo, CombatLogEntryRepository combatLogRepo,
                             TokenRepository tokenRepo,
                             PartyMemberRepository partyRepo, StatBlockRepository statBlockRepo,
+                            EncounterWaveRepository waveRepo,
                             CombatDifficultyCalculator calculator, DiceEngine diceEngine,
                             TablePresentationService tablePresentationService,
                             SceneRefCleaner sceneRefCleaner) {
@@ -80,6 +86,7 @@ public class EncounterService {
         this.tokenRepo = tokenRepo;
         this.partyRepo = partyRepo;
         this.statBlockRepo = statBlockRepo;
+        this.waveRepo = waveRepo;
         this.calculator = calculator;
         this.diceEngine = diceEngine;
         this.tablePresentationService = tablePresentationService;
@@ -87,6 +94,9 @@ public class EncounterService {
     }
 
     public record CreateRequest(String name, UUID mapId) {}
+
+    public record AddFromLibraryRequest(UUID statBlockId, int quantity, String groupName,
+                                         UUID waveId, Integer startX, Integer startY, String placementRegionKey) {}
 
     public record UpdateRequest(String name, UUID mapId, String status, String lairActionName,
                                 String lairActionDescription) {}
@@ -104,7 +114,8 @@ public class EncounterService {
                                String concentratingOn, boolean concentrationCheckPending,
                                int legendaryActionsUsed, int legendaryActionsMax,
                                int legendaryResistancesUsed, int legendaryResistancesMax,
-                               String notes) {}
+                               String notes,
+                               UUID waveId, Integer startX, Integer startY, String placementRegionKey) {}
 
     public record CombatantCreateRequest(String name, int maxHp, String kind,
                                          UUID tokenId, UUID statBlockId, UUID partyMemberId) {}
@@ -116,7 +127,8 @@ public class EncounterService {
                                          String concentratingOn, Boolean concentrationCheckPending,
                                          Integer legendaryActionsUsed, Integer legendaryActionsMax,
                                          Integer legendaryResistancesUsed, Integer legendaryResistancesMax,
-                                          String notes) {}
+                                         String notes,
+                                         UUID waveId, Integer startX, Integer startY, String placementRegionKey) {}
 
     public record InitiativeRequest(int initiative) {}
 
@@ -178,7 +190,9 @@ public class EncounterService {
                 c.getConcentratingOn(), c.isConcentrationCheckPending(),
                 c.getLegendaryActionsUsed(), c.getLegendaryActionsMax(),
                 c.getLegendaryResistancesUsed(), c.getLegendaryResistancesMax(),
-                c.getNotes());
+                c.getNotes(),
+                c.getWave() != null ? c.getWave().getId() : null,
+                c.getStartX(), c.getStartY(), c.getPlacementRegionKey());
     }
 
     public EncounterDto create(UUID campaignId, CreateRequest req) {
@@ -192,7 +206,9 @@ public class EncounterService {
                     .orElseThrow(() -> new NotFoundException("Map not found: " + req.mapId()));
             e.setMap(map);
         }
-        return toDto(encounterRepo.save(e));
+        Encounter saved = encounterRepo.save(e);
+        ensureMainWave(saved);
+        return toDto(saved);
     }
 
     public EncounterDto update(UUID id, UpdateRequest req) {
@@ -321,6 +337,40 @@ public class EncounterService {
         return toDto(saved);
     }
 
+    @Transactional
+    public List<CombatantDto> addFromLibrary(UUID encounterId, AddFromLibraryRequest req) {
+        if (req.quantity() < 1 || req.quantity() > 50) {
+            throw new IllegalArgumentException("quantity must be 1..50");
+        }
+        Encounter e = findEntityById(encounterId);
+        StatBlock sb = statBlockRepo.findById(req.statBlockId())
+                .orElseThrow(() -> new NotFoundException("StatBlock not found: " + req.statBlockId()));
+        EncounterWave wave = req.waveId() != null
+                ? waveRepo.findById(req.waveId()).orElseThrow(() -> new NotFoundException("Wave not found: " + req.waveId()))
+                : ensureMainWave(e);
+        String groupId = UUID.randomUUID().toString();
+        String baseName = req.groupName() != null && !req.groupName().isBlank()
+                ? req.groupName() : sb.getName();
+        List<CombatantDto> out = new ArrayList<>();
+        int hp = parseHpAsInt(sb);
+        for (int i = 0; i < req.quantity(); i++) {
+            CombatantCreateRequest one = new CombatantCreateRequest(
+                    req.quantity() == 1 ? baseName : baseName + " " + (i + 1),
+                    hp > 0 ? hp : 10,
+                    "MONSTER",
+                    null,
+                    sb.getId(),
+                    null);
+            CombatantDto dto = addCombatant(encounterId, one);
+            dto = updateCombatant(dto.id(), new CombatantUpdateRequest(
+                    null, null, null, null, null, null,
+                    null, groupId, i == 0, null, null, null, null, null, null, null, null, null,
+                    wave.getId(), req.startX(), req.startY(), req.placementRegionKey()));
+            out.add(dto);
+        }
+        return out;
+    }
+
     public void removeCombatant(UUID combatantId) {
         Combatant c = findCombatantById(combatantId);
         try {
@@ -366,6 +416,14 @@ public class EncounterService {
         if (req.legendaryResistancesUsed() != null) c.setLegendaryResistancesUsed(req.legendaryResistancesUsed());
         if (req.legendaryResistancesMax() != null) c.setLegendaryResistancesMax(req.legendaryResistancesMax());
         if (req.notes() != null) c.setNotes(req.notes());
+        if (req.waveId() != null) {
+            EncounterWave wave = waveRepo.findById(req.waveId())
+                    .orElseThrow(() -> new NotFoundException("Wave not found: " + req.waveId()));
+            c.setWave(wave);
+        }
+        if (req.startX() != null) c.setStartX(req.startX());
+        if (req.startY() != null) c.setStartY(req.startY());
+        if (req.placementRegionKey() != null) c.setPlacementRegionKey(req.placementRegionKey());
         Combatant saved = combatantRepo.save(c);
         syncCombatantToPartyMember(saved);
         return toDto(saved);
@@ -492,6 +550,31 @@ public class EncounterService {
 
     static int dexModifier(StatBlock sb) {
         return Math.floorDiv(sb.getDexScore() - 10, 2);
+    }
+
+    private EncounterWave ensureMainWave(Encounter e) {
+        return waveRepo.findByEncounterIdAndWaveKey(e.getId(), "main")
+                .orElseGet(() -> {
+                    EncounterWave w = new EncounterWave();
+                    w.setEncounter(e);
+                    w.setWaveKey("main");
+                    w.setName("Main");
+                    w.setSortOrder(0);
+                    w.setStatus(WaveStatus.ACTIVE);
+                    w.setTriggerKind(WaveTriggerKind.MANUAL);
+                    return waveRepo.save(w);
+                });
+    }
+
+    private static int parseHpAsInt(StatBlock sb) {
+        String hp = sb.getHp();
+        if (hp == null) return 10;
+        String[] parts = hp.split(" ");
+        try {
+            return Integer.parseInt(parts[0]);
+        } catch (NumberFormatException e) {
+            return 10;
+        }
     }
 
     public CombatantDto applyDamage(UUID combatantId, int amount) {
