@@ -1,4 +1,4 @@
-<div th:fragment="relationshipRow(relationships, campaignId)" xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="relationshipRow(relationships, campaignId, factionId)" xmlns:th="http://www.thymeleaf.org">
     <div th:if="${relationships.empty}" class="u-text-xs text-muted">No relationships.</div>
     <table th:unless="${relationships.empty}" class="table">
         <thead>
@@ -21,7 +21,7 @@
                 <td th:text="${rel.status.name()}">Status</td>
                 <td th:text="${rel.notes}">Notes</td>
                 <td>
-                    <form th:action="@{/campaigns/{cid}/world/factions/{fid}/relationships/{rid}(cid=${campaignId},fid='00000000-0000-0000-0000-000000000000',rid=${rel.id})}"
+                    <form th:action="@{/campaigns/{cid}/world/factions/{fid}/relationships/{rid}(cid=${campaignId},fid=${factionId},rid=${rel.id})}"
                           method="post" style="display:inline">
                         <input type="hidden" name="_method" value="delete"/>
                         <button type="submit" class="btn btn-danger btn-sm"

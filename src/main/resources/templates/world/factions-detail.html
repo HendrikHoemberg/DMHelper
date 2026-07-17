@@ -62,7 +62,7 @@
 
             <div class="detail-section">
                 <h3>Relationships</h3>
-                <div th:replace="~{world/_relationship-row :: relationshipRow(relationships=${relationships}, campaignId=${campaignId})}"></div>
+                <div th:replace="~{world/_relationship-row :: relationshipRow(relationships=${relationships}, campaignId=${campaignId}, factionId=${faction.id})}"></div>
                 <details class="u-mt-md">
                     <summary>Add Relationship</summary>
                     <form class="inline-form u-mt-sm"
