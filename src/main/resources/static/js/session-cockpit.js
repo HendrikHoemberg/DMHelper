@@ -636,6 +636,36 @@ function sessionCockpit(config) {
             }
         },
 
+        async followTransition(transitionId) {
+            try {
+                await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/session/current-scene/follow-transition`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ transitionId }),
+                    });
+                window.location.reload();
+            } catch (error) {
+                window.reportActionFailure('Could not follow the transition.', error,
+                    () => this.followTransition(transitionId));
+            }
+        },
+
+        async setObjectiveStatus(objectiveId, status) {
+            try {
+                await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/quests/objectives/${objectiveId}/status`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status }),
+                    });
+                window.location.reload();
+            } catch (error) {
+                window.reportActionFailure('Could not update the objective status.', error,
+                    () => this.setObjectiveStatus(objectiveId, status));
+            }
+        },
+
         nextTurn() {
             window.dispatchEvent(new CustomEvent('tracker-next-turn'));
         },

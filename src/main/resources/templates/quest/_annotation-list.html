@@ -1,0 +1,10 @@
+<div th:fragment="annotationList" xmlns:th="http://www.thymeleaf.org">
+  <div th:if="${quest.sourceLocator}" class="u-text-xs text-muted u-mb-sm">
+    Source: <span th:text="${quest.sourceLocator}">Source</span>
+  </div>
+  <div th:each="obj : ${quest.objectives}">
+    <div th:if="${obj.sourceLocator}" class="u-text-xs text-muted">
+      <span th:text="|${obj.title}: ${obj.sourceLocator}|">Objective Source</span>
+    </div>
+  </div>
+</div>

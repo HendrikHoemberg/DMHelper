@@ -69,6 +69,97 @@
       </div>
     </div>
 
+    <!-- Sections grouped by kind -->
+    <div class="u-mb-md" th:if="${scene.sections != null and !scene.sections.isEmpty()}">
+      <h4 class="u-text-sm u-mb-xs">Sections</h4>
+      <div th:each="section : ${scene.sections}" class="card card--compact u-mb-xs">
+        <span class="badge" th:text="${section.kind.name()}">KIND</span>
+        <strong th:text="${section.label}">Label</strong>
+        <p class="u-text-sm" th:text="${section.body}">Body</p>
+        <span th:if="${section.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${section.sourceLocator}|">Source</span>
+        <div class="u-flex u-gap-xs u-mt-xs">
+          <button class="btn btn-danger btn-sm"
+                  th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/sections/{sectionId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},sectionId=${section.id})}"
+                  hx-target="#actionRail" hx-swap="innerHTML"
+                  hx-confirm="Delete this section?">&times;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Checks -->
+    <div class="u-mb-md" th:if="${scene.checks != null and !scene.checks.isEmpty()}">
+      <h4 class="u-text-sm u-mb-xs">Checks</h4>
+      <div th:each="check : ${scene.checks}" class="card card--compact u-mb-xs">
+        <strong th:text="${check.label}">Check Label</strong>
+        <span class="badge" th:text="|DC ${check.dc}|" th:if="${check.dc != null}">DC</span>
+        <span class="badge" th:text="${check.visibility}" th:if="${check.visibility != null}">VISIBILITY</span>
+        <span th:if="${check.ability}" class="u-text-xs" th:text="|${check.ability} ${check.skill}|">Ability/Skill</span>
+        <span th:if="${check.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${check.sourceLocator}|">Source</span>
+        <div th:if="${check.success}" class="u-text-xs">Success: <span th:text="${check.success}">Success</span></div>
+        <div th:if="${check.failure}" class="u-text-xs">Failure: <span th:text="${check.failure}">Failure</span></div>
+        <div th:if="${check.partial}" class="u-text-xs">Partial: <span th:text="${check.partial}">Partial</span></div>
+        <div class="u-flex u-gap-xs u-mt-xs">
+          <button class="btn btn-danger btn-sm"
+                  th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/checks/{checkId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},checkId=${check.id})}"
+                  hx-target="#actionRail" hx-swap="innerHTML"
+                  hx-confirm="Delete this check?">&times;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Participants -->
+    <div class="u-mb-md" th:if="${scene.participants != null and !scene.participants.isEmpty()}">
+      <h4 class="u-text-sm u-mb-xs">Participants</h4>
+      <div th:each="p : ${scene.participants}" class="card card--compact u-mb-xs">
+        <strong th:text="${p.displayName}">Name</strong>
+        <span class="badge" th:text="|x${p.quantity}|" th:if="${p.quantity > 1}">Qty</span>
+        <span class="badge" th:text="${p.disposition}" th:if="${p.disposition != null}">Disp</span>
+        <span th:if="${p.placementHint}" class="u-text-xs" th:text="${p.placementHint}">Placement</span>
+        <span th:if="${p.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${p.sourceLocator}|">Source</span>
+        <div class="u-flex u-gap-xs u-mt-xs">
+          <button class="btn btn-danger btn-sm"
+                  th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/participants/{pid}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},pid=${p.id})}"
+                  hx-target="#actionRail" hx-swap="innerHTML"
+                  hx-confirm="Delete this participant?">&times;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transitions -->
+    <div class="u-mb-md" th:if="${scene.transitions != null and !scene.transitions.isEmpty()}">
+      <h4 class="u-text-sm u-mb-xs">Transitions</h4>
+      <div th:each="t : ${scene.transitions}" class="card card--compact u-mb-xs">
+        <span class="badge" th:text="${t.kind.name()}">KIND</span>
+        <strong th:text="${t.label}">Label</strong>
+        <span th:if="${t.targetScene != null}" th:text="${t.targetScene.title}">Target</span>
+        <span th:if="${t.externalDestination}" class="u-text-xs" th:text="|→ ${t.externalDestination}|">External</span>
+        <div th:if="${t.condition}" class="u-text-xs">Condition: <span th:text="${t.condition}">Condition</span></div>
+        <div th:if="${t.dmNote}" class="u-text-xs text-muted">DM: <span th:text="${t.dmNote}">DM Note</span></div>
+        <div class="u-flex u-gap-xs u-mt-xs">
+          <button class="btn btn-danger btn-sm"
+                  th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/transitions/{tid}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},tid=${t.id})}"
+                  hx-target="#actionRail" hx-swap="innerHTML"
+                  hx-confirm="Delete this transition?">&times;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Links -->
+    <div class="u-mb-md" th:if="${scene.links != null and !scene.links.isEmpty()}">
+      <h4 class="u-text-sm u-mb-xs">Links</h4>
+      <div th:each="link : ${scene.links}" class="card card--compact u-mb-xs">
+        <span class="badge" th:text="${link.role.name()}">ROLE</span>
+        <span th:text="${link.displayText ?: link.targetType}">Target</span>
+        <span th:if="${link.condition}" class="u-text-xs">Condition: <span th:text="${link.condition}">Condition</span></span>
+        <div class="u-flex u-gap-xs u-mt-xs">
+          <button class="btn btn-danger btn-sm"
+                  th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/links/{linkId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},linkId=${link.id})}"
+                  hx-target="#actionRail" hx-swap="innerHTML"
+                  hx-confirm="Delete this link?">&times;</button>
+        </div>
+      </div>
+    </div>
+
     <div class="u-flex u-gap-xs u-mt-md">
       <button class="btn btn-ghost btn-sm"
               th:hx-put="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/move(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"

@@ -11,6 +11,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SessionCockpitTemplateContractTest {
 
     @Test
+    void cockpitShowsRuntimeChoicesAndEditorialNavigationSeparately() throws IOException {
+        String story = Files.readString(Path.of("src/main/resources/templates/session/_story-rail.html"));
+        assertThat(story).contains("scene-editorial");
+        assertThat(story).contains("transition-choice");
+        assertThat(story).contains("stepScene");
+        assertThat(story).contains("followTransition");
+    }
+
+    @Test
     void cockpitOwnsOneRuntimeIslandAndAccessibleRailControls() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
         String rail = Files.readString(Path.of("src/main/resources/templates/session/_encounter-rail.html"));

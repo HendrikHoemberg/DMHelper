@@ -37,6 +37,14 @@ class PlayerSafeProjectionTest {
     }
 
     @Test
+    void playerSafeJsonDoesNotContainDmOnlyFields() throws Exception {
+        mockMvc.perform(get("/player"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("secrets"))))
+                .andExpect(content().string(not(containsString("dmAdvice"))));
+    }
+
+    @Test
     void pinApiReturns403WithoutValidPin() throws Exception {
         mockMvc.perform(get("/api/v1/maps/{id}/pins", UUID.randomUUID()))
                 .andExpect(status().isForbidden());

@@ -1,0 +1,34 @@
+<div th:fragment="objectiveList" xmlns:th="http://www.thymeleaf.org">
+  <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
+  <div th:if="${quest.objectives.empty}" class="empty-state">No objectives yet.</div>
+  <div th:unless="${quest.objectives.empty}">
+    <div th:each="obj : ${quest.objectives}" class="card card--compact u-mb-xs" th:attr="data-objective-id=${obj.id}">
+      <div class="u-flex u-gap-xs u-items-center">
+        <span class="badge" th:text="${obj.status.name()}">STATUS</span>
+        <strong th:text="${obj.title}">Objective</strong>
+        <span class="u-text-xs text-muted" th:if="${obj.sortOrder > 0}" th:text="|#${obj.sortOrder}|">#</span>
+      </div>
+      <div th:if="${obj.description}" class="u-text-sm" th:text="${obj.description}">Description</div>
+      <span th:if="${obj.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${obj.sourceLocator}|">Source</span>
+      <div class="u-flex u-gap-xs u-mt-xs">
+        <button class="btn btn-sm"
+                th:classappend="${obj.status.name() == 'COMPLETED'} ? 'btn-success' : 'btn-ghost'"
+                th:hx-post="@{/campaigns/{cid}/quests/objectives/{oid}/status(cid=${campaignId},oid=${obj.id})}"
+                hx-vals='{"status": "COMPLETED"}'
+                hx-target="closest [data-objective-id]" hx-swap="outerHTML">Complete</button>
+        <button class="btn btn-sm btn-ghost"
+                th:hx-post="@{/campaigns/{cid}/quests/objectives/{oid}/status(cid=${campaignId},oid=${obj.id})}"
+                hx-vals='{"status": "ACTIVE"}'
+                hx-target="closest [data-objective-id]" hx-swap="outerHTML">Activate</button>
+        <button class="btn btn-sm btn-ghost"
+                th:hx-post="@{/campaigns/{cid}/quests/objectives/{oid}/status(cid=${campaignId},oid=${obj.id})}"
+                hx-vals='{"status": "NOT_STARTED"}'
+                hx-target="closest [data-objective-id]" hx-swap="outerHTML">Reset</button>
+        <button class="btn btn-danger btn-sm"
+                th:hx-delete="@{/campaigns/{cid}/quests/{qid}/objectives/{oid}(cid=${campaignId},qid=${quest.id},oid=${obj.id})}"
+                hx-target="#objectiveList" hx-swap="innerHTML"
+                hx-confirm="Delete this objective?">&times;</button>
+      </div>
+    </div>
+  </div>
+</div>

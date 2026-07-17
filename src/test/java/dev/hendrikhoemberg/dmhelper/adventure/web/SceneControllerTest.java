@@ -19,6 +19,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -224,5 +225,114 @@ class SceneControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("error", "CHOICE transition requires a target scene"))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("CHOICE transition requires a target scene")));
+    }
+
+    // ---- Structured content rendering tests ----
+
+    @Test
+    void detailRendersSectionsGroupedByKind() throws Exception {
+        setupSceneDetailMocks();
+        SceneSection section = new SceneSection();
+        section.setId(UUID.randomUUID());
+        section.setKind(SceneSectionKind.READ_ALOUD);
+        section.setLabel("The Door");
+        section.setBody("You see a massive stone door.");
+        scene.setSections(List.of(section));
+
+        mockMvc.perform(get("/campaigns/{cid}/adventures/{aid}/scenes/{sid}",
+                        campaignId, adventureId, sceneId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("READ_ALOUD")));
+    }
+
+    @Test
+    void detailRendersChecksWithVisibilityAndOutcomes() throws Exception {
+        setupSceneDetailMocks();
+        SceneCheck check = new SceneCheck();
+        check.setId(UUID.randomUUID());
+        check.setLabel("Strength Check");
+        check.setDc(15);
+        check.setVisibility(SceneCheckVisibility.PLAYER_FACING);
+        check.setSuccess("The door opens");
+        check.setFailure("The door stays shut");
+        scene.setChecks(List.of(check));
+
+        mockMvc.perform(get("/campaigns/{cid}/adventures/{aid}/scenes/{sid}",
+                        campaignId, adventureId, sceneId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Strength Check")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("DC 15")));
+    }
+
+    @Test
+    void detailRendersParticipantsWithDispositionAndQuantity() throws Exception {
+        setupSceneDetailMocks();
+        SceneParticipant participant = new SceneParticipant();
+        participant.setId(UUID.randomUUID());
+        participant.setDisplayName("Goblin");
+        participant.setQuantity(3);
+        participant.setDisposition(SceneParticipantDisposition.HOSTILE);
+        participant.setPlacementHint("Behind the pillars");
+        scene.setParticipants(List.of(participant));
+
+        mockMvc.perform(get("/campaigns/{cid}/adventures/{aid}/scenes/{sid}",
+                        campaignId, adventureId, sceneId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Goblin")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("HOSTILE")));
+    }
+
+    @Test
+    void detailRendersTransitionsWithTargetAndCondition() throws Exception {
+        setupSceneDetailMocks();
+        Scene targetScene = new Scene();
+        targetScene.setId(UUID.randomUUID());
+        targetScene.setTitle("Next Chamber");
+        SceneTransition transition = new SceneTransition();
+        transition.setId(UUID.randomUUID());
+        transition.setKind(SceneTransitionKind.CHOICE);
+        transition.setLabel("Go through door");
+        transition.setTargetScene(targetScene);
+        transition.setCondition("If the party opens the door");
+        scene.setTransitions(List.of(transition));
+
+        mockMvc.perform(get("/campaigns/{cid}/adventures/{aid}/scenes/{sid}",
+                        campaignId, adventureId, sceneId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("CHOICE")));
+    }
+
+    @Test
+    void detailRendersLinksWithRoleAndCondition() throws Exception {
+        setupSceneDetailMocks();
+        SceneLink link = new SceneLink();
+        link.setId(UUID.randomUUID());
+        link.setRole(SceneLinkRole.REFERENCE);
+        link.setTargetType("HANDOUT");
+        link.setTargetId(UUID.randomUUID());
+        link.setDisplayText("Handout reference");
+        scene.setLinks(List.of(link));
+
+        mockMvc.perform(get("/campaigns/{cid}/adventures/{aid}/scenes/{sid}",
+                        campaignId, adventureId, sceneId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("REFERENCE")));
+    }
+
+    @Test
+    void validationErrorRetainsInput() throws Exception {
+        setupSceneDetailMocks();
+        doThrow(new IllegalArgumentException("Section label and body are required"))
+                .when(structuredService).addSection(any(), any(), any());
+
+        mockMvc.perform(post("/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/sections",
+                        campaignId, adventureId, chapterId, sceneId)
+                        .param("kind", "READ_ALOUD")
+                        .param("label", "")
+                        .param("body", "")
+                        .param("sortOrder", "0"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("error", "Section label and body are required"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Section label and body are required")));
     }
 }

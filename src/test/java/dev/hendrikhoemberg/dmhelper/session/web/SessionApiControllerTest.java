@@ -1,6 +1,10 @@
 package dev.hendrikhoemberg.dmhelper.session.web;
 
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneTransitionService;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus;
+import dev.hendrikhoemberg.dmhelper.quest.service.QuestService;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionLifecycleService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
@@ -13,9 +17,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.UUID;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -36,6 +39,12 @@ class SessionApiControllerTest {
     @MockitoBean
     private SessionWorkspaceService workspaces;
 
+    @MockitoBean
+    private SceneTransitionService sceneTransitionService;
+
+    @MockitoBean
+    private QuestService questService;
+
     private final UUID campaignId = UUID.randomUUID();
 
     @Test
@@ -55,6 +64,37 @@ class SessionApiControllerTest {
                 .andExpect(jsonPath("$.presentationMode").value("CURTAIN"))
                 .andExpect(jsonPath("$.attendeeIds").isArray())
                 .andExpect(jsonPath("$.draftBody").doesNotExist());
+    }
+
+    @Test
+    void followTransitionReturnsUpdatedScene() throws Exception {
+        var transitionId = UUID.randomUUID();
+        var targetScene = new dev.hendrikhoemberg.dmhelper.adventure.data.Scene();
+        targetScene.setId(UUID.randomUUID());
+        targetScene.setTitle("Next Room");
+        when(sceneTransitionService.followTransition(campaignId, transitionId)).thenReturn(targetScene);
+        SessionWorkspaceService.SessionWorkspace ws = mock(SessionWorkspaceService.SessionWorkspace.class);
+        when(workspaces.load(any(), any())).thenReturn(ws);
+
+        mvc.perform(post("/api/v1/campaigns/{id}/session/current-scene/follow-transition", campaignId)
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"transitionId\":\"" + transitionId + "\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void objectiveStatusChangeAppearsInDraft() throws Exception {
+        var objectiveId = UUID.randomUUID();
+        var objective = new QuestObjective();
+        objective.setId(objectiveId);
+        objective.setStatus(QuestObjectiveStatus.COMPLETED);
+        when(questService.setObjectiveStatus(campaignId, objectiveId, QuestObjectiveStatus.COMPLETED))
+                .thenReturn(objective);
+
+        mvc.perform(put("/api/v1/campaigns/{id}/session/quests/objectives/{oid}/status", campaignId, objectiveId)
+                        .contentType("application/json")
+                        .content("{\"status\":\"COMPLETED\"}"))
+                .andExpect(status().isOk());
     }
 
     @Test

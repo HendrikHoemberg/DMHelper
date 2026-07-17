@@ -1,6 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.session.service;
 
-import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
+import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
@@ -14,6 +14,7 @@ import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.quest.data.*;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,14 @@ public class SessionWorkspaceService {
         ACTIVE_ENCOUNTER, CURRENT_SCENE, SESSION_PLAN, EXPLICIT_MAP, STORED_SESSION, NONE
     }
 
+    public record StructuredSceneView(
+            Scene scene, List<SceneSection> sections, List<SceneCheck> checks,
+            List<SceneParticipant> participants, List<SceneTransition> transitions,
+            List<SceneLink> links) {}
+
+    public record QuestProgressView(
+            Quest quest, List<QuestObjective> objectives) {}
+
     public record SessionWorkspace(
             Campaign campaign,
             CampaignSession session,
@@ -46,7 +55,9 @@ public class SessionWorkspaceService {
             List<GameMap> maps,
             List<Handout> handouts,
             List<PartyMember> partyMembers,
-            CalendarService.InGameDate currentDate) {}
+            CalendarService.InGameDate currentDate,
+            StructuredSceneView structuredSceneView,
+            List<QuestProgressView> questProgressViews) {}
 
     private final CampaignRepository campaigns;
     private final CampaignSessionRepository sessions;
@@ -57,16 +68,18 @@ public class SessionWorkspaceService {
     private final HandoutRepository handouts;
     private final PartyMemberRepository party;
     private final CalendarService calendar;
+    private final QuestRepository questRepository;
 
     public SessionWorkspaceService(CampaignRepository campaigns,
-                                   CampaignSessionRepository sessions,
-                                   AdventureService adventures,
-                                   EncounterRepository encounters,
-                                   SessionPlanService plans,
-                                   GameMapRepository maps,
-                                   HandoutRepository handouts,
-                                   PartyMemberRepository party,
-                                   CalendarService calendar) {
+                                    CampaignSessionRepository sessions,
+                                    AdventureService adventures,
+                                    EncounterRepository encounters,
+                                    SessionPlanService plans,
+                                    GameMapRepository maps,
+                                    HandoutRepository handouts,
+                                    PartyMemberRepository party,
+                                    CalendarService calendar,
+                                    QuestRepository questRepository) {
         this.campaigns = campaigns;
         this.sessions = sessions;
         this.adventures = adventures;
@@ -76,6 +89,7 @@ public class SessionWorkspaceService {
         this.handouts = handouts;
         this.party = party;
         this.calendar = calendar;
+        this.questRepository = questRepository;
     }
 
     public SessionWorkspace load(UUID campaignId, UUID requestedMapId) {
@@ -88,6 +102,8 @@ public class SessionWorkspaceService {
         SessionPlanService.SessionPlan plan = plans.latest(campaignId).orElse(null);
         Selection selection = select(session, active, current, plan, requestedMapId, campaignId);
         List<Scene> neighbors = editorialNeighbors(current);
+        StructuredSceneView ssv = buildStructuredSceneView(current);
+        List<QuestProgressView> qpvs = buildQuestProgressViews(campaignId);
         return new SessionWorkspace(campaign, session, selection.map(), selection.source(), current,
                 neighbors.get(0), neighbors.get(1), active,
                 encounters.findByCampaignIdOrderByNameAsc(campaignId).stream()
@@ -95,7 +111,21 @@ public class SessionWorkspaceService {
                 plan, maps.findByCampaignIdOrderBySortOrderAsc(campaignId),
                 handouts.findByCampaignIdOrderByTitleAsc(campaignId),
                 party.findByCampaignIdAndActiveTrueOrderByCharacterNameAsc(campaignId),
-                calendar.getCurrentDate(campaignId));
+                calendar.getCurrentDate(campaignId), ssv, qpvs);
+    }
+
+    private StructuredSceneView buildStructuredSceneView(Scene scene) {
+        if (scene == null) return null;
+        return new StructuredSceneView(scene,
+                scene.getSections(), scene.getChecks(),
+                scene.getParticipants(), scene.getTransitions(),
+                scene.getLinks());
+    }
+
+    private List<QuestProgressView> buildQuestProgressViews(UUID campaignId) {
+        return questRepository.findByCampaignIdOrderByCreatedAtAscIdAsc(campaignId).stream()
+                .map(q -> new QuestProgressView(q, q.getObjectives()))
+                .toList();
     }
 
     private record Selection(GameMap map, SelectionSource source) {}

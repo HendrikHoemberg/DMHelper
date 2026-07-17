@@ -1,0 +1,16 @@
+<div th:fragment="linkList" xmlns:th="http://www.thymeleaf.org">
+  <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
+  <div th:if="${quest.links.empty}" class="empty-state">No links yet.</div>
+  <div th:unless="${quest.links.empty}">
+    <div th:each="link : ${quest.links}" class="card card--compact u-mb-xs">
+      <span class="badge" th:text="${link.role.name()}">ROLE</span>
+      <span th:text="${link.displayText ?: link.targetType}">Target</span>
+      <span th:if="${link.condition}" class="u-text-xs" th:text="|Condition: ${link.condition}|">Condition</span>
+      <span class="u-text-xs text-muted" th:text="|${link.targetScope} / ${link.targetType}|">Scope/Type</span>
+      <button class="btn btn-danger btn-sm"
+              th:hx-delete="@{/campaigns/{cid}/quests/{qid}/links/{linkId}(cid=${campaignId},qid=${quest.id},linkId=${link.id})}"
+              hx-target="#linkList" hx-swap="innerHTML"
+              hx-confirm="Delete this link?">&times;</button>
+    </div>
+  </div>
+</div>

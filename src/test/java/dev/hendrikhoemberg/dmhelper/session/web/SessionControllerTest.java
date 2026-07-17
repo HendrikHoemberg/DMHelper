@@ -1,5 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.session.web;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransition;
 import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
@@ -7,6 +9,7 @@ import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionPlanService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService.SessionWorkspace;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService.StructuredSceneView;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -49,6 +52,49 @@ class SessionControllerTest {
     }
 
     @Test
+    void structuredSceneViewPopulatedWhenCurrentScene() throws Exception {
+        Campaign campaign = new Campaign();
+        campaign.setId(campaignId);
+        campaign.setName("Test Campaign");
+        var adv = new dev.hendrikhoemberg.dmhelper.adventure.data.Adventure();
+        adv.setId(UUID.randomUUID());
+        adv.setName("Test Adv");
+        var ch = new dev.hendrikhoemberg.dmhelper.adventure.data.Chapter();
+        ch.setId(UUID.randomUUID());
+        ch.setTitle("Ch 1");
+        ch.setAdventure(adv);
+        Scene scene = new Scene();
+        scene.setId(UUID.randomUUID());
+        scene.setTitle("Throne Room");
+        scene.setChapter(ch);
+        SceneTransition transition = new SceneTransition();
+        transition.setId(UUID.randomUUID());
+        transition.setKind(dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransitionKind.CHOICE);
+        transition.setLabel("Go outside");
+        Scene targetScene = new Scene();
+        targetScene.setId(UUID.randomUUID());
+        targetScene.setTitle("Next Room");
+        transition.setTargetScene(targetScene);
+        scene.setTransitions(List.of(transition));
+        StructuredSceneView ssv = new StructuredSceneView(scene,
+                scene.getSections(), scene.getChecks(),
+                scene.getParticipants(), scene.getTransitions(),
+                scene.getLinks());
+        SessionWorkspace ws = new SessionWorkspace(
+                campaign, CampaignSession.idle(campaign),
+                null, SessionWorkspaceService.SelectionSource.NONE,
+                scene, null, null, null,
+                List.of(), null, List.of(), List.of(), List.of(),
+                new CalendarService.InGameDate(1492, 7, 12),
+                ssv, List.of());
+        when(workspaces.load(campaignId, null)).thenReturn(ws);
+
+        mvc.perform(get("/campaigns/{id}/session", campaignId))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeExists("workspace"));
+    }
+
+    @Test
     void attendanceEditorIncludesAnInactiveStoredAttendee() throws Exception {
         SessionWorkspace ws = emptyWorkspace();
         PartyMember inactive = new PartyMember();
@@ -76,7 +122,8 @@ class SessionControllerTest {
                 SessionWorkspaceService.SelectionSource.NONE,
                 null, null, null, null,
                 List.of(), null, List.of(), List.of(), List.of(),
-                new CalendarService.InGameDate(1492, 7, 12));
+                new CalendarService.InGameDate(1492, 7, 12),
+                null, List.of());
     }
 
     static SessionWorkspace mapWorkspace() {
@@ -93,6 +140,7 @@ class SessionControllerTest {
                 SessionWorkspaceService.SelectionSource.EXPLICIT_MAP,
                 null, null, null, null,
                 List.of(), null, List.of(), List.of(), List.of(),
-                new CalendarService.InGameDate(1492, 7, 12));
+                new CalendarService.InGameDate(1492, 7, 12),
+                null, List.of());
     }
 }

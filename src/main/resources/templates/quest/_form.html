@@ -1,0 +1,94 @@
+<div th:fragment="form" xmlns:th="http://www.thymeleaf.org">
+  <form class="inline-form"
+        th:action="@{/campaigns/{cid}/quests/{qid}(cid=${campaignId},qid=${quest.id})}"
+        th:if="${quest.id != null}"
+        method="put"
+        hx-put="true"
+        hx-target="body" hx-swap="outerHTML">
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input type="text" name="title" class="form-input" required th:value="${quest.title}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-input">
+        <option value="NOT_STARTED" th:selected="${quest.status.name() == 'NOT_STARTED'}">Not Started</option>
+        <option value="ACTIVE" th:selected="${quest.status.name() == 'ACTIVE'}">Active</option>
+        <option value="ON_HOLD" th:selected="${quest.status.name() == 'ON_HOLD'}">On Hold</option>
+        <option value="COMPLETED" th:selected="${quest.status.name() == 'COMPLETED'}">Completed</option>
+        <option value="FAILED" th:selected="${quest.status.name() == 'FAILED'}">Failed</option>
+        <option value="ABANDONED" th:selected="${quest.status.name() == 'ABANDONED'}">Abandoned</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Summary</label>
+      <textarea name="summary" class="form-input" th:text="${quest.summary}"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Source Locator</label>
+      <input type="text" name="sourceLocator" class="form-input" th:value="${quest.sourceLocator}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tags</label>
+      <input type="text" name="tags" class="form-input" th:value="${quest.tags}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Prerequisites</label>
+      <textarea name="prerequisites" class="form-input" th:text="${quest.prerequisites}"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Rewards</label>
+      <textarea name="rewards" class="form-input" th:text="${quest.rewards}"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Outcome Notes</label>
+      <textarea name="outcomeNotes" class="form-input" th:text="${quest.outcomeNotes}"></textarea>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn btn-ghost"
+         th:href="@{/campaigns/{cid}/quests/{qid}(cid=${campaignId},qid=${quest.id})}">Cancel</a>
+    </div>
+  </form>
+  <form class="inline-form"
+        th:action="@{/campaigns/{cid}/quests(cid=${campaignId})}"
+        th:if="${quest.id == null}"
+        method="post"
+        hx-post="true"
+        hx-target="body" hx-swap="outerHTML">
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input type="text" name="title" class="form-input" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-input">
+        <option value="NOT_STARTED">Not Started</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Summary</label>
+      <textarea name="summary" class="form-input"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Source Locator</label>
+      <input type="text" name="sourceLocator" class="form-input">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tags</label>
+      <input type="text" name="tags" class="form-input">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Prerequisites</label>
+      <textarea name="prerequisites" class="form-input"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Rewards</label>
+      <textarea name="rewards" class="form-input"></textarea>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Create</button>
+      <a class="btn btn-ghost" th:href="@{/campaigns/{cid}/quests(cid=${campaignId})}">Cancel</a>
+    </div>
+  </form>
+</div>

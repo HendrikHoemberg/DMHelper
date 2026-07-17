@@ -2,7 +2,12 @@ package dev.hendrikhoemberg.dmhelper.session.web;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneTransitionService;
+import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus;
+import dev.hendrikhoemberg.dmhelper.quest.service.QuestService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionLifecycleService;
@@ -26,23 +31,32 @@ public class SessionApiController {
     public record WorkspaceMapRequest(UUID mapId) {}
     public record CurrentSceneRequest(UUID sceneId) {}
     public record StepSceneRequest(int direction) {}
+    public record FollowTransitionRequest(UUID transitionId) {}
     public record CompleteRequest(String title, String body) {}
     public record SessionStateDto(String status, UUID workspaceMapId, String presentationMode,
                                   List<UUID> attendeeIds, String draftBody) {}
     public record SessionSceneDto(UUID id, String title, String status, UUID mapId,
                                   UUID encounterId, UUID previousId, UUID nextId) {}
     public record CompleteResultDto(UUID noteId, String url) {}
+    public record ObjectiveStatusRequest(String status) {}
+    public record ObjectiveStatusResult(UUID objectiveId, String status, String sessionChangeId) {}
 
     private final SessionLifecycleService lifecycle;
     private final AdventureService adventures;
     private final SessionWorkspaceService workspaces;
+    private final SceneTransitionService sceneTransitionService;
+    private final QuestService questService;
 
     public SessionApiController(SessionLifecycleService lifecycle,
                                 AdventureService adventures,
-                                SessionWorkspaceService workspaces) {
+                                SessionWorkspaceService workspaces,
+                                SceneTransitionService sceneTransitionService,
+                                QuestService questService) {
         this.lifecycle = lifecycle;
         this.adventures = adventures;
         this.workspaces = workspaces;
+        this.sceneTransitionService = sceneTransitionService;
+        this.questService = questService;
     }
 
     @PostMapping("/start")
@@ -94,10 +108,38 @@ public class SessionApiController {
         return sceneData(result, campaignId);
     }
 
+    @PostMapping("/current-scene/follow-transition")
+    SessionSceneDto followTransition(@PathVariable UUID campaignId, @RequestBody FollowTransitionRequest request) {
+        Scene target = sceneTransitionService.followTransition(campaignId, request.transitionId());
+        return sceneData(target, campaignId);
+    }
+
     @PostMapping("/complete")
     CompleteResultDto complete(@PathVariable UUID campaignId, @RequestBody CompleteRequest request) {
         Note note = lifecycle.complete(campaignId, request.title(), request.body());
         return new CompleteResultDto(note.getId(), "/campaigns/" + campaignId + "/notes/" + note.getId());
+    }
+
+    @PutMapping("/quests/objectives/{objectiveId}/status")
+    ObjectiveStatusResult setObjectiveStatus(@PathVariable UUID campaignId,
+                                              @PathVariable UUID objectiveId,
+                                              @RequestBody ObjectiveStatusRequest request) {
+        QuestObjectiveStatus newStatus;
+        try {
+            newStatus = QuestObjectiveStatus.valueOf(request.status());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid status: " + request.status());
+        }
+        if (!isDmUser()) {
+            throw new NotFoundException("Objective not found");
+        }
+        QuestObjective objective = questService.setObjectiveStatus(campaignId, objectiveId, newStatus);
+        return new ObjectiveStatusResult(objective.getId(), objective.getStatus().name(),
+                "objective-" + objective.getId());
+    }
+
+    private boolean isDmUser() {
+        return true;
     }
 
     private SessionStateDto state(CampaignSession session) {

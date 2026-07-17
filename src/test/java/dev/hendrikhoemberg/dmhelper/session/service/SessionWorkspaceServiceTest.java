@@ -39,6 +39,7 @@ class SessionWorkspaceServiceTest {
     @Mock private HandoutRepository handouts;
     @Mock private PartyMemberRepository party;
     @Mock private CalendarService calendar;
+    @Mock private dev.hendrikhoemberg.dmhelper.quest.data.QuestRepository questRepository;
 
     @InjectMocks private SessionWorkspaceService service;
 
