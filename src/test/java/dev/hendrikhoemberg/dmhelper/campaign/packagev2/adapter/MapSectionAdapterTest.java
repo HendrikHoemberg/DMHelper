@@ -287,7 +287,7 @@ class MapSectionAdapterTest {
                                 new MapDocumentDto.GridDto(30, 20, 48, "square", "GRID", true),
                                 List.of(new CampaignManifestV2.MapDto.LayerDto(
                                         "terrain", "Terrain", MapLayerDto.LayerType.TERRAIN,
-                                        true, false, List.of(), List.of(), null)),
+                                        true, false, List.of(), List.of(), null, null)),
                                 List.of(), List.of()
                         ),
                         List.of(new CampaignManifestV2.MapDto.TokenDto(
@@ -385,7 +385,7 @@ class MapSectionAdapterTest {
                                         true, false, List.of(), List.of(),
                                         new CampaignManifestV2.MapDto.ImageDto(
                                                 assetKey, 10, 20, 300, 200
-                                        )
+                                        ), null
                                 )),
                                 List.of(), List.of()
                         ),

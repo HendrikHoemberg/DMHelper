@@ -124,7 +124,8 @@ class CampaignCompleteRoundTripTest {
                         encounter.round(), encounter.activeTurnIndex(), encounter.logSequence(),
                         encounter.lairActionName(), encounter.lairActionDescription(), encounter.mapRef(),
                         encounter.lairActionTriggered(),
-                        includeCombatLog ? encounter.combatLog() : List.of()))
+                        includeCombatLog ? encounter.combatLog() : List.of(),
+                        encounter.prep(), encounter.rewards(), encounter.waves()))
                 .toList();
         var metadata = new CampaignManifestV2.Metadata(
                 source.metadata().packageKey(), source.metadata().createdAt(), source.metadata().generator(),

@@ -216,7 +216,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                                 layer.image().width(), layer.image().height());
                     }
                     layers.add(new CampaignManifestV2.MapDto.LayerDto(layer.id(), layer.name(), layer.type(), layer.visible(),
-                            layer.locked(), list(layer.cells()), list(layer.shapes()), image));
+                            layer.locked(), list(layer.cells()), list(layer.shapes()), image, null));
                 }
             }
             var document = m.document() == null ? null : new CampaignManifestV2.MapDto.MapDocumentV2(2,
@@ -250,7 +250,8 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                         ref(CampaignContentType.PARTY_MEMBER, partyKeys, c.partyMemberName()), c.defeated(), c.hidden(),
                         c.conditionsJson(), c.concentratingOn(), c.concentrationCheckPending(), c.legendaryActionsUsed(),
                         c.legendaryResistancesUsed(), c.legendaryActionsMax(), c.legendaryResistancesMax(),
-                        c.rechargedAbilities(), c.notes()));
+                        c.rechargedAbilities(), c.notes(),
+                        null, null, null, null));
             }
             if (e.map() != null) warning(warnings, "LEGACY_REFERENCE_MIGRATED", "/encounters/" + i + "/map", e.map());
             if (!combatants.isEmpty()) {
@@ -263,7 +264,8 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                     "Lair action triggered defaulted to false");
             encounters.add(new CampaignManifestV2.EncounterDto(encounterKeys.get(e.name()), e.name(), combatants, e.status(),
                     e.round(), e.activeTurnIndex(), e.logSequence(), e.lairActionName(), e.lairActionDescription(),
-                    ref(CampaignContentType.MAP, mapKeys, e.map()), false, List.of()));
+                    ref(CampaignContentType.MAP, mapKeys, e.map()), false, List.of(),
+                    null, null, null));
         }
 
         Map<String, String> noteKeys = new LinkedHashMap<>();

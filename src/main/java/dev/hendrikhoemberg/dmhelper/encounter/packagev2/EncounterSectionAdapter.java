@@ -7,6 +7,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.CombatLogEntryDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.CombatantDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.EncounterDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.WaveDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
@@ -19,6 +20,8 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWave;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWaveRepository;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
@@ -37,15 +40,18 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
     private final EncounterRepository encounterRepository;
     private final CombatantRepository combatantRepository;
     private final CombatLogEntryRepository combatLogEntryRepository;
+    private final EncounterWaveRepository waveRepository;
     private final StatBlockReferenceResolver statBlockResolver;
 
     public EncounterSectionAdapter(EncounterRepository encounterRepository,
                                     CombatantRepository combatantRepository,
                                     CombatLogEntryRepository combatLogEntryRepository,
+                                    EncounterWaveRepository waveRepository,
                                     StatBlockReferenceResolver statBlockResolver) {
         this.encounterRepository = encounterRepository;
         this.combatantRepository = combatantRepository;
         this.combatLogEntryRepository = combatLogEntryRepository;
+        this.waveRepository = waveRepository;
         this.statBlockResolver = statBlockResolver;
     }
 
@@ -96,13 +102,49 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                 ? context.packageRef(CampaignContentType.MAP, encounter.getMap().getId(), encounter.getMap().getName())
                 : null;
 
+        var waves = waveRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId());
+        List<WaveDto> waveDtos = waves.stream()
+                .map(w -> exportWave(w, context))
+                .toList();
+
+        CampaignManifestV2.EncounterPrep prep = parsePrep(encounter);
+        CampaignManifestV2.EncounterRewards rewards = parseRewards(encounter);
+
         return new EncounterDto(
                 key, encounter.getName(), combatantDtos,
                 encounter.getStatus().name(), encounter.getRound(),
                 encounter.getActiveTurnIndex(), encounter.getLogSequence(),
                 encounter.getLairActionName(), encounter.getLairActionDescription(),
-                mapRef, encounter.isLairActionTriggered(), combatLogDtos
+                mapRef, encounter.isLairActionTriggered(), combatLogDtos,
+                prep, rewards, waveDtos
         );
+    }
+
+    private WaveDto exportWave(EncounterWave wave, CampaignExportContext context) {
+        String key = context.key(CampaignContentType.ENCOUNTER_WAVE, wave.getId(), wave.getName());
+        return new WaveDto(
+                key, wave.getName(), wave.getSortOrder(),
+                wave.getStatus().name(), wave.getTriggerKind().name(),
+                wave.getTriggerValue(), wave.getNotes()
+        );
+    }
+
+    private CampaignManifestV2.EncounterPrep parsePrep(Encounter encounter) {
+        if (encounter.getPrepJson() == null || encounter.getPrepJson().isBlank()) return null;
+        try {
+            return MAPPER.readValue(encounter.getPrepJson(), CampaignManifestV2.EncounterPrep.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private CampaignManifestV2.EncounterRewards parseRewards(Encounter encounter) {
+        if (encounter.getRewardsJson() == null || encounter.getRewardsJson().isBlank()) return null;
+        try {
+            return MAPPER.readValue(encounter.getRewardsJson(), CampaignManifestV2.EncounterRewards.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private CombatantDto exportCombatant(Combatant combatant, CampaignExportContext context) {
@@ -118,6 +160,11 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                 ? context.packageRef(CampaignContentType.PARTY_MEMBER, combatant.getPartyMember().getId(), combatant.getPartyMember().getCharacterName())
                 : null;
 
+        String waveKey = null;
+        if (combatant.getWave() != null) {
+            waveKey = context.key(CampaignContentType.ENCOUNTER_WAVE, combatant.getWave().getId(), combatant.getWave().getName());
+        }
+
         return new CombatantDto(
                 key, combatant.getName(), combatant.getInitiative(),
                 combatant.getTieBreaker(), combatant.getSortOrder(),
@@ -129,7 +176,9 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                 combatant.isConcentrationCheckPending(),
                 combatant.getLegendaryActionsUsed(), combatant.getLegendaryResistancesUsed(),
                 combatant.getLegendaryActionsMax(), combatant.getLegendaryResistancesMax(),
-                combatant.getRechargedAbilities(), combatant.getNotes()
+                combatant.getRechargedAbilities(), combatant.getNotes(),
+                waveKey, combatant.getStartX(), combatant.getStartY(),
+                combatant.getPlacementRegionKey()
         );
     }
 
@@ -182,8 +231,18 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
             encounter.setActiveTurnIndex(dto.activeTurnIndex());
             encounter.setLogSequence(dto.logSequence());
             encounter.setLairActionName(dto.lairActionName());
-            encounter.setLairActionDescription(dto.lairActionDescription());
+                encounter.setLairActionDescription(dto.lairActionDescription());
             encounter.setLairActionTriggered(dto.lairActionTriggered());
+            if (dto.prep() != null) {
+                try {
+                    encounter.setPrepJson(MAPPER.writeValueAsString(dto.prep()));
+                } catch (Exception ignored) {}
+            }
+            if (dto.rewards() != null) {
+                try {
+                    encounter.setRewardsJson(MAPPER.writeValueAsString(dto.rewards()));
+                } catch (Exception ignored) {}
+            }
             if (dto.mapRef() != null) {
                 context.defer("encounter map " + dto.key(), () -> {
                     var map = context.require(dto.mapRef(), CampaignContentType.MAP,
@@ -194,6 +253,25 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
             encounterRepository.save(encounter);
             context.register(CampaignContentType.ENCOUNTER, dto.key(), encounter, encounter.getId());
             imported.add(new ImportedEncounter(encounter, dto));
+        }
+
+        for (var entry : imported) {
+            var dto = entry.dto;
+            if (dto.waves() != null) {
+                for (WaveDto wDto : dto.waves()) {
+                    var wave = new EncounterWave();
+                    wave.setEncounter(entry.encounter);
+                    wave.setWaveKey(wDto.key());
+                    wave.setName(wDto.name());
+                    wave.setSortOrder(wDto.sortOrder());
+                    wave.setStatus(dev.hendrikhoemberg.dmhelper.encounter.data.WaveStatus.valueOf(wDto.status()));
+                    wave.setTriggerKind(dev.hendrikhoemberg.dmhelper.encounter.data.WaveTriggerKind.valueOf(wDto.triggerKind()));
+                    wave.setTriggerValue(wDto.triggerValue());
+                    wave.setNotes(wDto.notes());
+                    waveRepository.save(wave);
+                    context.register(CampaignContentType.ENCOUNTER_WAVE, wDto.key(), wave, wave.getId());
+                }
+            }
         }
 
         for (var entry : imported) {
@@ -223,6 +301,17 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                 combatant.setLegendaryResistancesMax(cDto.legendaryResistancesMax());
                 combatant.setRechargedAbilities(cDto.rechargedAbilities());
                 combatant.setNotes(cDto.notes());
+                combatant.setStartX(cDto.startX());
+                combatant.setStartY(cDto.startY());
+                combatant.setPlacementRegionKey(cDto.placementRegionKey());
+                if (cDto.waveKey() != null) {
+                    context.defer("combatant wave " + cDto.key(), () -> {
+                        var wave = context.require(
+                                ContentReference.packageRef(CampaignContentType.ENCOUNTER_WAVE, cDto.waveKey()),
+                                CampaignContentType.ENCOUNTER_WAVE, EncounterWave.class);
+                        combatant.setWave(wave);
+                    });
+                }
                 if (cDto.tokenRef() != null) {
                     context.defer("combatant token " + cDto.key(), () -> {
                         var token = context.require(cDto.tokenRef(), CampaignContentType.TOKEN,

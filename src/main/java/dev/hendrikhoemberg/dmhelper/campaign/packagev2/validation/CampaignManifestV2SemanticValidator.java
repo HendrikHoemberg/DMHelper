@@ -21,6 +21,8 @@ import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignConten
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.OBJECTIVE;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SOURCE_ANNOTATION;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SESSION_OBJECTIVE_CHANGE;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.ENCOUNTER_WAVE;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.OBJECTIVE;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -90,14 +92,67 @@ public class CampaignManifestV2SemanticValidator {
                         map.tokens().get(j).key(), "/maps/" + i + "/tokens/" + j + "/key", problems);
                 validateTokenKind(map.tokens().get(j).kind(), "/maps/" + i + "/tokens/" + j + "/kind", problems);
             }
+            if (map.document() != null) {
+                var primitives = map.document().primitives();
+                Set<String> regionKeys = new HashSet<>();
+                for (int pi = 0; pi < size(primitives); pi++) {
+                    var prim = primitives.get(pi);
+                    if ("REGION".equals(prim.type()) && prim.key() != null) {
+                        if (!regionKeys.add(prim.key())) {
+                            error(problems, "DUPLICATE_REGION_KEY", "/maps/" + i + "/document/primitives/" + pi + "/key",
+                                    "Duplicate region key within map");
+                        }
+                    }
+                }
+            }
         }
         for (int i = 0; i < size(m.encounters()); i++) {
             var encounter = m.encounters().get(i);
             add(keys, CampaignContentType.ENCOUNTER, encounter.key(), "/encounters/" + i + "/key", problems);
+            Set<String> waveKeys = new HashSet<>();
+            for (int j = 0; j < size(encounter.waves()); j++) {
+                var w = encounter.waves().get(j);
+                add(keys, ENCOUNTER_WAVE, w.key(), "/encounters/" + i + "/waves/" + j + "/key", problems);
+                waveKeys.add(w.key());
+            }
             for (int j = 0; j < size(encounter.combatants()); j++) {
+                var c = encounter.combatants().get(j);
                 add(keys, CampaignContentType.COMBATANT,
-                        encounter.combatants().get(j).key(), "/encounters/" + i + "/combatants/" + j + "/key", problems);
-                validateCombatantKind(encounter.combatants().get(j).kind(), "/encounters/" + i + "/combatants/" + j + "/kind", problems);
+                        c.key(), "/encounters/" + i + "/combatants/" + j + "/key", problems);
+                validateCombatantKind(c.kind(), "/encounters/" + i + "/combatants/" + j + "/kind", problems);
+                if (c.waveKey() != null && !waveKeys.contains(c.waveKey())) {
+                    warning(problems, "UNRESOLVED_WAVE_REFERENCE", "/encounters/" + i + "/combatants/" + j + "/waveKey",
+                            "Combatant waveKey does not resolve to a wave in this encounter");
+                }
+                if (c.placementRegionKey() != null) {
+                    boolean foundRegion = false;
+                    if (encounter.mapRef() != null && encounter.mapRef().key() != null) {
+                        for (int mi = 0; mi < size(m.maps()); mi++) {
+                            var map = m.maps().get(mi);
+                            if (map.key().equals(encounter.mapRef().key()) && map.document() != null) {
+                                for (var prim : map.document().primitives()) {
+                                    if ("REGION".equals(prim.type()) && c.placementRegionKey().equals(prim.key())) {
+                                        foundRegion = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (foundRegion) break;
+                        }
+                    }
+                    if (!foundRegion) {
+                        warning(problems, "UNRESOLVED_PLACEMENT_REGION", "/encounters/" + i + "/combatants/" + j + "/placementRegionKey",
+                                "placementRegionKey does not match any REGION primitive on the encounter's map");
+                    }
+                }
+            }
+            if (encounter.rewards() != null && encounter.rewards().questObjectiveRefs() != null) {
+                for (int ri = 0; ri < encounter.rewards().questObjectiveRefs().size(); ri++) {
+                    var ref = encounter.rewards().questObjectiveRefs().get(ri);
+                    if (ref != null) {
+                        check(ref, "/encounters/" + i + "/rewards/questObjectiveRefs/" + ri, keys, problems);
+                    }
+                }
             }
             for (int j = 0; j < size(encounter.combatLog()); j++) {
                 var log = encounter.combatLog().get(j);
@@ -781,6 +836,10 @@ public class CampaignManifestV2SemanticValidator {
 
     private static void error(List<CampaignImportProblem> problems, String code, String path, String message) {
         problems.add(new CampaignImportProblem(ImportSeverity.ERROR, code, path, message, null));
+    }
+
+    private static void warning(List<CampaignImportProblem> problems, String code, String path, String message) {
+        problems.add(new CampaignImportProblem(ImportSeverity.WARNING, code, path, message, null));
     }
 
     private static int size(List<?> values) { return values == null ? 0 : values.size(); }

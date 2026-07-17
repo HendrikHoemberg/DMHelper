@@ -115,7 +115,8 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
             layers.add(new CampaignManifestV2.MapDto.LayerDto(
                     layer.id(), layer.name(), layer.type(),
                     layer.visible(), layer.locked(),
-                    layer.cells(), layer.shapes(), imageDto
+                    layer.cells(), layer.shapes(), imageDto,
+                    layer.playerVisible()
             ));
         }
 
@@ -162,7 +163,17 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
         );
         context.assets().add(descriptor, bytes);
 
-        return new CampaignManifestV2.MapDto.ImageDto(assetKey, image.x(), image.y(), image.width(), image.height());
+        CampaignManifestV2.MapDto.CalibrationDto calibrationDto = null;
+        if (image.calibration() != null) {
+            var cal = image.calibration();
+            calibrationDto = new CampaignManifestV2.MapDto.CalibrationDto(
+                    cal.ax(), cal.ay(), cal.bx(), cal.by(),
+                    cal.cellsBetween(), cal.offsetXPx(), cal.offsetYPx());
+        }
+
+        return new CampaignManifestV2.MapDto.ImageDto(
+                assetKey, image.x(), image.y(), image.width(), image.height(),
+                image.rotationDeg(), image.locked(), calibrationDto);
     }
 
     private TokenDto exportToken(Token token, CampaignExportContext context) {
@@ -269,7 +280,8 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
             layers.add(new MapLayerDto(
                     layer.id(), layer.name(), layer.type(),
                     layer.visible(), layer.locked(),
-                    layer.cells(), layer.shapes(), imageDto, null
+                    layer.cells(), layer.shapes(), imageDto,
+                    layer.playerVisible()
             ));
         }
 
@@ -297,7 +309,17 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
 
         String base64 = Base64.getEncoder().encodeToString(bytes);
         String dataUrl = "data:" + mediaType + ";base64," + base64;
-        return new MapLayerDto.ImageDto(dataUrl, image.x(), image.y(), image.width(), image.height());
+
+        MapDocumentDto.CalibrationDto calibrationDto = null;
+        if (image.calibration() != null) {
+            var cal = image.calibration();
+            calibrationDto = new MapDocumentDto.CalibrationDto(
+                    cal.ax(), cal.ay(), cal.bx(), cal.by(),
+                    cal.cellsBetween(), cal.offsetXPx(), cal.offsetYPx());
+        }
+
+        return new MapLayerDto.ImageDto(dataUrl, image.x(), image.y(), image.width(), image.height(),
+                image.rotationDeg(), image.locked(), calibrationDto);
     }
 
     private static String resolveMediaType(String assetRef, CampaignManifestV2 manifest) {

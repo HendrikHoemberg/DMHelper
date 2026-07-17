@@ -15,6 +15,7 @@ import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWave;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
@@ -321,6 +322,7 @@ public class CampaignSemanticSnapshotService {
             new OwnershipQuery(CampaignContentType.MAP, GameMap.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.TOKEN, Token.class, "map.campaign.id"),
             new OwnershipQuery(CampaignContentType.ENCOUNTER, Encounter.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.ENCOUNTER_WAVE, EncounterWave.class, "encounter.campaign.id"),
             new OwnershipQuery(CampaignContentType.COMBATANT, Combatant.class, "encounter.campaign.id"),
             new OwnershipQuery(CampaignContentType.COMBAT_LOG_ENTRY, CombatLogEntry.class,
                     "encounter.campaign.id"),

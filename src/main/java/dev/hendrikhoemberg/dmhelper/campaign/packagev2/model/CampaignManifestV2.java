@@ -276,7 +276,8 @@ public record CampaignManifestV2(
                 Boolean locked,
                 List<MapLayerDto.CellDto> cells,
                 List<MapLayerDto.ShapeDto> shapes,
-                ImageDto image
+                ImageDto image,
+                Boolean playerVisible
         ) {}
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -285,7 +286,21 @@ public record CampaignManifestV2(
                 double x,
                 double y,
                 double width,
-                double height
+                double height,
+                Double rotationDeg,
+                Boolean locked,
+                CalibrationDto calibration
+        ) {
+            public ImageDto(String assetRef, double x, double y, double width, double height) {
+                this(assetRef, x, y, width, height, null, null, null);
+            }
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        public record CalibrationDto(
+                double ax, double ay, double bx, double by,
+                double cellsBetween,
+                double offsetXPx, double offsetYPx
         ) {}
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -322,7 +337,53 @@ public record CampaignManifestV2(
             String lairActionDescription,
             ContentReference mapRef,
             boolean lairActionTriggered,
-            List<CombatLogEntryDto> combatLog
+            List<CombatLogEntryDto> combatLog,
+            EncounterPrep prep,
+            EncounterRewards rewards,
+            List<WaveDto> waves
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record EncounterPrep(
+            String tactics,
+            String morale,
+            String surrender,
+            String environment,
+            String sourceLocator,
+            String scalingNotes,
+            String sceneKey
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record EncounterRewards(
+            Integer xpTotal,
+            Integer xpPerPc,
+            List<EncounterCurrencyGrant> currency,
+            List<EncounterRewardItem> items,
+            List<ContentReference> questObjectiveRefs,
+            String notes
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record EncounterCurrencyGrant(String currency, double amount) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record EncounterRewardItem(
+            String customText,
+            ContentReference magicItemRef,
+            ContentReference equipmentItemRef,
+            int quantity
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record WaveDto(
+            String key,
+            String name,
+            int sortOrder,
+            String status,
+            String triggerKind,
+            String triggerValue,
+            String notes
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -351,7 +412,11 @@ public record CampaignManifestV2(
             int legendaryActionsMax,
             int legendaryResistancesMax,
             String rechargedAbilities,
-            String notes
+            String notes,
+            String waveKey,
+            Integer startX,
+            Integer startY,
+            String placementRegionKey
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

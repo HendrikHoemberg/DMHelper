@@ -74,7 +74,7 @@
       "enum": [
         "CAMPAIGN", "ADVENTURE", "CHAPTER", "SCENE",
         "MAP", "TOKEN",
-        "ENCOUNTER", "COMBATANT", "COMBAT_LOG_ENTRY",
+        "ENCOUNTER", "ENCOUNTER_WAVE", "COMBATANT", "COMBAT_LOG_ENTRY",
         "PARTY_MEMBER", "CHARACTER_SHEET", "SHEET_RESOURCE",
         "NOTE", "QUICK_NOTE", "HANDOUT",
         "ASSIGNMENT", "LEDGER_ENTRY", "TIMELINE_EVENT",
@@ -622,7 +622,69 @@
         "lairActionDescription": { "type": "string" },
         "mapRef": { "$ref": "#/$defs/contentReference" },
         "lairActionTriggered": { "type": "boolean" },
-        "combatLog": { "type": "array", "items": { "$ref": "#/$defs/combatLogEntry" } }
+        "combatLog": { "type": "array", "items": { "$ref": "#/$defs/combatLogEntry" } },
+        "prep": { "$ref": "#/$defs/encounterPrep" },
+        "rewards": { "$ref": "#/$defs/encounterRewards" },
+        "waves": { "type": "array", "items": { "$ref": "#/$defs/encounterWave" } }
+      }
+    },
+    "encounterPrep": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tactics": { "type": "string" },
+        "morale": { "type": "string" },
+        "surrender": { "type": "string" },
+        "environment": { "type": "string" },
+        "sourceLocator": { "type": "string" },
+        "scalingNotes": { "type": "string" },
+        "sceneKey": { "type": "string" }
+      }
+    },
+    "encounterRewards": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "xpTotal": { "type": "integer" },
+        "xpPerPc": { "type": "integer" },
+        "currency": { "type": "array", "items": { "$ref": "#/$defs/encounterCurrencyGrant" } },
+        "items": { "type": "array", "items": { "$ref": "#/$defs/encounterRewardItem" } },
+        "questObjectiveRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
+        "notes": { "type": "string" }
+      }
+    },
+    "encounterCurrencyGrant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currency", "amount"],
+      "properties": {
+        "currency": { "type": "string" },
+        "amount": { "type": "number" }
+      }
+    },
+    "encounterRewardItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quantity"],
+      "properties": {
+        "customText": { "type": "string" },
+        "magicItemRef": { "$ref": "#/$defs/contentReference" },
+        "equipmentItemRef": { "$ref": "#/$defs/contentReference" },
+        "quantity": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "encounterWave": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "sortOrder", "status", "triggerKind"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "name": { "type": "string" },
+        "sortOrder": { "type": "integer" },
+        "status": { "type": "string", "enum": ["RESERVE", "PENDING", "ACTIVE", "DEPLETED"] },
+        "triggerKind": { "type": "string", "enum": ["MANUAL", "ROUND", "HP_THRESHOLD", "CUSTOM"] },
+        "triggerValue": { "type": "string" },
+        "notes": { "type": "string" }
       }
     },
     "combatant": {
@@ -654,7 +716,11 @@
         "legendaryActionsMax": { "type": "integer", "minimum": 0 },
         "legendaryResistancesMax": { "type": "integer", "minimum": 0 },
         "rechargedAbilities": { "type": "string" },
-        "notes": { "type": "string" }
+        "notes": { "type": "string" },
+        "waveKey": { "$ref": "#/$defs/key" },
+        "startX": { "type": "integer" },
+        "startY": { "type": "integer" },
+        "placementRegionKey": { "type": "string" }
       }
     },
     "note": {

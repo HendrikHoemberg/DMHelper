@@ -170,10 +170,12 @@ class CampaignManifestV2SemanticValidatorTest {
         var combatant = new CampaignManifestV2.CombatantDto(
                 "c1", "Test", 0, 0, 0, 10, 10, 0,
                 "MONSTER", null, false, null, sb, null,
-                false, false, null, null, false, 0, 0, 0, 0, null, null);
+                false, false, null, null, false, 0, 0, 0, 0, null, null,
+                null, null, null, null);
         var encounter = new CampaignManifestV2.EncounterDto(
                 "enc1", "Test", List.of(combatant), "PLANNED",
-                0, -1, 0, null, null, null, false, List.of());
+                0, -1, 0, null, null, null, false, List.of(),
+                null, null, null);
         var manifest2 = new CampaignManifestV2(
                 2, manifest.metadata(), manifest.campaign(), manifest.assets(), manifest.party(),
                 manifest.customStatBlocks(), manifest.customSpells(), manifest.customConditions(), manifest.customRules(),

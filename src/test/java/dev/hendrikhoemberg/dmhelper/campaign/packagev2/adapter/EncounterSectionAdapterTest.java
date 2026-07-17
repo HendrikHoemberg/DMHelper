@@ -19,6 +19,10 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWave;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWaveRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.WaveStatus;
+import dev.hendrikhoemberg.dmhelper.encounter.data.WaveTriggerKind;
 import dev.hendrikhoemberg.dmhelper.encounter.packagev2.EncounterSectionAdapter;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
@@ -45,6 +49,7 @@ class EncounterSectionAdapterTest {
     @Mock EncounterRepository encounterRepository;
     @Mock CombatantRepository combatantRepository;
     @Mock CombatLogEntryRepository combatLogEntryRepository;
+    @Mock EncounterWaveRepository waveRepository;
     @Mock StatBlockRepository statBlockRepository;
     StatBlockReferenceResolver statBlockResolver;
 
@@ -65,7 +70,8 @@ class EncounterSectionAdapterTest {
                         mock(dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository.class),
                         statBlockRepository));
         adapter = new EncounterSectionAdapter(
-                encounterRepository, combatantRepository, combatLogEntryRepository, statBlockResolver);
+                encounterRepository, combatantRepository, combatLogEntryRepository,
+                waveRepository, statBlockResolver);
         campaign = new Campaign();
         campaignId = UUID.randomUUID();
         campaign.setId(campaignId);
@@ -185,6 +191,97 @@ class EncounterSectionAdapterTest {
     }
 
     @Test
+    void exportsWavesAndPrepAndRewards() {
+        var encounter = createEncounter("Wave Encounter", Encounter.Status.ACTIVE, 1, 0);
+        encounter.setPrepJson("{\"tactics\":\"flank\",\"morale\":\"flee at half\",\"sceneKey\":\"goblin-ambush\"}");
+        encounter.setRewardsJson("{\"xpTotal\":500,\"xpPerPc\":100,\"notes\":\"Test rewards\"}");
+        when(encounterRepository.findByCampaignIdOrderByNameAsc(campaignId))
+                .thenReturn(List.of(encounter));
+        when(combatantRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()))
+                .thenReturn(List.of());
+
+        var wave = new EncounterWave();
+        wave.setId(UUID.randomUUID());
+        wave.setEncounter(encounter);
+        wave.setWaveKey("wave-1");
+        wave.setName("First Wave");
+        wave.setSortOrder(0);
+        wave.setStatus(WaveStatus.PENDING);
+        wave.setTriggerKind(WaveTriggerKind.MANUAL);
+        wave.setNotes("Wait for signal");
+        when(waveRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()))
+                .thenReturn(List.of(wave));
+
+        var ctx = exportContext(CampaignExportOptions.complete());
+        var assembler = assembler();
+
+        adapter.exportSection(ctx, assembler);
+
+        var manifest = buildManifest(assembler);
+        assertThat(manifest.encounters()).hasSize(1);
+        var dto = manifest.encounters().get(0);
+        assertThat(dto.waves()).hasSize(1);
+        assertThat(dto.waves().get(0).name()).isEqualTo("First Wave");
+        assertThat(dto.waves().get(0).status()).isEqualTo("PENDING");
+        assertThat(dto.waves().get(0).triggerKind()).isEqualTo("MANUAL");
+        assertThat(dto.prep()).isNotNull();
+        assertThat(dto.prep().tactics()).isEqualTo("flank");
+        assertThat(dto.prep().sceneKey()).isEqualTo("goblin-ambush");
+        assertThat(dto.rewards()).isNotNull();
+        assertThat(dto.rewards().xpTotal()).isEqualTo(500);
+        assertThat(dto.rewards().xpPerPc()).isEqualTo(100);
+    }
+
+    @Test
+    void exportsCombatantWaveKeyAndPlacementFields() {
+        var encounter = createEncounter("Placed Encounter", Encounter.Status.ACTIVE, 1, 0);
+        var wave = new EncounterWave();
+        wave.setId(UUID.randomUUID());
+        wave.setEncounter(encounter);
+        wave.setWaveKey("main-wave");
+        wave.setName("Main");
+        wave.setSortOrder(0);
+        wave.setStatus(WaveStatus.ACTIVE);
+        wave.setTriggerKind(WaveTriggerKind.MANUAL);
+        when(waveRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()))
+                .thenReturn(List.of(wave));
+
+        var combatant = new Combatant();
+        combatant.setId(UUID.randomUUID());
+        combatant.setEncounter(encounter);
+        combatant.setName("Placed Goblin");
+        combatant.setInitiative(10);
+        combatant.setSortOrder(0);
+        combatant.setMaxHp(7);
+        combatant.setCurrentHp(7);
+        combatant.setKind("MONSTER");
+        combatant.setWave(wave);
+        combatant.setStartX(5);
+        combatant.setStartY(8);
+        combatant.setPlacementRegionKey("room-1");
+
+        when(encounterRepository.findByCampaignIdOrderByNameAsc(campaignId))
+                .thenReturn(List.of(encounter));
+        when(combatantRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()))
+                .thenReturn(List.of(combatant));
+
+        var ctx = exportContext(CampaignExportOptions.complete());
+        var assembler = assembler();
+
+        adapter.exportSection(ctx, assembler);
+
+        var manifest = buildManifest(assembler);
+        var dto = manifest.encounters().get(0);
+        assertThat(dto.waves()).hasSize(1);
+        assertThat(dto.combatants()).hasSize(1);
+        var cDto = dto.combatants().get(0);
+        assertThat(cDto.waveKey()).isNotNull();
+        assertThat(cDto.startX()).isEqualTo(5);
+        assertThat(cDto.startY()).isEqualTo(8);
+        assertThat(cDto.placementRegionKey()).isEqualTo("room-1");
+    }
+
+    @Test
     void excludesCombatLogWhenOptionIsFalse() {
         var encounter = createEncounter("Encounter", Encounter.Status.DONE, 1, 0);
         when(encounterRepository.findByCampaignIdOrderByNameAsc(campaignId))
@@ -209,7 +306,8 @@ class EncounterSectionAdapterTest {
                 Instant.parse("2025-06-01T12:00:00Z"));
         var encounterDto = new EncounterDto(
                 "ambush", "Ambush", List.of(), "ACTIVE",
-                1, 0, 1, null, null, null, false, List.of(logDto));
+                1, 0, 1, null, null, null, false, List.of(logDto),
+                null, null, null);
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
@@ -249,10 +347,12 @@ class EncounterSectionAdapterTest {
                 "goblin", "Goblin", 12, 0, 0, 7, 7, 0,
                 "MONSTER", null, false, null, srdRef, null,
                 false, false, null, null, false,
-                0, 0, 0, 0, null, null);
+                0, 0, 0, 0, null, null,
+                null, null, null, null);
         var encounterDto = new EncounterDto(
                 "ambush", "Ambush", List.of(combatantDto), "PLANNED",
-                0, -1, 0, null, null, null, false, List.of());
+                0, -1, 0, null, null, null, false, List.of(),
+                null, null, null);
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,

@@ -24,9 +24,6 @@ public record MapLayerDto(
         locked = locked != null ? locked : Boolean.FALSE;
         cells = cells != null ? cells : List.of();
         shapes = shapes != null ? shapes : List.of();
-        if (playerVisible == null) {
-            playerVisible = type == LayerType.ANNOTATIONS ? Boolean.FALSE : Boolean.TRUE;
-        }
     }
 
     public static MapLayerDto createTerrainLayer() {
