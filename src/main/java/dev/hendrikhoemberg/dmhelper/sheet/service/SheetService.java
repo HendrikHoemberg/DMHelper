@@ -264,6 +264,8 @@ public class SheetService {
         }
     }
 
+    public record OverrideMetaDto(String reason, String source) {}
+
     public record SheetDto(
             UUID id, UUID partyMemberId,
             Map<String, Integer> abilityScores,
@@ -273,6 +275,8 @@ public class SheetService {
             List<String> featRefs,
             int xp,
             Map<String, Object> overrides,
+            Map<String, OverrideMetaDto> overridesMeta,
+            Map<String, Object> proficiencies,
             int hitDiceUsed,
             Map<String, Integer> spellSlotsUsed,
             DerivedValues derivedValues,
@@ -1176,7 +1180,9 @@ public class SheetService {
         List<ClassLevelEntry> classLevels = List.of();
         List<String> featRefs = List.of();
         Map<String, Object> overrides = Map.of();
+        Map<String, Object> proficiencies = Map.of();
         Map<String, Integer> spellsUsed = Map.of();
+        Map<String, OverrideMetaDto> overridesMeta = Map.of();
 
         try {
             if (sheet.getAbilityScores() != null) {
@@ -1194,12 +1200,35 @@ public class SheetService {
                 overrides = mapper.readValue(sheet.getOverrides(),
                         mapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class));
             }
+            if (sheet.getProficiencies() != null) {
+                proficiencies = mapper.readValue(sheet.getProficiencies(),
+                        mapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class));
+            }
             if (sheet.getSpellSlotsUsed() != null) {
                 spellsUsed = mapper.readValue(sheet.getSpellSlotsUsed(),
                         mapper.getTypeFactory().constructMapType(Map.class, String.class, Integer.class));
             }
         } catch (Exception e) {
             log.warn("Failed to deserialize sheet JSON fields", e);
+        }
+
+        if (overrides.containsKey("_meta") && overrides.get("_meta") instanceof Map<?, ?> metaMap) {
+            Map<String, OverrideMetaDto> meta = new HashMap<>();
+            for (Map.Entry<?, ?> entry : metaMap.entrySet()) {
+                String key = entry.getKey().toString();
+                if (entry.getValue() instanceof Map<?, ?> metaEntry) {
+                    String reason = "";
+                    String source = "";
+                    if (metaEntry.containsKey("reason") && metaEntry.get("reason") instanceof String r) {
+                        reason = r;
+                    }
+                    if (metaEntry.containsKey("source") && metaEntry.get("source") instanceof String s) {
+                        source = s;
+                    }
+                    meta.put(key, new OverrideMetaDto(reason, source));
+                }
+            }
+            overridesMeta = meta;
         }
 
         List<SheetResourceDto> resources = resourceRepo.findBySheetId(sheet.getId()).stream()
@@ -1228,7 +1257,8 @@ public class SheetService {
                 abilityScores, classLevels,
                 speciesName, speciesId,
                 backgroundName, backgroundId,
-                featRefs, sheet.getXp(), overrides, sheet.getHitDiceUsed(),
+                featRefs, sheet.getXp(), overrides, overridesMeta, proficiencies,
+                sheet.getHitDiceUsed(),
                 spellsUsed, derived, resources, spells,
                 attacks, features
         );

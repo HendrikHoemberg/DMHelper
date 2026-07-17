@@ -145,6 +145,111 @@
                 </div>
             </div>
 
+            <div class="detail-section">
+                <h2>Overrides</h2>
+                <div id="overrides-editor">
+                    <table class="override-table">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Value</th>
+                                <th>Reason</th>
+                                <th>Source</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="overrides-rows">
+                            <tr class="override-row" th:each="entry : ${sheet.overrides()}" th:unless="${entry.key == '_meta'}">
+                                <td><input type="text" class="override-key" th:value="${entry.key}" /></td>
+                                <td><input type="number" class="override-value" th:value="${entry.value}" /></td>
+                                <td><input type="text" class="override-reason" th:value="${sheet.overridesMeta()?.get(entry.key)?.reason}" /></td>
+                                <td>
+                                    <select class="override-source">
+                                        <option value="">—</option>
+                                        <option value="feature" th:selected="${sheet.overridesMeta()?.get(entry.key)?.source == 'feature'}">Feature</option>
+                                        <option value="spell" th:selected="${sheet.overridesMeta()?.get(entry.key)?.source == 'spell'}">Spell</option>
+                                        <option value="item" th:selected="${sheet.overridesMeta()?.get(entry.key)?.source == 'item'}">Item</option>
+                                        <option value="manual" th:selected="${sheet.overridesMeta()?.get(entry.key)?.source == 'manual'}">Manual</option>
+                                    </select>
+                                </td>
+                                <td><button type="button" class="btn btn-danger btn-xs" onclick="this.closest('tr').remove()">×</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="form-actions" style="margin-top: var(--space-sm)">
+                        <button type="button" class="btn btn-ghost btn-xs" onclick="addOverrideRow()">+ Add Override</button>
+                        <button type="button" class="btn btn-primary"
+                                hx-put="@{/campaigns/{cid}/party/{pid}/sheet/overrides(cid=${campaign.id}, pid=${member.id})}"
+                                hx-vals='js:buildOverrides()'>Save Overrides</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h2>Proficiencies</h2>
+                <div class="proficiency-editor">
+                    <div class="prof-group">
+                        <h3>Skills</h3>
+                        <div class="skill-check-grid">
+                            <label class="skill-check-row" th:each="skill : ${T(java.util.Map).of(
+                                'acrobatics','Dex','animal_handling','Wis','arcana','Int',
+                                'athletics','Str','deception','Cha','history','Int',
+                                'insight','Wis','intimidation','Cha','investigation','Int',
+                                'medicine','Wis','nature','Int','perception','Wis',
+                                'performance','Cha','persuasion','Cha','religion','Int',
+                                'sleight_of_hand','Dex','stealth','Dex','survival','Wis'
+                            ).keySet()}">
+                                <input type="checkbox" name="skills" th:value="${skill}"
+                                    th:checked="${sheet.proficiencies()?.get('skills') instanceof T(java.util.List) and #lists.contains(sheet.proficiencies().get('skills'), skill)}" />
+                                <span class="skill-name" th:text="${skill.replace('_', ' ')}">acrobatics</span>
+                                <input type="checkbox" name="expertise" th:value="${skill}"
+                                    th:checked="${sheet.proficiencies()?.get('expertise') instanceof T(java.util.List) and #lists.contains(sheet.proficiencies().get('expertise'), skill)}" />
+                                <span class="exp-label">Exp</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="prof-group">
+                        <h3>Tools</h3>
+                        <input type="text" id="tools-input" class="chip-input"
+                               th:value="${#strings.listJoin(sheet.proficiencies()?.get('tools') ?: {}, ', ')}"
+                               placeholder="e.g. Cook's Utensils, Thieves' Tools" />
+                    </div>
+                    <div class="prof-group">
+                        <h3>Languages</h3>
+                        <input type="text" id="languages-input" class="chip-input"
+                               th:value="${#strings.listJoin(sheet.proficiencies()?.get('languages') ?: {}, ', ')}"
+                               placeholder="e.g. Common, Elvish, Draconic" />
+                    </div>
+                    <div class="prof-group">
+                        <h3>Armor</h3>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" name="armor" value="light"
+                                th:checked="${sheet.proficiencies()?.get('armor') instanceof T(java.util.List) and #lists.contains(sheet.proficiencies().get('armor'), 'light')}" /> Light</label>
+                            <label><input type="checkbox" name="armor" value="medium"
+                                th:checked="${sheet.proficiencies()?.get('armor') instanceof T(java.util.List) and #lists.contains(sheet.proficiencies().get('armor'), 'medium')}" /> Medium</label>
+                            <label><input type="checkbox" name="armor" value="heavy"
+                                th:checked="${sheet.proficiencies()?.get('armor') instanceof T(java.util.List) and #lists.contains(sheet.proficiencies().get('armor'), 'heavy')}" /> Heavy</label>
+                            <label><input type="checkbox" name="armor" value="shields"
+                                th:checked="${sheet.proficiencies()?.get('armor') instanceof T(java.util.List) and #lists.contains(sheet.proficiencies().get('armor'), 'shields')}" /> Shields</label>
+                        </div>
+                    </div>
+                    <div class="prof-group">
+                        <h3>Weapons</h3>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" name="weapons" value="simple"
+                                th:checked="${sheet.proficiencies()?.get('weapons') instanceof T(java.util.List) and #lists.contains(sheet.proficiencies().get('weapons'), 'simple')}" /> Simple</label>
+                            <label><input type="checkbox" name="weapons" value="martial"
+                                th:checked="${sheet.proficiencies()?.get('weapons') instanceof T(java.util.List) and #lists.contains(sheet.proficiencies().get('weapons'), 'martial')}" /> Martial</label>
+                        </div>
+                    </div>
+                    <div class="form-actions" style="margin-top: var(--space-sm)">
+                        <button type="button" class="btn btn-primary"
+                                hx-post="@{/campaigns/{cid}/party/{pid}/sheet/proficiencies(cid=${campaign.id}, pid=${member.id})}"
+                                hx-vals='js:buildProficiencies()'>Save Proficiencies</button>
+                    </div>
+                </div>
+            </div>
+
             <dialog id="rest-preview-dialog" class="sheet-dialog"></dialog>
 
             <div th:replace="~{sheet/_inventory :: inventory(assignments=${assignments}, totalWeight=${totalWeight}, campaignId=${campaign.id})}"></div>
@@ -157,5 +262,63 @@
 <div th:replace="~{sheet/_level-up-dialog :: levelUpDialog(${campaign.id}, ${member.id})}"></div>
     </main>
 </div>
+<script>
+function addOverrideRow() {
+    const tbody = document.getElementById('overrides-rows');
+    const tr = document.createElement('tr');
+    tr.className = 'override-row';
+    tr.innerHTML = `
+        <td><input type="text" class="override-key" placeholder="e.g. armorClass" /></td>
+        <td><input type="number" class="override-value" value="0" /></td>
+        <td><input type="text" class="override-reason" placeholder="reason" /></td>
+        <td>
+            <select class="override-source">
+                <option value="">—</option>
+                <option value="feature">Feature</option>
+                <option value="spell">Spell</option>
+                <option value="item">Item</option>
+                <option value="manual">Manual</option>
+            </select>
+        </td>
+        <td><button type="button" class="btn btn-danger btn-xs" onclick="this.closest('tr').remove()">×</button></td>
+    `;
+    tbody.appendChild(tr);
+}
+
+function buildOverrides() {
+    const rows = document.querySelectorAll('#overrides-rows .override-row');
+    const overrides = {};
+    const meta = {};
+    let hasAny = false;
+    rows.forEach(row => {
+        const key = row.querySelector('.override-key').value.trim();
+        const value = row.querySelector('.override-value').value;
+        const reason = row.querySelector('.override-reason').value.trim();
+        const source = row.querySelector('.override-source').value;
+        if (key) {
+            overrides[key] = parseInt(value) || 0;
+            if (reason || source) {
+                meta[key] = { reason: reason || '', source: source || '' };
+            }
+            hasAny = true;
+        }
+    });
+    if (hasAny) {
+        overrides._meta = meta;
+    }
+    return overrides;
+}
+
+function buildProficiencies() {
+    return {
+        skills: Array.from(document.querySelectorAll('input[name="skills"]:checked')).map(cb => cb.value),
+        expertise: Array.from(document.querySelectorAll('input[name="expertise"]:checked')).map(cb => cb.value),
+        tools: document.getElementById('tools-input').value.split(',').map(s => s.trim()).filter(Boolean),
+        languages: document.getElementById('languages-input').value.split(',').map(s => s.trim()).filter(Boolean),
+        armor: Array.from(document.querySelectorAll('input[name="armor"]:checked')).map(cb => cb.value),
+        weapons: Array.from(document.querySelectorAll('input[name="weapons"]:checked')).map(cb => cb.value)
+    };
+}
+</script>
 </body>
 </html>

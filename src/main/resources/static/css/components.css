@@ -2281,3 +2281,114 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
   padding: var(--space-md);
   margin-bottom: var(--space-md);
 }
+
+/* Override table */
+.override-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.override-table th,
+.override-table td {
+  padding: var(--space-xs) var(--space-sm);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+.override-table th {
+  font-weight: 600;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.override-table input,
+.override-table select {
+  width: 100%;
+  padding: 4px 8px;
+  font-size: var(--text-sm);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  font-family: inherit;
+}
+.override-table input:focus,
+.override-table select:focus {
+  border-color: var(--color-accent);
+}
+
+/* Proficiency editor */
+.proficiency-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.prof-group h3 {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-xs);
+}
+
+/* Skill check grid */
+.skill-check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-xs);
+}
+.skill-check-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: var(--text-sm);
+}
+.skill-check-row:hover {
+  background: var(--color-surface-hover);
+}
+.skill-check-row .skill-name {
+  flex: 1;
+  text-transform: capitalize;
+  color: var(--color-text);
+}
+.skill-check-row .exp-label {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.skill-check-row input[type="checkbox"] {
+  accent-color: var(--color-accent);
+}
+
+/* Checkbox group for armor/weapons */
+.checkbox-group {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+/* Chip input for tools/languages */
+.chip-input {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+.chip-input:focus {
+  border-color: var(--color-accent);
+}

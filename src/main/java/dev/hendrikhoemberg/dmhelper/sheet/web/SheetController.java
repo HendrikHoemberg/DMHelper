@@ -12,6 +12,7 @@ import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.*;
 import dev.hendrikhoemberg.dmhelper.treasury.data.InventoryState;
 import dev.hendrikhoemberg.dmhelper.treasury.service.TreasuryService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -296,49 +297,22 @@ public class SheetController {
     }
 
     @PostMapping("/party/{memberId}/sheet/proficiencies")
-    public String updateProficiencies(@PathVariable UUID campaignId, @PathVariable UUID memberId,
-                                      @RequestParam String skills,
-                                      @RequestParam(defaultValue = "") String expertise,
-                                      @RequestParam(defaultValue = "") String tools,
-                                      @RequestParam(defaultValue = "") String languages,
-                                      RedirectAttributes redirectAttributes) {
-        try {
-            SheetDto dto = sheetService.getSheetDtoByPartyMemberId(memberId);
-            Map<String, Object> prof = new HashMap<>();
-            prof.put("skills", Arrays.asList(skills.split(",\\s*")));
-            prof.put("expertise", expertise.isEmpty() ? List.of() : Arrays.asList(expertise.split(",\\s*")));
-            prof.put("tools", tools.isEmpty() ? List.of() : Arrays.asList(tools.split(",\\s*")));
-            prof.put("languages", languages.isEmpty() ? List.of() : Arrays.asList(languages.split(",\\s*")));
-            prof.put("armor", List.of());
-            prof.put("weapons", List.of());
-            UpdateSheetRequest req = new UpdateSheetRequest(null, null, prof, null, null, null, null, -1);
-            sheetService.updateSheet(dto.id(), req);
-            redirectAttributes.addFlashAttribute("message", "Proficiencies updated.");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Update failed: " + e.getMessage());
-        }
-        return "redirect:/campaigns/" + campaignId + "/party/" + memberId + "/sheet";
+    @ResponseBody
+    public ResponseEntity<Void> updateProficiencies(@PathVariable UUID campaignId, @PathVariable UUID memberId,
+                                                     @RequestBody Map<String, Object> body) {
+        SheetDto dto = sheetService.getSheetDtoByPartyMemberId(memberId);
+        UpdateSheetRequest req = new UpdateSheetRequest(null, null, body, null, null, null, null, -1);
+        sheetService.updateSheet(dto.id(), req);
+        return ResponseEntity.ok().header("HX-Refresh", "true").build();
     }
 
-    @PostMapping("/party/{memberId}/sheet/overrides")
-    public String updateOverrides(@PathVariable UUID campaignId, @PathVariable UUID memberId,
-                                  @RequestParam String overrideKey,
-                                  @RequestParam String overrideValue,
-                                  RedirectAttributes redirectAttributes) {
-        try {
-            SheetDto dto = sheetService.getSheetDtoByPartyMemberId(memberId);
-            Map<String, Object> overrides = new HashMap<>(dto.overrides());
-            try {
-                overrides.put(overrideKey, Integer.parseInt(overrideValue));
-            } catch (NumberFormatException e) {
-                overrides.put(overrideKey, overrideValue);
-            }
-            UpdateSheetRequest req = new UpdateSheetRequest(null, null, null, null, null, null, overrides, -1);
-            sheetService.updateSheet(dto.id(), req);
-            redirectAttributes.addFlashAttribute("message", "Override updated.");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Update failed: " + e.getMessage());
-        }
-        return "redirect:/campaigns/" + campaignId + "/party/" + memberId + "/sheet";
+    @PutMapping("/party/{memberId}/sheet/overrides")
+    @ResponseBody
+    public ResponseEntity<Void> updateOverrides(@PathVariable UUID campaignId, @PathVariable UUID memberId,
+                                                 @RequestBody Map<String, Object> body) {
+        SheetDto dto = sheetService.getSheetDtoByPartyMemberId(memberId);
+        UpdateSheetRequest req = new UpdateSheetRequest(null, null, null, null, null, null, body, -1);
+        sheetService.updateSheet(dto.id(), req);
+        return ResponseEntity.ok().header("HX-Refresh", "true").build();
     }
 }
