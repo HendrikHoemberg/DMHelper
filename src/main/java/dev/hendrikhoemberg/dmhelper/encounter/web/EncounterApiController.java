@@ -164,8 +164,12 @@ public class EncounterApiController {
 
     @PostMapping("/encounters/{id}/undo")
     public ResponseEntity<Void> undo(@PathVariable UUID id) {
-        service.undo(id);
-        return ResponseEntity.ok().build();
+        try {
+            service.undo(id);
+            return ResponseEntity.ok().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
     }
 
     @PutMapping("/combatants/{id}/hp")

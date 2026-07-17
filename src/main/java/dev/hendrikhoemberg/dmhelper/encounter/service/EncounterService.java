@@ -35,13 +35,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -52,6 +46,14 @@ public class EncounterService {
     private static final ObjectMapper JSON_MAPPER = JsonMapper.builder()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .build();
+
+    private static final Set<CombatLogEntry.EntryType> UNDO_BOUNDARIES = EnumSet.of(
+            CombatLogEntry.EntryType.ENCOUNTER_ACTIVATED,
+            CombatLogEntry.EntryType.ENCOUNTER_ENDED,
+            CombatLogEntry.EntryType.SESSION_END,
+            CombatLogEntry.EntryType.WAVE_SPAWNED,
+            CombatLogEntry.EntryType.REWARD_APPLIED
+    );
 
     private final EncounterRepository encounterRepo;
     private final CampaignRepository campaignRepo;
@@ -1242,6 +1244,9 @@ public class EncounterService {
         if (log.isEmpty()) return;
 
         CombatLogEntry lastEntry = log.get(log.size() - 1);
+        if (UNDO_BOUNDARIES.contains(lastEntry.getType())) {
+            throw new IllegalStateException("Cannot undo past a session boundary: " + lastEntry.getType());
+        }
             Encounter encounter = findEntityById(encounterId);
 
         Map<UUID, Combatant> combatants = combatantRepo

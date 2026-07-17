@@ -671,4 +671,24 @@ class EncounterServiceTest {
         assertThat(turn2.activeTurnIndex()).isEqualTo(0);
         assertThat(turn2.round()).isEqualTo(2);
     }
+
+    @Test
+    void cannotUndoEncounterActivated() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        service.activate(enc.id());
+        assertThatThrownBy(() -> service.undo(enc.id()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("boundary");
+    }
+
+    @Test
+    void canUndoDamageAfterActivate() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        CombatantDto goblin = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Goblin", 10, "MONSTER", null, null, null));
+        service.activate(enc.id());
+        service.applyDamage(goblin.id(), 2);
+        service.undo(enc.id());
+        assertThat(service.getCombatant(goblin.id()).currentHp()).isEqualTo(10);
+    }
 }
