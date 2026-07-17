@@ -99,7 +99,7 @@
     {
       "id": "agent.sdk",
       "name": "Agent SDK",
-      "status": "PARTIAL",
+      "status": "SUPPORTED",
       "notes": "Capability manifest API, validation error catalog; remaining agent endpoints deferred"
     },
     {

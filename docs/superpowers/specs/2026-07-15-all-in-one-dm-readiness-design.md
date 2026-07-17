@@ -998,7 +998,7 @@ Recommended sequence:
 | 7 | Custom compendium expansion | `IMPLEMENTED` |
 | 8 | Character-sheet completion | `IMPLEMENTED` |
 | 9 | Encounter and map depth | `IMPLEMENTED` |
-| 10 | Documentation/agent SDK release | `PLANNED` |
+| 10 | Documentation/agent SDK release | `IMPLEMENTED` |
 | 11 | P3 expansion | `PLANNED` |
 
 Each item receives a separate design, implementation plan, migration analysis, and verification
