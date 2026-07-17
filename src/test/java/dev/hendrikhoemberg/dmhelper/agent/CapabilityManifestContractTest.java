@@ -64,4 +64,15 @@ class CapabilityManifestContractTest {
                     .isTrue();
         }
     }
+
+    @Test
+    void flagshipFixturesIncludeMasterSpecSection212Trio() {
+        // Master design §21.2: minimal, feature-complete, published-adventure-shaped
+        var fixtures = service.capabilities().flagshipFixtures();
+        assertThat(fixtures).contains(
+                "classpath:campaigns/v2/minimal.dmcampaign.json",
+                "classpath:campaigns/v2/feature-complete.dmcampaign/manifest.json",
+                "classpath:campaigns/v2/published-adventure-shaped.dmcampaign/manifest.json"
+        );
+    }
 }

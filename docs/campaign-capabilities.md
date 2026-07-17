@@ -28,7 +28,7 @@
 | Named map regions with keys | `SUPPORTED` | Scene/encounter placement |
 | DM/player map layer split (shared tokens) | `SUPPORTED` | playerVisible flags |
 | Authoritative 2024 encounter difficulty | `PARTIAL` | Still labeled estimate |
-| Agent SDK | `SUPPORTED` | Capability manifest API, validation error catalog; remaining agent endpoints deferred |
+| Agent SDK | `SUPPORTED` | PIN-free capability manifest, validation error catalog, typed catalog snapshot, schemas, conversion playbook, and executable documentation examples |
 | World graph | `UNSUPPORTED` | P3 - Deferred |
 | Travel weather | `UNSUPPORTED` | P3 - Deferred |
 | Player interaction | `UNSUPPORTED` | P3 - Deferred |

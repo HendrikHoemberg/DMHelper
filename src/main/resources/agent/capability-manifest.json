@@ -100,7 +100,8 @@
       "id": "agent.sdk",
       "name": "Agent SDK",
       "status": "SUPPORTED",
-      "notes": "Capability manifest API, validation error catalog; remaining agent endpoints deferred"
+      "deliveryItem": 10,
+      "notes": "PIN-free capability manifest, validation error catalog, typed catalog snapshot, schemas, conversion playbook, and executable documentation examples"
     },
     {
       "id": "world.graph",
@@ -145,8 +146,10 @@
     "SOURCE_ANNOTATION"
   ],
   "flagshipFixtures": [
-    "classpath:campaigns/v2/current-surface.dmcampaign/manifest.json",
+    "classpath:campaigns/v2/minimal.dmcampaign.json",
     "classpath:campaigns/v2/feature-complete.dmcampaign/manifest.json",
-    "classpath:campaigns/v2/structured-adventure-quest.dmcampaign/manifest.json"
+    "classpath:campaigns/v2/published-adventure-shaped.dmcampaign/manifest.json",
+    "classpath:campaigns/v2/structured-adventure-quest.dmcampaign/manifest.json",
+    "classpath:campaigns/v2/current-surface.dmcampaign/manifest.json"
   ]
 }
