@@ -47,6 +47,11 @@ public class CampaignManifestAssembler {
     private List<DiceRollDto> diceRolls;
     private List<CampaignManifestV2.QuestDto> quests;
     private List<CampaignManifestV2.SourceAnnotationDto> annotations;
+    private List<CampaignManifestV2.WorldNpcDto> worldNpcs;
+    private List<CampaignManifestV2.WorldLocationDto> worldLocations;
+    private List<CampaignManifestV2.FactionDto> factions;
+    private List<CampaignManifestV2.WorldRelationshipDto> worldRelationships;
+    private List<CampaignManifestV2.FactionClockDto> factionClocks;
     private boolean built;
 
     public void campaign(CampaignDto value) {
@@ -179,6 +184,36 @@ public class CampaignManifestAssembler {
         annotations = value == null ? List.of() : List.copyOf(value);
     }
 
+    public CampaignManifestAssembler worldNpcs(List<CampaignManifestV2.WorldNpcDto> value) {
+        checkNotAlreadySet("worldNpcs", worldNpcs);
+        this.worldNpcs = List.copyOf(value);
+        return this;
+    }
+
+    public CampaignManifestAssembler worldLocations(List<CampaignManifestV2.WorldLocationDto> value) {
+        checkNotAlreadySet("worldLocations", worldLocations);
+        this.worldLocations = List.copyOf(value);
+        return this;
+    }
+
+    public CampaignManifestAssembler factions(List<CampaignManifestV2.FactionDto> value) {
+        checkNotAlreadySet("factions", factions);
+        this.factions = List.copyOf(value);
+        return this;
+    }
+
+    public CampaignManifestAssembler worldRelationships(List<CampaignManifestV2.WorldRelationshipDto> value) {
+        checkNotAlreadySet("worldRelationships", worldRelationships);
+        this.worldRelationships = List.copyOf(value);
+        return this;
+    }
+
+    public CampaignManifestAssembler factionClocks(List<CampaignManifestV2.FactionClockDto> value) {
+        checkNotAlreadySet("factionClocks", factionClocks);
+        this.factionClocks = List.copyOf(value);
+        return this;
+    }
+
     public CampaignManifestV2 build(CampaignManifestV2.Metadata metadata) {
         if (built) {
             throw new IllegalStateException("Manifest already built");
@@ -235,7 +270,12 @@ public class CampaignManifestAssembler {
                 session,
                 diceRolls,
                 quests == null ? List.of() : quests,
-                annotations == null ? List.of() : annotations
+                annotations == null ? List.of() : annotations,
+                worldNpcs != null ? worldNpcs : List.of(),
+                worldLocations != null ? worldLocations : List.of(),
+                factions != null ? factions : List.of(),
+                worldRelationships != null ? worldRelationships : List.of(),
+                factionClocks != null ? factionClocks : List.of()
         );
     }
 

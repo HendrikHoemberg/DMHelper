@@ -313,7 +313,7 @@ class EncounterSectionAdapterTest {
                 null, null, null, null, null, null, null, null, null,
                 null, null,
                 List.of(encounterDto),
-                null, null, null, null, null, null, null, null, List.of(), List.of());
+                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var encounter = invocation.getArgument(0, Encounter.class);
@@ -358,7 +358,7 @@ class EncounterSectionAdapterTest {
                 null, null, null, null, null, null, null, null, null,
                 null, null,
                 List.of(encounterDto),
-                null, null, null, null, null, null, null, null, List.of(), List.of());
+                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var encounter = invocation.getArgument(0, Encounter.class);

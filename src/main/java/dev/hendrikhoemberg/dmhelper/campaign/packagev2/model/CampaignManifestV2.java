@@ -43,8 +43,20 @@ public record CampaignManifestV2(
         SessionDto session,
         List<DiceRollDto> diceRolls,
         List<QuestDto> quests,
-        List<SourceAnnotationDto> annotations
+        List<SourceAnnotationDto> annotations,
+        List<WorldNpcDto> worldNpcs,
+        List<WorldLocationDto> worldLocations,
+        List<FactionDto> factions,
+        List<WorldRelationshipDto> worldRelationships,
+        List<FactionClockDto> factionClocks
 ) {
+    public CampaignManifestV2 {
+        if (worldNpcs == null) worldNpcs = List.of();
+        if (worldLocations == null) worldLocations = List.of();
+        if (factions == null) factions = List.of();
+        if (worldRelationships == null) worldRelationships = List.of();
+        if (factionClocks == null) factionClocks = List.of();
+    }
     public static final int CURRENT_FORMAT_VERSION = 2;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -829,5 +841,87 @@ public record CampaignManifestV2(
             String prerequisite,
             String benefit,
             ProvenanceDto provenance
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record WorldNpcDto(
+            String key,
+            String name,
+            String role,
+            String disposition,
+            ContentReference factionRef,
+            ContentReference locationRef,
+            ContentReference noteRef,
+            ContentReference statblockRef,
+            String appearance,
+            String voice,
+            String motivation,
+            String secret,
+            String inventoryText,
+            String status,
+            List<String> tags,
+            String sourceLocator,
+            Instant createdAt
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record WorldLocationDto(
+            String key,
+            String name,
+            String kind,
+            ContentReference parentLocationRef,
+            ContentReference mapRef,
+            String mapRegionKey,
+            ContentReference noteRef,
+            String summary,
+            String services,
+            String secrets,
+            List<ContentReference> occupantNpcRefs,
+            List<ContentReference> encounterRefs,
+            List<ContentReference> travelLocationRefs,
+            List<String> tags,
+            String sourceLocator,
+            Instant createdAt
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record FactionDto(
+            String key,
+            String name,
+            String goals,
+            String resources,
+            String reputationNotes,
+            ContentReference noteRef,
+            List<String> tags,
+            String sourceLocator,
+            Instant createdAt
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record WorldRelationshipDto(
+            String key,
+            String kind,
+            ContentReference fromRef,
+            ContentReference toRef,
+            boolean directed,
+            String knowledge,
+            String status,
+            String notes,
+            String sourceLocator,
+            int sortOrder
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record FactionClockDto(
+            String key,
+            ContentReference factionRef,
+            String title,
+            int segments,
+            int filled,
+            ContentReference objectiveRef,
+            ContentReference sceneRef,
+            String notes,
+            String sourceLocator,
+            int sortOrder
     ) {}
 }

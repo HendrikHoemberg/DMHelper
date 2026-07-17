@@ -202,7 +202,7 @@ class TreasurySectionAdapterTest {
                                 "armor", null, null,
                                 ContentReference.catalogRef(CampaignContentType.EQUIPMENT_ITEM, "SRD_5_2", "srd-2024_chain-mail"),
                                 null, 1, false, "CARRIED")),
-                null, null, null, null, null, List.of(), List.of());
+                null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         var context = new CampaignImportContext(
                 campaignId, new CampaignSectionAdapterTest.FakeKeyService(),
                 new PendingCampaignImport(UUID.randomUUID(), null, null, null));

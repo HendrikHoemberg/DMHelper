@@ -34,7 +34,12 @@
     "session": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/session" }] },
     "diceRolls": { "type": "array", "items": { "$ref": "#/$defs/diceRoll" } },
     "quests": { "type": "array", "items": { "$ref": "#/$defs/quest" } },
-    "annotations": { "type": "array", "items": { "$ref": "#/$defs/sourceAnnotation" } }
+    "annotations": { "type": "array", "items": { "$ref": "#/$defs/sourceAnnotation" } },
+    "worldNpcs": { "type": "array", "items": { "$ref": "#/$defs/worldNpc" } },
+    "worldLocations": { "type": "array", "items": { "$ref": "#/$defs/worldLocation" } },
+    "factions": { "type": "array", "items": { "$ref": "#/$defs/faction" } },
+    "worldRelationships": { "type": "array", "items": { "$ref": "#/$defs/worldRelationship" } },
+    "factionClocks": { "type": "array", "items": { "$ref": "#/$defs/factionClock" } }
   },
   "$defs": {
     "key": {
@@ -82,7 +87,8 @@
         "STATBLOCK", "SPELL", "CONDITION", "RULE", "EQUIPMENT_ITEM", "MAGIC_ITEM",
         "CLASS", "SPECIES", "BACKGROUND", "FEAT",
         "DICE_ROLL",
-        "TRANSITION", "QUEST", "OBJECTIVE", "SOURCE_ANNOTATION", "SESSION_OBJECTIVE_CHANGE"
+        "TRANSITION", "QUEST", "OBJECTIVE", "SOURCE_ANNOTATION", "SESSION_OBJECTIVE_CHANGE",
+        "WORLD_NPC", "WORLD_LOCATION", "FACTION", "WORLD_RELATIONSHIP", "FACTION_CLOCK"
       ]
     },
     "metadata": {
@@ -1072,6 +1078,103 @@
         "targetRef": { "$ref": "#/$defs/contentReference" },
         "displayText": { "type": "string" },
         "resolved": { "type": "boolean" }
+      }
+    },
+    "worldNpc": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "createdAt"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "disposition": { "type": "string", "enum": ["HOSTILE", "UNFRIENDLY", "NEUTRAL", "FRIENDLY", "ALLY", "UNKNOWN"] },
+        "factionRef": { "$ref": "#/$defs/contentReference" },
+        "locationRef": { "$ref": "#/$defs/contentReference" },
+        "noteRef": { "$ref": "#/$defs/contentReference" },
+        "statblockRef": { "$ref": "#/$defs/contentReference" },
+        "appearance": { "type": "string" },
+        "voice": { "type": "string" },
+        "motivation": { "type": "string" },
+        "secret": { "type": "string" },
+        "inventoryText": { "type": "string" },
+        "status": { "type": "string", "enum": ["ALIVE", "DEAD", "MISSING", "UNKNOWN"] },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "sourceLocator": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "worldLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "kind", "createdAt"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "name": { "type": "string" },
+        "kind": { "type": "string", "enum": ["SETTLEMENT", "LANDMARK", "DUNGEON", "REGION", "OTHER"] },
+        "parentLocationRef": { "$ref": "#/$defs/contentReference" },
+        "mapRef": { "$ref": "#/$defs/contentReference" },
+        "mapRegionKey": { "type": "string" },
+        "noteRef": { "$ref": "#/$defs/contentReference" },
+        "summary": { "type": "string" },
+        "services": { "type": "string" },
+        "secrets": { "type": "string" },
+        "occupantNpcRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
+        "encounterRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
+        "travelLocationRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "sourceLocator": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "faction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "createdAt"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "name": { "type": "string" },
+        "goals": { "type": "string" },
+        "resources": { "type": "string" },
+        "reputationNotes": { "type": "string" },
+        "noteRef": { "$ref": "#/$defs/contentReference" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "sourceLocator": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "worldRelationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "kind", "fromRef", "toRef"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "kind": { "type": "string", "enum": ["MEMBER_OF", "ALLY", "ENEMY", "CONTACT", "RIVAL", "SUBORDINATE", "SUPERIOR", "RELATED", "OTHER"] },
+        "fromRef": { "$ref": "#/$defs/contentReference" },
+        "toRef": { "$ref": "#/$defs/contentReference" },
+        "directed": { "type": "boolean" },
+        "knowledge": { "type": "string", "enum": ["PUBLIC", "KNOWN", "SECRET", "UNKNOWN"] },
+        "status": { "type": "string", "enum": ["ACTIVE", "DORMANT", "BROKEN", "UNKNOWN"] },
+        "notes": { "type": "string" },
+        "sourceLocator": { "type": "string" },
+        "sortOrder": { "type": "integer" }
+      }
+    },
+    "factionClock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "title", "segments"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "factionRef": { "$ref": "#/$defs/contentReference" },
+        "title": { "type": "string" },
+        "segments": { "type": "integer", "minimum": 1 },
+        "filled": { "type": "integer", "minimum": 0 },
+        "objectiveRef": { "$ref": "#/$defs/contentReference" },
+        "sceneRef": { "$ref": "#/$defs/contentReference" },
+        "notes": { "type": "string" },
+        "sourceLocator": { "type": "string" },
+        "sortOrder": { "type": "integer" }
       }
     }
   }

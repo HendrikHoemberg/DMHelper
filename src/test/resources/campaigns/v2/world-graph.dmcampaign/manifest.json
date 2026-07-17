@@ -1,0 +1,95 @@
+{
+  "formatVersion": 2,
+  "metadata": {
+    "packageKey": "world-graph-campaign",
+    "createdAt": "2026-01-01T00:00:00Z",
+    "generator": "DMHelper",
+    "catalogVersion": "2026.1",
+    "catalogSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "exclusions": []
+  },
+  "campaign": {
+    "key": "world-graph-campaign",
+    "name": "World Graph Campaign",
+    "description": "A v2 fixture exercising world graph entity types",
+    "createdAt": "2026-01-01T00:00:00Z",
+    "settings": {
+      "levelingMode": "XP",
+      "calendar": {
+        "monthLengths": [31,28,31,30,31,30,31,31,30,31,30,31],
+        "monthNames": ["January","February","March","April","May","June","July","August","September","October","November","December"],
+        "weekdayNames": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+      },
+      "currentDate": { "year": 1492, "month": 0, "day": 1 }
+    }
+  },
+  "assets": [],
+  "party": [],
+  "customStatBlocks": [],
+  "handouts": [],
+  "maps": [],
+  "encounters": [],
+  "notes": [],
+  "quickNotes": [],
+  "assignments": [],
+  "ledgerEntries": [],
+  "timelineEvents": [],
+  "adventures": [],
+  "session": null,
+  "diceRolls": [],
+  "worldNpcs": [{
+    "key": "npc-mira",
+    "name": "Mira",
+    "role": "Harbor contact",
+    "disposition": "FRIENDLY",
+    "factionRef": { "scope": "PACKAGE", "type": "FACTION", "key": "faction-iron-ring" },
+    "locationRef": { "scope": "PACKAGE", "type": "WORLD_LOCATION", "key": "loc-harbor" },
+    "status": "ALIVE",
+    "secret": "Works for the Ring",
+    "tags": ["contact"],
+    "createdAt": "2026-01-01T00:00:00Z"
+  }],
+  "worldLocations": [{
+    "key": "loc-harbor",
+    "name": "Salt Harbor",
+    "kind": "SETTLEMENT",
+    "summary": "Busy docks",
+    "secrets": "Smuggler tunnels",
+    "travelLocationRefs": [],
+    "encounterRefs": [],
+    "createdAt": "2026-01-01T00:00:00Z"
+  }],
+  "factions": [{
+    "key": "faction-iron-ring",
+    "name": "Iron Ring",
+    "goals": "Control docks",
+    "createdAt": "2026-01-01T00:00:00Z"
+  }],
+  "worldRelationships": [{
+    "key": "rel-mira-ring",
+    "kind": "MEMBER_OF",
+    "fromRef": { "scope": "PACKAGE", "type": "WORLD_NPC", "key": "npc-mira" },
+    "toRef": { "scope": "PACKAGE", "type": "FACTION", "key": "faction-iron-ring" },
+    "directed": true,
+    "knowledge": "PUBLIC",
+    "status": "ACTIVE",
+    "sortOrder": 0
+  }],
+  "factionClocks": [{
+    "key": "clock-ring-influence",
+    "factionRef": { "scope": "PACKAGE", "type": "FACTION", "key": "faction-iron-ring" },
+    "title": "Dock control",
+    "segments": 6,
+    "filled": 2,
+    "sortOrder": 0
+  }],
+  "customSpells": [],
+  "customConditions": [],
+  "customRules": [],
+  "customEquipment": [],
+  "customMagicItems": [],
+  "customClasses": [],
+  "customSpecies": [],
+  "customBackgrounds": [],
+  "customFeats": []
+}
