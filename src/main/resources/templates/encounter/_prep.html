@@ -1,0 +1,38 @@
+<div th:fragment="prep(campaignId, encounter, prep)">
+    <h3>Preparation Notes</h3>
+    <form th:attr="hx-put=@{/api/v1/encounters/{eid}/prep(eid=${encounter.id})}"
+          hx-sync="closest form:replace"
+          hx-vals='js:JSON.stringify(Object.fromEntries(new FormData(this)))'
+          hx-target="body"
+          hx-swap="outerHTML">
+        <div class="form-group">
+            <label for="prep-tactics">Tactics</label>
+            <textarea id="prep-tactics" name="tactics" rows="2" th:text="${prep.tactics}"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="prep-morale">Morale</label>
+            <input id="prep-morale" type="text" name="morale" th:value="${prep.morale}">
+        </div>
+        <div class="form-group">
+            <label for="prep-surrender">Surrender / Captured</label>
+            <input id="prep-surrender" type="text" name="surrender" th:value="${prep.surrender}">
+        </div>
+        <div class="form-group">
+            <label for="prep-environment">Environment</label>
+            <textarea id="prep-environment" name="environment" rows="2" th:text="${prep.environment}"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="prep-source-locator">Source Locator</label>
+            <input id="prep-source-locator" type="text" name="sourceLocator" th:value="${prep.sourceLocator}">
+        </div>
+        <div class="form-group">
+            <label for="prep-scaling-notes">Scaling Notes</label>
+            <input id="prep-scaling-notes" type="text" name="scalingNotes" th:value="${prep.scalingNotes}">
+        </div>
+        <div class="form-group">
+            <label for="prep-scene-key">Scene Key</label>
+            <input id="prep-scene-key" type="text" name="sceneKey" th:value="${prep.sceneKey}">
+        </div>
+        <button type="submit" class="btn btn-sm btn-primary">Save Prep Notes</button>
+    </form>
+</div>

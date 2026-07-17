@@ -1,5 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.encounter.web;
 
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPrep;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterRewards;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantDto;
@@ -7,6 +9,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.Combatant
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.EncounterDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.UpdateRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.WaveDto;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import org.junit.jupiter.api.Test;
@@ -133,6 +136,10 @@ class EncounterControllerTest {
                                 "2014 Medium thresholds stand in for 2024 Moderate thresholds.",
                                 "High begins at twice the proxy Moderate threshold.",
                                 "Monster XP uses stored XP, then the CR table, then a 200 XP fallback.")));
+
+        when(encounterService.listWaves(encId)).thenReturn(List.of());
+        when(encounterService.getPrep(encId)).thenReturn(EncounterPrep.empty());
+        when(encounterService.getRewards(encId)).thenReturn(EncounterRewards.empty());
 
         mockMvc.perform(get("/campaigns/{campaignId}/encounters/{id}", campaignId, encId))
                 .andExpect(status().isOk())

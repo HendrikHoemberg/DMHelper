@@ -1,0 +1,91 @@
+<div th:fragment="library-add(campaignId, encounterId)"
+     x-data="libraryAdd"
+     data-encounter-id="${encounterId}">
+    <h3>Add from Library</h3>
+    <div class="library-add-search u-flex u-gap-sm">
+        <input type="text" x-model="query" @input.debounce.300ms="search"
+               placeholder="Search creatures by name..." class="u-flex-1">
+        <input type="number" x-model="quantity" min="1" max="50" value="1"
+               class="u-w-sm" title="Quantity">
+        <input type="text" x-model="groupName" placeholder="Group name (optional)" class="u-flex-1">
+        <select x-model="waveId" class="u-w-sm">
+            <option value="">Main wave</option>
+            <option th:each="w : ${waves}" th:value="${w.id}" th:text="${w.name}">Wave</option>
+        </select>
+    </div>
+    <div class="library-add-results u-mt-sm">
+        <template x-if="results.length">
+            <div class="library-results">
+                <div x-show="results.length" class="card-grid u-mt-sm">
+                    <div x-data="{adding: false}"
+                         x-on:add-statblock.window="if ($event.detail.id !== statblock.id) return; adding = true"
+                         @added="adding = false"
+                         th:each="sb : ${results}"
+                         class="card">
+                        <div class="card-body">
+                            <h4 x-text="sb.name" class="card-title">Name</h4>
+                            <p class="text-muted u-text-sm"><span x-text="sb.cr"></span> CR · <span x-text="sb.type"></span> · HP <span x-text="sb.hp"></span> · AC <span x-text="sb.ac"></span> · <span x-text="sb.xp"></span> XP</p>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-sm btn-primary" @click="addFromLibrary(sb.id)"
+                                    x-text="adding ? 'Adding...' : 'Add'"
+                                    :disabled="adding">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+        <p x-show="query.length >= 2 && !results.length" class="text-muted u-text-sm">No results found.</p>
+    </div>
+</div>
+<script th:inline="javascript">
+document.addEventListener('alpine:init', () => {
+    Alpine.data('libraryAdd', () => ({
+        query: '',
+        quantity: 1,
+        groupName: '',
+        waveId: '',
+        results: [],
+        encounterId: document.querySelector('[data-encounter-id]')?.dataset?.encounterId,
+
+        async search() {
+            if (this.query.length < 2) { this.results = []; return; }
+            try {
+                const resp = await window.dmRequest(
+                    `/api/v1/library/statblocks/search?q=${encodeURIComponent(this.query)}`);
+                this.results = await resp.json();
+            } catch (e) {
+                window.reportActionFailure('Search failed', e, () => this.search());
+            }
+        },
+
+        async addFromLibrary(statblockId) {
+            try {
+                const body = JSON.stringify({
+                    statBlockId: statblockId,
+                    quantity: this.quantity,
+                    groupName: this.groupName || null,
+                    waveId: this.waveId || null,
+                    startX: null,
+                    startY: null,
+                    placementRegionKey: null
+                });
+                const resp = await window.dmRequest(
+                    `/api/v1/encounters/${this.encounterId}/combatants/from-library`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body
+                    });
+                const created = await resp.json();
+                window.showToast(`Added ${created.length} combatant(s)`, 'success');
+                window.location.reload();
+            } catch (e) {
+                window.reportActionFailure('Failed to add combatants', e,
+                    () => this.addFromLibrary(statblockId));
+            }
+        }
+    }));
+});
+</script>
+</div>

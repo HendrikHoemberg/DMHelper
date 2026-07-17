@@ -1,0 +1,22 @@
+<div th:fragment="rewards(campaignId, encounter, rewards)">
+    <h3>Rewards</h3>
+    <form th:attr="hx-put=@{/api/v1/encounters/{eid}/rewards(eid=${encounter.id})}"
+          hx-sync="closest form:replace"
+          hx-vals='js:JSON.stringify(Object.fromEntries(new FormData(this)))'
+          hx-target="body"
+          hx-swap="outerHTML">
+        <div class="form-group">
+            <label for="rewards-xp-total">Total XP</label>
+            <input id="rewards-xp-total" type="number" name="xpTotal" th:value="${rewards.xpTotal}" placeholder="e.g. 450">
+        </div>
+        <div class="form-group">
+            <label for="rewards-xp-per-pc">XP per PC (overrides total split)</label>
+            <input id="rewards-xp-per-pc" type="number" name="xpPerPc" th:value="${rewards.xpPerPc}">
+        </div>
+        <div class="form-group">
+            <label for="rewards-notes">Notes</label>
+            <textarea id="rewards-notes" name="notes" rows="2" th:text="${rewards.notes}"></textarea>
+        </div>
+        <button type="submit" class="btn btn-sm btn-primary">Save Rewards</button>
+    </form>
+</div>

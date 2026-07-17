@@ -1,0 +1,72 @@
+<div th:fragment="summary-modal(campaignId, encounter)"
+     x-data="endEncounterModal">
+    <template x-if="showModal">
+        <div class="modal-overlay" @click.self="showModal = false">
+            <div class="modal-content">
+                <h2>Encounter Complete</h2>
+                <div class="summary-stats">
+                    <p><strong th:text="${encounter.name}">Name</strong></p>
+                    <p>Rounds: <span x-text="summary.rounds"></span></p>
+                    <p>Defeated: <span x-text="summary.defeatedCount"></span></p>
+                    <p>Damage dealt: <span x-text="summary.totalDamageDealt"></span></p>
+                    <p>Waves spawned: <span x-text="summary.wavesSpawned.join(', ')"></span></p>
+                    <p x-show="summary.casualtyNames.length">Casualties: <span x-text="summary.casualtyNames.join(', ')"></span></p>
+                    <p>Reward XP: <span x-text="summary.rewardsDraft?.xpTotal || 0"></span></p>
+                </div>
+                <div class="modal-actions u-flex u-gap-sm u-mt-md">
+                    <button class="btn btn-primary" @click="confirmRewards">Confirm Rewards</button>
+                    <button class="btn btn-ghost" @click="showModal = false">Skip</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script th:inline="javascript">
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('endEncounterModal', () => ({
+            showModal: false,
+            summary: {
+                rounds: 0,
+                defeatedCount: 0,
+                totalDamageDealt: 0,
+                wavesSpawned: [],
+                casualtyNames: [],
+                rewardsDraft: null
+            },
+
+            async show(encounterId) {
+                try {
+                    const resp = await window.dmRequest(
+                        `/api/v1/encounters/${encounterId}/end-with-summary`, {
+                            method: 'POST'
+                        });
+                    const result = await resp.json();
+                    this.summary = result.summary;
+                    this.showModal = true;
+                } catch (e) {
+                    window.reportActionFailure('Failed to end encounter', e,
+                        () => this.show(encounterId));
+                }
+            },
+
+            async confirmRewards() {
+                try {
+                    const body = JSON.stringify({ awardXp: true, partyMemberIds: [] });
+                    await window.dmRequest(
+                        `/api/v1/encounters/${/*[[${encounter.id}]]*/''}/rewards/apply`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body
+                        });
+                    window.showToast('Rewards confirmed', 'success');
+                    this.showModal = false;
+                    window.location.reload();
+                } catch (e) {
+                    window.reportActionFailure('Failed to apply rewards', e,
+                        () => this.confirmRewards());
+                }
+            }
+        }));
+    });
+    </script>
+</div>

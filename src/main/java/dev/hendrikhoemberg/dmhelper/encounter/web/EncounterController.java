@@ -116,6 +116,9 @@ public class EncounterController {
         model.addAttribute("combatants", encounterService.getCombatants(id));
         model.addAttribute("difficulty", encounterService.calculateDifficulty(campaignId, id));
         model.addAttribute("campaignId", campaignId);
+        model.addAttribute("waves", encounterService.listWaves(id));
+        model.addAttribute("prep", encounterService.getPrep(id));
+        model.addAttribute("rewards", encounterService.getRewards(id));
         return "encounter/detail";
     }
 }

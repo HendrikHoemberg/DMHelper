@@ -143,6 +143,26 @@
                         <p th:text="${encounter.lairActionDescription}">Description</p>
                     </div>
                 </th:block>
+
+                <hr class="u-my-lg">
+
+                <div class="u-mb-lg" th:replace="~{encounter/_library-add :: library-add(${campaignId}, ${encounter.id})}"></div>
+
+                <hr class="u-my-lg">
+
+                <div class="u-mb-lg" th:replace="~{encounter/_waves :: waves(${campaignId}, ${encounter})}"></div>
+
+                <hr class="u-my-lg">
+
+                <div class="u-mb-lg" th:replace="~{encounter/_prep :: prep(${campaignId}, ${encounter}, ${prep})}"></div>
+
+                <hr class="u-my-lg">
+
+                <div class="u-mb-lg" th:replace="~{encounter/_rewards :: rewards(${campaignId}, ${encounter}, ${rewards})}"></div>
+
+                <hr class="u-my-lg">
+
+                <div class="u-mb-lg" th:replace="~{encounter/_summary-modal :: summary-modal(${campaignId}, ${encounter})}"></div>
             </div>
 
             <div class="u-mt-lg">
