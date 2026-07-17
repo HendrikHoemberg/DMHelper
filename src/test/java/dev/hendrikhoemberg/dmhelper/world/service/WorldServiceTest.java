@@ -4,6 +4,9 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
+import dev.hendrikhoemberg.dmhelper.notes.data.Note;
+import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
+import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
 import dev.hendrikhoemberg.dmhelper.world.data.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +31,9 @@ class WorldServiceTest {
 
     @Autowired
     private CampaignPackageKeyService packageKeys;
+
+    @Autowired
+    private NoteRepository noteRepository;
 
     private WorldService.NpcCommand minimalNpc(String name) {
         return new WorldService.NpcCommand(name, null, null, null, null, null, null,
@@ -228,5 +234,176 @@ class WorldServiceTest {
         worldService.createNpc(c.getId(), minimalNpc("B"));
         worldService.createNpc(c.getId(), minimalNpc("C"));
         assertThat(worldService.getNpcs(c.getId())).hasSize(3);
+    }
+
+    @Test
+    void updatesLocation() {
+        Campaign c = campaignService.create("LocUpd", null);
+        WorldLocation loc = worldService.createLocation(c.getId(), new WorldService.LocationCommand(
+                "Old Town", LocationKind.SETTLEMENT, null, null, null, null, null, null, null,
+                List.of(), List.of(), null, null));
+        WorldLocation updated = worldService.updateLocation(c.getId(), loc.getId(),
+                new WorldService.LocationCommand("New City", LocationKind.SETTLEMENT, null, null, null,
+                        null, null, null, null, List.of(), List.of(), null, null));
+        assertThat(updated.getName()).isEqualTo("New City");
+        assertThat(updated.getKind()).isEqualTo(LocationKind.SETTLEMENT);
+    }
+
+    @Test
+    void getLocationAndLocations() {
+        Campaign c = campaignService.create("GetLoc", null);
+        WorldLocation loc = worldService.createLocation(c.getId(), new WorldService.LocationCommand(
+                "Capital", LocationKind.SETTLEMENT, null, null, null, null, null, null, null,
+                List.of(), List.of(), null, null));
+        WorldLocation found = worldService.getLocation(c.getId(), loc.getId());
+        assertThat(found.getId()).isEqualTo(loc.getId());
+        assertThat(found.getName()).isEqualTo("Capital");
+        List<WorldLocation> all = worldService.getLocations(c.getId());
+        assertThat(all).hasSize(1);
+    }
+
+    @Test
+    void updatesFaction() {
+        Campaign c = campaignService.create("FacUpd", null);
+        Faction faction = worldService.createFaction(c.getId(), new WorldService.FactionCommand(
+                "Old Guild", "get rich", "gold", "neutral", null, null, null));
+        Faction updated = worldService.updateFaction(c.getId(), faction.getId(),
+                new WorldService.FactionCommand("New Guild", "get richer", "platinum", "friendly",
+                        null, null, null));
+        assertThat(updated.getName()).isEqualTo("New Guild");
+        assertThat(updated.getGoals()).isEqualTo("get richer");
+        assertThat(updated.getResources()).isEqualTo("platinum");
+    }
+
+    @Test
+    void getFactionAndFactions() {
+        Campaign c = campaignService.create("GetFac", null);
+        Faction faction = worldService.createFaction(c.getId(), new WorldService.FactionCommand(
+                "The Council", "rule", "votes", "neutral", null, null, null));
+        Faction found = worldService.getFaction(c.getId(), faction.getId());
+        assertThat(found.getId()).isEqualTo(faction.getId());
+        assertThat(found.getName()).isEqualTo("The Council");
+        List<Faction> all = worldService.getFactions(c.getId());
+        assertThat(all).hasSize(1);
+    }
+
+    @Test
+    void updatesRelationship() {
+        Campaign c = campaignService.create("RelUpd", null);
+        WorldNpc npc1 = worldService.createNpc(c.getId(), minimalNpc("Eve"));
+        WorldNpc npc2 = worldService.createNpc(c.getId(), minimalNpc("Frank"));
+        WorldRelationship rel = worldService.createRelationship(c.getId(), new WorldService.RelationshipCommand(
+                RelationshipKind.KNOWS, "WORLD_NPC", npc1.getId(), "WORLD_NPC", npc2.getId(),
+                true, RelationshipKnowledge.PUBLIC, RelationshipStatus.ACTIVE, null, null, 0));
+        WorldRelationship updated = worldService.updateRelationship(c.getId(), rel.getId(),
+                new WorldService.RelationshipCommand(RelationshipKind.ALLY, "WORLD_NPC", npc1.getId(),
+                        "WORLD_NPC", npc2.getId(), true, RelationshipKnowledge.SECRET,
+                        RelationshipStatus.ACTIVE, null, null, 1));
+        assertThat(updated.getKind()).isEqualTo(RelationshipKind.ALLY);
+        assertThat(updated.getKnowledge()).isEqualTo(RelationshipKnowledge.SECRET);
+        assertThat(updated.getSortOrder()).isEqualTo(1);
+    }
+
+    @Test
+    void rejectsSelfRelationshipOnUpdate() {
+        Campaign c = campaignService.create("SelfRelUpd", null);
+        WorldNpc npc1 = worldService.createNpc(c.getId(), minimalNpc("Grace"));
+        WorldNpc npc2 = worldService.createNpc(c.getId(), minimalNpc("Hank"));
+        WorldRelationship rel = worldService.createRelationship(c.getId(), new WorldService.RelationshipCommand(
+                RelationshipKind.KNOWS, "WORLD_NPC", npc1.getId(), "WORLD_NPC", npc2.getId(),
+                true, RelationshipKnowledge.PUBLIC, RelationshipStatus.ACTIVE, null, null, 0));
+        assertThatThrownBy(() -> worldService.updateRelationship(c.getId(), rel.getId(),
+                new WorldService.RelationshipCommand(RelationshipKind.KNOWS, "WORLD_NPC", npc1.getId(),
+                        "WORLD_NPC", npc1.getId(), true, RelationshipKnowledge.PUBLIC,
+                        RelationshipStatus.ACTIVE, null, null, 0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("self");
+    }
+
+    @Test
+    void getRelationshipsAndGetRelationship() {
+        Campaign c = campaignService.create("GetRels", null);
+        WorldNpc npc1 = worldService.createNpc(c.getId(), minimalNpc("Ivy"));
+        WorldNpc npc2 = worldService.createNpc(c.getId(), minimalNpc("Jack"));
+        WorldRelationship rel = worldService.createRelationship(c.getId(), new WorldService.RelationshipCommand(
+                RelationshipKind.KNOWS, "WORLD_NPC", npc1.getId(), "WORLD_NPC", npc2.getId(),
+                true, RelationshipKnowledge.PUBLIC, RelationshipStatus.ACTIVE, null, null, 0));
+        WorldRelationship found = worldService.getRelationship(c.getId(), rel.getId());
+        assertThat(found.getId()).isEqualTo(rel.getId());
+        assertThat(found.getKind()).isEqualTo(RelationshipKind.KNOWS);
+        List<WorldRelationship> all = worldService.getRelationships(c.getId());
+        assertThat(all).hasSize(1);
+    }
+
+    @Test
+    void updatesClock() {
+        Campaign c = campaignService.create("ClockUpd", null);
+        Faction faction = worldService.createFaction(c.getId(), new WorldService.FactionCommand(
+                "Upd Faction", null, null, null, null, null, null));
+        FactionClock clock = worldService.createClock(c.getId(), new WorldService.ClockCommand(
+                faction.getId(), "Old Title", 8, 2, null, null, null, null, 0));
+        FactionClock updated = worldService.updateClock(c.getId(), clock.getId(),
+                new WorldService.ClockCommand(faction.getId(), "New Title", 8, 5, null, null,
+                        null, null, 1));
+        assertThat(updated.getTitle()).isEqualTo("New Title");
+        assertThat(updated.getFilled()).isEqualTo(5);
+        assertThat(updated.getSortOrder()).isEqualTo(1);
+    }
+
+    @Test
+    void rejectsClockFilledOutOfRangeOnUpdate() {
+        Campaign c = campaignService.create("ClockUpdRange", null);
+        Faction faction = worldService.createFaction(c.getId(), new WorldService.FactionCommand(
+                "Range Faction Upd", null, null, null, null, null, null));
+        FactionClock clock = worldService.createClock(c.getId(), new WorldService.ClockCommand(
+                faction.getId(), "Test", 6, 2, null, null, null, null, 0));
+        assertThatThrownBy(() -> worldService.updateClock(c.getId(), clock.getId(),
+                new WorldService.ClockCommand(faction.getId(), "Bad", 6, 7, null, null,
+                        null, null, 0)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("filled");
+    }
+
+    @Test
+    void getClocksAndGetClock() {
+        Campaign c = campaignService.create("GetClocks", null);
+        Faction faction = worldService.createFaction(c.getId(), new WorldService.FactionCommand(
+                "Clock Faction Get", null, null, null, null, null, null));
+        FactionClock clock = worldService.createClock(c.getId(), new WorldService.ClockCommand(
+                faction.getId(), "Find Me", 4, 1, null, null, null, null, 0));
+        FactionClock found = worldService.getClock(c.getId(), clock.getId());
+        assertThat(found.getId()).isEqualTo(clock.getId());
+        assertThat(found.getTitle()).isEqualTo("Find Me");
+        List<FactionClock> all = worldService.getClocks(c.getId());
+        assertThat(all).hasSize(1);
+    }
+
+    @Test
+    void locationAppliesNoteId() {
+        Campaign c = campaignService.create("LocNote", null);
+        Note note = new Note();
+        note.setCampaign(c);
+        note.setType(NoteType.LOCATION);
+        note.setTitle("Location Note");
+        note = noteRepository.save(note);
+        WorldLocation loc = worldService.createLocation(c.getId(), new WorldService.LocationCommand(
+                "Noted Place", LocationKind.SITE, null, null, null, note.getId(), null, null, null,
+                List.of(), List.of(), null, null));
+        assertThat(loc.getNote()).isNotNull();
+        assertThat(loc.getNote().getId()).isEqualTo(note.getId());
+    }
+
+    @Test
+    void factionAppliesNoteId() {
+        Campaign c = campaignService.create("FacNote", null);
+        Note note = new Note();
+        note.setCampaign(c);
+        note.setType(NoteType.GENERIC);
+        note.setTitle("Faction Note");
+        note = noteRepository.save(note);
+        Faction faction = worldService.createFaction(c.getId(), new WorldService.FactionCommand(
+                "Noted Guild", null, null, null, note.getId(), null, null));
+        assertThat(faction.getNote()).isNotNull();
+        assertThat(faction.getNote().getId()).isEqualTo(note.getId());
     }
 }

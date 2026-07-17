@@ -8,4 +8,6 @@ import java.util.UUID;
 public interface WorldNpcRepository extends JpaRepository<WorldNpc, UUID> {
     List<WorldNpc> findByCampaignIdOrderByNameAscIdAsc(UUID campaignId);
     Optional<WorldNpc> findByIdAndCampaignId(UUID id, UUID campaignId);
+    List<WorldNpc> findByLocationId(UUID locationId);
+    List<WorldNpc> findByFactionId(UUID factionId);
 }

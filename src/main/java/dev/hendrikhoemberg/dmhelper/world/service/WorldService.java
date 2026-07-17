@@ -4,14 +4,21 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
+import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
+import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective;
 import dev.hendrikhoemberg.dmhelper.world.data.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -52,6 +59,9 @@ public class WorldService {
     private final CampaignPackageKeyService packageKeys;
     private final WorldLocationCycleValidator cycleValidator;
     private final WorldReferenceCleaner refCleaner;
+    private final NoteRepository noteRepository;
+    private final GameMapRepository gameMapRepository;
+    private final StatBlockRepository statBlockRepository;
 
     public WorldService(WorldNpcRepository npcRepository,
                         WorldLocationRepository locationRepository,
@@ -61,7 +71,10 @@ public class WorldService {
                         CampaignRepository campaignRepository,
                         CampaignPackageKeyService packageKeys,
                         WorldLocationCycleValidator cycleValidator,
-                        WorldReferenceCleaner refCleaner) {
+                        WorldReferenceCleaner refCleaner,
+                        NoteRepository noteRepository,
+                        GameMapRepository gameMapRepository,
+                        StatBlockRepository statBlockRepository) {
         this.npcRepository = npcRepository;
         this.locationRepository = locationRepository;
         this.factionRepository = factionRepository;
@@ -71,6 +84,9 @@ public class WorldService {
         this.packageKeys = packageKeys;
         this.cycleValidator = cycleValidator;
         this.refCleaner = refCleaner;
+        this.noteRepository = noteRepository;
+        this.gameMapRepository = gameMapRepository;
+        this.statBlockRepository = statBlockRepository;
     }
 
     // ---- NPC CRUD ----
@@ -79,6 +95,8 @@ public class WorldService {
         Campaign campaign = findCampaign(campaignId);
         validateFactionInCampaign(campaignId, cmd.factionId());
         validateLocationInCampaign(campaignId, cmd.locationId());
+        validateNoteInCampaign(campaignId, cmd.noteId());
+        validateStatblockInCampaign(campaignId, cmd.statblockId());
         WorldNpc npc = new WorldNpc();
         npc.setCampaign(campaign);
         applyNpcCommand(npc, cmd);
@@ -91,6 +109,8 @@ public class WorldService {
         WorldNpc npc = findNpcInCampaign(campaignId, npcId);
         validateFactionInCampaign(campaignId, cmd.factionId());
         validateLocationInCampaign(campaignId, cmd.locationId());
+        validateNoteInCampaign(campaignId, cmd.noteId());
+        validateStatblockInCampaign(campaignId, cmd.statblockId());
         applyNpcCommand(npc, cmd);
         return npcRepository.save(npc);
     }
@@ -207,12 +227,27 @@ public class WorldService {
         } else {
             location.setParentLocation(null);
         }
+        if (cmd.mapId() != null) {
+            GameMap m = new GameMap();
+            m.setId(cmd.mapId());
+            location.setMap(m);
+        } else {
+            location.setMap(null);
+        }
+        if (cmd.mapRegionKey() != null) location.setMapRegionKey(cmd.mapRegionKey());
+        if (cmd.noteId() != null) {
+            Note n = new Note();
+            n.setId(cmd.noteId());
+            location.setNote(n);
+        } else {
+            location.setNote(null);
+        }
         if (cmd.summary() != null) location.setSummary(cmd.summary());
         if (cmd.services() != null) location.setServices(cmd.services());
         if (cmd.secrets() != null) location.setSecrets(cmd.secrets());
         if (cmd.tags() != null) location.setTags(cmd.tags());
         if (cmd.sourceLocator() != null) location.setSourceLocator(cmd.sourceLocator());
-        if (cmd.mapRegionKey() != null) location.setMapRegionKey(cmd.mapRegionKey());
+        // TODO: handle encounterIds and travelLocationIds when the location UI is built
     }
 
     private WorldLocation findLocationInCampaign(UUID campaignId, UUID locationId) {
@@ -260,6 +295,13 @@ public class WorldService {
         if (cmd.goals() != null) faction.setGoals(cmd.goals());
         if (cmd.resources() != null) faction.setResources(cmd.resources());
         if (cmd.reputationNotes() != null) faction.setReputationNotes(cmd.reputationNotes());
+        if (cmd.noteId() != null) {
+            Note n = new Note();
+            n.setId(cmd.noteId());
+            faction.setNote(n);
+        } else {
+            faction.setNote(null);
+        }
         if (cmd.tags() != null) faction.setTags(cmd.tags());
         if (cmd.sourceLocator() != null) faction.setSourceLocator(cmd.sourceLocator());
     }
@@ -287,6 +329,9 @@ public class WorldService {
 
     public WorldRelationship updateRelationship(UUID campaignId, UUID relationshipId, RelationshipCommand cmd) {
         WorldRelationship relationship = findRelationshipInCampaign(campaignId, relationshipId);
+        if (cmd.fromType().equals(cmd.toType()) && cmd.fromId().equals(cmd.toId())) {
+            throw new IllegalArgumentException("Relationship cannot reference itself");
+        }
         applyRelationshipCommand(relationship, cmd);
         return relationshipRepository.save(relationship);
     }
@@ -295,6 +340,11 @@ public class WorldService {
         WorldRelationship relationship = findRelationshipInCampaign(campaignId, relationshipId);
         relationshipRepository.delete(relationship);
         packageKeys.deleteBindings(campaignId, CampaignContentType.WORLD_RELATIONSHIP, List.of(relationshipId));
+    }
+
+    @Transactional(readOnly = true)
+    public WorldRelationship getRelationship(UUID campaignId, UUID id) {
+        return findRelationshipInCampaign(campaignId, id);
     }
 
     @Transactional(readOnly = true)
@@ -350,6 +400,11 @@ public class WorldService {
     }
 
     @Transactional(readOnly = true)
+    public FactionClock getClock(UUID campaignId, UUID id) {
+        return findClockInCampaign(campaignId, id);
+    }
+
+    @Transactional(readOnly = true)
     public List<FactionClock> getClocks(UUID campaignId) {
         return clockRepository.findByCampaignIdOrderBySortOrderAscIdAsc(campaignId);
     }
@@ -364,6 +419,20 @@ public class WorldService {
         if (cmd.title() != null) clock.setTitle(cmd.title());
         clock.setSegments(cmd.segments());
         clock.setFilled(cmd.filled());
+        if (cmd.objectiveId() != null) {
+            QuestObjective o = new QuestObjective();
+            o.setId(cmd.objectiveId());
+            clock.setObjective(o);
+        } else {
+            clock.setObjective(null);
+        }
+        if (cmd.sceneId() != null) {
+            Scene s = new Scene();
+            s.setId(cmd.sceneId());
+            clock.setScene(s);
+        } else {
+            clock.setScene(null);
+        }
         if (cmd.notes() != null) clock.setNotes(cmd.notes());
         if (cmd.sourceLocator() != null) clock.setSourceLocator(cmd.sourceLocator());
         clock.setSortOrder(cmd.sortOrder());
@@ -392,6 +461,24 @@ public class WorldService {
         if (locationId == null) return;
         if (!locationRepository.findByIdAndCampaignId(locationId, campaignId).isPresent()) {
             throw new IllegalArgumentException("Location not found in campaign");
+        }
+    }
+
+    private void validateNoteInCampaign(UUID campaignId, UUID noteId) {
+        if (noteId == null) return;
+        if (noteRepository.findByIdAndCampaignId(noteId, campaignId).isEmpty()) {
+            throw new IllegalArgumentException("Note not found in campaign");
+        }
+    }
+
+    private void validateStatblockInCampaign(UUID campaignId, UUID statblockId) {
+        if (statblockId == null) return;
+        Optional<StatBlock> sb = statBlockRepository.findById(statblockId);
+        if (sb.isEmpty()) {
+            throw new IllegalArgumentException("StatBlock not found");
+        }
+        if (sb.get().getCampaign() != null && !sb.get().getCampaign().getId().equals(campaignId)) {
+            throw new IllegalArgumentException("StatBlock not found in campaign");
         }
     }
 }

@@ -24,11 +24,9 @@ public class WorldReferenceCleaner {
     }
 
     public void onLocationDelete(UUID campaignId, UUID locationId) {
-        List<WorldNpc> npcs = npcRepository.findByCampaignIdOrderByNameAscIdAsc(campaignId);
+        List<WorldNpc> npcs = npcRepository.findByLocationId(locationId);
         for (WorldNpc npc : npcs) {
-            if (npc.getLocation() != null && locationId.equals(npc.getLocation().getId())) {
-                npc.setLocation(null);
-            }
+            npc.setLocation(null);
         }
         if (!npcs.isEmpty()) {
             npcRepository.saveAll(npcs);
@@ -52,11 +50,9 @@ public class WorldReferenceCleaner {
             List<UUID> clockIds = clocks.stream().map(FactionClock::getId).toList();
             clockRepository.deleteAllById(clockIds);
         }
-        List<WorldNpc> npcs = npcRepository.findByCampaignIdOrderByNameAscIdAsc(campaignId);
+        List<WorldNpc> npcs = npcRepository.findByFactionId(factionId);
         for (WorldNpc npc : npcs) {
-            if (npc.getFaction() != null && factionId.equals(npc.getFaction().getId())) {
-                npc.setFaction(null);
-            }
+            npc.setFaction(null);
         }
         if (!npcs.isEmpty()) {
             npcRepository.saveAll(npcs);

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface NoteRepository extends JpaRepository<Note, UUID> {
@@ -26,4 +27,6 @@ public interface NoteRepository extends JpaRepository<Note, UUID> {
            "AND LOWER(n.title) = LOWER(:title)")
     List<Note> findByCampaignIdAndTitle(@Param("campaignId") UUID campaignId,
                                         @Param("title") String title);
+
+    Optional<Note> findByIdAndCampaignId(UUID id, UUID campaignId);
 }
