@@ -85,11 +85,46 @@ class FlywayMigrationTest {
     }
 
     @Test
-    void v7IsTheLatestMigration() {
-        Integer appliedV7 = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '7' AND \"success\" = TRUE",
+    void v8AddsCharacterSheetColumns() {
+        Integer appliedV8 = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '8' AND \"success\" = TRUE",
                 Integer.class);
-        assertThat(appliedV7).isEqualTo(1);
+        assertThat(appliedV8).isEqualTo(1);
+    }
+
+    @Test
+    void v8AndV9AreApplied() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '8' AND \"success\" = TRUE",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '9' AND \"success\" = TRUE",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v9CreatesEncounterWaveAndPrepColumns() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'ENCOUNTER_WAVE'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'ENCOUNTER' AND column_name = 'PREP_JSON'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'ENCOUNTER' AND column_name = 'REWARDS_JSON'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'COMBATANT' AND column_name = 'WAVE_ID'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'COMBATANT' AND column_name = 'START_X'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'COMBATANT' AND column_name = 'START_Y'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'COMBATANT' AND column_name = 'PLACEMENT_REGION_KEY'",
+                Integer.class)).isEqualTo(1);
     }
 
     @Test
