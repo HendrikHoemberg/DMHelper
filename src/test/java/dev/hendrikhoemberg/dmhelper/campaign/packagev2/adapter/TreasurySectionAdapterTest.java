@@ -15,6 +15,7 @@ import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItem;
 import dev.hendrikhoemberg.dmhelper.library.data.MagicItem;
 import dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
@@ -73,6 +74,7 @@ class TreasurySectionAdapterTest {
         pm.setCharacterName("Thia");
 
         var mi = new MagicItem();
+        mi.setSource(ContentSource.SRD);
         mi.setSourceKey("srd-2024_bag-of-holding");
         mi.setName("Bag of Holding");
 
@@ -109,6 +111,7 @@ class TreasurySectionAdapterTest {
     @Test
     void exportsAssignmentWithEquipmentItem() {
         var ei = new EquipmentItem();
+        ei.setSource(ContentSource.SRD);
         ei.setSourceKey("srd-2024_chain-mail");
         ei.setName("Chain Mail");
 
@@ -153,9 +156,11 @@ class TreasurySectionAdapterTest {
     @Test
     void importsCatalogItemReferences() {
         var magicItem = new MagicItem();
+        magicItem.setSource(ContentSource.SRD);
         magicItem.setId(UUID.randomUUID());
         magicItem.setSourceKey("srd-2024_bag-of-holding");
         var equipmentItem = new EquipmentItem();
+        equipmentItem.setSource(ContentSource.SRD);
         equipmentItem.setId(UUID.randomUUID());
         equipmentItem.setSourceKey("srd-2024_chain-mail");
         when(magicItemRepository.findBySourceKey("srd-2024_bag-of-holding"))

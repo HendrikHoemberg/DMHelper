@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.treasury.service;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItem;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
@@ -45,6 +46,7 @@ class TreasuryServiceTest {
         em.persist(pc);
 
         EquipmentItem sword = new EquipmentItem();
+        sword.setSource(ContentSource.SRD);
         sword.setSourceKey("srd_longsword");
         sword.setName("Longsword");
         sword.setCategory(EquipmentItem.Category.WEAPON);

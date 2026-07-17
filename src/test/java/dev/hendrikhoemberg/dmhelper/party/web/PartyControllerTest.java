@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import org.junit.jupiter.api.Test;
@@ -56,6 +57,7 @@ class PartyControllerTest {
     @Test
     void shouldRenderNewForm() throws Exception {
         CharacterClass rogue = new CharacterClass();
+        rogue.setSource(ContentSource.SRD);
         rogue.setName("Rogue");
         when(classRepository.findBySubclassOfIsNullOrderByNameAsc()).thenReturn(List.of(rogue));
 
@@ -72,6 +74,7 @@ class PartyControllerTest {
         c.setId(campaignId);
         c.setName("Test");
         CharacterClass rogue = new CharacterClass();
+        rogue.setSource(ContentSource.SRD);
         rogue.setName("Rogue");
         PartyMember pm = new PartyMember();
         pm.setId(pid);
@@ -89,8 +92,10 @@ class PartyControllerTest {
     @Test
     void shouldRenderClassDropdownOptions() throws Exception {
         CharacterClass rogue = new CharacterClass();
+        rogue.setSource(ContentSource.SRD);
         rogue.setName("Rogue");
         CharacterClass wizard = new CharacterClass();
+        wizard.setSource(ContentSource.SRD);
         wizard.setName("Wizard");
         when(classRepository.findBySubclassOfIsNullOrderByNameAsc())
                 .thenReturn(List.of(rogue, wizard));

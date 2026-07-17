@@ -19,6 +19,7 @@ import dev.hendrikhoemberg.dmhelper.library.data.Species;
 import dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.Spell;
 import dev.hendrikhoemberg.dmhelper.library.data.SpellRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.party.packagev2.PartySectionAdapter;
@@ -112,21 +113,25 @@ class PartySectionAdapterTest {
     @Test
     void importsFullPartyWithSheetAndResourcesAndSpells() {
         var species = new Species();
+        species.setSource(ContentSource.SRD);
         species.setId(UUID.randomUUID());
         species.setSourceKey("human");
         species.setName("Human");
 
         var background = new Background();
+        background.setSource(ContentSource.SRD);
         background.setId(UUID.randomUUID());
         background.setSourceKey("soldier");
         background.setName("Soldier");
 
         var spell1 = new Spell();
+        spell1.setSource(ContentSource.SRD);
         spell1.setId(UUID.randomUUID());
         spell1.setSourceKey("fire-bolt");
         spell1.setName("Fire Bolt");
 
         var spell2 = new Spell();
+        spell2.setSource(ContentSource.SRD);
         spell2.setId(UUID.randomUUID());
         spell2.setSourceKey("shield");
         spell2.setName("Shield");

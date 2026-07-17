@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.common.config;
 
 import dev.hendrikhoemberg.dmhelper.library.data.Spell;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.SpellRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ class SpellReseedMigrationTest {
 
     private Spell spell(String key, String school) {
         Spell s = new Spell();
+        s.setSource(ContentSource.SRD);
         s.setSourceKey(key);
         s.setName(key);
         s.setLevel(1);

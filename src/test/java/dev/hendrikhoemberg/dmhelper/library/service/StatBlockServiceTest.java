@@ -18,7 +18,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import({StatBlockService.class, SceneRefCleaner.class})
+@Import({StatBlockService.class, SceneRefCleaner.class, CustomContentSupport.class, LibraryReferenceCleaner.class})
 class StatBlockServiceTest {
 
     @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;

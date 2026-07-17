@@ -2,6 +2,8 @@ package dev.hendrikhoemberg.dmhelper.library.service;
 
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentProvenance;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
@@ -20,12 +22,18 @@ public class StatBlockService {
     private final StatBlockRepository repository;
     private final CampaignRepository campaignRepo;
     private final SceneRefCleaner sceneRefCleaner;
+    private final CustomContentSupport customContentSupport;
+    private final LibraryReferenceCleaner referenceCleaner;
 
     public StatBlockService(StatBlockRepository repository, CampaignRepository campaignRepo,
-                            SceneRefCleaner sceneRefCleaner) {
+                            SceneRefCleaner sceneRefCleaner,
+                            CustomContentSupport customContentSupport,
+                            LibraryReferenceCleaner referenceCleaner) {
         this.repository = repository;
         this.campaignRepo = campaignRepo;
         this.sceneRefCleaner = sceneRefCleaner;
+        this.customContentSupport = customContentSupport;
+        this.referenceCleaner = referenceCleaner;
     }
 
     @Transactional(readOnly = true)
@@ -110,7 +118,7 @@ public class StatBlockService {
         if (sourceKey != null && !sourceKey.isBlank()) {
             sb.setSourceKey(sourceKey);
         } else {
-            sb.setSourceKey(name.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", ""));
+            sb.setSourceKey(customContentSupport.slugify(name));
         }
         if (xp != null) {
             sb.setXp(xp);
@@ -139,13 +147,13 @@ public class StatBlockService {
     }
 
     public StatBlock updateCustom(UUID id, String name, String cr, String type,
-                                  int ac, String hp, String speed,
-                                   int str, int dex, int con, int intel, int wis, int cha,
-                                   Integer strSave, Integer dexSave, Integer conSave,
-                                   Integer intSave, Integer wisSave, Integer chaSave,
-                                   String skills, String damageVuln, String damageRes,
-                                   String damageImm, String condImm,
-                                   String senses, String languages) {
+                                   int ac, String hp, String speed,
+                                    int str, int dex, int con, int intel, int wis, int cha,
+                                    Integer strSave, Integer dexSave, Integer conSave,
+                                    Integer intSave, Integer wisSave, Integer chaSave,
+                                    String skills, String damageVuln, String damageRes,
+                                    String damageImm, String condImm,
+                                    String senses, String languages) {
         StatBlock sb = findById(id);
         if (sb.getSource() != ContentSource.CUSTOM) {
             throw new IllegalArgumentException("Cannot edit SRD statblocks");
@@ -183,6 +191,9 @@ public class StatBlockService {
         StatBlock sb = findById(id);
         if (sb.getSource() != ContentSource.CUSTOM) {
             throw new IllegalArgumentException("Cannot delete SRD statblocks");
+        }
+        if (sb.getCampaign() != null) {
+            referenceCleaner.deletePackageKey(sb.getCampaign().getId(), CampaignContentType.STATBLOCK, id);
         }
         repository.delete(sb);
     }
@@ -240,7 +251,11 @@ public class StatBlockService {
         if (sb.getSource() != ContentSource.CUSTOM) {
             throw new IllegalArgumentException("Only custom statblocks can be promoted");
         }
-        sb.setCampaign(null);
+        if (sb.getCampaign() != null) {
+            UUID oldCampaignId = sb.getCampaign().getId();
+            sb.setCampaign(null);
+            referenceCleaner.deletePackageKey(oldCampaignId, CampaignContentType.STATBLOCK, id);
+        }
         return repository.save(sb);
     }
 }

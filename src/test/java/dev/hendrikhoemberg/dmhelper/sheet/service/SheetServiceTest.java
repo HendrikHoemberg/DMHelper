@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
@@ -49,6 +50,7 @@ class SheetServiceTest {
     @BeforeEach
     void setUp() {
         var fighter = new CharacterClass();
+        fighter.setSource(ContentSource.SRD);
         fighter.setSourceKey("srd-2024_fighter");
         fighter.setName("Fighter");
         fighter.setHitDie("d10");
@@ -249,6 +251,7 @@ class SheetServiceTest {
     @Test
     void setLevelWithClassSourceKey() {
         var wizard = new CharacterClass();
+        wizard.setSource(ContentSource.SRD);
         wizard.setSourceKey("srd-2024_wizard");
         wizard.setName("Wizard");
         wizard.setHitDie("d6");

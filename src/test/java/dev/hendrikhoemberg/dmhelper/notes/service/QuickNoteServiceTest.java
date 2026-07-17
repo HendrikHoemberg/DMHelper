@@ -2,6 +2,8 @@ package dev.hendrikhoemberg.dmhelper.notes.service;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
+import dev.hendrikhoemberg.dmhelper.library.service.CustomContentSupport;
+import dev.hendrikhoemberg.dmhelper.library.service.LibraryReferenceCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
@@ -27,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @Import({QuickNoteService.class, NoteService.class, WikiLinkParser.class, StatBlockService.class, SceneRefCleaner.class,
+        CustomContentSupport.class, LibraryReferenceCleaner.class,
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
         dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class})
 class QuickNoteServiceTest {

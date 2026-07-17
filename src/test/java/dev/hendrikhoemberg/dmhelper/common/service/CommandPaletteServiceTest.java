@@ -71,6 +71,7 @@ class CommandPaletteServiceTest {
         statBlockRepository.save(sb);
 
         Spell spell = new Spell();
+        spell.setSource(ContentSource.SRD);
         spell.setName("Fireball");
         spell.setSourceKey("fireball");
         spell.setLevel(3);

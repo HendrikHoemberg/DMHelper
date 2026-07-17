@@ -188,7 +188,7 @@ class LibraryControllerTest {
 
     @Test
     void shouldSearchMagicItems() throws Exception {
-        when(magicItemService.search(isNull(), isNull(), isNull())).thenReturn(List.of());
+        when(magicItemService.search(isNull(String.class), isNull(String.class), isNull(String.class))).thenReturn(List.of());
         mockMvc.perform(get("/library/magic-items"))
                 .andExpect(status().isOk());
     }

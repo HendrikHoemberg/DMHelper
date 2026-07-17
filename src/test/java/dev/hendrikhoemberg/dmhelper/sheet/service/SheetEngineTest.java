@@ -6,6 +6,7 @@ import dev.hendrikhoemberg.dmhelper.library.data.Feat;
 import dev.hendrikhoemberg.dmhelper.library.data.FeatRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.RuleSection;
 import dev.hendrikhoemberg.dmhelper.library.data.RuleSectionRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.Species;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetEngine.DerivedValues;
@@ -38,6 +39,7 @@ class SheetEngineTest {
     @BeforeEach
     void setUp() throws Exception {
         var fighterClass = new CharacterClass();
+        fighterClass.setSource(ContentSource.SRD);
         fighterClass.setSourceKey("srd-2024_fighter");
         fighterClass.setName("Fighter");
         fighterClass.setHitDie("d10");
@@ -71,6 +73,7 @@ class SheetEngineTest {
                 """);
 
         var wizardClass = new CharacterClass();
+        wizardClass.setSource(ContentSource.SRD);
         wizardClass.setSourceKey("srd-2024_wizard");
         wizardClass.setName("Wizard");
         wizardClass.setHitDie("d6");
@@ -105,6 +108,7 @@ class SheetEngineTest {
         when(classRepo.findAllByOrderByNameAsc()).thenReturn(List.of(fighterClass, wizardClass));
 
         var multiclassRule = new RuleSection();
+        multiclassRule.setSource(ContentSource.SRD);
         multiclassRule.setSourceKey("srd-2024_multiclassing_spellcasting");
         multiclassRule.setBody("""
                 |Level|1|2|3|4|5|6|7|8|9|
@@ -166,6 +170,7 @@ class SheetEngineTest {
 
         if (speciesSpeed != null) {
             var species = new Species();
+            species.setSource(ContentSource.SRD);
             species.setSpeed(speciesSpeed);
             sheet.setSpecies(species);
         }
@@ -295,6 +300,7 @@ class SheetEngineTest {
     @Test
     void eldritchKnight5Wizard5() throws Exception {
         var ekClass = new CharacterClass();
+        ekClass.setSource(ContentSource.SRD);
         ekClass.setSourceKey("srd-2024_fighter_eldritch_knight");
         ekClass.setName("Eldritch Knight");
         ekClass.setHitDie("d10");
@@ -319,6 +325,7 @@ class SheetEngineTest {
                 """);
 
         var wizardClass2 = new CharacterClass();
+        wizardClass2.setSource(ContentSource.SRD);
         wizardClass2.setSourceKey("srd-2024_wizard");
         wizardClass2.setName("Wizard");
         wizardClass2.setHitDie("d6");
@@ -353,6 +360,7 @@ class SheetEngineTest {
         when(classRepo.findAllByOrderByNameAsc()).thenReturn(List.of(ekClass, wizardClass2));
 
         var mcRule = new RuleSection();
+        mcRule.setSource(ContentSource.SRD);
         mcRule.setSourceKey("srd-2024_multiclassing_spellcasting");
         mcRule.setBody("""
                 |Level|1|2|3|4|5|6|7|8|9|
@@ -434,6 +442,7 @@ class SheetEngineTest {
     @Test
     void featAsiAppliesToAbilityScores() throws Exception {
         var asiFeat = new Feat();
+        asiFeat.setSource(ContentSource.SRD);
         asiFeat.setSourceKey("srd-2024_asi_feat");
         asiFeat.setName("Ability Score Improvement");
         asiFeat.setBenefit("+2 to Strength");
@@ -456,6 +465,7 @@ class SheetEngineTest {
     @Test
     void asiFeatIsFlaggedForManualAssignment() throws Exception {
         var asiFeat = new Feat();
+        asiFeat.setSource(ContentSource.SRD);
         asiFeat.setSourceKey("ability-score-improvement");
         asiFeat.setName("Ability Score Improvement");
         asiFeat.setBenefit("Increase one ability score of your choice by 2, or increase two ability scores of your choice by 1.");

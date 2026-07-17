@@ -3,6 +3,8 @@ package dev.hendrikhoemberg.dmhelper.campaign.service;
 import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
+import dev.hendrikhoemberg.dmhelper.library.service.CustomContentSupport;
+import dev.hendrikhoemberg.dmhelper.library.service.LibraryReferenceCleaner;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneTransitionService;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEvent;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEventRepository;
@@ -69,6 +71,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 @Import({CampaignService.class, PartyMemberService.class, StatBlockService.class, GameMapService.class,
+         CustomContentSupport.class, LibraryReferenceCleaner.class,
          dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
          NoteService.class, WikiLinkParser.class, SceneRefCleaner.class, AdventureService.class,
          SceneTransitionService.class,
@@ -127,32 +130,38 @@ class CampaignImportExportRoundTripTest {
     @BeforeEach
     void seedCatalog() {
         Species human = new Species();
+        human.setSource(ContentSource.SRD);
         human.setSourceKey("srd-2024_human");
         human.setName("Human");
         speciesRepo.save(human);
 
         Background criminal = new Background();
+        criminal.setSource(ContentSource.SRD);
         criminal.setSourceKey("srd-2024_criminal");
         criminal.setName("Criminal");
         backgroundRepo.save(criminal);
 
         CharacterClass rogue = new CharacterClass();
+        rogue.setSource(ContentSource.SRD);
         rogue.setSourceKey("srd-2024_rogue");
         rogue.setName("Rogue");
         classRepo.save(rogue);
 
         Feat alert = new Feat();
+        alert.setSource(ContentSource.SRD);
         alert.setSourceKey("srd-2024_alert");
         alert.setName("Alert");
         featRepo.save(alert);
 
         Spell cureWounds = new Spell();
+        cureWounds.setSource(ContentSource.SRD);
         cureWounds.setSourceKey("cure-wounds");
         cureWounds.setName("Cure Wounds");
         cureWounds.setLevel(1);
         spellRepo.save(cureWounds);
 
         MagicItem bagOfHolding = new MagicItem();
+        bagOfHolding.setSource(ContentSource.SRD);
         bagOfHolding.setSourceKey("srd-2024_bag-of-holding");
         bagOfHolding.setName("Bag of Holding");
         magicItemRepo.save(bagOfHolding);
