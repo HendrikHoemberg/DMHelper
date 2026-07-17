@@ -22,7 +22,6 @@ import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignConten
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SOURCE_ANNOTATION;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SESSION_OBJECTIVE_CHANGE;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.ENCOUNTER_WAVE;
-import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.OBJECTIVE;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.FACTION;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.WORLD_NPC;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.WORLD_LOCATION;
@@ -475,18 +474,6 @@ public class CampaignManifestV2SemanticValidator {
             case "FACTION" -> requireRefTypeOneOf(link.targetRef(), List.of(NOTE, FACTION), path, problems);
             case "TIMELINE_EVENT" -> requireRefType(link.targetRef(), CampaignContentType.TIMELINE_EVENT, path, problems);
         }
-    }
-
-    private static CampaignContentType expectedQuestLinkType(String role) {
-        if (role == null) return null;
-        return switch (role) {
-            case "HANDOUT" -> HANDOUT;
-            case "RULE" -> CampaignContentType.RULE;
-            case "RELATED_SCENE" -> SCENE;
-            case "NPC", "LOCATION", "FACTION" -> NOTE;
-            case "TIMELINE_EVENT" -> CampaignContentType.TIMELINE_EVENT;
-            default -> null; // REFERENCE, REWARD: flexible
-        };
     }
 
     private static void validateQuestObjectiveDependencies(CampaignManifestV2.QuestDto q, String qPath,

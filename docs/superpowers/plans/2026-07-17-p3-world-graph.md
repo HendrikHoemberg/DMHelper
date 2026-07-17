@@ -1201,16 +1201,4 @@ Travel weather, fog gameplay, audio, interactive players, and rollable-table eng
 
 ---
 
-## Execution handoff
 
-**Plan complete and saved to `docs/superpowers/plans/2026-07-17-p3-world-graph.md`.**
-
-**Two execution options:**
-
-1. **Subagent-Driven (recommended)** — dispatch a fresh subagent per task, review between tasks, fast iteration  
-   **REQUIRED SUB-SKILL:** superpowers:subagent-driven-development
-
-2. **Inline Execution** — execute tasks in this session with executing-plans and checkpoints  
-   **REQUIRED SUB-SKILL:** superpowers:executing-plans
-
-**Which approach?**

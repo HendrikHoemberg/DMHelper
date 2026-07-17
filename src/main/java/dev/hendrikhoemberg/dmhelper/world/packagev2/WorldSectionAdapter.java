@@ -23,6 +23,8 @@ import dev.hendrikhoemberg.dmhelper.world.data.WorldNpc;
 import dev.hendrikhoemberg.dmhelper.world.data.WorldNpcRepository;
 import dev.hendrikhoemberg.dmhelper.world.data.WorldRelationship;
 import dev.hendrikhoemberg.dmhelper.world.data.WorldRelationshipRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -31,6 +33,8 @@ import java.util.UUID;
 
 @Component
 public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSectionImporter {
+
+    private static final Logger log = LoggerFactory.getLogger(WorldSectionAdapter.class);
 
     private final WorldNpcRepository npcRepo;
     private final WorldLocationRepository locationRepo;
@@ -134,7 +138,9 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
         List<FactionClock> clocks = clockRepo.findByCampaignIdOrderBySortOrderAscIdAsc(context.campaignId());
         List<FactionClockDto> clockDtos = clocks.stream().map(c -> {
             String key = context.key(CampaignContentType.FACTION_CLOCK, c.getId(), c.getTitle());
-            ContentReference factionRef = context.packageRef(CampaignContentType.FACTION, c.getFaction().getId(), c.getFaction().getName());
+            ContentReference factionRef = c.getFaction() != null
+                    ? context.packageRef(CampaignContentType.FACTION, c.getFaction().getId(), c.getFaction().getName())
+                    : null;
             ContentReference objectiveRef = c.getObjective() != null
                     ? context.packageRef(CampaignContentType.OBJECTIVE, c.getObjective().getId(), c.getObjective().getTitle())
                     : null;
@@ -209,8 +215,8 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
                             WorldLocation parent = context.require(dto.parentLocationRef(),
                                     CampaignContentType.WORLD_LOCATION, WorldLocation.class);
                             l.setParentLocation(parent);
-                        } catch (Exception e) {
-                            // cycle detected - semantic validator handles this
+                        } catch (IllegalStateException e) {
+                            log.warn("Location parent not yet resolved for {} (cycle or ordering issue)", dto.key());
                         }
                     }
                     if (dto.mapRef() != null) {
@@ -364,11 +370,10 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
     }
 
     private static UUID entityId(Object entity) {
-        try {
-            return (UUID) entity.getClass().getMethod("getId").invoke(entity);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException(
-                    "Cannot resolve package entity id for " + entity.getClass().getName(), e);
-        }
+        if (entity instanceof WorldNpc n) return n.getId();
+        if (entity instanceof Faction f) return f.getId();
+        if (entity instanceof WorldLocation l) return l.getId();
+        throw new IllegalStateException(
+                "Cannot resolve package entity id for " + entity.getClass().getName());
     }
 }

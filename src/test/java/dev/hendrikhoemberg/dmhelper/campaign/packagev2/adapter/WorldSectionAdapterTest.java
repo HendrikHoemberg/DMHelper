@@ -61,6 +61,29 @@ class WorldSectionAdapterTest {
     }
 
     @Test
+    void handlesEmptyWorldData() {
+        when(factionRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId)).thenReturn(List.of());
+        when(locationRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId)).thenReturn(List.of());
+        when(npcRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId)).thenReturn(List.of());
+        when(relationshipRepo.findByCampaignIdOrderBySortOrderAscIdAsc(campaignId)).thenReturn(List.of());
+        when(clockRepo.findByCampaignIdOrderBySortOrderAscIdAsc(campaignId)).thenReturn(List.of());
+
+        var keyService = new CampaignSectionAdapterTest.FakeKeyService();
+        var ctx = exportContext(keyService);
+        var assembler = new CampaignManifestAssembler();
+        assembler.assets(List.of());
+        adapter.exportSection(ctx, assembler);
+        fillRest(assembler);
+        var manifest = buildManifest(assembler);
+
+        assertThat(manifest.factions()).isEmpty();
+        assertThat(manifest.worldLocations()).isEmpty();
+        assertThat(manifest.worldNpcs()).isEmpty();
+        assertThat(manifest.worldRelationships()).isEmpty();
+        assertThat(manifest.factionClocks()).isEmpty();
+    }
+
+    @Test
     void exportsFactions() {
         Faction faction = new Faction();
         faction.setId(UUID.randomUUID());
