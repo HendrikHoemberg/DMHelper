@@ -487,6 +487,24 @@ class SheetEngineTest {
     }
 
     @Test
+    void derivesFromLegacyClassRefKey() throws Exception {
+        var scores = Map.of("str", 15, "dex", 12, "con", 14, "int", 10, "wis", 13, "cha", 8);
+        var mapper = new ObjectMapper();
+        var classLevels = List.<Map<String, Object>>of(
+                Map.of("classRef", "srd-2024_fighter", "level", 1, "hitDieRolls", List.of())
+        );
+        var sheet = createSheet(scores, classLevels, List.of(), List.of(), null, 0, 0);
+
+        var dv = engine.derive(sheet);
+
+        assertEquals(1, dv.totalLevel());
+        assertEquals(2, dv.proficiencyBonus());
+        assertEquals(2, dv.strMod());
+        assertEquals(12, dv.maxHp(), "Level 1 fighter: 10 + 2 = 12");
+        assertEquals("Fighter 1", dv.classAndLevel());
+    }
+
+    @Test
     void skillExpertise() throws Exception {
         var scores = Map.of("str", 10, "dex", 10, "con", 10, "int", 10, "wis", 14, "cha", 10);
         var classLevels = List.<Map<String, Object>>of(

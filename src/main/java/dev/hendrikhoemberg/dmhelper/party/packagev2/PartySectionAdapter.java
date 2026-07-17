@@ -26,6 +26,7 @@ import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResource;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResourceRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReference;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReferenceRepository;
+import dev.hendrikhoemberg.dmhelper.sheet.service.SheetClassLevelCodec;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
@@ -135,7 +136,7 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
             var list = objectMapper.readValue(raw, new TypeReference<List<Map<String, Object>>>() {});
             List<ClassLevelDto> result = new ArrayList<>();
             for (var entry : list) {
-                String classSourceKey = (String) entry.get("classRef");
+                String classSourceKey = SheetClassLevelCodec.classSourceKeyOf(entry);
                 int level = ((Number) entry.get("level")).intValue();
                 @SuppressWarnings("unchecked")
                 List<Integer> hitDieRolls = entry.containsKey("hitDieRolls")
@@ -308,7 +309,7 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
             for (ClassLevelDto cl : sheetDto.classLevels()) {
                 CharacterClass cls = libraryRefs.resolveClass(cl.classRef(), context);
                 Map<String, Object> entry = new LinkedHashMap<>();
-                entry.put("classRef", cls.getSourceKey());
+                entry.put("classSourceKey", cls.getSourceKey());
                 entry.put("level", cl.level());
                 if (cl.hitDieRolls() != null && !cl.hitDieRolls().isEmpty()) {
                     entry.put("hitDieRolls", cl.hitDieRolls());

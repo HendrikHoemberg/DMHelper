@@ -518,7 +518,7 @@ public class SheetEngine {
             int maxHp = 0;
             int totalHitDice = 0;
             for (Map<String, Object> entry : classLevels) {
-                String classKey = (String) entry.get("classSourceKey");
+                String classKey = SheetClassLevelCodec.classSourceKeyOf(entry);
                 int level = getInt(entry, "level");
                 totalHitDice += level;
                 int dieType = classHitDies.getOrDefault(classKey, 8);
@@ -534,7 +534,7 @@ public class SheetEngine {
 
             Set<String> proficientSaves = new HashSet<>();
             for (Map<String, Object> entry : classLevels) {
-                String classKey = (String) entry.get("classSourceKey");
+                String classKey = SheetClassLevelCodec.classSourceKeyOf(entry);
                 Set<String> saves = classSavingThrows.getOrDefault(classKey, Set.of());
                 proficientSaves.addAll(saves);
             }
@@ -571,7 +571,7 @@ public class SheetEngine {
             }
 
             for (Map<String, Object> entry : classLevels) {
-                String classKey = (String) entry.get("classSourceKey");
+                String classKey = SheetClassLevelCodec.classSourceKeyOf(entry);
                 List<String> skills = classSkillProficiencies.getOrDefault(classKey, List.of());
                 for (String skill : skills) {
                     if (!profSkills.contains(skill)) {
@@ -599,7 +599,7 @@ public class SheetEngine {
             int[] pactSlots = new int[10];
             List<Map<String, Object>> castingClasses = new ArrayList<>();
             for (Map<String, Object> entry : classLevels) {
-                String classKey = (String) entry.get("classSourceKey");
+                String classKey = SheetClassLevelCodec.classSourceKeyOf(entry);
                 if (classSlotTables.containsKey(classKey)) {
                     castingClasses.add(entry);
                 }
@@ -607,7 +607,7 @@ public class SheetEngine {
 
             if (castingClasses.size() == 1) {
                 Map<String, Object> entry = castingClasses.get(0);
-                String classKey = (String) entry.get("classSourceKey");
+                String classKey = SheetClassLevelCodec.classSourceKeyOf(entry);
                 int classLevel = getInt(entry, "level");
                 Map<Integer, int[]> classTable = classSlotTables.get(classKey);
                 if (classTable != null) {
@@ -621,7 +621,7 @@ public class SheetEngine {
             } else if (castingClasses.size() > 1) {
                 int combinedLevel = 0;
                 for (Map<String, Object> entry : castingClasses) {
-                    String classKey = (String) entry.get("classSourceKey");
+                    String classKey = SheetClassLevelCodec.classSourceKeyOf(entry);
                     int classLevel = getInt(entry, "level");
                     if (classKey != null && classKey.contains("warlock")) {
                         Map<Integer, int[]> lockTable = classSlotTables.get(classKey);
@@ -650,7 +650,7 @@ public class SheetEngine {
             int bestAtk = 0;
             Map<String, String> classCasting = new LinkedHashMap<>();
             for (Map<String, Object> entry : classLevels) {
-                String classKey = (String) entry.get("classSourceKey");
+                String classKey = SheetClassLevelCodec.classSourceKeyOf(entry);
                 String ability = classSpellcastingAbilities.get(classKey);
                 if (ability != null) {
                     classCasting.put(classKey, ability);
@@ -667,7 +667,7 @@ public class SheetEngine {
 
             List<String> skillChoices = new ArrayList<>();
             for (Map<String, Object> entry : classLevels) {
-                String classKey = (String) entry.get("classSourceKey");
+                String classKey = SheetClassLevelCodec.classSourceKeyOf(entry);
                 if (classKey == null) continue;
                 var clsOpt = classRepo.findBySourceKey(classKey);
                 if (clsOpt.isEmpty()) continue;
@@ -698,7 +698,7 @@ public class SheetEngine {
 
             List<String> classStrings = new ArrayList<>();
             for (Map<String, Object> entry : classLevels) {
-                String classKey = (String) entry.get("classSourceKey");
+                String classKey = SheetClassLevelCodec.classSourceKeyOf(entry);
                 int level = getInt(entry, "level");
                 String name = classNames.getOrDefault(classKey, classKey);
                 classStrings.add(name + " " + level);

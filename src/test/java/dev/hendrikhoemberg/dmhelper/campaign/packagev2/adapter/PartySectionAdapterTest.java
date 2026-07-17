@@ -263,6 +263,71 @@ class PartySectionAdapterTest {
         verify(spellRefRepo, times(2)).save(any());
     }
 
+    @Test
+    void importPersistsClassSourceKeyInClob() {
+        var species = new Species();
+        species.setSource(ContentSource.SRD);
+        species.setId(UUID.randomUUID());
+        species.setSourceKey("human");
+        species.setName("Human");
+
+        var cls = srdClass("fighter");
+        when(speciesRepo.findBySourceAndSourceKey(ContentSource.SRD, "human")).thenReturn(Optional.of(species));
+        when(classRepo.findBySourceAndSourceKey(ContentSource.SRD, "fighter")).thenReturn(Optional.of(cls));
+
+        when(partyRepo.save(any())).thenAnswer(inv -> {
+            var pm = inv.getArgument(0, PartyMember.class);
+            if (pm.getId() == null) pm.setId(UUID.randomUUID());
+            return pm;
+        });
+        when(sheetRepo.save(any())).thenAnswer(inv -> {
+            var cs = inv.getArgument(0, CharacterSheet.class);
+            if (cs.getId() == null) cs.setId(UUID.randomUUID());
+            return cs;
+        });
+
+        var manifest = new CampaignManifestV2(
+                2, null, null, null,
+                List.of(new CampaignManifestV2.PartyMemberDto(
+                        "party-test", "Tester", "Dev", "Fighter 3",
+                        15, 30, 30, 2, 30, 10, 10, 10,
+                        null, true,
+                        new CampaignManifestV2.SheetDto(
+                                "sheet-test",
+                                Map.of("str", 15, "dex", 14, "con", 13, "int", 10, "wis", 10, "cha", 8),
+                                List.of(
+                                        new CampaignManifestV2.ClassLevelDto(
+                                                ContentReference.catalogRef(CampaignContentType.CLASS, null, "fighter"),
+                                                3, List.of(10, 7))
+                                ),
+                                Map.of("skills", List.of(), "tools", List.of(), "languages", List.of(), "armor", List.of(), "weapons", List.of(), "expertise", List.of()),
+                                ContentReference.catalogRef(CampaignContentType.SPECIES, null, "human"),
+                                null, List.of(), 0, Map.of(), 0, List.of(), List.of(), Map.of()
+                        )
+                )),
+                null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, List.of(), List.of()
+        );
+
+        var freshCampaign = new Campaign();
+        freshCampaign.setId(UUID.randomUUID());
+        var importContext = new CampaignImportContext(
+                freshCampaign.getId(), new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
+        importContext.setCampaign(freshCampaign);
+        importContext.register(CampaignContentType.CAMPAIGN, "campaign-key", freshCampaign, freshCampaign.getId());
+
+        adapter.importSection(manifest, importContext);
+
+        verify(sheetRepo).save(argThat(cs -> {
+            String cl = cs.getClassLevels();
+            return cl != null
+                    && cl.contains("\"classSourceKey\"")
+                    && !cl.contains("\"classRef\"")
+                    && cl.contains("fighter");
+        }));
+    }
+
     private PartyMember partyMember(UUID id, String name) {
         var pm = new PartyMember();
         pm.setId(id);

@@ -118,8 +118,13 @@ public class SheetService {
     public record ClassLevelEntry(
             String classSourceKey,
             int level,
-            List<Integer> hitDieRolls
-    ) {}
+            List<Integer> hitDieRolls,
+            String subclassSourceKey
+    ) {
+        public ClassLevelEntry(String classSourceKey, int level, List<Integer> hitDieRolls) {
+            this(classSourceKey, level, hitDieRolls, null);
+        }
+    }
 
     public record SheetDto(
             UUID id, UUID partyMemberId,
@@ -291,7 +296,7 @@ public class SheetService {
 
             Map<String, Object> entry = null;
             for (Map<String, Object> e : classLevels) {
-                if (request.classSourceKey().equals(e.get("classSourceKey"))) {
+                if (request.classSourceKey().equals(SheetClassLevelCodec.classSourceKeyOf(e))) {
                     entry = e;
                     break;
                 }
@@ -408,7 +413,7 @@ public class SheetService {
 
             Map<String, Object> entry = null;
             for (Map<String, Object> e : classLevels) {
-                if (classSourceKey.equals(e.get("classSourceKey"))) {
+                if (classSourceKey.equals(SheetClassLevelCodec.classSourceKeyOf(e))) {
                     entry = e;
                     break;
                 }
@@ -422,7 +427,7 @@ public class SheetService {
 
             List<Integer> rolls = getHitDieRolls(entry);
             if (totalLevel > oldLevel) {
-                int dieSize = getHitDieSize((String) entry.get("classSourceKey"));
+                int dieSize = getHitDieSize(SheetClassLevelCodec.classSourceKeyOf(entry));
                 int avg = (dieSize / 2) + 1;
                 for (int i = oldLevel; i < totalLevel; i++) {
                     rolls.add(avg);
@@ -576,8 +581,7 @@ public class SheetService {
                         mapper.getTypeFactory().constructMapType(Map.class, String.class, Integer.class));
             }
             if (sheet.getClassLevels() != null) {
-                classLevels = mapper.readValue(sheet.getClassLevels(),
-                        mapper.getTypeFactory().constructCollectionType(List.class, ClassLevelEntry.class));
+                classLevels = SheetClassLevelCodec.read(sheet.getClassLevels());
             }
             if (sheet.getFeatRefs() != null) {
                 featRefs = mapper.readValue(sheet.getFeatRefs(),
