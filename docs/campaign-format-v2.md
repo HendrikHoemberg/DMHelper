@@ -61,6 +61,79 @@ legitimately have no originating class; when present it must be a valid class re
 
 ## Custom Compendium Arrays
 
+## Character Sheet Fields
+
+The v2 manifest carries full character sheet data within each party member's `sheet` object:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | string | Package key for the sheet |
+| `abilityScores` | object | Map of ability name to score (e.g. `{"str": 10, "dex": 18}`) |
+| `classLevels` | ClassLevelDto[] | Class levels with references, levels, hit die rolls |
+| `proficiencies` | object | Map of skill/ability to proficiency level |
+| `speciesRef` | ContentReference \| null | Reference to the character's species |
+| `backgroundRef` | ContentReference \| null | Reference to the character's background |
+| `featRefs` | ContentReference[] | References to feats |
+| `xp` | int | Experience points |
+| `overrides` | object | Override values (e.g. custom speed). May contain `_meta` with per-field override reasons |
+| `hitDiceUsed` | int | Number of hit dice already expended |
+| `resources` | ResourceDto[] | Per-sheet resources (e.g. Cunning Action, Action Surge) |
+| `spells` | SpellRefDto[] | Known/prepared spells with optional source class |
+| `spellSlotsUsed` | object | Map of spell level to slots used (e.g. `{"1": 2, "2": 1}`) |
+| `attacks` | AttackDto[] | Weapon/natural attacks with bonus, damage, range |
+| `features` | FeatureDto[] | Class/racial features with action type, source, and body text |
+
+### AttackDto
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | string | Unique key within the sheet |
+| `name` | string | Attack name |
+| `attackBonus` | int | Attack roll modifier |
+| `damageExpression` | string | Damage dice expression (e.g. `"1d8+4"`) |
+| `damageType` | string | Damage type (e.g. `"piercing"`) |
+| `range` | string \| null | Range description |
+| `properties` | string \| null | Weapon properties |
+| `ammunition` | string \| null | Ammunition type used |
+| `notes` | string \| null | Free-text notes |
+
+### FeatureDto
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | string | Unique key within the sheet |
+| `name` | string | Feature name |
+| `actionType` | string \| null | Action type (`"action"`, `"bonus"`, `"reaction"`, `"passive"`, etc.) |
+| `source` | string \| null | Source class or feature group |
+| `body` | string \| null | Feature description/mechanics text |
+| `resourceName` | string \| null | Associated resource name if this feature consumes uses |
+
+### Party Member Live State
+
+Party members carry live gameplay state fields at the party member level:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `tempHp` | int | Temporary hit points |
+| `inspiration` | boolean | Whether the character has inspiration |
+| `exhaustion` | int | Exhaustion level (0-6) |
+| `deathSaveSuccesses` | int | Successful death saves (0-3) |
+| `deathSaveFailures` | int | Failed death saves (0-3) |
+| `concentratingOn` | string \| null | Spell key or name the character is concentrating on |
+| `conditionsJson` | string \| null | JSON array of active conditions |
+
+### Item Assignment Inventory State
+
+Item assignments carry an `inventoryState` field:
+
+| Value | Description |
+|-------|-------------|
+| `EQUIPPED` | Currently worn/wielded |
+| `CARRIED` | In inventory, not equipped |
+| `STASHED` | In storage (e.g. bag of holding) |
+| `CONSUMED` | Used up (e.g. potion) |
+| `LOST` | Permanently lost |
+
 The manifest carries nine optional arrays for campaign-scoped custom content beyond statblocks.
 Each array contains DTOs following the same key/sourceKey pattern as `customStatBlocks`, with an
 optional `provenance` block for source tracking.

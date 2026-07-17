@@ -100,6 +100,13 @@
       "passiveInvestigation": 10,
       "notes": "Sneaky",
       "active": true,
+      "tempHp": 5,
+      "inspiration": true,
+      "exhaustion": 0,
+      "deathSaveSuccesses": 2,
+      "deathSaveFailures": 1,
+      "concentratingOn": "",
+      "conditionsJson": "",
       "sheet": {
         "key": "sheet-aria",
         "abilityScores": {
@@ -154,7 +161,13 @@
         ],
         "xp": 6500,
         "overrides": {
-          "speed": 35
+          "speed": 35,
+          "_meta": {
+            "speed": {
+              "reason": "Monk unarmored movement",
+              "source": "class:Rogue"
+            }
+          }
         },
         "hitDiceUsed": 2,
         "resources": [
@@ -186,7 +199,48 @@
         "spellSlotsUsed": {
           "1": 2,
           "2": 1
-        }
+        },
+        "attacks": [
+          {
+            "key": "attack-aria-rapier",
+            "name": "Rapier",
+            "attackBonus": 6,
+            "damageExpression": "1d8+4",
+            "damageType": "piercing",
+            "range": "5 ft.",
+            "properties": "finesse",
+            "notes": ""
+          },
+          {
+            "key": "attack-aria-shortbow",
+            "name": "Shortbow",
+            "attackBonus": 6,
+            "damageExpression": "1d6+4",
+            "damageType": "piercing",
+            "range": "80/320 ft.",
+            "properties": "ammunition, two-handed",
+            "ammunition": "arrow",
+            "notes": ""
+          }
+        ],
+        "features": [
+          {
+            "key": "feature-aria-sneak-attack",
+            "name": "Sneak Attack",
+            "actionType": "PASSIVE",
+            "source": "Rogue",
+            "body": "Once per turn, deal an extra 3d6 damage",
+            "resourceName": null
+          },
+          {
+            "key": "feature-aria-cunning-action",
+            "name": "Cunning Action",
+            "actionType": "BONUS_ACTION",
+            "source": "Rogue",
+            "body": "Dash, Disengage, or Hide as a bonus action",
+            "resourceName": "Cunning Action"
+          }
+        ]
       }
     },
     {
@@ -204,6 +258,13 @@
       "passiveInvestigation": 9,
       "notes": "Tank",
       "active": true,
+      "tempHp": 0,
+      "inspiration": false,
+      "exhaustion": 1,
+      "deathSaveSuccesses": 0,
+      "deathSaveFailures": 0,
+      "concentratingOn": "",
+      "conditionsJson": "[{\"name\":\"frightened\"}]",
       "sheet": {
         "key": "sheet-borin",
         "abilityScores": {
@@ -776,7 +837,8 @@
         "sourceKey": "srd-2024_bag-of-holding"
       },
       "quantity": 1,
-      "attuned": false
+      "attuned": false,
+      "inventoryState": "EQUIPPED"
     },
     {
       "key": "assignment-potion",
@@ -792,7 +854,8 @@
         "sourceKey": "srd-2024_gauntlets-of-ogre-power"
       },
       "quantity": 2,
-      "attuned": false
+      "attuned": false,
+      "inventoryState": "STASHED"
     },
     {
       "key": "assignment-custom-item",
@@ -803,7 +866,8 @@
       },
       "customText": "Mysterious Amulet",
       "quantity": 1,
-      "attuned": true
+      "attuned": true,
+      "inventoryState": "CARRIED"
     }
   ],
   "ledgerEntries": [
