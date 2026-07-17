@@ -118,7 +118,9 @@ public class CampaignImportPreviewStore {
     private static int provenanceCount(CampaignManifestV2 m) {
         if (m == null) return 0;
         int count = 0;
-        if (m.customStatBlocks() != null) count += (int) m.customStatBlocks().stream().filter(s -> s.sourceKey() != null && !s.sourceKey().isBlank()).count();
+        if (m.customStatBlocks() != null) count += (int) m.customStatBlocks().stream()
+                .filter(s -> s.provenance() != null || (s.sourceKey() != null && !s.sourceKey().isBlank()))
+                .count();
         if (m.customSpells() != null) count += (int) m.customSpells().stream().filter(s -> s.provenance() != null).count();
         if (m.customConditions() != null) count += (int) m.customConditions().stream().filter(s -> s.provenance() != null).count();
         if (m.customRules() != null) count += (int) m.customRules().stream().filter(s -> s.provenance() != null).count();

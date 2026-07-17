@@ -11,11 +11,18 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportCon
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignAssetCollector;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportOptions;
+import dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItem;
 import dev.hendrikhoemberg.dmhelper.library.data.MagicItem;
 import dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.FeatRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.SpellRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
+import dev.hendrikhoemberg.dmhelper.library.packagev2.LibraryContentReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
@@ -31,6 +38,7 @@ import java.util.UUID;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,8 +57,16 @@ class TreasurySectionAdapterTest {
 
     @BeforeEach
     void setUp() {
-        adapter = new TreasurySectionAdapter(
-                assignmentRepository, magicItemRepository, equipmentItemRepository);
+        var libraryRefs = new LibraryContentReferenceResolver(
+                mock(SpellRepository.class),
+                mock(SpeciesRepository.class),
+                mock(BackgroundRepository.class),
+                mock(CharacterClassRepository.class),
+                mock(FeatRepository.class),
+                magicItemRepository,
+                equipmentItemRepository,
+                mock(StatBlockRepository.class));
+        adapter = new TreasurySectionAdapter(assignmentRepository, libraryRefs);
         campaign = new Campaign();
         campaignId = UUID.randomUUID();
         campaign.setId(campaignId);
@@ -163,9 +179,9 @@ class TreasurySectionAdapterTest {
         equipmentItem.setSource(ContentSource.SRD);
         equipmentItem.setId(UUID.randomUUID());
         equipmentItem.setSourceKey("srd-2024_chain-mail");
-        when(magicItemRepository.findBySourceKey("srd-2024_bag-of-holding"))
+        when(magicItemRepository.findBySourceAndSourceKey(ContentSource.SRD, "srd-2024_bag-of-holding"))
                 .thenReturn(Optional.of(magicItem));
-        when(equipmentItemRepository.findBySourceKey("srd-2024_chain-mail"))
+        when(equipmentItemRepository.findBySourceAndSourceKey(ContentSource.SRD, "srd-2024_chain-mail"))
                 .thenReturn(Optional.of(equipmentItem));
         when(assignmentRepository.save(any())).thenAnswer(invocation -> {
             var assignment = invocation.getArgument(0, ItemAssignment.class);

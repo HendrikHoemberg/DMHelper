@@ -120,15 +120,17 @@ The `customClasses` array stores `subclassOf` as a free-text string. On import:
 - **User-global custom content** (content with `campaign IS NULL`) is **not** automatically included
   in the export. The export only captures campaign-scoped custom entries. Global custom content
   must be manually included or handled at the application layer.
-- References from campaign entities (character sheets, tokens, encounters) to custom content use
-  **package-scoped content references** with the appropriate `CampaignContentType`.
+- References from campaign entities (character sheets, treasury assignments, tokens, encounters) to
+  custom content use **package-scoped content references** with the appropriate `CampaignContentType`.
+  SRD content continues to use `scope: CATALOG`. `LibraryContentReferenceResolver` is the single
+  export/import path for this split.
 
 ### Non-Campaign Custom Export Rejection
 
 When a non-campaign (user-global) custom entry is encountered during export — for example via a
-reference that would pull in global content — the export is rejected with error code
-`NON_CAMPAIGN_CUSTOM_DEPENDENCY`. This ensures the exported package is self-contained and does not
-silently depend on user-global data that the receiving campaign would not have.
+sheet or treasury reference that points at `source=CUSTOM` and `campaign IS NULL` — export throws
+`CampaignPackageException` with code `NON_CAMPAIGN_CUSTOM_DEPENDENCY`. Clone the content into the
+campaign before export so the package stays self-contained.
 
 ### Example
 

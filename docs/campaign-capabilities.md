@@ -10,4 +10,4 @@
 | Session cockpit | `SUPPORTED` | Durable start/resume/pause/end coordination across existing modules; deterministic reviewed session logs and v2 recovery. |
 | Structured scene transitions | `SUPPORTED` | Delivery item 6; CHOICE/ENTRANCE/EXIT transitions with typed scene references, mutual exclusion rules, and deferred resolution on import. |
 | Structured quests/objectives | `SUPPORTED` | Delivery item 6; quests with status lifecycle, objectives with ALL/ANY completion mode, prerequisite dependency DAG, and session objective-change history. |
-| Campaign-scoped non-statblock custom content | `SUPPORTED` | Delivery item 7. |
+| Campaign-scoped non-statblock custom content | `SUPPORTED` | Delivery item 7; package PACKAGE refs for sheets/treasury, provenance, and create/clone/promote across library types. |

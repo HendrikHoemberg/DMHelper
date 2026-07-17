@@ -995,7 +995,7 @@ Recommended sequence:
 | 4 | Complete round-trip | `IMPLEMENTED` |
 | 5 | Session cockpit | `IMPLEMENTED` |
 | 6 | Structured adventure/quest model | `IMPLEMENTED` |
-| 7 | Custom compendium expansion | `PLANNED` |
+| 7 | Custom compendium expansion | `IMPLEMENTED` |
 | 8 | Character-sheet completion | `PLANNED` |
 | 9 | Encounter and map depth | `PLANNED` |
 | 10 | Documentation/agent SDK release | `PLANNED` |

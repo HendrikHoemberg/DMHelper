@@ -36,6 +36,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,7 +54,16 @@ class EncounterSectionAdapterTest {
 
     @BeforeEach
     void setUp() {
-        statBlockResolver = new StatBlockReferenceResolver(statBlockRepository);
+        statBlockResolver = new StatBlockReferenceResolver(
+                new dev.hendrikhoemberg.dmhelper.library.packagev2.LibraryContentReferenceResolver(
+                        mock(dev.hendrikhoemberg.dmhelper.library.data.SpellRepository.class),
+                        mock(dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository.class),
+                        mock(dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository.class),
+                        mock(dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository.class),
+                        mock(dev.hendrikhoemberg.dmhelper.library.data.FeatRepository.class),
+                        mock(dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository.class),
+                        mock(dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository.class),
+                        statBlockRepository));
         adapter = new EncounterSectionAdapter(
                 encounterRepository, combatantRepository, combatLogEntryRepository, statBlockResolver);
         campaign = new Campaign();

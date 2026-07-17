@@ -1,11 +1,14 @@
 package dev.hendrikhoemberg.dmhelper.sheet.service;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.library.data.Background;
 import dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.Feat;
 import dev.hendrikhoemberg.dmhelper.library.data.FeatRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.Species;
 import dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.Spell;
 import dev.hendrikhoemberg.dmhelper.library.data.SpellRepository;

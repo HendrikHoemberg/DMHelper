@@ -14,13 +14,10 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportCon
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionExporter;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionImporter;
-import dev.hendrikhoemberg.dmhelper.library.data.Background;
-import dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository;
-
-import dev.hendrikhoemberg.dmhelper.library.data.Species;
-import dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
+import dev.hendrikhoemberg.dmhelper.library.data.Feat;
 import dev.hendrikhoemberg.dmhelper.library.data.Spell;
-import dev.hendrikhoemberg.dmhelper.library.data.SpellRepository;
+import dev.hendrikhoemberg.dmhelper.library.packagev2.LibraryContentReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
@@ -44,25 +41,19 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
     private final CharacterSheetRepository characterSheetRepository;
     private final SheetResourceRepository sheetResourceRepository;
     private final SheetSpellReferenceRepository sheetSpellReferenceRepository;
-    private final SpeciesRepository speciesRepository;
-    private final BackgroundRepository backgroundRepository;
-    private final SpellRepository spellRepository;
+    private final LibraryContentReferenceResolver libraryRefs;
     private final ObjectMapper objectMapper;
 
     public PartySectionAdapter(PartyMemberRepository partyMemberRepository,
                                CharacterSheetRepository characterSheetRepository,
                                SheetResourceRepository sheetResourceRepository,
                                SheetSpellReferenceRepository sheetSpellReferenceRepository,
-                               SpeciesRepository speciesRepository,
-                               BackgroundRepository backgroundRepository,
-                                SpellRepository spellRepository) {
+                               LibraryContentReferenceResolver libraryRefs) {
         this.partyMemberRepository = partyMemberRepository;
         this.characterSheetRepository = characterSheetRepository;
         this.sheetResourceRepository = sheetResourceRepository;
         this.sheetSpellReferenceRepository = sheetSpellReferenceRepository;
-        this.speciesRepository = speciesRepository;
-        this.backgroundRepository = backgroundRepository;
-        this.spellRepository = spellRepository;
+        this.libraryRefs = libraryRefs;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -120,12 +111,12 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
 
         ContentReference speciesRef = null;
         if (cs.getSpecies() != null) {
-            speciesRef = context.catalogRef(CampaignContentType.SPECIES, cs.getSpecies().getSourceKey());
+            speciesRef = libraryRefs.referenceFor(cs.getSpecies(), context);
         }
 
         ContentReference backgroundRef = null;
         if (cs.getBackground() != null) {
-            backgroundRef = context.catalogRef(CampaignContentType.BACKGROUND, cs.getBackground().getSourceKey());
+            backgroundRef = libraryRefs.referenceFor(cs.getBackground(), context);
         }
 
         return new SheetDto(
@@ -150,10 +141,17 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
                 List<Integer> hitDieRolls = entry.containsKey("hitDieRolls")
                         ? ((List<Number>) entry.get("hitDieRolls")).stream().map(Number::intValue).toList()
                         : List.of();
-                ContentReference classRef = context.catalogRef(CampaignContentType.CLASS, classSourceKey);
+                CharacterClass cls = libraryRefs.findClassForCampaign(context.campaignId(), classSourceKey);
+                if (cls == null) {
+                    throw new IllegalStateException(
+                            "Sheet class level references unknown class sourceKey '" + classSourceKey + "'");
+                }
+                ContentReference classRef = libraryRefs.referenceFor(cls, context);
                 result.add(new ClassLevelDto(classRef, level, hitDieRolls));
             }
             return result;
+        } catch (IllegalStateException e) {
+            throw e;
         } catch (Exception e) {
             return List.of();
         }
@@ -165,9 +163,18 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
 
         try {
             var sourceKeys = objectMapper.readValue(raw, new TypeReference<List<String>>() {});
-            return sourceKeys.stream()
-                    .map(sk -> context.catalogRef(CampaignContentType.FEAT, sk))
-                    .toList();
+            List<ContentReference> refs = new ArrayList<>();
+            for (String sk : sourceKeys) {
+                Feat feat = libraryRefs.findFeatForCampaign(context.campaignId(), sk);
+                if (feat == null) {
+                    throw new IllegalStateException(
+                            "Sheet feat references unknown feat sourceKey '" + sk + "'");
+                }
+                refs.add(libraryRefs.referenceFor(feat, context));
+            }
+            return refs;
+        } catch (IllegalStateException e) {
+            throw e;
         } catch (Exception e) {
             return List.of();
         }
@@ -188,11 +195,17 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
         return sheetSpellReferenceRepository.findBySheetIdOrderByIdAsc(cs.getId())
                 .stream()
                 .map(sr -> {
-                    ContentReference spellRef = context.catalogRef(CampaignContentType.SPELL,
-                            sr.getSpell().getSourceKey());
+                    ContentReference spellRef = libraryRefs.referenceFor(sr.getSpell(), context);
                     ContentReference sourceClassRef = null;
                     if (sr.getSourceClass() != null && !sr.getSourceClass().isBlank()) {
-                        sourceClassRef = context.catalogRef(CampaignContentType.CLASS, sr.getSourceClass());
+                        CharacterClass sourceClass = libraryRefs.findClassForCampaign(
+                                context.campaignId(), sr.getSourceClass());
+                        if (sourceClass == null) {
+                            throw new IllegalStateException(
+                                    "Spell source class references unknown class sourceKey '"
+                                            + sr.getSourceClass() + "'");
+                        }
+                        sourceClassRef = libraryRefs.referenceFor(sourceClass, context);
                     }
                     return new SpellRefDto(spellRef, sr.isPrepared(), sourceClassRef);
                 })
@@ -216,7 +229,6 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
 
         var campaign = context.campaign();
 
-        // Pass 1: save and register party members
         List<ImportedPartyMember> imported = new ArrayList<>();
         for (PartyMemberDto dto : dtos) {
             var pm = new PartyMember();
@@ -239,7 +251,6 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
             imported.add(new ImportedPartyMember(pm, dto));
         }
 
-        // Pass 2: save sheets, resources, spell refs
         for (var entry : imported) {
             var sheetDto = entry.dto.sheet();
             if (sheetDto == null) continue;
@@ -247,11 +258,11 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
             var cs = new CharacterSheet();
             cs.setPartyMember(entry.pm);
             cs.setAbilityScores(toJson(sheetDto.abilityScores()));
-            cs.setClassLevels(importClassLevels(sheetDto));
+            cs.setClassLevels(importClassLevels(sheetDto, context));
             cs.setProficiencies(toJson(sheetDto.proficiencies()));
-            cs.setSpecies(resolveSpecies(sheetDto.speciesRef()));
-            cs.setBackground(resolveBackground(sheetDto.backgroundRef()));
-            cs.setFeatRefs(importFeatRefs(sheetDto));
+            cs.setSpecies(libraryRefs.resolveSpecies(sheetDto.speciesRef(), context));
+            cs.setBackground(libraryRefs.resolveBackground(sheetDto.backgroundRef(), context));
+            cs.setFeatRefs(importFeatRefs(sheetDto, context));
             cs.setXp(sheetDto.xp());
             cs.setOverrides(toJson(sheetDto.overrides()));
             cs.setHitDiceUsed(sheetDto.hitDiceUsed());
@@ -259,7 +270,6 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
             characterSheetRepository.save(cs);
             context.register(CampaignContentType.CHARACTER_SHEET, sheetDto.key(), cs, cs.getId());
 
-            // Resources
             for (ResourceDto resDto : sheetDto.resources()) {
                 var res = new SheetResource();
                 res.setSheet(cs);
@@ -271,30 +281,34 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
                 context.register(CampaignContentType.SHEET_RESOURCE, resDto.key(), res, res.getId());
             }
 
-            // Spell refs
             for (SpellRefDto spellDto : sheetDto.spells()) {
-                var spell = resolveSpell(spellDto.spellRef());
-                if (spell == null) continue;
+                Spell spell = libraryRefs.resolveSpell(spellDto.spellRef(), context);
+                if (spell == null) {
+                    throw new IllegalStateException(
+                            "Unresolved spell reference on party member '" + entry.dto.characterName() + "'");
+                }
 
                 var sr = new SheetSpellReference();
                 sr.setSheet(cs);
                 sr.setSpell(spell);
                 sr.setPrepared(spellDto.prepared());
                 if (spellDto.sourceClassRef() != null) {
-                    sr.setSourceClass(spellDto.sourceClassRef().sourceKey());
+                    CharacterClass sourceClass = libraryRefs.resolveClass(spellDto.sourceClassRef(), context);
+                    sr.setSourceClass(sourceClass.getSourceKey());
                 }
                 sheetSpellReferenceRepository.save(sr);
             }
         }
     }
 
-    private String importClassLevels(SheetDto sheetDto) {
+    private String importClassLevels(SheetDto sheetDto, CampaignImportContext context) {
         if (sheetDto.classLevels() == null || sheetDto.classLevels().isEmpty()) return null;
         try {
             List<Map<String, Object>> list = new ArrayList<>();
             for (ClassLevelDto cl : sheetDto.classLevels()) {
+                CharacterClass cls = libraryRefs.resolveClass(cl.classRef(), context);
                 Map<String, Object> entry = new LinkedHashMap<>();
-                entry.put("classRef", cl.classRef().sourceKey());
+                entry.put("classRef", cls.getSourceKey());
                 entry.put("level", cl.level());
                 if (cl.hitDieRolls() != null && !cl.hitDieRolls().isEmpty()) {
                     entry.put("hitDieRolls", cl.hitDieRolls());
@@ -302,36 +316,27 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
                 list.add(entry);
             }
             return objectMapper.writeValueAsString(list);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return null;
+            throw new IllegalStateException("Failed to import class levels", e);
         }
     }
 
-    private String importFeatRefs(SheetDto sheetDto) {
+    private String importFeatRefs(SheetDto sheetDto, CampaignImportContext context) {
         if (sheetDto.featRefs() == null || sheetDto.featRefs().isEmpty()) return null;
         try {
-            List<String> sourceKeys = sheetDto.featRefs().stream()
-                    .map(ContentReference::sourceKey)
-                    .toList();
+            List<String> sourceKeys = new ArrayList<>();
+            for (ContentReference ref : sheetDto.featRefs()) {
+                Feat feat = libraryRefs.resolveFeat(ref, context);
+                sourceKeys.add(feat.getSourceKey());
+            }
             return objectMapper.writeValueAsString(sourceKeys);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            return null;
+            throw new IllegalStateException("Failed to import feat refs", e);
         }
-    }
-
-    private Species resolveSpecies(ContentReference ref) {
-        if (ref == null) return null;
-        return speciesRepository.findBySourceKey(ref.sourceKey());
-    }
-
-    private Background resolveBackground(ContentReference ref) {
-        if (ref == null) return null;
-        return backgroundRepository.findBySourceKey(ref.sourceKey());
-    }
-
-    private Spell resolveSpell(ContentReference ref) {
-        if (ref == null) return null;
-        return spellRepository.findBySourceKey(ref.sourceKey());
     }
 
     private String toJson(Map<String, Object> map) {

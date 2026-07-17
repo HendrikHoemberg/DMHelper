@@ -179,6 +179,11 @@ public class CharacterClassService {
     public void deleteCustom(UUID id) {
         CharacterClass clazz = findById(id);
         customContentSupport.assertCustom(clazz.getSource());
+        int refs = referenceCleaner.countClassSourceKeyReferences(clazz.getSourceKey());
+        if (refs > 0) {
+            throw new IllegalArgumentException(
+                    "Cannot delete class: referenced by " + refs + " character sheet(s)");
+        }
         if (clazz.getCampaign() != null) {
             referenceCleaner.deletePackageKey(clazz.getCampaign().getId(), CampaignContentType.CLASS, id);
         }

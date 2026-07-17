@@ -155,7 +155,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                     s.wisSave(), s.chaSave(), s.skills(), s.damageVulnerabilities(), s.damageResistances(),
                     s.damageImmunities(), s.conditionImmunities(), s.senses(), s.languages(), s.traits(), s.actions(),
                     s.bonusActions(), s.reactions(), s.legendaryActions(), s.legendaryDescription(), s.lairActions(), s.xp(),
-                    Instant.EPOCH));
+                    Instant.EPOCH, null));
         }
 
         Map<String, String> handoutKeys = new LinkedHashMap<>();

@@ -9,9 +9,8 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportCon
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionExporter;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionImporter;
+import dev.hendrikhoemberg.dmhelper.library.packagev2.LibraryContentReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
-import dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository;
-import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import org.springframework.stereotype.Component;
@@ -22,15 +21,12 @@ import java.util.List;
 public class TreasurySectionAdapter implements CampaignSectionExporter, CampaignSectionImporter {
 
     private final ItemAssignmentRepository assignmentRepository;
-    private final MagicItemRepository magicItemRepository;
-    private final EquipmentItemRepository equipmentItemRepository;
+    private final LibraryContentReferenceResolver libraryRefs;
 
     public TreasurySectionAdapter(ItemAssignmentRepository assignmentRepository,
-                                  MagicItemRepository magicItemRepository,
-                                  EquipmentItemRepository equipmentItemRepository) {
+                                  LibraryContentReferenceResolver libraryRefs) {
         this.assignmentRepository = assignmentRepository;
-        this.magicItemRepository = magicItemRepository;
-        this.equipmentItemRepository = equipmentItemRepository;
+        this.libraryRefs = libraryRefs;
     }
 
     @Override
@@ -64,14 +60,12 @@ public class TreasurySectionAdapter implements CampaignSectionExporter, Campaign
 
         ContentReference magicItemRef = null;
         if (assignment.getMagicItem() != null) {
-            magicItemRef = context.catalogRef(CampaignContentType.MAGIC_ITEM,
-                    assignment.getMagicItem().getSourceKey());
+            magicItemRef = libraryRefs.referenceFor(assignment.getMagicItem(), context);
         }
 
         ContentReference equipmentItemRef = null;
         if (assignment.getEquipmentItem() != null) {
-            equipmentItemRef = context.catalogRef(CampaignContentType.EQUIPMENT_ITEM,
-                    assignment.getEquipmentItem().getSourceKey());
+            equipmentItemRef = libraryRefs.referenceFor(assignment.getEquipmentItem(), context);
         }
 
         return new AssignmentDto(key, holderRef, magicItemRef, equipmentItemRef,
@@ -93,15 +87,10 @@ public class TreasurySectionAdapter implements CampaignSectionExporter, Campaign
             assignment.setAttuned(dto.attuned());
 
             if (dto.magicItemRef() != null) {
-                assignment.setMagicItem(magicItemRepository.findBySourceKey(dto.magicItemRef().sourceKey())
-                        .orElseThrow(() -> new IllegalStateException(
-                                "No catalog magic item for " + dto.magicItemRef().sourceKey())));
+                assignment.setMagicItem(libraryRefs.resolveMagicItem(dto.magicItemRef(), context));
             }
             if (dto.equipmentItemRef() != null) {
-                assignment.setEquipmentItem(equipmentItemRepository.findBySourceKey(
-                                dto.equipmentItemRef().sourceKey())
-                        .orElseThrow(() -> new IllegalStateException(
-                                "No catalog equipment item for " + dto.equipmentItemRef().sourceKey())));
+                assignment.setEquipmentItem(libraryRefs.resolveEquipmentItem(dto.equipmentItemRef(), context));
             }
 
             if (dto.holderRef() != null) {

@@ -14,12 +14,19 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportCon
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
 import dev.hendrikhoemberg.dmhelper.library.data.Background;
 import dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository;
-
+import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
+import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.Feat;
+import dev.hendrikhoemberg.dmhelper.library.data.FeatRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.Species;
 import dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.Spell;
 import dev.hendrikhoemberg.dmhelper.library.data.SpellRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
+import dev.hendrikhoemberg.dmhelper.library.packagev2.LibraryContentReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.party.packagev2.PartySectionAdapter;
@@ -52,6 +59,8 @@ class PartySectionAdapterTest {
     private SpeciesRepository speciesRepo;
     private BackgroundRepository backgroundRepo;
     private SpellRepository spellRepo;
+    private CharacterClassRepository classRepo;
+    private FeatRepository featRepo;
     private Campaign campaign;
 
     @BeforeEach
@@ -63,8 +72,13 @@ class PartySectionAdapterTest {
         speciesRepo = mock(SpeciesRepository.class);
         backgroundRepo = mock(BackgroundRepository.class);
         spellRepo = mock(SpellRepository.class);
-        adapter = new PartySectionAdapter(partyRepo, sheetRepo, resourceRepo, spellRefRepo,
-                speciesRepo, backgroundRepo, spellRepo);
+        classRepo = mock(CharacterClassRepository.class);
+        featRepo = mock(FeatRepository.class);
+        var libraryRefs = new LibraryContentReferenceResolver(
+                spellRepo, speciesRepo, backgroundRepo, classRepo, featRepo,
+                mock(MagicItemRepository.class), mock(EquipmentItemRepository.class),
+                mock(StatBlockRepository.class));
+        adapter = new PartySectionAdapter(partyRepo, sheetRepo, resourceRepo, spellRefRepo, libraryRefs);
         campaign = new Campaign();
         campaign.setId(UUID.randomUUID());
         campaign.setName("Test Campaign");
@@ -136,10 +150,14 @@ class PartySectionAdapterTest {
         spell2.setSourceKey("shield");
         spell2.setName("Shield");
 
-        when(speciesRepo.findBySourceKey("human")).thenReturn(species);
-        when(backgroundRepo.findBySourceKey("soldier")).thenReturn(background);
-        when(spellRepo.findBySourceKey("fire-bolt")).thenReturn(spell1);
-        when(spellRepo.findBySourceKey("shield")).thenReturn(spell2);
+        when(speciesRepo.findBySourceAndSourceKey(ContentSource.SRD, "human")).thenReturn(Optional.of(species));
+        when(backgroundRepo.findBySourceAndSourceKey(ContentSource.SRD, "soldier")).thenReturn(Optional.of(background));
+        when(spellRepo.findBySourceAndSourceKey(ContentSource.SRD, "fire-bolt")).thenReturn(Optional.of(spell1));
+        when(spellRepo.findBySourceAndSourceKey(ContentSource.SRD, "shield")).thenReturn(Optional.of(spell2));
+        when(classRepo.findBySourceAndSourceKey(ContentSource.SRD, "fighter")).thenReturn(Optional.of(srdClass("fighter")));
+        when(classRepo.findBySourceAndSourceKey(ContentSource.SRD, "wizard")).thenReturn(Optional.of(srdClass("wizard")));
+        when(featRepo.findBySourceAndSourceKey(ContentSource.SRD, "tough")).thenReturn(Optional.of(srdFeat("tough")));
+        when(featRepo.findBySourceAndSourceKey(ContentSource.SRD, "alert")).thenReturn(Optional.of(srdFeat("alert")));
 
         when(partyRepo.save(any())).thenAnswer(inv -> {
             var pm = inv.getArgument(0, PartyMember.class);
@@ -262,6 +280,24 @@ class PartySectionAdapterTest {
         pm.setPassiveInvestigation(10);
         pm.setActive(true);
         return pm;
+    }
+
+    private static CharacterClass srdClass(String sourceKey) {
+        var cls = new CharacterClass();
+        cls.setId(UUID.randomUUID());
+        cls.setSource(ContentSource.SRD);
+        cls.setSourceKey(sourceKey);
+        cls.setName(sourceKey);
+        return cls;
+    }
+
+    private static Feat srdFeat(String sourceKey) {
+        var feat = new Feat();
+        feat.setId(UUID.randomUUID());
+        feat.setSource(ContentSource.SRD);
+        feat.setSourceKey(sourceKey);
+        feat.setName(sourceKey);
+        return feat;
     }
 
     private CampaignExportContext exportContext(CampaignSectionAdapterTest.FakeKeyService keyService) {

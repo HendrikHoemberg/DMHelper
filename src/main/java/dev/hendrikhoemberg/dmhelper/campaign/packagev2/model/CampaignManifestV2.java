@@ -184,7 +184,8 @@ public record CampaignManifestV2(
             String legendaryDescription,
             String lairActions,
             int xp,
-            Instant createdAt
+            Instant createdAt,
+            ProvenanceDto provenance
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

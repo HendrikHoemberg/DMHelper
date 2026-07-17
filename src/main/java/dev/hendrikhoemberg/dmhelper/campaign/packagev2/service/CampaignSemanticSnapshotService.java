@@ -20,6 +20,15 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntry;
+import dev.hendrikhoemberg.dmhelper.library.data.Background;
+import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
+import dev.hendrikhoemberg.dmhelper.library.data.Condition;
+import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItem;
+import dev.hendrikhoemberg.dmhelper.library.data.Feat;
+import dev.hendrikhoemberg.dmhelper.library.data.MagicItem;
+import dev.hendrikhoemberg.dmhelper.library.data.RuleSection;
+import dev.hendrikhoemberg.dmhelper.library.data.Species;
+import dev.hendrikhoemberg.dmhelper.library.data.Spell;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNote;
@@ -327,6 +336,15 @@ public class CampaignSemanticSnapshotService {
             new OwnershipQuery(CampaignContentType.LEDGER_ENTRY, LedgerEntry.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.TIMELINE_EVENT, TimelineEvent.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.STATBLOCK, StatBlock.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.SPELL, Spell.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.CONDITION, Condition.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.RULE, RuleSection.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.EQUIPMENT_ITEM, EquipmentItem.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.MAGIC_ITEM, MagicItem.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.CLASS, CharacterClass.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.SPECIES, Species.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.BACKGROUND, Background.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.FEAT, Feat.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.DICE_ROLL, DiceRoll.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.SESSION, CampaignSession.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.SESSION_SCENE_VISIT, SessionSceneVisit.class,

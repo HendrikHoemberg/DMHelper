@@ -109,14 +109,17 @@ public class SpellService {
         spell.setHigherLevel(request.higherLevel());
         spell.setRitual(request.ritual());
         spell.setConcentration(request.concentration());
-        if (request.sourceKey() != null && !request.sourceKey().isBlank()) {
-            spell.setSourceKey(request.sourceKey());
-        } else {
-            spell.setSourceKey(customContentSupport.slugify(request.name()));
-        }
-        if (provenanceOrNull != null) {
-            spell.setProvenance(provenanceOrNull);
-        }
+        String sourceKey = request.sourceKey() != null && !request.sourceKey().isBlank()
+                ? request.sourceKey()
+                : customContentSupport.slugify(request.name());
+        customContentSupport.assertAvailableSourceKey(
+                sourceKey,
+                campaignIdOrNull,
+                sk -> repository.findBySourceAndSourceKey(ContentSource.SRD, sk).isPresent(),
+                repository::existsBySourceAndSourceKeyAndCampaignIsNull,
+                repository::existsByCampaignIdAndSourceKey);
+        spell.setSourceKey(sourceKey);
+        spell.setProvenance(customContentSupport.provenanceOrDefault(provenanceOrNull));
         return repository.save(spell);
     }
 

@@ -337,7 +337,8 @@
         "legendaryDescription": { "type": "string" },
         "lairActions": { "type": "string" },
         "xp": { "type": "integer" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "provenance": { "$ref": "#/$defs/provenance" }
       }
     },
     "provenance": {

@@ -160,6 +160,11 @@ public class FeatService {
     public void deleteCustom(UUID id) {
         Feat feat = findById(id);
         customContentSupport.assertCustom(feat.getSource());
+        int refs = referenceCleaner.countFeatSourceKeyReferences(feat.getSourceKey());
+        if (refs > 0) {
+            throw new IllegalArgumentException(
+                    "Cannot delete feat: referenced by " + refs + " character sheet(s)");
+        }
         if (feat.getCampaign() != null) {
             referenceCleaner.deletePackageKey(feat.getCampaign().getId(), CampaignContentType.FEAT, id);
         }

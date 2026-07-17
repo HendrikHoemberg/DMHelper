@@ -57,7 +57,16 @@ class AdventureSectionAdapterTest {
         statBlockRepository = mock(StatBlockRepository.class);
         adapter = new AdventureSectionAdapter(
                 adventureRepo, chapterRepo, sceneRepo,
-                new StatBlockReferenceResolver(statBlockRepository));
+                new StatBlockReferenceResolver(
+                        new dev.hendrikhoemberg.dmhelper.library.packagev2.LibraryContentReferenceResolver(
+                                mock(dev.hendrikhoemberg.dmhelper.library.data.SpellRepository.class),
+                                mock(dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository.class),
+                                mock(dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository.class),
+                                mock(dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository.class),
+                                mock(dev.hendrikhoemberg.dmhelper.library.data.FeatRepository.class),
+                                mock(dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository.class),
+                                mock(dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository.class),
+                                statBlockRepository)));
         campaign = new Campaign();
         campaign.setId(UUID.randomUUID());
         campaign.setName("Test Campaign");

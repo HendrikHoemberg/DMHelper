@@ -105,7 +105,7 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
                             sb.getSenses(), sb.getLanguages(),
                             sb.getTraits(), sb.getActions(), sb.getBonusActions(), sb.getReactions(),
                             sb.getLegendaryActions(), sb.getLegendaryDescription(), sb.getLairActions(),
-                            sb.getXp(), sb.getCreatedAt()
+                            sb.getXp(), sb.getCreatedAt(), toProvenanceDto(sb.getProvenance())
                     );
                 })
                 .toList();
@@ -330,6 +330,7 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
             sb.setLairActions(dto.lairActions());
             sb.setXp(dto.xp());
             sb.setCreatedAt(dto.createdAt());
+            sb.setProvenance(toContentProvenance(dto.provenance()));
             if (dto.sourceKey() != null && !dto.sourceKey().isBlank()) {
                 sb.setSourceKey(dto.sourceKey());
             }
@@ -543,9 +544,7 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
 
     private static ContentProvenance toContentProvenance(ProvenanceDto dto) {
         if (dto == null) {
-            var p = new ContentProvenance();
-            p.setImportedAt(Instant.now());
-            return p;
+            return null;
         }
         var p = new ContentProvenance();
         p.setSourceTitle(dto.sourceTitle());
