@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="|${npc.id != null} ? 'Edit' : 'New' NPC — ${campaign.name}|">NPC Form</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <h1 th:text="${npc.id != null} ? 'Edit NPC' : 'New NPC'">NPC Form</h1>
+            </div>
+            <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
+            <form class="inline-form"
+                  th:action="@{${npc.id != null}
+                      ? '/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${npc.id})'
+                      : '/campaigns/{cid}/world/npcs(cid=${campaignId})'}"
+                  th:method="${npc.id != null} ? 'put' : 'post'"
+                  method="post">
+                <input type="hidden" th:if="${npc.id != null}" name="_method" value="put"/>
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" name="name" class="form-input" required th:value="${npc.name}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <input type="text" name="role" class="form-input" th:value="${npc.role}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Disposition</label>
+                    <select name="disposition" class="form-input">
+                        <option value="">--</option>
+                        <option value="HOSTILE" th:selected="${npc.disposition?.name() == 'HOSTILE'}">Hostile</option>
+                        <option value="UNFRIENDLY" th:selected="${npc.disposition?.name() == 'UNFRIENDLY'}">Unfriendly</option>
+                        <option value="NEUTRAL" th:selected="${npc.disposition?.name() == 'NEUTRAL'}">Neutral</option>
+                        <option value="FRIENDLY" th:selected="${npc.disposition?.name() == 'FRIENDLY'}">Friendly</option>
+                        <option value="ALLY" th:selected="${npc.disposition?.name() == 'ALLY'}">Ally</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-input">
+                        <option value="">--</option>
+                        <option value="ALIVE" th:selected="${npc.status?.name() == 'ALIVE'}">Alive</option>
+                        <option value="DEAD" th:selected="${npc.status?.name() == 'DEAD'}">Dead</option>
+                        <option value="MISSING" th:selected="${npc.status?.name() == 'MISSING'}">Missing</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Faction</label>
+                    <select name="factionId" class="form-input">
+                        <option value="">--</option>
+                        <option th:each="f : ${factions}" th:value="${f.id}"
+                                th:selected="${npc.faction?.id == f.id}"
+                                th:text="${f.name}">Faction</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Location</label>
+                    <select name="locationId" class="form-input">
+                        <option value="">--</option>
+                        <option th:each="loc : ${locations}" th:value="${loc.id}"
+                                th:selected="${npc.location?.id == loc.id}"
+                                th:text="${loc.name}">Location</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Appearance</label>
+                    <textarea name="appearance" class="form-input" th:text="${npc.appearance}"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Voice</label>
+                    <textarea name="voice" class="form-input" th:text="${npc.voice}"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Motivation</label>
+                    <textarea name="motivation" class="form-input" th:text="${npc.motivation}"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Secret</label>
+                    <textarea name="secret" class="form-input" th:text="${npc.secret}"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Inventory</label>
+                    <textarea name="inventoryText" class="form-input" th:text="${npc.inventoryText}"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tags</label>
+                    <input type="text" name="tags" class="form-input" th:value="${npc.tags}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Source Locator</label>
+                    <input type="text" name="sourceLocator" class="form-input" th:value="${npc.sourceLocator}">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" th:text="${npc.id != null} ? 'Update' : 'Create'">Save</button>
+                    <a class="btn btn-ghost"
+                       th:href="@{${npc.id != null}
+                           ? '/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${npc.id})'
+                           : '/campaigns/{cid}/world/npcs(cid=${campaignId})'}">Cancel</a>
+                </div>
+            </form>
+        </main>
+    </div>
+</body>
+</html>

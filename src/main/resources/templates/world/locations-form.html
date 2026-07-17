@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="|${location.id != null} ? 'Edit' : 'New' Location — ${campaign.name}|">Location Form</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <h1 th:text="${location.id != null} ? 'Edit Location' : 'New Location'">Location Form</h1>
+            </div>
+            <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
+            <form class="inline-form"
+                  th:action="@{${location.id != null}
+                      ? '/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${location.id})'
+                      : '/campaigns/{cid}/world/locations(cid=${campaignId})'}"
+                  th:method="${location.id != null} ? 'put' : 'post'"
+                  method="post">
+                <input type="hidden" th:if="${location.id != null}" name="_method" value="put"/>
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" name="name" class="form-input" required th:value="${location.name}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Kind</label>
+                    <select name="kind" class="form-input">
+                        <option value="SITE" th:selected="${location.kind?.name() == 'SITE'}">Site</option>
+                        <option value="REGION" th:selected="${location.kind?.name() == 'REGION'}">Region</option>
+                        <option value="SETTLEMENT" th:selected="${location.kind?.name() == 'SETTLEMENT'}">Settlement</option>
+                        <option value="PLANE" th:selected="${location.kind?.name() == 'PLANE'}">Plane</option>
+                        <option value="OTHER" th:selected="${location.kind?.name() == 'OTHER'}">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Parent Location</label>
+                    <select name="parentLocationId" class="form-input">
+                        <option value="">--</option>
+                        <option th:each="loc : ${allLocations}"
+                                th:if="${loc.id != location.id}"
+                                th:value="${loc.id}"
+                                th:selected="${location.parentLocation?.id == loc.id}"
+                                th:text="${loc.name}">Location</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Summary</label>
+                    <textarea name="summary" class="form-input" th:text="${location.summary}"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Services</label>
+                    <textarea name="services" class="form-input" th:text="${location.services}"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Secrets</label>
+                    <textarea name="secrets" class="form-input" th:text="${location.secrets}"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tags</label>
+                    <input type="text" name="tags" class="form-input" th:value="${location.tags}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Source Locator</label>
+                    <input type="text" name="sourceLocator" class="form-input" th:value="${location.sourceLocator}">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" th:text="${location.id != null} ? 'Update' : 'Create'">Save</button>
+                    <a class="btn btn-ghost"
+                       th:href="@{${location.id != null}
+                           ? '/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${location.id})'
+                           : '/campaigns/{cid}/world/locations(cid=${campaignId})'}">Cancel</a>
+                </div>
+            </form>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="|${location.name} — ${campaign.name}|">Location Detail</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <div class="breadcrumb">
+                    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
+                    <span> / </span>
+                    <a th:href="@{/campaigns/{cid}/world/locations(cid=${campaignId})}">Locations</a>
+                    <span> / </span>
+                    <span th:text="${location.name}">Location</span>
+                </div>
+                <h1 th:text="${location.name}">Location Name</h1>
+                <div class="page-header-actions">
+                    <span class="badge" th:text="${location.kind.name()}">KIND</span>
+                    <button class="btn btn-ghost"
+                            th:hx-get="@{/campaigns/{cid}/world/locations/{lid}/edit(cid=${campaignId},lid=${location.id})}"
+                            hx-target="#locationForm"
+                            hx-swap="innerHTML">Edit</button>
+                    <button class="btn btn-danger"
+                            th:hx-delete="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${location.id})}"
+                            hx-confirm="Delete this location?"
+                            hx-target="body" hx-swap="outerHTML">Delete</button>
+                </div>
+            </div>
+            <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
+            <div id="locationForm"></div>
+            <div class="detail-section">
+                <div th:if="${location.kind}" class="u-mb-md" th:text="|Kind: ${location.kind.name()}|">Kind</div>
+                <div th:if="${location.parentLocation}" class="u-mb-md">
+                    <span>Parent Location: </span>
+                    <a th:href="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${location.parentLocation.id})}"
+                       th:text="${location.parentLocation.name}">Parent</a>
+                </div>
+                <div th:if="${location.summary}" class="u-mb-md">
+                    <h4>Summary</h4>
+                    <p th:text="${location.summary}">Summary</p>
+                </div>
+                <div th:if="${location.services}" class="u-mb-md">
+                    <h4>Services</h4>
+                    <p th:text="${location.services}">Services</p>
+                </div>
+                <div th:if="${location.secrets}" class="u-mb-md">
+                    <h4>Secrets</h4>
+                    <p th:text="${location.secrets}">Secrets</p>
+                </div>
+                <div th:if="${location.tags}" class="u-mb-md" th:text="|Tags: ${location.tags}|">Tags</div>
+                <div th:if="${location.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${location.sourceLocator}|">Source</div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

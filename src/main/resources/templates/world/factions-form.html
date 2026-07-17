@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="|${faction.id != null} ? 'Edit' : 'New' Faction — ${campaign.name}|">Faction Form</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <h1 th:text="${faction.id != null} ? 'Edit Faction' : 'New Faction'">Faction Form</h1>
+            </div>
+            <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
+            <form class="inline-form"
+                  th:action="@{${faction.id != null}
+                      ? '/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${faction.id})'
+                      : '/campaigns/{cid}/world/factions(cid=${campaignId})'}"
+                  th:method="${faction.id != null} ? 'put' : 'post'"
+                  method="post">
+                <input type="hidden" th:if="${faction.id != null}" name="_method" value="put"/>
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" name="name" class="form-input" required th:value="${faction.name}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Goals</label>
+                    <textarea name="goals" class="form-input" th:text="${faction.goals}"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Resources</label>
+                    <textarea name="resources" class="form-input" th:text="${faction.resources}"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Reputation Notes</label>
+                    <textarea name="reputationNotes" class="form-input" th:text="${faction.reputationNotes}"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tags</label>
+                    <input type="text" name="tags" class="form-input" th:value="${faction.tags}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Source Locator</label>
+                    <input type="text" name="sourceLocator" class="form-input" th:value="${faction.sourceLocator}">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" th:text="${faction.id != null} ? 'Update' : 'Create'">Save</button>
+                    <a class="btn btn-ghost"
+                       th:href="@{${faction.id != null}
+                           ? '/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${faction.id})'
+                           : '/campaigns/{cid}/world/factions(cid=${campaignId})'}">Cancel</a>
+                </div>
+            </form>
+        </main>
+    </div>
+</body>
+</html>

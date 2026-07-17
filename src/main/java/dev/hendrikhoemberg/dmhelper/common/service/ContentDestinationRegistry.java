@@ -9,7 +9,8 @@ import java.util.UUID;
 @Component
 public class ContentDestinationRegistry {
     public enum CampaignType {
-        NOTE, QUICK_NOTE, MAP, ENCOUNTER, HANDOUT, PARTY_MEMBER, PARTY_MEMBER_SHEET, SCENE
+        NOTE, QUICK_NOTE, MAP, ENCOUNTER, HANDOUT, PARTY_MEMBER, PARTY_MEMBER_SHEET, SCENE,
+        WORLD_NPC, WORLD_LOCATION, FACTION
     }
 
     public enum LibraryType {
@@ -37,6 +38,18 @@ public class ContentDestinationRegistry {
             case SCENE -> {
                 if (parentId == null) throw new IllegalArgumentException("Scene destination requires adventure ID");
                 yield root + "/adventures/" + parentId + "/scenes/" + entityId;
+            }
+            case WORLD_NPC -> {
+                if (entityId == null) yield root + "/world/npcs";
+                yield root + "/world/npcs/" + entityId;
+            }
+            case WORLD_LOCATION -> {
+                if (entityId == null) yield root + "/world/locations";
+                yield root + "/world/locations/" + entityId;
+            }
+            case FACTION -> {
+                if (entityId == null) yield root + "/world/factions";
+                yield root + "/world/factions/" + entityId;
             }
         };
     }

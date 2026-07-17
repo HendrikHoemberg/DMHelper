@@ -6,6 +6,9 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.*;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldNpcRepository;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldLocationRepository;
+import dev.hendrikhoemberg.dmhelper.world.data.FactionRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
@@ -46,6 +49,9 @@ public class CommandPaletteService {
     private final SceneRepository sceneRepo;
     private final ContentDestinationRegistry destinations;
     private final CharacterSheetRepository characterSheetRepo;
+    private final WorldNpcRepository worldNpcRepo;
+    private final WorldLocationRepository worldLocationRepo;
+    private final FactionRepository factionRepo;
 
     public CommandPaletteService(NoteRepository noteRepo, QuickNoteRepository quickNoteRepo,
                                   StatBlockRepository statBlockRepo, SpellRepository spellRepo,
@@ -57,7 +63,10 @@ public class CommandPaletteService {
                                   HandoutRepository handoutRepo, PartyMemberRepository partyMemberRepo,
                                   SceneRepository sceneRepo,
                                   ContentDestinationRegistry destinations,
-                                  CharacterSheetRepository characterSheetRepo) {
+                                  CharacterSheetRepository characterSheetRepo,
+                                  WorldNpcRepository worldNpcRepo,
+                                  WorldLocationRepository worldLocationRepo,
+                                  FactionRepository factionRepo) {
         this.noteRepo = noteRepo;
         this.quickNoteRepo = quickNoteRepo;
         this.statBlockRepo = statBlockRepo;
@@ -77,6 +86,9 @@ public class CommandPaletteService {
         this.sceneRepo = sceneRepo;
         this.destinations = destinations;
         this.characterSheetRepo = characterSheetRepo;
+        this.worldNpcRepo = worldNpcRepo;
+        this.worldLocationRepo = worldLocationRepo;
+        this.factionRepo = factionRepo;
     }
 
     public List<SearchResultItem> search(String query, UUID campaignId) {
@@ -132,6 +144,27 @@ public class CommandPaletteService {
                                             ? ContentDestinationRegistry.CampaignType.PARTY_MEMBER_SHEET
                                             : ContentDestinationRegistry.CampaignType.PARTY_MEMBER,
                                     campaignId, pm.getId(), null)))
+                    .forEach(item -> add(results, item, null, q, true));
+
+            worldNpcRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId).stream()
+                    .filter(n -> matches(n.getName(), q))
+                    .map(n -> new SearchResultItem(n.getId().toString(), n.getName(), "world-npc",
+                            n.getRole(),
+                            destinations.campaign(ContentDestinationRegistry.CampaignType.WORLD_NPC, campaignId, n.getId(), null)))
+                    .forEach(item -> add(results, item, null, q, true));
+
+            worldLocationRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId).stream()
+                    .filter(l -> matches(l.getName(), q))
+                    .map(l -> new SearchResultItem(l.getId().toString(), l.getName(), "world-location",
+                            l.getKind().name(),
+                            destinations.campaign(ContentDestinationRegistry.CampaignType.WORLD_LOCATION, campaignId, l.getId(), null)))
+                    .forEach(item -> add(results, item, null, q, true));
+
+            factionRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId).stream()
+                    .filter(f -> matches(f.getName(), q))
+                    .map(f -> new SearchResultItem(f.getId().toString(), f.getName(), "faction",
+                            null,
+                            destinations.campaign(ContentDestinationRegistry.CampaignType.FACTION, campaignId, f.getId(), null)))
                     .forEach(item -> add(results, item, null, q, true));
 
             sceneRepo.findByChapterAdventureCampaignId(campaignId).stream()

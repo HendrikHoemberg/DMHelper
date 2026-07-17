@@ -1,0 +1,18 @@
+<div th:fragment="clockRow(clocks, campaignId, factionId)" xmlns:th="http://www.thymeleaf.org">
+    <div th:if="${clocks.empty}" class="u-text-xs text-muted">No clocks.</div>
+    <div th:unless="${clocks.empty}" th:each="clock : ${clocks}" class="card u-mb-sm">
+        <div class="card-header">
+            <strong th:text="${clock.title}">Clock Title</strong>
+            <span class="badge" th:text="|${clock.filled}/${clock.segments}|">0/4</span>
+        </div>
+        <div th:if="${clock.notes}" class="card-body u-text-xs" th:text="${clock.notes}">Notes</div>
+        <div class="card-footer">
+            <form th:action="@{/campaigns/{cid}/world/factions/{fid}/clocks/{clkid}(cid=${campaignId},fid=${factionId},clkid=${clock.id})}"
+                  method="post" style="display:inline">
+                <input type="hidden" name="_method" value="delete"/>
+                <button type="submit" class="btn btn-danger btn-sm"
+                        onclick="return confirm('Delete this clock?')">Delete</button>
+            </form>
+        </div>
+    </div>
+</div>

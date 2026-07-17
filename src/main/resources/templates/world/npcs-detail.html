@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="|${npc.name} — ${campaign.name}|">NPC Detail</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <div class="breadcrumb">
+                    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
+                    <span> / </span>
+                    <a th:href="@{/campaigns/{cid}/world/npcs(cid=${campaignId})}">NPCs</a>
+                    <span> / </span>
+                    <span th:text="${npc.name}">NPC</span>
+                </div>
+                <h1 th:text="${npc.name}">NPC Name</h1>
+                <div class="page-header-actions">
+                    <span class="badge" th:text="${npc.status.name()}">STATUS</span>
+                    <button class="btn btn-ghost"
+                            th:hx-get="@{/campaigns/{cid}/world/npcs/{nid}/edit(cid=${campaignId},nid=${npc.id})}"
+                            hx-target="#npcForm"
+                            hx-swap="innerHTML">Edit</button>
+                    <button class="btn btn-danger"
+                            th:hx-delete="@{/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${npc.id})}"
+                            hx-confirm="Delete this NPC?"
+                            hx-target="body" hx-swap="outerHTML">Delete</button>
+                </div>
+            </div>
+            <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
+            <div id="npcForm"></div>
+            <div class="detail-section">
+                <div th:if="${npc.role}" class="u-mb-md" th:text="|Role: ${npc.role}|">Role</div>
+                <div th:if="${npc.disposition}" class="u-mb-md" th:text="|Disposition: ${npc.disposition.name()}|">Disposition</div>
+                <div th:if="${npc.faction}" class="u-mb-md">
+                    <span>Faction: </span>
+                    <a th:href="@{/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${npc.faction.id})}"
+                       th:text="${npc.faction.name}">Faction</a>
+                </div>
+                <div th:if="${npc.location}" class="u-mb-md">
+                    <span>Location: </span>
+                    <a th:href="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${npc.location.id})}"
+                       th:text="${npc.location.name}">Location</a>
+                </div>
+                <div th:if="${npc.appearance}" class="u-mb-md">
+                    <h4>Appearance</h4>
+                    <p th:text="${npc.appearance}">Appearance</p>
+                </div>
+                <div th:if="${npc.voice}" class="u-mb-md">
+                    <h4>Voice</h4>
+                    <p th:text="${npc.voice}">Voice</p>
+                </div>
+                <div th:if="${npc.motivation}" class="u-mb-md">
+                    <h4>Motivation</h4>
+                    <p th:text="${npc.motivation}">Motivation</p>
+                </div>
+                <div th:if="${npc.secret}" class="u-mb-md">
+                    <h4>Secret</h4>
+                    <p th:text="${npc.secret}">Secret</p>
+                </div>
+                <div th:if="${npc.inventoryText}" class="u-mb-md">
+                    <h4>Inventory</h4>
+                    <p th:text="${npc.inventoryText}">Inventory</p>
+                </div>
+                <div th:if="${npc.tags}" class="u-mb-md" th:text="|Tags: ${npc.tags}|">Tags</div>
+                <div th:if="${npc.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${npc.sourceLocator}|">Source</div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

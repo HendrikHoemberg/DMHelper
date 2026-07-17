@@ -34,6 +34,12 @@
         </div>
         <div class="appnav-group">
             <div class="appnav-label">World</div>
+            <a class="appnav-link" data-icon="&#x1F464;" data-label="NPCs"
+               th:href="@{/campaigns/{id}/world/npcs(id=${campaignId})}"><span class="appnav-text">NPCs</span></a>
+            <a class="appnav-link" data-icon="&#x1F3D9;" data-label="Locations"
+               th:href="@{/campaigns/{id}/world/locations(id=${campaignId})}"><span class="appnav-text">Locations</span></a>
+            <a class="appnav-link" data-icon="&#x1F3F7;" data-label="Factions"
+               th:href="@{/campaigns/{id}/world/factions(id=${campaignId})}"><span class="appnav-text">Factions</span></a>
             <a class="appnav-link" data-icon="&#x1F319;" data-label="Calendar"
                th:href="@{/campaigns/{id}/calendar(id=${campaignId})}"><span class="appnav-text">Calendar</span></a>
             <a class="appnav-link" data-icon="&#x1F4DA;" data-label="Library"

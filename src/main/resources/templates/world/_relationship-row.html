@@ -1,0 +1,34 @@
+<div th:fragment="relationshipRow(relationships, campaignId)" xmlns:th="http://www.thymeleaf.org">
+    <div th:if="${relationships.empty}" class="u-text-xs text-muted">No relationships.</div>
+    <table th:unless="${relationships.empty}" class="table">
+        <thead>
+            <tr>
+                <th>Kind</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Knowledge</th>
+                <th>Status</th>
+                <th>Notes</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="rel : ${relationships}">
+                <td th:text="${rel.kind.name()}">Kind</td>
+                <td th:text="|${rel.fromType}:${rel.fromId}|">From</td>
+                <td th:text="|${rel.toType}:${rel.toId}|">To</td>
+                <td th:text="${rel.knowledge.name()}">Knowledge</td>
+                <td th:text="${rel.status.name()}">Status</td>
+                <td th:text="${rel.notes}">Notes</td>
+                <td>
+                    <form th:action="@{/campaigns/{cid}/world/factions/{fid}/relationships/{rid}(cid=${campaignId},fid='00000000-0000-0000-0000-000000000000',rid=${rel.id})}"
+                          method="post" style="display:inline">
+                        <input type="hidden" name="_method" value="delete"/>
+                        <button type="submit" class="btn btn-danger btn-sm"
+                                onclick="return confirm('Delete this relationship?')">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

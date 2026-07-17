@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="|NPCs — ${campaign.name}|">NPCs</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <h1>NPCs</h1>
+                <div class="page-header-actions">
+                    <a class="btn btn-primary"
+                       th:href="@{/campaigns/{cid}/world/npcs/new(cid=${campaignId})}">+ New NPC</a>
+                </div>
+            </div>
+            <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
+            <div th:if="${npcs.empty}" class="empty-state">No NPCs yet.</div>
+            <div th:unless="${npcs.empty}" class="card-grid">
+                <div th:each="npc : ${npcs}" class="card">
+                    <div class="card-header">
+                        <a th:href="@{/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${npc.id})}"
+                           th:text="${npc.name}">NPC Name</a>
+                        <span class="badge" th:text="${npc.status.name()}">STATUS</span>
+                    </div>
+                    <div th:if="${npc.role}" class="card-body" th:text="${npc.role}">Role</div>
+                    <div class="card-footer">
+                        <span th:if="${npc.faction != null}" class="u-text-xs text-muted"
+                              th:text="|${npc.faction.name}|">Faction</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
