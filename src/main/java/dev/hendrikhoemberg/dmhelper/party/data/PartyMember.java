@@ -77,6 +77,8 @@ public class PartyMember {
     @Column(columnDefinition = "CLOB")
     private String conditionsJson;
 
+    private int xp;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -142,6 +144,9 @@ public class PartyMember {
 
     public String getConditionsJson() { return conditionsJson; }
     public void setConditionsJson(String conditionsJson) { this.conditionsJson = conditionsJson; }
+
+    public int getXp() { return xp; }
+    public void setXp(int xp) { this.xp = xp; }
 
     @OneToOne(mappedBy = "partyMember", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore

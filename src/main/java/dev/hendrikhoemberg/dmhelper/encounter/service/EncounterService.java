@@ -169,6 +169,24 @@ public class EncounterService {
                                      String combatantId, String combatantName, String payload,
                                      Instant createdAt) {}
 
+    public record EncounterSummaryDto(
+            UUID encounterId,
+            String name,
+            int rounds,
+            int combatantCount,
+            int defeatedCount,
+            int partyCasualtyCount,
+            int totalDamageDealt,
+            List<String> wavesSpawned,
+            List<String> casualtyNames,
+            EncounterRewards rewardsDraft,
+            Instant endedAt
+    ) {}
+
+    public record EncounterEndResult(EncounterDto encounter, EncounterSummaryDto summary) {}
+
+    public record ApplyRewardsRequest(boolean awardXp, List<UUID> partyMemberIds) {}
+
     static EncounterDto toDto(Encounter e) {
         return new EncounterDto(e.getId(), e.getCampaign().getId(),
                 e.getMap() != null ? e.getMap().getId() : null,
@@ -287,6 +305,137 @@ public class EncounterService {
         tablePresentationService.updateAoEs(e.getCampaign().getId(), List.of());
         tablePresentationService.broadcastCurrentState(e.getCampaign().getId());
         return dto;
+    }
+
+    @Transactional
+    public EncounterDto updatePrep(UUID id, EncounterPrep prep) {
+        Encounter e = findEntityById(id);
+        try {
+            e.setPrepJson(JSON_MAPPER.writeValueAsString(prep));
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Invalid prep data", ex);
+        }
+        return toDto(e);
+    }
+
+    @Transactional
+    public EncounterDto updateRewards(UUID id, EncounterRewards rewards) {
+        Encounter e = findEntityById(id);
+        try {
+            e.setRewardsJson(JSON_MAPPER.writeValueAsString(rewards));
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Invalid rewards data", ex);
+        }
+        return toDto(e);
+    }
+
+    @Transactional(readOnly = true)
+    public EncounterPrep getPrep(UUID id) {
+        Encounter e = findEntityById(id);
+        if (e.getPrepJson() == null || e.getPrepJson().isBlank()) return EncounterPrep.empty();
+        try {
+            return JSON_MAPPER.readValue(e.getPrepJson(), EncounterPrep.class);
+        } catch (Exception ex) {
+            return EncounterPrep.empty();
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public EncounterRewards getRewards(UUID id) {
+        Encounter e = findEntityById(id);
+        if (e.getRewardsJson() == null || e.getRewardsJson().isBlank()) return EncounterRewards.empty();
+        try {
+            return JSON_MAPPER.readValue(e.getRewardsJson(), EncounterRewards.class);
+        } catch (Exception ex) {
+            return EncounterRewards.empty();
+        }
+    }
+
+    @Transactional
+    public EncounterEndResult endEncounterWithSummary(UUID encounterId) {
+        EncounterDto enc = endEncounter(encounterId);
+        EncounterSummaryDto summary = buildSummary(encounterId);
+        return new EncounterEndResult(enc, summary);
+    }
+
+    public EncounterSummaryDto buildSummary(UUID encounterId) {
+        Encounter e = findEntityById(encounterId);
+        List<Combatant> all = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+        List<CombatLogEntry> log = combatLogRepo.findByEncounterIdOrderBySequenceAsc(encounterId);
+
+        int damage = log.stream()
+                .filter(l -> l.getType() == CombatLogEntry.EntryType.DAMAGE)
+                .mapToInt(l -> extractAmount(l.getPayload()))
+                .sum();
+        List<String> waves = log.stream()
+                .filter(l -> l.getType() == CombatLogEntry.EntryType.WAVE_SPAWNED)
+                .map(l -> extractWaveKey(l.getPayload()))
+                .filter(Objects::nonNull)
+                .toList();
+        List<String> casualtyNames = all.stream()
+                .filter(Combatant::isDefeated)
+                .map(Combatant::getName)
+                .toList();
+
+        return new EncounterSummaryDto(
+                e.getId(), e.getName(), e.getRound(),
+                all.size(),
+                (int) all.stream().filter(Combatant::isDefeated).count(),
+                (int) all.stream().filter(c -> "PC".equals(c.getKind()) && c.isDefeated()).count(),
+                damage,
+                waves,
+                casualtyNames,
+                getRewards(encounterId),
+                Instant.now()
+        );
+    }
+
+    private int extractAmount(String payload) {
+        try {
+            return JSON_MAPPER.readTree(payload).get("amount").asInt(0);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private String extractWaveKey(String payload) {
+        try {
+            return JSON_MAPPER.readTree(payload).get("waveKey").asText(null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Transactional
+    public void applyRewards(UUID encounterId, ApplyRewardsRequest req) {
+        Encounter e = findEntityById(encounterId);
+        List<CombatLogEntry> log = combatLogRepo.findByEncounterIdOrderBySequenceAsc(encounterId);
+        if (!log.isEmpty() && log.get(log.size() - 1).getType() == CombatLogEntry.EntryType.REWARD_APPLIED) {
+            throw new IllegalStateException("Rewards already applied");
+        }
+
+        EncounterRewards rewards = getRewards(encounterId);
+        if (rewards == null || rewards.equals(EncounterRewards.empty())) return;
+
+        if (req.awardXp() && rewards.xpTotal() != null && rewards.xpTotal() > 0 && req.partyMemberIds() != null) {
+            int xpPerMember = rewards.xpPerPc() != null && rewards.xpPerPc() > 0
+                    ? rewards.xpPerPc()
+                    : rewards.xpTotal() / req.partyMemberIds().size();
+            for (UUID memberId : req.partyMemberIds()) {
+                PartyMember pm = partyRepo.findById(memberId).orElse(null);
+                if (pm != null) {
+                    pm.setXp(pm.getXp() + xpPerMember);
+                    partyRepo.save(pm);
+                }
+            }
+        }
+
+        try {
+            logEntry(encounterId, CombatLogEntry.EntryType.REWARD_APPLIED, "",
+                    JSON_MAPPER.writeValueAsString(Map.of("xpAwarded", req.awardXp())));
+        } catch (Exception ex) {
+            // ignore log failure
+        }
     }
 
     public CombatantDto addCombatant(UUID encounterId, CombatantCreateRequest req) {

@@ -2,7 +2,10 @@ package dev.hendrikhoemberg.dmhelper.encounter.web;
 
 import dev.hendrikhoemberg.dmhelper.encounter.service.CombatDifficultyCalculator.DifficultyResult;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPrep;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterRewards;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatLogEntryDto;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.EncounterEndResult;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.AddFromLibraryRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantDto;
@@ -58,6 +61,33 @@ public class EncounterApiController {
     @PostMapping("/encounters/{id}/end")
     public EncounterDto end(@PathVariable UUID id) {
         return service.endEncounter(id);
+    }
+
+    @PutMapping("/encounters/{id}/prep")
+    public EncounterPrep updatePrep(@PathVariable UUID id,
+            @RequestBody EncounterPrep prep) {
+        return service.updatePrep(id, prep);
+    }
+
+    @GetMapping("/encounters/{id}/prep")
+    public EncounterPrep getPrep(@PathVariable UUID id) {
+        return service.getPrep(id);
+    }
+
+    @PutMapping("/encounters/{id}/rewards")
+    public EncounterDto updateRewards(@PathVariable UUID id,
+            @RequestBody EncounterRewards rewards) {
+        return service.updateRewards(id, rewards);
+    }
+
+    @GetMapping("/encounters/{id}/rewards")
+    public EncounterRewards getRewards(@PathVariable UUID id) {
+        return service.getRewards(id);
+    }
+
+    @PostMapping("/encounters/{id}/end-with-summary")
+    public EncounterEndResult endWithSummary(@PathVariable UUID id) {
+        return service.endEncounterWithSummary(id);
     }
 
     @GetMapping("/campaigns/{campaignId}/encounters")
