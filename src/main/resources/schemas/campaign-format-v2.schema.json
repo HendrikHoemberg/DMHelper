@@ -693,7 +693,8 @@
         "equipmentItemRef": { "$ref": "#/$defs/contentReference" },
         "customText": { "type": "string" },
         "quantity": { "type": "integer", "minimum": 0 },
-        "attuned": { "type": "boolean" }
+        "attuned": { "type": "boolean" },
+        "inventoryState": { "type": "string", "enum": ["EQUIPPED", "CARRIED", "STASHED", "CONSUMED", "LOST"] }
       }
     },
     "ledgerEntry": {

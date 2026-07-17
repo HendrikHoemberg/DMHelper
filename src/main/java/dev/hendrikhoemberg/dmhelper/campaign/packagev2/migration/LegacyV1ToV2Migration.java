@@ -128,7 +128,8 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                         nullableCatalog(CampaignContentType.SPECIES, s.speciesKey()),
                         nullableCatalog(CampaignContentType.BACKGROUND, s.backgroundKey()),
                         list(s.featRefs()).stream().map(ref -> catalog(CampaignContentType.FEAT, ref)).toList(),
-                        s.xp(), map(s.overrides()), s.hitDiceUsed(), resources, spells, map(s.spellSlotsUsed()));
+                        s.xp(), map(s.overrides()), s.hitDiceUsed(), resources, spells, map(s.spellSlotsUsed()),
+                        List.of(), List.of());
             }
             int currentHp = value.maxHp();
             warning(warnings, "LEGACY_STATE_DEFAULTED", "/party/" + i + "/currentHp",
@@ -292,7 +293,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                     ref(CampaignContentType.PARTY_MEMBER, partyKeys, a.holderName()),
                     nullableCatalog(CampaignContentType.MAGIC_ITEM, a.magicItemKey()),
                     nullableCatalog(CampaignContentType.EQUIPMENT_ITEM, a.equipmentItemKey()),
-                    a.customText(), a.quantity(), a.attuned()));
+                    a.customText(), a.quantity(), a.attuned(), "CARRIED"));
         }
 
         List<CampaignManifestV2.LedgerEntryDto> ledger = new ArrayList<>();

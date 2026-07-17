@@ -39,6 +39,10 @@ public class ItemAssignment {
 
     private boolean attuned;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "inventory_state", nullable = false, length = 16)
+    private InventoryState inventoryState = InventoryState.CARRIED;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public Campaign getCampaign() { return campaign; }
@@ -55,6 +59,8 @@ public class ItemAssignment {
     public void setQuantity(int quantity) { this.quantity = quantity; }
     public boolean isAttuned() { return attuned; }
     public void setAttuned(boolean attuned) { this.attuned = attuned; }
+    public InventoryState getInventoryState() { return inventoryState; }
+    public void setInventoryState(InventoryState inventoryState) { this.inventoryState = inventoryState; }
 
     public String getItemName() {
         if (magicItem != null) return magicItem.getName();

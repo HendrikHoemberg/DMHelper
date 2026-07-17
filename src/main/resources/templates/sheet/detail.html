@@ -141,14 +141,7 @@
                 </div>
             </div>
 
-            <section id="sheet-loot"
-                     th:hx-get="@{/campaigns/{cid}/treasury/fragment/{mid}(cid=${campaign.id}, mid=${member.id})}"
-                     hx-trigger="load">
-                <div class="detail-section">
-                    <h2>Equipment &amp; Loot</h2>
-                    <div class="loading" style="color: var(--color-text-muted);">Loading...</div>
-                </div>
-            </section>
+            <div th:replace="~{sheet/_inventory :: inventory(assignments=${assignments}, totalWeight=${totalWeight}, campaignId=${campaign.id})}"></div>
         </div>
 
         <th:block th:unless="${hasSheet}"><div th:replace="~{common/_empty-state :: empty-state('No character sheet yet.', 'Create Sheet', @{/campaigns/{cid}/party/{pid}/sheet/create(cid=${campaign.id}, pid=${member.id})}, null)}"></div></th:block>

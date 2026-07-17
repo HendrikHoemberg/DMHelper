@@ -12,3 +12,6 @@ ALTER TABLE party_member ADD COLUMN IF NOT EXISTS conditions_json CLOB;
 -- Add attacks and features JSON columns to character_sheet for first-class attack/action tracking.
 ALTER TABLE character_sheet ADD COLUMN IF NOT EXISTS attacks_json CLOB;
 ALTER TABLE character_sheet ADD COLUMN IF NOT EXISTS features_json CLOB;
+
+-- Add inventory state to item_assignment for character sheet inventory panel.
+ALTER TABLE item_assignment ADD COLUMN IF NOT EXISTS inventory_state VARCHAR(16) NOT NULL DEFAULT 'CARRIED';

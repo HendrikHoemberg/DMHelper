@@ -10,6 +10,7 @@ import dev.hendrikhoemberg.dmhelper.library.data.MagicItem;
 import dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.treasury.data.InventoryState;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import org.springframework.stereotype.Service;
@@ -43,14 +44,29 @@ public class TreasuryService {
 
     public record CreateAssignmentRequest(
         UUID campaignId, UUID partyMemberId, UUID magicItemId, UUID equipmentItemId,
-        String customText, int quantity, boolean attuned
-    ) {}
+        String customText, int quantity, boolean attuned,
+        InventoryState inventoryState
+    ) {
+        public CreateAssignmentRequest {
+            if (inventoryState == null) inventoryState = InventoryState.CARRIED;
+        }
+
+        public CreateAssignmentRequest(
+            UUID campaignId, UUID partyMemberId, UUID magicItemId, UUID equipmentItemId,
+            String customText, int quantity, boolean attuned
+        ) {
+            this(campaignId, partyMemberId, magicItemId, equipmentItemId,
+                 customText, quantity, attuned,
+                 partyMemberId == null ? InventoryState.STASHED : InventoryState.CARRIED);
+        }
+    }
 
     public record AssignmentDto(
         UUID id, UUID campaignId, UUID partyMemberId, String holderName,
         UUID magicItemId, String magicItemName,
         UUID equipmentItemId, String equipmentItemName,
-        String customText, int quantity, boolean attuned, String itemName
+        String customText, int quantity, boolean attuned, String itemName,
+        InventoryState inventoryState
     ) {
         public static AssignmentDto from(ItemAssignment a) {
             return new AssignmentDto(
@@ -61,7 +77,8 @@ public class TreasuryService {
                 a.getMagicItem() != null ? a.getMagicItem().getName() : null,
                 a.getEquipmentItem() != null ? a.getEquipmentItem().getId() : null,
                 a.getEquipmentItem() != null ? a.getEquipmentItem().getName() : null,
-                a.getCustomText(), a.getQuantity(), a.isAttuned(), a.getItemName()
+                a.getCustomText(), a.getQuantity(), a.isAttuned(), a.getItemName(),
+                a.getInventoryState()
             );
         }
     }
@@ -93,6 +110,7 @@ public class TreasuryService {
         a.setCustomText(req.customText);
         a.setQuantity(req.quantity);
         a.setAttuned(req.attuned);
+        a.setInventoryState(req.inventoryState());
         return AssignmentDto.from(repository.save(a));
     }
 
@@ -142,6 +160,24 @@ public class TreasuryService {
         return AssignmentDto.from(repository.save(a));
     }
 
+    public AssignmentDto setInventoryState(UUID id, InventoryState state) {
+        ItemAssignment a = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Item assignment not found: " + id));
+        a.setInventoryState(state);
+        return AssignmentDto.from(repository.save(a));
+    }
+
+    public AssignmentDto adjustQuantity(UUID id, int delta) {
+        ItemAssignment a = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Item assignment not found: " + id));
+        int newQty = Math.max(0, a.getQuantity() + delta);
+        a.setQuantity(newQty);
+        if (newQty == 0) {
+            a.setInventoryState(InventoryState.CONSUMED);
+        }
+        return AssignmentDto.from(repository.save(a));
+    }
+
     public void delete(UUID id) {
         if (!repository.existsById(id)) {
             throw new NotFoundException("Item assignment not found: " + id);
@@ -152,6 +188,13 @@ public class TreasuryService {
     @Transactional(readOnly = true)
     public int countAttunements(UUID partyMemberId) {
         return repository.countByPartyMemberIdAndAttunedTrue(partyMemberId);
+    }
+
+    @Transactional(readOnly = true)
+    public EquipmentItem findEquipmentItemForAssignment(UUID assignmentId) {
+        return repository.findById(assignmentId)
+                .map(ItemAssignment::getEquipmentItem)
+                .orElse(null);
     }
 
     public Optional<MagicItem> resolveMagicItemForCampaign(UUID campaignId, String sourceKey) {

@@ -377,8 +377,13 @@ public record CampaignManifestV2(
             ContentReference equipmentItemRef,
             String customText,
             int quantity,
-            boolean attuned
-    ) {}
+            boolean attuned,
+            String inventoryState
+    ) {
+        public AssignmentDto {
+            if (inventoryState == null) inventoryState = "CARRIED";
+        }
+    }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record LedgerEntryDto(

@@ -6,6 +6,7 @@ import dev.hendrikhoemberg.dmhelper.ledger.service.LedgerService;
 import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.treasury.data.InventoryState;
 import dev.hendrikhoemberg.dmhelper.treasury.service.TreasuryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -111,6 +112,24 @@ public class TreasuryController {
         var dto = treasuryService.update(id, existing.partyMemberId(), quantity, existing.attuned());
         model.addAttribute("assignment", dto);
         return "treasury/_card :: card";
+    }
+
+    @PutMapping("/{id}/state")
+    String setInventoryState(@PathVariable UUID campaignId, @PathVariable UUID id,
+                             @RequestParam InventoryState inventoryState, Model model) {
+        var dto = treasuryService.setInventoryState(id, inventoryState);
+        model.addAttribute("assignment", dto);
+        model.addAttribute("campaignId", campaignId);
+        return "sheet/_inventory :: itemCard";
+    }
+
+    @PutMapping("/{id}/quantity-adjust")
+    String adjustQuantity(@PathVariable UUID campaignId, @PathVariable UUID id,
+                          @RequestParam int delta, Model model) {
+        var dto = treasuryService.adjustQuantity(id, delta);
+        model.addAttribute("assignment", dto);
+        model.addAttribute("campaignId", campaignId);
+        return "sheet/_inventory :: itemCard";
     }
 
     @DeleteMapping("/{id}")

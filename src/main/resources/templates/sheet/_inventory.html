@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="inventory(assignments, totalWeight, campaignId)" class="detail-section">
+    <h2>Equipment &amp; Inventory</h2>
+    <div th:if="${totalWeight != null && totalWeight > 0}" class="u-mb-sm u-text-muted" style="font-size: var(--text-sm);">
+        Weight (total lb): <strong th:text="${totalWeight}">0</strong>
+    </div>
+    <div th:if="${not #lists.isEmpty(assignments)}" style="display:flex; flex-direction:column; gap: var(--space-sm);">
+        <div th:each="a : ${assignments}" th:replace="~{sheet/_inventory :: itemCard(assignment=${a}, campaignId=${campaignId})}"></div>
+    </div>
+    <div th:if="${#lists.isEmpty(assignments)}" class="empty-state">No items</div>
+</div>
+
+<div th:fragment="itemCard(assignment, campaignId)" class="card assignment-card" th:id="'inv-' + ${assignment.id()}">
+    <div class="u-flex u-items-center u-gap-sm" style="flex-wrap: wrap;">
+        <div class="u-flex-1 u-min-w-0">
+            <div class="u-fw-600" th:text="${assignment.itemName()}">Item Name</div>
+            <div class="u-flex u-gap-xs u-mt-xs" style="flex-wrap: wrap;">
+                <span th:if="${assignment.quantity() > 1}" class="badge" th:text="'x' + ${assignment.quantity()}">x1</span>
+                <span th:if="${assignment.attuned()}" class="badge badge-attune">attuned</span>
+                <span class="badge"
+                      th:classappend="'badge-state-' + ${assignment.inventoryState().name().toLowerCase()}"
+                      th:text="${assignment.inventoryState().name()}">CARRIED</span>
+            </div>
+        </div>
+        <div class="u-flex u-gap-xs u-shrink-0">
+            <form th:method="put"
+                  th:hx-put="@{/campaigns/{cid}/treasury/{id}/state(cid=${campaignId}, id=${assignment.id()})}"
+                  hx-target="closest .card" hx-swap="outerHTML" class="u-inline">
+                <select name="inventoryState" class="state-select" onchange="this.form.requestSubmit()">
+                    <option value="EQUIPPED" th:selected="${assignment.inventoryState().name() == 'EQUIPPED'}">Equipped</option>
+                    <option value="CARRIED" th:selected="${assignment.inventoryState().name() == 'CARRIED'}">Carried</option>
+                    <option value="STASHED" th:selected="${assignment.inventoryState().name() == 'STASHED'}">Stashed</option>
+                    <option value="CONSUMED" th:selected="${assignment.inventoryState().name() == 'CONSUMED'}">Consumed</option>
+                    <option value="LOST" th:selected="${assignment.inventoryState().name() == 'LOST'}">Lost</option>
+                </select>
+            </form>
+            <form th:method="put"
+                  th:hx-put="@{/campaigns/{cid}/treasury/{id}/quantity-adjust(cid=${campaignId}, id=${assignment.id()})}"
+                  hx-target="closest .card" hx-swap="outerHTML" class="u-flex u-gap-xs">
+                <input type="number" name="delta" value="-1" min="-99" max="99" class="qty-input" style="width: 48px;" />
+                <button class="btn btn-ghost btn-xs">Adj</button>
+            </form>
+        </div>
+    </div>
+</div>
+</html>

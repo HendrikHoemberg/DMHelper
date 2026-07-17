@@ -197,11 +197,11 @@ class TreasurySectionAdapterTest {
                         new CampaignManifestV2.AssignmentDto(
                                 "bag", null,
                                 ContentReference.catalogRef(CampaignContentType.MAGIC_ITEM, "SRD_5_2", "srd-2024_bag-of-holding"),
-                                null, null, 1, false),
+                                null, null, 1, false, "CARRIED"),
                         new CampaignManifestV2.AssignmentDto(
                                 "armor", null, null,
                                 ContentReference.catalogRef(CampaignContentType.EQUIPMENT_ITEM, "SRD_5_2", "srd-2024_chain-mail"),
-                                null, 1, false)),
+                                null, 1, false, "CARRIED")),
                 null, null, null, null, null, List.of(), List.of());
         var context = new CampaignImportContext(
                 campaignId, new CampaignSectionAdapterTest.FakeKeyService(),

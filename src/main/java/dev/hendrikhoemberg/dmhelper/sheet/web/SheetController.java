@@ -9,6 +9,8 @@ import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.*;
+import dev.hendrikhoemberg.dmhelper.treasury.data.InventoryState;
+import dev.hendrikhoemberg.dmhelper.treasury.service.TreasuryService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -27,18 +29,21 @@ public class SheetController {
     private final SpeciesRepository speciesRepo;
     private final BackgroundRepository backgroundRepo;
     private final CampaignSettingsCodec settingsCodec;
+    private final TreasuryService treasuryService;
 
     public SheetController(CampaignService campaignService, SheetService sheetService,
                            PartyMemberRepository partyMemberRepo,
                            SpeciesRepository speciesRepo,
                            BackgroundRepository backgroundRepo,
-                           CampaignSettingsCodec settingsCodec) {
+                           CampaignSettingsCodec settingsCodec,
+                           TreasuryService treasuryService) {
         this.campaignService = campaignService;
         this.sheetService = sheetService;
         this.partyMemberRepo = partyMemberRepo;
         this.speciesRepo = speciesRepo;
         this.backgroundRepo = backgroundRepo;
         this.settingsCodec = settingsCodec;
+        this.treasuryService = treasuryService;
     }
 
     @ModelAttribute("campaign")
@@ -69,6 +74,25 @@ public class SheetController {
 
         Campaign campaign = campaignService.findById(campaignId);
         model.addAttribute("levelingMode", settingsCodec.read(campaign).levelingMode().name());
+
+        var assignments = treasuryService.findByPartyMemberId(memberId);
+        model.addAttribute("assignments", assignments);
+
+        double totalWeight = assignments.stream()
+            .filter(a -> a.inventoryState() == InventoryState.CARRIED || a.inventoryState() == InventoryState.EQUIPPED)
+            .mapToDouble(a -> {
+                try {
+                    var eq = treasuryService.findEquipmentItemForAssignment(a.id());
+                    if (eq != null && eq.getWeight() != null && !eq.getWeight().isBlank()) {
+                        String w = eq.getWeight().replaceAll("[^0-9.]", "");
+                        return Double.parseDouble(w) * a.quantity();
+                    }
+                } catch (Exception ignored) {}
+                return 0;
+            })
+            .sum();
+        model.addAttribute("totalWeight", totalWeight > 0 ? totalWeight : null);
+
         return "sheet/detail";
     }
 

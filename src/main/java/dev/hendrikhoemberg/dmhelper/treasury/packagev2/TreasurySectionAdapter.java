@@ -11,6 +11,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionEx
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionImporter;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.LibraryContentReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.treasury.data.InventoryState;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import org.springframework.stereotype.Component;
@@ -69,7 +70,8 @@ public class TreasurySectionAdapter implements CampaignSectionExporter, Campaign
         }
 
         return new AssignmentDto(key, holderRef, magicItemRef, equipmentItemRef,
-                assignment.getCustomText(), assignment.getQuantity(), assignment.isAttuned());
+                assignment.getCustomText(), assignment.getQuantity(), assignment.isAttuned(),
+                assignment.getInventoryState().name());
     }
 
     @Override
@@ -85,6 +87,7 @@ public class TreasurySectionAdapter implements CampaignSectionExporter, Campaign
             assignment.setCustomText(dto.customText());
             assignment.setQuantity(dto.quantity());
             assignment.setAttuned(dto.attuned());
+            assignment.setInventoryState(InventoryState.valueOf(dto.inventoryState()));
 
             if (dto.magicItemRef() != null) {
                 assignment.setMagicItem(libraryRefs.resolveMagicItem(dto.magicItemRef(), context));

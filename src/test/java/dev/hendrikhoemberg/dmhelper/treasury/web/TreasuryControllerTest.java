@@ -6,6 +6,7 @@ import dev.hendrikhoemberg.dmhelper.ledger.service.LedgerService;
 import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.treasury.data.InventoryState;
 import dev.hendrikhoemberg.dmhelper.treasury.service.TreasuryService;
 import dev.hendrikhoemberg.dmhelper.treasury.service.TreasuryService.AssignmentDto;
 import org.junit.jupiter.api.Test;
@@ -105,7 +106,7 @@ class TreasuryControllerTest {
         when(partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(campaignId)).thenReturn(List.of());
         when(treasuryService.toggleAttunement(id)).thenReturn(
                 new AssignmentDto(id, campaignId, null, "Party Stash",
-                        null, null, null, null, null, 1, false, null));
+                        null, null, null, null, null, 1, false, null, InventoryState.CARRIED));
 
         mockMvc.perform(put("/campaigns/{campaignId}/treasury/{id}/attune", campaignId, id))
                 .andExpect(status().isOk());
