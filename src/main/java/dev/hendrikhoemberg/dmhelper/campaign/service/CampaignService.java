@@ -89,6 +89,11 @@ public class CampaignService {
     private final CampaignSessionRepository campaignSessionRepository;
     private final SessionSceneVisitRepository sessionSceneVisitRepository;
     private final dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner sessionReferenceCleaner;
+    private final dev.hendrikhoemberg.dmhelper.world.data.FactionClockRepository factionClockRepo;
+    private final dev.hendrikhoemberg.dmhelper.world.data.WorldRelationshipRepository worldRelationshipRepo;
+    private final dev.hendrikhoemberg.dmhelper.world.data.WorldNpcRepository worldNpcRepo;
+    private final dev.hendrikhoemberg.dmhelper.world.data.WorldLocationRepository worldLocationRepo;
+    private final dev.hendrikhoemberg.dmhelper.world.data.FactionRepository worldFactionRepo;
 
     @jakarta.persistence.PersistenceContext
     private jakarta.persistence.EntityManager em;
@@ -126,7 +131,12 @@ public class CampaignService {
                               CampaignImportValidator importValidator,
                               CampaignSessionRepository campaignSessionRepository,
                               SessionSceneVisitRepository sessionSceneVisitRepository,
-                              dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner sessionReferenceCleaner) {
+                               dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner sessionReferenceCleaner,
+                               dev.hendrikhoemberg.dmhelper.world.data.FactionClockRepository factionClockRepo,
+                               dev.hendrikhoemberg.dmhelper.world.data.WorldRelationshipRepository worldRelationshipRepo,
+                               dev.hendrikhoemberg.dmhelper.world.data.WorldNpcRepository worldNpcRepo,
+                               dev.hendrikhoemberg.dmhelper.world.data.WorldLocationRepository worldLocationRepo,
+                               dev.hendrikhoemberg.dmhelper.world.data.FactionRepository worldFactionRepo) {
         this.repository = repository;
         this.partyMemberRepository = partyMemberRepository;
         this.statBlockRepository = statBlockRepository;
@@ -161,6 +171,11 @@ public class CampaignService {
         this.campaignSessionRepository = campaignSessionRepository;
         this.sessionSceneVisitRepository = sessionSceneVisitRepository;
         this.sessionReferenceCleaner = sessionReferenceCleaner;
+        this.factionClockRepo = factionClockRepo;
+        this.worldRelationshipRepo = worldRelationshipRepo;
+        this.worldNpcRepo = worldNpcRepo;
+        this.worldLocationRepo = worldLocationRepo;
+        this.worldFactionRepo = worldFactionRepo;
         this.objectMapper = JsonMapper.builder()
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -280,6 +295,30 @@ public class CampaignService {
         em.flush();
 
         diceRollRepo.deleteAll(diceRollRepo.findByCampaignId(cid));
+        em.flush();
+
+        // World graph — clocks reference factions (non-null FK), so delete clocks first.
+        factionClockRepo.deleteAll(factionClockRepo.findByCampaignIdOrderBySortOrderAscIdAsc(cid));
+        em.flush();
+
+        worldRelationshipRepo.deleteAll(
+                worldRelationshipRepo.findByCampaignIdOrderBySortOrderAscIdAsc(cid));
+        em.flush();
+
+        // Null out parent-location self-refs so Hibernate can delete in any order.
+        var locations = worldLocationRepo.findByCampaignIdOrderByNameAscIdAsc(cid);
+        for (var loc : locations) {
+            loc.setParentLocation(null);
+        }
+        worldLocationRepo.saveAll(locations);
+        em.flush();
+        worldLocationRepo.deleteAll(locations);
+        em.flush();
+
+        worldNpcRepo.deleteAll(worldNpcRepo.findByCampaignIdOrderByNameAscIdAsc(cid));
+        em.flush();
+
+        worldFactionRepo.deleteAll(worldFactionRepo.findByCampaignIdOrderByNameAscIdAsc(cid));
         em.flush();
 
         repository.delete(campaign);

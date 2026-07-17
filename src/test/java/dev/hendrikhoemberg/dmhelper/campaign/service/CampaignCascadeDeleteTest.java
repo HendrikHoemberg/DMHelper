@@ -40,6 +40,10 @@ import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import dev.hendrikhoemberg.dmhelper.quest.data.*;
 import dev.hendrikhoemberg.dmhelper.session.data.*;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
+import dev.hendrikhoemberg.dmhelper.world.data.*;
+import dev.hendrikhoemberg.dmhelper.world.service.WorldLocationCycleValidator;
+import dev.hendrikhoemberg.dmhelper.world.service.WorldReferenceCleaner;
+import dev.hendrikhoemberg.dmhelper.world.service.WorldService;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import jakarta.persistence.EntityManager;
@@ -77,7 +81,8 @@ import static org.assertj.core.api.Assertions.assertThatCode;
          dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator.class,
          dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSchemaValidator.class,
          dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignCatalogResolver.class,
-         dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSemanticValidator.class})
+         dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSemanticValidator.class,
+         WorldService.class, WorldLocationCycleValidator.class, WorldReferenceCleaner.class})
 class CampaignCascadeDeleteTest {
 
     @TestConfiguration
@@ -121,6 +126,11 @@ class CampaignCascadeDeleteTest {
     @Autowired private QuestObjectiveDependencyRepository questDepRepo;
     @Autowired private QuestLinkRepository questLinkRepo;
     @Autowired private SessionObjectiveChangeRepository sessionObjChangeRepo;
+    @Autowired private WorldNpcRepository worldNpcRepo;
+    @Autowired private WorldLocationRepository worldLocationRepo;
+    @Autowired private FactionRepository factionRepo;
+    @Autowired private WorldRelationshipRepository worldRelationshipRepo;
+    @Autowired private FactionClockRepository factionClockRepo;
     @Autowired private EntityManager em;
 
     /** A campaign with one of everything hanging off it. */
@@ -306,6 +316,61 @@ class CampaignCascadeDeleteTest {
         assertThat(detached.getPresentedHandout()).isNull();
         assertThat(detached.getAttendees()).isEmpty();
         assertThat(detached.getPlanNote()).isNull();
+    }
+
+    @Test
+    void deletingCampaignCascadesWorldGraph() {
+        Campaign c = campaignService.create("WorldDelete", null);
+        UUID cid = c.getId();
+
+        Faction faction = new Faction();
+        faction.setCampaign(c);
+        faction.setName("The Fallen");
+        factionRepo.save(faction);
+
+        WorldNpc npc = new WorldNpc();
+        npc.setCampaign(c);
+        npc.setName("Doomed NPC");
+        npc.setFaction(faction);
+        npc.setStatus(WorldNpcStatus.UNKNOWN);
+        worldNpcRepo.save(npc);
+
+        WorldLocation loc = new WorldLocation();
+        loc.setCampaign(c);
+        loc.setName("Lost City");
+        loc.setKind(LocationKind.SITE);
+        worldLocationRepo.save(loc);
+
+        WorldRelationship rel = new WorldRelationship();
+        rel.setCampaign(c);
+        rel.setKind(RelationshipKind.KNOWS);
+        rel.setFromType("WORLD_NPC");
+        rel.setFromId(npc.getId());
+        rel.setToType("WORLD_NPC");
+        rel.setToId(npc.getId());
+        worldRelationshipRepo.save(rel);
+
+        FactionClock clock = new FactionClock();
+        clock.setCampaign(c);
+        clock.setFaction(faction);
+        clock.setTitle("Doom Timer");
+        clock.setSegments(6);
+        clock.setFilled(0);
+        factionClockRepo.save(clock);
+
+        em.flush();
+
+        assertThatCode(() -> {
+            campaignService.delete(cid);
+            em.flush();
+        }).doesNotThrowAnyException();
+
+        assertThat(campaignRepo.findById(cid)).isEmpty();
+        assertThat(factionRepo.findByCampaignIdOrderByNameAscIdAsc(cid)).isEmpty();
+        assertThat(worldNpcRepo.findByCampaignIdOrderByNameAscIdAsc(cid)).isEmpty();
+        assertThat(worldLocationRepo.findByCampaignIdOrderByNameAscIdAsc(cid)).isEmpty();
+        assertThat(worldRelationshipRepo.findByCampaignIdOrderBySortOrderAscIdAsc(cid)).isEmpty();
+        assertThat(factionClockRepo.findByCampaignIdOrderBySortOrderAscIdAsc(cid)).isEmpty();
     }
 
     @Test
