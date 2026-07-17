@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignSettingsCodec;
 import dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
@@ -28,6 +29,7 @@ public class SheetController {
     private final PartyMemberRepository partyMemberRepo;
     private final SpeciesRepository speciesRepo;
     private final BackgroundRepository backgroundRepo;
+    private final CharacterClassRepository classRepo;
     private final CampaignSettingsCodec settingsCodec;
     private final TreasuryService treasuryService;
 
@@ -35,6 +37,7 @@ public class SheetController {
                            PartyMemberRepository partyMemberRepo,
                            SpeciesRepository speciesRepo,
                            BackgroundRepository backgroundRepo,
+                           CharacterClassRepository classRepo,
                            CampaignSettingsCodec settingsCodec,
                            TreasuryService treasuryService) {
         this.campaignService = campaignService;
@@ -42,6 +45,7 @@ public class SheetController {
         this.partyMemberRepo = partyMemberRepo;
         this.speciesRepo = speciesRepo;
         this.backgroundRepo = backgroundRepo;
+        this.classRepo = classRepo;
         this.settingsCodec = settingsCodec;
         this.treasuryService = treasuryService;
     }
@@ -105,7 +109,17 @@ public class SheetController {
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("speciesList", speciesRepo.findAllByOrderByNameAsc());
         model.addAttribute("backgroundList", backgroundRepo.findAllByOrderByNameAsc());
+        model.addAttribute("classList", classRepo.findBySubclassOfIsNullOrderByNameAsc());
+        model.addAttribute("allClasses", classRepo.findAllByOrderByNameAsc());
         return "sheet/create";
+    }
+
+    @GetMapping("/party/{memberId}/sheet/creation-options")
+    @ResponseBody
+    public CreationOptionsDto creationOptions(@PathVariable UUID campaignId,
+                                              @PathVariable UUID memberId,
+                                              @RequestParam String classSourceKey) {
+        return sheetService.creationOptions(classSourceKey);
     }
 
     @PostMapping("/party/{memberId}/sheet")
@@ -120,6 +134,12 @@ public class SheetController {
                          @RequestParam(defaultValue = "10") int cha,
                          @RequestParam(required = false) UUID speciesId,
                          @RequestParam(required = false) UUID backgroundId,
+                         @RequestParam(required = false) String subclassSourceKey,
+                         @RequestParam(defaultValue = "") String skills,
+                         @RequestParam(defaultValue = "") String tools,
+                         @RequestParam(defaultValue = "") String languages,
+                         @RequestParam(defaultValue = "") String expertise,
+                         @RequestParam(defaultValue = "average") String hitDieChoice,
                          RedirectAttributes redirectAttributes) {
         try {
             Map<String, Integer> scores = new HashMap<>();
@@ -130,12 +150,19 @@ public class SheetController {
             scores.put("wis", wis);
             scores.put("cha", cha);
 
-            ClassLevelEntry entry = new ClassLevelEntry(classSourceKey, classLevel, List.of());
-            Map<String, Object> proficiencies = Map.of(
-                    "skills", List.of(), "tools", List.of(),
-                    "languages", List.of(), "armor", List.of(),
-                    "weapons", List.of(), "expertise", List.of()
-            );
+            ClassLevelEntry entry = new ClassLevelEntry(classSourceKey, classLevel,
+                    classLevel > 1 ? generateHitDieRolls(classSourceKey, classLevel, hitDieChoice) : List.of(),
+                    subclassSourceKey);
+            Map<String, Object> proficiencies = new HashMap<>();
+            proficiencies.put("skills", skills.isEmpty() ? List.of() : Arrays.asList(skills.split(",\\s*")));
+            proficiencies.put("expertise", expertise.isEmpty() ? List.of() : Arrays.asList(expertise.split(",\\s*")));
+            proficiencies.put("tools", tools.isEmpty() ? List.of() : Arrays.asList(tools.split(",\\s*")));
+            proficiencies.put("languages", languages.isEmpty() ? List.of() : Arrays.asList(languages.split(",\\s*")));
+
+            var creationOptions = sheetService.creationOptions(classSourceKey);
+            proficiencies.put("armor", creationOptions.armorProficiencies());
+            proficiencies.put("weapons", creationOptions.weaponProficiencies());
+
             CreateSheetRequest req = new CreateSheetRequest(memberId, scores,
                     List.of(entry), proficiencies, speciesId, backgroundId, List.of(), 0);
             sheetService.createSheet(req);
@@ -160,16 +187,43 @@ public class SheetController {
         return "redirect:/campaigns/" + campaignId + "/party";
     }
 
+    private List<Integer> generateHitDieRolls(String classSourceKey, int level, String hitDieChoice) {
+        List<Integer> rolls = new ArrayList<>();
+        if (level <= 1) return rolls;
+        int dieSize = 8;
+        var clsOpt = classRepo.findBySourceKey(classSourceKey);
+        if (clsOpt.isPresent() && clsOpt.get().getHitDie() != null) {
+            try { dieSize = Integer.parseInt(clsOpt.get().getHitDie().substring(1)); } catch (Exception ignored) {}
+        }
+        int avg = (dieSize / 2) + 1;
+        for (int i = 1; i < level; i++) {
+            rolls.add("average".equals(hitDieChoice) ? avg : avg);
+        }
+        return rolls;
+    }
+
     @PostMapping("/party/{memberId}/sheet/level-up")
     public String levelUp(@PathVariable UUID campaignId, @PathVariable UUID memberId,
                           @RequestParam String classSourceKey,
                           @RequestParam(required = false) Integer hpRoll,
                           @RequestParam(defaultValue = "false") boolean isAverage,
+                          @RequestParam(required = false) String subclassSourceKey,
+                          @RequestParam(required = false) String asiType,
+                          @RequestParam(required = false) String asiAbility1,
+                          @RequestParam(required = false) String asiAbility2,
                           RedirectAttributes redirectAttributes) {
         try {
             SheetDto dto = sheetService.getSheetDtoByPartyMemberId(memberId);
+            Map<String, Integer> asiScores = new HashMap<>();
+            if ("single".equals(asiType) && asiAbility1 != null && !asiAbility1.isBlank()) {
+                asiScores.put(asiAbility1, 2);
+            } else if ("double".equals(asiType)) {
+                if (asiAbility1 != null && !asiAbility1.isBlank()) asiScores.put(asiAbility1, 1);
+                if (asiAbility2 != null && !asiAbility2.isBlank()) asiScores.put(asiAbility2, 1);
+            }
             LevelUpRequest req = new LevelUpRequest(classSourceKey,
-                    hpRoll != null ? hpRoll : 0, isAverage);
+                    hpRoll != null ? hpRoll : 0, isAverage,
+                    subclassSourceKey, asiType, asiScores);
             sheetService.levelUp(dto.id(), req);
             redirectAttributes.addFlashAttribute("message", "Level up successful!");
         } catch (Exception e) {

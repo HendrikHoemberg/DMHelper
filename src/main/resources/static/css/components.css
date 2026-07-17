@@ -2233,3 +2233,51 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
 .pm-num::-webkit-outer-spin-button,
 .pm-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .pm-num { -moz-appearance: textfield; appearance: textfield; text-align: center; }
+
+/* Wizard step progress bar */
+.wizard-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+.wizard-step {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius);
+  cursor: default;
+}
+.wizard-step.active {
+  color: var(--color-accent);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+.wizard-step-sep {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.wizard-fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+.wizard-fieldset legend {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+  color: var(--color-text);
+}
+.wizard-details {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+}

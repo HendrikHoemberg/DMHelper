@@ -154,38 +154,7 @@
     </main>
 </div>
 
-<dialog id="level-up-dialog" class="sheet-level-up-dialog">
-    <h3>Level Up</h3>
-    <form th:action="@{/campaigns/{cid}/party/{pid}/sheet/level-up(cid=${campaign.id}, pid=${member.id})}" method="post">
-        <div class="form-group">
-            <label>Class:</label>
-            <select name="classSourceKey" required>
-                <option th:each="cl : ${sheet.classLevels()}" th:value="${cl.classSourceKey()}" th:text="${cl.classSourceKey()}">Fighter</option>
-                <option value="srd-2024_barbarian">— New: Barbarian —</option>
-                <option value="srd-2024_bard">— New: Bard —</option>
-                <option value="srd-2024_cleric">— New: Cleric —</option>
-                <option value="srd-2024_druid">— New: Druid —</option>
-                <option value="srd-2024_fighter">— New: Fighter —</option>
-                <option value="srd-2024_monk">— New: Monk —</option>
-                <option value="srd-2024_paladin">— New: Paladin —</option>
-                <option value="srd-2024_ranger">— New: Ranger —</option>
-                <option value="srd-2024_rogue">— New: Rogue —</option>
-                <option value="srd-2024_sorcerer">— New: Sorcerer —</option>
-                <option value="srd-2024_warlock">— New: Warlock —</option>
-                <option value="srd-2024_wizard">— New: Wizard —</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label><input type="radio" name="isAverage" value="true" checked> Average HP</label>
-            <label><input type="radio" name="isAverage" value="false"> Roll:</label>
-            <input type="number" name="hpRoll" value="1" min="1" max="12" class="small-input">
-        </div>
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Confirm</button>
-            <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
-        </div>
-    </form>
-</dialog>
+<div th:replace="~{sheet/_level-up-dialog :: levelUpDialog(${campaign.id}, ${member.id})}"></div>
     </main>
 </div>
 </body>

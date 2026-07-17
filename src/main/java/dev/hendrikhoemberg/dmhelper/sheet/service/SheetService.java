@@ -29,6 +29,8 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.*;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -71,6 +73,46 @@ public class SheetService {
             int xp
     ) {}
 
+    public record CreationOptionsDto(
+            String classSourceKey,
+            String hitDie,
+            List<String> savingThrows,
+            int skillChoiceCount,
+            List<String> skillOptions,
+            List<SubclassOption> subclasses,
+            List<String> armorProficiencies,
+            List<String> weaponProficiencies
+    ) {}
+
+    public record SubclassOption(String sourceKey, String name) {}
+
+    static final int SUBCLASS_LEVEL = 3;
+
+    private static final Map<String, String> SKILL_ABILITY_MAP = Map.ofEntries(
+        Map.entry("athletics", "str"),
+        Map.entry("acrobatics", "dex"),
+        Map.entry("sleight_of_hand", "dex"),
+        Map.entry("stealth", "dex"),
+        Map.entry("arcana", "int"),
+        Map.entry("history", "int"),
+        Map.entry("investigation", "int"),
+        Map.entry("nature", "int"),
+        Map.entry("religion", "int"),
+        Map.entry("animal_handling", "wis"),
+        Map.entry("insight", "wis"),
+        Map.entry("medicine", "wis"),
+        Map.entry("perception", "wis"),
+        Map.entry("survival", "wis"),
+        Map.entry("deception", "cha"),
+        Map.entry("intimidation", "cha"),
+        Map.entry("performance", "cha"),
+        Map.entry("persuasion", "cha")
+    );
+
+    private static final Pattern CHOOSE_FROM_PATTERN = Pattern.compile(
+        "choose\\s+(\\d+)\\s+from\\s+([A-Za-z_\\s,]+)", Pattern.CASE_INSENSITIVE
+    );
+
     private static final int[] XP_THRESHOLDS = {
             0, 0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000,
             64000, 85000, 100000, 120000, 140000, 165000, 195000,
@@ -100,6 +142,101 @@ public class SheetService {
             }
         }
         return new XpResult(sheet.getId(), xp, newLevel, newLevel > currentLevel);
+    }
+
+    public CreationOptionsDto creationOptions(String classSourceKey) {
+        var clsOpt = classRepo.findBySourceKey(classSourceKey);
+        if (clsOpt.isEmpty()) {
+            return new CreationOptionsDto(classSourceKey, "d8", List.of(), 0, List.of(),
+                    List.of(), List.of(), List.of());
+        }
+        var cls = clsOpt.get();
+
+        int skillChoiceCount = 0;
+        List<String> skillOptions = new ArrayList<>();
+        try {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> features = mapper.readValue(cls.getFeatures(), List.class);
+            for (Map<String, Object> f : features) {
+                if ("CORE_TRAITS_TABLE".equals(f.get("feature_type"))) {
+                    String desc = (String) f.get("description");
+                    if (desc != null) {
+                        Matcher m = CHOOSE_FROM_PATTERN.matcher(desc);
+                        while (m.find()) {
+                            skillChoiceCount = Integer.parseInt(m.group(1));
+                            String skillsPart = m.group(2);
+                            for (String s : skillsPart.split("[;,/]")) {
+                                String skill = s.trim().toLowerCase(Locale.ROOT)
+                                        .replace(" ", "_").replace("-", "_");
+                                if (SKILL_ABILITY_MAP.containsKey(skill) && !skillOptions.contains(skill)) {
+                                    skillOptions.add(skill);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Failed to parse skill choices for {}", classSourceKey, e);
+        }
+
+        List<String> savingThrows = new ArrayList<>();
+        try {
+            @SuppressWarnings("unchecked")
+            List<Object> raw = mapper.readValue(cls.getSavingThrows(), List.class);
+            for (Object item : raw) {
+                if (item instanceof String s) {
+                    String normal = s.toLowerCase(Locale.ROOT);
+                    if (normal.length() <= 3) savingThrows.add(normal);
+                } else if (item instanceof Map<?, ?> m) {
+                    String name = (String) m.get("name");
+                    if (name != null) {
+                        savingThrows.add(switch (name.toLowerCase(Locale.ROOT)) {
+                            case "strength" -> "str"; case "dexterity" -> "dex";
+                            case "constitution" -> "con"; case "intelligence" -> "int";
+                            case "wisdom" -> "wis"; case "charisma" -> "cha";
+                            default -> name.toLowerCase(Locale.ROOT);
+                        });
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Failed to parse saving throws for {}", classSourceKey, e);
+        }
+
+        List<SubclassOption> subclasses = classRepo.findBySubclassOfOrderByNameAsc(classSourceKey).stream()
+                .map(sc -> new SubclassOption(sc.getSourceKey(), sc.getName()))
+                .collect(Collectors.toList());
+
+        List<String> armorProfs = new ArrayList<>();
+        List<String> weaponProfs = new ArrayList<>();
+        if (cls.getProficiencies() != null) {
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> profMap = mapper.readValue(cls.getProficiencies(), Map.class);
+                Object armor = profMap.get("armor");
+                if (armor instanceof List<?> a) {
+                    for (Object item : a) armorProfs.add(item.toString());
+                }
+                Object weapons = profMap.get("weapons");
+                if (weapons instanceof List<?> w) {
+                    for (Object item : w) weaponProfs.add(item.toString());
+                }
+            } catch (Exception e) {
+                log.debug("Failed to parse proficiencies for {}", classSourceKey, e);
+            }
+        }
+
+        return new CreationOptionsDto(
+                classSourceKey,
+                cls.getHitDie() != null ? cls.getHitDie() : "d8",
+                savingThrows,
+                skillChoiceCount,
+                skillOptions,
+                subclasses,
+                armorProfs,
+                weaponProfs
+        );
     }
 
     private int getTotalLevel(CharacterSheet sheet) {
@@ -148,8 +285,15 @@ public class SheetService {
     public record LevelUpRequest(
             String classSourceKey,
             int hpRoll,
-            boolean isAverage
-    ) {}
+            boolean isAverage,
+            String subclassSourceKey,
+            String asiType,
+            Map<String, Integer> asiScores
+    ) {
+        public LevelUpRequest(String classSourceKey, int hpRoll, boolean isAverage) {
+            this(classSourceKey, hpRoll, isAverage, null, null, Map.of());
+        }
+    }
 
     public record SheetResourceDto(
             UUID id, String name, int maxUses, int currentUses, String resetRule
@@ -329,16 +473,24 @@ public class SheetService {
                     break;
                 }
             }
+            boolean isNewClass = false;
             if (entry == null) {
                 entry = new HashMap<>();
                 entry.put("classSourceKey", request.classSourceKey());
                 entry.put("level", 0);
                 entry.put("hitDieRolls", new ArrayList<Integer>());
                 classLevels.add(entry);
+                isNewClass = true;
             }
 
             int currentLevel = ((Number) entry.get("level")).intValue();
-            entry.put("level", currentLevel + 1);
+            int newLevel = currentLevel + 1;
+            entry.put("level", newLevel);
+
+            // Handle subclass at level 3
+            if (request.subclassSourceKey() != null && !request.subclassSourceKey().isBlank()) {
+                entry.put("subclassSourceKey", request.subclassSourceKey());
+            }
 
             List<Integer> rolls = getHitDieRolls(entry);
             int hpGain;
@@ -356,6 +508,35 @@ public class SheetService {
             entry.put("hitDieRolls", rolls);
 
             sheet.setClassLevels(mapper.writeValueAsString(classLevels));
+
+            // Handle ASI
+            if (request.asiType() != null && !request.asiType().isBlank()) {
+                Map<String, Integer> scores = mapper.readValue(sheet.getAbilityScores(),
+                        mapper.getTypeFactory().constructMapType(Map.class, String.class, Integer.class));
+
+                if ("single".equals(request.asiType()) && request.asiScores() != null) {
+                    for (var adjust : request.asiScores().entrySet()) {
+                        scores.merge(adjust.getKey(), adjust.getValue(), Integer::sum);
+                    }
+                } else if ("double".equals(request.asiType()) && request.asiScores() != null) {
+                    for (var adjust : request.asiScores().entrySet()) {
+                        scores.merge(adjust.getKey(), adjust.getValue(), Integer::sum);
+                    }
+                } else if ("feat".equals(request.asiType())) {
+                    List<String> currentFeats = sheet.getFeatRefs() != null ?
+                            mapper.readValue(sheet.getFeatRefs(),
+                                    mapper.getTypeFactory().constructCollectionType(List.class, String.class))
+                            : new ArrayList<>();
+                    String featKey = request.asiScores() != null && request.asiScores().containsKey("featSourceKey")
+                            ? request.asiScores().get("featSourceKey").toString() : null;
+                    if (featKey != null && !currentFeats.contains(featKey)) {
+                        currentFeats.add(featKey);
+                    }
+                    sheet.setFeatRefs(mapper.writeValueAsString(currentFeats));
+                }
+
+                sheet.setAbilityScores(mapper.writeValueAsString(scores));
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to process level-up", e);
         }
@@ -1076,5 +1257,44 @@ public class SheetService {
             }
         }
         return 8;
+    }
+
+    public boolean isAsiLevel(String classSourceKey, int level) {
+        var clsOpt = classRepo.findBySourceKey(classSourceKey);
+        if (clsOpt.isEmpty()) {
+            return level == 4 || level == 8 || level == 12 || level == 16 || level == 19;
+        }
+        try {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> features = mapper.readValue(clsOpt.get().getFeatures(), List.class);
+            for (Map<String, Object> f : features) {
+                Object tableData = f.get("data_for_class_table");
+                if (tableData instanceof List<?> rows) {
+                    for (Object row : rows) {
+                        if (row instanceof Map<?, ?> r) {
+                            Object lvl = r.get("level");
+                            if (lvl instanceof Number ln && ln.intValue() == level) {
+                                String name = (String) f.get("name");
+                                String featureType = (String) f.get("feature_type");
+                                if ((name != null && (name.toLowerCase(Locale.ROOT).contains("asi")
+                                        || name.toLowerCase(Locale.ROOT).contains("ability score improvement")))
+                                        || (featureType != null && featureType.contains("ASI"))) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Fallback: check standard ASI levels
+            return level == 4 || level == 8 || level == 12 || level == 16 || level == 19;
+        } catch (Exception e) {
+            log.debug("Failed to parse features for ASI check: {}", classSourceKey, e);
+            return level == 4 || level == 8 || level == 12 || level == 16 || level == 19;
+        }
+    }
+
+    public boolean levelHasSubclass(String classSourceKey, int level) {
+        return level >= SUBCLASS_LEVEL;
     }
 }
