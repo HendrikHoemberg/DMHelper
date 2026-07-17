@@ -1,0 +1,46 @@
+<div th:fragment="liveState(campaignId, member)" class="sheet-live-state">
+    <dl class="pm-stats">
+        <div>
+            <dt>Temp HP</dt>
+            <dd>
+                <span th:text="${member.tempHp}">0</span>
+                <button class="btn btn-sm btn-ghost"
+                        hx-get="/api/v1/campaigns/[[${campaignId}]]/party/[[${member.id}]]/live-state/edit"
+                        hx-target="closest dd" hx-swap="innerHTML">edit</button>
+            </dd>
+        </div>
+        <div>
+            <dt>Inspiration</dt>
+            <dd>
+                <span th:text="${member.inspiration} ? 'Yes' : 'No'">No</span>
+                <button class="btn btn-sm btn-ghost"
+                        hx-get="/api/v1/campaigns/[[${campaignId}]]/party/[[${member.id}]]/live-state/edit"
+                        hx-target="closest dd" hx-swap="innerHTML">edit</button>
+            </dd>
+        </div>
+        <div>
+            <dt>Exhaustion</dt>
+            <dd>
+                <span th:text="${member.exhaustion}">0</span>
+                <button class="btn btn-sm btn-ghost"
+                        hx-get="/api/v1/campaigns/[[${campaignId}]]/party/[[${member.id}]]/live-state/edit"
+                        hx-target="closest dd" hx-swap="innerHTML">edit</button>
+            </dd>
+        </div>
+        <div>
+            <dt>Death Saves</dt>
+            <dd th:text="${#strings.repeat('S', member.deathSaveSuccesses) + #strings.repeat('F', member.deathSaveFailures)} + ' (' + (4 - member.deathSaveSuccesses - member.deathSaveFailures) + ')' + ' — ' + (member.deathSaveSuccesses >= 3 ? 'Stable' : (member.deathSaveFailures >= 3 ? 'Dead' : 'Living'))">0</dd>
+        </div>
+        <div>
+            <dt>Concentrating</dt>
+            <dd th:text="${member.concentratingOn} ?: '—'">—</dd>
+        </div>
+        <div>
+            <dt>Conditions</dt>
+            <dd>
+                <span th:unless="${member.conditionsJson}">—</span>
+                <span th:each="condition : ${#strings.listSplit(member.conditionsJson ?: '', ',')}" th:text="${condition}" th:remove="tag"><br></span>
+            </dd>
+        </div>
+    </dl>
+</div>

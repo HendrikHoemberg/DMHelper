@@ -102,8 +102,23 @@ public record CampaignManifestV2(
             int passiveInvestigation,
             String notes,
             boolean active,
-            SheetDto sheet
-    ) {}
+            SheetDto sheet,
+            Integer tempHp,
+            Boolean inspiration,
+            Integer exhaustion,
+            Integer deathSaveSuccesses,
+            Integer deathSaveFailures,
+            String concentratingOn,
+            String conditionsJson
+    ) {
+        public PartyMemberDto {
+            if (tempHp == null) tempHp = 0;
+            if (inspiration == null) inspiration = false;
+            if (exhaustion == null) exhaustion = 0;
+            if (deathSaveSuccesses == null) deathSaveSuccesses = 0;
+            if (deathSaveFailures == null) deathSaveFailures = 0;
+        }
+    }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record SheetDto(

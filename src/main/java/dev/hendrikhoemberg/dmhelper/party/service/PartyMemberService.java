@@ -136,4 +136,51 @@ public class PartyMemberService {
         pm.setActive(active);
         repository.save(pm);
     }
+
+    public PartyMember updateLiveState(UUID partyMemberId, PartyLiveStateDto body) {
+        if (body.exhaustion() < 0 || body.exhaustion() > 6) {
+            throw new IllegalArgumentException("Exhaustion must be 0–6");
+        }
+        if (body.deathSaveSuccesses() < 0 || body.deathSaveSuccesses() > 3) {
+            throw new IllegalArgumentException("Death save successes must be 0–3");
+        }
+        if (body.deathSaveFailures() < 0 || body.deathSaveFailures() > 3) {
+            throw new IllegalArgumentException("Death save failures must be 0–3");
+        }
+        if (body.tempHp() < 0) {
+            throw new IllegalArgumentException("Temp HP cannot be negative");
+        }
+
+        PartyMember pm = findById(partyMemberId);
+        pm.setTempHp(body.tempHp());
+        pm.setInspiration(body.inspiration());
+        pm.setExhaustion(body.exhaustion());
+        pm.setDeathSaveSuccesses(body.deathSaveSuccesses());
+        pm.setDeathSaveFailures(body.deathSaveFailures());
+        pm.setConcentratingOn(body.concentratingOn());
+        pm.setConditionsJson(body.conditionsJson());
+        if (body.currentHp() != null) {
+            int max = body.maxHp() != null ? body.maxHp() : pm.getMaxHp();
+            pm.setCurrentHp(Math.min(body.currentHp(), max));
+        }
+        if (body.maxHp() != null) {
+            pm.setMaxHp(body.maxHp());
+            if (pm.getCurrentHp() > pm.getMaxHp()) {
+                pm.setCurrentHp(pm.getMaxHp());
+            }
+        }
+        return repository.save(pm);
+    }
+
+    public record PartyLiveStateDto(
+            int tempHp,
+            boolean inspiration,
+            int exhaustion,
+            int deathSaveSuccesses,
+            int deathSaveFailures,
+            String concentratingOn,
+            String conditionsJson,
+            Integer currentHp,
+            Integer maxHp
+    ) {}
 }

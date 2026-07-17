@@ -136,7 +136,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
             party.add(new CampaignManifestV2.PartyMemberDto(memberKey, value.characterName(), value.playerName(),
                     value.classAndLevel(), value.ac(), value.maxHp(), currentHp, value.initiativeBonus(), value.speed(),
                     value.passivePerception(), value.passiveInsight(), value.passiveInvestigation(), value.notes(),
-                    value.active(), sheet));
+                    value.active(), sheet, null, null, null, null, null, null, null));
         }
 
         Map<String, String> statKeys = new LinkedHashMap<>();

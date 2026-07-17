@@ -56,6 +56,27 @@ public class PartyMember {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(nullable = false)
+    private int tempHp;
+
+    @Column(nullable = false)
+    private boolean inspiration;
+
+    @Column(nullable = false)
+    private int exhaustion;
+
+    @Column(nullable = false)
+    private int deathSaveSuccesses;
+
+    @Column(nullable = false)
+    private int deathSaveFailures;
+
+    @Column(length = 255)
+    private String concentratingOn;
+
+    @Column(columnDefinition = "CLOB")
+    private String conditionsJson;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -100,6 +121,27 @@ public class PartyMember {
 
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+
+    public int getTempHp() { return tempHp; }
+    public void setTempHp(int tempHp) { this.tempHp = tempHp; }
+
+    public boolean isInspiration() { return inspiration; }
+    public void setInspiration(boolean inspiration) { this.inspiration = inspiration; }
+
+    public int getExhaustion() { return exhaustion; }
+    public void setExhaustion(int exhaustion) { this.exhaustion = exhaustion; }
+
+    public int getDeathSaveSuccesses() { return deathSaveSuccesses; }
+    public void setDeathSaveSuccesses(int deathSaveSuccesses) { this.deathSaveSuccesses = deathSaveSuccesses; }
+
+    public int getDeathSaveFailures() { return deathSaveFailures; }
+    public void setDeathSaveFailures(int deathSaveFailures) { this.deathSaveFailures = deathSaveFailures; }
+
+    public String getConcentratingOn() { return concentratingOn; }
+    public void setConcentratingOn(String concentratingOn) { this.concentratingOn = concentratingOn; }
+
+    public String getConditionsJson() { return conditionsJson; }
+    public void setConditionsJson(String conditionsJson) { this.conditionsJson = conditionsJson; }
 
     @OneToOne(mappedBy = "partyMember", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore

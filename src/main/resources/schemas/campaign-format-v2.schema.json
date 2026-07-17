@@ -240,6 +240,13 @@
         "passiveInvestigation": { "type": "integer" },
         "notes": { "type": "string" },
         "active": { "type": "boolean" },
+        "tempHp": { "type": "integer", "minimum": 0 },
+        "inspiration": { "type": "boolean" },
+        "exhaustion": { "type": "integer", "minimum": 0, "maximum": 6 },
+        "deathSaveSuccesses": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "deathSaveFailures": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "concentratingOn": { "type": "string", "maxLength": 255 },
+        "conditionsJson": { "type": "string" },
         "sheet": { "$ref": "#/$defs/sheet" }
       }
     },

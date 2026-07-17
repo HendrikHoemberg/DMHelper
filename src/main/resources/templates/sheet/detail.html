@@ -57,6 +57,11 @@
             </div>
 
             <div class="detail-section">
+                <h2>Live State</h2>
+                <div th:replace="~{sheet/_live-state :: liveState(campaignId=${campaign.id}, member=${member})}"></div>
+            </div>
+
+            <div class="detail-section">
                 <h2>Saving Throws</h2>
                 <dl class="pm-stats">
                     <div><dt>STR</dt><dd><span th:text="'+' + ${sheet.derivedValues().saveStr()}">+7</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveStr()}'" type="button" title="STR save">d20</button></dd></div>

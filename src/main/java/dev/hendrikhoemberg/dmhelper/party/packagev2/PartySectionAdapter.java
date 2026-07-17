@@ -92,7 +92,10 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
                 key, pm.getCharacterName(), pm.getPlayerName(), pm.getClassAndLevel(),
                 pm.getAc(), pm.getMaxHp(), pm.getCurrentHp(), pm.getInitiativeBonus(),
                 pm.getSpeed(), pm.getPassivePerception(), pm.getPassiveInsight(),
-                pm.getPassiveInvestigation(), pm.getNotes(), pm.isActive(), sheetDto
+                pm.getPassiveInvestigation(), pm.getNotes(), pm.isActive(), sheetDto,
+                pm.getTempHp(), pm.isInspiration(), pm.getExhaustion(),
+                pm.getDeathSaveSuccesses(), pm.getDeathSaveFailures(),
+                pm.getConcentratingOn(), pm.getConditionsJson()
         );
     }
 
@@ -247,6 +250,13 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
             pm.setPassiveInvestigation(dto.passiveInvestigation());
             pm.setNotes(dto.notes());
             pm.setActive(dto.active());
+            pm.setTempHp(dto.tempHp());
+            pm.setInspiration(dto.inspiration());
+            pm.setExhaustion(dto.exhaustion());
+            pm.setDeathSaveSuccesses(dto.deathSaveSuccesses());
+            pm.setDeathSaveFailures(dto.deathSaveFailures());
+            pm.setConcentratingOn(dto.concentratingOn());
+            pm.setConditionsJson(dto.conditionsJson());
             partyMemberRepository.save(pm);
             context.register(CampaignContentType.PARTY_MEMBER, dto.key(), pm, pm.getId());
             imported.add(new ImportedPartyMember(pm, dto));

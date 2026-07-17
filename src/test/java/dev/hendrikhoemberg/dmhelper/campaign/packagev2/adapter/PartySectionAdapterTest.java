@@ -230,7 +230,8 @@ class PartySectionAdapterTest {
                                                 ContentReference.catalogRef(CampaignContentType.CLASS, null, "wizard"))
                                 ),
                                 Map.of("1", 2, "2", 1)
-                        )
+                        ),
+                        null, null, null, null, null, null, null
                 )),
                 null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
@@ -240,7 +241,6 @@ class PartySectionAdapterTest {
         var importContext = new CampaignImportContext(
                 freshCampaign.getId(), new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
         importContext.setCampaign(freshCampaign);
-        importContext.register(CampaignContentType.CAMPAIGN, "campaign-key", freshCampaign, freshCampaign.getId());
 
         adapter.importSection(manifest, importContext);
 
@@ -261,6 +261,122 @@ class PartySectionAdapterTest {
 
         verify(resourceRepo, times(2)).save(any());
         verify(spellRefRepo, times(2)).save(any());
+    }
+
+    @Test
+    void exportsAndImportsLiveStateFields() {
+        UUID pmId = UUID.randomUUID();
+        var pm = partyMember(pmId, "Elara");
+        pm.setTempHp(7);
+        pm.setInspiration(true);
+        pm.setExhaustion(2);
+        pm.setDeathSaveSuccesses(1);
+        pm.setDeathSaveFailures(1);
+        pm.setConcentratingOn("Bless");
+        pm.setConditionsJson("[{\"sourceKey\":\"poisoned\"}]");
+
+        when(partyRepo.findByCampaignIdOrderByCharacterNameAscIdAsc(campaign.getId()))
+                .thenReturn(List.of(pm));
+
+        var keyService = new CampaignSectionAdapterTest.FakeKeyService();
+        var assembler = new CampaignManifestAssembler();
+        assembler.assets(List.of());
+        var ctx = exportContext(keyService);
+        adapter.exportSection(ctx, assembler);
+        fillRest(assembler);
+        var manifest = buildManifest(assembler);
+
+        var dto = manifest.party().get(0);
+        assertThat(dto.tempHp()).isEqualTo(7);
+        assertThat(dto.inspiration()).isTrue();
+        assertThat(dto.exhaustion()).isEqualTo(2);
+        assertThat(dto.deathSaveSuccesses()).isEqualTo(1);
+        assertThat(dto.deathSaveFailures()).isEqualTo(1);
+        assertThat(dto.concentratingOn()).isEqualTo("Bless");
+        assertThat(dto.conditionsJson()).isEqualTo("[{\"sourceKey\":\"poisoned\"}]");
+    }
+
+    @Test
+    void importsLiveStateFieldsWithDefaultsForNull() {
+        when(partyRepo.save(any())).thenAnswer(inv -> {
+            var p = inv.getArgument(0, PartyMember.class);
+            if (p.getId() == null) p.setId(UUID.randomUUID());
+            return p;
+        });
+
+        var manifest = new CampaignManifestV2(
+                2, null, null, null,
+                List.of(new CampaignManifestV2.PartyMemberDto(
+                        "party-test", "Test", "Dev", "Fighter 1",
+                        15, 30, 30, 2, 30, 10, 10, 10,
+                        null, true, null,
+                        null, null, null, null, null, null, null
+                )),
+                null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, List.of(), List.of()
+        );
+
+        var freshCampaign = new Campaign();
+        freshCampaign.setId(UUID.randomUUID());
+        var importContext = new CampaignImportContext(
+                freshCampaign.getId(), new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
+        importContext.setCampaign(freshCampaign);
+        importContext.register(CampaignContentType.CAMPAIGN, "campaign-key", freshCampaign, freshCampaign.getId());
+
+        adapter.importSection(manifest, importContext);
+
+        verify(partyRepo).save(argThat(pm ->
+                pm.getTempHp() == 0 &&
+                !pm.isInspiration() &&
+                pm.getExhaustion() == 0 &&
+                pm.getDeathSaveSuccesses() == 0 &&
+                pm.getDeathSaveFailures() == 0 &&
+                pm.getConcentratingOn() == null &&
+                pm.getConditionsJson() == null
+        ));
+    }
+
+    @Test
+    void importsLiveStateFieldsWithValues() {
+        when(partyRepo.save(any())).thenAnswer(inv -> {
+            var p = inv.getArgument(0, PartyMember.class);
+            if (p.getId() == null) p.setId(UUID.randomUUID());
+            return p;
+        });
+
+        var manifest = new CampaignManifestV2(
+                2, null, null, null,
+                List.of(new CampaignManifestV2.PartyMemberDto(
+                        "party-test", "Test", "Dev", "Fighter 1",
+                        15, 30, 30, 2, 30, 10, 10, 10,
+                        null, true, null,
+                        7, true, 2, 1, 0, "Bless", "[{\"sourceKey\":\"poisoned\"}]"
+                )),
+                null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, List.of(), List.of()
+        );
+
+        var freshCampaign = new Campaign();
+        freshCampaign.setId(UUID.randomUUID());
+        var importContext = new CampaignImportContext(
+                freshCampaign.getId(), new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
+        importContext.setCampaign(freshCampaign);
+        importContext.register(CampaignContentType.CAMPAIGN, "campaign-key", freshCampaign, freshCampaign.getId());
+
+        adapter.importSection(manifest, importContext);
+
+        verify(partyRepo).save(argThat(pm ->
+                pm.getTempHp() == 7 &&
+                pm.isInspiration() &&
+                pm.getExhaustion() == 2 &&
+                pm.getDeathSaveSuccesses() == 1 &&
+                pm.getDeathSaveFailures() == 0 &&
+                "Bless".equals(pm.getConcentratingOn()) &&
+                pm.getConditionsJson() != null &&
+                pm.getConditionsJson().contains("poisoned")
+        ));
     }
 
     @Test
@@ -303,7 +419,8 @@ class PartySectionAdapterTest {
                                 Map.of("skills", List.of(), "tools", List.of(), "languages", List.of(), "armor", List.of(), "weapons", List.of(), "expertise", List.of()),
                                 ContentReference.catalogRef(CampaignContentType.SPECIES, null, "human"),
                                 null, List.of(), 0, Map.of(), 0, List.of(), List.of(), Map.of()
-                        )
+                        ),
+                        null, null, null, null, null, null, null
                 )),
                 null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,

@@ -294,7 +294,8 @@ class CampaignManifestV2SemanticValidatorTest {
         var quest = new CampaignManifestV2.QuestDto("q1", "Q", "ACTIVE", null, null,
                 null, null, null, null, List.of(link), List.of(), Instant.parse("2025-01-01T00:00:00Z"));
         var party = new CampaignManifestV2.PartyMemberDto(
-                "pm-1", "Aria", null, "Fighter 1", 16, 10, 10, 2, 30, 12, 10, 10, null, true, null);
+                "pm-1", "Aria", null, "Fighter 1", 16, 10, 10, 2, 30, 12, 10, 10, null, true, null,
+                null, null, null, null, null, null, null);
         var base = minimal();
         var manifest = new CampaignManifestV2(
                 2, base.metadata(), base.campaign(), base.assets(), List.of(party),
