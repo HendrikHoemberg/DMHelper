@@ -31,6 +31,7 @@ ALTER TABLE spell ADD COLUMN IF NOT EXISTS prov_source_hash VARCHAR(128);
 ALTER TABLE spell ADD COLUMN IF NOT EXISTS prov_confidence VARCHAR(20);
 ALTER TABLE spell DROP CONSTRAINT IF EXISTS spell_source_key_key;
 CREATE INDEX IF NOT EXISTS idx_spell_campaign ON spell(campaign_id_fk);
+CREATE INDEX IF NOT EXISTS idx_spell_campaign_name ON spell(campaign_id_fk, name);
 CREATE INDEX IF NOT EXISTS idx_spell_source ON spell(source);
 CREATE INDEX IF NOT EXISTS idx_spell_source_key ON spell(source_key);
 
@@ -51,6 +52,7 @@ ALTER TABLE srd_condition ADD COLUMN IF NOT EXISTS prov_source_hash VARCHAR(128)
 ALTER TABLE srd_condition ADD COLUMN IF NOT EXISTS prov_confidence VARCHAR(20);
 ALTER TABLE srd_condition DROP CONSTRAINT IF EXISTS srd_condition_source_key_key;
 CREATE INDEX IF NOT EXISTS idx_condition_campaign ON srd_condition(campaign_id_fk);
+CREATE INDEX IF NOT EXISTS idx_condition_campaign_name ON srd_condition(campaign_id_fk, name);
 CREATE INDEX IF NOT EXISTS idx_condition_source ON srd_condition(source);
 CREATE INDEX IF NOT EXISTS idx_condition_source_key ON srd_condition(source_key);
 
@@ -71,6 +73,7 @@ ALTER TABLE rule_section ADD COLUMN IF NOT EXISTS prov_source_hash VARCHAR(128);
 ALTER TABLE rule_section ADD COLUMN IF NOT EXISTS prov_confidence VARCHAR(20);
 ALTER TABLE rule_section DROP CONSTRAINT IF EXISTS rule_section_source_key_key;
 CREATE INDEX IF NOT EXISTS idx_rule_section_campaign ON rule_section(campaign_id_fk);
+CREATE INDEX IF NOT EXISTS idx_rule_section_campaign_name ON rule_section(campaign_id_fk, name);
 CREATE INDEX IF NOT EXISTS idx_rule_section_source ON rule_section(source);
 CREATE INDEX IF NOT EXISTS idx_rule_section_source_key ON rule_section(source_key);
 
@@ -91,6 +94,7 @@ ALTER TABLE equipment_item ADD COLUMN IF NOT EXISTS prov_source_hash VARCHAR(128
 ALTER TABLE equipment_item ADD COLUMN IF NOT EXISTS prov_confidence VARCHAR(20);
 ALTER TABLE equipment_item DROP CONSTRAINT IF EXISTS equipment_item_source_key_key;
 CREATE INDEX IF NOT EXISTS idx_equipment_campaign ON equipment_item(campaign_id_fk);
+CREATE INDEX IF NOT EXISTS idx_equipment_campaign_name ON equipment_item(campaign_id_fk, name);
 CREATE INDEX IF NOT EXISTS idx_equipment_source ON equipment_item(source);
 CREATE INDEX IF NOT EXISTS idx_equipment_source_key ON equipment_item(source_key);
 
@@ -111,6 +115,7 @@ ALTER TABLE magic_item ADD COLUMN IF NOT EXISTS prov_source_hash VARCHAR(128);
 ALTER TABLE magic_item ADD COLUMN IF NOT EXISTS prov_confidence VARCHAR(20);
 ALTER TABLE magic_item DROP CONSTRAINT IF EXISTS magic_item_source_key_key;
 CREATE INDEX IF NOT EXISTS idx_magic_item_campaign ON magic_item(campaign_id_fk);
+CREATE INDEX IF NOT EXISTS idx_magic_item_campaign_name ON magic_item(campaign_id_fk, name);
 CREATE INDEX IF NOT EXISTS idx_magic_item_source ON magic_item(source);
 CREATE INDEX IF NOT EXISTS idx_magic_item_source_key ON magic_item(source_key);
 
@@ -131,6 +136,7 @@ ALTER TABLE character_class ADD COLUMN IF NOT EXISTS prov_source_hash VARCHAR(12
 ALTER TABLE character_class ADD COLUMN IF NOT EXISTS prov_confidence VARCHAR(20);
 ALTER TABLE character_class DROP CONSTRAINT IF EXISTS character_class_source_key_key;
 CREATE INDEX IF NOT EXISTS idx_class_campaign ON character_class(campaign_id_fk);
+CREATE INDEX IF NOT EXISTS idx_class_campaign_name ON character_class(campaign_id_fk, name);
 CREATE INDEX IF NOT EXISTS idx_class_source ON character_class(source);
 CREATE INDEX IF NOT EXISTS idx_class_source_key ON character_class(source_key);
 
@@ -151,6 +157,7 @@ ALTER TABLE species ADD COLUMN IF NOT EXISTS prov_source_hash VARCHAR(128);
 ALTER TABLE species ADD COLUMN IF NOT EXISTS prov_confidence VARCHAR(20);
 ALTER TABLE species DROP CONSTRAINT IF EXISTS species_source_key_key;
 CREATE INDEX IF NOT EXISTS idx_species_campaign ON species(campaign_id_fk);
+CREATE INDEX IF NOT EXISTS idx_species_campaign_name ON species(campaign_id_fk, name);
 CREATE INDEX IF NOT EXISTS idx_species_source ON species(source);
 CREATE INDEX IF NOT EXISTS idx_species_source_key ON species(source_key);
 
@@ -171,6 +178,7 @@ ALTER TABLE background ADD COLUMN IF NOT EXISTS prov_source_hash VARCHAR(128);
 ALTER TABLE background ADD COLUMN IF NOT EXISTS prov_confidence VARCHAR(20);
 ALTER TABLE background DROP CONSTRAINT IF EXISTS background_source_key_key;
 CREATE INDEX IF NOT EXISTS idx_background_campaign ON background(campaign_id_fk);
+CREATE INDEX IF NOT EXISTS idx_background_campaign_name ON background(campaign_id_fk, name);
 CREATE INDEX IF NOT EXISTS idx_background_source ON background(source);
 CREATE INDEX IF NOT EXISTS idx_background_source_key ON background(source_key);
 
@@ -191,6 +199,7 @@ ALTER TABLE feat ADD COLUMN IF NOT EXISTS prov_source_hash VARCHAR(128);
 ALTER TABLE feat ADD COLUMN IF NOT EXISTS prov_confidence VARCHAR(20);
 ALTER TABLE feat DROP CONSTRAINT IF EXISTS feat_source_key_key;
 CREATE INDEX IF NOT EXISTS idx_feat_campaign ON feat(campaign_id_fk);
+CREATE INDEX IF NOT EXISTS idx_feat_campaign_name ON feat(campaign_id_fk, name);
 CREATE INDEX IF NOT EXISTS idx_feat_source ON feat(source);
 CREATE INDEX IF NOT EXISTS idx_feat_source_key ON feat(source_key);
 

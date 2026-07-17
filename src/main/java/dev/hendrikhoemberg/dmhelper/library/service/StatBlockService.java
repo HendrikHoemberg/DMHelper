@@ -229,6 +229,9 @@ public class StatBlockService {
         clone.setLegendaryDescription(original.getLegendaryDescription());
         clone.setLairActions(original.getLairActions());
         clone.setXp(original.getXp());
+        if (original.getProvenance() != null) {
+            clone.setProvenance(original.getProvenance());
+        }
         return repository.save(clone);
     }
 
