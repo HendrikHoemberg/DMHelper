@@ -11,4 +11,11 @@
 | Structured scene transitions | `SUPPORTED` | Delivery item 6; CHOICE/ENTRANCE/EXIT transitions with typed scene references, mutual exclusion rules, and deferred resolution on import. |
 | Structured quests/objectives | `SUPPORTED` | Delivery item 6; quests with status lifecycle, objectives with ALL/ANY completion mode, prerequisite dependency DAG, and session objective-change history. |
 | Campaign-scoped non-statblock custom content | `SUPPORTED` | Delivery item 7; package PACKAGE refs for sheets/treasury, provenance, and create/clone/promote across library types. |
-| Character sheet completion | `SUPPORTED` | Sheet round-trip covers ability scores, class levels (with hit die rolls and subclass), proficiencies, species, background, feats, xp, overrides (with `_meta` reasons), hit dice, resources, spells, spell slots, attacks, and features. |
+| Character creation choices (class/subclass/skills) | `SUPPORTED` | Create/level-up capture class, optional subclass, skill/tool/language choices, and hit-die roll or average. |
+| At-table attacks/features | `SUPPORTED` | Sheet attacks and feature actions with roll expressions; package-exported. |
+| Live HP/temp/death saves/conditions on party | `SUPPORTED` | PartyMember live combat state is editable, package-round-tripped, and synced with linked combatants. |
+| Sheet inventory states | `SUPPORTED` | EQUIPPED/CARRIED/STASHED/CONSUMED/LOST with attunement constrained to EQUIPPED/CARRIED. |
+| Rest preview and apply | `SUPPORTED` | Preview is pure; apply heals HP from hit dice (short), restores full HP, clears temp HP/death saves, and reduces exhaustion (long). |
+| Multi-member rest/XP/condition/loot ops | `SUPPORTED` | Batch bar on party and sheets overview with rest preview confirmation. |
+| Full automated ASI/subclass feature schedule from all class JSON | `PARTIAL` | ASI/subclass prompts use common schedules and class data when present; incomplete class feature tables remain manual. |
+| Character sheet package round-trip | `SUPPORTED` | Ability scores, class levels (hit die rolls + subclassRef), proficiencies, overrides `_meta`, resources, spells/slots, attacks, features, and party live state. |

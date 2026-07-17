@@ -4,6 +4,8 @@ import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.SheetDto;
+import dev.hendrikhoemberg.dmhelper.treasury.data.InventoryState;
+import dev.hendrikhoemberg.dmhelper.treasury.service.TreasuryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -32,6 +34,9 @@ class PartyBatchOperationsTest {
 
     @MockitoBean
     private PartyMemberRepository partyMemberRepo;
+
+    @MockitoBean
+    private TreasuryService treasuryService;
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final UUID campaignId = UUID.randomUUID();
@@ -135,6 +140,30 @@ class PartyBatchOperationsTest {
                         .contentType("application/json")
                         .content(mapper.writeValueAsString(Map.of(
                                 "memberIds", List.of(id1.toString(), id2.toString())
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.results.length()").value(2))
+                .andExpect(jsonPath("$.results[0].status").value("ok"))
+                .andExpect(jsonPath("$.results[1].status").value("ok"));
+    }
+
+    @Test
+    void batchLootAssignsCustomItemToEachMember() throws Exception {
+        UUID id1 = UUID.randomUUID();
+        UUID id2 = UUID.randomUUID();
+        UUID assignmentId = UUID.randomUUID();
+
+        var dto = new TreasuryService.AssignmentDto(
+                assignmentId, campaignId, id1, "A", null, null, null, null,
+                "Potion of Healing", 1, false, "Potion of Healing", InventoryState.CARRIED);
+        when(treasuryService.create(any())).thenReturn(dto);
+
+        mockMvc.perform(post("/api/v1/campaigns/{campaignId}/party/loot/batch", campaignId)
+                        .contentType("application/json")
+                        .content(mapper.writeValueAsString(Map.of(
+                                "memberIds", List.of(id1.toString(), id2.toString()),
+                                "customText", "Potion of Healing",
+                                "quantity", 1
                         ))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.results.length()").value(2))

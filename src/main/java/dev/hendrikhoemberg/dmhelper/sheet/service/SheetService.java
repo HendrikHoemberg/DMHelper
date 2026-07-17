@@ -685,6 +685,12 @@ public class SheetService {
         int toSpend = Math.min(hitDiceSpent, maxSpendable);
         sheet.setHitDiceUsed(sheet.getHitDiceUsed() + toSpend);
 
+        int hpRecovered = estimateHitDiceHp(sheet, toSpend);
+        PartyMember pm = sheet.getPartyMember();
+        int newHp = Math.min(pm.getMaxHp(), pm.getCurrentHp() + hpRecovered);
+        pm.setCurrentHp(newHp);
+        partyMemberRepo.save(pm);
+
         List<SheetResource> resources = resourceRepo.findBySheetId(sheetId);
         for (SheetResource r : resources) {
             if (r.getResetRule() == SheetResource.ResetRule.SHORT_REST) {
@@ -723,6 +729,18 @@ public class SheetService {
                 resourceRepo.save(r);
             }
         }
+
+        PartyMember pm = sheet.getPartyMember();
+        // Full HP restore to rules-derived max (syncToPartyMember also writes max).
+        pm.setMaxHp(derived.maxHp());
+        pm.setCurrentHp(derived.maxHp());
+        pm.setTempHp(0);
+        if (pm.getExhaustion() > 0) {
+            pm.setExhaustion(pm.getExhaustion() - 1);
+        }
+        pm.setDeathSaveSuccesses(0);
+        pm.setDeathSaveFailures(0);
+        partyMemberRepo.save(pm);
 
         sheet = sheetRepo.save(sheet);
         syncToPartyMember(sheet);

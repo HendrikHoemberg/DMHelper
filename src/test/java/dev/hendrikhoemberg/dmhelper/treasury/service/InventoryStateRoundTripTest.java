@@ -164,4 +164,32 @@ class InventoryStateRoundTripTest {
                 campaign.getId(), null, null, sword.getId(), null, 1, false));
         assertThat(result.inventoryState()).isEqualTo(InventoryState.STASHED);
     }
+
+    @Test
+    void rejectsAttunementWhenStashedOrLost() {
+        var result = service.create(new TreasuryService.CreateAssignmentRequest(
+                campaign.getId(), pc.getId(), null, sword.getId(), null, 1, false,
+                InventoryState.STASHED));
+
+        assertThatThrownBy(() -> service.toggleAttunement(result.id()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("EQUIPPED or CARRIED");
+
+        service.setInventoryState(result.id(), InventoryState.CARRIED);
+        var attuned = service.toggleAttunement(result.id());
+        assertThat(attuned.attuned()).isTrue();
+
+        assertThatThrownBy(() -> service.setInventoryState(result.id(), InventoryState.LOST))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("EQUIPPED or CARRIED");
+    }
+
+    @Test
+    void rejectsCreateAttunedWithInvalidState() {
+        assertThatThrownBy(() -> service.create(new TreasuryService.CreateAssignmentRequest(
+                campaign.getId(), pc.getId(), null, sword.getId(), null, 1, true,
+                InventoryState.STASHED)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("EQUIPPED or CARRIED");
+    }
 }

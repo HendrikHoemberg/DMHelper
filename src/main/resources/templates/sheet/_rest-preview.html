@@ -40,8 +40,11 @@
              th:value="${preview.hitDiceToSpend}"
              min="0" th:max="${preview.hitDiceAvailable}"
              class="small-input"
-             hx-get="/campaigns/{campaignId}/party/{memberId}/sheet/rest/preview?type=SHORT"
-             hx-trigger="change" hx-target="#rest-preview-dialog" hx-swap="innerHTML">
+             th:hx-get="@{/campaigns/{cid}/party/{pid}/sheet/rest/preview(cid=${campaignId}, pid=${memberId}, type=SHORT)}"
+             hx-include="this"
+             hx-trigger="change"
+             hx-target="#rest-preview-dialog"
+             hx-swap="innerHTML">
     </div>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Confirm</button>

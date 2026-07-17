@@ -279,7 +279,8 @@
       "properties": {
         "classRef": { "$ref": "#/$defs/contentReference" },
         "level": { "type": "integer", "minimum": 1 },
-        "hitDieRolls": { "type": "array", "items": { "type": "integer", "minimum": 1 } }
+        "hitDieRolls": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
+        "subclassRef": { "$ref": "#/$defs/contentReference" }
       }
     },
     "resource": {

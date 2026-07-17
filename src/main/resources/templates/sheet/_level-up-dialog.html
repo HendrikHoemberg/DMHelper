@@ -78,7 +78,9 @@
         </div>
     </form>
 </dialog>
-<script>
+<script th:inline="javascript">
+const sheetTotalLevel = /*[[${sheet != null ? sheet.derivedValues().totalLevel() : 1}]]*/ 1;
+
 function updateLevelUpForm() {
     const select = document.getElementById('lu-class-select');
     if (!select) return;
@@ -105,17 +107,12 @@ function updateLevelUpForm() {
         })
         .catch(() => {});
 
-    // Check if this level is an ASI level
-    const sheetData = /*[[${sheet}]]*/ null;
-    if (sheetData) {
-        const currentLevel = sheetData.derivedValues ? sheetData.derivedValues.totalLevel : 1;
-        const newLevel = currentLevel + 1;
-        const asiLevels = [4, 8, 12, 16, 19];
-        const fighterExtraAsi = [6, 14];
-        const isAsi = asiLevels.includes(newLevel) ||
-            (classSourceKey && classSourceKey.includes('fighter') && fighterExtraAsi.includes(newLevel));
-        document.getElementById('lu-asi-section').style.display = isAsi ? 'block' : 'none';
-    }
+    const newLevel = sheetTotalLevel + 1;
+    const asiLevels = [4, 8, 12, 16, 19];
+    const fighterExtraAsi = [6, 14];
+    const isAsi = asiLevels.includes(newLevel) ||
+        (classSourceKey && classSourceKey.includes('fighter') && fighterExtraAsi.includes(newLevel));
+    document.getElementById('lu-asi-section').style.display = isAsi ? 'block' : 'none';
 }
 
 function updateAsiFields() {

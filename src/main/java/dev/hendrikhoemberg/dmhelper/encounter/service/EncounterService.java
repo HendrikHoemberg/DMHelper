@@ -387,9 +387,15 @@ public class EncounterService {
             c.setName(token.getName());
             c.setKind(token.getKind());
             if (token.getPartyMember() != null) {
-                c.setMaxHp(token.getPartyMember().getMaxHp());
-                c.setCurrentHp(token.getPartyMember().getCurrentHp());
-                c.setPartyMember(token.getPartyMember());
+                PartyMember linked = token.getPartyMember();
+                c.setMaxHp(linked.getMaxHp());
+                c.setCurrentHp(linked.getCurrentHp());
+                c.setTempHp(linked.getTempHp());
+                if (linked.getConditionsJson() != null && !linked.getConditionsJson().isBlank()) {
+                    c.setConditionsJson(linked.getConditionsJson());
+                }
+                c.setConcentratingOn(linked.getConcentratingOn());
+                c.setPartyMember(linked);
             } else {
                 c.setMaxHp(token.getMaxHp() != null ? token.getMaxHp() : 10);
                 c.setCurrentHp(token.getCurrentHp() != null ? token.getCurrentHp() : c.getMaxHp());
@@ -414,6 +420,11 @@ public class EncounterService {
             c.setKind("PC");
             c.setMaxHp(pm.getMaxHp());
             c.setCurrentHp(pm.getCurrentHp());
+            c.setTempHp(pm.getTempHp());
+            if (pm.getConditionsJson() != null && !pm.getConditionsJson().isBlank()) {
+                c.setConditionsJson(pm.getConditionsJson());
+            }
+            c.setConcentratingOn(pm.getConcentratingOn());
             c.setPartyMember(pm);
             c.setSortOrder((int) combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).size());
             combatantRepo.save(c);

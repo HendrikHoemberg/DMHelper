@@ -177,7 +177,18 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
                             "Sheet class level references unknown class sourceKey '" + classSourceKey + "'");
                 }
                 ContentReference classRef = libraryRefs.referenceFor(cls, context);
-                result.add(new ClassLevelDto(classRef, level, hitDieRolls));
+                ContentReference subclassRef = null;
+                Object subclassKeyObj = entry.get("subclassSourceKey");
+                if (subclassKeyObj != null && !subclassKeyObj.toString().isBlank()) {
+                    String subclassKey = subclassKeyObj.toString();
+                    CharacterClass subclass = libraryRefs.findClassForCampaign(context.campaignId(), subclassKey);
+                    if (subclass == null) {
+                        throw new IllegalStateException(
+                                "Sheet class level references unknown subclass sourceKey '" + subclassKey + "'");
+                    }
+                    subclassRef = libraryRefs.referenceFor(subclass, context);
+                }
+                result.add(new ClassLevelDto(classRef, level, hitDieRolls, subclassRef));
             }
             return result;
         } catch (IllegalStateException e) {
@@ -351,6 +362,12 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
                 entry.put("level", cl.level());
                 if (cl.hitDieRolls() != null && !cl.hitDieRolls().isEmpty()) {
                     entry.put("hitDieRolls", cl.hitDieRolls());
+                }
+                if (cl.subclassRef() != null) {
+                    CharacterClass subclass = libraryRefs.resolveClass(cl.subclassRef(), context);
+                    if (subclass != null) {
+                        entry.put("subclassSourceKey", subclass.getSourceKey());
+                    }
                 }
                 list.add(entry);
             }

@@ -131,13 +131,13 @@
                 <div class="form-actions" style="flex-wrap: wrap;">
                     <button type="button" class="btn btn-primary"
                             onclick="document.getElementById('rest-preview-dialog').innerHTML = '<p>Loading...</p>'; document.getElementById('rest-preview-dialog').showModal();"
-                            hx-get="@{/campaigns/{cid}/party/{pid}/sheet/rest/preview(cid=${campaign.id}, pid=${member.id}, type=SHORT, hitDiceSpent=0)}"
+                            th:hx-get="@{/campaigns/{cid}/party/{pid}/sheet/rest/preview(cid=${campaign.id}, pid=${member.id}, type=SHORT, hitDiceSpent=0)}"
                             hx-target="#rest-preview-dialog" hx-swap="innerHTML">
                         Short Rest
                     </button>
                     <button type="button" class="btn btn-primary"
                             onclick="document.getElementById('rest-preview-dialog').innerHTML = '<p>Loading...</p>'; document.getElementById('rest-preview-dialog').showModal();"
-                            hx-get="@{/campaigns/{cid}/party/{pid}/sheet/rest/preview(cid=${campaign.id}, pid=${member.id}, type=LONG, hitDiceSpent=0)}"
+                            th:hx-get="@{/campaigns/{cid}/party/{pid}/sheet/rest/preview(cid=${campaign.id}, pid=${member.id}, type=LONG, hitDiceSpent=0)}"
                             hx-target="#rest-preview-dialog" hx-swap="innerHTML">
                         Long Rest
                     </button>
@@ -179,7 +179,8 @@
                     <div class="form-actions" style="margin-top: var(--space-sm)">
                         <button type="button" class="btn btn-ghost btn-xs" onclick="addOverrideRow()">+ Add Override</button>
                         <button type="button" class="btn btn-primary"
-                                hx-put="@{/campaigns/{cid}/party/{pid}/sheet/overrides(cid=${campaign.id}, pid=${member.id})}"
+                                th:hx-put="@{/campaigns/{cid}/party/{pid}/sheet/overrides(cid=${campaign.id}, pid=${member.id})}"
+                                hx-headers='{"Content-Type": "application/json"}'
                                 hx-vals='js:buildOverrides()'>Save Overrides</button>
                     </div>
                 </div>
@@ -244,7 +245,8 @@
                     </div>
                     <div class="form-actions" style="margin-top: var(--space-sm)">
                         <button type="button" class="btn btn-primary"
-                                hx-post="@{/campaigns/{cid}/party/{pid}/sheet/proficiencies(cid=${campaign.id}, pid=${member.id})}"
+                                th:hx-post="@{/campaigns/{cid}/party/{pid}/sheet/proficiencies(cid=${campaign.id}, pid=${member.id})}"
+                                hx-headers='{"Content-Type": "application/json"}'
                                 hx-vals='js:buildProficiencies()'>Save Proficiencies</button>
                     </div>
                 </div>

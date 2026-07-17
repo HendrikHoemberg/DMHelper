@@ -38,6 +38,7 @@
                 <button class="btn btn-xs batch-btn" onclick="batchXp()">Award XP</button>
                 <button class="btn btn-xs batch-btn" onclick="batchMilestone()">Set Level</button>
                 <button class="btn btn-xs batch-btn" onclick="batchCondition()">Condition</button>
+                <button class="btn btn-xs batch-btn" onclick="batchLoot()">Assign Loot</button>
                 <button class="btn btn-xs batch-btn" onclick="batchClearDeathSaves()">Clear Death Saves</button>
             </div>
         </div>
@@ -82,7 +83,7 @@
     <div class="modal-content" id="batch-dialog-body"></div>
 </div>
 
-<script>
+<script th:inline="javascript">
 const campaignId = /*[[${campaign.id}]]*/ '';
 
 function toggleSelectAll(el) {
@@ -114,18 +115,59 @@ function getSelectedIds() {
     return Array.from(document.querySelectorAll('.member-select:checked')).map(cb => cb.value);
 }
 
-function batchRest(type) {
+async function batchRest(type) {
     const ids = getSelectedIds();
     if (!ids.length) { alert('Select at least one member'); return; }
     const hitDice = type === 'SHORT' ? prompt('Hit dice to spend:', '1') : '0';
     if (hitDice === null) return;
-    fetch(`/api/v1/campaigns/${campaignId}/party/rest?type=${type}&members=${ids.join(',')}&hitDiceSpent=${hitDice}`, {
-        method: 'POST'
+    try {
+        const previews = await Promise.all(ids.map(id =>
+            fetch(`/api/v1/campaigns/${campaignId}/party/${id}/sheet/rest/preview?type=${type}&hitDiceSpent=${hitDice}`)
+                .then(r => r.ok ? r.json() : null)
+                .catch(() => null)
+        ));
+        const lines = previews.filter(Boolean).map(p =>
+            `• HP ~${p.estimatedHpRecovered}, resources: ${(p.resourcesToReset || []).join(', ') || 'none'}`
+            + (p.clearExhaustionOneLevel ? ', exhaustion −1' : '')
+        );
+        const summary = lines.length
+            ? `${type} rest for ${ids.length} member(s):\n${lines.join('\n')}\n\nApply?`
+            : `Apply ${type} rest to ${ids.length} member(s)?`;
+        if (!confirm(summary)) return;
+        const r = await fetch(`/api/v1/campaigns/${campaignId}/party/rest?type=${type}&members=${ids.join(',')}&hitDiceSpent=${hitDice}`, {
+            method: 'POST'
+        });
+        const data = await r.json();
+        const ok = data.results.filter(x => x.status === 'ok').length;
+        alert(`Applied ${type} rest to ${ok} member(s)`);
+        location.reload();
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+function batchLoot() {
+    const ids = getSelectedIds();
+    if (!ids.length) { alert('Select at least one member'); return; }
+    const customText = prompt('Item text to assign to each selected member:', 'Potion of Healing');
+    if (!customText) return;
+    const quantity = prompt('Quantity each:', '1');
+    if (quantity === null) return;
+    fetch(`/api/v1/campaigns/${campaignId}/party/loot/batch`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            memberIds: ids,
+            customText: customText,
+            quantity: parseInt(quantity) || 1,
+            inventoryState: 'CARRIED'
+        })
     })
     .then(r => r.json())
     .then(data => {
+        if (data.error) { alert(data.error); return; }
         const ok = data.results.filter(r => r.status === 'ok').length;
-        alert(`Applied ${type} rest to ${ok} member(s)`);
+        alert(`Assigned loot to ${ok} member(s)`);
         location.reload();
     })
     .catch(e => alert('Error: ' + e.message));

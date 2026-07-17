@@ -166,8 +166,13 @@ public record CampaignManifestV2(
     public record ClassLevelDto(
             ContentReference classRef,
             int level,
-            List<Integer> hitDieRolls
-    ) {}
+            List<Integer> hitDieRolls,
+            ContentReference subclassRef
+    ) {
+        public ClassLevelDto(ContentReference classRef, int level, List<Integer> hitDieRolls) {
+            this(classRef, level, hitDieRolls, null);
+        }
+    }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ResourceDto(

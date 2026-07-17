@@ -7,14 +7,14 @@
                 Lv <span th:text="${iterStat.index}">1</span>:
                 <span class="slot-count"
                       th:text="${sheet.spellSlotsUsed().get(iterStat.index.toString()) ?: 0} + ' / ' + ${slotAmt}">0/4</span>
-                <button class="btn btn-xs btn-ghost"
-                        hx-put="/api/v1/campaigns/[[${campaignId}]]/party/[[${memberId}]]/sheet/spells/slots"
-                        hx-vals='{"level": "[[${iterStat.index}]]"}'
-                        hx-swap="none">+</button>
-                <button class="btn btn-xs btn-ghost"
-                        hx-put="/api/v1/campaigns/[[${campaignId}]]/party/[[${memberId}]]/sheet/spells/slots/recover"
-                        hx-vals='{"level": "[[${iterStat.index}]]"}'
-                        hx-swap="none">-</button>
+                <button type="button" class="btn btn-xs btn-ghost"
+                        th:hx-put="@{/api/v1/campaigns/{cid}/party/{mid}/sheet/spells/slots(cid=${campaignId}, mid=${memberId}, level=${iterStat.index})}"
+                        hx-swap="none"
+                        hx-on::after-request="if(event.detail.successful) location.reload()">+</button>
+                <button type="button" class="btn btn-xs btn-ghost"
+                        th:hx-put="@{/api/v1/campaigns/{cid}/party/{mid}/sheet/spells/slots/recover(cid=${campaignId}, mid=${memberId}, level=${iterStat.index})}"
+                        hx-swap="none"
+                        hx-on::after-request="if(event.detail.successful) location.reload()">−</button>
             </span>
         </th:block>
         <th:block th:each="pactAmt, iterStat : ${sheet.derivedValues().pactSlots()}">
@@ -22,14 +22,14 @@
                 Pact Lv <span th:text="${iterStat.index}">3</span>:
                 <span class="slot-count"
                       th:text="${sheet.spellSlotsUsed().get('pact') ?: 0} + ' / ' + ${pactAmt}">0/3</span>
-                <button class="btn btn-xs btn-ghost"
-                        hx-put="/api/v1/campaigns/[[${campaignId}]]/party/[[${memberId}]]/sheet/spells/slots"
-                        hx-vals='{"level": "pact"}'
-                        hx-swap="none">+</button>
-                <button class="btn btn-xs btn-ghost"
-                        hx-put="/api/v1/campaigns/[[${campaignId}]]/party/[[${memberId}]]/sheet/spells/slots/recover"
-                        hx-vals='{"level": "pact"}'
-                        hx-swap="none">-</button>
+                <button type="button" class="btn btn-xs btn-ghost"
+                        th:hx-put="@{/api/v1/campaigns/{cid}/party/{mid}/sheet/spells/slots(cid=${campaignId}, mid=${memberId}, level=pact)}"
+                        hx-swap="none"
+                        hx-on::after-request="if(event.detail.successful) location.reload()">+</button>
+                <button type="button" class="btn btn-xs btn-ghost"
+                        th:hx-put="@{/api/v1/campaigns/{cid}/party/{mid}/sheet/spells/slots/recover(cid=${campaignId}, mid=${memberId}, level=pact)}"
+                        hx-swap="none"
+                        hx-on::after-request="if(event.detail.successful) location.reload()">−</button>
             </span>
         </th:block>
     </div>
@@ -42,7 +42,7 @@
 
         <label class="spell-prepared-toggle">
             <input type="checkbox" th:checked="${spell.prepared()}"
-                   hx-put="/api/v1/campaigns/[[${campaignId}]]/party/[[${memberId}]]/sheet/spells/[[${spell.id()}]]/prepared"
+                   th:hx-put="@{/api/v1/campaigns/{cid}/party/{mid}/sheet/spells/{sid}/prepared(cid=${campaignId}, mid=${memberId}, sid=${spell.id()})}"
                    hx-trigger="change"
                    hx-swap="none">
         </label>

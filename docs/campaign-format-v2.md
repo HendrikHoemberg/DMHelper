@@ -69,7 +69,7 @@ The v2 manifest carries full character sheet data within each party member's `sh
 |-------|------|-------------|
 | `key` | string | Package key for the sheet |
 | `abilityScores` | object | Map of ability name to score (e.g. `{"str": 10, "dex": 18}`) |
-| `classLevels` | ClassLevelDto[] | Class levels with references, levels, hit die rolls |
+| `classLevels` | ClassLevelDto[] | Class levels with class references, optional subclassRef, levels, hit die rolls |
 | `proficiencies` | object | Map of skill/ability to proficiency level |
 | `speciesRef` | ContentReference \| null | Reference to the character's species |
 | `backgroundRef` | ContentReference \| null | Reference to the character's background |
@@ -83,6 +83,17 @@ The v2 manifest carries full character sheet data within each party member's `sh
 | `attacks` | AttackDto[] | Weapon/natural attacks with bonus, damage, range |
 | `features` | FeatureDto[] | Class/racial features with action type, source, and body text |
 
+### ClassLevelDto
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `classRef` | ContentReference | Base class (CATALOG or PACKAGE) |
+| `level` | int | Levels in this class |
+| `hitDieRolls` | int[] | HP rolls for levels 2..n |
+| `subclassRef` | ContentReference \| null | Optional subclass class entry |
+
+Internal sheet storage uses `classSourceKey` / `subclassSourceKey` strings; the package always uses typed content references.
+
 ### AttackDto
 
 | Field | Type | Description |
@@ -94,7 +105,7 @@ The v2 manifest carries full character sheet data within each party member's `sh
 | `damageType` | string | Damage type (e.g. `"piercing"`) |
 | `range` | string \| null | Range description |
 | `properties` | string \| null | Weapon properties |
-| `ammunition` | string \| null | Ammunition type used |
+| `ammunition` | string \| null | Ammunition type or remaining-count note |
 | `notes` | string \| null | Free-text notes |
 
 ### FeatureDto

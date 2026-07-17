@@ -996,7 +996,7 @@ Recommended sequence:
 | 5 | Session cockpit | `IMPLEMENTED` |
 | 6 | Structured adventure/quest model | `IMPLEMENTED` |
 | 7 | Custom compendium expansion | `IMPLEMENTED` |
-| 8 | Character-sheet completion | `PLANNED` |
+| 8 | Character-sheet completion | `IMPLEMENTED` |
 | 9 | Encounter and map depth | `PLANNED` |
 | 10 | Documentation/agent SDK release | `PLANNED` |
 | 11 | P3 expansion | `PLANNED` |

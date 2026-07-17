@@ -187,6 +187,28 @@ class EncounterPartyHpSyncTest {
     }
 
     @Test
+    void prefilledPartyMemberCopiesTempHpAndConditions() {
+        PartyMember pm = createPartyMember(7, 20);
+        pm.setTempHp(4);
+        pm.setConditionsJson(
+                "[{\"sourceKey\":\"poisoned\",\"name\":\"Poisoned\",\"description\":\"\","
+                        + "\"durationRounds\":0,\"tickOnSourceTurn\":true,\"appliedInRound\":0}]");
+        pm.setConcentratingOn("Hunter's Mark");
+        partyRepo.save(pm);
+
+        EncounterDto enc = encounterService.create(campaign.getId(),
+                new CreateRequest("Encounter", null));
+
+        var combatants = encounterService.prefillFromParty(enc.id(), campaign.getId());
+
+        assertThat(combatants).hasSize(1);
+        assertThat(combatants.get(0).tempHp()).isEqualTo(4);
+        assertThat(combatants.get(0).conditions()).isNotEmpty();
+        assertThat(combatants.get(0).conditions().get(0).sourceKey()).isEqualTo("poisoned");
+        assertThat(combatants.get(0).concentratingOn()).isEqualTo("Hunter's Mark");
+    }
+
+    @Test
     void setCombatantHpSyncsToLinkedPartyMember() {
         PartyMember pm = createPartyMember(20, 20);
         EncounterDto enc = encounterService.create(campaign.getId(),

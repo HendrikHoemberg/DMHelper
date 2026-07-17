@@ -224,4 +224,50 @@ class RestPreviewServiceTest {
         assertTrue(preview.clearExhaustionOneLevel(),
                 "Long rest preview should indicate exhaustion reduction");
     }
+
+    @Test
+    void shortRestApplyHealsCurrentHpFromHitDice() {
+        when(sheetEngine.derive(any())).thenReturn(
+                makeDerived(5, 50, 5, 5, new int[10], new int[10])
+        );
+
+        var dto = sheetService.createSheet(makeCreateRequest(testMember.getId()));
+        testMember = partyMemberRepo.findById(testMember.getId()).orElseThrow();
+        testMember.setCurrentHp(10);
+        testMember.setMaxHp(50);
+        partyMemberRepo.save(testMember);
+
+        sheetService.shortRest(dto.id(), 2);
+
+        PartyMember after = partyMemberRepo.findById(testMember.getId()).orElseThrow();
+        assertTrue(after.getCurrentHp() > 10, "Short rest should heal from hit dice");
+        assertTrue(after.getCurrentHp() <= 50, "Short rest should not exceed max HP");
+    }
+
+    @Test
+    void longRestApplyRestoresFullHpAndReducesExhaustion() {
+        when(sheetEngine.derive(any())).thenReturn(
+                makeDerived(5, 50, 5, 5, new int[10], new int[10])
+        );
+
+        var dto = sheetService.createSheet(makeCreateRequest(testMember.getId()));
+        testMember = partyMemberRepo.findById(testMember.getId()).orElseThrow();
+        testMember.setCurrentHp(12);
+        testMember.setMaxHp(40);
+        testMember.setTempHp(5);
+        testMember.setExhaustion(2);
+        testMember.setDeathSaveSuccesses(1);
+        testMember.setDeathSaveFailures(2);
+        partyMemberRepo.save(testMember);
+
+        sheetService.longRest(dto.id(), 0);
+
+        PartyMember after = partyMemberRepo.findById(testMember.getId()).orElseThrow();
+        assertEquals(50, after.getCurrentHp(), "Long rest should restore to derived max HP");
+        assertEquals(50, after.getMaxHp());
+        assertEquals(0, after.getTempHp(), "Long rest clears temp HP");
+        assertEquals(1, after.getExhaustion(), "Long rest reduces exhaustion by 1");
+        assertEquals(0, after.getDeathSaveSuccesses());
+        assertEquals(0, after.getDeathSaveFailures());
+    }
 }

@@ -446,6 +446,111 @@ class PartySectionAdapterTest {
         }));
     }
 
+    @Test
+    void importAndExportPreserveSubclassSourceKey() {
+        var fighter = srdClass("srd-2024_fighter");
+        var champion = srdClass("srd-2024_fighter_champion");
+        champion.setSubclassOf("srd-2024_fighter");
+        when(classRepo.findBySourceAndSourceKey(ContentSource.SRD, "srd-2024_fighter"))
+                .thenReturn(Optional.of(fighter));
+        when(classRepo.findBySourceAndSourceKey(ContentSource.SRD, "srd-2024_fighter_champion"))
+                .thenReturn(Optional.of(champion));
+        when(classRepo.findBySourceAndSourceKeyAndCampaignIsNull(ContentSource.SRD, "srd-2024_fighter"))
+                .thenReturn(Optional.of(fighter));
+        when(classRepo.findBySourceAndSourceKeyAndCampaignIsNull(ContentSource.SRD, "srd-2024_fighter_champion"))
+                .thenReturn(Optional.of(champion));
+
+        when(partyRepo.save(any())).thenAnswer(inv -> {
+            var pm = inv.getArgument(0, PartyMember.class);
+            if (pm.getId() == null) pm.setId(UUID.randomUUID());
+            return pm;
+        });
+        when(sheetRepo.save(any())).thenAnswer(inv -> {
+            var cs = inv.getArgument(0, CharacterSheet.class);
+            if (cs.getId() == null) cs.setId(UUID.randomUUID());
+            return cs;
+        });
+
+        var manifest = new CampaignManifestV2(
+                2, null, null, null,
+                List.of(new CampaignManifestV2.PartyMemberDto(
+                        "party-test", "Tester", "Dev", "Fighter 3",
+                        15, 30, 30, 2, 30, 10, 10, 10,
+                        null, true,
+                        new CampaignManifestV2.SheetDto(
+                                "sheet-test",
+                                Map.of("str", 15, "dex", 14, "con", 13, "int", 10, "wis", 10, "cha", 8),
+                                List.of(
+                                        new CampaignManifestV2.ClassLevelDto(
+                                                ContentReference.catalogRef(CampaignContentType.CLASS, "SRD_5_2", "srd-2024_fighter"),
+                                                3, List.of(10, 7),
+                                                ContentReference.catalogRef(CampaignContentType.CLASS, "SRD_5_2", "srd-2024_fighter_champion"))
+                                ),
+                                Map.of(), null, null, List.of(), 0, Map.of(), 0, List.of(), List.of(), Map.of(),
+                                List.of(), List.of()
+                        ),
+                        null, null, null, null, null, null, null
+                )),
+                null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, List.of(), List.of()
+        );
+
+        var freshCampaign = new Campaign();
+        freshCampaign.setId(UUID.randomUUID());
+        var importContext = new CampaignImportContext(
+                freshCampaign.getId(), new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
+        importContext.setCampaign(freshCampaign);
+        importContext.register(CampaignContentType.CAMPAIGN, "campaign-key", freshCampaign, freshCampaign.getId());
+
+        adapter.importSection(manifest, importContext);
+
+        verify(sheetRepo).save(argThat(cs -> {
+            String cl = cs.getClassLevels();
+            return cl != null
+                    && cl.contains("\"classSourceKey\":\"srd-2024_fighter\"")
+                    && cl.contains("\"subclassSourceKey\":\"srd-2024_fighter_champion\"");
+        }));
+
+        // Export path: sheet CLOB with subclass must emit subclassRef
+        UUID pmId = UUID.randomUUID();
+        UUID sheetId = UUID.randomUUID();
+        var pm = partyMember(pmId, "Champion");
+        var cs = new CharacterSheet();
+        cs.setId(sheetId);
+        cs.setPartyMember(pm);
+        cs.setClassLevels(
+                "[{\"classSourceKey\":\"srd-2024_fighter\",\"subclassSourceKey\":\"srd-2024_fighter_champion\",\"level\":3,\"hitDieRolls\":[10,7]}]");
+        cs.setAbilityScores("{\"str\":15,\"dex\":14,\"con\":13,\"int\":10,\"wis\":10,\"cha\":8}");
+        cs.setXp(0);
+        cs.setHitDiceUsed(0);
+        pm.setCharacterSheet(cs);
+
+        when(partyRepo.findByCampaignIdOrderByCharacterNameAscIdAsc(campaign.getId()))
+                .thenReturn(List.of(pm));
+        when(classRepo.findByCampaignIdAndSourceKey(any(), eq("srd-2024_fighter")))
+                .thenReturn(Optional.empty());
+        when(classRepo.findByCampaignIdAndSourceKey(any(), eq("srd-2024_fighter_champion")))
+                .thenReturn(Optional.empty());
+        // LibraryContentReferenceResolver.findClassForCampaign uses multiple repo methods —
+        // the when() above for findBySourceAndSourceKey already covers catalog SRD lookup.
+
+        var keyService = new CampaignSectionAdapterTest.FakeKeyService();
+        var assembler = new CampaignManifestAssembler();
+        assembler.assets(List.of());
+        var ctx = exportContext(keyService);
+        adapter.exportSection(ctx, assembler);
+        fillRest(assembler);
+        var exported = buildManifest(assembler);
+
+        assertThat(exported.party()).hasSize(1);
+        assertThat(exported.party().get(0).sheet().classLevels()).hasSize(1);
+        var level = exported.party().get(0).sheet().classLevels().get(0);
+        assertThat(level.classRef().sourceKey()).isEqualTo("srd-2024_fighter");
+        assertThat(level.subclassRef()).isNotNull();
+        assertThat(level.subclassRef().sourceKey()).isEqualTo("srd-2024_fighter_champion");
+    }
+
     private PartyMember partyMember(UUID id, String name) {
         var pm = new PartyMember();
         pm.setId(id);

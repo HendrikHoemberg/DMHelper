@@ -1,46 +1,78 @@
 <div th:fragment="liveState(campaignId, member)" class="sheet-live-state">
-    <dl class="pm-stats">
-        <div>
-            <dt>Temp HP</dt>
-            <dd>
-                <span th:text="${member.tempHp}">0</span>
-                <button class="btn btn-sm btn-ghost"
-                        hx-get="/api/v1/campaigns/[[${campaignId}]]/party/[[${member.id}]]/live-state/edit"
-                        hx-target="closest dd" hx-swap="innerHTML">edit</button>
-            </dd>
+    <form class="live-state-form"
+          th:hx-put="@{/api/v1/campaigns/{cid}/party/{mid}/live-state(cid=${campaignId}, mid=${member.id})}"
+          hx-headers='{"Content-Type": "application/json"}'
+          hx-vals='js:{
+              tempHp: parseInt(document.getElementById("ls-tempHp").value) || 0,
+              inspiration: document.getElementById("ls-inspiration").checked,
+              exhaustion: parseInt(document.getElementById("ls-exhaustion").value) || 0,
+              deathSaveSuccesses: parseInt(document.getElementById("ls-dss").value) || 0,
+              deathSaveFailures: parseInt(document.getElementById("ls-dsf").value) || 0,
+              concentratingOn: document.getElementById("ls-conc").value || null,
+              conditionsJson: document.getElementById("ls-conditions").value || null,
+              currentHp: parseInt(document.getElementById("ls-currentHp").value) || 0
+          }'
+          hx-swap="none"
+          hx-on::after-request="if(event.detail.successful) location.reload()">
+        <dl class="pm-stats">
+            <div>
+                <dt>Current HP</dt>
+                <dd>
+                    <input id="ls-currentHp" type="number" min="0" class="small-input"
+                           th:value="${member.currentHp}">
+                    / <span th:text="${member.maxHp}">10</span>
+                </dd>
+            </div>
+            <div>
+                <dt>Temp HP</dt>
+                <dd>
+                    <input id="ls-tempHp" type="number" min="0" class="small-input"
+                           th:value="${member.tempHp}">
+                </dd>
+            </div>
+            <div>
+                <dt>Inspiration</dt>
+                <dd>
+                    <label>
+                        <input id="ls-inspiration" type="checkbox"
+                               th:checked="${member.inspiration}">
+                        Yes
+                    </label>
+                </dd>
+            </div>
+            <div>
+                <dt>Exhaustion</dt>
+                <dd>
+                    <input id="ls-exhaustion" type="number" min="0" max="6" class="small-input"
+                           th:value="${member.exhaustion}">
+                </dd>
+            </div>
+            <div>
+                <dt>Death Saves</dt>
+                <dd>
+                    S <input id="ls-dss" type="number" min="0" max="3" class="small-input"
+                             th:value="${member.deathSaveSuccesses}">
+                    F <input id="ls-dsf" type="number" min="0" max="3" class="small-input"
+                             th:value="${member.deathSaveFailures}">
+                </dd>
+            </div>
+            <div>
+                <dt>Concentrating</dt>
+                <dd>
+                    <input id="ls-conc" type="text" class="small-input"
+                           th:value="${member.concentratingOn}" placeholder="—">
+                </dd>
+            </div>
+            <div>
+                <dt>Conditions (JSON)</dt>
+                <dd>
+                    <input id="ls-conditions" type="text" class="small-input" style="min-width: 16rem"
+                           th:value="${member.conditionsJson}" placeholder="[]">
+                </dd>
+            </div>
+        </dl>
+        <div class="form-actions" style="margin-top: var(--space-sm)">
+            <button type="submit" class="btn btn-primary btn-xs">Save Live State</button>
         </div>
-        <div>
-            <dt>Inspiration</dt>
-            <dd>
-                <span th:text="${member.inspiration} ? 'Yes' : 'No'">No</span>
-                <button class="btn btn-sm btn-ghost"
-                        hx-get="/api/v1/campaigns/[[${campaignId}]]/party/[[${member.id}]]/live-state/edit"
-                        hx-target="closest dd" hx-swap="innerHTML">edit</button>
-            </dd>
-        </div>
-        <div>
-            <dt>Exhaustion</dt>
-            <dd>
-                <span th:text="${member.exhaustion}">0</span>
-                <button class="btn btn-sm btn-ghost"
-                        hx-get="/api/v1/campaigns/[[${campaignId}]]/party/[[${member.id}]]/live-state/edit"
-                        hx-target="closest dd" hx-swap="innerHTML">edit</button>
-            </dd>
-        </div>
-        <div>
-            <dt>Death Saves</dt>
-            <dd th:text="${#strings.repeat('S', member.deathSaveSuccesses) + #strings.repeat('F', member.deathSaveFailures)} + ' (' + (4 - member.deathSaveSuccesses - member.deathSaveFailures) + ')' + ' — ' + (member.deathSaveSuccesses >= 3 ? 'Stable' : (member.deathSaveFailures >= 3 ? 'Dead' : 'Living'))">0</dd>
-        </div>
-        <div>
-            <dt>Concentrating</dt>
-            <dd th:text="${member.concentratingOn} ?: '—'">—</dd>
-        </div>
-        <div>
-            <dt>Conditions</dt>
-            <dd>
-                <span th:unless="${member.conditionsJson}">—</span>
-                <span th:each="condition : ${#strings.listSplit(member.conditionsJson ?: '', ',')}" th:text="${condition}" th:remove="tag"><br></span>
-            </dd>
-        </div>
-    </dl>
+    </form>
 </div>

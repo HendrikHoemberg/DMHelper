@@ -109,8 +109,11 @@ public class TreasuryService {
         }
         a.setCustomText(req.customText);
         a.setQuantity(req.quantity);
-        a.setAttuned(req.attuned);
         a.setInventoryState(req.inventoryState());
+        if (req.attuned) {
+            requireAttunableState(req.inventoryState());
+        }
+        a.setAttuned(req.attuned);
         return AssignmentDto.from(repository.save(a));
     }
 
@@ -149,6 +152,9 @@ public class TreasuryService {
             a.setPartyMember(null);
         }
         a.setQuantity(Math.max(1, quantity));
+        if (attuned) {
+            requireAttunableState(a.getInventoryState());
+        }
         a.setAttuned(attuned);
         return AssignmentDto.from(repository.save(a));
     }
@@ -156,15 +162,29 @@ public class TreasuryService {
     public AssignmentDto toggleAttunement(UUID id) {
         ItemAssignment a = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Item assignment not found: " + id));
-        a.setAttuned(!a.isAttuned());
+        boolean next = !a.isAttuned();
+        if (next) {
+            requireAttunableState(a.getInventoryState());
+        }
+        a.setAttuned(next);
         return AssignmentDto.from(repository.save(a));
     }
 
     public AssignmentDto setInventoryState(UUID id, InventoryState state) {
         ItemAssignment a = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Item assignment not found: " + id));
+        if (a.isAttuned()) {
+            requireAttunableState(state);
+        }
         a.setInventoryState(state);
         return AssignmentDto.from(repository.save(a));
+    }
+
+    private static void requireAttunableState(InventoryState state) {
+        if (state != InventoryState.EQUIPPED && state != InventoryState.CARRIED) {
+            throw new IllegalArgumentException(
+                    "Attuned items must be EQUIPPED or CARRIED (got " + state + ")");
+        }
     }
 
     public AssignmentDto adjustQuantity(UUID id, int delta) {

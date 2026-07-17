@@ -3,6 +3,8 @@ package dev.hendrikhoemberg.dmhelper.sheet.web;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService;
+import dev.hendrikhoemberg.dmhelper.treasury.data.InventoryState;
+import dev.hendrikhoemberg.dmhelper.treasury.service.TreasuryService;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.AttackDto;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.CreateSheetRequest;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.FeatureDto;
@@ -24,11 +26,14 @@ public class SheetApiController {
 
     private final SheetService sheetService;
     private final PartyMemberRepository partyMemberRepo;
+    private final TreasuryService treasuryService;
     private final ObjectMapper mapper;
 
-    public SheetApiController(SheetService sheetService, PartyMemberRepository partyMemberRepo) {
+    public SheetApiController(SheetService sheetService, PartyMemberRepository partyMemberRepo,
+                              TreasuryService treasuryService) {
         this.sheetService = sheetService;
         this.partyMemberRepo = partyMemberRepo;
+        this.treasuryService = treasuryService;
         this.mapper = new ObjectMapper();
     }
 
@@ -248,6 +253,44 @@ public class SheetApiController {
         return ResponseEntity.ok(Map.of("results", results));
     }
 
+    /**
+     * Assign the same custom-text loot item to one or more party members.
+     * Body: { memberIds: string[], customText: string, quantity?: number, inventoryState?: string }
+     */
+    @PostMapping("/party/loot/batch")
+    public ResponseEntity<Map<String, Object>> batchLoot(
+            @PathVariable UUID campaignId,
+            @RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        List<String> memberIds = (List<String>) body.get("memberIds");
+        String customText = (String) body.get("customText");
+        if (memberIds == null || memberIds.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "memberIds required"));
+        }
+        if (customText == null || customText.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "customText required"));
+        }
+        int quantity = body.get("quantity") instanceof Number n ? n.intValue() : 1;
+        InventoryState state = InventoryState.CARRIED;
+        if (body.get("inventoryState") instanceof String s && !s.isBlank()) {
+            state = InventoryState.valueOf(s);
+        }
+
+        List<Map<String, Object>> results = new ArrayList<>();
+        for (String id : memberIds) {
+            try {
+                UUID memberId = UUID.fromString(id);
+                var req = new TreasuryService.CreateAssignmentRequest(
+                        campaignId, memberId, null, null, customText, quantity, false, state);
+                var created = treasuryService.create(req);
+                results.add(Map.of("id", id, "status", "ok", "assignmentId", created.id().toString()));
+            } catch (Exception e) {
+                results.add(Map.of("id", id, "status", "error", "message", e.getMessage()));
+            }
+        }
+        return ResponseEntity.ok(Map.of("results", results));
+    }
+
     @GetMapping("/party/{memberId}/sheet/resources")
     public ResponseEntity<List<SheetResourceDto>> listResources(
             @PathVariable UUID campaignId, @PathVariable UUID memberId) {
@@ -312,19 +355,27 @@ public class SheetApiController {
     @PutMapping("/party/{memberId}/sheet/spells/slots")
     public ResponseEntity<SheetDto> spendSlot(
             @PathVariable UUID campaignId, @PathVariable UUID memberId,
-            @RequestBody Map<String, String> body) {
+            @RequestParam(required = false) String level,
+            @RequestBody(required = false) Map<String, String> body) {
         UUID sheetId = sheetService.getSheetDtoByPartyMemberId(memberId).id();
-        String level = body.get("level");
-        return ResponseEntity.ok(sheetService.spendSpellSlot(sheetId, level));
+        String resolved = level;
+        if ((resolved == null || resolved.isBlank()) && body != null) {
+            resolved = body.get("level");
+        }
+        return ResponseEntity.ok(sheetService.spendSpellSlot(sheetId, resolved));
     }
 
     @PutMapping("/party/{memberId}/sheet/spells/slots/recover")
     public ResponseEntity<SheetDto> recoverSlot(
             @PathVariable UUID campaignId, @PathVariable UUID memberId,
-            @RequestBody Map<String, String> body) {
+            @RequestParam(required = false) String level,
+            @RequestBody(required = false) Map<String, String> body) {
         UUID sheetId = sheetService.getSheetDtoByPartyMemberId(memberId).id();
-        String level = body.get("level");
-        return ResponseEntity.ok(sheetService.recoverSpellSlot(sheetId, level));
+        String resolved = level;
+        if ((resolved == null || resolved.isBlank()) && body != null) {
+            resolved = body.get("level");
+        }
+        return ResponseEntity.ok(sheetService.recoverSpellSlot(sheetId, resolved));
     }
 
     // ---- Attacks ----
