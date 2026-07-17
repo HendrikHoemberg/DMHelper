@@ -55,8 +55,19 @@ class EncounterTemplateContractTest {
     @Test
     void rewardsFormContainsFields() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/encounter/_rewards.html"));
-        assertThat(html).contains("name=\"xpTotal\"", "name=\"xpPerPc\"", "name=\"notes\"");
-        assertThat(html).contains("hx-put");
+        assertThat(html).contains("rewards-xp-total", "rewards-xp-per-pc", "rewards-notes");
+        assertThat(html).contains("encounterRewardsForm");
+        assertThat(html).contains("/api/v1/encounters/${this.encounterId}/rewards");
+        assertThat(html).contains("window.dmRequest");
+    }
+
+    @Test
+    void summaryModalWiresApplyRewardsEndpoint() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/encounter/_summary-modal.html"));
+        assertThat(html).contains("/rewards/apply");
+        assertThat(html).contains("createLedger");
+        assertThat(html).contains("applyItems");
+        assertThat(html).contains("applyQuestObjectives");
     }
 
     @Test

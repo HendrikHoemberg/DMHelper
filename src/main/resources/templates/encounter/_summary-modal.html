@@ -1,21 +1,25 @@
 <div th:fragment="summary-modal(campaignId, encounter)"
-     x-data="endEncounterModal">
+     x-data="endEncounterModal(/*[[${encounter.id}]]*/ '')"
+     @end-encounter.window="show(($event.detail && $event.detail.id) || encounterId)">
     <template x-if="showModal">
-        <div class="modal-overlay" @click.self="showModal = false">
-            <div class="modal-content">
+        <div class="modal-overlay" @click.self="showModal = false" style="position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1000;">
+            <div class="modal-content" style="background:var(--surface, #1e1e24);padding:1.5rem;border-radius:8px;max-width:28rem;width:90%;">
                 <h2>Encounter Complete</h2>
                 <div class="summary-stats">
                     <p><strong th:text="${encounter.name}">Name</strong></p>
                     <p>Rounds: <span x-text="summary.rounds"></span></p>
                     <p>Defeated: <span x-text="summary.defeatedCount"></span></p>
                     <p>Damage dealt: <span x-text="summary.totalDamageDealt"></span></p>
-                    <p>Waves spawned: <span x-text="summary.wavesSpawned.join(', ')"></span></p>
-                    <p x-show="summary.casualtyNames.length">Casualties: <span x-text="summary.casualtyNames.join(', ')"></span></p>
+                    <p>Waves spawned: <span x-text="(summary.wavesSpawned || []).join(', ') || '—'"></span></p>
+                    <p x-show="summary.casualtyNames && summary.casualtyNames.length">
+                        Casualties: <span x-text="(summary.casualtyNames || []).join(', ')"></span>
+                    </p>
                     <p>Reward XP: <span x-text="summary.rewardsDraft?.xpTotal || 0"></span></p>
+                    <p class="text-muted u-text-sm">Confirm applies XP to active party members, ledger currency, stashed items, and quest objective refs when present. Skip leaves rewards unapplied.</p>
                 </div>
                 <div class="modal-actions u-flex u-gap-sm u-mt-md">
-                    <button class="btn btn-primary" @click="confirmRewards">Confirm Rewards</button>
-                    <button class="btn btn-ghost" @click="showModal = false">Skip</button>
+                    <button class="btn btn-primary" @click="confirmRewards" type="button">Confirm Rewards</button>
+                    <button class="btn btn-ghost" @click="skip" type="button">Skip</button>
                 </div>
             </div>
         </div>
@@ -23,7 +27,8 @@
 
     <script th:inline="javascript">
     document.addEventListener('alpine:init', () => {
-        Alpine.data('endEncounterModal', () => ({
+        Alpine.data('endEncounterModal', (encounterId) => ({
+            encounterId: encounterId,
             showModal: false,
             summary: {
                 rounds: 0,
@@ -34,37 +39,49 @@
                 rewardsDraft: null
             },
 
-            async show(encounterId) {
+            async show(id) {
+                const eid = id || this.encounterId;
                 try {
                     const resp = await window.dmRequest(
-                        `/api/v1/encounters/${encounterId}/end-with-summary`, {
+                        `/api/v1/encounters/${eid}/end-with-summary`, {
                             method: 'POST'
                         });
                     const result = await resp.json();
-                    this.summary = result.summary;
+                    this.summary = result.summary || result;
                     this.showModal = true;
                 } catch (e) {
                     window.reportActionFailure('Failed to end encounter', e,
-                        () => this.show(encounterId));
+                        () => this.show(eid));
                 }
             },
 
             async confirmRewards() {
                 try {
-                    const body = JSON.stringify({ awardXp: true, partyMemberIds: [] });
+                    const body = JSON.stringify({
+                        awardXp: true,
+                        partyMemberIds: [],
+                        createLedger: true,
+                        applyItems: true,
+                        applyQuestObjectives: true
+                    });
                     await window.dmRequest(
-                        `/api/v1/encounters/${/*[[${encounter.id}]]*/''}/rewards/apply`, {
+                        `/api/v1/encounters/${this.encounterId}/rewards/apply`, {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json'},
                             body
                         });
-                    window.showToast('Rewards confirmed', 'success');
+                    if (window.showToast) window.showToast('Rewards confirmed', 'success');
                     this.showModal = false;
                     window.location.reload();
                 } catch (e) {
                     window.reportActionFailure('Failed to apply rewards', e,
                         () => this.confirmRewards());
                 }
+            },
+
+            skip() {
+                this.showModal = false;
+                window.location.reload();
             }
         }));
     });

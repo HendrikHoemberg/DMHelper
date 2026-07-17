@@ -85,4 +85,51 @@ class EncounterCompletionTest {
         assertThat(reloaded.xpTotal()).isEqualTo(500);
         assertThat(reloaded.xpPerPc()).isEqualTo(100);
     }
+
+    @Test
+    void applyRewardsAwardsXpToActivePartyAndIsIdempotent() {
+        var pm = new dev.hendrikhoemberg.dmhelper.party.data.PartyMember();
+        pm.setCampaign(campaign);
+        pm.setCharacterName("Fighter");
+        pm.setAc(16);
+        pm.setMaxHp(20);
+        pm.setCurrentHp(20);
+        pm.setInitiativeBonus(2);
+        pm.setSpeed(30);
+        pm.setPassivePerception(12);
+        pm.setPassiveInsight(10);
+        pm.setPassiveInvestigation(10);
+        pm.setActive(true);
+        pm.setXp(0);
+        em.persist(pm);
+        em.flush();
+
+        var enc = service.create(campaign.getId(), new CreateRequest("Rewards Apply", null));
+        service.updateRewards(enc.id(), new EncounterRewards(300, null, List.of(), List.of(), List.of(), null));
+        service.activate(enc.id());
+        service.endEncounterWithSummary(enc.id());
+
+        service.applyRewards(enc.id(), new EncounterService.ApplyRewardsRequest(true, List.of(pm.getId()), true, true, true));
+        em.flush();
+        em.clear();
+        var reloaded = em.find(dev.hendrikhoemberg.dmhelper.party.data.PartyMember.class, pm.getId());
+        assertThat(reloaded.getXp()).isEqualTo(300);
+
+        assertThatThrownBy(() -> service.applyRewards(enc.id(),
+                new EncounterService.ApplyRewardsRequest(true, List.of(pm.getId()))))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("already");
+    }
+
+    @Test
+    void summaryDamageUsesAbsoluteValues() {
+        var enc = service.create(campaign.getId(), new CreateRequest("Dmg", null));
+        service.activate(enc.id());
+        var goblin = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Goblin", 20, "MONSTER", null, null, null));
+        service.applyDamage(goblin.id(), -7);
+        service.applyDamage(goblin.id(), -3);
+        var summary = service.buildSummary(enc.id());
+        assertThat(summary.totalDamageDealt()).isEqualTo(10);
+    }
 }

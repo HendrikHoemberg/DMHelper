@@ -90,6 +90,13 @@ public class EncounterApiController {
         return service.endEncounterWithSummary(id);
     }
 
+    @PostMapping("/encounters/{id}/rewards/apply")
+    public ResponseEntity<Void> applyRewards(@PathVariable UUID id,
+            @RequestBody EncounterService.ApplyRewardsRequest req) {
+        service.applyRewards(id, req);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/campaigns/{campaignId}/encounters")
     public List<EncounterDto> list(@PathVariable UUID campaignId) {
         return service.list(campaignId);

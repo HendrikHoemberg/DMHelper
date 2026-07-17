@@ -45,6 +45,9 @@ class EncounterPrepBuilderTest {
         assertThat(created.subList(1, 3)).allMatch(comb -> !comb.groupLeader());
         assertThat(created.getFirst().startX()).isEqualTo(48);
         assertThat(created.getFirst().placementRegionKey()).isEqualTo("tree-line");
+        assertThat(created).extracting(comb -> comb.name())
+                .containsExactly("Goblin squad 1", "Goblin squad 2", "Goblin squad 3");
+        assertThat(created).allMatch(comb -> comb.maxHp() == 7);
     }
 
     @Test

@@ -65,4 +65,11 @@ public class CampaignPackageKeyService {
                         campaignId, type.name(), entityId)
                 .map(CampaignPackageKey::getPackageKey);
     }
+
+    @Transactional(readOnly = true)
+    public Optional<UUID> findEntityId(UUID campaignId, CampaignContentType type, String packageKey) {
+        return repository.findByCampaignIdAndEntityTypeAndPackageKey(
+                        campaignId, type.name(), packageKey)
+                .map(CampaignPackageKey::getEntityId);
+    }
 }

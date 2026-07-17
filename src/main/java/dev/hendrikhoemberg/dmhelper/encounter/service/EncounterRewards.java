@@ -9,23 +9,29 @@ import java.util.List;
 public record EncounterRewards(
         Integer xpTotal,
         Integer xpPerPc,
-        List<EncounterCurrencyGrant> currency,
-        List<EncounterRewardItem> items,
+        List<CurrencyGrant> currency,
+        List<RewardItem> items,
         List<ContentReference> questObjectiveRefs,
         String notes
 ) {
+    public EncounterRewards {
+        if (currency == null) currency = List.of();
+        if (items == null) items = List.of();
+        if (questObjectiveRefs == null) questObjectiveRefs = List.of();
+    }
+
     public static EncounterRewards empty() {
         return new EncounterRewards(null, null, List.of(), List.of(), List.of(), null);
     }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CurrencyGrant(String currency, double amount) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record RewardItem(
+            String customText,
+            ContentReference magicItemRef,
+            ContentReference equipmentItemRef,
+            int quantity
+    ) {}
 }
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-record EncounterCurrencyGrant(String currency, double amount) {}
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-record EncounterRewardItem(
-        String customText,
-        ContentReference magicItemRef,
-        ContentReference equipmentItemRef,
-        int quantity
-) {}

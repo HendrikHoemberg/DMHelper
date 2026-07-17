@@ -121,7 +121,10 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
     }
 
     private WaveDto exportWave(EncounterWave wave, CampaignExportContext context) {
-        String key = context.key(CampaignContentType.ENCOUNTER_WAVE, wave.getId(), wave.getName());
+        // Prefer the stable wave_key as the package-key seed so exports stay identity-stable.
+        String keySeed = wave.getWaveKey() != null && !wave.getWaveKey().isBlank()
+                ? wave.getWaveKey() : wave.getName();
+        String key = context.key(CampaignContentType.ENCOUNTER_WAVE, wave.getId(), keySeed);
         return new WaveDto(
                 key, wave.getName(), wave.getSortOrder(),
                 wave.getStatus().name(), wave.getTriggerKind().name(),
@@ -162,7 +165,9 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
 
         String waveKey = null;
         if (combatant.getWave() != null) {
-            waveKey = context.key(CampaignContentType.ENCOUNTER_WAVE, combatant.getWave().getId(), combatant.getWave().getName());
+            String seed = combatant.getWave().getWaveKey() != null && !combatant.getWave().getWaveKey().isBlank()
+                    ? combatant.getWave().getWaveKey() : combatant.getWave().getName();
+            waveKey = context.key(CampaignContentType.ENCOUNTER_WAVE, combatant.getWave().getId(), seed);
         }
 
         return new CombatantDto(

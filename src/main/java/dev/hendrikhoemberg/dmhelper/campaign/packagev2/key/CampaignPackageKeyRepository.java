@@ -14,6 +14,9 @@ public interface CampaignPackageKeyRepository extends JpaRepository<CampaignPack
     boolean existsByCampaignIdAndEntityTypeAndPackageKey(
             UUID campaignId, String entityType, String packageKey);
 
+    Optional<CampaignPackageKey> findByCampaignIdAndEntityTypeAndPackageKey(
+            UUID campaignId, String entityType, String packageKey);
+
     List<CampaignPackageKey> findByCampaignIdOrderByEntityTypeAscPackageKeyAsc(UUID campaignId);
 
     void deleteByCampaignIdAndEntityTypeAndEntityIdIn(UUID campaignId, String entityType, java.util.Collection<UUID> entityIds);

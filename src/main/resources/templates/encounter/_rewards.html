@@ -1,22 +1,88 @@
-<div th:fragment="rewards(campaignId, encounter, rewards)">
+<div th:fragment="rewards(campaignId, encounter, rewards)"
+     x-data="encounterRewardsForm(/*[[${encounter.id}]]*/ '', {
+         xpTotal: /*[[${rewards.xpTotal}]]*/ null,
+         xpPerPc: /*[[${rewards.xpPerPc}]]*/ null,
+         currency: /*[[${rewards.currency}]]*/ [],
+         notes: /*[[${rewards.notes}]]*/ ''
+     })">
     <h3>Rewards</h3>
-    <form th:attr="hx-put=@{/api/v1/encounters/{eid}/rewards(eid=${encounter.id})}"
-          hx-sync="closest form:replace"
-          hx-vals='js:JSON.stringify(Object.fromEntries(new FormData(this)))'
-          hx-target="body"
-          hx-swap="outerHTML">
-        <div class="form-group">
-            <label for="rewards-xp-total">Total XP</label>
-            <input id="rewards-xp-total" type="number" name="xpTotal" th:value="${rewards.xpTotal}" placeholder="e.g. 450">
+    <div class="form-group">
+        <label for="rewards-xp-total">Total XP</label>
+        <input id="rewards-xp-total" type="number" x-model.number="form.xpTotal" placeholder="e.g. 450">
+    </div>
+    <div class="form-group">
+        <label for="rewards-xp-per-pc">XP per PC (overrides total split)</label>
+        <input id="rewards-xp-per-pc" type="number" x-model.number="form.xpPerPc">
+    </div>
+    <div class="form-group">
+        <label for="rewards-currency-amount">Currency grant (party ledger)</label>
+        <div class="u-flex u-gap-sm">
+            <input id="rewards-currency-amount" type="number" step="0.01" x-model.number="currencyAmount" placeholder="amount">
+            <input type="text" x-model="currencyCode" placeholder="gp" style="width:4rem">
         </div>
-        <div class="form-group">
-            <label for="rewards-xp-per-pc">XP per PC (overrides total split)</label>
-            <input id="rewards-xp-per-pc" type="number" name="xpPerPc" th:value="${rewards.xpPerPc}">
+    </div>
+    <div class="form-group">
+        <label for="rewards-item-text">Custom loot item (stashed)</label>
+        <div class="u-flex u-gap-sm">
+            <input id="rewards-item-text" type="text" x-model="itemText" placeholder="e.g. Healing potion">
+            <input type="number" min="1" x-model.number="itemQty" style="width:4rem" title="Quantity">
         </div>
-        <div class="form-group">
-            <label for="rewards-notes">Notes</label>
-            <textarea id="rewards-notes" name="notes" rows="2" th:text="${rewards.notes}"></textarea>
-        </div>
-        <button type="submit" class="btn btn-sm btn-primary">Save Rewards</button>
-    </form>
+    </div>
+    <div class="form-group">
+        <label for="rewards-notes">Notes</label>
+        <textarea id="rewards-notes" rows="2" x-model="form.notes"></textarea>
+    </div>
+    <button type="button" class="btn btn-sm btn-primary" @click="save">Save Rewards</button>
+    <p class="text-muted u-text-sm u-mt-sm" x-show="status" x-text="status"></p>
+
+    <script th:inline="javascript">
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('encounterRewardsForm', (encounterId, initial) => ({
+            encounterId,
+            form: {
+                xpTotal: initial.xpTotal ?? null,
+                xpPerPc: initial.xpPerPc ?? null,
+                currency: Array.isArray(initial.currency) ? initial.currency : [],
+                items: Array.isArray(initial.items) ? initial.items : [],
+                questObjectiveRefs: Array.isArray(initial.questObjectiveRefs) ? initial.questObjectiveRefs : [],
+                notes: initial.notes || ''
+            },
+            currencyAmount: (initial.currency && initial.currency[0]) ? initial.currency[0].amount : null,
+            currencyCode: (initial.currency && initial.currency[0]) ? (initial.currency[0].currency || 'gp') : 'gp',
+            itemText: (initial.items && initial.items[0]) ? (initial.items[0].customText || '') : '',
+            itemQty: (initial.items && initial.items[0]) ? (initial.items[0].quantity || 1) : 1,
+            status: '',
+
+            async save() {
+                const currency = [];
+                if (this.currencyAmount != null && this.currencyAmount > 0) {
+                    currency.push({ currency: this.currencyCode || 'gp', amount: this.currencyAmount });
+                }
+                const items = [];
+                if (this.itemText && this.itemText.trim()) {
+                    items.push({ customText: this.itemText.trim(), quantity: this.itemQty > 0 ? this.itemQty : 1 });
+                }
+                const body = {
+                    xpTotal: this.form.xpTotal || null,
+                    xpPerPc: this.form.xpPerPc || null,
+                    currency,
+                    items,
+                    questObjectiveRefs: this.form.questObjectiveRefs || [],
+                    notes: this.form.notes || null
+                };
+                try {
+                    await window.dmRequest(`/api/v1/encounters/${this.encounterId}/rewards`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    this.status = 'Saved.';
+                    if (window.showToast) window.showToast('Rewards saved', 'success');
+                } catch (e) {
+                    window.reportActionFailure('Failed to save rewards', e, () => this.save());
+                }
+            }
+        }));
+    });
+    </script>
 </div>

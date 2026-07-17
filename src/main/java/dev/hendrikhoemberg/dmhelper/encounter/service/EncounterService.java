@@ -3,6 +3,9 @@ package dev.hendrikhoemberg.dmhelper.encounter.service;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntry;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntryRepository;
@@ -20,12 +23,21 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
+import dev.hendrikhoemberg.dmhelper.ledger.service.LedgerService;
+import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItem;
+import dev.hendrikhoemberg.dmhelper.library.data.MagicItem;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveRepository;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus;
+import dev.hendrikhoemberg.dmhelper.treasury.data.InventoryState;
+import dev.hendrikhoemberg.dmhelper.treasury.service.TreasuryService;
 import jakarta.persistence.EntityManager;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
@@ -34,6 +46,7 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
@@ -69,6 +82,10 @@ public class EncounterService {
     private final DiceEngine diceEngine;
     private final TablePresentationService tablePresentationService;
     private final SceneRefCleaner sceneRefCleaner;
+    private final ObjectProvider<LedgerService> ledgerService;
+    private final ObjectProvider<TreasuryService> treasuryService;
+    private final ObjectProvider<CampaignPackageKeyService> packageKeyService;
+    private final ObjectProvider<QuestObjectiveRepository> questObjectiveRepository;
 
     public EncounterService(EncounterRepository encounterRepo, CampaignRepository campaignRepo,
                             EntityManager em, GameMapRepository mapRepo,
@@ -78,7 +95,11 @@ public class EncounterService {
                             EncounterWaveRepository waveRepo,
                             CombatDifficultyCalculator calculator, DiceEngine diceEngine,
                             TablePresentationService tablePresentationService,
-                            SceneRefCleaner sceneRefCleaner) {
+                            SceneRefCleaner sceneRefCleaner,
+                            ObjectProvider<LedgerService> ledgerService,
+                            ObjectProvider<TreasuryService> treasuryService,
+                            ObjectProvider<CampaignPackageKeyService> packageKeyService,
+                            ObjectProvider<QuestObjectiveRepository> questObjectiveRepository) {
         this.encounterRepo = encounterRepo;
         this.campaignRepo = campaignRepo;
         this.em = em;
@@ -93,6 +114,10 @@ public class EncounterService {
         this.diceEngine = diceEngine;
         this.tablePresentationService = tablePresentationService;
         this.sceneRefCleaner = sceneRefCleaner;
+        this.ledgerService = ledgerService;
+        this.treasuryService = treasuryService;
+        this.packageKeyService = packageKeyService;
+        this.questObjectiveRepository = questObjectiveRepository;
     }
 
     public record CreateRequest(String name, UUID mapId) {}
@@ -185,7 +210,22 @@ public class EncounterService {
 
     public record EncounterEndResult(EncounterDto encounter, EncounterSummaryDto summary) {}
 
-    public record ApplyRewardsRequest(boolean awardXp, List<UUID> partyMemberIds) {}
+    public record ApplyRewardsRequest(
+            boolean awardXp,
+            List<UUID> partyMemberIds,
+            boolean createLedger,
+            boolean applyItems,
+            boolean applyQuestObjectives
+    ) {
+        public ApplyRewardsRequest {
+            if (partyMemberIds == null) partyMemberIds = List.of();
+        }
+
+        /** Back-compat: confirm-rewards UI historically only sent awardXp + partyMemberIds. */
+        public ApplyRewardsRequest(boolean awardXp, List<UUID> partyMemberIds) {
+            this(awardXp, partyMemberIds, true, true, true);
+        }
+    }
 
     static EncounterDto toDto(Encounter e) {
         return new EncounterDto(e.getId(), e.getCampaign().getId(),
@@ -290,7 +330,13 @@ public class EncounterService {
         e.setStatus(Encounter.Status.ACTIVE);
         e.setRound(1);
         e.setActiveTurnIndex(-1);
-        EncounterDto dto = toDto(encounterRepo.save(e));
+        Encounter saved = encounterRepo.save(e);
+        for (EncounterWave wave : waveRepo.findByEncounterIdOrderBySortOrderAsc(saved.getId())) {
+            if (wave.getStatus() == WaveStatus.ACTIVE) {
+                placeTokensForWave(saved, wave);
+            }
+        }
+        EncounterDto dto = toDto(saved);
         logEntry(id, CombatLogEntry.EntryType.ENCOUNTER_ACTIVATED, "", "");
         return dto;
     }
@@ -365,7 +411,7 @@ public class EncounterService {
 
         int damage = log.stream()
                 .filter(l -> l.getType() == CombatLogEntry.EntryType.DAMAGE)
-                .mapToInt(l -> extractAmount(l.getPayload()))
+                .mapToInt(l -> Math.abs(extractAmount(l.getPayload())))
                 .sum();
         List<String> waves = log.stream()
                 .filter(l -> l.getType() == CombatLogEntry.EntryType.WAVE_SPAWNED)
@@ -410,31 +456,131 @@ public class EncounterService {
     public void applyRewards(UUID encounterId, ApplyRewardsRequest req) {
         Encounter e = findEntityById(encounterId);
         List<CombatLogEntry> log = combatLogRepo.findByEncounterIdOrderBySequenceAsc(encounterId);
-        if (!log.isEmpty() && log.get(log.size() - 1).getType() == CombatLogEntry.EntryType.REWARD_APPLIED) {
+        boolean alreadyApplied = log.stream()
+                .anyMatch(l -> l.getType() == CombatLogEntry.EntryType.REWARD_APPLIED);
+        if (alreadyApplied) {
             throw new IllegalStateException("Rewards already applied");
         }
 
         EncounterRewards rewards = getRewards(encounterId);
-        if (rewards == null || rewards.equals(EncounterRewards.empty())) return;
+        if (rewards == null) {
+            rewards = EncounterRewards.empty();
+        }
 
-        if (req.awardXp() && rewards.xpTotal() != null && rewards.xpTotal() > 0 && req.partyMemberIds() != null) {
-            int xpPerMember = rewards.xpPerPc() != null && rewards.xpPerPc() > 0
-                    ? rewards.xpPerPc()
-                    : rewards.xpTotal() / req.partyMemberIds().size();
-            for (UUID memberId : req.partyMemberIds()) {
-                PartyMember pm = partyRepo.findById(memberId).orElse(null);
-                if (pm != null) {
-                    pm.setXp(pm.getXp() + xpPerMember);
-                    partyRepo.save(pm);
+        UUID campaignId = e.getCampaign().getId();
+        List<UUID> memberIds = req.partyMemberIds() != null && !req.partyMemberIds().isEmpty()
+                ? req.partyMemberIds()
+                : partyRepo.findByCampaignIdAndActiveTrueOrderByCharacterNameAsc(campaignId).stream()
+                        .map(PartyMember::getId)
+                        .toList();
+
+        if (req.awardXp()) {
+            Integer xpPool = rewards.xpTotal();
+            Integer xpPerPc = rewards.xpPerPc();
+            if ((xpPerPc != null && xpPerPc > 0) || (xpPool != null && xpPool > 0)) {
+                if (memberIds.isEmpty()) {
+                    throw new IllegalArgumentException("No party members selected to award XP");
+                }
+                int xpPerMember = xpPerPc != null && xpPerPc > 0
+                        ? xpPerPc
+                        : Math.max(1, xpPool / memberIds.size());
+                for (UUID memberId : memberIds) {
+                    PartyMember pm = partyRepo.findById(memberId).orElse(null);
+                    if (pm != null) {
+                        pm.setXp(pm.getXp() + xpPerMember);
+                        partyRepo.save(pm);
+                    }
                 }
             }
         }
 
+        if (req.createLedger() && rewards.currency() != null && !rewards.currency().isEmpty()) {
+            LedgerService ledger = ledgerService.getIfAvailable();
+            if (ledger != null) {
+                for (EncounterRewards.CurrencyGrant grant : rewards.currency()) {
+                    if (grant == null || grant.amount() <= 0) continue;
+                    String currency = grant.currency() != null ? grant.currency() : "gp";
+                    ledger.create(new LedgerService.CreateLedgerEntryRequest(
+                            campaignId, "GOLD", "GAIN",
+                            BigDecimal.valueOf(grant.amount()),
+                            currency,
+                            "Party",
+                            "Encounter reward: " + e.getName(),
+                            null, null, null));
+                }
+            }
+        }
+
+        if (req.applyItems() && rewards.items() != null && !rewards.items().isEmpty()) {
+            TreasuryService treasury = treasuryService.getIfAvailable();
+            if (treasury != null) {
+                for (EncounterRewards.RewardItem item : rewards.items()) {
+                    if (item == null || item.quantity() < 1) continue;
+                    UUID magicId = resolveMagicItemId(treasury, campaignId, item.magicItemRef());
+                    UUID equipId = resolveEquipmentItemId(treasury, campaignId, item.equipmentItemRef());
+                    String custom = item.customText();
+                    if (magicId == null && equipId == null && (custom == null || custom.isBlank())) {
+                        continue;
+                    }
+                    treasury.create(new TreasuryService.CreateAssignmentRequest(
+                            campaignId, null, magicId, equipId, custom, item.quantity(), false,
+                            InventoryState.STASHED));
+                }
+            }
+        }
+
+        if (req.applyQuestObjectives() && rewards.questObjectiveRefs() != null
+                && !rewards.questObjectiveRefs().isEmpty()) {
+            applyQuestObjectiveRefs(campaignId, rewards.questObjectiveRefs());
+        }
+
         try {
             logEntry(encounterId, CombatLogEntry.EntryType.REWARD_APPLIED, "",
-                    JSON_MAPPER.writeValueAsString(Map.of("xpAwarded", req.awardXp())));
+                    JSON_MAPPER.writeValueAsString(Map.of(
+                            "xpAwarded", req.awardXp(),
+                            "ledger", req.createLedger(),
+                            "items", req.applyItems(),
+                            "quests", req.applyQuestObjectives())));
         } catch (Exception ex) {
-            // ignore log failure
+            logEntry(encounterId, CombatLogEntry.EntryType.REWARD_APPLIED, "", "{}");
+        }
+    }
+
+    private UUID resolveMagicItemId(TreasuryService treasury, UUID campaignId, ContentReference ref) {
+        if (ref == null) return null;
+        String sourceKey = ref.sourceKey() != null ? ref.sourceKey() : ref.key();
+        if (sourceKey == null || sourceKey.isBlank()) return null;
+        return treasury.resolveMagicItemForCampaign(campaignId, sourceKey)
+                .map(MagicItem::getId)
+                .orElse(null);
+    }
+
+    private UUID resolveEquipmentItemId(TreasuryService treasury, UUID campaignId, ContentReference ref) {
+        if (ref == null) return null;
+        String sourceKey = ref.sourceKey() != null ? ref.sourceKey() : ref.key();
+        if (sourceKey == null || sourceKey.isBlank()) return null;
+        return treasury.resolveEquipmentItemForCampaign(campaignId, sourceKey)
+                .map(EquipmentItem::getId)
+                .orElse(null);
+    }
+
+    private void applyQuestObjectiveRefs(UUID campaignId, List<ContentReference> refs) {
+        CampaignPackageKeyService keys = packageKeyService.getIfAvailable();
+        QuestObjectiveRepository objectives = questObjectiveRepository.getIfAvailable();
+        if (keys == null || objectives == null) return;
+        for (ContentReference ref : refs) {
+            if (ref == null || ref.key() == null || ref.key().isBlank()) continue;
+            Optional<UUID> entityId = keys.findEntityId(campaignId, CampaignContentType.OBJECTIVE, ref.key());
+            if (entityId.isEmpty()) continue;
+            objectives.findById(entityId.get()).ifPresent(objective -> {
+                if (objective.getQuest() != null
+                        && objective.getQuest().getCampaign() != null
+                        && campaignId.equals(objective.getQuest().getCampaign().getId())
+                        && objective.getStatus() != QuestObjectiveStatus.COMPLETED) {
+                    objective.setStatus(QuestObjectiveStatus.COMPLETED);
+                    objectives.save(objective);
+                }
+            });
         }
     }
 
@@ -462,8 +608,17 @@ public class EncounterService {
         } else if (req.statBlockId() != null) {
             StatBlock sb = statBlockRepo.findById(req.statBlockId())
                     .orElseThrow(() -> new NotFoundException("StatBlock not found: " + req.statBlockId()));
-            name = sb.getName();
-            kind = "MONSTER";
+            // Prefer caller-supplied display names (library multi-add uses "Goblin 1", "Goblin 2", …).
+            if (name == null || name.isBlank()) {
+                name = sb.getName();
+            }
+            if (kind == null || kind.isBlank() || "NPC".equals(kind)) {
+                kind = "MONSTER";
+            }
+            if (maxHp <= 0) {
+                maxHp = parseHpAsInt(sb);
+                currentHp = maxHp;
+            }
             c.setStatBlock(sb);
         } else if (req.partyMemberId() != null) {
             if (combatantRepo.findByEncounterIdAndPartyMemberId(encounterId, req.partyMemberId()).isPresent()) {
@@ -825,6 +980,7 @@ public class EncounterService {
         }
         wave.setStatus(WaveStatus.ACTIVE);
         waveRepo.save(wave);
+        placeTokensForWave(e, wave);
         try {
             String payload = JSON_MAPPER.writeValueAsString(Map.of("waveKey", wave.getWaveKey()));
             logEntry(encounterId, CombatLogEntry.EntryType.WAVE_SPAWNED, "", payload);
@@ -832,6 +988,74 @@ public class EncounterService {
             logEntry(encounterId, CombatLogEntry.EntryType.WAVE_SPAWNED, "", "{}");
         }
         return toDto(e);
+    }
+
+    /**
+     * Place map tokens for combatants that declare start coordinates and/or a placement region.
+     * Existing token links are left alone. No-op when the encounter has no map.
+     */
+    private void placeTokensForWave(Encounter e, EncounterWave wave) {
+        if (e.getMap() == null) return;
+        GameMap map = e.getMap();
+        List<Combatant> combatants = combatantRepo.findByWaveId(wave.getId());
+        MapDocumentDto doc = parseMapDocument(map);
+        int cell = map.getCellSizePx() > 0 ? map.getCellSizePx() : 48;
+        int index = 0;
+        for (Combatant c : combatants) {
+            if (c.getToken() != null) continue;
+            Integer x = c.getStartX();
+            Integer y = c.getStartY();
+            if ((x == null || y == null) && c.getPlacementRegionKey() != null && doc != null) {
+                int[] center = regionCenterPixels(doc, c.getPlacementRegionKey(), cell);
+                if (center != null) {
+                    x = center[0] + (index * cell / 2);
+                    y = center[1] + (index * cell / 2);
+                }
+            }
+            if (x == null || y == null) {
+                index++;
+                continue;
+            }
+            Token token = new Token();
+            token.setMap(map);
+            token.setName(c.getName());
+            token.setKind(c.getKind() != null ? c.getKind() : "MONSTER");
+            token.setPositionX(x);
+            token.setPositionY(y);
+            token.setMaxHp(c.getMaxHp());
+            token.setCurrentHp(c.getCurrentHp());
+            if (c.getStatBlock() != null) token.setStatBlock(c.getStatBlock());
+            if (c.getPartyMember() != null) token.setPartyMember(c.getPartyMember());
+            Token saved = tokenRepo.save(token);
+            c.setToken(saved);
+            combatantRepo.save(c);
+            index++;
+        }
+    }
+
+    private MapDocumentDto parseMapDocument(GameMap map) {
+        if (map.getDocument() == null || map.getDocument().isBlank()) return null;
+        try {
+            return JSON_MAPPER.readValue(map.getDocument(), MapDocumentDto.class);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private static int[] regionCenterPixels(MapDocumentDto doc, String regionKey, int cellSizePx) {
+        if (doc.primitives() == null) return null;
+        for (MapDocumentDto.PrimitiveDto p : doc.primitives()) {
+            if (p == null || p.key() == null) continue;
+            if (!regionKey.equals(p.key())) continue;
+            if (!"REGION".equalsIgnoreCase(p.type()) && p.type() != null
+                    && !p.type().isBlank() && !"region".equalsIgnoreCase(p.type())) {
+                // still allow named non-REGION primitives as placement anchors
+            }
+            int midCol = (p.startCol() + p.endCol()) / 2;
+            int midRow = (p.startRow() + p.endRow()) / 2;
+            return new int[]{midCol * cellSizePx, midRow * cellSizePx};
+        }
+        return null;
     }
 
     private static int parseHpAsInt(StatBlock sb) {

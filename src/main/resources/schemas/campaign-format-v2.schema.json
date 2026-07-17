@@ -700,7 +700,7 @@
         "maxHp": { "type": "integer", "minimum": 0 },
         "currentHp": { "type": "integer", "minimum": 0 },
         "tempHp": { "type": "integer", "minimum": 0 },
-        "kind": { "type": "string", "enum": ["PC", "NPC", "MONSTER", "OBJECT"] },
+        "kind": { "type": "string", "enum": ["PC", "NPC", "MONSTER", "OBJECT", "HAZARD"] },
         "groupId": { "type": "string" },
         "groupLeader": { "type": "boolean" },
         "tokenRef": { "$ref": "#/$defs/contentReference" },

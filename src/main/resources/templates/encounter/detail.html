@@ -38,10 +38,11 @@
                         </form>
                     </th:block>
                     <th:block th:if="${encounter.status == 'ACTIVE'}">
-                        <form method="post" th:action="@{/campaigns/{cid}/encounters/{eid}/end(cid=${campaignId}, eid=${encounter.id})}"
-                              class="u-inline">
-                            <button type="submit" class="btn btn-warning">End Encounter</button>
-                        </form>
+                        <button type="button" class="btn btn-warning"
+                                th:attr="data-encounter-id=${encounter.id}"
+                                onclick="window.dispatchEvent(new CustomEvent('end-encounter', { detail: { id: this.dataset.encounterId } }))">
+                            End Encounter
+                        </button>
                     </th:block>
                     <a class="btn btn-ghost"
                        th:href="@{/campaigns/{cid}/encounters/{eid}/edit(cid=${campaignId}, eid=${encounter.id})}">Edit</a>
