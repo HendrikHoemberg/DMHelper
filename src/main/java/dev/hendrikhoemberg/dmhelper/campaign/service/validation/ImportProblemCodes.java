@@ -93,6 +93,10 @@ public final class ImportProblemCodes {
     public static final String UNSUPPORTED_FORMAT_VERSION = "UNSUPPORTED_FORMAT_VERSION";
     public static final String UNSUPPORTED_MEDIA_TYPE = "UNSUPPORTED_MEDIA_TYPE";
     public static final String VALIDATION_ERROR = "VALIDATION_ERROR";
+    public static final String WORLD_LOCATION_CYCLE = "WORLD_LOCATION_CYCLE";
+    public static final String WORLD_RELATIONSHIP_SELF = "WORLD_RELATIONSHIP_SELF";
+    public static final String FACTION_CLOCK_RANGE = "FACTION_CLOCK_RANGE";
+    public static final String INVALID_WORLD_REFERENCE_TYPE = "INVALID_WORLD_REFERENCE_TYPE";
 
     private static final Set<String> ALL;
 

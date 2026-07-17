@@ -41,6 +41,11 @@ import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResource;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
+import dev.hendrikhoemberg.dmhelper.world.data.Faction;
+import dev.hendrikhoemberg.dmhelper.world.data.FactionClock;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldLocation;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldNpc;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldRelationship;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
@@ -356,5 +361,10 @@ public class CampaignSemanticSnapshotService {
             new OwnershipQuery(CampaignContentType.OBJECTIVE, QuestObjective.class, "quest.campaign.id"),
             new OwnershipQuery(CampaignContentType.SOURCE_ANNOTATION, SourceAnnotation.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.SESSION_OBJECTIVE_CHANGE, SessionObjectiveChange.class,
-                    "session.campaign.id"));
+                    "session.campaign.id"),
+            new OwnershipQuery(CampaignContentType.WORLD_NPC, WorldNpc.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.WORLD_LOCATION, WorldLocation.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.FACTION, Faction.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.WORLD_RELATIONSHIP, WorldRelationship.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.FACTION_CLOCK, FactionClock.class, "campaign.id"));
 }

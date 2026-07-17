@@ -23,6 +23,11 @@ import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignConten
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SESSION_OBJECTIVE_CHANGE;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.ENCOUNTER_WAVE;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.OBJECTIVE;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.FACTION;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.WORLD_NPC;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.WORLD_LOCATION;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.WORLD_RELATIONSHIP;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.FACTION_CLOCK;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -285,6 +290,17 @@ public class CampaignManifestV2SemanticValidator {
             }
         }
 
+        for (int i = 0; i < size(m.factions()); i++)
+            add(keys, FACTION, m.factions().get(i).key(), "/factions/" + i + "/key", problems);
+        for (int i = 0; i < size(m.worldLocations()); i++)
+            add(keys, WORLD_LOCATION, m.worldLocations().get(i).key(), "/worldLocations/" + i + "/key", problems);
+        for (int i = 0; i < size(m.worldNpcs()); i++)
+            add(keys, WORLD_NPC, m.worldNpcs().get(i).key(), "/worldNpcs/" + i + "/key", problems);
+        for (int i = 0; i < size(m.worldRelationships()); i++)
+            add(keys, WORLD_RELATIONSHIP, m.worldRelationships().get(i).key(), "/worldRelationships/" + i + "/key", problems);
+        for (int i = 0; i < size(m.factionClocks()); i++)
+            add(keys, FACTION_CLOCK, m.factionClocks().get(i).key(), "/factionClocks/" + i + "/key", problems);
+
         validateReferences(m, keys, problems);
         validateSpatialAndState(m, problems);
         validateAssets(m, problems);
@@ -292,6 +308,7 @@ public class CampaignManifestV2SemanticValidator {
         validateExclusionSemantics(m, problems);
         validateCurrentSceneRef(m, keys, problems);
         validateStructuredAdventureAndQuests(m, keys, problems);
+        validateWorldEntities(m, keys, problems);
         return problems;
     }
 
@@ -435,15 +452,28 @@ public class CampaignManifestV2SemanticValidator {
                     }
                 }
             } else if (link.targetRef() != null) {
-                CampaignContentType expected = expectedQuestLinkType(link.role());
-                if (expected != null) {
-                    requireRefType(link.targetRef(), expected, path + "/targetRef", problems);
-                }
+                validateQuestLinkType(link, path + "/targetRef", problems);
             }
         }
         if (giverCount > 1) {
             error(problems, "MULTIPLE_GIVERS", qPath + "/links",
                     "A quest may have at most one GIVER link");
+        }
+    }
+
+    private static void validateQuestLinkType(CampaignManifestV2.QuestLinkDto link, String path,
+                                               List<CampaignImportProblem> problems) {
+        if (link.targetRef() == null) return;
+        String role = link.role();
+        if (role == null) return;
+        switch (role) {
+            case "HANDOUT" -> requireRefType(link.targetRef(), HANDOUT, path, problems);
+            case "RULE" -> requireRefType(link.targetRef(), CampaignContentType.RULE, path, problems);
+            case "RELATED_SCENE" -> requireRefType(link.targetRef(), SCENE, path, problems);
+            case "NPC" -> requireRefTypeOneOf(link.targetRef(), List.of(NOTE, WORLD_NPC), path, problems);
+            case "LOCATION" -> requireRefTypeOneOf(link.targetRef(), List.of(NOTE, WORLD_LOCATION), path, problems);
+            case "FACTION" -> requireRefTypeOneOf(link.targetRef(), List.of(NOTE, FACTION), path, problems);
+            case "TIMELINE_EVENT" -> requireRefType(link.targetRef(), CampaignContentType.TIMELINE_EVENT, path, problems);
         }
     }
 
@@ -747,6 +777,34 @@ public class CampaignManifestV2SemanticValidator {
                         "/session/objectiveChanges/" + i + "/objectiveRef", keys, problems);
             }
         }
+        for (int i = 0; i < size(m.factions()); i++) {
+            var dto = m.factions().get(i);
+            check(dto.noteRef(), "/factions/" + i + "/noteRef", keys, problems);
+        }
+        for (int i = 0; i < size(m.worldLocations()); i++) {
+            var dto = m.worldLocations().get(i);
+            check(dto.parentLocationRef(), "/worldLocations/" + i + "/parentLocationRef", keys, problems);
+            check(dto.mapRef(), "/worldLocations/" + i + "/mapRef", keys, problems);
+            check(dto.noteRef(), "/worldLocations/" + i + "/noteRef", keys, problems);
+        }
+        for (int i = 0; i < size(m.worldNpcs()); i++) {
+            var dto = m.worldNpcs().get(i);
+            check(dto.factionRef(), "/worldNpcs/" + i + "/factionRef", keys, problems);
+            check(dto.locationRef(), "/worldNpcs/" + i + "/locationRef", keys, problems);
+            check(dto.noteRef(), "/worldNpcs/" + i + "/noteRef", keys, problems);
+            check(dto.statblockRef(), "/worldNpcs/" + i + "/statblockRef", keys, problems);
+        }
+        for (int i = 0; i < size(m.worldRelationships()); i++) {
+            var dto = m.worldRelationships().get(i);
+            check(dto.fromRef(), "/worldRelationships/" + i + "/fromRef", keys, problems);
+            check(dto.toRef(), "/worldRelationships/" + i + "/toRef", keys, problems);
+        }
+        for (int i = 0; i < size(m.factionClocks()); i++) {
+            var dto = m.factionClocks().get(i);
+            check(dto.factionRef(), "/factionClocks/" + i + "/factionRef", keys, problems);
+            check(dto.objectiveRef(), "/factionClocks/" + i + "/objectiveRef", keys, problems);
+            check(dto.sceneRef(), "/factionClocks/" + i + "/sceneRef", keys, problems);
+        }
     }
 
     private void check(ContentReference ref, String path, Map<CampaignContentType, Set<String>> keys,
@@ -866,6 +924,171 @@ public class CampaignManifestV2SemanticValidator {
         if (refs == null) return;
         for (int i = 0; i < refs.size(); i++) {
             requireRefType(refs.get(i), expectedType, path + "/" + i, problems);
+        }
+    }
+
+    private void validateWorldEntities(CampaignManifestV2 m,
+                                        Map<CampaignContentType, Set<String>> keys,
+                                        List<CampaignImportProblem> problems) {
+        validateWorldReferenceTypes(m, problems);
+        validateLocationParentCycles(m, problems);
+        validateSelfRelationships(m, problems);
+        validateClockRanges(m, problems);
+    }
+
+    private static void validateWorldReferenceTypes(CampaignManifestV2 m,
+                                                     List<CampaignImportProblem> problems) {
+        for (int i = 0; i < size(m.factions()); i++) {
+            var dto = m.factions().get(i);
+            if (dto.noteRef() != null) {
+                requireRefType(dto.noteRef(), NOTE, "/factions/" + i + "/noteRef", problems);
+            }
+        }
+        for (int i = 0; i < size(m.worldLocations()); i++) {
+            var dto = m.worldLocations().get(i);
+            if (dto.parentLocationRef() != null) {
+                requireRefType(dto.parentLocationRef(), WORLD_LOCATION,
+                        "/worldLocations/" + i + "/parentLocationRef", problems);
+            }
+            if (dto.mapRef() != null) {
+                requireRefType(dto.mapRef(), MAP, "/worldLocations/" + i + "/mapRef", problems);
+            }
+            if (dto.noteRef() != null) {
+                requireRefType(dto.noteRef(), NOTE, "/worldLocations/" + i + "/noteRef", problems);
+            }
+        }
+        for (int i = 0; i < size(m.worldNpcs()); i++) {
+            var dto = m.worldNpcs().get(i);
+            if (dto.factionRef() != null) {
+                requireWorldRefType(dto.factionRef(), FACTION,
+                        "/worldNpcs/" + i + "/factionRef", problems);
+            }
+            if (dto.locationRef() != null) {
+                requireWorldRefType(dto.locationRef(), WORLD_LOCATION,
+                        "/worldNpcs/" + i + "/locationRef", problems);
+            }
+            if (dto.noteRef() != null) {
+                requireWorldRefType(dto.noteRef(), NOTE,
+                        "/worldNpcs/" + i + "/noteRef", problems);
+            }
+            if (dto.statblockRef() != null) {
+                requireWorldRefType(dto.statblockRef(), CampaignContentType.STATBLOCK,
+                        "/worldNpcs/" + i + "/statblockRef", problems);
+            }
+        }
+        for (int i = 0; i < size(m.worldRelationships()); i++) {
+            var dto = m.worldRelationships().get(i);
+            if (dto.fromRef() != null) {
+                requireRefTypeOneOf(dto.fromRef(),
+                        List.of(WORLD_NPC, FACTION, WORLD_LOCATION),
+                        "/worldRelationships/" + i + "/fromRef", problems);
+            }
+            if (dto.toRef() != null) {
+                requireRefTypeOneOf(dto.toRef(),
+                        List.of(WORLD_NPC, FACTION, WORLD_LOCATION),
+                        "/worldRelationships/" + i + "/toRef", problems);
+            }
+        }
+        for (int i = 0; i < size(m.factionClocks()); i++) {
+            var dto = m.factionClocks().get(i);
+            if (dto.factionRef() != null) {
+                requireRefType(dto.factionRef(), FACTION,
+                        "/factionClocks/" + i + "/factionRef", problems);
+            }
+            if (dto.objectiveRef() != null) {
+                requireRefType(dto.objectiveRef(), OBJECTIVE,
+                        "/factionClocks/" + i + "/objectiveRef", problems);
+            }
+            if (dto.sceneRef() != null) {
+                requireRefType(dto.sceneRef(), SCENE,
+                        "/factionClocks/" + i + "/sceneRef", problems);
+            }
+        }
+    }
+
+    private static void validateLocationParentCycles(CampaignManifestV2 m,
+                                                      List<CampaignImportProblem> problems) {
+        var locations = m.worldLocations();
+        if (locations == null || locations.isEmpty()) return;
+        Map<String, String> parentMap = new java.util.HashMap<>();
+        for (var loc : locations) {
+            if (loc.parentLocationRef() != null && loc.parentLocationRef().key() != null) {
+                parentMap.put(loc.key(), loc.parentLocationRef().key());
+            }
+        }
+        for (var loc : locations) {
+            String start = loc.key();
+            Set<String> visited = new HashSet<>();
+            String current = start;
+            boolean hasCycle = false;
+            while (current != null && parentMap.containsKey(current)) {
+                if (!visited.add(current)) {
+                    hasCycle = true;
+                    break;
+                }
+                current = parentMap.get(current);
+                if (current != null && current.equals(start)) {
+                    hasCycle = true;
+                    break;
+                }
+            }
+            if (hasCycle) {
+                error(problems, "WORLD_LOCATION_CYCLE", "/worldLocations",
+                        "Location parent chain contains a cycle involving " + start);
+            }
+        }
+    }
+
+    private static void validateSelfRelationships(CampaignManifestV2 m,
+                                                   List<CampaignImportProblem> problems) {
+        var relationships = m.worldRelationships();
+        if (relationships == null) return;
+        for (int i = 0; i < relationships.size(); i++) {
+            var dto = relationships.get(i);
+            if (dto.fromRef() != null && dto.toRef() != null
+                    && dto.fromRef().key() != null && dto.fromRef().key().equals(dto.toRef().key())
+                    && dto.fromRef().type() == dto.toRef().type()) {
+                error(problems, "WORLD_RELATIONSHIP_SELF",
+                        "/worldRelationships/" + i,
+                        "Relationship references the same entity as both source and target");
+            }
+        }
+    }
+
+    private static void validateClockRanges(CampaignManifestV2 m,
+                                             List<CampaignImportProblem> problems) {
+        var clocks = m.factionClocks();
+        if (clocks == null) return;
+        for (int i = 0; i < clocks.size(); i++) {
+            var dto = clocks.get(i);
+            if (dto.segments() < 1) {
+                error(problems, "FACTION_CLOCK_RANGE",
+                        "/factionClocks/" + i + "/segments",
+                        "Clock must have at least 1 segment");
+            }
+            if (dto.filled() > dto.segments()) {
+                error(problems, "FACTION_CLOCK_RANGE",
+                        "/factionClocks/" + i + "/filled",
+                        "Clock filled segments cannot exceed total segments");
+            }
+        }
+    }
+
+    private static void requireWorldRefType(ContentReference ref, CampaignContentType expectedType,
+                                             String path, List<CampaignImportProblem> problems) {
+        if (ref == null) return;
+        if (ref.type() != expectedType) {
+            error(problems, "INVALID_WORLD_REFERENCE_TYPE", path,
+                    "Expected reference type " + expectedType + " but got " + ref.type());
+        }
+    }
+
+    private static void requireRefTypeOneOf(ContentReference ref, List<CampaignContentType> expectedTypes,
+                                            String path, List<CampaignImportProblem> problems) {
+        if (ref == null) return;
+        if (!expectedTypes.contains(ref.type())) {
+            error(problems, "INVALID_WORLD_REFERENCE_TYPE", path,
+                    "Expected one of " + expectedTypes + " but got " + ref.type());
         }
     }
 }

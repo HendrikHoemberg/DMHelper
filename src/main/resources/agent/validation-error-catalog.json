@@ -871,6 +871,48 @@
       "repairHints": [
         "Use the import validation report to locate the exact source."
       ]
+    },
+    {
+      "code": "WORLD_LOCATION_CYCLE",
+      "defaultSeverity": "ERROR",
+      "summary": "A location parent chain contains a cycle.",
+      "when": "World location validation during semantic validation.",
+      "suggestionTemplate": "Break the circular parent reference chain.",
+      "repairHints": [
+        "Inspect the location parent references to identify the cycle.",
+        "Remove or correct the parent reference that creates the cycle."
+      ]
+    },
+    {
+      "code": "WORLD_RELATIONSHIP_SELF",
+      "defaultSeverity": "ERROR",
+      "summary": "A relationship references the same entity as both source and target.",
+      "when": "World relationship validation during semantic validation.",
+      "suggestionTemplate": "Remove the self-referencing relationship or change one endpoint.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "FACTION_CLOCK_RANGE",
+      "defaultSeverity": "ERROR",
+      "summary": "A faction clock has invalid segments or filled values.",
+      "when": "Faction clock validation during semantic validation.",
+      "suggestionTemplate": "Correct the clock segments and filled values to be within valid range.",
+      "repairHints": [
+        "Segments must be at least 1.",
+        "Filled segments must not exceed total segments."
+      ]
+    },
+    {
+      "code": "INVALID_WORLD_REFERENCE_TYPE",
+      "defaultSeverity": "ERROR",
+      "summary": "A reference in a world entity points at an entity of the wrong type.",
+      "when": "World entity reference type checking during semantic validation.",
+      "suggestionTemplate": "Correct the reference to point at the expected entity type.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
     }
   ]
 }
