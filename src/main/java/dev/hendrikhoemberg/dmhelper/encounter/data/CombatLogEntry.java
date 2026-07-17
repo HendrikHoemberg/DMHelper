@@ -22,7 +22,8 @@ public class CombatLogEntry {
         GROUP_SPLIT, LAIR_ACTION,
         ENCOUNTER_ACTIVATED, ENCOUNTER_ENDED, SESSION_END,
         DICE_ROLL, NOTE,
-        SORT_ORDER
+        SORT_ORDER,
+        WAVE_SPAWNED, REWARD_APPLIED
     }
 
     @Id

@@ -130,6 +130,15 @@ public class EncounterService {
                                          String notes,
                                          UUID waveId, Integer startX, Integer startY, String placementRegionKey) {}
 
+    public record WaveDto(UUID id, UUID encounterId, String waveKey, String name, int sortOrder,
+            String status, String triggerKind, String triggerValue, String notes, int combatantCount) {}
+
+    public record CreateWaveRequest(String waveKey, String name, WaveTriggerKind triggerKind,
+            String triggerValue, String notes) {}
+
+    public record UpdateWaveRequest(String name, WaveStatus status, WaveTriggerKind triggerKind,
+            String triggerValue, String notes, Integer sortOrder) {}
+
     public record InitiativeRequest(int initiative) {}
 
     public record ReorderRequest(List<UUID> orderedIds) {}
@@ -499,7 +508,13 @@ public class EncounterService {
     @Transactional(readOnly = true)
     public List<CombatantDto> getCombatants(UUID encounterId) {
         return combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).stream()
+                .filter(this::isOnActiveWave)
                 .map(EncounterService::toDto).toList();
+    }
+
+    private boolean isOnActiveWave(Combatant c) {
+        if (c.getWave() == null) return true;
+        return c.getWave().getStatus() == WaveStatus.ACTIVE;
     }
 
     @Transactional(readOnly = true)
@@ -564,6 +579,93 @@ public class EncounterService {
                     w.setTriggerKind(WaveTriggerKind.MANUAL);
                     return waveRepo.save(w);
                 });
+    }
+
+    private WaveDto waveToDto(EncounterWave w) {
+        int count = (int) combatantRepo.countByWaveId(w.getId());
+        return new WaveDto(w.getId(), w.getEncounter().getId(), w.getWaveKey(), w.getName(),
+                w.getSortOrder(), w.getStatus().name(), w.getTriggerKind().name(),
+                w.getTriggerValue(), w.getNotes(), count);
+    }
+
+    @Transactional(readOnly = true)
+    public List<WaveDto> listWaves(UUID encounterId) {
+        return waveRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).stream()
+                .map(this::waveToDto)
+                .toList();
+    }
+
+    @Transactional
+    public WaveDto createWave(UUID encounterId, CreateWaveRequest req) {
+        Encounter e = findEntityById(encounterId);
+        if (waveRepo.findByEncounterIdAndWaveKey(e.getId(), req.waveKey()).isPresent()) {
+            throw new IllegalArgumentException("Wave key '" + req.waveKey() + "' already exists in this encounter");
+        }
+        int maxSort = waveRepo.findByEncounterIdOrderBySortOrderAsc(e.getId()).stream()
+                .mapToInt(EncounterWave::getSortOrder).max().orElse(-1);
+        EncounterWave w = new EncounterWave();
+        w.setEncounter(e);
+        w.setWaveKey(req.waveKey());
+        w.setName(req.name());
+        w.setSortOrder(maxSort + 1);
+        w.setStatus(WaveStatus.PENDING);
+        w.setTriggerKind(req.triggerKind());
+        w.setTriggerValue(req.triggerValue());
+        w.setNotes(req.notes());
+        w = waveRepo.save(w);
+        return waveToDto(w);
+    }
+
+    @Transactional
+    public WaveDto updateWave(UUID waveId, UpdateWaveRequest req) {
+        EncounterWave w = waveRepo.findById(waveId)
+                .orElseThrow(() -> new NotFoundException("Wave not found: " + waveId));
+        if (req.name() != null) w.setName(req.name());
+        if (req.status() != null) w.setStatus(req.status());
+        if (req.triggerKind() != null) w.setTriggerKind(req.triggerKind());
+        if (req.triggerValue() != null) w.setTriggerValue(req.triggerValue());
+        if (req.notes() != null) w.setNotes(req.notes());
+        if (req.sortOrder() != null) w.setSortOrder(req.sortOrder());
+        w = waveRepo.save(w);
+        return waveToDto(w);
+    }
+
+    @Transactional
+    public void deleteWave(UUID waveId) {
+        EncounterWave w = waveRepo.findById(waveId)
+                .orElseThrow(() -> new NotFoundException("Wave not found: " + waveId));
+        if ("main".equals(w.getWaveKey())) {
+            throw new IllegalArgumentException("Cannot delete the main wave");
+        }
+        EncounterWave main = waveRepo.findByEncounterIdAndWaveKey(w.getEncounter().getId(), "main")
+                .orElseThrow();
+        List<Combatant> combatants = combatantRepo.findByWaveId(waveId);
+        for (Combatant c : combatants) {
+            c.setWave(main);
+            combatantRepo.save(c);
+        }
+        waveRepo.delete(w);
+    }
+
+    @Transactional
+    public EncounterDto spawnWave(UUID encounterId, UUID waveId) {
+        Encounter e = findEntityById(encounterId);
+        if (e.getStatus() != Encounter.Status.ACTIVE) {
+            throw new IllegalStateException("Encounter must be ACTIVE to spawn a wave");
+        }
+        EncounterWave wave = waveRepo.findById(waveId)
+                .orElseThrow(() -> new NotFoundException("Wave not found: " + waveId));
+        if (!wave.getEncounter().getId().equals(encounterId)) {
+            throw new IllegalArgumentException("Wave does not belong to encounter");
+        }
+        if (wave.getStatus() == WaveStatus.ACTIVE || wave.getStatus() == WaveStatus.DEPLETED) {
+            throw new IllegalStateException("Wave is already " + wave.getStatus());
+        }
+        wave.setStatus(WaveStatus.ACTIVE);
+        waveRepo.save(wave);
+        logEntry(encounterId, CombatLogEntry.EntryType.WAVE_SPAWNED, "",
+                "{\"waveKey\":\"" + wave.getWaveKey() + "\"}");
+        return toDto(e);
     }
 
     private static int parseHpAsInt(StatBlock sb) {

@@ -23,4 +23,8 @@ public interface CombatantRepository extends JpaRepository<Combatant, UUID> {
     Optional<Combatant> findByEncounterIdAndPartyMemberId(UUID encounterId, UUID partyMemberId);
 
     List<Combatant> findByPartyMemberId(UUID partyMemberId);
+
+    long countByWaveId(UUID waveId);
+
+    List<Combatant> findByWaveId(UUID waveId);
 }

@@ -231,6 +231,34 @@ public class EncounterApiController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/encounters/{id}/waves")
+    public List<EncounterService.WaveDto> listWaves(@PathVariable UUID id) {
+        return service.listWaves(id);
+    }
+
+    @PostMapping("/encounters/{id}/waves")
+    public ResponseEntity<EncounterService.WaveDto> createWave(@PathVariable UUID id,
+            @RequestBody EncounterService.CreateWaveRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.createWave(id, req));
+    }
+
+    @PutMapping("/encounters/{id}/waves/{waveId}")
+    public EncounterService.WaveDto updateWave(@PathVariable UUID id, @PathVariable UUID waveId,
+            @RequestBody EncounterService.UpdateWaveRequest req) {
+        return service.updateWave(waveId, req);
+    }
+
+    @DeleteMapping("/encounters/{id}/waves/{waveId}")
+    public ResponseEntity<Void> deleteWave(@PathVariable UUID id, @PathVariable UUID waveId) {
+        service.deleteWave(waveId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/encounters/{id}/waves/{waveId}/spawn")
+    public EncounterService.EncounterDto spawnWave(@PathVariable UUID id, @PathVariable UUID waveId) {
+        return service.spawnWave(id, waveId);
+    }
+
     @GetMapping("/combatants/{id}/recharge-prompts")
     public List<RechargePrompt> getRechargePrompts(@PathVariable UUID id) {
         return service.checkRechargeAbilities(id);
