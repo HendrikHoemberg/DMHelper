@@ -237,7 +237,8 @@ class FlywayMigrationTest {
         assertThat(applied).isEqualTo(1);
 
         for (String table : List.of(
-                "WORLD_NPC", "WORLD_LOCATION", "FACTION", "WORLD_RELATIONSHIP", "FACTION_CLOCK")) {
+                "WORLD_NPC", "WORLD_LOCATION", "FACTION", "WORLD_RELATIONSHIP", "FACTION_CLOCK",
+                "WORLD_LOCATION_ENCOUNTER", "WORLD_LOCATION_TRAVEL")) {
             Integer count = jdbc.queryForObject(
                     "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?",
                     Integer.class, table);
