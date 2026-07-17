@@ -62,6 +62,24 @@ public class CampaignManifestV2SemanticValidator {
         }
         for (int i = 0; i < size(m.customStatBlocks()); i++) add(keys, CampaignContentType.STATBLOCK,
                 m.customStatBlocks().get(i).key(), "/customStatBlocks/" + i + "/key", problems);
+        for (int i = 0; i < size(m.customSpells()); i++) add(keys, CampaignContentType.SPELL,
+                m.customSpells().get(i).key(), "/customSpells/" + i + "/key", problems);
+        for (int i = 0; i < size(m.customConditions()); i++) add(keys, CampaignContentType.CONDITION,
+                m.customConditions().get(i).key(), "/customConditions/" + i + "/key", problems);
+        for (int i = 0; i < size(m.customRules()); i++) add(keys, CampaignContentType.RULE,
+                m.customRules().get(i).key(), "/customRules/" + i + "/key", problems);
+        for (int i = 0; i < size(m.customEquipment()); i++) add(keys, CampaignContentType.EQUIPMENT_ITEM,
+                m.customEquipment().get(i).key(), "/customEquipment/" + i + "/key", problems);
+        for (int i = 0; i < size(m.customMagicItems()); i++) add(keys, CampaignContentType.MAGIC_ITEM,
+                m.customMagicItems().get(i).key(), "/customMagicItems/" + i + "/key", problems);
+        for (int i = 0; i < size(m.customClasses()); i++) add(keys, CampaignContentType.CLASS,
+                m.customClasses().get(i).key(), "/customClasses/" + i + "/key", problems);
+        for (int i = 0; i < size(m.customSpecies()); i++) add(keys, CampaignContentType.SPECIES,
+                m.customSpecies().get(i).key(), "/customSpecies/" + i + "/key", problems);
+        for (int i = 0; i < size(m.customBackgrounds()); i++) add(keys, CampaignContentType.BACKGROUND,
+                m.customBackgrounds().get(i).key(), "/customBackgrounds/" + i + "/key", problems);
+        for (int i = 0; i < size(m.customFeats()); i++) add(keys, CampaignContentType.FEAT,
+                m.customFeats().get(i).key(), "/customFeats/" + i + "/key", problems);
         for (int i = 0; i < size(m.handouts()); i++) add(keys, CampaignContentType.HANDOUT,
                 m.handouts().get(i).key(), "/handouts/" + i + "/key", problems);
         for (int i = 0; i < size(m.maps()); i++) {

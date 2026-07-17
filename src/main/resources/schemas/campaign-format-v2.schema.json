@@ -5,7 +5,7 @@
   "description": "Schema for the .dmcampaign.json v2 export/import format. All coordinate positions use grid-cell units. Grid coordinates use [col, row] order (zero-indexed from top-left). Currency amounts are in the units specified by the currency field (cp, sp, ep, gp, pp). Dates use ISO-8601 format.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["formatVersion", "metadata", "campaign", "assets", "party", "customStatBlocks", "handouts", "maps", "encounters", "notes", "quickNotes", "assignments", "ledgerEntries", "timelineEvents", "adventures", "diceRolls"],
+  "required": ["formatVersion", "metadata", "campaign", "assets", "party", "customStatBlocks", "customSpells", "customConditions", "customRules", "customEquipment", "customMagicItems", "customClasses", "customSpecies", "customBackgrounds", "customFeats", "handouts", "maps", "encounters", "notes", "quickNotes", "assignments", "ledgerEntries", "timelineEvents", "adventures", "diceRolls"],
   "properties": {
     "formatVersion": { "type": "integer", "const": 2 },
     "metadata": { "$ref": "#/$defs/metadata" },
@@ -13,6 +13,15 @@
     "assets": { "type": "array", "items": { "$ref": "#/$defs/asset" } },
     "party": { "type": "array", "items": { "$ref": "#/$defs/partyMember" } },
     "customStatBlocks": { "type": "array", "items": { "$ref": "#/$defs/statBlock" } },
+    "customSpells": { "type": "array", "items": { "$ref": "#/$defs/customSpell" } },
+    "customConditions": { "type": "array", "items": { "$ref": "#/$defs/customCondition" } },
+    "customRules": { "type": "array", "items": { "$ref": "#/$defs/customRule" } },
+    "customEquipment": { "type": "array", "items": { "$ref": "#/$defs/customEquipment" } },
+    "customMagicItems": { "type": "array", "items": { "$ref": "#/$defs/customMagicItem" } },
+    "customClasses": { "type": "array", "items": { "$ref": "#/$defs/customClass" } },
+    "customSpecies": { "type": "array", "items": { "$ref": "#/$defs/customSpecies" } },
+    "customBackgrounds": { "type": "array", "items": { "$ref": "#/$defs/customBackground" } },
+    "customFeats": { "type": "array", "items": { "$ref": "#/$defs/customFeat" } },
     "handouts": { "type": "array", "items": { "$ref": "#/$defs/handout" } },
     "maps": { "type": "array", "items": { "$ref": "#/$defs/map" } },
     "encounters": { "type": "array", "items": { "$ref": "#/$defs/encounter" } },
@@ -329,6 +338,169 @@
         "lairActions": { "type": "string" },
         "xp": { "type": "integer" },
         "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "sourceTitle": { "type": "string" },
+        "editionVersion": { "type": "string" },
+        "sourceLocator": { "type": "string" },
+        "licenseClassification": { "type": "string", "enum": ["ORIGINAL", "SRD", "OGL_COMPATIBLE", "THIRD_PARTY", "NON_REDISTRIBUTABLE", "UNKNOWN"] },
+        "importedAt": { "type": "string", "format": "date-time" },
+        "converterId": { "type": "string" },
+        "converterVersion": { "type": "string" },
+        "sourceHash": { "type": "string" },
+        "extractionConfidence": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW", "UNKNOWN"] }
+      }
+    },
+    "customSpell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "level"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "sourceKey": { "type": "string" },
+        "name": { "type": "string" },
+        "level": { "type": "integer", "minimum": 0 },
+        "school": { "type": "string" },
+        "castingTime": { "type": "string" },
+        "range": { "type": "string" },
+        "components": { "type": "string" },
+        "duration": { "type": "string" },
+        "description": { "type": "string" },
+        "higherLevel": { "type": "string" },
+        "ritual": { "type": "boolean" },
+        "concentration": { "type": "boolean" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "customCondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "sourceKey": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "customRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "sortOrder"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "sourceKey": { "type": "string" },
+        "name": { "type": "string" },
+        "body": { "type": "string" },
+        "parentKey": { "type": "string" },
+        "sortOrder": { "type": "integer" },
+        "ruleset": { "type": "string" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "customEquipment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "sourceKey": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string", "enum": ["WEAPON", "ARMOR", "GEAR", "TOOL"] },
+        "cost": { "type": "string" },
+        "weight": { "type": "string" },
+        "properties": { "type": "string" },
+        "description": { "type": "string" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "customMagicItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "sourceKey": { "type": "string" },
+        "name": { "type": "string" },
+        "rarity": { "type": "string" },
+        "category": { "type": "string" },
+        "type": { "type": "string" },
+        "description": { "type": "string" },
+        "weight": { "type": "string" },
+        "cost": { "type": "string" },
+        "requiresAttunement": { "type": "boolean" },
+        "attunementDetail": { "type": "string" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "customClass": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "sourceKey": { "type": "string" },
+        "name": { "type": "string" },
+        "hitDie": { "type": "string" },
+        "subclassOf": { "type": "string" },
+        "description": { "type": "string" },
+        "savingThrows": { "type": "string" },
+        "features": { "type": "string" },
+        "spellcasting": { "type": "string" },
+        "proficiencies": { "type": "string" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "customSpecies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "sourceKey": { "type": "string" },
+        "name": { "type": "string" },
+        "size": { "type": "string" },
+        "speed": { "type": "string" },
+        "traits": { "type": "string" },
+        "description": { "type": "string" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "customBackground": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "sourceKey": { "type": "string" },
+        "name": { "type": "string" },
+        "abilityScores": { "type": "string" },
+        "featRef": { "type": "string" },
+        "skills": { "type": "string" },
+        "tools": { "type": "string" },
+        "description": { "type": "string" },
+        "equipment": { "type": "string" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "customFeat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "sourceKey": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "prerequisite": { "type": "string" },
+        "benefit": { "type": "string" },
+        "provenance": { "$ref": "#/$defs/provenance" }
       }
     },
     "handout": {

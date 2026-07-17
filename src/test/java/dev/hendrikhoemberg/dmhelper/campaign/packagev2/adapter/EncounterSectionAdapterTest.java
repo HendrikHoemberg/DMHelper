@@ -201,8 +201,11 @@ class EncounterSectionAdapterTest {
                 "ambush", "Ambush", List.of(), "ACTIVE",
                 1, 0, 1, null, null, null, false, List.of(logDto));
         var manifest = new CampaignManifestV2(
-                2, null, null, null, null, null, null, null,
-                List.of(encounterDto), null, null, null, null, null, null, null, null, List.of(), List.of());
+                2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null,
+                List.of(encounterDto),
+                null, null, null, null, null, null, null, null, List.of(), List.of());
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var encounter = invocation.getArgument(0, Encounter.class);
@@ -241,8 +244,11 @@ class EncounterSectionAdapterTest {
                 "ambush", "Ambush", List.of(combatantDto), "PLANNED",
                 0, -1, 0, null, null, null, false, List.of());
         var manifest = new CampaignManifestV2(
-                2, null, null, null, null, null, null, null,
-                List.of(encounterDto), null, null, null, null, null, null, null, null, List.of(), List.of());
+                2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null,
+                List.of(encounterDto),
+                null, null, null, null, null, null, null, null, List.of(), List.of());
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var encounter = invocation.getArgument(0, Encounter.class);
@@ -291,6 +297,15 @@ class EncounterSectionAdapterTest {
         a.assets(List.of());
         a.party(List.of());
         a.customStatBlocks(List.of());
+        a.customSpells(List.of());
+        a.customConditions(List.of());
+        a.customRules(List.of());
+        a.customEquipment(List.of());
+        a.customMagicItems(List.of());
+        a.customClasses(List.of());
+        a.customSpecies(List.of());
+        a.customBackgrounds(List.of());
+        a.customFeats(List.of());
         a.handouts(List.of());
         a.maps(List.of());
         a.notes(List.of());

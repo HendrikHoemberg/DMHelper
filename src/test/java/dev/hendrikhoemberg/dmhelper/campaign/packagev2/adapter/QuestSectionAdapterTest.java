@@ -109,8 +109,9 @@ class QuestSectionAdapterTest {
         });
 
         var manifest = new CampaignManifestV2(
-                2, null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, List.of(), List.of(qDto), List.of());
+                2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null, List.of(), List.of(qDto), List.of());
         var keys = new CampaignSectionAdapterTest.FakeKeyService();
         var context = new CampaignImportContext(
                 campaignId, keys, new PendingCampaignImport(UUID.randomUUID(), null, null, null));
@@ -126,6 +127,15 @@ class QuestSectionAdapterTest {
         a.campaign(new CampaignManifestV2.CampaignDto("campaign-key", "test", null, null, null, null));
         a.party(List.of());
         a.customStatBlocks(List.of());
+        a.customSpells(List.of());
+        a.customConditions(List.of());
+        a.customRules(List.of());
+        a.customEquipment(List.of());
+        a.customMagicItems(List.of());
+        a.customClasses(List.of());
+        a.customSpecies(List.of());
+        a.customBackgrounds(List.of());
+        a.customFeats(List.of());
         a.handouts(List.of());
         a.maps(List.of());
         a.encounters(List.of());

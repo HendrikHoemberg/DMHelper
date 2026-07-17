@@ -70,6 +70,15 @@ class CampaignSectionAdapterTest {
 
         assembler.party(List.of());
         assembler.customStatBlocks(List.of());
+        assembler.customSpells(List.of());
+        assembler.customConditions(List.of());
+        assembler.customRules(List.of());
+        assembler.customEquipment(List.of());
+        assembler.customMagicItems(List.of());
+        assembler.customClasses(List.of());
+        assembler.customSpecies(List.of());
+        assembler.customBackgrounds(List.of());
+        assembler.customFeats(List.of());
         assembler.handouts(List.of());
         assembler.maps(List.of());
         assembler.encounters(List.of());
@@ -98,7 +107,9 @@ class CampaignSectionAdapterTest {
                 2, null,
                 new CampaignDto("campaign-key", "Imported Campaign", "Imported description",
                         Instant.parse("2025-01-01T00:00:00Z"), null, null),
-                null, null, null, null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of()
+                null, null, null,
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of()
         );
         var context = new CampaignImportContext(
                 UUID.randomUUID(), new FakeKeyService(), pendingImport());
@@ -122,7 +133,9 @@ class CampaignSectionAdapterTest {
         var manifest = new CampaignManifestV2(
                 2, null,
                 new CampaignDto("campaign-key", "Test", "desc", Instant.now(), null, sceneRef),
-                null, null, null, null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of()
+                null, null, null,
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of()
         );
 
         var context = new CampaignImportContext(

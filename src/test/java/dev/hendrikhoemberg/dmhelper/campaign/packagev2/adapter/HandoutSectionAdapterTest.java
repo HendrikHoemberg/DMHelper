@@ -140,6 +140,7 @@ class HandoutSectionAdapterTest {
 
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
                 List.of(new HandoutDto(
                         "handout-map", "Map", List.of("quest", "important"),
                         assetKey, "image/png", false, true
@@ -197,6 +198,7 @@ class HandoutSectionAdapterTest {
 
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
                 List.of(
                         new HandoutDto("h1", "DM Only", List.of(), assetKey, "image/png", true, false),
                         new HandoutDto("h2", "Presented", List.of(), assetKey, "image/png", false, true),
@@ -304,6 +306,15 @@ class HandoutSectionAdapterTest {
         a.campaign(new CampaignManifestV2.CampaignDto("campaign-key", "test", null, null, null, null));
         a.party(List.of());
         a.customStatBlocks(List.of());
+        a.customSpells(List.of());
+        a.customConditions(List.of());
+        a.customRules(List.of());
+        a.customEquipment(List.of());
+        a.customMagicItems(List.of());
+        a.customClasses(List.of());
+        a.customSpecies(List.of());
+        a.customBackgrounds(List.of());
+        a.customFeats(List.of());
         a.maps(List.of());
         a.encounters(List.of());
         a.notes(List.of());

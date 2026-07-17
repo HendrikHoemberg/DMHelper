@@ -16,11 +16,49 @@
     "settings": {
       "levelingMode": "XP",
       "calendar": {
-        "monthLengths": [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        "monthNames": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-        "weekdayNames": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        "monthLengths": [
+          31,
+          28,
+          31,
+          30,
+          31,
+          30,
+          31,
+          31,
+          30,
+          31,
+          30,
+          31
+        ],
+        "monthNames": [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December"
+        ],
+        "weekdayNames": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ]
       },
-      "currentDate": { "year": 1492, "month": 0, "day": 1 }
+      "currentDate": {
+        "year": 1492,
+        "month": 0,
+        "day": 1
+      }
     }
   },
   "assets": [],
@@ -36,5 +74,14 @@
   "timelineEvents": [],
   "adventures": [],
   "session": null,
-  "diceRolls": []
+  "diceRolls": [],
+  "customSpells": [],
+  "customConditions": [],
+  "customRules": [],
+  "customEquipment": [],
+  "customMagicItems": [],
+  "customClasses": [],
+  "customSpecies": [],
+  "customBackgrounds": [],
+  "customFeats": []
 }

@@ -25,6 +25,15 @@ public class CampaignManifestAssembler {
     private List<AssetDescriptor> assets;
     private List<PartyMemberDto> party;
     private List<StatBlockDto> customStatBlocks;
+    private List<CampaignManifestV2.CustomSpellDto> customSpells;
+    private List<CampaignManifestV2.CustomConditionDto> customConditions;
+    private List<CampaignManifestV2.CustomRuleDto> customRules;
+    private List<CampaignManifestV2.CustomEquipmentDto> customEquipment;
+    private List<CampaignManifestV2.CustomMagicItemDto> customMagicItems;
+    private List<CampaignManifestV2.CustomClassDto> customClasses;
+    private List<CampaignManifestV2.CustomSpeciesDto> customSpecies;
+    private List<CampaignManifestV2.CustomBackgroundDto> customBackgrounds;
+    private List<CampaignManifestV2.CustomFeatDto> customFeats;
     private List<HandoutDto> handouts;
     private List<MapDto> maps;
     private List<EncounterDto> encounters;
@@ -58,6 +67,51 @@ public class CampaignManifestAssembler {
     public void customStatBlocks(List<StatBlockDto> value) {
         checkNotAlreadySet("customStatBlocks", customStatBlocks);
         customStatBlocks = List.copyOf(value);
+    }
+
+    public void customSpells(List<CampaignManifestV2.CustomSpellDto> value) {
+        checkNotAlreadySet("customSpells", customSpells);
+        customSpells = value == null ? List.of() : List.copyOf(value);
+    }
+
+    public void customConditions(List<CampaignManifestV2.CustomConditionDto> value) {
+        checkNotAlreadySet("customConditions", customConditions);
+        customConditions = value == null ? List.of() : List.copyOf(value);
+    }
+
+    public void customRules(List<CampaignManifestV2.CustomRuleDto> value) {
+        checkNotAlreadySet("customRules", customRules);
+        customRules = value == null ? List.of() : List.copyOf(value);
+    }
+
+    public void customEquipment(List<CampaignManifestV2.CustomEquipmentDto> value) {
+        checkNotAlreadySet("customEquipment", customEquipment);
+        customEquipment = value == null ? List.of() : List.copyOf(value);
+    }
+
+    public void customMagicItems(List<CampaignManifestV2.CustomMagicItemDto> value) {
+        checkNotAlreadySet("customMagicItems", customMagicItems);
+        customMagicItems = value == null ? List.of() : List.copyOf(value);
+    }
+
+    public void customClasses(List<CampaignManifestV2.CustomClassDto> value) {
+        checkNotAlreadySet("customClasses", customClasses);
+        customClasses = value == null ? List.of() : List.copyOf(value);
+    }
+
+    public void customSpecies(List<CampaignManifestV2.CustomSpeciesDto> value) {
+        checkNotAlreadySet("customSpecies", customSpecies);
+        customSpecies = value == null ? List.of() : List.copyOf(value);
+    }
+
+    public void customBackgrounds(List<CampaignManifestV2.CustomBackgroundDto> value) {
+        checkNotAlreadySet("customBackgrounds", customBackgrounds);
+        customBackgrounds = value == null ? List.of() : List.copyOf(value);
+    }
+
+    public void customFeats(List<CampaignManifestV2.CustomFeatDto> value) {
+        checkNotAlreadySet("customFeats", customFeats);
+        customFeats = value == null ? List.of() : List.copyOf(value);
     }
 
     public void handouts(List<HandoutDto> value) {
@@ -133,6 +187,15 @@ public class CampaignManifestAssembler {
         checkRequired("assets", assets);
         checkRequired("party", party);
         checkRequired("customStatBlocks", customStatBlocks);
+        checkRequired("customSpells", customSpells);
+        checkRequired("customConditions", customConditions);
+        checkRequired("customRules", customRules);
+        checkRequired("customEquipment", customEquipment);
+        checkRequired("customMagicItems", customMagicItems);
+        checkRequired("customClasses", customClasses);
+        checkRequired("customSpecies", customSpecies);
+        checkRequired("customBackgrounds", customBackgrounds);
+        checkRequired("customFeats", customFeats);
         checkRequired("handouts", handouts);
         checkRequired("maps", maps);
         checkRequired("encounters", encounters);
@@ -151,6 +214,15 @@ public class CampaignManifestAssembler {
                 assets,
                 party,
                 customStatBlocks,
+                customSpells == null ? List.of() : customSpells,
+                customConditions == null ? List.of() : customConditions,
+                customRules == null ? List.of() : customRules,
+                customEquipment == null ? List.of() : customEquipment,
+                customMagicItems == null ? List.of() : customMagicItems,
+                customClasses == null ? List.of() : customClasses,
+                customSpecies == null ? List.of() : customSpecies,
+                customBackgrounds == null ? List.of() : customBackgrounds,
+                customFeats == null ? List.of() : customFeats,
                 handouts,
                 maps,
                 encounters,

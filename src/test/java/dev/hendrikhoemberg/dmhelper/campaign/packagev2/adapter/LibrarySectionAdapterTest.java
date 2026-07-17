@@ -10,9 +10,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportOpt
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
-import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
-import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
-import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.*;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.LibrarySectionAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,13 +25,32 @@ import static org.mockito.Mockito.*;
 class LibrarySectionAdapterTest {
 
     private LibrarySectionAdapter adapter;
-    private StatBlockRepository repository;
+    private StatBlockRepository statBlockRepo;
+    private SpellRepository spellRepo;
+    private ConditionRepository conditionRepo;
+    private RuleSectionRepository ruleSectionRepo;
+    private EquipmentItemRepository equipmentItemRepo;
+    private MagicItemRepository magicItemRepo;
+    private CharacterClassRepository characterClassRepo;
+    private SpeciesRepository speciesRepo;
+    private BackgroundRepository backgroundRepo;
+    private FeatRepository featRepo;
     private Campaign campaign;
 
     @BeforeEach
     void setUp() {
-        repository = mock(StatBlockRepository.class);
-        adapter = new LibrarySectionAdapter(repository);
+        statBlockRepo = mock(StatBlockRepository.class);
+        spellRepo = mock(SpellRepository.class);
+        conditionRepo = mock(ConditionRepository.class);
+        ruleSectionRepo = mock(RuleSectionRepository.class);
+        equipmentItemRepo = mock(EquipmentItemRepository.class);
+        magicItemRepo = mock(MagicItemRepository.class);
+        characterClassRepo = mock(CharacterClassRepository.class);
+        speciesRepo = mock(SpeciesRepository.class);
+        backgroundRepo = mock(BackgroundRepository.class);
+        featRepo = mock(FeatRepository.class);
+        adapter = new LibrarySectionAdapter(statBlockRepo, spellRepo, conditionRepo, ruleSectionRepo,
+                equipmentItemRepo, magicItemRepo, characterClassRepo, speciesRepo, backgroundRepo, featRepo);
         campaign = new Campaign();
         campaign.setId(UUID.randomUUID());
         campaign.setName("Test Campaign");
@@ -56,7 +73,7 @@ class LibrarySectionAdapterTest {
         var sb2 = statBlock(UUID.randomUUID(), "Goblin King", "3", "humanoid", 15, "65", 700,
                 Instant.parse("2025-02-01T00:00:00Z"));
 
-        when(repository.findByCampaignIdOrderByNameAscIdAsc(campaign.getId()))
+        when(statBlockRepo.findByCampaignIdOrderByNameAscIdAsc(campaign.getId()))
                 .thenReturn(List.of(sb1, sb2));
 
         var ctx = new CampaignExportContext(
@@ -89,7 +106,7 @@ class LibrarySectionAdapterTest {
         UUID sbId = UUID.randomUUID();
         var sb = fullStatBlock(sbId);
 
-        when(repository.findByCampaignIdOrderByNameAscIdAsc(campaign.getId()))
+        when(statBlockRepo.findByCampaignIdOrderByNameAscIdAsc(campaign.getId()))
                 .thenReturn(List.of(sb));
 
         var keyService = new CampaignSectionAdapterTest.FakeKeyService();
@@ -120,7 +137,7 @@ class LibrarySectionAdapterTest {
 
         // Import into fresh context - capture the saved entity
         var captured = new StatBlock[1];
-        when(repository.save(any())).thenAnswer(inv -> {
+        when(statBlockRepo.save(any())).thenAnswer(inv -> {
             var s = inv.getArgument(0, StatBlock.class);
             if (s.getId() == null) s.setId(UUID.randomUUID());
             captured[0] = s;
@@ -133,6 +150,7 @@ class LibrarySectionAdapterTest {
         var importManifest = new CampaignManifestV2(
                 2, null, null, null,
                 null, manifest2.customStatBlocks(),
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of()
         );
 

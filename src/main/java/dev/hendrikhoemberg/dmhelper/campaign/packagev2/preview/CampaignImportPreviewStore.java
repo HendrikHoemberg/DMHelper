@@ -82,7 +82,12 @@ public class CampaignImportPreviewStore {
         long installed = manifest == null || manifest.assets() == null ? 0
                 : manifest.assets().stream().mapToLong(a -> a.sizeBytes()).sum();
         int provenance = provenanceCount(manifest);
-        int provenanceEligible = manifest == null ? 0 : size(manifest.customStatBlocks()) + size(manifest.adventures());
+        int provenanceEligible = manifest == null ? 0 : size(manifest.customStatBlocks())
+                + size(manifest.customSpells()) + size(manifest.customConditions())
+                + size(manifest.customRules()) + size(manifest.customEquipment())
+                + size(manifest.customMagicItems()) + size(manifest.customClasses())
+                + size(manifest.customSpecies()) + size(manifest.customBackgrounds())
+                + size(manifest.customFeats()) + size(manifest.adventures());
         return new CampaignImportPreview(id, status, result.sourceFormatVersion(), 2, counts(manifest),
                 result.stagedPackage().uploadedBytes(), installed, provenance,
                 Math.max(0, provenanceEligible - provenance), exclusions(manifest), result.migrations(),
@@ -90,7 +95,7 @@ public class CampaignImportPreviewStore {
     }
 
     private static CampaignEntityCounts counts(CampaignManifestV2 m) {
-        if (m == null) return new CampaignEntityCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        if (m == null) return new CampaignEntityCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         int tokens = m.maps().stream().mapToInt(map -> size(map.tokens())).sum();
         int combatants = m.encounters().stream().mapToInt(encounter -> size(encounter.combatants())).sum();
         int chapters = m.adventures().stream().mapToInt(adventure -> size(adventure.chapters())).sum();
@@ -99,7 +104,11 @@ public class CampaignImportPreviewStore {
         int combatLogEntries = m.encounters().stream().mapToInt(encounter -> size(encounter.combatLog())).sum();
         int noteLinks = m.notes().stream().mapToInt(note -> size(note.links())).sum();
         int sessionSceneVisits = m.session() != null ? size(m.session().sceneVisits()) : 0;
-        return new CampaignEntityCounts(size(m.party()), size(m.customStatBlocks()), size(m.handouts()),
+        return new CampaignEntityCounts(size(m.party()), size(m.customStatBlocks()),
+                size(m.customSpells()), size(m.customConditions()), size(m.customRules()),
+                size(m.customEquipment()), size(m.customMagicItems()), size(m.customClasses()),
+                size(m.customSpecies()), size(m.customBackgrounds()), size(m.customFeats()),
+                size(m.handouts()),
                 size(m.maps()), tokens, size(m.encounters()), combatants, size(m.notes()), size(m.quickNotes()),
                 size(m.assignments()), size(m.ledgerEntries()), size(m.timelineEvents()), size(m.adventures()),
                 chapters, scenes, size(m.assets()), combatLogEntries, size(m.diceRolls()), noteLinks,
@@ -108,8 +117,19 @@ public class CampaignImportPreviewStore {
 
     private static int provenanceCount(CampaignManifestV2 m) {
         if (m == null) return 0;
-        return (int) m.customStatBlocks().stream().filter(s -> s.sourceKey() != null && !s.sourceKey().isBlank()).count()
-                + (int) m.adventures().stream().filter(a -> a.sourceAttribution() != null && !a.sourceAttribution().isBlank()).count();
+        int count = 0;
+        if (m.customStatBlocks() != null) count += (int) m.customStatBlocks().stream().filter(s -> s.sourceKey() != null && !s.sourceKey().isBlank()).count();
+        if (m.customSpells() != null) count += (int) m.customSpells().stream().filter(s -> s.provenance() != null).count();
+        if (m.customConditions() != null) count += (int) m.customConditions().stream().filter(s -> s.provenance() != null).count();
+        if (m.customRules() != null) count += (int) m.customRules().stream().filter(s -> s.provenance() != null).count();
+        if (m.customEquipment() != null) count += (int) m.customEquipment().stream().filter(s -> s.provenance() != null).count();
+        if (m.customMagicItems() != null) count += (int) m.customMagicItems().stream().filter(s -> s.provenance() != null).count();
+        if (m.customClasses() != null) count += (int) m.customClasses().stream().filter(s -> s.provenance() != null).count();
+        if (m.customSpecies() != null) count += (int) m.customSpecies().stream().filter(s -> s.provenance() != null).count();
+        if (m.customBackgrounds() != null) count += (int) m.customBackgrounds().stream().filter(s -> s.provenance() != null).count();
+        if (m.customFeats() != null) count += (int) m.customFeats().stream().filter(s -> s.provenance() != null).count();
+        if (m.adventures() != null) count += (int) m.adventures().stream().filter(a -> a.sourceAttribution() != null && !a.sourceAttribution().isBlank()).count();
+        return count;
     }
 
     private static java.util.List<CampaignExportExclusion> exclusions(CampaignManifestV2 m) {

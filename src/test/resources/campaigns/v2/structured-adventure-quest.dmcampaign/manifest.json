@@ -16,11 +16,49 @@
     "settings": {
       "levelingMode": "XP",
       "calendar": {
-        "monthLengths": [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        "monthNames": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-        "weekdayNames": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        "monthLengths": [
+          31,
+          28,
+          31,
+          30,
+          31,
+          30,
+          31,
+          31,
+          30,
+          31,
+          30,
+          31
+        ],
+        "monthNames": [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December"
+        ],
+        "weekdayNames": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ]
       },
-      "currentDate": { "year": 1492, "month": 0, "day": 1 }
+      "currentDate": {
+        "year": 1492,
+        "month": 0,
+        "day": 1
+      }
     }
   },
   "assets": [],
@@ -95,44 +133,106 @@
               "summary": "The village where the quest begins",
               "sourceLocator": "book:5",
               "mapRegionKey": "village-center",
-              "tags": ["start", "social"],
+              "tags": [
+                "start",
+                "social"
+              ],
               "sections": [
-                { "kind": "READ_ALOUD", "label": "Read Aloud", "body": "The village square is bustling with activity.", "sourceLocator": "book:5", "sortOrder": 1 },
-                { "kind": "DM_ADVICE", "label": "DM Note", "body": "If players ask about the elder, point them to the town hall.", "sortOrder": 2 },
-                { "kind": "SECRET", "body": "A hidden trapdoor is under the fountain", "sortOrder": 3 },
-                { "kind": "TRAP", "label": "Fountain trap", "body": "The trapdoor drops into a shallow pit (1d6 bludgeoning).", "sortOrder": 4 }
+                {
+                  "kind": "READ_ALOUD",
+                  "label": "Read Aloud",
+                  "body": "The village square is bustling with activity.",
+                  "sourceLocator": "book:5",
+                  "sortOrder": 1
+                },
+                {
+                  "kind": "DM_ADVICE",
+                  "label": "DM Note",
+                  "body": "If players ask about the elder, point them to the town hall.",
+                  "sortOrder": 2
+                },
+                {
+                  "kind": "SECRET",
+                  "body": "A hidden trapdoor is under the fountain",
+                  "sortOrder": 3
+                },
+                {
+                  "kind": "TRAP",
+                  "label": "Fountain trap",
+                  "body": "The trapdoor drops into a shallow pit (1d6 bludgeoning).",
+                  "sortOrder": 4
+                }
               ],
               "checks": [
                 {
-                  "label": "Investigate", "ability": "wis", "skill": "perception",
+                  "label": "Investigate",
+                  "ability": "wis",
+                  "skill": "perception",
                   "visibility": "PLAYER_FACING",
-                  "success": "You notice faint footprints leading north", "failure": "You see nothing unusual",
+                  "success": "You notice faint footprints leading north",
+                  "failure": "You see nothing unusual",
                   "partial": "You see some disturbed dust",
-                  "sourceLocator": "book:5", "sortOrder": 1
+                  "sourceLocator": "book:5",
+                  "sortOrder": 1
                 }
               ],
               "participants": [
                 {
-                  "displayName": "Town Guard", "quantity": 2, "disposition": "FRIENDLY",
+                  "displayName": "Town Guard",
+                  "quantity": 2,
+                  "disposition": "FRIENDLY",
                   "placementHint": "At the gate",
-                  "statblockRef": { "scope": "CATALOG", "type": "STATBLOCK", "ruleset": "SRD_5_2", "sourceKey": "bandit" },
-                  "sourceLocator": "book:5", "sortOrder": 1
+                  "statblockRef": {
+                    "scope": "CATALOG",
+                    "type": "STATBLOCK",
+                    "ruleset": "SRD_5_2",
+                    "sourceKey": "bandit"
+                  },
+                  "sourceLocator": "book:5",
+                  "sortOrder": 1
                 }
               ],
               "transitions": [
-                { "key": "t-go-forest", "kind": "CHOICE", "label": "Head into the forest", "targetSceneRef": { "scope": "PACKAGE", "type": "SCENE", "key": "sc-forest" }, "condition": "if day time", "dmNote": "Forest is dangerous at night", "sourceLocator": "book:6", "sortOrder": 1 },
-                { "key": "t-leave", "kind": "EXIT", "label": "Leave the village", "externalDestination": "Overworld", "sortOrder": 2 }
+                {
+                  "key": "t-go-forest",
+                  "kind": "CHOICE",
+                  "label": "Head into the forest",
+                  "targetSceneRef": {
+                    "scope": "PACKAGE",
+                    "type": "SCENE",
+                    "key": "sc-forest"
+                  },
+                  "condition": "if day time",
+                  "dmNote": "Forest is dangerous at night",
+                  "sourceLocator": "book:6",
+                  "sortOrder": 1
+                },
+                {
+                  "key": "t-leave",
+                  "kind": "EXIT",
+                  "label": "Leave the village",
+                  "externalDestination": "Overworld",
+                  "sortOrder": 2
+                }
               ],
               "links": [
                 {
                   "role": "NPC",
-                  "targetRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-village-elder" },
+                  "targetRef": {
+                    "scope": "PACKAGE",
+                    "type": "NOTE",
+                    "key": "note-village-elder"
+                  },
                   "displayText": "Village Elder",
                   "sortOrder": 1
                 },
                 {
                   "role": "REFERENCE",
-                  "targetRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-village-lore" },
+                  "targetRef": {
+                    "scope": "PACKAGE",
+                    "type": "NOTE",
+                    "key": "note-village-lore"
+                  },
                   "displayText": "Village lore",
                   "sortOrder": 2
                 }
@@ -146,16 +246,38 @@
               "sortOrder": 2,
               "sourceLocator": "book:7",
               "sections": [
-                { "kind": "READ_ALOUD", "body": "Tall trees block out the sun.", "sortOrder": 1 },
-                { "kind": "ENVIRONMENT", "label": "Forest Terrain", "body": "Dense undergrowth makes movement difficult.", "sortOrder": 2 },
-                { "kind": "HAZARD", "label": "Poison ivy", "body": "Contact requires a DC 12 Constitution save.", "sortOrder": 3 }
+                {
+                  "kind": "READ_ALOUD",
+                  "body": "Tall trees block out the sun.",
+                  "sortOrder": 1
+                },
+                {
+                  "kind": "ENVIRONMENT",
+                  "label": "Forest Terrain",
+                  "body": "Dense undergrowth makes movement difficult.",
+                  "sortOrder": 2
+                },
+                {
+                  "kind": "HAZARD",
+                  "label": "Poison ivy",
+                  "body": "Contact requires a DC 12 Constitution save.",
+                  "sortOrder": 3
+                }
               ],
               "participants": [
                 {
-                  "displayName": "Goblin Scout", "quantity": 3, "disposition": "HOSTILE",
+                  "displayName": "Goblin Scout",
+                  "quantity": 3,
+                  "disposition": "HOSTILE",
                   "placementHint": "Hidden in bushes",
-                  "statblockRef": { "scope": "CATALOG", "type": "STATBLOCK", "ruleset": "SRD_5_2", "sourceKey": "bandit" },
-                  "sourceLocator": "book:7", "sortOrder": 1
+                  "statblockRef": {
+                    "scope": "CATALOG",
+                    "type": "STATBLOCK",
+                    "ruleset": "SRD_5_2",
+                    "sourceKey": "bandit"
+                  },
+                  "sourceLocator": "book:7",
+                  "sortOrder": 1
                 }
               ],
               "statblockRefs": [],
@@ -173,28 +295,77 @@
       "status": "ACTIVE",
       "summary": "Find the lost treasure hidden in the dark forest.",
       "sourceLocator": "book:3",
-      "tags": ["main", "treasure"],
+      "tags": [
+        "main",
+        "treasure"
+      ],
       "rewards": "1000 XP and a magic item",
       "prerequisites": "Must be level 3+",
       "outcomeNotes": "Treasure contains a map to an even greater prize.",
       "links": [
         {
           "role": "GIVER",
-          "targetRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-village-elder" },
+          "targetRef": {
+            "scope": "PACKAGE",
+            "type": "NOTE",
+            "key": "note-village-elder"
+          },
           "displayText": "Village Elder",
           "sortOrder": 1
         },
         {
           "role": "RELATED_SCENE",
-          "targetRef": { "scope": "PACKAGE", "type": "SCENE", "key": "sc-forest" },
+          "targetRef": {
+            "scope": "PACKAGE",
+            "type": "SCENE",
+            "key": "sc-forest"
+          },
           "displayText": "Dark Forest",
           "sortOrder": 2
         }
       ],
       "objectives": [
-        { "key": "obj-find-cave", "title": "Find the hidden cave", "description": "Search the forest for the entrance", "status": "NOT_STARTED", "completionMode": "ALL", "sortOrder": 1, "sourceLocator": "book:3" },
-        { "key": "obj-defeat-guardian", "title": "Defeat the guardian", "description": "The cave is guarded by a powerful creature", "status": "NOT_STARTED", "completionMode": "ALL", "sortOrder": 2, "prerequisiteRefs": [{ "scope": "PACKAGE", "type": "OBJECTIVE", "key": "obj-find-cave" }], "sourceLocator": "book:4" },
-        { "key": "obj-retrieve-treasure", "title": "Retrieve the treasure", "description": "Claim the treasure from the cave", "status": "NOT_STARTED", "completionMode": "ANY", "sortOrder": 3, "prerequisiteRefs": [{ "scope": "PACKAGE", "type": "OBJECTIVE", "key": "obj-find-cave" }], "sourceLocator": "book:4" }
+        {
+          "key": "obj-find-cave",
+          "title": "Find the hidden cave",
+          "description": "Search the forest for the entrance",
+          "status": "NOT_STARTED",
+          "completionMode": "ALL",
+          "sortOrder": 1,
+          "sourceLocator": "book:3"
+        },
+        {
+          "key": "obj-defeat-guardian",
+          "title": "Defeat the guardian",
+          "description": "The cave is guarded by a powerful creature",
+          "status": "NOT_STARTED",
+          "completionMode": "ALL",
+          "sortOrder": 2,
+          "prerequisiteRefs": [
+            {
+              "scope": "PACKAGE",
+              "type": "OBJECTIVE",
+              "key": "obj-find-cave"
+            }
+          ],
+          "sourceLocator": "book:4"
+        },
+        {
+          "key": "obj-retrieve-treasure",
+          "title": "Retrieve the treasure",
+          "description": "Claim the treasure from the cave",
+          "status": "NOT_STARTED",
+          "completionMode": "ANY",
+          "sortOrder": 3,
+          "prerequisiteRefs": [
+            {
+              "scope": "PACKAGE",
+              "type": "OBJECTIVE",
+              "key": "obj-find-cave"
+            }
+          ],
+          "sourceLocator": "book:4"
+        }
       ],
       "createdAt": "2025-07-01T10:00:00Z"
     },
@@ -202,9 +373,18 @@
       "key": "quest-side",
       "title": "Side Quest: Help the Village",
       "status": "ACTIVE",
-      "tags": ["side"],
+      "tags": [
+        "side"
+      ],
       "objectives": [
-        { "key": "obj-find-supplies", "title": "Find supplies", "status": "NOT_STARTED", "completionMode": "ALL", "sortOrder": 1, "sourceLocator": "book:2" }
+        {
+          "key": "obj-find-supplies",
+          "title": "Find supplies",
+          "status": "NOT_STARTED",
+          "completionMode": "ALL",
+          "sortOrder": 1,
+          "sourceLocator": "book:2"
+        }
       ],
       "createdAt": "2025-07-01T10:00:00Z"
     }
@@ -215,19 +395,31 @@
     "startedAt": "2025-07-16T18:00:00Z",
     "presentationMode": "CURTAIN",
     "attendeeRefs": [
-      { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-aria" }
+      {
+        "scope": "PACKAGE",
+        "type": "PARTY_MEMBER",
+        "key": "party-member-aria"
+      }
     ],
     "sceneVisits": [
       {
         "key": "visit-village",
-        "sceneRef": { "scope": "PACKAGE", "type": "SCENE", "key": "sc-village" },
+        "sceneRef": {
+          "scope": "PACKAGE",
+          "type": "SCENE",
+          "key": "sc-village"
+        },
         "visitedAt": "2025-07-16T18:10:00Z"
       }
     ],
     "objectiveChanges": [
       {
         "key": "obj-change-accept",
-        "objectiveRef": { "scope": "PACKAGE", "type": "OBJECTIVE", "key": "obj-find-cave" },
+        "objectiveRef": {
+          "scope": "PACKAGE",
+          "type": "OBJECTIVE",
+          "key": "obj-find-cave"
+        },
         "previousStatus": "NOT_STARTED",
         "newStatus": "ACTIVE",
         "changedAt": "2025-07-16T18:05:00Z"
@@ -237,7 +429,11 @@
   "annotations": [
     {
       "key": "ann-check-dc",
-      "ownerRef": { "scope": "PACKAGE", "type": "SCENE", "key": "sc-village" },
+      "ownerRef": {
+        "scope": "PACKAGE",
+        "type": "SCENE",
+        "key": "sc-village"
+      },
       "fieldPath": "/adventures/0/chapters/0/scenes/0/checks/0/dc",
       "message": "DC not stated in source; left unresolved",
       "confidence": "MEDIUM",
@@ -246,5 +442,14 @@
       "createdAt": "2025-07-01T10:00:00Z"
     }
   ],
-  "diceRolls": []
+  "diceRolls": [],
+  "customSpells": [],
+  "customConditions": [],
+  "customRules": [],
+  "customEquipment": [],
+  "customMagicItems": [],
+  "customClasses": [],
+  "customSpecies": [],
+  "customBackgrounds": [],
+  "customFeats": []
 }

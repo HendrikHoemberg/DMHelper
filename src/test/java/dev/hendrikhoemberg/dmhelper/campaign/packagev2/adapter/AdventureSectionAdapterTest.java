@@ -196,11 +196,13 @@ class AdventureSectionAdapterTest {
     @Test
     void importsAdventuresWithChaptersAndScenes() {
         var scenes = List.of(new SceneDto("sc-key", "Room 1", "body", "DONE", 3,
-                null, null, null, null, null, null, null, null, null, null, null, null, null, null));
+                null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null));
         var chapters = List.of(new ChapterDto("ch-key", "Chapter X", "intro text", 2, scenes));
         var adventures = List.of(new AdventureDto("adv-key", "Imported Adv", "desc", "src", 1, chapters, null));
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null,
                 adventures, null, null, List.of(), List.of()
         );
@@ -264,6 +266,7 @@ class AdventureSectionAdapterTest {
         var adventures = List.of(new AdventureDto("adv-key", "Adv", null, null, 0, chapters, null));
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null,
                 adventures, null, null, List.of(), List.of()
         );
@@ -412,6 +415,15 @@ class AdventureSectionAdapterTest {
         a.campaign(new CampaignManifestV2.CampaignDto("campaign-key", "test", null, null, null, null));
         a.party(List.of());
         a.customStatBlocks(List.of());
+        a.customSpells(List.of());
+        a.customConditions(List.of());
+        a.customRules(List.of());
+        a.customEquipment(List.of());
+        a.customMagicItems(List.of());
+        a.customClasses(List.of());
+        a.customSpecies(List.of());
+        a.customBackgrounds(List.of());
+        a.customFeats(List.of());
         a.handouts(List.of());
         a.maps(List.of());
         a.encounters(List.of());

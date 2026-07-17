@@ -174,7 +174,9 @@ class TreasurySectionAdapterTest {
         });
 
         var manifest = new CampaignManifestV2(
-                2, null, null, null, null, null, null, null, null, null, null,
+                2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null,
                 List.of(
                         new CampaignManifestV2.AssignmentDto(
                                 "bag", null,
@@ -209,6 +211,15 @@ class TreasurySectionAdapterTest {
         a.campaign(new CampaignManifestV2.CampaignDto("key", "test", null, null, null, null));
         a.party(List.of());
         a.customStatBlocks(List.of());
+        a.customSpells(List.of());
+        a.customConditions(List.of());
+        a.customRules(List.of());
+        a.customEquipment(List.of());
+        a.customMagicItems(List.of());
+        a.customClasses(List.of());
+        a.customSpecies(List.of());
+        a.customBackgrounds(List.of());
+        a.customFeats(List.of());
         a.handouts(List.of());
         a.maps(List.of());
         a.encounters(List.of());

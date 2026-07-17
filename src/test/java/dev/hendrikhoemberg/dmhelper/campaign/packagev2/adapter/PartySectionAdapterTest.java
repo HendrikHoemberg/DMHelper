@@ -214,7 +214,9 @@ class PartySectionAdapterTest {
                                 Map.of("1", 2, "2", 1)
                         )
                 )),
-                null, null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of()
+                null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, List.of(), List.of()
         );
 
         var importContext = new CampaignImportContext(
@@ -271,6 +273,15 @@ class PartySectionAdapterTest {
     private void fillRest(CampaignManifestAssembler a) {
         a.campaign(new CampaignManifestV2.CampaignDto("campaign-key", "test", null, null, null, null));
         a.customStatBlocks(List.of());
+        a.customSpells(List.of());
+        a.customConditions(List.of());
+        a.customRules(List.of());
+        a.customEquipment(List.of());
+        a.customMagicItems(List.of());
+        a.customClasses(List.of());
+        a.customSpecies(List.of());
+        a.customBackgrounds(List.of());
+        a.customFeats(List.of());
         a.handouts(List.of());
         a.maps(List.of());
         a.encounters(List.of());

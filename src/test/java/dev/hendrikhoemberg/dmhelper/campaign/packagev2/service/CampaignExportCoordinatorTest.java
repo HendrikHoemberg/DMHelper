@@ -60,6 +60,15 @@ class CampaignExportCoordinatorTest {
                     "INVALID KEY", "Campaign", null, java.time.Instant.EPOCH, null, null));
             target.party(List.of());
             target.customStatBlocks(List.of());
+            target.customSpells(List.of());
+            target.customConditions(List.of());
+            target.customRules(List.of());
+            target.customEquipment(List.of());
+            target.customMagicItems(List.of());
+            target.customClasses(List.of());
+            target.customSpecies(List.of());
+            target.customBackgrounds(List.of());
+            target.customFeats(List.of());
             target.handouts(List.of());
             target.maps(List.of());
             target.encounters(List.of());

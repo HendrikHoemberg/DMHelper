@@ -16,13 +16,55 @@
     "settings": {
       "levelingMode": "XP",
       "calendar": {
-        "monthLengths": [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        "monthNames": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-        "weekdayNames": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        "monthLengths": [
+          31,
+          28,
+          31,
+          30,
+          31,
+          30,
+          31,
+          31,
+          30,
+          31,
+          30,
+          31
+        ],
+        "monthNames": [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December"
+        ],
+        "weekdayNames": [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday"
+        ]
       },
-      "currentDate": { "year": 1492, "month": 3, "day": 15 }
+      "currentDate": {
+        "year": 1492,
+        "month": 3,
+        "day": 15
+      }
     },
-    "currentSceneRef": { "scope": "PACKAGE", "type": "SCENE", "key": "scene-crypt-entry" }
+    "currentSceneRef": {
+      "scope": "PACKAGE",
+      "type": "SCENE",
+      "key": "scene-crypt-entry"
+    }
   },
   "assets": [
     {
@@ -60,34 +102,91 @@
       "active": true,
       "sheet": {
         "key": "sheet-aria",
-        "abilityScores": { "str": 10, "dex": 18, "con": 14, "int": 12, "wis": 13, "cha": 8 },
+        "abilityScores": {
+          "str": 10,
+          "dex": 18,
+          "con": 14,
+          "int": 12,
+          "wis": 13,
+          "cha": 8
+        },
         "classLevels": [
           {
-            "classRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_rogue" },
+            "classRef": {
+              "scope": "CATALOG",
+              "type": "CLASS",
+              "ruleset": "SRD_5_2",
+              "sourceKey": "srd-2024_rogue"
+            },
             "level": 5,
-            "hitDieRolls": [8, 5, 6, 7, 4]
+            "hitDieRolls": [
+              8,
+              5,
+              6,
+              7,
+              4
+            ]
           }
         ],
-        "proficiencies": { "stealth": "expertise", "perception": "proficient" },
-        "speciesRef": { "scope": "CATALOG", "type": "SPECIES", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_human" },
-        "backgroundRef": { "scope": "CATALOG", "type": "BACKGROUND", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_criminal" },
+        "proficiencies": {
+          "stealth": "expertise",
+          "perception": "proficient"
+        },
+        "speciesRef": {
+          "scope": "CATALOG",
+          "type": "SPECIES",
+          "ruleset": "SRD_5_2",
+          "sourceKey": "srd-2024_human"
+        },
+        "backgroundRef": {
+          "scope": "CATALOG",
+          "type": "BACKGROUND",
+          "ruleset": "SRD_5_2",
+          "sourceKey": "srd-2024_criminal"
+        },
         "featRefs": [
-          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_alert" }
+          {
+            "scope": "CATALOG",
+            "type": "FEAT",
+            "ruleset": "SRD_5_2",
+            "sourceKey": "srd-2024_alert"
+          }
         ],
         "xp": 6500,
-        "overrides": { "speed": 35 },
+        "overrides": {
+          "speed": 35
+        },
         "hitDiceUsed": 2,
         "resources": [
-          { "key": "resource-aria-cunning-action", "name": "Cunning Action", "maxUses": 1, "currentUses": 1, "resetRule": "SHORT_REST" }
+          {
+            "key": "resource-aria-cunning-action",
+            "name": "Cunning Action",
+            "maxUses": 1,
+            "currentUses": 1,
+            "resetRule": "SHORT_REST"
+          }
         ],
         "spells": [
           {
-            "spellRef": { "scope": "CATALOG", "type": "SPELL", "ruleset": "SRD_5_2", "sourceKey": "cure-wounds" },
+            "spellRef": {
+              "scope": "CATALOG",
+              "type": "SPELL",
+              "ruleset": "SRD_5_2",
+              "sourceKey": "cure-wounds"
+            },
             "prepared": true,
-            "sourceClassRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_cleric" }
+            "sourceClassRef": {
+              "scope": "CATALOG",
+              "type": "CLASS",
+              "ruleset": "SRD_5_2",
+              "sourceKey": "srd-2024_cleric"
+            }
           }
         ],
-        "spellSlotsUsed": { "1": 2, "2": 1 }
+        "spellSlotsUsed": {
+          "1": 2,
+          "2": 1
+        }
       }
     }
   ],
@@ -103,8 +202,15 @@
       "ac": 15,
       "hp": "21 (6d6)",
       "speed": "30 ft.",
-      "strScore": 10, "dexScore": 14, "conScore": 12, "intScore": 10, "wisScore": 10, "chaScore": 8,
-      "strSave": 2, "dexSave": 4, "conSave": 3,
+      "strScore": 10,
+      "dexScore": 14,
+      "conScore": 12,
+      "intScore": 10,
+      "wisScore": 10,
+      "chaScore": 8,
+      "strSave": 2,
+      "dexSave": 4,
+      "conSave": 3,
       "skills": "Stealth +6, Perception +2",
       "damageVulnerabilities": "radiant",
       "damageResistances": "",
@@ -127,7 +233,10 @@
     {
       "key": "handout-warning-plaque",
       "title": "Warning Plaque",
-      "tags": ["lore", "crypt"],
+      "tags": [
+        "lore",
+        "crypt"
+      ],
       "assetRef": "asset-warning-plaque",
       "contentType": "image/png",
       "dmOnly": false,
@@ -141,48 +250,139 @@
       "movementMode": "GRID",
       "showGrid": true,
       "sortOrder": 0,
-      "grid": { "w": 20, "h": 15, "cellPx": 48, "gridType": "SQUARE" },
+      "grid": {
+        "w": 20,
+        "h": 15,
+        "cellPx": 48,
+        "gridType": "SQUARE"
+      },
       "document": {
         "schemaVersion": 2,
-        "grid": { "width": 20, "height": 15, "cellSizePx": 48, "gridType": "square", "movementMode": "GRID", "showGrid": true },
+        "grid": {
+          "width": 20,
+          "height": 15,
+          "cellSizePx": 48,
+          "gridType": "square",
+          "movementMode": "GRID",
+          "showGrid": true
+        },
         "layers": [
           {
-            "id": "terrain", "name": "Terrain", "type": "TERRAIN",
-            "visible": true, "locked": false,
-            "cells": [{ "col": 5, "row": 5, "terrain": "wall" }],
+            "id": "terrain",
+            "name": "Terrain",
+            "type": "TERRAIN",
+            "visible": true,
+            "locked": false,
+            "cells": [
+              {
+                "col": 5,
+                "row": 5,
+                "terrain": "wall"
+              }
+            ],
             "shapes": []
           },
           {
-            "id": "objects", "name": "Objects", "type": "OBJECTS",
-            "visible": true, "locked": false,
+            "id": "objects",
+            "name": "Objects",
+            "type": "OBJECTS",
+            "visible": true,
+            "locked": false,
             "cells": [],
             "shapes": [
-              { "type": "rect", "points": [0, 0, 5, 5], "fill": "#ff0000", "stroke": "#000", "strokeWidth": 1, "label": "altar" }
+              {
+                "type": "rect",
+                "points": [
+                  0,
+                  0,
+                  5,
+                  5
+                ],
+                "fill": "#ff0000",
+                "stroke": "#000",
+                "strokeWidth": 1,
+                "label": "altar"
+              }
             ]
           },
           {
-            "id": "annotations", "name": "Annotations (DM only)", "type": "ANNOTATIONS",
-            "visible": true, "locked": true,
+            "id": "annotations",
+            "name": "Annotations (DM only)",
+            "type": "ANNOTATIONS",
+            "visible": true,
+            "locked": true,
             "cells": [],
             "shapes": [
-              { "type": "rect", "points": [2, 2, 3, 3], "fill": "#ffff00", "stroke": "#000", "strokeWidth": 1, "label": "trap" }
+              {
+                "type": "rect",
+                "points": [
+                  2,
+                  2,
+                  3,
+                  3
+                ],
+                "fill": "#ffff00",
+                "stroke": "#000",
+                "strokeWidth": 1,
+                "label": "trap"
+              }
             ]
           },
           {
-            "id": "bg", "name": "Background", "type": "IMAGE",
-            "visible": true, "locked": true,
-            "cells": [], "shapes": [],
-            "image": { "assetRef": "asset-crypt-map", "x": 0, "y": 0, "width": 20, "height": 15 }
+            "id": "bg",
+            "name": "Background",
+            "type": "IMAGE",
+            "visible": true,
+            "locked": true,
+            "cells": [],
+            "shapes": [],
+            "image": {
+              "assetRef": "asset-crypt-map",
+              "x": 0,
+              "y": 0,
+              "width": 20,
+              "height": 15
+            }
           }
         ],
         "primitives": [
-          { "type": "ROOM", "startCol": 2, "startRow": 2, "endCol": 10, "endRow": 8 },
-          { "type": "CORRIDOR", "startCol": 10, "startRow": 4, "endCol": 15, "endRow": 4 },
-          { "type": "DOOR", "startCol": 10, "startRow": 5, "endCol": 10, "endRow": 5 },
-          { "type": "REGION", "startCol": 0, "startRow": 0, "endCol": 1, "endRow": 1, "terrain": "moss" }
+          {
+            "type": "ROOM",
+            "startCol": 2,
+            "startRow": 2,
+            "endCol": 10,
+            "endRow": 8
+          },
+          {
+            "type": "CORRIDOR",
+            "startCol": 10,
+            "startRow": 4,
+            "endCol": 15,
+            "endRow": 4
+          },
+          {
+            "type": "DOOR",
+            "startCol": 10,
+            "startRow": 5,
+            "endCol": 10,
+            "endRow": 5
+          },
+          {
+            "type": "REGION",
+            "startCol": 0,
+            "startRow": 0,
+            "endCol": 1,
+            "endRow": 1,
+            "terrain": "moss"
+          }
         ],
         "customTerrain": [
-          { "key": "moss", "name": "Moss", "fill": "#2a6e3a", "walkable": true }
+          {
+            "key": "moss",
+            "name": "Moss",
+            "fill": "#2a6e3a",
+            "walkable": true
+          }
         ]
       },
       "tokens": [
@@ -196,7 +396,11 @@
           "sizeCols": 1,
           "sizeRows": 1,
           "hidden": false,
-          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
+          "statBlockRef": {
+            "scope": "PACKAGE",
+            "type": "STATBLOCK",
+            "key": "statblock-goblin-captain"
+          },
           "currentHp": 21,
           "maxHp": 21,
           "dead": false,
@@ -221,8 +425,16 @@
           "tempHp": 0,
           "kind": "MONSTER",
           "groupLeader": false,
-          "tokenRef": { "scope": "PACKAGE", "type": "TOKEN", "key": "token-goblin-1" },
-          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
+          "tokenRef": {
+            "scope": "PACKAGE",
+            "type": "TOKEN",
+            "key": "token-goblin-1"
+          },
+          "statBlockRef": {
+            "scope": "PACKAGE",
+            "type": "STATBLOCK",
+            "key": "statblock-goblin-captain"
+          },
           "defeated": false,
           "hidden": false,
           "conditionsJson": "[]",
@@ -245,7 +457,11 @@
           "tempHp": 5,
           "kind": "PC",
           "groupLeader": true,
-          "partyMemberRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-aria" },
+          "partyMemberRef": {
+            "scope": "PACKAGE",
+            "type": "PARTY_MEMBER",
+            "key": "party-member-aria"
+          },
           "defeated": false,
           "hidden": false,
           "conditionsJson": "[]",
@@ -264,7 +480,11 @@
       "logSequence": 0,
       "lairActionTriggered": false,
       "combatLog": [],
-      "mapRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-crypt" }
+      "mapRef": {
+        "scope": "PACKAGE",
+        "type": "MAP",
+        "key": "map-crypt"
+      }
     }
   ],
   "notes": [
@@ -279,7 +499,11 @@
       "links": [
         {
           "targetType": "HANDOUT",
-          "targetRef": { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-warning-plaque" },
+          "targetRef": {
+            "scope": "PACKAGE",
+            "type": "HANDOUT",
+            "key": "handout-warning-plaque"
+          },
           "displayText": "See warning plaque",
           "resolved": true
         }
@@ -289,13 +513,21 @@
   "quickNotes": [
     {
       "key": "quicknote-campaign",
-      "targetRef": { "scope": "PACKAGE", "type": "CAMPAIGN", "key": "current-surface-campaign" },
+      "targetRef": {
+        "scope": "PACKAGE",
+        "type": "CAMPAIGN",
+        "key": "current-surface-campaign"
+      },
       "body": "Campaign level quick note",
       "createdAt": "2025-06-15T14:35:00Z"
     },
     {
       "key": "quicknote-map",
-      "targetRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-crypt" },
+      "targetRef": {
+        "scope": "PACKAGE",
+        "type": "MAP",
+        "key": "map-crypt"
+      },
       "body": "Map note about the crypt",
       "createdAt": "2025-06-15T14:36:00Z"
     }
@@ -303,8 +535,17 @@
   "assignments": [
     {
       "key": "assignment-bag-of-holding",
-      "holderRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-aria" },
-      "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_1", "sourceKey": "bag-of-holding" },
+      "holderRef": {
+        "scope": "PACKAGE",
+        "type": "PARTY_MEMBER",
+        "key": "party-member-aria"
+      },
+      "magicItemRef": {
+        "scope": "CATALOG",
+        "type": "MAGIC_ITEM",
+        "ruleset": "SRD_5_1",
+        "sourceKey": "bag-of-holding"
+      },
       "quantity": 1,
       "attuned": false
     }
@@ -322,7 +563,11 @@
       "currency": "gp",
       "holder": "party",
       "note": "Crypt treasure",
-      "itemAssignmentRef": { "scope": "PACKAGE", "type": "ASSIGNMENT", "key": "assignment-bag-of-holding" }
+      "itemAssignmentRef": {
+        "scope": "PACKAGE",
+        "type": "ASSIGNMENT",
+        "key": "assignment-bag-of-holding"
+      }
     }
   ],
   "timelineEvents": [
@@ -333,7 +578,11 @@
       "inGameDay": 15,
       "title": "Entered the Crypt",
       "body": "The party discovered the hidden entrance.",
-      "noteRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-crypt-lore" }
+      "noteRef": {
+        "scope": "PACKAGE",
+        "type": "NOTE",
+        "key": "note-crypt-lore"
+      }
     }
   ],
   "adventures": [
@@ -357,14 +606,33 @@
               "body": "The hallway is dark.",
               "status": "UNVISITED",
               "sortOrder": 1,
-              "mapRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-crypt" },
-              "pin": { "x": 200, "y": 150 },
-              "encounterRef": { "scope": "PACKAGE", "type": "ENCOUNTER", "key": "encounter-crypt-guardians" },
+              "mapRef": {
+                "scope": "PACKAGE",
+                "type": "MAP",
+                "key": "map-crypt"
+              },
+              "pin": {
+                "x": 200,
+                "y": 150
+              },
+              "encounterRef": {
+                "scope": "PACKAGE",
+                "type": "ENCOUNTER",
+                "key": "encounter-crypt-guardians"
+              },
               "statblockRefs": [
-                { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" }
+                {
+                  "scope": "PACKAGE",
+                  "type": "STATBLOCK",
+                  "key": "statblock-goblin-captain"
+                }
               ],
               "handoutRefs": [
-                { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-warning-plaque" }
+                {
+                  "scope": "PACKAGE",
+                  "type": "HANDOUT",
+                  "key": "handout-warning-plaque"
+                }
               ]
             }
           ]
@@ -377,13 +645,33 @@
     {
       "key": "dice-init-aria",
       "expression": "1d20+4",
-      "rolls": [{ "die": "d20", "values": [15] }],
+      "rolls": [
+        {
+          "die": "d20",
+          "values": [
+            15
+          ]
+        }
+      ],
       "modifier": 4,
       "total": 19,
       "advantage": false,
       "disadvantage": false,
-      "encounterRef": { "scope": "PACKAGE", "type": "ENCOUNTER", "key": "encounter-crypt-guardians" },
+      "encounterRef": {
+        "scope": "PACKAGE",
+        "type": "ENCOUNTER",
+        "key": "encounter-crypt-guardians"
+      },
       "createdAt": "2025-06-15T14:31:00Z"
     }
-  ]
+  ],
+  "customSpells": [],
+  "customConditions": [],
+  "customRules": [],
+  "customEquipment": [],
+  "customMagicItems": [],
+  "customClasses": [],
+  "customSpecies": [],
+  "customBackgrounds": [],
+  "customFeats": []
 }

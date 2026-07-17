@@ -266,7 +266,9 @@ class MapSectionAdapterTest {
         srd.setSourceKey("srd-2024_goblin");
 
         var manifest = new CampaignManifestV2(
-                2, null, null, null, null, null, null,
+                2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null,
                 List.of(new MapDto(
                         "map-dungeon", "Dungeon",
                         new MapDto.GridDto(30, 20, 48, "SQUARE"),
@@ -359,7 +361,9 @@ class MapSectionAdapterTest {
         UUID mapId = UUID.randomUUID();
 
         var manifest = new CampaignManifestV2(
-                2, null, null, null, null, null, null,
+                2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null,
                 List.of(new MapDto(
                         "map-world", "World",
                         new MapDto.GridDto(30, 20, 48, "SQUARE"),
@@ -536,6 +540,15 @@ class MapSectionAdapterTest {
         a.campaign(new CampaignManifestV2.CampaignDto("campaign-key", "test", null, null, null, null));
         a.party(List.of());
         a.customStatBlocks(List.of());
+        a.customSpells(List.of());
+        a.customConditions(List.of());
+        a.customRules(List.of());
+        a.customEquipment(List.of());
+        a.customMagicItems(List.of());
+        a.customClasses(List.of());
+        a.customSpecies(List.of());
+        a.customBackgrounds(List.of());
+        a.customFeats(List.of());
         a.handouts(List.of());
         a.encounters(List.of());
         a.notes(List.of());

@@ -21,7 +21,10 @@ class CampaignSemanticComparatorTest {
                 new CampaignManifestV2.CampaignDto(
                         base.campaign().key(), "Changed", base.campaign().description(),
                         base.campaign().createdAt(), base.campaign().settings(), base.campaign().currentSceneRef()),
-                base.assets(), base.party(), base.customStatBlocks(), base.handouts(), base.maps(),
+                base.assets(), base.party(), base.customStatBlocks(), base.customSpells(), base.customConditions(), base.customRules(),
+                base.customEquipment(), base.customMagicItems(), base.customClasses(), base.customSpecies(),
+                base.customBackgrounds(), base.customFeats(),
+                base.handouts(), base.maps(),
                 base.encounters(), base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(),
                 base.timelineEvents(), base.adventures(), base.session(), base.diceRolls(), base.quests(), base.annotations());
 
@@ -40,7 +43,10 @@ class CampaignSemanticComparatorTest {
                 base.metadata().catalogSha256(), base.metadata().exclusions());
         var changed = new CampaignManifestV2(
                 base.formatVersion(), metadata, base.campaign(), base.assets(), base.party(),
-                base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(), base.notes(),
+                base.customStatBlocks(), base.customSpells(), base.customConditions(), base.customRules(),
+                base.customEquipment(), base.customMagicItems(), base.customClasses(), base.customSpecies(),
+                base.customBackgrounds(), base.customFeats(),
+                base.handouts(), base.maps(), base.encounters(), base.notes(),
                 base.quickNotes(), base.assignments(), base.ledgerEntries(), base.timelineEvents(),
                 base.adventures(), base.session(), base.diceRolls(), base.quests(), base.annotations());
 
@@ -100,7 +106,10 @@ class CampaignSemanticComparatorTest {
                 java.util.List.of(chapter), Instant.parse("2025-01-01T00:00:00Z"));
         return new CampaignManifestV2(
                 base.formatVersion(), base.metadata(), base.campaign(), base.assets(), base.party(),
-                base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(), base.notes(),
+                base.customStatBlocks(), base.customSpells(), base.customConditions(), base.customRules(),
+                base.customEquipment(), base.customMagicItems(), base.customClasses(), base.customSpecies(),
+                base.customBackgrounds(), base.customFeats(),
+                base.handouts(), base.maps(), base.encounters(), base.notes(),
                 base.quickNotes(), base.assignments(), base.ledgerEntries(), base.timelineEvents(),
                 java.util.List.of(adventure), base.session(), base.diceRolls(), base.quests(), base.annotations());
     }
@@ -111,7 +120,10 @@ class CampaignSemanticComparatorTest {
                 null, null, null, "GOLD", "GAIN", amount, "gp", null, null, null);
         return new CampaignManifestV2(
                 base.formatVersion(), base.metadata(), base.campaign(), base.assets(), base.party(),
-                base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(), base.notes(),
+                base.customStatBlocks(), base.customSpells(), base.customConditions(), base.customRules(),
+                base.customEquipment(), base.customMagicItems(), base.customClasses(), base.customSpecies(),
+                base.customBackgrounds(), base.customFeats(),
+                base.handouts(), base.maps(), base.encounters(), base.notes(),
                 base.quickNotes(), base.assignments(), java.util.List.of(entry), base.timelineEvents(),
                 base.adventures(), base.session(), base.diceRolls(), base.quests(), base.annotations());
     }

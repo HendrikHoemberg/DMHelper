@@ -131,7 +131,10 @@ class CampaignCompleteRoundTripTest {
                 source.metadata().catalogVersion(), source.metadata().catalogSha256(), exclusions);
         return new CampaignManifestV2(
                 source.formatVersion(), metadata, source.campaign(), source.assets(), source.party(),
-                source.customStatBlocks(), source.handouts(), source.maps(), encounters, source.notes(),
+                source.customStatBlocks(), source.customSpells(), source.customConditions(), source.customRules(),
+                source.customEquipment(), source.customMagicItems(), source.customClasses(), source.customSpecies(),
+                source.customBackgrounds(), source.customFeats(),
+                source.handouts(), source.maps(), encounters, source.notes(),
                 source.quickNotes(), source.assignments(), source.ledgerEntries(), source.timelineEvents(),
                 source.adventures(), source.session(), includeDiceHistory ? source.diceRolls() : List.of(),
                 source.quests(), source.annotations());

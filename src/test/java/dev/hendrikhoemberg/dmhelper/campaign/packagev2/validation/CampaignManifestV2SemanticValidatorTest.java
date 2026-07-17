@@ -36,8 +36,12 @@ class CampaignManifestV2SemanticValidatorTest {
                 new CampaignManifestV2.Metadata("pkg", Instant.parse("2025-01-01T00:00:00Z"), "test", "1", "abc", List.of()),
                 new CampaignManifestV2.CampaignDto("camp", "Test", null, Instant.parse("2025-01-01T00:00:00Z"),
                         new CampaignManifestV2.CampaignSettingsDto(CampaignManifestV2.LevelingMode.XP, null, null), null),
+                List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.of(), List.of(), List.of(),
+                List.of(), List.of(), List.of(),
+                List.of(), List.of(), List.of(),
+                List.of(), List.of(), List.of(),
                 null, List.of(), List.of(), List.of()
         );
     }
@@ -54,7 +58,10 @@ class CampaignManifestV2SemanticValidatorTest {
         var adv2 = new CampaignManifestV2.AdventureDto("dup", "Dup2", null, null, 2, List.of(), null);
         var manifest2 = new CampaignManifestV2(
                 2, manifest.metadata(), manifest.campaign(), manifest.assets(), manifest.party(),
-                manifest.customStatBlocks(), manifest.handouts(), manifest.maps(), manifest.encounters(),
+                manifest.customStatBlocks(), manifest.customSpells(), manifest.customConditions(), manifest.customRules(),
+                manifest.customEquipment(), manifest.customMagicItems(), manifest.customClasses(), manifest.customSpecies(),
+                manifest.customBackgrounds(), manifest.customFeats(),
+                manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), List.of(adv, adv2), manifest.session(), manifest.diceRolls(),
                 manifest.quests(), manifest.annotations()
@@ -70,7 +77,10 @@ class CampaignManifestV2SemanticValidatorTest {
         var handout = new CampaignManifestV2.HandoutDto("h1", "Cross", List.of(), "missing-asset", "image/png", false, false);
         var manifest2 = new CampaignManifestV2(
                 2, manifest.metadata(), manifest.campaign(), List.of(), manifest.party(),
-                manifest.customStatBlocks(), List.of(handout), manifest.maps(), manifest.encounters(),
+                manifest.customStatBlocks(), manifest.customSpells(), manifest.customConditions(), manifest.customRules(),
+                manifest.customEquipment(), manifest.customMagicItems(), manifest.customClasses(), manifest.customSpecies(),
+                manifest.customBackgrounds(), manifest.customFeats(),
+                List.of(handout), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
                 manifest.quests(), manifest.annotations()
@@ -95,7 +105,10 @@ class CampaignManifestV2SemanticValidatorTest {
         var manifest = minimal();
         var manifest2 = new CampaignManifestV2(
                 2, manifest.metadata(), manifest.campaign(), manifest.assets(), manifest.party(),
-                manifest.customStatBlocks(), manifest.handouts(), manifest.maps(), manifest.encounters(),
+                manifest.customStatBlocks(), manifest.customSpells(), manifest.customConditions(), manifest.customRules(),
+                manifest.customEquipment(), manifest.customMagicItems(), manifest.customClasses(), manifest.customSpecies(),
+                manifest.customBackgrounds(), manifest.customFeats(),
+                manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), List.of(adv), manifest.session(), manifest.diceRolls(),
                 manifest.quests(), manifest.annotations()
@@ -115,7 +128,10 @@ class CampaignManifestV2SemanticValidatorTest {
         var adv = new CampaignManifestV2.AdventureDto("dup-adv", "Adv", null, null, 1, List.of(chapter), null);
         var manifest2 = new CampaignManifestV2(
                 2, manifest.metadata(), manifest.campaign(), manifest.assets(), manifest.party(),
-                manifest.customStatBlocks(), manifest.handouts(), manifest.maps(), manifest.encounters(),
+                manifest.customStatBlocks(), manifest.customSpells(), manifest.customConditions(), manifest.customRules(),
+                manifest.customEquipment(), manifest.customMagicItems(), manifest.customClasses(), manifest.customSpecies(),
+                manifest.customBackgrounds(), manifest.customFeats(),
+                manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), List.of(adv), manifest.session(), manifest.diceRolls(),
                 manifest.quests(), manifest.annotations()
@@ -133,7 +149,10 @@ class CampaignManifestV2SemanticValidatorTest {
         var manifest = minimal();
         var manifest2 = new CampaignManifestV2(
                 2, manifest.metadata(), manifest.campaign(), manifest.assets(), manifest.party(),
-                manifest.customStatBlocks(), manifest.handouts(), manifest.maps(), manifest.encounters(),
+                manifest.customStatBlocks(), manifest.customSpells(), manifest.customConditions(), manifest.customRules(),
+                manifest.customEquipment(), manifest.customMagicItems(), manifest.customClasses(), manifest.customSpecies(),
+                manifest.customBackgrounds(), manifest.customFeats(),
+                manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
                 manifest.quests(), List.of(annotation)
@@ -157,7 +176,10 @@ class CampaignManifestV2SemanticValidatorTest {
                 0, -1, 0, null, null, null, false, List.of());
         var manifest2 = new CampaignManifestV2(
                 2, manifest.metadata(), manifest.campaign(), manifest.assets(), manifest.party(),
-                manifest.customStatBlocks(), manifest.handouts(), manifest.maps(), List.of(encounter),
+                manifest.customStatBlocks(), manifest.customSpells(), manifest.customConditions(), manifest.customRules(),
+                manifest.customEquipment(), manifest.customMagicItems(), manifest.customClasses(), manifest.customSpecies(),
+                manifest.customBackgrounds(), manifest.customFeats(),
+                manifest.handouts(), manifest.maps(), List.of(encounter),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
                 manifest.quests(), manifest.annotations()
@@ -178,7 +200,10 @@ class CampaignManifestV2SemanticValidatorTest {
                 null, null, null, null, null, List.of(objA, objB), Instant.parse("2025-01-01T00:00:00Z"));
         var manifest2 = new CampaignManifestV2(
                 2, manifest.metadata(), manifest.campaign(), manifest.assets(), manifest.party(),
-                manifest.customStatBlocks(), manifest.handouts(), manifest.maps(), manifest.encounters(),
+                manifest.customStatBlocks(), manifest.customSpells(), manifest.customConditions(), manifest.customRules(),
+                manifest.customEquipment(), manifest.customMagicItems(), manifest.customClasses(), manifest.customSpecies(),
+                manifest.customBackgrounds(), manifest.customFeats(),
+                manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
                 List.of(quest), manifest.annotations()
@@ -196,7 +221,10 @@ class CampaignManifestV2SemanticValidatorTest {
                 "/field", "msg", "MEDIUM", null, "OPEN", null, Instant.parse("2025-01-01T00:00:00Z"));
         var manifest2 = new CampaignManifestV2(
                 2, manifest.metadata(), manifest.campaign(), manifest.assets(), manifest.party(),
-                manifest.customStatBlocks(), manifest.handouts(), manifest.maps(), manifest.encounters(),
+                manifest.customStatBlocks(), manifest.customSpells(), manifest.customConditions(), manifest.customRules(),
+                manifest.customEquipment(), manifest.customMagicItems(), manifest.customClasses(), manifest.customSpecies(),
+                manifest.customBackgrounds(), manifest.customFeats(),
+                manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
                 manifest.quests(), List.of(annotation)
@@ -270,7 +298,10 @@ class CampaignManifestV2SemanticValidatorTest {
         var base = minimal();
         var manifest = new CampaignManifestV2(
                 2, base.metadata(), base.campaign(), base.assets(), List.of(party),
-                base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(),
+                base.customStatBlocks(), base.customSpells(), base.customConditions(), base.customRules(),
+                base.customEquipment(), base.customMagicItems(), base.customClasses(), base.customSpecies(),
+                base.customBackgrounds(), base.customFeats(),
+                base.handouts(), base.maps(), base.encounters(),
                 base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(),
                 base.timelineEvents(), base.adventures(), base.session(), base.diceRolls(),
                 List.of(quest), base.annotations());
@@ -291,7 +322,10 @@ class CampaignManifestV2SemanticValidatorTest {
         var base = minimal();
         var manifest = new CampaignManifestV2(
                 2, base.metadata(), base.campaign(), base.assets(), base.party(),
-                base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(),
+                base.customStatBlocks(), base.customSpells(), base.customConditions(), base.customRules(),
+                base.customEquipment(), base.customMagicItems(), base.customClasses(), base.customSpecies(),
+                base.customBackgrounds(), base.customFeats(),
+                base.handouts(), base.maps(), base.encounters(),
                 List.of(note), base.quickNotes(), base.assignments(), base.ledgerEntries(),
                 base.timelineEvents(), base.adventures(), base.session(), base.diceRolls(),
                 List.of(quest), base.annotations());
@@ -314,7 +348,10 @@ class CampaignManifestV2SemanticValidatorTest {
         var base = minimal();
         var manifest = new CampaignManifestV2(
                 2, base.metadata(), base.campaign(), base.assets(), base.party(),
-                base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(),
+                base.customStatBlocks(), base.customSpells(), base.customConditions(), base.customRules(),
+                base.customEquipment(), base.customMagicItems(), base.customClasses(), base.customSpecies(),
+                base.customBackgrounds(), base.customFeats(),
+                base.handouts(), base.maps(), base.encounters(),
                 base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(),
                 base.timelineEvents(), List.of(adv), base.session(), base.diceRolls(),
                 base.quests(), base.annotations());
@@ -339,7 +376,10 @@ class CampaignManifestV2SemanticValidatorTest {
         var base = minimal();
         var manifest = new CampaignManifestV2(
                 2, base.metadata(), base.campaign(), base.assets(), base.party(),
-                base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(),
+                base.customStatBlocks(), base.customSpells(), base.customConditions(), base.customRules(),
+                base.customEquipment(), base.customMagicItems(), base.customClasses(), base.customSpecies(),
+                base.customBackgrounds(), base.customFeats(),
+                base.handouts(), base.maps(), base.encounters(),
                 List.of(note), base.quickNotes(), base.assignments(), base.ledgerEntries(),
                 base.timelineEvents(), List.of(adv), base.session(), base.diceRolls(),
                 base.quests(), base.annotations());
@@ -364,7 +404,10 @@ class CampaignManifestV2SemanticValidatorTest {
         var m = minimal();
         return new CampaignManifestV2(
                 2, m.metadata(), m.campaign(), m.assets(), m.party(),
-                m.customStatBlocks(), m.handouts(), m.maps(), m.encounters(),
+                m.customStatBlocks(), m.customSpells(), m.customConditions(), m.customRules(),
+                m.customEquipment(), m.customMagicItems(), m.customClasses(), m.customSpecies(),
+                m.customBackgrounds(), m.customFeats(),
+                m.handouts(), m.maps(), m.encounters(),
                 m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
                 m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
                 quests, m.annotations());

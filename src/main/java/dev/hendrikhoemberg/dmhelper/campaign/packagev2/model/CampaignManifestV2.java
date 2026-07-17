@@ -1,10 +1,12 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationConfidence;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.dice.DiceResult;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapLayerDto;
+import dev.hendrikhoemberg.dmhelper.library.data.LicenseClassification;
 import tools.jackson.databind.JsonNode;
 
 import java.math.BigDecimal;
@@ -20,6 +22,15 @@ public record CampaignManifestV2(
         List<AssetDescriptor> assets,
         List<PartyMemberDto> party,
         List<StatBlockDto> customStatBlocks,
+        List<CustomSpellDto> customSpells,
+        List<CustomConditionDto> customConditions,
+        List<CustomRuleDto> customRules,
+        List<CustomEquipmentDto> customEquipment,
+        List<CustomMagicItemDto> customMagicItems,
+        List<CustomClassDto> customClasses,
+        List<CustomSpeciesDto> customSpecies,
+        List<CustomBackgroundDto> customBackgrounds,
+        List<CustomFeatDto> customFeats,
         List<HandoutDto> handouts,
         List<MapDto> maps,
         List<EncounterDto> encounters,
@@ -569,5 +580,138 @@ public record CampaignManifestV2(
             ContentReference targetRef,
             String displayText,
             boolean resolved
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record ProvenanceDto(
+            String sourceTitle,
+            String editionVersion,
+            String sourceLocator,
+            LicenseClassification licenseClassification,
+            Instant importedAt,
+            String converterId,
+            String converterVersion,
+            String sourceHash,
+            SourceAnnotationConfidence extractionConfidence
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CustomSpellDto(
+            String key,
+            String sourceKey,
+            String name,
+            int level,
+            String school,
+            String castingTime,
+            String range,
+            String components,
+            String duration,
+            String description,
+            String higherLevel,
+            boolean ritual,
+            boolean concentration,
+            ProvenanceDto provenance
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CustomConditionDto(
+            String key,
+            String sourceKey,
+            String name,
+            String description,
+            ProvenanceDto provenance
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CustomRuleDto(
+            String key,
+            String sourceKey,
+            String name,
+            String body,
+            String parentKey,
+            int sortOrder,
+            String ruleset,
+            ProvenanceDto provenance
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CustomEquipmentDto(
+            String key,
+            String sourceKey,
+            String name,
+            String category,
+            String cost,
+            String weight,
+            String properties,
+            String description,
+            ProvenanceDto provenance
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CustomMagicItemDto(
+            String key,
+            String sourceKey,
+            String name,
+            String rarity,
+            String category,
+            String type,
+            String description,
+            String weight,
+            String cost,
+            boolean requiresAttunement,
+            String attunementDetail,
+            ProvenanceDto provenance
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CustomClassDto(
+            String key,
+            String sourceKey,
+            String name,
+            String hitDie,
+            String subclassOf,
+            String description,
+            String savingThrows,
+            String features,
+            String spellcasting,
+            String proficiencies,
+            ProvenanceDto provenance
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CustomSpeciesDto(
+            String key,
+            String sourceKey,
+            String name,
+            String size,
+            String speed,
+            String traits,
+            String description,
+            ProvenanceDto provenance
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CustomBackgroundDto(
+            String key,
+            String sourceKey,
+            String name,
+            String abilityScores,
+            String featRef,
+            String skills,
+            String tools,
+            String description,
+            String equipment,
+            ProvenanceDto provenance
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CustomFeatDto(
+            String key,
+            String sourceKey,
+            String name,
+            String category,
+            String prerequisite,
+            String benefit,
+            ProvenanceDto provenance
     ) {}
 }

@@ -16,11 +16,49 @@
     "settings": {
       "levelingMode": "XP",
       "calendar": {
-        "monthLengths": [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
-        "monthNames": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-        "weekdayNames": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        "monthLengths": [
+          31,
+          28,
+          31,
+          30,
+          31,
+          30,
+          31,
+          31,
+          30,
+          31,
+          30,
+          31
+        ],
+        "monthNames": [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December"
+        ],
+        "weekdayNames": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday"
+        ]
       },
-      "currentDate": { "year": 1492, "month": 0, "day": 1 }
+      "currentDate": {
+        "year": 1492,
+        "month": 0,
+        "day": 1
+      }
     }
   },
   "assets": [
@@ -59,25 +97,69 @@
       "active": true,
       "sheet": {
         "key": "sheet-aria",
-        "abilityScores": { "str": 10, "dex": 18, "con": 14, "int": 12, "wis": 13, "cha": 8 },
+        "abilityScores": {
+          "str": 10,
+          "dex": 18,
+          "con": 14,
+          "int": 12,
+          "wis": 13,
+          "cha": 8
+        },
         "classLevels": [
           {
-            "classRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_rogue" },
+            "classRef": {
+              "scope": "CATALOG",
+              "type": "CLASS",
+              "ruleset": "SRD_5_2",
+              "sourceKey": "srd-2024_rogue"
+            },
             "level": 5,
-            "hitDieRolls": [8, 5, 6, 7, 4]
+            "hitDieRolls": [
+              8,
+              5,
+              6,
+              7,
+              4
+            ]
           }
         ],
-        "proficiencies": { "stealth": "expertise", "perception": "proficient" },
-        "speciesRef": { "scope": "CATALOG", "type": "SPECIES", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_human" },
-        "backgroundRef": { "scope": "CATALOG", "type": "BACKGROUND", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_criminal" },
+        "proficiencies": {
+          "stealth": "expertise",
+          "perception": "proficient"
+        },
+        "speciesRef": {
+          "scope": "CATALOG",
+          "type": "SPECIES",
+          "ruleset": "SRD_5_2",
+          "sourceKey": "srd-2024_human"
+        },
+        "backgroundRef": {
+          "scope": "CATALOG",
+          "type": "BACKGROUND",
+          "ruleset": "SRD_5_2",
+          "sourceKey": "srd-2024_criminal"
+        },
         "featRefs": [
-          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_alert" }
+          {
+            "scope": "CATALOG",
+            "type": "FEAT",
+            "ruleset": "SRD_5_2",
+            "sourceKey": "srd-2024_alert"
+          }
         ],
         "xp": 6500,
-        "overrides": { "speed": 35 },
+        "overrides": {
+          "speed": 35
+        },
         "hitDiceUsed": 2,
         "resources": [
-          { "key": "resource-aria-cunning-action", "name": "Cunning Action", "maxUses": 1, "currentUses": 1, "resetRule": "SHORT_REST" }
+          {
+            "key": "resource-aria-cunning-action",
+            "name": "Cunning Action",
+            "maxUses": 1,
+            "currentUses": 1,
+            "resetRule": "SHORT_REST"
+          }
         ],
         "spells": [],
         "spellSlotsUsed": {}
@@ -100,19 +182,56 @@
       "active": true,
       "sheet": {
         "key": "sheet-borin",
-        "abilityScores": { "str": 18, "dex": 12, "con": 16, "int": 8, "wis": 10, "cha": 10 },
+        "abilityScores": {
+          "str": 18,
+          "dex": 12,
+          "con": 16,
+          "int": 8,
+          "wis": 10,
+          "cha": 10
+        },
         "classLevels": [
           {
-            "classRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_fighter" },
+            "classRef": {
+              "scope": "CATALOG",
+              "type": "CLASS",
+              "ruleset": "SRD_5_2",
+              "sourceKey": "srd-2024_fighter"
+            },
             "level": 6,
-            "hitDieRolls": [10, 8, 9, 7, 10, 6]
+            "hitDieRolls": [
+              10,
+              8,
+              9,
+              7,
+              10,
+              6
+            ]
           }
         ],
-        "proficiencies": { "athletics": "proficient", "survival": "proficient" },
-        "speciesRef": { "scope": "CATALOG", "type": "SPECIES", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_dwarf" },
-        "backgroundRef": { "scope": "CATALOG", "type": "BACKGROUND", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_soldier" },
+        "proficiencies": {
+          "athletics": "proficient",
+          "survival": "proficient"
+        },
+        "speciesRef": {
+          "scope": "CATALOG",
+          "type": "SPECIES",
+          "ruleset": "SRD_5_2",
+          "sourceKey": "srd-2024_dwarf"
+        },
+        "backgroundRef": {
+          "scope": "CATALOG",
+          "type": "BACKGROUND",
+          "ruleset": "SRD_5_2",
+          "sourceKey": "srd-2024_soldier"
+        },
         "featRefs": [
-          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_alert" }
+          {
+            "scope": "CATALOG",
+            "type": "FEAT",
+            "ruleset": "SRD_5_2",
+            "sourceKey": "srd-2024_alert"
+          }
         ],
         "xp": 14000,
         "overrides": {},
@@ -139,44 +258,120 @@
       "active": true,
       "sheet": {
         "key": "sheet-elara",
-        "abilityScores": { "str": 8, "dex": 14, "con": 12, "int": 18, "wis": 13, "cha": 10 },
+        "abilityScores": {
+          "str": 8,
+          "dex": 14,
+          "con": 12,
+          "int": 18,
+          "wis": 13,
+          "cha": 10
+        },
         "classLevels": [
           {
-            "classRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_wizard" },
+            "classRef": {
+              "scope": "CATALOG",
+              "type": "CLASS",
+              "ruleset": "SRD_5_2",
+              "sourceKey": "srd-2024_wizard"
+            },
             "level": 5,
-            "hitDieRolls": [6, 4, 6, 5, 4]
+            "hitDieRolls": [
+              6,
+              4,
+              6,
+              5,
+              4
+            ]
           }
         ],
-        "proficiencies": { "arcana": "proficient", "investigation": "proficient" },
-        "speciesRef": { "scope": "CATALOG", "type": "SPECIES", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_elf" },
-        "backgroundRef": { "scope": "CATALOG", "type": "BACKGROUND", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_sage" },
+        "proficiencies": {
+          "arcana": "proficient",
+          "investigation": "proficient"
+        },
+        "speciesRef": {
+          "scope": "CATALOG",
+          "type": "SPECIES",
+          "ruleset": "SRD_5_2",
+          "sourceKey": "srd-2024_elf"
+        },
+        "backgroundRef": {
+          "scope": "CATALOG",
+          "type": "BACKGROUND",
+          "ruleset": "SRD_5_2",
+          "sourceKey": "srd-2024_sage"
+        },
         "featRefs": [
-          { "scope": "CATALOG", "type": "FEAT", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_alert" }
+          {
+            "scope": "CATALOG",
+            "type": "FEAT",
+            "ruleset": "SRD_5_2",
+            "sourceKey": "srd-2024_alert"
+          }
         ],
         "xp": 6500,
         "overrides": {},
         "hitDiceUsed": 1,
         "resources": [
-          { "key": "resource-elara-arcane-recovery", "name": "Arcane Recovery", "maxUses": 1, "currentUses": 1, "resetRule": "LONG_REST" }
+          {
+            "key": "resource-elara-arcane-recovery",
+            "name": "Arcane Recovery",
+            "maxUses": 1,
+            "currentUses": 1,
+            "resetRule": "LONG_REST"
+          }
         ],
         "spells": [
           {
-            "spellRef": { "scope": "CATALOG", "type": "SPELL", "ruleset": "SRD_5_2", "sourceKey": "magic-missile" },
+            "spellRef": {
+              "scope": "CATALOG",
+              "type": "SPELL",
+              "ruleset": "SRD_5_2",
+              "sourceKey": "magic-missile"
+            },
             "prepared": true,
-            "sourceClassRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_wizard" }
+            "sourceClassRef": {
+              "scope": "CATALOG",
+              "type": "CLASS",
+              "ruleset": "SRD_5_2",
+              "sourceKey": "srd-2024_wizard"
+            }
           },
           {
-            "spellRef": { "scope": "CATALOG", "type": "SPELL", "ruleset": "SRD_5_2", "sourceKey": "shield" },
+            "spellRef": {
+              "scope": "CATALOG",
+              "type": "SPELL",
+              "ruleset": "SRD_5_2",
+              "sourceKey": "shield"
+            },
             "prepared": true,
-            "sourceClassRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_wizard" }
+            "sourceClassRef": {
+              "scope": "CATALOG",
+              "type": "CLASS",
+              "ruleset": "SRD_5_2",
+              "sourceKey": "srd-2024_wizard"
+            }
           },
           {
-            "spellRef": { "scope": "CATALOG", "type": "SPELL", "ruleset": "SRD_5_2", "sourceKey": "mage-armor" },
+            "spellRef": {
+              "scope": "CATALOG",
+              "type": "SPELL",
+              "ruleset": "SRD_5_2",
+              "sourceKey": "mage-armor"
+            },
             "prepared": true,
-            "sourceClassRef": { "scope": "CATALOG", "type": "CLASS", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_wizard" }
+            "sourceClassRef": {
+              "scope": "CATALOG",
+              "type": "CLASS",
+              "ruleset": "SRD_5_2",
+              "sourceKey": "srd-2024_wizard"
+            }
           }
         ],
-        "spellSlotsUsed": { "1": 1, "2": 0, "3": 0 }
+        "spellSlotsUsed": {
+          "1": 1,
+          "2": 0,
+          "3": 0
+        }
       }
     }
   ],
@@ -192,8 +387,15 @@
       "ac": 15,
       "hp": "21 (6d6)",
       "speed": "30 ft.",
-      "strScore": 10, "dexScore": 14, "conScore": 12, "intScore": 10, "wisScore": 10, "chaScore": 8,
-      "strSave": 2, "dexSave": 4, "conSave": 3,
+      "strScore": 10,
+      "dexScore": 14,
+      "conScore": 12,
+      "intScore": 10,
+      "wisScore": 10,
+      "chaScore": 8,
+      "strSave": 2,
+      "dexSave": 4,
+      "conSave": 3,
       "skills": "Stealth +6, Perception +2",
       "damageVulnerabilities": "radiant",
       "damageResistances": "",
@@ -221,8 +423,15 @@
       "ac": 13,
       "hp": "13 (2d8+4)",
       "speed": "30 ft.",
-      "strScore": 10, "dexScore": 14, "conScore": 15, "intScore": 6, "wisScore": 8, "chaScore": 5,
-      "strSave": 0, "dexSave": 2, "conSave": 2,
+      "strScore": 10,
+      "dexScore": 14,
+      "conScore": 15,
+      "intScore": 6,
+      "wisScore": 8,
+      "chaScore": 5,
+      "strSave": 0,
+      "dexSave": 2,
+      "conSave": 2,
       "skills": "",
       "damageVulnerabilities": "bludgeoning",
       "damageResistances": "",
@@ -250,8 +459,15 @@
       "ac": 8,
       "hp": "22 (3d8+9)",
       "speed": "20 ft.",
-      "strScore": 13, "dexScore": 6, "conScore": 16, "intScore": 3, "wisScore": 6, "chaScore": 5,
-      "strSave": 1, "dexSave": -2, "conSave": 3,
+      "strScore": 13,
+      "dexScore": 6,
+      "conScore": 16,
+      "intScore": 3,
+      "wisScore": 6,
+      "chaScore": 5,
+      "strSave": 1,
+      "dexSave": -2,
+      "conSave": 3,
       "skills": "",
       "damageVulnerabilities": "",
       "damageResistances": "",
@@ -274,7 +490,10 @@
     {
       "key": "handout-inscription",
       "title": "Ancient Inscription",
-      "tags": ["lore", "ruins"],
+      "tags": [
+        "lore",
+        "ruins"
+      ],
       "assetRef": "asset-inscription",
       "contentType": "image/png",
       "dmOnly": false,
@@ -283,7 +502,10 @@
     {
       "key": "handout-dm-backstory",
       "title": "DM Backstory Notes",
-      "tags": ["dm", "secret"],
+      "tags": [
+        "dm",
+        "secret"
+      ],
       "assetRef": "asset-inscription",
       "contentType": "image/png",
       "dmOnly": true,
@@ -292,7 +514,9 @@
     {
       "key": "handout-player-journal",
       "title": "Player Journal Entry",
-      "tags": ["journal"],
+      "tags": [
+        "journal"
+      ],
       "assetRef": "asset-inscription",
       "contentType": "image/png",
       "dmOnly": false,
@@ -306,26 +530,63 @@
       "movementMode": "GRID",
       "showGrid": true,
       "sortOrder": 0,
-      "grid": { "w": 30, "h": 20, "cellPx": 48, "gridType": "SQUARE" },
+      "grid": {
+        "w": 30,
+        "h": 20,
+        "cellPx": 48,
+        "gridType": "SQUARE"
+      },
       "document": {
         "schemaVersion": 2,
-        "grid": { "width": 30, "height": 20, "cellSizePx": 48, "gridType": "square", "movementMode": "GRID", "showGrid": true },
+        "grid": {
+          "width": 30,
+          "height": 20,
+          "cellSizePx": 48,
+          "gridType": "square",
+          "movementMode": "GRID",
+          "showGrid": true
+        },
         "layers": [
           {
-            "id": "terrain", "name": "Terrain", "type": "TERRAIN",
-            "visible": true, "locked": false,
+            "id": "terrain",
+            "name": "Terrain",
+            "type": "TERRAIN",
+            "visible": true,
+            "locked": false,
             "cells": [
-              { "col": 10, "row": 5, "terrain": "wall" },
-              { "col": 10, "row": 6, "terrain": "wall" },
-              { "col": 10, "row": 7, "terrain": "wall" }
+              {
+                "col": 10,
+                "row": 5,
+                "terrain": "wall"
+              },
+              {
+                "col": 10,
+                "row": 6,
+                "terrain": "wall"
+              },
+              {
+                "col": 10,
+                "row": 7,
+                "terrain": "wall"
+              }
             ],
             "shapes": []
           },
           {
-            "id": "bg", "name": "Background", "type": "IMAGE",
-            "visible": true, "locked": true,
-            "cells": [], "shapes": [],
-            "image": { "assetRef": "asset-ruins-map", "x": 0, "y": 0, "width": 30, "height": 20 }
+            "id": "bg",
+            "name": "Background",
+            "type": "IMAGE",
+            "visible": true,
+            "locked": true,
+            "cells": [],
+            "shapes": [],
+            "image": {
+              "assetRef": "asset-ruins-map",
+              "x": 0,
+              "y": 0,
+              "width": 30,
+              "height": 20
+            }
           }
         ],
         "primitives": [],
@@ -342,7 +603,11 @@
           "sizeCols": 1,
           "sizeRows": 1,
           "hidden": false,
-          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
+          "statBlockRef": {
+            "scope": "PACKAGE",
+            "type": "STATBLOCK",
+            "key": "statblock-goblin-captain"
+          },
           "currentHp": 21,
           "maxHp": 21,
           "dead": false,
@@ -358,7 +623,11 @@
           "sizeCols": 1,
           "sizeRows": 1,
           "hidden": false,
-          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
+          "statBlockRef": {
+            "scope": "PACKAGE",
+            "type": "STATBLOCK",
+            "key": "statblock-goblin-captain"
+          },
           "currentHp": 21,
           "maxHp": 21,
           "dead": false,
@@ -374,7 +643,11 @@
           "sizeCols": 1,
           "sizeRows": 1,
           "hidden": true,
-          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-skeleton" },
+          "statBlockRef": {
+            "scope": "PACKAGE",
+            "type": "STATBLOCK",
+            "key": "statblock-skeleton"
+          },
           "currentHp": 13,
           "maxHp": 13,
           "dead": false,
@@ -400,8 +673,16 @@
           "kind": "MONSTER",
           "groupId": "goblins",
           "groupLeader": false,
-          "tokenRef": { "scope": "PACKAGE", "type": "TOKEN", "key": "token-goblin-1" },
-          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
+          "tokenRef": {
+            "scope": "PACKAGE",
+            "type": "TOKEN",
+            "key": "token-goblin-1"
+          },
+          "statBlockRef": {
+            "scope": "PACKAGE",
+            "type": "STATBLOCK",
+            "key": "statblock-goblin-captain"
+          },
           "defeated": false,
           "hidden": false,
           "conditionsJson": "[]",
@@ -425,8 +706,16 @@
           "kind": "MONSTER",
           "groupId": "goblins",
           "groupLeader": false,
-          "tokenRef": { "scope": "PACKAGE", "type": "TOKEN", "key": "token-goblin-2" },
-          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
+          "tokenRef": {
+            "scope": "PACKAGE",
+            "type": "TOKEN",
+            "key": "token-goblin-2"
+          },
+          "statBlockRef": {
+            "scope": "PACKAGE",
+            "type": "STATBLOCK",
+            "key": "statblock-goblin-captain"
+          },
           "defeated": false,
           "hidden": false,
           "conditionsJson": "[]",
@@ -450,8 +739,16 @@
           "kind": "MONSTER",
           "groupId": "",
           "groupLeader": false,
-          "tokenRef": { "scope": "PACKAGE", "type": "TOKEN", "key": "token-skeleton-1" },
-          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-skeleton" },
+          "tokenRef": {
+            "scope": "PACKAGE",
+            "type": "TOKEN",
+            "key": "token-skeleton-1"
+          },
+          "statBlockRef": {
+            "scope": "PACKAGE",
+            "type": "STATBLOCK",
+            "key": "statblock-skeleton"
+          },
           "defeated": false,
           "hidden": true,
           "conditionsJson": "[]",
@@ -468,7 +765,11 @@
       "round": 0,
       "activeTurnIndex": -1,
       "logSequence": 0,
-      "mapRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-ruins" },
+      "mapRef": {
+        "scope": "PACKAGE",
+        "type": "MAP",
+        "key": "map-ruins"
+      },
       "lairActionTriggered": false,
       "combatLog": []
     },
@@ -488,7 +789,11 @@
           "kind": "MONSTER",
           "groupId": "",
           "groupLeader": false,
-          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-zombie" },
+          "statBlockRef": {
+            "scope": "PACKAGE",
+            "type": "STATBLOCK",
+            "key": "statblock-zombie"
+          },
           "defeated": false,
           "hidden": false,
           "conditionsJson": "[]",
@@ -512,7 +817,11 @@
           "kind": "MONSTER",
           "groupId": "",
           "groupLeader": false,
-          "statBlockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-zombie" },
+          "statBlockRef": {
+            "scope": "PACKAGE",
+            "type": "STATBLOCK",
+            "key": "statblock-zombie"
+          },
           "defeated": false,
           "hidden": false,
           "conditionsJson": "[]",
@@ -545,7 +854,11 @@
       "links": [
         {
           "targetType": "HANDOUT",
-          "targetRef": { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-inscription" },
+          "targetRef": {
+            "scope": "PACKAGE",
+            "type": "HANDOUT",
+            "key": "handout-inscription"
+          },
           "displayText": "See inscription",
           "resolved": true
         }
@@ -562,7 +875,11 @@
       "links": [
         {
           "targetType": "STATBLOCK",
-          "targetRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
+          "targetRef": {
+            "scope": "PACKAGE",
+            "type": "STATBLOCK",
+            "key": "statblock-goblin-captain"
+          },
           "displayText": "Goblin statblock",
           "resolved": true
         }
@@ -592,19 +909,31 @@
   "quickNotes": [
     {
       "key": "quicknote-ruins",
-      "targetRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-ruins" },
+      "targetRef": {
+        "scope": "PACKAGE",
+        "type": "MAP",
+        "key": "map-ruins"
+      },
       "body": "Reminder: describe the eerie silence",
       "createdAt": "2025-07-01T10:05:00Z"
     },
     {
       "key": "quicknote-tomb-riddle",
-      "targetRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-tomb-riddle" },
+      "targetRef": {
+        "scope": "PACKAGE",
+        "type": "NOTE",
+        "key": "note-tomb-riddle"
+      },
       "body": "Answer: 'time'",
       "createdAt": "2025-07-01T10:06:00Z"
     },
     {
       "key": "quicknote-party-aria",
-      "targetRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-aria" },
+      "targetRef": {
+        "scope": "PACKAGE",
+        "type": "PARTY_MEMBER",
+        "key": "party-member-aria"
+      },
       "body": "Aria found a secret door",
       "createdAt": "2025-07-01T10:07:00Z"
     }
@@ -612,15 +941,33 @@
   "assignments": [
     {
       "key": "assignment-bag-of-holding",
-      "holderRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-aria" },
-      "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_bag-of-holding" },
+      "holderRef": {
+        "scope": "PACKAGE",
+        "type": "PARTY_MEMBER",
+        "key": "party-member-aria"
+      },
+      "magicItemRef": {
+        "scope": "CATALOG",
+        "type": "MAGIC_ITEM",
+        "ruleset": "SRD_5_2",
+        "sourceKey": "srd-2024_bag-of-holding"
+      },
       "quantity": 1,
       "attuned": false
     },
     {
       "key": "assignment-gauntlets",
-      "holderRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-borin" },
-      "magicItemRef": { "scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_gauntlets-of-ogre-power" },
+      "holderRef": {
+        "scope": "PACKAGE",
+        "type": "PARTY_MEMBER",
+        "key": "party-member-borin"
+      },
+      "magicItemRef": {
+        "scope": "CATALOG",
+        "type": "MAGIC_ITEM",
+        "ruleset": "SRD_5_2",
+        "sourceKey": "srd-2024_gauntlets-of-ogre-power"
+      },
       "quantity": 1,
       "attuned": true
     }
@@ -638,7 +985,11 @@
       "currency": "gp",
       "holder": "party",
       "note": "Ruins treasure hoard",
-      "itemAssignmentRef": { "scope": "PACKAGE", "type": "ASSIGNMENT", "key": "assignment-bag-of-holding" }
+      "itemAssignmentRef": {
+        "scope": "PACKAGE",
+        "type": "ASSIGNMENT",
+        "key": "assignment-bag-of-holding"
+      }
     },
     {
       "key": "ledger-tomb-gems",
@@ -662,7 +1013,11 @@
       "inGameDay": 1,
       "title": "Arrived at the Ruins",
       "body": "The party reached the ancient ruins at dawn.",
-      "noteRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-ruins-lore" }
+      "noteRef": {
+        "scope": "PACKAGE",
+        "type": "NOTE",
+        "key": "note-ruins-lore"
+      }
     },
     {
       "key": "timeline-defeated-patrol",
@@ -671,7 +1026,11 @@
       "inGameDay": 1,
       "title": "Defeated the Patrol",
       "body": "The party fought through the goblin patrol.",
-      "noteRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-goblin-tactics" }
+      "noteRef": {
+        "scope": "PACKAGE",
+        "type": "NOTE",
+        "key": "note-goblin-tactics"
+      }
     },
     {
       "key": "timeline-entered-tomb",
@@ -680,7 +1039,11 @@
       "inGameDay": 1,
       "title": "Entered the Tomb",
       "body": "The party solved the riddle and entered the tomb.",
-      "noteRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-tomb-riddle" }
+      "noteRef": {
+        "scope": "PACKAGE",
+        "type": "NOTE",
+        "key": "note-tomb-riddle"
+      }
     },
     {
       "key": "timeline-found-passage",
@@ -689,7 +1052,11 @@
       "inGameDay": 1,
       "title": "Found the Hidden Passage",
       "body": "Elara discovered the hidden passage behind the statue.",
-      "noteRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-hidden-passage" }
+      "noteRef": {
+        "scope": "PACKAGE",
+        "type": "NOTE",
+        "key": "note-hidden-passage"
+      }
     }
   ],
   "adventures": [
@@ -714,10 +1081,18 @@
               "status": "DONE",
               "sortOrder": 1,
               "statblockRefs": [
-                { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" }
+                {
+                  "scope": "PACKAGE",
+                  "type": "STATBLOCK",
+                  "key": "statblock-goblin-captain"
+                }
               ],
               "handoutRefs": [
-                { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-inscription" }
+                {
+                  "scope": "PACKAGE",
+                  "type": "HANDOUT",
+                  "key": "handout-inscription"
+                }
               ]
             },
             {
@@ -726,16 +1101,43 @@
               "body": "The crumbling entrance to the ruins.",
               "status": "VISITED",
               "sortOrder": 2,
-              "mapRef": { "scope": "PACKAGE", "type": "MAP", "key": "map-ruins" },
-              "pin": { "x": 150, "y": 100 },
-              "encounterRef": { "scope": "PACKAGE", "type": "ENCOUNTER", "key": "encounter-ruins-patrol" },
+              "mapRef": {
+                "scope": "PACKAGE",
+                "type": "MAP",
+                "key": "map-ruins"
+              },
+              "pin": {
+                "x": 150,
+                "y": 100
+              },
+              "encounterRef": {
+                "scope": "PACKAGE",
+                "type": "ENCOUNTER",
+                "key": "encounter-ruins-patrol"
+              },
               "statblockRefs": [
-                { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" },
-                { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-skeleton" }
+                {
+                  "scope": "PACKAGE",
+                  "type": "STATBLOCK",
+                  "key": "statblock-goblin-captain"
+                },
+                {
+                  "scope": "PACKAGE",
+                  "type": "STATBLOCK",
+                  "key": "statblock-skeleton"
+                }
               ],
               "handoutRefs": [
-                { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-inscription" },
-                { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-dm-backstory" }
+                {
+                  "scope": "PACKAGE",
+                  "type": "HANDOUT",
+                  "key": "handout-inscription"
+                },
+                {
+                  "scope": "PACKAGE",
+                  "type": "HANDOUT",
+                  "key": "handout-dm-backstory"
+                }
               ]
             }
           ]
@@ -753,7 +1155,11 @@
               "status": "UNVISITED",
               "sortOrder": 1,
               "handoutRefs": [
-                { "scope": "PACKAGE", "type": "HANDOUT", "key": "handout-inscription" }
+                {
+                  "scope": "PACKAGE",
+                  "type": "HANDOUT",
+                  "key": "handout-inscription"
+                }
               ]
             },
             {
@@ -762,9 +1168,17 @@
               "body": "The chamber where the tomb guardians reside.",
               "status": "UNVISITED",
               "sortOrder": 2,
-              "encounterRef": { "scope": "PACKAGE", "type": "ENCOUNTER", "key": "encounter-tomb-guardians" },
+              "encounterRef": {
+                "scope": "PACKAGE",
+                "type": "ENCOUNTER",
+                "key": "encounter-tomb-guardians"
+              },
               "statblockRefs": [
-                { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-zombie" }
+                {
+                  "scope": "PACKAGE",
+                  "type": "STATBLOCK",
+                  "key": "statblock-zombie"
+                }
               ],
               "handoutRefs": []
             },
@@ -828,8 +1242,17 @@
               "status": "UNVISITED",
               "sortOrder": 1,
               "statblockRefs": [
-                { "scope": "CATALOG", "type": "STATBLOCK", "ruleset": "SRD_5_2", "sourceKey": "bandit" },
-                { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain" }
+                {
+                  "scope": "CATALOG",
+                  "type": "STATBLOCK",
+                  "ruleset": "SRD_5_2",
+                  "sourceKey": "bandit"
+                },
+                {
+                  "scope": "PACKAGE",
+                  "type": "STATBLOCK",
+                  "key": "statblock-goblin-captain"
+                }
               ],
               "handoutRefs": []
             }
@@ -850,45 +1273,94 @@
     {
       "key": "dice-init-goblin-1",
       "expression": "1d20+2",
-      "rolls": [{ "die": "d20", "values": [12] }],
+      "rolls": [
+        {
+          "die": "d20",
+          "values": [
+            12
+          ]
+        }
+      ],
       "modifier": 2,
       "total": 14,
       "advantage": false,
       "disadvantage": false,
-      "encounterRef": { "scope": "PACKAGE", "type": "ENCOUNTER", "key": "encounter-ruins-patrol" },
+      "encounterRef": {
+        "scope": "PACKAGE",
+        "type": "ENCOUNTER",
+        "key": "encounter-ruins-patrol"
+      },
       "createdAt": "2025-07-01T10:02:00Z"
     },
     {
       "key": "dice-init-goblin-2",
       "expression": "1d20+2",
-      "rolls": [{ "die": "d20", "values": [5] }],
+      "rolls": [
+        {
+          "die": "d20",
+          "values": [
+            5
+          ]
+        }
+      ],
       "modifier": 2,
       "total": 7,
       "advantage": false,
       "disadvantage": false,
-      "encounterRef": { "scope": "PACKAGE", "type": "ENCOUNTER", "key": "encounter-ruins-patrol" },
+      "encounterRef": {
+        "scope": "PACKAGE",
+        "type": "ENCOUNTER",
+        "key": "encounter-ruins-patrol"
+      },
       "createdAt": "2025-07-01T10:02:01Z"
     },
     {
       "key": "dice-init-skeleton-1",
       "expression": "1d20",
-      "rolls": [{ "die": "d20", "values": [10] }],
+      "rolls": [
+        {
+          "die": "d20",
+          "values": [
+            10
+          ]
+        }
+      ],
       "modifier": 0,
       "total": 10,
       "advantage": false,
       "disadvantage": false,
-      "encounterRef": { "scope": "PACKAGE", "type": "ENCOUNTER", "key": "encounter-ruins-patrol" },
+      "encounterRef": {
+        "scope": "PACKAGE",
+        "type": "ENCOUNTER",
+        "key": "encounter-ruins-patrol"
+      },
       "createdAt": "2025-07-01T10:02:02Z"
     },
     {
       "key": "dice-perception-aria",
       "expression": "1d20+4",
-      "rolls": [{ "die": "d20", "values": [17] }],
+      "rolls": [
+        {
+          "die": "d20",
+          "values": [
+            17
+          ]
+        }
+      ],
       "modifier": 4,
       "total": 21,
       "advantage": true,
       "disadvantage": false,
       "createdAt": "2025-07-01T10:03:00Z"
     }
-  ]
+  ],
+  "customSpells": [],
+  "customConditions": [],
+  "customRules": [],
+  "customEquipment": [],
+  "customMagicItems": [],
+  "customClasses": [],
+  "customSpecies": [],
+  "customBackgrounds": [],
+  "customFeats": []
 }

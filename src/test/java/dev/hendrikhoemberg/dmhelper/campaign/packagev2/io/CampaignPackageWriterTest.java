@@ -62,7 +62,11 @@ class CampaignPackageWriterTest {
             AssetDescriptor asset = new AssetDescriptor("crypt-image", path, "image/png", bytes.length,
                     HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)), "crypt.png");
             return new CampaignManifestV2(base.formatVersion(), base.metadata(), base.campaign(), List.of(asset),
-                    base.party(), base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(),
+                    base.party(), base.customStatBlocks(),
+                    base.customSpells(), base.customConditions(), base.customRules(),
+                    base.customEquipment(), base.customMagicItems(), base.customClasses(), base.customSpecies(),
+                    base.customBackgrounds(), base.customFeats(),
+                    base.handouts(), base.maps(), base.encounters(),
                     base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(), base.timelineEvents(),
                     base.adventures(), base.session(), base.diceRolls(), base.quests(), base.annotations());
         }
