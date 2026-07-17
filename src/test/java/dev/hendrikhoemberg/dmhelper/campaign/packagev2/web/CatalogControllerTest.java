@@ -43,4 +43,12 @@ class CatalogControllerTest {
                 .andExpect(content().contentType("application/json"))
                 .andExpect(header().string("ETag", "\"" + snapshot.sha256() + "\""));
     }
+
+    @Test
+    void catalogEndpointsDoNotRequirePin() throws Exception {
+        mvc.perform(get("/api/v1/catalog")).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/catalog/snapshot"))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("ETag"));
+    }
 }

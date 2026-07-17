@@ -297,6 +297,14 @@ Both are JSON Schema draft 2020-12 and resolve offline.
 
 `GET /api/v1/catalog/snapshot` returns the checked-in snapshot as raw JSON with an `ETag` equal to the quoted SHA-256.
 
+### Snapshot Hash Integrity
+
+The checked-in catalog snapshot `src/main/resources/catalog/srd-5.2-catalog.json`
+is verified against the live `CampaignCatalogService.snapshot()` by
+`CatalogSnapshotFidelityTest`. Any change to catalog data must be accompanied
+by a snapshot refresh (`-Ddmhelper.writeCatalogSnapshot=true`). A drift
+between the two fails the build.
+
 ## Validation Pipeline
 
 ```text
