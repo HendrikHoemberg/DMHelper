@@ -777,7 +777,7 @@
         "ownerRef": { "$ref": "#/$defs/contentReference" },
         "fieldPath": { "type": "string" },
         "message": { "type": "string" },
-        "confidence": { "type": "string", "enum": ["CERTAIN", "LIKELY", "UNCERTAIN", "UNKNOWN"] },
+        "confidence": { "type": "string", "enum": ["HIGH", "MEDIUM", "LOW", "UNKNOWN"] },
         "sourceLocator": { "type": "string" },
         "status": { "type": "string", "enum": ["OPEN", "RESOLVED", "DISMISSED"] },
         "resolutionNote": { "type": "string" },

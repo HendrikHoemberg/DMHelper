@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface SourceAnnotationRepository extends JpaRepository<SourceAnnotation, UUID> {
+    List<SourceAnnotation> findByCampaignIdOrderByCreatedAtAscIdAsc(UUID campaignId);
     List<SourceAnnotation> findByCampaignIdAndOwnerTypeAndOwnerId(UUID campaignId, String ownerType, UUID ownerId);
     List<SourceAnnotation> findByOwnerTypeAndOwnerId(String ownerType, UUID ownerId);
     @Modifying

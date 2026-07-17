@@ -34,4 +34,30 @@ class SessionCockpitSecurityTest {
         mvc.perform(get("/api/v1/table/state"))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void followTransitionIsPinGated() throws Exception {
+        mvc.perform(post("/api/v1/campaigns/{id}/session/current-scene/follow-transition", UUID.randomUUID())
+                        .contentType("application/json")
+                        .content("{\"transitionId\":\"" + UUID.randomUUID() + "\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void objectiveStatusChangeIsPinGated() throws Exception {
+        mvc.perform(put("/api/v1/campaigns/{id}/session/quests/objectives/{oid}/status",
+                        UUID.randomUUID(), UUID.randomUUID())
+                        .contentType("application/json")
+                        .content("{\"status\":\"COMPLETED\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void questApiObjectiveStatusIsPinGated() throws Exception {
+        mvc.perform(put("/api/v1/campaigns/{id}/quests/objectives/{oid}/status",
+                        UUID.randomUUID(), UUID.randomUUID())
+                        .contentType("application/json")
+                        .content("{\"status\":\"COMPLETED\"}"))
+                .andExpect(status().isForbidden());
+    }
 }

@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.adapter;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotation;
 import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationRepository;
@@ -17,6 +18,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportOpt
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -26,6 +28,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,17 +61,23 @@ class SourceAnnotationSectionAdapterTest {
     }
 
     @Test
-    void importsSourceAnnotation() {
+    void importsSourceAnnotationWithDeferredPackageOwner() {
         var sceneId = UUID.randomUUID();
+        var scene = new Scene();
+        scene.setId(sceneId);
+        scene.setTitle("Village");
+
         var dto = new CampaignManifestV2.SourceAnnotationDto(
                 "ann-1",
-                ContentReference.packageRef(CampaignContentType.SCENE, sceneId.toString()),
-                "/checks/0/dc", "DC inferred", "MEDIUM",
+                ContentReference.packageRef(CampaignContentType.SCENE, "sc-village"),
+                "/adventures/0/chapters/0/scenes/0/checks/0/dc", "DC inferred", "MEDIUM",
                 "book:1", "OPEN", null, Instant.parse("2025-01-01T00:00:00Z"));
 
         when(repo.save(any())).thenAnswer(inv -> {
             SourceAnnotation a = inv.getArgument(0);
-            a.setId(UUID.randomUUID());
+            if (a.getId() == null) {
+                a.setId(UUID.randomUUID());
+            }
             return a;
         });
 
@@ -78,29 +88,39 @@ class SourceAnnotationSectionAdapterTest {
         var context = new CampaignImportContext(
                 campaignId, keys, new PendingCampaignImport(UUID.randomUUID(), null, null, null));
         context.setCampaign(campaign);
+        context.register(CampaignContentType.SCENE, "sc-village", scene, sceneId);
 
         adapter.importSection(manifest, context);
+        context.runDeferred();
 
-        assertThat(keys.bindings)
-                .containsValue(dto.key());
+        ArgumentCaptor<SourceAnnotation> captor = ArgumentCaptor.forClass(SourceAnnotation.class);
+        verify(repo, atLeastOnce()).save(captor.capture());
+        SourceAnnotation saved = captor.getAllValues().get(captor.getAllValues().size() - 1);
+        assertThat(saved.getOwnerType()).isEqualTo("SCENE");
+        assertThat(saved.getOwnerId()).isEqualTo(sceneId);
+        assertThat(saved.getConfidence().name()).isEqualTo("MEDIUM");
+        assertThat(keys.bindings).containsValue(dto.key());
     }
 
     @Test
-    void exportsSourceAnnotations() {
+    void exportsSourceAnnotationsWithPackageKeysNotUuids() {
+        UUID ownerId = UUID.randomUUID();
         SourceAnnotation a = new SourceAnnotation();
         a.setId(UUID.randomUUID());
         a.setCampaign(campaign);
         a.setOwnerType("SCENE");
-        a.setOwnerId(UUID.randomUUID());
-        a.setFieldPath("/checks/0/dc");
+        a.setOwnerId(ownerId);
+        a.setFieldPath("/adventures/0/chapters/0/scenes/0/checks/0/dc");
         a.setMessage("DC inferred");
-        a.setConfidence(dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationConfidence.UNKNOWN);
+        a.setConfidence(dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationConfidence.HIGH);
         a.setStatus(dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationStatus.OPEN);
         a.setCreatedAt(Instant.parse("2025-01-01T00:00:00Z"));
 
-        when(repo.findAll()).thenReturn(List.of(a));
+        when(repo.findByCampaignIdOrderByCreatedAtAscIdAsc(campaignId)).thenReturn(List.of(a));
 
         var keyService = new CampaignSectionAdapterTest.FakeKeyService();
+        // Pre-bind a stable package key for the owner so export does not emit a UUID
+        keyService.bindImported(campaignId, CampaignContentType.SCENE, ownerId, "sc-village");
         var ctx = new CampaignExportContext(
                 campaignId, campaign, CampaignExportOptions.complete(),
                 keyService, new CampaignAssetCollector());
@@ -111,6 +131,11 @@ class SourceAnnotationSectionAdapterTest {
         var manifest = buildManifest(assembler);
 
         assertThat(manifest.annotations()).hasSize(1);
+        var exported = manifest.annotations().get(0);
+        assertThat(exported.ownerRef().scope()).isEqualTo(ContentReference.Scope.PACKAGE);
+        assertThat(exported.ownerRef().type()).isEqualTo(CampaignContentType.SCENE);
+        assertThat(exported.ownerRef().key()).isEqualTo("sc-village");
+        assertThat(exported.confidence()).isEqualTo("HIGH");
     }
 
     private void fillRest(CampaignManifestAssembler a) {
@@ -128,6 +153,7 @@ class SourceAnnotationSectionAdapterTest {
         a.adventures(List.of());
         a.session(null);
         a.diceRolls(List.of());
+        a.quests(List.of());
     }
 
     private CampaignManifestV2 buildManifest(CampaignManifestAssembler a) {

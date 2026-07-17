@@ -39,6 +39,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 public class AdventureSectionAdapter implements CampaignSectionExporter, CampaignSectionImporter {
@@ -175,17 +176,23 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
     }
 
     private static ContentReference toContentRef(SceneLink link, CampaignExportContext context) {
+        CampaignContentType type = CampaignContentType.valueOf(link.getTargetType());
         if (link.getTargetScope() == dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkTargetScope.CATALOG) {
-            return ContentReference.catalogRef(CampaignContentType.valueOf(link.getTargetType()), link.getCatalogRuleset(), link.getCatalogSourceKey());
+            return ContentReference.catalogRef(type, link.getCatalogRuleset(), link.getCatalogSourceKey());
         }
-        return ContentReference.packageRef(CampaignContentType.valueOf(link.getTargetType()), link.getTargetId().toString());
+        if (link.getTargetId() == null) {
+            throw new IllegalStateException("PACKAGE scene link missing targetId: role=" + link.getRole());
+        }
+        String display = link.getDisplayText() != null ? link.getDisplayText() : link.getTargetType();
+        return context.packageRef(type, link.getTargetId(), display);
     }
 
-    private static CampaignContentType contentTypeFor(String targetType) {
+    private static UUID entityId(Object entity) {
         try {
-            return CampaignContentType.valueOf(targetType);
-        } catch (IllegalArgumentException e) {
-            return CampaignContentType.NOTE;
+            return (UUID) entity.getClass().getMethod("getId").invoke(entity);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(
+                    "Cannot resolve package entity id for " + entity.getClass().getName(), e);
         }
     }
 
@@ -315,13 +322,15 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                             l.setCondition(lDto.condition());
                             l.setSortOrder(lDto.sortOrder());
                             if (lDto.targetRef() != null) {
-                                l.setTargetScope(lDto.targetRef().scope() == ContentReference.Scope.CATALOG
+                                boolean catalog = lDto.targetRef().scope() == ContentReference.Scope.CATALOG;
+                                l.setTargetScope(catalog
                                         ? dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkTargetScope.CATALOG
                                         : dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkTargetScope.PACKAGE);
                                 l.setTargetType(lDto.targetRef().type().name());
-                                if (lDto.targetRef().scope() == ContentReference.Scope.CATALOG) {
+                                if (catalog) {
                                     l.setCatalogRuleset(lDto.targetRef().ruleset());
                                     l.setCatalogSourceKey(lDto.targetRef().sourceKey());
+                                    l.setTargetId(null);
                                 }
                             }
                             sc.getLinks().add(l);
@@ -379,6 +388,20 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                                     Scene target = context.require(tDto.targetSceneRef(), CampaignContentType.SCENE, Scene.class);
                                     t.setTargetScene(target);
                                 }
+                            }
+                        }
+                        // Resolve PACKAGE-scoped scene link targets to package entity IDs
+                        if (scDto.links() != null) {
+                            for (int i = 0; i < scDto.links().size() && i < scene.getLinks().size(); i++) {
+                                var lDto = scDto.links().get(i);
+                                var link = scene.getLinks().get(i);
+                                if (lDto.targetRef() == null
+                                        || lDto.targetRef().scope() == ContentReference.Scope.CATALOG) {
+                                    continue;
+                                }
+                                CampaignContentType targetType = lDto.targetRef().type();
+                                Object target = context.require(lDto.targetRef(), targetType, Object.class);
+                                link.setTargetId(entityId(target));
                             }
                         }
                         sceneRepo.save(scene);

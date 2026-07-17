@@ -77,11 +77,37 @@ class FlywayMigrationTest {
     }
 
     @Test
-    void v5IsTheLatestMigration() {
+    void v5IsApplied() {
         Integer appliedV5 = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '5' AND \"success\" = TRUE",
                 Integer.class);
         assertThat(appliedV5).isEqualTo(1);
+    }
+
+    @Test
+    void v6IsTheLatestMigration() {
+        Integer appliedV6 = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '6' AND \"success\" = TRUE",
+                Integer.class);
+        assertThat(appliedV6).isEqualTo(1);
+    }
+
+    @Test
+    void v6MakesLinkTargetIdNullable() {
+        Integer sceneLinkNullable = jdbc.queryForObject(
+                """
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_name = 'SCENE_LINK' AND column_name = 'TARGET_ID' AND is_nullable = 'YES'
+                """,
+                Integer.class);
+        Integer questLinkNullable = jdbc.queryForObject(
+                """
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_name = 'QUEST_LINK' AND column_name = 'TARGET_ID' AND is_nullable = 'YES'
+                """,
+                Integer.class);
+        assertThat(sceneLinkNullable).isEqualTo(1);
+        assertThat(questLinkNullable).isEqualTo(1);
     }
 
     @Test

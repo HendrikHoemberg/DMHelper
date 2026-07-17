@@ -26,7 +26,8 @@ public class SceneLink {
     @Column(nullable = false, length = 30)
     private String targetType;
 
-    @Column(nullable = false)
+    /** Null for CATALOG-scoped links; set for PACKAGE-scoped targets. */
+    @Column
     private UUID targetId;
 
     @Column(length = 100)

@@ -303,7 +303,7 @@ class CampaignManifestV2ContractTest {
                     "ownerRef": { "scope": "PACKAGE", "type": "SCENE", "key": "sc-structured" },
                     "fieldPath": "/checks/0/dc",
                     "message": "DC inferred from source",
-                    "confidence": "LIKELY",
+                    "confidence": "MEDIUM",
                     "sourceLocator": "book:1",
                     "status": "OPEN",
                     "createdAt": "2025-01-01T00:00:00Z"
@@ -426,6 +426,51 @@ class CampaignManifestV2ContractTest {
         transition.put("key", "t-bad").put("kind", "INVALID_TRANSITION").put("sortOrder", 1);
         assertThat(schema.validate(mapper.writeValueAsString(root)))
                 .extracting(CampaignImportProblem::code).contains("SCHEMA_VIOLATION");
+    }
+
+    @Test
+    void structuredAdventureEnumsMatchJavaEnums() throws Exception {
+        JsonNode defs = mapper.readTree(fixture("schemas/campaign-format-v2.schema.json")).get("$defs");
+        assertSchemaEnumEqualsJava(defs, "sceneSection", "kind",
+                dev.hendrikhoemberg.dmhelper.adventure.data.SceneSectionKind.class);
+        assertSchemaEnumEqualsJava(defs, "sceneCheck", "visibility",
+                dev.hendrikhoemberg.dmhelper.adventure.data.SceneCheckVisibility.class);
+        assertSchemaEnumEqualsJava(defs, "sceneParticipant", "disposition",
+                dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipantDisposition.class);
+        assertSchemaEnumEqualsJava(defs, "sceneTransition", "kind",
+                dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransitionKind.class);
+        assertSchemaEnumEqualsJava(defs, "sceneLink", "role",
+                dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkRole.class);
+        assertSchemaEnumEqualsJava(defs, "quest", "status",
+                dev.hendrikhoemberg.dmhelper.quest.data.QuestStatus.class);
+        assertSchemaEnumEqualsJava(defs, "questObjective", "status",
+                dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus.class);
+        assertSchemaEnumEqualsJava(defs, "questObjective", "completionMode",
+                dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveCompletionMode.class);
+        assertSchemaEnumEqualsJava(defs, "questLink", "role",
+                dev.hendrikhoemberg.dmhelper.quest.data.QuestLinkRole.class);
+        assertSchemaEnumEqualsJava(defs, "sourceAnnotation", "confidence",
+                dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationConfidence.class);
+        assertSchemaEnumEqualsJava(defs, "sourceAnnotation", "status",
+                dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationStatus.class);
+        assertSchemaEnumEqualsJava(defs, "sessionObjectiveChange", "previousStatus",
+                dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus.class);
+        assertSchemaEnumEqualsJava(defs, "sessionObjectiveChange", "newStatus",
+                dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus.class);
+    }
+
+    private static void assertSchemaEnumEqualsJava(JsonNode defs, String defName, String property,
+                                                   Class<? extends Enum<?>> javaEnum) {
+        JsonNode enumNode = defs.get(defName).get("properties").get(property).get("enum");
+        assertThat(enumNode).as("$defs.%s.properties.%s.enum", defName, property).isNotNull();
+        List<String> schemaValues = new ArrayList<>();
+        enumNode.forEach(n -> schemaValues.add(n.textValue()));
+        List<String> javaValues = java.util.Arrays.stream(javaEnum.getEnumConstants())
+                .map(Enum::name)
+                .toList();
+        assertThat(schemaValues)
+                .as("schema enum for %s.%s must match %s", defName, property, javaEnum.getSimpleName())
+                .containsExactlyElementsOf(javaValues);
     }
 
     private static List<String> collectEntityKeys(JsonNode node) {

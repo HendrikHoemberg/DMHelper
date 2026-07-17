@@ -46,7 +46,28 @@
   "handouts": [],
   "maps": [],
   "encounters": [],
-  "notes": [],
+  "notes": [
+    {
+      "key": "note-village-elder",
+      "type": "NPC",
+      "title": "Village Elder",
+      "body": "The elder who gives the treasure quest.",
+      "tags": "npc,giver",
+      "dmOnly": true,
+      "createdAt": "2025-07-01T10:00:00Z",
+      "links": []
+    },
+    {
+      "key": "note-village-lore",
+      "type": "LOCATION",
+      "title": "Village Lore",
+      "body": "Local legends about the dark forest.",
+      "tags": "lore",
+      "dmOnly": true,
+      "createdAt": "2025-07-01T10:00:00Z",
+      "links": []
+    }
+  ],
   "quickNotes": [],
   "assignments": [],
   "ledgerEntries": [],
@@ -74,15 +95,17 @@
               "summary": "The village where the quest begins",
               "sourceLocator": "book:5",
               "mapRegionKey": "village-center",
+              "tags": ["start", "social"],
               "sections": [
                 { "kind": "READ_ALOUD", "label": "Read Aloud", "body": "The village square is bustling with activity.", "sourceLocator": "book:5", "sortOrder": 1 },
                 { "kind": "DM_ADVICE", "label": "DM Note", "body": "If players ask about the elder, point them to the town hall.", "sortOrder": 2 },
-                { "kind": "SECRET", "body": "A hidden trapdoor is under the fountain", "sortOrder": 3 }
+                { "kind": "SECRET", "body": "A hidden trapdoor is under the fountain", "sortOrder": 3 },
+                { "kind": "TRAP", "label": "Fountain trap", "body": "The trapdoor drops into a shallow pit (1d6 bludgeoning).", "sortOrder": 4 }
               ],
               "checks": [
                 {
                   "label": "Investigate", "ability": "wis", "skill": "perception",
-                  "dc": 12, "visibility": "PLAYER_FACING",
+                  "visibility": "PLAYER_FACING",
                   "success": "You notice faint footprints leading north", "failure": "You see nothing unusual",
                   "partial": "You see some disturbed dust",
                   "sourceLocator": "book:5", "sortOrder": 1
@@ -92,7 +115,7 @@
                 {
                   "displayName": "Town Guard", "quantity": 2, "disposition": "FRIENDLY",
                   "placementHint": "At the gate",
-                  "statblockRef": null,
+                  "statblockRef": { "scope": "CATALOG", "type": "STATBLOCK", "ruleset": "SRD_5_2", "sourceKey": "bandit" },
                   "sourceLocator": "book:5", "sortOrder": 1
                 }
               ],
@@ -100,7 +123,20 @@
                 { "key": "t-go-forest", "kind": "CHOICE", "label": "Head into the forest", "targetSceneRef": { "scope": "PACKAGE", "type": "SCENE", "key": "sc-forest" }, "condition": "if day time", "dmNote": "Forest is dangerous at night", "sourceLocator": "book:6", "sortOrder": 1 },
                 { "key": "t-leave", "kind": "EXIT", "label": "Leave the village", "externalDestination": "Overworld", "sortOrder": 2 }
               ],
-              "links": []
+              "links": [
+                {
+                  "role": "NPC",
+                  "targetRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-village-elder" },
+                  "displayText": "Village Elder",
+                  "sortOrder": 1
+                },
+                {
+                  "role": "REFERENCE",
+                  "targetRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-village-lore" },
+                  "displayText": "Village lore",
+                  "sortOrder": 2
+                }
+              ]
             },
             {
               "key": "sc-forest",
@@ -111,13 +147,14 @@
               "sourceLocator": "book:7",
               "sections": [
                 { "kind": "READ_ALOUD", "body": "Tall trees block out the sun.", "sortOrder": 1 },
-                { "kind": "ENVIRONMENT", "label": "Forest Terrain", "body": "Dense undergrowth makes movement difficult.", "sortOrder": 2 }
+                { "kind": "ENVIRONMENT", "label": "Forest Terrain", "body": "Dense undergrowth makes movement difficult.", "sortOrder": 2 },
+                { "kind": "HAZARD", "label": "Poison ivy", "body": "Contact requires a DC 12 Constitution save.", "sortOrder": 3 }
               ],
               "participants": [
                 {
                   "displayName": "Goblin Scout", "quantity": 3, "disposition": "HOSTILE",
                   "placementHint": "Hidden in bushes",
-                  "statblockRef": null,
+                  "statblockRef": { "scope": "CATALOG", "type": "STATBLOCK", "ruleset": "SRD_5_2", "sourceKey": "bandit" },
                   "sourceLocator": "book:7", "sortOrder": 1
                 }
               ],
@@ -140,7 +177,20 @@
       "rewards": "1000 XP and a magic item",
       "prerequisites": "Must be level 3+",
       "outcomeNotes": "Treasure contains a map to an even greater prize.",
-      "links": [],
+      "links": [
+        {
+          "role": "GIVER",
+          "targetRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-village-elder" },
+          "displayText": "Village Elder",
+          "sortOrder": 1
+        },
+        {
+          "role": "RELATED_SCENE",
+          "targetRef": { "scope": "PACKAGE", "type": "SCENE", "key": "sc-forest" },
+          "displayText": "Dark Forest",
+          "sortOrder": 2
+        }
+      ],
       "objectives": [
         { "key": "obj-find-cave", "title": "Find the hidden cave", "description": "Search the forest for the entrance", "status": "NOT_STARTED", "completionMode": "ALL", "sortOrder": 1, "sourceLocator": "book:3" },
         { "key": "obj-defeat-guardian", "title": "Defeat the guardian", "description": "The cave is guarded by a powerful creature", "status": "NOT_STARTED", "completionMode": "ALL", "sortOrder": 2, "prerequisiteRefs": [{ "scope": "PACKAGE", "type": "OBJECTIVE", "key": "obj-find-cave" }], "sourceLocator": "book:4" },
@@ -184,6 +234,17 @@
       }
     ]
   },
-  "annotations": [],
+  "annotations": [
+    {
+      "key": "ann-check-dc",
+      "ownerRef": { "scope": "PACKAGE", "type": "SCENE", "key": "sc-village" },
+      "fieldPath": "/adventures/0/chapters/0/scenes/0/checks/0/dc",
+      "message": "DC not stated in source; left unresolved",
+      "confidence": "MEDIUM",
+      "sourceLocator": "book:5",
+      "status": "OPEN",
+      "createdAt": "2025-07-01T10:00:00Z"
+    }
+  ],
   "diceRolls": []
 }

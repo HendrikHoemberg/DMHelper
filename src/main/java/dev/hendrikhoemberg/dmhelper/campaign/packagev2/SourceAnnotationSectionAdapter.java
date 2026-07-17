@@ -1,7 +1,9 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotation;
+import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationConfidence;
 import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationStatus;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SourceAnnotationDto;
@@ -37,48 +39,79 @@ public class SourceAnnotationSectionAdapter implements CampaignSectionExporter, 
 
     @Override
     public void exportSection(CampaignExportContext context, CampaignManifestAssembler target) {
-        var campaign = context.campaign();
-        List<SourceAnnotation> annotations = repo.findByCampaignIdAndOwnerTypeAndOwnerId(
-                campaign.getId(), "", UUID.randomUUID());
-        annotations = repo.findAll();
-        List<SourceAnnotationDto> dtos = annotations.stream()
-                .filter(a -> a.getCampaign().getId().equals(campaign.getId()))
-                .map(a -> {
-                    String aKey = context.key(CampaignContentType.SOURCE_ANNOTATION, a.getId(), "annotation");
-                    ContentReference ownerRef = ContentReference.packageRef(
-                            CampaignContentType.valueOf(a.getOwnerType()), a.getOwnerId().toString());
-                    return new SourceAnnotationDto(aKey, ownerRef, a.getFieldPath(),
-                            a.getMessage(), a.getConfidence().name(), a.getSourceLocator(),
-                            a.getStatus().name(), a.getResolutionNote(), a.getCreatedAt());
-                }).toList();
+        List<SourceAnnotation> annotations =
+                repo.findByCampaignIdOrderByCreatedAtAscIdAsc(context.campaignId());
+        List<SourceAnnotationDto> dtos = annotations.stream().map(a -> {
+            String aKey = context.key(CampaignContentType.SOURCE_ANNOTATION, a.getId(), "annotation");
+            CampaignContentType ownerType = CampaignContentType.valueOf(a.getOwnerType());
+            ContentReference ownerRef = context.packageRef(ownerType, a.getOwnerId(), a.getOwnerType());
+            return new SourceAnnotationDto(
+                    aKey,
+                    ownerRef,
+                    a.getFieldPath(),
+                    a.getMessage(),
+                    a.getConfidence() != null ? a.getConfidence().name() : null,
+                    a.getSourceLocator(),
+                    a.getStatus() != null ? a.getStatus().name() : null,
+                    a.getResolutionNote(),
+                    a.getCreatedAt());
+        }).toList();
         target.annotations(dtos);
     }
 
     @Override
     public void importSection(CampaignManifestV2 source, CampaignImportContext context) {
         List<SourceAnnotationDto> dtos = source.annotations();
-        if (dtos == null) return;
+        if (dtos == null) {
+            return;
+        }
         var campaign = context.campaign();
         for (SourceAnnotationDto dto : dtos) {
-            SourceAnnotation a = new SourceAnnotation();
-            a.setCampaign(campaign);
-            if (dto.ownerRef() != null) {
-                a.setOwnerType(dto.ownerRef().type().name());
-                a.setOwnerId(UUID.fromString(dto.ownerRef().key()));
-            }
-            a.setFieldPath(dto.fieldPath());
-            a.setMessage(dto.message());
+            SourceAnnotation annotation = new SourceAnnotation();
+            annotation.setCampaign(campaign);
+            annotation.setFieldPath(dto.fieldPath());
+            annotation.setMessage(dto.message());
             if (dto.confidence() != null) {
-                a.setConfidence(dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationConfidence.valueOf(dto.confidence()));
+                annotation.setConfidence(SourceAnnotationConfidence.valueOf(dto.confidence()));
             }
-            a.setSourceLocator(dto.sourceLocator());
+            annotation.setSourceLocator(dto.sourceLocator());
             if (dto.status() != null) {
-                a.setStatus(dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationStatus.valueOf(dto.status()));
+                annotation.setStatus(SourceAnnotationStatus.valueOf(dto.status()));
             }
-            a.setResolutionNote(dto.resolutionNote());
-            if (dto.createdAt() != null) a.setCreatedAt(dto.createdAt());
-            repo.save(a);
-            context.register(CampaignContentType.SOURCE_ANNOTATION, dto.key(), a, a.getId());
+            annotation.setResolutionNote(dto.resolutionNote());
+            if (dto.createdAt() != null) {
+                annotation.setCreatedAt(dto.createdAt());
+            }
+
+            if (dto.ownerRef() == null) {
+                throw new IllegalArgumentException("Source annotation requires ownerRef: " + dto.key());
+            }
+            if (dto.ownerRef().scope() != ContentReference.Scope.PACKAGE) {
+                throw new IllegalArgumentException(
+                        "Source annotation ownerRef must be PACKAGE-scoped: " + dto.key());
+            }
+            CampaignContentType ownerType = dto.ownerRef().type();
+            annotation.setOwnerType(ownerType.name());
+            // Temporary placeholder until deferred resolution; column is non-null.
+            annotation.setOwnerId(UUID.fromString("00000000-0000-0000-0000-000000000000"));
+            repo.save(annotation);
+            context.register(CampaignContentType.SOURCE_ANNOTATION, dto.key(), annotation, annotation.getId());
+
+            ContentReference ownerRef = dto.ownerRef();
+            context.defer("source-annotation-owner:" + dto.key(), () -> {
+                Object owner = context.require(ownerRef, ownerType, Object.class);
+                annotation.setOwnerId(entityId(owner));
+                repo.save(annotation);
+            });
+        }
+    }
+
+    private static UUID entityId(Object entity) {
+        try {
+            return (UUID) entity.getClass().getMethod("getId").invoke(entity);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(
+                    "Cannot resolve package entity id for " + entity.getClass().getName(), e);
         }
     }
 }

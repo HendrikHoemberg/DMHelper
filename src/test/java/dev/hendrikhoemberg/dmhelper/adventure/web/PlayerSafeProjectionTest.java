@@ -8,11 +8,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.containsString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,6 +44,25 @@ class PlayerSafeProjectionTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(not(containsString("secrets"))))
                 .andExpect(content().string(not(containsString("dmAdvice"))));
+    }
+
+    @Test
+    void tableStateJsonDoesNotExposeStructuredDmFields() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/table/state"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String body = result.getResponse().getContentAsString();
+        assertThat(body)
+                .doesNotContain("DM_ADVICE")
+                .doesNotContain("READ_ALOUD")
+                .doesNotContain("sourceLocator")
+                .doesNotContain("sourceAnnotation")
+                .doesNotContain("dmNote")
+                .doesNotContain("prerequisites")
+                .doesNotContain("outcomeNotes")
+                .doesNotContain("completionMode")
+                .doesNotContain("externalDestination")
+                .doesNotContain("fieldPath");
     }
 
     @Test

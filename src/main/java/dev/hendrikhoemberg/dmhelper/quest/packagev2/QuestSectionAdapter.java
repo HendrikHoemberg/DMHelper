@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class QuestSectionAdapter implements CampaignSectionExporter, CampaignSectionImporter {
@@ -89,14 +90,25 @@ public class QuestSectionAdapter implements CampaignSectionExporter, CampaignSec
     }
 
     private static ContentReference resolveLinkTarget(QuestLink link, CampaignExportContext context) {
+        CampaignContentType type = CampaignContentType.valueOf(link.getTargetType());
         if (link.getTargetScope() == dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkTargetScope.CATALOG) {
             return ContentReference.catalogRef(
-                    CampaignContentType.valueOf(link.getTargetType()),
-                    link.getCatalogRuleset(), link.getCatalogSourceKey());
+                    type, link.getCatalogRuleset(), link.getCatalogSourceKey());
         }
-        return ContentReference.packageRef(
-                CampaignContentType.valueOf(link.getTargetType()),
-                link.getTargetId().toString());
+        if (link.getTargetId() == null) {
+            throw new IllegalStateException("PACKAGE quest link missing targetId: role=" + link.getRole());
+        }
+        String display = link.getDisplayText() != null ? link.getDisplayText() : link.getTargetType();
+        return context.packageRef(type, link.getTargetId(), display);
+    }
+
+    private static UUID entityId(Object entity) {
+        try {
+            return (UUID) entity.getClass().getMethod("getId").invoke(entity);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(
+                    "Cannot resolve package entity id for " + entity.getClass().getName(), e);
+        }
     }
 
     @Override
@@ -144,13 +156,15 @@ public class QuestSectionAdapter implements CampaignSectionExporter, CampaignSec
                     l.setCondition(lDto.condition());
                     l.setSortOrder(lDto.sortOrder());
                     if (lDto.targetRef() != null) {
-                        l.setTargetScope(lDto.targetRef().scope() == ContentReference.Scope.CATALOG
+                        boolean catalog = lDto.targetRef().scope() == ContentReference.Scope.CATALOG;
+                        l.setTargetScope(catalog
                                 ? dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkTargetScope.CATALOG
                                 : dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkTargetScope.PACKAGE);
                         l.setTargetType(lDto.targetRef().type().name());
-                        if (lDto.targetRef().scope() == ContentReference.Scope.CATALOG) {
+                        if (catalog) {
                             l.setCatalogRuleset(lDto.targetRef().ruleset());
                             l.setCatalogSourceKey(lDto.targetRef().sourceKey());
+                            l.setTargetId(null);
                         }
                     }
                     linkRepo.save(l);
@@ -183,6 +197,21 @@ public class QuestSectionAdapter implements CampaignSectionExporter, CampaignSec
                                 existing.add(dep);
                             }
                         }
+                    }
+                }
+                // Resolve PACKAGE-scoped quest link targets after notes/statblocks are registered
+                if (qDto.links() != null) {
+                    for (int i = 0; i < qDto.links().size() && i < quest.getLinks().size(); i++) {
+                        var lDto = qDto.links().get(i);
+                        var link = quest.getLinks().get(i);
+                        if (lDto.targetRef() == null
+                                || lDto.targetRef().scope() == ContentReference.Scope.CATALOG) {
+                            continue;
+                        }
+                        CampaignContentType targetType = lDto.targetRef().type();
+                        Object target = context.require(lDto.targetRef(), targetType, Object.class);
+                        link.setTargetId(entityId(target));
+                        linkRepo.save(link);
                     }
                 }
             });

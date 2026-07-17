@@ -119,6 +119,14 @@ class FlywayLegacyUpgradeTest {
     }
 
     @Test
+    void appliesV6AfterBaseline() {
+        Integer appliedV6 = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '6' AND \"success\" = TRUE",
+                Integer.class);
+        assertThat(appliedV6).isEqualTo(1);
+    }
+
+    @Test
     void v5TablesExistAfterUpgrade() {
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'QUEST'",

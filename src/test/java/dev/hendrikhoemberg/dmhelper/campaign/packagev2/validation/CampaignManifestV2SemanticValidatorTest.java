@@ -129,7 +129,7 @@ class CampaignManifestV2SemanticValidatorTest {
     void invalidOwnerRefDetected() {
         var annotation = new CampaignManifestV2.SourceAnnotationDto(
                 "ann-bad", ContentReference.packageRef(CampaignContentType.SCENE, "missing-scene"),
-                "/field", "msg", "CERTAIN", null, "OPEN", null, Instant.parse("2025-01-01T00:00:00Z"));
+                "/field", "msg", "HIGH", null, "OPEN", null, Instant.parse("2025-01-01T00:00:00Z"));
         var manifest = minimal();
         var manifest2 = new CampaignManifestV2(
                 2, manifest.metadata(), manifest.campaign(), manifest.assets(), manifest.party(),
@@ -193,7 +193,7 @@ class CampaignManifestV2SemanticValidatorTest {
         var manifest = minimal();
         var annotation = new CampaignManifestV2.SourceAnnotationDto(
                 "ann-missing", ContentReference.packageRef(CampaignContentType.SCENE, "no-such-scene"),
-                "/field", "msg", "CERTAIN", null, "OPEN", null, Instant.parse("2025-01-01T00:00:00Z"));
+                "/field", "msg", "MEDIUM", null, "OPEN", null, Instant.parse("2025-01-01T00:00:00Z"));
         var manifest2 = new CampaignManifestV2(
                 2, manifest.metadata(), manifest.campaign(), manifest.assets(), manifest.party(),
                 manifest.customStatBlocks(), manifest.handouts(), manifest.maps(), manifest.encounters(),
