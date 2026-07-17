@@ -805,3 +805,16 @@ player devices.
 - **Dice roller is optional-first** (§2.3.9) — promoted into v1 (M11), but every roll input must accept a typed value so physical dice remain first-class forever; no feature may require the digital roller.
 - **New-feature milestone placement** (2026-07) — compendium lands directly after M2 (reuses the just-built open5e seeding machinery); map → battle → tracker → player view stay next so the app is table-ready early (M5); sheets (M9) follow the notes module and build on compendium data; bookkeeping (M10) and dice (M11) before final polish (M12).
 - **Freeform movement toggle** (2026-07, before M5) — the battle map supports both grid-snapped and freeform pixel movement, toggled per-map via `GameMap.movementMode`. Token positions are stored as pixel coordinates in both modes; grid snapping is applied only on the frontend during drag. Grid visibility is an independent toggle (`showGrid`). Token sizes remain in cell increments (1×1..4×4) in both modes. The map editor stays grid-based always. AoE templates and measurement follow the active movement mode.
+
+---
+
+## 10. Delivery Item Tracking
+
+| Item | Description | Status | Artifacts |
+|------|-------------|--------|-----------|
+| 1 | Campaign package v2 container format | `IMPLEMENTED` | CampaignManifestV2, ZIP/JSON containers, preview/import/export pipeline |
+| 2 | Typed catalog & content references | `IMPLEMENTED` | CampaignContentType, ContentReference, catalog endpoints |
+| 3 | Session cockpit | `IMPLEMENTED` | CampaignSession, session state DTO, determinic import recovery |
+| 4 | Session log & scene visits | `IMPLEMENTED` | SessionSceneVisit, scene visit DTOs, draft body |
+| 5 | Combat log & dice history opt-out | `IMPLEMENTED` | CombatLogEntry, DiceRoll, exclusions metadata |
+| 6 | Structured scenes, quests, annotations | `IMPLEMENTED` | Flyway V5 migration; fixture `structured-adventure-quest.dmcampaign`; `CampaignCompleteRoundTripTest`, `CampaignPackageValidationPipelineTest`, `SessionDraftServiceTest`, `CoreSessionLoopSmokeTest`; AdventureSectionAdapter, QuestSectionAdapter, SourceAnnotationSectionAdapter, SessionSectionAdapter |

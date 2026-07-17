@@ -184,6 +184,271 @@ Tokens, combatants, and party members use the following `kind` values:
 
 These are stored as strings in the manifest. The importer preserves the exact value.
 
+## Structured Scene Enums
+
+Structured scenes introduce typed fields backed by string-valued enums:
+
+| Enum | Values | Field |
+|------|--------|-------|
+| `SceneStatus` | `UNVISITED`, `VISITED`, `DONE` | `scene.status` |
+| `SceneSectionKind` | `READ_ALOUD`, `DM_ADVICE`, `SECRET`, `FEATURE`, `TRAP`, `HAZARD`, `ENVIRONMENT`, `PUZZLE`, `TREASURE`, `DEVELOPMENT`, `CONSEQUENCE`, `SCALING` | `scene.sections[].kind` |
+| `SceneCheckVisibility` | `PLAYER_FACING`, `DM_FACING`, `PASSIVE` | `scene.checks[].visibility` |
+| `SceneParticipantDisposition` | `HOSTILE`, `UNFRIENDLY`, `NEUTRAL`, `FRIENDLY`, `ALLY`, `UNKNOWN` | `scene.participants[].disposition` |
+| `SceneTransitionKind` | `CHOICE`, `ENTRANCE`, `EXIT` | `scene.transitions[].kind` |
+| `SceneLinkRole` | `REFERENCE`, `HANDOUT`, `RULE`, `QUEST`, `TIMELINE_EVENT`, `RELATED_SCENE`, `NPC`, `LOCATION` | `scene.links[].role` |
+| `SceneLinkTargetScope` | `PACKAGE`, `CATALOG` | `scene.links[].targetRef.scope` |
+
+## Structured Quest Enums
+
+| Enum | Values | Field |
+|------|--------|-------|
+| `QuestStatus` | `NOT_STARTED`, `ACTIVE`, `ON_HOLD`, `COMPLETED`, `FAILED`, `ABANDONED` | `quest.status` |
+| `QuestObjectiveStatus` | `NOT_STARTED`, `ACTIVE`, `COMPLETED`, `FAILED`, `SKIPPED` | `quest.objectives[].status` |
+| `QuestObjectiveCompletionMode` | `ALL`, `ANY` | `quest.objectives[].completionMode` |
+| `QuestLinkRole` | `GIVER`, `REFERENCE`, `HANDOUT`, `RULE`, `RELATED_SCENE`, `NPC`, `LOCATION`, `FACTION`, `TIMELINE_EVENT`, `REWARD` | `quest.links[].role` |
+
+## Source Annotation Enums
+
+| Enum | Values | Field |
+|------|--------|-------|
+| `SourceAnnotationConfidence` | `HIGH`, `MEDIUM`, `LOW`, `UNKNOWN` | `annotation.confidence` |
+| `SourceAnnotationStatus` | `OPEN`, `RESOLVED`, `DISMISSED` | `annotation.status` |
+
+## Structured Scene DTO Fields
+
+Each `SceneDto` in the manifest carries the following fields beyond the v1 scene contract:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `summary` | string \| null | Short DM-facing summary of the scene |
+| `sourceLocator` | string \| null | Page/book reference (e.g. `"book:42"`) |
+| `tags` | string[] | Free-text tags for filtering |
+| `mapRegionKey` | string \| null | Unvalidated free-text key referencing a map region; **not** a resolved reference (see note below) |
+| `sections` | SceneSectionDto[] | Ordered content blocks (read-aloud, DM advice, secret text, etc.) |
+| `checks` | SceneCheckDto[] | Ability checks tied to the scene |
+| `participants` | SceneParticipantDto[] | Creatures or NPCs present in the scene |
+| `transitions` | SceneTransitionDto[] | Navigation options leaving the scene |
+| `links` | SceneLinkDto[] | Cross-references to notes, handouts, rules, quests |
+
+### SceneSectionDto
+
+```json
+{ "kind": "READ_ALOUD", "label": "Read Aloud", "body": "...", "sourceLocator": "book:5", "sortOrder": 1 }
+```
+
+`kind` must be one of the `SceneSectionKind` values. `label` is optional and defaults to the kind's display name.
+
+### SceneCheckDto
+
+```json
+{
+  "label": "Investigate", "ability": "wis", "skill": "perception", "dc": 12,
+  "visibility": "PLAYER_FACING",
+  "success": "You find tracks", "failure": "You see nothing", "partial": "Some disturbed dust",
+  "ruleRef": { "scope": "CATALOG", "type": "RULE", "ruleset": "SRD_5_2", "sourceKey": "skill_perception" },
+  "sourceLocator": "book:5", "sortOrder": 1
+}
+```
+
+`ability` and `skill` are free-text strings (e.g. `"wis"`, `"perception"`). `visibility` controls whether the DC and results are player-facing, DM-only, or passive. `ruleRef` is an optional catalog reference to a compendium rule.
+
+### SceneParticipantDto
+
+```json
+{
+  "displayName": "Town Guard", "quantity": 2, "disposition": "FRIENDLY",
+  "placementHint": "At the gate",
+  "statblockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "town-guard" },
+  "noteRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-guards" },
+  "sourceLocator": "book:5", "sortOrder": 1
+}
+```
+
+`disposition` is a `SceneParticipantDisposition` enum. `statblockRef` and `noteRef` are optional typed references. `placementHint` is free-text guidance for the DM.
+
+### SceneTransitionDto
+
+```json
+{
+  "key": "t-go-forest",
+  "kind": "CHOICE",
+  "label": "Head into the forest",
+  "targetSceneRef": { "scope": "PACKAGE", "type": "SCENE", "key": "sc-forest" },
+  "externalDestination": null,
+  "condition": "if day time",
+  "dmNote": "Forest is dangerous at night",
+  "sourceLocator": "book:6",
+  "sortOrder": 1
+}
+```
+
+**Transition kind rules:**
+- `CHOICE` — must provide `targetSceneRef`; `externalDestination` must be null. Represents a player-driven choice that leads to another structured scene.
+- `ENTRANCE` — must provide `targetSceneRef`; `externalDestination` must be null. Represents an automatic entry into the scene (e.g., a door from another map region).
+- `EXIT` — must provide `externalDestination` (free-text); `targetSceneRef` must be null. Represents leaving the adventure structure (e.g., "Overworld", "Town").
+
+The CHECK constraint `ck_scene_transition_target` enforces the mutual exclusion at the database level.
+
+### SceneLinkDto
+
+```json
+{
+  "role": "RULE",
+  "targetRef": { "scope": "CATALOG", "type": "RULE", "ruleset": "SRD_5_2", "sourceKey": "condition_frightened" },
+  "displayText": "Frightened condition",
+  "condition": "if the guard succeeds",
+  "sortOrder": 1
+}
+```
+
+`role` is a `SceneLinkRole` enum. `targetRef` follows the standard typed-reference rules (see below). `displayText` is optional human-readable text; `condition` is optional narrative context.
+
+### Typed-Reference Rules
+
+All content references in the item-6 DTOs follow the same `ContentReference` structure used throughout v2:
+
+- **Package reference** — `{ "scope": "PACKAGE", "type": "<CampaignContentType>", "key": "<package-key>" }`.
+  Used for references within the same campaign. The `type` must match a `CampaignContentType` enum value (e.g. `SCENE`, `OBJECTIVE`, `STATBLOCK`, `NOTE`).
+- **Catalog reference** — `{ "scope": "CATALOG", "type": "<CampaignContentType>", "ruleset": "SRD_5_2", "sourceKey": "<stable-id>" }`.
+  Used for references to SRD/compendium content. `ruleset` is required for catalog references.
+
+The union is closed: providing `key` on a catalog reference or `sourceKey`/`ruleset` on a package reference is a schema error.
+
+For item-6, the following `CampaignContentType` values appear in references:
+`ADVENTURE`, `CHAPTER`, `SCENE`, `TRANSITION`, `QUEST`, `OBJECTIVE`, `STATBLOCK`, `NOTE`, `HANDOUT`, `RULE`, `PARTY_MEMBER`, `SOURCE_ANNOTATION`, `SESSION_OBJECTIVE_CHANGE`.
+
+## Quest DTO Fields
+
+### QuestDto
+
+```json
+{
+  "key": "quest-treasure",
+  "title": "Find the Lost Treasure",
+  "status": "ACTIVE",
+  "summary": "Find the lost treasure hidden in the dark forest.",
+  "sourceLocator": "book:3",
+  "tags": ["main", "treasure"],
+  "rewards": "1000 XP and a magic item",
+  "prerequisites": "Must be level 3+",
+  "outcomeNotes": "Treasure contains a map to an even greater prize.",
+  "links": [...],
+  "objectives": [...],
+  "createdAt": "2025-07-01T10:00:00Z"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | `QuestStatus` enum: `NOT_STARTED`, `ACTIVE`, `ON_HOLD`, `COMPLETED`, `FAILED`, `ABANDONED` |
+| `summary` | string \| null | Short quest summary |
+| `sourceLocator` | string \| null | Page/book reference |
+| `tags` | string[] | Free-text tags |
+| `rewards` | string \| null | Free-text reward description |
+| `prerequisites` | string \| null | Free-text prerequisites |
+| `outcomeNotes` | string \| null | Free-text outcome notes for the DM |
+| `links` | QuestLinkDto[] | Cross-references (same structure as SceneLinkDto) |
+
+### QuestObjectiveDto
+
+```json
+{
+  "key": "obj-find-cave",
+  "title": "Find the hidden cave",
+  "description": "Search the forest for the entrance",
+  "status": "NOT_STARTED",
+  "completionMode": "ALL",
+  "sortOrder": 1,
+  "prerequisiteRefs": [
+    { "scope": "PACKAGE", "type": "OBJECTIVE", "key": "obj-find-cave" }
+  ],
+  "sourceLocator": "book:3"
+}
+```
+
+**Objective dependency semantics:**
+- `completionMode` controls how sub-objectives of a parent are evaluated:
+  - `ALL` — every prerequisite objective must reach `COMPLETED` before this objective can become `ACTIVE`.
+  - `ANY` — any one prerequisite objective reaching `COMPLETED` is sufficient.
+- Objective status is **DM-controlled**: only the DM (or automated DM tooling) transitions status via the UI or API. There is no automatic status inference from combat outcomes.
+- Objectives with no `prerequisiteRefs` are available immediately (root objectives).
+- The `prerequisiteRefs` list references other `OBJECTIVE` entries within the same campaign package via typed package references.
+
+## Source Annotation Format
+
+Source annotations track the provenance and confidence of content extracted from published adventures or external sources.
+
+```json
+{
+  "key": "ann-village-scene",
+  "ownerRef": { "scope": "PACKAGE", "type": "SCENE", "key": "sc-village" },
+  "fieldPath": "sections[0].body",
+  "message": "Paraphrased from original text",
+  "confidence": "HIGH",
+  "sourceLocator": "book:5",
+  "status": "OPEN",
+  "resolutionNote": "Verify against original",
+  "createdAt": "2025-07-01T10:00:00Z"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ownerRef` | ContentReference | Typed ref to the owning entity (scene, quest, etc.) |
+| `fieldPath` | string \| null | JSON pointer to the annotated field |
+| `message` | string | Annotation text |
+| `confidence` | string | `SourceAnnotationConfidence` enum |
+| `sourceLocator` | string \| null | Source page/book reference |
+| `status` | string | `SourceAnnotationStatus` enum |
+| `resolutionNote` | string \| null | Note on how the annotation was resolved |
+
+Annotations are stored at the campaign level and follow the adapter order at position 980 (between Quest 950 and Notes 1000).
+
+## Session Objective-Change Format
+
+Session objective changes record the history of objective status transitions during a session.
+
+```json
+{
+  "key": "obj-change-accept",
+  "objectiveRef": { "scope": "PACKAGE", "type": "OBJECTIVE", "key": "obj-find-cave" },
+  "previousStatus": "NOT_STARTED",
+  "newStatus": "ACTIVE",
+  "changedAt": "2025-07-16T18:05:00Z"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `objectiveRef` | ContentReference | Typed ref to the objective (always package-scoped) |
+| `previousStatus` | string \| null | The `QuestObjectiveStatus` before the change |
+| `newStatus` | string | The `QuestObjectiveStatus` after the change |
+| `changedAt` | string (ISO-8601) | Real-world timestamp |
+
+These are nested inside the `session` object under `session.objectiveChanges[]`.
+
+## V1 Compatibility
+
+Legacy v1 scenes (created before the item-6 structured scene migration) receive `null` or empty values for all new item-6 fields:
+
+| Field | Legacy Value |
+|-------|-------------|
+| `summary` | `null` |
+| `sourceLocator` | `null` |
+| `tags` | `[]` |
+| `mapRegionKey` | `null` |
+| `sections` | `[]` |
+| `checks` | `[]` |
+| `participants` | `[]` |
+| `transitions` | `[]` |
+| `links` | `[]` |
+
+Legacy campaigns (without a `quests` or `annotations` array) simply omit these sections. The import adapter treats `null` section arrays as empty — no migration defaulting is required.
+
+## mapRegionKey Note
+
+`mapRegionKey` is stored as **unvalidated free-text**. It is not resolved against any map region registry during import or export. A future delivery item (item 9) may introduce a proper typed reference. Until then, importing a package with `mapRegionKey` set simply preserves the string value; no referential integrity check is performed.
+
 ## Persistent vs Transient Classification
 
 Every campaign-owned field is classified as either:
@@ -215,7 +480,10 @@ Adapters (order):
   TreasurySectionAdapter       (700) — item assignments
   LedgerSectionAdapter         (800) — ledger entries
   AdventureSectionAdapter      (900) — adventures, chapters, scenes
+  QuestSectionAdapter          (950) — quests, objectives, dependencies
+  SourceAnnotationSectionAdapter (980) — source annotations
   NotesSectionAdapter         (1000) — notes, links, quick notes
+  SessionSectionAdapter       (1150) — session state, scene visits, objective changes
   CalendarSectionAdapter      (1100) — timeline events
   DiceSectionAdapter          (1200) — dice history
 ```
@@ -252,13 +520,14 @@ no campaign row, key row, or installed asset survives.
 
 ## Fixture Locations
 
-Three flagship fixtures verify the round-trip contract:
+Four flagship fixtures verify the round-trip contract:
 
 | Fixture | Path | Purpose |
 |---------|------|---------|
 | Minimal v2 | `src/test/resources/campaigns/v2/minimal.dmcampaign.json` | Asset-free, single entity — validates structural schema |
 | Feature-complete v2 | `src/test/resources/campaigns/v2/feature-complete.dmcampaign/manifest.json` | Exercises every current section, relationship, history, and asset type |
 | Published-adventure-shaped v2 | `src/test/resources/campaigns/v2/published-adventure-shaped.dmcampaign/manifest.json` | Exercises larger ordered adventure content and repeated references |
+| Structured-adventure-quest v2 | `src/test/resources/campaigns/v2/structured-adventure-quest.dmcampaign/manifest.json` | Exercises structured scenes (sections, checks, participants, transitions, links), quests with objectives and dependencies, source annotations, and session objective changes |
 
 Each fixture follows schema validate → dry-run → import → export → re-import → semantic
 deep-compare. Imported database snapshots also receive a normalized, repository-backed projection
