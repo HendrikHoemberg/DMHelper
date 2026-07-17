@@ -238,9 +238,9 @@ class MapSectionAdapterTest {
                 new MapDocumentDto.GridDto(30, 20, 48, "square", "GRID", true),
                 List.of(
                         new MapLayerDto("background-a", "A", MapLayerDto.LayerType.IMAGE,
-                                true, false, List.of(), List.of(), image),
+                                true, false, List.of(), List.of(), image, null),
                         new MapLayerDto("background-b", "B", MapLayerDto.LayerType.IMAGE,
-                                true, false, List.of(), List.of(), image)),
+                                true, false, List.of(), List.of(), image, null)),
                 List.of(), List.of());
         map.setDocument(new tools.jackson.databind.json.JsonMapper().writeValueAsString(document));
 
@@ -487,7 +487,7 @@ class MapSectionAdapterTest {
             if (imageDataUrl != null) {
                 var imgLayer = new MapLayerDto("bg", "Background", MapLayerDto.LayerType.IMAGE,
                         true, false, List.of(), List.of(),
-                        new MapLayerDto.ImageDto(imageDataUrl, 0, 0, 30, 20));
+                        new MapLayerDto.ImageDto(imageDataUrl, 0, 0, 30, 20), null);
                 var terrainLayer = MapLayerDto.createTerrainLayer();
                 var objectsLayer = MapLayerDto.createObjectsLayer();
                 var annotationsLayer = MapLayerDto.createAnnotationsLayer();

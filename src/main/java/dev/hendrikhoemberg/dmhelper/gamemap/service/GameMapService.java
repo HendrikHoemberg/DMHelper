@@ -100,13 +100,26 @@ public class GameMapService {
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid map document JSON: " + e.getMessage(), e);
         }
-        if (doc.schemaVersion() != MapDocumentDto.CURRENT_SCHEMA_VERSION) {
+
+        String jsonToSave = documentJson;
+        if (doc.schemaVersion() == 1) {
+            // v1→v2 migration: bump schema version
+            var migrated = new MapDocumentDto(
+                    MapDocumentDto.CURRENT_SCHEMA_VERSION,
+                    doc.grid(), doc.layers(), doc.primitives(), doc.customTerrain()
+            );
+            try {
+                jsonToSave = objectMapper.writeValueAsString(migrated);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to migrate map document v1→v2", e);
+            }
+        } else if (doc.schemaVersion() != MapDocumentDto.CURRENT_SCHEMA_VERSION) {
             throw new IllegalArgumentException(
                     "Unsupported schemaVersion: " + doc.schemaVersion()
                     + ". Expected: " + MapDocumentDto.CURRENT_SCHEMA_VERSION);
         }
 
-        map.setDocument(documentJson);
+        map.setDocument(jsonToSave);
         repository.saveAndFlush(map);
         return map.getVersion();
     }

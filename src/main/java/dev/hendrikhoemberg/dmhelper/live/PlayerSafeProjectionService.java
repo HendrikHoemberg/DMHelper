@@ -43,16 +43,21 @@ public class PlayerSafeProjectionService {
 
             var safeLayers = doc.layers().stream()
                     .filter(l -> l.type() != MapLayerDto.LayerType.ANNOTATIONS)
+                    .filter(l -> l.playerVisible() == null || l.playerVisible())
                     .map(l -> l.visible() != null && l.visible() ? l : new MapLayerDto(
                             l.id(), l.name(), l.type(), false,
-                            l.locked(), List.of(), List.of(), null))
+                            l.locked(), List.of(), List.of(), null, l.playerVisible()))
+                    .toList();
+
+            var safePrimitives = doc.primitives().stream()
+                    .filter(p -> p.playerVisible() == null || p.playerVisible())
                     .toList();
 
             return new MapDocumentDto(
                     doc.schemaVersion(),
                     doc.grid(),
                     safeLayers,
-                    doc.primitives(),
+                    safePrimitives,
                     doc.customTerrain()
             );
         } catch (Exception e) {

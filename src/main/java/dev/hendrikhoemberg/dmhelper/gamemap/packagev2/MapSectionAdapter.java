@@ -269,7 +269,7 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
             layers.add(new MapLayerDto(
                     layer.id(), layer.name(), layer.type(),
                     layer.visible(), layer.locked(),
-                    layer.cells(), layer.shapes(), imageDto
+                    layer.cells(), layer.shapes(), imageDto, null
             ));
         }
 

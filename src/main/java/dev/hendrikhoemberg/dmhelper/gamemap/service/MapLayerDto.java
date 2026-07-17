@@ -14,7 +14,8 @@ public record MapLayerDto(
         Boolean locked,
         List<CellDto> cells,
         List<ShapeDto> shapes,
-        ImageDto image
+        ImageDto image,
+        Boolean playerVisible
 ) {
     public enum LayerType { TERRAIN, OBJECTS, ANNOTATIONS, IMAGE }
 
@@ -23,18 +24,21 @@ public record MapLayerDto(
         locked = locked != null ? locked : Boolean.FALSE;
         cells = cells != null ? cells : List.of();
         shapes = shapes != null ? shapes : List.of();
+        if (playerVisible == null) {
+            playerVisible = type == LayerType.ANNOTATIONS ? Boolean.FALSE : Boolean.TRUE;
+        }
     }
 
     public static MapLayerDto createTerrainLayer() {
-        return new MapLayerDto("terrain", "Terrain", LayerType.TERRAIN, true, false, List.of(), List.of(), null);
+        return new MapLayerDto("terrain", "Terrain", LayerType.TERRAIN, true, false, List.of(), List.of(), null, null);
     }
 
     public static MapLayerDto createObjectsLayer() {
-        return new MapLayerDto("objects", "Objects", LayerType.OBJECTS, true, false, List.of(), List.of(), null);
+        return new MapLayerDto("objects", "Objects", LayerType.OBJECTS, true, false, List.of(), List.of(), null, null);
     }
 
     public static MapLayerDto createAnnotationsLayer() {
-        return new MapLayerDto("annotations", "Annotations (DM only)", LayerType.ANNOTATIONS, true, false, List.of(), List.of(), null);
+        return new MapLayerDto("annotations", "Annotations (DM only)", LayerType.ANNOTATIONS, true, false, List.of(), List.of(), null, null);
     }
 
     /** A single painted cell on a terrain layer. Cells not present in the array are "floor" / default. */
@@ -62,8 +66,16 @@ public record MapLayerDto(
      *  base64 data URL — this app has no separate file-storage subsystem, so it lives in the
      *  document CLOB alongside everything else. x/y/width/height are in grid-cell units, the
      *  same coordinate space shapes use; no rotation, matching the shape schema's scope. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ImageDto(
             @JsonProperty(required = true) String dataUrl,
-            double x, double y, double width, double height
-    ) {}
+            double x, double y, double width, double height,
+            Double rotationDeg,
+            Boolean locked,
+            MapDocumentDto.CalibrationDto calibration
+    ) {
+        public ImageDto(String dataUrl, double x, double y, double width, double height) {
+            this(dataUrl, x, y, width, height, 0.0, false, null);
+        }
+    }
 }

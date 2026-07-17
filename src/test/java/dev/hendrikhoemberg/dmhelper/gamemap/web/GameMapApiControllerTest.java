@@ -94,7 +94,7 @@ class GameMapApiControllerTest {
         mockMvc.perform(get("/api/v1/maps/{id}/document", m.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.version").value(3))
-                .andExpect(jsonPath("$.document.schemaVersion").value(1))
+                .andExpect(jsonPath("$.document.schemaVersion").value(2))
                 .andExpect(jsonPath("$.document.layers.length()").value(3));
     }
 

@@ -55,7 +55,7 @@ class GameMapServiceTest {
         assertThat(map.getDocument()).contains("\"schemaVersion\"");
 
         MapDocumentDto doc = service.getDocument(map.getId());
-        assertThat(doc.schemaVersion()).isEqualTo(1);
+        assertThat(doc.schemaVersion()).isEqualTo(2);
         assertThat(doc.grid().width()).isEqualTo(30);
         assertThat(doc.grid().height()).isEqualTo(20);
         assertThat(doc.grid().gridType()).isEqualTo("square");
@@ -123,7 +123,7 @@ class GameMapServiceTest {
         GameMap map = service.create(campaign.getId(), "Test Map", 20, 15, 48);
         long initialVersion = map.getVersion();
         String newDoc = """
-                {"schemaVersion":1,"grid":{"width":20,"height":15,"cellSizePx":48,"gridType":"square"},"layers":[{"id":"terrain","name":"Terrain","type":"TERRAIN","visible":true,"locked":false,"cells":[{"col":0,"row":0,"terrain":"wall"}],"shapes":[]}]}""";
+                {"schemaVersion":2,"grid":{"width":20,"height":15,"cellSizePx":48,"gridType":"square"},"layers":[{"id":"terrain","name":"Terrain","type":"TERRAIN","visible":true,"locked":false,"cells":[{"col":0,"row":0,"terrain":"wall"}],"shapes":[]}],"primitives":[],"customTerrain":[]}""";
 
         long newVersion = service.updateDocument(map.getId(), newDoc, initialVersion);
 
@@ -251,7 +251,7 @@ class GameMapServiceTest {
                         MapLayerDto.createAnnotationsLayer(),
                         new MapLayerDto("bg", "Background", MapLayerDto.LayerType.IMAGE, true, false, List.of(),
                                 List.of(new MapLayerDto.ShapeDto("rect", List.of(0.0, 0.0, 5.0, 5.0), "#ff0000", "#000", 1.0, "box")),
-                                new MapLayerDto.ImageDto("data:image/png;base64,AAAA", 0, 0, 10, 10))
+                                new MapLayerDto.ImageDto("data:image/png;base64,AAAA", 0, 0, 10, 10), null)
                 ),
                 List.of(
                         new MapDocumentDto.PrimitiveDto("ROOM", 2, 2, 10, 8, null)

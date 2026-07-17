@@ -14,7 +14,7 @@ public record MapDocumentDto(
         List<PrimitiveDto> primitives,
         List<TerrainDefDto> customTerrain
 ) {
-    public static final int CURRENT_SCHEMA_VERSION = 1;
+    public static final int CURRENT_SCHEMA_VERSION = 2;
 
     public MapDocumentDto {
         layers = layers != null ? layers : List.of();
@@ -66,7 +66,23 @@ public record MapDocumentDto(
             @JsonProperty(required = true) String type,   // ROOM | CORRIDOR | DOOR | REGION
             int startCol, int startRow,
             int endCol, int endRow,
-            String terrain   // REGION fill terrain key; ignored by other types
+            String terrain,   // REGION fill terrain key; ignored by other types
+            String key,       // required when type is REGION
+            String label,
+            Boolean playerVisible  // default true
+    ) {
+        public PrimitiveDto(String type, int startCol, int startRow, int endCol, int endRow, String terrain) {
+            this(type, startCol, startRow, endCol, endRow, terrain, null, null, null);
+        }
+    }
+
+    /** Image calibration: defines two grid-cell points (a and b), the number of cells between
+     *  them, and pixel offsets to align the image origin with the grid origin. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CalibrationDto(
+            double ax, double ay, double bx, double by,
+            double cellsBetween,
+            double offsetXPx, double offsetYPx
     ) {}
 
     /** Custom terrain palette entry (SPEC §4.3: palette extensible with

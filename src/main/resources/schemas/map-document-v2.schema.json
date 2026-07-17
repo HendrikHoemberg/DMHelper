@@ -39,7 +39,8 @@
         "locked": { "type": "boolean" },
         "cells": { "type": "array", "items": { "$ref": "#/$defs/cell" } },
         "shapes": { "type": "array", "items": { "$ref": "#/$defs/shape" } },
-        "image": { "$ref": "#/$defs/image" }
+        "image": { "$ref": "#/$defs/image" },
+        "playerVisible": { "type": "boolean" }
       }
     },
     "cell": {
@@ -74,7 +75,10 @@
         "x": { "type": "number" },
         "y": { "type": "number" },
         "width": { "type": "number", "exclusiveMinimum": 0 },
-        "height": { "type": "number", "exclusiveMinimum": 0 }
+        "height": { "type": "number", "exclusiveMinimum": 0 },
+        "rotationDeg": { "type": "number" },
+        "locked": { "type": "boolean" },
+        "calibration": { "$ref": "#/$defs/calibration" }
       }
     },
     "primitive": {
@@ -87,7 +91,24 @@
         "startRow": { "type": "integer", "minimum": 0 },
         "endCol": { "type": "integer", "minimum": 0 },
         "endRow": { "type": "integer", "minimum": 0 },
-        "terrain": { "type": "string" }
+        "terrain": { "type": "string" },
+        "key": { "type": "string" },
+        "label": { "type": "string" },
+        "playerVisible": { "type": "boolean" }
+      }
+    },
+    "calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ax", "ay", "bx", "by", "cellsBetween", "offsetXPx", "offsetYPx"],
+      "properties": {
+        "ax": { "type": "number" },
+        "ay": { "type": "number" },
+        "bx": { "type": "number" },
+        "by": { "type": "number" },
+        "cellsBetween": { "type": "number", "minimum": 0 },
+        "offsetXPx": { "type": "number" },
+        "offsetYPx": { "type": "number" }
       }
     },
     "terrain": {
