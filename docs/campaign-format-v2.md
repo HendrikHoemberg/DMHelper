@@ -380,6 +380,30 @@ Tokens, combatants, and party members use the following `kind` values:
 
 These are stored as strings in the manifest. The importer preserves the exact value.
 
+## Encounter Preparation (v2)
+
+### Waves
+
+Each encounter may include ordered `waves[]`:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `key` | package key | Unique within the encounter |
+| `name` | string | Display label |
+| `sortOrder` | int | Editorial order |
+| `status` | enum | `RESERVE` \| `PENDING` \| `ACTIVE` \| `DEPLETED` |
+| `triggerKind` | enum | `MANUAL` \| `ROUND` \| `HP_THRESHOLD` \| `CUSTOM` |
+| `triggerValue` | string \| null | e.g. `"3"` for round 3 |
+| `notes` | string \| null | DM-only |
+
+Combatants may set `waveKey` (package-local), `startX`/`startY` (pixels from top-left), and `placementRegionKey` (map region key).
+
+### Prep and rewards
+
+`prep` object: tactics, morale, surrender/flee, environment notes, source locator, optional scene ref.
+`rewards` object: XP, currency entries, item grants, quest objective refs, free-form notes.
+Reward application is **DM-confirmed at table**; the package only carries the authored draft.
+
 ## Structured Scene Enums
 
 Structured scenes introduce typed fields backed by string-valued enums:
@@ -645,6 +669,15 @@ Legacy campaigns (without a `quests` or `annotations` array) simply omit these s
 
 `mapRegionKey` is stored as **unvalidated free-text**. It is not resolved against any map region registry during import or export. A future delivery item (item 9) may introduce a proper typed reference. Until then, importing a package with `mapRegionKey` set simply preserves the string value; no referential integrity check is performed.
 
+## Map Document Semantics
+
+- Token coordinates: **pixels** from the top-left origin of the map canvas.
+- Token sizes: **cell counts**.
+- Region/primitive grid fields: **column/row** indices when the schema says so (see `map-document-v2.schema.json`).
+- IMAGE layers may include `calibration` (two-point grid calibration), `rotationDeg`, `locked`, and `playerVisible`.
+- REGION primitives require stable `key` + `label` for scene/encounter placement references.
+- Layers/primitives with `playerVisible: false` are DM-only; player projection strips them. Tokens are not duplicated per presentation layer.
+
 ## Persistent vs Transient Classification
 
 Every campaign-owned field is classified as either:
@@ -750,3 +783,18 @@ Export v2 package:
 ```bash
 curl -O http://localhost:8080/campaigns/{campaignId}/package
 ```
+
+## Validation Error Catalog
+
+Machine-readable: `GET /api/v1/validation-errors` and
+`src/main/resources/agent/validation-error-catalog.json`.
+
+Human index: [validation-errors.md](authoring/validation-errors.md).
+
+## Documentation Examples
+
+| Example | Path | Expected |
+|---------|------|----------|
+| Minimal valid | `src/test/resources/docs-examples/minimal-valid.dmcampaign.json` | dry-run OK |
+| Schema error | `src/test/resources/docs-examples/schema-error.dmcampaign.json` | SCHEMA_VIOLATION |
+| Semantic error | `src/test/resources/docs-examples/semantic-error.dmcampaign.json` | UNRESOLVED_* |
