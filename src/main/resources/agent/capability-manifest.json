@@ -1,0 +1,152 @@
+{
+  "manifestVersion": 1,
+  "catalogVersion": "srd-5.2-dmhelper-1",
+  "packageFormatVersions": [1, 2],
+  "rulesets": ["SRD_5_2"],
+  "endpoints": {
+    "schemas": "/api/v1/schemas/{name}",
+    "catalog": "/api/v1/catalog",
+    "catalogSnapshot": "/api/v1/catalog/snapshot",
+    "capabilities": "/api/v1/capabilities",
+    "validationErrors": "/api/v1/validation-errors",
+    "packagePreview": "/campaigns/package-imports/previews",
+    "packageConfirm": "/campaigns/package-imports/{previewId}/confirm",
+    "packageExport": "/campaigns/{campaignId}/package"
+  },
+  "capabilities": [
+    {
+      "id": "p0.runtime_reliability",
+      "name": "P0 interaction reliability",
+      "status": "SUPPORTED",
+      "deliveryItem": 1,
+      "notes": "Quick notes; ContentDestinationRegistry route contract tests; dm-request.js correlated errors; package asset safety; difficulty labeled estimate"
+    },
+    {
+      "id": "package.v1.contract",
+      "name": "Campaign contract v1",
+      "status": "SUPPORTED",
+      "notes": "Schema, DTO, dry-run, import, references, and checked fixtures share one contract"
+    },
+    {
+      "id": "package.v2.foundation",
+      "name": "Campaign package v2 foundation",
+      "status": "SUPPORTED",
+      "notes": "ZIP/JSON containers, stable keys, typed catalog, preview, migrations, staged assets, and atomic import"
+    },
+    {
+      "id": "package.v2.round_trip",
+      "name": "Current persisted campaign state recovery",
+      "status": "SUPPORTED",
+      "notes": "Default export/import preserves all currently persisted campaign meaning"
+    },
+    {
+      "id": "session.cockpit",
+      "name": "Session cockpit",
+      "status": "SUPPORTED",
+      "notes": "Durable start/resume/pause/end coordination; deterministic reviewed session logs and v2 recovery"
+    },
+    {
+      "id": "adventure.structured_scenes",
+      "name": "Structured scene transitions",
+      "status": "SUPPORTED",
+      "deliveryItem": 6,
+      "notes": "CHOICE/ENTRANCE/EXIT transitions with typed scene references, mutual exclusion rules, and deferred resolution on import"
+    },
+    {
+      "id": "quest.objectives",
+      "name": "Structured quests/objectives",
+      "status": "SUPPORTED",
+      "deliveryItem": 6,
+      "notes": "Quests with status lifecycle, objectives with ALL/ANY completion mode, prerequisite dependency DAG, and session objective-change history"
+    },
+    {
+      "id": "compendium.custom_with_provenance",
+      "name": "Campaign-scoped non-statblock custom content",
+      "status": "SUPPORTED",
+      "deliveryItem": 7,
+      "notes": "Package PACKAGE refs for sheets/treasury, provenance, and create/clone/promote across library types"
+    },
+    {
+      "id": "character.sheet_completion",
+      "name": "Character sheet package round-trip",
+      "status": "SUPPORTED",
+      "notes": "Ability scores, class levels, proficiencies, overrides, resources, spells/slots, attacks, features, and party live state"
+    },
+    {
+      "id": "encounter.prep_and_waves",
+      "name": "Encounter prep notes + structured rewards",
+      "status": "SUPPORTED",
+      "notes": "DM-confirmed apply of prep notes, rewards, waves, reserves, spawn, multi-add groups, and undo lifecycle boundaries"
+    },
+    {
+      "id": "map.published_workflow",
+      "name": "Published map calibrate/crop/rotate/lock",
+      "status": "SUPPORTED",
+      "notes": "Image-first workflow for calibrate, crop, rotate, and lock"
+    },
+    {
+      "id": "encounter.difficulty_2024",
+      "name": "Authoritative 2024 encounter difficulty",
+      "status": "PARTIAL",
+      "notes": "Still labeled estimate"
+    },
+    {
+      "id": "character.full_asi_schedule",
+      "name": "Full automated ASI/subclass feature schedule from all class JSON",
+      "status": "PARTIAL",
+      "notes": "ASI/subclass prompts use common schedules and class data when present; incomplete class feature tables remain manual"
+    },
+    {
+      "id": "agent.sdk",
+      "name": "Agent SDK",
+      "status": "PARTIAL",
+      "notes": "Capability manifest API, validation error catalog; remaining agent endpoints deferred"
+    },
+    {
+      "id": "world.graph",
+      "name": "World graph",
+      "status": "UNSUPPORTED",
+      "notes": "P3 - Deferred"
+    },
+    {
+      "id": "map.fog_of_war",
+      "name": "Full fog of war gameplay",
+      "status": "UNSUPPORTED",
+      "notes": "Deferred P3"
+    },
+    {
+      "id": "travel.weather",
+      "name": "Travel weather",
+      "status": "UNSUPPORTED",
+      "notes": "P3 - Deferred"
+    },
+    {
+      "id": "player.interaction",
+      "name": "Player interaction",
+      "status": "UNSUPPORTED",
+      "notes": "P3 - Deferred"
+    }
+  ],
+  "contentTypes": [
+    "CAMPAIGN", "ADVENTURE", "CHAPTER", "SCENE",
+    "MAP", "TOKEN",
+    "ENCOUNTER", "ENCOUNTER_WAVE", "COMBATANT", "COMBAT_LOG_ENTRY",
+    "PARTY_MEMBER", "CHARACTER_SHEET", "SHEET_RESOURCE",
+    "NOTE", "QUICK_NOTE", "HANDOUT",
+    "ASSIGNMENT", "LEDGER_ENTRY", "TIMELINE_EVENT",
+    "SESSION", "SESSION_SCENE_VISIT",
+    "STATBLOCK", "SPELL", "CONDITION", "RULE", "EQUIPMENT_ITEM", "MAGIC_ITEM",
+    "CLASS", "SPECIES", "BACKGROUND", "FEAT",
+    "DICE_ROLL",
+    "TRANSITION",
+    "SESSION_OBJECTIVE_CHANGE",
+    "QUEST",
+    "OBJECTIVE",
+    "SOURCE_ANNOTATION"
+  ],
+  "flagshipFixtures": [
+    "classpath:campaigns/v2/current-surface.dmcampaign/manifest.json",
+    "classpath:campaigns/v2/feature-complete.dmcampaign/manifest.json",
+    "classpath:campaigns/v2/structured-adventure-quest.dmcampaign/manifest.json"
+  ]
+}

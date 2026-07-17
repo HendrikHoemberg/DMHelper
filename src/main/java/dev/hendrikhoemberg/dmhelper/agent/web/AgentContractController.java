@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.agent.web;
 
 import dev.hendrikhoemberg.dmhelper.agent.AgentContractService;
+import dev.hendrikhoemberg.dmhelper.agent.CapabilityManifest;
 import dev.hendrikhoemberg.dmhelper.agent.ValidationErrorCatalog;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
@@ -27,5 +28,13 @@ public class AgentContractController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .cacheControl(CacheControl.maxAge(1, TimeUnit.HOURS))
                 .body(service.validationErrors());
+    }
+
+    @GetMapping("/capabilities")
+    public ResponseEntity<CapabilityManifest> capabilities() {
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .cacheControl(CacheControl.maxAge(1, TimeUnit.HOURS))
+                .body(service.capabilities());
     }
 }
