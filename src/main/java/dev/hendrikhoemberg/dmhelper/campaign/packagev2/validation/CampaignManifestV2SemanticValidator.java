@@ -17,6 +17,10 @@ import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignConten
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SCENE;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SESSION;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SESSION_SCENE_VISIT;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.QUEST;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.OBJECTIVE;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SOURCE_ANNOTATION;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SESSION_OBJECTIVE_CHANGE;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -171,6 +175,40 @@ public class CampaignManifestV2SemanticValidator {
             add(keys, CampaignContentType.DICE_ROLL, roll.key(), "/diceRolls/" + i + "/key", problems);
             if (roll.encounterRef() != null) {
                 check(roll.encounterRef(), "/diceRolls/" + i + "/encounterRef", keys, problems);
+            }
+        }
+
+        for (int qi = 0; qi < size(m.quests()); qi++) {
+            var q = m.quests().get(qi);
+            add(keys, QUEST, q.key(), "/quests/" + qi + "/key", problems);
+            for (int oi = 0; oi < size(q.objectives()); oi++) {
+                var o = q.objectives().get(oi);
+                add(keys, OBJECTIVE, o.key(), "/quests/" + qi + "/objectives/" + oi + "/key", problems);
+            }
+        }
+
+        for (int ai = 0; ai < size(m.annotations()); ai++) {
+            add(keys, SOURCE_ANNOTATION, m.annotations().get(ai).key(), "/annotations/" + ai + "/key", problems);
+        }
+
+        if (m.session() != null && m.session().objectiveChanges() != null) {
+            for (int i = 0; i < m.session().objectiveChanges().size(); i++) {
+                add(keys, SESSION_OBJECTIVE_CHANGE, m.session().objectiveChanges().get(i).key(),
+                        "/session/objectiveChanges/" + i + "/key", problems);
+            }
+        }
+
+        for (int ai = 0; ai < size(m.adventures()); ai++) {
+            for (int ci = 0; ci < size(m.adventures().get(ai).chapters()); ci++) {
+                for (int si = 0; si < size(m.adventures().get(ai).chapters().get(ci).scenes()); si++) {
+                    var scene = m.adventures().get(ai).chapters().get(ci).scenes().get(si);
+                    if (scene.transitions() != null) {
+                        for (int ti = 0; ti < scene.transitions().size(); ti++) {
+                            add(keys, CampaignContentType.TRANSITION, scene.transitions().get(ti).key(),
+                                    "/adventures/" + ai + "/chapters/" + ci + "/scenes/" + si + "/transitions/" + ti + "/key", problems);
+                        }
+                    }
+                }
             }
         }
 
@@ -346,7 +384,42 @@ public class CampaignManifestV2SemanticValidator {
                 check(scene.encounterRef(), path + "/encounterRef", keys, problems);
                 for (int j = 0; j < size(scene.statblockRefs()); j++) check(scene.statblockRefs().get(j), path + "/statblockRefs/" + j, keys, problems);
                 for (int j = 0; j < size(scene.handoutRefs()); j++) check(scene.handoutRefs().get(j), path + "/handoutRefs/" + j, keys, problems);
+                if (scene.checks() != null) for (int ci2 = 0; ci2 < scene.checks().size(); ci2++) {
+                    check(scene.checks().get(ci2).ruleRef(), path + "/checks/" + ci2 + "/ruleRef", keys, problems);
+                }
+                if (scene.participants() != null) for (int pi = 0; pi < scene.participants().size(); pi++) {
+                    check(scene.participants().get(pi).statblockRef(), path + "/participants/" + pi + "/statblockRef", keys, problems);
+                    check(scene.participants().get(pi).noteRef(), path + "/participants/" + pi + "/noteRef", keys, problems);
+                }
+                if (scene.transitions() != null) for (int ti = 0; ti < scene.transitions().size(); ti++) {
+                    check(scene.transitions().get(ti).targetSceneRef(), path + "/transitions/" + ti + "/targetSceneRef", keys, problems);
+                }
+                if (scene.links() != null) for (int li = 0; li < scene.links().size(); li++) {
+                    check(scene.links().get(li).targetRef(), path + "/links/" + li + "/targetRef", keys, problems);
+                }
             }
+        for (int qi = 0; qi < size(m.quests()); qi++) {
+            var q = m.quests().get(qi);
+            String qPath = "/quests/" + qi;
+            if (q.objectives() != null) for (int oi = 0; oi < q.objectives().size(); oi++) {
+                var o = q.objectives().get(oi);
+                if (o.prerequisiteRefs() != null) for (int pi = 0; pi < o.prerequisiteRefs().size(); pi++) {
+                    check(o.prerequisiteRefs().get(pi), qPath + "/objectives/" + oi + "/prerequisiteRefs/" + pi, keys, problems);
+                }
+            }
+            if (q.links() != null) for (int li = 0; li < q.links().size(); li++) {
+                check(q.links().get(li).targetRef(), qPath + "/links/" + li + "/targetRef", keys, problems);
+            }
+        }
+        for (int ai = 0; ai < size(m.annotations()); ai++) {
+            check(m.annotations().get(ai).ownerRef(), "/annotations/" + ai + "/ownerRef", keys, problems);
+        }
+        if (m.session() != null && m.session().objectiveChanges() != null) {
+            for (int i = 0; i < m.session().objectiveChanges().size(); i++) {
+                check(m.session().objectiveChanges().get(i).objectiveRef(),
+                        "/session/objectiveChanges/" + i + "/objectiveRef", keys, problems);
+            }
+        }
     }
 
     private void check(ContentReference ref, String path, Map<CampaignContentType, Set<String>> keys,

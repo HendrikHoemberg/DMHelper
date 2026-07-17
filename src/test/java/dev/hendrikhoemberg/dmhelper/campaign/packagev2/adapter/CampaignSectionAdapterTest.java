@@ -98,7 +98,7 @@ class CampaignSectionAdapterTest {
                 2, null,
                 new CampaignDto("campaign-key", "Imported Campaign", "Imported description",
                         Instant.parse("2025-01-01T00:00:00Z"), null, null),
-                null, null, null, null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of()
         );
         var context = new CampaignImportContext(
                 UUID.randomUUID(), new FakeKeyService(), pendingImport());
@@ -122,7 +122,7 @@ class CampaignSectionAdapterTest {
         var manifest = new CampaignManifestV2(
                 2, null,
                 new CampaignDto("campaign-key", "Test", "desc", Instant.now(), null, sceneRef),
-                null, null, null, null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of()
         );
 
         var context = new CampaignImportContext(

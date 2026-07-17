@@ -36,6 +36,8 @@ public class CampaignManifestAssembler {
     private List<AdventureDto> adventures;
     private SessionDto session;
     private List<DiceRollDto> diceRolls;
+    private List<CampaignManifestV2.QuestDto> quests;
+    private List<CampaignManifestV2.SourceAnnotationDto> annotations;
     private boolean built;
 
     public void campaign(CampaignDto value) {
@@ -113,6 +115,16 @@ public class CampaignManifestAssembler {
         diceRolls = List.copyOf(value);
     }
 
+    public void quests(List<CampaignManifestV2.QuestDto> value) {
+        checkNotAlreadySet("quests", quests);
+        quests = value == null ? List.of() : List.copyOf(value);
+    }
+
+    public void annotations(List<CampaignManifestV2.SourceAnnotationDto> value) {
+        checkNotAlreadySet("annotations", annotations);
+        annotations = value == null ? List.of() : List.copyOf(value);
+    }
+
     public CampaignManifestV2 build(CampaignManifestV2.Metadata metadata) {
         if (built) {
             throw new IllegalStateException("Manifest already built");
@@ -149,7 +161,9 @@ public class CampaignManifestAssembler {
                 timelineEvents,
                 adventures,
                 session,
-                diceRolls
+                diceRolls,
+                quests == null ? List.of() : quests,
+                annotations == null ? List.of() : annotations
         );
     }
 

@@ -144,7 +144,7 @@ class HandoutSectionAdapterTest {
                         "handout-map", "Map", List.of("quest", "important"),
                         assetKey, "image/png", false, true
                 )),
-                null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null, List.of(), List.of()
         );
 
         Path assetFile = tempDir.resolve(assetKey + ".png");
@@ -204,7 +204,7 @@ class HandoutSectionAdapterTest {
                         new HandoutDto("h4", "Both True", List.of(), assetKey, "image/png", true, true)
 
                 ),
-                null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null, List.of(), List.of()
         );
 
         Path assetFile = tempDir.resolve(assetKey + ".png");

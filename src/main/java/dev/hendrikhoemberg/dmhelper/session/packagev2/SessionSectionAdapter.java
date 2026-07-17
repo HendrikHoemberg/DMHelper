@@ -5,6 +5,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.InGameDateDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SessionDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SessionObjectiveChangeDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SessionSceneVisitDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
@@ -16,8 +17,11 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChangeRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
 import org.springframework.stereotype.Component;
@@ -27,9 +31,11 @@ import java.util.List;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.HANDOUT;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.MAP;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.NOTE;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.OBJECTIVE;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.PARTY_MEMBER;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SCENE;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SESSION;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SESSION_OBJECTIVE_CHANGE;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SESSION_SCENE_VISIT;
 
 @Component
@@ -37,10 +43,13 @@ public class SessionSectionAdapter implements CampaignSectionExporter, CampaignS
 
     private final CampaignSessionRepository sessions;
     private final SessionSceneVisitRepository visits;
+    private final SessionObjectiveChangeRepository objectiveChanges;
 
-    public SessionSectionAdapter(CampaignSessionRepository sessions, SessionSceneVisitRepository visits) {
+    public SessionSectionAdapter(CampaignSessionRepository sessions, SessionSceneVisitRepository visits,
+                                 SessionObjectiveChangeRepository objectiveChanges) {
         this.sessions = sessions;
         this.visits = visits;
+        this.objectiveChanges = objectiveChanges;
     }
 
     @Override
@@ -77,10 +86,20 @@ public class SessionSectionAdapter implements CampaignSectionExporter, CampaignS
                     ContentReference sceneRef = context.packageRef(SCENE, v.getScene().getId(), v.getScene().getTitle());
                     return new SessionSceneVisitDto(vKey, sceneRef, v.getVisitedAt(), v.getCompletedAt());
                 }).toList();
+        List<SessionObjectiveChangeDto> changeDtos = objectiveChanges
+                .findBySessionIdOrderByChangedAtAscIdAsc(session.getId()).stream()
+                .map(oc -> {
+                    String ocKey = context.key(SESSION_OBJECTIVE_CHANGE, oc.getId(), "obj-change");
+                    ContentReference objRef = context.packageRef(OBJECTIVE, oc.getObjective().getId(),
+                            oc.getObjective().getTitle());
+                    return new SessionObjectiveChangeDto(ocKey, objRef,
+                            oc.getPreviousStatus() != null ? oc.getPreviousStatus().name() : null,
+                            oc.getNewStatus().name(), oc.getChangedAt());
+                }).toList();
         target.session(new SessionDto(sessionKey, session.getStatus().name(),
                 session.getStartedAt(), session.getPausedAt(), session.getReviewStartedAt(),
                 startDate, planRef, mapRef, session.getPresentationMode().name(),
-                presentedRef, attendeeRefs, visitDtos, session.getDraftBody()));
+                presentedRef, attendeeRefs, visitDtos, session.getDraftBody(), changeDtos));
     }
 
     @Override
@@ -100,7 +119,47 @@ public class SessionSectionAdapter implements CampaignSectionExporter, CampaignS
         session.setDraftBody(dto.draftBody());
         CampaignSession saved = sessions.save(session);
         context.register(SESSION, dto.key(), saved, saved.getId());
-        context.defer("session-references:" + dto.key(), () -> restoreReferences(saved, dto, context));
+        context.defer("session-references:" + dto.key(), () -> {
+            restoreReferences(saved, dto, context);
+            restoreObjectiveChanges(saved, dto, context);
+        });
+    }
+
+    private void restoreObjectiveChanges(CampaignSession saved, SessionDto dto, CampaignImportContext context) {
+        if (dto.objectiveChanges() == null) return;
+        for (SessionObjectiveChangeDto ocDto : dto.objectiveChanges()) {
+            SessionObjectiveChange oc = new SessionObjectiveChange();
+            oc.setSession(saved);
+            oc.setNewStatus(dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus.valueOf(ocDto.newStatus()));
+            if (ocDto.previousStatus() != null) {
+                oc.setPreviousStatus(dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus.valueOf(ocDto.previousStatus()));
+            }
+            oc.setChangedAt(ocDto.changedAt());
+            if (ocDto.objectiveRef() != null) {
+                ObjectiveRefSetter setter = new ObjectiveRefSetter(oc, ocDto.objectiveRef(), context);
+                setter.run();
+            }
+            objectiveChanges.save(oc);
+            context.register(SESSION_OBJECTIVE_CHANGE, ocDto.key(), oc, oc.getId());
+        }
+    }
+
+    private static class ObjectiveRefSetter implements Runnable {
+        private final SessionObjectiveChange oc;
+        private final ContentReference objectiveRef;
+        private final CampaignImportContext context;
+
+        ObjectiveRefSetter(SessionObjectiveChange oc, ContentReference objectiveRef, CampaignImportContext context) {
+            this.oc = oc;
+            this.objectiveRef = objectiveRef;
+            this.context = context;
+        }
+
+        @Override
+        public void run() {
+            QuestObjective obj = context.require(objectiveRef, OBJECTIVE, QuestObjective.class);
+            oc.setObjective(obj);
+        }
     }
 
     private void restoreReferences(CampaignSession saved, SessionDto dto, CampaignImportContext context) {

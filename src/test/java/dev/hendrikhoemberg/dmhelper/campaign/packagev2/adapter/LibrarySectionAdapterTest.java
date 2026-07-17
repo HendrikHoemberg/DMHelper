@@ -132,7 +132,7 @@ class LibrarySectionAdapterTest {
         var importManifest = new CampaignManifestV2(
                 2, null, null, null,
                 null, manifest2.customStatBlocks(),
-                null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of()
         );
 
         var importContext = new CampaignImportContext(

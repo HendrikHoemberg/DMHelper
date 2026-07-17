@@ -64,7 +64,7 @@ class CampaignPackageWriterTest {
             return new CampaignManifestV2(base.formatVersion(), base.metadata(), base.campaign(), List.of(asset),
                     base.party(), base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(),
                     base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(), base.timelineEvents(),
-                    base.adventures(), base.session(), base.diceRolls());
+                    base.adventures(), base.session(), base.diceRolls(), base.quests(), base.annotations());
         }
     }
 }

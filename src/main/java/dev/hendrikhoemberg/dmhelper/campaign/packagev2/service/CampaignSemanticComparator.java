@@ -16,7 +16,7 @@ public final class CampaignSemanticComparator {
     private static final Set<String> UNORDERED_VALUE_COLLECTIONS = Set.of(
             "links", "spells", "featRefs");
     private static final Set<String> ORDERED_KEYED_COLLECTIONS = Set.of(
-            "handoutRefs", "statblockRefs");
+            "handoutRefs", "statblockRefs", "transitions", "objectives");
 
     private CampaignSemanticComparator() {
     }

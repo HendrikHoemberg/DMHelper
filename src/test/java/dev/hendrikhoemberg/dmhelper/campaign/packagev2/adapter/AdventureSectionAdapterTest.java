@@ -195,13 +195,13 @@ class AdventureSectionAdapterTest {
     @Test
     void importsAdventuresWithChaptersAndScenes() {
         var scenes = List.of(new SceneDto("sc-key", "Room 1", "body", "DONE", 3,
-                null, null, null, null, null));
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null));
         var chapters = List.of(new ChapterDto("ch-key", "Chapter X", "intro text", 2, scenes));
         var adventures = List.of(new AdventureDto("adv-key", "Imported Adv", "desc", "src", 1, chapters, null));
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null,
-                adventures, null, null
+                adventures, null, null, List.of(), List.of()
         );
 
         when(adventureRepo.save(any())).thenAnswer(inv -> {
@@ -257,13 +257,14 @@ class AdventureSectionAdapterTest {
                 ContentReference.packageRef(CampaignContentType.MAP, "map-key"),
                 Map.of("x", 50, "y", 100),
                 ContentReference.packageRef(CampaignContentType.ENCOUNTER, "enc-key"),
-                sceneStatblockRefs, sceneHandoutRefs));
+                sceneStatblockRefs, sceneHandoutRefs,
+                null, null, null, null, null, null, null, null, null));
         var chapters = List.of(new ChapterDto("ch-key", "Ch1", null, 0, scenes));
         var adventures = List.of(new AdventureDto("adv-key", "Adv", null, null, 0, chapters, null));
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null,
-                adventures, null, null
+                adventures, null, null, List.of(), List.of()
         );
 
         when(adventureRepo.save(any())).thenAnswer(inv -> {

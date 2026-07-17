@@ -23,7 +23,9 @@
     "timelineEvents": { "type": "array", "items": { "$ref": "#/$defs/timelineEvent" } },
     "adventures": { "type": "array", "items": { "$ref": "#/$defs/adventure" } },
     "session": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/session" }] },
-    "diceRolls": { "type": "array", "items": { "$ref": "#/$defs/diceRoll" } }
+    "diceRolls": { "type": "array", "items": { "$ref": "#/$defs/diceRoll" } },
+    "quests": { "type": "array", "items": { "$ref": "#/$defs/quest" } },
+    "annotations": { "type": "array", "items": { "$ref": "#/$defs/sourceAnnotation" } }
   },
   "$defs": {
     "key": {
@@ -70,7 +72,8 @@
         "SESSION", "SESSION_SCENE_VISIT",
         "STATBLOCK", "SPELL", "CONDITION", "RULE", "EQUIPMENT_ITEM", "MAGIC_ITEM",
         "CLASS", "SPECIES", "BACKGROUND", "FEAT",
-        "DICE_ROLL"
+        "DICE_ROLL",
+        "TRANSITION", "QUEST", "OBJECTIVE", "SOURCE_ANNOTATION", "SESSION_OBJECTIVE_CHANGE"
       ]
     },
     "metadata": {
@@ -150,7 +153,8 @@
         "presentedRef": { "$ref": "#/$defs/contentReference" },
         "attendeeRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
         "sceneVisits": { "type": "array", "items": { "$ref": "#/$defs/sessionSceneVisit" } },
-        "draftBody": { "type": "string" }
+        "draftBody": { "type": "string" },
+        "objectiveChanges": { "type": "array", "items": { "$ref": "#/$defs/sessionObjectiveChange" } }
       },
       "allOf": [
         {
@@ -562,7 +566,16 @@
         },
         "encounterRef": { "$ref": "#/$defs/contentReference" },
         "statblockRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
-        "handoutRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } }
+        "handoutRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
+        "summary": { "type": "string" },
+        "sourceLocator": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "mapRegionKey": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,99}$" },
+        "sections": { "type": "array", "items": { "$ref": "#/$defs/sceneSection" } },
+        "checks": { "type": "array", "items": { "$ref": "#/$defs/sceneCheck" } },
+        "participants": { "type": "array", "items": { "$ref": "#/$defs/sceneParticipant" } },
+        "transitions": { "type": "array", "items": { "$ref": "#/$defs/sceneTransition" } },
+        "links": { "type": "array", "items": { "$ref": "#/$defs/sceneLink" } }
       }
     },
     "combatLogEntry": {
@@ -602,6 +615,173 @@
       "properties": {
         "die": { "type": "string" },
         "values": { "type": "array", "items": { "type": "integer" } }
+      }
+    },
+    "sceneSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "sortOrder"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["READ_ALOUD", "DM_ADVICE", "SECRET", "FEATURE", "TRAP", "HAZARD", "ENVIRONMENT", "PUZZLE", "TREASURE", "DEVELOPMENT", "CONSEQUENCE", "SCALING"] },
+        "label": { "type": "string" },
+        "body": { "type": "string" },
+        "sourceLocator": { "type": "string" },
+        "sortOrder": { "type": "integer" }
+      }
+    },
+    "sceneCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sortOrder"],
+      "properties": {
+        "label": { "type": "string" },
+        "ability": { "type": "string" },
+        "skill": { "type": "string" },
+        "dc": { "type": "integer" },
+        "visibility": { "type": "string", "enum": ["PLAYER_FACING", "DM_FACING", "PASSIVE"] },
+        "success": { "type": "string" },
+        "failure": { "type": "string" },
+        "partial": { "type": "string" },
+        "ruleRef": { "$ref": "#/$defs/contentReference" },
+        "sourceLocator": { "type": "string" },
+        "sortOrder": { "type": "integer" }
+      }
+    },
+    "sceneParticipant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quantity", "sortOrder"],
+      "properties": {
+        "displayName": { "type": "string" },
+        "quantity": { "type": "integer", "minimum": 1 },
+        "disposition": { "type": "string", "enum": ["HOSTILE", "UNFRIENDLY", "NEUTRAL", "FRIENDLY", "ALLY", "UNKNOWN"] },
+        "placementHint": { "type": "string" },
+        "statblockRef": { "$ref": "#/$defs/contentReference" },
+        "noteRef": { "$ref": "#/$defs/contentReference" },
+        "sourceLocator": { "type": "string" },
+        "sortOrder": { "type": "integer" }
+      }
+    },
+    "sceneTransition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "kind", "sortOrder"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "kind": { "type": "string", "enum": ["CHOICE", "ENTRANCE", "EXIT"] },
+        "label": { "type": "string" },
+        "targetSceneRef": { "$ref": "#/$defs/contentReference" },
+        "externalDestination": { "type": "string" },
+        "condition": { "type": "string" },
+        "dmNote": { "type": "string" },
+        "sourceLocator": { "type": "string" },
+        "sortOrder": { "type": "integer" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "CHOICE" } }, "required": ["kind"] },
+          "then": { "required": ["targetSceneRef"], "not": { "required": ["externalDestination"] } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "ENTRANCE" } }, "required": ["kind"] },
+          "then": { "oneOf": [
+            { "required": ["targetSceneRef"], "not": { "required": ["externalDestination"] } },
+            { "required": ["externalDestination"], "not": { "required": ["targetSceneRef"] } }
+          ] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "EXIT" } }, "required": ["kind"] },
+          "then": { "oneOf": [
+            { "required": ["targetSceneRef"], "not": { "required": ["externalDestination"] } },
+            { "required": ["externalDestination"], "not": { "required": ["targetSceneRef"] } }
+          ] }
+        }
+      ]
+    },
+    "sceneLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "targetRef", "sortOrder"],
+      "properties": {
+        "role": { "type": "string", "enum": ["REFERENCE", "HANDOUT", "RULE", "QUEST", "TIMELINE_EVENT", "RELATED_SCENE", "NPC", "LOCATION"] },
+        "targetRef": { "$ref": "#/$defs/contentReference" },
+        "displayText": { "type": "string" },
+        "condition": { "type": "string" },
+        "sortOrder": { "type": "integer" }
+      }
+    },
+    "sessionObjectiveChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "objectiveRef", "newStatus", "changedAt"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "objectiveRef": { "$ref": "#/$defs/contentReference" },
+        "previousStatus": { "type": "string", "enum": ["NOT_STARTED", "ACTIVE", "COMPLETED", "FAILED", "SKIPPED"] },
+        "newStatus": { "type": "string", "enum": ["NOT_STARTED", "ACTIVE", "COMPLETED", "FAILED", "SKIPPED"] },
+        "changedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "quest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "title", "createdAt"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "title": { "type": "string" },
+        "status": { "type": "string", "enum": ["NOT_STARTED", "ACTIVE", "ON_HOLD", "COMPLETED", "FAILED", "ABANDONED"] },
+        "summary": { "type": "string" },
+        "sourceLocator": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "rewards": { "type": "string" },
+        "prerequisites": { "type": "string" },
+        "outcomeNotes": { "type": "string" },
+        "links": { "type": "array", "items": { "$ref": "#/$defs/questLink" } },
+        "objectives": { "type": "array", "items": { "$ref": "#/$defs/questObjective" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "questLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "targetRef", "sortOrder"],
+      "properties": {
+        "role": { "type": "string", "enum": ["GIVER", "REFERENCE", "HANDOUT", "RULE", "RELATED_SCENE", "NPC", "LOCATION", "FACTION", "TIMELINE_EVENT", "REWARD"] },
+        "targetRef": { "$ref": "#/$defs/contentReference" },
+        "displayText": { "type": "string" },
+        "condition": { "type": "string" },
+        "sortOrder": { "type": "integer" }
+      }
+    },
+    "questObjective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "title", "sortOrder"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["NOT_STARTED", "ACTIVE", "COMPLETED", "FAILED", "SKIPPED"] },
+        "completionMode": { "type": "string", "enum": ["ALL", "ANY"] },
+        "sortOrder": { "type": "integer" },
+        "prerequisiteRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
+        "sourceLocator": { "type": "string" }
+      }
+    },
+    "sourceAnnotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "ownerRef", "message", "createdAt"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "ownerRef": { "$ref": "#/$defs/contentReference" },
+        "fieldPath": { "type": "string" },
+        "message": { "type": "string" },
+        "confidence": { "type": "string", "enum": ["CERTAIN", "LIKELY", "UNCERTAIN", "UNKNOWN"] },
+        "sourceLocator": { "type": "string" },
+        "status": { "type": "string", "enum": ["OPEN", "RESOLVED", "DISMISSED"] },
+        "resolutionNote": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       }
     },
     "noteLink": {

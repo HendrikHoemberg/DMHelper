@@ -209,7 +209,7 @@ class PartySectionAdapterTest {
                                 Map.of("1", 2, "2", 1)
                         )
                 )),
-                null, null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of()
         );
 
         var importContext = new CampaignImportContext(

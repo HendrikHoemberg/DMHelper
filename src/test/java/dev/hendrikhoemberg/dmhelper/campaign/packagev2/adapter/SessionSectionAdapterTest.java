@@ -15,6 +15,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignAssetColl
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportOptions;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChangeRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
 import dev.hendrikhoemberg.dmhelper.session.packagev2.SessionSectionAdapter;
@@ -40,6 +41,7 @@ class SessionSectionAdapterTest {
 
     @Mock CampaignSessionRepository sessionRepository;
     @Mock SessionSceneVisitRepository visitRepository;
+    @Mock SessionObjectiveChangeRepository objectiveChangeRepository;
 
     private SessionSectionAdapter adapter;
     private Campaign campaign;
@@ -47,7 +49,7 @@ class SessionSectionAdapterTest {
 
     @BeforeEach
     void setUp() {
-        adapter = new SessionSectionAdapter(sessionRepository, visitRepository);
+        adapter = new SessionSectionAdapter(sessionRepository, visitRepository, objectiveChangeRepository);
         campaign = new Campaign();
         campaignId = UUID.randomUUID();
         campaign.setId(campaignId);
@@ -126,10 +128,10 @@ class SessionSectionAdapterTest {
         var dto = new SessionDto("session", "RUNNING",
                 Instant.parse("2025-07-16T18:00:00Z"), null, null,
                 null, null, null, "CURTAIN",
-                null, List.of(), List.of(), null);
+                null, List.of(), List.of(), null, null);
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, dto, List.of());
+                null, null, null, null, dto, List.of(), List.of(), List.of());
         var keys = new CampaignSectionAdapterTest.FakeKeyService();
         var context = new CampaignImportContext(
                 campaignId, keys, new PendingCampaignImport(UUID.randomUUID(), null, null, null));
@@ -159,10 +161,10 @@ class SessionSectionAdapterTest {
         var dto = new SessionDto("session", "PAUSED",
                 Instant.parse("2025-07-16T18:00:00Z"), null, null,
                 null, null, null, "HANDOUT",
-                secretRef, List.of(), List.of(), null);
+                secretRef, List.of(), List.of(), null, null);
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, dto, List.of());
+                null, null, null, null, dto, List.of(), List.of(), List.of());
         var keys = new CampaignSectionAdapterTest.FakeKeyService();
         var context = new CampaignImportContext(
                 campaignId, keys, new PendingCampaignImport(UUID.randomUUID(), null, null, null));

@@ -345,7 +345,8 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                             s.sortOrder(), ref(CampaignContentType.MAP, mapKeys, s.map()), s.pin(),
                             ref(CampaignContentType.ENCOUNTER, encounterKeys, s.encounter()),
                             list(s.statblocks()).stream().map(value -> ref(CampaignContentType.STATBLOCK, statKeys, value)).toList(),
-                            list(s.handouts()).stream().map(value -> ref(CampaignContentType.HANDOUT, handoutKeys, value)).toList()));
+                            list(s.handouts()).stream().map(value -> ref(CampaignContentType.HANDOUT, handoutKeys, value)).toList(),
+                            null, null, null, null, null, null, null, null, null));
                 }
                 chapters.add(new CampaignManifestV2.ChapterDto(
                         key(keyResolver, CampaignContentType.CHAPTER,
@@ -384,7 +385,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
         }
 
         var manifest = new CampaignManifestV2(2, metadata, campaign, assets, party, statBlocks, handouts, maps,
-                encounters, notes, quickNotes, assignments, ledger, timeline, adventures, null, List.of());
+                encounters, notes, quickNotes, assignments, ledger, timeline, adventures, null, List.of(), List.of(), List.of());
         return new CampaignPackageValidationResult(source, manifest, 1, assetsByKey, warnings, List.of("MIGRATED_FROM_V1"));
     }
 

@@ -219,6 +219,215 @@ class CampaignManifestV2ContractTest {
         }
     }
 
+    @Test
+    void structuredSceneWithAllNewFieldsValidates() throws Exception {
+        String json = """
+                {
+                  "formatVersion": 2,
+                  "metadata": {
+                    "packageKey": "test-pkg",
+                    "createdAt": "2025-01-01T00:00:00Z",
+                    "generator": "DMHelper",
+                    "catalogVersion": "1.0",
+                    "catalogSha256": "abc123",
+                    "exclusions": []
+                  },
+                  "campaign": {
+                    "key": "campaign-structured",
+                    "name": "Structured",
+                    "createdAt": "2025-01-01T00:00:00Z",
+                    "settings": { "levelingMode": "XP" }
+                  },
+                  "assets": [],
+                  "party": [],
+                  "customStatBlocks": [],
+                  "handouts": [],
+                  "maps": [],
+                  "encounters": [],
+                  "notes": [],
+                  "quickNotes": [],
+                  "assignments": [],
+                  "ledgerEntries": [],
+                  "timelineEvents": [],
+                  "adventures": [{
+                    "key": "adv-structured",
+                    "name": "Structured Adventure",
+                    "sortOrder": 1,
+                    "createdAt": "2025-01-01T00:00:00Z",
+                    "chapters": [{
+                      "key": "ch-structured",
+                      "title": "Ch1",
+                      "sortOrder": 1,
+                      "scenes": [{
+                        "key": "sc-structured",
+                        "title": "Structured Scene",
+                        "body": "Body text",
+                        "status": "UNVISITED",
+                        "sortOrder": 1,
+                        "summary": "A summary",
+                        "sourceLocator": "book:1",
+                        "tags": ["exploration", "combat"],
+                        "mapRegionKey": "north-wing",
+                        "sections": [
+                          { "kind": "READ_ALOUD", "label": "Read this", "body": "The room is dark...", "sourceLocator": "book:1", "sortOrder": 1 },
+                          { "kind": "DM_ADVICE", "label": "DM Note", "body": "If players check...", "sortOrder": 2 },
+                          { "kind": "SECRET", "body": "Hidden treasure under the rug", "sortOrder": 3 }
+                        ],
+                        "checks": [{
+                          "label": "Perception", "ability": "wis", "skill": "perception",
+                          "dc": 15, "visibility": "PLAYER_FACING",
+                          "success": "You spot the hidden door", "failure": "You see nothing",
+                          "partial": "You notice some dust",
+                          "ruleRef": { "scope": "CATALOG", "type": "RULE", "ruleset": "SRD_5_2", "sourceKey": "observation-rule" },
+                          "sourceLocator": "book:1", "sortOrder": 1
+                        }],
+                        "participants": [{
+                          "displayName": "Goblin", "quantity": 3, "disposition": "HOSTILE",
+                          "placementHint": "Behind the door",
+                          "statblockRef": { "scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin" },
+                          "sourceLocator": "book:1", "sortOrder": 1
+                        }],
+                        "transitions": [
+                          { "key": "t-choice", "kind": "CHOICE", "label": "Go north", "targetSceneRef": { "scope": "PACKAGE", "type": "SCENE", "key": "sc-north" }, "condition": "if door unlocked", "dmNote": "Leads to boss", "sortOrder": 1 },
+                          { "key": "t-exit", "kind": "EXIT", "label": "Leave dungeon", "externalDestination": "Overworld", "sortOrder": 2 }
+                        ],
+                        "links": [{
+                          "role": "REFERENCE", "targetRef": { "scope": "PACKAGE", "type": "NOTE", "key": "note-lore" },
+                          "displayText": "See lore note", "sortOrder": 1
+                        }]
+                      }]
+                    }]
+                  }],
+                  "annotations": [{
+                    "key": "ann-source-1",
+                    "ownerRef": { "scope": "PACKAGE", "type": "SCENE", "key": "sc-structured" },
+                    "fieldPath": "/checks/0/dc",
+                    "message": "DC inferred from source",
+                    "confidence": "LIKELY",
+                    "sourceLocator": "book:1",
+                    "status": "OPEN",
+                    "createdAt": "2025-01-01T00:00:00Z"
+                  }],
+                  "diceRolls": []
+                }
+                """;
+        assertThat(schema.validate(json)).isEmpty();
+        CampaignManifestV2 manifest = mapper.readValue(json, CampaignManifestV2.class);
+        assertThat(manifest.annotations()).hasSize(1);
+        assertThat(manifest.adventures().get(0).chapters().get(0).scenes().get(0).sections()).hasSize(3);
+        assertThat(manifest.adventures().get(0).chapters().get(0).scenes().get(0).checks()).hasSize(1);
+        assertThat(manifest.adventures().get(0).chapters().get(0).scenes().get(0).participants()).hasSize(1);
+        assertThat(manifest.adventures().get(0).chapters().get(0).scenes().get(0).transitions()).hasSize(2);
+        assertThat(manifest.adventures().get(0).chapters().get(0).scenes().get(0).links()).hasSize(1);
+        assertThat(schema.validate(mapper.writeValueAsString(manifest))).isEmpty();
+    }
+
+    @Test
+    void structuredQuestValidatesAndDeserializes() throws Exception {
+        String json = """
+                {
+                  "formatVersion": 2,
+                  "metadata": {
+                    "packageKey": "test-pkg",
+                    "createdAt": "2025-01-01T00:00:00Z",
+                    "generator": "DMHelper",
+                    "catalogVersion": "1.0",
+                    "catalogSha256": "abc123",
+                    "exclusions": []
+                  },
+                  "campaign": {
+                    "key": "campaign-quest",
+                    "name": "Quest Test",
+                    "createdAt": "2025-01-01T00:00:00Z",
+                    "settings": { "levelingMode": "XP" }
+                  },
+                  "assets": [],
+                  "party": [],
+                  "customStatBlocks": [],
+                  "handouts": [],
+                  "maps": [],
+                  "encounters": [],
+                  "notes": [],
+                  "quickNotes": [],
+                  "assignments": [],
+                  "ledgerEntries": [],
+                  "timelineEvents": [],
+                  "adventures": [],
+                  "session": {
+                    "key": "session-quest",
+                    "status": "RUNNING",
+                    "startedAt": "2025-01-01T00:00:00Z",
+                    "presentationMode": "CURTAIN",
+                    "attendeeRefs": [],
+                    "sceneVisits": [],
+                    "objectiveChanges": [{
+                      "key": "obj-change-1",
+                      "objectiveRef": { "scope": "PACKAGE", "type": "OBJECTIVE", "key": "obj-find-treasure" },
+                      "previousStatus": "NOT_STARTED",
+                      "newStatus": "COMPLETED",
+                      "changedAt": "2025-01-01T01:00:00Z"
+                    }]
+                  },
+                  "quests": [{
+                    "key": "quest-treasure",
+                    "title": "Find the Treasure",
+                    "status": "ACTIVE",
+                    "summary": "Find the lost treasure",
+                    "tags": ["main", "treasure"],
+                    "rewards": "500 XP",
+                    "prerequisites": "Must have map",
+                    "outcomeNotes": "Treasure found!",
+                    "links": [
+                      { "role": "GIVER", "targetRef": { "scope": "PACKAGE", "type": "PARTY_MEMBER", "key": "party-member-aria" }, "displayText": "Aria gives quest", "sortOrder": 1 },
+                      { "role": "RULE", "targetRef": { "scope": "CATALOG", "type": "RULE", "ruleset": "SRD_5_2", "sourceKey": "exploration-rule" }, "displayText": "Exploration rules", "sortOrder": 2 }
+                    ],
+                    "objectives": [
+                      { "key": "obj-find-cave", "title": "Find the cave", "status": "COMPLETED", "completionMode": "ALL", "sortOrder": 1, "sourceLocator": "ch1" },
+                      { "key": "obj-find-treasure", "title": "Find the treasure", "description": "Search the cave", "status": "ACTIVE", "completionMode": "ANY", "sortOrder": 2, "prerequisiteRefs": [{ "scope": "PACKAGE", "type": "OBJECTIVE", "key": "obj-find-cave" }], "sourceLocator": "ch2" }
+                    ],
+                    "createdAt": "2025-01-01T00:00:00Z"
+                  }],
+                  "diceRolls": []
+                }
+                """;
+        assertThat(schema.validate(json)).isEmpty();
+        CampaignManifestV2 manifest = mapper.readValue(json, CampaignManifestV2.class);
+        assertThat(manifest.quests()).hasSize(1);
+        assertThat(manifest.quests().get(0).objectives()).hasSize(2);
+        assertThat(manifest.quests().get(0).links()).hasSize(2);
+        assertThat(manifest.session().objectiveChanges()).hasSize(1);
+        assertThat(schema.validate(mapper.writeValueAsString(manifest))).isEmpty();
+    }
+
+    @Test
+    void unknownFieldsRejectedBySchema() {
+        assertThat(schema.validate(currentSurfaceManifest().replaceAll(
+                "\\}$",
+                ",\"unknownField\":\"value\"}"))).extracting(CampaignImportProblem::code).contains("SCHEMA_VIOLATION");
+    }
+
+    @Test
+    void unknownSceneKindRejectedBySchema() {
+        assertThat(schema.validate(currentSurfaceManifest().replaceAll(
+                "\"status\"\\s*:\\s*\"UNVISITED\"",
+                "\"status\":\"INVALID_STATUS\""))).extracting(CampaignImportProblem::code).contains("SCHEMA_VIOLATION");
+    }
+
+    @Test
+    void unknownTransitionKindRejectedBySchema() throws Exception {
+        ObjectNode root = (ObjectNode) mapper.readTree(currentSurfaceManifest());
+        var adventure = root.withArray("adventures").addObject();
+        adventure.put("key", "adv-test").put("name", "Test").put("sortOrder", 1).put("createdAt", "2025-01-01T00:00:00Z");
+        var chapter = adventure.withArray("chapters").addObject();
+        chapter.put("key", "ch-test").put("title", "Ch1").put("sortOrder", 1);
+        var scene = chapter.withArray("scenes").addObject();
+        scene.put("key", "sc-test").put("title", "Test").put("sortOrder", 1);
+        var transition = scene.withArray("transitions").addObject();
+        transition.put("key", "t-bad").put("kind", "INVALID_TRANSITION").put("sortOrder", 1);
+        assertThat(schema.validate(mapper.writeValueAsString(root)))
+                .extracting(CampaignImportProblem::code).contains("SCHEMA_VIOLATION");
+    }
+
     private static List<String> collectEntityKeys(JsonNode node) {
         List<String> keys = new ArrayList<>();
         collectKeys(node, keys);

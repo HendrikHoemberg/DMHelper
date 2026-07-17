@@ -285,7 +285,7 @@ class MapSectionAdapterTest {
                         )),
                         0
                 )),
-                null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, List.of(), List.of()
         );
 
         var freshCampaign = new Campaign();
@@ -378,7 +378,7 @@ class MapSectionAdapterTest {
                         List.of(),
                         0
                 )),
-                null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, List.of(), List.of()
         );
 
         // Stage asset file

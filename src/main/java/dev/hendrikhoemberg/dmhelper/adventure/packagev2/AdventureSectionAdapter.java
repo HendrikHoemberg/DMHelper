@@ -5,13 +5,23 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.AdventureRepository;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Chapter;
 import dev.hendrikhoemberg.dmhelper.adventure.data.ChapterRepository;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneCheck;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneLink;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipant;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneSection;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneStatus;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransition;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.AdventureDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.ChapterDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SceneCheckDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SceneDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SceneLinkDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SceneParticipantDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SceneSectionDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SceneTransitionDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
@@ -23,8 +33,10 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
+import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -89,11 +101,68 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                                             List<ContentReference> handoutRefs = sc.getHandouts().stream()
                                                     .map(h -> context.packageRef(CampaignContentType.HANDOUT, h.getId(), h.getTitle()))
                                                     .toList();
+                                            List<String> tags = sc.getTags() == null || sc.getTags().isBlank() ? List.of()
+                                                    : List.of(sc.getTags().split(","));
+                                            List<SceneSectionDto> sectionDtos = sc.getSections().stream()
+                                                    .map(sec -> new SceneSectionDto(
+                                                            sec.getKind().name(), sec.getLabel(), sec.getBody(),
+                                                            sec.getSourceLocator(), sec.getSortOrder()))
+                                                    .toList();
+                                            List<SceneCheckDto> checkDtos = sc.getChecks().stream()
+                                                    .map(chk -> {
+                                                        ContentReference ruleRef = chk.getRuleScope() != null && "CATALOG".equals(chk.getRuleScope())
+                                                                ? ContentReference.catalogRef(CampaignContentType.RULE, chk.getRuleRuleset(), chk.getRuleSourceKey())
+                                                                : null;
+                                                        return new SceneCheckDto(
+                                                                chk.getLabel(), chk.getAbility(), chk.getSkill(), chk.getDc(),
+                                                                chk.getVisibility() != null ? chk.getVisibility().name() : null,
+                                                                chk.getSuccess(), chk.getFailure(), chk.getPartial(),
+                                                                ruleRef, chk.getSourceLocator(), chk.getSortOrder());
+                                                    })
+                                                    .toList();
+                                            List<SceneParticipantDto> participantDtos = sc.getParticipants().stream()
+                                                    .map(p -> {
+                                                        ContentReference statblockRef = p.getStatBlock() != null
+                                                                ? statBlockResolver.referenceFor(p.getStatBlock(), context)
+                                                                : null;
+                                                        ContentReference noteRef = p.getNote() != null
+                                                                ? context.packageRef(CampaignContentType.NOTE, p.getNote().getId(), p.getNote().getTitle())
+                                                                : null;
+                                                        return new SceneParticipantDto(
+                                                                p.getDisplayName(), p.getQuantity(),
+                                                                p.getDisposition() != null ? p.getDisposition().name() : null,
+                                                                p.getPlacementHint(), statblockRef, noteRef,
+                                                                p.getSourceLocator(), p.getSortOrder());
+                                                    })
+                                                    .toList();
+                                            List<SceneTransitionDto> transitionDtos = sc.getTransitions().stream()
+                                                    .map(t -> {
+                                                        String tKey = context.key(CampaignContentType.TRANSITION, t.getId(), t.getLabel());
+                                                        ContentReference targetRef = t.getTargetScene() != null
+                                                                ? context.packageRef(CampaignContentType.SCENE, t.getTargetScene().getId(), t.getTargetScene().getTitle())
+                                                                : null;
+                                                        return new SceneTransitionDto(
+                                                                tKey, t.getKind().name(), t.getLabel(),
+                                                                targetRef, t.getExternalDestination(),
+                                                                t.getCondition(), t.getDmNote(),
+                                                                t.getSourceLocator(), t.getSortOrder());
+                                                    })
+                                                    .toList();
+                                            List<SceneLinkDto> linkDtos = sc.getLinks().stream()
+                                                    .map(l -> new SceneLinkDto(
+                                                            l.getRole().name(),
+                                                            toContentRef(l, context),
+                                                            l.getDisplayText(), l.getCondition(), l.getSortOrder()))
+                                                    .toList();
                                             return new SceneDto(
                                                     scKey, sc.getTitle(), sc.getBody(),
                                                     sc.getStatus().name(), sc.getSortOrder(),
                                                     mapRef, pin, encounterRef,
-                                                    statblockRefs, handoutRefs
+                                                    statblockRefs, handoutRefs,
+                                                    sc.getSummary(), sc.getSourceLocator(), tags,
+                                                    sc.getMapRegionKey(),
+                                                    sectionDtos, checkDtos, participantDtos,
+                                                    transitionDtos, linkDtos
                                             );
                                         }).toList();
                                 return new ChapterDto(chKey, ch.getTitle(), ch.getIntro(), ch.getSortOrder(), sceneDtos);
@@ -103,6 +172,21 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                 }).toList();
 
         target.adventures(adventureDtos);
+    }
+
+    private static ContentReference toContentRef(SceneLink link, CampaignExportContext context) {
+        if (link.getTargetScope() == dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkTargetScope.CATALOG) {
+            return ContentReference.catalogRef(CampaignContentType.valueOf(link.getTargetType()), link.getCatalogRuleset(), link.getCatalogSourceKey());
+        }
+        return ContentReference.packageRef(CampaignContentType.valueOf(link.getTargetType()), link.getTargetId().toString());
+    }
+
+    private static CampaignContentType contentTypeFor(String targetType) {
+        try {
+            return CampaignContentType.valueOf(targetType);
+        } catch (IllegalArgumentException e) {
+            return CampaignContentType.NOTE;
+        }
     }
 
     @Override
@@ -151,6 +235,98 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                         sc.setPinX(scDto.pin().get("x"));
                         sc.setPinY(scDto.pin().get("y"));
                     }
+                    sc.setSummary(scDto.summary());
+                    sc.setSourceLocator(scDto.sourceLocator());
+                    if (scDto.tags() != null) {
+                        sc.setTags(String.join(",", scDto.tags()));
+                    }
+                    sc.setMapRegionKey(scDto.mapRegionKey());
+                    if (scDto.sections() != null) {
+                        for (SceneSectionDto secDto : scDto.sections()) {
+                            SceneSection sec = new SceneSection();
+                            sec.setScene(sc);
+                            sec.setKind(dev.hendrikhoemberg.dmhelper.adventure.data.SceneSectionKind.valueOf(secDto.kind()));
+                            sec.setLabel(secDto.label());
+                            sec.setBody(secDto.body());
+                            sec.setSourceLocator(secDto.sourceLocator());
+                            sec.setSortOrder(secDto.sortOrder());
+                            sc.getSections().add(sec);
+                        }
+                    }
+                    if (scDto.checks() != null) {
+                        for (SceneCheckDto chkDto : scDto.checks()) {
+                            SceneCheck chk = new SceneCheck();
+                            chk.setScene(sc);
+                            chk.setLabel(chkDto.label());
+                            chk.setAbility(chkDto.ability());
+                            chk.setSkill(chkDto.skill());
+                            chk.setDc(chkDto.dc());
+                            if (chkDto.visibility() != null) {
+                                chk.setVisibility(dev.hendrikhoemberg.dmhelper.adventure.data.SceneCheckVisibility.valueOf(chkDto.visibility()));
+                            }
+                            chk.setSuccess(chkDto.success());
+                            chk.setFailure(chkDto.failure());
+                            chk.setPartial(chkDto.partial());
+                            if (chkDto.ruleRef() != null && chkDto.ruleRef().scope() == ContentReference.Scope.CATALOG) {
+                                chk.setRuleScope("CATALOG");
+                                chk.setRuleRuleset(chkDto.ruleRef().ruleset());
+                                chk.setRuleSourceKey(chkDto.ruleRef().sourceKey());
+                            }
+                            chk.setSourceLocator(chkDto.sourceLocator());
+                            chk.setSortOrder(chkDto.sortOrder());
+                            sc.getChecks().add(chk);
+                        }
+                    }
+                    if (scDto.participants() != null) {
+                        for (SceneParticipantDto pDto : scDto.participants()) {
+                            SceneParticipant p = new SceneParticipant();
+                            p.setScene(sc);
+                            p.setDisplayName(pDto.displayName());
+                            p.setQuantity(pDto.quantity());
+                            if (pDto.disposition() != null) {
+                                p.setDisposition(dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipantDisposition.valueOf(pDto.disposition()));
+                            }
+                            p.setPlacementHint(pDto.placementHint());
+                            p.setSourceLocator(pDto.sourceLocator());
+                            p.setSortOrder(pDto.sortOrder());
+                            sc.getParticipants().add(p);
+                        }
+                    }
+                    if (scDto.transitions() != null) {
+                        for (SceneTransitionDto tDto : scDto.transitions()) {
+                            SceneTransition t = new SceneTransition();
+                            t.setScene(sc);
+                            t.setKind(dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransitionKind.valueOf(tDto.kind()));
+                            t.setLabel(tDto.label());
+                            t.setExternalDestination(tDto.externalDestination());
+                            t.setCondition(tDto.condition());
+                            t.setDmNote(tDto.dmNote());
+                            t.setSourceLocator(tDto.sourceLocator());
+                            t.setSortOrder(tDto.sortOrder());
+                            sc.getTransitions().add(t);
+                        }
+                    }
+                    if (scDto.links() != null) {
+                        for (SceneLinkDto lDto : scDto.links()) {
+                            SceneLink l = new SceneLink();
+                            l.setScene(sc);
+                            l.setRole(dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkRole.valueOf(lDto.role()));
+                            l.setDisplayText(lDto.displayText());
+                            l.setCondition(lDto.condition());
+                            l.setSortOrder(lDto.sortOrder());
+                            if (lDto.targetRef() != null) {
+                                l.setTargetScope(lDto.targetRef().scope() == ContentReference.Scope.CATALOG
+                                        ? dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkTargetScope.CATALOG
+                                        : dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkTargetScope.PACKAGE);
+                                l.setTargetType(lDto.targetRef().type().name());
+                                if (lDto.targetRef().scope() == ContentReference.Scope.CATALOG) {
+                                    l.setCatalogRuleset(lDto.targetRef().ruleset());
+                                    l.setCatalogSourceKey(lDto.targetRef().sourceKey());
+                                }
+                            }
+                            sc.getLinks().add(l);
+                        }
+                    }
                     sceneRepo.save(sc);
                     context.register(CampaignContentType.SCENE, scDto.key(), sc, sc.getId());
 
@@ -177,6 +353,32 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                                 if (ref.scope() == ContentReference.Scope.CATALOG) continue;
                                 Handout h = context.require(ref, CampaignContentType.HANDOUT, Handout.class);
                                 scene.getHandouts().add(h);
+                            }
+                        }
+                        // Restore participant statblock/note references
+                        if (scDto.participants() != null) {
+                            for (int i = 0; i < scDto.participants().size() && i < scene.getParticipants().size(); i++) {
+                                var pDto = scDto.participants().get(i);
+                                var p = scene.getParticipants().get(i);
+                                if (pDto.statblockRef() != null) {
+                                    p.setStatBlock(statBlockResolver.resolve(pDto.statblockRef(), context));
+                                }
+                                if (pDto.noteRef() != null) {
+                                    Note note = context.require(pDto.noteRef(), CampaignContentType.NOTE, Note.class);
+                                    p.setNote(note);
+                                }
+                            }
+                        }
+                        // Restore transition target scene references
+                        if (scDto.transitions() != null) {
+                            for (int i = 0; i < scDto.transitions().size() && i < scene.getTransitions().size(); i++) {
+                                var tDto = scDto.transitions().get(i);
+                                var t = scene.getTransitions().get(i);
+                                context.register(CampaignContentType.TRANSITION, tDto.key(), t, t.getId());
+                                if (tDto.targetSceneRef() != null) {
+                                    Scene target = context.require(tDto.targetSceneRef(), CampaignContentType.SCENE, Scene.class);
+                                    t.setTargetScene(target);
+                                }
                             }
                         }
                         sceneRepo.save(scene);

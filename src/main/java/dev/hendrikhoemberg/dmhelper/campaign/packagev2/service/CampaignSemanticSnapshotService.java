@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.campaign.packagev2.service;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Adventure;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Chapter;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransition;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEvent;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
@@ -22,6 +23,10 @@ import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntry;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNote;
+import dev.hendrikhoemberg.dmhelper.quest.data.Quest;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective;
+import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotation;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetResource;
@@ -166,6 +171,10 @@ public class CampaignSemanticSnapshotService {
                     projected.put("contentSha256", sha256(bytes));
                     continue;
                 }
+                if (entity instanceof dev.hendrikhoemberg.dmhelper.adventure.data.Scene
+                        && field.getName().equals("tags")) {
+                    continue;
+                }
                 JsonNode node = projectValue(value, field, stableIds);
                 if (node != null) projected.set(field.getName(), node);
             } catch (ReflectiveOperationException e) {
@@ -264,7 +273,8 @@ public class CampaignSemanticSnapshotService {
                 && field.getAnnotation(Id.class) == null
                 && field.getAnnotation(Version.class) == null
                 && field.getAnnotation(Transient.class) == null
-                && !"updatedAt".equals(field.getName());
+                && !"updatedAt".equals(field.getName())
+;
     }
 
     private static boolean relation(Field field) {
@@ -320,5 +330,11 @@ public class CampaignSemanticSnapshotService {
             new OwnershipQuery(CampaignContentType.DICE_ROLL, DiceRoll.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.SESSION, CampaignSession.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.SESSION_SCENE_VISIT, SessionSceneVisit.class,
+                    "session.campaign.id"),
+            new OwnershipQuery(CampaignContentType.TRANSITION, SceneTransition.class, "scene.chapter.adventure.campaign.id"),
+            new OwnershipQuery(CampaignContentType.QUEST, Quest.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.OBJECTIVE, QuestObjective.class, "quest.campaign.id"),
+            new OwnershipQuery(CampaignContentType.SOURCE_ANNOTATION, SourceAnnotation.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.SESSION_OBJECTIVE_CHANGE, SessionObjectiveChange.class,
                     "session.campaign.id"));
 }

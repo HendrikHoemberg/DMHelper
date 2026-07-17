@@ -30,7 +30,9 @@ public record CampaignManifestV2(
         List<TimelineEventDto> timelineEvents,
         List<AdventureDto> adventures,
         SessionDto session,
-        List<DiceRollDto> diceRolls
+        List<DiceRollDto> diceRolls,
+        List<QuestDto> quests,
+        List<SourceAnnotationDto> annotations
 ) {
     public static final int CURRENT_FORMAT_VERSION = 2;
 
@@ -384,7 +386,74 @@ public record CampaignManifestV2(
             Map<String, Integer> pin,
             ContentReference encounterRef,
             List<ContentReference> statblockRefs,
-            List<ContentReference> handoutRefs
+            List<ContentReference> handoutRefs,
+            String summary,
+            String sourceLocator,
+            List<String> tags,
+            String mapRegionKey,
+            List<SceneSectionDto> sections,
+            List<SceneCheckDto> checks,
+            List<SceneParticipantDto> participants,
+            List<SceneTransitionDto> transitions,
+            List<SceneLinkDto> links
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SceneSectionDto(
+            String kind,
+            String label,
+            String body,
+            String sourceLocator,
+            int sortOrder
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SceneCheckDto(
+            String label,
+            String ability,
+            String skill,
+            Integer dc,
+            String visibility,
+            String success,
+            String failure,
+            String partial,
+            ContentReference ruleRef,
+            String sourceLocator,
+            int sortOrder
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SceneParticipantDto(
+            String displayName,
+            int quantity,
+            String disposition,
+            String placementHint,
+            ContentReference statblockRef,
+            ContentReference noteRef,
+            String sourceLocator,
+            int sortOrder
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SceneTransitionDto(
+            String key,
+            String kind,
+            String label,
+            ContentReference targetSceneRef,
+            String externalDestination,
+            String condition,
+            String dmNote,
+            String sourceLocator,
+            int sortOrder
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SceneLinkDto(
+            String role,
+            ContentReference targetRef,
+            String displayText,
+            String condition,
+            int sortOrder
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -401,7 +470,8 @@ public record CampaignManifestV2(
             ContentReference presentedRef,
             List<ContentReference> attendeeRefs,
             List<SessionSceneVisitDto> sceneVisits,
-            String draftBody) {}
+            String draftBody,
+            List<SessionObjectiveChangeDto> objectiveChanges) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record SessionSceneVisitDto(
@@ -431,6 +501,65 @@ public record CampaignManifestV2(
             boolean advantage,
             boolean disadvantage,
             ContentReference encounterRef,
+            Instant createdAt
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SessionObjectiveChangeDto(
+            String key,
+            ContentReference objectiveRef,
+            String previousStatus,
+            String newStatus,
+            Instant changedAt
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record QuestDto(
+            String key,
+            String title,
+            String status,
+            String summary,
+            String sourceLocator,
+            List<String> tags,
+            String rewards,
+            String prerequisites,
+            String outcomeNotes,
+            List<QuestLinkDto> links,
+            List<QuestObjectiveDto> objectives,
+            Instant createdAt
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record QuestLinkDto(
+            String role,
+            ContentReference targetRef,
+            String displayText,
+            String condition,
+            int sortOrder
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record QuestObjectiveDto(
+            String key,
+            String title,
+            String description,
+            String status,
+            String completionMode,
+            int sortOrder,
+            List<ContentReference> prerequisiteRefs,
+            String sourceLocator
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SourceAnnotationDto(
+            String key,
+            ContentReference ownerRef,
+            String fieldPath,
+            String message,
+            String confidence,
+            String sourceLocator,
+            String status,
+            String resolutionNote,
             Instant createdAt
     ) {}
 

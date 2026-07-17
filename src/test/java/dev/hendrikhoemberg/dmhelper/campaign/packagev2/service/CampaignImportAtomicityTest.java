@@ -117,7 +117,10 @@ class CampaignImportAtomicityTest {
                 "stat_block", "game_map", "token", "handout", "encounter", "combatant",
                 "combat_log_entry", "item_assignment", "ledger_entry", "timeline_event", "note",
                 "note_link", "quick_note", "adventure", "adventure_chapter", "adventure_scene",
-                "scene_statblock", "scene_handout", "dice_roll", "campaign_package_key");
+                "scene_statblock", "scene_handout", "scene_section", "scene_check", "scene_participant",
+                "scene_transition", "scene_link", "dice_roll", "campaign_package_key",
+                "quest", "quest_objective", "quest_link", "quest_objective_dependency",
+                "source_annotation", "session_objective_change");
         Map<String, Long> counts = new LinkedHashMap<>();
         for (String table : tables) {
             Number count = (Number) entityManager.createNativeQuery("select count(*) from " + table)
