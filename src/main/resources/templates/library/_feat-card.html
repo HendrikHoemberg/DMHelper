@@ -1,9 +1,22 @@
+<th:block th:fragment="feat-card(feat)">
+    <div class="card">
+        <h3 class="card-title" th:text="${feat.name}">Feat Name</h3>
+        <div class="badge-group">
+            <span class="badge badge-srd" th:if="${feat.category != null}" th:text="${feat.category}">Category</span>
+            <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${feat})}"></th:block>
+        </div>
+        <p th:if="${feat.prerequisite != null}"><em th:text="${'Prerequisite: ' + feat.prerequisite}">Prerequisite</em></p>
+        <p class="card-text" th:utext="${#markdown.toHtml(feat.benefit)}">Benefit</p>
+    </div>
+</th:block>
+
 <th:block th:fragment="feat-card-list">
     <div class="card-grid" th:if="${feats != null and !feats.isEmpty()}">
         <div th:each="f : ${feats}" class="card">
             <h3 class="card-title" th:text="${f.name}">Feat Name</h3>
             <div class="badge-group">
                 <span class="badge badge-srd" th:if="${f.category != null}" th:text="${f.category}">Category</span>
+                <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${f})}"></th:block>
             </div>
             <p th:if="${f.prerequisite != null}"><em th:text="${'Prerequisite: ' + f.prerequisite}">Prerequisite</em></p>
             <p class="card-text" th:utext="${#markdown.toHtml(f.benefit)}">Benefit</p>

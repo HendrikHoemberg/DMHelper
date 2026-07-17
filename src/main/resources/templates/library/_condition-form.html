@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="detail-section" th:fragment="condition-form" id="condition-form">
+    <h2 th:text="${condition == null ? 'Create Custom Condition' : 'Edit ' + condition.name}">Create Condition</h2>
+    <form th:action="${condition == null} ? '/library/conditions' : '/library/conditions/' + ${condition.id}"
+          th:method="${condition == null ? 'post' : 'put'}"
+          th:hx-target="${condition == null ? '#condition-results' : '#condition-form'}"
+          th:hx-swap="${condition == null ? 'beforeend' : 'outerHTML'}">
+        <input type="hidden" name="campaignId" th:value="${campaignId}">
+        <div class="form-group">
+            <label>Name *</label>
+            <input type="text" name="name" required th:value="${condition?.name}" placeholder="e.g. Poisoned">
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea name="description" rows="4" th:text="${condition?.description}"></textarea>
+        </div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-ghost"
+                    th:if="${condition != null}"
+                    th:hx-get="@{/library/conditions/{id}(id=${condition.id})}"
+                    hx-target="#condition-form"
+                    hx-swap="outerHTML">Cancel</button>
+            <button type="submit" class="btn btn-primary" th:text="${condition == null ? 'Create' : 'Save'}">Create</button>
+        </div>
+    </form>
+</div>
+</html>

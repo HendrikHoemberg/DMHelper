@@ -45,12 +45,38 @@ public class ContentDestinationRegistry {
         return switch (type) {
             case STATBLOCK -> "/library/statblocks/" + entityId;
             case CLASS -> {
+                if (entityId != null) {
+                    yield "/library/classes/id/" + entityId;
+                }
                 if (sourceKey == null || sourceKey.isBlank()) {
                     yield filtered("classes", displayName);
                 }
                 yield "/library/classes/" + encodePathSegment(sourceKey);
             }
-            default -> filtered(type.tab, displayName);
+            case SPELL -> entityId != null
+                    ? "/library/spells/" + entityId
+                    : filtered("spells", displayName);
+            case CONDITION -> entityId != null
+                    ? "/library/conditions/" + entityId
+                    : filtered("conditions", displayName);
+            case RULE -> entityId != null
+                    ? "/library/rules/" + entityId
+                    : filtered("rules", displayName);
+            case EQUIPMENT -> entityId != null
+                    ? "/library/equipment/" + entityId
+                    : filtered("equipment", displayName);
+            case MAGIC_ITEM -> entityId != null
+                    ? "/library/magic-items/" + entityId
+                    : filtered("magic-items", displayName);
+            case SPECIES -> entityId != null
+                    ? "/library/species/" + entityId
+                    : filtered("species", displayName);
+            case BACKGROUND -> entityId != null
+                    ? "/library/backgrounds/" + entityId
+                    : filtered("backgrounds", displayName);
+            case FEAT -> entityId != null
+                    ? "/library/feats/" + entityId
+                    : filtered("feats", displayName);
         };
     }
 

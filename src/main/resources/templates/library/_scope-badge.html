@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="scope-badge(entity)">
+    <span th:if="${entity.source.name() == 'SRD'}" class="library-chip library-chip--accent library-chip--source">SRD 5.2</span>
+    <span th:if="${entity.source.name() == 'CUSTOM'}" class="library-chip library-chip--success library-chip--source">Custom</span>
+</th:block>
+</html>

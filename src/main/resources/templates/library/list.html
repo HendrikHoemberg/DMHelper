@@ -131,14 +131,14 @@
                                hx-get="/library/spells"
                                hx-trigger="keyup changed delay:200ms"
                                hx-target="#spell-results"
-                               hx-include="#spellLevel,#spellSchool">
+                                hx-include="#spellLevel,#spellSchool,#spellSource">
                     </div>
                     <div class="form-group">
                         <label>Level</label>
                         <select name="level" id="spellLevel"
                                 hx-get="/library/spells" hx-trigger="change"
                                 hx-target="#spell-results"
-                                hx-include="#spellSearch,#spellSchool">
+                                hx-include="#spellSearch,#spellSchool,#spellSource">
                             <option value="">Any Level</option>
                             <option value="0">Cantrip</option>
                             <option value="1">1st</option>
@@ -157,18 +157,31 @@
                         <select name="school" id="spellSchool"
                                 hx-get="/library/spells" hx-trigger="change"
                                 hx-target="#spell-results"
-                                hx-include="#spellSearch,#spellLevel">
+                                hx-include="#spellSearch,#spellLevel,#spellSource">
                             <option value="">Any School</option>
                             <option value="Abjuration">Abjuration</option>
                             <option value="Conjuration">Conjuration</option>
                             <option value="Divination">Divination</option>
                             <option value="Enchantment">Enchantment</option>
-                            <option value="Evocation">Evocation</option>
                             <option value="Illusion">Illusion</option>
                             <option value="Necromancy">Necromancy</option>
                             <option value="Transmutation">Transmutation</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Source</label>
+                        <select name="source" id="spellSource"
+                                hx-get="/library/spells" hx-trigger="change"
+                                hx-target="#spell-results"
+                                hx-include="#spellSearch,#spellLevel,#spellSchool">
+                            <option value="">All</option>
+                            <option value="SRD">SRD</option>
+                            <option value="CUSTOM">Custom</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="u-flex u-mb-md">
+                    <a th:href="@{/library/spells/new}" class="btn btn-primary btn-sm">+ New Spell</a>
                 </div>
                 <div id="spell-results" hx-get="/library/spells" hx-trigger="load" hx-swap="innerHTML">
                     <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
@@ -179,11 +192,26 @@
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
-                        <input type="text" name="search" placeholder="Search conditions..."
+                        <input type="text" name="search" id="conditionSearch" placeholder="Search conditions..."
                                hx-get="/library/conditions"
                                hx-trigger="keyup changed delay:200ms"
-                               hx-target="#condition-results">
+                               hx-target="#condition-results"
+                               hx-include="#conditionSource">
                     </div>
+                    <div class="form-group">
+                        <label>Source</label>
+                        <select name="source" id="conditionSource"
+                                hx-get="/library/conditions" hx-trigger="change"
+                                hx-target="#condition-results"
+                                hx-include="#conditionSearch">
+                            <option value="">All</option>
+                            <option value="SRD">SRD</option>
+                            <option value="CUSTOM">Custom</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="u-flex u-mb-md">
+                    <a th:href="@{/library/conditions/new}" class="btn btn-primary btn-sm">+ New Condition</a>
                 </div>
                 <div id="condition-results" hx-get="/library/conditions" hx-trigger="load" hx-swap="innerHTML">
                     <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
@@ -194,11 +222,26 @@
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
-                        <input type="text" name="search" placeholder="Search rules..."
+                        <input type="text" name="search" id="ruleSearch" placeholder="Search rules..."
                                hx-get="/library/rules"
                                hx-trigger="keyup changed delay:200ms"
-                               hx-target="#rule-results">
+                               hx-target="#rule-results"
+                               hx-include="#ruleSource">
                     </div>
+                    <div class="form-group">
+                        <label>Source</label>
+                        <select name="source" id="ruleSource"
+                                hx-get="/library/rules" hx-trigger="change"
+                                hx-target="#rule-results"
+                                hx-include="#ruleSearch">
+                            <option value="">All</option>
+                            <option value="SRD">SRD</option>
+                            <option value="CUSTOM">Custom</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="u-flex u-mb-md">
+                    <a th:href="@{/library/rules/new}" class="btn btn-primary btn-sm">+ New Rule</a>
                 </div>
                 <div id="rule-results" hx-get="/library/rules" hx-trigger="load" hx-swap="innerHTML">
                     <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
@@ -213,14 +256,14 @@
                                hx-get="/library/equipment"
                                hx-trigger="keyup changed delay:200ms"
                                hx-target="#equipment-results"
-                               hx-include="#equipmentCategory">
+                               hx-include="#equipmentCategory,#equipmentSource">
                     </div>
                     <div class="form-group">
                         <label>Category</label>
                         <select name="category" id="equipmentCategory"
                                 hx-get="/library/equipment" hx-trigger="change"
                                 hx-target="#equipment-results"
-                                hx-include="#equipmentSearch">
+                                hx-include="#equipmentSearch,#equipmentSource">
                             <option value="">All Categories</option>
                             <option value="WEAPON">Weapons</option>
                             <option value="ARMOR">Armor</option>
@@ -228,6 +271,20 @@
                             <option value="TOOL">Tools</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Source</label>
+                        <select name="source" id="equipmentSource"
+                                hx-get="/library/equipment" hx-trigger="change"
+                                hx-target="#equipment-results"
+                                hx-include="#equipmentSearch,#equipmentCategory">
+                            <option value="">All</option>
+                            <option value="SRD">SRD</option>
+                            <option value="CUSTOM">Custom</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="u-flex u-mb-md">
+                    <a th:href="@{/library/equipment/new}" class="btn btn-primary btn-sm">+ New Equipment</a>
                 </div>
                 <div id="equipment-results" hx-get="/library/equipment" hx-trigger="load" hx-swap="innerHTML">
                     <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
@@ -242,14 +299,14 @@
                                hx-get="/library/magic-items"
                                hx-trigger="keyup changed delay:200ms"
                                hx-target="#magic-item-results"
-                               hx-include="#magicRarity,#magicCategory">
+                               hx-include="#magicRarity,#magicCategory,#magicSource">
                     </div>
                     <div class="form-group">
                         <label>Rarity</label>
                         <select name="rarity" id="magicRarity"
                                 hx-get="/library/magic-items" hx-trigger="change"
                                 hx-target="#magic-item-results"
-                                hx-include="#magicSearch,#magicCategory">
+                                hx-include="#magicSearch,#magicCategory,#magicSource">
                             <option value="">Any Rarity</option>
                             <option value="Common">Common</option>
                             <option value="Uncommon">Uncommon</option>
@@ -264,7 +321,7 @@
                         <select name="category" id="magicCategory"
                                 hx-get="/library/magic-items" hx-trigger="change"
                                 hx-target="#magic-item-results"
-                                hx-include="#magicSearch,#magicRarity">
+                                hx-include="#magicSearch,#magicRarity,#magicSource">
                             <option value="">All Categories</option>
                             <option value="Armor">Armor</option>
                             <option value="Weapon">Weapon</option>
@@ -277,6 +334,20 @@
                             <option value="Scroll">Scroll</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Source</label>
+                        <select name="source" id="magicSource"
+                                hx-get="/library/magic-items" hx-trigger="change"
+                                hx-target="#magic-item-results"
+                                hx-include="#magicSearch,#magicRarity,#magicCategory">
+                            <option value="">All</option>
+                            <option value="SRD">SRD</option>
+                            <option value="CUSTOM">Custom</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="u-flex u-mb-md">
+                    <a th:href="@{/library/magic-items/new}" class="btn btn-primary btn-sm">+ New Magic Item</a>
                 </div>
                 <div id="magic-item-results" hx-get="/library/magic-items" hx-trigger="load" hx-swap="innerHTML">
                     <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
@@ -287,11 +358,26 @@
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
-                        <input type="text" name="search" placeholder="Search classes..."
+                        <input type="text" name="search" id="classSearch" placeholder="Search classes..."
                                hx-get="/library/classes"
                                hx-trigger="keyup changed delay:200ms"
-                               hx-target="#class-results">
+                               hx-target="#class-results"
+                               hx-include="#classSource">
                     </div>
+                    <div class="form-group">
+                        <label>Source</label>
+                        <select name="source" id="classSource"
+                                hx-get="/library/classes" hx-trigger="change"
+                                hx-target="#class-results"
+                                hx-include="#classSearch">
+                            <option value="">All</option>
+                            <option value="SRD">SRD</option>
+                            <option value="CUSTOM">Custom</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="u-flex u-mb-md">
+                    <a th:href="@{/library/classes/new}" class="btn btn-primary btn-sm">+ New Class</a>
                 </div>
                 <div id="class-results" hx-get="/library/classes" hx-trigger="load" hx-swap="innerHTML">
                     <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
@@ -302,11 +388,26 @@
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
-                        <input type="text" name="search" placeholder="Search species..."
+                        <input type="text" name="search" id="speciesSearch" placeholder="Search species..."
                                hx-get="/library/species"
                                hx-trigger="keyup changed delay:200ms"
-                               hx-target="#species-results">
+                               hx-target="#species-results"
+                               hx-include="#speciesSource">
                     </div>
+                    <div class="form-group">
+                        <label>Source</label>
+                        <select name="source" id="speciesSource"
+                                hx-get="/library/species" hx-trigger="change"
+                                hx-target="#species-results"
+                                hx-include="#speciesSearch">
+                            <option value="">All</option>
+                            <option value="SRD">SRD</option>
+                            <option value="CUSTOM">Custom</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="u-flex u-mb-md">
+                    <a th:href="@{/library/species/new}" class="btn btn-primary btn-sm">+ New Species</a>
                 </div>
                 <div id="species-results" hx-get="/library/species" hx-trigger="load" hx-swap="innerHTML">
                     <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
@@ -317,11 +418,26 @@
                 <div class="search-bar">
                     <div class="form-group">
                         <label>Search</label>
-                        <input type="text" name="search" placeholder="Search backgrounds..."
+                        <input type="text" name="search" id="backgroundSearch" placeholder="Search backgrounds..."
                                hx-get="/library/backgrounds"
                                hx-trigger="keyup changed delay:200ms"
-                               hx-target="#background-results">
+                               hx-target="#background-results"
+                               hx-include="#backgroundSource">
                     </div>
+                    <div class="form-group">
+                        <label>Source</label>
+                        <select name="source" id="backgroundSource"
+                                hx-get="/library/backgrounds" hx-trigger="change"
+                                hx-target="#background-results"
+                                hx-include="#backgroundSearch">
+                            <option value="">All</option>
+                            <option value="SRD">SRD</option>
+                            <option value="CUSTOM">Custom</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="u-flex u-mb-md">
+                    <a th:href="@{/library/backgrounds/new}" class="btn btn-primary btn-sm">+ New Background</a>
                 </div>
                 <div id="background-results" hx-get="/library/backgrounds" hx-trigger="load" hx-swap="innerHTML">
                     <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
@@ -336,14 +452,14 @@
                                hx-get="/library/feats"
                                hx-trigger="keyup changed delay:200ms"
                                hx-target="#feat-results"
-                               hx-include="#featCategory">
+                               hx-include="#featCategory,#featSource">
                     </div>
                     <div class="form-group">
                         <label>Category</label>
                         <select name="category" id="featCategory"
                                 hx-get="/library/feats" hx-trigger="change"
                                 hx-target="#feat-results"
-                                hx-include="#featSearch">
+                                hx-include="#featSearch,#featSource">
                             <option value="">All Categories</option>
                             <option value="General">General</option>
                             <option value="Origin">Origin</option>
@@ -351,6 +467,20 @@
                             <option value="Epic Boon">Epic Boon</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Source</label>
+                        <select name="source" id="featSource"
+                                hx-get="/library/feats" hx-trigger="change"
+                                hx-target="#feat-results"
+                                hx-include="#featSearch,#featCategory">
+                            <option value="">All</option>
+                            <option value="SRD">SRD</option>
+                            <option value="CUSTOM">Custom</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="u-flex u-mb-md">
+                    <a th:href="@{/library/feats/new}" class="btn btn-primary btn-sm">+ New Feat</a>
                 </div>
                 <div id="feat-results" hx-get="/library/feats" hx-trigger="load" hx-swap="innerHTML">
                     <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>

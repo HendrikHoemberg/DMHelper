@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="detail-section" th:fragment="magic-item-form" id="magic-item-form">
+    <h2 th:text="${magicItem == null ? 'Create Custom Magic Item' : 'Edit ' + magicItem.name}">Create Magic Item</h2>
+    <form th:action="${magicItem == null} ? '/library/magic-items' : '/library/magic-items/' + ${magicItem.id}"
+          th:method="${magicItem == null ? 'post' : 'put'}"
+          th:hx-target="${magicItem == null ? '#magic-item-results' : '#magic-item-form'}"
+          th:hx-swap="${magicItem == null ? 'beforeend' : 'outerHTML'}">
+        <input type="hidden" name="campaignId" th:value="${campaignId}">
+        <div class="form-group">
+            <label>Name *</label>
+            <input type="text" name="name" required th:value="${magicItem?.name}" placeholder="e.g. Bag of Holding">
+        </div>
+        <div class="form-row-3">
+            <div class="form-group">
+                <label>Rarity</label>
+                <select name="rarity">
+                    <option value="">--</option>
+                    <option value="Common" th:selected="${magicItem?.rarity == 'Common'}">Common</option>
+                    <option value="Uncommon" th:selected="${magicItem?.rarity == 'Uncommon'}">Uncommon</option>
+                    <option value="Rare" th:selected="${magicItem?.rarity == 'Rare'}">Rare</option>
+                    <option value="Very Rare" th:selected="${magicItem?.rarity == 'Very Rare'}">Very Rare</option>
+                    <option value="Legendary" th:selected="${magicItem?.rarity == 'Legendary'}">Legendary</option>
+                    <option value="Artifact" th:selected="${magicItem?.rarity == 'Artifact'}">Artifact</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <input type="text" name="category" th:value="${magicItem?.category}" placeholder="Wondrous Item">
+            </div>
+            <div class="form-group">
+                <label>Type</label>
+                <input type="text" name="type" th:value="${magicItem?.type}" placeholder="Item">
+            </div>
+        </div>
+        <div class="form-row-3">
+            <div class="form-group"><label>Cost</label><input type="text" name="cost" th:value="${magicItem?.cost}" placeholder="--"></div>
+            <div class="form-group"><label>Weight</label><input type="text" name="weight" th:value="${magicItem?.weight}" placeholder="--"></div>
+            <div class="form-checkbox-row">
+                <label><input type="checkbox" name="requiresAttunement" th:checked="${magicItem?.requiresAttunement}" value="true"> Requires Attunement</label>
+            </div>
+        </div>
+        <div class="form-group" th:if="${magicItem?.requiresAttunement}">
+            <label>Attunement Detail</label>
+            <input type="text" name="attunementDetail" th:value="${magicItem?.attunementDetail}">
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea name="description" rows="6" th:text="${magicItem?.description}"></textarea>
+        </div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-ghost"
+                    th:if="${magicItem != null}"
+                    th:hx-get="@{/library/magic-items/{id}(id=${magicItem.id})}"
+                    hx-target="#magic-item-form"
+                    hx-swap="outerHTML">Cancel</button>
+            <button type="submit" class="btn btn-primary" th:text="${magicItem == null ? 'Create' : 'Save'}">Create</button>
+        </div>
+    </form>
+</div>
+</html>

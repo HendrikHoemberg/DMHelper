@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="detail-section" th:fragment="equipment-form" id="equipment-form">
+    <h2 th:text="${equipmentItem == null ? 'Create Custom Equipment' : 'Edit ' + equipmentItem.name}">Create Equipment</h2>
+    <form th:action="${equipmentItem == null} ? '/library/equipment' : '/library/equipment/' + ${equipmentItem.id}"
+          th:method="${equipmentItem == null ? 'post' : 'put'}"
+          th:hx-target="${equipmentItem == null ? '#equipment-results' : '#equipment-form'}"
+          th:hx-swap="${equipmentItem == null ? 'beforeend' : 'outerHTML'}">
+        <input type="hidden" name="campaignId" th:value="${campaignId}">
+        <div class="form-group">
+            <label>Name *</label>
+            <input type="text" name="name" required th:value="${equipmentItem?.name}" placeholder="e.g. Longsword">
+        </div>
+        <div class="form-row-3">
+            <div class="form-group">
+                <label>Category</label>
+                <select name="category">
+                    <option value="WEAPON" th:selected="${equipmentItem != null and equipmentItem.category.name() == 'WEAPON'}">Weapon</option>
+                    <option value="ARMOR" th:selected="${equipmentItem != null and equipmentItem.category.name() == 'ARMOR'}">Armor</option>
+                    <option value="GEAR" th:selected="${equipmentItem != null and equipmentItem.category.name() == 'GEAR'}">Adventuring Gear</option>
+                    <option value="TOOL" th:selected="${equipmentItem != null and equipmentItem.category.name() == 'TOOL'}">Tool</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Cost</label><input type="text" name="cost" th:value="${equipmentItem?.cost}" placeholder="15 gp"></div>
+            <div class="form-group"><label>Weight</label><input type="text" name="weight" th:value="${equipmentItem?.weight}" placeholder="3 lb"></div>
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea name="description" rows="6" th:text="${equipmentItem?.description}"></textarea>
+        </div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-ghost"
+                    th:if="${equipmentItem != null}"
+                    th:hx-get="@{/library/equipment/{id}(id=${equipmentItem.id})}"
+                    hx-target="#equipment-form"
+                    hx-swap="outerHTML">Cancel</button>
+            <button type="submit" class="btn btn-primary" th:text="${equipmentItem == null ? 'Create' : 'Save'}">Create</button>
+        </div>
+    </form>
+</div>
+</html>

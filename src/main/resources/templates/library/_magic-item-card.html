@@ -1,3 +1,16 @@
+<th:block th:fragment="magic-item-card(item)">
+    <div class="card">
+        <h3 class="card-title library-card__title" th:text="${item.name}">Name</h3>
+        <div class="badge-group library-card__meta">
+            <span class="badge" th:classappend="'badge-' + ${item.rarity?.toLowerCase()}" th:text="${item.rarity}">Rarity</span>
+            <span class="badge badge-srd" th:text="${item.category}">Category</span>
+            <span class="badge badge-attune" th:if="${item.requiresAttunement}">Attunement</span>
+            <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${item})}"></th:block>
+        </div>
+        <p class="card-text" th:utext="${#markdown.toHtml(item.description)}">Description</p>
+    </div>
+</th:block>
+
 <th:block th:fragment="magic-item-card-list">
     <div class="card-grid" th:if="${magicItems != null and !magicItems.isEmpty()}">
         <div th:each="m : ${magicItems}" class="card">
@@ -6,6 +19,7 @@
                 <span class="badge" th:classappend="'badge-' + ${m.rarity?.toLowerCase()}" th:text="${m.rarity}">Rarity</span>
                 <span class="badge badge-srd" th:text="${m.category}">Category</span>
                 <span class="badge badge-attune" th:if="${m.requiresAttunement}">Attunement</span>
+                <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${m})}"></th:block>
             </div>
             <p class="card-text" th:utext="${#markdown.toHtml(m.description)}">Description</p>
         </div>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="detail-section" th:fragment="feat-form" id="feat-form">
+    <h2 th:text="${feat == null ? 'Create Custom Feat' : 'Edit ' + feat.name}">Create Feat</h2>
+    <form th:action="${feat == null} ? '/library/feats' : '/library/feats/' + ${feat.id}"
+          th:method="${feat == null ? 'post' : 'put'}"
+          th:hx-target="${feat == null ? '#feat-results' : '#feat-form'}"
+          th:hx-swap="${feat == null ? 'beforeend' : 'outerHTML'}">
+        <input type="hidden" name="campaignId" th:value="${campaignId}">
+        <div class="form-group">
+            <label>Name *</label>
+            <input type="text" name="name" required th:value="${feat?.name}" placeholder="e.g. Alert">
+        </div>
+        <div class="form-group">
+            <label>Category</label>
+            <input type="text" name="category" th:value="${feat?.category}" placeholder="General">
+        </div>
+        <div class="form-group">
+            <label>Prerequisite</label>
+            <input type="text" name="prerequisite" th:value="${feat?.prerequisite}">
+        </div>
+        <div class="form-group">
+            <label>Benefit (Markdown)</label>
+            <textarea name="benefit" rows="6" th:text="${feat?.benefit}"></textarea>
+        </div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-ghost"
+                    th:if="${feat != null}"
+                    th:hx-get="@{/library/feats/{id}(id=${feat.id})}"
+                    hx-target="#feat-form"
+                    hx-swap="outerHTML">Cancel</button>
+            <button type="submit" class="btn btn-primary" th:text="${feat == null ? 'Create' : 'Save'}">Create</button>
+        </div>
+    </form>
+</div>
+</html>

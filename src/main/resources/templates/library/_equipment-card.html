@@ -1,3 +1,7 @@
+<th:block th:fragment="equipment-card(item)">
+    <span th:text="${item.name}"></span>
+</th:block>
+
 <th:block th:fragment="equipment-card-list">
     <table class="equipment-table settle-in" th:if="${equipment != null and !equipment.isEmpty()}">
         <thead>

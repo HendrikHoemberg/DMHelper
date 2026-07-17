@@ -8,6 +8,7 @@
         <span th:text="${spell.school}">School</span>
         <span th:if="${spell.ritual}">Ritual</span>
         <span th:if="${spell.concentration}">Concentration</span>
+        <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${spell})}"></th:block>
     </div>
     <div class="spell-details">
         <p><strong>Casting Time:</strong> <span th:text="${spell.castingTime}"></span></p>

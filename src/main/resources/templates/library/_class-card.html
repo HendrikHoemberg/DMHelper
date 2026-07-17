@@ -1,3 +1,10 @@
+<th:block th:fragment="class-card(clz)">
+    <a class="card card-clickable" th:href="@{/library/classes/id/{id}(id=${clz.id})}">
+        <h3 class="card-title library-card__title" th:text="${clz.name}">Class Name</h3>
+        <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${clz})}"></th:block>
+    </a>
+</th:block>
+
 <th:block th:fragment="class-card-list">
     <div class="card-grid" th:if="${classes != null and !classes.isEmpty()}">
         <a th:each="c : ${classes}" class="card card-clickable"
@@ -7,6 +14,7 @@
                 <span class="badge badge-srd" th:text="${'HD: ' + c.hitDie}">HD</span>
                 <span class="badge badge-type" th:if="${c.subclassOf != null}"
                       th:text="${'Subclass of ' + c.subclassOf}">Subclass</span>
+                <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${c})}"></th:block>
             </div>
         </a>
     </div>

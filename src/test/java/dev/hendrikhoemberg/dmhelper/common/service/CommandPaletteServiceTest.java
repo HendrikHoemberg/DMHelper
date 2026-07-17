@@ -168,11 +168,11 @@ class CommandPaletteServiceTest {
     }
 
     @Test
-    void spellResultUsesFilteredLibraryTab() {
+    void spellResultUsesDetailRoute() {
         var result = commandPaletteService.search("Fireball", null).stream()
                 .filter(item -> item.type().equals("spell"))
                 .findFirst().orElseThrow();
-        assertThat(result.url()).isEqualTo("/library?tab=spells&search=Fireball");
+        assertThat(result.url()).startsWith("/library/spells/");
     }
 
     @Test

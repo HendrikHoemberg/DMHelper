@@ -1,8 +1,17 @@
+<th:block th:fragment="rule-card(rule)">
+    <div class="card">
+        <h3 class="card-title" th:text="${rule.name}">Rule Name</h3>
+        <div class="card-text" th:utext="${#markdown.toHtml(rule.body)}">Description</div>
+        <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${rule})}"></th:block>
+    </div>
+</th:block>
+
 <th:block th:fragment="rule-card-list">
     <div class="card-grid" th:if="${rules != null and !rules.isEmpty()}">
         <div th:each="r : ${rules}" class="card">
             <h3 class="card-title" th:text="${r.name}">Rule Name</h3>
             <div class="card-text" th:utext="${#markdown.toHtml(r.body)}">Description</div>
+            <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${r})}"></th:block>
         </div>
     </div>
     <div class="empty-state"><p>No rules match your search.</p></div>

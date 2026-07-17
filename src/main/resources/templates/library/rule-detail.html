@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper -- ' + ${rule.name}">DMHelper -- Rule</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <a href="/library" class="btn btn-ghost">&larr; Back to Library</a>
+                <div class="u-flex">
+                    <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${rule})}"></th:block>
+                    <th:block th:if="${rule.source.name() == 'SRD'}">
+                        <form th:hx-post="@{/library/rules/{id}/clone(id=${rule.id})}" hx-target="body">
+                            <button type="submit" class="btn btn-primary">Clone &amp; Edit</button>
+                        </form>
+                    </th:block>
+                    <th:block th:if="${rule.source.name() == 'CUSTOM'}">
+                        <a th:href="@{/library/rules/{id}/edit(id=${rule.id})}" class="btn btn-primary">Edit</a>
+                        <button class="btn btn-danger"
+                                th:hx-delete="@{/library/rules/{id}(id=${rule.id})}"
+                                hx-confirm="Delete this rule?"
+                                hx-target="body" hx-swap="outerHTML">Delete</button>
+                    </th:block>
+                </div>
+            </div>
+            <div class="detail-section">
+                <h1 th:text="${rule.name}">Rule Name</h1>
+                <div class="detail-meta">
+                    <span th:if="${rule.ruleset != null}" class="library-chip" th:text="${rule.ruleset}">Ruleset</span>
+                </div>
+                <div class="detail-body" th:utext="${#markdown.toHtml(rule.body)}"></div>
+            </div>
+            <th:block th:if="${rule.source.name() == 'CUSTOM'}" th:replace="~{library/_provenance-fields :: provenance(entity=${rule})}"></th:block>
+            <th:block th:if="${campaignId != null}">
+                <div class="u-mt-lg">
+                    <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='RULE', targetId=${rule.id})}"></th:block>
+                </div>
+            </th:block>
+        </main>
+    </div>
+</body>
+</html>

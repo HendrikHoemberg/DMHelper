@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper -- ' + ${magicItem.name}">DMHelper -- Magic Item</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <a href="/library" class="btn btn-ghost">&larr; Back to Library</a>
+                <div class="u-flex">
+                    <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${magicItem})}"></th:block>
+                    <th:block th:if="${magicItem.source.name() == 'SRD'}">
+                        <form th:hx-post="@{/library/magic-items/{id}/clone(id=${magicItem.id})}" hx-target="body">
+                            <button type="submit" class="btn btn-primary">Clone &amp; Edit</button>
+                        </form>
+                    </th:block>
+                    <th:block th:if="${magicItem.source.name() == 'CUSTOM'}">
+                        <a th:href="@{/library/magic-items/{id}/edit(id=${magicItem.id})}" class="btn btn-primary">Edit</a>
+                        <button class="btn btn-danger"
+                                th:hx-delete="@{/library/magic-items/{id}(id=${magicItem.id})}"
+                                hx-confirm="Delete this magic item?"
+                                hx-target="body" hx-swap="outerHTML">Delete</button>
+                    </th:block>
+                </div>
+            </div>
+            <div class="detail-section">
+                <h1 th:text="${magicItem.name}">Item Name</h1>
+                <div class="detail-meta">
+                    <span class="badge" th:classappend="'badge-' + ${magicItem.rarity?.toLowerCase()}" th:text="${magicItem.rarity}">Rarity</span>
+                    <span class="badge" th:text="${magicItem.category}">Category</span>
+                    <span class="badge" th:if="${magicItem.requiresAttunement}">Attunement</span>
+                </div>
+                <div class="detail-grid">
+                    <div th:if="${magicItem.type != null}"><strong>Type:</strong> <span th:text="${magicItem.type}"></span></div>
+                    <div th:if="${magicItem.cost != null}"><strong>Cost:</strong> <span th:text="${magicItem.cost}"></span></div>
+                    <div th:if="${magicItem.weight != null}"><strong>Weight:</strong> <span th:text="${magicItem.weight}"></span></div>
+                    <div th:if="${magicItem.attunementDetail != null}"><strong>Attunement:</strong> <span th:text="${magicItem.attunementDetail}"></span></div>
+                </div>
+                <div class="detail-body" th:utext="${#markdown.toHtml(magicItem.description)}"></div>
+            </div>
+            <th:block th:if="${magicItem.source.name() == 'CUSTOM'}" th:replace="~{library/_provenance-fields :: provenance(entity=${magicItem})}"></th:block>
+            <th:block th:if="${campaignId != null}">
+                <div class="u-mt-lg">
+                    <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='MAGIC_ITEM', targetId=${magicItem.id})}"></th:block>
+                </div>
+            </th:block>
+        </main>
+    </div>
+</body>
+</html>

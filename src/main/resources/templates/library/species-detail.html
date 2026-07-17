@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper -- ' + ${species.name}">DMHelper -- Species</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <a href="/library" class="btn btn-ghost">&larr; Back to Library</a>
+                <div class="u-flex">
+                    <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${species})}"></th:block>
+                    <th:block th:if="${species.source.name() == 'SRD'}">
+                        <form th:hx-post="@{/library/species/{id}/clone(id=${species.id})}" hx-target="body">
+                            <button type="submit" class="btn btn-primary">Clone &amp; Edit</button>
+                        </form>
+                    </th:block>
+                    <th:block th:if="${species.source.name() == 'CUSTOM'}">
+                        <a th:href="@{/library/species/{id}/edit(id=${species.id})}" class="btn btn-primary">Edit</a>
+                        <button class="btn btn-danger"
+                                th:hx-delete="@{/library/species/{id}(id=${species.id})}"
+                                hx-confirm="Delete this species?"
+                                hx-target="body" hx-swap="outerHTML">Delete</button>
+                    </th:block>
+                </div>
+            </div>
+            <div class="detail-section">
+                <h1 th:text="${species.name}">Species Name</h1>
+                <div class="detail-grid">
+                    <div th:if="${species.size != null}"><strong>Size:</strong> <span th:text="${species.size}"></span></div>
+                    <div th:if="${species.speed != null}"><strong>Speed:</strong> <span th:text="${species.speed}"></span></div>
+                </div>
+                <div class="detail-body" th:utext="${#markdown.toHtml(species.description)}"></div>
+            </div>
+            <th:block th:if="${species.source.name() == 'CUSTOM'}" th:replace="~{library/_provenance-fields :: provenance(entity=${species})}"></th:block>
+            <th:block th:if="${campaignId != null}">
+                <div class="u-mt-lg">
+                    <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='SPECIES', targetId=${species.id})}"></th:block>
+                </div>
+            </th:block>
+        </main>
+    </div>
+</body>
+</html>

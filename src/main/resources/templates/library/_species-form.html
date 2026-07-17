@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="detail-section" th:fragment="species-form" id="species-form">
+    <h2 th:text="${species == null ? 'Create Custom Species' : 'Edit ' + species.name}">Create Species</h2>
+    <form th:action="${species == null} ? '/library/species' : '/library/species/' + ${species.id}"
+          th:method="${species == null ? 'post' : 'put'}"
+          th:hx-target="${species == null ? '#species-results' : '#species-form'}"
+          th:hx-swap="${species == null ? 'beforeend' : 'outerHTML'}">
+        <input type="hidden" name="campaignId" th:value="${campaignId}">
+        <div class="form-group">
+            <label>Name *</label>
+            <input type="text" name="name" required th:value="${species?.name}" placeholder="e.g. Dragonborn">
+        </div>
+        <div class="form-row-2">
+            <div class="form-group"><label>Size</label><input type="text" name="size" th:value="${species?.size}" placeholder="Medium"></div>
+            <div class="form-group"><label>Speed</label><input type="text" name="speed" th:value="${species?.speed}" placeholder="30 ft."></div>
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea name="description" rows="6" th:text="${species?.description}"></textarea>
+        </div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-ghost"
+                    th:if="${species != null}"
+                    th:hx-get="@{/library/species/{id}(id=${species.id})}"
+                    hx-target="#species-form"
+                    hx-swap="outerHTML">Cancel</button>
+            <button type="submit" class="btn btn-primary" th:text="${species == null ? 'Create' : 'Save'}">Create</button>
+        </div>
+    </form>
+</div>
+</html>

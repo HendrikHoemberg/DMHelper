@@ -40,12 +40,37 @@ class ContentDestinationRegistryTest {
         assertThat(registry.library(ContentDestinationRegistry.LibraryType.STATBLOCK,
                 entityId, "goblin", "Goblin")).isEqualTo("/library/statblocks/" + entityId);
         assertThat(registry.library(ContentDestinationRegistry.LibraryType.CLASS,
-                entityId, "srd-2024_fighter", "Fighter")).isEqualTo("/library/classes/srd-2024_fighter");
+                entityId, "srd-2024_fighter", "Fighter")).isEqualTo("/library/classes/id/" + entityId);
         assertThat(registry.library(ContentDestinationRegistry.LibraryType.SPELL,
-                entityId, "fireball", "Fireball")).isEqualTo("/library?tab=spells&search=Fireball");
+                entityId, "fireball", "Fireball")).isEqualTo("/library/spells/" + entityId);
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.CONDITION,
+                entityId, "poisoned", "Poisoned")).isEqualTo("/library/conditions/" + entityId);
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.RULE,
+                entityId, "combat", "Combat")).isEqualTo("/library/rules/" + entityId);
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.EQUIPMENT,
+                entityId, "longsword", "Longsword")).isEqualTo("/library/equipment/" + entityId);
         assertThat(registry.library(ContentDestinationRegistry.LibraryType.MAGIC_ITEM,
                 entityId, "bag-of-holding", "Bag of Holding")).isEqualTo(
+                "/library/magic-items/" + entityId);
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.SPECIES,
+                entityId, "elf", "Elf")).isEqualTo("/library/species/" + entityId);
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.BACKGROUND,
+                entityId, "acolyte", "Acolyte")).isEqualTo("/library/backgrounds/" + entityId);
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.FEAT,
+                entityId, "alert", "Alert")).isEqualTo("/library/feats/" + entityId);
+    }
+
+    @Test
+    void libraryDestinationsFallBackToFilteredTabsWhenNoEntityId() {
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.SPELL,
+                null, "fireball", "Fireball")).isEqualTo("/library?tab=spells&search=Fireball");
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.MAGIC_ITEM,
+                null, "bag-of-holding", "Bag of Holding")).isEqualTo(
                 "/library?tab=magic-items&search=Bag%20of%20Holding");
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.CLASS,
+                null, "srd-2024_fighter", "Fighter")).isEqualTo("/library/classes/srd-2024_fighter");
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.CLASS,
+                null, null, "Fighter")).isEqualTo("/library?tab=classes&search=Fighter");
     }
 
     @Test
