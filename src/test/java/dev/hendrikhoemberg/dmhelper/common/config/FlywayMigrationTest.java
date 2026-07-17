@@ -86,17 +86,19 @@ class FlywayMigrationTest {
 
     @Test
     void v8AddsCharacterSheetColumns() {
-        Integer appliedV8 = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '8' AND \"success\" = TRUE",
-                Integer.class);
-        assertThat(appliedV8).isEqualTo(1);
-    }
-
-    @Test
-    void v8AndV9AreApplied() {
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '8' AND \"success\" = TRUE",
                 Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'PARTY_MEMBER' AND column_name = 'TEMP_HP'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'PARTY_MEMBER' AND column_name = 'INSPIRATION'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v9IsApplied() {
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '9' AND \"success\" = TRUE",
                 Integer.class)).isEqualTo(1);
@@ -125,6 +127,20 @@ class FlywayMigrationTest {
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'COMBATANT' AND column_name = 'PLACEMENT_REGION_KEY'",
                 Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v9HasExpectedConstraints() {
+        String sql = """
+                SELECT COUNT(*) FROM information_schema.table_constraints
+                WHERE table_name = 'ENCOUNTER_WAVE'
+                AND constraint_name IN ('UQ_WAVE_KEY_PER_ENCOUNTER', 'FK_WAVE_ENCOUNTER')""";
+        assertThat(jdbc.queryForObject(sql, Integer.class)).isEqualTo(2);
+        String combatantConstraintSql = """
+                SELECT COUNT(*) FROM information_schema.table_constraints
+                WHERE table_name = 'COMBATANT'
+                AND constraint_name = 'FK_COMBATANT_WAVE'""";
+        assertThat(jdbc.queryForObject(combatantConstraintSql, Integer.class)).isEqualTo(1);
     }
 
     @Test
