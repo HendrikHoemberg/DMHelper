@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.campaign.packagev2.io;
 
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.AssetDescriptor;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportProblemCodes;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
 
 import java.io.IOException;
@@ -23,26 +24,26 @@ public final class AssetSignatureValidator {
 
     public static CampaignImportProblem validate(Path file, AssetDescriptor descriptor) {
         if (!SUPPORTED_MEDIA_TYPES.contains(descriptor.mediaType())) {
-            return problem("UNSUPPORTED_MEDIA_TYPE", "Unsupported media type: " + descriptor.mediaType());
+            return problem(ImportProblemCodes.UNSUPPORTED_MEDIA_TYPE, "Unsupported media type: " + descriptor.mediaType());
         }
         if (!fileExtensionMatches(descriptor)) {
-            return problem("ASSET_EXTENSION_MISMATCH", "Extension mismatch for " + descriptor.originalName());
+            return problem(ImportProblemCodes.ASSET_EXTENSION_MISMATCH, "Extension mismatch for " + descriptor.originalName());
         }
         try {
             byte[] bytes = Files.readAllBytes(file);
             if (bytes.length != descriptor.sizeBytes()) {
-                return problem("ASSET_SIZE_MISMATCH", "Declared " + descriptor.sizeBytes() + " bytes but file is " + bytes.length);
+                return problem(ImportProblemCodes.ASSET_SIZE_MISMATCH, "Declared " + descriptor.sizeBytes() + " bytes but file is " + bytes.length);
             }
             if (!signatureMatches(bytes, descriptor.mediaType())) {
-                return problem("ASSET_SIGNATURE_MISMATCH", "File signature does not match declared media type: " + descriptor.mediaType());
+                return problem(ImportProblemCodes.ASSET_SIGNATURE_MISMATCH, "File signature does not match declared media type: " + descriptor.mediaType());
             }
             String sha256 = computeSha256(bytes);
             if (!sha256.equals(descriptor.sha256())) {
-                return problem("ASSET_DIGEST_MISMATCH", "SHA-256 mismatch for " + descriptor.key());
+                return problem(ImportProblemCodes.ASSET_DIGEST_MISMATCH, "SHA-256 mismatch for " + descriptor.key());
             }
             return null;
         } catch (IOException e) {
-            return problem("ASSET_READ_ERROR", "Could not read staged asset: " + e.getMessage());
+            return problem(ImportProblemCodes.ASSET_READ_ERROR, "Could not read staged asset: " + e.getMessage());
         }
     }
 

@@ -16,6 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportProblemCodes;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
 
 @Component
@@ -43,7 +44,7 @@ public final class CampaignManifestV2SchemaValidator {
                 .stream()
                 .map(error -> new CampaignImportProblem(
                         ImportSeverity.ERROR,
-                        "SCHEMA_VIOLATION",
+                        ImportProblemCodes.SCHEMA_VIOLATION,
                         error.getInstanceLocation().toString(),
                         error.getMessage(),
                         "Match the field type, required fields, enum, range, or closed-object shape in campaign-format-v2.schema.json."))

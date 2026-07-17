@@ -51,7 +51,7 @@ public final class CampaignImportValidator {
     private static CampaignImportProblem invalidJson(JacksonException e) {
         return new CampaignImportProblem(
                 ImportSeverity.ERROR,
-                "INVALID_JSON",
+                ImportProblemCodes.INVALID_JSON,
                 "/",
                 "Campaign file is not valid JSON.",
                 "Fix the JSON syntax near line " + (e.getLocation() != null ? e.getLocation().getLineNr() : "?") + ".");
@@ -60,7 +60,7 @@ public final class CampaignImportValidator {
     private static CampaignImportProblem dtoDrift(JacksonException e) {
         return new CampaignImportProblem(
                 ImportSeverity.ERROR,
-                "DTO_SCHEMA_DRIFT",
+                ImportProblemCodes.DTO_SCHEMA_DRIFT,
                 "/",
                 "Schema-valid JSON cannot be deserialized into CampaignExportDto. " + e.getOriginalMessage(),
                 "Report this as a schema/DTO compatibility issue.");

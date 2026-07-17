@@ -5,6 +5,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignFormat
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignPackageValidationResult;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportProblemCodes;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
 import org.springframework.stereotype.Component;
 
@@ -34,7 +35,7 @@ public class FormatMigrationRegistry {
         if (migration == null) {
             return new CampaignPackageValidationResult(source, null, 1, Map.of(),
                     List.of(new CampaignImportProblem(ImportSeverity.ERROR,
-                            "UNSUPPORTED_FORMAT_VERSION", "",
+                            ImportProblemCodes.UNSUPPORTED_FORMAT_VERSION, "",
                             "No migration for version 1", null)),
                     List.of());
         }

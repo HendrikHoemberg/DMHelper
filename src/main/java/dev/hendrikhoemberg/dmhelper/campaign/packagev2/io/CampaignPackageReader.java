@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.io;
 
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportProblemCodes;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
@@ -40,7 +41,7 @@ public final class CampaignPackageReader {
         try {
             if (isZip(originalFilename, mediaType)) return readZip(input, stageDir);
             if (!"application/json".equals(mediaType)) {
-                throw problem("UNSUPPORTED_MEDIA_TYPE", "Only campaign JSON or ZIP packages are supported");
+                throw problem(ImportProblemCodes.UNSUPPORTED_MEDIA_TYPE, "Only campaign JSON or ZIP packages are supported");
             }
             return readJson(input, stageDir);
         } catch (CampaignPackageException e) {
@@ -48,7 +49,7 @@ public final class CampaignPackageReader {
             throw e;
         } catch (Exception e) {
             cleanup(stageDir);
-            throw problem("PACKAGE_READ_ERROR", "The campaign package could not be read");
+            throw problem(ImportProblemCodes.PACKAGE_READ_ERROR, "The campaign package could not be read");
         }
     }
 
@@ -60,26 +61,26 @@ public final class CampaignPackageReader {
 
     private StagedCampaignPackage readJson(InputStream input, Path stageDir) throws IOException {
         Path manifest = stageDir.resolve("manifest.json");
-        long bytes = copyBounded(input, manifest, limits.maxManifestBytes(), "MANIFEST_TOO_LARGE");
+        long bytes = copyBounded(input, manifest, limits.maxManifestBytes(), ImportProblemCodes.MANIFEST_TOO_LARGE);
         int version;
         try (var in = Files.newInputStream(manifest)) {
             var root = JsonMapper.builder().build().readTree(in);
             version = root != null && root.has("formatVersion") && root.get("formatVersion").isIntegralNumber()
                     ? root.get("formatVersion").intValue() : -1;
         } catch (Exception e) {
-            throw problem("INVALID_JSON", "Manifest is not valid JSON");
+            throw problem(ImportProblemCodes.INVALID_JSON, "Manifest is not valid JSON");
         }
         var kind = switch (version) {
             case 1 -> StagedCampaignPackage.ContainerKind.V1_JSON;
             case 2 -> StagedCampaignPackage.ContainerKind.V2_JSON;
-            default -> throw problem("UNSUPPORTED_FORMAT_VERSION", "Unsupported or missing formatVersion");
+            default -> throw problem(ImportProblemCodes.UNSUPPORTED_FORMAT_VERSION, "Unsupported or missing formatVersion");
         };
         return new StagedCampaignPackage(stageDir, manifest, Map.of(), bytes, bytes, kind);
     }
 
     private StagedCampaignPackage readZip(InputStream input, Path stageDir) throws IOException {
         Path upload = stageDir.resolve("upload.zip");
-        long uploaded = copyBounded(input, upload, limits.maxUploadBytes(), "PACKAGE_TOO_LARGE");
+        long uploaded = copyBounded(input, upload, limits.maxUploadBytes(), ImportProblemCodes.PACKAGE_TOO_LARGE);
         try (ZipFile zip = ZipFile.builder().setPath(upload).get()) {
             var entries = zip.getEntries();
             int count = 0;
@@ -90,56 +91,56 @@ public final class CampaignPackageReader {
 
             while (entries.hasMoreElements()) {
                 ZipArchiveEntry entry = entries.nextElement();
-                if (++count > limits.maxEntries()) throw problem("TOO_MANY_ENTRIES", "ZIP entry limit exceeded");
-                if (entry.getGeneralPurposeBit().usesEncryption()) throw problem("ENCRYPTED_ENTRY", "Encrypted ZIP entries are not supported");
-                if (entry.isUnixSymlink()) throw problem("SYMLINK_ENTRY", "Symbolic-link ZIP entries are not supported");
+                if (++count > limits.maxEntries()) throw problem(ImportProblemCodes.TOO_MANY_ENTRIES, "ZIP entry limit exceeded");
+                if (entry.getGeneralPurposeBit().usesEncryption()) throw problem(ImportProblemCodes.ENCRYPTED_ENTRY, "Encrypted ZIP entries are not supported");
+                if (entry.isUnixSymlink()) throw problem(ImportProblemCodes.SYMLINK_ENTRY, "Symbolic-link ZIP entries are not supported");
                 if (entry.isDirectory()) continue;
 
                 String normalized = normalizePath(entry.getName());
-                if (normalized == null) throw problem("TRAVERSAL_ASSET_PATH", "ZIP contains an invalid path");
-                if (normalized.length() > limits.maxNormalizedPathLength()) throw problem("PATH_TOO_LONG", "ZIP path is too long");
+                if (normalized == null) throw problem(ImportProblemCodes.TRAVERSAL_ASSET_PATH, "ZIP contains an invalid path");
+                if (normalized.length() > limits.maxNormalizedPathLength()) throw problem(ImportProblemCodes.PATH_TOO_LONG, "ZIP path is too long");
                 if (!foldedPaths.add(normalized.toLowerCase(Locale.ROOT))) {
-                    throw problem("DUPLICATE_NORMALIZED_PATH", "ZIP contains duplicate normalized paths");
+                    throw problem(ImportProblemCodes.DUPLICATE_NORMALIZED_PATH, "ZIP contains duplicate normalized paths");
                 }
 
                 long maximum;
                 String limitCode;
                 if ("manifest.json".equals(normalized)) {
-                    if (manifest != null) throw problem("DUPLICATE_MANIFEST", "ZIP contains multiple manifests");
+                    if (manifest != null) throw problem(ImportProblemCodes.DUPLICATE_MANIFEST, "ZIP contains multiple manifests");
                     maximum = limits.maxManifestBytes();
-                    limitCode = "MANIFEST_TOO_LARGE";
+                    limitCode = ImportProblemCodes.MANIFEST_TOO_LARGE;
                 } else if (isAllowedAssetPath(normalized)) {
                     maximum = limits.maxAssetBytes();
-                    limitCode = "ASSET_TOO_LARGE";
+                    limitCode = ImportProblemCodes.ASSET_TOO_LARGE;
                 } else {
-                    throw problem("UNEXPECTED_ROOT_ENTRY", "ZIP contains an unsupported entry");
+                    throw problem(ImportProblemCodes.UNEXPECTED_ROOT_ENTRY, "ZIP contains an unsupported entry");
                 }
 
                 long declared = entry.getSize();
                 long compressed = entry.getCompressedSize();
                 if (declared > maximum) throw problem(limitCode, "ZIP entry exceeds its size limit");
                 if (compressed > 0 && declared >= 0 && (double) declared / compressed > limits.maxCompressionRatio()) {
-                    throw problem("COMPRESSION_RATIO_EXCEEDED", "ZIP entry compression ratio is unsafe");
+                    throw problem(ImportProblemCodes.COMPRESSION_RATIO_EXCEEDED, "ZIP entry compression ratio is unsafe");
                 }
 
                 Path destination = stageDir.resolve(normalized).normalize();
-                if (!destination.startsWith(stageDir)) throw problem("TRAVERSAL_ASSET_PATH", "ZIP path escapes staging");
+                if (!destination.startsWith(stageDir)) throw problem(ImportProblemCodes.TRAVERSAL_ASSET_PATH, "ZIP path escapes staging");
                 if (destination.getParent() != null) Files.createDirectories(destination.getParent());
                 long actual;
                 try (var entryInput = zip.getInputStream(entry)) {
                     actual = copyBounded(entryInput, destination, maximum, limitCode);
                 }
                 if (compressed > 0 && (double) actual / compressed > limits.maxCompressionRatio()) {
-                    throw problem("COMPRESSION_RATIO_EXCEEDED", "ZIP entry compression ratio is unsafe");
+                    throw problem(ImportProblemCodes.COMPRESSION_RATIO_EXCEEDED, "ZIP entry compression ratio is unsafe");
                 }
                 expanded += actual;
                 if (expanded > limits.maxExpandedBytes()) {
-                    throw problem("PACKAGE_EXPANDED_TOO_LARGE", "Expanded package exceeds its size limit");
+                    throw problem(ImportProblemCodes.PACKAGE_EXPANDED_TOO_LARGE, "Expanded package exceeds its size limit");
                 }
                 if ("manifest.json".equals(normalized)) manifest = destination;
                 else assets.put(normalized, destination);
             }
-            if (manifest == null) throw problem("MANIFEST_MISSING", "ZIP does not contain manifest.json");
+            if (manifest == null) throw problem(ImportProblemCodes.MANIFEST_MISSING, "ZIP does not contain manifest.json");
             return new StagedCampaignPackage(stageDir, manifest, assets, uploaded, expanded,
                     StagedCampaignPackage.ContainerKind.V2_ZIP);
         }

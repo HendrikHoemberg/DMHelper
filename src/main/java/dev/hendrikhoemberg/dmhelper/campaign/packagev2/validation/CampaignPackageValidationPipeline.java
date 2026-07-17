@@ -7,6 +7,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.migration.FormatMigration
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator;
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportProblemCodes;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
@@ -70,7 +71,7 @@ public class CampaignPackageValidationPipeline {
                     migratedAssets, canonicalSchema, migrationLabels);
             problems.addAll(semantics.validate(manifest));
             if (manifest.metadata() != null && !catalog.snapshot().sha256().equals(manifest.metadata().catalogSha256())) {
-                problems.add(new CampaignImportProblem(ImportSeverity.WARNING, "CATALOG_SNAPSHOT_MISMATCH",
+                problems.add(new CampaignImportProblem(ImportSeverity.WARNING, ImportProblemCodes.CATALOG_SNAPSHOT_MISMATCH,
                         "/metadata/catalogSha256", "Catalog snapshot differs from this DMHelper installation", null));
             }
 
@@ -80,7 +81,7 @@ public class CampaignPackageValidationPipeline {
                 Path file = assetsByKey.get(descriptor.key());
                 if (file == null) file = staged.assetsByNormalizedPath().get(descriptor.path());
                 if (file == null) {
-                    problems.add(new CampaignImportProblem(ImportSeverity.ERROR, "ASSET_NOT_FOUND", "/assets/" + i,
+                    problems.add(new CampaignImportProblem(ImportSeverity.ERROR, ImportProblemCodes.ASSET_NOT_FOUND, "/assets/" + i,
                             "A declared asset is missing from the package", null));
                     continue;
                 }
@@ -92,14 +93,14 @@ public class CampaignPackageValidationPipeline {
             return new CampaignPackageValidationResult(staged, manifest, sourceVersion, assetsByKey, problems, migrationLabels);
         } catch (Exception e) {
             return new CampaignPackageValidationResult(staged, null, 2, Map.of(),
-                    List.of(new CampaignImportProblem(ImportSeverity.ERROR, "VALIDATION_ERROR", "",
+                    List.of(new CampaignImportProblem(ImportSeverity.ERROR, ImportProblemCodes.VALIDATION_ERROR, "",
                             "Campaign package validation failed", null)), List.of());
         }
     }
 
     private static CampaignPackageValidationResult unsupported(StagedCampaignPackage staged, int version) {
         return new CampaignPackageValidationResult(staged, null, version, Map.of(),
-                List.of(new CampaignImportProblem(ImportSeverity.ERROR, "UNSUPPORTED_FORMAT_VERSION", "",
+                List.of(new CampaignImportProblem(ImportSeverity.ERROR, ImportProblemCodes.UNSUPPORTED_FORMAT_VERSION, "",
                         "No migration path exists for this format version", null)), List.of());
     }
 }
