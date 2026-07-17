@@ -59,6 +59,108 @@ import. Campaign-owned custom statblocks use package references and are included
 `customStatBlocks`. A sheet spell's `sourceClassRef` is optional because runtime spell records may
 legitimately have no originating class; when present it must be a valid class reference.
 
+## Custom Compendium Arrays
+
+The manifest carries nine optional arrays for campaign-scoped custom content beyond statblocks.
+Each array contains DTOs following the same key/sourceKey pattern as `customStatBlocks`, with an
+optional `provenance` block for source tracking.
+
+| Array | Content Type | DTO Fields |
+|-------|-------------|------------|
+| `customSpells` | Custom spell definitions | key, sourceKey, name, level, school, castingTime, range, components, duration, description, higherLevel, ritual, concentration, provenance |
+| `customConditions` | Custom conditions | key, sourceKey, name, description, provenance |
+| `customRules` | Custom rule sections | key, sourceKey, name, body, parentKey, sortOrder, ruleset, provenance |
+| `customEquipment` | Custom equipment items | key, sourceKey, name, category, cost, weight, properties, description, provenance |
+| `customMagicItems` | Custom magic items | key, sourceKey, name, rarity, category, type, description, weight, cost, requiresAttunement, attunementDetail, provenance |
+| `customClasses` | Custom character classes | key, sourceKey, name, hitDie, subclassOf, description, savingThrows, features, spellcasting, proficiencies, provenance |
+| `customSpecies` | Custom species/races | key, sourceKey, name, size, speed, traits, description, provenance |
+| `customBackgrounds` | Custom backgrounds | key, sourceKey, name, abilityScores, featRef, skills, tools, description, equipment, provenance |
+| `customFeats` | Custom feats | key, sourceKey, name, category, prerequisite, benefit, provenance |
+
+### Provenance Schema
+
+Each custom entry may carry a `provenance` block tracking the origin of the content:
+
+```json
+{
+  "sourceTitle": "Homebrew Codex",
+  "editionVersion": "1.0",
+  "sourceLocator": "p.12",
+  "licenseClassification": "ORIGINAL",
+  "extractionConfidence": "HIGH"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `sourceTitle` | string \| null | Title of the source document |
+| `editionVersion` | string \| null | Version of the source edition |
+| `sourceLocator` | string \| null | Page or section reference (e.g. `"p.12"`) |
+| `licenseClassification` | enum | One of `ORIGINAL`, `SRD`, `OGL_COMPATIBLE`, `THIRD_PARTY`, `NON_REDISTRIBUTABLE`, `UNKNOWN` |
+| `importedAt` | string (ISO-8601) \| null | When the content was imported |
+| `converterId` | string \| null | Tool that performed the conversion |
+| `converterVersion` | string \| null | Version of the converter |
+| `sourceHash` | string \| null | Hash of the original source material |
+| `extractionConfidence` | enum \| null | One of `HIGH`, `MEDIUM`, `LOW`, `UNKNOWN` |
+
+### subclassOf Resolution
+
+The `customClasses` array stores `subclassOf` as a free-text string. On import:
+
+- If the value matches a **SRD sourceKey** (e.g. `"class_wizard"`), the custom class is linked to
+  that SRD parent class as a subclass.
+- If the value matches a **package key** of another entry in `customClasses`, the custom class is
+  linked to another campaign-scoped custom class.
+- If neither resolution succeeds, `subclassOf` is stored as-is for deferred/link-time resolution.
+
+### Dependency Rules
+
+- Custom content arrays are **campaign-scoped only**. All entries in these arrays are imported into
+  the target campaign and bound to it.
+- **User-global custom content** (content with `campaign IS NULL`) is **not** automatically included
+  in the export. The export only captures campaign-scoped custom entries. Global custom content
+  must be manually included or handled at the application layer.
+- References from campaign entities (character sheets, tokens, encounters) to custom content use
+  **package-scoped content references** with the appropriate `CampaignContentType`.
+
+### Non-Campaign Custom Export Rejection
+
+When a non-campaign (user-global) custom entry is encountered during export — for example via a
+reference that would pull in global content — the export is rejected with error code
+`NON_CAMPAIGN_CUSTOM_DEPENDENCY`. This ensures the exported package is self-contained and does not
+silently depend on user-global data that the receiving campaign would not have.
+
+### Example
+
+```json
+{
+  "customSpells": [
+    {
+      "key": "arc-bolt",
+      "sourceKey": "homebrew-arc-bolt",
+      "name": "Arc Bolt",
+      "level": 1,
+      "school": "Evocation",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": "V, S",
+      "duration": "Instantaneous",
+      "description": "A crackling bolt of force.",
+      "higherLevel": null,
+      "ritual": false,
+      "concentration": false,
+      "provenance": {
+        "sourceTitle": "Homebrew Codex",
+        "editionVersion": "1.0",
+        "sourceLocator": "p.12",
+        "licenseClassification": "ORIGINAL",
+        "extractionConfidence": "HIGH"
+      }
+    }
+  ]
+}
+```
+
 ## Open Session State
 
 The manifest carries the current open session when one is active (nullable — `null` means IDLE):

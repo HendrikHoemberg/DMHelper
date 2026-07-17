@@ -150,7 +150,10 @@ each with its own `web/service/data` sub-packages, so modules stay decoupled and
    not a degraded mode.
 5. **SRD content is read-only seed data**; homebrew content is user data. Both share one statblock
    schema, distinguished by `source` (`SRD` vs `CUSTOM`). Custom content can be campaign-scoped or
-   global (reusable across campaigns). Spell entries are also read-only SRD seed data (no CRUD).
+   global (reusable across campaigns). All compendium types (spells, conditions, rules, equipment,
+   magic items, classes, species, backgrounds, feats) also support campaign-scoped custom variants
+   exported in the v2 manifest arrays (`customSpells` … `customFeats`). Spell entries are also
+   read-only SRD seed data (no CRUD).
 6. **Hypermedia by default, islands where it earns it.** Screens are server-rendered and updated
    via htmx fragments; only the map editor and battle map are client-side JS applications
    (Konva canvas islands talking JSON to `/api/v1`). New features must justify becoming an island
@@ -818,3 +821,4 @@ player devices.
 | 4 | Session log & scene visits | `IMPLEMENTED` | SessionSceneVisit, scene visit DTOs, draft body |
 | 5 | Combat log & dice history opt-out | `IMPLEMENTED` | CombatLogEntry, DiceRoll, exclusions metadata |
 | 6 | Structured scenes, quests, annotations | `IMPLEMENTED` | Flyway V5 migration; fixture `structured-adventure-quest.dmcampaign`; `CampaignCompleteRoundTripTest`, `CampaignPackageValidationPipelineTest`, `SessionDraftServiceTest`, `CoreSessionLoopSmokeTest`; AdventureSectionAdapter, QuestSectionAdapter, SourceAnnotationSectionAdapter, SessionSectionAdapter |
+| 7 | Custom compendium expansion (non-statblock) | `IMPLEMENTED` | Custom spells, conditions, rules, equipment, magic items, classes, species, backgrounds, feats; `LibrarySectionAdapter`; provenance DTOs; `NON_CAMPAIGN_CUSTOM_DEPENDENCY` error; `CampaignManifestV2` custom arrays |
