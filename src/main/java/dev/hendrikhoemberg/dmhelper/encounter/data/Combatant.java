@@ -85,6 +85,19 @@ public class Combatant {
     @Column(length = 255)
     private String notes;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "wave_id")
+    private EncounterWave wave;
+
+    @Column(name = "start_x")
+    private Integer startX;
+
+    @Column(name = "start_y")
+    private Integer startY;
+
+    @Column(name = "placement_region_key", length = 100)
+    private String placementRegionKey;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -162,4 +175,16 @@ public class Combatant {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public EncounterWave getWave() { return wave; }
+    public void setWave(EncounterWave wave) { this.wave = wave; }
+
+    public Integer getStartX() { return startX; }
+    public void setStartX(Integer startX) { this.startX = startX; }
+
+    public Integer getStartY() { return startY; }
+    public void setStartY(Integer startY) { this.startY = startY; }
+
+    public String getPlacementRegionKey() { return placementRegionKey; }
+    public void setPlacementRegionKey(String placementRegionKey) { this.placementRegionKey = placementRegionKey; }
 }

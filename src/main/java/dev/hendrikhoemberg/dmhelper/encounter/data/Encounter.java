@@ -54,8 +54,20 @@ public class Encounter {
     @Column(name = "encounter_key", length = 100)
     private String encounterKey;
 
+    @Column(name = "prep_json", columnDefinition = "CLOB")
+    private String prepJson;
+
+    @Column(name = "rewards_json", columnDefinition = "CLOB")
+    private String rewardsJson;
+
     public String getEncounterKey() { return encounterKey; }
     public void setEncounterKey(String encounterKey) { this.encounterKey = encounterKey; }
+
+    public String getPrepJson() { return prepJson; }
+    public void setPrepJson(String prepJson) { this.prepJson = prepJson; }
+
+    public String getRewardsJson() { return rewardsJson; }
+    public void setRewardsJson(String rewardsJson) { this.rewardsJson = rewardsJson; }
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
