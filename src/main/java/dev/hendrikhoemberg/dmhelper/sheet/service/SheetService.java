@@ -156,7 +156,7 @@ public class SheetService {
     ) {}
 
     public record SheetSpellDto(
-            UUID id, String spellName, int spellLevel, boolean prepared, String sourceClass
+            UUID id, String spellName, int spellLevel, boolean prepared, String sourceClass, String description
     ) {}
 
     // ---- Attack / Feature DTOs ----
@@ -547,7 +547,7 @@ public class SheetService {
         ref.setPrepared(prepared);
         ref.setSourceClass(sourceClass);
         ref = spellRefRepo.save(ref);
-        return new SheetSpellDto(ref.getId(), spell.getName(), spell.getLevel(), ref.isPrepared(), ref.getSourceClass());
+        return new SheetSpellDto(ref.getId(), spell.getName(), spell.getLevel(), ref.isPrepared(), ref.getSourceClass(), spell.getDescription());
     }
 
     public SheetSpellDto addSpellBySourceKey(UUID sheetId, String sourceKey, boolean prepared, String sourceClass) {
@@ -562,7 +562,7 @@ public class SheetService {
         ref.setPrepared(prepared);
         ref.setSourceClass(sourceClass);
         ref = spellRefRepo.save(ref);
-        return new SheetSpellDto(ref.getId(), spell.getName(), spell.getLevel(), ref.isPrepared(), ref.getSourceClass());
+        return new SheetSpellDto(ref.getId(), spell.getName(), spell.getLevel(), ref.isPrepared(), ref.getSourceClass(), spell.getDescription());
     }
 
     public void removeSpell(UUID spellRefId) {
@@ -574,6 +574,96 @@ public class SheetService {
                 .orElseThrow(() -> new IllegalArgumentException("Spell reference not found"));
         ref.setPrepared(!ref.isPrepared());
         spellRefRepo.save(ref);
+    }
+
+    // ---- Spell Slots ----
+
+    public Map<String, Integer> getSpellSlotsUsed(CharacterSheet sheet) {
+        try {
+            if (sheet.getSpellSlotsUsed() != null) {
+                return mapper.readValue(sheet.getSpellSlotsUsed(),
+                        mapper.getTypeFactory().constructMapType(Map.class, String.class, Integer.class));
+            }
+        } catch (Exception e) {
+            log.warn("Failed to deserialize spellSlotsUsed", e);
+        }
+        return new HashMap<>();
+    }
+
+    private void saveSpellSlotsUsed(CharacterSheet sheet, Map<String, Integer> used) {
+        try {
+            sheet.setSpellSlotsUsed(mapper.writeValueAsString(used));
+            sheetRepo.save(sheet);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize spell slots", e);
+        }
+    }
+
+    public SheetDto spendSpellSlot(UUID sheetId, String level) {
+        CharacterSheet sheet = sheetRepo.findById(sheetId)
+                .orElseThrow(() -> new IllegalArgumentException("Sheet not found"));
+        DerivedValues derived = sheetEngine.derive(sheet);
+        Map<String, Integer> used = getSpellSlotsUsed(sheet);
+        int current = used.getOrDefault(level, 0);
+
+        int max;
+        if ("pact".equals(level)) {
+            int pactLevel = 0;
+            for (int i = 1; i < derived.pactSlots().length; i++) {
+                if (derived.pactSlots()[i] > 0) { pactLevel = i; break; }
+            }
+            max = pactLevel > 0 ? derived.pactSlots()[pactLevel] : 0;
+        } else {
+            try {
+                int lvl = Integer.parseInt(level);
+                max = lvl >= 0 && lvl < derived.spellSlots().length ? derived.spellSlots()[lvl] : 0;
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid spell level: " + level);
+            }
+        }
+
+        used.put(level, Math.min(current + 1, max));
+        saveSpellSlotsUsed(sheet, used);
+        return toDto(sheet);
+    }
+
+    public SheetDto recoverSpellSlot(UUID sheetId, String level) {
+        CharacterSheet sheet = sheetRepo.findById(sheetId)
+                .orElseThrow(() -> new IllegalArgumentException("Sheet not found"));
+        Map<String, Integer> used = getSpellSlotsUsed(sheet);
+        int current = used.getOrDefault(level, 0);
+        used.put(level, Math.max(0, current - 1));
+        saveSpellSlotsUsed(sheet, used);
+        return toDto(sheet);
+    }
+
+    public Map<String, Integer> getRemainingSlots(UUID sheetId) {
+        CharacterSheet sheet = sheetRepo.findById(sheetId)
+                .orElseThrow(() -> new IllegalArgumentException("Sheet not found"));
+        DerivedValues derived = sheetEngine.derive(sheet);
+        Map<String, Integer> used = getSpellSlotsUsed(sheet);
+        Map<String, Integer> remaining = new HashMap<>();
+
+        for (int i = 1; i < derived.spellSlots().length; i++) {
+            int max = derived.spellSlots()[i];
+            if (max > 0) {
+                String key = String.valueOf(i);
+                remaining.put(key, max - used.getOrDefault(key, 0));
+            }
+        }
+
+        int pactMax = 0;
+        for (int i = 1; i < derived.pactSlots().length; i++) {
+            if (derived.pactSlots()[i] > 0) {
+                pactMax = derived.pactSlots()[i];
+                break;
+            }
+        }
+        if (pactMax > 0) {
+            remaining.put("pact", pactMax - used.getOrDefault("pact", 0));
+        }
+
+        return remaining;
     }
 
     // ---- Attacks ----
@@ -815,7 +905,8 @@ public class SheetService {
                 .map(s -> {
                     String spellName = s.getSpell() != null ? s.getSpell().getName() : "Unknown";
                     int spellLevel = s.getSpell() != null ? s.getSpell().getLevel() : 0;
-                    return new SheetSpellDto(s.getId(), spellName, spellLevel, s.isPrepared(), s.getSourceClass());
+                    String description = s.getSpell() != null ? s.getSpell().getDescription() : null;
+                    return new SheetSpellDto(s.getId(), spellName, spellLevel, s.isPrepared(), s.getSourceClass(), description);
                 })
                 .collect(Collectors.toList());
 

@@ -190,6 +190,32 @@ public class SheetApiController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/party/{memberId}/sheet/spells/{spellRefId}/prepared")
+    public ResponseEntity<Void> togglePrepared(
+            @PathVariable UUID campaignId, @PathVariable UUID memberId,
+            @PathVariable UUID spellRefId) {
+        sheetService.togglePrepared(spellRefId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/party/{memberId}/sheet/spells/slots")
+    public ResponseEntity<SheetDto> spendSlot(
+            @PathVariable UUID campaignId, @PathVariable UUID memberId,
+            @RequestBody Map<String, String> body) {
+        UUID sheetId = sheetService.getSheetDtoByPartyMemberId(memberId).id();
+        String level = body.get("level");
+        return ResponseEntity.ok(sheetService.spendSpellSlot(sheetId, level));
+    }
+
+    @PutMapping("/party/{memberId}/sheet/spells/slots/recover")
+    public ResponseEntity<SheetDto> recoverSlot(
+            @PathVariable UUID campaignId, @PathVariable UUID memberId,
+            @RequestBody Map<String, String> body) {
+        UUID sheetId = sheetService.getSheetDtoByPartyMemberId(memberId).id();
+        String level = body.get("level");
+        return ResponseEntity.ok(sheetService.recoverSpellSlot(sheetId, level));
+    }
+
     // ---- Attacks ----
 
     @PutMapping("/party/{memberId}/sheet/attacks")

@@ -1,9 +1,59 @@
-<div th:fragment="spellList(sheet)" class="sheet-spells">
-    <div th:each="spell : ${sheet.spells()}" class="sheet-spell">
-        <span class="sheet-spell-name" th:text="${spell.spellName()}">Magic Missile</span>
+<div th:fragment="spellList(sheet, campaignId, memberId)" class="sheet-spells"
+     x-data="{ query: '' }">
+
+    <div class="spell-slots-tracker" th:if="${sheet.derivedValues().spellSlots() != null}">
+        <th:block th:each="slotAmt, iterStat : ${sheet.derivedValues().spellSlots()}">
+            <span th:if="${slotAmt > 0 and iterStat.index >= 1}" class="spell-slot-level">
+                Lv <span th:text="${iterStat.index}">1</span>:
+                <span class="slot-count"
+                      th:text="${sheet.spellSlotsUsed().get(iterStat.index.toString()) ?: 0} + ' / ' + ${slotAmt}">0/4</span>
+                <button class="btn btn-xs btn-ghost"
+                        hx-put="/api/v1/campaigns/[[${campaignId}]]/party/[[${memberId}]]/sheet/spells/slots"
+                        hx-vals='{"level": "[[${iterStat.index}]]"}'
+                        hx-swap="none">+</button>
+                <button class="btn btn-xs btn-ghost"
+                        hx-put="/api/v1/campaigns/[[${campaignId}]]/party/[[${memberId}]]/sheet/spells/slots/recover"
+                        hx-vals='{"level": "[[${iterStat.index}]]"}'
+                        hx-swap="none">-</button>
+            </span>
+        </th:block>
+        <th:block th:each="pactAmt, iterStat : ${sheet.derivedValues().pactSlots()}">
+            <span th:if="${pactAmt > 0 and iterStat.index >= 1}" class="spell-slot-level">
+                Pact Lv <span th:text="${iterStat.index}">3</span>:
+                <span class="slot-count"
+                      th:text="${sheet.spellSlotsUsed().get('pact') ?: 0} + ' / ' + ${pactAmt}">0/3</span>
+                <button class="btn btn-xs btn-ghost"
+                        hx-put="/api/v1/campaigns/[[${campaignId}]]/party/[[${memberId}]]/sheet/spells/slots"
+                        hx-vals='{"level": "pact"}'
+                        hx-swap="none">+</button>
+                <button class="btn btn-xs btn-ghost"
+                        hx-put="/api/v1/campaigns/[[${campaignId}]]/party/[[${memberId}]]/sheet/spells/slots/recover"
+                        hx-vals='{"level": "pact"}'
+                        hx-swap="none">-</button>
+            </span>
+        </th:block>
+    </div>
+
+    <input type="search" class="spell-search-input" placeholder="Search spells..." x-model="query">
+
+    <div th:each="spell : ${sheet.spells()}" class="sheet-spell"
+         th:attr="data-search=|${spell.spellName()} ${spell.spellLevel()} ${spell.sourceClass()}|"
+         x-show="query === '' || $el.dataset.search.toLowerCase().includes(query.toLowerCase())">
+
+        <label class="spell-prepared-toggle">
+            <input type="checkbox" th:checked="${spell.prepared()}"
+                   hx-put="/api/v1/campaigns/[[${campaignId}]]/party/[[${memberId}]]/sheet/spells/[[${spell.id()}]]/prepared"
+                   hx-trigger="change"
+                   hx-swap="none">
+        </label>
+
+        <details class="spell-details">
+            <summary class="sheet-spell-name" th:text="${spell.spellName()}">Magic Missile</summary>
+            <div class="spell-description" th:text="${spell.description() ?: 'No description'}">Description text</div>
+        </details>
+
         <span class="badge" th:text="'Lvl ' + ${spell.spellLevel()}">Lvl 1</span>
-        <span th:if="${spell.sourceClass() != null}" class="badge" th:text="${spell.sourceClass()}">wizard</span>
-        <span th:if="${spell.prepared()}" class="badge badge-success">Prepared</span>
+        <span th:if="${spell.sourceClass() != null}" class="badge badge-tag" th:text="${spell.sourceClass()}">wizard</span>
     </div>
     <p th:if="${sheet.spells().isEmpty()}" class="text-muted">No spells</p>
 </div>

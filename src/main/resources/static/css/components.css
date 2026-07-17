@@ -1220,6 +1220,70 @@
     font-weight: bold;
 }
 
+.spell-search-input {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: var(--space-md);
+    font-size: var(--text-base);
+    font-family: inherit;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+}
+.spell-search-input:focus {
+    border-color: var(--color-accent);
+}
+
+.spell-prepared-toggle {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.spell-details {
+    flex: 1;
+}
+.spell-details summary {
+    cursor: pointer;
+    display: inline;
+}
+.spell-description {
+    margin-top: var(--space-xs);
+    padding: var(--space-sm);
+    background: var(--color-bg);
+    border-radius: var(--radius);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    color: var(--color-text-secondary);
+}
+
+.spell-slots-tracker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+    padding: var(--space-sm);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+}
+.spell-slot-level {
+    font-size: var(--text-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 2px 8px;
+    background: var(--color-bg);
+    border-radius: 4px;
+}
+.slot-count {
+    font-weight: 600;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+}
+
 .small-input {
     width: 60px;
     padding: 4px;

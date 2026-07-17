@@ -118,7 +118,7 @@
 
             <div class="detail-section">
                 <h2>Spells</h2>
-                <div th:replace="~{sheet/_spell-list :: spellList(sheet=${sheet})}"></div>
+                <div th:replace="~{sheet/_spell-list :: spellList(sheet=${sheet}, campaignId=${campaignId}, memberId=${member.id})}"></div>
             </div>
 
             <div class="detail-section">
