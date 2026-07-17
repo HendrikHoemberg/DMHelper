@@ -273,6 +273,14 @@
             <div class="tool-group">
                 <button class="tool-btn" @click="$refs.imageInput.click()" title="Import a background reference image (PNG/JPG)">🖼 Import Image</button>
                 <input type="file" accept="image/*" x-ref="imageInput" style="display: none;" @change="importImage($event)">
+                <button class="tool-btn" @click="rotateImage(-90)" title="Rotate image 90° counter-clockwise">↺ Rotate CCW</button>
+                <button class="tool-btn" @click="rotateImage(90)" title="Rotate image 90° clockwise">↻ Rotate CW</button>
+                <button class="tool-btn" @click="startCrop()" title="Crop the background image">✂ Crop</button>
+                <button class="tool-btn" @click="startCalibration()" title="Calibrate grid to image">📐 Calibrate Grid</button>
+                <button class="tool-btn" @click="applyCalibrationCellSize()" title="Persist the calibrated cell size to the map">📏 Apply Cell Size</button>
+                <label style="display: flex; align-items: center; gap: 4px; font-size: var(--text-sm); padding: 0 4px; cursor: pointer;" title="Lock background image position/size">
+                    <input type="checkbox" x-model="imageLocked" @change="setImageLocked(imageLocked)"> 🔒 Lock
+                </label>
                 <button class="tool-btn" @click="exportPng()" title="Export the current map view as a PNG">⬇ Export PNG</button>
             </div>
 
@@ -319,6 +327,13 @@
                             <button @click="toggleLocked(l.id)"
                                     :title="layers[l.id].locked ? 'Unlock layer' : 'Lock layer'"
                                     x-text="layers[l.id].locked ? '🔒' : '🔓'"></button>
+                            <label style="display: inline-flex; align-items: center; font-size: 10px; cursor: pointer;"
+                                   :title="(layers[l.id].playerVisible === false ? 'Hidden from players' : 'Visible to players')">
+                                <input type="checkbox"
+                                       :checked="layers[l.id].playerVisible !== false"
+                                       @change="togglePlayerVisible(l.id)"
+                                       style="width: 12px; height: 12px; margin: 0;"> 👤
+                            </label>
                         </div>
                     </template>
                 </div>
@@ -378,16 +393,17 @@
                     { id: 'annotations', name: 'Annotations (DM only)' },
                 ],
                 layers: {
-                    image: { visible: true, locked: false },
-                    terrain: { visible: true, locked: false },
-                    objects: { visible: true, locked: false },
-                    annotations: { visible: true, locked: false },
+                    image: { visible: true, locked: false, playerVisible: true },
+                    terrain: { visible: true, locked: false, playerVisible: true },
+                    objects: { visible: true, locked: false, playerVisible: true },
+                    annotations: { visible: true, locked: false, playerVisible: false },
                 },
                 selectedShape: null,
                 conflict: false,
                 canUndo: false,
                 canRedo: false,
                 helpOpen: false,
+                imageLocked: false,
                 init() {
                     window.addEventListener('map-toolchange', (e) => { this.tool = e.detail.tool; });
                     window.addEventListener('map-palette', (e) => {
@@ -411,6 +427,7 @@
                 setLayer(id) { this.activeLayer = id; window.mapEditor?.setLayer(id); },
                 toggleVisible(id) { window.mapEditor?.toggleLayerVisible(id); },
                 toggleLocked(id) { window.mapEditor?.toggleLayerLocked(id); },
+                togglePlayerVisible(id) { window.mapEditor?.toggleLayerPlayerVisible(id); },
                 applyShapeFill() { window.mapEditor?.setShapeFill(this.selectedShape.fill); },
                 applyShapeStroke() { window.mapEditor?.setShapeStroke(this.selectedShape.stroke); },
                 applyShapeLabel() { window.mapEditor?.setShapeLabel(this.selectedShape.label); },
@@ -438,6 +455,11 @@
                 },
                 downloadBackup() { window.mapEditor?.downloadDocumentBackup(); },
                 exportPng() { window.mapEditor?.exportPng(); },
+                rotateImage(deg) { window.mapEditor?.rotateImage(deg); },
+                startCrop() { window.mapEditor?.startCrop(); },
+                startCalibration() { window.mapEditor?.startCalibration(); },
+                applyCalibrationCellSize() { window.mapEditor?.applyCalibrationCellSize(); },
+                setImageLocked(locked) { window.mapEditor?.setImageLocked(locked); },
             };
         }
     </script>

@@ -68,6 +68,11 @@ export class MapEditor {
         this.cellIndex = {};   // layer id -> Map<"col,row", Konva.Rect>
         this.brushSize = 1;
         this.lastPaintCell = null;   // {col, row} — last painted cell, for stroke interpolation
+
+        this.cropMode = false;
+        this.cropStart = null;
+        this.calibrateMode = false;
+        this.calibratePointA = null;
     }
 
     load() {
@@ -280,7 +285,7 @@ export class MapEditor {
     emitLayerState() {
         const layers = {};
         for (const l of (this.document?.layers || [])) {
-            layers[l.id] = { visible: l.visible !== false, locked: !!l.locked };
+            layers[l.id] = { visible: l.visible !== false, locked: !!l.locked, playerVisible: l.playerVisible !== false };
         }
         this.emit('map-layerstate', { layers });
     }
@@ -401,6 +406,8 @@ export class MapEditor {
                 image: htmlImg,
                 x: imageDto.x * this.cellSizePx, y: imageDto.y * this.cellSizePx,
                 width: imageDto.width * this.cellSizePx, height: imageDto.height * this.cellSizePx,
+                rotation: imageDto.rotationDeg || 0,
+                draggable: !imageDto.locked,
                 listening: true,
             });
             node.setAttr('_imageLayer', true);
@@ -449,6 +456,26 @@ export class MapEditor {
             const pos = this.cellPos();
             if (!pos) return;
 
+            if (this.cropMode) {
+                const imgLayer = this.layerDto('image');
+                if (!imgLayer?.image) { this.setStatus('No background image to crop'); return; }
+                this.cropStart = { x: this.snapPt(pos.x), y: this.snapPt(pos.y) };
+                this.drawing = true;
+                return;
+            }
+
+            if (this.calibrateMode) {
+                const imgLayer = this.layerDto('image');
+                if (!imgLayer?.image) { this.setStatus('No background image to calibrate'); this.calibrateMode = false; return; }
+                if (!this.calibratePointA) {
+                    this.calibratePointA = { x: pos.x, y: pos.y };
+                    this.setStatus('First calibration point set at (' + Math.round(pos.x) + ', ' + Math.round(pos.y) + ') — click a second point');
+                } else {
+                    this.finishCalibration(pos);
+                }
+                return;
+            }
+
             if (this.activeTool === 'select') {
                 const shapeNode = e.target && e.target.getAttr('_shape') ? e.target : null;
                 if (shapeNode) {
@@ -457,6 +484,7 @@ export class MapEditor {
                 }
                 const imageNode = e.target && e.target.getAttr('_imageLayer') ? e.target : null;
                 if (imageNode) {
+                    if (this.isImageLocked()) { this.setStatus('Image is locked'); return; }
                     this.selectImageForTransform(imageNode);
                     return;
                 }
@@ -518,6 +546,14 @@ export class MapEditor {
             this.updateHoverPreview(pos);
             this.updateCursorInfo(pos);
 
+            if (this.cropMode && this.cropStart) {
+                this.previewCellRect(
+                    { col: Math.floor(this.cropStart.x), row: Math.floor(this.cropStart.y) },
+                    { col: pos.col, row: pos.row }
+                );
+                return;
+            }
+
             if (this.activeTool === 'polygon' && this.polygonPoints.length) {
                 this.renderPolygonPreview(pos);
                 return;
@@ -545,12 +581,20 @@ export class MapEditor {
                 this.container.style.cursor = this.cursorForTool(this.activeTool);
                 return;
             }
+
+            const pos = this.cellPos();
+
+            if (this.cropMode && this.cropStart && pos) {
+                this.confirmCrop(pos);
+                this.cropStart = null;
+                this.drawing = false;
+                return;
+            }
+
             if (!this.drawing) return;
             this.drawing = false;
             this.lastPaintCell = null;
             this.erasing = false;
-
-            const pos = this.cellPos();
             if (this.activeTool === 'select' && this.movingSelection && pos) {
                 this.commitSelectionMove(pos);
                 this.movingSelection = null;
@@ -665,6 +709,8 @@ export class MapEditor {
                     this.clearSelection();
                     this.clearShapeSelection();
                     this.clearImageSelection();
+                    if (this.cropMode) { this.cancelCrop(); }
+                    if (this.calibrateMode) { this.cancelCalibrate(); }
                     break;
             }
         });
@@ -954,14 +1000,25 @@ export class MapEditor {
             this.setStatus('Room/Door/Region primitives apply to the Terrain layer');
             return;
         }
+
+        const key = prompt('Region key (a-z, 0-9, ., _, -, 1-100 chars):', '')?.trim();
+        if (!key) { this.setStatus('Region creation cancelled'); return; }
+        if (!/^[a-z0-9][a-z0-9._-]{0,99}$/.test(key)) {
+            this.setStatus('Invalid key — must start with a-z/0-9, 1-100 chars');
+            return;
+        }
+        const label = prompt('Region label (display name):', '')?.trim() || '';
+
         this.pushUndo();
         this.syncDocument();
         this.document.primitives = this.document.primitives || [];
         this.document.primitives.push({
-            type: 'REGION', startCol: a.col, startRow: a.row, endCol: b.col, endRow: b.row, terrain: this.terrain,
+            type: 'REGION', startCol: a.col, startRow: a.row, endCol: b.col, endRow: b.row,
+            terrain: this.terrain, key, label, playerVisible: true,
         });
         this.renderDocument();
         this.markDirty();
+        this.setStatus('Region "' + label + '" created');
     }
 
     commitDoorPrimitive(col, row) {
@@ -1384,10 +1441,11 @@ export class MapEditor {
         if (layerDto && layerDto.image) {
             const cs = this.cellSizePx;
             layerDto.image = {
-                dataUrl: layerDto.image.dataUrl,
+                ...layerDto.image,
                 x: this.round2(node.x() / cs), y: this.round2(node.y() / cs),
                 width: this.round2((node.width() * node.scaleX()) / cs),
                 height: this.round2((node.height() * node.scaleY()) / cs),
+                rotationDeg: node.rotation(),
             };
         }
         this.clearImageSelection();
@@ -1585,6 +1643,215 @@ export class MapEditor {
         this.previewLayer.visible(true);
         this.stage.batchDraw();
         this.triggerDownload(dataUrl, `map-${this.mapId}.png`);
+    }
+
+    /* ---- Image features: rotate, crop, calibrate, lock ---- */
+
+    isImageLocked() {
+        const l = this.layerDto('image');
+        return !!(l?.image?.locked);
+    }
+
+    rotateImage(deg) {
+        const layerDto = this.layerDto('image');
+        if (!layerDto?.image) { this.setStatus('No background image'); return; }
+        this.pushUndo();
+        this.syncDocument();
+        layerDto.image.rotationDeg = (layerDto.image.rotationDeg || 0) + deg;
+        this.renderDocument();
+        this.markDirty();
+        this.setStatus('Image rotated ' + deg + '°');
+    }
+
+    startCrop() {
+        if (!this.layerDto('image')?.image) { this.setStatus('No background image to crop'); return; }
+        this.cropMode = true;
+        this.clearShapeSelection();
+        this.clearImageSelection();
+        this.setStatus('Crop mode: draw a rectangle on the image, then confirm');
+    }
+
+    cancelCrop() {
+        this.cropMode = false;
+        this.cropStart = null;
+        this.clearPreview();
+        this.setStatus('Crop cancelled');
+    }
+
+    confirmCrop(endPos) {
+        const a = this.cropStart;
+        const b = { x: this.snapPt(endPos.x), y: this.snapPt(endPos.y) };
+        this.clearPreview();
+
+        if (Math.abs(b.x - a.x) < 0.5 || Math.abs(b.y - a.y) < 0.5) {
+            this.setStatus('Crop rectangle too small');
+            this.cropMode = false;
+            this.cropStart = null;
+            return;
+        }
+
+        const minX = Math.min(a.x, b.x), minY = Math.min(a.y, b.y);
+        const maxX = Math.max(a.x, b.x), maxY = Math.max(a.y, b.y);
+
+        const layerDto = this.layerDto('image');
+        if (!layerDto?.image) { this.cropMode = false; this.cropStart = null; return; }
+        const img = layerDto.image;
+
+        const kl = this.layers['image'];
+        const konvaImageNode = kl?.findOne('Image');
+        if (!konvaImageNode) { this.cropMode = false; this.cropStart = null; return; }
+        const htmlImg = konvaImageNode.image();
+
+        const natW = htmlImg.naturalWidth || htmlImg.width;
+        const natH = htmlImg.naturalHeight || htmlImg.height;
+
+        const relX = minX - img.x, relY = minY - img.y;
+        const relW = maxX - minX, relH = maxY - minY;
+
+        if (relX < -0.01 || relY < -0.01 || relX + relW > img.width + 0.01 || relY + relH > img.height + 0.01) {
+            this.setStatus('Crop rectangle must be within image bounds');
+            return;
+        }
+
+        const srcX = Math.max(0, (relX / img.width) * natW);
+        const srcY = Math.max(0, (relY / img.height) * natH);
+        const srcW = Math.min(natW - srcX, (relW / img.width) * natW);
+        const srcH = Math.min(natH - srcY, (relH / img.height) * natH);
+
+        if (srcW < 1 || srcH < 1) {
+            this.setStatus('Crop area too small');
+            return;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = srcW;
+        canvas.height = srcH;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(htmlImg, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
+        const newDataUrl = canvas.toDataURL('image/png');
+
+        this.pushUndo();
+        this.syncDocument();
+        img.dataUrl = newDataUrl;
+        img.x = this.round2(minX);
+        img.y = this.round2(minY);
+        img.width = this.round2(relW);
+        img.height = this.round2(relH);
+        this.renderDocument();
+        this.markDirty();
+        this.cropMode = false;
+        this.cropStart = null;
+        this.setStatus('Image cropped');
+    }
+
+    startCalibration() {
+        if (!this.layerDto('image')?.image) { this.setStatus('No background image to calibrate'); return; }
+        this.calibrateMode = true;
+        this.calibratePointA = null;
+        this.clearShapeSelection();
+        this.clearImageSelection();
+        this.setStatus('Calibration: click a point on the image (e.g. left edge of a known-distance feature), then click another');
+    }
+
+    cancelCalibrate() {
+        this.calibrateMode = false;
+        this.calibratePointA = null;
+        this.setStatus('Calibration cancelled');
+    }
+
+    finishCalibration(pos) {
+        const a = this.calibratePointA;
+        const b = { x: pos.x, y: pos.y };
+
+        if (Math.hypot(b.x - a.x, b.y - a.y) < 0.5) {
+            this.setStatus('Points too close — calibration cancelled');
+            this.calibrateMode = false;
+            this.calibratePointA = null;
+            return;
+        }
+
+        const cellsBetween = parseInt(prompt('How many cells between these points?', '1'), 10);
+        if (!cellsBetween || cellsBetween < 1) {
+            this.setStatus('Calibration cancelled');
+            this.calibrateMode = false;
+            this.calibratePointA = null;
+            return;
+        }
+
+        this.calibrateFromPoints(a.x, a.y, b.x, b.y, cellsBetween);
+        this.calibrateMode = false;
+        this.calibratePointA = null;
+    }
+
+    calibrateFromPoints(ax, ay, bx, by, cellsBetween) {
+        const layerDto = this.layerDto('image');
+        if (!layerDto?.image) return;
+        const img = layerDto.image;
+
+        const distPx = Math.hypot((bx - ax) * this.cellSizePx, (by - ay) * this.cellSizePx);
+        const newCellSize = Math.max(8, Math.round(distPx / cellsBetween));
+        const scale = (cellsBetween * this.cellSizePx) / (distPx || 1);
+
+        this.pushUndo();
+        this.syncDocument();
+        img.width *= scale;
+        img.height *= scale;
+        img.calibration = {
+            ax, ay, bx, by, cellsBetween,
+            offsetXPx: img.x * this.cellSizePx,
+            offsetYPx: img.y * this.cellSizePx,
+        };
+
+        const oldCellSize = this.cellSizePx;
+        this.cellSizePx = newCellSize;
+        this.gridLayer.destroyChildren();
+        this.drawGrid();
+        this.renderDocument();
+        this.markDirty();
+        this.setStatus('Calibrated: cell size = ' + newCellSize + 'px (was ' + oldCellSize + 'px). Use "Apply cell size" to persist.');
+    }
+
+    async applyCalibrationCellSize() {
+        const newSize = this.cellSizePx;
+        try {
+            const res = await fetch(`/api/v1/maps/${this.mapId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cellSizePx: newSize }),
+            });
+            if (!res.ok) throw new Error('Failed: ' + res.status);
+            this.setStatus('Cell size applied (' + newSize + 'px)');
+        } catch (err) {
+            console.error('Apply cell size failed:', err);
+            this.setStatus('Failed to apply cell size');
+        }
+    }
+
+    setImageLocked(locked) {
+        const layerDto = this.layerDto('image');
+        if (!layerDto?.image) { this.setStatus('No background image'); return; }
+        this.pushUndo();
+        this.syncDocument();
+        layerDto.image.locked = !!locked;
+        this.renderDocument();
+        this.markDirty();
+        this.setStatus(locked ? 'Image locked' : 'Image unlocked');
+    }
+
+    /* ---- Player visible controls ---- */
+
+    toggleLayerPlayerVisible(id) {
+        const l = this.layerDto(id);
+        if (!l) return;
+        l.playerVisible = l.playerVisible === false ? true : false;
+        this.markDirty();
+    }
+
+    setLayerPlayerVisible(id, visible) {
+        const l = this.layerDto(id);
+        if (!l) return;
+        l.playerVisible = !!visible;
+        this.markDirty();
     }
 
     markDirty() {
