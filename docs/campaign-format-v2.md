@@ -668,7 +668,7 @@ world-building state — NPCs, locations, factions, relationships, and faction p
 | `key` | string | Package key |
 | `name` | string | NPC display name |
 | `role` | string \| null | Role or title (e.g. "Harbor contact") |
-| `disposition` | string \| null | `WorldDisposition` enum: `HOSTILE`, `UNFRIENDLY`, `NEUTRAL`, `FRIENDLY`, `ALLY` |
+| `disposition` | string \| null | `WorldDisposition` enum: `HOSTILE`, `UNFRIENDLY`, `NEUTRAL`, `FRIENDLY`, `ALLY`, `UNKNOWN` |
 | `factionRef` | ContentReference \| null | Package reference to an entry in `factions` |
 | `locationRef` | ContentReference \| null | Package reference to an entry in `worldLocations` |
 | `noteRef` | ContentReference \| null | Package reference to an entry in `notes` |
@@ -678,7 +678,7 @@ world-building state — NPCs, locations, factions, relationships, and faction p
 | `motivation` | string \| null | What drives the NPC |
 | `secret` | string \| null | DM-only secret (not exposed to player endpoints) |
 | `inventoryText` | string \| null | Free-text inventory |
-| `status` | string \| null | `WorldNpcStatus` enum: `ALIVE`, `DEAD`, `UNKNOWN` |
+| `status` | string \| null | `WorldNpcStatus` enum: `ALIVE`, `DEAD`, `MISSING`, `UNKNOWN` |
 | `tags` | string[] | Free-text tags |
 | `sourceLocator` | string \| null | Page/book reference |
 | `createdAt` | string (ISO-8601) | Creation timestamp |
@@ -689,7 +689,7 @@ world-building state — NPCs, locations, factions, relationships, and faction p
 |-------|------|-------------|
 | `key` | string | Package key |
 | `name` | string | Location display name |
-| `kind` | string \| null | `LocationKind` enum: `CONTINENT`, `REGION`, `SETTLEMENT`, `DUNGEON`, `LANDMARK`, `ROOM`, `OTHER` |
+| `kind` | string \| null | `LocationKind` enum: `SITE`, `REGION`, `SETTLEMENT`, `PLANE`, `OTHER` |
 | `parentLocationRef` | ContentReference \| null | Package reference to a parent location |
 | `mapRef` | ContentReference \| null | Package reference to a map |
 | `mapRegionKey` | string \| null | Free-text map region key |
@@ -723,12 +723,12 @@ world-building state — NPCs, locations, factions, relationships, and faction p
 | Field | Type | Description |
 |-------|------|-------------|
 | `key` | string | Package key |
-| `kind` | string | `RelationshipKind` enum: `MEMBER_OF`, `ALLY`, `RIVAL`, `ENEMY`, `CONTACTS`, `LOCATED_AT`, `TRAVEL_TO` |
+| `kind` | string | `RelationshipKind` enum: `ALLY`, `ENEMY`, `RIVAL`, `MEMBER_OF`, `LEADS`, `SERVES`, `RELATED`, `KNOWS`, `OWNS`, `LOCATED_IN`, `TRAVELS_TO`, `OTHER` |
 | `fromRef` | ContentReference | Source entity reference (WORLD_NPC, FACTION, WORLD_LOCATION) |
 | `toRef` | ContentReference | Target entity reference |
 | `directed` | boolean | Whether the relationship has a direction |
-| `knowledge` | string | `RelationshipKnowledge` enum: `PUBLIC`, `KNOWN`, `SECRET` |
-| `status` | string | `RelationshipStatus` enum: `ACTIVE`, `DORMANT`, `BROKEN` |
+| `knowledge` | string | `RelationshipKnowledge` enum: `PUBLIC`, `SECRET` |
+| `status` | string | `RelationshipStatus` enum: `ACTIVE`, `STRAINED`, `BROKEN`, `UNKNOWN` |
 | `notes` | string \| null | DM-only notes |
 | `sourceLocator` | string \| null | Page/book reference |
 | `sortOrder` | int | Editorial sorting |

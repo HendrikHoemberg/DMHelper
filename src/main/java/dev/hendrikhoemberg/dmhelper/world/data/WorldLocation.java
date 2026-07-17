@@ -1,10 +1,13 @@
 package dev.hendrikhoemberg.dmhelper.world.data;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -59,6 +62,20 @@ public class WorldLocation {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
+    @ManyToMany
+    @JoinTable(name = "world_location_encounter",
+            joinColumns = @JoinColumn(name = "location_id"),
+            inverseJoinColumns = @JoinColumn(name = "encounter_id"))
+    @OrderColumn(name = "sort_order")
+    private List<Encounter> encounters = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(name = "world_location_travel",
+            joinColumns = @JoinColumn(name = "location_id"),
+            inverseJoinColumns = @JoinColumn(name = "target_location_id"))
+    @OrderColumn(name = "sort_order")
+    private List<WorldLocation> travelLocations = new ArrayList<>();
+
     @PrePersist
     void onCreate() {
         if (createdAt == null) {
@@ -107,4 +124,14 @@ public class WorldLocation {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public List<Encounter> getEncounters() { return encounters; }
+    public void setEncounters(List<Encounter> encounters) {
+        this.encounters = encounters != null ? encounters : new ArrayList<>();
+    }
+
+    public List<WorldLocation> getTravelLocations() { return travelLocations; }
+    public void setTravelLocations(List<WorldLocation> travelLocations) {
+        this.travelLocations = travelLocations != null ? travelLocations : new ArrayList<>();
+    }
 }

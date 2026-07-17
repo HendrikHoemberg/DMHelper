@@ -481,6 +481,23 @@ class CampaignManifestV2ContractTest {
                 dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus.class);
     }
 
+    @Test
+    void worldGraphEnumsMatchJavaEnums() throws Exception {
+        JsonNode defs = mapper.readTree(fixture("schemas/campaign-format-v2.schema.json")).get("$defs");
+        assertSchemaEnumEqualsJava(defs, "worldNpc", "disposition",
+                dev.hendrikhoemberg.dmhelper.world.data.WorldDisposition.class);
+        assertSchemaEnumEqualsJava(defs, "worldNpc", "status",
+                dev.hendrikhoemberg.dmhelper.world.data.WorldNpcStatus.class);
+        assertSchemaEnumEqualsJava(defs, "worldLocation", "kind",
+                dev.hendrikhoemberg.dmhelper.world.data.LocationKind.class);
+        assertSchemaEnumEqualsJava(defs, "worldRelationship", "kind",
+                dev.hendrikhoemberg.dmhelper.world.data.RelationshipKind.class);
+        assertSchemaEnumEqualsJava(defs, "worldRelationship", "knowledge",
+                dev.hendrikhoemberg.dmhelper.world.data.RelationshipKnowledge.class);
+        assertSchemaEnumEqualsJava(defs, "worldRelationship", "status",
+                dev.hendrikhoemberg.dmhelper.world.data.RelationshipStatus.class);
+    }
+
     private static void assertSchemaEnumEqualsJava(JsonNode defs, String defName, String property,
                                                    Class<? extends Enum<?>> javaEnum) {
         JsonNode enumNode = defs.get(defName).get("properties").get(property).get("enum");

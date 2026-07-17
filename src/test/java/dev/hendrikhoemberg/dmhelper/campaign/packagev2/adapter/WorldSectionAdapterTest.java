@@ -12,6 +12,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportCon
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignAssetCollector;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportOptions;
+import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.world.data.*;
 import dev.hendrikhoemberg.dmhelper.world.packagev2.WorldSectionAdapter;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +37,7 @@ class WorldSectionAdapterTest {
     @Mock FactionRepository factionRepo;
     @Mock WorldRelationshipRepository relationshipRepo;
     @Mock FactionClockRepository clockRepo;
+    @Mock StatBlockReferenceResolver statBlockResolver;
 
     private WorldSectionAdapter adapter;
     private Campaign campaign;
@@ -43,7 +45,8 @@ class WorldSectionAdapterTest {
 
     @BeforeEach
     void setUp() {
-        adapter = new WorldSectionAdapter(npcRepo, locationRepo, factionRepo, relationshipRepo, clockRepo);
+        adapter = new WorldSectionAdapter(npcRepo, locationRepo, factionRepo, relationshipRepo, clockRepo,
+                statBlockResolver);
         campaign = new Campaign();
         campaignId = UUID.randomUUID();
         campaign.setId(campaignId);
@@ -92,6 +95,10 @@ class WorldSectionAdapterTest {
         faction.setGoals("Control the underworld");
 
         when(factionRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId)).thenReturn(List.of(faction));
+        when(locationRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId)).thenReturn(List.of());
+        when(npcRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId)).thenReturn(List.of());
+        when(relationshipRepo.findByCampaignIdOrderBySortOrderAscIdAsc(campaignId)).thenReturn(List.of());
+        when(clockRepo.findByCampaignIdOrderBySortOrderAscIdAsc(campaignId)).thenReturn(List.of());
 
         var keyService = new CampaignSectionAdapterTest.FakeKeyService();
         var ctx = exportContext(keyService);
@@ -117,6 +124,10 @@ class WorldSectionAdapterTest {
         location.setSecrets("Hidden treasure");
 
         when(locationRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId)).thenReturn(List.of(location));
+        when(npcRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId)).thenReturn(List.of());
+        when(factionRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId)).thenReturn(List.of());
+        when(relationshipRepo.findByCampaignIdOrderBySortOrderAscIdAsc(campaignId)).thenReturn(List.of());
+        when(clockRepo.findByCampaignIdOrderBySortOrderAscIdAsc(campaignId)).thenReturn(List.of());
 
         var keyService = new CampaignSectionAdapterTest.FakeKeyService();
         var ctx = exportContext(keyService);
@@ -131,6 +142,53 @@ class WorldSectionAdapterTest {
         assertThat(dto.name()).isEqualTo("Dark Alley");
         assertThat(dto.kind()).isEqualTo("SITE");
         assertThat(dto.secrets()).isEqualTo("Hidden treasure");
+        assertThat(dto.occupantNpcRefs()).isEmpty();
+        assertThat(dto.encounterRefs()).isEmpty();
+        assertThat(dto.travelLocationRefs()).isEmpty();
+    }
+
+    @Test
+    void exportsLocationOccupantsEncountersAndTravel() {
+        WorldLocation harbor = new WorldLocation();
+        harbor.setId(UUID.randomUUID());
+        harbor.setCampaign(campaign);
+        harbor.setName("Harbor");
+        harbor.setKind(LocationKind.SETTLEMENT);
+
+        WorldLocation road = new WorldLocation();
+        road.setId(UUID.randomUUID());
+        road.setCampaign(campaign);
+        road.setName("Coast Road");
+        road.setKind(LocationKind.SITE);
+        harbor.getTravelLocations().add(road);
+
+        WorldNpc mira = new WorldNpc();
+        mira.setId(UUID.randomUUID());
+        mira.setCampaign(campaign);
+        mira.setName("Mira");
+        mira.setStatus(WorldNpcStatus.ALIVE);
+        mira.setLocation(harbor);
+
+        when(locationRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId)).thenReturn(List.of(harbor, road));
+        when(npcRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId)).thenReturn(List.of(mira));
+        when(factionRepo.findByCampaignIdOrderByNameAscIdAsc(campaignId)).thenReturn(List.of());
+        when(relationshipRepo.findByCampaignIdOrderBySortOrderAscIdAsc(campaignId)).thenReturn(List.of());
+        when(clockRepo.findByCampaignIdOrderBySortOrderAscIdAsc(campaignId)).thenReturn(List.of());
+
+        var keyService = new CampaignSectionAdapterTest.FakeKeyService();
+        var ctx = exportContext(keyService);
+        var assembler = new CampaignManifestAssembler();
+        assembler.assets(List.of());
+        adapter.exportSection(ctx, assembler);
+        fillRest(assembler);
+        var manifest = buildManifest(assembler);
+
+        var harborDto = manifest.worldLocations().stream()
+                .filter(l -> "Harbor".equals(l.name())).findFirst().orElseThrow();
+        assertThat(harborDto.occupantNpcRefs()).hasSize(1);
+        assertThat(harborDto.occupantNpcRefs().getFirst().type()).isEqualTo(CampaignContentType.WORLD_NPC);
+        assertThat(harborDto.travelLocationRefs()).hasSize(1);
+        assertThat(harborDto.travelLocationRefs().getFirst().type()).isEqualTo(CampaignContentType.WORLD_LOCATION);
     }
 
     @Test

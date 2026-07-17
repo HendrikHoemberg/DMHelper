@@ -56,7 +56,24 @@
     "summary": "Busy docks",
     "secrets": "Smuggler tunnels",
     "tags": [],
-    "travelLocationRefs": [],
+    "occupantNpcRefs": [
+      { "scope": "PACKAGE", "type": "WORLD_NPC", "key": "npc-mira" }
+    ],
+    "travelLocationRefs": [
+      { "scope": "PACKAGE", "type": "WORLD_LOCATION", "key": "loc-coast-road" }
+    ],
+    "encounterRefs": [],
+    "createdAt": "2026-01-01T00:00:00Z"
+  }, {
+    "key": "loc-coast-road",
+    "name": "Coast Road",
+    "kind": "SITE",
+    "summary": "Windswept road north of the harbor",
+    "tags": [],
+    "occupantNpcRefs": [],
+    "travelLocationRefs": [
+      { "scope": "PACKAGE", "type": "WORLD_LOCATION", "key": "loc-harbor" }
+    ],
     "encounterRefs": [],
     "createdAt": "2026-01-01T00:00:00Z"
   }],

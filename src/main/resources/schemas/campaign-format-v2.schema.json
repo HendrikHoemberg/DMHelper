@@ -1112,7 +1112,7 @@
       "properties": {
         "key": { "$ref": "#/$defs/key" },
         "name": { "type": "string" },
-        "kind": { "type": "string", "enum": ["SETTLEMENT", "LANDMARK", "DUNGEON", "REGION", "OTHER"] },
+        "kind": { "type": "string", "enum": ["SITE", "REGION", "SETTLEMENT", "PLANE", "OTHER"] },
         "parentLocationRef": { "$ref": "#/$defs/contentReference" },
         "mapRef": { "$ref": "#/$defs/contentReference" },
         "mapRegionKey": { "type": "string" },
@@ -1150,12 +1150,12 @@
       "required": ["key", "kind", "fromRef", "toRef"],
       "properties": {
         "key": { "$ref": "#/$defs/key" },
-        "kind": { "type": "string", "enum": ["MEMBER_OF", "ALLY", "ENEMY", "CONTACT", "RIVAL", "SUBORDINATE", "SUPERIOR", "RELATED", "OTHER"] },
+        "kind": { "type": "string", "enum": ["ALLY", "ENEMY", "RIVAL", "MEMBER_OF", "LEADS", "SERVES", "RELATED", "KNOWS", "OWNS", "LOCATED_IN", "TRAVELS_TO", "OTHER"] },
         "fromRef": { "$ref": "#/$defs/contentReference" },
         "toRef": { "$ref": "#/$defs/contentReference" },
         "directed": { "type": "boolean" },
-        "knowledge": { "type": "string", "enum": ["PUBLIC", "KNOWN", "SECRET", "UNKNOWN"] },
-        "status": { "type": "string", "enum": ["ACTIVE", "DORMANT", "BROKEN", "UNKNOWN"] },
+        "knowledge": { "type": "string", "enum": ["PUBLIC", "SECRET"] },
+        "status": { "type": "string", "enum": ["ACTIVE", "STRAINED", "BROKEN", "UNKNOWN"] },
         "notes": { "type": "string" },
         "sourceLocator": { "type": "string" },
         "sortOrder": { "type": "integer" }

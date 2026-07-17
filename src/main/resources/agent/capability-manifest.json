@@ -144,7 +144,12 @@
     "SESSION_OBJECTIVE_CHANGE",
     "QUEST",
     "OBJECTIVE",
-    "SOURCE_ANNOTATION"
+    "SOURCE_ANNOTATION",
+    "WORLD_NPC",
+    "WORLD_LOCATION",
+    "FACTION",
+    "WORLD_RELATIONSHIP",
+    "FACTION_CLOCK"
   ],
   "flagshipFixtures": [
     "classpath:campaigns/v2/minimal.dmcampaign.json",

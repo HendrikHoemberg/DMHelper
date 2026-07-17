@@ -6,6 +6,8 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
@@ -17,6 +19,7 @@ import dev.hendrikhoemberg.dmhelper.world.data.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -62,6 +65,7 @@ public class WorldService {
     private final NoteRepository noteRepository;
     private final GameMapRepository gameMapRepository;
     private final StatBlockRepository statBlockRepository;
+    private final EncounterRepository encounterRepository;
 
     public WorldService(WorldNpcRepository npcRepository,
                         WorldLocationRepository locationRepository,
@@ -74,7 +78,8 @@ public class WorldService {
                         WorldReferenceCleaner refCleaner,
                         NoteRepository noteRepository,
                         GameMapRepository gameMapRepository,
-                        StatBlockRepository statBlockRepository) {
+                        StatBlockRepository statBlockRepository,
+                        EncounterRepository encounterRepository) {
         this.npcRepository = npcRepository;
         this.locationRepository = locationRepository;
         this.factionRepository = factionRepository;
@@ -87,6 +92,7 @@ public class WorldService {
         this.noteRepository = noteRepository;
         this.gameMapRepository = gameMapRepository;
         this.statBlockRepository = statBlockRepository;
+        this.encounterRepository = encounterRepository;
     }
 
     // ---- NPC CRUD ----
@@ -117,6 +123,7 @@ public class WorldService {
 
     public void deleteNpc(UUID campaignId, UUID npcId) {
         WorldNpc npc = findNpcInCampaign(campaignId, npcId);
+        refCleaner.onNpcDelete(campaignId, npcId);
         npcRepository.delete(npc);
         packageKeys.deleteBindings(campaignId, CampaignContentType.WORLD_NPC, List.of(npcId));
     }
@@ -184,9 +191,11 @@ public class WorldService {
         Campaign campaign = findCampaign(campaignId);
         cycleValidator.assertNoCycle(null, cmd.parentLocationId());
         validateLocationInCampaign(campaignId, cmd.parentLocationId());
+        validateMapInCampaign(campaignId, cmd.mapId());
+        validateNoteInCampaign(campaignId, cmd.noteId());
         WorldLocation location = new WorldLocation();
         location.setCampaign(campaign);
-        applyLocationCommand(location, cmd);
+        applyLocationCommand(campaignId, location, cmd);
         location = locationRepository.save(location);
         packageKeys.getOrCreate(campaignId, CampaignContentType.WORLD_LOCATION, location.getId(), location.getName());
         return location;
@@ -196,7 +205,9 @@ public class WorldService {
         WorldLocation location = findLocationInCampaign(campaignId, locationId);
         cycleValidator.assertNoCycle(locationId, cmd.parentLocationId());
         validateLocationInCampaign(campaignId, cmd.parentLocationId());
-        applyLocationCommand(location, cmd);
+        validateMapInCampaign(campaignId, cmd.mapId());
+        validateNoteInCampaign(campaignId, cmd.noteId());
+        applyLocationCommand(campaignId, location, cmd);
         return locationRepository.save(location);
     }
 
@@ -209,15 +220,27 @@ public class WorldService {
 
     @Transactional(readOnly = true)
     public WorldLocation getLocation(UUID campaignId, UUID locationId) {
-        return findLocationInCampaign(campaignId, locationId);
+        WorldLocation location = findLocationInCampaign(campaignId, locationId);
+        // Force-initialize collections used by export/UI within the open session.
+        location.getTravelLocations().size();
+        location.getEncounters().size();
+        if (location.getParentLocation() != null) {
+            location.getParentLocation().getName();
+        }
+        return location;
     }
 
     @Transactional(readOnly = true)
     public List<WorldLocation> getLocations(UUID campaignId) {
-        return locationRepository.findByCampaignIdOrderByNameAscIdAsc(campaignId);
+        List<WorldLocation> locations = locationRepository.findByCampaignIdOrderByNameAscIdAsc(campaignId);
+        for (WorldLocation location : locations) {
+            location.getTravelLocations().size();
+            location.getEncounters().size();
+        }
+        return locations;
     }
 
-    private void applyLocationCommand(WorldLocation location, LocationCommand cmd) {
+    private void applyLocationCommand(UUID campaignId, WorldLocation location, LocationCommand cmd) {
         if (cmd.name() != null) location.setName(cmd.name());
         if (cmd.kind() != null) location.setKind(cmd.kind());
         if (cmd.parentLocationId() != null) {
@@ -247,7 +270,25 @@ public class WorldService {
         if (cmd.secrets() != null) location.setSecrets(cmd.secrets());
         if (cmd.tags() != null) location.setTags(cmd.tags());
         if (cmd.sourceLocator() != null) location.setSourceLocator(cmd.sourceLocator());
-        // TODO: handle encounterIds and travelLocationIds when the location UI is built
+        if (cmd.encounterIds() != null) {
+            List<Encounter> encounters = new ArrayList<>();
+            for (UUID encounterId : cmd.encounterIds()) {
+                encounters.add(findEncounterInCampaign(campaignId, encounterId));
+            }
+            location.getEncounters().clear();
+            location.getEncounters().addAll(encounters);
+        }
+        if (cmd.travelLocationIds() != null) {
+            List<WorldLocation> travel = new ArrayList<>();
+            for (UUID travelId : cmd.travelLocationIds()) {
+                if (location.getId() != null && location.getId().equals(travelId)) {
+                    throw new IllegalArgumentException("Location cannot list itself as a travel destination");
+                }
+                travel.add(findLocationInCampaign(campaignId, travelId));
+            }
+            location.getTravelLocations().clear();
+            location.getTravelLocations().addAll(travel);
+        }
     }
 
     private WorldLocation findLocationInCampaign(UUID campaignId, UUID locationId) {
@@ -410,6 +451,9 @@ public class WorldService {
     }
 
     private void validateClockFilled(int segments, int filled) {
+        if (segments < 1) {
+            throw new IllegalArgumentException("Clock must have at least 1 segment");
+        }
         if (filled < 0 || filled > segments) {
             throw new IllegalArgumentException("Clock filled must be in [0, " + segments + "], got " + filled);
         }
@@ -480,5 +524,23 @@ public class WorldService {
         if (sb.get().getCampaign() != null && !sb.get().getCampaign().getId().equals(campaignId)) {
             throw new IllegalArgumentException("StatBlock not found in campaign");
         }
+    }
+
+    private void validateMapInCampaign(UUID campaignId, UUID mapId) {
+        if (mapId == null) return;
+        GameMap map = gameMapRepository.findById(mapId)
+                .orElseThrow(() -> new IllegalArgumentException("Map not found in campaign"));
+        if (map.getCampaign() == null || !map.getCampaign().getId().equals(campaignId)) {
+            throw new IllegalArgumentException("Map not found in campaign");
+        }
+    }
+
+    private Encounter findEncounterInCampaign(UUID campaignId, UUID encounterId) {
+        Encounter encounter = encounterRepository.findById(encounterId)
+                .orElseThrow(() -> new IllegalArgumentException("Encounter not found in campaign"));
+        if (encounter.getCampaign() == null || !encounter.getCampaign().getId().equals(campaignId)) {
+            throw new IllegalArgumentException("Encounter not found in campaign");
+        }
+        return encounter;
     }
 }

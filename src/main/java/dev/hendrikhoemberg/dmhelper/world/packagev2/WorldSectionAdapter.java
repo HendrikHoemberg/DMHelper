@@ -13,6 +13,8 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportCon
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionExporter;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionImporter;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
+import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.world.data.Faction;
 import dev.hendrikhoemberg.dmhelper.world.data.FactionClock;
 import dev.hendrikhoemberg.dmhelper.world.data.FactionClockRepository;
@@ -23,8 +25,6 @@ import dev.hendrikhoemberg.dmhelper.world.data.WorldNpc;
 import dev.hendrikhoemberg.dmhelper.world.data.WorldNpcRepository;
 import dev.hendrikhoemberg.dmhelper.world.data.WorldRelationship;
 import dev.hendrikhoemberg.dmhelper.world.data.WorldRelationshipRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -34,24 +34,25 @@ import java.util.UUID;
 @Component
 public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSectionImporter {
 
-    private static final Logger log = LoggerFactory.getLogger(WorldSectionAdapter.class);
-
     private final WorldNpcRepository npcRepo;
     private final WorldLocationRepository locationRepo;
     private final FactionRepository factionRepo;
     private final WorldRelationshipRepository relationshipRepo;
     private final FactionClockRepository clockRepo;
+    private final StatBlockReferenceResolver statBlockResolver;
 
     public WorldSectionAdapter(WorldNpcRepository npcRepo,
                                 WorldLocationRepository locationRepo,
                                 FactionRepository factionRepo,
                                 WorldRelationshipRepository relationshipRepo,
-                                FactionClockRepository clockRepo) {
+                                FactionClockRepository clockRepo,
+                                StatBlockReferenceResolver statBlockResolver) {
         this.npcRepo = npcRepo;
         this.locationRepo = locationRepo;
         this.factionRepo = factionRepo;
         this.relationshipRepo = relationshipRepo;
         this.clockRepo = clockRepo;
+        this.statBlockResolver = statBlockResolver;
     }
 
     @Override
@@ -66,7 +67,7 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
 
     @Override
     public void exportSection(CampaignExportContext context, CampaignManifestAssembler target) {
-        List<Faction> factions = factionRepo.findByCampaignIdOrderByNameAscIdAsc(context.campaignId());
+        List<Faction> factions = orEmpty(factionRepo.findByCampaignIdOrderByNameAscIdAsc(context.campaignId()));
         List<FactionDto> factionDtos = factions.stream().map(f -> {
             String key = context.key(CampaignContentType.FACTION, f.getId(), f.getName());
             ContentReference noteRef = f.getNote() != null
@@ -78,11 +79,13 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
         }).toList();
         target.factions(factionDtos);
 
-        List<WorldLocation> locations = locationRepo.findByCampaignIdOrderByNameAscIdAsc(context.campaignId());
+        List<WorldNpc> npcs = orEmpty(npcRepo.findByCampaignIdOrderByNameAscIdAsc(context.campaignId()));
+        List<WorldLocation> locations = orEmpty(locationRepo.findByCampaignIdOrderByNameAscIdAsc(context.campaignId()));
         List<WorldLocationDto> locationDtos = locations.stream().map(l -> {
             String key = context.key(CampaignContentType.WORLD_LOCATION, l.getId(), l.getName());
             ContentReference parentRef = l.getParentLocation() != null
-                    ? context.packageRef(CampaignContentType.WORLD_LOCATION, l.getParentLocation().getId(), l.getParentLocation().getName())
+                    ? context.packageRef(CampaignContentType.WORLD_LOCATION,
+                    l.getParentLocation().getId(), l.getParentLocation().getName())
                     : null;
             ContentReference mapRef = l.getMap() != null
                     ? context.packageRef(CampaignContentType.MAP, l.getMap().getId(), l.getMap().getName())
@@ -90,28 +93,40 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
             ContentReference noteRef = l.getNote() != null
                     ? context.packageRef(CampaignContentType.NOTE, l.getNote().getId(), l.getNote().getTitle())
                     : null;
+            List<ContentReference> occupants = npcs.stream()
+                    .filter(n -> n.getLocation() != null && l.getId().equals(n.getLocation().getId()))
+                    .map(n -> context.packageRef(CampaignContentType.WORLD_NPC, n.getId(), n.getName()))
+                    .toList();
+            List<ContentReference> encounterRefs = l.getEncounters() == null ? List.of()
+                    : l.getEncounters().stream()
+                    .map(e -> context.packageRef(CampaignContentType.ENCOUNTER, e.getId(), e.getName()))
+                    .toList();
+            List<ContentReference> travelRefs = l.getTravelLocations() == null ? List.of()
+                    : l.getTravelLocations().stream()
+                    .map(t -> context.packageRef(CampaignContentType.WORLD_LOCATION, t.getId(), t.getName()))
+                    .toList();
             return new WorldLocationDto(key, l.getName(), l.getKind().name(),
                     parentRef, mapRef, l.getMapRegionKey(), noteRef,
                     l.getSummary(), l.getServices(), l.getSecrets(),
-                    List.of(), List.of(), List.of(),
+                    occupants, encounterRefs, travelRefs,
                     parseTags(l.getTags()), l.getSourceLocator(), l.getCreatedAt());
         }).toList();
         target.worldLocations(locationDtos);
 
-        List<WorldNpc> npcs = npcRepo.findByCampaignIdOrderByNameAscIdAsc(context.campaignId());
         List<WorldNpcDto> npcDtos = npcs.stream().map(n -> {
             String key = context.key(CampaignContentType.WORLD_NPC, n.getId(), n.getName());
             ContentReference factionRef = n.getFaction() != null
                     ? context.packageRef(CampaignContentType.FACTION, n.getFaction().getId(), n.getFaction().getName())
                     : null;
             ContentReference locationRef = n.getLocation() != null
-                    ? context.packageRef(CampaignContentType.WORLD_LOCATION, n.getLocation().getId(), n.getLocation().getName())
+                    ? context.packageRef(CampaignContentType.WORLD_LOCATION,
+                    n.getLocation().getId(), n.getLocation().getName())
                     : null;
             ContentReference noteRef = n.getNote() != null
                     ? context.packageRef(CampaignContentType.NOTE, n.getNote().getId(), n.getNote().getTitle())
                     : null;
             ContentReference statblockRef = n.getStatblock() != null
-                    ? context.packageRef(CampaignContentType.STATBLOCK, n.getStatblock().getId(), n.getStatblock().getName())
+                    ? statBlockResolver.referenceFor(n.getStatblock(), context)
                     : null;
             return new WorldNpcDto(key, n.getName(), n.getRole(),
                     n.getDisposition() != null ? n.getDisposition().name() : null,
@@ -122,7 +137,8 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
         }).toList();
         target.worldNpcs(npcDtos);
 
-        List<WorldRelationship> relationships = relationshipRepo.findByCampaignIdOrderBySortOrderAscIdAsc(context.campaignId());
+        List<WorldRelationship> relationships =
+                orEmpty(relationshipRepo.findByCampaignIdOrderBySortOrderAscIdAsc(context.campaignId()));
         List<WorldRelationshipDto> relDtos = relationships.stream().map(r -> {
             String key = context.key(CampaignContentType.WORLD_RELATIONSHIP, r.getId(),
                     r.getKind().name() + ":" + r.getFromType() + "-" + r.getToType());
@@ -135,14 +151,15 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
         }).toList();
         target.worldRelationships(relDtos);
 
-        List<FactionClock> clocks = clockRepo.findByCampaignIdOrderBySortOrderAscIdAsc(context.campaignId());
+        List<FactionClock> clocks = orEmpty(clockRepo.findByCampaignIdOrderBySortOrderAscIdAsc(context.campaignId()));
         List<FactionClockDto> clockDtos = clocks.stream().map(c -> {
             String key = context.key(CampaignContentType.FACTION_CLOCK, c.getId(), c.getTitle());
             ContentReference factionRef = c.getFaction() != null
                     ? context.packageRef(CampaignContentType.FACTION, c.getFaction().getId(), c.getFaction().getName())
                     : null;
             ContentReference objectiveRef = c.getObjective() != null
-                    ? context.packageRef(CampaignContentType.OBJECTIVE, c.getObjective().getId(), c.getObjective().getTitle())
+                    ? context.packageRef(CampaignContentType.OBJECTIVE,
+                    c.getObjective().getId(), c.getObjective().getTitle())
                     : null;
             ContentReference sceneRef = c.getScene() != null
                     ? context.packageRef(CampaignContentType.SCENE, c.getScene().getId(), c.getScene().getTitle())
@@ -180,9 +197,8 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
                             ContentReference.packageRef(CampaignContentType.FACTION, dto.key()),
                             CampaignContentType.FACTION, Faction.class);
                     if (dto.noteRef() != null) {
-                        dev.hendrikhoemberg.dmhelper.notes.data.Note note = context.require(
-                                dto.noteRef(), CampaignContentType.NOTE, dev.hendrikhoemberg.dmhelper.notes.data.Note.class);
-                        f.setNote(note);
+                        f.setNote(context.require(dto.noteRef(), CampaignContentType.NOTE,
+                                dev.hendrikhoemberg.dmhelper.notes.data.Note.class));
                     }
                 });
             }
@@ -211,23 +227,39 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
                             ContentReference.packageRef(CampaignContentType.WORLD_LOCATION, dto.key()),
                             CampaignContentType.WORLD_LOCATION, WorldLocation.class);
                     if (dto.parentLocationRef() != null) {
-                        try {
-                            WorldLocation parent = context.require(dto.parentLocationRef(),
-                                    CampaignContentType.WORLD_LOCATION, WorldLocation.class);
-                            l.setParentLocation(parent);
-                        } catch (IllegalStateException e) {
-                            log.warn("Location parent not yet resolved for {} (cycle or ordering issue)", dto.key());
-                        }
+                        l.setParentLocation(context.require(dto.parentLocationRef(),
+                                CampaignContentType.WORLD_LOCATION, WorldLocation.class));
                     }
                     if (dto.mapRef() != null) {
-                        dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap map = context.require(
-                                dto.mapRef(), CampaignContentType.MAP, dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap.class);
-                        l.setMap(map);
+                        l.setMap(context.require(dto.mapRef(), CampaignContentType.MAP,
+                                dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap.class));
                     }
                     if (dto.noteRef() != null) {
-                        dev.hendrikhoemberg.dmhelper.notes.data.Note note = context.require(
-                                dto.noteRef(), CampaignContentType.NOTE, dev.hendrikhoemberg.dmhelper.notes.data.Note.class);
-                        l.setNote(note);
+                        l.setNote(context.require(dto.noteRef(), CampaignContentType.NOTE,
+                                dev.hendrikhoemberg.dmhelper.notes.data.Note.class));
+                    }
+                    if (dto.encounterRefs() != null) {
+                        l.getEncounters().clear();
+                        for (ContentReference ref : dto.encounterRefs()) {
+                            l.getEncounters().add(context.require(ref, CampaignContentType.ENCOUNTER, Encounter.class));
+                        }
+                    }
+                    if (dto.travelLocationRefs() != null) {
+                        l.getTravelLocations().clear();
+                        for (ContentReference ref : dto.travelLocationRefs()) {
+                            l.getTravelLocations().add(context.require(
+                                    ref, CampaignContentType.WORLD_LOCATION, WorldLocation.class));
+                        }
+                    }
+                    if (dto.occupantNpcRefs() != null) {
+                        for (ContentReference ref : dto.occupantNpcRefs()) {
+                            WorldNpc occupant = context.require(
+                                    ref, CampaignContentType.WORLD_NPC, WorldNpc.class);
+                            // locationRef on the NPC wins if both are set; only fill when empty
+                            if (occupant.getLocation() == null) {
+                                occupant.setLocation(l);
+                            }
+                        }
                     }
                 });
             }
@@ -241,7 +273,8 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
                 entity.setName(dto.name());
                 entity.setRole(dto.role());
                 if (dto.disposition() != null) {
-                    entity.setDisposition(dev.hendrikhoemberg.dmhelper.world.data.WorldDisposition.valueOf(dto.disposition()));
+                    entity.setDisposition(
+                            dev.hendrikhoemberg.dmhelper.world.data.WorldDisposition.valueOf(dto.disposition()));
                 }
                 entity.setAppearance(dto.appearance());
                 entity.setVoice(dto.voice());
@@ -261,23 +294,18 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
                             ContentReference.packageRef(CampaignContentType.WORLD_NPC, dto.key()),
                             CampaignContentType.WORLD_NPC, WorldNpc.class);
                     if (dto.factionRef() != null) {
-                        Faction f = context.require(dto.factionRef(), CampaignContentType.FACTION, Faction.class);
-                        n.setFaction(f);
+                        n.setFaction(context.require(dto.factionRef(), CampaignContentType.FACTION, Faction.class));
                     }
                     if (dto.locationRef() != null) {
-                        WorldLocation l = context.require(dto.locationRef(),
-                                CampaignContentType.WORLD_LOCATION, WorldLocation.class);
-                        n.setLocation(l);
+                        n.setLocation(context.require(dto.locationRef(),
+                                CampaignContentType.WORLD_LOCATION, WorldLocation.class));
                     }
                     if (dto.noteRef() != null) {
-                        dev.hendrikhoemberg.dmhelper.notes.data.Note note = context.require(
-                                dto.noteRef(), CampaignContentType.NOTE, dev.hendrikhoemberg.dmhelper.notes.data.Note.class);
-                        n.setNote(note);
+                        n.setNote(context.require(dto.noteRef(), CampaignContentType.NOTE,
+                                dev.hendrikhoemberg.dmhelper.notes.data.Note.class));
                     }
                     if (dto.statblockRef() != null) {
-                        dev.hendrikhoemberg.dmhelper.library.data.StatBlock sb = context.require(
-                                dto.statblockRef(), CampaignContentType.STATBLOCK, dev.hendrikhoemberg.dmhelper.library.data.StatBlock.class);
-                        n.setStatblock(sb);
+                        n.setStatblock(statBlockResolver.resolve(dto.statblockRef(), context));
                     }
                 });
             }
@@ -294,7 +322,8 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
                     }
                     r.setDirected(dto.directed());
                     if (dto.knowledge() != null) {
-                        r.setKnowledge(dev.hendrikhoemberg.dmhelper.world.data.RelationshipKnowledge.valueOf(dto.knowledge()));
+                        r.setKnowledge(
+                                dev.hendrikhoemberg.dmhelper.world.data.RelationshipKnowledge.valueOf(dto.knowledge()));
                     }
                     if (dto.status() != null) {
                         r.setStatus(dev.hendrikhoemberg.dmhelper.world.data.RelationshipStatus.valueOf(dto.status()));
@@ -331,24 +360,25 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
                     c.setSourceLocator(dto.sourceLocator());
                     c.setSortOrder(dto.sortOrder());
                     if (dto.factionRef() != null) {
-                        Faction f = context.require(dto.factionRef(), CampaignContentType.FACTION, Faction.class);
-                        c.setFaction(f);
+                        c.setFaction(context.require(dto.factionRef(), CampaignContentType.FACTION, Faction.class));
                     }
                     if (dto.objectiveRef() != null) {
-                        dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective obj = context.require(
-                                dto.objectiveRef(), CampaignContentType.OBJECTIVE, dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective.class);
-                        c.setObjective(obj);
+                        c.setObjective(context.require(dto.objectiveRef(), CampaignContentType.OBJECTIVE,
+                                dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective.class));
                     }
                     if (dto.sceneRef() != null) {
-                        dev.hendrikhoemberg.dmhelper.adventure.data.Scene scene = context.require(
-                                dto.sceneRef(), CampaignContentType.SCENE, dev.hendrikhoemberg.dmhelper.adventure.data.Scene.class);
-                        c.setScene(scene);
+                        c.setScene(context.require(dto.sceneRef(), CampaignContentType.SCENE,
+                                dev.hendrikhoemberg.dmhelper.adventure.data.Scene.class));
                     }
                     clockRepo.save(c);
                     context.register(CampaignContentType.FACTION_CLOCK, dto.key(), c, c.getId());
                 });
             }
         }
+    }
+
+    private static <T> List<T> orEmpty(List<T> list) {
+        return list == null ? List.of() : list;
     }
 
     private static List<String> parseTags(String tags) {

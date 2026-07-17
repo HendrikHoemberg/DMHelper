@@ -151,6 +151,37 @@ class WorldServiceTest {
     }
 
     @Test
+    void deleteNpcRemovesRelationshipsReferencingIt() {
+        Campaign c = campaignService.create("RelCleanup", null);
+        WorldNpc alice = worldService.createNpc(c.getId(), minimalNpc("Alice"));
+        WorldNpc bob = worldService.createNpc(c.getId(), minimalNpc("Bob"));
+        worldService.createRelationship(c.getId(), new WorldService.RelationshipCommand(
+                RelationshipKind.KNOWS, "WORLD_NPC", alice.getId(), "WORLD_NPC", bob.getId(),
+                true, RelationshipKnowledge.SECRET, RelationshipStatus.ACTIVE,
+                "hidden pact", null, 0));
+        assertThat(worldService.getRelationships(c.getId())).hasSize(1);
+        worldService.deleteNpc(c.getId(), alice.getId());
+        assertThat(worldService.getRelationships(c.getId())).isEmpty();
+        assertThat(worldService.getNpcs(c.getId())).extracting(WorldNpc::getName).containsExactly("Bob");
+    }
+
+    @Test
+    void locationTravelLinksRoundTripInService() {
+        Campaign c = campaignService.create("TravelLinks", null);
+        WorldLocation harbor = worldService.createLocation(c.getId(), new WorldService.LocationCommand(
+                "Harbor", LocationKind.SETTLEMENT, null, null, null, null, null, null, null,
+                List.of(), List.of(), null, null));
+        WorldLocation road = worldService.createLocation(c.getId(), new WorldService.LocationCommand(
+                "Road", LocationKind.SITE, null, null, null, null, null, null, null,
+                List.of(), List.of(), null, null));
+        worldService.updateLocation(c.getId(), harbor.getId(), new WorldService.LocationCommand(
+                "Harbor", LocationKind.SETTLEMENT, null, null, null, null, null, null, null,
+                List.of(), List.of(road.getId()), null, null));
+        WorldLocation reloaded = worldService.getLocation(c.getId(), harbor.getId());
+        assertThat(reloaded.getTravelLocations()).extracting(WorldLocation::getId).containsExactly(road.getId());
+    }
+
+    @Test
     void createsFactionClock() {
         Campaign c = campaignService.create("ClockTest", null);
         Faction faction = worldService.createFaction(c.getId(), new WorldService.FactionCommand(

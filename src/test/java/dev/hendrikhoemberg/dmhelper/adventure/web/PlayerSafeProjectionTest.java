@@ -82,6 +82,22 @@ class PlayerSafeProjectionTest {
     }
 
     @Test
+    void tableStateJsonDoesNotExposeWorldGraphDmFields() throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/table/state"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String body = result.getResponse().getContentAsString();
+        assertThat(body)
+                .doesNotContain("worldNpcs")
+                .doesNotContain("worldLocations")
+                .doesNotContain("factionClocks")
+                .doesNotContain("inventoryText")
+                .doesNotContain("reputationNotes")
+                .doesNotContain("WORLD_NPC")
+                .doesNotContain("FACTION_CLOCK");
+    }
+
+    @Test
     void tableStateJsonDoesNotLeakRawConditionsJson() throws Exception {
         MvcResult result = mockMvc.perform(get("/api/v1/table/state"))
                 .andExpect(status().isOk())

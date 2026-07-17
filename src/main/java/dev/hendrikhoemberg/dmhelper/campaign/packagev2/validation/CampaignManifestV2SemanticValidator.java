@@ -21,6 +21,7 @@ import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignConten
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.OBJECTIVE;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SOURCE_ANNOTATION;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.SESSION_OBJECTIVE_CHANGE;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.ENCOUNTER;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.ENCOUNTER_WAVE;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.FACTION;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.WORLD_NPC;
@@ -774,6 +775,24 @@ public class CampaignManifestV2SemanticValidator {
             check(dto.parentLocationRef(), "/worldLocations/" + i + "/parentLocationRef", keys, problems);
             check(dto.mapRef(), "/worldLocations/" + i + "/mapRef", keys, problems);
             check(dto.noteRef(), "/worldLocations/" + i + "/noteRef", keys, problems);
+            if (dto.occupantNpcRefs() != null) {
+                for (int j = 0; j < dto.occupantNpcRefs().size(); j++) {
+                    check(dto.occupantNpcRefs().get(j),
+                            "/worldLocations/" + i + "/occupantNpcRefs/" + j, keys, problems);
+                }
+            }
+            if (dto.encounterRefs() != null) {
+                for (int j = 0; j < dto.encounterRefs().size(); j++) {
+                    check(dto.encounterRefs().get(j),
+                            "/worldLocations/" + i + "/encounterRefs/" + j, keys, problems);
+                }
+            }
+            if (dto.travelLocationRefs() != null) {
+                for (int j = 0; j < dto.travelLocationRefs().size(); j++) {
+                    check(dto.travelLocationRefs().get(j),
+                            "/worldLocations/" + i + "/travelLocationRefs/" + j, keys, problems);
+                }
+            }
         }
         for (int i = 0; i < size(m.worldNpcs()); i++) {
             var dto = m.worldNpcs().get(i);
@@ -943,6 +962,24 @@ public class CampaignManifestV2SemanticValidator {
             }
             if (dto.noteRef() != null) {
                 requireRefType(dto.noteRef(), NOTE, "/worldLocations/" + i + "/noteRef", problems);
+            }
+            if (dto.occupantNpcRefs() != null) {
+                for (int j = 0; j < dto.occupantNpcRefs().size(); j++) {
+                    requireRefType(dto.occupantNpcRefs().get(j), WORLD_NPC,
+                            "/worldLocations/" + i + "/occupantNpcRefs/" + j, problems);
+                }
+            }
+            if (dto.encounterRefs() != null) {
+                for (int j = 0; j < dto.encounterRefs().size(); j++) {
+                    requireRefType(dto.encounterRefs().get(j), ENCOUNTER,
+                            "/worldLocations/" + i + "/encounterRefs/" + j, problems);
+                }
+            }
+            if (dto.travelLocationRefs() != null) {
+                for (int j = 0; j < dto.travelLocationRefs().size(); j++) {
+                    requireRefType(dto.travelLocationRefs().get(j), WORLD_LOCATION,
+                            "/worldLocations/" + i + "/travelLocationRefs/" + j, problems);
+                }
             }
         }
         for (int i = 0; i < size(m.worldNpcs()); i++) {
