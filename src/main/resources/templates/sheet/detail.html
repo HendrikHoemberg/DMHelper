@@ -129,17 +129,23 @@
             <div class="detail-section">
                 <h2>Actions</h2>
                 <div class="form-actions" style="flex-wrap: wrap;">
-                    <form th:action="@{/campaigns/{cid}/party/{pid}/sheet/rest/short(cid=${campaign.id}, pid=${member.id})}" method="post" class="inline-form" style="display: flex; align-items: center; gap: var(--space-sm);">
-                        <label>Hit Dice:</label>
-                        <input type="number" name="hitDiceSpent" value="0" min="0" class="small-input">
-                        <button type="submit" class="btn btn-primary">Short Rest</button>
-                    </form>
-                    <form th:action="@{/campaigns/{cid}/party/{pid}/sheet/rest/long(cid=${campaign.id}, pid=${member.id})}" method="post" class="inline-form" style="display: flex; align-items: center; gap: var(--space-sm);">
-                        <button type="submit" class="btn btn-primary">Long Rest</button>
-                    </form>
+                    <button type="button" class="btn btn-primary"
+                            onclick="document.getElementById('rest-preview-dialog').innerHTML = '<p>Loading...</p>'; document.getElementById('rest-preview-dialog').showModal();"
+                            hx-get="@{/campaigns/{cid}/party/{pid}/sheet/rest/preview(cid=${campaign.id}, pid=${member.id}, type=SHORT, hitDiceSpent=0)}"
+                            hx-target="#rest-preview-dialog" hx-swap="innerHTML">
+                        Short Rest
+                    </button>
+                    <button type="button" class="btn btn-primary"
+                            onclick="document.getElementById('rest-preview-dialog').innerHTML = '<p>Loading...</p>'; document.getElementById('rest-preview-dialog').showModal();"
+                            hx-get="@{/campaigns/{cid}/party/{pid}/sheet/rest/preview(cid=${campaign.id}, pid=${member.id}, type=LONG, hitDiceSpent=0)}"
+                            hx-target="#rest-preview-dialog" hx-swap="innerHTML">
+                        Long Rest
+                    </button>
                     <button class="btn btn-primary" onclick="document.getElementById('level-up-dialog').showModal()">Level Up</button>
                 </div>
             </div>
+
+            <dialog id="rest-preview-dialog" class="sheet-dialog"></dialog>
 
             <div th:replace="~{sheet/_inventory :: inventory(assignments=${assignments}, totalWeight=${totalWeight}, campaignId=${campaign.id})}"></div>
         </div>

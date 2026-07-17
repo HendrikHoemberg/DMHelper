@@ -1,0 +1,60 @@
+<div th:fragment="restPreview">
+  <h3 th:text="${restType == 'SHORT' ? 'Short Rest Preview' : 'Long Rest Preview'}">Rest Preview</h3>
+
+  <div class="rest-preview-details">
+    <div class="form-group">
+      <strong>HP Recovery:</strong>
+      <span th:text="${preview.estimatedHpRecovered}">0</span>
+    </div>
+
+    <div class="form-group" th:if="${!preview.resourcesToReset().isEmpty()}">
+      <strong>Resources reset:</strong>
+      <span th:text="${#strings.listJoin(preview.resourcesToReset(), ', ')}">-</span>
+    </div>
+
+    <div class="form-group" th:if="${!preview.spellSlotsToRecover().isEmpty()}">
+      <strong>Spell slots recovered:</strong>
+      <ul>
+        <li th:each="entry : ${preview.spellSlotsToRecover()}" th:text="${entry.key} + ': ' + ${entry.value}"></li>
+      </ul>
+    </div>
+
+    <div class="form-group" th:if="${preview.clearExhaustionOneLevel}">
+      <strong>Exhaustion:</strong> Reduced by 1 level (if any)
+      <span th:if="${preview.notes().isEmpty() or !#strings.contains(preview.notes()[0], 'SRD')}" style="font-size: 0.85em; color: var(--text-muted);"> (SRD rest rule)</span>
+    </div>
+
+    <div class="form-group" th:if="${!preview.notes().isEmpty()}">
+      <ul>
+        <li th:each="note : ${preview.notes()}" th:text="${note}"></li>
+      </ul>
+    </div>
+  </div>
+
+  <form th:if="${restType == 'SHORT'}"
+        th:action="@{/campaigns/{cid}/party/{pid}/sheet/rest/short(cid=${campaignId}, pid=${memberId})}"
+        method="post">
+    <div class="form-group">
+      <label>Hit Dice to Spend (available: <span th:text="${preview.hitDiceAvailable()}">0</span>):</label>
+      <input type="number" name="hitDiceSpent"
+             th:value="${preview.hitDiceToSpend}"
+             min="0" th:max="${preview.hitDiceAvailable}"
+             class="small-input"
+             hx-get="/campaigns/{campaignId}/party/{memberId}/sheet/rest/preview?type=SHORT"
+             hx-trigger="change" hx-target="#rest-preview-dialog" hx-swap="innerHTML">
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Confirm</button>
+      <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+    </div>
+  </form>
+
+  <form th:if="${restType == 'LONG'}"
+        th:action="@{/campaigns/{cid}/party/{pid}/sheet/rest/long(cid=${campaignId}, pid=${memberId})}"
+        method="post">
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Confirm</button>
+      <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+    </div>
+  </form>
+</div>

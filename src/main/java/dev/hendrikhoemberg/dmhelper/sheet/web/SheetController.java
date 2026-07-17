@@ -205,6 +205,20 @@ public class SheetController {
         return "redirect:/campaigns/" + campaignId + "/party/" + memberId + "/sheet";
     }
 
+    @GetMapping("/party/{memberId}/sheet/rest/preview")
+    public String restPreview(@PathVariable UUID campaignId, @PathVariable UUID memberId,
+                              @RequestParam String type,
+                              @RequestParam(defaultValue = "0") int hitDiceSpent,
+                              Model model) {
+        UUID sheetId = sheetService.getSheetDtoByPartyMemberId(memberId).id();
+        RestPreviewDto preview = sheetService.previewRest(sheetId, type, hitDiceSpent);
+        model.addAttribute("preview", preview);
+        model.addAttribute("restType", type.toUpperCase());
+        model.addAttribute("campaignId", campaignId);
+        model.addAttribute("memberId", memberId);
+        return "sheet/_rest-preview";
+    }
+
     @PostMapping("/party/{memberId}/sheet/abilities")
     public String updateAbilities(@PathVariable UUID campaignId, @PathVariable UUID memberId,
                                   @RequestParam Map<String, String> params,

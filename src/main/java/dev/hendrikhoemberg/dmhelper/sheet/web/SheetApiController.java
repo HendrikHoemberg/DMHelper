@@ -5,6 +5,7 @@ import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.AttackDto;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.CreateSheetRequest;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.FeatureDto;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.LevelUpRequest;
+import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.RestPreviewDto;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.SheetDto;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.SheetResourceDto;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.SheetSpellDto;
@@ -54,6 +55,30 @@ public class SheetApiController {
         SheetDto dto = sheetService.getSheetDtoByPartyMemberId(memberId);
         sheetService.deleteSheet(dto.id());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/party/{memberId}/sheet/rest/preview")
+    public ResponseEntity<RestPreviewDto> restPreview(
+            @PathVariable UUID campaignId, @PathVariable UUID memberId,
+            @RequestParam String type,
+            @RequestParam(defaultValue = "0") int hitDiceSpent) {
+        UUID sheetId = sheetService.getSheetDtoByPartyMemberId(memberId).id();
+        return ResponseEntity.ok(sheetService.previewRest(sheetId, type, hitDiceSpent));
+    }
+
+    @PostMapping("/party/{memberId}/sheet/rest/apply")
+    public ResponseEntity<SheetDto> applyRest(
+            @PathVariable UUID campaignId, @PathVariable UUID memberId,
+            @RequestParam String type,
+            @RequestParam(defaultValue = "0") int hitDiceSpent) {
+        UUID sheetId = sheetService.getSheetDtoByPartyMemberId(memberId).id();
+        SheetDto result;
+        if ("SHORT".equalsIgnoreCase(type)) {
+            result = sheetService.shortRest(sheetId, hitDiceSpent);
+        } else {
+            result = sheetService.longRest(sheetId, hitDiceSpent);
+        }
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/party/{memberId}/sheet/level-up")

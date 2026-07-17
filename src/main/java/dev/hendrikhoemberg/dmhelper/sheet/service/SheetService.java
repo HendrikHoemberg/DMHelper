@@ -365,6 +365,130 @@ public class SheetService {
         return toDto(sheet);
     }
 
+    public record RestPreviewDto(
+            UUID sheetId,
+            String restType,
+            int hitDiceAvailable,
+            int hitDiceToSpend,
+            int estimatedHpRecovered,
+            List<String> resourcesToReset,
+            Map<String, Integer> spellSlotsToRecover,
+            boolean clearExhaustionOneLevel,
+            List<String> notes
+    ) {}
+
+    @Transactional(readOnly = true)
+    public RestPreviewDto previewRest(UUID sheetId, String restType, int hitDiceToSpend) {
+        CharacterSheet sheet = sheetRepo.findById(sheetId)
+                .orElseThrow(() -> new IllegalArgumentException("Sheet not found"));
+        DerivedValues derived = sheetEngine.derive(sheet);
+
+        int hitDiceAvailable = derived.remainingHitDice();
+        int hitDiceToSpendActual = Math.min(hitDiceToSpend, hitDiceAvailable);
+        int estimatedHpRecovered = 0;
+        List<String> resourcesToReset = new ArrayList<>();
+        Map<String, Integer> spellSlotsToRecover = new HashMap<>();
+        boolean clearExhaustionOneLevel = false;
+        List<String> notes = new ArrayList<>();
+
+        List<SheetResource> resources = resourceRepo.findBySheetId(sheetId);
+
+        if ("SHORT".equalsIgnoreCase(restType)) {
+            estimatedHpRecovered = estimateHitDiceHp(sheet, hitDiceToSpendActual);
+            for (SheetResource r : resources) {
+                if (r.getResetRule() == SheetResource.ResetRule.SHORT_REST) {
+                    resourcesToReset.add(r.getName());
+                }
+            }
+            if (hitDiceToSpendActual > 0) {
+                notes.add("Spending " + hitDiceToSpendActual + " hit "
+                        + (hitDiceToSpendActual == 1 ? "die" : "dice")
+                        + " (avg ~" + estimatedHpRecovered + " HP)");
+            }
+        } else {
+            estimatedHpRecovered = derived.maxHp();
+            clearExhaustionOneLevel = true;
+
+            int recoveredHd = Math.min(sheet.getHitDiceUsed(), Math.max(1, derived.totalHitDice() / 2));
+            if (recoveredHd > 0) {
+                notes.add("Recover " + recoveredHd + " hit "
+                        + (recoveredHd == 1 ? "die" : "dice"));
+            }
+
+            for (SheetResource r : resources) {
+                if (r.getResetRule() == SheetResource.ResetRule.SHORT_REST
+                        || r.getResetRule() == SheetResource.ResetRule.LONG_REST) {
+                    resourcesToReset.add(r.getName());
+                }
+            }
+
+            Map<String, Integer> used = getSpellSlotsUsed(sheet);
+            for (int i = 1; i < derived.spellSlots().length; i++) {
+                int max = derived.spellSlots()[i];
+                if (max > 0) {
+                    String key = String.valueOf(i);
+                    int usedCount = used.getOrDefault(key, 0);
+                    if (usedCount > 0) {
+                        spellSlotsToRecover.put(key, usedCount);
+                    }
+                }
+            }
+            int pactLevel = 0;
+            for (int i = 1; i < derived.pactSlots().length; i++) {
+                if (derived.pactSlots()[i] > 0) {
+                    pactLevel = i;
+                    break;
+                }
+            }
+            if (pactLevel > 0) {
+                int pactUsed = used.getOrDefault("pact", 0);
+                if (pactUsed > 0) {
+                    spellSlotsToRecover.put("pact", pactUsed);
+                }
+            }
+            if (!spellSlotsToRecover.isEmpty()) {
+                notes.add("All spell slots recovered");
+            }
+            notes.add("Full HP restored");
+        }
+
+        return new RestPreviewDto(
+                sheetId,
+                restType.toUpperCase(),
+                hitDiceAvailable,
+                hitDiceToSpendActual,
+                estimatedHpRecovered,
+                resourcesToReset,
+                spellSlotsToRecover,
+                clearExhaustionOneLevel,
+                notes
+        );
+    }
+
+    private int estimateHitDiceHp(CharacterSheet sheet, int hitDiceCount) {
+        if (hitDiceCount <= 0) return 0;
+        try {
+            List<Map<String, Object>> classLevels = mapper.readValue(sheet.getClassLevels(),
+                    mapper.getTypeFactory().constructCollectionType(List.class, Map.class));
+            int weightedSum = 0;
+            int totalLevels = 0;
+            for (Map<String, Object> entry : classLevels) {
+                String classKey = SheetClassLevelCodec.classSourceKeyOf(entry);
+                int level = ((Number) entry.get("level")).intValue();
+                int dieSize = getHitDieSize(classKey);
+                weightedSum += dieSize * level;
+                totalLevels += level;
+            }
+            if (totalLevels == 0) return 0;
+            int avgDieSize = weightedSum / totalLevels;
+            int avgPerDie = (avgDieSize / 2) + 1;
+            return avgPerDie * hitDiceCount;
+        } catch (Exception e) {
+            log.warn("Failed to estimate hit dice HP", e);
+            return 0;
+        }
+    }
+
     // ---- Rests ----
 
     public SheetDto shortRest(UUID sheetId, int hitDiceSpent) {
