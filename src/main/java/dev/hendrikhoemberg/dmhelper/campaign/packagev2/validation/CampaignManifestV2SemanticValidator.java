@@ -734,6 +734,7 @@ public class CampaignManifestV2SemanticValidator {
                 if (scene.participants() != null) for (int pi = 0; pi < scene.participants().size(); pi++) {
                     check(scene.participants().get(pi).statblockRef(), path + "/participants/" + pi + "/statblockRef", keys, problems);
                     check(scene.participants().get(pi).noteRef(), path + "/participants/" + pi + "/noteRef", keys, problems);
+                    check(scene.participants().get(pi).worldNpcRef(), path + "/participants/" + pi + "/worldNpcRef", keys, problems);
                 }
                 if (scene.transitions() != null) for (int ti = 0; ti < scene.transitions().size(); ti++) {
                     check(scene.transitions().get(ti).targetSceneRef(), path + "/transitions/" + ti + "/targetSceneRef", keys, problems);
