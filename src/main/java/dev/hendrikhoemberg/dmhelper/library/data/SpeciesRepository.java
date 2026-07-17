@@ -25,5 +25,9 @@ public interface SpeciesRepository extends JpaRepository<Species, UUID>,
 
     boolean existsBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
 
+    Optional<Species> findBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
+
     boolean existsByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
+
+    Optional<Species> findByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
 }

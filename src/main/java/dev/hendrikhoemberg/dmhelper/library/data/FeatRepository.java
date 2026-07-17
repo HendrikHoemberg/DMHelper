@@ -26,5 +26,9 @@ public interface FeatRepository extends JpaRepository<Feat, UUID>,
 
     boolean existsBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
 
+    Optional<Feat> findBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
+
     boolean existsByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
+
+    Optional<Feat> findByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
 }

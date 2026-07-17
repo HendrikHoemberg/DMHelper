@@ -1,11 +1,13 @@
 package dev.hendrikhoemberg.dmhelper.library.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import jakarta.persistence.*;
 import java.util.UUID;
 
 @Entity
+@JsonIgnoreProperties({"provenance"})
 @Table(name = "spell", indexes = {
     @Index(name = "idx_spell_name", columnList = "name"),
     @Index(name = "idx_spell_level", columnList = "level"),
@@ -32,6 +34,7 @@ public class Spell {
     private Campaign campaign;
 
     @Embedded
+    @JsonIgnore
     private ContentProvenance provenance;
 
     @Column(nullable = false, length = 255)
@@ -71,6 +74,7 @@ public class Spell {
     public void setSource(ContentSource source) { this.source = source; }
     public Campaign getCampaign() { return campaign; }
     public void setCampaign(Campaign campaign) { this.campaign = campaign; }
+    @JsonIgnore
     public ContentProvenance getProvenance() { return provenance; }
     public void setProvenance(ContentProvenance provenance) { this.provenance = provenance; }
     public String getName() { return name; }

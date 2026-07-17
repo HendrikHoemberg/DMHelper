@@ -32,6 +32,7 @@ public class StatBlock {
     private Campaign campaign;
 
     @Embedded
+    @JsonIgnore
     private ContentProvenance provenance;
 
     @Deprecated(forRemoval = true)
@@ -142,6 +143,7 @@ public class StatBlock {
     public Campaign getCampaign() { return campaign; }
     public void setCampaign(Campaign campaign) { this.campaign = campaign; }
 
+    @JsonIgnore
     public ContentProvenance getProvenance() { return provenance; }
     public void setProvenance(ContentProvenance provenance) { this.provenance = provenance; }
 

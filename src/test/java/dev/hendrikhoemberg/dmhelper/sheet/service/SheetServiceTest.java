@@ -5,6 +5,8 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
+import dev.hendrikhoemberg.dmhelper.library.data.Spell;
+import dev.hendrikhoemberg.dmhelper.library.data.SpellRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
@@ -41,6 +43,9 @@ class SheetServiceTest {
 
     @Autowired
     private CharacterClassRepository classRepo;
+
+    @Autowired
+    private SpellRepository spellRepo;
 
     @MockitoBean
     private SheetEngine sheetEngine;
@@ -309,5 +314,64 @@ class SheetServiceTest {
         sheetService.deleteSheet(dto.id());
 
         assertFalse(sheetService.hasSheet(testMember.getId()));
+    }
+
+    @Test
+    void sheetCanPrepareCampaignScopedCustomSpell() {
+        when(sheetEngine.derive(any())).thenReturn(
+                makeDerived(15, 14, 13, 1, 2, 11, 1, 1, "Fighter 1")
+        );
+
+        var campaign = testMember.getCampaign();
+        var customSpell = new Spell();
+        customSpell.setSource(ContentSource.CUSTOM);
+        customSpell.setSourceKey("campaign-custom-fireball");
+        customSpell.setCampaign(campaign);
+        customSpell.setName("Campaign Fireball");
+        customSpell.setLevel(3);
+        customSpell.setSchool("evocation");
+        spellRepo.save(customSpell);
+
+        var scores = Map.of("str", 15, "dex", 14, "con", 13,
+                "int", 12, "wis", 10, "cha", 8);
+        var entry = new ClassLevelEntry("srd-2024_fighter", 1, List.of());
+        Map<String, Object> prof = Map.of("skills", List.of(), "tools", List.of(),
+                "languages", List.of(), "armor", List.of(), "weapons", List.of(), "expertise", List.of());
+        var req = new CreateSheetRequest(testMember.getId(), scores,
+                List.of(entry), prof, null, null, List.of(), 0);
+        var dto = sheetService.createSheet(req);
+
+        var spellDto = sheetService.addSpellBySourceKey(dto.id(), "campaign-custom-fireball", true, "Fighter");
+
+        assertNotNull(spellDto);
+        assertEquals("Campaign Fireball", spellDto.spellName());
+        assertEquals(3, spellDto.spellLevel());
+    }
+
+    @Test
+    void playerPayloadDoesNotIncludeContentProvenance() throws Exception {
+        var mapper = new tools.jackson.databind.ObjectMapper();
+        var provenance = new dev.hendrikhoemberg.dmhelper.library.data.ContentProvenance();
+        provenance.setSourceTitle("Test Source");
+        provenance.setSourceHash("abc123");
+        provenance.setConverterId("test-converter");
+
+        var spell = new Spell();
+        spell.setSource(ContentSource.CUSTOM);
+        spell.setSourceKey("test-provenance-spell");
+        spell.setName("Provenance Test Spell");
+        spell.setLevel(1);
+        spell.setProvenance(provenance);
+        spell = spellRepo.save(spell);
+
+        var json = mapper.writeValueAsString(spell);
+
+        assertFalse(json.contains("\"provenance\""), "JSON should not contain provenance field");
+        assertFalse(json.contains("sourceTitle"), "JSON should not contain sourceTitle");
+        assertFalse(json.contains("sourceHash"), "JSON should not contain sourceHash");
+        assertFalse(json.contains("converterId"), "JSON should not contain converterId");
+        assertFalse(json.contains("sourceTitle"), "JSON should not contain sourceTitle");
+        assertFalse(json.contains("sourceHash"), "JSON should not contain sourceHash");
+        assertFalse(json.contains("converterId"), "JSON should not contain converterId");
     }
 }

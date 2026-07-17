@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.treasury.service;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItem;
 import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.MagicItem;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -150,5 +152,17 @@ public class TreasuryService {
     @Transactional(readOnly = true)
     public int countAttunements(UUID partyMemberId) {
         return repository.countByPartyMemberIdAndAttunedTrue(partyMemberId);
+    }
+
+    public Optional<MagicItem> resolveMagicItemForCampaign(UUID campaignId, String sourceKey) {
+        return magicItemRepository.findByCampaignIdAndSourceKey(campaignId, sourceKey)
+                .or(() -> magicItemRepository.findBySourceAndSourceKeyAndCampaignIsNull(ContentSource.CUSTOM, sourceKey))
+                .or(() -> magicItemRepository.findBySourceAndSourceKey(ContentSource.SRD, sourceKey));
+    }
+
+    public Optional<EquipmentItem> resolveEquipmentItemForCampaign(UUID campaignId, String sourceKey) {
+        return equipmentItemRepository.findByCampaignIdAndSourceKey(campaignId, sourceKey)
+                .or(() -> equipmentItemRepository.findBySourceAndSourceKeyAndCampaignIsNull(ContentSource.CUSTOM, sourceKey))
+                .or(() -> equipmentItemRepository.findBySourceAndSourceKey(ContentSource.SRD, sourceKey));
     }
 }

@@ -25,5 +25,9 @@ public interface BackgroundRepository extends JpaRepository<Background, UUID>,
 
     boolean existsBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
 
+    Optional<Background> findBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
+
     boolean existsByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
+
+    Optional<Background> findByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
 }

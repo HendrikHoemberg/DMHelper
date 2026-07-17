@@ -26,5 +26,9 @@ public interface MagicItemRepository extends JpaRepository<MagicItem, UUID>,
 
     boolean existsBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
 
+    Optional<MagicItem> findBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
+
     boolean existsByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
+
+    Optional<MagicItem> findByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
 }

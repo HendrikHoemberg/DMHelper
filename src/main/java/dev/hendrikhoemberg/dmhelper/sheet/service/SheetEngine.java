@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.sheet.service;
 
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.Feat;
 import dev.hendrikhoemberg.dmhelper.library.data.FeatRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.RuleSection;
@@ -453,7 +454,19 @@ public class SheetEngine {
             List<String> featsRequiringManualAssignment = new ArrayList<>();
 
             if (!featRefs.isEmpty()) {
-                var feats = featRepo.findBySourceKeyIn(featRefs);
+                UUID campaignId = sheet.getPartyMember() != null && sheet.getPartyMember().getCampaign() != null
+                        ? sheet.getPartyMember().getCampaign().getId() : null;
+                List<Feat> feats = new ArrayList<>();
+                for (String ref : featRefs) {
+                    if (campaignId != null) {
+                        featRepo.findByCampaignIdAndSourceKey(campaignId, ref)
+                                .or(() -> featRepo.findBySourceAndSourceKeyAndCampaignIsNull(ContentSource.CUSTOM, ref))
+                                .or(() -> featRepo.findBySourceAndSourceKey(ContentSource.SRD, ref))
+                                .ifPresent(feats::add);
+                    } else {
+                        featRepo.findBySourceKeyIn(List.of(ref)).stream().findFirst().ifPresent(feats::add);
+                    }
+                }
                 for (Feat feat : feats) {
                     if ("ability-score-improvement".equals(feat.getSourceKey())) {
                         featsRequiringManualAssignment.add(feat.getName());

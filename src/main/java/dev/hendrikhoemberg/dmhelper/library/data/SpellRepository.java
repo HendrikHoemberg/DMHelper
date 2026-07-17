@@ -32,5 +32,9 @@ public interface SpellRepository extends JpaRepository<Spell, UUID>,
 
     boolean existsBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
 
+    Optional<Spell> findBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
+
     boolean existsByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
+
+    Optional<Spell> findByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
 }

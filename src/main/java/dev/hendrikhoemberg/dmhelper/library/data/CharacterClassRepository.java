@@ -30,5 +30,9 @@ public interface CharacterClassRepository extends JpaRepository<CharacterClass, 
 
     boolean existsBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
 
+    Optional<CharacterClass> findBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
+
     boolean existsByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
+
+    Optional<CharacterClass> findByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
 }

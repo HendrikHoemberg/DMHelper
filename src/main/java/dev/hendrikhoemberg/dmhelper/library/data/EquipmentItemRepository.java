@@ -28,5 +28,9 @@ public interface EquipmentItemRepository extends JpaRepository<EquipmentItem, UU
 
     boolean existsBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
 
+    Optional<EquipmentItem> findBySourceAndSourceKeyAndCampaignIsNull(ContentSource source, String sourceKey);
+
     boolean existsByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
+
+    Optional<EquipmentItem> findByCampaignIdAndSourceKey(UUID campaignId, String sourceKey);
 }

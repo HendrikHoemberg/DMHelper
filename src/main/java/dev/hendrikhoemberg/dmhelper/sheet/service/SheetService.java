@@ -3,6 +3,9 @@ package dev.hendrikhoemberg.dmhelper.sheet.service;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.library.data.BackgroundRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
+import dev.hendrikhoemberg.dmhelper.library.data.Feat;
+import dev.hendrikhoemberg.dmhelper.library.data.FeatRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.SpeciesRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.Spell;
 import dev.hendrikhoemberg.dmhelper.library.data.SpellRepository;
@@ -37,6 +40,7 @@ public class SheetService {
     private final SpeciesRepository speciesRepo;
     private final BackgroundRepository backgroundRepo;
     private final SpellRepository spellRepo;
+    private final FeatRepository featRepo;
     private final ObjectMapper mapper;
 
     private static final Logger log = LoggerFactory.getLogger(SheetService.class);
@@ -152,7 +156,8 @@ public class SheetService {
                         CharacterClassRepository classRepo,
                         SpeciesRepository speciesRepo,
                         BackgroundRepository backgroundRepo,
-                        SpellRepository spellRepo) {
+                        SpellRepository spellRepo,
+                        FeatRepository featRepo) {
         this.sheetRepo = sheetRepo;
         this.resourceRepo = resourceRepo;
         this.spellRefRepo = spellRefRepo;
@@ -162,6 +167,7 @@ public class SheetService {
         this.speciesRepo = speciesRepo;
         this.backgroundRepo = backgroundRepo;
         this.spellRepo = spellRepo;
+        this.featRepo = featRepo;
         this.mapper = new ObjectMapper();
     }
 
@@ -460,6 +466,38 @@ public class SheetService {
                 resource.getMaxUses(), resource.getCurrentUses(), resource.getResetRule().name());
     }
 
+    // ---- Campaign-aware resolution ----
+
+    public Optional<Spell> resolveSpellForCampaign(UUID campaignId, String sourceKey) {
+        return spellRepo.findByCampaignIdAndSourceKey(campaignId, sourceKey)
+                .or(() -> spellRepo.findBySourceAndSourceKeyAndCampaignIsNull(ContentSource.CUSTOM, sourceKey))
+                .or(() -> spellRepo.findBySourceAndSourceKey(ContentSource.SRD, sourceKey));
+    }
+
+    public Optional<CharacterClass> resolveClassForCampaign(UUID campaignId, String sourceKey) {
+        return classRepo.findByCampaignIdAndSourceKey(campaignId, sourceKey)
+                .or(() -> classRepo.findBySourceAndSourceKeyAndCampaignIsNull(ContentSource.CUSTOM, sourceKey))
+                .or(() -> classRepo.findBySourceAndSourceKey(ContentSource.SRD, sourceKey));
+    }
+
+    public Optional<Feat> resolveFeatForCampaign(UUID campaignId, String sourceKey) {
+        return featRepo.findByCampaignIdAndSourceKey(campaignId, sourceKey)
+                .or(() -> featRepo.findBySourceAndSourceKeyAndCampaignIsNull(ContentSource.CUSTOM, sourceKey))
+                .or(() -> featRepo.findBySourceAndSourceKey(ContentSource.SRD, sourceKey));
+    }
+
+    public Optional<Species> resolveSpeciesForCampaign(UUID campaignId, String sourceKey) {
+        return speciesRepo.findByCampaignIdAndSourceKey(campaignId, sourceKey)
+                .or(() -> speciesRepo.findBySourceAndSourceKeyAndCampaignIsNull(ContentSource.CUSTOM, sourceKey))
+                .or(() -> speciesRepo.findBySourceAndSourceKey(ContentSource.SRD, sourceKey));
+    }
+
+    public Optional<Background> resolveBackgroundForCampaign(UUID campaignId, String sourceKey) {
+        return backgroundRepo.findByCampaignIdAndSourceKey(campaignId, sourceKey)
+                .or(() -> backgroundRepo.findBySourceAndSourceKeyAndCampaignIsNull(ContentSource.CUSTOM, sourceKey))
+                .or(() -> backgroundRepo.findBySourceAndSourceKey(ContentSource.SRD, sourceKey));
+    }
+
     // ---- Spells ----
 
     public SheetSpellDto addSpell(UUID sheetId, UUID spellId, boolean prepared, String sourceClass) {
@@ -467,6 +505,21 @@ public class SheetService {
                 .orElseThrow(() -> new IllegalArgumentException("Sheet not found"));
         Spell spell = spellRepo.findById(spellId)
                 .orElseThrow(() -> new IllegalArgumentException("Spell not found"));
+        SheetSpellReference ref = new SheetSpellReference();
+        ref.setSheet(sheet);
+        ref.setSpell(spell);
+        ref.setPrepared(prepared);
+        ref.setSourceClass(sourceClass);
+        ref = spellRefRepo.save(ref);
+        return new SheetSpellDto(ref.getId(), spell.getName(), spell.getLevel(), ref.isPrepared(), ref.getSourceClass());
+    }
+
+    public SheetSpellDto addSpellBySourceKey(UUID sheetId, String sourceKey, boolean prepared, String sourceClass) {
+        CharacterSheet sheet = sheetRepo.findById(sheetId)
+                .orElseThrow(() -> new IllegalArgumentException("Sheet not found"));
+        UUID campaignId = sheet.getPartyMember().getCampaign().getId();
+        Spell spell = resolveSpellForCampaign(campaignId, sourceKey)
+                .orElseThrow(() -> new IllegalArgumentException("Spell not found for sourceKey: " + sourceKey));
         SheetSpellReference ref = new SheetSpellReference();
         ref.setSheet(sheet);
         ref.setSpell(spell);

@@ -31,6 +31,7 @@ public class CharacterClass {
     private Campaign campaign;
 
     @Embedded
+    @JsonIgnore
     private ContentProvenance provenance;
 
     @Column(nullable = false, length = 255)
@@ -65,6 +66,7 @@ public class CharacterClass {
     public void setSource(ContentSource source) { this.source = source; }
     public Campaign getCampaign() { return campaign; }
     public void setCampaign(Campaign campaign) { this.campaign = campaign; }
+    @JsonIgnore
     public ContentProvenance getProvenance() { return provenance; }
     public void setProvenance(ContentProvenance provenance) { this.provenance = provenance; }
     public String getName() { return name; }
