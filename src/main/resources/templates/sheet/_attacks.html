@@ -1,0 +1,30 @@
+<div th:fragment="attacks(sheet, campaignId, memberId)" class="sheet-attacks">
+    <div th:if="${!sheet.attacks().isEmpty()}">
+        <table class="sheet-attack-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Bonus</th>
+                    <th>Damage</th>
+                    <th>Range</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="attack : ${sheet.attacks()}">
+                    <td class="sheet-attack-name" th:text="${attack.name()}">Longsword</td>
+                    <td class="sheet-attack-bonus"><span th:text="'+' + ${attack.attackBonus()}">+5</span></td>
+                    <td class="sheet-attack-damage">
+                        <span th:text="${attack.damageExpression()}">1d8+3</span>
+                        <span class="text-muted" th:if="${attack.damageType() != null and !attack.damageType().isEmpty()}" th:text="${attack.damageType()}">slashing</span>
+                    </td>
+                    <td class="sheet-attack-range" th:text="${attack.range()}">5 ft</td>
+                    <td class="sheet-attack-actions">
+                        <button class="roll-btn" th:attr="data-roll='d20+${attack.attackBonus()}'" type="button" th:title="'Attack roll: ' + ${attack.name()}">d20</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p th:if="${sheet.attacks().isEmpty()}" class="text-muted">No attacks defined</p>
+</div>

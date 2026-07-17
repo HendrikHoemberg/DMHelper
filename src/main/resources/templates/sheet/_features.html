@@ -1,0 +1,13 @@
+<div th:fragment="features(sheet, campaignId, memberId)" class="sheet-features">
+    <div th:if="${!sheet.features().isEmpty()}">
+        <div th:each="feature : ${sheet.features()}" class="sheet-feature">
+            <div class="sheet-feature-header">
+                <span class="sheet-feature-badge badge" th:text="${feature.actionType().replace('_', ' ').toLowerCase()}">action</span>
+                <span class="sheet-feature-name" th:text="${feature.name()}">Second Wind</span>
+                <span class="sheet-feature-source" th:if="${feature.source() != null and !feature.source().isEmpty()}" th:text="${'(' + feature.source() + ')'}">(Fighter 1)</span>
+            </div>
+            <div class="sheet-feature-body" th:if="${feature.body() != null and !feature.body().isEmpty()}" th:text="${feature.body()}">Regain HP</div>
+        </div>
+    </div>
+    <p th:if="${sheet.features().isEmpty()}" class="text-muted">No features defined</p>
+</div>

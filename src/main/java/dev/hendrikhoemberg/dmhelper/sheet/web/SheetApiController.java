@@ -1,7 +1,9 @@
 package dev.hendrikhoemberg.dmhelper.sheet.web;
 
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService;
+import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.AttackDto;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.CreateSheetRequest;
+import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.FeatureDto;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.LevelUpRequest;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.SheetDto;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.SheetResourceDto;
@@ -185,6 +187,60 @@ public class SheetApiController {
             @PathVariable UUID campaignId, @PathVariable UUID memberId,
             @PathVariable UUID spellRefId) {
         sheetService.removeSpell(spellRefId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ---- Attacks ----
+
+    @PutMapping("/party/{memberId}/sheet/attacks")
+    public ResponseEntity<List<AttackDto>> setAttacks(
+            @PathVariable UUID campaignId, @PathVariable UUID memberId,
+            @RequestBody List<AttackDto> attacks) {
+        UUID sheetId = sheetService.getSheetDtoByPartyMemberId(memberId).id();
+        return ResponseEntity.ok(sheetService.setAttacks(sheetId, attacks));
+    }
+
+    @PostMapping("/party/{memberId}/sheet/attacks")
+    public ResponseEntity<AttackDto> addAttack(
+            @PathVariable UUID campaignId, @PathVariable UUID memberId,
+            @RequestBody AttackDto attack) {
+        UUID sheetId = sheetService.getSheetDtoByPartyMemberId(memberId).id();
+        return ResponseEntity.ok(sheetService.addAttack(sheetId, attack));
+    }
+
+    @DeleteMapping("/party/{memberId}/sheet/attacks/{key}")
+    public ResponseEntity<Void> deleteAttack(
+            @PathVariable UUID campaignId, @PathVariable UUID memberId,
+            @PathVariable String key) {
+        UUID sheetId = sheetService.getSheetDtoByPartyMemberId(memberId).id();
+        sheetService.deleteAttack(sheetId, key);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ---- Features ----
+
+    @PutMapping("/party/{memberId}/sheet/features")
+    public ResponseEntity<List<FeatureDto>> setFeatures(
+            @PathVariable UUID campaignId, @PathVariable UUID memberId,
+            @RequestBody List<FeatureDto> features) {
+        UUID sheetId = sheetService.getSheetDtoByPartyMemberId(memberId).id();
+        return ResponseEntity.ok(sheetService.setFeatures(sheetId, features));
+    }
+
+    @PostMapping("/party/{memberId}/sheet/features")
+    public ResponseEntity<FeatureDto> addFeature(
+            @PathVariable UUID campaignId, @PathVariable UUID memberId,
+            @RequestBody FeatureDto feature) {
+        UUID sheetId = sheetService.getSheetDtoByPartyMemberId(memberId).id();
+        return ResponseEntity.ok(sheetService.addFeature(sheetId, feature));
+    }
+
+    @DeleteMapping("/party/{memberId}/sheet/features/{key}")
+    public ResponseEntity<Void> deleteFeature(
+            @PathVariable UUID campaignId, @PathVariable UUID memberId,
+            @PathVariable String key) {
+        UUID sheetId = sheetService.getSheetDtoByPartyMemberId(memberId).id();
+        sheetService.deleteFeature(sheetId, key);
         return ResponseEntity.noContent().build();
     }
 }

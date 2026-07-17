@@ -54,6 +54,12 @@ public class CharacterSheet {
     @Column(columnDefinition = "CLOB")
     private String spellSlotsUsed;
 
+    @Column(columnDefinition = "CLOB")
+    private String attacksJson;
+
+    @Column(columnDefinition = "CLOB")
+    private String featuresJson;
+
     @OneToMany(mappedBy = "sheet", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<dev.hendrikhoemberg.dmhelper.sheet.data.SheetResource> resources = new ArrayList<>();
@@ -103,4 +109,10 @@ public class CharacterSheet {
 
     public List<dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReference> getSpells() { return spells; }
     public void setSpells(List<dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReference> spells) { this.spells = spells; }
+
+    public String getAttacksJson() { return attacksJson; }
+    public void setAttacksJson(String attacksJson) { this.attacksJson = attacksJson; }
+
+    public String getFeaturesJson() { return featuresJson; }
+    public void setFeaturesJson(String featuresJson) { this.featuresJson = featuresJson; }
 }

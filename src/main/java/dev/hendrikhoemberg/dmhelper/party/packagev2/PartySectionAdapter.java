@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 public class PartySectionAdapter implements CampaignSectionExporter, CampaignSectionImporter {
@@ -112,6 +113,8 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
         List<ContentReference> featRefs = exportFeatRefs(cs, context);
         List<ResourceDto> resources = exportResources(cs, context);
         List<SpellRefDto> spells = exportSpells(cs, context);
+        List<CampaignManifestV2.AttackDto> attacks = exportAttacks(cs);
+        List<CampaignManifestV2.FeatureDto> features = exportFeatures(cs);
 
         ContentReference speciesRef = null;
         if (cs.getSpecies() != null) {
@@ -127,8 +130,31 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
                 sheetKey, abilityScores, classLevels, proficiencies,
                 speciesRef, backgroundRef, featRefs,
                 cs.getXp(), overrides, cs.getHitDiceUsed(),
-                resources, spells, spellSlotsUsed
+                resources, spells, spellSlotsUsed,
+                attacks, features
         );
+    }
+
+    private List<CampaignManifestV2.AttackDto> exportAttacks(CharacterSheet cs) {
+        String raw = cs.getAttacksJson();
+        if (raw == null || raw.isBlank()) return List.of();
+        try {
+            return objectMapper.readValue(raw,
+                    new TypeReference<List<CampaignManifestV2.AttackDto>>() {});
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    private List<CampaignManifestV2.FeatureDto> exportFeatures(CharacterSheet cs) {
+        String raw = cs.getFeaturesJson();
+        if (raw == null || raw.isBlank()) return List.of();
+        try {
+            return objectMapper.readValue(raw,
+                    new TypeReference<List<CampaignManifestV2.FeatureDto>>() {});
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 
     private List<ClassLevelDto> exportClassLevels(CharacterSheet cs, CampaignExportContext context) {
@@ -278,6 +304,8 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
             cs.setOverrides(toJson(sheetDto.overrides()));
             cs.setHitDiceUsed(sheetDto.hitDiceUsed());
             cs.setSpellSlotsUsed(toJson(sheetDto.spellSlotsUsed()));
+            cs.setAttacksJson(toAttacksJson(sheetDto.attacks()));
+            cs.setFeaturesJson(toFeaturesJson(sheetDto.features()));
             characterSheetRepository.save(cs);
             context.register(CampaignContentType.CHARACTER_SHEET, sheetDto.key(), cs, cs.getId());
 
@@ -354,6 +382,24 @@ public class PartySectionAdapter implements CampaignSectionExporter, CampaignSec
         if (map == null || map.isEmpty()) return null;
         try {
             return objectMapper.writeValueAsString(map);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String toAttacksJson(List<CampaignManifestV2.AttackDto> attacks) {
+        if (attacks == null || attacks.isEmpty()) return null;
+        try {
+            return objectMapper.writeValueAsString(attacks);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String toFeaturesJson(List<CampaignManifestV2.FeatureDto> features) {
+        if (features == null || features.isEmpty()) return null;
+        try {
+            return objectMapper.writeValueAsString(features);
         } catch (Exception e) {
             return null;
         }

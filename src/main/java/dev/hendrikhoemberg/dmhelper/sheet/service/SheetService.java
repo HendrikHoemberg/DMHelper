@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.*;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -139,7 +140,9 @@ public class SheetService {
             Map<String, Integer> spellSlotsUsed,
             DerivedValues derivedValues,
             List<SheetResourceDto> resources,
-            List<SheetSpellDto> spells
+            List<SheetSpellDto> spells,
+            List<AttackDto> attacks,
+            List<FeatureDto> features
     ) {}
 
     public record LevelUpRequest(
@@ -154,6 +157,29 @@ public class SheetService {
 
     public record SheetSpellDto(
             UUID id, String spellName, int spellLevel, boolean prepared, String sourceClass
+    ) {}
+
+    // ---- Attack / Feature DTOs ----
+
+    public record AttackDto(
+            String key,
+            String name,
+            int attackBonus,
+            String damageExpression,
+            String damageType,
+            String range,
+            String properties,
+            String ammunition,
+            String notes
+    ) {}
+
+    public record FeatureDto(
+            String key,
+            String name,
+            String actionType,
+            String source,
+            String body,
+            String resourceName
     ) {}
 
     public SheetService(CharacterSheetRepository sheetRepo,
@@ -207,6 +233,8 @@ public class SheetService {
             sheet.setFeatRefs(mapper.writeValueAsString(request.featRefs() != null ? request.featRefs() : List.of()));
             sheet.setOverrides(mapper.writeValueAsString(Map.of()));
             sheet.setSpellSlotsUsed(mapper.writeValueAsString(Map.of()));
+            sheet.setAttacksJson(mapper.writeValueAsString(List.of()));
+            sheet.setFeaturesJson(mapper.writeValueAsString(List.of()));
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize sheet data", e);
         }
@@ -548,6 +576,183 @@ public class SheetService {
         spellRefRepo.save(ref);
     }
 
+    // ---- Attacks ----
+
+    public List<AttackDto> getAttacks(UUID sheetId) {
+        CharacterSheet sheet = sheetRepo.findById(sheetId)
+                .orElseThrow(() -> new IllegalArgumentException("Sheet not found"));
+        return parseAttacks(sheet.getAttacksJson());
+    }
+
+    public List<AttackDto> setAttacks(UUID sheetId, List<AttackDto> attacks) {
+        CharacterSheet sheet = sheetRepo.findById(sheetId)
+                .orElseThrow(() -> new IllegalArgumentException("Sheet not found"));
+        try {
+            sheet.setAttacksJson(mapper.writeValueAsString(attacks));
+            sheetRepo.save(sheet);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize attacks", e);
+        }
+        return getAttacks(sheetId);
+    }
+
+    public AttackDto addAttack(UUID sheetId, AttackDto request) {
+        List<AttackDto> attacks = new ArrayList<>(getAttacks(sheetId));
+        String key = request.key() != null && !request.key().isBlank()
+                ? request.key() : generateKey(request.name());
+        AttackDto attack = new AttackDto(key, request.name(), request.attackBonus(),
+                request.damageExpression(), request.damageType(), request.range(),
+                request.properties(), request.ammunition(), request.notes());
+        attacks.add(attack);
+        try {
+            sheetRepo.findById(sheetId).ifPresent(s -> {
+                try {
+                    s.setAttacksJson(mapper.writeValueAsString(attacks));
+                    sheetRepo.save(s);
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to serialize attacks", e);
+                }
+            });
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to add attack", e);
+        }
+        return attack;
+    }
+
+    public AttackDto updateAttack(UUID sheetId, AttackDto request) {
+        List<AttackDto> attacks = new ArrayList<>(getAttacks(sheetId));
+        boolean found = false;
+        for (int i = 0; i < attacks.size(); i++) {
+            if (attacks.get(i).key().equals(request.key())) {
+                attacks.set(i, request);
+                found = true;
+                break;
+            }
+        }
+        if (!found) throw new IllegalArgumentException("Attack not found: " + request.key());
+        try {
+            CharacterSheet sheet = sheetRepo.findById(sheetId).orElseThrow();
+            sheet.setAttacksJson(mapper.writeValueAsString(attacks));
+            sheetRepo.save(sheet);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize attacks", e);
+        }
+        return request;
+    }
+
+    public void deleteAttack(UUID sheetId, String key) {
+        List<AttackDto> attacks = new ArrayList<>(getAttacks(sheetId));
+        boolean removed = attacks.removeIf(a -> a.key().equals(key));
+        if (!removed) throw new IllegalArgumentException("Attack not found: " + key);
+        try {
+            CharacterSheet sheet = sheetRepo.findById(sheetId).orElseThrow();
+            sheet.setAttacksJson(mapper.writeValueAsString(attacks));
+            sheetRepo.save(sheet);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize attacks", e);
+        }
+    }
+
+    // ---- Features ----
+
+    public List<FeatureDto> getFeatures(UUID sheetId) {
+        CharacterSheet sheet = sheetRepo.findById(sheetId)
+                .orElseThrow(() -> new IllegalArgumentException("Sheet not found"));
+        return parseFeatures(sheet.getFeaturesJson());
+    }
+
+    public List<FeatureDto> setFeatures(UUID sheetId, List<FeatureDto> features) {
+        CharacterSheet sheet = sheetRepo.findById(sheetId)
+                .orElseThrow(() -> new IllegalArgumentException("Sheet not found"));
+        try {
+            sheet.setFeaturesJson(mapper.writeValueAsString(features));
+            sheetRepo.save(sheet);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize features", e);
+        }
+        return getFeatures(sheetId);
+    }
+
+    public FeatureDto addFeature(UUID sheetId, FeatureDto request) {
+        List<FeatureDto> features = new ArrayList<>(getFeatures(sheetId));
+        String key = request.key() != null && !request.key().isBlank()
+                ? request.key() : generateKey(request.name());
+        FeatureDto feature = new FeatureDto(key, request.name(), request.actionType(),
+                request.source(), request.body(), request.resourceName());
+        features.add(feature);
+        try {
+            CharacterSheet sheet = sheetRepo.findById(sheetId).orElseThrow();
+            sheet.setFeaturesJson(mapper.writeValueAsString(features));
+            sheetRepo.save(sheet);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize features", e);
+        }
+        return feature;
+    }
+
+    public FeatureDto updateFeature(UUID sheetId, FeatureDto request) {
+        List<FeatureDto> features = new ArrayList<>(getFeatures(sheetId));
+        boolean found = false;
+        for (int i = 0; i < features.size(); i++) {
+            if (features.get(i).key().equals(request.key())) {
+                features.set(i, request);
+                found = true;
+                break;
+            }
+        }
+        if (!found) throw new IllegalArgumentException("Feature not found: " + request.key());
+        try {
+            CharacterSheet sheet = sheetRepo.findById(sheetId).orElseThrow();
+            sheet.setFeaturesJson(mapper.writeValueAsString(features));
+            sheetRepo.save(sheet);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize features", e);
+        }
+        return request;
+    }
+
+    public void deleteFeature(UUID sheetId, String key) {
+        List<FeatureDto> features = new ArrayList<>(getFeatures(sheetId));
+        boolean removed = features.removeIf(f -> f.key().equals(key));
+        if (!removed) throw new IllegalArgumentException("Feature not found: " + key);
+        try {
+            CharacterSheet sheet = sheetRepo.findById(sheetId).orElseThrow();
+            sheet.setFeaturesJson(mapper.writeValueAsString(features));
+            sheetRepo.save(sheet);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize features", e);
+        }
+    }
+
+    private List<AttackDto> parseAttacks(String json) {
+        if (json == null || json.isBlank()) return List.of();
+        try {
+            return mapper.readValue(json,
+                    mapper.getTypeFactory().constructCollectionType(List.class, AttackDto.class));
+        } catch (Exception e) {
+            log.warn("Failed to parse attacks JSON", e);
+            return List.of();
+        }
+    }
+
+    private List<FeatureDto> parseFeatures(String json) {
+        if (json == null || json.isBlank()) return List.of();
+        try {
+            return mapper.readValue(json,
+                    mapper.getTypeFactory().constructCollectionType(List.class, FeatureDto.class));
+        } catch (Exception e) {
+            log.warn("Failed to parse features JSON", e);
+            return List.of();
+        }
+    }
+
+    static String generateKey(String name) {
+        if (name == null || name.isBlank()) return "";
+        return name.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-|-$", "");
+    }
+
     // ---- Sync ----
 
     void syncToPartyMember(CharacterSheet sheet) {
@@ -619,13 +824,17 @@ public class SheetService {
         String backgroundName = sheet.getBackground() != null ? sheet.getBackground().getName() : null;
         UUID backgroundId = sheet.getBackground() != null ? sheet.getBackground().getId() : null;
 
+        List<AttackDto> attacks = parseAttacks(sheet.getAttacksJson());
+        List<FeatureDto> features = parseFeatures(sheet.getFeaturesJson());
+
         return new SheetDto(
                 sheet.getId(), sheet.getPartyMember().getId(),
                 abilityScores, classLevels,
                 speciesName, speciesId,
                 backgroundName, backgroundId,
                 featRefs, sheet.getXp(), overrides, sheet.getHitDiceUsed(),
-                spellsUsed, derived, resources, spells
+                spellsUsed, derived, resources, spells,
+                attacks, features
         );
     }
 

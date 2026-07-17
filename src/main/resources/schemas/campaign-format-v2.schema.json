@@ -267,7 +267,9 @@
         "hitDiceUsed": { "type": "integer", "minimum": 0 },
         "resources": { "type": "array", "items": { "$ref": "#/$defs/resource" } },
         "spells": { "type": "array", "items": { "$ref": "#/$defs/spellRef" } },
-        "spellSlotsUsed": { "type": "object" }
+        "spellSlotsUsed": { "type": "object" },
+        "attacks": { "type": "array", "items": { "$ref": "#/$defs/attack" } },
+        "features": { "type": "array", "items": { "$ref": "#/$defs/feature" } }
       }
     },
     "classLevel": {
@@ -300,6 +302,35 @@
         "spellRef": { "$ref": "#/$defs/contentReference" },
         "prepared": { "type": "boolean" },
         "sourceClassRef": { "$ref": "#/$defs/contentReference" }
+      }
+    },
+    "attack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "attackBonus", "damageExpression"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "name": { "type": "string" },
+        "attackBonus": { "type": "integer" },
+        "damageExpression": { "type": "string" },
+        "damageType": { "type": "string" },
+        "range": { "type": "string" },
+        "properties": { "type": "string" },
+        "ammunition": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "actionType"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "name": { "type": "string" },
+        "actionType": { "type": "string", "enum": ["ACTION", "BONUS_ACTION", "REACTION", "FREE", "PASSIVE", "OTHER"] },
+        "source": { "type": "string" },
+        "body": { "type": "string" },
+        "resourceName": { "type": "string" }
       }
     },
     "statBlock": {

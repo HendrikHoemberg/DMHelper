@@ -229,7 +229,8 @@ class PartySectionAdapterTest {
                                                 false,
                                                 ContentReference.catalogRef(CampaignContentType.CLASS, null, "wizard"))
                                 ),
-                                Map.of("1", 2, "2", 1)
+                                Map.of("1", 2, "2", 1),
+                                List.of(), List.of()
                         ),
                         null, null, null, null, null, null, null
                 )),
@@ -418,7 +419,7 @@ class PartySectionAdapterTest {
                                 ),
                                 Map.of("skills", List.of(), "tools", List.of(), "languages", List.of(), "armor", List.of(), "weapons", List.of(), "expertise", List.of()),
                                 ContentReference.catalogRef(CampaignContentType.SPECIES, null, "human"),
-                                null, List.of(), 0, Map.of(), 0, List.of(), List.of(), Map.of()
+                                null, List.of(), 0, Map.of(), 0, List.of(), List.of(), Map.of(), List.of(), List.of()
                         ),
                         null, null, null, null, null, null, null
                 )),

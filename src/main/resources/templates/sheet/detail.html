@@ -107,6 +107,16 @@
             </div>
 
             <div class="detail-section">
+                <h2>Attacks</h2>
+                <div th:replace="~{sheet/_attacks :: attacks(sheet=${sheet}, campaignId=${campaign.id}, memberId=${member.id})}"></div>
+            </div>
+
+            <div class="detail-section">
+                <h2>Features &amp; Actions</h2>
+                <div th:replace="~{sheet/_features :: features(sheet=${sheet}, campaignId=${campaign.id}, memberId=${member.id})}"></div>
+            </div>
+
+            <div class="detail-section">
                 <h2>Spells</h2>
                 <div th:replace="~{sheet/_spell-list :: spellList(sheet=${sheet})}"></div>
             </div>

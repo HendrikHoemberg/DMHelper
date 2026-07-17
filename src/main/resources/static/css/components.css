@@ -1099,6 +1099,74 @@
     color: var(--color-accent);
 }
 
+.sheet-attack-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+.sheet-attack-table th,
+.sheet-attack-table td {
+    padding: var(--space-xs) var(--space-sm);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+}
+.sheet-attack-table th {
+    font-weight: 600;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.sheet-attack-name {
+    font-weight: 600;
+}
+.sheet-attack-bonus {
+    color: var(--color-attack-bonus, var(--color-accent));
+}
+.sheet-attack-damage {
+    color: var(--color-text);
+}
+.sheet-attack-range {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+.sheet-attack-actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.sheet-feature-group {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    margin: var(--space-md) 0 var(--space-sm);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px solid var(--color-border);
+}
+.sheet-feature {
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--color-border);
+}
+.sheet-feature-header {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+}
+.sheet-feature-name {
+    font-weight: 600;
+}
+.sheet-feature-source {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+.sheet-feature-body {
+    margin-top: var(--space-xs);
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
 .sheet-level-up-dialog {
     background: var(--color-surface);
     border: 1px solid var(--color-border);

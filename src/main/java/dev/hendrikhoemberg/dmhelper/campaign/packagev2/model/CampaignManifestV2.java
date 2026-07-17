@@ -134,7 +134,32 @@ public record CampaignManifestV2(
             int hitDiceUsed,
             List<ResourceDto> resources,
             List<SpellRefDto> spells,
-            Map<String, Object> spellSlotsUsed
+            Map<String, Object> spellSlotsUsed,
+            List<AttackDto> attacks,
+            List<FeatureDto> features
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record AttackDto(
+            String key,
+            String name,
+            int attackBonus,
+            String damageExpression,
+            String damageType,
+            String range,
+            String properties,
+            String ammunition,
+            String notes
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record FeatureDto(
+            String key,
+            String name,
+            String actionType,
+            String source,
+            String body,
+            String resourceName
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
