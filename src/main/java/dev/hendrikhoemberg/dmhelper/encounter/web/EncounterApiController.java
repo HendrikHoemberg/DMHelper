@@ -64,7 +64,7 @@ public class EncounterApiController {
     }
 
     @PutMapping("/encounters/{id}/prep")
-    public EncounterPrep updatePrep(@PathVariable UUID id,
+    public EncounterDto updatePrep(@PathVariable UUID id,
             @RequestBody EncounterPrep prep) {
         return service.updatePrep(id, prep);
     }
