@@ -17,6 +17,19 @@ class SessionCockpitTemplateContractTest {
         assertThat(story).contains("transition-choice");
         assertThat(story).contains("stepScene");
         assertThat(story).contains("followTransition");
+        assertThat(story).contains("scene-summary");
+        assertThat(story).contains("scene-checks");
+        assertThat(story).contains("structuredSceneView.checks");
+    }
+
+    @Test
+    void questProgressAlwaysRenderedWithStatusControls() throws IOException {
+        String plan = Files.readString(Path.of("src/main/resources/templates/session/_session-plan.html"));
+        assertThat(plan).contains("data-quest-progress");
+        assertThat(plan).contains("setObjectiveStatus");
+        assertThat(plan).contains("objective-status-select");
+        // Quest progress is not gated on sessionPlan == null
+        assertThat(plan).doesNotContain("th:if=\"${workspace.sessionPlan == null}\">\n  <h3");
     }
 
     @Test

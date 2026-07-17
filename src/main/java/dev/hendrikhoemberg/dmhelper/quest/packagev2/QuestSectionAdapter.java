@@ -18,6 +18,7 @@ import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveDependency;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveRepository;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestRepository;
+import dev.hendrikhoemberg.dmhelper.quest.service.QuestObjectiveDependencyValidator;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -29,13 +30,16 @@ public class QuestSectionAdapter implements CampaignSectionExporter, CampaignSec
     private final QuestRepository questRepo;
     private final QuestObjectiveRepository objectiveRepo;
     private final QuestLinkRepository linkRepo;
+    private final QuestObjectiveDependencyValidator dependencyValidator;
 
     public QuestSectionAdapter(QuestRepository questRepo,
                                QuestObjectiveRepository objectiveRepo,
-                               QuestLinkRepository linkRepo) {
+                               QuestLinkRepository linkRepo,
+                               QuestObjectiveDependencyValidator dependencyValidator) {
         this.questRepo = questRepo;
         this.objectiveRepo = objectiveRepo;
         this.linkRepo = linkRepo;
+        this.dependencyValidator = dependencyValidator;
     }
 
     @Override
@@ -158,6 +162,7 @@ public class QuestSectionAdapter implements CampaignSectionExporter, CampaignSec
                 Quest quest = context.require(
                         ContentReference.packageRef(CampaignContentType.QUEST, qDto.key()),
                         CampaignContentType.QUEST, Quest.class);
+                List<QuestObjectiveDependency> existing = new ArrayList<>();
                 if (qDto.objectives() != null) {
                     for (int i = 0; i < qDto.objectives().size() && i < quest.getObjectives().size(); i++) {
                         var oDto = qDto.objectives().get(i);
@@ -165,11 +170,17 @@ public class QuestSectionAdapter implements CampaignSectionExporter, CampaignSec
                         if (oDto.prerequisiteRefs() != null) {
                             for (ContentReference prereqRef : oDto.prerequisiteRefs()) {
                                 QuestObjective prereq = context.require(prereqRef, CampaignContentType.OBJECTIVE, QuestObjective.class);
+                                if (!prereq.getQuest().getId().equals(quest.getId())) {
+                                    throw new IllegalArgumentException(
+                                            "Objective dependencies must stay within the same quest");
+                                }
+                                dependencyValidator.validate(obj.getId(), prereq.getId(), existing);
                                 QuestObjectiveDependency dep = new QuestObjectiveDependency();
                                 dep.setQuest(quest);
                                 dep.setObjective(obj);
                                 dep.setPrerequisiteObjective(prereq);
                                 obj.getDependencies().add(dep);
+                                existing.add(dep);
                             }
                         }
                     }

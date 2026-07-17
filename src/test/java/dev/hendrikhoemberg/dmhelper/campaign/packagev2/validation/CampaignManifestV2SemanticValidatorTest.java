@@ -205,4 +205,168 @@ class CampaignManifestV2SemanticValidatorTest {
                 .extracting(CampaignImportProblem::code)
                 .contains("UNRESOLVED_REFERENCE");
     }
+
+    @Test
+    void selfDependencyIsRejected() {
+        var obj = new CampaignManifestV2.QuestObjectiveDto("obj-a", "A", null, "NOT_STARTED", "ALL", 1,
+                List.of(ContentReference.packageRef(CampaignContentType.OBJECTIVE, "obj-a")), null);
+        var quest = new CampaignManifestV2.QuestDto("q1", "Q", "ACTIVE", null, null,
+                null, null, null, null, null, List.of(obj), Instant.parse("2025-01-01T00:00:00Z"));
+        var manifest = withQuests(List.of(quest));
+        assertThat(validator.validate(manifest))
+                .extracting(CampaignImportProblem::code)
+                .contains("SELF_DEPENDENCY");
+    }
+
+    @Test
+    void duplicateDependencyEdgeIsRejected() {
+        var ref = ContentReference.packageRef(CampaignContentType.OBJECTIVE, "obj-a");
+        var objA = new CampaignManifestV2.QuestObjectiveDto("obj-a", "A", null, "NOT_STARTED", "ALL", 1, null, null);
+        var objB = new CampaignManifestV2.QuestObjectiveDto("obj-b", "B", null, "NOT_STARTED", "ALL", 2,
+                List.of(ref, ref), null);
+        var quest = new CampaignManifestV2.QuestDto("q1", "Q", "ACTIVE", null, null,
+                null, null, null, null, null, List.of(objA, objB), Instant.parse("2025-01-01T00:00:00Z"));
+        assertThat(validator.validate(withQuests(List.of(quest))))
+                .extracting(CampaignImportProblem::code)
+                .contains("DUPLICATE_DEPENDENCY");
+    }
+
+    @Test
+    void cyclicDependencyIsRejected() {
+        var objA = new CampaignManifestV2.QuestObjectiveDto("obj-a", "A", null, "NOT_STARTED", "ALL", 1,
+                List.of(ContentReference.packageRef(CampaignContentType.OBJECTIVE, "obj-b")), null);
+        var objB = new CampaignManifestV2.QuestObjectiveDto("obj-b", "B", null, "NOT_STARTED", "ALL", 2,
+                List.of(ContentReference.packageRef(CampaignContentType.OBJECTIVE, "obj-a")), null);
+        var quest = new CampaignManifestV2.QuestDto("q1", "Q", "ACTIVE", null, null,
+                null, null, null, null, null, List.of(objA, objB), Instant.parse("2025-01-01T00:00:00Z"));
+        assertThat(validator.validate(withQuests(List.of(quest))))
+                .extracting(CampaignImportProblem::code)
+                .contains("DEPENDENCY_CYCLE");
+    }
+
+    @Test
+    void crossQuestDependencyIsRejected() {
+        var objA = new CampaignManifestV2.QuestObjectiveDto("obj-a", "A", null, "NOT_STARTED", "ALL", 1, null, null);
+        var objB = new CampaignManifestV2.QuestObjectiveDto("obj-b", "B", null, "NOT_STARTED", "ALL", 1,
+                List.of(ContentReference.packageRef(CampaignContentType.OBJECTIVE, "obj-a")), null);
+        var q1 = new CampaignManifestV2.QuestDto("q1", "Q1", "ACTIVE", null, null,
+                null, null, null, null, null, List.of(objA), Instant.parse("2025-01-01T00:00:00Z"));
+        var q2 = new CampaignManifestV2.QuestDto("q2", "Q2", "ACTIVE", null, null,
+                null, null, null, null, null, List.of(objB), Instant.parse("2025-01-01T00:00:00Z"));
+        assertThat(validator.validate(withQuests(List.of(q1, q2))))
+                .extracting(CampaignImportProblem::code)
+                .contains("CROSS_QUEST_DEPENDENCY");
+    }
+
+    @Test
+    void giverMustTargetNoteOrStatblock() {
+        var link = new CampaignManifestV2.QuestLinkDto("GIVER",
+                ContentReference.packageRef(CampaignContentType.PARTY_MEMBER, "pm-1"),
+                "Bad", null, 1);
+        var quest = new CampaignManifestV2.QuestDto("q1", "Q", "ACTIVE", null, null,
+                null, null, null, null, List.of(link), List.of(), Instant.parse("2025-01-01T00:00:00Z"));
+        var party = new CampaignManifestV2.PartyMemberDto(
+                "pm-1", "Aria", null, "Fighter 1", 16, 10, 10, 2, 30, 12, 10, 10, null, true, null);
+        var base = minimal();
+        var manifest = new CampaignManifestV2(
+                2, base.metadata(), base.campaign(), base.assets(), List.of(party),
+                base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(),
+                base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(),
+                base.timelineEvents(), base.adventures(), base.session(), base.diceRolls(),
+                List.of(quest), base.annotations());
+        assertThat(validator.validate(manifest))
+                .extracting(CampaignImportProblem::code)
+                .contains("INVALID_GIVER");
+    }
+
+    @Test
+    void multipleGiversRejected() {
+        var noteRef = ContentReference.packageRef(CampaignContentType.NOTE, "n1");
+        var link1 = new CampaignManifestV2.QuestLinkDto("GIVER", noteRef, "G1", null, 1);
+        var link2 = new CampaignManifestV2.QuestLinkDto("GIVER", noteRef, "G2", null, 2);
+        var note = new CampaignManifestV2.NoteDto(
+                "n1", "NPC", "Giver", null, null, false, Instant.parse("2025-01-01T00:00:00Z"), List.of());
+        var quest = new CampaignManifestV2.QuestDto("q1", "Q", "ACTIVE", null, null,
+                null, null, null, null, List.of(link1, link2), List.of(), Instant.parse("2025-01-01T00:00:00Z"));
+        var base = minimal();
+        var manifest = new CampaignManifestV2(
+                2, base.metadata(), base.campaign(), base.assets(), base.party(),
+                base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(),
+                List.of(note), base.quickNotes(), base.assignments(), base.ledgerEntries(),
+                base.timelineEvents(), base.adventures(), base.session(), base.diceRolls(),
+                List.of(quest), base.annotations());
+        assertThat(validator.validate(manifest))
+                .extracting(CampaignImportProblem::code)
+                .contains("MULTIPLE_GIVERS");
+    }
+
+    @Test
+    void checkWithoutDcRequiresSourceAnnotation() {
+        var check = new CampaignManifestV2.SceneCheckDto(
+                "Unknown check", "wis", "perception", null, "PLAYER_FACING",
+                null, null, null, null, null, 1);
+        var scene = new CampaignManifestV2.SceneDto(
+                "sc-1", "S", null, "UNVISITED", 1,
+                null, null, null, null, null,
+                null, null, null, null, null, List.of(check), null, null, null);
+        var chapter = new CampaignManifestV2.ChapterDto("ch-1", "C", null, 1, List.of(scene));
+        var adv = new CampaignManifestV2.AdventureDto("adv-1", "A", null, null, 1, List.of(chapter), null);
+        var base = minimal();
+        var manifest = new CampaignManifestV2(
+                2, base.metadata(), base.campaign(), base.assets(), base.party(),
+                base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(),
+                base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(),
+                base.timelineEvents(), List.of(adv), base.session(), base.diceRolls(),
+                base.quests(), base.annotations());
+        assertThat(validator.validate(manifest))
+                .extracting(CampaignImportProblem::code)
+                .contains("MISSING_SOURCE_ANNOTATION");
+    }
+
+    @Test
+    void invalidSceneLinkRoleTypeRejected() {
+        var link = new CampaignManifestV2.SceneLinkDto("HANDOUT",
+                ContentReference.packageRef(CampaignContentType.NOTE, "n1"),
+                "wrong", null, 1);
+        var note = new CampaignManifestV2.NoteDto(
+                "n1", "PERSON", "N", null, null, false, Instant.parse("2025-01-01T00:00:00Z"), List.of());
+        var scene = new CampaignManifestV2.SceneDto(
+                "sc-1", "S", null, "UNVISITED", 1,
+                null, null, null, null, null,
+                null, null, null, null, null, null, null, null, List.of(link));
+        var chapter = new CampaignManifestV2.ChapterDto("ch-1", "C", null, 1, List.of(scene));
+        var adv = new CampaignManifestV2.AdventureDto("adv-1", "A", null, null, 1, List.of(chapter), null);
+        var base = minimal();
+        var manifest = new CampaignManifestV2(
+                2, base.metadata(), base.campaign(), base.assets(), base.party(),
+                base.customStatBlocks(), base.handouts(), base.maps(), base.encounters(),
+                List.of(note), base.quickNotes(), base.assignments(), base.ledgerEntries(),
+                base.timelineEvents(), List.of(adv), base.session(), base.diceRolls(),
+                base.quests(), base.annotations());
+        assertThat(validator.validate(manifest))
+                .extracting(CampaignImportProblem::code)
+                .contains("INVALID_REFERENCE_TYPE");
+    }
+
+    @Test
+    void prerequisitesRequireCompletionMode() {
+        var objA = new CampaignManifestV2.QuestObjectiveDto("obj-a", "A", null, "NOT_STARTED", "ALL", 1, null, null);
+        var objB = new CampaignManifestV2.QuestObjectiveDto("obj-b", "B", null, "NOT_STARTED", null, 2,
+                List.of(ContentReference.packageRef(CampaignContentType.OBJECTIVE, "obj-a")), null);
+        var quest = new CampaignManifestV2.QuestDto("q1", "Q", "ACTIVE", null, null,
+                null, null, null, null, null, List.of(objA, objB), Instant.parse("2025-01-01T00:00:00Z"));
+        assertThat(validator.validate(withQuests(List.of(quest))))
+                .extracting(CampaignImportProblem::code)
+                .contains("INVALID_COMPLETION_MODE");
+    }
+
+    private CampaignManifestV2 withQuests(List<CampaignManifestV2.QuestDto> quests) {
+        var m = minimal();
+        return new CampaignManifestV2(
+                2, m.metadata(), m.campaign(), m.assets(), m.party(),
+                m.customStatBlocks(), m.handouts(), m.maps(), m.encounters(),
+                m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
+                m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
+                quests, m.annotations());
+    }
 }

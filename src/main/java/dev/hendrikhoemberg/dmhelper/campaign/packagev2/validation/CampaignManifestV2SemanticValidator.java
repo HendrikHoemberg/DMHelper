@@ -218,7 +218,261 @@ public class CampaignManifestV2SemanticValidator {
         validateCalendar(m, problems);
         validateExclusionSemantics(m, problems);
         validateCurrentSceneRef(m, keys, problems);
+        validateStructuredAdventureAndQuests(m, keys, problems);
         return problems;
+    }
+
+    /**
+     * Item-6 semantic rules: transition targets, link role/type pairs, GIVER contract,
+     * unresolved check DCs without source annotations, and objective dependency graphs.
+     */
+    private void validateStructuredAdventureAndQuests(CampaignManifestV2 m,
+                                                      Map<CampaignContentType, Set<String>> keys,
+                                                      List<CampaignImportProblem> problems) {
+        Set<String> annotatedCheckDcPaths = new HashSet<>();
+        for (int ai = 0; ai < size(m.annotations()); ai++) {
+            var ann = m.annotations().get(ai);
+            if (ann.fieldPath() != null && ann.fieldPath().contains("/checks/")
+                    && ann.fieldPath().endsWith("/dc")) {
+                annotatedCheckDcPaths.add(ann.fieldPath());
+            }
+        }
+
+        for (int ai = 0; ai < size(m.adventures()); ai++) {
+            var adventure = m.adventures().get(ai);
+            for (int ci = 0; ci < size(adventure.chapters()); ci++) {
+                var chapter = adventure.chapters().get(ci);
+                for (int si = 0; si < size(chapter.scenes()); si++) {
+                    var scene = chapter.scenes().get(si);
+                    String scenePath = "/adventures/" + ai + "/chapters/" + ci + "/scenes/" + si;
+                    validateSceneTransitions(scene, scenePath, problems);
+                    validateSceneLinks(scene, scenePath, problems);
+                    validateSceneChecks(scene, scenePath, annotatedCheckDcPaths, problems);
+                }
+            }
+        }
+
+        // Map objective key -> quest key for cross-quest checks
+        Map<String, String> objectiveToQuest = new java.util.HashMap<>();
+        for (int qi = 0; qi < size(m.quests()); qi++) {
+            var q = m.quests().get(qi);
+            for (int oi = 0; oi < size(q.objectives()); oi++) {
+                objectiveToQuest.put(q.objectives().get(oi).key(), q.key());
+            }
+        }
+
+        for (int qi = 0; qi < size(m.quests()); qi++) {
+            var q = m.quests().get(qi);
+            String qPath = "/quests/" + qi;
+            validateQuestLinks(q, qPath, problems);
+            validateQuestObjectiveDependencies(q, qPath, objectiveToQuest, problems);
+        }
+    }
+
+    private static void validateSceneTransitions(CampaignManifestV2.SceneDto scene, String scenePath,
+                                                 List<CampaignImportProblem> problems) {
+        if (scene.transitions() == null) return;
+        for (int ti = 0; ti < scene.transitions().size(); ti++) {
+            var t = scene.transitions().get(ti);
+            String path = scenePath + "/transitions/" + ti;
+            if (t.targetSceneRef() != null) {
+                requireRefType(t.targetSceneRef(), SCENE, path + "/targetSceneRef", problems);
+            }
+            String kind = t.kind();
+            boolean hasTarget = t.targetSceneRef() != null;
+            boolean hasExternal = t.externalDestination() != null && !t.externalDestination().isBlank();
+            if ("CHOICE".equals(kind)) {
+                if (!hasTarget) {
+                    error(problems, "INVALID_TRANSITION_TARGET", path + "/targetSceneRef",
+                            "CHOICE transitions require an in-campaign target scene");
+                }
+                if (hasExternal) {
+                    error(problems, "INVALID_TRANSITION_TARGET", path + "/externalDestination",
+                            "CHOICE transitions must not set externalDestination");
+                }
+            } else if ("ENTRANCE".equals(kind) || "EXIT".equals(kind)) {
+                if (hasTarget == hasExternal) {
+                    error(problems, "INVALID_TRANSITION_TARGET", path,
+                            kind + " transitions require exactly one of targetSceneRef or externalDestination");
+                }
+            }
+        }
+    }
+
+    private static void validateSceneLinks(CampaignManifestV2.SceneDto scene, String scenePath,
+                                           List<CampaignImportProblem> problems) {
+        if (scene.links() == null) return;
+        for (int li = 0; li < scene.links().size(); li++) {
+            var link = scene.links().get(li);
+            String path = scenePath + "/links/" + li;
+            if (link.targetRef() == null) continue;
+            CampaignContentType expected = expectedSceneLinkType(link.role());
+            if (expected != null) {
+                requireRefType(link.targetRef(), expected, path + "/targetRef", problems);
+            }
+        }
+    }
+
+    private static CampaignContentType expectedSceneLinkType(String role) {
+        if (role == null) return null;
+        return switch (role) {
+            case "HANDOUT" -> HANDOUT;
+            case "RULE" -> CampaignContentType.RULE;
+            case "QUEST" -> QUEST;
+            case "TIMELINE_EVENT" -> CampaignContentType.TIMELINE_EVENT;
+            case "RELATED_SCENE" -> SCENE;
+            case "NPC", "LOCATION" -> NOTE;
+            default -> null; // REFERENCE: any type
+        };
+    }
+
+    private static void validateSceneChecks(CampaignManifestV2.SceneDto scene, String scenePath,
+                                            Set<String> annotatedCheckDcPaths,
+                                            List<CampaignImportProblem> problems) {
+        if (scene.checks() == null) return;
+        for (int ci = 0; ci < scene.checks().size(); ci++) {
+            var check = scene.checks().get(ci);
+            if (check.dc() != null) continue;
+            String dcPath = scenePath + "/checks/" + ci + "/dc";
+            boolean hasAnnotation = annotatedCheckDcPaths.contains(dcPath);
+            if (!hasAnnotation) {
+                error(problems, "MISSING_SOURCE_ANNOTATION", dcPath,
+                        "A check with no DC requires a source annotation for that field");
+            }
+        }
+    }
+
+    private static void validateQuestLinks(CampaignManifestV2.QuestDto q, String qPath,
+                                           List<CampaignImportProblem> problems) {
+        if (q.links() == null) return;
+        int giverCount = 0;
+        for (int li = 0; li < q.links().size(); li++) {
+            var link = q.links().get(li);
+            String path = qPath + "/links/" + li;
+            if ("GIVER".equals(link.role())) {
+                giverCount++;
+                if (link.targetRef() == null) {
+                    error(problems, "INVALID_GIVER", path + "/targetRef",
+                            "GIVER link requires a target reference");
+                } else {
+                    CampaignContentType type = link.targetRef().type();
+                    if (type != NOTE && type != CampaignContentType.STATBLOCK) {
+                        error(problems, "INVALID_GIVER", path + "/targetRef",
+                                "GIVER must target a NOTE or STATBLOCK");
+                    }
+                }
+            } else if (link.targetRef() != null) {
+                CampaignContentType expected = expectedQuestLinkType(link.role());
+                if (expected != null) {
+                    requireRefType(link.targetRef(), expected, path + "/targetRef", problems);
+                }
+            }
+        }
+        if (giverCount > 1) {
+            error(problems, "MULTIPLE_GIVERS", qPath + "/links",
+                    "A quest may have at most one GIVER link");
+        }
+    }
+
+    private static CampaignContentType expectedQuestLinkType(String role) {
+        if (role == null) return null;
+        return switch (role) {
+            case "HANDOUT" -> HANDOUT;
+            case "RULE" -> CampaignContentType.RULE;
+            case "RELATED_SCENE" -> SCENE;
+            case "NPC", "LOCATION", "FACTION" -> NOTE;
+            case "TIMELINE_EVENT" -> CampaignContentType.TIMELINE_EVENT;
+            default -> null; // REFERENCE, REWARD: flexible
+        };
+    }
+
+    private static void validateQuestObjectiveDependencies(CampaignManifestV2.QuestDto q, String qPath,
+                                                           Map<String, String> objectiveToQuest,
+                                                           List<CampaignImportProblem> problems) {
+        if (q.objectives() == null) return;
+        Set<String> questObjectiveKeys = new HashSet<>();
+        for (var o : q.objectives()) {
+            questObjectiveKeys.add(o.key());
+        }
+
+        // edge list for cycle detection: objective key -> set of prerequisite keys
+        Map<String, Set<String>> edges = new java.util.HashMap<>();
+        Set<String> edgePairs = new HashSet<>();
+
+        for (int oi = 0; oi < q.objectives().size(); oi++) {
+            var o = q.objectives().get(oi);
+            String oPath = qPath + "/objectives/" + oi;
+            List<ContentReference> prereqs = o.prerequisiteRefs();
+            boolean hasPrereqs = prereqs != null && !prereqs.isEmpty();
+
+            if (hasPrereqs && (o.completionMode() == null || o.completionMode().isBlank())) {
+                error(problems, "INVALID_COMPLETION_MODE", oPath + "/completionMode",
+                        "Objectives with prerequisites require a completionMode (ALL or ANY)");
+            }
+            if (!hasPrereqs) {
+                continue;
+            }
+
+            Set<String> prereqKeys = edges.computeIfAbsent(o.key(), k -> new HashSet<>());
+            for (int pi = 0; pi < prereqs.size(); pi++) {
+                ContentReference ref = prereqs.get(pi);
+                String pPath = oPath + "/prerequisiteRefs/" + pi;
+                if (ref == null) continue;
+                if (ref.type() != OBJECTIVE) {
+                    error(problems, "INVALID_REFERENCE_TYPE", pPath,
+                            "Objective prerequisites must reference type OBJECTIVE");
+                    continue;
+                }
+                String prereqKey = ref.key();
+                if (o.key().equals(prereqKey)) {
+                    error(problems, "SELF_DEPENDENCY", pPath,
+                            "An objective cannot depend on itself");
+                    continue;
+                }
+                String pair = o.key() + "->" + prereqKey;
+                if (!edgePairs.add(pair)) {
+                    error(problems, "DUPLICATE_DEPENDENCY", pPath,
+                            "Duplicate dependency edge");
+                    continue;
+                }
+                String ownerQuest = objectiveToQuest.get(prereqKey);
+                if (ownerQuest != null && !ownerQuest.equals(q.key())) {
+                    error(problems, "CROSS_QUEST_DEPENDENCY", pPath,
+                            "Objective dependencies must stay within the same quest");
+                    continue;
+                }
+                if (ownerQuest == null && !questObjectiveKeys.contains(prereqKey)) {
+                    // unresolved is already reported by validateReferences; skip graph edge
+                    continue;
+                }
+                prereqKeys.add(prereqKey);
+            }
+        }
+
+        // Cycle detection over this quest's graph (edges point to prerequisites)
+        for (String start : edges.keySet()) {
+            Set<String> visiting = new HashSet<>();
+            Set<String> visited = new HashSet<>();
+            if (hasCycle(start, edges, visiting, visited)) {
+                error(problems, "DEPENDENCY_CYCLE", qPath + "/objectives",
+                        "Objective dependency graph contains a cycle involving " + start);
+                break;
+            }
+        }
+    }
+
+    /** DFS cycle detection where edges map node -> prerequisites (outgoing edges). */
+    private static boolean hasCycle(String node, Map<String, Set<String>> edges,
+                                    Set<String> visiting, Set<String> visited) {
+        if (visiting.contains(node)) return true;
+        if (visited.contains(node)) return false;
+        visiting.add(node);
+        for (String next : edges.getOrDefault(node, Set.of())) {
+            if (hasCycle(next, edges, visiting, visited)) return true;
+        }
+        visiting.remove(node);
+        visited.add(node);
+        return false;
     }
 
     private void validateCurrentSceneRef(CampaignManifestV2 m, Map<CampaignContentType, Set<String>> keys,

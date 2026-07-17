@@ -133,9 +133,14 @@ public class SessionApiController {
         if (!isDmUser()) {
             throw new NotFoundException("Objective not found");
         }
-        QuestObjective objective = questService.setObjectiveStatus(campaignId, objectiveId, newStatus);
-        return new ObjectiveStatusResult(objective.getId(), objective.getStatus().name(),
-                "objective-" + objective.getId());
+        QuestService.ObjectiveStatusUpdate update =
+                questService.setObjectiveStatus(campaignId, objectiveId, newStatus);
+        String sessionChangeId = update.sessionChangeId() == null
+                ? null
+                : update.sessionChangeId().toString();
+        return new ObjectiveStatusResult(update.objective().getId(),
+                update.objective().getStatus().name(),
+                sessionChangeId);
     }
 
     private boolean isDmUser() {

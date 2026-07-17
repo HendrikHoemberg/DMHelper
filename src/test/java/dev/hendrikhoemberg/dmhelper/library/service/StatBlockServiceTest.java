@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.UUID;
 
@@ -18,6 +19,8 @@ import static org.assertj.core.api.Assertions.*;
 @DataJpaTest
 @Import({StatBlockService.class, SceneRefCleaner.class})
 class StatBlockServiceTest {
+
+    @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
 
     @Autowired
     private StatBlockRepository repository;

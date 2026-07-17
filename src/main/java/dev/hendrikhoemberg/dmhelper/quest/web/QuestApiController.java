@@ -56,8 +56,13 @@ public class QuestApiController {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid status: " + request.status());
         }
-        QuestObjective objective = questService.setObjectiveStatus(campaignId, objectiveId, newStatus);
-        return new ObjectiveStatusResult(objective.getId(), objective.getStatus().name(),
-                "objective-" + objective.getId());
+        QuestService.ObjectiveStatusUpdate update =
+                questService.setObjectiveStatus(campaignId, objectiveId, newStatus);
+        String sessionChangeId = update.sessionChangeId() == null
+                ? null
+                : update.sessionChangeId().toString();
+        return new ObjectiveStatusResult(update.objective().getId(),
+                update.objective().getStatus().name(),
+                sessionChangeId);
     }
 }

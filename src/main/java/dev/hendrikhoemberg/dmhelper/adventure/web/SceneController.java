@@ -97,8 +97,20 @@ public class SceneController {
                               @RequestParam String title,
                               @RequestParam(required = false) String sceneKey,
                               @RequestParam(required = false) String body,
+                              @RequestParam(required = false) String summary,
+                              @RequestParam(required = false) String sourceLocator,
+                              @RequestParam(required = false) String tags,
+                              @RequestParam(required = false) String mapRegionKey,
                               Model model) {
         Scene scene = adventureService.updateScene(id, title, sceneKey, body);
+        try {
+            structuredService.updateMetadata(campaignId, id,
+                    new SceneStructuredContentService.SceneMetadataCommand(
+                            summary, sourceLocator, tags, mapRegionKey));
+            scene = adventureService.findSceneById(id);
+        } catch (IllegalArgumentException | NotFoundException e) {
+            model.addAttribute("error", e.getMessage());
+        }
         model.addAttribute("scene", scene);
         model.addAttribute("adventure", adventureService.findAdventureById(adventureId));
         model.addAttribute("campaignId", campaignId);
@@ -473,7 +485,9 @@ public class SceneController {
                           @RequestParam SceneLinkRole role,
                           @RequestParam SceneLinkTargetScope targetScope,
                           @RequestParam String targetType,
-                          @RequestParam UUID targetId,
+                          @RequestParam(required = false) UUID targetId,
+                          @RequestParam(required = false) String catalogRuleset,
+                          @RequestParam(required = false) String catalogSourceKey,
                           @RequestParam(required = false) String displayText,
                           @RequestParam(required = false) String condition,
                           @RequestParam(defaultValue = "0") int sortOrder,
@@ -482,7 +496,7 @@ public class SceneController {
             structuredService.addLink(campaignId, sceneId,
                     new SceneStructuredContentService.SceneLinkCommand(
                             role, targetScope, targetType, targetId,
-                            null, null, displayText, condition, sortOrder));
+                            catalogRuleset, catalogSourceKey, displayText, condition, sortOrder));
         } catch (IllegalArgumentException | NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }

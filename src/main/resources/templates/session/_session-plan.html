@@ -34,25 +34,40 @@
   </div>
 </div>
 <div class="session-plan-inner" th:if="${workspace.sessionPlan == null}">
+  <p style="margin: 0 var(--space-md); color: var(--color-text-muted);">No session plan yet. Create one from a note.</p>
+</div>
+<!-- Quest progress is always available alongside an optional session plan -->
+<div class="session-plan-inner quest-progress-panel" data-quest-progress>
   <h3 style="margin: 0 var(--space-md); font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-text-muted);">Quest Progress</h3>
   <div th:if="${workspace.questProgressViews != null and !workspace.questProgressViews.isEmpty()}" class="quest-progress-list">
-    <div th:each="qpv : ${workspace.questProgressViews}" class="quest-progress-card u-mb-sm">
+    <div th:each="qpv : ${workspace.questProgressViews}" class="quest-progress-card u-mb-sm"
+         th:attr="data-quest-id=${qpv.quest.id}">
       <div class="u-flex u-gap-xs u-items-center">
         <span class="badge" th:text="${qpv.quest.status.name()}">STATUS</span>
         <strong th:text="${qpv.quest.title}">Quest Title</strong>
       </div>
       <div th:if="${qpv.objectives != null and !qpv.objectives.isEmpty()}" class="objective-list u-mt-xs">
-        <div th:each="obj : ${qpv.objectives}" class="objective-row u-text-sm">
+        <div th:each="obj : ${qpv.objectives}" class="objective-row u-text-sm"
+             th:attr="data-objective-id=${obj.id}">
           <span class="badge"
                 th:classappend="${obj.status.name() == 'COMPLETED'} ? 'badge-success' : (${obj.status.name() == 'ACTIVE'} ? 'badge-warning' : '')"
                 th:text="${obj.status.name()}">STATUS</span>
           <span th:text="${obj.title}">Objective</span>
+          <select class="form-input objective-status-select"
+                  th:attr="data-objective-id=${obj.id}"
+                  @change="setObjectiveStatus($el.dataset.objectiveId, $el.value)">
+            <option value="NOT_STARTED" th:selected="${obj.status.name() == 'NOT_STARTED'}">Not started</option>
+            <option value="ACTIVE" th:selected="${obj.status.name() == 'ACTIVE'}">Active</option>
+            <option value="COMPLETED" th:selected="${obj.status.name() == 'COMPLETED'}">Completed</option>
+            <option value="FAILED" th:selected="${obj.status.name() == 'FAILED'}">Failed</option>
+            <option value="SKIPPED" th:selected="${obj.status.name() == 'SKIPPED'}">Skipped</option>
+          </select>
         </div>
       </div>
     </div>
   </div>
   <div th:if="${workspace.questProgressViews == null or workspace.questProgressViews.isEmpty()}" class="empty-state u-mt-sm">
-    <p>No session plan yet. Create one from a note.</p>
+    <p style="margin: 0 var(--space-md); color: var(--color-text-muted);">No quests yet.</p>
   </div>
 </div>
 </th:block>

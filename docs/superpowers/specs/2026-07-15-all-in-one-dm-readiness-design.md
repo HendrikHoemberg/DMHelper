@@ -994,7 +994,7 @@ Recommended sequence:
 | 3 | Package v2 foundation | `IMPLEMENTED` |
 | 4 | Complete round-trip | `IMPLEMENTED` |
 | 5 | Session cockpit | `IMPLEMENTED` |
-| 6 | Structured adventure/quest model | `PLANNED` |
+| 6 | Structured adventure/quest model | `IMPLEMENTED` |
 | 7 | Custom compendium expansion | `PLANNED` |
 | 8 | Character-sheet completion | `PLANNED` |
 | 9 | Encounter and map depth | `PLANNED` |

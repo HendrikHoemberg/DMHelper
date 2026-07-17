@@ -89,7 +89,7 @@ class SessionApiControllerTest {
         objective.setId(objectiveId);
         objective.setStatus(QuestObjectiveStatus.COMPLETED);
         when(questService.setObjectiveStatus(campaignId, objectiveId, QuestObjectiveStatus.COMPLETED))
-                .thenReturn(objective);
+                .thenReturn(new QuestService.ObjectiveStatusUpdate(objective, UUID.randomUUID()));
 
         mvc.perform(put("/api/v1/campaigns/{id}/session/quests/objectives/{oid}/status", campaignId, objectiveId)
                         .contentType("application/json")

@@ -63,11 +63,16 @@ class SessionActivityRecorderTest {
     void recordsOneRowPerStatusChange() {
         when(clock.instant()).thenReturn(Instant.parse("2026-07-16T12:00:00Z"));
         when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(runningSession));
-        when(objectiveChanges.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(objectiveChanges.save(any())).thenAnswer(inv -> {
+            SessionObjectiveChange c = inv.getArgument(0);
+            c.setId(UUID.randomUUID());
+            return c;
+        });
 
-        recorder.recordObjectiveChange(campaignId, objective.getId(),
+        Optional<UUID> changeId = recorder.recordObjectiveChange(campaignId, objective.getId(),
                 QuestObjectiveStatus.NOT_STARTED, QuestObjectiveStatus.ACTIVE);
 
+        assertThat(changeId).isPresent();
         verify(objectiveChanges).save(changeCaptor.capture());
         SessionObjectiveChange saved = changeCaptor.getValue();
         assertThat(saved.getSession().getId()).isEqualTo(runningSession.getId());
@@ -75,13 +80,15 @@ class SessionActivityRecorderTest {
         assertThat(saved.getPreviousStatus()).isEqualTo(QuestObjectiveStatus.NOT_STARTED);
         assertThat(saved.getNewStatus()).isEqualTo(QuestObjectiveStatus.ACTIVE);
         assertThat(saved.getChangedAt()).isEqualTo(Instant.parse("2026-07-16T12:00:00Z"));
+        assertThat(changeId.get()).isEqualTo(saved.getId());
     }
 
     @Test
     void doesNotRecordWhenStatusIsUnchanged() {
-        recorder.recordObjectiveChange(campaignId, objective.getId(),
+        Optional<UUID> changeId = recorder.recordObjectiveChange(campaignId, objective.getId(),
                 QuestObjectiveStatus.ACTIVE, QuestObjectiveStatus.ACTIVE);
 
+        assertThat(changeId).isEmpty();
         verify(objectiveChanges, never()).save(any());
     }
 
@@ -89,9 +96,10 @@ class SessionActivityRecorderTest {
     void doesNotRecordWhenNoSessionIsRunning() {
         when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(idleSession));
 
-        recorder.recordObjectiveChange(campaignId, objective.getId(),
+        Optional<UUID> changeId = recorder.recordObjectiveChange(campaignId, objective.getId(),
                 QuestObjectiveStatus.NOT_STARTED, QuestObjectiveStatus.ACTIVE);
 
+        assertThat(changeId).isEmpty();
         verify(objectiveChanges, never()).save(any());
     }
 
@@ -99,10 +107,16 @@ class SessionActivityRecorderTest {
     void allowsNullablePreviousStatusOnFirstChange() {
         when(clock.instant()).thenReturn(Instant.now());
         when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(runningSession));
-        when(objectiveChanges.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(objectiveChanges.save(any())).thenAnswer(inv -> {
+            SessionObjectiveChange c = inv.getArgument(0);
+            c.setId(UUID.randomUUID());
+            return c;
+        });
 
-        recorder.recordObjectiveChange(campaignId, objective.getId(), null, QuestObjectiveStatus.NOT_STARTED);
+        Optional<UUID> changeId = recorder.recordObjectiveChange(campaignId, objective.getId(),
+                null, QuestObjectiveStatus.NOT_STARTED);
 
+        assertThat(changeId).isPresent();
         verify(objectiveChanges).save(changeCaptor.capture());
         assertThat(changeCaptor.getValue().getPreviousStatus()).isNull();
         assertThat(changeCaptor.getValue().getNewStatus()).isEqualTo(QuestObjectiveStatus.NOT_STARTED);
@@ -112,9 +126,10 @@ class SessionActivityRecorderTest {
     void doesNotRecordWhenNoSessionExists() {
         when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.empty());
 
-        recorder.recordObjectiveChange(campaignId, objective.getId(),
+        Optional<UUID> changeId = recorder.recordObjectiveChange(campaignId, objective.getId(),
                 QuestObjectiveStatus.NOT_STARTED, QuestObjectiveStatus.ACTIVE);
 
+        assertThat(changeId).isEmpty();
         verify(objectiveChanges, never()).save(any());
     }
 }

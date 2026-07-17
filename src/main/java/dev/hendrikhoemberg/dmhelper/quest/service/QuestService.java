@@ -129,7 +129,9 @@ public class QuestService {
         packageKeys.deleteBindings(campaignId, CampaignContentType.OBJECTIVE, List.of(objectiveId));
     }
 
-    public QuestObjective setObjectiveStatus(UUID campaignId, UUID objectiveId, QuestObjectiveStatus nextStatus) {
+    public record ObjectiveStatusUpdate(QuestObjective objective, UUID sessionChangeId) {}
+
+    public ObjectiveStatusUpdate setObjectiveStatus(UUID campaignId, UUID objectiveId, QuestObjectiveStatus nextStatus) {
         QuestObjective objective = objectiveRepository.findById(objectiveId)
                 .orElseThrow(() -> new NotFoundException("Objective not found"));
         if (!objective.getQuest().getCampaign().getId().equals(campaignId)) {
@@ -137,12 +139,14 @@ public class QuestService {
         }
         QuestObjectiveStatus previousStatus = objective.getStatus();
         if (previousStatus == nextStatus) {
-            return objective;
+            return new ObjectiveStatusUpdate(objective, null);
         }
         objective.setStatus(nextStatus);
         QuestObjective saved = objectiveRepository.save(objective);
-        activityRecorder.recordObjectiveChange(campaignId, objectiveId, previousStatus, nextStatus);
-        return saved;
+        UUID sessionChangeId = activityRecorder
+                .recordObjectiveChange(campaignId, objectiveId, previousStatus, nextStatus)
+                .orElse(null);
+        return new ObjectiveStatusUpdate(saved, sessionChangeId);
     }
 
     // ---- Dependencies ----
@@ -180,13 +184,7 @@ public class QuestService {
 
     public QuestLink addLink(UUID campaignId, UUID questId, QuestLinkCommand cmd) {
         Quest quest = findQuestInCampaign(campaignId, questId);
-        if (cmd.role() == QuestLinkRole.GIVER) {
-            boolean hasGiver = quest.getLinks().stream()
-                    .anyMatch(l -> l.getRole() == QuestLinkRole.GIVER);
-            if (hasGiver) {
-                throw new IllegalArgumentException("Quest already has a GIVER link");
-            }
-        }
+        validateGiverContract(quest, null, cmd);
         QuestLink link = new QuestLink();
         link.setQuest(quest);
         applyLinkCommand(link, cmd);
@@ -197,8 +195,25 @@ public class QuestService {
     public QuestLink updateLink(UUID campaignId, UUID questId, UUID linkId, QuestLinkCommand cmd) {
         Quest quest = findQuestInCampaign(campaignId, questId);
         QuestLink link = findLinkInQuest(quest, linkId);
+        validateGiverContract(quest, linkId, cmd);
         applyLinkCommand(link, cmd);
         return linkRepository.save(link);
+    }
+
+    private void validateGiverContract(Quest quest, UUID updatingLinkId, QuestLinkCommand cmd) {
+        if (cmd.role() != QuestLinkRole.GIVER) {
+            return;
+        }
+        String targetType = cmd.targetType();
+        if (targetType == null || !(targetType.equals("NOTE") || targetType.equals("STATBLOCK"))) {
+            throw new IllegalArgumentException("GIVER link must target a NOTE or STATBLOCK");
+        }
+        boolean hasOtherGiver = quest.getLinks().stream()
+                .anyMatch(l -> l.getRole() == QuestLinkRole.GIVER
+                        && (updatingLinkId == null || !updatingLinkId.equals(l.getId())));
+        if (hasOtherGiver) {
+            throw new IllegalArgumentException("Quest already has a GIVER link");
+        }
     }
 
     public void deleteLink(UUID campaignId, UUID questId, UUID linkId) {

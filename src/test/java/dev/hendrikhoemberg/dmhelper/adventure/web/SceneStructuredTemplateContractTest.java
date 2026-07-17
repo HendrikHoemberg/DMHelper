@@ -80,6 +80,28 @@ class SceneStructuredTemplateContractTest {
         assertThat(form).contains("mapId", "encounterId", "statBlockId", "handoutId");
     }
 
+    @Test
+    void sceneFormExposesMetadataAndSceneNotesLabel() throws IOException {
+        String form = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-form.html"));
+        assertThat(form).contains("Scene notes", "name=\"summary\"", "name=\"sourceLocator\"",
+                "name=\"tags\"", "name=\"mapRegionKey\"");
+    }
+
+    @Test
+    void actionRailHasCreateFormsForStructuredChildren() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+        assertThat(html).contains("data-create=\"section\"", "data-create=\"check\"",
+                "data-create=\"participant\"", "data-create=\"transition\"", "data-create=\"link\"");
+        assertThat(html).contains("data-structured-metadata", "name=\"mapRegionKey\"");
+    }
+
+    @Test
+    void scenePanelLabelsBodyAsSceneNotes() throws IOException {
+        String panel = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-panel.html"));
+        assertThat(panel).contains("Scene notes");
+        assertThat(panel).doesNotContain(">Read Aloud</summary>");
+    }
+
     private static int count(String s, String substring) {
         int count = 0;
         int idx = 0;

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 
@@ -27,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.*;
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
         dev.hendrikhoemberg.dmhelper.common.service.ContentDestinationRegistry.class})
 class NoteServiceTest {
+
+    @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
 
     @Autowired private NoteRepository noteRepository;
     @Autowired private NoteLinkRepository noteLinkRepository;

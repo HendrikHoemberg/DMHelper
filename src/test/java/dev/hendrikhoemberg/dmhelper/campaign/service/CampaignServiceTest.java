@@ -39,6 +39,8 @@ import static org.mockito.Mockito.*;
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
 class CampaignServiceTest {
 
+    @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
+
     @Autowired
     private CampaignRepository repository;
 

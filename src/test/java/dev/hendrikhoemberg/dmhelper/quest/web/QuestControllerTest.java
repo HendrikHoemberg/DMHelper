@@ -134,7 +134,7 @@ class QuestControllerTest {
         when(questService.getQuest(campaignId, questId)).thenReturn(quest);
         when(questService.getQuests(campaignId)).thenReturn(List.of(quest));
         when(questService.setObjectiveStatus(campaignId, objective.getId(), QuestObjectiveStatus.COMPLETED))
-                .thenReturn(objective);
+                .thenReturn(new QuestService.ObjectiveStatusUpdate(objective, null));
 
         mockMvc.perform(post("/campaigns/{cid}/quests/objectives/{oid}/status", campaignId, objective.getId())
                         .param("status", "COMPLETED"))

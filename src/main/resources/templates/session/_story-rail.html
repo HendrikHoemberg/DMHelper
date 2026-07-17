@@ -9,6 +9,8 @@
         <span class="scene-status-badge" th:text="${workspace.currentScene.status}">UNVISITED</span>
         <h4 th:text="${workspace.currentScene.title}">Scene Title</h4>
         <span class="scene-key" th:if="${workspace.currentScene.sceneKey}" th:text="${workspace.currentScene.sceneKey}">key</span>
+        <div class="scene-summary" th:if="${workspace.currentScene.summary}"
+             th:text="${workspace.currentScene.summary}">Scene summary</div>
         <div class="scene-body" th:if="${workspace.currentScene.body}" th:text="${workspace.currentScene.body}">Scene notes</div>
         <div class="scene-editorial">
           <button class="btn btn-ghost" th:if="${workspace.previousScene != null}"
@@ -61,6 +63,19 @@
             <span class="badge" th:text="${section.kind.name()}">SECTION</span>
             <strong th:text="${section.label}">Label</strong>
             <p class="u-text-sm" th:text="${section.body}">Body</p>
+          </div>
+          <!-- Checks (DM-only) -->
+          <div th:if="${workspace.structuredSceneView.checks != null and !workspace.structuredSceneView.checks.isEmpty()}"
+               class="scene-checks u-mt-sm">
+            <h5 class="u-text-sm">Checks</h5>
+            <div th:each="check : ${workspace.structuredSceneView.checks}" class="check-row u-mb-xs">
+              <strong th:text="${check.label}">Check</strong>
+              <span class="badge" th:if="${check.dc != null}" th:text="|DC ${check.dc}|">DC</span>
+              <span class="badge" th:if="${check.visibility != null}" th:text="${check.visibility.name()}">VIS</span>
+              <span th:if="${check.ability}" class="u-text-xs" th:text="|${check.ability} ${check.skill}|">Ability</span>
+              <div th:if="${check.success}" class="u-text-xs">Success: <span th:text="${check.success}"></span></div>
+              <div th:if="${check.failure}" class="u-text-xs">Failure: <span th:text="${check.failure}"></span></div>
+            </div>
           </div>
         </div>
         <!-- Outgoing CHOICE transitions as actionable buttons -->

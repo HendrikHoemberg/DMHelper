@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -47,13 +48,19 @@ public class SessionActivityRecorder {
                         }));
     }
 
-    public void recordObjectiveChange(UUID campaignId, UUID objectiveId,
+    /**
+     * Records an objective status change when a session is running.
+     *
+     * @return the generated session-change id, or empty when no row is written
+     *         (status unchanged, no session, or session not running)
+     */
+    public Optional<UUID> recordObjectiveChange(UUID campaignId, UUID objectiveId,
                                        QuestObjectiveStatus previousStatus,
                                        QuestObjectiveStatus newStatus) {
-        if (previousStatus == newStatus) return;
-        sessions.findByCampaignId(campaignId)
+        if (previousStatus == newStatus) return Optional.empty();
+        return sessions.findByCampaignId(campaignId)
                 .filter(session -> session.getStatus() == CampaignSession.Status.RUNNING)
-                .ifPresent(session -> {
+                .map(session -> {
                     SessionObjectiveChange change = new SessionObjectiveChange();
                     change.setSession(session);
                     QuestObjective objective = new QuestObjective();
@@ -62,7 +69,7 @@ public class SessionActivityRecorder {
                     change.setPreviousStatus(previousStatus);
                     change.setNewStatus(newStatus);
                     change.setChangedAt(clock.instant());
-                    objectiveChanges.save(change);
+                    return objectiveChanges.save(change).getId();
                 });
     }
 

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.dao.OptimisticLockingFailureException;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -22,6 +23,8 @@ import static org.assertj.core.api.Assertions.*;
 @Import({GameMapService.class, SceneRefCleaner.class,
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
 class GameMapServiceTest {
+
+    @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
 
     @Autowired private GameMapService service;
 

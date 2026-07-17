@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,6 +21,8 @@ import static org.assertj.core.api.Assertions.*;
 @Import({TokenService.class, GameMapService.class, SceneRefCleaner.class,
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
 class TokenServiceTest {
+
+    @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
 
     @Autowired private TokenService tokenService;
     @Autowired private GameMapService mapService;

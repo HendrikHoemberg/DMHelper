@@ -25,6 +25,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 import java.util.UUID;
@@ -35,6 +36,8 @@ import static org.assertj.core.api.Assertions.*;
 @Import({EncounterService.class, CombatDifficultyCalculator.class, GameMapService.class, DiceEngine.class, SceneRefCleaner.class,
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class, EncounterServiceTest.MockConfig.class})
 class EncounterServiceTest {
+
+    @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
 
     @TestConfiguration
     static class MockConfig {

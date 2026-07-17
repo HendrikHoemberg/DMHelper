@@ -240,9 +240,15 @@ class QuestServiceTest {
         when(objectiveRepository.findById(objId)).thenReturn(Optional.of(obj));
         when(objectiveRepository.save(obj)).thenReturn(obj);
 
-        QuestObjective result = service.setObjectiveStatus(campaignId, objId, QuestObjectiveStatus.ACTIVE);
+        when(activityRecorder.recordObjectiveChange(campaignId, objId,
+                QuestObjectiveStatus.NOT_STARTED, QuestObjectiveStatus.ACTIVE))
+                .thenReturn(Optional.of(UUID.randomUUID()));
 
-        assertThat(result.getStatus()).isEqualTo(QuestObjectiveStatus.ACTIVE);
+        QuestService.ObjectiveStatusUpdate result =
+                service.setObjectiveStatus(campaignId, objId, QuestObjectiveStatus.ACTIVE);
+
+        assertThat(result.objective().getStatus()).isEqualTo(QuestObjectiveStatus.ACTIVE);
+        assertThat(result.sessionChangeId()).isNotNull();
         verify(activityRecorder).recordObjectiveChange(campaignId, objId,
                 QuestObjectiveStatus.NOT_STARTED, QuestObjectiveStatus.ACTIVE);
     }
@@ -258,8 +264,10 @@ class QuestServiceTest {
 
         when(objectiveRepository.findById(objId)).thenReturn(Optional.of(obj));
 
-        service.setObjectiveStatus(campaignId, objId, QuestObjectiveStatus.ACTIVE);
+        QuestService.ObjectiveStatusUpdate result =
+                service.setObjectiveStatus(campaignId, objId, QuestObjectiveStatus.ACTIVE);
 
+        assertThat(result.sessionChangeId()).isNull();
         verify(objectiveRepository, never()).save(any());
         verify(activityRecorder, never()).recordObjectiveChange(any(), any(), any(), any());
     }
@@ -496,6 +504,60 @@ class QuestServiceTest {
     private QuestService.QuestLinkCommand giverCmd(UUID targetId) {
         return new QuestService.QuestLinkCommand(QuestLinkRole.GIVER,
                 SceneLinkTargetScope.PACKAGE,
-                "NPC", targetId, null, null, "Giver", null, 0);
+                "NOTE", targetId, null, null, "Giver", null, 0);
+    }
+
+    @Test
+    void rejectsGiverWithInvalidTargetType() {
+        when(questRepository.findByIdAndCampaignId(questId, campaignId)).thenReturn(Optional.of(quest));
+        var cmd = new QuestService.QuestLinkCommand(QuestLinkRole.GIVER,
+                SceneLinkTargetScope.PACKAGE,
+                "PARTY_MEMBER", UUID.randomUUID(), null, null, "Bad", null, 0);
+        assertThatThrownBy(() -> service.addLink(campaignId, questId, cmd))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("NOTE or STATBLOCK");
+    }
+
+    @Test
+    void rejectsUpdateThatCreatesSecondGiver() {
+        UUID existingId = UUID.randomUUID();
+        QuestLink existing = new QuestLink();
+        existing.setId(existingId);
+        existing.setQuest(quest);
+        existing.setRole(QuestLinkRole.GIVER);
+        existing.setTargetType("NOTE");
+        quest.getLinks().add(existing);
+
+        UUID otherId = UUID.randomUUID();
+        QuestLink other = new QuestLink();
+        other.setId(otherId);
+        other.setQuest(quest);
+        other.setRole(QuestLinkRole.REFERENCE);
+        quest.getLinks().add(other);
+
+        when(questRepository.findByIdAndCampaignId(questId, campaignId)).thenReturn(Optional.of(quest));
+        var cmd = giverCmd(UUID.randomUUID());
+        assertThatThrownBy(() -> service.updateLink(campaignId, questId, otherId, cmd))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("already has a GIVER");
+    }
+
+    @Test
+    void rejectsUpdateGiverWithInvalidTargetType() {
+        UUID existingId = UUID.randomUUID();
+        QuestLink existing = new QuestLink();
+        existing.setId(existingId);
+        existing.setQuest(quest);
+        existing.setRole(QuestLinkRole.GIVER);
+        existing.setTargetType("NOTE");
+        quest.getLinks().add(existing);
+
+        when(questRepository.findByIdAndCampaignId(questId, campaignId)).thenReturn(Optional.of(quest));
+        var cmd = new QuestService.QuestLinkCommand(QuestLinkRole.GIVER,
+                SceneLinkTargetScope.PACKAGE,
+                "PARTY_MEMBER", UUID.randomUUID(), null, null, "Bad", null, 0);
+        assertThatThrownBy(() -> service.updateLink(campaignId, questId, existingId, cmd))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("NOTE or STATBLOCK");
     }
 }

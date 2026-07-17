@@ -17,14 +17,34 @@
              th:value="${scene.sceneKey}" class="form-input"/>
     </div>
     <div class="form-group">
-      <label class="form-label">Body (Markdown)</label>
-      <textarea name="body" placeholder="Scene description in markdown"
+      <label class="form-label">Scene notes (Markdown)</label>
+      <textarea name="body" placeholder="Scene notes in markdown (not structured read-aloud)"
                 th:text="${scene.body}" class="form-input" rows="12"
                 hx-trigger="keyup changed delay:2s"
                 th:hx-put="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
                 hx-target="#sceneBody"
                 hx-swap="innerHTML"
-                hx-include="[name='title'], [name='sceneKey']"></textarea>
+                hx-include="[name='title'], [name='sceneKey'], [name='summary'], [name='sourceLocator'], [name='tags'], [name='mapRegionKey']"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Summary</label>
+      <textarea name="summary" placeholder="Short scene summary" class="form-input" rows="2"
+                th:text="${scene.summary}"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Source Locator</label>
+      <input type="text" name="sourceLocator" placeholder="e.g. book:42"
+             th:value="${scene.sourceLocator}" class="form-input"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tags</label>
+      <input type="text" name="tags" placeholder="comma-separated tags"
+             th:value="${scene.tags}" class="form-input"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Map Region Key</label>
+      <input type="text" name="mapRegionKey" placeholder="optional map region hint"
+             th:value="${scene.mapRegionKey}" class="form-input"/>
     </div>
     <div class="form-group">
       <label class="form-label">Linked Map</label>

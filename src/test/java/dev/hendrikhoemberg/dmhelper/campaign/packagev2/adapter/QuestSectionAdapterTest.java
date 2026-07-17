@@ -43,7 +43,8 @@ class QuestSectionAdapterTest {
 
     @BeforeEach
     void setUp() {
-        adapter = new QuestSectionAdapter(questRepo, objectiveRepo, linkRepo);
+        adapter = new QuestSectionAdapter(questRepo, objectiveRepo, linkRepo,
+                new dev.hendrikhoemberg.dmhelper.quest.service.QuestObjectiveDependencyValidator());
         campaign = new Campaign();
         campaignId = UUID.randomUUID();
         campaign.setId(campaignId);
