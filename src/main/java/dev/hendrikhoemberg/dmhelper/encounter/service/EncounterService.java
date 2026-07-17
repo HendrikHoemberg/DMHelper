@@ -297,7 +297,7 @@ public class EncounterService {
                     .orElseThrow(() -> new NotFoundException("Party member not found: " + req.partyMemberId()));
             name = pm.getCharacterName();
             maxHp = pm.getMaxHp();
-            currentHp = maxHp;
+            currentHp = pm.getCurrentHp();
             kind = "PC";
             c.setPartyMember(pm);
         }
@@ -366,7 +366,9 @@ public class EncounterService {
         if (req.legendaryResistancesUsed() != null) c.setLegendaryResistancesUsed(req.legendaryResistancesUsed());
         if (req.legendaryResistancesMax() != null) c.setLegendaryResistancesMax(req.legendaryResistancesMax());
         if (req.notes() != null) c.setNotes(req.notes());
-        return toDto(combatantRepo.save(c));
+        Combatant saved = combatantRepo.save(c);
+        syncCombatantToPartyMember(saved);
+        return toDto(saved);
     }
 
     public List<CombatantDto> prefillFromMap(UUID encounterId, UUID mapId) {
@@ -384,12 +386,15 @@ public class EncounterService {
             c.setEncounter(e);
             c.setName(token.getName());
             c.setKind(token.getKind());
-            c.setMaxHp(token.getMaxHp() != null ? token.getMaxHp() : 10);
-            c.setCurrentHp(token.getCurrentHp() != null ? token.getCurrentHp() : c.getMaxHp());
-            c.setToken(token);
             if (token.getPartyMember() != null) {
+                c.setMaxHp(token.getPartyMember().getMaxHp());
+                c.setCurrentHp(token.getPartyMember().getCurrentHp());
                 c.setPartyMember(token.getPartyMember());
+            } else {
+                c.setMaxHp(token.getMaxHp() != null ? token.getMaxHp() : 10);
+                c.setCurrentHp(token.getCurrentHp() != null ? token.getCurrentHp() : c.getMaxHp());
             }
+            c.setToken(token);
             c.setSortOrder((int) combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).size());
             combatantRepo.save(c);
         }
@@ -408,7 +413,7 @@ public class EncounterService {
             c.setName(pm.getCharacterName());
             c.setKind("PC");
             c.setMaxHp(pm.getMaxHp());
-            c.setCurrentHp(pm.getMaxHp());
+            c.setCurrentHp(pm.getCurrentHp());
             c.setPartyMember(pm);
             c.setSortOrder((int) combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).size());
             combatantRepo.save(c);
@@ -505,6 +510,7 @@ public class EncounterService {
             } catch (Exception e) { /* ignore */ }
         }
         Combatant saved = combatantRepo.save(c);
+        syncCombatantToPartyMember(saved);
         CombatLogEntry.EntryType type = amount < 0 ? CombatLogEntry.EntryType.DAMAGE : CombatLogEntry.EntryType.HEAL;
         try {
             String payload = JSON_MAPPER.writeValueAsString(Map.of("amount", amount));
@@ -523,6 +529,7 @@ public class EncounterService {
                 combatantId.toString(), "{}");
         }
         Combatant saved = combatantRepo.save(c);
+        syncCombatantToPartyMember(saved);
         try {
             String payload = JSON_MAPPER.writeValueAsString(Map.of(
                 "currentHp", saved.getCurrentHp(),
@@ -554,6 +561,7 @@ public class EncounterService {
             c.setConditionsJson(JSON_MAPPER.writeValueAsString(conditions));
         } catch (Exception e) { /* ignore */ }
         Combatant saved = combatantRepo.save(c);
+        syncCombatantToPartyMember(saved);
         CombatLogEntry.EntryType type = removed ? CombatLogEntry.EntryType.CONDITION_REMOVED : CombatLogEntry.EntryType.CONDITION_ADDED;
         try {
             String payload = JSON_MAPPER.writeValueAsString(Map.of("sourceKey", sourceKey, "durationRounds", durationRounds));
@@ -582,6 +590,7 @@ public class EncounterService {
                     c.setConditionsJson(JSON_MAPPER.writeValueAsString(updated));
                 } catch (Exception e) { /* ignore */ }
                 combatantRepo.save(c);
+                syncCombatantToPartyMember(c);
                 try {
                     String payload = JSON_MAPPER.writeValueAsString(Map.of(
                         "expiredKeys", expiredKeys,
@@ -601,6 +610,7 @@ public class EncounterService {
             c.setConditionsJson(JSON_MAPPER.writeValueAsString(conditions));
         } catch (Exception e) { /* ignore */ }
         Combatant saved = combatantRepo.save(c);
+        syncCombatantToPartyMember(saved);
         logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.CONDITION_REMOVED,
             combatantId.toString(), "{\"sourceKey\":\"" + sourceKey + "\"}");
         return toDto(saved);
@@ -794,6 +804,7 @@ public class EncounterService {
         Combatant c = findCombatantById(combatantId);
         c.setConcentratingOn(spellName != null && !spellName.isEmpty() ? spellName : null);
         Combatant saved = combatantRepo.save(c);
+        syncCombatantToPartyMember(saved);
         logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.CONCENTRATION_SET,
             combatantId.toString(), "{\"spellName\":\"" + (spellName != null ? spellName : "") + "\"}");
         return toDto(saved);
@@ -810,7 +821,9 @@ public class EncounterService {
             logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.CONCENTRATION_CHECK,
                 combatantId.toString(), "{\"passed\":true}");
         }
-        return toDto(combatantRepo.save(c));
+        Combatant saved = combatantRepo.save(c);
+        syncCombatantToPartyMember(saved);
+        return toDto(saved);
     }
 
     public List<RechargePrompt> checkRechargeAbilities(UUID combatantId) {
@@ -1379,6 +1392,16 @@ public class EncounterService {
                 }
             }
         }
+    }
+
+    private void syncCombatantToPartyMember(Combatant combatant) {
+        if (combatant.getPartyMember() == null) return;
+        PartyMember pm = combatant.getPartyMember();
+        pm.setCurrentHp(combatant.getCurrentHp());
+        pm.setTempHp(combatant.getTempHp());
+        pm.setConditionsJson(combatant.getConditionsJson());
+        pm.setConcentratingOn(combatant.getConcentratingOn());
+        partyRepo.save(pm);
     }
 
     Combatant findCombatantById(UUID id) {

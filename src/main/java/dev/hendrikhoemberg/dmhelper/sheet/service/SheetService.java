@@ -555,6 +555,9 @@ public class SheetService {
         PartyMember pm = sheet.getPartyMember();
         pm.setAc(derived.armorClass());
         pm.setMaxHp(derived.maxHp());
+        if (pm.getCurrentHp() > derived.maxHp()) {
+            pm.setCurrentHp(derived.maxHp());
+        }
         pm.setInitiativeBonus(derived.initiativeBonus());
         pm.setSpeed(derived.speed());
         pm.setPassivePerception(derived.passivePerception());
