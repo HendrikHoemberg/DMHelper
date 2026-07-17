@@ -997,7 +997,7 @@ Recommended sequence:
 | 6 | Structured adventure/quest model | `IMPLEMENTED` |
 | 7 | Custom compendium expansion | `IMPLEMENTED` |
 | 8 | Character-sheet completion | `IMPLEMENTED` |
-| 9 | Encounter and map depth | `PLANNED` |
+| 9 | Encounter and map depth | `IMPLEMENTED` |
 | 10 | Documentation/agent SDK release | `PLANNED` |
 | 11 | P3 expansion | `PLANNED` |
 

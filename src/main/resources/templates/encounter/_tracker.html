@@ -629,6 +629,8 @@
                 <h3 x-text="encounter?.name || 'Combat'"></h3>
                 <span>Round <strong class="round-counter" x-ref="roundCounter"
                                     x-text="encounter?.round || 0"></strong></span>
+                <span class="badge badge-warning" x-show="pendingWaves.length > 0"
+                      x-text="'(' + pendingWaves.length + ' wave' + (pendingWaves.length !== 1 ? 's' : '') + ' pending)'"></span>
                 <button class="btn btn-danger" style="padding: 2px 8px; font-size: 0.75rem;" @click="endEncounter()">End</button>
             </div>
 
