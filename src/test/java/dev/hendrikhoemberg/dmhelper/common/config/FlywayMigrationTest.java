@@ -6,6 +6,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -225,5 +227,21 @@ class FlywayMigrationTest {
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'ADVENTURE_SCENE' AND column_name = 'MAP_REGION_KEY'",
                 Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v12CreatesWorldGraphTables() {
+        Integer applied = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '12' AND \"success\" = TRUE",
+                Integer.class);
+        assertThat(applied).isEqualTo(1);
+
+        for (String table : List.of(
+                "WORLD_NPC", "WORLD_LOCATION", "FACTION", "WORLD_RELATIONSHIP", "FACTION_CLOCK")) {
+            Integer count = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?",
+                    Integer.class, table);
+            assertThat(count).as(table).isEqualTo(1);
+        }
     }
 }
