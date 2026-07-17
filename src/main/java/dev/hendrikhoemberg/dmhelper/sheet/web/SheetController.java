@@ -58,7 +58,7 @@ public class SheetController {
 
     @GetMapping("/sheets")
     public String overview(@PathVariable UUID campaignId, Model model) {
-        List<PartyMember> members = partyMemberRepo.findByCampaignIdAndActiveTrueOrderByCharacterNameAsc(campaignId);
+        List<PartyMember> members = partyMemberRepo.findByCampaignIdOrderByCharacterNameAscIdAsc(campaignId);
         model.addAttribute("members", members);
         model.addAttribute("campaignId", campaignId);
         return "sheet/overview";

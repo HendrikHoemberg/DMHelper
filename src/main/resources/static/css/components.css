@@ -39,6 +39,11 @@
   transform: scale(0.985) translateY(0);
 }
 
+.card .pm-checkbox {
+  grid-column: 1 / -1;
+  margin-bottom: var(--space-xs);
+}
+
 .card h3:not(.library-card__title) {
   font-size: var(--text-lg);
   margin-bottom: var(--space-xs);
@@ -448,6 +453,63 @@
   50% { filter: brightness(1.4); }
 }
 
+/* Batch action bar */
+.batch-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-bottom: var(--space-lg);
+}
+.batch-bar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+.batch-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.batch-toggle:hover { color: var(--color-text); }
+.batch-count {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+.batch-bar-actions {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+.batch-btn {
+  font-size: var(--text-xs);
+  padding: 2px 10px;
+}
+
+/* Member checkbox */
+.pm-checkbox {
+  grid-column: 1;
+  margin-bottom: var(--space-xs);
+}
+.pm-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--color-accent);
+}
+
 .party-member-card {
   background: var(--color-surface); border: 1px solid var(--color-border);
   border-radius: var(--radius); padding: var(--space-md);
@@ -462,6 +524,27 @@
 .party-member-card .pm-stats dd { font-weight: 600; font-size: var(--text-base); }
 .party-member-card .pm-actions { grid-column: 2; grid-row: 1 / 4; display: flex; flex-direction: column; gap: var(--space-xs); }
 .pm-inactive { opacity: 0.4; }
+
+/* Batch dialog modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.6);
+  border: none;
+}
+.modal-content {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-lg);
+  max-width: 480px;
+  width: 90%;
+  color: var(--color-text);
+}
 
 /* Form tabs */
 .form-tabs { display: flex; gap: 0; margin-bottom: var(--space-md); border-bottom: 2px solid var(--color-border); }

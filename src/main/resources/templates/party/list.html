@@ -27,11 +27,33 @@
 
             <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${activeMembers}, oob=null)}"></th:block>
 
+            <div class="batch-bar" id="batch-bar">
+                <div class="batch-bar-left">
+                    <label class="batch-toggle">
+                        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                        Select All
+                    </label>
+                    <label class="batch-toggle batch-toggle-inactive">
+                        <input type="checkbox" id="include-inactive" onchange="toggleInactive()">
+                        Include inactive
+                    </label>
+                    <span class="batch-count" id="batch-count">0 selected</span>
+                </div>
+                <div class="batch-bar-actions">
+                    <button class="btn btn-xs batch-btn" onclick="batchRest('SHORT')" title="Short Rest">Short Rest</button>
+                    <button class="btn btn-xs batch-btn" onclick="batchRest('LONG')" title="Long Rest">Long Rest</button>
+                    <button class="btn btn-xs batch-btn" onclick="batchXp()">Award XP</button>
+                    <button class="btn btn-xs batch-btn" onclick="batchMilestone()">Set Level</button>
+                    <button class="btn btn-xs batch-btn" onclick="batchCondition()">Condition</button>
+                    <button class="btn btn-xs batch-btn" onclick="batchClearDeathSaves()">Clear Death Saves</button>
+                </div>
+            </div>
+
             <div id="party-grid" class="card-grid empty-state-host">
                 <th:block th:if="${members == null or members.isEmpty()}">
                     <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
                         'No heroes yet', 'Add member', @{/campaigns/{id}/party/new(id=${campaign.id})},
-                        'Add the player characters so combat, passive senses, and difficulty math work.', '♜')}"></th:block>
+                        'Add the player characters so combat, passive senses, and difficulty math work.', '\u265C')}"></th:block>
                 </th:block>
                 <th:block th:each="pm : ${members}">
                     <th:block th:replace="~{party/_card :: card(pm=${pm})}"></th:block>
@@ -42,5 +64,142 @@
                     onclick="if (event.target === this) this.close();"></dialog>
         </main>
     </div>
+
+<script>
+const campaignId = /*[[${campaign.id}]]*/ '';
+
+function toggleSelectAll(el) {
+    const checked = el.checked;
+    document.querySelectorAll('.member-select').forEach(cb => {
+        const isActive = cb.dataset.active === 'true';
+        const showInactive = document.getElementById('include-inactive').checked;
+        if (isActive || showInactive) {
+            cb.checked = checked;
+        }
+    });
+    updateBatchCount();
+}
+
+function toggleInactive() {
+    const show = document.getElementById('include-inactive').checked;
+    document.querySelectorAll('.party-member-card.pm-inactive').forEach(c => {
+        c.style.display = show ? '' : 'none';
+    });
+    updateBatchCount();
+}
+
+function updateBatchCount() {
+    const count = document.querySelectorAll('.member-select:checked').length;
+    document.getElementById('batch-count').textContent = count + ' selected';
+}
+
+function getSelectedIds() {
+    return Array.from(document.querySelectorAll('.member-select:checked')).map(cb => cb.value);
+}
+
+function batchRest(type) {
+    const ids = getSelectedIds();
+    if (!ids.length) { alert('Select at least one member'); return; }
+    const hitDice = type === 'SHORT' ? prompt('Hit dice to spend:', '1') : '0';
+    if (hitDice === null) return;
+    fetch(`/api/v1/campaigns/${campaignId}/party/rest?type=${type}&members=${ids.join(',')}&hitDiceSpent=${hitDice}`, {
+        method: 'POST'
+    })
+    .then(r => r.json())
+    .then(data => {
+        const ok = data.results.filter(r => r.status === 'ok').length;
+        alert(`Applied ${type} rest to ${ok} member(s)`);
+        location.reload();
+    })
+    .catch(e => alert('Error: ' + e.message));
+}
+
+function batchXp() {
+    const ids = getSelectedIds();
+    if (!ids.length) { alert('Select at least one member'); return; }
+    const amount = prompt('Total XP to award (split equally):', '1000');
+    if (!amount) return;
+    fetch(`/api/v1/campaigns/${campaignId}/party/xp`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ memberIds: ids, amount: parseInt(amount), split: 'EQUAL' })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const count = data.members ? data.members.length : 0;
+        alert(`Awarded XP to ${count} member(s)`);
+        location.reload();
+    })
+    .catch(e => alert('Error: ' + e.message));
+}
+
+function batchMilestone() {
+    const ids = getSelectedIds();
+    if (!ids.length) { alert('Select at least one member'); return; }
+    const level = prompt('Set level to:', '5');
+    if (!level) return;
+    const cls = prompt('Class source key (e.g. srd-2024_fighter):', 'srd-2024_fighter');
+    if (!cls) return;
+    fetch(`/api/v1/campaigns/${campaignId}/party/milestone/batch`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ memberIds: ids, level: parseInt(level), classSourceKey: cls })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const ok = data.results.filter(r => r.status === 'ok').length;
+        alert(`Set level for ${ok} member(s)`);
+        location.reload();
+    })
+    .catch(e => alert('Error: ' + e.message));
+}
+
+function batchCondition() {
+    const ids = getSelectedIds();
+    if (!ids.length) { alert('Select at least one member'); return; }
+    const name = prompt('Condition name:', 'poisoned');
+    if (!name) return;
+    const notes = prompt('Notes (optional):', '');
+    const condition = { sourceKey: name, name: name, notes: notes || '' };
+    fetch(`/api/v1/campaigns/${campaignId}/party/condition/batch`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ memberIds: ids, condition })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const ok = data.results.filter(r => r.status === 'ok').length;
+        alert(`Added condition to ${ok} member(s)`);
+        location.reload();
+    })
+    .catch(e => alert('Error: ' + e.message));
+}
+
+function batchClearDeathSaves() {
+    const ids = getSelectedIds();
+    if (!ids.length) { alert('Select at least one member'); return; }
+    if (!confirm('Clear death saves for selected members?')) return;
+    fetch(`/api/v1/campaigns/${campaignId}/party/death-saves/clear-batch`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ memberIds: ids })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const ok = data.results.filter(r => r.status === 'ok').length;
+        alert(`Cleared death saves for ${ok} member(s)`);
+        location.reload();
+    })
+    .catch(e => alert('Error: ' + e.message));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.member-select').forEach(cb => {
+        cb.addEventListener('change', updateBatchCount);
+    });
+    updateBatchCount();
+    toggleInactive();
+});
+</script>
 </body>
 </html>

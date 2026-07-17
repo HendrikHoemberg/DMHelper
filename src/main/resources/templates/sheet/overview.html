@@ -19,8 +19,37 @@
                 <a th:href="@{/campaigns/{id}/party(id=${campaign.id})}" class="btn btn-ghost">&larr; Party Roster</a>
             </div>
         </div>
+
+        <div class="batch-bar" id="batch-bar">
+            <div class="batch-bar-left">
+                <label class="batch-toggle">
+                    <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                    Select All
+                </label>
+                <label class="batch-toggle batch-toggle-inactive">
+                    <input type="checkbox" id="include-inactive" onchange="toggleInactive()">
+                    Include inactive
+                </label>
+                <span class="batch-count" id="batch-count">0 selected</span>
+            </div>
+            <div class="batch-bar-actions">
+                <button class="btn btn-xs batch-btn" onclick="batchRest('SHORT')" title="Short Rest">Short Rest</button>
+                <button class="btn btn-xs batch-btn" onclick="batchRest('LONG')" title="Long Rest">Long Rest</button>
+                <button class="btn btn-xs batch-btn" onclick="batchXp()">Award XP</button>
+                <button class="btn btn-xs batch-btn" onclick="batchMilestone()">Set Level</button>
+                <button class="btn btn-xs batch-btn" onclick="batchCondition()">Condition</button>
+                <button class="btn btn-xs batch-btn" onclick="batchClearDeathSaves()">Clear Death Saves</button>
+            </div>
+        </div>
+
         <div class="card-grid" th:if="${!members.isEmpty()}">
-            <div class="card" th:each="pm : ${members}">
+            <div class="card" th:each="pm : ${members}"
+                 th:classappend="${!pm.active} ? 'pm-inactive' : ''">
+                <div class="pm-checkbox">
+                    <input type="checkbox" class="member-select" th:value="${pm.id}"
+                           th:attr="data-active=${pm.active}"
+                           th:id="'sel-' + ${pm.id}">
+                </div>
                 <h3 th:text="${pm.characterName}">Character Name</h3>
                 <div class="pm-player">
                     <span th:if="${pm.classAndLevel != null and !pm.classAndLevel.isBlank()}"
@@ -48,5 +77,146 @@
         <th:block th:if="${members.isEmpty()}"><div th:replace="~{common/_empty-state :: empty-state('No party members yet. Add members in the Party roster first.', 'Party Roster', @{/campaigns/{id}/party(id=${campaign.id})}, null)}"></div></th:block>
     </main>
 </div>
+
+<div id="batch-dialog" class="modal" style="display:none;">
+    <div class="modal-content" id="batch-dialog-body"></div>
+</div>
+
+<script>
+const campaignId = /*[[${campaign.id}]]*/ '';
+
+function toggleSelectAll(el) {
+    const checked = el.checked;
+    document.querySelectorAll('.member-select').forEach(cb => {
+        const isActive = cb.dataset.active === 'true';
+        const showInactive = document.getElementById('include-inactive').checked;
+        if (isActive || showInactive) {
+            cb.checked = checked;
+        }
+    });
+    updateBatchCount();
+}
+
+function toggleInactive() {
+    const show = document.getElementById('include-inactive').checked;
+    document.querySelectorAll('.card.pm-inactive').forEach(c => {
+        c.style.display = show ? '' : 'none';
+    });
+    updateBatchCount();
+}
+
+function updateBatchCount() {
+    const count = document.querySelectorAll('.member-select:checked').length;
+    document.getElementById('batch-count').textContent = count + ' selected';
+}
+
+function getSelectedIds() {
+    return Array.from(document.querySelectorAll('.member-select:checked')).map(cb => cb.value);
+}
+
+function batchRest(type) {
+    const ids = getSelectedIds();
+    if (!ids.length) { alert('Select at least one member'); return; }
+    const hitDice = type === 'SHORT' ? prompt('Hit dice to spend:', '1') : '0';
+    if (hitDice === null) return;
+    fetch(`/api/v1/campaigns/${campaignId}/party/rest?type=${type}&members=${ids.join(',')}&hitDiceSpent=${hitDice}`, {
+        method: 'POST'
+    })
+    .then(r => r.json())
+    .then(data => {
+        const ok = data.results.filter(r => r.status === 'ok').length;
+        alert(`Applied ${type} rest to ${ok} member(s)`);
+        location.reload();
+    })
+    .catch(e => alert('Error: ' + e.message));
+}
+
+function batchXp() {
+    const ids = getSelectedIds();
+    if (!ids.length) { alert('Select at least one member'); return; }
+    const amount = prompt('Total XP to award (split equally):', '1000');
+    if (!amount) return;
+    fetch(`/api/v1/campaigns/${campaignId}/party/xp`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ memberIds: ids, amount: parseInt(amount), split: 'EQUAL' })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const count = data.members ? data.members.length : 0;
+        alert(`Awarded XP to ${count} member(s)`);
+        location.reload();
+    })
+    .catch(e => alert('Error: ' + e.message));
+}
+
+function batchMilestone() {
+    const ids = getSelectedIds();
+    if (!ids.length) { alert('Select at least one member'); return; }
+    const level = prompt('Set level to:', '5');
+    if (!level) return;
+    const cls = prompt('Class source key (e.g. srd-2024_fighter):', 'srd-2024_fighter');
+    if (!cls) return;
+    fetch(`/api/v1/campaigns/${campaignId}/party/milestone/batch`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ memberIds: ids, level: parseInt(level), classSourceKey: cls })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const ok = data.results.filter(r => r.status === 'ok').length;
+        alert(`Set level for ${ok} member(s)`);
+        location.reload();
+    })
+    .catch(e => alert('Error: ' + e.message));
+}
+
+function batchCondition() {
+    const ids = getSelectedIds();
+    if (!ids.length) { alert('Select at least one member'); return; }
+    const name = prompt('Condition name:', 'poisoned');
+    if (!name) return;
+    const notes = prompt('Notes (optional):', '');
+    const condition = { sourceKey: name, name: name, notes: notes || '' };
+    fetch(`/api/v1/campaigns/${campaignId}/party/condition/batch`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ memberIds: ids, condition })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const ok = data.results.filter(r => r.status === 'ok').length;
+        alert(`Added condition to ${ok} member(s)`);
+        location.reload();
+    })
+    .catch(e => alert('Error: ' + e.message));
+}
+
+function batchClearDeathSaves() {
+    const ids = getSelectedIds();
+    if (!ids.length) { alert('Select at least one member'); return; }
+    if (!confirm('Clear death saves for selected members?')) return;
+    fetch(`/api/v1/campaigns/${campaignId}/party/death-saves/clear-batch`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ memberIds: ids })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const ok = data.results.filter(r => r.status === 'ok').length;
+        alert(`Cleared death saves for ${ok} member(s)`);
+        location.reload();
+    })
+    .catch(e => alert('Error: ' + e.message));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.member-select').forEach(cb => {
+        cb.addEventListener('change', updateBatchCount);
+    });
+    updateBatchCount();
+    toggleInactive();
+});
+</script>
 </body>
 </html>

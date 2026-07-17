@@ -1,5 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.sheet.web;
 
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.AttackDto;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.CreateSheetRequest;
@@ -12,6 +14,7 @@ import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.SheetSpellDto;
 import dev.hendrikhoemberg.dmhelper.sheet.service.SheetService.UpdateSheetRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.*;
 
@@ -20,9 +23,13 @@ import java.util.*;
 public class SheetApiController {
 
     private final SheetService sheetService;
+    private final PartyMemberRepository partyMemberRepo;
+    private final ObjectMapper mapper;
 
-    public SheetApiController(SheetService sheetService) {
+    public SheetApiController(SheetService sheetService, PartyMemberRepository partyMemberRepo) {
         this.sheetService = sheetService;
+        this.partyMemberRepo = partyMemberRepo;
+        this.mapper = new ObjectMapper();
     }
 
     @GetMapping("/party/{memberId}/sheet")
@@ -160,6 +167,85 @@ public class SheetApiController {
             }
             return ResponseEntity.ok(Map.of("members", results));
         }
+    }
+
+    @PostMapping("/party/milestone/batch")
+    public ResponseEntity<Map<String, Object>> batchSetLevel(
+            @PathVariable UUID campaignId,
+            @RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        List<String> memberIds = (List<String>) body.get("memberIds");
+        int level = ((Number) body.get("level")).intValue();
+        String classSourceKey = (String) body.get("classSourceKey");
+
+        List<Map<String, Object>> results = new ArrayList<>();
+        for (String id : memberIds) {
+            try {
+                UUID memberId = UUID.fromString(id);
+                SheetDto dto = sheetService.getSheetDtoByPartyMemberId(memberId);
+                SheetDto result = sheetService.setLevel(dto.id(), classSourceKey, level);
+                results.add(Map.of("id", id, "status", "ok", "level", level));
+            } catch (Exception e) {
+                results.add(Map.of("id", id, "status", "error", "message", e.getMessage()));
+            }
+        }
+        return ResponseEntity.ok(Map.of("results", results));
+    }
+
+    @PostMapping("/party/condition/batch")
+    public ResponseEntity<Map<String, Object>> batchAddCondition(
+            @PathVariable UUID campaignId,
+            @RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        List<String> memberIds = (List<String>) body.get("memberIds");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> condition = (Map<String, Object>) body.get("condition");
+
+        List<Map<String, Object>> results = new ArrayList<>();
+        for (String id : memberIds) {
+            try {
+                UUID memberId = UUID.fromString(id);
+                PartyMember pm = partyMemberRepo.findById(memberId)
+                        .orElseThrow(() -> new IllegalArgumentException("Party member not found"));
+
+                List<Map<String, Object>> conditions = new ArrayList<>();
+                if (pm.getConditionsJson() != null && !pm.getConditionsJson().isBlank()) {
+                    conditions = mapper.readValue(pm.getConditionsJson(),
+                            mapper.getTypeFactory().constructCollectionType(List.class, Map.class));
+                }
+                conditions.add(condition);
+                pm.setConditionsJson(mapper.writeValueAsString(conditions));
+                partyMemberRepo.save(pm);
+                results.add(Map.of("id", id, "status", "ok"));
+            } catch (Exception e) {
+                results.add(Map.of("id", id, "status", "error", "message", e.getMessage()));
+            }
+        }
+        return ResponseEntity.ok(Map.of("results", results));
+    }
+
+    @PostMapping("/party/death-saves/clear-batch")
+    public ResponseEntity<Map<String, Object>> batchClearDeathSaves(
+            @PathVariable UUID campaignId,
+            @RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        List<String> memberIds = (List<String>) body.get("memberIds");
+
+        List<Map<String, Object>> results = new ArrayList<>();
+        for (String id : memberIds) {
+            try {
+                UUID memberId = UUID.fromString(id);
+                PartyMember pm = partyMemberRepo.findById(memberId)
+                        .orElseThrow(() -> new IllegalArgumentException("Party member not found"));
+                pm.setDeathSaveSuccesses(0);
+                pm.setDeathSaveFailures(0);
+                partyMemberRepo.save(pm);
+                results.add(Map.of("id", id, "status", "ok"));
+            } catch (Exception e) {
+                results.add(Map.of("id", id, "status", "error", "message", e.getMessage()));
+            }
+        }
+        return ResponseEntity.ok(Map.of("results", results));
     }
 
     @GetMapping("/party/{memberId}/sheet/resources")

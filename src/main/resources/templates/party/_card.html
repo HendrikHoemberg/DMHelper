@@ -3,6 +3,11 @@
 <div class="party-member-card" th:fragment="card(pm)"
      th:id="'pm-card-' + ${pm.id}"
      th:classappend="${!pm.active} ? 'pm-inactive'">
+    <div class="pm-checkbox">
+        <input type="checkbox" class="member-select" th:value="${pm.id}"
+               th:attr="data-active=${pm.active}"
+               th:id="'sel-' + ${pm.id}">
+    </div>
     <h3 th:text="${pm.characterName}">Character Name</h3>
     <div class="pm-player" th:with="hasPlayer=${pm.playerName != null and !pm.playerName.isBlank()}">
         <span th:if="${hasPlayer}" th:text="'Played by ' + ${pm.playerName}">Played by X</span>
