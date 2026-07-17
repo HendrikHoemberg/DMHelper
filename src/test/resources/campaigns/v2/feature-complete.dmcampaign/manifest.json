@@ -541,7 +541,17 @@
               "x": 0,
               "y": 0,
               "width": 20,
-              "height": 15
+              "height": 15,
+              "locked": true,
+              "calibration": {
+                "ax": 0,
+                "ay": 0,
+                "bx": 5,
+                "by": 0,
+                "cellsBetween": 5,
+                "offsetXPx": 0,
+                "offsetYPx": 0
+              }
             }
           }
         ],
@@ -573,7 +583,20 @@
             "startRow": 0,
             "endCol": 1,
             "endRow": 1,
-            "terrain": "moss"
+            "terrain": "moss",
+            "key": "moss-corner",
+            "label": "Mossy Corner"
+          },
+          {
+            "type": "REGION",
+            "startCol": 15,
+            "startRow": 10,
+            "endCol": 19,
+            "endRow": 14,
+            "terrain": "dungeon",
+            "key": "secret-treasure-room",
+            "label": "Secret Treasure Room",
+            "playerVisible": false
           }
         ],
         "customTerrain": [
@@ -667,7 +690,11 @@
           "legendaryActionsMax": 0,
           "legendaryResistancesMax": 0,
           "rechargedAbilities": "",
-          "notes": "wounded"
+          "notes": "wounded",
+          "waveKey": "wave-main",
+          "startX": 100,
+          "startY": 200,
+          "placementRegionKey": "moss-corner"
         },
         {
           "key": "combatant-aria",
@@ -697,6 +724,39 @@
           "legendaryResistancesMax": 0,
           "rechargedAbilities": "",
           "notes": ""
+        }
+      ],
+      "prep": {
+        "tactics": "Pack tactics — goblins focus fire on the closest target, retreating if outnumbered 2:1",
+        "morale": "Goblins flee if the captain is defeated; captain fights to the death",
+        "environment": "Darkness (dim light), scattered rubble provides half cover",
+        "sceneKey": "scene-crypt-entry"
+      },
+      "rewards": {
+        "xpTotal": 400,
+        "xpPerPc": 200,
+        "currency": [
+          { "currency": "gp", "amount": 150.0 }
+        ],
+        "notes": "Goblins carry 150gp in mixed coin; +200 XP each for clever resolution beyond combat"
+      },
+      "waves": [
+        {
+          "key": "wave-main",
+          "name": "Main Guard",
+          "sortOrder": 0,
+          "status": "ACTIVE",
+          "triggerKind": "MANUAL",
+          "notes": "Initial goblin patrol — visible on the map"
+        },
+        {
+          "key": "wave-reinforcements",
+          "name": "Reinforcements",
+          "sortOrder": 1,
+          "status": "PENDING",
+          "triggerKind": "ROUND",
+          "triggerValue": "3",
+          "notes": "Arrives at round 3 from the south corridor"
         }
       ],
       "status": "ACTIVE",

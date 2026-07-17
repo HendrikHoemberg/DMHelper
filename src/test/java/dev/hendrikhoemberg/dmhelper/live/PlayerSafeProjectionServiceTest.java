@@ -1,6 +1,11 @@
 package dev.hendrikhoemberg.dmhelper.live;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWave;
+import dev.hendrikhoemberg.dmhelper.encounter.data.WaveStatus;
+import dev.hendrikhoemberg.dmhelper.encounter.data.WaveTriggerKind;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
@@ -9,6 +14,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import tools.jackson.databind.json.JsonMapper;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -121,5 +129,66 @@ class PlayerSafeProjectionServiceTest {
         assertThat(invisibleLayer.cells()).isEmpty();
         assertThat(invisibleLayer.shapes()).isEmpty();
         assertThat(invisibleLayer.image()).isNull();
+    }
+
+    @Test
+    void playerPayloadOmitsPrepRewardsAndDmOnlyRegions() throws Exception {
+        JsonMapper mapper = new JsonMapper();
+
+        Encounter enc = new Encounter();
+        enc.setCampaign(gameMap.getCampaign());
+        enc.setName("Danger Room");
+        enc.setPrepJson("{\"tactics\":\"ambush from shadows\",\"morale\":\"fanatic\"}");
+        enc.setRewardsJson("{\"xpTotal\":1000,\"xpPerPc\":250,\"notes\":\"hidden treasure\"}");
+        enc.setStatus(Encounter.Status.ACTIVE);
+        enc.setRound(1);
+        em.persist(enc);
+
+        EncounterWave wave = new EncounterWave();
+        wave.setEncounter(enc);
+        wave.setWaveKey("wave-main");
+        wave.setName("Main");
+        wave.setSortOrder(0);
+        wave.setStatus(WaveStatus.ACTIVE);
+        wave.setTriggerKind(WaveTriggerKind.MANUAL);
+        em.persist(wave);
+
+        Combatant cbt = new Combatant();
+        cbt.setEncounter(enc);
+        cbt.setName("Shadow Assassin");
+        cbt.setInitiative(18);
+        cbt.setSortOrder(0);
+        cbt.setMaxHp(30);
+        cbt.setCurrentHp(30);
+        cbt.setKind("MONSTER");
+        cbt.setHidden(false);
+        cbt.setWave(wave);
+        cbt.setStartX(5);
+        cbt.setStartY(10);
+        cbt.setPlacementRegionKey("secret-room");
+        em.persist(cbt);
+
+        GameMap safetyMap = new GameMap();
+        safetyMap.setCampaign(gameMap.getCampaign());
+        safetyMap.setName("Secret Base");
+        safetyMap.setGridWidth(20);
+        safetyMap.setGridHeight(15);
+        safetyMap.setCellSizePx(48);
+        safetyMap.setDocument("{\"schemaVersion\":2,\"grid\":{\"width\":20,\"height\":15,\"cellSizePx\":48,\"gridType\":\"square\",\"movementMode\":\"GRID\",\"showGrid\":true},\"layers\":[{\"id\":\"terrain\",\"name\":\"Terrain\",\"type\":\"TERRAIN\",\"visible\":true,\"locked\":false,\"cells\":[],\"shapes\":[],\"playerVisible\":true}],\"primitives\":[{\"type\":\"REGION\",\"startCol\":0,\"startRow\":0,\"endCol\":5,\"endRow\":5,\"terrain\":\"dungeon\",\"key\":\"secret-region-key\",\"label\":\"Secret Room\",\"playerVisible\":false}],\"customTerrain\":[]}");
+        em.persist(safetyMap);
+        em.flush();
+
+        var combatants = service.projectCombatants(List.of(cbt), 0);
+        String combatantJson = mapper.writeValueAsString(combatants);
+        assertThat(combatantJson)
+                .doesNotContain("tactics")
+                .doesNotContain("rewards")
+                .doesNotContain("ambush from shadows")
+                .doesNotContain("hidden treasure");
+
+        var projectedMap = service.projectMapDocument(safetyMap);
+        assertThat(projectedMap.primitives()).noneMatch(p -> "secret-region-key".equals(p.key()));
+        String mapJson = mapper.writeValueAsString(projectedMap);
+        assertThat(mapJson).doesNotContain("secret-region-key");
     }
 }

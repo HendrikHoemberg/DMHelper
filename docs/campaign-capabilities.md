@@ -19,3 +19,13 @@
 | Multi-member rest/XP/condition/loot ops | `SUPPORTED` | Batch bar on party and sheets overview with rest preview confirmation. |
 | Full automated ASI/subclass feature schedule from all class JSON | `PARTIAL` | ASI/subclass prompts use common schedules and class data when present; incomplete class feature tables remain manual. |
 | Character sheet package round-trip | `SUPPORTED` | Ability scores, class levels (hit die rolls + subclassRef), proficiencies, overrides `_meta`, resources, spells/slots, attacks, features, and party live state. |
+| Encounter library multi-add / groups | `SUPPORTED` | Quantity + group leader |
+| Encounter waves / reserves / spawn | `SUPPORTED` | Manual + round prompts |
+| Encounter prep notes + structured rewards | `SUPPORTED` | DM-confirmed apply |
+| Encounter completion summary | `SUPPORTED` | Deterministic from log |
+| Undo lifecycle boundaries | `SUPPORTED` | Activate/end/wave/reward |
+| Published map calibrate/crop/rotate/lock | `SUPPORTED` | Image-first workflow |
+| Named map regions with keys | `SUPPORTED` | Scene/encounter placement |
+| DM/player map layer split (shared tokens) | `SUPPORTED` | playerVisible flags |
+| Authoritative 2024 encounter difficulty | `PARTIAL` | Still labeled estimate |
+| Full fog of war gameplay | `UNSUPPORTED` | Deferred P3 |
