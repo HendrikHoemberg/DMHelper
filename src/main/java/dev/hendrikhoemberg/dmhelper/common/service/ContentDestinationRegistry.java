@@ -16,7 +16,8 @@ public class ContentDestinationRegistry {
     public enum LibraryType {
         STATBLOCK(null), SPELL("spells"), CONDITION("conditions"), RULE("rules"),
         EQUIPMENT("equipment"), MAGIC_ITEM("magic-items"), CLASS(null),
-        SPECIES("species"), BACKGROUND("backgrounds"), FEAT("feats");
+        SPECIES("species"), BACKGROUND("backgrounds"), FEAT("feats"),
+        ROLLABLE_TABLE("tables");
 
         private final String tab;
 
@@ -90,6 +91,9 @@ public class ContentDestinationRegistry {
             case FEAT -> entityId != null
                     ? "/library/feats/" + entityId
                     : filtered("feats", displayName);
+            case ROLLABLE_TABLE -> entityId != null
+                    ? "/library/tables/" + entityId
+                    : filtered("tables", displayName);
         };
     }
 

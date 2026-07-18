@@ -2478,3 +2478,104 @@ dialog.modal:not([open]) {
 .chip-input:focus {
   border-color: var(--color-accent);
 }
+
+/* Rollable table editor */
+.entry-card {
+  background: var(--elevation-raised-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+}
+
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.entry-fields > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.entry-fields label {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-bar {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+/* Roll panel */
+.roll-panel {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+  background: var(--elevation-raised-bg);
+}
+
+.roll-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+}
+
+.roll-controls input,
+.roll-controls select {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--text-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.roll-result-entry {
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.roll-result-entry:last-child {
+  border-bottom: none;
+}
+
+.roll-result-text {
+  font-size: var(--text-md);
+  font-weight: 500;
+}
+
+.roll-result-ref {
+  display: inline-block;
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  text-decoration: underline;
+  margin-top: var(--space-xs);
+}
+
+/* Dice history table rows */
+.dice-history-item-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-xs) 0;
+}
+
+.dice-history-item-table .expr {
+  font-weight: 600;
+  color: var(--color-gold-soft);
+}
+
+.dice-history-item-table .outcome-summary {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}

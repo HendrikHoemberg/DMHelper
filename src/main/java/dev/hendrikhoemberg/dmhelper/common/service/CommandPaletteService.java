@@ -11,6 +11,8 @@ import dev.hendrikhoemberg.dmhelper.world.data.WorldLocationRepository;
 import dev.hendrikhoemberg.dmhelper.world.data.FactionRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,21 +54,23 @@ public class CommandPaletteService {
     private final WorldNpcRepository worldNpcRepo;
     private final WorldLocationRepository worldLocationRepo;
     private final FactionRepository factionRepo;
+    private final RollableTableRepository rollableTableRepo;
 
     public CommandPaletteService(NoteRepository noteRepo, QuickNoteRepository quickNoteRepo,
-                                  StatBlockRepository statBlockRepo, SpellRepository spellRepo,
-                                  ConditionRepository conditionRepo, RuleSectionRepository ruleSectionRepo,
-                                  EquipmentItemRepository equipmentItemRepo, MagicItemRepository magicItemRepo,
-                                  CharacterClassRepository characterClassRepo, SpeciesRepository speciesRepo,
-                                  BackgroundRepository backgroundRepo, FeatRepository featRepo,
-                                  GameMapRepository gameMapRepo, EncounterRepository encounterRepo,
-                                  HandoutRepository handoutRepo, PartyMemberRepository partyMemberRepo,
-                                  SceneRepository sceneRepo,
-                                  ContentDestinationRegistry destinations,
-                                  CharacterSheetRepository characterSheetRepo,
-                                  WorldNpcRepository worldNpcRepo,
-                                  WorldLocationRepository worldLocationRepo,
-                                  FactionRepository factionRepo) {
+                                   StatBlockRepository statBlockRepo, SpellRepository spellRepo,
+                                   ConditionRepository conditionRepo, RuleSectionRepository ruleSectionRepo,
+                                   EquipmentItemRepository equipmentItemRepo, MagicItemRepository magicItemRepo,
+                                   CharacterClassRepository characterClassRepo, SpeciesRepository speciesRepo,
+                                   BackgroundRepository backgroundRepo, FeatRepository featRepo,
+                                   GameMapRepository gameMapRepo, EncounterRepository encounterRepo,
+                                   HandoutRepository handoutRepo, PartyMemberRepository partyMemberRepo,
+                                   SceneRepository sceneRepo,
+                                   ContentDestinationRegistry destinations,
+                                   CharacterSheetRepository characterSheetRepo,
+                                   WorldNpcRepository worldNpcRepo,
+                                   WorldLocationRepository worldLocationRepo,
+                                   FactionRepository factionRepo,
+                                   RollableTableRepository rollableTableRepo) {
         this.noteRepo = noteRepo;
         this.quickNoteRepo = quickNoteRepo;
         this.statBlockRepo = statBlockRepo;
@@ -89,6 +93,7 @@ public class CommandPaletteService {
         this.worldNpcRepo = worldNpcRepo;
         this.worldLocationRepo = worldLocationRepo;
         this.factionRepo = factionRepo;
+        this.rollableTableRepo = rollableTableRepo;
     }
 
     public List<SearchResultItem> search(String query, UUID campaignId) {
@@ -167,6 +172,15 @@ public class CommandPaletteService {
                             destinations.campaign(ContentDestinationRegistry.CampaignType.FACTION, campaignId, f.getId(), null)))
                     .forEach(item -> add(results, item, null, q, true));
 
+            rollableTableRepo.findByCampaignIdOrderByNameAsc(campaignId).stream()
+                    .filter(rt -> matches(rt.getName(), q) || matches(rt.getDescription(), q)
+                            || matches(rt.getCategory() != null ? rt.getCategory().name() : null, q)
+                            || matches(rt.getTags(), q))
+                    .map(rt -> new SearchResultItem(rt.getId().toString(), rt.getName(), "rollable-table",
+                            rt.getCategory() != null ? rt.getCategory().name().toLowerCase() : null,
+                            destinations.library(ContentDestinationRegistry.LibraryType.ROLLABLE_TABLE, rt.getId(), rt.getSourceKey(), rt.getName())))
+                    .forEach(item -> add(results, item, null, q, true));
+
             sceneRepo.findByChapterAdventureCampaignId(campaignId).stream()
                     .filter(s -> matches(s.getTitle(), q))
                     .map(s -> {
@@ -230,6 +244,12 @@ public class CommandPaletteService {
         featRepo.findByNameContainingIgnoreCaseOrderByNameAsc(q).stream()
                 .map(f -> new SearchResultItem(f.getId().toString(), f.getName(), "feat",
                         null, destinations.library(ContentDestinationRegistry.LibraryType.FEAT, f.getId(), null, f.getName())))
+                .forEach(item -> add(results, item, null, q, false));
+
+        rollableTableRepo.findByNameContainingIgnoreCaseOrderByNameAsc(q).stream()
+                .map(rt -> new SearchResultItem(rt.getId().toString(), rt.getName(), "rollable-table",
+                        rt.getCategory() != null ? rt.getCategory().name().toLowerCase() : null,
+                        destinations.library(ContentDestinationRegistry.LibraryType.ROLLABLE_TABLE, rt.getId(), rt.getSourceKey(), rt.getName())))
                 .forEach(item -> add(results, item, null, q, false));
 
         return results.stream()

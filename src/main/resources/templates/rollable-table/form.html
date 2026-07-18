@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org" xmlns:x="http://www.w3.org/1999/xhtml">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — ' + (${table} != null ? 'Edit ' + ${table.name} : 'New Table')">DMHelper — Rollable Table Editor</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <div>
+                    <div class="page-header-eyebrow">Rollable Table Editor</div>
+                    <h1 th:text="${table != null ? 'Edit ' + table.name : 'New Table'}">New Table</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+            </div>
+            <div class="detail-section"
+                 x-data="tableEditor()">
+                <form @@submit.prevent="save()">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" x-model="form.name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description (Markdown)</label>
+                        <textarea id="description" name="description" x-model="form.description" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="addressMode">Address Mode</label>
+                        <select id="addressMode" name="addressMode" x-model="form.addressMode">
+                            <option value="RANGE">Range</option>
+                            <option value="WEIGHTED">Weighted</option>
+                        </select>
+                    </div>
+                    <div class="form-group" x-show="form.addressMode === 'RANGE'">
+                        <label for="rollExpression">Roll Expression</label>
+                        <input type="text" id="rollExpression" name="rollExpression" x-model="form.rollExpression" placeholder="e.g. 1d100">
+                    </div>
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <select id="category" name="category" x-model="form.category">
+                            <option value="GENERIC">Generic</option>
+                            <option value="ENCOUNTER">Encounter</option>
+                            <option value="TREASURE">Treasure</option>
+                            <option value="WEATHER">Weather</option>
+                            <option value="RUMOR">Rumor</option>
+                            <option value="EVENT">Event</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tags">Tags (comma-separated)</label>
+                        <input type="text" id="tags" name="tags" x-model="form.tags">
+                    </div>
+                    <h3 class="u-mt-lg">Entries</h3>
+                    <template x-for="(entry, index) in form.entries" :key="index">
+                        <div class="entry-card u-mb-md" :data-path="'/entries/' + index">
+                            <div class="entry-header">
+                                <span x-text="'Entry ' + (index + 1)"></span>
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        @@click="removeEntry(index)">Remove</button>
+                            </div>
+                            <div class="entry-fields u-flex u-gap-sm u-mt-sm">
+                                <div x-show="form.addressMode === 'RANGE'">
+                                    <label>Range Start</label>
+                                    <input type="number" name="rangeStart" x-model="entry.rangeStart" :data-path="'/entries/' + index + '/rangeStart'">
+                                </div>
+                                <div x-show="form.addressMode === 'RANGE'">
+                                    <label>Range End</label>
+                                    <input type="number" name="rangeEnd" x-model="entry.rangeEnd" :data-path="'/entries/' + index + '/rangeEnd'">
+                                </div>
+                                <div x-show="form.addressMode === 'WEIGHTED'">
+                                    <label>Weight</label>
+                                    <input type="number" name="weight" x-model="entry.weight" :data-path="'/entries/' + index + '/weight'">
+                                </div>
+                                <div>
+                                    <label>Result Text</label>
+                                    <input type="text" name="resultText" x-model="entry.resultText" :data-path="'/entries/' + index + '/resultText'">
+                                </div>
+                                <div>
+                                    <label>Quantity Expression</label>
+                                    <input type="text" name="quantityExpression" x-model="entry.quantityExpression">
+                                </div>
+                            </div>
+                            <div class="u-mt-sm">
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        @@click="showReferencePicker(index)">Add Reference</button>
+                                <template x-for="(ref, refIndex) in entry.references" :key="refIndex">
+                                    <div class="u-flex u-gap-sm u-mt-xs" :data-path="'/entries/' + index + '/references/' + refIndex">
+                                        <span x-text="ref.displayText || ref.targetType"></span>
+                                        <button type="button" class="btn btn-ghost btn-sm"
+                                                @@click="removeReference(index, refIndex)">&times;</button>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="u-mt-sm u-flex u-gap-sm">
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        @@click="moveEntry(index, index - 1)" :disabled="index === 0">&uarr;</button>
+                                <button type="button" class="btn btn-ghost btn-sm"
+                                        @@click="moveEntry(index, index + 1)" :disabled="index === form.entries.length - 1">&darr;</button>
+                            </div>
+                        </div>
+                    </template>
+                    <button type="button" class="btn btn-ghost" @@click="addEntry()">Add Entry</button>
+                    <div class="form-actions u-mt-lg">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a th:href="@{/library/tables}" class="btn btn-ghost">Cancel</a>
+                    </div>
+                </form>
+                <div class="u-mt-lg" x-show="problems.length > 0">
+                    <h3 class="u-text-danger">Validation Errors</h3>
+                    <template x-for="problem in problems" :key="problem.path">
+                        <div class="u-text-danger u-text-sm" x-text="problem.code + ': ' + problem.message"
+                             :data-path-match="problem.path"></div>
+                    </template>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    window.TABLE_ID = /*[[${table?.id}]]*/ null;
+    window.TABLE_NAME = /*[[${table?.name}]]*/ '';
+    window.TABLE_SOURCE_KEY = /*[[${table?.sourceKey}]]*/ '';
+    window.TABLE_DESCRIPTION = /*[[${table?.description}]]*/ '';
+    window.TABLE_ADDRESS_MODE = /*[[${table?.addressMode}]]*/ 'WEIGHTED';
+    window.TABLE_ROLL_EXPRESSION = /*[[${table?.rollExpression}]]*/ '';
+    window.TABLE_CATEGORY = /*[[${table?.category}]]*/ 'GENERIC';
+    window.TABLE_TAGS = /*[[${table?.tags}]]*/ '';
+    window.TABLE_ENTRIES = /*[[${table?.entries}]]*/ null;
+    /*]]>*/
+    </script>
+    <script th:src="@{/js/rollable-table-editor.js}"></script>
+</body>
+</html>

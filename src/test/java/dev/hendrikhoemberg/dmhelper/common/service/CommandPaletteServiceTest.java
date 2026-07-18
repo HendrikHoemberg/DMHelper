@@ -15,6 +15,10 @@ import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableCategory;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +46,7 @@ class CommandPaletteServiceTest {
     @Autowired private HandoutRepository handoutRepository;
     @Autowired private PartyMemberRepository partyMemberRepository;
     @Autowired private CharacterSheetRepository characterSheetRepository;
+    @Autowired private RollableTableRepository rollableTableRepository;
 
     private Campaign campaign;
 
@@ -259,5 +264,50 @@ class CommandPaletteServiceTest {
 
         assertThat(results).extracting(CommandPaletteService.SearchResultItem::type)
                 .startsWith("note", "party-member");
+    }
+
+    @Test
+    void searchFindsCampaignRollableTablesByTitle() {
+        RollableTable table = new RollableTable();
+        table.setCampaign(campaign);
+        table.setName("Wild Magic Surge");
+        table.setSource(ContentSource.CUSTOM);
+        table.setAddressMode(TableAddressMode.WEIGHTED);
+        table.setCategory(TableCategory.GENERIC);
+        table.setSourceKey("wild-magic-surge");
+        table.setDescription("A chaotic table of wild magic effects");
+        rollableTableRepository.save(table);
+
+        var results = commandPaletteService.search("Wild Magic", campaign.getId());
+        assertThat(results).anyMatch(r -> r.title().equals("Wild Magic Surge") && r.type().equals("rollable-table"));
+    }
+
+    @Test
+    void searchFindsGlobalRollableTablesByName() {
+        RollableTable table = new RollableTable();
+        table.setName("Global Loot Table");
+        table.setSource(ContentSource.SRD);
+        table.setAddressMode(TableAddressMode.WEIGHTED);
+        table.setCategory(TableCategory.TREASURE);
+        table.setSourceKey("global-loot");
+        rollableTableRepository.save(table);
+
+        var results = commandPaletteService.search("Global Loot", null);
+        assertThat(results).anyMatch(r -> r.title().equals("Global Loot Table") && r.type().equals("rollable-table"));
+    }
+
+    @Test
+    void campaignTableTitleRanksAheadOfGlobalTableTitle() {
+        RollableTable campaignTable = new RollableTable();
+        campaignTable.setCampaign(campaign);
+        campaignTable.setName("Goblin");
+        campaignTable.setSource(ContentSource.CUSTOM);
+        campaignTable.setAddressMode(TableAddressMode.WEIGHTED);
+        campaignTable.setCategory(TableCategory.RUMOR);
+        campaignTable.setSourceKey("goblin-rumor");
+        rollableTableRepository.save(campaignTable);
+
+        var results = commandPaletteService.search("Goblin", campaign.getId());
+        assertThat(results.getFirst().type()).isEqualTo("rollable-table");
     }
 }

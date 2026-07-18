@@ -18,7 +18,7 @@ public class MarkdownUtil {
 
     private final Parser parser = Parser.builder().build();
     private final HtmlRenderer renderer = HtmlRenderer.builder()
-            .escapeHtml(false)
+            .escapeHtml(true)
             .nodeRendererFactory(ReadAloudNodeRenderer::new)
             .build();
 

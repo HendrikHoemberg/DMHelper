@@ -49,4 +49,13 @@ class MarkdownUtilTest {
         assertThat(markdownUtil.toHtml("# Title")).contains("<h1>Title</h1>");
         assertThat(markdownUtil.toHtml(null)).isEmpty();
     }
+
+    @Test
+    void escapesRawHtmlInOrdinaryMarkdown() {
+        String html = markdownUtil.toHtml("# Safe\n<script>alert(1)</script><img src=x onerror=alert(2)>");
+        assertThat(html).doesNotContain("<script>");
+        assertThat(html).contains("&lt;script&gt;");
+        assertThat(html).doesNotContain("<img");
+        assertThat(html).contains("&lt;img");
+    }
 }

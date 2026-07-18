@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — ' + ${table.name}">DMHelper — Rollable Table</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <div>
+                    <div class="page-header-eyebrow">Rollable Tables</div>
+                    <h1 th:text="${table.name}">Table Name</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+                <div class="page-header-actions">
+                    <a th:href="@{/library/tables}" class="btn btn-ghost">&larr; Back to Tables</a>
+                    <a th:if="${table.source.name() == 'CUSTOM'}"
+                       class="btn btn-ghost"
+                       th:href="@{/library/tables/{id}/edit(id=${table.id})}">Edit</a>
+                </div>
+            </div>
+            <div class="detail-section" th:attr="data-table-id=${table.id}">
+                <div class="detail-meta">
+                    <span class="badge" th:text="${table.category}">CATEGORY</span>
+                    <span class="badge" th:text="${table.addressMode}">MODE</span>
+                    <span class="badge" th:text="${table.rollExpression}">EXPR</span>
+                </div>
+                <div class="detail-description" th:utext="${markdownDescription}"></div>
+                <div class="u-mt-lg">
+                    <th:block th:replace="~{rollable-table/_roll-panel :: roll-panel}"></th:block>
+                    <div x-data="tableDraftPanel()">
+                        <th:block th:replace="~{rollable-table/_encounter-draft :: encounter-draft}"></th:block>
+                        <th:block th:replace="~{rollable-table/_reward-draft :: reward-draft}"></th:block>
+                    </div>
+                </div>
+                <h2 class="u-mt-lg">Entries</h2>
+                <table class="data-table u-mt-md">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Range/Weight</th>
+                            <th>Result</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="entry : ${table.entries}">
+                            <td th:text="${entry.sortOrder + 1}">1</td>
+                            <td>
+                                <span th:if="${entry.rangeStart != null}"
+                                      th:text="${entry.rangeStart} + '-' + ${entry.rangeEnd}">1-6</span>
+                                <span th:if="${entry.weight != null}"
+                                      th:text="'w=' + ${entry.weight}">w=1</span>
+                            </td>
+                            <td th:text="${entry.resultText}">Result text</td>
+                            <td th:text="${entry.quantityExpression}">1</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    window.TABLE_ID = /*[[${table.id}]]*/ null;
+    /*]]>*/
+    </script>
+    <script th:src="@{/js/rollable-table-roll.js}"></script>
+</body>
+</html>

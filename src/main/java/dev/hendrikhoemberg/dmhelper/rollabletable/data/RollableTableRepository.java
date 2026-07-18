@@ -12,4 +12,6 @@ public interface RollableTableRepository extends JpaRepository<RollableTable, UU
 
     @Query("SELECT DISTINCT t FROM RollableTable t LEFT JOIN FETCH t.entries WHERE t.id = :id")
     Optional<RollableTable> findWithEntriesById(@Param("id") UUID id);
+
+    List<RollableTable> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
 }

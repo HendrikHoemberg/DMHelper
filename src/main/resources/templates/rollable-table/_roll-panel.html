@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="roll-panel"
+     x-data="tableRollPanel()"
+     class="roll-panel u-mt-md">
+    <div class="roll-controls u-flex u-gap-sm">
+        <label>
+            Manual value
+            <input type="number" x-model="request.manualValue">
+        </label>
+        <label>
+            N count
+            <input type="number" x-model="request.rollCount" min="1" value="1">
+        </label>
+        <label>
+            Duplicate policy
+            <select x-model="request.duplicatePolicy">
+                <option value="ALLOW_DUPLICATES">Allow Duplicates</option>
+                <option value="REROLL_DUPLICATES">Reroll Duplicates</option>
+            </select>
+        </label>
+        <button class="btn btn-primary" @@click="roll()" :disabled="loading">
+            <span x-text="loading ? 'Rolling...' : 'Roll'">Roll</span>
+        </button>
+    </div>
+    <div class="roll-results u-mt-md" x-show="result !== null">
+        <template x-for="outcome in (result?.outcomes || [])" :key="outcome.entryKey">
+            <div class="roll-result-entry">
+                <div class="roll-result-text" x-text="outcome.resultText"></div>
+                <template x-for="ref in (outcome.references || [])" :key="ref.targetId">
+                    <a class="roll-result-ref" x-text="ref.displayText"
+                       :href="'/library/tables/' + ref.targetId"></a>
+                </template>
+            </div>
+        </template>
+    </div>
+</div>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="reward-draft"
+     x-show="draft?.items?.length > 0"
+     class="draft-panel u-mt-md">
+    <div class="draft-header">
+        <h3>Review Reward Draft</h3>
+        <div class="draft-warning">No state changes until confirmed.</div>
+    </div>
+    <div class="draft-source u-mt-sm" x-text="'Source: ' + (draft?.sourceText || '')"></div>
+    <table class="data-table u-mt-sm">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Destination</th>
+            </tr>
+        </thead>
+        <tbody>
+            <template x-for="(item, idx) in (draft?.items || [])" :key="item.targetId">
+                <tr>
+                    <td x-text="item.displayName"></td>
+                    <td>
+                        <input type="number" x-model="draftItems[idx].quantity" min="1" max="50">
+                    </td>
+                    <td>Party Stash</td>
+                </tr>
+            </template>
+        </tbody>
+    </table>
+    <div class="u-flex u-gap-sm u-mt-sm">
+        <button class="btn btn-primary" @@click="confirmRewardDraft()" :disabled="draftLoading">
+            <span x-text="draftLoading ? 'Confirming...' : 'Confirm'"></span>
+        </button>
+        <button class="btn btn-ghost" @@click="discardDraft()" :disabled="draftLoading">
+            <span x-text="draftLoading ? 'Discarding...' : 'Discard'"></span>
+        </button>
+    </div>
+</div>
+</html>

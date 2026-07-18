@@ -11,6 +11,8 @@
         <!-- Rolls are logged to a campaign's history, so the roller only exists inside one.
              The panel is a sibling of the bar, not a child, so the two never share an Alpine
              scope; they talk through an event instead — same as the command palette. -->
+        <a href="/library/tables" class="btn btn-ghost u-text-sm"
+           title="Rollable Tables">&#x1F3B2;</a>
         <button class="dice-toggle-btn" id="diceToggle"
                 th:if="${campaignId != null}"
                 onclick="window.dispatchEvent(new CustomEvent('dice-roller-toggle'))"

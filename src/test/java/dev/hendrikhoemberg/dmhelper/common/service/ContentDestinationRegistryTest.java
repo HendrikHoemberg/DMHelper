@@ -58,6 +58,8 @@ class ContentDestinationRegistryTest {
                 entityId, "acolyte", "Acolyte")).isEqualTo("/library/backgrounds/" + entityId);
         assertThat(registry.library(ContentDestinationRegistry.LibraryType.FEAT,
                 entityId, "alert", "Alert")).isEqualTo("/library/feats/" + entityId);
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.ROLLABLE_TABLE,
+                entityId, "my-table", "My Table")).isEqualTo("/library/tables/" + entityId);
     }
 
     @Test
