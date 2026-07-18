@@ -118,7 +118,9 @@ Runtime features must work without internet access except the explicitly approve
 subsystem defined by the table-fidelity and atmosphere specification. A music provider outage may
 disable audio only; it must never block or degrade any non-audio session operation. User-created
 and imported content remains local unless the user explicitly exports or shares it. No new frontend
-build chain or runtime CDN is introduced.
+build chain or general-purpose runtime CDN is introduced.
+An official provider-hosted playback client or script required solely by the approved streaming-music
+subsystem falls within this exception and must not be used by non-audio features.
 
 ### 4.7 Rules provenance is visible
 

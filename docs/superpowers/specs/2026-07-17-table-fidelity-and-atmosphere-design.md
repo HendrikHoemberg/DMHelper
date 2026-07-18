@@ -48,7 +48,7 @@ priorities, and acceptance criteria shared between them.
 
 Master §4.6 requires runtime features to work without internet access. The music subsystem is
 **the first and only approved exception**: it is streaming-first by explicit product decision and
-requires internet access and a provider account.
+requires internet access and may require a provider account.
 
 The exception is bounded by these rules:
 
@@ -61,6 +61,10 @@ The exception is bounded by these rules:
   removable with a single visible action;
 - when the subsystem is unconfigured or offline, its UI states that plainly instead of failing
   silently or blocking.
+
+The exception includes an official provider-hosted playback client or script when the selected
+provider technically requires it. It does not authorize unrelated runtime CDN assets or a new
+frontend build chain.
 
 ### 3.2 Unchanged principles with specific consequences here
 
@@ -332,9 +336,10 @@ vendor:
   `supportsQueue`); the UI adapts to declared capabilities instead of assuming them;
 - playback happens **on the DM device** (the machine running the DM browser/its linked provider
   app); the player view remains silent and receives no audio-related data;
-- authentication uses the provider’s standard local OAuth flow; tokens are stored in local app
-  data, never in the database export, never in campaign packages, and are clearable from
-  settings.
+- providers that require authentication use their standard local OAuth flow; tokens are stored
+  in local app data, never in the database export, never in campaign packages, and are clearable
+  from settings. An authless public provider path may declare `AudioAuthMode.NONE` and must not
+  invent credentials or request unrelated API scopes;
 
 ### 7.2 Content model
 
@@ -388,6 +393,10 @@ Switching rules:
   actionable messages with retry per master §6.3 — e.g. “No active playback device. Open your
   provider app, then retry.”;
 - the session-log draft may record the cue timeline as an optional section.
+- when a provider requires its official player to remain visible, the cockpit renders that player
+  at or above the provider minimum throughout playback. The quick-access widget may use compact
+  controls while idle, but it must not collapse or hide that player while audio continues;
+  scripted playback is blocked whenever the provider's visibility threshold is not met;
 
 ### 7.5 Package, schema, and validation
 

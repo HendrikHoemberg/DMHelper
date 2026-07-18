@@ -64,4 +64,20 @@ class DocsIndexContractTest {
                 .contains("https://developers.google.com/youtube/iframe_api_reference")
                 .contains("https://developer.spotify.com/policy");
     }
+
+    @Test
+    void approvedMusicDesignCoversAuthlessAndProviderHostedPlaybackClients() throws Exception {
+        String master = Files.readString(Path.of(
+                "docs/superpowers/specs/2026-07-15-all-in-one-dm-readiness-design.md"));
+        String atmosphere = Files.readString(Path.of(
+                "docs/superpowers/specs/2026-07-17-table-fidelity-and-atmosphere-design.md"));
+
+        assertThat(master)
+                .contains("general-purpose runtime CDN")
+                .contains("official provider-hosted playback client or script");
+        assertThat(atmosphere)
+                .contains("may require a provider account")
+                .contains("An authless public provider path may declare `AudioAuthMode.NONE`")
+                .contains("must not collapse or hide that player while audio continues");
+    }
 }

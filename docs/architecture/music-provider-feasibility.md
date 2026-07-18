@@ -157,6 +157,70 @@ rateLimitHandling=honor Retry-After on 429
 | PROVIDER_OFFLINE | Network error, 5xx response, or request timeout |
 | POLICY_DISABLED | Spotify is not authorized for this product behavior (CONDITIONAL status) |
 
+## Provider Interfaces (Planned)
+
+These are the planned provider-neutral interfaces for the row 7 atmosphere/music implementation.
+No Java code is committed by this spike.
+
+enum AudioProviderId { YOUTUBE, SPOTIFY }
+enum AudioAuthMode { NONE, OAUTH_PKCE }
+
+record AudioProviderCapabilities(
+        boolean supportsSearch,
+        boolean supportsPlayPause,
+        boolean supportsSkip,
+        boolean supportsVolume,
+        boolean supportsQueue,
+        boolean supportsCrossfade,
+        boolean requiresVisiblePlayer,
+        boolean requiresInitialUserGesture,
+        boolean requiresActiveProviderDevice) {}
+
+interface AudioProviderClient {
+    AudioProviderId id();
+    AudioAuthMode authMode();
+    AudioProviderCapabilities capabilities();
+    ProviderReference parseReference(String input);
+    ProviderMetadata resolveMetadata(ProviderReference reference);
+    PlaybackState currentState();
+    PlaybackResult play(ProviderReference reference);
+    PlaybackResult pause();
+    PlaybackResult resume();
+    PlaybackResult skip();
+    PlaybackResult setVolume(int percent);
+    void clearCredentials();
+}
+
+## YouTube Implementation Constraints
+
+The row 7 implementation must observe all of these:
+
+- the official IFrame player is rendered only in the PIN-gated DM cockpit;
+- no YouTube script, reference, state, iframe, thumbnail, or error reaches /player or /ws/table;
+- the player is at least 480 by 270 when controls are shown, remains unobscured, and retains required branding;
+- while YouTube audio plays, its official player stays rendered in the cockpit and cannot be collapsed or hidden;
+- an IntersectionObserver or equivalent visibility check prevents scripted playback below the provider's visibility threshold;
+- the first audible action is a clearly labeled DM gesture;
+- onAutoplayBlocked becomes a visible prompt;
+- URL parsing accepts only documented YouTube video/playlist URL shapes and stores opaque IDs;
+- baseline supports pasted references, not search, so no API key is required;
+- the official provider-hosted IFrame script loads only when YouTube is enabled in the DM widget and is the sole runtime-script exception authorized by the amended design;
+- browser tests use a deterministic fake provider and never call YouTube.
+
+## Spotify Implementation Constraints
+
+The row 7 plan includes Spotify only when its status is SUPPORTED. The implementation:
+
+- is included only when status is SUPPORTED;
+- must not hide policy risk behind a feature flag when status is CONDITIONAL;
+- uses PKCE with no client secret and a loopback callback;
+- treats the client ID as local configuration because 2026 development mode cannot support a universal zero-setup distribution;
+- stores only refresh credentials on disk with owner-only permissions;
+- keeps access tokens and device IDs transient;
+- requires Premium and an active official device;
+- honors Retry-After and bounds provider timeouts away from session mutations;
+- displays metadata/artwork and provider attribution whenever Spotify content is controlled.
+
 ## Account and Subscription Prerequisites
 
 YouTube public embeds require no account for known public IDs. Spotify playback requires the
