@@ -192,14 +192,13 @@
                     <div class="prof-group">
                         <h3>Skills</h3>
                         <div class="skill-check-grid">
-                            <label class="skill-check-row" th:each="skill : ${T(java.util.Map).of(
-                                'acrobatics','Dex','animal_handling','Wis','arcana','Int',
-                                'athletics','Str','deception','Cha','history','Int',
-                                'insight','Wis','intimidation','Cha','investigation','Int',
-                                'medicine','Wis','nature','Int','perception','Wis',
-                                'performance','Cha','persuasion','Cha','religion','Int',
-                                'sleight_of_hand','Dex','stealth','Dex','survival','Wis'
-                            ).keySet()}">
+                            <label class="skill-check-row" th:each="skill : ${T(java.util.List).of(
+                                'acrobatics','animal_handling','arcana','athletics',
+                                'deception','history','insight','intimidation',
+                                'investigation','medicine','nature','perception',
+                                'performance','persuasion','religion','sleight_of_hand',
+                                'stealth','survival'
+                            )}">
                                 <input type="checkbox" name="skills" th:value="${skill}"
                                     th:checked="${sheet.proficiencies()?.get('skills') instanceof T(java.util.List) and #lists.contains(sheet.proficiencies().get('skills'), skill)}" />
                                 <span class="skill-name" th:text="${skill.replace('_', ' ')}">acrobatics</span>

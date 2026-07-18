@@ -848,9 +848,12 @@ class CoreSessionLoopSmokeTest {
                 .findFirst().orElseThrow();
         UUID memberId = member.getId();
 
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/party");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+
         dmPage.evaluate("""
-            async ([baseUrl, cid, mid]) => {
-                const resp = await fetch(baseUrl + '/api/v1/campaigns/' + cid + '/party/' + mid + '/sheet', {
+            async ([cid, mid]) => {
+                const resp = await fetch('/api/v1/campaigns/' + cid + '/party/' + mid + '/sheet', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -863,9 +866,7 @@ class CoreSessionLoopSmokeTest {
                 });
                 if (!resp.ok) throw new Error('Sheet creation failed: ' + await resp.text());
             }
-        """, Arrays.asList("http://localhost:" + port, campaignId.toString(), memberId.toString()));
-
-        dmPage.waitForTimeout(500);
+        """, Arrays.asList(campaignId.toString(), memberId.toString()));
 
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/party/" + memberId + "/sheet");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
@@ -875,8 +876,8 @@ class CoreSessionLoopSmokeTest {
         assertThat(dmPage.textContent("body")).contains("Short Rest");
 
         dmPage.evaluate("""
-            async ([baseUrl, cid, mid]) => {
-                const resp = await fetch(baseUrl + '/api/v1/campaigns/' + cid + '/party/' + mid + '/live-state', {
+            async ([cid, mid]) => {
+                const resp = await fetch('/api/v1/campaigns/' + cid + '/party/' + mid + '/live-state', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -887,11 +888,10 @@ class CoreSessionLoopSmokeTest {
                 });
                 if (!resp.ok) throw new Error('Live state update failed: ' + await resp.text());
             }
-        """, Arrays.asList("http://localhost:" + port, campaignId.toString(), memberId.toString()));
-        dmPage.waitForTimeout(300);
+        """, Arrays.asList(campaignId.toString(), memberId.toString()));
 
         dmPage.locator("button:has-text('Short Rest')").first().click();
-        dmPage.locator("#rest-preview-dialog").waitFor();
+        dmPage.locator("#rest-preview-dialog h3").waitFor();
         assertThat(dmPage.textContent("body")).contains("Short Rest Preview");
         dmPage.locator("#rest-preview-dialog button:has-text('Cancel')").click();
     }

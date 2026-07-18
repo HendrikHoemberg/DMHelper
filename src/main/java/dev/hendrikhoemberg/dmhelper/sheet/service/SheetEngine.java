@@ -10,6 +10,8 @@ import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
@@ -105,6 +107,15 @@ public class SheetEngine {
 
     @PostConstruct
     public void initialize() {
+        rebuildCaches();
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady() {
+        rebuildCaches();
+    }
+
+    private void rebuildCaches() {
         this.proficiencyBonusTable = buildProficiencyBonusTable();
         this.multiclassSlotTable = parseMulticlassSlotTable();
         this.classSpellcastingAbilities = buildSpellcastingAbilities();
