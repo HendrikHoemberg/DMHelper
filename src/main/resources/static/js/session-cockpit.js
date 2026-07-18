@@ -37,6 +37,14 @@ function sessionCockpit(config) {
         attendeeIds: config.attendeeIds || [],
         draftTitle: '',
         draftBody: config.draftBody || '',
+        threatPinKind: 'TRAP',
+        threatPinQuery: '',
+        threatPinResults: [],
+        selectedThreatForPin: null,
+        threatPinLabel: '',
+        threatPinX: 0,
+        threatPinY: 0,
+        threatPins: [],
 
         async mutateSession(path, options, summary, retry) {
             try {
@@ -395,6 +403,7 @@ function sessionCockpit(config) {
             });
             this.loadMaps();
             this.loadPlannedEncounters();
+            this.refreshThreatPins();
             this.loadActiveEncounter();
             if (config.mapId) {
                 this.visitedMapIds.add(this.currentMapId);
@@ -637,6 +646,86 @@ function sessionCockpit(config) {
             if (created) {
                 this.sbSearch = '';
                 this.sbResults = [];
+            }
+        },
+
+        async searchThreatPins() {
+            if (!this.threatPinQuery || this.threatPinQuery.length < 1) {
+                this.threatPinResults = [];
+                return;
+            }
+            try {
+                const base = this.threatPinKind === 'HAZARD' ? '/api/v1/hazards/search' : '/api/v1/traps/search';
+                const url = `${base}?campaignId=${encodeURIComponent(this.campaignId || '')}&q=${encodeURIComponent(this.threatPinQuery)}`;
+                const resp = await window.dmRequest(url);
+                this.threatPinResults = await resp.json();
+            } catch (error) {
+                window.reportActionFailure('Threat search failed', error, () => this.searchThreatPins());
+            }
+        },
+
+        selectThreatForPin(item) {
+            this.selectedThreatForPin = item;
+            this.threatPinResults = [];
+            this.threatPinQuery = item.name || '';
+            if (!this.threatPinLabel) this.threatPinLabel = item.name || '';
+        },
+
+        async refreshThreatPins() {
+            if (!this.currentMapId) {
+                this.threatPins = [];
+                return;
+            }
+            try {
+                const resp = await window.dmRequest(`/api/v1/maps/${this.currentMapId}/pins`);
+                const pins = await resp.json();
+                this.threatPins = (pins || []).filter(p => p.pinKind === 'THREAT' || p.threatKind);
+            } catch (error) {
+                window.reportActionFailure('Could not load threat pins.', error, () => this.refreshThreatPins());
+            }
+        },
+
+        async createThreatPin() {
+            if (!this.selectedThreatForPin || !this.currentMapId) return;
+            try {
+                const label = this.threatPinLabel || this.selectedThreatForPin.name || 'pin';
+                const keyBase = label.toString().toLowerCase()
+                    .replace(/[^a-z0-9._-]+/g, '-')
+                    .replace(/^-+|-+$/g, '')
+                    .slice(0, 80) || 'pin';
+                const body = {
+                    key: `${keyBase}-${Date.now().toString(36)}`.slice(0, 100),
+                    threatKind: this.selectedThreatForPin.kind || this.threatPinKind,
+                    threatId: this.selectedThreatForPin.id,
+                    x: Math.max(0, Math.floor(Number(this.threatPinX) || 0)),
+                    y: Math.max(0, Math.floor(Number(this.threatPinY) || 0)),
+                    label: this.threatPinLabel || null,
+                    sortOrder: 0,
+                };
+                await window.dmRequest(`/api/v1/maps/${this.currentMapId}/pins`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                this.selectedThreatForPin = null;
+                this.threatPinQuery = '';
+                this.threatPinLabel = '';
+                await this.refreshThreatPins();
+                await window.battleMap?.loadPins(this.currentMapId);
+                window.showToast?.('Threat pin created', 'success');
+            } catch (error) {
+                window.reportActionFailure('Could not create threat pin', error, () => this.createThreatPin());
+            }
+        },
+
+        async deleteThreatPin(pinId) {
+            if (!this.currentMapId) return;
+            try {
+                await window.dmRequest(`/api/v1/maps/${this.currentMapId}/pins/${pinId}`, { method: 'DELETE' });
+                await this.refreshThreatPins();
+                await window.battleMap?.loadPins(this.currentMapId);
+            } catch (error) {
+                window.reportActionFailure('Could not delete threat pin', error, () => this.deleteThreatPin(pinId));
             }
         },
 

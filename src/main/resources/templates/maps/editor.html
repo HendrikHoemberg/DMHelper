@@ -351,6 +351,51 @@
                     </label>
                     <button class="btn btn-ghost" style="width: 100%; margin-top: var(--space-xs);" @click="deleteShape()">Delete shape</button>
                 </div>
+
+                <div class="sidebar-section threat-pin-section" data-threat-pins>
+                    <h3>Threat pins</h3>
+                    <p class="text-muted u-text-xs" style="margin: 0 0 var(--space-xs);">DM-only markers. Not shown to players.</p>
+                    <label class="sidebar-field">Type
+                        <select x-model="threatPinKind" @change="threatPinResults = []; threatPinQuery = ''" class="u-w-full">
+                            <option value="TRAP">Trap</option>
+                            <option value="HAZARD">Hazard</option>
+                        </select>
+                    </label>
+                    <label class="sidebar-field">Search
+                        <input type="search" x-model="threatPinQuery" @input.debounce.300ms="searchThreats()"
+                               placeholder="Find trap/hazard…" class="u-w-full">
+                    </label>
+                    <div class="threat-pin-results" x-show="threatPinResults.length" x-cloak style="max-height: 120px; overflow-y: auto; margin-bottom: var(--space-xs);">
+                        <template x-for="item in threatPinResults" :key="item.id">
+                            <button type="button" class="btn btn-ghost u-w-full"
+                                    style="justify-content: flex-start; font-size: var(--text-sm);"
+                                    @click="selectThreat(item)"
+                                    x-text="item.name"></button>
+                        </template>
+                    </div>
+                    <p class="text-muted u-text-xs" x-show="selectedThreat" x-text="selectedThreat ? ('Selected: ' + selectedThreat.name) : ''"></p>
+                    <label class="sidebar-field">Label
+                        <input type="text" x-model="threatPinLabel" placeholder="Optional label" class="u-w-full">
+                    </label>
+                    <label class="sidebar-field">X
+                        <input type="number" x-model.number="threatPinX" min="0" class="u-w-full">
+                    </label>
+                    <label class="sidebar-field">Y
+                        <input type="number" x-model.number="threatPinY" min="0" class="u-w-full">
+                    </label>
+                    <button type="button" class="btn btn-primary u-w-full" style="margin-top: var(--space-xs);"
+                            @click="createThreatPin()" :disabled="!selectedThreat">Create pin</button>
+                    <div class="threat-pin-list" style="margin-top: var(--space-sm);">
+                        <template x-for="pin in threatPins" :key="pin.id">
+                            <div class="u-flex u-items-center u-gap-xs" style="margin-bottom: 4px; font-size: var(--text-sm);">
+                                <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;"
+                                      x-text="(pin.title || pin.key) + ' (' + pin.x + ',' + pin.y + ')'"></span>
+                                <button type="button" class="btn btn-ghost" style="padding: 0 4px;"
+                                        @click="deleteThreatPin(pin.id)" title="Delete pin">×</button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -404,7 +449,17 @@
                 canRedo: false,
                 helpOpen: false,
                 imageLocked: false,
+                threatPinKind: 'TRAP',
+                threatPinQuery: '',
+                threatPinResults: [],
+                selectedThreat: null,
+                threatPinLabel: '',
+                threatPinX: 0,
+                threatPinY: 0,
+                threatPins: [],
+                campaignId: '',
                 init() {
+                    this.campaignId = window.MAP_CAMPAIGN_ID || '';
                     window.addEventListener('map-toolchange', (e) => { this.tool = e.detail.tool; });
                     window.addEventListener('map-palette', (e) => {
                         this.terrains = [{ key: '__erase__', name: '◇ Erase' }, ...e.detail.terrains];
@@ -421,6 +476,61 @@
                         this.canUndo = e.detail.canUndo;
                         this.canRedo = e.detail.canRedo;
                     });
+                    window.addEventListener('map-threat-pins', (e) => {
+                        this.threatPins = (e.detail.pins || []).filter(p => p.pinKind === 'THREAT');
+                    });
+                    this.$nextTick(() => this.refreshThreatPins());
+                },
+                async searchThreats() {
+                    if (!this.threatPinQuery || this.threatPinQuery.length < 1) {
+                        this.threatPinResults = [];
+                        return;
+                    }
+                    try {
+                        const base = this.threatPinKind === 'HAZARD' ? '/api/v1/hazards/search' : '/api/v1/traps/search';
+                        const url = `${base}?campaignId=${encodeURIComponent(this.campaignId || '')}&q=${encodeURIComponent(this.threatPinQuery)}`;
+                        const resp = await window.dmRequest(url);
+                        this.threatPinResults = await resp.json();
+                    } catch (e) {
+                        window.reportActionFailure('Threat search failed', e, () => this.searchThreats());
+                    }
+                },
+                selectThreat(item) {
+                    this.selectedThreat = item;
+                    this.threatPinResults = [];
+                    this.threatPinQuery = item.name || '';
+                    if (!this.threatPinLabel) this.threatPinLabel = item.name || '';
+                },
+                async refreshThreatPins() {
+                    if (window.mapEditor?.loadThreatPins) {
+                        await window.mapEditor.loadThreatPins();
+                    }
+                },
+                async createThreatPin() {
+                    if (!this.selectedThreat || !window.mapEditor) return;
+                    try {
+                        await window.mapEditor.createThreatPin({
+                            threatKind: this.selectedThreat.kind || this.threatPinKind,
+                            threatId: this.selectedThreat.id,
+                            x: Number(this.threatPinX) || 0,
+                            y: Number(this.threatPinY) || 0,
+                            label: this.threatPinLabel || null,
+                        });
+                        this.selectedThreat = null;
+                        this.threatPinQuery = '';
+                        this.threatPinLabel = '';
+                        window.showToast?.('Threat pin created', 'success');
+                    } catch (e) {
+                        window.reportActionFailure('Could not create threat pin', e, () => this.createThreatPin());
+                    }
+                },
+                async deleteThreatPin(pinId) {
+                    if (!window.mapEditor) return;
+                    try {
+                        await window.mapEditor.deleteThreatPin(pinId);
+                    } catch (e) {
+                        window.reportActionFailure('Could not delete threat pin', e, () => this.deleteThreatPin(pinId));
+                    }
                 },
                 setTool(t) { window.mapEditor?.setTool(t); },
                 applyTerrain() { window.mapEditor?.setTerrain(this.terrain); },
@@ -466,6 +576,7 @@
     <script type="module" th:inline="javascript">
         import { MapEditor } from '/js/map/map-editor.js';
 
+        window.MAP_CAMPAIGN_ID = /*[[${campaignId}]]*/ '';
         const editor = new MapEditor({
             container: document.getElementById('editorCanvasWrap'),
             mapId: /*[[${map.id}]]*/ '',

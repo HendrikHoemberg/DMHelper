@@ -117,6 +117,39 @@
               </div>
             </div>
           </section>
+          <section class="sidebar-section threat-pin-section" data-threat-pins>
+            <h3>Threat pins</h3>
+            <p class="text-muted u-text-xs">DM-only. Click a diamond marker on the map to open the card.</p>
+            <label class="u-block u-text-sm">Type
+              <select x-model="threatPinKind" class="u-w-full">
+                <option value="TRAP">Trap</option>
+                <option value="HAZARD">Hazard</option>
+              </select>
+            </label>
+            <label class="u-block u-text-sm">Search
+              <input type="search" x-model="threatPinQuery" @input.debounce.300ms="searchThreatPins()"
+                     placeholder="Find trap/hazard…" class="u-w-full">
+            </label>
+            <div x-show="threatPinResults.length" x-cloak>
+              <template x-for="item in threatPinResults" :key="item.id">
+                <button type="button" class="btn btn-ghost u-w-full" style="justify-content:flex-start"
+                        @click="selectThreatForPin(item)" x-text="item.name"></button>
+              </template>
+            </div>
+            <label class="u-block u-text-sm">Label <input type="text" x-model="threatPinLabel" class="u-w-full"></label>
+            <div class="u-flex u-gap-sm">
+              <label class="u-text-sm">X <input type="number" x-model.number="threatPinX" class="u-w-full"></label>
+              <label class="u-text-sm">Y <input type="number" x-model.number="threatPinY" class="u-w-full"></label>
+            </div>
+            <button type="button" class="btn btn-primary u-w-full" style="margin-top:4px"
+                    @click="createThreatPin()" :disabled="!selectedThreatForPin">Create pin</button>
+            <template x-for="pin in threatPins" :key="pin.id">
+              <div class="u-flex u-items-center u-gap-xs" style="font-size:var(--text-sm);margin-top:4px">
+                <span style="flex:1" x-text="pin.title || pin.key"></span>
+                <button type="button" class="btn btn-ghost" @click="deleteThreatPin(pin.id)">×</button>
+              </div>
+            </template>
+          </section>
           <section class="sidebar-section">
             <h3>Tokens (<span x-text="tokens.length">0</span>)</h3>
             <template x-for="t in tokens" :key="t.id">
@@ -175,6 +208,17 @@ window.sessionCockpitConfig = {
     attendeeIds: /*[[${attendeeIds}]]*/ [],
     draftBody: /*[[${workspace.session.draftBody}]]*/ null
 };
+// DM-only threat map pins: open library detail when a pin is clicked on the battle map.
+window.addEventListener('threat-card-open', (event) => {
+    const detail = event.detail || {};
+    if (!detail.threatId || !detail.threatKind) return;
+    const base = detail.threatKind === 'HAZARD' ? '/library/hazards/' : '/library/traps/';
+    const title = detail.title ? ` (${detail.title})` : '';
+    if (window.showToast) {
+        window.showToast('Opening threat card' + title, 'info');
+    }
+    window.open(base + detail.threatId, '_blank', 'noopener');
+});
 </script>
 </body>
 </html>

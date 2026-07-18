@@ -1980,4 +1980,51 @@ export class MapEditor {
     emit(name, detail) {
         window.dispatchEvent(new CustomEvent(name, { detail }));
     }
+
+    /* ---- DM-only threat pins (not part of MapDocumentDto) ---- */
+
+    async loadThreatPins() {
+        if (!this.mapId) return;
+        try {
+            const res = await window.dmRequest(`/api/v1/maps/${this.mapId}/pins`);
+            const pins = await res.json();
+            this.emit('map-threat-pins', { pins });
+            return pins;
+        } catch (error) {
+            window.reportActionFailure('Could not load threat pins.', error, () => this.loadThreatPins());
+            return [];
+        }
+    }
+
+    async createThreatPin({ threatKind, threatId, x, y, label }) {
+        const keyBase = (label || threatKind || 'pin')
+            .toString()
+            .toLowerCase()
+            .replace(/[^a-z0-9._-]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 80) || 'pin';
+        const key = `${keyBase}-${Date.now().toString(36)}`.slice(0, 100);
+        const body = {
+            key,
+            threatKind,
+            threatId,
+            x: Math.max(0, Math.floor(Number(x) || 0)),
+            y: Math.max(0, Math.floor(Number(y) || 0)),
+            label: label || null,
+            sortOrder: 0,
+        };
+        const res = await window.dmRequest(`/api/v1/maps/${this.mapId}/pins`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        const created = await res.json();
+        await this.loadThreatPins();
+        return created;
+    }
+
+    async deleteThreatPin(pinId) {
+        await window.dmRequest(`/api/v1/maps/${this.mapId}/pins/${pinId}`, { method: 'DELETE' });
+        await this.loadThreatPins();
+    }
 }

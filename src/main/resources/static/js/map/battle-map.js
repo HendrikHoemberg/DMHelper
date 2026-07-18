@@ -1063,7 +1063,7 @@ export class BattleMap {
         this.previewLayer.batchDraw();
     }
 
-    /* ---- Pins ---- */
+    /* ---- Pins (scene + DM-only threat markers) ---- */
     async loadPins(mapId) {
         this.pinLayer.destroyChildren();
         if (!this.dmMode) return;
@@ -1071,32 +1071,76 @@ export class BattleMap {
             const res = await this._request(`/api/v1/maps/${mapId}/pins`);
             const pins = await res.json();
             for (const pin of pins) {
-                const circle = new Konva.Circle({
-                    x: pin.x, y: pin.y, radius: 14,
-                    fill: '#b45309', stroke: '#fff', strokeWidth: 2,
-                    draggable: false
-                });
-                const label = new Konva.Text({
-                    x: pin.x - 8, y: pin.y - 8,
-                    text: pin.sceneKey || '\u2022',
-                    fontSize: 12, fill: '#fff',
-                    fontStyle: 'bold', align: 'center',
-                    width: 16
-                });
-                const group = new Konva.Group({ listening: true });
-                group.add(circle);
-                group.add(label);
-                group.on('click', () => {
-                    if (window.openSceneInPanel) {
-                        window.openSceneInPanel(pin.sceneId);
-                    }
-                });
-                this.pinLayer.add(group);
+                const isThreat = pin.pinKind === 'THREAT' || pin.threatKind;
+                if (isThreat) {
+                    this._drawThreatPin(pin);
+                } else {
+                    this._drawScenePin(pin);
+                }
             }
             this.pinLayer.draw();
         } catch (error) {
             this._failure('Could not load pins.', error, null);
         }
+    }
+
+    _drawScenePin(pin) {
+        const circle = new Konva.Circle({
+            x: pin.x, y: pin.y, radius: 14,
+            fill: '#b45309', stroke: '#fff', strokeWidth: 2,
+            draggable: false
+        });
+        const label = new Konva.Text({
+            x: pin.x - 8, y: pin.y - 8,
+            text: pin.sceneKey || '\u2022',
+            fontSize: 12, fill: '#fff',
+            fontStyle: 'bold', align: 'center',
+            width: 16
+        });
+        const group = new Konva.Group({ listening: true });
+        group.add(circle);
+        group.add(label);
+        group.on('click', () => {
+            if (window.openSceneInPanel) {
+                window.openSceneInPanel(pin.sceneId);
+            }
+        });
+        this.pinLayer.add(group);
+    }
+
+    /** Distinct DM marker for traps/hazards — never rendered for players. */
+    _drawThreatPin(pin) {
+        const fill = pin.threatKind === 'HAZARD' ? '#7c3aed' : '#b91c1c';
+        const diamond = new Konva.RegularPolygon({
+            x: pin.x, y: pin.y,
+            sides: 4, radius: 16,
+            fill, stroke: '#fef3c7', strokeWidth: 2,
+            rotation: 0,
+            draggable: false,
+        });
+        const glyph = pin.threatKind === 'HAZARD' ? 'H' : 'T';
+        const label = new Konva.Text({
+            x: pin.x - 8, y: pin.y - 8,
+            text: glyph,
+            fontSize: 12, fill: '#fff',
+            fontStyle: 'bold', align: 'center',
+            width: 16
+        });
+        const group = new Konva.Group({ listening: true, name: 'threat-pin' });
+        group.add(diamond);
+        group.add(label);
+        group.on('click', () => {
+            window.dispatchEvent(new CustomEvent('threat-card-open', {
+                detail: {
+                    threatKind: pin.threatKind,
+                    threatId: pin.threatId,
+                    pinId: pin.id,
+                    title: pin.title,
+                    key: pin.key,
+                },
+            }));
+        });
+        this.pinLayer.add(group);
     }
 
     showPins() {

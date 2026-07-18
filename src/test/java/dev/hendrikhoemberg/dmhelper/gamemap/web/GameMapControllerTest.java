@@ -68,7 +68,9 @@ class GameMapControllerTest {
 
         mockMvc.perform(get("/campaigns/{campaignId}/maps/{mapId}/edit", UUID.randomUUID(), m.getId()))
                 .andExpect(status().isOk())
-                .andExpect(view().name("maps/editor"));
+                .andExpect(view().name("maps/editor"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Threat pins")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("threat-pin")));
     }
 
     @Test
