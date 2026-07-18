@@ -11,9 +11,12 @@ import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.service.CustomContentSupport;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableEntry;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableEntryReference;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableCategory;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableReferenceScope;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableRollService;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableService;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableValidationException;
@@ -29,6 +32,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
 import java.util.List;
@@ -38,6 +42,7 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -85,6 +90,7 @@ class RollableTableApiControllerTest {
     private RollableTable table(UUID id, String name) {
         RollableTable t = new RollableTable();
         t.setId(id);
+        t.setSourceKey(name.toLowerCase().replace(' ', '-'));
         t.setName(name);
         t.setSource(ContentSource.CUSTOM);
         t.setAddressMode(TableAddressMode.WEIGHTED);
@@ -104,6 +110,61 @@ class RollableTableApiControllerTest {
                         .content("{\"name\":\"New Table\",\"sourceKey\":\"new-table\",\"addressMode\":\"WEIGHTED\",\"category\":\"GENERIC\",\"entries\":[]}"))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/library/tables/" + id));
+    }
+
+    @Test
+    void createReturnsFiniteResponseForBidirectionalEntryGraph() throws Exception {
+        UUID id = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+        RollableTable table = table(id, "Nested Table");
+
+        RollableTableEntry entry = new RollableTableEntry();
+        entry.setId(UUID.randomUUID());
+        entry.setTable(table);
+        entry.setEntryKey("nested-result");
+        entry.setWeight(1);
+        entry.setResultText("A nested result");
+        entry.setSortOrder(0);
+
+        RollableTableEntryReference reference = new RollableTableEntryReference();
+        reference.setId(UUID.randomUUID());
+        reference.setEntry(entry);
+        reference.setTargetScope(TableReferenceScope.ENTITY);
+        reference.setTargetType("ROLLABLE_TABLE");
+        reference.setTargetId(targetId);
+        reference.setDisplayText("Another table");
+        reference.setSortOrder(0);
+        entry.getReferences().add(reference);
+        table.getEntries().add(entry);
+
+        when(service.create(any(), any(), any())).thenReturn(table);
+
+        mockMvc.perform(post("/api/v1/rollable-tables")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Nested Table\",\"sourceKey\":\"nested-table\",\"addressMode\":\"WEIGHTED\",\"category\":\"GENERIC\",\"entries\":[]}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(id.toString()))
+                .andExpect(jsonPath("$.entries[0].entryKey").value("nested-result"))
+                .andExpect(jsonPath("$.entries[0].references[0].targetId").value(targetId.toString()))
+                .andExpect(jsonPath("$.entries[0].table").doesNotExist())
+                .andExpect(jsonPath("$.entries[0].references[0].entry").doesNotExist());
+    }
+
+    @Test
+    void mappedResponseSerializesWithoutPersistenceBackLinks() throws Exception {
+        RollableTable table = table(UUID.randomUUID(), "Serialization Table");
+        RollableTableEntry entry = new RollableTableEntry();
+        entry.setTable(table);
+        entry.setEntryKey("result");
+        table.getEntries().add(entry);
+
+        String json = JsonMapper.builder().build()
+                .writeValueAsString(RollableTableWebMapper.from(table));
+
+        assertThat(json)
+                .contains("\"entryKey\":\"result\"")
+                .doesNotContain("\"table\"")
+                .doesNotContain("\"entry\"");
     }
 
     @Test

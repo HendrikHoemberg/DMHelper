@@ -84,7 +84,8 @@ public class RollableTableApiController {
         try {
             ContentProvenance provenance = customContentSupport.defaultForCreate(null);
             RollableTable table = service.create(campaignId, write, provenance);
-            return ResponseEntity.created(URI.create("/library/tables/" + table.getId())).body(table);
+            return ResponseEntity.created(URI.create("/library/tables/" + table.getId()))
+                    .body(RollableTableWebMapper.from(table));
         } catch (RollableTableValidationException e) {
             ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
             problem.setProperty("problems", e.problems());
@@ -96,7 +97,7 @@ public class RollableTableApiController {
     public ResponseEntity<?> update(@PathVariable UUID id, @RequestBody RollableTableWrite write) {
         try {
             RollableTable table = service.updateCustom(id, write, null);
-            return ResponseEntity.ok(table);
+            return ResponseEntity.ok(RollableTableWebMapper.from(table));
         } catch (RollableTableValidationException e) {
             ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
             problem.setProperty("problems", e.problems());
@@ -105,17 +106,17 @@ public class RollableTableApiController {
     }
 
     @PostMapping("/{id}/clone")
-    public ResponseEntity<RollableTable> clone(@PathVariable UUID id,
-                                                @RequestParam(required = false) UUID campaignId,
-                                                @RequestParam(required = false) String name) {
+    public ResponseEntity<RollableTableResponse> clone(@PathVariable UUID id,
+                                                       @RequestParam(required = false) UUID campaignId,
+                                                       @RequestParam(required = false) String name) {
         RollableTable cloned = service.cloneAsCustom(id, campaignId, name);
-        return ResponseEntity.status(HttpStatus.CREATED).body(cloned);
+        return ResponseEntity.status(HttpStatus.CREATED).body(RollableTableWebMapper.from(cloned));
     }
 
     @PostMapping("/{id}/promote")
-    public ResponseEntity<RollableTable> promote(@PathVariable UUID id) {
+    public ResponseEntity<RollableTableResponse> promote(@PathVariable UUID id) {
         RollableTable table = service.promoteToGlobal(id);
-        return ResponseEntity.ok(table);
+        return ResponseEntity.ok(RollableTableWebMapper.from(table));
     }
 
     @DeleteMapping("/{id}")
