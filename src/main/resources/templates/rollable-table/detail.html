@@ -4,11 +4,11 @@
     <th:block th:replace="~{fragments/head :: head}"></th:block>
     <title th:text="'DMHelper — ' + ${table.name}">DMHelper — Rollable Table</title>
 </head>
-<body>
+<body th:attr="data-campaign-id=${campaignId}">
     <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
     <div class="app-shell">
         <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
+        <main class="app-main" x-data="tableManagement()">
             <div class="page-header">
                 <div>
                     <div class="page-header-eyebrow">Rollable Tables</div>
@@ -20,6 +20,15 @@
                     <a th:if="${table.source.name() == 'CUSTOM'}"
                        class="btn btn-ghost"
                        th:href="@{/library/tables/{id}/edit(id=${table.id})}">Edit</a>
+                    <button type="button" class="btn btn-ghost" @@click="cloneTable()"
+                            :disabled="managementLoading">Clone</button>
+                    <button th:if="${table.source.name() == 'CUSTOM' and campaignId != null}"
+                            type="button" class="btn btn-ghost" @@click="promoteTable()"
+                            :disabled="managementLoading">Promote</button>
+                    <button th:if="${table.source.name() == 'CUSTOM'}"
+                            type="button" class="btn btn-danger" @@click="deleteTable()"
+                            :disabled="managementLoading">Delete</button>
+                    <span class="u-text-sm" x-show="managementMessage" x-text="managementMessage"></span>
                 </div>
             </div>
             <div class="detail-section" th:attr="data-table-id=${table.id}">
@@ -69,5 +78,6 @@
     /*]]>*/
     </script>
     <script th:src="@{/js/rollable-table-roll.js}"></script>
+    <script th:src="@{/js/rollable-table-management.js}"></script>
 </body>
 </html>

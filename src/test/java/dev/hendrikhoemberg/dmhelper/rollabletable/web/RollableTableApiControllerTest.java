@@ -26,6 +26,7 @@ import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollGroup;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollOutcome;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollRequest;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableValidationProblem;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableReferenceResolver;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -84,6 +85,9 @@ class RollableTableApiControllerTest {
 
     @MockitoBean
     private HandoutRepository handoutRepository;
+
+    @MockitoBean
+    private TableReferenceResolver referenceResolver;
 
     private final UUID campaignId = UUID.randomUUID();
 
@@ -240,6 +244,34 @@ class RollableTableApiControllerTest {
                         .param("q", "gob"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    void referenceOptionsExcludeForeignTablesAndExposeSafeDestination() throws Exception {
+        RollableTable sameCampaign = table(UUID.randomUUID(), "Same Campaign");
+        RollableTable global = table(UUID.randomUUID(), "Global");
+        RollableTable foreign = table(UUID.randomUUID(), "Foreign");
+        when(repository.findByNameContainingIgnoreCaseOrderByNameAsc(""))
+                .thenReturn(List.of(sameCampaign, global, foreign));
+        when(referenceResolver.isVisibleToScope(
+                eq(dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.ROLLABLE_TABLE),
+                eq(sameCampaign.getId()), eq(campaignId))).thenReturn(true);
+        when(referenceResolver.isVisibleToScope(
+                eq(dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.ROLLABLE_TABLE),
+                eq(global.getId()), eq(campaignId))).thenReturn(true);
+        when(referenceResolver.isVisibleToScope(
+                eq(dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.ROLLABLE_TABLE),
+                eq(foreign.getId()), eq(campaignId))).thenReturn(false);
+
+        mockMvc.perform(get("/api/v1/rollable-tables/reference-options")
+                        .param("campaignId", campaignId.toString())
+                        .param("type", "ROLLABLE_TABLE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].label").value(org.hamcrest.Matchers.containsInAnyOrder(
+                        "Same Campaign", "Global")))
+                .andExpect(jsonPath("$[*].label").value(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.hasItem("Foreign"))))
+                .andExpect(jsonPath("$[0].url").value(org.hamcrest.Matchers.startsWith("/library/tables/")));
     }
 
     @Test

@@ -18,6 +18,8 @@ import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableValidatio
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableWrite;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollGroup;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollRequest;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableDeletionImpact;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableReferenceResolver;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +55,7 @@ public class RollableTableApiController {
     private final NoteRepository noteRepository;
     private final EncounterRepository encounterRepository;
     private final HandoutRepository handoutRepository;
+    private final TableReferenceResolver referenceResolver;
 
     public RollableTableApiController(RollableTableService service,
                                        RollableTableRollService rollService,
@@ -64,7 +67,8 @@ public class RollableTableApiController {
                                        MagicItemRepository magicItemRepository,
                                        NoteRepository noteRepository,
                                        EncounterRepository encounterRepository,
-                                       HandoutRepository handoutRepository) {
+                                       HandoutRepository handoutRepository,
+                                       TableReferenceResolver referenceResolver) {
         this.service = service;
         this.rollService = rollService;
         this.repository = repository;
@@ -76,6 +80,7 @@ public class RollableTableApiController {
         this.noteRepository = noteRepository;
         this.encounterRepository = encounterRepository;
         this.handoutRepository = handoutRepository;
+        this.referenceResolver = referenceResolver;
     }
 
     @PostMapping
@@ -130,6 +135,11 @@ public class RollableTableApiController {
         }
     }
 
+    @GetMapping("/{id}/deletion-impact")
+    public ResponseEntity<TableDeletionImpact> deletionImpact(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.deletionImpact(id));
+    }
+
     @GetMapping("/reference-options")
     public ResponseEntity<List<Map<String, String>>> referenceOptions(
             @RequestParam(required = false) UUID campaignId,
@@ -151,11 +161,7 @@ public class RollableTableApiController {
                         ? statBlockRepository.findAll()
                         : statBlockRepository.findByNameContainingIgnoreCaseOrderByNameAsc(query);
                 for (var item : items) {
-                    Map<String, String> m = new LinkedHashMap<>();
-                    m.put("id", item.getId().toString());
-                    m.put("label", item.getName());
-                    m.put("type", type);
-                    results.add(m);
+                    addVisibleOption(results, contentType, item.getId(), item.getName(), campaignId);
                 }
             }
             case EQUIPMENT_ITEM -> {
@@ -163,11 +169,7 @@ public class RollableTableApiController {
                         ? equipmentItemRepository.findAll()
                         : equipmentItemRepository.findByNameContainingIgnoreCaseOrderByNameAsc(query);
                 for (var item : items) {
-                    Map<String, String> m = new LinkedHashMap<>();
-                    m.put("id", item.getId().toString());
-                    m.put("label", item.getName());
-                    m.put("type", type);
-                    results.add(m);
+                    addVisibleOption(results, contentType, item.getId(), item.getName(), campaignId);
                 }
             }
             case MAGIC_ITEM -> {
@@ -175,11 +177,7 @@ public class RollableTableApiController {
                         ? magicItemRepository.findAll()
                         : magicItemRepository.findByNameContainingIgnoreCaseOrderByNameAsc(query);
                 for (var item : items) {
-                    Map<String, String> m = new LinkedHashMap<>();
-                    m.put("id", item.getId().toString());
-                    m.put("label", item.getName());
-                    m.put("type", type);
-                    results.add(m);
+                    addVisibleOption(results, contentType, item.getId(), item.getName(), campaignId);
                 }
             }
             case NOTE -> {
@@ -187,11 +185,7 @@ public class RollableTableApiController {
                     var items = noteRepository.findByCampaignIdOrderByCreatedAtDesc(campaignId);
                     for (var item : items) {
                         if (query.isEmpty() || (item.getTitle() != null && item.getTitle().toLowerCase().contains(query))) {
-                            Map<String, String> m = new LinkedHashMap<>();
-                            m.put("id", item.getId().toString());
-                            m.put("label", item.getTitle());
-                            m.put("type", type);
-                            results.add(m);
+                            addVisibleOption(results, contentType, item.getId(), item.getTitle(), campaignId);
                         }
                     }
                 }
@@ -199,11 +193,7 @@ public class RollableTableApiController {
             case ROLLABLE_TABLE -> {
                 var items = repository.findByNameContainingIgnoreCaseOrderByNameAsc(query);
                 for (var item : items) {
-                    Map<String, String> m = new LinkedHashMap<>();
-                    m.put("id", item.getId().toString());
-                    m.put("label", item.getName());
-                    m.put("type", type);
-                    results.add(m);
+                    addVisibleOption(results, contentType, item.getId(), item.getName(), campaignId);
                 }
             }
             case ENCOUNTER -> {
@@ -211,11 +201,7 @@ public class RollableTableApiController {
                     var items = encounterRepository.findByCampaignIdOrderByNameAsc(campaignId);
                     for (var item : items) {
                         if (query.isEmpty() || (item.getName() != null && item.getName().toLowerCase().contains(query))) {
-                            Map<String, String> m = new LinkedHashMap<>();
-                            m.put("id", item.getId().toString());
-                            m.put("label", item.getName());
-                            m.put("type", type);
-                            results.add(m);
+                            addVisibleOption(results, contentType, item.getId(), item.getName(), campaignId);
                         }
                     }
                 }
@@ -225,11 +211,7 @@ public class RollableTableApiController {
                     var items = handoutRepository.findByCampaignIdOrderByTitleAsc(campaignId);
                     for (var item : items) {
                         if (query.isEmpty() || (item.getTitle() != null && item.getTitle().toLowerCase().contains(query))) {
-                            Map<String, String> m = new LinkedHashMap<>();
-                            m.put("id", item.getId().toString());
-                            m.put("label", item.getTitle());
-                            m.put("type", type);
-                            results.add(m);
+                            addVisibleOption(results, contentType, item.getId(), item.getTitle(), campaignId);
                         }
                     }
                 }
@@ -237,6 +219,41 @@ public class RollableTableApiController {
         }
 
         return ResponseEntity.ok(results);
+    }
+
+    private void addVisibleOption(List<Map<String, String>> results,
+                                  CampaignContentType type,
+                                  UUID id,
+                                  String label,
+                                  UUID campaignIdOrNull) {
+        if (!referenceResolver.isVisibleToScope(type, id, campaignIdOrNull)) {
+            return;
+        }
+        Map<String, String> option = new LinkedHashMap<>();
+        option.put("id", id.toString());
+        option.put("label", label);
+        option.put("type", type.name());
+        String url = destinationUrl(type, id, campaignIdOrNull);
+        if (url != null) {
+            option.put("url", url);
+        }
+        results.add(option);
+    }
+
+    private String destinationUrl(CampaignContentType type, UUID id, UUID campaignIdOrNull) {
+        return switch (type) {
+            case STATBLOCK -> "/library/statblocks/" + id;
+            case EQUIPMENT_ITEM -> "/library/equipment/" + id;
+            case MAGIC_ITEM -> "/library/magic-items/" + id;
+            case ROLLABLE_TABLE -> "/library/tables/" + id;
+            case NOTE -> campaignIdOrNull == null ? null
+                    : "/campaigns/" + campaignIdOrNull + "/notes/" + id;
+            case ENCOUNTER -> campaignIdOrNull == null ? null
+                    : "/campaigns/" + campaignIdOrNull + "/encounters/" + id;
+            case HANDOUT -> campaignIdOrNull == null ? null
+                    : "/campaigns/" + campaignIdOrNull + "/handouts/" + id + "/present";
+            default -> null;
+        };
     }
 
     @PostMapping("/{id}/roll")

@@ -16,6 +16,8 @@
                     <div class="rule-taper rule-taper--gold"></div>
                 </div>
                 <div class="page-header-actions">
+                    <a class="btn btn-primary"
+                       th:href="@{/library/tables/new(campaignId=${campaignId})}">+ New Table</a>
                     <a th:if="${campaignId != null}" class="btn btn-primary"
                        th:href="@{/campaigns/{id}(id=${campaignId})}">&larr; Back to Campaign</a>
                 </div>

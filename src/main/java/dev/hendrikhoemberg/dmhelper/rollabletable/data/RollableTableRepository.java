@@ -11,6 +11,11 @@ import java.util.UUID;
 public interface RollableTableRepository extends JpaRepository<RollableTable, UUID> {
     List<RollableTable> findByCampaignIdOrderByNameAsc(UUID campaignId);
 
+    @Query("SELECT t FROM RollableTable t "
+            + "WHERE t.campaign IS NULL OR (:campaignId IS NOT NULL AND t.campaign.id = :campaignId) "
+            + "ORDER BY t.name ASC")
+    List<RollableTable> findVisibleByCampaignId(@Param("campaignId") UUID campaignIdOrNull);
+
     @Query("SELECT DISTINCT t FROM RollableTable t LEFT JOIN FETCH t.entries WHERE t.id = :id")
     Optional<RollableTable> findWithEntriesById(@Param("id") UUID id);
 

@@ -127,4 +127,38 @@ class RollableTablePersistenceTest {
         assertThat(ref.getSortOrder()).isEqualTo(0);
         assertThat(ref.getEntry().getId()).isEqualTo(second.getId());
     }
+
+    @Test
+    void visibleQueryIncludesSameCampaignGlobalAndSrdButExcludesOtherCampaign() {
+        Campaign otherCampaign = new Campaign();
+        otherCampaign.setName("Other Campaign");
+        em.persist(otherCampaign);
+
+        persistTable("global-table", "Global Table", ContentSource.CUSTOM, null);
+        persistTable("srd-table", "SRD Table", ContentSource.SRD, null);
+        persistTable("foreign-table", "Foreign Table", ContentSource.CUSTOM, otherCampaign);
+        em.flush();
+        em.clear();
+
+        assertThat(repository.findVisibleByCampaignId(campaign.getId()))
+                .extracting(RollableTable::getName)
+                .containsExactly("Global Table", "SRD Table", "Wilderness Encounters")
+                .doesNotContain("Foreign Table");
+        assertThat(repository.findVisibleByCampaignId(null))
+                .extracting(RollableTable::getName)
+                .containsExactly("Global Table", "SRD Table")
+                .doesNotContain("Foreign Table", "Wilderness Encounters");
+    }
+
+    private void persistTable(String sourceKey, String name, ContentSource source, Campaign owner) {
+        RollableTable candidate = new RollableTable();
+        candidate.setSourceKey(sourceKey);
+        candidate.setSource(source);
+        candidate.setCampaign(owner);
+        candidate.setName(name);
+        candidate.setAddressMode(TableAddressMode.WEIGHTED);
+        candidate.setRollExpression("1d1");
+        candidate.setCategory(TableCategory.GENERIC);
+        em.persist(candidate);
+    }
 }

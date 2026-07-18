@@ -4,7 +4,7 @@
     <th:block th:replace="~{fragments/head :: head}"></th:block>
     <title th:text="'DMHelper — ' + (${table} != null ? 'Edit ' + ${table.name} : 'New Table')">DMHelper — Rollable Table Editor</title>
 </head>
-<body>
+<body th:attr="data-campaign-id=${campaignId}">
     <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
     <div class="app-shell">
         <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
@@ -22,6 +22,11 @@
                     <div class="form-group">
                         <label for="name">Name</label>
                         <input type="text" id="name" name="name" x-model="form.name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sourceKey">Stable Key</label>
+                        <input type="text" id="sourceKey" name="sourceKey" x-model="form.sourceKey"
+                               pattern="[a-z0-9][a-z0-9._-]{0,99}" required>
                     </div>
                     <div class="form-group">
                         <label for="description">Description (Markdown)</label>
@@ -62,6 +67,12 @@
                                         @@click="removeEntry(index)">Remove</button>
                             </div>
                             <div class="entry-fields u-flex u-gap-sm u-mt-sm">
+                                <div>
+                                    <label>Stable Entry Key</label>
+                                    <input type="text" name="entryKey" x-model="entry.key"
+                                           pattern="[a-z0-9][a-z0-9._-]{0,99}"
+                                           :data-path="'/entries/' + index + '/key'" required>
+                                </div>
                                 <div x-show="form.addressMode === 'RANGE'">
                                     <label>Range Start</label>
                                     <input type="number" name="rangeStart" x-model="entry.rangeStart" :data-path="'/entries/' + index + '/rangeStart'">
@@ -80,7 +91,8 @@
                                 </div>
                                 <div>
                                     <label>Quantity Expression</label>
-                                    <input type="text" name="quantityExpression" x-model="entry.quantityExpression">
+                                    <input type="text" name="quantityExpression" x-model="entry.quantityExpression"
+                                           :data-path="'/entries/' + index + '/quantityExpression'">
                                 </div>
                             </div>
                             <div class="u-mt-sm">
@@ -100,6 +112,11 @@
                                 <button type="button" class="btn btn-ghost btn-sm"
                                         @@click="moveEntry(index, index + 1)" :disabled="index === form.entries.length - 1">&darr;</button>
                             </div>
+                            <template x-for="problem in problemsFor('/entries/' + index)"
+                                      :key="problem.path + problem.code">
+                                <div class="u-text-danger u-text-sm u-mt-xs"
+                                     x-text="problem.code + ': ' + problem.message"></div>
+                            </template>
                         </div>
                     </template>
                     <button type="button" class="btn btn-ghost" @@click="addEntry()">Add Entry</button>
@@ -115,6 +132,47 @@
                              :data-path-match="problem.path"></div>
                     </template>
                 </div>
+                <div class="card u-mt-lg" x-show="referencePicker.open" x-cloak
+                     role="dialog" aria-modal="true" aria-label="Add table reference">
+                    <div class="entry-header">
+                        <h3>Add Reference</h3>
+                        <button type="button" class="btn btn-ghost btn-sm"
+                                @@click="referencePicker.open = false">Close</button>
+                    </div>
+                    <div class="u-flex u-gap-sm u-mt-sm">
+                        <label for="referenceType">Reference Type</label>
+                        <select id="referenceType" x-model="referencePicker.type"
+                                @@change="fetchReferenceOptions()">
+                            <option value="STATBLOCK">Stat Block</option>
+                            <option value="EQUIPMENT_ITEM">Equipment</option>
+                            <option value="MAGIC_ITEM">Magic Item</option>
+                            <option value="NOTE">Note</option>
+                            <option value="ROLLABLE_TABLE">Rollable Table</option>
+                            <option value="ENCOUNTER">Encounter</option>
+                            <option value="HANDOUT">Handout</option>
+                        </select>
+                        <label for="referenceQuery">Search</label>
+                        <input id="referenceQuery" type="search" x-model="referencePicker.query"
+                               @@input.debounce.250ms="fetchReferenceOptions()"
+                               placeholder="Search visible content">
+                    </div>
+                    <div class="u-mt-sm" x-show="referencePicker.loading">Loading references…</div>
+                    <div class="u-text-danger u-mt-sm" x-show="referencePicker.error"
+                         x-text="referencePicker.error"></div>
+                    <div class="u-mt-sm" x-show="!referencePicker.loading">
+                        <template x-for="option in referencePicker.options" :key="option.type + option.id">
+                            <div class="u-flex u-gap-sm u-mt-xs">
+                                <button type="button" class="btn btn-ghost u-flex-1"
+                                        x-text="option.label" @@click="addReference(option)"></button>
+                                <a x-show="option.url" :href="option.url" target="_blank"
+                                   rel="noopener" class="btn btn-ghost btn-sm">Preview</a>
+                            </div>
+                        </template>
+                        <div x-show="referencePicker.options.length === 0" class="text-muted">
+                            No visible references found.
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -128,7 +186,7 @@
     window.TABLE_ROLL_EXPRESSION = /*[[${table?.rollExpression}]]*/ '';
     window.TABLE_CATEGORY = /*[[${table?.category}]]*/ 'GENERIC';
     window.TABLE_TAGS = /*[[${table?.tags}]]*/ '';
-    window.TABLE_ENTRIES = /*[[${table?.entries}]]*/ null;
+    window.TABLE_ENTRIES = /*[[${editorEntries}]]*/ null;
     /*]]>*/
     </script>
     <script th:src="@{/js/rollable-table-editor.js}"></script>

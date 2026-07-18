@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.rollabletable.web;
 
 import dev.hendrikhoemberg.dmhelper.config.MarkdownUtil;
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableEntry;
@@ -66,7 +67,7 @@ class RollableTableControllerTest {
 
     @Test
     void listReturns200WithTables() throws Exception {
-        when(repository.findByCampaignIdOrderByNameAsc(any())).thenReturn(List.of(
+        when(repository.findVisibleByCampaignId(any())).thenReturn(List.of(
                 table(UUID.randomUUID(), "Potion Effects", ContentSource.CUSTOM),
                 table(UUID.randomUUID(), "Tavern Names", ContentSource.CUSTOM)
         ));
@@ -80,7 +81,7 @@ class RollableTableControllerTest {
 
     @Test
     void listFiltersByCategory() throws Exception {
-        when(repository.findByCampaignIdOrderByNameAsc(any())).thenReturn(List.of(
+        when(repository.findVisibleByCampaignId(any())).thenReturn(List.of(
                 table(UUID.randomUUID(), "Encounter Table", ContentSource.CUSTOM)
         ));
 
@@ -98,9 +99,24 @@ class RollableTableControllerTest {
     }
 
     @Test
+    void listContainsCreateControlWithCampaignContext() throws Exception {
+        when(repository.findVisibleByCampaignId(campaignId)).thenReturn(List.of());
+
+        mockMvc.perform(get("/library/tables")
+                        .param("campaignId", campaignId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("New Table")))
+                .andExpect(content().string(containsString("/library/tables/new?campaignId=" + campaignId)));
+    }
+
+    @Test
     void detailReturns200WithEntries() throws Exception {
         UUID id = UUID.randomUUID();
         RollableTable t = table(id, "Wild Magic Surge", ContentSource.CUSTOM);
+        Campaign campaign = new Campaign();
+        campaign.setId(campaignId);
+        campaign.setName("Test Campaign");
+        t.setCampaign(campaign);
         t.getEntries().add(entry("e1", "Fireball centered on self", 0));
         t.getEntries().add(entry("e2", "Turn into a potted plant", 1));
         when(repository.findWithEntriesById(id)).thenReturn(Optional.of(t));
@@ -111,7 +127,10 @@ class RollableTableControllerTest {
                 .andExpect(content().string(containsString("Wild Magic Surge")))
                 .andExpect(content().string(containsString("Fireball centered on self")))
                 .andExpect(content().string(containsString("Turn into a potted plant")))
-                .andExpect(content().string(containsString("Roll")));
+                .andExpect(content().string(containsString("Roll")))
+                .andExpect(content().string(containsString("Clone")))
+                .andExpect(content().string(containsString("Promote")))
+                .andExpect(content().string(containsString("Delete")));
     }
 
     @Test

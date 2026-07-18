@@ -15,17 +15,21 @@
       ? 'The item changed before this request completed. Reload and try again.'
       : `The server refused that request (${response.status}).`;
     let correlationId = response.headers.get('X-Correlation-ID');
+    let problem = null;
     const contentType = response.headers.get('Content-Type') || '';
     if (contentType.includes('json')) {
       try {
         const body = await response.json();
+        problem = body;
         detail = body.detail || detail;
         correlationId = body.correlationId || correlationId;
       } catch (_) {
         // A malformed error body must not hide the status/header fallback.
       }
     }
-    return new DmRequestError(detail, response.status, correlationId);
+    const error = new DmRequestError(detail, response.status, correlationId);
+    error.problem = problem;
+    return error;
   }
 
   window.dmRequest = async function dmRequest(url, options = {}) {

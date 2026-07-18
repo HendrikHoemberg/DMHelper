@@ -73,6 +73,34 @@ class RollableTableTemplateContractTest {
     }
 
     @Test
+    void managementControlsAreVisibleInListAndDetail() throws IOException {
+        String list = Files.readString(Path.of("src/main/resources/templates/rollable-table/list.html"));
+        String detail = Files.readString(Path.of("src/main/resources/templates/rollable-table/detail.html"));
+
+        assertThat(list).contains("New Table", "/library/tables/new");
+        assertThat(detail).contains("Clone", "Promote", "Delete", "tableManagement");
+    }
+
+    @Test
+    void referencePickerFetchesAndAddsOptions() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/rollable-table/form.html"));
+        String javascript = Files.readString(Path.of("src/main/resources/static/js/rollable-table-editor.js"));
+
+        assertThat(html).contains("referencePicker", "referenceType", "referenceQuery");
+        assertThat(javascript).contains("fetchReferenceOptions", "addReference", "reference-options");
+        assertThat(javascript).doesNotContain("Reference picker to be implemented");
+    }
+
+    @Test
+    void editorUsesStructuredProblemDetailsForInlineValidation() throws IOException {
+        String request = Files.readString(Path.of("src/main/resources/static/js/dm-request.js"));
+        String editor = Files.readString(Path.of("src/main/resources/static/js/rollable-table-editor.js"));
+
+        assertThat(request).contains("error.problem = problem");
+        assertThat(editor).contains("error.problem?.problems");
+    }
+
+    @Test
     void controllerAddsMarkdownDescriptionToModel() throws IOException {
         String java = Files.readString(Path.of(
                 "src/main/java/dev/hendrikhoemberg/dmhelper/rollabletable/web/RollableTableController.java"));

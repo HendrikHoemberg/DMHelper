@@ -41,12 +41,7 @@ public class RollableTableController {
                        @RequestParam(required = false) String tag,
                        @RequestParam(required = false) String text,
                        Model model) {
-        List<RollableTable> tables;
-        if (campaignId != null) {
-            tables = repository.findByCampaignIdOrderByNameAsc(campaignId);
-        } else {
-            tables = repository.findAll();
-        }
+        List<RollableTable> tables = repository.findVisibleByCampaignId(campaignId);
 
         Stream<RollableTable> stream = tables.stream();
         if (category != null && !category.isBlank()) {
@@ -99,6 +94,7 @@ public class RollableTableController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This table is read-only");
         }
         model.addAttribute("table", table);
+        model.addAttribute("editorEntries", RollableTableWebMapper.from(table).entries());
         model.addAttribute("campaignId", table.getCampaign() != null ? table.getCampaign().getId() : null);
         return "rollable-table/form";
     }
