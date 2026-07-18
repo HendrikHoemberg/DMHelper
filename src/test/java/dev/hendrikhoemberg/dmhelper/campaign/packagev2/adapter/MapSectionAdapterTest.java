@@ -297,7 +297,7 @@ class MapSectionAdapterTest {
                         )),
                         0
                 )),
-                null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         var freshCampaign = new Campaign();
         freshCampaign.setId(UUID.randomUUID());
@@ -391,7 +391,7 @@ class MapSectionAdapterTest {
                         List.of(),
                         0
                 )),
-                null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         // Stage asset file
         Path assetFile = tempDir.resolve(assetKey + ".png");

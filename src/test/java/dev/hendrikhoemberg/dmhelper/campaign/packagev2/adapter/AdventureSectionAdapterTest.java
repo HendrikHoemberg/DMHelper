@@ -214,7 +214,7 @@ class AdventureSectionAdapterTest {
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null,
-                adventures, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                adventures, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(adventureRepo.save(any())).thenAnswer(inv -> {
             Adventure a = inv.getArgument(0);
@@ -277,7 +277,7 @@ class AdventureSectionAdapterTest {
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null,
-                adventures, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                adventures, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(adventureRepo.save(any())).thenAnswer(inv -> {
             Adventure a = inv.getArgument(0);
@@ -444,7 +444,7 @@ class AdventureSectionAdapterTest {
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null,
-                adventures, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                adventures, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(adventureRepo.save(any())).thenAnswer(inv -> {
             Adventure a = inv.getArgument(0);

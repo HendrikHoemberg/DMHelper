@@ -39,7 +39,8 @@
     "worldLocations": { "type": "array", "items": { "$ref": "#/$defs/worldLocation" } },
     "factions": { "type": "array", "items": { "$ref": "#/$defs/faction" } },
     "worldRelationships": { "type": "array", "items": { "$ref": "#/$defs/worldRelationship" } },
-    "factionClocks": { "type": "array", "items": { "$ref": "#/$defs/factionClock" } }
+    "factionClocks": { "type": "array", "items": { "$ref": "#/$defs/factionClock" } },
+    "rollableTables": { "type": "array", "items": { "$ref": "#/$defs/rollableTable" } }
   },
   "$defs": {
     "key": {
@@ -81,7 +82,7 @@
         "MAP", "TOKEN",
         "ENCOUNTER", "ENCOUNTER_WAVE", "COMBATANT", "COMBAT_LOG_ENTRY",
         "PARTY_MEMBER", "CHARACTER_SHEET", "SHEET_RESOURCE",
-        "NOTE", "QUICK_NOTE", "HANDOUT",
+        "NOTE", "QUICK_NOTE", "HANDOUT", "ROLLABLE_TABLE",
         "ASSIGNMENT", "LEDGER_ENTRY", "TIMELINE_EVENT",
         "SESSION", "SESSION_SCENE_VISIT",
         "STATBLOCK", "SPELL", "CONDITION", "RULE", "EQUIPMENT_ITEM", "MAGIC_ITEM",
@@ -1125,7 +1126,8 @@
         "travelLocationRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
         "tags": { "type": "array", "items": { "type": "string" } },
         "sourceLocator": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "tableLinks": { "type": "array", "items": { "$ref": "#/$defs/worldLocationTableLink" } }
       }
     },
     "faction": {
@@ -1175,6 +1177,47 @@
         "sceneRef": { "$ref": "#/$defs/contentReference" },
         "notes": { "type": "string" },
         "sourceLocator": { "type": "string" },
+        "sortOrder": { "type": "integer" }
+      }
+    },
+    "rollableTable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "addressMode", "category"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "sourceKey": { "type": "string" },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "addressMode": { "type": "string", "enum": ["RANGE", "WEIGHTED"] },
+        "rollExpression": { "type": "string" },
+        "category": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "entries": { "type": "array", "items": { "$ref": "#/$defs/rollableTableEntry" } },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "rollableTableEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "rangeStart": { "type": "integer", "minimum": 1 },
+        "rangeEnd": { "type": "integer", "minimum": 1 },
+        "weight": { "type": "integer", "minimum": 1 },
+        "resultText": { "type": "string" },
+        "quantityExpression": { "type": "string" },
+        "references": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } }
+      }
+    },
+    "worldLocationTableLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "tableRef", "sortOrder"],
+      "properties": {
+        "role": { "type": "string", "enum": ["RANDOM_ENCOUNTERS", "LOOT", "TABLE_REFERENCE"] },
+        "tableRef": { "$ref": "#/$defs/contentReference" },
         "sortOrder": { "type": "integer" }
       }
     }

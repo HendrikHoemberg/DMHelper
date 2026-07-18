@@ -5,6 +5,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.FactionClockDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.FactionDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.WorldLocationDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.WorldLocationTableLinkDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.WorldNpcDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.WorldRelationshipDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
@@ -15,6 +16,10 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionEx
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionImporter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableLinkRole;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLink;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLinkRepository;
 import dev.hendrikhoemberg.dmhelper.world.data.Faction;
 import dev.hendrikhoemberg.dmhelper.world.data.FactionClock;
 import dev.hendrikhoemberg.dmhelper.world.data.FactionClockRepository;
@@ -40,19 +45,22 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
     private final WorldRelationshipRepository relationshipRepo;
     private final FactionClockRepository clockRepo;
     private final StatBlockReferenceResolver statBlockResolver;
+    private final WorldLocationTableLinkRepository tableLinkRepo;
 
     public WorldSectionAdapter(WorldNpcRepository npcRepo,
                                 WorldLocationRepository locationRepo,
                                 FactionRepository factionRepo,
                                 WorldRelationshipRepository relationshipRepo,
                                 FactionClockRepository clockRepo,
-                                StatBlockReferenceResolver statBlockResolver) {
+                                StatBlockReferenceResolver statBlockResolver,
+                                WorldLocationTableLinkRepository tableLinkRepo) {
         this.npcRepo = npcRepo;
         this.locationRepo = locationRepo;
         this.factionRepo = factionRepo;
         this.relationshipRepo = relationshipRepo;
         this.clockRepo = clockRepo;
         this.statBlockResolver = statBlockResolver;
+        this.tableLinkRepo = tableLinkRepo;
     }
 
     @Override
@@ -105,11 +113,20 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
                     : l.getTravelLocations().stream()
                     .map(t -> context.packageRef(CampaignContentType.WORLD_LOCATION, t.getId(), t.getName()))
                     .toList();
+            List<WorldLocationTableLinkDto> tableLinkDtos = tableLinkRepo.findByLocationIdWithTable(l.getId())
+                    .stream()
+                    .map(link -> new WorldLocationTableLinkDto(
+                            link.getRole() != null ? link.getRole().name() : null,
+                            context.packageRef(CampaignContentType.ROLLABLE_TABLE,
+                                    link.getTable().getId(), link.getTable().getName()),
+                            link.getSortOrder()))
+                    .toList();
             return new WorldLocationDto(key, l.getName(), l.getKind().name(),
                     parentRef, mapRef, l.getMapRegionKey(), noteRef,
                     l.getSummary(), l.getServices(), l.getSecrets(),
                     occupants, encounterRefs, travelRefs,
-                    parseTags(l.getTags()), l.getSourceLocator(), l.getCreatedAt());
+                    parseTags(l.getTags()), l.getSourceLocator(), l.getCreatedAt(),
+                    tableLinkDtos);
         }).toList();
         target.worldLocations(locationDtos);
 
@@ -255,10 +272,25 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
                         for (ContentReference ref : dto.occupantNpcRefs()) {
                             WorldNpc occupant = context.require(
                                     ref, CampaignContentType.WORLD_NPC, WorldNpc.class);
-                            // locationRef on the NPC wins if both are set; only fill when empty
                             if (occupant.getLocation() == null) {
                                 occupant.setLocation(l);
                             }
+                        }
+                    }
+                    if (dto.tableLinks() != null) {
+                        for (WorldLocationTableLinkDto linkDto : dto.tableLinks()) {
+                            WorldLocationTableLink link = new WorldLocationTableLink();
+                            link.setLocation(l);
+                            if (linkDto.tableRef() != null) {
+                                RollableTable table = context.require(linkDto.tableRef(),
+                                        CampaignContentType.ROLLABLE_TABLE, RollableTable.class);
+                                link.setTable(table);
+                            }
+                            if (linkDto.role() != null) {
+                                link.setRole(RollableTableLinkRole.valueOf(linkDto.role()));
+                            }
+                            link.setSortOrder(linkDto.sortOrder());
+                            tableLinkRepo.save(link);
                         }
                     }
                 });

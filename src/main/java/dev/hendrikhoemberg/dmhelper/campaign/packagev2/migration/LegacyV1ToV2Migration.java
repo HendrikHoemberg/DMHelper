@@ -392,7 +392,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 handouts, maps,
                 encounters, notes, quickNotes, assignments, ledger, timeline, adventures, null, List.of(), List.of(), List.of(),
-                List.of(), List.of(), List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         return new CampaignPackageValidationResult(source, manifest, 1, assetsByKey, warnings, List.of("MIGRATED_FROM_V1"));
     }
 

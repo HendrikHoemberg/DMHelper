@@ -52,6 +52,7 @@ public class CampaignManifestAssembler {
     private List<CampaignManifestV2.FactionDto> factions;
     private List<CampaignManifestV2.WorldRelationshipDto> worldRelationships;
     private List<CampaignManifestV2.FactionClockDto> factionClocks;
+    private List<CampaignManifestV2.RollableTableDto> rollableTables;
     private boolean built;
 
     public void campaign(CampaignDto value) {
@@ -209,6 +210,11 @@ public class CampaignManifestAssembler {
         this.factionClocks = value == null ? List.of() : List.copyOf(value);
     }
 
+    public void rollableTables(List<CampaignManifestV2.RollableTableDto> value) {
+        checkNotAlreadySet("rollableTables", rollableTables);
+        this.rollableTables = value == null ? List.of() : List.copyOf(value);
+    }
+
     public CampaignManifestV2 build(CampaignManifestV2.Metadata metadata) {
         if (built) {
             throw new IllegalStateException("Manifest already built");
@@ -270,7 +276,8 @@ public class CampaignManifestAssembler {
                 worldLocations == null ? List.of() : worldLocations,
                 factions == null ? List.of() : factions,
                 worldRelationships == null ? List.of() : worldRelationships,
-                factionClocks == null ? List.of() : factionClocks
+                factionClocks == null ? List.of() : factionClocks,
+                rollableTables == null ? List.of() : rollableTables
         );
     }
 

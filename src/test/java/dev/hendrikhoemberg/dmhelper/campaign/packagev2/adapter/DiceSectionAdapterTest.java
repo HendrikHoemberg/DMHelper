@@ -108,7 +108,7 @@ class DiceSectionAdapterTest {
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null,
-                null, null, null, null, null, List.of(dto), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, List.of(dto), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         var keys = new CampaignSectionAdapterTest.FakeKeyService();
         var context = new CampaignImportContext(
                 campaignId, keys, new PendingCampaignImport(UUID.randomUUID(), null, null, null));

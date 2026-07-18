@@ -35,6 +35,7 @@ import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNote;
 import dev.hendrikhoemberg.dmhelper.quest.data.Quest;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
 import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotation;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
@@ -366,5 +367,6 @@ public class CampaignSemanticSnapshotService {
             new OwnershipQuery(CampaignContentType.WORLD_LOCATION, WorldLocation.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.FACTION, Faction.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.WORLD_RELATIONSHIP, WorldRelationship.class, "campaign.id"),
-            new OwnershipQuery(CampaignContentType.FACTION_CLOCK, FactionClock.class, "campaign.id"));
+            new OwnershipQuery(CampaignContentType.FACTION_CLOCK, FactionClock.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.ROLLABLE_TABLE, RollableTable.class, "campaign.id"));
 }

@@ -48,7 +48,8 @@ public record CampaignManifestV2(
         List<WorldLocationDto> worldLocations,
         List<FactionDto> factions,
         List<WorldRelationshipDto> worldRelationships,
-        List<FactionClockDto> factionClocks
+        List<FactionClockDto> factionClocks,
+        List<RollableTableDto> rollableTables
 ) {
     public CampaignManifestV2 {
         if (worldNpcs == null) worldNpcs = List.of();
@@ -56,6 +57,7 @@ public record CampaignManifestV2(
         if (factions == null) factions = List.of();
         if (worldRelationships == null) worldRelationships = List.of();
         if (factionClocks == null) factionClocks = List.of();
+        if (rollableTables == null) rollableTables = List.of();
     }
     public static final int CURRENT_FORMAT_VERSION = 2;
 
@@ -882,7 +884,8 @@ public record CampaignManifestV2(
             List<ContentReference> travelLocationRefs,
             List<String> tags,
             String sourceLocator,
-            Instant createdAt
+            Instant createdAt,
+            List<WorldLocationTableLinkDto> tableLinks
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -909,6 +912,38 @@ public record CampaignManifestV2(
             String status,
             String notes,
             String sourceLocator,
+            int sortOrder
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record RollableTableDto(
+            String key,
+            String sourceKey,
+            String name,
+            String description,
+            String addressMode,
+            String rollExpression,
+            String category,
+            List<String> tags,
+            List<RollableTableEntryDto> entries,
+            ProvenanceDto provenance
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record RollableTableEntryDto(
+            String key,
+            Integer rangeStart,
+            Integer rangeEnd,
+            Integer weight,
+            String resultText,
+            String quantityExpression,
+            List<ContentReference> references
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record WorldLocationTableLinkDto(
+            String role,
+            ContentReference tableRef,
             int sortOrder
     ) {}
 

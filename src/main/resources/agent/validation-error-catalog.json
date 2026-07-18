@@ -913,6 +913,96 @@
       "repairHints": [
         "Use the import validation report to locate the exact source."
       ]
+    },
+    {
+      "code": "INVALID_TABLE_EXPRESSION",
+      "defaultSeverity": "ERROR",
+      "summary": "The roll expression of a table is not valid.",
+      "when": "Rollable table validation during semantic validation.",
+      "suggestionTemplate": "Correct the roll expression to a valid dice expression.",
+      "repairHints": [
+        "Use a valid dice expression such as '1d6', '1d8+2', or '2d10'."
+      ]
+    },
+    {
+      "code": "INVALID_QUANTITY_EXPRESSION",
+      "defaultSeverity": "ERROR",
+      "summary": "The quantity expression of a table entry is not valid.",
+      "when": "Rollable table entry validation during semantic validation.",
+      "suggestionTemplate": "Correct the quantity expression to a valid dice expression.",
+      "repairHints": [
+        "Use a valid dice expression such as '1d4', '1d6+1', or null."
+      ]
+    },
+    {
+      "code": "TABLE_RANGE_GAP",
+      "defaultSeverity": "ERROR",
+      "summary": "There is a gap between the ranges of table entries.",
+      "when": "Rollable table range validation during semantic validation.",
+      "suggestionTemplate": "Ensure entry ranges cover the full range without gaps.",
+      "repairHints": [
+        "Adjust rangeStart and rangeEnd values to cover consecutive ranges."
+      ]
+    },
+    {
+      "code": "TABLE_RANGE_OVERLAP",
+      "defaultSeverity": "ERROR",
+      "summary": "Two table entries have overlapping ranges.",
+      "when": "Rollable table range validation during semantic validation.",
+      "suggestionTemplate": "Ensure entry ranges do not overlap.",
+      "repairHints": [
+        "Adjust rangeStart and rangeEnd so no two entries share range values."
+      ]
+    },
+    {
+      "code": "TABLE_RANGE_BOUNDS",
+      "defaultSeverity": "ERROR",
+      "summary": "A table entry range is outside the possible roll range.",
+      "when": "Rollable table range validation during semantic validation.",
+      "suggestionTemplate": "Ensure the range values are within the possible roll range.",
+      "repairHints": [
+        "Verify that rangeStart and rangeEnd are within the possible dice result range."
+      ]
+    },
+    {
+      "code": "TABLE_WEIGHT_INVALID",
+      "defaultSeverity": "ERROR",
+      "summary": "A weighted table entry has a non-positive weight.",
+      "when": "Rollable table weight validation during semantic validation.",
+      "suggestionTemplate": "Set the weight to a positive integer.",
+      "repairHints": [
+        "Weight must be at least 1 for a weighted-table entry."
+      ]
+    },
+    {
+      "code": "INVALID_TABLE_REFERENCE_TYPE",
+      "defaultSeverity": "ERROR",
+      "summary": "A reference in a table entry points at an entity of the wrong type.",
+      "when": "Rollable table entry reference type checking during semantic validation.",
+      "suggestionTemplate": "Correct the reference to point at the expected entity type.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "TABLE_REFERENCE_CYCLE",
+      "defaultSeverity": "ERROR",
+      "summary": "Table entries form a circular reference chain through nested table references.",
+      "when": "Rollable table reference graph validation during semantic validation.",
+      "suggestionTemplate": "Break the circular reference chain.",
+      "repairHints": [
+        "Remove or change the nested table reference that creates the cycle."
+      ]
+    },
+    {
+      "code": "TABLE_REFERENCE_DEPTH_EXCEEDED",
+      "defaultSeverity": "ERROR",
+      "summary": "The nesting depth of table references exceeds the allowed maximum.",
+      "when": "Rollable table reference depth validation during semantic validation.",
+      "suggestionTemplate": "Reduce the nesting depth of table references.",
+      "repairHints": [
+        "Flatten nested table references by inlining or restructuring entries."
+      ]
     }
   ]
 }

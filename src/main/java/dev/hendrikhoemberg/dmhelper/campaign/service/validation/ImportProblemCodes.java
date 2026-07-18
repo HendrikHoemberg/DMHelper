@@ -97,6 +97,15 @@ public final class ImportProblemCodes {
     public static final String WORLD_RELATIONSHIP_SELF = "WORLD_RELATIONSHIP_SELF";
     public static final String FACTION_CLOCK_RANGE = "FACTION_CLOCK_RANGE";
     public static final String INVALID_WORLD_REFERENCE_TYPE = "INVALID_WORLD_REFERENCE_TYPE";
+    public static final String INVALID_TABLE_EXPRESSION = "INVALID_TABLE_EXPRESSION";
+    public static final String INVALID_QUANTITY_EXPRESSION = "INVALID_QUANTITY_EXPRESSION";
+    public static final String TABLE_RANGE_GAP = "TABLE_RANGE_GAP";
+    public static final String TABLE_RANGE_OVERLAP = "TABLE_RANGE_OVERLAP";
+    public static final String TABLE_RANGE_BOUNDS = "TABLE_RANGE_BOUNDS";
+    public static final String TABLE_WEIGHT_INVALID = "TABLE_WEIGHT_INVALID";
+    public static final String INVALID_TABLE_REFERENCE_TYPE = "INVALID_TABLE_REFERENCE_TYPE";
+    public static final String TABLE_REFERENCE_CYCLE = "TABLE_REFERENCE_CYCLE";
+    public static final String TABLE_REFERENCE_DEPTH_EXCEEDED = "TABLE_REFERENCE_DEPTH_EXCEEDED";
 
     private static final Set<String> ALL;
 

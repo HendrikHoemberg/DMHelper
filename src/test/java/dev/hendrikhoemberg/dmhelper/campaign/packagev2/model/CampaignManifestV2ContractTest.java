@@ -479,6 +479,8 @@ class CampaignManifestV2ContractTest {
                 dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus.class);
         assertSchemaEnumEqualsJava(defs, "sessionObjectiveChange", "newStatus",
                 dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus.class);
+        assertSchemaEnumEqualsJava(defs, "rollableTable", "addressMode",
+                dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode.class);
     }
 
     @Test

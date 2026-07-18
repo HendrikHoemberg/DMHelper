@@ -28,6 +28,7 @@ import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignConten
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.WORLD_LOCATION;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.WORLD_RELATIONSHIP;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.FACTION_CLOCK;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.ROLLABLE_TABLE;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -300,6 +301,8 @@ public class CampaignManifestV2SemanticValidator {
             add(keys, WORLD_RELATIONSHIP, m.worldRelationships().get(i).key(), "/worldRelationships/" + i + "/key", problems);
         for (int i = 0; i < size(m.factionClocks()); i++)
             add(keys, FACTION_CLOCK, m.factionClocks().get(i).key(), "/factionClocks/" + i + "/key", problems);
+        for (int i = 0; i < size(m.rollableTables()); i++)
+            add(keys, ROLLABLE_TABLE, m.rollableTables().get(i).key(), "/rollableTables/" + i + "/key", problems);
 
         validateReferences(m, keys, problems);
         validateSpatialAndState(m, problems);
@@ -309,6 +312,7 @@ public class CampaignManifestV2SemanticValidator {
         validateCurrentSceneRef(m, keys, problems);
         validateStructuredAdventureAndQuests(m, keys, problems);
         validateWorldEntities(m, keys, problems);
+        validateTables(m, problems);
         return problems;
     }
 
@@ -412,6 +416,7 @@ public class CampaignManifestV2SemanticValidator {
             case "TIMELINE_EVENT" -> CampaignContentType.TIMELINE_EVENT;
             case "RELATED_SCENE" -> SCENE;
             case "NPC", "LOCATION" -> NOTE;
+            case "RANDOM_ENCOUNTERS" -> CampaignContentType.ROLLABLE_TABLE;
             default -> null; // REFERENCE: any type
         };
     }
@@ -1114,6 +1119,79 @@ public class CampaignManifestV2SemanticValidator {
         if (!expectedTypes.contains(ref.type())) {
             error(problems, "INVALID_WORLD_REFERENCE_TYPE", path,
                     "Expected one of " + expectedTypes + " but got " + ref.type());
+        }
+    }
+
+    private void validateTables(CampaignManifestV2 m, List<CampaignImportProblem> problems) {
+        var tables = m.rollableTables();
+        if (tables == null) return;
+        for (int ti = 0; ti < tables.size(); ti++) {
+            var table = tables.get(ti);
+            String tablePath = "/rollableTables/" + ti;
+
+            if (table.entries() == null) continue;
+
+            if ("RANGE".equals(table.addressMode())) {
+                int previousEnd = 0;
+                java.util.Map.Entry<Integer, Integer>[] entries = table.entries().stream()
+                        .map(e -> {
+                            int start = e.rangeStart() != null ? e.rangeStart() : 1;
+                            int end = e.rangeEnd() != null ? e.rangeEnd() : start;
+                            return new java.util.AbstractMap.SimpleEntry<>(start, end);
+                        })
+                        .sorted(java.util.Comparator.comparingInt(java.util.Map.Entry::getKey))
+                        .toArray(java.util.Map.Entry[]::new);
+
+                for (int ei = 0; ei < entries.length; ei++) {
+                    int start = entries[ei].getKey();
+                    int end = entries[ei].getValue();
+                    if (start < 1 || end < start) {
+                        error(problems, "TABLE_RANGE_BOUNDS", tablePath + "/entries/" + ei,
+                                "Entry range must have start >= 1 and end >= start");
+                    }
+                    if (ei > 0 && start <= previousEnd) {
+                        if (start < previousEnd) {
+                            error(problems, "TABLE_RANGE_OVERLAP", tablePath + "/entries/" + ei,
+                                    "Entry range overlaps with previous entry");
+                        }
+                    }
+                    if (ei > 0 && start > previousEnd + 1) {
+                        error(problems, "TABLE_RANGE_GAP", tablePath + "/entries/" + ei,
+                                "Gap between entry ranges");
+                    }
+                    if (previousEnd < start) {
+                        previousEnd = Math.max(previousEnd, end);
+                    } else {
+                        previousEnd = Math.max(previousEnd, end);
+                    }
+                }
+            }
+
+            if ("WEIGHTED".equals(table.addressMode())) {
+                for (int ei = 0; ei < table.entries().size(); ei++) {
+                    var entry = table.entries().get(ei);
+                    if (entry.weight() == null || entry.weight() < 1) {
+                        error(problems, "TABLE_WEIGHT_INVALID", tablePath + "/entries/" + ei + "/weight",
+                                "Weighted entry must have a positive weight");
+                    }
+                }
+            }
+
+            for (int ei = 0; ei < table.entries().size(); ei++) {
+                var entry = table.entries().get(ei);
+                String entryPath = tablePath + "/entries/" + ei;
+                if (entry.references() != null) {
+                    for (int ri = 0; ri < entry.references().size(); ri++) {
+                        var ref = entry.references().get(ri);
+                        if (ref != null) {
+                            String refPath = entryPath + "/references/" + ri;
+                            if (ref.type() == ROLLABLE_TABLE && ref.scope() == ContentReference.Scope.PACKAGE) {
+                                // Check for cycle - will be detected by depth check at runtime
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

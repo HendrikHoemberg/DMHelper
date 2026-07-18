@@ -13,6 +13,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestA
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignAssetCollector;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportOptions;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLinkRepository;
 import dev.hendrikhoemberg.dmhelper.world.data.*;
 import dev.hendrikhoemberg.dmhelper.world.packagev2.WorldSectionAdapter;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,7 @@ class WorldSectionAdapterTest {
     @Mock WorldRelationshipRepository relationshipRepo;
     @Mock FactionClockRepository clockRepo;
     @Mock StatBlockReferenceResolver statBlockResolver;
+    @Mock WorldLocationTableLinkRepository tableLinkRepo;
 
     private WorldSectionAdapter adapter;
     private Campaign campaign;
@@ -46,7 +48,7 @@ class WorldSectionAdapterTest {
     @BeforeEach
     void setUp() {
         adapter = new WorldSectionAdapter(npcRepo, locationRepo, factionRepo, relationshipRepo, clockRepo,
-                statBlockResolver);
+                statBlockResolver, tableLinkRepo);
         campaign = new Campaign();
         campaignId = UUID.randomUUID();
         campaign.setId(campaignId);
@@ -330,7 +332,7 @@ class WorldSectionAdapterTest {
     void importsLocationAndBindsKey() {
         var locationDto = new CampaignManifestV2.WorldLocationDto(
                 "loc-key", "Test Location", "SITE", null, null, null, null,
-                "Summary", "Services", "Secrets", null, null, null, null, null, null);
+                "Summary", "Services", "Secrets", null, null, null, null, null, null, null);
 
         when(locationRepo.save(any())).thenAnswer(inv -> {
             WorldLocation l = inv.getArgument(0);
@@ -518,6 +520,6 @@ class WorldSectionAdapterTest {
                 noSb, noSpell, noCond, noRule, noEquip, noMagic, noClass, noSpecies, noBg, noFeat,
                 noHand, noMap, noEnc, noNote, noQn, noAssign, noLedger, noTimeline,
                 noAdv, null, noDice, noQ, noAnn,
-                npcs, locations, factions, relationships, clocks);
+                npcs, locations, factions, relationships, clocks, List.of());
     }
 }
