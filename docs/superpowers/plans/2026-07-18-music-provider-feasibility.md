@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Implementation status (verified 2026-07-18):** Complete. YouTube is the viable baseline provider; Spotify is CONDITIONAL (Policy III.6). This spike shipped no provider feature.
+
 **Goal:** Commit an evidence-backed provider decision that proves YouTube can supply the baseline DM-device music path and classifies Spotify as supported, conditional, or rejected without building the production music subsystem.
 
 **Architecture:** This is a documentation-and-proof spike, not atmosphere feature implementation. It evaluates only the public YouTube IFrame Player API and Spotify Web API, performs disposable real-provider proofs outside the repository, and commits sanitized evidence plus the exact downstream provider contract. YouTube is the required baseline because it has public playback controls without a paid account; Spotify is an optional enhanced adapter whose policy, Premium, OAuth, device, and development-mode constraints must not become readiness prerequisites.

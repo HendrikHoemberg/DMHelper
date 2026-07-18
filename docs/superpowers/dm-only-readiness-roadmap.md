@@ -4,7 +4,7 @@
 
 **Roadmap established after:** commit `36f7c3c`; use the status table together with current Git history
 
-**Current NEXT item:** 2 — Music-provider feasibility spike
+**Current NEXT item:** 3 — Rollable tables and integrations
 
 **Terminal goal:** DMHelper can prepare, run, record, export, restore, and resume a representative campaign as an all-in-one **DM-operated** tool.
 
@@ -60,8 +60,8 @@ integration churn and keeps the release gate attributable.
 | # | Work package | Status | Depends on | Design scope | Implementation plan | Exit gate |
 |---|---|---|---|---|---|---|
 | 1 | P0 browser-smoke release-gate repair | `COMPLETE` | — | Master §§5–6, 21, 23 | [Completed plan](plans/2026-07-18-p0-browser-smoke-release-gate-repair.md) | Native party dialog regression and same-origin sheet setup fixed; `CoreSessionLoopSmokeTest` and full Maven suite green; master blocker note updated. |
-| 2 | Music-provider feasibility spike | `READY` | 1 | Atmosphere §7.1 and §7.6 | [Ready plan](plans/2026-07-18-music-provider-feasibility.md) | Using current official Spotify and YouTube documentation, commit `docs/architecture/music-provider-feasibility.md` identifying one viable provider, OAuth/token-storage approach, DM-device playback-control proof, capability limits, failure modes, and any account/subscription prerequisites. No readiness feature is marked complete by the spike. |
-| 3 | Rollable tables and integrations | `BLOCKED` | 2 | Atmosphere delivery items 1–2 | Create a dated `p3-rollable-tables` plan | Table model/editor/validation, nested deterministic rolls, log integration, scene/location links, encounter/reward drafts, package round-trip, fixtures, and focused/full tests pass. |
+| 2 | Music-provider feasibility spike | `COMPLETE` | 1 | Atmosphere §7.1 and §7.6 | [Completed plan](plans/2026-07-18-music-provider-feasibility.md) | YouTube proven as viable baseline provider on the DM device (Firefox/Linux, 480x270 visible player, all six controls passed). Spotify classified CONDITIONAL (Policy III.6 synchronization). Provider contract frozen. See [decision record](../architecture/music-provider-feasibility.md). |
+| 3 | Rollable tables and integrations | `READY` | 2 | Atmosphere delivery items 1–2 | Create a dated `p3-rollable-tables` plan | Table model/editor/validation, nested deterministic rolls, log integration, scene/location links, encounter/reward drafts, package round-trip, fixtures, and focused/full tests pass. |
 | 4 | Traps and hazards | `BLOCKED` | 3 | Atmosphere delivery items 3–4 | Create a dated `p3-traps-and-hazards` plan | Structured and prose-compatible traps/hazards, provenance, scene/tracker/map integrations, package round-trip, player-safety coverage, and focused/full tests pass. |
 | 5 | Travel core | `BLOCKED` | 4 | Travel delivery items 1–3 | Create a dated `p3-travel-core` plan | Settings, migrations, routes, legs, authoring/search/dependency rules, journey/watch state machine, persistence, package-key contracts, and focused/full tests pass. |
 | 6 | Manual fog of war | `BLOCKED` | 5 | Atmosphere delivery items 5–6 | Create a dated `p3-manual-fog` plan | Mask model, DM tools, package support, server-side masked projection, reconnect behavior, cache/payload leak security tests, round-trip, and focused/full tests pass. |
@@ -112,15 +112,16 @@ where the task independently requires current external facts.
 
 ## 7. Current recovery note
 
-As of the P0 post-implementation audit on 2026-07-18:
+As of the music-provider feasibility spike completion on 2026-07-18:
 
 - master delivery items 1–10 are implemented;
 - world graph and faction clocks are implemented;
 - the remaining P3 designs are approved and committed;
 - the P0 browser-smoke plan is implemented, audited, and linked above;
-- the music-provider feasibility plan is written; no P3 table/trap/fog/full-music/travel implementation plan has yet been created;
+- the music-provider feasibility spike is complete: YouTube is the viable baseline provider (Firefox/Linux, all six controls passed with visible official player); Spotify is CONDITIONAL (Policy III.6 synchronization prohibition);
+- no P3 table/trap/fog/full-music/travel implementation plan has yet been created;
 - the focused browser gate and complete Maven suite are green;
-- the next action is to execute the linked music-provider feasibility-spike plan for row 2.
+- the next action is to create the p3-rollable-tables implementation plan for row 3.
 
 When conversation context is missing or compacted, resume from the first non-`COMPLETE` row in this
 file and validate its status against the repository before acting.
