@@ -85,12 +85,17 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
     }
 
     private void exportStatBlocks(CampaignExportContext context, CampaignManifestAssembler target) {
-        List<StatBlock> customBlocks = statBlockRepository.findByCampaignIdOrderByNameAscIdAsc(context.campaignId())
-                .stream()
-                .filter(sb -> sb.getSource() == ContentSource.CUSTOM)
-                .toList();
+        List<StatBlock> customBlocks = new java.util.ArrayList<>(
+                statBlockRepository.findByCampaignIdOrderByNameAscIdAsc(context.campaignId())
+                        .stream()
+                        .filter(sb -> sb.getSource() == ContentSource.CUSTOM)
+                        .toList());
+        if (target.closureStatblockIds() != null) {
+            customBlocks.addAll(statBlockRepository.findAllById(target.closureStatblockIds()));
+        }
 
         List<StatBlockDto> dtos = customBlocks.stream()
+                .distinct()
                 .map(sb -> {
                     String key = context.key(CampaignContentType.STATBLOCK, sb.getId(), sb.getName());
                     return new StatBlockDto(
@@ -114,9 +119,15 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
     }
 
     private void exportSpells(CampaignExportContext context, CampaignManifestAssembler target) {
-        List<CustomSpellDto> dtos = spellRepository.findByCampaignIdOrderByNameAsc(context.campaignId())
+        var campaignSpells = spellRepository.findByCampaignIdOrderByNameAsc(context.campaignId())
                 .stream()
                 .filter(s -> s.getSource() == ContentSource.CUSTOM)
+                .collect(java.util.stream.Collectors.toList());
+        if (target.closureSpellIds() != null) {
+            campaignSpells.addAll(spellRepository.findAllById(target.closureSpellIds()));
+        }
+        List<CustomSpellDto> dtos = campaignSpells.stream()
+                .distinct()
                 .map(s -> {
                     String key = context.key(CampaignContentType.SPELL, s.getId(), s.getName());
                     return new CustomSpellDto(
@@ -164,9 +175,15 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
     }
 
     private void exportEquipment(CampaignExportContext context, CampaignManifestAssembler target) {
-        List<CustomEquipmentDto> dtos = equipmentItemRepository.findByCampaignIdOrderByNameAsc(context.campaignId())
+        var campaignEquip = equipmentItemRepository.findByCampaignIdOrderByNameAsc(context.campaignId())
                 .stream()
                 .filter(e -> e.getSource() == ContentSource.CUSTOM)
+                .collect(java.util.stream.Collectors.toList());
+        if (target.closureEquipmentIds() != null) {
+            campaignEquip.addAll(equipmentItemRepository.findAllById(target.closureEquipmentIds()));
+        }
+        List<CustomEquipmentDto> dtos = campaignEquip.stream()
+                .distinct()
                 .map(e -> {
                     String key = context.key(CampaignContentType.EQUIPMENT_ITEM, e.getId(), e.getName());
                     String category = e.getCategory() != null ? e.getCategory().name() : null;
@@ -181,9 +198,15 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
     }
 
     private void exportMagicItems(CampaignExportContext context, CampaignManifestAssembler target) {
-        List<CustomMagicItemDto> dtos = magicItemRepository.findByCampaignIdOrderByNameAsc(context.campaignId())
+        var campaignMagic = magicItemRepository.findByCampaignIdOrderByNameAsc(context.campaignId())
                 .stream()
                 .filter(m -> m.getSource() == ContentSource.CUSTOM)
+                .collect(java.util.stream.Collectors.toList());
+        if (target.closureMagicItemIds() != null) {
+            campaignMagic.addAll(magicItemRepository.findAllById(target.closureMagicItemIds()));
+        }
+        List<CustomMagicItemDto> dtos = campaignMagic.stream()
+                .distinct()
                 .map(m -> {
                     String key = context.key(CampaignContentType.MAGIC_ITEM, m.getId(), m.getName());
                     return new CustomMagicItemDto(

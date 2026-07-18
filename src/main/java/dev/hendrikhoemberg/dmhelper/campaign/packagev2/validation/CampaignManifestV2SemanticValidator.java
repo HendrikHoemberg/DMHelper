@@ -30,6 +30,8 @@ import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignConten
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.FACTION_CLOCK;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.ROLLABLE_TABLE;
 
+import dev.hendrikhoemberg.dmhelper.dice.DiceExpressionSpec;
+
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -1129,6 +1131,15 @@ public class CampaignManifestV2SemanticValidator {
             var table = tables.get(ti);
             String tablePath = "/rollableTables/" + ti;
 
+            if (table.rollExpression() != null) {
+                try {
+                    DiceExpressionSpec.parse(table.rollExpression());
+                } catch (IllegalArgumentException e) {
+                    error(problems, "INVALID_TABLE_EXPRESSION", tablePath + "/rollExpression",
+                            "Invalid dice expression: " + table.rollExpression());
+                }
+            }
+
             if (table.entries() == null) continue;
 
             if ("RANGE".equals(table.addressMode())) {
@@ -1180,18 +1191,108 @@ public class CampaignManifestV2SemanticValidator {
             for (int ei = 0; ei < table.entries().size(); ei++) {
                 var entry = table.entries().get(ei);
                 String entryPath = tablePath + "/entries/" + ei;
+
+                if (entry.quantityExpression() != null) {
+                    try {
+                        DiceExpressionSpec.parse(entry.quantityExpression());
+                    } catch (IllegalArgumentException e) {
+                        error(problems, "INVALID_QUANTITY_EXPRESSION", entryPath + "/quantityExpression",
+                                "Invalid quantity expression: " + entry.quantityExpression());
+                    }
+                }
+
                 if (entry.references() != null) {
                     for (int ri = 0; ri < entry.references().size(); ri++) {
                         var ref = entry.references().get(ri);
                         if (ref != null) {
                             String refPath = entryPath + "/references/" + ri;
                             if (ref.type() == ROLLABLE_TABLE && ref.scope() == ContentReference.Scope.PACKAGE) {
-                                // Check for cycle - will be detected by depth check at runtime
+                                int depth = detectTableRefCycleAndDepth(m, table.key(), new java.util.HashSet<>(), new java.util.HashSet<>(), 0);
+                                if (depth > 5) {
+                                    error(problems, "TABLE_REFERENCE_DEPTH_EXCEEDED", refPath,
+                                            "Table reference depth exceeds maximum (5)");
+                                }
                             }
                         }
                     }
                 }
             }
         }
+        detectTableCycles(m, problems);
+    }
+
+    private int detectTableRefCycleAndDepth(CampaignManifestV2 m, String tableKey,
+                                             java.util.Set<String> visiting,
+                                             java.util.Set<String> visited, int depth) {
+        if (depth > 5) return depth;
+        if (visiting.contains(tableKey)) return -1;
+        if (visited.contains(tableKey)) return depth;
+
+        visiting.add(tableKey);
+        var tables = m.rollableTables();
+        if (tables != null) {
+            for (var table : tables) {
+                if (table.key().equals(tableKey) && table.entries() != null) {
+                    for (var entry : table.entries()) {
+                        if (entry.references() != null) {
+                            for (var ref : entry.references()) {
+                                if (ref != null && ref.type() == ROLLABLE_TABLE
+                                        && ref.scope() == ContentReference.Scope.PACKAGE) {
+                                    int result = detectTableRefCycleAndDepth(m, ref.key(), visiting, visited, depth + 1);
+                                    if (result == -1 || result > 5) return result;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        visiting.remove(tableKey);
+        visited.add(tableKey);
+        return depth;
+    }
+
+    private void detectTableCycles(CampaignManifestV2 m, List<CampaignImportProblem> problems) {
+        var tables = m.rollableTables();
+        if (tables == null) return;
+
+        java.util.Map<String, java.util.Set<String>> edges = new java.util.HashMap<>();
+        for (var table : tables) {
+            if (table.entries() != null) {
+                for (var entry : table.entries()) {
+                    if (entry.references() != null) {
+                        for (var ref : entry.references()) {
+                            if (ref != null && ref.type() == ROLLABLE_TABLE
+                                    && ref.scope() == ContentReference.Scope.PACKAGE) {
+                                edges.computeIfAbsent(table.key(), k -> new java.util.HashSet<>()).add(ref.key());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        for (var start : edges.keySet()) {
+            java.util.Set<String> visiting = new java.util.HashSet<>();
+            java.util.Set<String> visited = new java.util.HashSet<>();
+            if (hasTableCycle(start, edges, visiting, visited)) {
+                error(problems, "TABLE_REFERENCE_CYCLE", "/rollableTables",
+                        "Table reference chain contains a cycle involving " + start);
+                break;
+            }
+        }
+    }
+
+    private boolean hasTableCycle(String node, java.util.Map<String, java.util.Set<String>> edges,
+                                   java.util.Set<String> visiting, java.util.Set<String> visited) {
+        if (visiting.contains(node)) return true;
+        if (visited.contains(node)) return false;
+        visiting.add(node);
+        for (var next : edges.getOrDefault(node, java.util.Set.of())) {
+            if (hasTableCycle(next, edges, visiting, visited)) return true;
+        }
+        visiting.remove(node);
+        visited.add(node);
+        return false;
     }
 }

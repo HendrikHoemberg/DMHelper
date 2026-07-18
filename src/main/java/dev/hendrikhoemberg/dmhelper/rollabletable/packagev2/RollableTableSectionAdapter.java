@@ -1,11 +1,10 @@
 package dev.hendrikhoemberg.dmhelper.rollabletable.packagev2;
 
-import dev.hendrikhoemberg.dmhelper.campaign.packagev2.catalog.CampaignCatalogService;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.ProvenanceDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.RollableTableDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.RollableTableEntryDto;
-import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.ProvenanceDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
@@ -25,9 +24,11 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @Component
 public class RollableTableSectionAdapter implements CampaignSectionExporter, CampaignSectionImporter {
@@ -48,7 +49,7 @@ public class RollableTableSectionAdapter implements CampaignSectionExporter, Cam
 
     @Override
     public int order() {
-        return 250;
+        return 150;
     }
 
     @Override
@@ -59,8 +60,24 @@ public class RollableTableSectionAdapter implements CampaignSectionExporter, Cam
                 .flatMap(id -> tableRepository.findWithEntriesById(id).stream())
                 .map(table -> toDto(table, context))
                 .toList();
-
         target.rollableTables(dtos);
+
+        exportClosureLibraryEntities(closure.libraryReferenceIds(), context, target);
+    }
+
+    private void exportClosureLibraryEntities(Map<CampaignContentType, Set<UUID>> refIds,
+                                               CampaignExportContext context,
+                                               CampaignManifestAssembler target) {
+        for (var entry : refIds.entrySet()) {
+            switch (entry.getKey()) {
+                case STATBLOCK -> target.setClosureStatblockIds(entry.getValue());
+                case MAGIC_ITEM -> target.setClosureMagicItemIds(entry.getValue());
+                case EQUIPMENT_ITEM -> target.setClosureEquipmentIds(entry.getValue());
+                case SPELL -> target.setClosureSpellIds(entry.getValue());
+                default -> {
+                }
+            }
+        }
     }
 
     private RollableTableDto toDto(RollableTable table, CampaignExportContext context) {
@@ -91,6 +108,7 @@ public class RollableTableSectionAdapter implements CampaignSectionExporter, Cam
 
         List<ContentReference> refs = entry.getReferences().stream()
                 .map(ref -> toContentRef(ref, context))
+                .filter(r -> r != null)
                 .toList();
 
         return new RollableTableEntryDto(
@@ -105,23 +123,19 @@ public class RollableTableSectionAdapter implements CampaignSectionExporter, Cam
     }
 
     private ContentReference toContentRef(RollableTableEntryReference ref, CampaignExportContext context) {
-        if (ref.getTargetScope() == TableReferenceScope.CATALOG) {
-            try {
-                CampaignContentType type = CampaignContentType.valueOf(ref.getTargetType());
-                return ContentReference.catalogRef(type, ref.getCatalogRuleset(), ref.getCatalogSourceKey());
-            } catch (IllegalArgumentException e) {
-                return null;
-            }
-        }
+        CampaignContentType type;
         try {
-            CampaignContentType type = CampaignContentType.valueOf(ref.getTargetType());
-            if (type == CampaignContentType.ROLLABLE_TABLE && ref.getTargetId() != null) {
-                return context.packageRef(type, ref.getTargetId(), ref.getDisplayText());
-            }
-            return context.packageRef(type, ref.getTargetId(), ref.getDisplayText());
+            type = CampaignContentType.valueOf(ref.getTargetType());
         } catch (IllegalArgumentException e) {
             return null;
         }
+        if (ref.getTargetScope() == TableReferenceScope.CATALOG) {
+            return ContentReference.catalogRef(type, ref.getCatalogRuleset(), ref.getCatalogSourceKey());
+        }
+        if (ref.getTargetId() != null) {
+            return context.packageRef(type, ref.getTargetId(), ref.getDisplayText());
+        }
+        return null;
     }
 
     @Override
@@ -168,15 +182,16 @@ public class RollableTableSectionAdapter implements CampaignSectionExporter, Cam
                             RollableTableEntryReference entryRef = new RollableTableEntryReference();
                             entryRef.setEntry(entry);
                             entryRef.setSortOrder(ri);
-                            entryRef.setDisplayText(ref.key());
                             if (ref.scope() == ContentReference.Scope.CATALOG) {
                                 entryRef.setTargetScope(TableReferenceScope.CATALOG);
                                 entryRef.setTargetType(ref.type().name());
                                 entryRef.setCatalogRuleset(ref.ruleset());
                                 entryRef.setCatalogSourceKey(ref.sourceKey());
+                                entryRef.setDisplayText(ref.sourceKey());
                             } else {
                                 entryRef.setTargetScope(TableReferenceScope.ENTITY);
                                 entryRef.setTargetType(ref.type().name());
+                                entryRef.setDisplayText(ref.key());
                             }
                             entry.getReferences().add(entryRef);
                         }
@@ -276,5 +291,4 @@ public class RollableTableSectionAdapter implements CampaignSectionExporter, Cam
                     "Cannot resolve package entity id for " + entity.getClass().getName(), e);
         }
     }
-
 }

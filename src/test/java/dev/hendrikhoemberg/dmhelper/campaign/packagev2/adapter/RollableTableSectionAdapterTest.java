@@ -37,9 +37,9 @@ class RollableTableSectionAdapterTest {
     @Mock RollableTableExportClosureService closureService;
 
     @Test
-    void hasOrder250() {
+    void hasOrder150() {
         var adapter = new RollableTableSectionAdapter(tableRepo, closureService);
-        assertThat(adapter.order()).isEqualTo(250);
+        assertThat(adapter.order()).isEqualTo(150);
     }
 
     @Test
