@@ -75,7 +75,9 @@
                 <template x-if="item.kind === 'TABLE'">
                     <div class="dice-history-item">
                         <span class="expr" x-text="item.tableName"></span>
-                        <span class="value" x-text="item.outcomes ? item.outcomes.map(o => o.resultText).join(', ') : ''"></span>
+                        <span class="value" x-show="item.outcomes !== null"
+                              x-text="item.outcomes ? item.outcomes.map(o => o.resultText).join(', ') : ''"></span>
+                        <span class="value text-muted" x-show="item.outcomes === null">Result unavailable</span>
                     </div>
                 </template>
                 <template x-if="item.kind === 'DICE' || !item.kind">

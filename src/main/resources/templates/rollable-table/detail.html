@@ -39,11 +39,7 @@
                 </div>
                 <div class="detail-description" th:utext="${markdownDescription}"></div>
                 <div class="u-mt-lg">
-                    <th:block th:replace="~{rollable-table/_roll-panel :: roll-panel}"></th:block>
-                    <div x-data="tableDraftPanel()">
-                        <th:block th:replace="~{rollable-table/_encounter-draft :: encounter-draft}"></th:block>
-                        <th:block th:replace="~{rollable-table/_reward-draft :: reward-draft}"></th:block>
-                    </div>
+                    <th:block th:replace="~{rollable-table/_roll-panel :: roll-panel(tableId=${table.id}, compact=${false})}"></th:block>
                 </div>
                 <h2 class="u-mt-lg">Entries</h2>
                 <table class="data-table u-mt-md">

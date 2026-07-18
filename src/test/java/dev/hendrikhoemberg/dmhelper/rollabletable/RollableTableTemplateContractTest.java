@@ -64,6 +64,19 @@ class RollableTableTemplateContractTest {
     }
 
     @Test
+    void rollPanelOwnsResultLogAndDraftStateAndRendersNestedOutcomes() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/rollable-table/_roll-panel.html"));
+        String detail = Files.readString(Path.of("src/main/resources/templates/rollable-table/detail.html"));
+        String javascript = Files.readString(Path.of("src/main/resources/static/js/rollable-table-roll.js"));
+
+        assertThat(javascript).contains("rollId: null", "this.rollId = this.result.logId",
+                "flattenOutcomes", "table-history-refresh", "referenceUrl");
+        assertThat(javascript).doesNotContain("Alpine.data('tableDraftPanel'");
+        assertThat(html).contains("nestedDepth", "encounter-draft", "reward-draft");
+        assertThat(detail).doesNotContain("x-data=\"tableDraftPanel()\"");
+    }
+
+    @Test
     void listTemplateContainsFilterControls() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/rollable-table/list.html"));
         assertThat(html).contains("campaignId");

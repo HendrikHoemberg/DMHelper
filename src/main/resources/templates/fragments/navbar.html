@@ -144,6 +144,7 @@ document.addEventListener('alpine:init', () => {
             });
 
             window.addEventListener('dice-roller-toggle', () => { this.open = !this.open; });
+            window.addEventListener('table-history-refresh', () => this.loadHistory());
             this.$watch('open', (isOpen) => {
                 document.getElementById('diceToggle')?.classList.toggle('active', isOpen);
             });

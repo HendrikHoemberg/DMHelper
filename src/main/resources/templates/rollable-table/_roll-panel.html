@@ -1,8 +1,17 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div th:fragment="roll-panel"
-     x-data="tableRollPanel()"
-     class="roll-panel u-mt-md">
+<div th:fragment="roll-panel(tableId, compact)"
+     th:attr="data-table-id=${tableId},data-compact=${compact}"
+     x-data="tableRollPanel({ tableId: $el.dataset.tableId || null, campaignId: document.body.dataset.campaignId || null, compact: $el.dataset.compact === 'true' })"
+     x-show="!compact || open"
+     x-cloak
+     class="roll-panel u-mt-md"
+     :class="{ 'roll-panel--compact': compact }">
+    <div class="u-flex u-items-center u-gap-sm" x-show="compact">
+        <strong x-text="tableName || 'Roll linked table'">Roll linked table</strong>
+        <span class="u-flex-1"></span>
+        <button type="button" class="btn btn-ghost btn-sm" @click="open = false">Close</button>
+    </div>
     <div class="roll-controls u-flex u-gap-sm">
         <label>
             Manual value
@@ -19,20 +28,31 @@
                 <option value="REROLL_DUPLICATES">Reroll Duplicates</option>
             </select>
         </label>
-        <button class="btn btn-primary" @@click="roll()" :disabled="loading">
+        <button type="button" class="btn btn-primary" @click="roll()" :disabled="loading || !tableId">
             <span x-text="loading ? 'Rolling...' : 'Roll'">Roll</span>
         </button>
     </div>
-    <div class="roll-results u-mt-md" x-show="result !== null">
-        <template x-for="outcome in (result?.outcomes || [])" :key="outcome.entryKey">
-            <div class="roll-result-entry">
-                <div class="roll-result-text" x-text="outcome.resultText"></div>
-                <template x-for="ref in (outcome.references || [])" :key="ref.targetId">
+    <div class="roll-results u-mt-md" x-show="result !== null" aria-live="polite">
+        <template x-for="row in flattenOutcomes()" :key="row.key">
+            <div class="roll-result-entry"
+                 :class="{ 'roll-result-entry--nested': row.nestedDepth > 0 }"
+                 :style="{ marginLeft: (row.nestedDepth * 1.25) + 'rem' }">
+                <div class="u-text-xs text-muted" x-show="row.nestedDepth > 0"
+                     x-text="row.outcome.tableName"></div>
+                <div class="roll-result-text" x-text="row.outcome.resultText"></div>
+                <template x-for="ref in (row.outcome.references || [])"
+                          :key="ref.targetType + ':' + ref.targetId">
                     <a class="roll-result-ref" x-text="ref.displayText"
-                       :href="'/library/tables/' + ref.targetId"></a>
+                       x-show="referenceUrl(ref)" :href="referenceUrl(ref)"></a>
                 </template>
             </div>
         </template>
     </div>
+    <div x-show="draft && !draftConfirmed && !draftDiscarded">
+        <th:block th:replace="~{rollable-table/_encounter-draft :: encounter-draft}"></th:block>
+        <th:block th:replace="~{rollable-table/_reward-draft :: reward-draft}"></th:block>
+    </div>
+    <div class="u-mt-sm" x-show="draftConfirmed">Draft confirmed.</div>
+    <div class="u-mt-sm" x-show="draftDiscarded">Draft discarded.</div>
 </div>
 </html>

@@ -85,6 +85,31 @@ class SessionCockpitTemplateContractTest {
                 "return true;", "return false;");
     }
 
+    @Test
+    void cockpitUsesSharedTablePanelForPickerAndDirectStoryRolls() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
+        String linked = Files.readString(Path.of("src/main/resources/templates/session/_linked-tables.html"));
+        String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
+
+        assertThat(html).contains("rollable-table/_roll-panel :: roll-panel",
+                "/js/rollable-table-roll.js", "openLinkedTable(");
+        assertThat(linked).contains("rollLinkedTable(");
+        assertThat(js).contains("new CustomEvent('table-roll-open'",
+                "new CustomEvent('table-roll-direct'");
+        assertThat(js).doesNotContain("/roll?campaignId=${encodeURIComponent(cid)}");
+    }
+
+    @Test
+    void diceHistoryRefreshesAfterTableActionsAndMarksUnreadableRows() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
+        String navbar = Files.readString(Path.of("src/main/resources/templates/fragments/navbar.html"));
+        String history = Files.readString(Path.of("src/main/resources/templates/fragments/_dice-roller.html"));
+
+        assertThat(html).contains("table-history-refresh");
+        assertThat(navbar).contains("table-history-refresh");
+        assertThat(history).contains("Result unavailable");
+    }
+
     private static int count(String s, String substring) {
         int count = 0;
         int idx = 0;

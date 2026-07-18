@@ -16,6 +16,7 @@
     <script th:src="@{/js/ui-elevation.js}"></script>
     <script th:src="@{/js/campaign-import.js}" defer></script>
     <script th:src="@{/js/session-cockpit.js}"></script>
+    <script th:src="@{/js/rollable-table-roll.js}"></script>
     <script>
     // Ensure diceRoller component is registered before Alpine scans the DOM
     document.addEventListener('alpine:init', () => {
@@ -29,6 +30,7 @@
                     document.body.dataset.activeEncounterId = this._encounterId || '';
                 });
                 window.addEventListener('dice-roller-toggle', () => { this.open = !this.open; });
+                window.addEventListener('table-history-refresh', () => this.loadHistory());
                 this.$watch('open', (isOpen) => {
                     document.getElementById('diceToggle')?.classList.toggle('active', isOpen);
                 });
@@ -112,7 +114,7 @@
               th:value="${handout.id}" th:text="${handout.title}">Handout</option>
     </select>
     <select id="cockpitTablePicker" class="form-input" aria-label="Roll linked table"
-            @change="rollLinkedTable($event.target.value, $event.target.options[$event.target.selectedIndex]?.text || ''); $event.target.value = ''">
+            @change="openLinkedTable($event.target.value, $event.target.options[$event.target.selectedIndex]?.text || ''); $event.target.value = ''">
       <option value="">Roll linked table…</option>
       <option th:each="t : ${workspace.linkedTables}" th:value="${t.tableId}" th:text="${t.name}">Table</option>
     </select>
@@ -121,6 +123,7 @@
        th:href="@{/campaigns/{id}/calendar(id=${campaignId})}">Calendar</a>
     <button class="btn btn-ghost" x-ref="sessionButton" @click="openLifecycle()">Session</button>
   </header>
+  <th:block th:replace="~{rollable-table/_roll-panel :: roll-panel(tableId=${null}, compact=${true})}"></th:block>
   <section class="cockpit-grid">
     <aside class="cockpit-story" aria-label="Story rail"
            th:replace="~{session/_story-rail :: story(workspace=${workspace})}"></aside>
