@@ -5,8 +5,8 @@
 
 ## Decision
 
-**Readiness provider:** PROOF_REQUIRED
-**YouTube status:** ELIGIBLE_FOR_PROOF
+**Readiness provider:** YOUTUBE
+**YouTube status:** VIABLE
 **Spotify status:** CONDITIONAL
 
 YouTube is the required baseline candidate. Spotify is an optional enhanced candidate and cannot
@@ -61,8 +61,46 @@ become a readiness dependency. No provider feature is implemented or advertised 
 
 ## DM-Device Playback Proof
 
-The paper assessment is complete. Real YouTube playback remains required before this decision can
-advance the roadmap. Spotify playback is optional and cannot override a policy incompatibility.
+### YouTube: VIABLE
+
+**Execution timestamp:** 2026-07-18T19:30:00Z (approximate)
+**Browser:** Firefox (Linux)
+**Player dimensions:** 480 by 270 CSS pixels, visible and unobscured
+**Official sample video:** M7lc1UVf-VE
+**Official sample playlist:** PLC77007E23FF423C6
+
+All six controls passed after an explicit DM gesture (Enable audio):
+
+1. Enable audio — audible output from the DM device
+2. Pause — audio stopped
+3. Resume — audio continued from paused position
+4. Volume 25% — volume reduced and persisted
+5. Switch cue context — official sample playlist replaced initial video context without page navigation
+6. Next — playlist advanced to the next track
+
+Autoplay was initially blocked as expected before the Enable audio gesture. Browser console
+contained YouTube-internal warnings (feature policy, SameSite cookie, Firefox fingerprinting
+protection, unreachable code in YouTube scripts, CORS-blocked ad tracking) — none were player
+errors or CSP/Referer failures.
+
+The official player remained visible, unobscured, with intact branding and controls throughout
+scripted playback. No YouTube reference, state, or script was exposed outside the proof page.
+
+### YouTube Provider Capabilities
+
+providerId=YOUTUBE
+authMode=NONE
+supportsKnownVideo=true
+supportsKnownPlaylist=true
+supportsSearch=false
+supportsPlayPause=true
+supportsSkip=true
+supportsVolume=true
+supportsQueue=true
+supportsCrossfade=false
+requiresVisiblePlayer=true
+requiresInitialUserGesture=true
+playsOnDmDevice=true
 
 ### Spotify: NOT_EXERCISED
 
@@ -135,5 +173,6 @@ strictly DM-only projection boundary.
 
 ## Roadmap Outcome
 
-Row 2 remains READY until YouTube is proven on the DM device and this record names a viable
-readiness provider. This paper assessment alone does not advance row 3.
+YouTube is proven on the DM device as a viable baseline provider. Row 2 can advance to COMPLETE
+when the contract test passes and the roadmap is updated. This proof alone does not advance row 3;
+see the roadmap for the next legal work package.
