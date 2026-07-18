@@ -39,7 +39,7 @@ become a readiness dependency. No provider feature is implemented or advertised 
 - https://developer.spotify.com/policy
 - https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide
 - https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow
-- https://developer.spotify.com/documentation/web-api/tutorials/redirect_uri
+- https://developer.spotify.com/documentation/web-api/concepts/redirect_uri
 - https://developer.spotify.com/documentation/web-api/tutorials/refreshing-tokens
 - https://developer.spotify.com/documentation/web-api/concepts/scopes
 - https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback
@@ -63,8 +63,10 @@ become a readiness dependency. No provider feature is implemented or advertised 
 
 ### YouTube: VIABLE
 
-**Execution timestamp:** 2026-07-18T19:30:00Z (approximate)
-**Browser:** Firefox (Linux)
+**Manual proof confirmation:** The user confirmed on 2026-07-18 that the audible DM-device proof
+was approved immediately before the follow-up audit. The original executor did not preserve a
+reliable clock time.
+**Browser:** Firefox on Linux (exact browser and OS versions were not recorded by the original executor)
 **Player dimensions:** 480 by 270 CSS pixels, visible and unobscured
 **Official sample video:** M7lc1UVf-VE
 **Official sample playlist:** PLC77007E23FF423C6
@@ -102,12 +104,19 @@ requiresVisiblePlayer=true
 requiresInitialUserGesture=true
 playsOnDmDevice=true
 
-### Spotify: NOT_EXERCISED
+### Spotify Functional Proof: NOT EXECUTED
 
 Functional proof was not executed. Prerequisites (Spotify Premium account, developer application
 with registered 127.0.0.1 loopback redirect, active official client or Connect device) are not
 available in this environment. The policy gate in the Policy Compliance Assessment above
-determines the final Spotify status.
+determines the final Spotify status, which remains CONDITIONAL.
+
+## OAuth and Credential Storage
+
+YouTube baseline playback of known public IDs uses no OAuth token or API key and stores no
+credentials. Spotify would use Authorization Code with PKCE, a 127.0.0.1 loopback callback,
+least-privilege playback scopes, an in-memory access token, and an owner-only local refresh-token
+file as specified below.
 
 ## Spotify Provider Contract
 
@@ -127,7 +136,12 @@ logBehavior=never log tokens, authorization codes, provider responses containing
 Platform handling: on non-POSIX systems, use an owner-only application-data location and fail
 closed with an actionable settings error if owner-only storage cannot be established.
 
-## Provider Capabilities
+## Capability Limits
+
+The future provider SPI must declare capabilities instead of presenting unsupported controls.
+YouTube requires its official player to remain visible and an initial DM gesture; it does not
+provide baseline search or crossfade. Spotify requires Premium and an active official playback
+device; it does not provide crossfade. The detailed Spotify declaration is:
 
 supportsSearch=true
 supportsKnownTrack=true
@@ -145,17 +159,21 @@ developmentModeUserLimit=5
 developmentModeClientIdsPerDeveloper=1
 rateLimitHandling=honor Retry-After on 429
 
-## Provider Failure Mapping
+## Failure Modes
 
-| Failure category | Spotify trigger |
-|---|---|
-| AUTH_REQUIRED | Expired or revoked authorization; six-month refresh-token expiry requiring reauthorization |
-| PREMIUM_REQUIRED | Product or account rejection when the user does not have an active Premium subscription |
-| NO_ACTIVE_DEVICE | No active client or Connect device available for playback commands |
-| CONTENT_UNAVAILABLE | Deleted, market-restricted, or non-playable track or episode references |
-| RATE_LIMITED | 429 response; honor Retry-After header |
-| PROVIDER_OFFLINE | Network error, 5xx response, or request timeout |
-| POLICY_DISABLED | Spotify is not authorized for this product behavior (CONDITIONAL status) |
+Audio failures remain bounded to the audio widget. They must be visible and retryable without
+interrupting scene navigation, encounters, presentation, or any other session action.
+
+| Failure category | YouTube trigger | Spotify trigger |
+|---|---|---|
+| AUTOPLAY_BLOCKED | Browser rejects scripted playback before a DM gesture; show the enable-audio prompt | Not applicable |
+| AUTH_REQUIRED | Not applicable for public-ID baseline playback | Expired or revoked authorization; six-month refresh-token expiry requiring reauthorization |
+| PREMIUM_REQUIRED | Not applicable | Product or account rejection without an active Premium subscription |
+| NO_ACTIVE_DEVICE | Not applicable; playback occurs in the visible browser player | No active client or Connect device available for playback commands |
+| CONTENT_UNAVAILABLE | Deleted, embedding-disabled, age-restricted, region-restricted, or otherwise unplayable video/playlist | Deleted, market-restricted, or non-playable track or episode reference |
+| RATE_LIMITED | Provider throttling or temporary embed-service rejection | 429 response; honor Retry-After |
+| PROVIDER_OFFLINE | IFrame API load failure, network error, player error, or timeout | Network error, 5xx response, or request timeout |
+| POLICY_DISABLED | Current YouTube terms no longer permit the required visible-player behavior | Spotify remains unauthorized while its status is CONDITIONAL |
 
 ## Provider Interfaces (Planned)
 

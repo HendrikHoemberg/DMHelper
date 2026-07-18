@@ -55,14 +55,24 @@ class DocsIndexContractTest {
                 .contains("**Spotify status:**")
                 .contains("## Candidate Matrix")
                 .contains("## DM-Device Playback Proof")
+                .contains("**Manual proof confirmation:**")
+                .contains("### Spotify Functional Proof: NOT EXECUTED")
+                .contains("## OAuth and Credential Storage")
                 .contains("## Spotify Provider Contract")
-                .contains("## Provider Capabilities")
-                .contains("## Provider Failure Mapping")
+                .contains("## Capability Limits")
+                .contains("## Failure Modes")
+                .contains("| AUTOPLAY_BLOCKED |")
+                .contains("| CONTENT_UNAVAILABLE |")
+                .contains("| PROVIDER_OFFLINE |")
                 .contains("## Account and Subscription Prerequisites")
                 .contains("## Downstream Implementation Contract")
                 .contains("## Roadmap Outcome")
                 .contains("https://developers.google.com/youtube/iframe_api_reference")
-                .contains("https://developer.spotify.com/policy");
+                .contains("https://developer.spotify.com/policy")
+                .contains("https://developer.spotify.com/documentation/web-api/concepts/redirect_uri")
+                .doesNotContain("https://developer.spotify.com/documentation/web-api/tutorials/redirect_uri")
+                .doesNotContain("### Spotify: NOT_EXERCISED")
+                .doesNotContain("(approximate)");
     }
 
     @Test
