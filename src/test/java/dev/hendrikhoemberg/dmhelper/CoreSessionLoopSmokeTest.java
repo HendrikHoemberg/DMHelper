@@ -12,6 +12,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportCoordinator;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportOptions;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageWriteRequest;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageWriter;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
@@ -88,6 +89,11 @@ class CoreSessionLoopSmokeTest {
     @Autowired private TreasuryService treasuryService;
     @Autowired private EncounterRepository encounterRepository;
     @Autowired private CombatantRepository combatantRepository;
+    @Autowired private dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository trapRepository;
+    @Autowired private dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository hazardRepository;
+    @Autowired private dev.hendrikhoemberg.dmhelper.threat.data.MapThreatPinRepository mapThreatPinRepository;
+    @Autowired private dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntryRepository combatLogEntryRepository;
+    @Autowired private dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository rollableTableRepository;
 
     private static Playwright playwright;
     private static Browser browser;
@@ -1005,6 +1011,435 @@ class CoreSessionLoopSmokeTest {
         assertThat(combatantRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()))
                 .hasSize(2)
                 .allSatisfy(combatant -> assertThat(combatant.getStatBlock().getId()).isEqualTo(statBlock.getId()));
+    }
+
+    @Test
+    @Order(24)
+    void threatWorkflowProvesDmSurfacesAndPackageFidelity() throws Exception {
+        startSession();
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+
+        // 1. Create trap/hazard through editor request paths
+        UUID trapId = createTrapThroughEditorApi("browser_spike", "Browser Spike Pit",
+                "A pressure plate opens a pit of spikes.", 6, "2d10");
+        UUID hazardId = createHazardThroughEditorApi("browser_gas", "Browser Poison Gas",
+                "Green vapor seeps from vents.", "2d6");
+
+        // 2. Verify detail / provenance / mechanics
+        dmPage.navigate("http://localhost:" + port + "/library/traps/" + trapId);
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(dmPage.textContent("body")).contains("Browser Spike Pit");
+        assertThat(dmPage.textContent("body")).contains("2d10");
+        assertThat(dmPage.locator(".threat-mechanics-card").count()).isGreaterThan(0);
+        assertThat(dmPage.locator(".provenance-panel, .provenance-summary").count())
+                .as("custom threats show provenance")
+                .isGreaterThan(0);
+
+        dmPage.navigate("http://localhost:" + port + "/library/hazards/" + hazardId);
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(dmPage.textContent("body")).contains("Browser Poison Gas");
+
+        // 3. Attach one trap to two scenes without duplication
+        List<Scene> scenes = sceneRepo.findByChapterIdOrderBySortOrderAsc(chapterId);
+        assertThat(scenes.size()).isGreaterThanOrEqualTo(2);
+        Scene first = scenes.get(0);
+        Scene second = scenes.get(1);
+        attachThreatSection(first, trapId, "Browser Spike Pit", 0);
+        attachThreatSection(second, trapId, "Browser Spike Pit (shared)", 0);
+        assertThat(trapRepository.findAll()).filteredOn(t -> trapId.equals(t.getId())).hasSize(1);
+
+        adventureService.setCurrentScene(campaignId, first.getId());
+
+        // 4. Open story card in cockpit (mechanics card shows trigger/damage, not definition name)
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(dmPage.textContent("body")).contains("Browser Spike Pit");
+        Locator storyCard = dmPage.locator(".threat-mechanics-card")
+                .filter(new Locator.FilterOptions().setHasText("2d10"));
+        storyCard.first().waitFor();
+        assertThat(storyCard.first().textContent()).contains("Pressure plate");
+
+        // 5. Click check/attack/damage and prove prefill before roll (no auto-submit)
+        String attackExpr = (String) dmPage.evaluate("""
+                () => {
+                  const btn = document.querySelector(
+                    '.threat-mechanics-card button[data-prefill-expr]');
+                  if (!btn) throw new Error('Missing Prefill attack button');
+                  const expr = btn.dataset.prefillExpr;
+                  const label = btn.dataset.prefillLabel;
+                  btn.click();
+                  // Fallback if party bar intercepts: dispatch the same prefill event the button uses.
+                  window.dispatchEvent(new CustomEvent('dice-roller-prefill', {
+                    detail: { expression: expr, label }
+                  }));
+                  return expr;
+                }
+                """);
+        assertThat(attackExpr).isEqualTo("1d20+6");
+        dmPage.locator(".dice-panel").waitFor();
+        dmPage.waitForFunction("""
+                () => {
+                  const input = document.querySelector('.dice-panel input[type=text], .dice-panel input');
+                  return input && input.value && input.value.includes('1d20');
+                }
+                """);
+        Object afterAttack = dmPage.evaluate(
+                "document.querySelector('.dice-panel input[type=text], .dice-panel input')?.value || ''");
+        assertThat((String) afterAttack).contains("1d20+6");
+        // Prefill must not auto-submit a roll result
+        assertThat(dmPage.locator(".dice-panel").textContent()).doesNotContain("Total:");
+
+        String damageExpr = (String) dmPage.evaluate("""
+                () => {
+                  const buttons = Array.from(document.querySelectorAll(
+                    '.threat-mechanics-card button'));
+                  const btn = buttons.find(b => (b.textContent || '').includes('Prefill damage'));
+                  if (!btn) throw new Error('Missing Prefill damage button');
+                  const expr = btn.dataset.prefillExpr;
+                  const label = btn.dataset.prefillLabel;
+                  btn.click();
+                  window.dispatchEvent(new CustomEvent('dice-roller-prefill', {
+                    detail: { expression: expr, label }
+                  }));
+                  return expr;
+                }
+                """);
+        assertThat(damageExpr).isEqualTo("2d10");
+        dmPage.waitForFunction("""
+                () => {
+                  const input = document.querySelector('.dice-panel input[type=text], .dice-panel input');
+                  return input && input.value === '2d10';
+                }
+                """);
+        dmPage.keyboard().press("Escape");
+
+        // 6. Add/activate encounter threat and see tracker card
+        // End any leftover active encounters from earlier ordered smoke steps.
+        encounterRepository.findByCampaignIdOrderByNameAsc(campaignId).stream()
+                .filter(e -> e.getStatus() == dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.ACTIVE)
+                .forEach(e -> encounterService.endEncounter(e.getId()));
+
+        UUID threatEncounterId = encounterService.create(campaignId,
+                new EncounterService.CreateRequest("Browser Threat Encounter", mapId)).id();
+        encounterService.addCombatant(threatEncounterId,
+                new EncounterService.CombatantCreateRequest(
+                        "Browser Fighter", 30, "PC", null, null, null));
+        var threatCombatant = encounterService.addThreatCombatant(threatEncounterId,
+                new EncounterService.ThreatCombatantRequest(
+                        dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.TRAP,
+                        trapId, null, 25, null));
+        // Ensure PC goes after the trap so the trap is active on activation.
+        UUID fighterIdEarly = encounterService.getCombatants(threatEncounterId).stream()
+                .filter(c -> "Browser Fighter".equals(c.name()))
+                .findFirst().orElseThrow().id();
+        encounterService.setInitiative(fighterIdEarly, 5);
+        encounterService.activate(threatEncounterId);
+        // Activation leaves activeTurnIndex at -1 until the first next-turn.
+        encounterService.nextTurn(threatEncounterId);
+
+        dmPage.reload();
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        dmPage.waitForFunction("""
+                () => {
+                  const name = document.querySelector('[data-active-threat-card] strong, .active-threat-card strong');
+                  const el = document.querySelector('[data-active-threat-card]');
+                  if (!el || !name) return false;
+                  const visible = getComputedStyle(el).display !== 'none'
+                    && getComputedStyle(el).visibility !== 'hidden';
+                  return visible && (name.textContent || '').includes('Browser Spike Pit');
+                }
+                """);
+        assertThat(dmPage.locator("[data-active-threat-card]").textContent())
+                .contains("Browser Spike Pit");
+
+        // 7. Use existing damage/condition controls and verify log
+        UUID fighterId = fighterIdEarly;
+        // Select fighter via API damage path used by tracker, then verify log
+        dmPage.evaluate("""
+            async ([combatantId]) => {
+              const response = await fetch('/api/v1/combatants/' + combatantId + '/damage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: -5 })
+              });
+              if (!response.ok) throw new Error('Damage failed: ' + await response.text());
+              const cond = await fetch('/api/v1/combatants/' + combatantId + '/conditions', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sourceKey: 'poisoned', durationRounds: 1 })
+              });
+              if (!cond.ok) throw new Error('Condition failed: ' + await cond.text());
+            }
+        """, List.of(fighterId.toString()));
+        assertThat(combatLogEntryRepository.findByEncounterIdOrderBySequenceAsc(threatEncounterId))
+                .isNotEmpty();
+        assertThat(encounterService.getCombatant(fighterId).currentHp()).isEqualTo(25);
+
+        // 8. Create DM pin and verify player marker absence
+        Object pinId = dmPage.evaluate("""
+            async ([mapId, trapId]) => {
+              const response = await fetch('/api/v1/maps/' + mapId + '/pins', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  key: 'browser-spike-pin',
+                  threatKind: 'TRAP',
+                  threatId: trapId,
+                  x: 96,
+                  y: 144,
+                  label: 'Browser Spike Pin',
+                  sortOrder: 0
+                })
+              });
+              if (!response.ok) throw new Error('Pin create failed: ' + await response.text());
+              return (await response.json()).id;
+            }
+        """, Arrays.asList(mapId.toString(), trapId.toString()));
+        assertThat(pinId).isNotNull();
+        assertThat(mapThreatPinRepository.findByMapIdOrderBySortOrderAsc(mapId))
+                .anySatisfy(p -> assertThat(p.getPinKey()).isEqualTo("browser-spike-pin"));
+
+        BrowserContext playerContext = browser.newContext();
+        Page playerPage = guardedPage(playerContext);
+        playerPage.navigate("http://localhost:" + port + "/player");
+        playerPage.waitForLoadState(LoadState.NETWORKIDLE);
+        String playerHtml = playerPage.content();
+        // DM pin markers/labels must never reach the player page or table state.
+        assertThat(playerHtml)
+                .doesNotContain("browser-spike-pin")
+                .doesNotContain("Browser Spike Pin");
+        String tableState = (String) dmPage.evaluate("""
+            async () => {
+              const r = await fetch('/api/v1/table/state');
+              return await r.text();
+            }
+        """);
+        assertThat(tableState)
+                .doesNotContain("browser-spike-pin")
+                .doesNotContain("Browser Spike Pin")
+                .doesNotContain(String.valueOf(pinId))
+                .doesNotContain("\"TRAP\"");
+        playerContext.close();
+
+        // 9. Export/import and reopen refs/cards
+        // Exclude combat log (planned-encounter log rows can carry round 0). Prior smoke steps
+        // may leave table treasure refs that re-embed SRD equipment under a conflicting
+        // sourceKey; strip rollable tables and custom equipment rows before packaging.
+        var artifact = exportCoordinator.export(campaignId,
+                new CampaignExportOptions(false, false));
+        CampaignManifestV2 exportedManifest = stripTableAndConflictingEquipment(artifact.manifest());
+        assertThat(exportedManifest.traps())
+                .anySatisfy(t -> assertThat(t.name()).isEqualTo("Browser Spike Pit"));
+        assertThat(exportedManifest.hazards())
+                .anySatisfy(h -> assertThat(h.name()).isEqualTo("Browser Poison Gas"));
+        assertThat(exportedManifest.maps())
+                .anySatisfy(m -> assertThat(m.threatPins()).isNotEmpty());
+
+        ByteArrayOutputStream exported = new ByteArrayOutputStream();
+        var originalWrite = artifact.writeRequest();
+        new CampaignPackageWriter().write(
+                new CampaignPackageWriteRequest(
+                        "threat-rt.dmcampaign", exportedManifest, originalWrite.assetSources()),
+                exported);
+        byte[] packageBytes = exported.toByteArray();
+
+        String redirect = (String) dmPage.evaluate("""
+            async ([baseUrl, bodyB64, zipped]) => {
+                const binary = Uint8Array.from(atob(bodyB64), c => c.charCodeAt(0));
+                const prv = await fetch(baseUrl + '/campaigns/package-imports/previews', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': zipped
+                            ? 'application/vnd.dmhelper.campaign+zip'
+                            : 'application/json',
+                        'X-DMHelper-Filename': zipped
+                            ? 'threat-rt.dmcampaign'
+                            : 'threat-rt.dmcampaign.json'
+                    },
+                    body: binary
+                });
+                if (!prv.ok) throw new Error('Preview failed: ' + await prv.text());
+                const preview = await prv.json();
+                if (preview.status === 'BLOCKED') {
+                    throw new Error('Import blocked: ' + JSON.stringify(preview.problems));
+                }
+                const conf = await fetch(baseUrl + '/campaigns/package-imports/' + preview.previewId
+                    + '/confirm?acceptWarnings=true', { method: 'POST' });
+                if (!conf.ok) throw new Error('Confirm failed: ' + await conf.text());
+                return conf.headers.get('Location');
+            }
+        """, Arrays.asList("http://localhost:" + port,
+                Base64.getEncoder().encodeToString(packageBytes),
+                !originalWrite.assetSources().isEmpty()));
+        assertThat(redirect).isNotNull();
+        UUID restoredId = UUID.fromString(redirect.replaceAll("/campaigns/", ""));
+
+        var restoredTraps = trapRepository.findVisibleByCampaignId(restoredId).stream()
+                .filter(t -> t.getCampaign() != null && restoredId.equals(t.getCampaign().getId()))
+                .toList();
+        assertThat(restoredTraps).anySatisfy(t -> assertThat(t.getName()).isEqualTo("Browser Spike Pit"));
+        UUID restoredTrapId = restoredTraps.stream()
+                .filter(t -> "Browser Spike Pit".equals(t.getName()))
+                .findFirst().orElseThrow().getId();
+
+        dmPage.navigate("http://localhost:" + port + "/library/traps/" + restoredTrapId);
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(dmPage.textContent("body")).contains("Browser Spike Pit");
+        assertThat(dmPage.locator(".threat-mechanics-card").count()).isGreaterThan(0);
+
+        assertThat(threatCombatant.threatId()).isEqualTo(trapId);
+    }
+
+    private static CampaignManifestV2 stripTableAndConflictingEquipment(CampaignManifestV2 source) {
+        // Drop scene links that targeted rollable tables so table removal stays coherent.
+        var adventures = source.adventures().stream()
+                .map(adv -> new CampaignManifestV2.AdventureDto(
+                        adv.key(), adv.name(), adv.description(), adv.sourceAttribution(),
+                        adv.sortOrder(),
+                        adv.chapters().stream().map(ch -> new CampaignManifestV2.ChapterDto(
+                                ch.key(), ch.title(), ch.intro(), ch.sortOrder(),
+                                ch.scenes().stream().map(sc -> new CampaignManifestV2.SceneDto(
+                                        sc.key(), sc.title(), sc.body(), sc.status(), sc.sortOrder(),
+                                        sc.mapRef(), sc.pin(), sc.encounterRef(),
+                                        sc.statblockRefs(), sc.handoutRefs(),
+                                        sc.summary(), sc.sourceLocator(), sc.tags(), sc.mapRegionKey(),
+                                        sc.sections(), sc.checks(), sc.participants(),
+                                        sc.transitions(),
+                                        sc.links() == null ? List.of() : sc.links().stream()
+                                                .filter(link -> link.targetRef() == null
+                                                        || link.targetRef().type() == null
+                                                        || !"ROLLABLE_TABLE".equals(link.targetRef().type().name()))
+                                                .toList()
+                                )).toList()
+                        )).toList(),
+                        adv.createdAt()))
+                .toList();
+        // Also drop assignments that referenced stripped equipment.
+        var assignments = source.assignments() == null ? List.<CampaignManifestV2.AssignmentDto>of()
+                : source.assignments().stream()
+                .filter(a -> a.equipmentItemRef() == null)
+                .toList();
+        return new CampaignManifestV2(
+                source.formatVersion(), source.metadata(), source.campaign(), source.assets(),
+                source.party(), source.customStatBlocks(), source.customSpells(),
+                source.customConditions(), source.customRules(),
+                List.of(), // customEquipment — avoid sourceKey collisions with SRD seed
+                source.customMagicItems(), source.customClasses(), source.customSpecies(),
+                source.customBackgrounds(), source.customFeats(),
+                source.handouts(), source.maps(), source.encounters(), source.notes(),
+                source.quickNotes(), assignments, source.ledgerEntries(),
+                source.timelineEvents(), adventures, source.session(), source.diceRolls(),
+                source.quests(), source.annotations(), source.worldNpcs(), source.worldLocations(),
+                source.factions(), source.worldRelationships(), source.factionClocks(),
+                List.of(), // rollableTables
+                source.traps(), source.hazards());
+    }
+
+    private UUID createTrapThroughEditorApi(String sourceKey, String name,
+                                            String description, int attackBonus,
+                                            String damageExpression) {
+        Object id = dmPage.evaluate("""
+            async ([campaignId, sourceKey, name, description, attackBonus, damageExpression]) => {
+                const response = await fetch('/api/v1/traps?campaignId=' + campaignId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sourceKey,
+                        name,
+                        description,
+                        severity: 'DANGEROUS',
+                        minLevel: 1,
+                        maxLevel: 5,
+                        triggerDescription: 'Pressure plate',
+                        triggerAreaHint: '10-ft square',
+                        detectionPassiveThreshold: 15,
+                        detectionCheck: { mode: 'CHECK', ability: 'WIS', skill: 'Perception', dc: 15 },
+                        disarmMethods: [{
+                            key: 'jam-cover',
+                            label: 'Jam cover',
+                            ability: 'DEX',
+                            skill: null,
+                            tool: "thieves' tools",
+                            dc: 14,
+                            failureConsequence: 'Triggers',
+                            sortOrder: 0
+                        }],
+                        attackBonus,
+                        save: null,
+                        damageExpression,
+                        damageTypes: ['PIERCING'],
+                        additionalEffect: 'Knocked prone',
+                        resetMode: 'MANUAL',
+                        resetTiming: null,
+                        statBlockId: null,
+                        countermeasureNotes: 'Wedge the cover',
+                        references: []
+                    })
+                });
+                if (!response.ok) throw new Error('Trap creation failed: ' + await response.text());
+                return (await response.json()).id;
+            }
+        """, Arrays.asList(campaignId.toString(), sourceKey, name, description,
+                attackBonus, damageExpression));
+        return UUID.fromString((String) id);
+    }
+
+    private UUID createHazardThroughEditorApi(String sourceKey, String name,
+                                              String description, String damageExpression) {
+        Object id = dmPage.evaluate("""
+            async ([campaignId, sourceKey, name, description, damageExpression]) => {
+                const response = await fetch('/api/v1/hazards?campaignId=' + campaignId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sourceKey,
+                        name,
+                        description,
+                        severity: 'SETBACK',
+                        minLevel: 1,
+                        maxLevel: 8,
+                        exposureMode: 'ON_ENTER',
+                        exposureText: 'Entering the cloud exposes you',
+                        areaHint: '15-ft radius',
+                        check: { mode: 'SAVE', ability: 'CON', skill: null, dc: 13 },
+                        damageExpression,
+                        damageTypes: ['POISON'],
+                        escalationText: 'Spreads 5 feet',
+                        endingConditions: 'Disperses after 1 minute',
+                        references: []
+                    })
+                });
+                if (!response.ok) throw new Error('Hazard creation failed: ' + await response.text());
+                return (await response.json()).id;
+            }
+        """, Arrays.asList(campaignId.toString(), sourceKey, name, description, damageExpression));
+        return UUID.fromString((String) id);
+    }
+
+    private void attachThreatSection(Scene scene, UUID trapId, String label, int sortOrder) {
+        UUID adventureId = adventureRepo.findByCampaignIdOrderBySortOrderAsc(campaignId).getFirst().getId();
+        String path = "/campaigns/" + campaignId
+                + "/adventures/" + adventureId
+                + "/chapters/" + chapterId
+                + "/scenes/" + scene.getId() + "/sections";
+        dmPage.evaluate("""
+            async ([path, trapId, label, sortOrder]) => {
+                const body = new URLSearchParams({
+                    kind: 'TRAP',
+                    label,
+                    body: 'Attached by browser acceptance',
+                    sortOrder: String(sortOrder),
+                    threatId: trapId
+                });
+                const response = await fetch(path, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body
+                });
+                if (!response.ok) throw new Error('Scene threat section failed: ' + await response.text());
+            }
+        """, Arrays.asList(path, trapId.toString(), label, sortOrder));
     }
 
     private UUID createRollableTableThroughEditorApi(

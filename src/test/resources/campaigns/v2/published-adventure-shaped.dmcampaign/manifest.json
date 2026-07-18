@@ -653,6 +653,20 @@
           "dead": false,
           "notes": "ambush"
         }
+      ],
+      "threatPins": [
+        {
+          "key": "pin-falling-block",
+          "x": 120,
+          "y": 96,
+          "label": "Falling block",
+          "threatRef": {
+            "scope": "PACKAGE",
+            "type": "TRAP",
+            "key": "trap-falling-block"
+          },
+          "sortOrder": 0
+        }
       ]
     }
   ],
@@ -759,6 +773,34 @@
           "legendaryResistancesMax": 0,
           "rechargedAbilities": "",
           "notes": "hidden"
+        },
+        {
+          "key": "combatant-falling-block",
+          "name": "Falling Block",
+          "initiative": 20,
+          "tieBreaker": 0,
+          "sortOrder": 99,
+          "maxHp": 0,
+          "currentHp": 0,
+          "tempHp": 0,
+          "kind": "TRAP",
+          "groupId": "",
+          "groupLeader": false,
+          "defeated": false,
+          "hidden": false,
+          "conditionsJson": "[]",
+          "concentrationCheckPending": false,
+          "legendaryActionsUsed": 0,
+          "legendaryResistancesUsed": 0,
+          "legendaryActionsMax": 0,
+          "legendaryResistancesMax": 0,
+          "rechargedAbilities": "",
+          "notes": "published falling block",
+          "threatRef": {
+            "scope": "PACKAGE",
+            "type": "TRAP",
+            "key": "trap-falling-block"
+          }
         }
       ],
       "status": "PLANNED",
@@ -1097,7 +1139,11 @@
               "links": [
                 {
                   "role": "RANDOM_ENCOUNTERS",
-                  "targetRef": {"scope": "PACKAGE", "type": "ROLLABLE_TABLE", "key": "rt-ruins-random-encounters"},
+                  "targetRef": {
+                    "scope": "PACKAGE",
+                    "type": "ROLLABLE_TABLE",
+                    "key": "rt-ruins-random-encounters"
+                  },
                   "displayText": "Random encounters",
                   "sortOrder": 1
                 }
@@ -1145,6 +1191,39 @@
                   "scope": "PACKAGE",
                   "type": "HANDOUT",
                   "key": "handout-dm-backstory"
+                }
+              ],
+              "sections": [
+                {
+                  "kind": "READ_ALOUD",
+                  "label": "Read Aloud",
+                  "body": "Dust sifts from the cracked lintel as you approach the doorway.",
+                  "sourceLocator": "p.42",
+                  "sortOrder": 0
+                },
+                {
+                  "kind": "TRAP",
+                  "label": "Falling Block",
+                  "body": "A stone block is suspended above the corridor threshold. Detection DC is not stated in the source.",
+                  "sourceLocator": "p.42 Falling Block",
+                  "sortOrder": 1,
+                  "threatRef": {
+                    "scope": "PACKAGE",
+                    "type": "TRAP",
+                    "key": "trap-falling-block"
+                  }
+                },
+                {
+                  "kind": "HAZARD",
+                  "label": "Unstable Ceiling",
+                  "body": "Loose stonework rains dust whenever something heavy moves below.",
+                  "sourceLocator": "p.43",
+                  "sortOrder": 2,
+                  "threatRef": {
+                    "scope": "PACKAGE",
+                    "type": "HAZARD",
+                    "key": "hazard-unstable-ceiling"
+                  }
                 }
               ]
             }
@@ -1377,12 +1456,19 @@
       "name": "Ruins Approach",
       "kind": "SITE",
       "summary": "The area surrounding the ancient ruins",
-      "tags": ["ruins", "approach"],
+      "tags": [
+        "ruins",
+        "approach"
+      ],
       "createdAt": "2025-07-01T10:00:00Z",
       "tableLinks": [
         {
           "role": "RANDOM_ENCOUNTERS",
-          "tableRef": {"scope": "PACKAGE", "type": "ROLLABLE_TABLE", "key": "rt-ruins-random-encounters"},
+          "tableRef": {
+            "scope": "PACKAGE",
+            "type": "ROLLABLE_TABLE",
+            "key": "rt-ruins-random-encounters"
+          },
           "sortOrder": 1
         }
       ]
@@ -1396,7 +1482,11 @@
       "addressMode": "RANGE",
       "rollExpression": "1d100",
       "category": "ENCOUNTER",
-      "tags": ["ruins", "random", "encounters"],
+      "tags": [
+        "ruins",
+        "random",
+        "encounters"
+      ],
       "createdAt": "2025-07-16T18:00:00Z",
       "entries": [
         {
@@ -1406,7 +1496,11 @@
           "resultText": "Goblins scavenging",
           "quantityExpression": "2d4",
           "references": [
-            {"scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain"}
+            {
+              "scope": "PACKAGE",
+              "type": "STATBLOCK",
+              "key": "statblock-goblin-captain"
+            }
           ]
         },
         {
@@ -1416,7 +1510,11 @@
           "resultText": "Wandering skeletons",
           "quantityExpression": "1d4",
           "references": [
-            {"scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-skeleton"}
+            {
+              "scope": "PACKAGE",
+              "type": "STATBLOCK",
+              "key": "statblock-skeleton"
+            }
           ]
         },
         {
@@ -1426,7 +1524,11 @@
           "resultText": "Shambling zombies",
           "quantityExpression": "1d4",
           "references": [
-            {"scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-zombie"}
+            {
+              "scope": "PACKAGE",
+              "type": "STATBLOCK",
+              "key": "statblock-zombie"
+            }
           ]
         },
         {
@@ -1441,7 +1543,12 @@
           "rangeEnd": 65,
           "resultText": "Abandoned treasure cache",
           "references": [
-            {"scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_bag-of-holding"}
+            {
+              "scope": "CATALOG",
+              "type": "MAGIC_ITEM",
+              "ruleset": "SRD_5_2",
+              "sourceKey": "srd-2024_bag-of-holding"
+            }
           ]
         },
         {
@@ -1450,7 +1557,11 @@
           "rangeEnd": 70,
           "resultText": "Sudden weather change",
           "references": [
-            {"scope": "PACKAGE", "type": "ROLLABLE_TABLE", "key": "rt-ruins-weather"}
+            {
+              "scope": "PACKAGE",
+              "type": "ROLLABLE_TABLE",
+              "key": "rt-ruins-weather"
+            }
           ]
         },
         {
@@ -1468,7 +1579,9 @@
       "addressMode": "RANGE",
       "rollExpression": "1d6",
       "category": "WEATHER",
-      "tags": ["weather"],
+      "tags": [
+        "weather"
+      ],
       "createdAt": "2025-07-16T18:01:00Z",
       "entries": [
         {
@@ -1490,6 +1603,106 @@
           "resultText": "Heavy rain"
         }
       ]
+    }
+  ],
+  "traps": [
+    {
+      "key": "trap-falling-block",
+      "sourceKey": "published_falling-block",
+      "name": "Falling Block",
+      "description": "A stone block is suspended above the corridor threshold.",
+      "severity": "DANGEROUS",
+      "triggerDescription": "Tripwire across the threshold.",
+      "triggerAreaHint": "Corridor entrance",
+      "detectionCheck": {
+        "mode": "CHECK",
+        "ability": "WIS",
+        "skill": "Perception"
+      },
+      "disarmMethods": [
+        {
+          "key": "cut-wire",
+          "label": "Cut the tripwire",
+          "ability": "DEX",
+          "skill": "Sleight of Hand",
+          "tool": "thieves' tools",
+          "failureConsequence": "The block falls.",
+          "sortOrder": 0
+        }
+      ],
+      "damage": {
+        "expression": "4d10",
+        "types": [
+          "BLUDGEONING"
+        ]
+      },
+      "resetMode": "NONE",
+      "countermeasureNotes": "Brace the block with a 10-foot pole before cutting the wire.",
+      "createdAt": "2025-07-01T10:30:00Z",
+      "provenance": {
+        "sourceTitle": "Ruins of Destiny",
+        "editionVersion": "1st printing",
+        "sourceLocator": "p.42 Falling Block",
+        "licenseClassification": "THIRD_PARTY",
+        "importedAt": "2025-07-01T10:00:00Z",
+        "converterId": "fixture-published-adventure",
+        "converterVersion": "1.0",
+        "extractionConfidence": "MEDIUM"
+      }
+    }
+  ],
+  "hazards": [
+    {
+      "key": "hazard-unstable-ceiling",
+      "sourceKey": "published_unstable-ceiling",
+      "name": "Unstable Ceiling",
+      "description": "Loose stonework rains dust whenever something heavy moves below.",
+      "severity": "SETBACK",
+      "exposureMode": "PER_ROUND",
+      "exposureText": "Creatures under the weak section risk debris each round.",
+      "areaHint": "20-foot stretch of hallway",
+      "endingConditions": "Ends after the ceiling collapses fully or is shored up.",
+      "createdAt": "2025-07-01T10:31:00Z",
+      "provenance": {
+        "sourceTitle": "Ruins of Destiny",
+        "editionVersion": "1st printing",
+        "sourceLocator": "p.43 Unstable Ceiling",
+        "licenseClassification": "THIRD_PARTY",
+        "importedAt": "2025-07-01T10:00:00Z",
+        "converterId": "fixture-published-adventure",
+        "converterVersion": "1.0",
+        "extractionConfidence": "LOW"
+      }
+    }
+  ],
+  "annotations": [
+    {
+      "key": "ann-falling-block-dc",
+      "ownerRef": {
+        "scope": "PACKAGE",
+        "type": "TRAP",
+        "key": "trap-falling-block"
+      },
+      "fieldPath": "/traps/0/detectionCheck/dc",
+      "message": "Source does not state a detection DC for the falling block; left unresolved rather than invented.",
+      "confidence": "UNKNOWN",
+      "sourceLocator": "p.42",
+      "status": "OPEN",
+      "createdAt": "2025-07-01T10:00:00Z"
+    },
+    {
+      "key": "ann-falling-block-disarm-dc",
+      "ownerRef": {
+        "scope": "PACKAGE",
+        "type": "TRAP",
+        "key": "trap-falling-block"
+      },
+      "fieldPath": "/traps/0/disarmMethods/0/dc",
+      "message": "Source describes cutting the tripwire but gives no DC.",
+      "confidence": "UNKNOWN",
+      "sourceLocator": "p.42",
+      "status": "OPEN",
+      "createdAt": "2025-07-01T10:00:00Z"
     }
   ]
 }

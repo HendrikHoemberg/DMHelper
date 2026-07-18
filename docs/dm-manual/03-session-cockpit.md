@@ -50,6 +50,17 @@ opens the shared roll panel for manual range results, multiple rolls, and duplic
 nested outcomes, unavailable-history markers, and pending encounter/reward drafts remain visible in
 the cockpit; confirming or discarding a draft is always a separate DM action.
 
+## Traps and Hazards
+
+Scene sections with kind `TRAP` or `HAZARD` that reference a threat definition render a mechanics
+card in the story rail. Clicking detection/check/attack/damage **Prefill** buttons opens the shared
+dice roller with the expression filled — they do not submit a roll.
+
+When the active encounter turn is a trap or hazard combatant, the encounter rail shows the same
+mechanics card. Resolution remains manual: use existing tracker damage and condition controls on
+creatures. DM-only threat map pins are managed from the cockpit map sidebar; pins never appear on
+the player table. See [08-traps-and-hazards.md](08-traps-and-hazards.md).
+
 ## Session Log Draft
 
 The draft is generated on first end-review and contains only what persisted data can prove. Session logs are normal `SESSION_LOG` notes after completion.

@@ -36,6 +36,8 @@ import dev.hendrikhoemberg.dmhelper.notes.data.QuickNote;
 import dev.hendrikhoemberg.dmhelper.quest.data.Quest;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
+import dev.hendrikhoemberg.dmhelper.threat.data.Hazard;
+import dev.hendrikhoemberg.dmhelper.threat.data.Trap;
 import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotation;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
@@ -209,6 +211,21 @@ public class CampaignSemanticSnapshotService {
         if (value instanceof Iterable<?> values) {
             ArrayNode array = mapper.createArrayNode();
             for (Object element : values) {
+                if (element == null) {
+                    array.add(mapper.nullNode());
+                    continue;
+                }
+                // ElementCollection of enums/scalars (e.g. trap damage types) is not an entity graph.
+                if (element instanceof Enum<?> || element instanceof String
+                        || element instanceof Number || element instanceof Boolean
+                        || element instanceof TemporalAccessor) {
+                    array.add(mapper.valueToTree(element));
+                    continue;
+                }
+                if (element instanceof UUID id) {
+                    array.add(mapper.valueToTree(stableIds.getOrDefault(id, id.toString())));
+                    continue;
+                }
                 String reference = stableReferenceOrNull(element, stableIds);
                 array.add(reference != null ? mapper.valueToTree(reference) : projectEntity(element, stableIds));
             }
@@ -375,5 +392,7 @@ public class CampaignSemanticSnapshotService {
             new OwnershipQuery(CampaignContentType.FACTION, Faction.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.WORLD_RELATIONSHIP, WorldRelationship.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.FACTION_CLOCK, FactionClock.class, "campaign.id"),
-            new OwnershipQuery(CampaignContentType.ROLLABLE_TABLE, RollableTable.class, "campaign.id"));
+            new OwnershipQuery(CampaignContentType.ROLLABLE_TABLE, RollableTable.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.TRAP, Trap.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.HAZARD, Hazard.class, "campaign.id"));
 }

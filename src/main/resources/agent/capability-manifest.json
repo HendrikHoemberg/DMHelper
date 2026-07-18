@@ -118,6 +118,13 @@
       "notes": "DM-only ranged/weighted tables, nested rolls, scene/location links, confirmed encounter/reward drafts, and package-v2 round-trip"
     },
     {
+      "id": "threats.traps_hazards",
+      "name": "Traps and hazards",
+      "status": "SUPPORTED",
+      "deliveryItem": 11,
+      "notes": "DM-only trap/hazard definitions, scene/tracker/pin integrations, dice prefill without auto-resolution, player-safe projections, and package-v2 dependency-closure round-trip"
+    },
+    {
       "id": "map.fog_of_war",
       "name": "Full fog of war gameplay",
       "status": "UNSUPPORTED",
@@ -148,6 +155,8 @@
     "CLASS", "SPECIES", "BACKGROUND", "FEAT",
     "DICE_ROLL",
     "ROLLABLE_TABLE",
+    "TRAP",
+    "HAZARD",
     "TRANSITION",
     "SESSION_OBJECTIVE_CHANGE",
     "QUEST",

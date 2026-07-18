@@ -650,6 +650,20 @@
           "notes": "",
           "icon": "dagger"
         }
+      ],
+      "threatPins": [
+        {
+          "key": "pin-spike-pit",
+          "x": 240,
+          "y": 192,
+          "label": "Spike pit",
+          "threatRef": {
+            "scope": "PACKAGE",
+            "type": "TRAP",
+            "key": "trap-spike-pit"
+          },
+          "sortOrder": 0
+        }
       ]
     }
   ],
@@ -724,10 +738,38 @@
           "legendaryResistancesMax": 0,
           "rechargedAbilities": "",
           "notes": ""
+        },
+        {
+          "key": "combatant-spike-pit",
+          "name": "Spike Pit",
+          "initiative": 20,
+          "tieBreaker": 0,
+          "sortOrder": 2,
+          "maxHp": 0,
+          "currentHp": 0,
+          "tempHp": 0,
+          "kind": "TRAP",
+          "groupId": "",
+          "groupLeader": false,
+          "defeated": false,
+          "hidden": false,
+          "conditionsJson": "[]",
+          "concentrationCheckPending": false,
+          "legendaryActionsUsed": 0,
+          "legendaryResistancesUsed": 0,
+          "legendaryActionsMax": 0,
+          "legendaryResistancesMax": 0,
+          "rechargedAbilities": "",
+          "notes": "advisory threat combatant",
+          "threatRef": {
+            "scope": "PACKAGE",
+            "type": "TRAP",
+            "key": "trap-spike-pit"
+          }
         }
       ],
       "prep": {
-        "tactics": "Pack tactics — goblins focus fire on the closest target, retreating if outnumbered 2:1",
+        "tactics": "Pack tactics \u2014 goblins focus fire on the closest target, retreating if outnumbered 2:1",
         "morale": "Goblins flee if the captain is defeated; captain fights to the death",
         "environment": "Darkness (dim light), scattered rubble provides half cover",
         "sceneKey": "scene-crypt-entry"
@@ -736,7 +778,10 @@
         "xpTotal": 400,
         "xpPerPc": 200,
         "currency": [
-          { "currency": "gp", "amount": 150.0 }
+          {
+            "currency": "gp",
+            "amount": 150.0
+          }
         ],
         "notes": "Goblins carry 150gp in mixed coin; +200 XP each for clever resolution beyond combat"
       },
@@ -747,7 +792,7 @@
           "sortOrder": 0,
           "status": "ACTIVE",
           "triggerKind": "MANUAL",
-          "notes": "Initial goblin patrol — visible on the map"
+          "notes": "Initial goblin patrol \u2014 visible on the map"
         },
         {
           "key": "wave-reinforcements",
@@ -1044,6 +1089,31 @@
                   "type": "HANDOUT",
                   "key": "handout-players-map"
                 }
+              ],
+              "sections": [
+                {
+                  "kind": "TRAP",
+                  "label": "Spike Pit",
+                  "body": "A false floor conceals the spike pit.",
+                  "sourceLocator": "homebrew:crypt-entry",
+                  "sortOrder": 0,
+                  "threatRef": {
+                    "scope": "PACKAGE",
+                    "type": "TRAP",
+                    "key": "trap-spike-pit"
+                  }
+                },
+                {
+                  "kind": "HAZARD",
+                  "label": "Poison Gas Vent",
+                  "body": "Vents along the walls release green gas when the seal is broken.",
+                  "sortOrder": 1,
+                  "threatRef": {
+                    "scope": "PACKAGE",
+                    "type": "HAZARD",
+                    "key": "hazard-poison-gas"
+                  }
+                }
               ]
             },
             {
@@ -1063,7 +1133,20 @@
                   "key": "statblock-skeleton"
                 }
               ],
-              "handoutRefs": []
+              "handoutRefs": [],
+              "sections": [
+                {
+                  "kind": "TRAP",
+                  "label": "Spike Pit (shared)",
+                  "body": "The same spike pit mechanism is referenced from this chamber's approach.",
+                  "sortOrder": 0,
+                  "threatRef": {
+                    "scope": "PACKAGE",
+                    "type": "TRAP",
+                    "key": "trap-spike-pit"
+                  }
+                }
+              ]
             }
           ]
         },
@@ -1162,7 +1245,11 @@
       "addressMode": "RANGE",
       "rollExpression": "1d12",
       "category": "ENCOUNTER",
-      "tags": ["forest", "random", "encounter"],
+      "tags": [
+        "forest",
+        "random",
+        "encounter"
+      ],
       "createdAt": "2025-07-16T18:00:00Z",
       "entries": [
         {
@@ -1172,7 +1259,11 @@
           "resultText": "Goblins",
           "quantityExpression": "2d4",
           "references": [
-            {"scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain"}
+            {
+              "scope": "PACKAGE",
+              "type": "STATBLOCK",
+              "key": "statblock-goblin-captain"
+            }
           ]
         },
         {
@@ -1182,7 +1273,11 @@
           "resultText": "Skeletons",
           "quantityExpression": "1d4",
           "references": [
-            {"scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-skeleton"}
+            {
+              "scope": "PACKAGE",
+              "type": "STATBLOCK",
+              "key": "statblock-skeleton"
+            }
           ]
         },
         {
@@ -1204,7 +1299,11 @@
           "rangeEnd": 10,
           "resultText": "Sudden storm",
           "references": [
-            {"scope": "PACKAGE", "type": "ROLLABLE_TABLE", "key": "rt-road-weather"}
+            {
+              "scope": "PACKAGE",
+              "type": "ROLLABLE_TABLE",
+              "key": "rt-road-weather"
+            }
           ]
         },
         {
@@ -1222,7 +1321,10 @@
       "addressMode": "RANGE",
       "rollExpression": "1d6",
       "category": "TREASURE",
-      "tags": ["treasure", "crypt"],
+      "tags": [
+        "treasure",
+        "crypt"
+      ],
       "createdAt": "2025-07-16T18:01:00Z",
       "entries": [
         {
@@ -1237,7 +1339,12 @@
           "rangeEnd": 5,
           "resultText": "Magic item",
           "references": [
-            {"scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_bag-of-holding"}
+            {
+              "scope": "CATALOG",
+              "type": "MAGIC_ITEM",
+              "ruleset": "SRD_5_2",
+              "sourceKey": "srd-2024_bag-of-holding"
+            }
           ]
         },
         {
@@ -1255,7 +1362,10 @@
       "addressMode": "RANGE",
       "rollExpression": "1d6",
       "category": "WEATHER",
-      "tags": ["weather", "travel"],
+      "tags": [
+        "weather",
+        "travel"
+      ],
       "createdAt": "2025-07-16T18:02:00Z",
       "entries": [
         {
@@ -1285,7 +1395,11 @@
       "addressMode": "WEIGHTED",
       "rollExpression": "1d100",
       "category": "RUMOR",
-      "tags": ["tavern", "rumors", "information"],
+      "tags": [
+        "tavern",
+        "rumors",
+        "information"
+      ],
       "createdAt": "2025-07-16T18:03:00Z",
       "entries": [
         {
@@ -1322,7 +1436,10 @@
       "addressMode": "RANGE",
       "rollExpression": "1d8",
       "category": "EVENT",
-      "tags": ["city", "events"],
+      "tags": [
+        "city",
+        "events"
+      ],
       "createdAt": "2025-07-16T18:04:00Z",
       "entries": [
         {
@@ -1364,7 +1481,10 @@
       "addressMode": "RANGE",
       "rollExpression": "1d6",
       "category": "GENERIC",
-      "tags": ["npc", "roleplay"],
+      "tags": [
+        "npc",
+        "roleplay"
+      ],
       "createdAt": "2025-07-16T18:05:00Z",
       "entries": [
         {
@@ -1392,6 +1512,107 @@
           "resultText": "Stares into the distance"
         }
       ]
+    }
+  ],
+  "traps": [
+    {
+      "key": "trap-spike-pit",
+      "sourceKey": "custom_spike-pit",
+      "name": "Spike Pit",
+      "description": "A covered pit lined with iron spikes waits under the hallway floor.",
+      "severity": "DANGEROUS",
+      "minLevel": 1,
+      "maxLevel": 5,
+      "triggerDescription": "Pressure plate under the floor covering.",
+      "triggerAreaHint": "10-foot-square section of hallway",
+      "detectionPassiveThreshold": 15,
+      "detectionCheck": {
+        "mode": "CHECK",
+        "ability": "WIS",
+        "skill": "Perception",
+        "dc": 15
+      },
+      "disarmMethods": [
+        {
+          "key": "jam-cover",
+          "label": "Jam the cover shut",
+          "ability": "DEX",
+          "skill": "Sleight of Hand",
+          "tool": "thieves' tools",
+          "dc": 14,
+          "failureConsequence": "The trap triggers immediately.",
+          "sortOrder": 0
+        }
+      ],
+      "attackBonus": 7,
+      "damage": {
+        "expression": "2d10",
+        "types": [
+          "PIERCING"
+        ]
+      },
+      "additionalEffect": "The target is knocked prone.",
+      "resetMode": "MANUAL",
+      "statBlockRef": {
+        "scope": "PACKAGE",
+        "type": "STATBLOCK",
+        "key": "statblock-skeleton"
+      },
+      "countermeasureNotes": "Wedge the cover with an iron spike.",
+      "conditionRefs": [
+        {
+          "scope": "CATALOG",
+          "type": "CONDITION",
+          "ruleset": "SRD_5_2",
+          "sourceKey": "poisoned"
+        }
+      ],
+      "salvageItemRefs": [
+        {
+          "scope": "CATALOG",
+          "type": "EQUIPMENT_ITEM",
+          "ruleset": "SRD_5_2",
+          "sourceKey": "backpack"
+        }
+      ],
+      "createdAt": "2025-07-16T18:10:00Z"
+    }
+  ],
+  "hazards": [
+    {
+      "key": "hazard-poison-gas",
+      "sourceKey": "custom_poison-gas",
+      "name": "Poison Gas Vent",
+      "description": "Green vapor seeps from floor vents along the burial chamber.",
+      "severity": "SETBACK",
+      "minLevel": 1,
+      "maxLevel": 8,
+      "exposureMode": "ON_ENTER",
+      "exposureText": "Anyone who enters the cloud is exposed.",
+      "areaHint": "15-foot-radius cloud centered on the vents",
+      "check": {
+        "mode": "SAVE",
+        "ability": "CON",
+        "dc": 13
+      },
+      "damage": {
+        "expression": "2d6",
+        "types": [
+          "POISON"
+        ]
+      },
+      "escalationText": "The cloud spreads 5 feet at the start of each round.",
+      "endingConditions": "Disperses after 1 minute or in a strong wind.",
+      "conditionRefs": [
+        {
+          "scope": "CATALOG",
+          "type": "CONDITION",
+          "ruleset": "SRD_5_2",
+          "sourceKey": "poisoned"
+        }
+      ],
+      "salvageItemRefs": [],
+      "createdAt": "2025-07-16T18:11:00Z"
     }
   ]
 }

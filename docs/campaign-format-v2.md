@@ -871,7 +871,8 @@ Rollable tables use their own adapter at position 150, between Campaign (100) an
 ```text
 CampaignSectionAdapter       (100) — campaign metadata and settings
 RollableTableSectionAdapter  (150) — rollable tables, entries, references
-LibrarySectionAdapter        (200) — custom statblocks
+LibrarySectionAdapter        (200) — custom statblocks (+ threat library closure seed)
+ThreatSectionAdapter         (250) — traps and hazards
 ```
 
 ### Export Closure and Local Roll Evidence
@@ -886,6 +887,119 @@ content is excluded. Catalog-scoped SRD entry references remain catalog referenc
 resolution time, and created target IDs—are persistent local operational evidence and are not
 exported. Deleting a table clears the nullable definition link but preserves these snapshots and
 draft states.
+
+## Traps and Hazards
+
+The manifest carries optional top-level `traps` and `hazards` arrays (default empty for older v2
+packages). Threats are DM-only reusable definitions with typed mechanics, provenance, and
+references. Scene sections, encounter combatants, and map pins reference them via `threatRef`
+content references with type `TRAP` or `HAZARD`.
+
+### TrapDto
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | string | Package key |
+| `sourceKey` | string | Stable source identifier |
+| `name` | string | Display name |
+| `description` | string | Sanitized Markdown body |
+| `severity` | string | `SETBACK`, `DANGEROUS`, or `DEADLY` |
+| `minLevel` / `maxLevel` | int \| null | Optional level band 1–20 |
+| `triggerDescription` | string \| null | Escaped plain trigger text |
+| `triggerAreaHint` | string \| null | Area hint |
+| `detectionPassiveThreshold` | int \| null | Passive Perception threshold (0–40 representational) |
+| `detectionCheck` | ThreatCheckDto \| null | Active detection check/save |
+| `disarmMethods` | TrapDisarmMethodDto[] | Stable-keyed disarm options |
+| `attackBonus` | int \| null | Mutually exclusive with `save` |
+| `save` | ThreatCheckDto \| null | Mutually exclusive with `attackBonus` |
+| `damage` | ThreatDamageDto \| null | Expression + damage type enums |
+| `additionalEffect` | string \| null | Escaped plain text |
+| `resetMode` | string | `NONE`, `MANUAL`, or `AUTOMATIC` |
+| `resetTiming` | string \| null | Required when `resetMode` is `AUTOMATIC` |
+| `statBlockRef` | ContentReference \| null | Optional related creature |
+| `countermeasureNotes` | string \| null | Escaped plain text |
+| `conditionRefs` | ContentReference[] | Applied-condition library targets |
+| `salvageItemRefs` | ContentReference[] | Equipment/magic salvage targets |
+| `createdAt` | string (ISO-8601) \| null | Creation timestamp |
+| `provenance` | ProvenanceDto \| null | Source provenance |
+
+### HazardDto
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` / `sourceKey` / `name` / `description` / `severity` | | Same identity pattern as traps |
+| `exposureMode` | string | `ON_ENTER`, `START_OF_TURN`, `PER_ROUND`, or `CONTINUOUS` |
+| `exposureText` / `areaHint` | string \| null | Escaped plain text |
+| `check` | ThreatCheckDto \| null | Save or check on exposure |
+| `damage` | ThreatDamageDto \| null | Expression + types |
+| `escalationText` / `endingConditions` | string \| null | Escaped plain text |
+| `conditionRefs` / `salvageItemRefs` | ContentReference[] | Library targets |
+| `createdAt` / `provenance` | | Same as traps |
+
+### Scene, Combatant, and Map Integration
+
+```json
+{
+  "kind": "TRAP",
+  "label": "Spike Pit",
+  "sortOrder": 0,
+  "threatRef": {"scope": "PACKAGE", "type": "TRAP", "key": "trap-spike-pit"}
+}
+```
+
+```json
+{
+  "key": "combatant-spike-pit",
+  "name": "Spike Pit",
+  "kind": "TRAP",
+  "maxHp": 0,
+  "currentHp": 0,
+  "threatRef": {"scope": "PACKAGE", "type": "TRAP", "key": "trap-spike-pit"}
+}
+```
+
+```json
+{
+  "key": "pin-spike-pit",
+  "x": 240,
+  "y": 192,
+  "label": "Spike pit",
+  "threatRef": {"scope": "PACKAGE", "type": "TRAP", "key": "trap-spike-pit"},
+  "sortOrder": 0
+}
+```
+
+Map `threatPins` use pixel coordinates bounded by grid width/height × cell size. Pins are DM-only
+and are not part of the player map projection.
+
+### Example Trap
+
+```json
+{
+  "key": "trap-spike-pit",
+  "sourceKey": "custom_spike-pit",
+  "name": "Spike Pit",
+  "description": "A covered pit lined with iron spikes.",
+  "severity": "DANGEROUS",
+  "detectionCheck": {"mode": "CHECK", "ability": "WIS", "skill": "Perception", "dc": 15},
+  "disarmMethods": [
+    {"key": "jam-cover", "label": "Jam the cover shut", "ability": "DEX", "dc": 14, "sortOrder": 0}
+  ],
+  "attackBonus": 7,
+  "damage": {"expression": "2d10", "types": ["PIERCING"]},
+  "resetMode": "MANUAL",
+  "conditionRefs": [
+    {"scope": "CATALOG", "type": "CONDITION", "ruleset": "SRD_5_2", "sourceKey": "poisoned"}
+  ]
+}
+```
+
+### Export Closure
+
+`ThreatSectionAdapter` (order 250) exports campaign-owned traps/hazards plus threats referenced by
+campaign scenes, combatants, and map pins. User-global custom library dependencies required by those
+threats are seeded into library export (order 200). Catalog SRD refs remain catalog refs. Transient
+editor/roller open state is not exported.
 
 ### V1 Compatibility
 

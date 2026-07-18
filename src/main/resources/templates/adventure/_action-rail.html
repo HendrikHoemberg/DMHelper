@@ -109,10 +109,13 @@
         <span th:if="${section.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${section.sourceLocator}|">Source</span>
         <div th:if="${section.threatId != null and sectionThreatCards != null and sectionThreatCards[section.id] != null}"
              class="u-mt-xs" th:with="card=${sectionThreatCards[section.id]}">
-          <th:block th:if="${card.trap != null}"
-                    th:replace="~{threat/_mechanics-card :: mechanics-card(threat=${card.trap}, kind=${card.kind})}"></th:block>
-          <th:block th:if="${card.hazard != null}"
-                    th:replace="~{threat/_mechanics-card :: mechanics-card(threat=${card.hazard}, kind=${card.kind})}"></th:block>
+          <!-- Nest th:if outside th:replace: replace has higher precedence than if. -->
+          <th:block th:if="${card.trap != null}">
+            <th:block th:replace="~{threat/_mechanics-card :: mechanics-card(threat=${card.trap}, kind=${card.kind})}"></th:block>
+          </th:block>
+          <th:block th:if="${card.hazard != null}">
+            <th:block th:replace="~{threat/_mechanics-card :: mechanics-card(threat=${card.hazard}, kind=${card.kind})}"></th:block>
+          </th:block>
         </div>
         <div class="u-flex u-gap-xs u-mt-xs">
           <button class="btn btn-danger btn-sm"

@@ -20,7 +20,8 @@ class DmManualContractTest {
                 "docs/dm-manual/04-maps-encounters-party.md",
                 "docs/dm-manual/05-import-preview.md",
                 "docs/dm-manual/06-offline-and-troubleshooting.md",
-                "docs/dm-manual/07-rollable-tables.md")) {
+                "docs/dm-manual/07-rollable-tables.md",
+                "docs/dm-manual/08-traps-and-hazards.md")) {
             assertThat(Path.of(path)).exists();
         }
     }

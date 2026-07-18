@@ -13,6 +13,7 @@ Operational reference for running campaigns with DMHelper.
 | 05 | [Import Preview](05-import-preview.md) | Preview counts, warnings vs errors, confirm flow, additive import |
 | 06 | [Offline & Troubleshooting](06-offline-and-troubleshooting.md) | No-internet operation, backup restore, common import errors |
 | 07 | [Rollable Tables](07-rollable-tables.md) | Creating, rolling, nesting, linking, and troubleshooting random tables |
+| 08 | [Traps & Hazards](08-traps-and-hazards.md) | DM-only threats, scene/tracker/pin workflows, dice prefill, package fidelity |
 
 ## Reference
 

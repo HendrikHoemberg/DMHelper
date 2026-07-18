@@ -27,10 +27,12 @@ or `src/main/resources/agent/validation-error-catalog.json`.
 | `COMBAT_LOG_SEQUENCE_NOT_STRICTLY_INCREASING` | ERROR | Combat log sequence numbers are not strictly increasing. |
 | `COMPRESSION_RATIO_EXCEEDED` | ERROR | The compression ratio of an entry exceeds the allowed maximum. |
 | `CROSS_QUEST_DEPENDENCY` | ERROR | A quest depends on a quest in a different campaign. |
+| `DAMAGE_TYPE_REQUIRED` | ERROR | A damage expression is present without damage types. |
 | `DEPENDENCY_CYCLE` | ERROR | A circular dependency was detected between entities. |
 | `DICE_HISTORY_EXCLUDED_BUT_NON_EMPTY` | WARNING | Dice history data is present even though the import excluded it. |
 | `DTO_SCHEMA_DRIFT` | WARNING | The internal DTO structure does not match the expected schema. |
 | `DUPLICATE_DEPENDENCY` | WARNING | A dependency is declared more than once. |
+| `DUPLICATE_DISARM_KEY` | ERROR | Two disarm methods share the same key. |
 | `DUPLICATE_KEY` | ERROR | A key appears more than once in the same namespace. |
 | `DUPLICATE_MANIFEST` | ERROR | More than one manifest entry maps to the same key. |
 | `DUPLICATE_NORMALIZED_PATH` | ERROR | Two entries resolve to the same normalized path. |
@@ -40,11 +42,13 @@ or `src/main/resources/agent/validation-error-catalog.json`.
 | `DUPLICATE_SESSION_SCENE_VISIT` | WARNING | The same scene visit appears more than once in a session. |
 | `ENCRYPTED_ENTRY` | ERROR | A package entry is encrypted and cannot be processed. |
 | `GRID_MISMATCH` | WARNING | The grid configuration in the package does not match the target map. |
+| `HAZARD_EXPOSURE_REQUIRED` | ERROR | A hazard is missing an exposure mode. |
 | `INVALID_ACTIVE_TURN` | ERROR | The active turn reference does not point at a valid combatant. |
 | `INVALID_ASSIGNMENT_SOURCE` | ERROR | The source of an assignment is not valid. |
 | `INVALID_COMBATANT_KIND` | ERROR | The combatant kind value is not one of the recognized types. |
 | `INVALID_COMPLETION_MODE` | ERROR | The completion mode value is not valid. |
 | `INVALID_CURRENT_SCENE_REF` | ERROR | The current-scene reference does not match any known scene. |
+| `INVALID_DAMAGE_EXPRESSION` | ERROR | A damage expression is not a valid dice expression. |
 | `INVALID_GEOMETRY` | ERROR | A geometric shape has invalid or degenerate coordinates. |
 | `INVALID_GIVER` | ERROR | The giver reference in a quest is not valid. |
 | `INVALID_JSON` | ERROR | The content is not valid JSON. |
@@ -53,6 +57,8 @@ or `src/main/resources/agent/validation-error-catalog.json`.
 | `INVALID_RESOURCE_STATE` | ERROR | A resource is in an unexpected state for the requested operation. |
 | `INVALID_SESSION_PRESENTATION` | ERROR | The session presentation mode is not valid. |
 | `INVALID_STATE` | ERROR | An entity is in an invalid state for the requested operation. |
+| `INVALID_THREAT_REFERENCE_KIND` | ERROR | A scene section, combatant, or pin references the wrong threat kind. |
+| `INVALID_THREAT_REFERENCE_ROLE_TYPE` | ERROR | A threat reference role does not match its target type. |
 | `INVALID_TOKEN_KIND` | ERROR | The token kind value is not recognized. |
 | `INVALID_TRANSITION_TARGET` | ERROR | The target of a scene transition is not valid. |
 | `LEDGER_DATE_OUT_OF_RANGE` | ERROR | A ledger entry date falls outside the campaign timeline. |
@@ -69,17 +75,25 @@ or `src/main/resources/agent/validation-error-catalog.json`.
 | `NON_CAMPAIGN_CUSTOM_DEPENDENCY` | WARNING | A custom dependency references content outside the campaign. |
 | `OUT_OF_BOUNDS` | ERROR | A numeric value is outside its expected range. |
 | `PACKAGE_EXPANDED_TOO_LARGE` | ERROR | The expanded package exceeds the maximum allowed size. |
-| `PACKAGE_TOO_LARGE` | ERROR | The compressed package exceeds the maximum allowed size. |
 | `PACKAGE_READ_ERROR` | ERROR | The package could not be read. |
+| `PACKAGE_TOO_LARGE` | ERROR | The compressed package exceeds the maximum allowed size. |
 | `PATH_TOO_LONG` | ERROR | A path within the package exceeds the maximum allowed length. |
 | `SCHEMA_VIOLATION` | ERROR | The content does not conform to the expected JSON schema. |
 | `SELF_DEPENDENCY` | ERROR | An entity depends on itself. |
 | `SESSION_VISITS_NOT_MONOTONIC` | ERROR | Session scene visits are not in monotonic order. |
 | `SESSION_VISIT_COMPLETES_BEFORE_VISIT` | ERROR | A session scene visit is completed before it was visited. |
 | `SYMLINK_ENTRY` | ERROR | The package contains a symbolic link entry. |
+| `THREAT_CHECK_MISSING_ABILITY_OR_SKILL` | ERROR | A CHECK is missing ability/skill or a SAVE is missing ability. |
+| `THREAT_CHECK_SAVE_HAS_SKILL` | ERROR | A SAVE threat check includes a skill. |
+| `THREAT_DC_OUT_OF_BOUNDS` | ERROR | A DC or passive value is outside the allowed range. |
+| `THREAT_LEVEL_INVALID` | ERROR | A threat level band is outside 1–20 or inverted. |
+| `THREAT_PIN_OUT_OF_BOUNDS` | ERROR | A map threat pin is outside the map pixel bounds. |
+| `THREAT_SEVERITY_REQUIRED` | ERROR | A trap or hazard is missing severity. |
 | `TIMELINE_DATE_OUT_OF_RANGE` | ERROR | A timeline event date falls outside the campaign timeline range. |
 | `TOKEN_OUT_OF_BOUNDS` | ERROR | A token is positioned outside the map boundaries. |
 | `TOO_MANY_ENTRIES` | ERROR | The package contains more entries than the allowed maximum. |
+| `TRAP_EFFECT_MODE_CONFLICT` | ERROR | A trap declares both an attack bonus and a saving throw. |
+| `TRAP_RESET_TIMING_REQUIRED` | ERROR | An AUTOMATIC trap reset is missing reset timing. |
 | `TRAVERSAL_ASSET_PATH` | ERROR | An asset path attempts directory traversal outside the package. |
 | `UNEXPECTED_ROOT_ENTRY` | ERROR | An unexpected entry was found at the package root. |
 | `UNEXPECTED_SESSION_DRAFT` | WARNING | A session draft entry was found where it was not expected. |

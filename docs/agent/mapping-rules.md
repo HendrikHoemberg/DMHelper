@@ -177,11 +177,41 @@ Weighted tables do not require a contiguous range. Weights are relative — an e
 {"weight": 35, "resultText": "Common encounter"}
 ```
 
+## Trap and hazard mapping
+
+Traps and hazards map to top-level `traps[]` / `hazards[]` with stable package keys. Scene prose
+boxes that name a trap become `sections` with `kind: "TRAP"` or `"HAZARD"` and optional
+`threatRef`. Encounter write-ups that place a trap on the initiative track become combatants with
+`kind: "TRAP"`/`"HAZARD"` and matching `threatRef`. Map callouts become `maps[].threatPins[]`
+with pixel coordinates — never invent coordinates from gridless art.
+
+### Attack vs save mutual exclusion
+
+A trap may declare **at most one** of:
+
+- `attackBonus` (to-hit style)
+- `save` (`mode: "SAVE"`, ability, optional DC)
+
+If the source is ambiguous, omit both and annotate. Never invent a `+5` attack or a DC 15 save to
+satisfy the schema.
+
+### Disarm methods and severity
+
+- Disarm rows need stable `key` values unique within the trap (`jam-gears`, `cut-wire`).
+- Severity is `SETBACK` | `DANGEROUS` | `DEADLY` only when the source uses equivalent language;
+  default to the mildest stated tier or annotate if unknown.
+- Hazard `exposureMode` is required (`ON_ENTER`, `START_OF_TURN`, `PER_ROUND`, `CONTINUOUS`).
+
+### Provenance
+
+Published traps should carry `provenance` (title, locator, license, converter, confidence). Leave
+numeric mechanics absent rather than inventing them; pair omissions with `SOURCE_ANNOTATION`.
+
 ## When to emit SOURCE_ANNOTATION instead of inventing data
 
 If the source material is ambiguous or missing a required field:
 
-- **NEVER** guess a DC, stat block, map coordinate, or source key.
+- **NEVER** guess a DC, stat block, map coordinate, trap attack bonus, hazard save, or source key.
 - **ALWAYS** emit a `SOURCE_ANNOTATION` on the owning entity with `confidence: "LOW"` or `"UNKNOWN"`.
 - The `annotations` array at campaign root collects these. Each annotation references its owner.
 

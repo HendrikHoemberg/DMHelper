@@ -43,6 +43,7 @@ class CapabilityManifestContractTest {
                 "agent.sdk",
                 "world.graph",
                 "tables.rollable",
+                "threats.traps_hazards",
                 "map.fog_of_war"
         );
     }
@@ -52,6 +53,8 @@ class CapabilityManifestContractTest {
         var byId = service.capabilities().capabilities().stream()
                 .collect(Collectors.toMap(CapabilityManifest.Capability::id, c -> c));
         assertThat(byId.get("world.graph").status()).isEqualTo("SUPPORTED");
+        assertThat(byId.get("tables.rollable").status()).isEqualTo("SUPPORTED");
+        assertThat(byId.get("threats.traps_hazards").status()).isEqualTo("SUPPORTED");
         assertThat(byId.get("map.fog_of_war").status()).isEqualTo("UNSUPPORTED");
         assertThat(byId.get("agent.sdk").status()).isIn("PARTIAL", "SUPPORTED");
     }
