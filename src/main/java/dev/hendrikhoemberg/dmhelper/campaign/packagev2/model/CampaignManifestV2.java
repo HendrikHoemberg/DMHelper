@@ -926,6 +926,7 @@ public record CampaignManifestV2(
             String category,
             List<String> tags,
             List<RollableTableEntryDto> entries,
+            Instant createdAt,
             ProvenanceDto provenance
     ) {}
 

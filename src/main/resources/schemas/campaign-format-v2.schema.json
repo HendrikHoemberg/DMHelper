@@ -1194,7 +1194,8 @@
         "category": { "type": "string" },
         "tags": { "type": "array", "items": { "type": "string" } },
         "entries": { "type": "array", "items": { "$ref": "#/$defs/rollableTableEntry" } },
-        "provenance": { "$ref": "#/$defs/provenance" }
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "createdAt": { "type": "string", "format": "date-time" }
       }
     },
     "rollableTableEntry": {

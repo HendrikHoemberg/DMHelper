@@ -141,7 +141,8 @@ class CampaignCompleteRoundTripTest {
                 source.quickNotes(), source.assignments(), source.ledgerEntries(), source.timelineEvents(),
                 source.adventures(), source.session(), includeDiceHistory ? source.diceRolls() : List.of(),
                 source.quests(), source.annotations(), source.worldNpcs(), source.worldLocations(),
-                source.factions(), source.worldRelationships(), source.factionClocks(), List.of());
+                source.factions(), source.worldRelationships(), source.factionClocks(),
+                source.rollableTables());
     }
 
     private CampaignManifestV2 readManifest(String path) throws Exception {

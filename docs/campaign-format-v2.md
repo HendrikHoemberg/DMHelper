@@ -763,7 +763,118 @@ World graph routes are DM-only (PIN-gated under `/campaigns/{campaignId}/world/`
 endpoint and WebSocket table state do not include world entity data. NPC secrets and location
 secrets are never exposed to player-facing endpoints.
 
-## V1 Compatibility
+## Rollable Tables
+
+The manifest carries an optional `rollableTables` array. Each entry defines a random-result table
+with entries that may reference statblocks, magic items, equipment, spells, or nested tables.
+
+### RollableTableDto
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | string | Package key |
+| `sourceKey` | string | Stable source identifier |
+| `name` | string | Display name |
+| `description` | string \| null | Free-text description |
+| `addressMode` | string | `RANGE` or `WEIGHTED` |
+| `rollExpression` | string \| null | Dice expression for range mode (e.g. `"1d20"`) |
+| `category` | string | `ENCOUNTER`, `TREASURE`, `WEATHER`, `RUMOR`, `EVENT`, or `GENERIC` |
+| `tags` | string[] | Free-text tags |
+| `entries` | RollableTableEntryDto[] | Table entries |
+| `createdAt` | string (ISO-8601) | Creation timestamp |
+| `provenance` | ProvenanceDto \| null | Source provenance |
+
+### RollableTableEntryDto
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | string | Entry key (unique within the table) |
+| `rangeStart` | int \| null | Start of the range (inclusive, RANGE mode) |
+| `rangeEnd` | int \| null | End of the range (inclusive, RANGE mode) |
+| `weight` | int \| null | Relative weight (WEIGHTED mode) |
+| `resultText` | string \| null | Display text for the rolled result |
+| `quantityExpression` | string \| null | Dice expression for quantity (e.g. `"2d4"`) |
+| `references` | ContentReference[] | Linked entities (statblocks, items, nested tables) |
+
+### Example
+
+```json
+{
+  "key": "rt-forest-encounters",
+  "sourceKey": "custom_forest-encounters",
+  "name": "Forest Encounters",
+  "addressMode": "RANGE",
+  "rollExpression": "1d12",
+  "category": "ENCOUNTER",
+  "tags": ["forest", "random", "encounter"],
+  "createdAt": "2025-07-16T18:00:00Z",
+  "entries": [
+    {
+      "key": "fe-goblins",
+      "rangeStart": 1,
+      "rangeEnd": 3,
+      "resultText": "Goblins",
+      "quantityExpression": "2d4",
+      "references": [
+        {"scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain"}
+      ]
+    },
+    {
+      "key": "fe-nested-weather",
+      "rangeStart": 10,
+      "rangeEnd": 10,
+      "resultText": "Sudden storm",
+      "references": [
+        {"scope": "PACKAGE", "type": "ROLLABLE_TABLE", "key": "rt-road-weather"}
+      ]
+    }
+  ]
+}
+```
+
+### World Location Table Links
+
+World locations may carry a `tableLinks` array linking rollable tables to specific locations:
+
+```json
+{
+  "key": "wl-ruins-approach",
+  "name": "Ruins Approach",
+  "kind": "SITE",
+  "tableLinks": [
+    {
+      "role": "RANDOM_ENCOUNTERS",
+      "tableRef": {"scope": "PACKAGE", "type": "ROLLABLE_TABLE", "key": "rt-ruins-random-encounters"},
+      "sortOrder": 1
+    }
+  ]
+}
+```
+
+### Scene Links to Tables
+
+Scenes can link to rollable tables via `scene.links[]` with role `RANDOM_ENCOUNTERS`:
+
+```json
+{
+  "role": "RANDOM_ENCOUNTERS",
+  "targetRef": {"scope": "PACKAGE", "type": "ROLLABLE_TABLE", "key": "rt-ruins-random-encounters"},
+  "displayText": "Random encounters",
+  "sortOrder": 1
+}
+```
+
+### Module Adapter
+
+Rollable tables use their own adapter at position 150, between Campaign (100) and Library (200):
+
+```text
+CampaignSectionAdapter       (100) — campaign metadata and settings
+RollableTableSectionAdapter  (150) — rollable tables, entries, references
+LibrarySectionAdapter        (200) — custom statblocks
+```
+
+### V1 Compatibility
 
 Legacy v1 scenes (created before the item-6 structured scene migration) receive `null` or empty values for all new item-6 fields:
 
@@ -875,6 +986,11 @@ Five flagship fixtures verify the round-trip contract:
 | Published-adventure-shaped v2 | `src/test/resources/campaigns/v2/published-adventure-shaped.dmcampaign/manifest.json` | Exercises larger ordered adventure content and repeated references |
 | Structured-adventure-quest v2 | `src/test/resources/campaigns/v2/structured-adventure-quest.dmcampaign/manifest.json` | Exercises structured scenes (sections, checks, participants, transitions, links), quests with objectives and dependencies, source annotations, and session objective changes |
 | World-graph v2 | `src/test/resources/campaigns/v2/world-graph.dmcampaign/manifest.json` | Exercises world NPCs, locations, factions, relationships, and faction clocks |
+
+The feature-complete fixture covers one table in every category (ENCOUNTER, TREASURE, WEATHER,
+RUMOR, EVENT, GENERIC) with nested tables, weighted entries, and statblock/item references. The
+published-adventure fixture adds a d100 random-encounter table linked to a scene and world location
+with a nested sub-table and `2d4` quantity expressions.
 
 Each fixture follows schema validate → dry-run → import → export → re-import → semantic
 deep-compare. Imported database snapshots also receive a normalized, repository-backed projection

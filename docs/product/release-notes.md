@@ -16,6 +16,11 @@ Numbering matches master design §22
 - **Item 9 (Encounter and map depth):** Library multi-add/groups, waves/reserves/spawn, prep notes and structured rewards, completion summaries, undo lifecycle boundaries, published map calibrate/crop/rotate/lock, named map regions, and DM/player layer split (shared tokens).
 - **Item 10 (Documentation/agent SDK):** Audience-split docs, capability manifest API, validation error catalog, typed catalog snapshot fidelity, executable documentation examples, agent conversion playbook, and contract tests.
 
+## Delivery Item 11
+
+- **Item 11 (Rollable tables):** DM-only ranged/weighted tables, nested rolls (max depth 5), scene and world location links, confirmed encounter/reward drafts, and campaign package v2 round-trip. Includes flagship fixtures, capability manifest, DM manual chapter, agent mapping rules, performance and player-safety gates, and browser acceptance tests.
+- **Item 11 (World graph):** NPCs, locations, factions, relationships, faction clocks — campaign-scoped cross-referenced world-building state.
+
 ## Not started
 
-- **Item 11 (P3 expansion):** World graph, travel/weather, clocks, fog gameplay, audio, optional player interaction — deferred.
+- Travel/weather, fog gameplay, audio, optional player interaction — deferred.

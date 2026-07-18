@@ -111,6 +111,13 @@
       "notes": "NPCs, locations, factions, relationships, faction clocks; travel/fog/audio/players remain deferred P3 slices"
     },
     {
+      "id": "tables.rollable",
+      "name": "Rollable tables",
+      "status": "SUPPORTED",
+      "deliveryItem": 11,
+      "notes": "DM-only ranged/weighted tables, nested rolls, scene/location links, confirmed encounter/reward drafts, and package-v2 round-trip"
+    },
+    {
       "id": "map.fog_of_war",
       "name": "Full fog of war gameplay",
       "status": "UNSUPPORTED",
@@ -140,6 +147,7 @@
     "STATBLOCK", "SPELL", "CONDITION", "RULE", "EQUIPMENT_ITEM", "MAGIC_ITEM",
     "CLASS", "SPECIES", "BACKGROUND", "FEAT",
     "DICE_ROLL",
+    "ROLLABLE_TABLE",
     "TRANSITION",
     "SESSION_OBJECTIVE_CHANGE",
     "QUEST",

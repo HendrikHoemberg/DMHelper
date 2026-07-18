@@ -41,6 +41,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportVa
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignValidationResult;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLink;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -300,6 +301,10 @@ public class CampaignService {
         diceRollRepo.deleteAll(diceRollRepo.findByCampaignId(cid));
         em.flush();
 
+        em.createQuery("delete from WorldLocationTableLink l where l.location.id in "
+                + "(select loc.id from WorldLocation loc where loc.campaign.id = :cid)")
+                .setParameter("cid", cid).executeUpdate();
+        em.flush();
         rollableTableRepo.deleteAll(rollableTableRepo.findByCampaignIdOrderByNameAsc(cid));
         em.flush();
 

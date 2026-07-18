@@ -1093,6 +1093,14 @@
                   "type": "HANDOUT",
                   "key": "handout-inscription"
                 }
+              ],
+              "links": [
+                {
+                  "role": "RANDOM_ENCOUNTERS",
+                  "targetRef": {"scope": "PACKAGE", "type": "ROLLABLE_TABLE", "key": "rt-ruins-random-encounters"},
+                  "displayText": "Random encounters",
+                  "sortOrder": 1
+                }
               ]
             },
             {
@@ -1362,5 +1370,126 @@
   "customClasses": [],
   "customSpecies": [],
   "customBackgrounds": [],
-  "customFeats": []
+  "customFeats": [],
+  "worldLocations": [
+    {
+      "key": "wl-ruins-approach",
+      "name": "Ruins Approach",
+      "kind": "SITE",
+      "summary": "The area surrounding the ancient ruins",
+      "tags": ["ruins", "approach"],
+      "createdAt": "2025-07-01T10:00:00Z",
+      "tableLinks": [
+        {
+          "role": "RANDOM_ENCOUNTERS",
+          "tableRef": {"scope": "PACKAGE", "type": "ROLLABLE_TABLE", "key": "rt-ruins-random-encounters"},
+          "sortOrder": 1
+        }
+      ]
+    }
+  ],
+  "rollableTables": [
+    {
+      "key": "rt-ruins-random-encounters",
+      "sourceKey": "published_ruins-random-encounters",
+      "name": "Ruins Random Encounters",
+      "addressMode": "RANGE",
+      "rollExpression": "1d100",
+      "category": "ENCOUNTER",
+      "tags": ["ruins", "random", "encounters"],
+      "createdAt": "2025-07-16T18:00:00Z",
+      "entries": [
+        {
+          "key": "rre-goblins",
+          "rangeStart": 1,
+          "rangeEnd": 20,
+          "resultText": "Goblins scavenging",
+          "quantityExpression": "2d4",
+          "references": [
+            {"scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain"}
+          ]
+        },
+        {
+          "key": "rre-skeletons",
+          "rangeStart": 21,
+          "rangeEnd": 35,
+          "resultText": "Wandering skeletons",
+          "quantityExpression": "1d4",
+          "references": [
+            {"scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-skeleton"}
+          ]
+        },
+        {
+          "key": "rre-zombies",
+          "rangeStart": 36,
+          "rangeEnd": 50,
+          "resultText": "Shambling zombies",
+          "quantityExpression": "1d4",
+          "references": [
+            {"scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-zombie"}
+          ]
+        },
+        {
+          "key": "rre-trap",
+          "rangeStart": 51,
+          "rangeEnd": 60,
+          "resultText": "Hidden pit trap"
+        },
+        {
+          "key": "rre-treasure",
+          "rangeStart": 61,
+          "rangeEnd": 65,
+          "resultText": "Abandoned treasure cache",
+          "references": [
+            {"scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_bag-of-holding"}
+          ]
+        },
+        {
+          "key": "rre-weather",
+          "rangeStart": 66,
+          "rangeEnd": 70,
+          "resultText": "Sudden weather change",
+          "references": [
+            {"scope": "PACKAGE", "type": "ROLLABLE_TABLE", "key": "rt-ruins-weather"}
+          ]
+        },
+        {
+          "key": "rre-nothing",
+          "rangeStart": 71,
+          "rangeEnd": 100,
+          "resultText": "Nothing unusual"
+        }
+      ]
+    },
+    {
+      "key": "rt-ruins-weather",
+      "sourceKey": "published_ruins-weather",
+      "name": "Ruins Weather",
+      "addressMode": "RANGE",
+      "rollExpression": "1d6",
+      "category": "WEATHER",
+      "tags": ["weather"],
+      "createdAt": "2025-07-16T18:01:00Z",
+      "entries": [
+        {
+          "key": "rw-clear",
+          "rangeStart": 1,
+          "rangeEnd": 3,
+          "resultText": "Clear skies"
+        },
+        {
+          "key": "rw-fog",
+          "rangeStart": 4,
+          "rangeEnd": 5,
+          "resultText": "Thick fog rolls in"
+        },
+        {
+          "key": "rw-rain",
+          "rangeStart": 6,
+          "rangeEnd": 6,
+          "resultText": "Heavy rain"
+        }
+      ]
+    }
+  ]
 }

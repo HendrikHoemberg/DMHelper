@@ -42,6 +42,7 @@ class CapabilityManifestContractTest {
                 "map.published_workflow",
                 "agent.sdk",
                 "world.graph",
+                "tables.rollable",
                 "map.fog_of_war"
         );
     }

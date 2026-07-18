@@ -1153,5 +1153,244 @@
   "customClasses": [],
   "customSpecies": [],
   "customBackgrounds": [],
-  "customFeats": []
+  "customFeats": [],
+  "rollableTables": [
+    {
+      "key": "rt-forest-encounters",
+      "sourceKey": "custom_forest-encounters",
+      "name": "Forest Encounters",
+      "addressMode": "RANGE",
+      "rollExpression": "1d12",
+      "category": "ENCOUNTER",
+      "tags": ["forest", "random", "encounter"],
+      "createdAt": "2025-07-16T18:00:00Z",
+      "entries": [
+        {
+          "key": "fe-goblins",
+          "rangeStart": 1,
+          "rangeEnd": 3,
+          "resultText": "Goblins",
+          "quantityExpression": "2d4",
+          "references": [
+            {"scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-goblin-captain"}
+          ]
+        },
+        {
+          "key": "fe-skeletons",
+          "rangeStart": 4,
+          "rangeEnd": 6,
+          "resultText": "Skeletons",
+          "quantityExpression": "1d4",
+          "references": [
+            {"scope": "PACKAGE", "type": "STATBLOCK", "key": "statblock-skeleton"}
+          ]
+        },
+        {
+          "key": "fe-wolves",
+          "rangeStart": 7,
+          "rangeEnd": 8,
+          "resultText": "Wolves",
+          "quantityExpression": "1d6"
+        },
+        {
+          "key": "fe-deer",
+          "rangeStart": 9,
+          "rangeEnd": 9,
+          "resultText": "A deer crosses the path"
+        },
+        {
+          "key": "fe-nested-weather",
+          "rangeStart": 10,
+          "rangeEnd": 10,
+          "resultText": "Sudden storm",
+          "references": [
+            {"scope": "PACKAGE", "type": "ROLLABLE_TABLE", "key": "rt-road-weather"}
+          ]
+        },
+        {
+          "key": "fe-traveller",
+          "rangeStart": 11,
+          "rangeEnd": 12,
+          "resultText": "Lone traveller"
+        }
+      ]
+    },
+    {
+      "key": "rt-crypt-treasure",
+      "sourceKey": "custom_crypt-treasure",
+      "name": "Crypt Treasure",
+      "addressMode": "RANGE",
+      "rollExpression": "1d6",
+      "category": "TREASURE",
+      "tags": ["treasure", "crypt"],
+      "createdAt": "2025-07-16T18:01:00Z",
+      "entries": [
+        {
+          "key": "ct-coins",
+          "rangeStart": 1,
+          "rangeEnd": 3,
+          "resultText": "Pile of coins"
+        },
+        {
+          "key": "ct-magic-item",
+          "rangeStart": 4,
+          "rangeEnd": 5,
+          "resultText": "Magic item",
+          "references": [
+            {"scope": "CATALOG", "type": "MAGIC_ITEM", "ruleset": "SRD_5_2", "sourceKey": "srd-2024_bag-of-holding"}
+          ]
+        },
+        {
+          "key": "ct-equipment",
+          "rangeStart": 6,
+          "rangeEnd": 6,
+          "resultText": "Valuable equipment"
+        }
+      ]
+    },
+    {
+      "key": "rt-road-weather",
+      "sourceKey": "custom_road-weather",
+      "name": "Road Weather",
+      "addressMode": "RANGE",
+      "rollExpression": "1d6",
+      "category": "WEATHER",
+      "tags": ["weather", "travel"],
+      "createdAt": "2025-07-16T18:02:00Z",
+      "entries": [
+        {
+          "key": "weather-clear",
+          "rangeStart": 1,
+          "rangeEnd": 3,
+          "resultText": "Clear skies"
+        },
+        {
+          "key": "weather-rain",
+          "rangeStart": 4,
+          "rangeEnd": 5,
+          "resultText": "Light rain"
+        },
+        {
+          "key": "weather-storm",
+          "rangeStart": 6,
+          "rangeEnd": 6,
+          "resultText": "Heavy storm"
+        }
+      ]
+    },
+    {
+      "key": "rt-tavern-rumors",
+      "sourceKey": "custom_tavern-rumors",
+      "name": "Tavern Rumors",
+      "addressMode": "WEIGHTED",
+      "category": "RUMOR",
+      "tags": ["tavern", "rumors", "information"],
+      "createdAt": "2025-07-16T18:03:00Z",
+      "entries": [
+        {
+          "key": "rumor-dragon",
+          "weight": 10,
+          "resultText": "A dragon was sighted in the eastern mountains"
+        },
+        {
+          "key": "rumor-treasure",
+          "weight": 20,
+          "resultText": "Hidden treasure in the old crypt"
+        },
+        {
+          "key": "rumor-bandits",
+          "weight": 30,
+          "resultText": "Bandits on the north road"
+        },
+        {
+          "key": "rumor-king",
+          "weight": 5,
+          "resultText": "The king is secretly a doppelganger"
+        },
+        {
+          "key": "rumor-nothing",
+          "weight": 35,
+          "resultText": "The barkeep has nothing useful to say"
+        }
+      ]
+    },
+    {
+      "key": "rt-city-events",
+      "sourceKey": "custom_city-events",
+      "name": "City Events",
+      "addressMode": "RANGE",
+      "rollExpression": "1d8",
+      "category": "EVENT",
+      "tags": ["city", "events"],
+      "createdAt": "2025-07-16T18:04:00Z",
+      "entries": [
+        {
+          "key": "ce-festival",
+          "rangeStart": 1,
+          "rangeEnd": 2,
+          "resultText": "A festival fills the streets"
+        },
+        {
+          "key": "ce-guard",
+          "rangeStart": 3,
+          "rangeEnd": 4,
+          "resultText": "Guards patrol the city gates"
+        },
+        {
+          "key": "ce-merchant",
+          "rangeStart": 5,
+          "rangeEnd": 6,
+          "resultText": "A merchant calls out for adventurers"
+        },
+        {
+          "key": "ce-theft",
+          "rangeStart": 7,
+          "rangeEnd": 7,
+          "resultText": "A pickpocket targets the party"
+        },
+        {
+          "key": "ce-herald",
+          "rangeStart": 8,
+          "rangeEnd": 8,
+          "resultText": "A herald reads a proclamation"
+        }
+      ]
+    },
+    {
+      "key": "rt-npc-mannerisms",
+      "sourceKey": "custom_npc-mannerisms",
+      "name": "NPC Mannerisms",
+      "addressMode": "RANGE",
+      "rollExpression": "1d6",
+      "category": "GENERIC",
+      "tags": ["npc", "roleplay"],
+      "createdAt": "2025-07-16T18:05:00Z",
+      "entries": [
+        {
+          "key": "nm-paces",
+          "rangeStart": 1,
+          "rangeEnd": 1,
+          "resultText": "Paces nervously"
+        },
+        {
+          "key": "nm-whispers",
+          "rangeStart": 2,
+          "rangeEnd": 3,
+          "resultText": "Speaks in whispers"
+        },
+        {
+          "key": "nm-laughs",
+          "rangeStart": 4,
+          "rangeEnd": 5,
+          "resultText": "Laughs frequently"
+        },
+        {
+          "key": "nm-stares",
+          "rangeStart": 6,
+          "rangeEnd": 6,
+          "resultText": "Stares into the distance"
+        }
+      ]
+    }
+  ]
 }

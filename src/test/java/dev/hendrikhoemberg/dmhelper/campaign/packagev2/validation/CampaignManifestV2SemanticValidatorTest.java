@@ -401,7 +401,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 "RANGE", "1d6", "GENERIC", null,
                 List.of(new CampaignManifestV2.RollableTableEntryDto(
                         "e1", 1, 2, null, "Friendly", null, null)),
-                null);
+                null, null);
         assertThat(validator.validate(withRollableTables(List.of(table)))).isEmpty();
     }
 
@@ -409,7 +409,7 @@ class CampaignManifestV2SemanticValidatorTest {
     void invalidTableExpressionDetected() {
         var table = new CampaignManifestV2.RollableTableDto(
                 "rt-1", null, "Bad", null,
-                "RANGE", "not-a-dice", "GENERIC", null, null, null);
+                "RANGE", "not-a-dice", "GENERIC", null, null, null, null);
         assertThat(validator.validate(withRollableTables(List.of(table))))
                 .extracting(CampaignImportProblem::code)
                 .contains("INVALID_TABLE_EXPRESSION");
@@ -421,7 +421,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 "e1", 1, 6, null, "test", "not-a-qty", null);
         var table = new CampaignManifestV2.RollableTableDto(
                 "rt-1", null, "Test", null,
-                "RANGE", "1d6", "GENERIC", null, List.of(entry), null);
+                "RANGE", "1d6", "GENERIC", null, List.of(entry), null, null);
         assertThat(validator.validate(withRollableTables(List.of(table))))
                 .extracting(CampaignImportProblem::code)
                 .contains("INVALID_QUANTITY_EXPRESSION");
@@ -433,7 +433,7 @@ class CampaignManifestV2SemanticValidatorTest {
         var e2 = new CampaignManifestV2.RollableTableEntryDto("e2", 4, 6, null, "B", null, null);
         var table = new CampaignManifestV2.RollableTableDto(
                 "rt-1", null, "Gap", null,
-                "RANGE", "1d6", "GENERIC", null, List.of(e1, e2), null);
+                "RANGE", "1d6", "GENERIC", null, List.of(e1, e2), null, null);
         assertThat(validator.validate(withRollableTables(List.of(table))))
                 .extracting(CampaignImportProblem::code)
                 .contains("TABLE_RANGE_GAP");
@@ -445,7 +445,7 @@ class CampaignManifestV2SemanticValidatorTest {
         var e2 = new CampaignManifestV2.RollableTableEntryDto("e2", 3, 6, null, "B", null, null);
         var table = new CampaignManifestV2.RollableTableDto(
                 "rt-1", null, "Overlap", null,
-                "RANGE", "1d6", "GENERIC", null, List.of(e1, e2), null);
+                "RANGE", "1d6", "GENERIC", null, List.of(e1, e2), null, null);
         assertThat(validator.validate(withRollableTables(List.of(table))))
                 .extracting(CampaignImportProblem::code)
                 .contains("TABLE_RANGE_OVERLAP");
@@ -456,7 +456,7 @@ class CampaignManifestV2SemanticValidatorTest {
         var e1 = new CampaignManifestV2.RollableTableEntryDto("e1", 0, 2, null, "A", null, null);
         var table = new CampaignManifestV2.RollableTableDto(
                 "rt-1", null, "Bounds", null,
-                "RANGE", "1d6", "GENERIC", null, List.of(e1), null);
+                "RANGE", "1d6", "GENERIC", null, List.of(e1), null, null);
         assertThat(validator.validate(withRollableTables(List.of(table))))
                 .extracting(CampaignImportProblem::code)
                 .contains("TABLE_RANGE_BOUNDS");
@@ -467,7 +467,7 @@ class CampaignManifestV2SemanticValidatorTest {
         var e1 = new CampaignManifestV2.RollableTableEntryDto("e1", null, null, 0, "A", null, null);
         var table = new CampaignManifestV2.RollableTableDto(
                 "rt-1", null, "Weight", null,
-                "WEIGHTED", null, "GENERIC", null, List.of(e1), null);
+                "WEIGHTED", null, "GENERIC", null, List.of(e1), null, null);
         assertThat(validator.validate(withRollableTables(List.of(table))))
                 .extracting(CampaignImportProblem::code)
                 .contains("TABLE_WEIGHT_INVALID");
@@ -480,9 +480,9 @@ class CampaignManifestV2SemanticValidatorTest {
         var e1 = new CampaignManifestV2.RollableTableEntryDto("e1", null, null, null, "A", null, List.of(refA));
         var e2 = new CampaignManifestV2.RollableTableEntryDto("e2", null, null, null, "B", null, List.of(refB));
         var tA = new CampaignManifestV2.RollableTableDto(
-                "rt-a", null, "A", null, "RANGE", "1d6", "GENERIC", null, List.of(e1), null);
+                "rt-a", null, "A", null, "RANGE", "1d6", "GENERIC", null, List.of(e1), null, null);
         var tB = new CampaignManifestV2.RollableTableDto(
-                "rt-b", null, "B", null, "RANGE", "1d6", "GENERIC", null, List.of(e2), null);
+                "rt-b", null, "B", null, "RANGE", "1d6", "GENERIC", null, List.of(e2), null, null);
         assertThat(validator.validate(withRollableTables(List.of(tA, tB))))
                 .extracting(CampaignImportProblem::code)
                 .contains("TABLE_REFERENCE_CYCLE");

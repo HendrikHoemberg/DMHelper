@@ -147,7 +147,7 @@ class RollableTableSectionAdapterTest {
                 noAssign, noLedger, noTimeline, noAdv, null, noDice, noQ, noAnn,
                 noNpcs, noLocations, noFactions, noRelationships, noClocks,
                 List.of(new RollableTableDto("table-key", null, "Test Table", null,
-                        "RANGE", "1d6", "GENERIC", null, List.of(), null)));
+                        "RANGE", "1d6", "GENERIC", null, List.of(), null, null)));
 
         when(tableRepo.save(any())).thenAnswer(inv -> {
             var t = (RollableTable) inv.getArgument(0);

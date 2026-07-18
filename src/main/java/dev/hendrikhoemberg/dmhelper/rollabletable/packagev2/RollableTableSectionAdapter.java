@@ -99,6 +99,7 @@ public class RollableTableSectionAdapter implements CampaignSectionExporter, Cam
                 table.getCategory().name(),
                 tags,
                 entryDtos,
+                table.getCreatedAt(),
                 toProvenanceDto(table.getProvenance())
         );
     }
@@ -161,6 +162,7 @@ public class RollableTableSectionAdapter implements CampaignSectionExporter, Cam
             }
             entity.setTags(joinTags(dto.tags()));
             entity.setProvenance(toContentProvenance(dto.provenance()));
+            entity.setCreatedAt(dto.createdAt());
 
             if (dto.entries() != null) {
                 for (int i = 0; i < dto.entries().size(); i++) {

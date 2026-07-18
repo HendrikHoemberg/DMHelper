@@ -280,6 +280,13 @@ public class CampaignSemanticSnapshotService {
         } catch (ReflectiveOperationException ignored) {
             // Not every campaign relationship points to catalog content.
         }
+        try {
+            Object entryKey = entity.getClass().getMethod("getEntryKey").invoke(entity);
+            if (entryKey instanceof String key && !key.isBlank()) {
+                return "ENTRY:" + key;
+            }
+        } catch (ReflectiveOperationException ignored) {
+        }
         return null;
     }
 

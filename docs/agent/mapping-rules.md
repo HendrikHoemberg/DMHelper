@@ -129,6 +129,54 @@ Non-catalog custom content MUST include a `provenance` block:
 `ORIGINAL` content (entirely created by the DM) may omit provenance, but
 `licenseClassification` of `"ORIGINAL"` is recommended for clarity.
 
+## Rollable table die-column parsing and range normalization
+
+Rollable tables use `RANGE` addressing with `rangeStart`/`rangeEnd` fields for die-based
+selection, or `WEIGHTED` addressing with a `weight` field for proportional selection.
+
+### Die-column parsing
+
+When source material presents a table with die columns (e.g. `d12`, `d100`), map the column
+values to `rangeStart`/`rangeEnd`:
+
+```json
+// Source: "d100 01-20  Goblins"
+// -> entry { "rangeStart": 1, "rangeEnd": 20, "resultText": "Goblins" }
+```
+
+Contiguous ranges are preserved as-is. Non-contiguous single values use the same start/end:
+```json
+// Source: "12  A deer crosses the path"
+// -> entry { "rangeStart": 12, "rangeEnd": 12, "resultText": "A deer crosses the path" }
+```
+
+### Range normalization
+
+Ranges must be **contiguous** within the table for the mode to be valid. Overlapping ranges or
+gaps produce `TABLE_RANGE_OVERLAP` or `TABLE_RANGE_GAP` validation errors.
+
+- If the source has gaps, fill them with a `"Nothing unusual"` or equivalent entry — do NOT
+  silently compress ranges.
+- If the source has overlaps, use `SOURCE_ANNOTATION` with `confidence: "LOW"`.
+
+```json
+// Correct: d100 table covering all 1..100 values
+{"rangeStart": 1, "rangeEnd": 20, "resultText": "Goblins"},
+{"rangeStart": 21, "rangeEnd": 35, "resultText": "Skeletons"},
+{"rangeStart": 36, "rangeEnd": 100, "resultText": "Nothing unusual"}
+```
+
+### Weighted tables
+
+Weighted tables do not require a contiguous range. Weights are relative — an entry with
+`weight: 35` is 3.5× as likely as one with `weight: 10`.
+
+```json
+// Weighted entries
+{"weight": 10, "resultText": "Rare encounter"},
+{"weight": 35, "resultText": "Common encounter"}
+```
+
 ## When to emit SOURCE_ANNOTATION instead of inventing data
 
 If the source material is ambiguous or missing a required field:
