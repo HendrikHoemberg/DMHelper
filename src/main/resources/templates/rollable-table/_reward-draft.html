@@ -29,10 +29,10 @@
         </tbody>
     </table>
     <div class="u-flex u-gap-sm u-mt-sm">
-        <button class="btn btn-primary" @@click="confirmRewardDraft()" :disabled="draftLoading">
+        <button class="btn btn-primary" @click="confirmRewardDraft()" :disabled="draftLoading">
             <span x-text="draftLoading ? 'Confirming...' : 'Confirm'"></span>
         </button>
-        <button class="btn btn-ghost" @@click="discardDraft()" :disabled="draftLoading">
+        <button class="btn btn-ghost" @click="discardDraft()" :disabled="draftLoading">
             <span x-text="draftLoading ? 'Discarding...' : 'Discard'"></span>
         </button>
     </div>

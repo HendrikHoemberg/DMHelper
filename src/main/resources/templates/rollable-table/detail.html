@@ -20,13 +20,13 @@
                     <a th:if="${table.source.name() == 'CUSTOM'}"
                        class="btn btn-ghost"
                        th:href="@{/library/tables/{id}/edit(id=${table.id})}">Edit</a>
-                    <button type="button" class="btn btn-ghost" @@click="cloneTable()"
+                    <button type="button" class="btn btn-ghost" @click="cloneTable()"
                             :disabled="managementLoading">Clone</button>
                     <button th:if="${table.source.name() == 'CUSTOM' and campaignId != null}"
-                            type="button" class="btn btn-ghost" @@click="promoteTable()"
+                            type="button" class="btn btn-ghost" @click="promoteTable()"
                             :disabled="managementLoading">Promote</button>
                     <button th:if="${table.source.name() == 'CUSTOM'}"
-                            type="button" class="btn btn-danger" @@click="deleteTable()"
+                            type="button" class="btn btn-danger" @click="deleteTable()"
                             :disabled="managementLoading">Delete</button>
                     <span class="u-text-sm" x-show="managementMessage" x-text="managementMessage"></span>
                 </div>

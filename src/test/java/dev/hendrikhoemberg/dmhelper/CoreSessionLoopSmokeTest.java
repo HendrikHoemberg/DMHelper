@@ -3,9 +3,6 @@ package dev.hendrikhoemberg.dmhelper;
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.WaitForSelectorState;
-import dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkRole;
-import dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkTargetScope;
-import dev.hendrikhoemberg.dmhelper.adventure.service.SceneStructuredContentService;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Adventure;
 import dev.hendrikhoemberg.dmhelper.adventure.data.AdventureRepository;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Chapter;
@@ -19,6 +16,8 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageWriteRe
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageWriter;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
@@ -29,24 +28,14 @@ import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
-import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
-import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableEntry;
-import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
-import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode;
-import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableCategory;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableDraftStatus;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableDraftType;
-import dev.hendrikhoemberg.dmhelper.rollabletable.service.RewardItemDraft;
-import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableRollService;
-import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableService;
-import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableConsequenceDraft;
-import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableConsequenceService;
-import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableDuplicatePolicy;
-import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollRequest;
-import dev.hendrikhoemberg.dmhelper.rollabletable.service.EncounterCreatureDraft;
+import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionLifecycleService;
+import dev.hendrikhoemberg.dmhelper.treasury.service.TreasuryService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -93,12 +82,12 @@ class CoreSessionLoopSmokeTest {
     @Autowired private HandoutService handoutService;
     @Autowired private NoteRepository noteRepository;
     @Autowired private PartyMemberRepository partyMemberRepository;
-    @Autowired private RollableTableService rollableTableService;
-    @Autowired private RollableTableRollService rollableTableRollService;
-    @Autowired private RollableTableRepository rollableTableRepository;
-    @Autowired private TableConsequenceService consequenceService;
-    @Autowired private SceneStructuredContentService sceneStructuredContentService;
     @Autowired private dev.hendrikhoemberg.dmhelper.rollabletable.data.TableRollLogRepository rollLogRepository;
+    @Autowired private EquipmentItemRepository equipmentItemRepository;
+    @Autowired private StatBlockRepository statBlockRepository;
+    @Autowired private TreasuryService treasuryService;
+    @Autowired private EncounterRepository encounterRepository;
+    @Autowired private CombatantRepository combatantRepository;
 
     private static Playwright playwright;
     private static Browser browser;
@@ -924,63 +913,56 @@ class CoreSessionLoopSmokeTest {
     @Order(22)
     void rollableTableCreatesTreasureRollAndConfirmAddsToPartyStash() {
         startSession();
-
-        UUID sceneId = adventureService.getCurrentScene(campaignId).orElseThrow().getId();
-
-        RollableTable treasureTable = new RollableTable();
-        treasureTable.setSourceKey("browser_treasure");
-        treasureTable.setSource(dev.hendrikhoemberg.dmhelper.library.data.ContentSource.CUSTOM);
-        treasureTable.setName("Browser Treasure");
-        treasureTable.setAddressMode(TableAddressMode.RANGE);
-        treasureTable.setRollExpression("1d2");
-        treasureTable.setCategory(TableCategory.TREASURE);
-        treasureTable.setCampaign(campaignRepo.findById(campaignId).orElseThrow());
-        RollableTableEntry coinEntry = new RollableTableEntry();
-        coinEntry.setEntryKey("treasure-coins");
-        coinEntry.setRangeStart(1);
-        coinEntry.setRangeEnd(1);
-        coinEntry.setResultText("Gold coins");
-        coinEntry.setTable(treasureTable);
-        treasureTable.getEntries().add(coinEntry);
-        RollableTableEntry itemEntry = new RollableTableEntry();
-        itemEntry.setEntryKey("treasure-item");
-        itemEntry.setRangeStart(2);
-        itemEntry.setRangeEnd(2);
-        itemEntry.setResultText("Bag of Holding");
-        itemEntry.setTable(treasureTable);
-        treasureTable.getEntries().add(itemEntry);
-        rollableTableRepository.save(treasureTable);
-
-        sceneStructuredContentService.addLink(campaignId, sceneId,
-                new SceneStructuredContentService.SceneLinkCommand(
-                        SceneLinkRole.RANDOM_ENCOUNTERS, SceneLinkTargetScope.PACKAGE,
-                        "ROLLABLE_TABLE", treasureTable.getId(), null, null,
-                        "Browser Treasure", null, 1));
-
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
 
-        var rollResult = rollableTableRollService.roll(campaignId, treasureTable.getId(),
-                new TableRollRequest(null, 1, TableDuplicatePolicy.ALLOW_DUPLICATES));
-        assertThat(rollResult.outcomes()).isNotEmpty();
-        UUID rollId = rollResult.logId();
+        var equipment = equipmentItemRepository.findByNameContainingIgnoreCaseOrderByNameAsc("Backpack").getFirst();
+        long initialStashRows = treasuryService.findPartyStash(campaignId).stream()
+                .filter(item -> equipment.getId().equals(item.equipmentItemId()))
+                .count();
 
-        var log = rollLogRepository.findByIdAndCampaignId(rollId, campaignId).orElseThrow();
-        assertThat(log.getDraftType()).isEqualTo(dev.hendrikhoemberg.dmhelper.rollabletable.data.TableDraftType.REWARD);
-        assertThat(log.getDraftStatus()).isEqualTo(dev.hendrikhoemberg.dmhelper.rollabletable.data.TableDraftStatus.PENDING);
+        UUID tableId = createRollableTableThroughEditorApi(
+                "browser_treasure", "Browser Treasure", "TREASURE", "Found a backpack", "1",
+                "EQUIPMENT_ITEM", equipment.getId(), equipment.getName());
+        linkTableToCurrentSceneThroughHttp(tableId, "Browser Treasure");
 
-        consequenceService.discard(rollId, campaignId);
+        dmPage.reload();
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        Locator linkedTable = dmPage.locator(".linked-table-row")
+                .filter(new Locator.FilterOptions().setHasText("Browser Treasure"));
+        linkedTable.waitFor();
 
-        var discardedLog = rollLogRepository.findByIdAndCampaignId(rollId, campaignId).orElseThrow();
-        assertThat(discardedLog.getDraftStatus()).isEqualTo(dev.hendrikhoemberg.dmhelper.rollabletable.data.TableDraftStatus.DISCARDED);
+        linkedTable.locator("button:has-text('Roll')").click();
+        Locator rewardDraft = dmPage.locator(".draft-panel")
+                .filter(new Locator.FilterOptions().setHasText("Review Reward Draft"));
+        rewardDraft.waitFor();
+        assertThat(dmPage.locator(".roll-result-text").filter(
+                new Locator.FilterOptions().setHasText("Found a backpack")).isVisible()).isTrue();
+        rewardDraft.locator("input[type='number']").fill("2");
+        rewardDraft.locator("button:has-text('Discard')").click();
+        dmPage.getByText("Draft discarded.", new Page.GetByTextOptions().setExact(true)).waitFor();
 
-        var secondRoll = rollableTableRollService.roll(campaignId, treasureTable.getId(),
-                new TableRollRequest(null, 1, TableDuplicatePolicy.ALLOW_DUPLICATES));
-        consequenceService.confirmReward(secondRoll.logId(), campaignId,
-                new TableConsequenceService.ConfirmRewardRequest(List.of()));
+        var discardedLog = rollLogRepository.findTop20ByCampaignIdOrderByCreatedAtDesc(campaignId).getFirst();
+        assertThat(discardedLog.getDraftType()).isEqualTo(TableDraftType.REWARD);
+        assertThat(discardedLog.getDraftStatus()).isEqualTo(TableDraftStatus.DISCARDED);
+        assertThat(treasuryService.findPartyStash(campaignId).stream()
+                .filter(item -> equipment.getId().equals(item.equipmentItemId())).count())
+                .isEqualTo(initialStashRows);
 
-        var confirmedLog = rollLogRepository.findByIdAndCampaignId(secondRoll.logId(), campaignId).orElseThrow();
-        assertThat(confirmedLog.getDraftStatus()).isEqualTo(dev.hendrikhoemberg.dmhelper.rollabletable.data.TableDraftStatus.CONFIRMED);
+        dmPage.locator("#cockpitTablePicker").selectOption(tableId.toString());
+        dmPage.locator(".roll-panel button:has-text('Roll')").click();
+        rewardDraft.waitFor();
+        rewardDraft.locator("input[type='number']").fill("3");
+        rewardDraft.locator("button:has-text('Confirm')").click();
+        dmPage.getByText("Draft confirmed.", new Page.GetByTextOptions().setExact(true)).waitFor();
+
+        var confirmedLog = rollLogRepository.findTop20ByCampaignIdOrderByCreatedAtDesc(campaignId).getFirst();
+        assertThat(confirmedLog.getDraftStatus()).isEqualTo(TableDraftStatus.CONFIRMED);
+        assertThat(treasuryService.findPartyStash(campaignId))
+                .anySatisfy(item -> {
+                    assertThat(item.equipmentItemId()).isEqualTo(equipment.getId());
+                    assertThat(item.quantity()).isEqualTo(3);
+                });
     }
 
     @Test
@@ -988,44 +970,110 @@ class CoreSessionLoopSmokeTest {
     void rollableTableCreatesEncounterRollAndConfirmProducesPlannedEncounter() {
         startSession();
 
-        RollableTable encTable = new RollableTable();
-        encTable.setSourceKey("browser_encounter");
-        encTable.setSource(dev.hendrikhoemberg.dmhelper.library.data.ContentSource.CUSTOM);
-        encTable.setName("Browser Encounter");
-        encTable.setAddressMode(TableAddressMode.RANGE);
-        encTable.setRollExpression("1d2");
-        encTable.setCategory(TableCategory.ENCOUNTER);
-        encTable.setCampaign(campaignRepo.findById(campaignId).orElseThrow());
-        RollableTableEntry encEntry = new RollableTableEntry();
-        encEntry.setEntryKey("enc-goblins");
-        encEntry.setRangeStart(1);
-        encEntry.setRangeEnd(1);
-        encEntry.setResultText("Goblins");
-        encEntry.setQuantityExpression("2");
-        encEntry.setTable(encTable);
-        encTable.getEntries().add(encEntry);
-        RollableTableEntry noEntry = new RollableTableEntry();
-        noEntry.setEntryKey("enc-nothing");
-        noEntry.setRangeStart(2);
-        noEntry.setRangeEnd(2);
-        noEntry.setResultText("Nothing");
-        noEntry.setTable(encTable);
-        encTable.getEntries().add(noEntry);
-        rollableTableRepository.save(encTable);
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        var statBlock = statBlockRepository.findByNameContainingIgnoreCaseOrderByNameAsc("Goblin").getFirst();
+        UUID tableId = createRollableTableThroughEditorApi(
+                "browser_encounter", "Browser Encounter", "ENCOUNTER", "Goblins attack", "1",
+                "STATBLOCK", statBlock.getId(), statBlock.getName());
+        linkTableToCurrentSceneThroughHttp(tableId, "Browser Encounter");
 
-        var rollResult = rollableTableRollService.roll(campaignId, encTable.getId(),
-                new TableRollRequest(null, 1, TableDuplicatePolicy.ALLOW_DUPLICATES));
-        assertThat(rollResult.outcomes()).isNotEmpty();
-        UUID rollId = rollResult.logId();
+        dmPage.reload();
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        dmPage.locator("#cockpitTablePicker").selectOption(tableId.toString());
+        Locator panel = dmPage.locator(".roll-panel");
+        panel.waitFor();
+        panel.locator("input[type='number']").first().fill("1");
+        panel.locator("button:has-text('Roll')").click();
 
-        var log = rollLogRepository.findByIdAndCampaignId(rollId, campaignId).orElseThrow();
-        assertThat(log.getDraftType()).isEqualTo(dev.hendrikhoemberg.dmhelper.rollabletable.data.TableDraftType.ENCOUNTER);
+        Locator encounterDraft = panel.locator(".draft-panel")
+                .filter(new Locator.FilterOptions().setHasText("Review Encounter Draft"));
+        encounterDraft.waitFor();
+        encounterDraft.locator("input[type='text']").first().fill("Browser Encounter Encounter");
+        encounterDraft.locator("input[type='number']").fill("2");
+        encounterDraft.locator("button:has-text('Confirm')").click();
+        dmPage.getByText("Draft confirmed.", new Page.GetByTextOptions().setExact(true)).waitFor();
 
-        var confirmReq = new TableConsequenceService.ConfirmEncounterRequest(
-                "Browser Encounter Encounter", null, List.of());
-        consequenceService.confirmEncounter(rollId, campaignId, confirmReq);
+        var confirmedLog = rollLogRepository.findTop20ByCampaignIdOrderByCreatedAtDesc(campaignId).getFirst();
+        assertThat(confirmedLog.getDraftType()).isEqualTo(TableDraftType.ENCOUNTER);
+        assertThat(confirmedLog.getDraftStatus()).isEqualTo(TableDraftStatus.CONFIRMED);
 
-        var confirmedLog = rollLogRepository.findByIdAndCampaignId(rollId, campaignId).orElseThrow();
-        assertThat(confirmedLog.getDraftStatus()).isEqualTo(dev.hendrikhoemberg.dmhelper.rollabletable.data.TableDraftStatus.CONFIRMED);
+        var encounter = encounterRepository.findByCampaignIdOrderByNameAsc(campaignId).stream()
+                .filter(candidate -> candidate.getName().equals("Browser Encounter Encounter"))
+                .findFirst().orElseThrow();
+        assertThat(encounter.getStatus()).isEqualTo(dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.PLANNED);
+        assertThat(combatantRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()))
+                .hasSize(2)
+                .allSatisfy(combatant -> assertThat(combatant.getStatBlock().getId()).isEqualTo(statBlock.getId()));
+    }
+
+    private UUID createRollableTableThroughEditorApi(
+            String sourceKey, String name, String category, String resultText,
+            String quantityExpression, String referenceType, UUID referenceId, String referenceLabel) {
+        Object id = dmPage.evaluate("""
+            async ([campaignId, sourceKey, name, category, resultText, quantityExpression,
+                    referenceType, referenceId, referenceLabel]) => {
+                const response = await fetch('/api/v1/rollable-tables?campaignId=' + campaignId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sourceKey,
+                        name,
+                        description: 'Created by the real browser acceptance flow',
+                        addressMode: 'RANGE',
+                        rollExpression: '1d1',
+                        category,
+                        tags: ['browser-acceptance'],
+                        entries: [{
+                            key: sourceKey + '-result',
+                            rangeStart: 1,
+                            rangeEnd: 1,
+                            weight: null,
+                            resultText,
+                            quantityExpression,
+                            references: [{
+                                scope: 'ENTITY',
+                                targetType: referenceType,
+                                targetId: referenceId,
+                                catalogRuleset: null,
+                                catalogSourceKey: null,
+                                displayText: referenceLabel
+                            }]
+                        }]
+                    })
+                });
+                if (!response.ok) throw new Error('Table creation failed: ' + await response.text());
+                return (await response.json()).id;
+            }
+        """, Arrays.asList(campaignId.toString(), sourceKey, name, category, resultText,
+                quantityExpression, referenceType, referenceId.toString(), referenceLabel));
+        return UUID.fromString((String) id);
+    }
+
+    private void linkTableToCurrentSceneThroughHttp(UUID tableId, String displayText) {
+        Scene scene = adventureService.getCurrentScene(campaignId).orElseThrow();
+        UUID adventureId = adventureRepo.findByCampaignIdOrderBySortOrderAsc(campaignId).getFirst().getId();
+        String path = "/campaigns/" + campaignId
+                + "/adventures/" + adventureId
+                + "/chapters/" + chapterId
+                + "/scenes/" + scene.getId() + "/links";
+        dmPage.evaluate("""
+            async ([path, tableId, displayText]) => {
+                const body = new URLSearchParams({
+                    role: 'RANDOM_ENCOUNTERS',
+                    targetScope: 'PACKAGE',
+                    targetType: 'ROLLABLE_TABLE',
+                    targetId: tableId,
+                    displayText,
+                    sortOrder: '1'
+                });
+                const response = await fetch(path, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body
+                });
+                if (!response.ok) throw new Error('Scene table link failed: ' + await response.text());
+            }
+        """, Arrays.asList(path, tableId.toString(), displayText));
     }
 }
