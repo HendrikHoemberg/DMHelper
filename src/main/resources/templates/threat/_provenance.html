@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="provenance(entity)" th:if="${entity.provenance != null}">
+    <details class="provenance-panel">
+        <summary class="provenance-summary"><strong>Provenance</strong></summary>
+        <div class="provenance-fields">
+            <div th:if="${entity.provenance.sourceTitle != null}">
+                <span class="provenance-label">Source:</span>
+                <span th:text="${entity.provenance.sourceTitle}"></span>
+            </div>
+            <div th:if="${entity.provenance.editionVersion != null}">
+                <span class="provenance-label">Edition:</span>
+                <span th:text="${entity.provenance.editionVersion}"></span>
+            </div>
+            <div th:if="${entity.provenance.sourceLocator != null}">
+                <span class="provenance-label">Locator:</span>
+                <span th:text="${entity.provenance.sourceLocator}"></span>
+            </div>
+            <div th:if="${entity.provenance.licenseClassification != null}">
+                <span class="provenance-label">License:</span>
+                <span th:text="${entity.provenance.licenseClassification}"></span>
+            </div>
+            <div th:if="${entity.provenance.importedAt != null}">
+                <span class="provenance-label">Imported:</span>
+                <span th:text="${#temporals.format(entity.provenance.importedAt, 'yyyy-MM-dd HH:mm')}"></span>
+            </div>
+            <div th:if="${entity.provenance.converterId != null}">
+                <span class="provenance-label">Converter:</span>
+                <span th:text="${entity.provenance.converterId + (entity.provenance.converterVersion != null ? ' v' + entity.provenance.converterVersion : '')}"></span>
+            </div>
+            <div th:if="${entity.provenance.sourceHash != null}">
+                <span class="provenance-label">Hash:</span>
+                <code th:text="${#strings.abbreviate(entity.provenance.sourceHash, 16)}"></code>
+            </div>
+            <div th:if="${entity.provenance.extractionConfidence != null}">
+                <span class="provenance-label">Confidence:</span>
+                <span th:text="${entity.provenance.extractionConfidence}"></span>
+            </div>
+        </div>
+    </details>
+</th:block>
+</html>

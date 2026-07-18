@@ -21,6 +21,13 @@ import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableCategory;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.Hazard;
+import dev.hendrikhoemberg.dmhelper.threat.data.HazardExposureMode;
+import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatResetMode;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatSeverity;
+import dev.hendrikhoemberg.dmhelper.threat.data.Trap;
+import dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +54,8 @@ class CommandPaletteServiceTest {
     @Autowired private PartyMemberRepository partyMemberRepository;
     @Autowired private CharacterSheetRepository characterSheetRepository;
     @Autowired private RollableTableRepository rollableTableRepository;
+    @Autowired private TrapRepository trapRepository;
+    @Autowired private HazardRepository hazardRepository;
 
     private Campaign campaign;
 
@@ -352,5 +361,100 @@ class CommandPaletteServiceTest {
         table.setCategory(TableCategory.GENERIC);
         table.setSourceKey(sourceKey);
         return table;
+    }
+
+    @Test
+    void searchFindsCampaignTrapsByTitle() {
+        Trap trap = newTrap("Spike Pit", "spike-pit", ContentSource.CUSTOM);
+        trap.setCampaign(campaign);
+        trapRepository.save(trap);
+
+        var results = commandPaletteService.search("Spike", campaign.getId());
+        assertThat(results).anyMatch(r -> r.title().equals("Spike Pit") && r.type().equals("trap"));
+    }
+
+    @Test
+    void searchFindsGlobalHazardsByName() {
+        Hazard hazard = newHazard("Lava Field", "lava-field", ContentSource.SRD);
+        hazardRepository.save(hazard);
+
+        var results = commandPaletteService.search("Lava", null);
+        assertThat(results).anyMatch(r -> r.title().equals("Lava Field") && r.type().equals("hazard"));
+    }
+
+    @Test
+    void campaignTrapTitleRanksAheadOfGlobalTrapTitle() {
+        Trap campaignTrap = newTrap("Goblin", "goblin-trap", ContentSource.CUSTOM);
+        campaignTrap.setCampaign(campaign);
+        trapRepository.save(campaignTrap);
+
+        var results = commandPaletteService.search("Goblin", campaign.getId()).stream()
+                .filter(r -> r.type().equals("trap") || r.type().equals("statblock"))
+                .toList();
+        assertThat(results.getFirst().type()).isEqualTo("trap");
+    }
+
+    @Test
+    void trapAndHazardSearchIsCampaignIsolatedRankedAndDeduplicated() {
+        Campaign otherCampaign = new Campaign();
+        otherCampaign.setName("Other Threat Campaign");
+        otherCampaign = campaignRepository.save(otherCampaign);
+
+        Trap campaignTrap = newTrap("Shared Threat", "campaign-trap", ContentSource.CUSTOM);
+        campaignTrap.setCampaign(campaign);
+        campaignTrap = trapRepository.save(campaignTrap);
+
+        Trap globalTrap = trapRepository.save(newTrap("Shared Threat", "global-trap", ContentSource.CUSTOM));
+        Trap srdTrap = trapRepository.save(newTrap("Shared Threat", "srd-trap", ContentSource.SRD));
+
+        Trap foreignTrap = newTrap("Shared Threat", "foreign-trap", ContentSource.CUSTOM);
+        foreignTrap.setCampaign(otherCampaign);
+        foreignTrap = trapRepository.save(foreignTrap);
+
+        Hazard campaignHazard = newHazard("Shared Threat", "campaign-hazard", ContentSource.CUSTOM);
+        campaignHazard.setCampaign(campaign);
+        campaignHazard = hazardRepository.save(campaignHazard);
+
+        Hazard foreignHazard = newHazard("Shared Threat", "foreign-hazard", ContentSource.CUSTOM);
+        foreignHazard.setCampaign(otherCampaign);
+        foreignHazard = hazardRepository.save(foreignHazard);
+
+        var trapResults = commandPaletteService.search("Shared Threat", campaign.getId()).stream()
+                .filter(result -> result.type().equals("trap"))
+                .toList();
+        var hazardResults = commandPaletteService.search("Shared Threat", campaign.getId()).stream()
+                .filter(result -> result.type().equals("hazard"))
+                .toList();
+
+        assertThat(trapResults.getFirst().id()).isEqualTo(campaignTrap.getId().toString());
+        assertThat(trapResults).extracting(CommandPaletteService.SearchResultItem::id)
+                .containsExactlyInAnyOrder(
+                        campaignTrap.getId().toString(),
+                        globalTrap.getId().toString(),
+                        srdTrap.getId().toString())
+                .doesNotContain(foreignTrap.getId().toString());
+        assertThat(hazardResults).extracting(CommandPaletteService.SearchResultItem::id)
+                .containsExactly(campaignHazard.getId().toString())
+                .doesNotContain(foreignHazard.getId().toString());
+    }
+
+    private Trap newTrap(String name, String sourceKey, ContentSource source) {
+        Trap trap = new Trap();
+        trap.setName(name);
+        trap.setSourceKey(sourceKey);
+        trap.setSource(source);
+        trap.setSeverity(ThreatSeverity.DANGEROUS);
+        trap.setResetMode(ThreatResetMode.NONE);
+        return trap;
+    }
+
+    private Hazard newHazard(String name, String sourceKey, ContentSource source) {
+        Hazard hazard = new Hazard();
+        hazard.setName(name);
+        hazard.setSourceKey(sourceKey);
+        hazard.setSource(source);
+        hazard.setSeverity(ThreatSeverity.SETBACK);
+        hazard.setExposureMode(HazardExposureMode.ON_ENTER);
+        return hazard;
     }
 }

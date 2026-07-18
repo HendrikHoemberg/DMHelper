@@ -60,6 +60,10 @@ class ContentDestinationRegistryTest {
                 entityId, "alert", "Alert")).isEqualTo("/library/feats/" + entityId);
         assertThat(registry.library(ContentDestinationRegistry.LibraryType.ROLLABLE_TABLE,
                 entityId, "my-table", "My Table")).isEqualTo("/library/tables/" + entityId);
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.TRAP,
+                entityId, "spike-pit", "Spike Pit")).isEqualTo("/library/traps/" + entityId);
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.HAZARD,
+                entityId, "lava-field", "Lava Field")).isEqualTo("/library/hazards/" + entityId);
     }
 
     @Test
@@ -73,6 +77,10 @@ class ContentDestinationRegistryTest {
                 null, "srd-2024_fighter", "Fighter")).isEqualTo("/library/classes/srd-2024_fighter");
         assertThat(registry.library(ContentDestinationRegistry.LibraryType.CLASS,
                 null, null, "Fighter")).isEqualTo("/library?tab=classes&search=Fighter");
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.TRAP,
+                null, "spike-pit", "Spike Pit")).isEqualTo("/library?tab=traps&search=Spike%20Pit");
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.HAZARD,
+                null, "lava-field", "Lava Field")).isEqualTo("/library?tab=hazards&search=Lava%20Field");
     }
 
     @Test

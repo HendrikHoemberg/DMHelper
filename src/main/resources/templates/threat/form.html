@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org" xmlns:x="http://www.w3.org/1999/xhtml">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — ' + ${editorTitle}">DMHelper — Threat Editor</title>
+</head>
+<body th:attr="data-campaign-id=${campaignId}">
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <div>
+                    <div class="page-header-eyebrow">Threat Editor</div>
+                    <h1 th:text="${editorTitle}">New Threat</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+            </div>
+            <div class="detail-section" x-data="threatEditor()">
+                <form @submit.prevent="save()">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" x-model="form.name"
+                               data-path="/name" required>
+                        <template x-for="problem in problemsFor('/name')" :key="problem.code">
+                            <div class="u-text-danger u-text-sm" x-text="problem.message"></div>
+                        </template>
+                    </div>
+                    <div class="form-group">
+                        <label for="sourceKey">Stable Key</label>
+                        <input type="text" id="sourceKey" name="sourceKey" x-model="form.sourceKey"
+                               pattern="[a-z0-9][a-z0-9._-]{0,99}" data-path="/sourceKey" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description (Markdown)</label>
+                        <textarea id="description" name="description" x-model="form.description"
+                                  rows="4" data-path="/description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="severity">Severity</label>
+                        <select id="severity" name="severity" x-model="form.severity" data-path="/severity">
+                            <option value="SETBACK">Setback</option>
+                            <option value="DANGEROUS">Dangerous</option>
+                            <option value="DEADLY">Deadly</option>
+                        </select>
+                    </div>
+                    <div class="u-flex u-gap-sm">
+                        <div class="form-group">
+                            <label for="minLevel">Min Level</label>
+                            <input type="number" id="minLevel" x-model.number="form.minLevel"
+                                   min="1" max="20" data-path="/minLevel">
+                        </div>
+                        <div class="form-group">
+                            <label for="maxLevel">Max Level</label>
+                            <input type="number" id="maxLevel" x-model.number="form.maxLevel"
+                                   min="1" max="20" data-path="/maxLevel">
+                        </div>
+                    </div>
+
+                    <!-- Trap fields -->
+                    <template x-if="kind === 'TRAP'">
+                        <div>
+                            <div class="form-group">
+                                <label for="triggerDescription">Trigger</label>
+                                <textarea id="triggerDescription" x-model="form.triggerDescription"
+                                          rows="2" data-path="/triggerDescription"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="triggerAreaHint">Trigger Area Hint</label>
+                                <input type="text" id="triggerAreaHint" x-model="form.triggerAreaHint"
+                                       data-path="/triggerAreaHint">
+                            </div>
+                            <div class="form-group">
+                                <label for="detectionPassiveThreshold">Passive Detection DC</label>
+                                <input type="number" id="detectionPassiveThreshold"
+                                       x-model.number="form.detectionPassiveThreshold"
+                                       data-path="/detectionPassiveThreshold">
+                            </div>
+                            <fieldset class="u-mt-md" data-path="/detectionCheck">
+                                <legend>Detection Check</legend>
+                                <div class="u-flex u-gap-sm">
+                                    <select x-model="form.detectionCheck.mode">
+                                        <option value="">—</option>
+                                        <option value="CHECK">Check</option>
+                                        <option value="SAVE">Save</option>
+                                    </select>
+                                    <input type="text" placeholder="Ability" x-model="form.detectionCheck.ability">
+                                    <input type="text" placeholder="Skill" x-model="form.detectionCheck.skill">
+                                    <input type="number" placeholder="DC" x-model.number="form.detectionCheck.dc">
+                                </div>
+                            </fieldset>
+
+                            <h3 class="u-mt-lg">Disarm Methods</h3>
+                            <template x-for="(method, index) in form.disarmMethods" :key="method._key">
+                                <div class="entry-card u-mb-md" :data-path="'/disarmMethods/' + index">
+                                    <div class="entry-header">
+                                        <span x-text="'Method ' + (index + 1)"></span>
+                                        <button type="button" class="btn btn-ghost btn-sm"
+                                                @click="removeDisarmMethod(index)">Remove</button>
+                                    </div>
+                                    <div class="entry-fields u-flex u-gap-sm u-mt-sm">
+                                        <div>
+                                            <label>Key</label>
+                                            <input type="text" x-model="method.key"
+                                                   pattern="[a-z0-9][a-z0-9._-]{0,99}"
+                                                   :data-path="'/disarmMethods/' + index + '/key'" required>
+                                        </div>
+                                        <div>
+                                            <label>Label</label>
+                                            <input type="text" x-model="method.label"
+                                                   :data-path="'/disarmMethods/' + index + '/label'" required>
+                                        </div>
+                                        <div>
+                                            <label>Ability</label>
+                                            <input type="text" x-model="method.ability">
+                                        </div>
+                                        <div>
+                                            <label>Skill</label>
+                                            <input type="text" x-model="method.skill">
+                                        </div>
+                                        <div>
+                                            <label>Tool</label>
+                                            <input type="text" x-model="method.tool">
+                                        </div>
+                                        <div>
+                                            <label>DC</label>
+                                            <input type="number" x-model.number="method.dc"
+                                                   :data-path="'/disarmMethods/' + index + '/dc'">
+                                        </div>
+                                    </div>
+                                    <div class="form-group u-mt-sm">
+                                        <label>Failure Consequence</label>
+                                        <input type="text" x-model="method.failureConsequence">
+                                    </div>
+                                    <div class="u-mt-sm u-flex u-gap-sm">
+                                        <button type="button" class="btn btn-ghost btn-sm"
+                                                @click="moveDisarmMethod(index, index - 1)"
+                                                :disabled="index === 0">&uarr;</button>
+                                        <button type="button" class="btn btn-ghost btn-sm"
+                                                @click="moveDisarmMethod(index, index + 1)"
+                                                :disabled="index === form.disarmMethods.length - 1">&darr;</button>
+                                    </div>
+                                    <template x-for="problem in problemsFor('/disarmMethods/' + index)"
+                                              :key="problem.path + problem.code">
+                                        <div class="u-text-danger u-text-sm u-mt-xs"
+                                             x-text="problem.code + ': ' + problem.message"></div>
+                                    </template>
+                                </div>
+                            </template>
+                            <button type="button" class="btn btn-ghost" @click="addDisarmMethod()">Add Disarm Method</button>
+
+                            <div class="form-group u-mt-lg">
+                                <label for="attackBonus">Attack Bonus</label>
+                                <input type="number" id="attackBonus" x-model.number="form.attackBonus"
+                                       data-path="/attackBonus">
+                            </div>
+                            <fieldset data-path="/save">
+                                <legend>Save (mutually exclusive with attack)</legend>
+                                <div class="u-flex u-gap-sm">
+                                    <select x-model="form.save.mode">
+                                        <option value="">—</option>
+                                        <option value="CHECK">Check</option>
+                                        <option value="SAVE">Save</option>
+                                    </select>
+                                    <input type="text" placeholder="Ability" x-model="form.save.ability">
+                                    <input type="number" placeholder="DC" x-model.number="form.save.dc">
+                                </div>
+                            </fieldset>
+                            <div class="form-group">
+                                <label for="damageExpression">Damage Expression</label>
+                                <input type="text" id="damageExpression" x-model="form.damageExpression"
+                                       placeholder="e.g. 2d10" data-path="/damageExpression">
+                            </div>
+                            <div class="form-group">
+                                <label>Damage Types</label>
+                                <div class="u-flex u-gap-sm u-flex-wrap" data-path="/damageTypes">
+                                    <template x-for="dt in allDamageTypes" :key="dt">
+                                        <label class="u-flex u-gap-xs">
+                                            <input type="checkbox" :value="dt"
+                                                   :checked="form.damageTypes.includes(dt)"
+                                                   @change="toggleDamageType(dt)">
+                                            <span x-text="dt"></span>
+                                        </label>
+                                    </template>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="additionalEffect">Additional Effect</label>
+                                <textarea id="additionalEffect" x-model="form.additionalEffect" rows="2"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="resetMode">Reset Mode</label>
+                                <select id="resetMode" x-model="form.resetMode" data-path="/resetMode">
+                                    <option value="NONE">None</option>
+                                    <option value="MANUAL">Manual</option>
+                                    <option value="AUTOMATIC">Automatic</option>
+                                </select>
+                            </div>
+                            <div class="form-group" x-show="form.resetMode === 'AUTOMATIC'">
+                                <label for="resetTiming">Reset Timing</label>
+                                <input type="text" id="resetTiming" x-model="form.resetTiming"
+                                       data-path="/resetTiming">
+                            </div>
+                            <div class="form-group">
+                                <label for="statBlockId">Stat Block (optional)</label>
+                                <div class="u-flex u-gap-sm">
+                                    <input type="text" id="statBlockId" x-model="form.statBlockId"
+                                           placeholder="UUID" data-path="/statBlockId" readonly>
+                                    <button type="button" class="btn btn-ghost btn-sm"
+                                            @click="showReferencePicker('STATBLOCK')">Search</button>
+                                    <button type="button" class="btn btn-ghost btn-sm"
+                                            @click="form.statBlockId = null; form.statBlockLabel = ''"
+                                            x-show="form.statBlockId">Clear</button>
+                                </div>
+                                <span class="text-muted" x-text="form.statBlockLabel"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="countermeasureNotes">Countermeasure Notes</label>
+                                <textarea id="countermeasureNotes" x-model="form.countermeasureNotes" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Hazard fields -->
+                    <template x-if="kind === 'HAZARD'">
+                        <div>
+                            <div class="form-group">
+                                <label for="exposureMode">Exposure Mode</label>
+                                <select id="exposureMode" x-model="form.exposureMode" data-path="/exposureMode" required>
+                                    <option value="ON_ENTER">On Enter</option>
+                                    <option value="START_OF_TURN">Start of Turn</option>
+                                    <option value="PER_ROUND">Per Round</option>
+                                    <option value="CONTINUOUS">Continuous</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="exposureText">Exposure Text</label>
+                                <textarea id="exposureText" x-model="form.exposureText" rows="2"
+                                          data-path="/exposureText"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="areaHint">Area Hint</label>
+                                <input type="text" id="areaHint" x-model="form.areaHint" data-path="/areaHint">
+                            </div>
+                            <fieldset data-path="/check">
+                                <legend>Check / Save</legend>
+                                <div class="u-flex u-gap-sm">
+                                    <select x-model="form.check.mode">
+                                        <option value="">—</option>
+                                        <option value="CHECK">Check</option>
+                                        <option value="SAVE">Save</option>
+                                    </select>
+                                    <input type="text" placeholder="Ability" x-model="form.check.ability">
+                                    <input type="text" placeholder="Skill" x-model="form.check.skill">
+                                    <input type="number" placeholder="DC" x-model.number="form.check.dc">
+                                </div>
+                            </fieldset>
+                            <div class="form-group">
+                                <label for="hazardDamageExpression">Damage Expression</label>
+                                <input type="text" id="hazardDamageExpression" x-model="form.damageExpression"
+                                       placeholder="e.g. 1d6" data-path="/damageExpression">
+                            </div>
+                            <div class="form-group">
+                                <label>Damage Types</label>
+                                <div class="u-flex u-gap-sm u-flex-wrap" data-path="/damageTypes">
+                                    <template x-for="dt in allDamageTypes" :key="dt">
+                                        <label class="u-flex u-gap-xs">
+                                            <input type="checkbox" :value="dt"
+                                                   :checked="form.damageTypes.includes(dt)"
+                                                   @change="toggleDamageType(dt)">
+                                            <span x-text="dt"></span>
+                                        </label>
+                                    </template>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="escalationText">Escalation</label>
+                                <textarea id="escalationText" x-model="form.escalationText" rows="2"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="endingConditions">Ending Conditions</label>
+                                <textarea id="endingConditions" x-model="form.endingConditions" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </template>
+
+                    <h3 class="u-mt-lg">References (conditions / salvage items)</h3>
+                    <template x-for="(ref, refIndex) in form.references" :key="ref._key">
+                        <div class="u-flex u-gap-sm u-mt-xs" :data-path="'/references/' + refIndex">
+                            <span x-text="ref.role + ': ' + (ref.displayText || ref.targetType)"></span>
+                            <button type="button" class="btn btn-ghost btn-sm"
+                                    @click="removeReference(refIndex)">&times;</button>
+                        </div>
+                    </template>
+                    <div class="u-flex u-gap-sm u-mt-sm">
+                        <button type="button" class="btn btn-ghost btn-sm"
+                                @click="showReferencePicker('CONDITION')">Add Condition</button>
+                        <button type="button" class="btn btn-ghost btn-sm"
+                                @click="showReferencePicker('EQUIPMENT_ITEM')">Add Equipment</button>
+                        <button type="button" class="btn btn-ghost btn-sm"
+                                @click="showReferencePicker('MAGIC_ITEM')">Add Magic Item</button>
+                    </div>
+
+                    <div class="form-actions u-mt-lg">
+                        <button type="submit" class="btn btn-primary" :disabled="loading">Save</button>
+                        <a th:href="@{${kind.name() == 'TRAP' ? '/library/traps' : '/library/hazards'}}"
+                           class="btn btn-ghost">Cancel</a>
+                    </div>
+                </form>
+
+                <div class="u-mt-lg" x-show="problems.length > 0">
+                    <h3 class="u-text-danger">Validation Errors</h3>
+                    <template x-for="problem in problems" :key="problem.path + problem.code">
+                        <div class="u-text-danger u-text-sm" x-text="problem.code + ': ' + problem.message"
+                             :data-path-match="problem.path"></div>
+                    </template>
+                </div>
+
+                <div class="card u-mt-lg" x-show="referencePicker.open" x-cloak
+                     role="dialog" aria-modal="true" aria-label="Add threat reference">
+                    <div class="entry-header">
+                        <h3 x-text="'Search ' + referencePicker.type">Search</h3>
+                        <button type="button" class="btn btn-ghost btn-sm"
+                                @click="referencePicker.open = false">Close</button>
+                    </div>
+                    <div class="u-flex u-gap-sm u-mt-sm">
+                        <label for="referenceQuery">Search</label>
+                        <input id="referenceQuery" type="search" x-model="referencePicker.query"
+                               @input.debounce.250ms="fetchReferenceOptions()"
+                               placeholder="Search visible content">
+                    </div>
+                    <div class="u-mt-sm" x-show="referencePicker.loading">Loading references…</div>
+                    <div class="u-text-danger u-mt-sm" x-show="referencePicker.error"
+                         x-text="referencePicker.error"></div>
+                    <div class="u-mt-sm" x-show="!referencePicker.loading">
+                        <template x-for="option in referencePicker.options" :key="option.type + option.id">
+                            <div class="u-flex u-gap-sm u-mt-xs">
+                                <button type="button" class="btn btn-ghost u-flex-1"
+                                        x-text="option.label" @click="addReference(option)"></button>
+                                <a x-show="option.url" :href="option.url" target="_blank"
+                                   rel="noopener" class="btn btn-ghost btn-sm">Preview</a>
+                            </div>
+                        </template>
+                        <div x-show="referencePicker.options.length === 0" class="text-muted">
+                            No visible references found.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    window.THREAT_KIND = /*[[${kind.name()}]]*/ 'TRAP';
+    window.THREAT_ID = /*[[${threat?.id}]]*/ null;
+    window.THREAT_DTO = /*[[${editorDto}]]*/ null;
+    window.THREAT_API_BASE = /*[[${kind.name() == 'TRAP' ? '/api/v1/traps' : '/api/v1/hazards'}]]*/ '/api/v1/traps';
+    window.THREAT_LIST_HREF = /*[[${kind.name() == 'TRAP' ? '/library/traps' : '/library/hazards'}]]*/ '/library/traps';
+    /*]]>*/
+    </script>
+    <script th:src="@{/js/threat-editor.js}"></script>
+</body>
+</html>

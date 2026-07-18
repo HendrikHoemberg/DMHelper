@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="mechanics-card(threat, kind)">
+    <div class="threat-mechanics-card" th:attr="data-threat-kind=${kind}">
+        <div class="detail-meta">
+            <span class="badge" th:text="${threat.severity}">SEVERITY</span>
+            <span class="badge" th:if="${threat.minLevel != null}">
+                Lv <span th:text="${threat.minLevel}">1</span>
+                <span th:if="${threat.maxLevel != null}">–<span th:text="${threat.maxLevel}">5</span></span>
+            </span>
+            <span class="badge" th:text="${threat.source}">CUSTOM</span>
+        </div>
+
+        <!-- Trap-specific mechanics (escaped typed text) -->
+        <th:block th:if="${kind.name() == 'TRAP'}">
+            <div class="u-mt-md" th:if="${threat.triggerDescription != null}">
+                <strong>Trigger</strong>
+                <p th:text="${threat.triggerDescription}">Trigger</p>
+            </div>
+            <div th:if="${threat.triggerAreaHint != null}">
+                <strong>Area</strong>
+                <p th:text="${threat.triggerAreaHint}">Area</p>
+            </div>
+            <div th:if="${threat.detectionPassiveThreshold != null}">
+                <strong>Passive Detection</strong>
+                <p>DC <span th:text="${threat.detectionPassiveThreshold}">15</span></p>
+            </div>
+            <div th:if="${threat.detectionCheck != null}">
+                <strong>Detection Check</strong>
+                <p>
+                    <span th:text="${threat.detectionCheck.mode}">CHECK</span>
+                    <span th:if="${threat.detectionCheck.ability != null}" th:text="${threat.detectionCheck.ability}"></span>
+                    <span th:if="${threat.detectionCheck.skill != null}" th:text="'(' + ${threat.detectionCheck.skill} + ')'"></span>
+                    <span th:if="${threat.detectionCheck.dc != null}">DC <span th:text="${threat.detectionCheck.dc}"></span></span>
+                </p>
+            </div>
+            <div th:if="${threat.disarmMethods != null and !threat.disarmMethods.isEmpty()}">
+                <strong>Disarm Methods</strong>
+                <ul>
+                    <li th:each="m : ${threat.disarmMethods}">
+                        <span th:text="${m.label}">Method</span>
+                        <span th:if="${m.dc != null}"> (DC <span th:text="${m.dc}">15</span>)</span>
+                        <span th:if="${m.failureConsequence != null}"
+                              th:text="' — ' + ${m.failureConsequence}"> — consequence</span>
+                    </li>
+                </ul>
+            </div>
+            <div th:if="${threat.attackBonus != null}">
+                <strong>Attack</strong>
+                <p>+<span th:text="${threat.attackBonus}">5</span></p>
+            </div>
+            <div th:if="${threat.save != null}">
+                <strong>Save</strong>
+                <p>
+                    <span th:text="${threat.save.mode}">SAVE</span>
+                    <span th:if="${threat.save.ability != null}" th:text="${threat.save.ability}"></span>
+                    <span th:if="${threat.save.dc != null}">DC <span th:text="${threat.save.dc}"></span></span>
+                </p>
+            </div>
+            <div th:if="${threat.damageExpression != null}">
+                <strong>Damage</strong>
+                <p>
+                    <span th:text="${threat.damageExpression}">2d10</span>
+                    <span th:if="${threat.damageTypes != null and !threat.damageTypes.isEmpty()}"
+                          th:each="dt, iter : ${threat.damageTypes}"
+                          th:text="${iter.first ? ' ' : ', '} + ${dt}"></span>
+                </p>
+            </div>
+            <div th:if="${threat.additionalEffect != null}">
+                <strong>Additional Effect</strong>
+                <p th:text="${threat.additionalEffect}">Effect</p>
+            </div>
+            <div th:if="${threat.resetMode != null}">
+                <strong>Reset</strong>
+                <p>
+                    <span th:text="${threat.resetMode}">NONE</span>
+                    <span th:if="${threat.resetTiming != null}" th:text="' — ' + ${threat.resetTiming}"></span>
+                </p>
+            </div>
+            <div th:if="${threat.countermeasureNotes != null}">
+                <strong>Countermeasures</strong>
+                <p th:text="${threat.countermeasureNotes}">Notes</p>
+            </div>
+        </th:block>
+
+        <!-- Hazard-specific mechanics (escaped typed text) -->
+        <th:block th:if="${kind.name() == 'HAZARD'}">
+            <div class="u-mt-md" th:if="${threat.exposureMode != null}">
+                <strong>Exposure</strong>
+                <p th:text="${threat.exposureMode}">ON_ENTER</p>
+            </div>
+            <div th:if="${threat.exposureText != null}">
+                <strong>Exposure Details</strong>
+                <p th:text="${threat.exposureText}">Text</p>
+            </div>
+            <div th:if="${threat.areaHint != null}">
+                <strong>Area</strong>
+                <p th:text="${threat.areaHint}">Area</p>
+            </div>
+            <div th:if="${threat.check != null}">
+                <strong>Check / Save</strong>
+                <p>
+                    <span th:text="${threat.check.mode}">CHECK</span>
+                    <span th:if="${threat.check.ability != null}" th:text="${threat.check.ability}"></span>
+                    <span th:if="${threat.check.skill != null}" th:text="'(' + ${threat.check.skill} + ')'"></span>
+                    <span th:if="${threat.check.dc != null}">DC <span th:text="${threat.check.dc}"></span></span>
+                </p>
+            </div>
+            <div th:if="${threat.damageExpression != null}">
+                <strong>Damage</strong>
+                <p>
+                    <span th:text="${threat.damageExpression}">1d6</span>
+                    <span th:if="${threat.damageTypes != null and !threat.damageTypes.isEmpty()}"
+                          th:each="dt, iter : ${threat.damageTypes}"
+                          th:text="${iter.first ? ' ' : ', '} + ${dt}"></span>
+                </p>
+            </div>
+            <div th:if="${threat.escalationText != null}">
+                <strong>Escalation</strong>
+                <p th:text="${threat.escalationText}">Escalation</p>
+            </div>
+            <div th:if="${threat.endingConditions != null}">
+                <strong>Ending Conditions</strong>
+                <p th:text="${threat.endingConditions}">Ends when…</p>
+            </div>
+        </th:block>
+
+        <div th:if="${threat.references != null and !threat.references.isEmpty()}" class="u-mt-md">
+            <strong>References</strong>
+            <ul>
+                <li th:each="ref : ${threat.references}">
+                    <span th:text="${ref.role}">ROLE</span>:
+                    <span th:text="${ref.displayText != null ? ref.displayText : ref.targetType}">Target</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</th:block>
+</html>

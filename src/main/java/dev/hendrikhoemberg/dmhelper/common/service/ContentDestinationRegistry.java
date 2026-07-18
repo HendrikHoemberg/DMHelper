@@ -17,7 +17,7 @@ public class ContentDestinationRegistry {
         STATBLOCK(null), SPELL("spells"), CONDITION("conditions"), RULE("rules"),
         EQUIPMENT("equipment"), MAGIC_ITEM("magic-items"), CLASS(null),
         SPECIES("species"), BACKGROUND("backgrounds"), FEAT("feats"),
-        ROLLABLE_TABLE("tables");
+        ROLLABLE_TABLE("tables"), TRAP("traps"), HAZARD("hazards");
 
         private final String tab;
 
@@ -94,6 +94,12 @@ public class ContentDestinationRegistry {
             case ROLLABLE_TABLE -> entityId != null
                     ? "/library/tables/" + entityId
                     : filtered("tables", displayName);
+            case TRAP -> entityId != null
+                    ? "/library/traps/" + entityId
+                    : filtered("traps", displayName);
+            case HAZARD -> entityId != null
+                    ? "/library/hazards/" + entityId
+                    : filtered("hazards", displayName);
         };
     }
 

@@ -14,6 +14,8 @@ import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,6 +59,8 @@ public class CommandPaletteService {
     private final WorldLocationRepository worldLocationRepo;
     private final FactionRepository factionRepo;
     private final RollableTableRepository rollableTableRepo;
+    private final TrapRepository trapRepo;
+    private final HazardRepository hazardRepo;
 
     public CommandPaletteService(NoteRepository noteRepo, QuickNoteRepository quickNoteRepo,
                                    StatBlockRepository statBlockRepo, SpellRepository spellRepo,
@@ -72,7 +76,9 @@ public class CommandPaletteService {
                                    WorldNpcRepository worldNpcRepo,
                                    WorldLocationRepository worldLocationRepo,
                                    FactionRepository factionRepo,
-                                   RollableTableRepository rollableTableRepo) {
+                                   RollableTableRepository rollableTableRepo,
+                                   TrapRepository trapRepo,
+                                   HazardRepository hazardRepo) {
         this.noteRepo = noteRepo;
         this.quickNoteRepo = quickNoteRepo;
         this.statBlockRepo = statBlockRepo;
@@ -96,6 +102,8 @@ public class CommandPaletteService {
         this.worldLocationRepo = worldLocationRepo;
         this.factionRepo = factionRepo;
         this.rollableTableRepo = rollableTableRepo;
+        this.trapRepo = trapRepo;
+        this.hazardRepo = hazardRepo;
     }
 
     public List<SearchResultItem> search(String query, UUID campaignId) {
@@ -251,6 +259,36 @@ public class CommandPaletteService {
                                     table.getId(), table.getSourceKey(), table.getName()));
                     boolean campaignOwned = campaignId != null && table.getCampaign() != null
                             && campaignId.equals(table.getCampaign().getId());
+                    add(results, item, null, q, campaignOwned);
+                });
+
+        trapRepo.findVisibleByCampaignId(campaignId).stream()
+                .filter(t -> matches(t.getName(), q) || matches(t.getDescription(), q)
+                        || matches(t.getTriggerDescription(), q)
+                        || matches(t.getSeverity() != null ? t.getSeverity().name() : null, q))
+                .forEach(trap -> {
+                    SearchResultItem item = new SearchResultItem(
+                            trap.getId().toString(), trap.getName(), "trap",
+                            trap.getSeverity() != null ? trap.getSeverity().name().toLowerCase() : null,
+                            destinations.library(ContentDestinationRegistry.LibraryType.TRAP,
+                                    trap.getId(), trap.getSourceKey(), trap.getName()));
+                    boolean campaignOwned = campaignId != null && trap.getCampaign() != null
+                            && campaignId.equals(trap.getCampaign().getId());
+                    add(results, item, null, q, campaignOwned);
+                });
+
+        hazardRepo.findVisibleByCampaignId(campaignId).stream()
+                .filter(h -> matches(h.getName(), q) || matches(h.getDescription(), q)
+                        || matches(h.getExposureText(), q)
+                        || matches(h.getSeverity() != null ? h.getSeverity().name() : null, q))
+                .forEach(hazard -> {
+                    SearchResultItem item = new SearchResultItem(
+                            hazard.getId().toString(), hazard.getName(), "hazard",
+                            hazard.getSeverity() != null ? hazard.getSeverity().name().toLowerCase() : null,
+                            destinations.library(ContentDestinationRegistry.LibraryType.HAZARD,
+                                    hazard.getId(), hazard.getSourceKey(), hazard.getName()));
+                    boolean campaignOwned = campaignId != null && hazard.getCampaign() != null
+                            && campaignId.equals(hazard.getCampaign().getId());
                     add(results, item, null, q, campaignOwned);
                 });
 
