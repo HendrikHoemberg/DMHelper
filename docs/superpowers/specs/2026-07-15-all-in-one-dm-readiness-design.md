@@ -980,6 +980,10 @@ issues; convenience observations are triaged separately.
 
 This program must not be implemented as one branch or one plan.
 
+The canonical continuation order and current `NEXT` item are maintained in the
+[DM-only readiness execution roadmap](../dm-only-readiness-roadmap.md). Future implementation
+sessions must use that roadmap rather than reconstructing sequence or status from chat history.
+
 Recommended sequence:
 
 1. **P0 runtime reliability:** quick notes, destinations, errors, asset security, difficulty label.
