@@ -92,6 +92,7 @@ class CoreSessionLoopSmokeTest {
     @Autowired private dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository trapRepository;
     @Autowired private dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository hazardRepository;
     @Autowired private dev.hendrikhoemberg.dmhelper.threat.data.MapThreatPinRepository mapThreatPinRepository;
+    @Autowired private dev.hendrikhoemberg.dmhelper.adventure.data.SceneSectionRepository sceneSectionRepository;
     @Autowired private dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntryRepository combatLogEntryRepository;
     @Autowired private dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository rollableTableRepository;
 
@@ -1060,48 +1061,72 @@ class CoreSessionLoopSmokeTest {
         storyCard.first().waitFor();
         assertThat(storyCard.first().textContent()).contains("Pressure plate");
 
-        // 5. Click check/attack/damage and prove prefill before roll (no auto-submit)
-        String attackExpr = (String) dmPage.evaluate("""
+        // 5. Click detection/attack/damage Prefill and assert dice input from the button click alone.
+        // Cockpit chrome (quest panel) can intercept Playwright hit-testing, so we fire the button's
+        // own DOM click() — which runs its onclick dispatcher — and never re-dispatch dice-roller-prefill
+        // as a fallback. A broken/missing button must fail the value assertion.
+        dmPage.evaluate("""
                 () => {
-                  const btn = document.querySelector(
-                    '.threat-mechanics-card button[data-prefill-expr]');
-                  if (!btn) throw new Error('Missing Prefill attack button');
-                  const expr = btn.dataset.prefillExpr;
-                  const label = btn.dataset.prefillLabel;
-                  btn.click();
-                  // Fallback if party bar intercepts: dispatch the same prefill event the button uses.
-                  window.dispatchEvent(new CustomEvent('dice-roller-prefill', {
-                    detail: { expression: expr, label }
-                  }));
-                  return expr;
+                  const card = Array.from(document.querySelectorAll('.threat-mechanics-card'))
+                    .find(c => (c.textContent || '').includes('2d10'));
+                  if (!card) throw new Error('Missing threat mechanics card');
+                  const detectionStrong = Array.from(card.querySelectorAll('strong'))
+                    .find(s => (s.textContent || '').trim() === 'Detection Check');
+                  const detectionBtn = detectionStrong
+                    && detectionStrong.parentElement
+                    && detectionStrong.parentElement.querySelector('button');
+                  if (!detectionBtn || !(detectionBtn.textContent || '').includes('Prefill 1d20')) {
+                    throw new Error('Missing detection Prefill 1d20 button');
+                  }
+                  detectionBtn.click();
                 }
                 """);
-        assertThat(attackExpr).isEqualTo("1d20+6");
         dmPage.locator(".dice-panel").waitFor();
         dmPage.waitForFunction("""
                 () => {
                   const input = document.querySelector('.dice-panel input[type=text], .dice-panel input');
-                  return input && input.value && input.value.includes('1d20');
+                  return input && input.value === '1d20';
                 }
                 """);
-        Object afterAttack = dmPage.evaluate(
-                "document.querySelector('.dice-panel input[type=text], .dice-panel input')?.value || ''");
-        assertThat((String) afterAttack).contains("1d20+6");
+        assertThat((String) dmPage.evaluate(
+                "document.querySelector('.dice-panel input[type=text], .dice-panel input')?.value || ''"))
+                .isEqualTo("1d20");
         // Prefill must not auto-submit a roll result
+        assertThat(dmPage.locator(".dice-panel").textContent()).doesNotContain("Total:");
+
+        String attackExpr = (String) dmPage.evaluate("""
+                () => {
+                  const card = Array.from(document.querySelectorAll('.threat-mechanics-card'))
+                    .find(c => (c.textContent || '').includes('2d10'));
+                  const btn = card && Array.from(card.querySelectorAll('button'))
+                    .find(b => (b.textContent || '').includes('Prefill attack'));
+                  if (!btn) throw new Error('Missing Prefill attack button');
+                  const expr = btn.dataset.prefillExpr;
+                  btn.click();
+                  return expr;
+                }
+                """);
+        assertThat(attackExpr).isEqualTo("1d20+6");
+        dmPage.waitForFunction("""
+                () => {
+                  const input = document.querySelector('.dice-panel input[type=text], .dice-panel input');
+                  return input && input.value === '1d20+6';
+                }
+                """);
+        assertThat((String) dmPage.evaluate(
+                "document.querySelector('.dice-panel input[type=text], .dice-panel input')?.value || ''"))
+                .isEqualTo("1d20+6");
         assertThat(dmPage.locator(".dice-panel").textContent()).doesNotContain("Total:");
 
         String damageExpr = (String) dmPage.evaluate("""
                 () => {
-                  const buttons = Array.from(document.querySelectorAll(
-                    '.threat-mechanics-card button'));
-                  const btn = buttons.find(b => (b.textContent || '').includes('Prefill damage'));
+                  const card = Array.from(document.querySelectorAll('.threat-mechanics-card'))
+                    .find(c => (c.textContent || '').includes('2d10'));
+                  const btn = card && Array.from(card.querySelectorAll('button'))
+                    .find(b => (b.textContent || '').includes('Prefill damage'));
                   if (!btn) throw new Error('Missing Prefill damage button');
                   const expr = btn.dataset.prefillExpr;
-                  const label = btn.dataset.prefillLabel;
                   btn.click();
-                  window.dispatchEvent(new CustomEvent('dice-roller-prefill', {
-                    detail: { expression: expr, label }
-                  }));
                   return expr;
                 }
                 """);
@@ -1112,6 +1137,9 @@ class CoreSessionLoopSmokeTest {
                   return input && input.value === '2d10';
                 }
                 """);
+        assertThat((String) dmPage.evaluate(
+                "document.querySelector('.dice-panel input[type=text], .dice-panel input')?.value || ''"))
+                .isEqualTo("2d10");
         dmPage.keyboard().press("Escape");
 
         // 6. Add/activate encounter threat and see tracker card
@@ -1287,6 +1315,72 @@ class CoreSessionLoopSmokeTest {
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
         assertThat(dmPage.textContent("body")).contains("Browser Spike Pit");
         assertThat(dmPage.locator(".threat-mechanics-card").count()).isGreaterThan(0);
+
+        // Restored scene sections still reference the re-mapped trap (dual-scene attach)
+        var restoredSections = sceneSectionRepository.findByThreatKindAndThreatId(
+                dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.TRAP, restoredTrapId);
+        assertThat(restoredSections)
+                .as("import remaps scene threat sections onto restored trap")
+                .hasSizeGreaterThanOrEqualTo(2)
+                .allSatisfy(s -> assertThat(s.getThreatId()).isEqualTo(restoredTrapId));
+        assertThat(restoredSections.stream().map(s -> s.getLabel()).toList())
+                .anyMatch(l -> l != null && l.contains("Browser Spike Pit"));
+
+        // Restored map pin still points at the re-mapped trap
+        var restoredPins = mapThreatPinRepository.findByThreatKindAndThreatId(
+                dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.TRAP, restoredTrapId);
+        assertThat(restoredPins)
+                .as("import remaps DM map pins onto restored trap")
+                .isNotEmpty()
+                .anySatisfy(p -> {
+                    assertThat(p.getPinKey()).isEqualTo("browser-spike-pin");
+                    assertThat(p.getLabel()).isEqualTo("Browser Spike Pin");
+                    assertThat(p.getThreatId()).isEqualTo(restoredTrapId);
+                });
+        UUID restoredMapId = mapRepo.findByCampaignIdOrderBySortOrderAsc(restoredId).stream()
+                .map(m -> m.getId())
+                .filter(id -> mapThreatPinRepository.findByMapIdOrderBySortOrderAsc(id).stream()
+                        .anyMatch(p -> "browser-spike-pin".equals(p.getPinKey())))
+                .findFirst()
+                .orElseThrow();
+        Object pinApiBody = dmPage.evaluate("""
+            async ([mapId]) => {
+              const r = await fetch('/api/v1/maps/' + mapId + '/pins');
+              if (!r.ok) throw new Error('Pin list failed: ' + await r.text());
+              return await r.text();
+            }
+        """, List.of(restoredMapId.toString()));
+        assertThat((String) pinApiBody)
+                .contains("browser-spike-pin")
+                .contains(restoredTrapId.toString());
+
+        // Restored encounter combatant keeps threatRef → remapped trap
+        var restoredThreatCombatants = combatantRepository.findByThreatKindAndThreatId(
+                dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.TRAP, restoredTrapId);
+        assertThat(restoredThreatCombatants)
+                .as("import remaps encounter threat combatants onto restored trap")
+                .isNotEmpty()
+                .allSatisfy(c -> {
+                    assertThat(c.getThreatKind())
+                            .isEqualTo(dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.TRAP);
+                    assertThat(c.getThreatId()).isEqualTo(restoredTrapId);
+                });
+        assertThat(encounterRepository.findByCampaignIdOrderByNameAsc(restoredId))
+                .anySatisfy(e -> assertThat(e.getName()).isEqualTo("Browser Threat Encounter"));
+
+        // Reopen cockpit story card on restored campaign (scene sections + mechanics card)
+        var restoredAdventure = adventureRepo.findByCampaignIdOrderBySortOrderAsc(restoredId).getFirst();
+        var restoredChapter = chapterRepo.findByAdventureIdOrderBySortOrderAsc(restoredAdventure.getId()).getFirst();
+        var restoredScenes = sceneRepo.findByChapterIdOrderBySortOrderAsc(restoredChapter.getId());
+        assertThat(restoredScenes).isNotEmpty();
+        adventureService.setCurrentScene(restoredId, restoredScenes.getFirst().getId());
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + restoredId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(dmPage.textContent("body")).contains("Browser Spike Pit");
+        Locator restoredStoryCard = dmPage.locator(".threat-mechanics-card")
+                .filter(new Locator.FilterOptions().setHasText("2d10"));
+        restoredStoryCard.first().waitFor();
+        assertThat(restoredStoryCard.first().textContent()).contains("Pressure plate");
 
         assertThat(threatCombatant.threatId()).isEqualTo(trapId);
     }
