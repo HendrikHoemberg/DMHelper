@@ -131,7 +131,8 @@
               hx-target="#actionRail" hx-swap="innerHTML" data-create="section">
           <div class="form-group">
             <label class="form-label">Kind</label>
-            <select name="kind" class="form-input" required>
+            <select name="kind" class="form-input" required
+                    onchange="window.dmHelperFilterSectionThreatOptions &amp;&amp; window.dmHelperFilterSectionThreatOptions(this)">
               <option value="READ_ALOUD">Read Aloud</option>
               <option value="DM_ADVICE">DM Advice</option>
               <option value="SECRET">Secret</option>
@@ -158,18 +159,44 @@
             <label class="form-label">Source Locator</label>
             <input type="text" name="sourceLocator" class="form-input">
           </div>
-          <div class="form-group">
+          <div class="form-group" data-threat-selector-group hidden>
             <label class="form-label">Threat reference (TRAP/HAZARD only)</label>
             <select name="threatId" class="form-input" data-threat-selector="section">
               <option value="">— none —</option>
-              <optgroup label="Traps" th:if="${visibleTraps != null and !visibleTraps.isEmpty()}">
+              <optgroup label="Traps" data-threat-kind="TRAP"
+                        th:if="${visibleTraps != null and !visibleTraps.isEmpty()}">
                 <option th:each="t : ${visibleTraps}" th:value="${t.id}" th:text="${t.name}">Trap</option>
               </optgroup>
-              <optgroup label="Hazards" th:if="${visibleHazards != null and !visibleHazards.isEmpty()}">
+              <optgroup label="Hazards" data-threat-kind="HAZARD"
+                        th:if="${visibleHazards != null and !visibleHazards.isEmpty()}">
                 <option th:each="h : ${visibleHazards}" th:value="${h.id}" th:text="${h.name}">Hazard</option>
               </optgroup>
             </select>
           </div>
+          <script>
+            window.dmHelperFilterSectionThreatOptions = function (kindSelect) {
+              var form = kindSelect && kindSelect.form;
+              if (!form) return;
+              var kind = kindSelect.value;
+              var group = form.querySelector('[data-threat-selector-group]');
+              var select = form.querySelector('[data-threat-selector="section"]');
+              if (!group || !select) return;
+              var show = kind === 'TRAP' || kind === 'HAZARD';
+              group.hidden = !show;
+              if (!show) {
+                select.value = '';
+                return;
+              }
+              select.querySelectorAll('optgroup[data-threat-kind]').forEach(function (og) {
+                og.hidden = og.getAttribute('data-threat-kind') !== kind;
+              });
+              var selected = select.selectedOptions[0];
+              var selectedGroup = selected && selected.parentElement;
+              if (selectedGroup && selectedGroup.tagName === 'OPTGROUP' && selectedGroup.hidden) {
+                select.value = '';
+              }
+            };
+          </script>
           <div class="form-group">
             <label class="form-label">Sort Order</label>
             <input type="number" name="sortOrder" class="form-input" value="0">

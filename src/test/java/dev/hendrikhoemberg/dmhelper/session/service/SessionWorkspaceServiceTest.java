@@ -11,12 +11,10 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
-import dev.hendrikhoemberg.dmhelper.config.MarkdownUtil;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableLinkService;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
-import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
-import dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository;
+import dev.hendrikhoemberg.dmhelper.threat.service.ThreatCardAssembler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,9 +43,7 @@ class SessionWorkspaceServiceTest {
     @Mock private CalendarService calendar;
     @Mock private dev.hendrikhoemberg.dmhelper.quest.data.QuestRepository questRepository;
     @Mock private RollableTableLinkService rollableTableLinkService;
-    @Mock private TrapRepository trapRepository;
-    @Mock private HazardRepository hazardRepository;
-    @Mock private MarkdownUtil markdownUtil;
+    @Mock private ThreatCardAssembler threatCardAssembler;
 
     @InjectMocks private SessionWorkspaceService service;
 

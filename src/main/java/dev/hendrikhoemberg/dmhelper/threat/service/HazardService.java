@@ -68,8 +68,20 @@ public class HazardService {
 
     @Transactional(readOnly = true)
     public Hazard findDetailedById(UUID id) {
-        return repository.findDetailedById(id)
+        Hazard hazard = repository.findDetailedById(id)
                 .orElseThrow(() -> new NotFoundException("Hazard not found: " + id));
+        // Force bag/association init so callers remain safe under open-in-view=false.
+        hydrate(hazard);
+        return hazard;
+    }
+
+    /** Touch lazy bags while the session is open (production has open-in-view=false). */
+    static void hydrate(Hazard hazard) {
+        hazard.getDamageTypes().size();
+        hazard.getReferences().size();
+        if (hazard.getCampaign() != null) {
+            hazard.getCampaign().getId();
+        }
     }
 
     @Transactional(readOnly = true)

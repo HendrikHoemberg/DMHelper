@@ -577,7 +577,7 @@ class CampaignManifestV2SemanticValidatorTest {
         assertThat(validator.validate(withTraps(List.of(trap))))
                 .anySatisfy(problem -> {
                     assertThat(problem.code()).isEqualTo("INVALID_DAMAGE_EXPRESSION");
-                    assertThat(problem.path()).isEqualTo("/traps/0/damageExpression");
+                    assertThat(problem.path()).isEqualTo("/traps/0/damage/expression");
                 });
     }
 

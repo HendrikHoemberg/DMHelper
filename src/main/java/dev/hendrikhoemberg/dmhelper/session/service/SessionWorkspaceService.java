@@ -6,7 +6,6 @@ import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
-import dev.hendrikhoemberg.dmhelper.config.MarkdownUtil;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
@@ -20,14 +19,11 @@ import dev.hendrikhoemberg.dmhelper.rollabletable.service.LinkedRollableTableVie
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableLinkService;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
-import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
-import dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository;
+import dev.hendrikhoemberg.dmhelper.threat.service.ThreatCardAssembler;
 import dev.hendrikhoemberg.dmhelper.threat.web.ThreatCardView;
-import dev.hendrikhoemberg.dmhelper.threat.web.ThreatWebMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -80,9 +76,7 @@ public class SessionWorkspaceService {
     private final CalendarService calendar;
     private final QuestRepository questRepository;
     private final RollableTableLinkService rollableTableLinkService;
-    private final TrapRepository trapRepository;
-    private final HazardRepository hazardRepository;
-    private final MarkdownUtil markdownUtil;
+    private final ThreatCardAssembler threatCardAssembler;
 
     public SessionWorkspaceService(CampaignRepository campaigns,
                                     CampaignSessionRepository sessions,
@@ -95,9 +89,7 @@ public class SessionWorkspaceService {
                                     CalendarService calendar,
                                     QuestRepository questRepository,
                                     RollableTableLinkService rollableTableLinkService,
-                                    TrapRepository trapRepository,
-                                    HazardRepository hazardRepository,
-                                    MarkdownUtil markdownUtil) {
+                                    ThreatCardAssembler threatCardAssembler) {
         this.campaigns = campaigns;
         this.sessions = sessions;
         this.adventures = adventures;
@@ -109,9 +101,7 @@ public class SessionWorkspaceService {
         this.calendar = calendar;
         this.questRepository = questRepository;
         this.rollableTableLinkService = rollableTableLinkService;
-        this.trapRepository = trapRepository;
-        this.hazardRepository = hazardRepository;
-        this.markdownUtil = markdownUtil;
+        this.threatCardAssembler = threatCardAssembler;
     }
 
     public SessionWorkspace load(UUID campaignId, UUID requestedMapId) {
@@ -144,35 +134,7 @@ public class SessionWorkspaceService {
         return new StructuredSceneView(scene,
                 scene.getSections(), scene.getChecks(),
                 scene.getParticipants(), scene.getTransitions(),
-                scene.getLinks(), buildSectionThreatCards(scene));
-    }
-
-    private Map<UUID, ThreatCardView> buildSectionThreatCards(Scene scene) {
-        Map<UUID, ThreatCardView> cards = new HashMap<>();
-        if (scene.getSections() == null) {
-            return cards;
-        }
-        for (SceneSection section : scene.getSections()) {
-            if (section.getThreatKind() == null || section.getThreatId() == null || section.getId() == null) {
-                continue;
-            }
-            ThreatCardView card = switch (section.getThreatKind()) {
-                case TRAP -> trapRepository.findDetailedById(section.getThreatId())
-                        .map(t -> ThreatWebMapper.cardFromTrap(t, htmlDescription(t.getDescription())))
-                        .orElse(null);
-                case HAZARD -> hazardRepository.findDetailedById(section.getThreatId())
-                        .map(h -> ThreatWebMapper.cardFromHazard(h, htmlDescription(h.getDescription())))
-                        .orElse(null);
-            };
-            if (card != null) {
-                cards.put(section.getId(), card);
-            }
-        }
-        return cards;
-    }
-
-    private String htmlDescription(String markdown) {
-        return markdown != null ? markdownUtil.toHtml(markdown) : "";
+                scene.getLinks(), threatCardAssembler.forScene(scene));
     }
 
     private List<QuestProgressView> buildQuestProgressViews(UUID campaignId) {

@@ -46,6 +46,7 @@ public record TrapResponse(
         ThreatResetMode resetMode,
         String resetTiming,
         UUID statBlockId,
+        String statBlockLabel,
         String countermeasureNotes,
         List<ReferenceResponse> references
 ) {

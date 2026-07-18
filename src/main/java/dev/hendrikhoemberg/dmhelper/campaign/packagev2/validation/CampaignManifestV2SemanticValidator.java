@@ -1253,7 +1253,7 @@ public class CampaignManifestV2SemanticValidator {
                         || problem.path().startsWith("/statBlockId"))) {
                     continue;
                 }
-                error(problems, problem.code(), path + problem.path(), problem.message());
+                error(problems, problem.code(), path + toPackageThreatPath(problem.path()), problem.message());
             }
             validateThreatPackageRefs(trap.conditionRefs(), path + "/conditionRefs",
                     CampaignContentType.CONDITION, keys, problems);
@@ -1273,7 +1273,7 @@ public class CampaignManifestV2SemanticValidator {
                         && problem.path().startsWith("/references")) {
                     continue;
                 }
-                error(problems, problem.code(), path + problem.path(), problem.message());
+                error(problems, problem.code(), path + toPackageThreatPath(problem.path()), problem.message());
             }
             validateThreatPackageRefs(hazard.conditionRefs(), path + "/conditionRefs",
                     CampaignContentType.CONDITION, keys, problems);
@@ -1484,5 +1484,25 @@ public class CampaignManifestV2SemanticValidator {
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    /**
+     * Map TrapWrite/HazardWrite problem paths onto package JSON pointer shapes
+     * so agent tooling can target the manifest fields directly.
+     */
+    static String toPackageThreatPath(String writePath) {
+        if (writePath == null || writePath.isEmpty()) {
+            return "";
+        }
+        if (writePath.equals("/damageExpression") || writePath.startsWith("/damageExpression/")) {
+            return "/damage/expression" + writePath.substring("/damageExpression".length());
+        }
+        if (writePath.equals("/damageTypes") || writePath.startsWith("/damageTypes/")) {
+            return "/damage/types" + writePath.substring("/damageTypes".length());
+        }
+        if (writePath.equals("/statBlockId") || writePath.startsWith("/statBlockId/")) {
+            return "/statBlockRef" + writePath.substring("/statBlockId".length());
+        }
+        return writePath;
     }
 }

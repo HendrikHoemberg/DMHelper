@@ -29,6 +29,7 @@ import dev.hendrikhoemberg.dmhelper.threat.data.ThreatResetMode;
 import dev.hendrikhoemberg.dmhelper.threat.data.ThreatSeverity;
 import dev.hendrikhoemberg.dmhelper.threat.data.Trap;
 import dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository;
+import dev.hendrikhoemberg.dmhelper.threat.web.ThreatWebMapper;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -275,6 +276,38 @@ class TrapServiceTest {
         assertThat(loaded.getDisarmMethods().getFirst().getMethodKey()).isEqualTo("arcana");
         assertThat(loaded.getAttackBonus()).isEqualTo(4);
         assertThat(loaded.getReferences()).isEmpty();
+    }
+
+    /**
+     * Simulates production open-in-view=false: after findDetailedById returns and the
+     * entity is detached, bag access must not throw LazyInitializationException.
+     */
+    @Test
+    void findDetailedByIdHydratesBagsForDetachedAccess() {
+        TrapWrite write = new TrapWrite(
+                "hydrated-trap", "Hydrated Trap", "Needs full bag materialization.",
+                ThreatSeverity.DANGEROUS, null, null, null, null, null, null,
+                List.of(new TrapDisarmMethodWrite(
+                        "jam", "Jam", "DEX", "Sleight of Hand", null, 14, null, 0)),
+                null, null, "1d10", List.of(DamageType.PIERCING, DamageType.POISON), null,
+                ThreatResetMode.NONE, null, null, null,
+                List.of(new ThreatReferenceWrite(
+                        ThreatReferenceRole.CONDITION, CampaignContentType.CONDITION,
+                        conditionId, "Poisoned")));
+        UUID trapId = service.create(campaignId, write, null).getId();
+        em.flush();
+        em.clear();
+
+        Trap loaded = service.findDetailedById(trapId);
+        em.detach(loaded);
+
+        assertThatCode(() -> {
+            assertThat(loaded.getDisarmMethods()).hasSize(1);
+            assertThat(loaded.getDamageTypes()).containsExactly(DamageType.PIERCING, DamageType.POISON);
+            assertThat(loaded.getReferences()).hasSize(1);
+            assertThat(ThreatWebMapper.fromTrap(loaded).disarmMethods()).hasSize(1);
+            assertThat(ThreatWebMapper.fromTrap(loaded).statBlockLabel()).isNull();
+        }).doesNotThrowAnyException();
     }
 
     private TrapWrite validWrite(String key, String name) {

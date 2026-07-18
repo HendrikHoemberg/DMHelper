@@ -6,6 +6,7 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('diceRoller', () => ({
         open: false,
         expression: '',
+        label: '',
         advantage: false,
         disadvantage: false,
         result: null,
@@ -25,6 +26,7 @@ document.addEventListener('alpine:init', () => {
             window.addEventListener('table-history-refresh', () => this.loadHistory());
             window.addEventListener('dice-roller-prefill', (event) => {
                 this.expression = (event.detail && event.detail.expression) || '';
+                this.label = (event.detail && event.detail.label) || '';
                 this.advantage = false;
                 this.disadvantage = false;
                 this.result = null;
@@ -72,6 +74,7 @@ document.addEventListener('alpine:init', () => {
                 }));
                 await this.loadHistory();
                 this.expression = '';
+                this.label = '';
                 this.advantage = false;
                 this.disadvantage = false;
             } catch (error) {

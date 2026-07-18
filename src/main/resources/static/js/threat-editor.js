@@ -77,7 +77,7 @@
             resetMode: dto.resetMode || 'NONE',
             resetTiming: dto.resetTiming || '',
             statBlockId: dto.statBlockId || null,
-            statBlockLabel: '',
+            statBlockLabel: dto.statBlockLabel || '',
             countermeasureNotes: dto.countermeasureNotes || '',
             exposureMode: dto.exposureMode || 'ON_ENTER',
             exposureText: dto.exposureText || '',

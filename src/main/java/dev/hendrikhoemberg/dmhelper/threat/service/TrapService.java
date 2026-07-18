@@ -75,8 +75,24 @@ public class TrapService {
 
     @Transactional(readOnly = true)
     public Trap findDetailedById(UUID id) {
-        return repository.findDetailedById(id)
+        Trap trap = repository.findDetailedById(id)
                 .orElseThrow(() -> new NotFoundException("Trap not found: " + id));
+        // Force bag/association init so callers remain safe under open-in-view=false.
+        hydrate(trap);
+        return trap;
+    }
+
+    /** Touch lazy bags while the session is open (production has open-in-view=false). */
+    static void hydrate(Trap trap) {
+        trap.getDisarmMethods().size();
+        trap.getDamageTypes().size();
+        trap.getReferences().size();
+        if (trap.getStatBlock() != null) {
+            trap.getStatBlock().getName();
+        }
+        if (trap.getCampaign() != null) {
+            trap.getCampaign().getId();
+        }
     }
 
     @Transactional(readOnly = true)

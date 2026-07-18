@@ -237,7 +237,10 @@ class ThreatApiControllerTest {
 
         mockMvc.perform(delete("/api/v1/traps/{id}", id)
                         .param("confirmed", "false"))
-                .andExpect(status().isConflict());
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value(
+                        "Trap has 1 dependent(s); set confirmed=true to proceed"))
+                .andExpect(jsonPath("$.title").value("Conflict"));
     }
 
     @Test

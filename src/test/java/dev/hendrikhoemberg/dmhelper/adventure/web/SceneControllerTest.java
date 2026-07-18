@@ -44,6 +44,7 @@ class SceneControllerTest {
     @MockitoBean private MarkdownUtil markdownUtil;
     @MockitoBean private dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository trapRepository;
     @MockitoBean private dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository hazardRepository;
+    @MockitoBean private dev.hendrikhoemberg.dmhelper.threat.service.ThreatCardAssembler threatCardAssembler;
 
     private UUID campaignId, adventureId, sceneId, chapterId;
     private Campaign campaign;

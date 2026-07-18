@@ -105,13 +105,13 @@ public class ThreatApiController {
     }
 
     @DeleteMapping("/api/v1/traps/{id}")
-    public ResponseEntity<Void> deleteTrap(@PathVariable UUID id,
-                                           @RequestParam(defaultValue = "false") boolean confirmed) {
+    public ResponseEntity<?> deleteTrap(@PathVariable UUID id,
+                                        @RequestParam(defaultValue = "false") boolean confirmed) {
         try {
             trapService.deleteCustom(id, confirmed);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            return conflictProblem(e.getMessage());
         }
     }
 
@@ -189,13 +189,13 @@ public class ThreatApiController {
     }
 
     @DeleteMapping("/api/v1/hazards/{id}")
-    public ResponseEntity<Void> deleteHazard(@PathVariable UUID id,
-                                             @RequestParam(defaultValue = "false") boolean confirmed) {
+    public ResponseEntity<?> deleteHazard(@PathVariable UUID id,
+                                          @RequestParam(defaultValue = "false") boolean confirmed) {
         try {
             hazardService.deleteCustom(id, confirmed);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            return conflictProblem(e.getMessage());
         }
     }
 
@@ -239,6 +239,17 @@ public class ThreatApiController {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
         problem.setProperty("problems", e.problems());
         return ResponseEntity.badRequest().body(problem);
+    }
+
+    private static ResponseEntity<ProblemDetail> conflictProblem(String detail) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                detail != null && !detail.isBlank()
+                        ? detail
+                        : "This threat still has dependents; set confirmed=true to proceed");
+        problem.setTitle("Conflict");
+        problem.setType(URI.create("urn:dmhelper:conflict"));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
     }
 
     private List<Map<String, String>> referenceOptions(UUID campaignId, String type, String q) {

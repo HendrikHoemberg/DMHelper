@@ -110,6 +110,9 @@ class SceneStructuredTemplateContractTest {
         assertThat(html).contains("visibleHazards");
         assertThat(html).contains("threat/_mechanics-card");
         assertThat(html).contains("sectionThreatCards");
+        assertThat(html).contains("dmHelperFilterSectionThreatOptions");
+        assertThat(html).contains("data-threat-kind=\"TRAP\"");
+        assertThat(html).contains("data-threat-kind=\"HAZARD\"");
     }
 
     private static int count(String s, String substring) {

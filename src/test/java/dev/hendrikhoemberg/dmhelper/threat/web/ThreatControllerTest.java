@@ -19,7 +19,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
@@ -142,7 +141,7 @@ class ThreatControllerTest {
         campaign.setId(campaignId);
         campaign.setName("Test Campaign");
         t.setCampaign(campaign);
-        when(trapRepository.findDetailedById(id)).thenReturn(Optional.of(t));
+        when(trapService.findDetailedById(id)).thenReturn(t);
         when(markdownUtil.toHtml(any())).thenReturn("<p>A <strong>spiked</strong> pit</p>");
 
         mockMvc.perform(get("/library/traps/{id}", id))
@@ -158,7 +157,7 @@ class ThreatControllerTest {
     void hazardDetailReturns200WithManagementControls() throws Exception {
         UUID id = UUID.randomUUID();
         Hazard h = hazard(id, "Acid Pool", ContentSource.CUSTOM);
-        when(hazardRepository.findDetailedById(id)).thenReturn(Optional.of(h));
+        when(hazardService.findDetailedById(id)).thenReturn(h);
         when(markdownUtil.toHtml(any())).thenReturn("<p>Toxic mist</p>");
 
         mockMvc.perform(get("/library/hazards/{id}", id))
@@ -172,7 +171,7 @@ class ThreatControllerTest {
     void editTrapReturns200ForCustom() throws Exception {
         UUID id = UUID.randomUUID();
         Trap t = trap(id, "My Trap", ContentSource.CUSTOM);
-        when(trapRepository.findDetailedById(id)).thenReturn(Optional.of(t));
+        when(trapService.findDetailedById(id)).thenReturn(t);
 
         mockMvc.perform(get("/library/traps/{id}/edit", id))
                 .andExpect(status().isOk())
@@ -184,7 +183,7 @@ class ThreatControllerTest {
     void editTrapReturns403ForSrd() throws Exception {
         UUID id = UUID.randomUUID();
         Trap t = trap(id, "SRD Trap", ContentSource.SRD);
-        when(trapRepository.findDetailedById(id)).thenReturn(Optional.of(t));
+        when(trapService.findDetailedById(id)).thenReturn(t);
 
         mockMvc.perform(get("/library/traps/{id}/edit", id))
                 .andExpect(status().isForbidden());
@@ -194,7 +193,7 @@ class ThreatControllerTest {
     void editHazardReturns403ForSrd() throws Exception {
         UUID id = UUID.randomUUID();
         Hazard h = hazard(id, "SRD Hazard", ContentSource.SRD);
-        when(hazardRepository.findDetailedById(id)).thenReturn(Optional.of(h));
+        when(hazardService.findDetailedById(id)).thenReturn(h);
 
         mockMvc.perform(get("/library/hazards/{id}/edit", id))
                 .andExpect(status().isForbidden());

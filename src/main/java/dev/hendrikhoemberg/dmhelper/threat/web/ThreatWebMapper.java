@@ -18,6 +18,7 @@ public final class ThreatWebMapper {
     public static TrapResponse fromTrap(Trap trap) {
         UUID campaignId = trap.getCampaign() == null ? null : trap.getCampaign().getId();
         UUID statBlockId = trap.getStatBlock() == null ? null : trap.getStatBlock().getId();
+        String statBlockLabel = trap.getStatBlock() == null ? null : trap.getStatBlock().getName();
         return new TrapResponse(
                 ThreatKind.TRAP,
                 trap.getId(),
@@ -44,6 +45,7 @@ public final class ThreatWebMapper {
                 trap.getResetMode(),
                 trap.getResetTiming(),
                 statBlockId,
+                statBlockLabel,
                 trap.getCountermeasureNotes(),
                 trap.getReferences().stream().map(ThreatWebMapper::trapReference).toList());
     }

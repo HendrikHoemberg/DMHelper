@@ -12,20 +12,15 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
-import dev.hendrikhoemberg.dmhelper.threat.data.Hazard;
 import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
 import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
-import dev.hendrikhoemberg.dmhelper.threat.data.Trap;
 import dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository;
-import dev.hendrikhoemberg.dmhelper.threat.web.ThreatCardView;
-import dev.hendrikhoemberg.dmhelper.threat.web.ThreatWebMapper;
+import dev.hendrikhoemberg.dmhelper.threat.service.ThreatCardAssembler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 @Controller
@@ -42,6 +37,7 @@ public class SceneController {
     private final SceneTransitionService transitionService;
     private final TrapRepository trapRepository;
     private final HazardRepository hazardRepository;
+    private final ThreatCardAssembler threatCardAssembler;
 
     public SceneController(AdventureService adventureService,
                            CampaignRepository campaignRepository,
@@ -53,7 +49,8 @@ public class SceneController {
                            SceneStructuredContentService structuredService,
                            SceneTransitionService transitionService,
                            TrapRepository trapRepository,
-                           HazardRepository hazardRepository) {
+                           HazardRepository hazardRepository,
+                           ThreatCardAssembler threatCardAssembler) {
         this.adventureService = adventureService;
         this.campaignRepository = campaignRepository;
         this.gameMapRepository = gameMapRepository;
@@ -65,6 +62,7 @@ public class SceneController {
         this.hazardRepository = hazardRepository;
         this.structuredService = structuredService;
         this.transitionService = transitionService;
+        this.threatCardAssembler = threatCardAssembler;
     }
 
     @GetMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}")
@@ -87,7 +85,7 @@ public class SceneController {
         model.addAttribute("handouts", handoutRepository.findByCampaignIdOrderByTitleAsc(campaignId));
         model.addAttribute("visibleTraps", trapRepository.findVisibleByCampaignId(campaignId));
         model.addAttribute("visibleHazards", hazardRepository.findVisibleByCampaignId(campaignId));
-        model.addAttribute("sectionThreatCards", buildSectionThreatCards(scene));
+        model.addAttribute("sectionThreatCards", threatCardAssembler.forScene(scene));
         adventureService.getCurrentScene(campaignId).ifPresent(s -> model.addAttribute("currentScene", s));
         return "adventure/scene-detail";
     }
@@ -661,35 +659,7 @@ public class SceneController {
         model.addAttribute("handouts", handoutRepository.findByCampaignIdOrderByTitleAsc(campaignId));
         model.addAttribute("visibleTraps", trapRepository.findVisibleByCampaignId(campaignId));
         model.addAttribute("visibleHazards", hazardRepository.findVisibleByCampaignId(campaignId));
-        model.addAttribute("sectionThreatCards", buildSectionThreatCards(scene));
+        model.addAttribute("sectionThreatCards", threatCardAssembler.forScene(scene));
         return "adventure/_action-rail :: actionRail";
-    }
-
-    private Map<UUID, ThreatCardView> buildSectionThreatCards(Scene scene) {
-        Map<UUID, ThreatCardView> cards = new HashMap<>();
-        if (scene.getSections() == null) {
-            return cards;
-        }
-        for (SceneSection section : scene.getSections()) {
-            if (section.getThreatKind() == null || section.getThreatId() == null || section.getId() == null) {
-                continue;
-            }
-            ThreatCardView card = switch (section.getThreatKind()) {
-                case TRAP -> trapRepository.findDetailedById(section.getThreatId())
-                        .map(t -> ThreatWebMapper.cardFromTrap(t, htmlDescription(t.getDescription())))
-                        .orElse(null);
-                case HAZARD -> hazardRepository.findDetailedById(section.getThreatId())
-                        .map(h -> ThreatWebMapper.cardFromHazard(h, htmlDescription(h.getDescription())))
-                        .orElse(null);
-            };
-            if (card != null) {
-                cards.put(section.getId(), card);
-            }
-        }
-        return cards;
-    }
-
-    private String htmlDescription(String markdown) {
-        return markdown != null ? markdownUtil.toHtml(markdown) : "";
     }
 }

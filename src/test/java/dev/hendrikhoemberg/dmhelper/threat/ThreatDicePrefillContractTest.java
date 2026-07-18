@@ -20,6 +20,8 @@ class ThreatDicePrefillContractTest {
         assertThat(js).contains("this.advantage = false");
         assertThat(js).contains("this.disadvantage = false");
         assertThat(js).contains("this.result = null");
+        assertThat(js).contains("event.detail.label");
+        assertThat(js).contains("this.label");
     }
 
     @Test
@@ -46,6 +48,8 @@ class ThreatDicePrefillContractTest {
     void diceRollerFragmentExposesExpressionInputRef() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/fragments/_dice-roller.html"));
         assertThat(html).contains("x-ref=\"expressionInput\"");
+        assertThat(html).contains("x-show=\"label\"");
+        assertThat(html).contains("x-text=\"label\"");
     }
 
     private static int count(String s, String substring) {

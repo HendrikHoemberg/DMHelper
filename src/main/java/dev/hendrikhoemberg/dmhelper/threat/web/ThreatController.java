@@ -83,8 +83,7 @@ public class ThreatController {
 
     @GetMapping("/library/traps/{id}")
     public String trapDetail(@PathVariable UUID id, Model model) {
-        Trap trap = trapRepository.findDetailedById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Trap not found"));
+        Trap trap = trapService.findDetailedById(id);
         String md = trap.getDescription();
         model.addAttribute("kind", ThreatKind.TRAP);
         model.addAttribute("threat", trap);
@@ -99,8 +98,7 @@ public class ThreatController {
 
     @GetMapping("/library/traps/{id}/edit")
     public String editTrap(@PathVariable UUID id, Model model) {
-        Trap trap = trapRepository.findDetailedById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Trap not found"));
+        Trap trap = trapService.findDetailedById(id);
         if (trap.getSource() != ContentSource.CUSTOM) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This trap is read-only");
         }
@@ -153,8 +151,7 @@ public class ThreatController {
 
     @GetMapping("/library/hazards/{id}")
     public String hazardDetail(@PathVariable UUID id, Model model) {
-        Hazard hazard = hazardRepository.findDetailedById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Hazard not found"));
+        Hazard hazard = hazardService.findDetailedById(id);
         String md = hazard.getDescription();
         model.addAttribute("kind", ThreatKind.HAZARD);
         model.addAttribute("threat", hazard);
@@ -169,8 +166,7 @@ public class ThreatController {
 
     @GetMapping("/library/hazards/{id}/edit")
     public String editHazard(@PathVariable UUID id, Model model) {
-        Hazard hazard = hazardRepository.findDetailedById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Hazard not found"));
+        Hazard hazard = hazardService.findDetailedById(id);
         if (hazard.getSource() != ContentSource.CUSTOM) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "This hazard is read-only");
         }
