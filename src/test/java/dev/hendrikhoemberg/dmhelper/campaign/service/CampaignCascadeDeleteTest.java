@@ -30,6 +30,10 @@ import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntryRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableCategory;
 import dev.hendrikhoemberg.dmhelper.library.service.StatBlockService;
 import dev.hendrikhoemberg.dmhelper.notes.data.*;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
@@ -131,6 +135,7 @@ class CampaignCascadeDeleteTest {
     @Autowired private FactionRepository factionRepo;
     @Autowired private WorldRelationshipRepository worldRelationshipRepo;
     @Autowired private FactionClockRepository factionClockRepo;
+    @Autowired private RollableTableRepository rollableTableRepo;
     @Autowired private EntityManager em;
 
     /** A campaign with one of everything hanging off it. */
@@ -221,6 +226,16 @@ class CampaignCascadeDeleteTest {
         dr.setTotal(11);
         diceRollRepo.save(dr);
 
+        RollableTable rt = new RollableTable();
+        rt.setSourceKey("cascade-table");
+        rt.setSource(ContentSource.CUSTOM);
+        rt.setCampaign(c);
+        rt.setName("Cascade Delete Table");
+        rt.setAddressMode(TableAddressMode.RANGE);
+        rt.setRollExpression("1d6");
+        rt.setCategory(TableCategory.GENERIC);
+        rollableTableRepo.save(rt);
+
         Adventure adv = adventureService.createAdventure(cid, "The Sunken Crown", null, null);
         Chapter ch = adventureService.createChapter(adv.getId(), "Chapter One", null);
         Scene scene = adventureService.createScene(ch.getId(), "The Ford", null, null);
@@ -266,6 +281,7 @@ class CampaignCascadeDeleteTest {
         assertThat(timelineRepo.findByCampaignIdOrderByInGameYearAscInGameMonthAscInGameDayAsc(cid)).isEmpty();
         assertThat(assignmentRepo.findByCampaignIdOrderByPartyMemberAsc(cid)).isEmpty();
         assertThat(diceRollRepo.findByCampaignId(cid)).isEmpty();
+        assertThat(rollableTableRepo.findByCampaignIdOrderByNameAsc(cid)).isEmpty();
         assertThat(adventureRepo.findByCampaignIdOrderBySortOrderAsc(cid)).isEmpty();
         assertThat(gameMapService.findByCampaignId(cid)).isEmpty();
         assertThat(sessionRepo.findByCampaignId(cid)).isEmpty();

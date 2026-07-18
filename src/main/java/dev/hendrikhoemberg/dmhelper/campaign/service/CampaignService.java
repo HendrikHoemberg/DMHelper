@@ -84,6 +84,7 @@ public class CampaignService {
     private final dev.hendrikhoemberg.dmhelper.adventure.data.AdventureRepository adventureRepo;
     private final dev.hendrikhoemberg.dmhelper.adventure.data.ChapterRepository chapterRepo;
     private final dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository sceneRepo;
+    private final dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository rollableTableRepo;
     private final dev.hendrikhoemberg.dmhelper.dice.data.DiceRollRepository diceRollRepo;
     private final CampaignImportValidator importValidator;
     private final CampaignSessionRepository campaignSessionRepository;
@@ -127,6 +128,7 @@ public class CampaignService {
                              dev.hendrikhoemberg.dmhelper.adventure.data.AdventureRepository adventureRepo,
                              dev.hendrikhoemberg.dmhelper.adventure.data.ChapterRepository chapterRepo,
                               dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository sceneRepo,
+                              dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository rollableTableRepo,
                               dev.hendrikhoemberg.dmhelper.dice.data.DiceRollRepository diceRollRepo,
                               CampaignImportValidator importValidator,
                               CampaignSessionRepository campaignSessionRepository,
@@ -166,6 +168,7 @@ public class CampaignService {
         this.adventureRepo = adventureRepo;
         this.chapterRepo = chapterRepo;
         this.sceneRepo = sceneRepo;
+        this.rollableTableRepo = rollableTableRepo;
         this.diceRollRepo = diceRollRepo;
         this.importValidator = importValidator;
         this.campaignSessionRepository = campaignSessionRepository;
@@ -295,6 +298,9 @@ public class CampaignService {
         em.flush();
 
         diceRollRepo.deleteAll(diceRollRepo.findByCampaignId(cid));
+        em.flush();
+
+        rollableTableRepo.deleteAll(rollableTableRepo.findByCampaignIdOrderByNameAsc(cid));
         em.flush();
 
         // World graph — clocks reference factions (non-null FK), so delete clocks first.

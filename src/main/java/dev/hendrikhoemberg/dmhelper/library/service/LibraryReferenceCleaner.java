@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.library.service;
 
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableEntryReferenceRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReferenceRepository;
@@ -22,16 +23,19 @@ public class LibraryReferenceCleaner {
     private final SheetSpellReferenceRepository sheetSpellRefRepository;
     private final CharacterSheetRepository sheetRepository;
     private final ItemAssignmentRepository itemAssignmentRepository;
+    private final RollableTableEntryReferenceRepository rollableTableEntryRefRepository;
     private final CampaignPackageKeyService packageKeyService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public LibraryReferenceCleaner(SheetSpellReferenceRepository sheetSpellRefRepository,
                                    CharacterSheetRepository sheetRepository,
                                    ItemAssignmentRepository itemAssignmentRepository,
+                                   RollableTableEntryReferenceRepository rollableTableEntryRefRepository,
                                    CampaignPackageKeyService packageKeyService) {
         this.sheetSpellRefRepository = sheetSpellRefRepository;
         this.sheetRepository = sheetRepository;
         this.itemAssignmentRepository = itemAssignmentRepository;
+        this.rollableTableEntryRefRepository = rollableTableEntryRefRepository;
         this.packageKeyService = packageKeyService;
     }
 
@@ -89,6 +93,11 @@ public class LibraryReferenceCleaner {
             }
         }
         return count;
+    }
+
+    public int countRollableTableReferences(UUID entityId, CampaignContentType contentType) {
+        return rollableTableEntryRefRepository
+                .findByTargetTypeAndTargetId(contentType.name(), entityId).size();
     }
 
     private boolean classLevelsContain(String raw, String sourceKey) {
