@@ -567,6 +567,56 @@ class CampaignManifestV2ContractTest {
     }
 
     @Test
+    void contentTypeEnumAcceptsTrapAndHazardThreatRefs() throws Exception {
+        JsonNode defs = mapper.readTree(fixture("schemas/campaign-format-v2.schema.json")).get("$defs");
+        List<String> contentTypes = new ArrayList<>();
+        defs.get("contentType").get("enum").forEach(n -> contentTypes.add(n.textValue()));
+        assertThat(contentTypes).contains("TRAP", "HAZARD", "ROLLABLE_TABLE");
+
+        ObjectNode root = (ObjectNode) mapper.readTree(fixture("campaigns/v2/minimal.dmcampaign.json"));
+        root.putArray("traps").add(validTrap());
+        ObjectNode hazard = mapper.createObjectNode();
+        hazard.put("key", "hazard-lava");
+        hazard.put("sourceKey", "hazard-lava");
+        hazard.put("name", "Lava Field");
+        hazard.put("description", "Hot rock.");
+        hazard.put("severity", "DANGEROUS");
+        hazard.put("exposureMode", "ON_ENTER");
+        root.putArray("hazards").add(hazard);
+
+        ObjectNode adventure = root.putArray("adventures").addObject();
+        adventure.put("key", "adv-1");
+        adventure.put("name", "Adv");
+        adventure.put("sortOrder", 0);
+        adventure.put("createdAt", "2025-01-01T00:00:00Z");
+        ObjectNode chapter = adventure.putArray("chapters").addObject();
+        chapter.put("key", "ch-1");
+        chapter.put("title", "Ch");
+        chapter.put("sortOrder", 0);
+        ObjectNode scene = chapter.putArray("scenes").addObject();
+        scene.put("key", "sc-1");
+        scene.put("title", "Scene");
+        scene.put("status", "UNVISITED");
+        scene.put("sortOrder", 0);
+        ObjectNode trapSection = scene.putArray("sections").addObject();
+        trapSection.put("kind", "TRAP");
+        trapSection.put("sortOrder", 0);
+        ObjectNode trapRef = trapSection.putObject("threatRef");
+        trapRef.put("scope", "PACKAGE");
+        trapRef.put("type", "TRAP");
+        trapRef.put("key", "trap-spike");
+        ObjectNode hazardSection = scene.putArray("sections").addObject();
+        hazardSection.put("kind", "HAZARD");
+        hazardSection.put("sortOrder", 1);
+        ObjectNode hazardRef = hazardSection.putObject("threatRef");
+        hazardRef.put("scope", "PACKAGE");
+        hazardRef.put("type", "HAZARD");
+        hazardRef.put("key", "hazard-lava");
+
+        assertThat(schema.validate(mapper.writeValueAsString(root))).isEmpty();
+    }
+
+    @Test
     void worldGraphEnumsMatchJavaEnums() throws Exception {
         JsonNode defs = mapper.readTree(fixture("schemas/campaign-format-v2.schema.json")).get("$defs");
         assertSchemaEnumEqualsJava(defs, "worldNpc", "disposition",

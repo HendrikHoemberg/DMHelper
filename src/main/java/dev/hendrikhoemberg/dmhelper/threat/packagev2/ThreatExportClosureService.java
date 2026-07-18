@@ -10,6 +10,15 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.Condition;
+import dev.hendrikhoemberg.dmhelper.library.data.ConditionRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
+import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItem;
+import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.MagicItem;
+import dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.threat.data.Hazard;
 import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
 import dev.hendrikhoemberg.dmhelper.threat.data.MapThreatPin;
@@ -41,6 +50,10 @@ public class ThreatExportClosureService {
     private final CombatantRepository combatantRepository;
     private final GameMapRepository gameMapRepository;
     private final MapThreatPinRepository mapThreatPinRepository;
+    private final StatBlockRepository statBlockRepository;
+    private final ConditionRepository conditionRepository;
+    private final EquipmentItemRepository equipmentItemRepository;
+    private final MagicItemRepository magicItemRepository;
 
     public ThreatExportClosureService(TrapRepository trapRepository,
                                       HazardRepository hazardRepository,
@@ -48,7 +61,11 @@ public class ThreatExportClosureService {
                                       EncounterRepository encounterRepository,
                                       CombatantRepository combatantRepository,
                                       GameMapRepository gameMapRepository,
-                                      MapThreatPinRepository mapThreatPinRepository) {
+                                      MapThreatPinRepository mapThreatPinRepository,
+                                      StatBlockRepository statBlockRepository,
+                                      ConditionRepository conditionRepository,
+                                      EquipmentItemRepository equipmentItemRepository,
+                                      MagicItemRepository magicItemRepository) {
         this.trapRepository = trapRepository;
         this.hazardRepository = hazardRepository;
         this.sceneRepository = sceneRepository;
@@ -56,6 +73,10 @@ public class ThreatExportClosureService {
         this.combatantRepository = combatantRepository;
         this.gameMapRepository = gameMapRepository;
         this.mapThreatPinRepository = mapThreatPinRepository;
+        this.statBlockRepository = statBlockRepository;
+        this.conditionRepository = conditionRepository;
+        this.equipmentItemRepository = equipmentItemRepository;
+        this.magicItemRepository = magicItemRepository;
     }
 
     public ClosureResult forCampaign(UUID campaignId) {
@@ -143,23 +164,84 @@ public class ThreatExportClosureService {
         return new ClosureResult(List.copyOf(sortedTraps), List.copyOf(sortedHazards), Map.copyOf(libraryRefs));
     }
 
+    /**
+     * Seeds only user-global CUSTOM library rows for embedding by {@code LibrarySectionAdapter}.
+     * SRD/catalog targets stay as catalog content refs and must not be re-embedded as custom rows.
+     * Campaign-scoped CUSTOM rows are already exported by campaign ownership.
+     */
     private void collectLibraryRefs(List<ThreatReference> references, UUID statBlockId,
                                     Set<UUID> conditionIds, Set<UUID> statblockIds,
                                     Set<UUID> equipmentIds, Set<UUID> magicItemIds) {
-        if (statBlockId != null) {
+        if (statBlockId != null && isGlobalCustomStatBlock(statBlockId)) {
             statblockIds.add(statBlockId);
         }
         if (references == null) return;
         for (ThreatReference ref : references) {
             if (ref.getTargetId() == null || ref.getTargetType() == null) continue;
             switch (ref.getTargetType()) {
-                case CONDITION -> conditionIds.add(ref.getTargetId());
-                case STATBLOCK -> statblockIds.add(ref.getTargetId());
-                case EQUIPMENT_ITEM -> equipmentIds.add(ref.getTargetId());
-                case MAGIC_ITEM -> magicItemIds.add(ref.getTargetId());
+                case CONDITION -> {
+                    if (isGlobalCustomCondition(ref.getTargetId())) {
+                        conditionIds.add(ref.getTargetId());
+                    }
+                }
+                case STATBLOCK -> {
+                    if (isGlobalCustomStatBlock(ref.getTargetId())) {
+                        statblockIds.add(ref.getTargetId());
+                    }
+                }
+                case EQUIPMENT_ITEM -> {
+                    if (isGlobalCustomEquipment(ref.getTargetId())) {
+                        equipmentIds.add(ref.getTargetId());
+                    }
+                }
+                case MAGIC_ITEM -> {
+                    if (isGlobalCustomMagicItem(ref.getTargetId())) {
+                        magicItemIds.add(ref.getTargetId());
+                    }
+                }
                 default -> { }
             }
         }
+    }
+
+    private boolean isGlobalCustomStatBlock(UUID id) {
+        return statBlockRepository.findById(id)
+                .filter(ThreatExportClosureService::isGlobalCustom)
+                .isPresent();
+    }
+
+    private boolean isGlobalCustomCondition(UUID id) {
+        return conditionRepository.findById(id)
+                .filter(ThreatExportClosureService::isGlobalCustom)
+                .isPresent();
+    }
+
+    private boolean isGlobalCustomEquipment(UUID id) {
+        return equipmentItemRepository.findById(id)
+                .filter(ThreatExportClosureService::isGlobalCustom)
+                .isPresent();
+    }
+
+    private boolean isGlobalCustomMagicItem(UUID id) {
+        return magicItemRepository.findById(id)
+                .filter(ThreatExportClosureService::isGlobalCustom)
+                .isPresent();
+    }
+
+    private static boolean isGlobalCustom(StatBlock entity) {
+        return entity.getSource() == ContentSource.CUSTOM && entity.getCampaign() == null;
+    }
+
+    private static boolean isGlobalCustom(Condition entity) {
+        return entity.getSource() == ContentSource.CUSTOM && entity.getCampaign() == null;
+    }
+
+    private static boolean isGlobalCustom(EquipmentItem entity) {
+        return entity.getSource() == ContentSource.CUSTOM && entity.getCampaign() == null;
+    }
+
+    private static boolean isGlobalCustom(MagicItem entity) {
+        return entity.getSource() == ContentSource.CUSTOM && entity.getCampaign() == null;
     }
 
     public record ClosureResult(

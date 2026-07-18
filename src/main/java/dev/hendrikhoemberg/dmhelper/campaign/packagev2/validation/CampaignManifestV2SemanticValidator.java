@@ -911,17 +911,20 @@ public class CampaignManifestV2SemanticValidator {
             }
     }
 
-    private static final Set<String> VALID_KINDS = Set.of("PC", "NPC", "MONSTER", "OBJECT");
+    private static final Set<String> VALID_TOKEN_KINDS = Set.of("PC", "NPC", "MONSTER", "OBJECT");
+    private static final Set<String> VALID_COMBATANT_KINDS =
+            Set.of("PC", "NPC", "MONSTER", "OBJECT", "TRAP", "HAZARD");
 
     private static void validateTokenKind(String kind, String path, List<CampaignImportProblem> problems) {
-        if (kind != null && !VALID_KINDS.contains(kind)) {
+        if (kind != null && !VALID_TOKEN_KINDS.contains(kind)) {
             error(problems, "INVALID_TOKEN_KIND", path, "Token kind must be one of PC, NPC, MONSTER, OBJECT");
         }
     }
 
     private static void validateCombatantKind(String kind, String path, List<CampaignImportProblem> problems) {
-        if (kind != null && !VALID_KINDS.contains(kind)) {
-            error(problems, "INVALID_COMBATANT_KIND", path, "Combatant kind must be one of PC, NPC, MONSTER, OBJECT");
+        if (kind != null && !VALID_COMBATANT_KINDS.contains(kind)) {
+            error(problems, "INVALID_COMBATANT_KIND", path,
+                    "Combatant kind must be one of PC, NPC, MONSTER, OBJECT, TRAP, HAZARD");
         }
     }
 

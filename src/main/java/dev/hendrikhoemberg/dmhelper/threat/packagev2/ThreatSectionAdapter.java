@@ -42,7 +42,6 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Component
@@ -96,21 +95,9 @@ public class ThreatSectionAdapter implements CampaignSectionExporter, CampaignSe
                 .toList();
         target.traps(traps);
         target.hazards(hazards);
-        exportClosureLibraryEntities(closure.libraryReferenceIds(), target);
-    }
-
-    private void exportClosureLibraryEntities(
-            java.util.Map<CampaignContentType, Set<UUID>> refIds,
-            CampaignManifestAssembler target) {
-        for (var entry : refIds.entrySet()) {
-            switch (entry.getKey()) {
-                case STATBLOCK -> target.setClosureStatblockIds(entry.getValue());
-                case MAGIC_ITEM -> target.setClosureMagicItemIds(entry.getValue());
-                case EQUIPMENT_ITEM -> target.setClosureEquipmentIds(entry.getValue());
-                case CONDITION -> target.setClosureConditionIds(entry.getValue());
-                default -> { }
-            }
-        }
+        // Library embedding of threat library deps is owned solely by LibrarySectionAdapter
+        // (order 200), which seeds from ThreatExportClosureService before serializing custom rows.
+        // Do not re-seed closure IDs here (order 250) — library export has already run.
     }
 
     private TrapDto toTrapDto(Trap trap, CampaignExportContext context) {

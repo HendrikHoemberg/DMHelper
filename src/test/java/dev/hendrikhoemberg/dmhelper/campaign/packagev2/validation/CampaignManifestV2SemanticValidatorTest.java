@@ -661,6 +661,105 @@ class CampaignManifestV2SemanticValidatorTest {
                 .contains("INVALID_THREAT_REFERENCE_KIND");
     }
 
+    @Test
+    void threatPinOutOfBoundsIsRejected() {
+        var trap = trap("trap-spike", null, null, null, "NONE", null, List.of(), List.of());
+        var pin = new CampaignManifestV2.MapThreatPinDto(
+                "pin-1", 9999, 5, "Spike",
+                ContentReference.packageRef(CampaignContentType.TRAP, trap.key()), 0);
+        var map = new CampaignManifestV2.MapDto(
+                "map-1", "Crypt",
+                new CampaignManifestV2.MapDto.GridDto(10, 10, 48, "SQUARE"),
+                "GRID", true, null, List.of(), 0, List.of(pin));
+        var m = minimal();
+        var manifest = new CampaignManifestV2(
+                2, m.metadata(), m.campaign(), m.assets(), m.party(),
+                m.customStatBlocks(), m.customSpells(), m.customConditions(), m.customRules(),
+                m.customEquipment(), m.customMagicItems(), m.customClasses(), m.customSpecies(),
+                m.customBackgrounds(), m.customFeats(),
+                m.handouts(), List.of(map), m.encounters(),
+                m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
+                m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
+                m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.of(), List.of(trap), List.of());
+        assertThat(validator.validate(manifest))
+                .anySatisfy(problem -> {
+                    assertThat(problem.code()).isEqualTo("THREAT_PIN_OUT_OF_BOUNDS");
+                    assertThat(problem.path()).isEqualTo("/maps/0/threatPins/0/x");
+                });
+    }
+
+    @Test
+    void combatantThreatKindMismatchIsRejected() {
+        var trap = trap("trap-spike", null, null, null, "NONE", null, List.of(), List.of());
+        var combatant = new CampaignManifestV2.CombatantDto(
+                "c1", "Spike", 0, 0, 0, 1, 1, 0,
+                "TRAP", null, false, null, null, null,
+                false, false, null, null, false, 0, 0, 0, 0, null, null,
+                null, null, null, null,
+                ContentReference.packageRef(CampaignContentType.HAZARD, "hazard-lava"));
+        var encounter = new CampaignManifestV2.EncounterDto(
+                "enc1", "Trap Enc", List.of(combatant), "PLANNED",
+                0, -1, 0, null, null, null, false, List.of(),
+                null, null, null);
+        var m = minimal();
+        var manifest = new CampaignManifestV2(
+                2, m.metadata(), m.campaign(), m.assets(), m.party(),
+                m.customStatBlocks(), m.customSpells(), m.customConditions(), m.customRules(),
+                m.customEquipment(), m.customMagicItems(), m.customClasses(), m.customSpecies(),
+                m.customBackgrounds(), m.customFeats(),
+                m.handouts(), m.maps(), List.of(encounter),
+                m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
+                m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
+                m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.of(), List.of(trap), List.of());
+        assertThat(validator.validate(manifest))
+                .extracting(CampaignImportProblem::code)
+                .contains("INVALID_THREAT_REFERENCE_KIND");
+    }
+
+    @Test
+    void unresolvedStatBlockRefIsRejected() {
+        var trap = new CampaignManifestV2.TrapDto(
+                "trap-spike", "trap-spike", "Spike Pit", "A pit", "SETBACK", null, null, null, null, null, null,
+                List.of(), null, null, null, null, "NONE", null,
+                ContentReference.packageRef(CampaignContentType.STATBLOCK, "missing-sb"),
+                null, List.of(), List.of(), null, null);
+        assertThat(validator.validate(withTraps(List.of(trap))))
+                .anySatisfy(problem -> {
+                    assertThat(problem.code()).isEqualTo("UNRESOLVED_REFERENCE");
+                    assertThat(problem.path()).isEqualTo("/traps/0/statBlockRef");
+                });
+    }
+
+    @Test
+    void wrongTypeSalvageItemRefIsRejected() {
+        var trap = new CampaignManifestV2.TrapDto(
+                "trap-spike", "trap-spike", "Spike Pit", "A pit", "SETBACK", null, null, null, null, null, null,
+                List.of(), null, null, null, null, "NONE", null, null, null, List.of(),
+                List.of(ContentReference.packageRef(CampaignContentType.CONDITION, "poisoned")),
+                null, null);
+        assertThat(validator.validate(withTraps(List.of(trap))))
+                .anySatisfy(problem -> {
+                    assertThat(problem.code()).isEqualTo("INVALID_THREAT_REFERENCE_ROLE_TYPE");
+                    assertThat(problem.path()).isEqualTo("/traps/0/salvageItemRefs/0");
+                });
+    }
+
+    @Test
+    void unresolvedSalvageItemRefIsRejected() {
+        var trap = new CampaignManifestV2.TrapDto(
+                "trap-spike", "trap-spike", "Spike Pit", "A pit", "SETBACK", null, null, null, null, null, null,
+                List.of(), null, null, null, null, "NONE", null, null, null, List.of(),
+                List.of(ContentReference.packageRef(CampaignContentType.MAGIC_ITEM, "missing-item")),
+                null, null);
+        assertThat(validator.validate(withTraps(List.of(trap))))
+                .anySatisfy(problem -> {
+                    assertThat(problem.code()).isEqualTo("UNRESOLVED_REFERENCE");
+                    assertThat(problem.path()).isEqualTo("/traps/0/salvageItemRefs/0");
+                });
+    }
+
     private static CampaignManifestV2.TrapDto trap(
             String key, Integer attackBonus, CampaignManifestV2.ThreatCheckDto save,
             CampaignManifestV2.ThreatDamageDto damage, String resetMode, String resetTiming,
