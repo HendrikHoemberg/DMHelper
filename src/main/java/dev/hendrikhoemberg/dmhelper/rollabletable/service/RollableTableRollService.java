@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 @Service
 @Transactional
@@ -62,8 +63,12 @@ public class RollableTableRollService {
         }
 
         if (request.duplicatePolicy() == TableDuplicatePolicy.REROLL_DUPLICATES) {
+            Predicate<RollableTableEntry> reachable = switch (table.getAddressMode()) {
+                case RANGE -> e -> e.getRangeStart() != null && e.getRangeEnd() != null;
+                case WEIGHTED -> e -> e.getWeight() != null && e.getWeight() > 0;
+            };
             long uniqueCount = table.getEntries().stream()
-                    .filter(e -> e.getRangeStart() != null || e.getWeight() != null)
+                    .filter(reachable)
                     .count();
             if (request.rollCount() > uniqueCount) {
                 throw new IllegalArgumentException(
@@ -195,6 +200,10 @@ public class RollableTableRollService {
     }
 
     private TableConsequenceDraft buildDraft(TableCategory category, List<TableRollOutcome> outcomes) {
+        String sourceText = outcomes.stream()
+                .map(o -> o.resultText() != null ? o.resultText() : "")
+                .filter(t -> !t.isEmpty())
+                .reduce((a, b) -> a + ", " + b).orElse("");
         return switch (category) {
             case ENCOUNTER -> {
                 List<EncounterCreatureDraft> creatures = outcomes.stream()
@@ -206,8 +215,7 @@ public class RollableTableRollService {
                         .toList();
                 yield new EncounterTableDraft(
                         outcomes.getFirst().resultText(),
-                        outcomes.stream().map(TableRollOutcome::resultText)
-                                .reduce((a, b) -> a + ", " + b).orElse(""),
+                        sourceText,
                         creatures);
             }
             case TREASURE -> {
@@ -219,10 +227,7 @@ public class RollableTableRollService {
                                 ref.targetType(), ref.targetId(), ref.displayText(), 1))
                         .distinct()
                         .toList();
-                yield new RewardTableDraft(
-                        outcomes.stream().map(TableRollOutcome::resultText)
-                                .reduce((a, b) -> a + ", " + b).orElse(""),
-                        items);
+                yield new RewardTableDraft(sourceText, items);
             }
             default -> null;
         };

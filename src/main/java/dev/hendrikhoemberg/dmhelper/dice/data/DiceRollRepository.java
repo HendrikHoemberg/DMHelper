@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.dice.data;
 
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -9,6 +10,8 @@ public interface DiceRollRepository extends JpaRepository<DiceRoll, UUID> {
     List<DiceRoll> findTop20ByOrderByCreatedAtDesc();
 
     List<DiceRoll> findTop20ByCampaignIdOrderByCreatedAtDesc(UUID campaignId);
+
+    List<DiceRoll> findByCampaignIdOrderByCreatedAtDesc(UUID campaignId, Limit limit);
 
     List<DiceRoll> findByCampaignId(UUID campaignId);
 

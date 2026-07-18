@@ -6,6 +6,7 @@ import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableRollLog;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableRollLogRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollGroupCodec;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollOutcome;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -15,6 +16,8 @@ import java.util.UUID;
 
 @Service
 public class RollHistoryService {
+
+    static final int HISTORY_QUERY_LIMIT = 20;
 
     private final DiceRollRepository diceRollRepository;
     private final TableRollLogRepository tableRollLogRepository;
@@ -30,15 +33,16 @@ public class RollHistoryService {
 
     public List<RollHistoryItem> recent(UUID campaignId, int limit) {
         List<RollHistoryItem> items = new ArrayList<>();
+        Limit queryLimit = Limit.of(HISTORY_QUERY_LIMIT);
 
-        List<DiceRoll> diceRolls = diceRollRepository.findTop20ByCampaignIdOrderByCreatedAtDesc(campaignId);
+        List<DiceRoll> diceRolls = diceRollRepository.findByCampaignIdOrderByCreatedAtDesc(campaignId, queryLimit);
         for (DiceRoll roll : diceRolls) {
             items.add(new RollHistoryItem(
                     roll.getId(), RollHistoryKind.DICE, roll.getCreatedAt(),
                     roll.getExpression(), roll.getTotal(), null, null));
         }
 
-        List<TableRollLog> tableRolls = tableRollLogRepository.findTop20ByCampaignIdOrderByCreatedAtDesc(campaignId);
+        List<TableRollLog> tableRolls = tableRollLogRepository.findByCampaignIdOrderByCreatedAtDesc(campaignId, queryLimit);
         for (TableRollLog log : tableRolls) {
             List<RollHistoryItem.RollHistoryOutcome> outcomes = null;
             try {

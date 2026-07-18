@@ -19,7 +19,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Limit;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,9 +57,9 @@ class RollHistoryServiceTest {
         tableLog.setResultJson("{}");
         tableLog.setCreatedAt(Instant.parse("2026-07-18T12:02:00Z"));
 
-        when(diceRollRepository.findTop20ByCampaignIdOrderByCreatedAtDesc(campaignId))
+        when(diceRollRepository.findByCampaignIdOrderByCreatedAtDesc(eq(campaignId), any(Limit.class)))
                 .thenReturn(List.of(dice2, dice));
-        when(tableRollLogRepository.findTop20ByCampaignIdOrderByCreatedAtDesc(campaignId))
+        when(tableRollLogRepository.findByCampaignIdOrderByCreatedAtDesc(eq(campaignId), any(Limit.class)))
                 .thenReturn(List.of(tableLog));
         when(codec.decode("{}", tableLog.getId())).thenReturn(List.of(
                 new TableRollOutcome("forest-enc", "Forest Encounters",
@@ -89,9 +93,9 @@ class RollHistoryServiceTest {
         corrupted.setResultJson("corrupted");
         corrupted.setCreatedAt(Instant.parse("2026-07-18T12:00:00Z"));
 
-        when(diceRollRepository.findTop20ByCampaignIdOrderByCreatedAtDesc(campaignId))
+        when(diceRollRepository.findByCampaignIdOrderByCreatedAtDesc(eq(campaignId), any(Limit.class)))
                 .thenReturn(List.of());
-        when(tableRollLogRepository.findTop20ByCampaignIdOrderByCreatedAtDesc(campaignId))
+        when(tableRollLogRepository.findByCampaignIdOrderByCreatedAtDesc(eq(campaignId), any(Limit.class)))
                 .thenReturn(List.of(corrupted));
         when(codec.decode("corrupted", logId))
                 .thenThrow(new IllegalStateException("Unreadable table roll log: " + logId));

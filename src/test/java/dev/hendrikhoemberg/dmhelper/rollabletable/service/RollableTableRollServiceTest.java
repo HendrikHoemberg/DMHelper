@@ -353,6 +353,72 @@ class RollableTableRollServiceTest {
     }
 
     @Test
+    void encounterDraftContainsCreaturesFromStatblockRefs() {
+        table.setRollExpression("1d1");
+        table.setCategory(TableCategory.ENCOUNTER);
+        firstEntry.setRangeStart(1);
+        firstEntry.setRangeEnd(1);
+        firstEntry.setEntryKey("goblins");
+        firstEntry.setResultText("3 goblins appear");
+
+        UUID statBlockId = UUID.randomUUID();
+        RollableTableEntryReference ref = new RollableTableEntryReference();
+        ref.setTargetScope(TableReferenceScope.ENTITY);
+        ref.setTargetType("STATBLOCK");
+        ref.setTargetId(statBlockId);
+        ref.setDisplayText("Goblin");
+        firstEntry.getReferences().add(ref);
+
+        table.setEntries(List.of(firstEntry));
+
+        when(tableRepository.findWithEntriesById(table.getId())).thenReturn(Optional.of(table));
+        when(diceEngine.roll("1d1")).thenReturn(die("1d1", 1));
+
+        TableRollGroup group = service.roll(campaignId, table.getId(),
+                new TableRollRequest(null, 1, TableDuplicatePolicy.ALLOW_DUPLICATES));
+
+        assertThat(group.draft()).isInstanceOf(EncounterTableDraft.class);
+        EncounterTableDraft draft = (EncounterTableDraft) group.draft();
+        assertThat(draft.suggestedName()).isEqualTo("3 goblins appear");
+        assertThat(draft.creatures()).hasSize(1);
+        assertThat(draft.creatures().getFirst().statBlockId()).isEqualTo(statBlockId);
+        assertThat(draft.creatures().getFirst().displayName()).isEqualTo("Goblin");
+    }
+
+    @Test
+    void treasureDraftContainsItemsFromEquipmentRefs() {
+        table.setRollExpression("1d1");
+        table.setCategory(TableCategory.TREASURE);
+        firstEntry.setRangeStart(1);
+        firstEntry.setRangeEnd(1);
+        firstEntry.setEntryKey("loot");
+        firstEntry.setResultText("A magic sword");
+
+        UUID itemId = UUID.randomUUID();
+        RollableTableEntryReference ref = new RollableTableEntryReference();
+        ref.setTargetScope(TableReferenceScope.ENTITY);
+        ref.setTargetType("EQUIPMENT_ITEM");
+        ref.setTargetId(itemId);
+        ref.setDisplayText("Longsword +1");
+        firstEntry.getReferences().add(ref);
+
+        table.setEntries(List.of(firstEntry));
+
+        when(tableRepository.findWithEntriesById(table.getId())).thenReturn(Optional.of(table));
+        when(diceEngine.roll("1d1")).thenReturn(die("1d1", 1));
+
+        TableRollGroup group = service.roll(campaignId, table.getId(),
+                new TableRollRequest(null, 1, TableDuplicatePolicy.ALLOW_DUPLICATES));
+
+        assertThat(group.draft()).isInstanceOf(RewardTableDraft.class);
+        RewardTableDraft draft = (RewardTableDraft) group.draft();
+        assertThat(draft.sourceText()).contains("A magic sword");
+        assertThat(draft.items()).hasSize(1);
+        assertThat(draft.items().getFirst().targetId()).isEqualTo(itemId);
+        assertThat(draft.items().getFirst().displayName()).isEqualTo("Longsword +1");
+    }
+
+    @Test
     void weightedModeSelectsByCumulativeWeight() {
         table.setAddressMode(TableAddressMode.WEIGHTED);
         table.setRollExpression("1d100");
@@ -372,6 +438,55 @@ class RollableTableRollServiceTest {
 
         assertThat(group.outcomes()).hasSize(1);
         assertThat(group.outcomes().getFirst().entryKey()).isEqualTo("first");
+    }
+
+    @Test
+    void weightedModeSkipsNullAndZeroWeights() {
+        table.setAddressMode(TableAddressMode.WEIGHTED);
+        table.setRollExpression("1d100");
+        firstEntry.setEntryKey("thirty");
+        firstEntry.setWeight(30);
+        firstEntry.setResultText("R30");
+        firstEntry.setRangeStart(null);
+        firstEntry.setRangeEnd(null);
+        secondEntry.setEntryKey("ten");
+        secondEntry.setWeight(10);
+        secondEntry.setResultText("R10");
+        secondEntry.setRangeStart(null);
+        secondEntry.setRangeEnd(null);
+
+        RollableTableEntry nullWeight = new RollableTableEntry();
+        nullWeight.setEntryKey("null-weight");
+        nullWeight.setWeight(null);
+        nullWeight.setResultText("Rnull");
+        nullWeight.setTable(table);
+
+        RollableTableEntry zeroWeight = new RollableTableEntry();
+        zeroWeight.setEntryKey("zero-weight");
+        zeroWeight.setWeight(0);
+        zeroWeight.setResultText("R0");
+        zeroWeight.setTable(table);
+
+        RollableTableEntry sixty = new RollableTableEntry();
+        sixty.setEntryKey("sixty");
+        sixty.setWeight(60);
+        sixty.setResultText("R60");
+        sixty.setTable(table);
+
+        table.setEntries(List.of(firstEntry, nullWeight, secondEntry, zeroWeight, sixty));
+
+        when(tableRepository.findWithEntriesById(table.getId())).thenReturn(Optional.of(table));
+        when(diceEngine.roll("1d100")).thenReturn(die("1d100", 31), die("1d100", 100));
+
+        // total 31 falls in entry "ten" (cumulative: 30 < 31 <= 40)
+        TableRollGroup group = service.roll(campaignId, table.getId(),
+                new TableRollRequest(null, 1, TableDuplicatePolicy.ALLOW_DUPLICATES));
+        assertThat(group.outcomes().getFirst().entryKey()).isEqualTo("ten");
+
+        // total 100 falls in entry "sixty" (cumulative: 40 < 100 <= 100)
+        group = service.roll(campaignId, table.getId(),
+                new TableRollRequest(null, 1, TableDuplicatePolicy.ALLOW_DUPLICATES));
+        assertThat(group.outcomes().getFirst().entryKey()).isEqualTo("sixty");
     }
 
     private static DiceResult die(String expression, int total) {
