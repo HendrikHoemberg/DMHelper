@@ -1,8 +1,9 @@
 # DMHelper Table Fidelity and Atmosphere Expansion — Design Specification
 
 **Date:** 2026-07-17
-**Status:** Draft for review
+**Status:** Approved design
 **Parent specification:** `2026-07-15-all-in-one-dm-readiness-design.md` (master), delivery item 11 (P3 expansion)
+**Companion specification:** `2026-07-18-dm-travel-and-exploration-design.md`
 **Product premise:** Close the remaining gaps that force a DM running a published or homebrew
 campaign to reach for a book, a separate VTT, or a music app: rollable tables, reusable trap and
 hazard content, progressive map reveal, and in-app atmospheric music.
@@ -10,8 +11,12 @@ hazard content, progressive map reveal, and in-app atmospheric music.
 ## 1. Purpose and relationship to the master specification
 
 The master specification defined all-in-one DM readiness and delivered items 1–10. This document
-designs four P3 subsystems from item 11, selected because they are the features a DM running a
-published module today still handles outside the app:
+designs one of the two remaining required DM-only P3 slices from item 11. Together with the
+DM Travel and Exploration specification, it closes the feature portion of the required P3 program.
+Interactive player accounts and player-controlled gameplay are explicit non-goals.
+
+This slice contains four subsystems that a DM running a published module today still handles
+outside the app:
 
 - **Workstream M — Rollable tables:** random encounters, loot, rumors, weather, and other
   die-driven tables as first-class content instead of flattened prose.
@@ -473,9 +478,10 @@ Switching rules:
   they stay offline and deterministic);
 - **Security tests:** fog payload/image/cache leak attempts; token absence from exports and
   error responses; hostile table/trap content (Markdown/HTML) rendering safely;
-- **Manual acceptance:** the master §21.5 acceptance session is re-run after items M–O land,
+- **Manual acceptance:** the master §21.5 acceptance session is re-run after workstreams M–P land,
   now including a random-encounter roll, a trap resolution, and a fogged dungeon crawl; the
-  music subsystem is exercised in the same session when a provider account is available.
+  music subsystem is exercised with a real configured provider in the same release-acceptance
+  session. Provider-independent automated coverage continues to use a deterministic fake provider.
 
 ## 11. Delivery decomposition
 
@@ -496,7 +502,8 @@ then music (new external dependency, isolated last):
 | 9 | Fixtures, docs, capability matrix, agent playbook updates | 1–8 | `PLANNED` |
 
 Items 1–2, 3–4, 5–6, and 7–8 are independent pairs and may proceed in parallel where staffing
-allows; item 9 closes the program.
+allows; item 9 closes this specification. Required DM-only P3 feature delivery is complete only
+after the companion travel and exploration specification is also implemented and verified.
 
 ## 12. Explicit non-goals
 
@@ -505,9 +512,10 @@ allows; item 9 closes the program.
 - automatic application of trap/hazard damage or conditions to combatants;
 - hosting, caching, transcoding, or redistributing audio files;
 - synchronized audio playback on player devices;
+- player accounts, player-controlled tokens, player rolling, or player sheet editing;
 - bundling copyrighted tables, traps, or music with the application;
-- weather/travel simulation (tables may *represent* weather; the travel subsystem remains a
-  separate P3 design);
+- weather/travel simulation within this slice (tables may *represent* weather; stateful weather
+  and journey operation are defined by the companion DM Travel and Exploration specification);
 - circumventing any provider’s licensing, DRM, or terms of service.
 
 ## 13. Decisions captured by this specification
@@ -525,3 +533,9 @@ allows; item 9 closes the program.
 6. Audio content is referenced, never stored; credentials never leave local app data.
 7. All four subsystems join the v2 package, the registries, the capability matrix, the flagship
    fixtures, and the security suite in the same delivery program.
+8. All four subsystems, including music, are required for the DM-only readiness claim; an
+   individual campaign may intentionally use silence, but the released product must provide and
+   acceptance-test at least one working real provider integration.
+9. This specification and the DM Travel and Exploration specification together close the required
+   feature portion of delivery item 11. Reliability, documentation consistency, and the master
+   manual acceptance gate remain separate release-verification obligations.

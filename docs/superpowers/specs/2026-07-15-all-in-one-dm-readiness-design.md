@@ -8,6 +8,9 @@ character-management tools.
 **Secondary premise:** The application and its campaign format are documented precisely enough
 that an agent can translate a legally supplied campaign source into a package that validates,
 previews, imports, and runs correctly in DMHelper.
+**Operating boundary:** DMHelper is operated by the DM. The player surface is an anonymous,
+server-filtered presentation display; player accounts, player-controlled tokens, player rolling,
+and player sheet editing are outside the all-in-one readiness goal.
 
 ## 1. Purpose and relationship to the existing specification
 
@@ -111,9 +114,11 @@ merely because it lives in settings JSON, an action log, or an asset flag.
 
 ### 4.6 Offline and local ownership remain hard requirements
 
-Runtime features must work without internet access. User-created and imported content remains
-local unless the user explicitly exports or shares it. No new frontend build chain or runtime CDN
-is introduced.
+Runtime features must work without internet access except the explicitly approved streaming-music
+subsystem defined by the table-fidelity and atmosphere specification. A music provider outage may
+disable audio only; it must never block or degrade any non-audio session operation. User-created
+and imported content remains local unless the user explicitly exports or shares it. No new frontend
+build chain or runtime CDN is introduced.
 
 ### 4.7 Rules provenance is visible
 
@@ -158,16 +163,16 @@ These issues are release blockers because they affect existing advertised workfl
 - structured world entities and relationships;
 - quest objectives and campaign clocks;
 - traps, hazards, travel, weather, and rollable tables;
-- optional advanced player interaction, fog of war, and audio.
+- manual fog of war and DM-operated atmosphere/music.
 
 No P3 work should displace an unfinished P0 or P1 release gate.
 
 ## 6. Workstream A — Existing-path reliability
 
-> **Implementation status (2026-07-15):** Package v2 foundation complete. Container safety, key registry,
-> current-surface schema, typed catalog, v1 migration, preview/confirmation, atomic staged assets, and
-> complete round-trip are implemented. Delivery items 3 and 4 (Package v2 foundation, Complete round-trip)
-> are done. Session cockpit and all deeper features remain open.
+> **Implementation status (2026-07-18):** Delivery items 1–10 have shipped implementation, and the
+> world-graph/faction-clock slice of item 11 is implemented. Release verification is not green: the
+> current full suite contains two browser-smoke errors, which must be resolved before the readiness
+> claim. The remaining required P3 slices are tracked in §22.
 
 ### 6.1 Quick notes
 
@@ -520,8 +525,8 @@ Every compendium type supports:
 - campaign-scoped imported/custom content.
 
 This applies to statblocks, spells, mundane and magic items, classes, subclasses, species,
-backgrounds, feats, rules, conditions, traps, hazards, diseases, curses, vehicles, and optional
-rollable tables.
+backgrounds, feats, rules, conditions, traps, hazards, diseases, curses, vehicles, and rollable
+tables.
 
 ### 10.2 Provenance
 
@@ -656,8 +661,9 @@ automation feature consumes them.
 
 ### 13.3 Fog and reveal
 
-Fog of war is a post-readiness feature, but version-2 map documents must not preclude reveal regions
-or a persistent revealed/hidden state. Player-safe projection remains the enforcement boundary.
+Manual fog and persistent reveal state are required by the table-fidelity and atmosphere
+specification. Line-of-sight, token vision, and lighting automation remain post-readiness features.
+Player-safe projection remains the enforcement boundary.
 
 ### 13.4 Spatial contract
 
@@ -729,9 +735,10 @@ Minimum useful structures:
 
 ### 15.3 Travel and exploration
 
-As a P3 subsystem, travel may add routes, pace, watches, weather, navigation checks, supplies, and
-random encounter tables. It must integrate with the calendar, party resources, maps, scenes, and
-session log rather than become another isolated calculator.
+The required DM-only P3 travel slice adds routes, pace, watches, weather, navigation checks,
+supplies, and random encounter tables according to the DM Travel and Exploration specification.
+It integrates with the calendar, party resources, maps, scenes, and session log rather than
+becoming another isolated calculator.
 
 ## 16. Workstream K — Player presentation
 
@@ -744,8 +751,9 @@ The read-only player view remains a valid baseline. Improve it through:
 - DM-visible connected-device count and last-update status;
 - accessible scaling for TV, tablet, and phone displays.
 
-Future player interaction, identity, token movement, rolling, and character editing require a
-separate permissions design. They are not prerequisites for the DM-only all-in-one goal.
+Player interaction, identity, token movement, rolling, and character editing are explicit
+non-goals. The player view remains an anonymous presentation surface, not a second application
+runtime or a participant account system.
 
 ## 17. Workstream L — Architecture and maintainability
 
@@ -985,7 +993,7 @@ Recommended sequence:
 8. **Character-sheet completion:** creation, choices, actions, inventory, spells, and rest state.
 9. **Encounter and map depth:** prep waves/rewards and published-map workflow.
 10. **Documentation/agent SDK release:** generated references, catalogs, fixtures, and playbook.
-11. **P3 expansion:** world graph, travel, tables, clocks, fog, audio, optional players.
+11. **P3 expansion:** world graph, clocks, tables, traps/hazards, fog, music, travel, and weather.
 
 | # | Delivery Item | Status |
 |---|--------------|--------|
@@ -999,7 +1007,19 @@ Recommended sequence:
 | 8 | Character-sheet completion | `IMPLEMENTED` |
 | 9 | Encounter and map depth | `IMPLEMENTED` |
 | 10 | Documentation/agent SDK release | `IMPLEMENTED` |
-| 11 | P3 expansion | `PLANNED` |
+| 11 | P3 expansion | `IN_PROGRESS` |
+
+Delivery item 11 is tracked by required DM-only slices:
+
+| P3 Slice | Status | Authoritative design |
+|---|---|---|
+| World graph and faction clocks | `IMPLEMENTED` | `../plans/2026-07-17-p3-world-graph.md` |
+| Rollable tables, traps/hazards, manual fog, and music | `PLANNED` | `2026-07-17-table-fidelity-and-atmosphere-design.md` |
+| Travel, weather, navigation, watches, and supplies | `PLANNED` | `2026-07-18-dm-travel-and-exploration-design.md` |
+
+Delivery status records shipped scope, not release verification. The readiness claim remains
+blocked until the full suite, documentation consistency audit, security gates, and manual
+acceptance session in §21 and §23 pass.
 
 Each item receives a separate design, implementation plan, migration analysis, and verification
 report. Items 1–5 form the first coherent readiness baseline. Items 6–11 remain part of the
@@ -1010,6 +1030,7 @@ readiness program; the product must not claim all-in-one readiness until the def
 DMHelper may claim all-in-one DM readiness only when all conditions below are met:
 
 - P0 and P1 release gates are complete;
+- every required DM-only P3 slice in the delivery-item-11 matrix is complete;
 - the session cockpit is the normal runtime entry point;
 - a feature-complete campaign round-trips without unreported semantic loss;
 - a source-conversion agent can author against versioned schemas, catalogs, examples, and structured
@@ -1030,11 +1051,14 @@ unsupported information explicit instead of losing or inventing it.
 
 - bundling proprietary D&D books or campaigns with the application;
 - automatic redistribution of imported copyrighted content;
-- cloud accounts, multi-tenant hosting, or internet-required services;
+- cloud accounts, multi-tenant hosting, or internet-required services other than the explicitly
+  approved DM-side streaming-music provider;
+- player accounts, player-controlled tokens, player rolling, or player sheet editing;
 - autonomous DM decisions or automatic execution of story transitions;
 - mandatory digital dice;
 - replacing human review of ambiguous source conversion;
-- completing every P3 feature before the readiness claim;
+- completing optional tabletop features outside the required DM-only P3 slices before the
+  readiness claim;
 - rewriting the existing application in another stack.
 
 ## 25. Decisions captured by this master specification
@@ -1049,3 +1073,8 @@ unsupported information explicit instead of losing or inventing it.
 8. Support custom content and provenance for every campaign dependency, not only statblocks.
 9. Decompose import/export into module-owned adapters and a small coordinator.
 10. Treat documentation examples, schemas, catalogs, routes, and fixtures as executable contracts.
+11. Define all-in-one readiness as a DM-operated product boundary; the player surface remains
+    anonymous and presentation-only.
+12. Require atmosphere/music for readiness through a provider abstraction while containing its
+    network dependency so provider failure cannot affect the rest of a session.
+13. Track P3 through explicit child slices rather than one ambiguous planned/implemented label.
