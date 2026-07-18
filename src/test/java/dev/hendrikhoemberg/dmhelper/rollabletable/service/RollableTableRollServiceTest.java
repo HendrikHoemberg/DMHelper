@@ -419,6 +419,75 @@ class RollableTableRollServiceTest {
     }
 
     @Test
+    void encounterCategoryWithoutStatblockRefsDoesNotCreatePendingDraft() {
+        table.setRollExpression("1d1");
+        table.setCategory(TableCategory.ENCOUNTER);
+        firstEntry.setRangeStart(1);
+        firstEntry.setRangeEnd(1);
+        table.setEntries(List.of(firstEntry));
+        when(tableRepository.findWithEntriesById(table.getId())).thenReturn(Optional.of(table));
+        when(diceEngine.roll("1d1")).thenReturn(die("1d1", 1));
+
+        TableRollGroup group = service.roll(campaignId, table.getId(),
+                new TableRollRequest(null, 1, TableDuplicatePolicy.ALLOW_DUPLICATES));
+
+        assertThat(group.draft()).isNull();
+        verify(logRepository).save(logCaptor.capture());
+        assertThat(logCaptor.getValue().getDraftType()).isNull();
+        assertThat(logCaptor.getValue().getDraftStatus()).isEqualTo(TableDraftStatus.NONE);
+    }
+
+    @Test
+    void nestedStatblockRefCreatesEncounterDraft() {
+        table.setRollExpression("1d1");
+        table.setCategory(TableCategory.ENCOUNTER);
+        firstEntry.setRangeStart(1);
+        firstEntry.setRangeEnd(1);
+        table.setEntries(List.of(firstEntry));
+
+        RollableTable nested = new RollableTable();
+        nested.setId(UUID.randomUUID());
+        nested.setSourceKey("nested-encounter");
+        nested.setName("Nested Encounter");
+        nested.setAddressMode(TableAddressMode.RANGE);
+        nested.setRollExpression("1d1");
+        nested.setCategory(TableCategory.GENERIC);
+        RollableTableEntry nestedEntry = new RollableTableEntry();
+        nestedEntry.setEntryKey("nested-goblin");
+        nestedEntry.setRangeStart(1);
+        nestedEntry.setRangeEnd(1);
+        nestedEntry.setResultText("A goblin patrol");
+        nestedEntry.setTable(nested);
+        UUID statblockId = UUID.randomUUID();
+        RollableTableEntryReference statblock = new RollableTableEntryReference();
+        statblock.setTargetScope(TableReferenceScope.ENTITY);
+        statblock.setTargetType("STATBLOCK");
+        statblock.setTargetId(statblockId);
+        statblock.setDisplayText("Goblin");
+        nestedEntry.getReferences().add(statblock);
+        nested.setEntries(List.of(nestedEntry));
+
+        RollableTableEntryReference nestedRef = new RollableTableEntryReference();
+        nestedRef.setTargetScope(TableReferenceScope.ENTITY);
+        nestedRef.setTargetType("ROLLABLE_TABLE");
+        nestedRef.setTargetId(nested.getId());
+        nestedRef.setDisplayText("Nested Encounter");
+        firstEntry.getReferences().add(nestedRef);
+
+        when(tableRepository.findWithEntriesById(table.getId())).thenReturn(Optional.of(table));
+        when(tableRepository.findWithEntriesById(nested.getId())).thenReturn(Optional.of(nested));
+        when(diceEngine.roll("1d1")).thenReturn(die("1d1", 1));
+
+        TableRollGroup group = service.roll(campaignId, table.getId(),
+                new TableRollRequest(null, 1, TableDuplicatePolicy.ALLOW_DUPLICATES));
+
+        assertThat(group.draft()).isInstanceOf(EncounterTableDraft.class);
+        assertThat(((EncounterTableDraft) group.draft()).creatures())
+                .extracting(EncounterCreatureDraft::statBlockId)
+                .containsExactly(statblockId);
+    }
+
+    @Test
     void weightedModeSelectsByCumulativeWeight() {
         table.setAddressMode(TableAddressMode.WEIGHTED);
         table.setRollExpression("1d100");

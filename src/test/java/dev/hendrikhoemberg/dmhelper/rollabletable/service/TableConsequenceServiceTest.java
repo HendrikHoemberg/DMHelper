@@ -138,6 +138,8 @@ class TableConsequenceServiceTest {
         verify(encounterService).addFromLibrary(eq(encId), any());
         verify(encounterService).updatePrep(eq(encId), any());
         assertThat(log.getDraftStatus()).isEqualTo(TableDraftStatus.CONFIRMED);
+        assertThat(log.getResolvedAt()).isNotNull();
+        assertThat(log.getResolvedTargetIds()).isEqualTo("[\"" + encId + "\"]");
     }
 
     @Test
@@ -146,6 +148,11 @@ class TableConsequenceServiceTest {
         TableRollLog log = rollLog(TableDraftType.REWARD, TableDraftStatus.PENDING);
         when(logRepository.findForResolution(rollId, campaignId)).thenReturn(Optional.of(log));
         when(codec.decode(log.getResultJson(), rollId)).thenReturn(outcomesWithEquipment(itemId, "Longsword", 2));
+        UUID assignmentId = UUID.randomUUID();
+        when(treasuryService.create(any())).thenReturn(new TreasuryService.AssignmentDto(
+                assignmentId, campaignId, null, "Party Stash", null, null,
+                itemId, "Longsword", null, 2, false, "Longsword",
+                dev.hendrikhoemberg.dmhelper.treasury.data.InventoryState.STASHED));
 
         service.confirmReward(rollId, campaignId,
                 new TableConsequenceService.ConfirmRewardRequest(
@@ -157,6 +164,8 @@ class TableConsequenceServiceTest {
                         && req.inventoryState() == dev.hendrikhoemberg.dmhelper.treasury.data.InventoryState.STASHED
         ));
         assertThat(log.getDraftStatus()).isEqualTo(TableDraftStatus.CONFIRMED);
+        assertThat(log.getResolvedAt()).isNotNull();
+        assertThat(log.getResolvedTargetIds()).isEqualTo("[\"" + assignmentId + "\"]");
     }
 
     @Test
@@ -167,7 +176,56 @@ class TableConsequenceServiceTest {
         service.discard(rollId, campaignId);
 
         assertThat(log.getDraftStatus()).isEqualTo(TableDraftStatus.DISCARDED);
+        assertThat(log.getResolvedAt()).isNotNull();
+        assertThat(log.getResolvedTargetIds()).isEqualTo("[]");
         verifyNoInteractions(encounterService, treasuryService);
+    }
+
+    @Test
+    void wrongConfirmMethodIsRejectedBeforeCreatingAnything() {
+        TableRollLog encounter = rollLog(TableDraftType.ENCOUNTER, TableDraftStatus.PENDING);
+        when(logRepository.findForResolution(rollId, campaignId)).thenReturn(Optional.of(encounter));
+
+        assertThatThrownBy(() -> service.confirmReward(rollId, campaignId,
+                new TableConsequenceService.ConfirmRewardRequest(
+                        List.of(new TableConsequenceService.ItemEdit(UUID.randomUUID(), 1)))))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ENCOUNTER");
+        verifyNoInteractions(codec, encounterService, treasuryService);
+    }
+
+    @Test
+    void emptyReviewedRowsAreRejected() {
+        TableRollLog encounter = rollLog(TableDraftType.ENCOUNTER, TableDraftStatus.PENDING);
+        when(logRepository.findForResolution(rollId, campaignId)).thenReturn(Optional.of(encounter));
+
+        assertThatThrownBy(() -> service.confirmEncounter(rollId, campaignId,
+                new TableConsequenceService.ConfirmEncounterRequest("Empty", null, List.of())))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("at least one");
+        verifyNoInteractions(codec, encounterService, treasuryService);
+    }
+
+    @Test
+    void nestedReferencesAreValidConfirmationTargets() {
+        UUID sbId = UUID.randomUUID();
+        TableRollLog log = rollLog(TableDraftType.ENCOUNTER, TableDraftStatus.PENDING);
+        when(logRepository.findForResolution(rollId, campaignId)).thenReturn(Optional.of(log));
+        TableRollOutcome nested = outcome("nested",
+                List.of(new TableResolvedReference(CampaignContentType.STATBLOCK, sbId, "Goblin")),
+                List.of());
+        when(codec.decode(log.getResultJson(), rollId))
+                .thenReturn(List.of(outcome("root", List.of(), List.of(nested))));
+        UUID encounterId = UUID.randomUUID();
+        when(encounterService.create(eq(campaignId), any())).thenReturn(
+                new EncounterService.EncounterDto(encounterId, campaignId, null, "Nested",
+                        "PLANNED", 0, -1, 0, null, null, false, List.of(), List.of()));
+
+        service.confirmEncounter(rollId, campaignId,
+                new TableConsequenceService.ConfirmEncounterRequest("Nested", null,
+                        List.of(new TableConsequenceService.CreatureEdit(sbId, 1))));
+
+        verify(encounterService).addFromLibrary(eq(encounterId), any());
     }
 
     @Test
@@ -290,5 +348,12 @@ class TableConsequenceServiceTest {
                         new TableResolvedReference(CampaignContentType.ENCOUNTER, encId, "Encounter")
                 ),
                 List.of()));
+    }
+
+    private TableRollOutcome outcome(String text, List<TableResolvedReference> references,
+                                     List<TableRollOutcome> nested) {
+        return new TableRollOutcome("test", "Test",
+                new DiceResult("1d1", List.of(), 0, 1, false, false),
+                text, text, null, references, nested);
     }
 }

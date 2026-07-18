@@ -100,6 +100,18 @@ class RollableTableRollManagementControllerTest {
     }
 
     @Test
+    void wrongDraftTypeReturns409() throws Exception {
+        doThrow(new IllegalStateException("Draft type is REWARD; expected ENCOUNTER"))
+                .when(consequenceService).confirmEncounter(eq(rollId), eq(campaignId), any());
+
+        mockMvc.perform(post("/api/v1/rollable-table-rolls/{rollId}/encounter/confirm", rollId)
+                        .param("campaignId", campaignId.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"wrong type\",\"creatures\":[]}"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
     void notFoundReturns404() throws Exception {
         doThrow(new IllegalArgumentException("not found")).when(consequenceService)
                 .confirmEncounter(eq(rollId), eq(campaignId), any());

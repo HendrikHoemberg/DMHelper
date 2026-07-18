@@ -80,12 +80,14 @@ public class RollableTableRollService {
         Set<String> seenKeys = new HashSet<>();
 
         for (int i = 0; i < request.rollCount(); i++) {
-            TableRollOutcome outcome = rollOnce(table, request.manualValue(), 0, seenKeys, request.duplicatePolicy());
+            TableRollOutcome outcome = rollOnce(
+                    table, campaignId, request.manualValue(), 0, seenKeys, request.duplicatePolicy());
             outcomes.add(outcome);
         }
 
         TableConsequenceDraft draft = buildDraft(table.getCategory(), outcomes);
-        TableDraftType draftType = draft != null ? toDraftType(table.getCategory()) : null;
+        TableDraftType draftType = draft instanceof EncounterTableDraft ? TableDraftType.ENCOUNTER
+                : draft instanceof RewardTableDraft ? TableDraftType.REWARD : null;
 
         String resultJson = codec.encode(outcomes);
 
@@ -111,7 +113,7 @@ public class RollableTableRollService {
         return table.getCampaign().getId().equals(campaignId);
     }
 
-    private TableRollOutcome rollOnce(RollableTable table, Integer manualValue, int depth,
+    private TableRollOutcome rollOnce(RollableTable table, UUID campaignId, Integer manualValue, int depth,
                                       Set<String> seenKeys, TableDuplicatePolicy policy) {
         for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
             DiceResult rawRoll;
@@ -156,7 +158,12 @@ public class RollableTableRollService {
                     RollableTable nestedTable = tableRepository.findWithEntriesById(ref.getTargetId())
                             .orElseThrow(() -> new IllegalStateException(
                                     "Referenced table not found: " + ref.getTargetId()));
-                    TableRollOutcome nested = rollOnce(nestedTable, null, depth + 1, null, policy);
+                    if (!isVisibleToCampaign(nestedTable, campaignId)) {
+                        throw new IllegalStateException(
+                                "Referenced table is not visible to campaign: " + ref.getTargetId());
+                    }
+                    TableRollOutcome nested = rollOnce(
+                            nestedTable, campaignId, null, depth + 1, null, policy);
                     nestedRolls.add(nested);
                 }
             }
@@ -200,14 +207,15 @@ public class RollableTableRollService {
     }
 
     private TableConsequenceDraft buildDraft(TableCategory category, List<TableRollOutcome> outcomes) {
-        String sourceText = outcomes.stream()
+        List<TableRollOutcome> flattened = flattenOutcomes(outcomes);
+        String sourceText = flattened.stream()
                 .map(o -> o.resultText() != null ? o.resultText() : "")
                 .filter(t -> !t.isEmpty())
                 .reduce((a, b) -> a + ", " + b).orElse("");
         return switch (category) {
             case ENCOUNTER -> {
                 java.util.Map<UUID, EncounterCreatureDraft> aggregated = new java.util.LinkedHashMap<>();
-                for (TableRollOutcome outcome : outcomes) {
+                for (TableRollOutcome outcome : flattened) {
                     int qty = outcome.quantityRoll() != null ? Math.max(1, outcome.quantityRoll().total()) : 1;
                     for (TableResolvedReference ref : outcome.references()) {
                         if (ref.targetType() != CampaignContentType.STATBLOCK) continue;
@@ -218,14 +226,12 @@ public class RollableTableRollService {
                                         existing.quantity() + qty));
                     }
                 }
-                yield new EncounterTableDraft(
-                        outcomes.getFirst().resultText(),
-                        sourceText,
-                        List.copyOf(aggregated.values()));
+                yield aggregated.isEmpty() ? null : new EncounterTableDraft(
+                        outcomes.getFirst().resultText(), sourceText, List.copyOf(aggregated.values()));
             }
             case TREASURE -> {
                 java.util.Map<UUID, RewardItemDraft> aggregated = new java.util.LinkedHashMap<>();
-                for (TableRollOutcome outcome : outcomes) {
+                for (TableRollOutcome outcome : flattened) {
                     int qty = outcome.quantityRoll() != null ? Math.max(1, outcome.quantityRoll().total()) : 1;
                     for (TableResolvedReference ref : outcome.references()) {
                         if (ref.targetType() != CampaignContentType.EQUIPMENT_ITEM
@@ -237,17 +243,19 @@ public class RollableTableRollService {
                                         existing.quantity() + qty));
                     }
                 }
-                yield new RewardTableDraft(sourceText, List.copyOf(aggregated.values()));
+                yield aggregated.isEmpty() ? null
+                        : new RewardTableDraft(sourceText, List.copyOf(aggregated.values()));
             }
             default -> null;
         };
     }
 
-    private TableDraftType toDraftType(TableCategory category) {
-        return switch (category) {
-            case ENCOUNTER -> TableDraftType.ENCOUNTER;
-            case TREASURE -> TableDraftType.REWARD;
-            default -> null;
-        };
+    private static List<TableRollOutcome> flattenOutcomes(List<TableRollOutcome> outcomes) {
+        List<TableRollOutcome> flattened = new ArrayList<>();
+        for (TableRollOutcome outcome : outcomes) {
+            flattened.add(outcome);
+            flattened.addAll(flattenOutcomes(outcome.nestedRolls()));
+        }
+        return flattened;
     }
 }
