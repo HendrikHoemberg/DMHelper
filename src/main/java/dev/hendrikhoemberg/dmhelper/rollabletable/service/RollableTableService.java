@@ -1,9 +1,9 @@
 package dev.hendrikhoemberg.dmhelper.rollabletable.service;
 
-import dev.hendrikhoemberg.dmhelper.adventure.data.SceneLink;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
+import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentProvenance;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.service.CustomContentSupport;
@@ -13,6 +13,7 @@ import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableEntry;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableEntryReference;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableReferenceScope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,10 @@ import java.util.UUID;
 @Service
 @Transactional
 public class RollableTableService {
+
+    public static final String DEP_KIND_TABLE_ENTRY = "TABLE_ENTRY";
+    public static final String DEP_KIND_SCENE = "SCENE";
+    public static final String DEP_KIND_LOCATION = "LOCATION";
 
     private final RollableTableRepository repository;
     private final CampaignRepository campaignRepository;
@@ -131,10 +136,9 @@ public class RollableTableService {
         RollableTable table = findById(id);
         customContentSupport.assertCustom(table.getSource());
 
-        // Validate no campaign-owned entity references would cross scope
         for (var entry : table.getEntries()) {
             for (var ref : entry.getReferences()) {
-                if (ref.getTargetScope() == dev.hendrikhoemberg.dmhelper.rollabletable.data.TableReferenceScope.ENTITY) {
+                if (ref.getTargetScope() == TableReferenceScope.ENTITY) {
                     if (!referenceResolver.isVisibleToCampaign(ref.getTargetId(), null)) {
                         throw new IllegalArgumentException(
                                 "Cannot promote: reference to " + ref.getTargetType() + " " + ref.getTargetId()
@@ -152,6 +156,7 @@ public class RollableTableService {
         return repository.save(table);
     }
 
+    @Transactional(readOnly = true)
     public TableDeletionImpact deletionImpact(UUID id) {
         return dependencyService.computeDeletionImpact(id);
     }
@@ -169,16 +174,14 @@ public class RollableTableService {
         }
 
         if (confirmed) {
-            // Remove scene links referencing this table
             for (var link : sceneLinkRepository.findByTargetId(id)) {
                 var scene = link.getScene();
                 scene.getLinks().remove(link);
                 sceneLinkRepository.delete(link);
             }
 
-            // Replace nested-table references with plain-text markers
             for (var dep : impact.dependencies()) {
-                if ("TABLE_ENTRY".equals(dep.kind())) {
+                if (DEP_KIND_TABLE_ENTRY.equals(dep.kind())) {
                     var referencingTable = repository.findById(dep.dependentId());
                     referencingTable.ifPresent(rt -> {
                         for (var entry : rt.getEntries()) {
@@ -187,6 +190,13 @@ public class RollableTableService {
                                             && "ROLLABLE_TABLE".equals(r.getTargetType()))
                                     .toList();
                             for (var ref : refsToRemove) {
+                                String marker = "[Deleted table reference: " + table.getName() + "]";
+                                String existing = entry.getResultText();
+                                if (existing != null && !existing.isBlank()) {
+                                    entry.setResultText(existing + " " + marker);
+                                } else {
+                                    entry.setResultText(marker);
+                                }
                                 entry.getReferences().remove(ref);
                             }
                         }
@@ -205,7 +215,7 @@ public class RollableTableService {
 
     private RollableTable findById(UUID id) {
         return repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("RollableTable not found: " + id));
+                .orElseThrow(() -> new NotFoundException("RollableTable not found: " + id));
     }
 
     private void applyWrite(RollableTable table, RollableTableWrite write, ContentProvenance provenance) {
@@ -221,7 +231,9 @@ public class RollableTableService {
             int totalWeight = 0;
             if (write.entries() != null) {
                 for (var e : write.entries()) {
-                    if (e.weight() != null) totalWeight += e.weight();
+                    if (e.weight() != null) {
+                        totalWeight = Math.addExact(totalWeight, e.weight());
+                    }
                 }
             }
             table.setRollExpression("1d" + totalWeight);
@@ -229,8 +241,12 @@ public class RollableTableService {
             table.setRollExpression(write.rollExpression());
         }
         table.setCategory(write.category());
-        if (write.tags() != null && !write.tags().isEmpty()) {
-            table.setTags(String.join(", ", write.tags()));
+        if (write.tags() != null) {
+            if (write.tags().isEmpty()) {
+                table.setTags(null);
+            } else {
+                table.setTags(String.join(", ", write.tags()));
+            }
         }
         if (provenance != null) {
             table.setProvenance(provenance);
@@ -238,7 +254,6 @@ public class RollableTableService {
             table.setProvenance(customContentSupport.defaultForCreate(null));
         }
 
-        // Replace entries
         table.getEntries().clear();
         if (write.entries() != null) {
             int sortOrder = 0;

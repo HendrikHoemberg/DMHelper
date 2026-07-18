@@ -80,19 +80,16 @@ public class TableReferenceResolver {
         UUID entityCampaignId = extractCampaignId(entity);
         ContentSource source = extractSource(entity);
 
-        boolean isSrd = source == ContentSource.SRD;
-        boolean isGlobalCustom = source == ContentSource.CUSTOM && entityCampaignId == null;
+        if (campaignIdOrNull != null) {
+            boolean isSrd = source == ContentSource.SRD;
+            boolean isGlobalCustom = source == ContentSource.CUSTOM && entityCampaignId == null;
 
-        if (!isSrd && !isGlobalCustom) {
-            if (entityCampaignId != null && !entityCampaignId.equals(campaignIdOrNull)) {
-                throw new IllegalArgumentException(
-                        "UNRESOLVED_REFERENCE: " + ref.targetType() + " " + ref.targetId()
-                                + " belongs to a different campaign");
-            }
-            if (entityCampaignId == null && campaignIdOrNull == null) {
-                // Global content, OK
-            } else if (entityCampaignId == null) {
-                // SRD or global custom, OK
+            if (!isSrd && !isGlobalCustom) {
+                if (entityCampaignId != null && !entityCampaignId.equals(campaignIdOrNull)) {
+                    throw new IllegalArgumentException(
+                            "UNRESOLVED_REFERENCE: " + ref.targetType() + " " + ref.targetId()
+                                    + " belongs to a different campaign");
+                }
             }
         }
 

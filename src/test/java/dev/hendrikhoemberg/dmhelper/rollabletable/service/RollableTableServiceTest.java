@@ -6,6 +6,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.catalog.CampaignCatalogService;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
+import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentProvenance;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.LicenseClassification;
@@ -47,6 +48,9 @@ class RollableTableServiceTest {
     private RollableTableRepository repository;
 
     @Autowired
+    private RollableTableEntryReferenceRepository referenceRepository;
+
+    @Autowired
     private CampaignRepository campaignRepository;
 
     @Autowired
@@ -73,6 +77,7 @@ class RollableTableServiceTest {
     @BeforeEach
     void setUp() {
         repository.deleteAll();
+        referenceRepository.deleteAll();
         statBlockRepository.deleteAll();
         campaignRepository.deleteAll();
         sceneLinkRepository.deleteAll();
@@ -133,6 +138,20 @@ class RollableTableServiceTest {
 
         em.flush();
         return scene;
+    }
+
+    private UUID createTableReferencing(UUID targetId) {
+        var ref = new RollableTableReferenceWrite(
+                TableReferenceScope.ENTITY, CampaignContentType.ROLLABLE_TABLE,
+                targetId, null, null, "Target");
+        var write = new RollableTableWrite(
+                "referencer", "Referencer", null, TableAddressMode.RANGE,
+                "1d6", TableCategory.GENERIC, List.of(),
+                List.of(new RollableTableEntryWrite(
+                        "ref", 1, 6, null, null, null, List.of(ref))));
+        RollableTable table = service.create(campaignId, write, null);
+        em.flush();
+        return table.getId();
     }
 
     @Test
@@ -253,6 +272,147 @@ class RollableTableServiceTest {
         UUID tableId = table.getId();
         service.deleteCustom(tableId, false);
         assertThat(repository.findById(tableId)).isEmpty();
+    }
+
+    @Test
+    void insertsDeletedTableMarkerOnReferencingEntry() {
+        var write1 = validRangeWrite("to-delete", "To Delete");
+        RollableTable toDelete = service.create(campaignId, write1, null);
+        UUID idToDelete = toDelete.getId();
+        em.flush();
+
+        UUID referencerId = createTableReferencing(idToDelete);
+        em.clear();
+
+        service.deleteCustom(idToDelete, true);
+        em.flush();
+
+        RollableTable referencer = repository.findById(referencerId).orElseThrow();
+        boolean hasMarker = referencer.getEntries().stream()
+                .anyMatch(e -> e.getResultText() != null
+                        && e.getResultText().contains("[Deleted table reference: " + toDelete.getName() + "]"));
+        assertThat(hasMarker).isTrue();
+    }
+
+    @Test
+    void rejectsNonExistentTableWithNotFoundException() {
+        UUID fakeId = UUID.randomUUID();
+        assertThatThrownBy(() -> service.promoteToGlobal(fakeId))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void detectsCycleInReferenceGraph() {
+        // Create table B first (no refs)
+        var writeB = validRangeWrite("table-b", "Table B");
+        RollableTable tableB = service.create(campaignId, writeB, null);
+        em.flush();
+        em.clear();
+
+        // Create table A -> table B
+        var refToB = new RollableTableReferenceWrite(
+                TableReferenceScope.ENTITY, CampaignContentType.ROLLABLE_TABLE,
+                tableB.getId(), null, null, "Table B");
+        var writeA = new RollableTableWrite(
+                "table-a", "Table A", null, TableAddressMode.RANGE,
+                "1d6", TableCategory.GENERIC, List.of(),
+                List.of(new RollableTableEntryWrite(
+                        "ref-b", 1, 6, null, null, null, List.of(refToB))));
+        RollableTable tableA = service.create(campaignId, writeA, null);
+        em.flush();
+
+        // Now update table B to reference table A (creating a cycle)
+        var refToA = new RollableTableReferenceWrite(
+                TableReferenceScope.ENTITY, CampaignContentType.ROLLABLE_TABLE,
+                tableA.getId(), null, null, "Table A");
+        var writeBUpdate = new RollableTableWrite(
+                "table-b", "Table B", null, TableAddressMode.RANGE,
+                "1d6", TableCategory.GENERIC, List.of(),
+                List.of(new RollableTableEntryWrite(
+                        "ref-a", 1, 6, null, null, null, List.of(refToA))));
+        var cycleThrowable = org.assertj.core.api.Assertions.catchThrowableOfType(
+                () -> service.updateCustom(tableB.getId(), writeBUpdate, null),
+                RollableTableValidationException.class);
+        assertThat(cycleThrowable).isNotNull();
+        assertThat(cycleThrowable.problems()).anyMatch(p ->
+                p.code().equals("TABLE_REFERENCE_CYCLE"));
+    }
+
+    @Test
+    void detectsDepthExceeded() {
+        // Create a chain of 6 tables: T0 -> T1 -> ... -> T5 (depth 5, within limit)
+        // The 7th table would have depth 6, exceeding max 5
+        UUID prevId = null;
+        for (int i = 0; i < 6; i++) {
+            var ref = prevId != null
+                    ? List.of(new RollableTableReferenceWrite(
+                            TableReferenceScope.ENTITY, CampaignContentType.ROLLABLE_TABLE,
+                            prevId, null, null, "Prev"))
+                    : List.<RollableTableReferenceWrite>of();
+            var write = new RollableTableWrite(
+                    "depth-" + i, "Depth " + i, null, TableAddressMode.RANGE,
+                    "1d6", TableCategory.GENERIC, List.of(),
+                    List.of(new RollableTableEntryWrite(
+                            "entry", 1, 6, null, "Val", null, ref)));
+            RollableTable t = service.create(campaignId, write, null);
+            prevId = t.getId();
+            em.flush();
+        }
+
+        // Now try to create a table that references T5 (depth would be 6, exceeding 5)
+        var ref = List.of(new RollableTableReferenceWrite(
+                TableReferenceScope.ENTITY, CampaignContentType.ROLLABLE_TABLE,
+                prevId, null, null, "Deep"));
+        var write = new RollableTableWrite(
+                "too-deep", "Too Deep", null, TableAddressMode.RANGE,
+                "1d6", TableCategory.GENERIC, List.of(),
+                List.of(new RollableTableEntryWrite(
+                        "entry", 1, 6, null, "Val", null, ref)));
+        var throwable = org.assertj.core.api.Assertions.catchThrowableOfType(
+                () -> service.create(campaignId, write, null),
+                RollableTableValidationException.class);
+        assertThat(throwable).isNotNull();
+        assertThat(throwable.problems()).anyMatch(p ->
+                p.code().equals("TABLE_REFERENCE_DEPTH_EXCEEDED"));
+    }
+
+    @Test
+    void clearsTagsOnEmptyList() {
+        // First create with tags
+        var writeWithTags = new RollableTableWrite(
+                "tagged", "Tagged", null, TableAddressMode.RANGE,
+                "1d6", TableCategory.GENERIC, List.of("a", "b"),
+                List.of(new RollableTableEntryWrite(
+                        "only", 1, 6, null, "Result", null, List.of())));
+        RollableTable table = service.create(null, writeWithTags, null);
+        assertThat(table.getTags()).isEqualTo("a, b");
+
+        // Update with empty tags
+        var writeEmptyTags = new RollableTableWrite(
+                "tagged", "Tagged", null, TableAddressMode.RANGE,
+                "1d6", TableCategory.GENERIC, List.of(),
+                List.of(new RollableTableEntryWrite(
+                        "only", 1, 6, null, "Result", null, List.of())));
+        RollableTable updated = service.updateCustom(table.getId(), writeEmptyTags, null);
+        assertThat(updated.getTags()).isNull();
+    }
+
+    @Test
+    void unresolvedReferenceOnCreate() {
+        var ref = new RollableTableReferenceWrite(
+                TableReferenceScope.ENTITY, CampaignContentType.STATBLOCK,
+                UUID.randomUUID(), null, null, "Missing");
+        var write = new RollableTableWrite(
+                "bad-ref", "Bad Ref", null, TableAddressMode.RANGE,
+                "1d6", TableCategory.GENERIC, List.of(),
+                List.of(new RollableTableEntryWrite(
+                        "ref", 1, 6, null, null, null, List.of(ref))));
+        var unresThrowable = org.assertj.core.api.Assertions.catchThrowableOfType(
+                () -> service.create(null, write, null),
+                RollableTableValidationException.class);
+        assertThat(unresThrowable).isNotNull();
+        assertThat(unresThrowable.problems()).anyMatch(p ->
+                p.code().equals("UNRESOLVED_REFERENCE"));
     }
 
     private static RollableTableWrite validRangeWrite(String key, String name) {

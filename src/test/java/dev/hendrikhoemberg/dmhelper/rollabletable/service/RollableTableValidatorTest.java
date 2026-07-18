@@ -115,6 +115,26 @@ class RollableTableValidatorTest {
         assertThatCode(() -> validator.validate(write, null)).doesNotThrowAnyException();
     }
 
+    @Test
+    void detectsSelfReferenceCycle() {
+        UUID tableId = UUID.randomUUID();
+        var refToSelf = new RollableTableReferenceWrite(
+                TableReferenceScope.ENTITY, CampaignContentType.ROLLABLE_TABLE,
+                tableId, null, null, "Self");
+        var write = new RollableTableWrite(
+                "self-cycle", "Self Cycle", null, TableAddressMode.RANGE,
+                "1d6", TableCategory.GENERIC, List.of(),
+                List.of(entry("ref", 1, 6, null, null, null, List.of(refToSelf))));
+
+        assertThatThrownBy(() -> validator.validate(write, tableId))
+                .isInstanceOf(RollableTableValidationException.class)
+                .satisfies(e -> {
+                    var ex = (RollableTableValidationException) e;
+                    assertThat(ex.problems()).anyMatch(p ->
+                            p.code().equals("TABLE_REFERENCE_CYCLE"));
+                });
+    }
+
     private void assertProblem(RollableTableWrite write, String expectedCode, String expectedPath) {
         assertThatThrownBy(() -> validator.validate(write, null))
                 .isInstanceOf(RollableTableValidationException.class)

@@ -2,13 +2,18 @@ package dev.hendrikhoemberg.dmhelper.rollabletable.service;
 
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.dice.DiceExpressionSpec;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableReferenceScope;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -24,6 +29,21 @@ public class RollableTableValidator {
 
     private static final int MAX_REFERENCE_DEPTH = 5;
 
+    private final RollableTableRepository rollableTableRepository;
+    private final TableReferenceResolver referenceResolver;
+
+    @Autowired
+    public RollableTableValidator(RollableTableRepository rollableTableRepository,
+                                   TableReferenceResolver referenceResolver) {
+        this.rollableTableRepository = rollableTableRepository;
+        this.referenceResolver = referenceResolver;
+    }
+
+    public RollableTableValidator() {
+        this.rollableTableRepository = null;
+        this.referenceResolver = null;
+    }
+
     public void validate(RollableTableWrite write, UUID currentTableId) {
         List<TableValidationProblem> problems = collectProblems(write, currentTableId);
         if (!problems.isEmpty()) {
@@ -36,6 +56,7 @@ public class RollableTableValidator {
         validateTableFields(write, problems);
         validateEntries(write, problems);
         validateReferences(write, problems);
+        validateReferenceResolution(write, currentTableId, problems);
         validateGraph(write, currentTableId, problems);
         return problems;
     }
@@ -69,7 +90,6 @@ public class RollableTableValidator {
         sortedWithIndex.sort(Comparator.comparingInt(
                 ewi -> ewi.entry.rangeStart() != null ? ewi.entry.rangeStart() : Integer.MAX_VALUE));
 
-        // Validate each entry has valid range
         for (var ewi : sortedWithIndex) {
             var entry = ewi.entry;
             if (entry.rangeStart() == null || entry.rangeEnd() == null) {
@@ -91,7 +111,6 @@ public class RollableTableValidator {
             }
         }
 
-        // Check for gap, overlap, bounds
         DiceExpressionSpec rollSpec = null;
         if (write.rollExpression() != null && !write.rollExpression().isBlank()) {
             try {
@@ -128,7 +147,6 @@ public class RollableTableValidator {
             previousEnd = entry.rangeEnd();
         }
 
-        // Check last entry covers the max
         if (rollSpec != null && expectedMax > 0 && previousEnd < expectedMax && !sortedWithIndex.isEmpty()) {
             problems.add(new TableValidationProblem(
                     "TABLE_RANGE_BOUNDS", "/entries/" + sortedWithIndex.getLast().index + "/rangeEnd",
@@ -167,7 +185,6 @@ public class RollableTableValidator {
             }
         }
 
-        // Validate total weight does not overflow
         if (problems.isEmpty()) {
             try {
                 int total = 0;
@@ -208,50 +225,141 @@ public class RollableTableValidator {
         }
     }
 
-    private void validateGraph(RollableTableWrite write, UUID currentTableId, List<TableValidationProblem> problems) {
-        List<TableValidationProblem> graphProblems = new ArrayList<>();
-        dfsValidate(write, currentTableId, new HashSet<>(), new ArrayList<>(), 0, graphProblems);
-        problems.addAll(graphProblems);
-    }
-
-    private void dfsValidate(RollableTableWrite write, UUID currentTableId,
-                             Set<UUID> visiting, List<UUID> path, int depth,
-                             List<TableValidationProblem> problems) {
+    private void validateReferenceResolution(RollableTableWrite write, UUID currentTableId,
+                                              List<TableValidationProblem> problems) {
+        if (referenceResolver == null) return;
         if (write.entries() == null) return;
         for (int ei = 0; ei < write.entries().size(); ei++) {
             var entry = write.entries().get(ei);
             if (entry.references() == null) continue;
             for (int ri = 0; ri < entry.references().size(); ri++) {
                 var ref = entry.references().get(ri);
-                if (ref.scope() != null && ref.scope() == dev.hendrikhoemberg.dmhelper.rollabletable.data.TableReferenceScope.ENTITY
-                        && ref.targetType() == CampaignContentType.ROLLABLE_TABLE
-                        && ref.targetId() != null) {
-                    String basePath = "/entries/" + ei + "/references/" + ri;
-
-                    if (depth >= MAX_REFERENCE_DEPTH) {
+                String basePath = "/entries/" + ei + "/references/" + ri;
+                try {
+                    referenceResolver.require(null, ref);
+                } catch (IllegalArgumentException e) {
+                    String msg = e.getMessage();
+                    if (msg != null && msg.startsWith("UNRESOLVED_REFERENCE")) {
                         problems.add(new TableValidationProblem(
-                                "TABLE_REFERENCE_DEPTH_EXCEEDED", basePath,
-                                "Maximum reference depth of " + MAX_REFERENCE_DEPTH + " exceeded"));
-                        continue;
-                    }
-
-                    if (visiting.contains(ref.targetId())) {
-                        problems.add(new TableValidationProblem(
-                                "TABLE_REFERENCE_CYCLE", basePath,
-                                "Cycle detected at table " + ref.targetId()));
-                        continue;
-                    }
-
-                    if (currentTableId != null && ref.targetId().equals(currentTableId)) {
-                        problems.add(new TableValidationProblem(
-                                "TABLE_REFERENCE_CYCLE", basePath,
-                                "Self-referential cycle detected"));
-                        continue;
+                                "UNRESOLVED_REFERENCE", basePath, msg));
+                    } else {
+                        throw e;
                     }
                 }
             }
         }
     }
 
+    private void validateGraph(RollableTableWrite write, UUID currentTableId, List<TableValidationProblem> problems) {
+        List<TableValidationProblem> graphProblems = new ArrayList<>();
+        var visited = new HashSet<UUID>();
+        var visiting = new HashSet<UUID>();
+        var path = new ArrayList<PathEntry>();
+        var knownTables = new java.util.HashMap<UUID, RollableTableWrite>();
+        if (currentTableId != null) {
+            knownTables.put(currentTableId, write);
+        }
+        dfsValidate(write, currentTableId, visiting, path, 0, graphProblems, knownTables);
+        problems.addAll(graphProblems);
+    }
+
+    private void dfsValidate(RollableTableWrite write, UUID currentTableId,
+                             Set<UUID> visiting, List<PathEntry> path, int depth,
+                             List<TableValidationProblem> problems,
+                             java.util.Map<UUID, RollableTableWrite> knownTables) {
+        if (write.entries() == null) return;
+        for (int ei = 0; ei < write.entries().size(); ei++) {
+            var entry = write.entries().get(ei);
+            if (entry.references() == null) continue;
+            for (int ri = 0; ri < entry.references().size(); ri++) {
+                var ref = entry.references().get(ri);
+                if (ref.scope() != TableReferenceScope.ENTITY
+                        || ref.targetType() != CampaignContentType.ROLLABLE_TABLE
+                        || ref.targetId() == null) {
+                    continue;
+                }
+                String basePath = "/entries/" + ei + "/references/" + ri;
+
+                if (depth >= MAX_REFERENCE_DEPTH) {
+                    problems.add(new TableValidationProblem(
+                            "TABLE_REFERENCE_DEPTH_EXCEEDED", basePath,
+                            "Maximum reference depth of " + MAX_REFERENCE_DEPTH + " exceeded at path: "
+                                    + formatPath(path)));
+                    continue;
+                }
+
+                if (visiting.contains(ref.targetId())) {
+                    problems.add(new TableValidationProblem(
+                            "TABLE_REFERENCE_CYCLE", basePath,
+                            "Cycle detected at table " + ref.targetId() + " via path: "
+                                    + formatPath(path)));
+                    continue;
+                }
+
+                if (currentTableId != null && ref.targetId().equals(currentTableId)) {
+                    problems.add(new TableValidationProblem(
+                            "TABLE_REFERENCE_CYCLE", basePath,
+                            "Self-referential cycle detected"));
+                    continue;
+                }
+
+                if (rollableTableRepository != null) {
+                    RollableTableWrite targetWrite = knownTables.get(ref.targetId());
+                    if (targetWrite == null) {
+                        Optional<RollableTable> targetEntity = rollableTableRepository.findWithEntriesById(ref.targetId());
+                        if (targetEntity.isPresent()) {
+                            targetWrite = toWrite(targetEntity.get());
+                            knownTables.put(ref.targetId(), targetWrite);
+                        }
+                    }
+
+                    if (targetWrite != null) {
+                        visiting.add(ref.targetId());
+                        path.add(new PathEntry(ref.targetId(), ei, ri));
+                        dfsValidate(targetWrite, currentTableId, visiting, path, depth + 1,
+                                problems, knownTables);
+                        path.removeLast();
+                        visiting.remove(ref.targetId());
+                    }
+                }
+            }
+        }
+    }
+
+    private String formatPath(List<PathEntry> path) {
+        if (path.isEmpty()) return "(root)";
+        var sb = new StringBuilder();
+        for (var entry : path) {
+            if (!sb.isEmpty()) sb.append(" -> ");
+            sb.append("table:").append(entry.tableId)
+                    .append("[e").append(entry.entryIndex)
+                    .append("/r").append(entry.refIndex).append("]");
+        }
+        return sb.toString();
+    }
+
+    private RollableTableWrite toWrite(RollableTable entity) {
+        var entries = new ArrayList<RollableTableEntryWrite>();
+        for (var e : entity.getEntries()) {
+            var refs = new ArrayList<RollableTableReferenceWrite>();
+            for (var r : e.getReferences()) {
+                refs.add(new RollableTableReferenceWrite(
+                        r.getTargetScope(),
+                        CampaignContentType.valueOf(r.getTargetType()),
+                        r.getTargetId(), r.getCatalogRuleset(),
+                        r.getCatalogSourceKey(), r.getDisplayText()));
+            }
+            entries.add(new RollableTableEntryWrite(e.getEntryKey(),
+                    e.getRangeStart(), e.getRangeEnd(), e.getWeight(),
+                    e.getResultText(), e.getQuantityExpression(), refs));
+        }
+        return new RollableTableWrite(entity.getSourceKey(), entity.getName(),
+                entity.getDescription(), entity.getAddressMode(),
+                entity.getRollExpression(), entity.getCategory(),
+                entity.getTags() != null ? List.of(entity.getTags().split(",\s*")) : List.of(),
+                entries);
+    }
+
     private record EntryWithIndex(RollableTableEntryWrite entry, int index) {}
+    private record PathEntry(UUID tableId, int entryIndex, int refIndex) {}
 }
