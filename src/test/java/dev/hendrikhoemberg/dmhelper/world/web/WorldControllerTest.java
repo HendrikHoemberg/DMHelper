@@ -5,6 +5,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLinkRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.world.data.*;
 import dev.hendrikhoemberg.dmhelper.world.service.WorldService;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,7 @@ class WorldControllerTest {
     @MockitoBean private CampaignRepository campaignRepository;
     @MockitoBean private RollableTableRepository rollableTableRepository;
     @MockitoBean private WorldLocationTableLinkRepository locationTableLinkRepository;
+    @MockitoBean private TableReferenceResolver referenceResolver;
 
     private UUID campaignId, npcId, locationId, factionId;
     private Campaign campaign;

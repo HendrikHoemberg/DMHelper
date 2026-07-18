@@ -3,12 +3,12 @@ package dev.hendrikhoemberg.dmhelper.world.web;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
-import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableLinkRole;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLink;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLinkRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.world.data.*;
 import dev.hendrikhoemberg.dmhelper.world.service.WorldService;
 import org.springframework.http.ResponseEntity;
@@ -26,15 +26,18 @@ public class WorldController {
     private final CampaignRepository campaignRepository;
     private final RollableTableRepository rollableTableRepository;
     private final WorldLocationTableLinkRepository locationTableLinkRepository;
+    private final TableReferenceResolver referenceResolver;
 
     public WorldController(WorldService worldService,
                            CampaignRepository campaignRepository,
                            RollableTableRepository rollableTableRepository,
-                           WorldLocationTableLinkRepository locationTableLinkRepository) {
+                           WorldLocationTableLinkRepository locationTableLinkRepository,
+                           TableReferenceResolver referenceResolver) {
         this.worldService = worldService;
         this.campaignRepository = campaignRepository;
         this.rollableTableRepository = rollableTableRepository;
         this.locationTableLinkRepository = locationTableLinkRepository;
+        this.referenceResolver = referenceResolver;
     }
 
     @ModelAttribute
@@ -418,10 +421,7 @@ public class WorldController {
             RollableTable table = rollableTableRepository.findById(tableId)
                     .orElseThrow(() -> new IllegalArgumentException("Table not found"));
 
-            boolean visible = table.getSource() == ContentSource.SRD
-                    || table.getCampaign() == null
-                    || table.getCampaign().getId().equals(campaignId);
-            if (!visible) {
+            if (!referenceResolver.isVisibleToCampaign(table.getId(), campaignId)) {
                 throw new IllegalArgumentException("Table is not visible to this campaign");
             }
 

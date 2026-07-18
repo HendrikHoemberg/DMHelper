@@ -9,5 +9,6 @@ public record LinkedRollableTableView(
     String name,
     TableCategory category,
     String source,
-    String sourceLabel
+    String sourceLabel,
+    int sortOrder
 ) {}

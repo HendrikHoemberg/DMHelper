@@ -38,6 +38,7 @@ class RollableTableLinkServiceTest {
     @Mock private WorldLocationTableLinkRepository worldLocationTableLinkRepository;
     @Mock private RollableTableRepository rollableTableRepository;
     @Mock private WorldLocationRepository worldLocationRepository;
+    @Mock private TableReferenceResolver referenceResolver;
 
     @InjectMocks private RollableTableLinkService service;
 
@@ -102,6 +103,10 @@ class RollableTableLinkServiceTest {
         globalTable.setSource(ContentSource.CUSTOM);
     }
 
+    private void stubVisibility(RollableTable table, boolean visible) {
+        when(referenceResolver.isVisibleToCampaign(table.getId(), campaignId)).thenReturn(visible);
+    }
+
     private SceneLink sceneLink(UUID targetId, SceneLinkRole role, String targetType, int sortOrder, String displayText) {
         SceneLink link = new SceneLink();
         link.setId(UUID.randomUUID());
@@ -145,6 +150,7 @@ class RollableTableLinkServiceTest {
                 .thenReturn(List.of(
                         sceneLink(srdTable.getId(), SceneLinkRole.RANDOM_ENCOUNTERS, "ROLLABLE_TABLE", 0, "Encounters")));
         when(rollableTableRepository.findById(srdTable.getId())).thenReturn(Optional.of(srdTable));
+        stubVisibility(srdTable, true);
 
         var result = service.forScene(campaignId, sceneId);
 
@@ -163,8 +169,9 @@ class RollableTableLinkServiceTest {
                         sceneLink(locationId, SceneLinkRole.LOCATION, "WORLD_LOCATION", 0, "Dungeon")));
         when(worldLocationRepository.findByIdAndCampaignId(locationId, campaignId))
                 .thenReturn(Optional.of(location));
-        when(worldLocationTableLinkRepository.findByLocationIdOrderBySortOrderAsc(locationId))
+        when(worldLocationTableLinkRepository.findByLocationIdWithTable(locationId))
                 .thenReturn(List.of(locationTableLink(srdTable, 0)));
+        stubVisibility(srdTable, true);
 
         var result = service.forScene(campaignId, sceneId);
 
@@ -184,8 +191,9 @@ class RollableTableLinkServiceTest {
         when(rollableTableRepository.findById(srdTable.getId())).thenReturn(Optional.of(srdTable));
         when(worldLocationRepository.findByIdAndCampaignId(locationId, campaignId))
                 .thenReturn(Optional.of(location));
-        when(worldLocationTableLinkRepository.findByLocationIdOrderBySortOrderAsc(locationId))
+        when(worldLocationTableLinkRepository.findByLocationIdWithTable(locationId))
                 .thenReturn(List.of(locationTableLink(srdTable, 0)));
+        stubVisibility(srdTable, true);
 
         var result = service.forScene(campaignId, sceneId);
 
@@ -200,6 +208,7 @@ class RollableTableLinkServiceTest {
                 .thenReturn(List.of(
                         sceneLink(srdTable.getId(), SceneLinkRole.RANDOM_ENCOUNTERS, "ROLLABLE_TABLE", 0, "SRD")));
         when(rollableTableRepository.findById(srdTable.getId())).thenReturn(Optional.of(srdTable));
+        stubVisibility(srdTable, true);
 
         var result = service.forScene(campaignId, sceneId);
 
@@ -215,6 +224,7 @@ class RollableTableLinkServiceTest {
                 .thenReturn(List.of(
                         sceneLink(globalTable.getId(), SceneLinkRole.RANDOM_ENCOUNTERS, "ROLLABLE_TABLE", 0, "Global")));
         when(rollableTableRepository.findById(globalTable.getId())).thenReturn(Optional.of(globalTable));
+        stubVisibility(globalTable, true);
 
         var result = service.forScene(campaignId, sceneId);
 
@@ -229,6 +239,7 @@ class RollableTableLinkServiceTest {
                 .thenReturn(List.of(
                         sceneLink(campaignTable.getId(), SceneLinkRole.RANDOM_ENCOUNTERS, "ROLLABLE_TABLE", 0, "Campaign")));
         when(rollableTableRepository.findById(campaignTable.getId())).thenReturn(Optional.of(campaignTable));
+        stubVisibility(campaignTable, true);
 
         var result = service.forScene(campaignId, sceneId);
 
@@ -244,6 +255,7 @@ class RollableTableLinkServiceTest {
                 .thenReturn(List.of(
                         sceneLink(otherCampaignTable.getId(), SceneLinkRole.RANDOM_ENCOUNTERS, "ROLLABLE_TABLE", 0, "Other")));
         when(rollableTableRepository.findById(otherCampaignTable.getId())).thenReturn(Optional.of(otherCampaignTable));
+        stubVisibility(otherCampaignTable, false);
 
         var result = service.forScene(campaignId, sceneId);
 
@@ -261,8 +273,10 @@ class RollableTableLinkServiceTest {
         when(rollableTableRepository.findById(campaignTable.getId())).thenReturn(Optional.of(campaignTable));
         when(worldLocationRepository.findByIdAndCampaignId(locationId, campaignId))
                 .thenReturn(Optional.of(location));
-        when(worldLocationTableLinkRepository.findByLocationIdOrderBySortOrderAsc(locationId))
+        when(worldLocationTableLinkRepository.findByLocationIdWithTable(locationId))
                 .thenReturn(List.of(locationTableLink(srdTable, 0)));
+        stubVisibility(campaignTable, true);
+        stubVisibility(srdTable, true);
 
         var result = service.forScene(campaignId, sceneId);
 
@@ -282,5 +296,38 @@ class RollableTableLinkServiceTest {
         var result = service.forScene(campaignId, sceneId);
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void nameTiebreakerWithinSameSortOrder() {
+        RollableTable tableA = new RollableTable();
+        tableA.setId(UUID.randomUUID());
+        tableA.setSourceKey("a");
+        tableA.setName("A Encounters");
+        tableA.setCategory(TableCategory.ENCOUNTER);
+        tableA.setSource(ContentSource.SRD);
+
+        RollableTable tableB = new RollableTable();
+        tableB.setId(UUID.randomUUID());
+        tableB.setSourceKey("b");
+        tableB.setName("B Encounters");
+        tableB.setCategory(TableCategory.ENCOUNTER);
+        tableB.setSource(ContentSource.SRD);
+
+        when(sceneRepository.findByIdAndCampaignId(campaignId, sceneId))
+                .thenReturn(Optional.of(scene));
+        when(sceneLinkRepository.findBySceneIdOrderBySortOrderAsc(sceneId))
+                .thenReturn(List.of(
+                        sceneLink(tableB.getId(), SceneLinkRole.RANDOM_ENCOUNTERS, "ROLLABLE_TABLE", 0, "B"),
+                        sceneLink(tableA.getId(), SceneLinkRole.RANDOM_ENCOUNTERS, "ROLLABLE_TABLE", 0, "A")));
+        when(rollableTableRepository.findById(tableA.getId())).thenReturn(Optional.of(tableA));
+        when(rollableTableRepository.findById(tableB.getId())).thenReturn(Optional.of(tableB));
+        stubVisibility(tableA, true);
+        stubVisibility(tableB, true);
+
+        var result = service.forScene(campaignId, sceneId);
+
+        assertThat(result).extracting(LinkedRollableTableView::name)
+                .containsExactly("A Encounters", "B Encounters");
     }
 }

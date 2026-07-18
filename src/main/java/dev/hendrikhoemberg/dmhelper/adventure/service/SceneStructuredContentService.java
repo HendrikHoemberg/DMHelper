@@ -2,9 +2,9 @@ package dev.hendrikhoemberg.dmhelper.adventure.service;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
-import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableReferenceResolver;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +23,7 @@ public class SceneStructuredContentService {
     private final SceneLinkRepository linkRepository;
     private final SceneTransitionRepository transitionRepository;
     private final RollableTableRepository rollableTableRepository;
+    private final TableReferenceResolver referenceResolver;
     private final EntityManager em;
 
     public SceneStructuredContentService(SceneRepository sceneRepository,
@@ -32,6 +33,7 @@ public class SceneStructuredContentService {
                                           SceneLinkRepository linkRepository,
                                           SceneTransitionRepository transitionRepository,
                                           RollableTableRepository rollableTableRepository,
+                                          TableReferenceResolver referenceResolver,
                                           EntityManager em) {
         this.sceneRepository = sceneRepository;
         this.sectionRepository = sectionRepository;
@@ -40,6 +42,7 @@ public class SceneStructuredContentService {
         this.linkRepository = linkRepository;
         this.transitionRepository = transitionRepository;
         this.rollableTableRepository = rollableTableRepository;
+        this.referenceResolver = referenceResolver;
         this.em = em;
     }
 
@@ -420,10 +423,7 @@ public class SceneStructuredContentService {
             }
             RollableTable table = rollableTableRepository.findById(cmd.targetId())
                     .orElseThrow(() -> new IllegalArgumentException("ROLLABLE_TABLE not found: " + cmd.targetId()));
-            boolean visible = table.getSource() == ContentSource.SRD
-                    || table.getCampaign() == null
-                    || table.getCampaign().getId().equals(campaignId);
-            if (!visible) {
+            if (!referenceResolver.isVisibleToCampaign(table.getId(), campaignId)) {
                 throw new IllegalArgumentException("ROLLABLE_TABLE is not visible to this campaign");
             }
         }

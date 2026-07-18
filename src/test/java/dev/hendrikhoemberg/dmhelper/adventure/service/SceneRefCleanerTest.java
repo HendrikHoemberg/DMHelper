@@ -17,6 +17,7 @@ import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,7 @@ class SceneRefCleanerTest {
     @Autowired private SceneRefCleaner cleaner;
     @MockitoBean private SessionActivityRecorder sessionActivity;
     @MockitoBean private CampaignPackageKeyService packageKeyService;
+    @MockitoBean private TableReferenceResolver referenceResolver;
     @Autowired private CampaignRepository campaignRepository;
     @Autowired private GameMapRepository gameMapRepository;
     @Autowired private EncounterRepository encounterRepository;

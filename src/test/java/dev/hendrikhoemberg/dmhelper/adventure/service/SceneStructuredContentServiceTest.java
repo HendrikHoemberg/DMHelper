@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +37,7 @@ class SceneStructuredContentServiceTest {
     @Autowired private EntityManager em;
     @MockitoBean private SessionActivityRecorder sessionActivity;
     @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
+    @MockitoBean private TableReferenceResolver referenceResolver;
 
     private Campaign campaign;
     private Campaign otherCampaign;
