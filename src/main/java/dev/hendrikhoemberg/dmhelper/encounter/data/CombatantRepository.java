@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.encounter.data;
 
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -27,4 +28,6 @@ public interface CombatantRepository extends JpaRepository<Combatant, UUID> {
     long countByWaveId(UUID waveId);
 
     List<Combatant> findByWaveId(UUID waveId);
+
+    List<Combatant> findByThreatKindAndThreatId(ThreatKind threatKind, UUID threatId);
 }

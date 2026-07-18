@@ -187,11 +187,16 @@ public class StatBlockService {
     }
 
     public void delete(UUID id) {
-        sceneRefCleaner.detachStatBlock(id);
         StatBlock sb = findById(id);
         if (sb.getSource() != ContentSource.CUSTOM) {
             throw new IllegalArgumentException("Cannot delete SRD statblocks");
         }
+        int trapRefs = referenceCleaner.countTrapStatBlockReferences(id);
+        if (trapRefs > 0) {
+            throw new IllegalArgumentException(
+                    "Cannot delete statblock: referenced by " + trapRefs + " trap(s)");
+        }
+        sceneRefCleaner.detachStatBlock(id);
         if (sb.getCampaign() != null) {
             referenceCleaner.deletePackageKey(sb.getCampaign().getId(), CampaignContentType.STATBLOCK, id);
         }

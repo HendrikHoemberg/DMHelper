@@ -170,10 +170,12 @@ public class EquipmentItemService {
     public void deleteCustom(UUID id) {
         EquipmentItem item = findById(id);
         customContentSupport.assertCustom(item.getSource());
-        int refs = referenceCleaner.countEquipmentItemReferences(id);
+        int treasuryRefs = referenceCleaner.countEquipmentItemReferences(id);
+        int threatRefs = referenceCleaner.countThreatReferences(CampaignContentType.EQUIPMENT_ITEM, id);
+        int refs = treasuryRefs + threatRefs;
         if (refs > 0) {
             throw new IllegalArgumentException(
-                "Cannot delete equipment item: referenced by " + refs + " treasury assignment(s)");
+                "Cannot delete equipment item: referenced by " + refs + " dependent(s)");
         }
         if (item.getCampaign() != null) {
             referenceCleaner.deletePackageKey(item.getCampaign().getId(), CampaignContentType.EQUIPMENT_ITEM, id);

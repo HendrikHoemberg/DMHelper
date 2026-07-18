@@ -6,6 +6,8 @@ import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableEntryReferen
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.SheetSpellReferenceRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatReferenceRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,8 @@ public class LibraryReferenceCleaner {
     private final CharacterSheetRepository sheetRepository;
     private final ItemAssignmentRepository itemAssignmentRepository;
     private final RollableTableEntryReferenceRepository rollableTableEntryRefRepository;
+    private final ThreatReferenceRepository threatReferenceRepository;
+    private final TrapRepository trapRepository;
     private final CampaignPackageKeyService packageKeyService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -31,11 +35,15 @@ public class LibraryReferenceCleaner {
                                    CharacterSheetRepository sheetRepository,
                                    ItemAssignmentRepository itemAssignmentRepository,
                                    RollableTableEntryReferenceRepository rollableTableEntryRefRepository,
+                                   ThreatReferenceRepository threatReferenceRepository,
+                                   TrapRepository trapRepository,
                                    CampaignPackageKeyService packageKeyService) {
         this.sheetSpellRefRepository = sheetSpellRefRepository;
         this.sheetRepository = sheetRepository;
         this.itemAssignmentRepository = itemAssignmentRepository;
         this.rollableTableEntryRefRepository = rollableTableEntryRefRepository;
+        this.threatReferenceRepository = threatReferenceRepository;
+        this.trapRepository = trapRepository;
         this.packageKeyService = packageKeyService;
     }
 
@@ -98,6 +106,16 @@ public class LibraryReferenceCleaner {
     public int countRollableTableReferences(UUID entityId, CampaignContentType contentType) {
         return rollableTableEntryRefRepository
                 .findByTargetTypeAndTargetId(contentType.name(), entityId).size();
+    }
+
+    /** Counts trap/hazard ThreatReference rows targeting the given library entity. */
+    public int countThreatReferences(CampaignContentType contentType, UUID entityId) {
+        return threatReferenceRepository.findByTargetTypeAndTargetId(contentType, entityId).size();
+    }
+
+    /** Counts traps that link a statblock directly via Trap.statBlock. */
+    public int countTrapStatBlockReferences(UUID statBlockId) {
+        return (int) trapRepository.countByStatBlockId(statBlockId);
     }
 
     private boolean classLevelsContain(String raw, String sourceKey) {

@@ -150,6 +150,11 @@ public class ConditionService {
     public void deleteCustom(UUID id) {
         Condition condition = findById(id);
         customContentSupport.assertCustom(condition.getSource());
+        int refs = referenceCleaner.countThreatReferences(CampaignContentType.CONDITION, id);
+        if (refs > 0) {
+            throw new IllegalArgumentException(
+                    "Cannot delete condition: referenced by " + refs + " trap/hazard reference(s)");
+        }
         if (condition.getCampaign() != null) {
             referenceCleaner.deletePackageKey(condition.getCampaign().getId(), CampaignContentType.CONDITION, id);
         }

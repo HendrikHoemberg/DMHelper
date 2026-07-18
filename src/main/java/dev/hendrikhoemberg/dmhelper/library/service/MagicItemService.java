@@ -179,10 +179,12 @@ public class MagicItemService {
     public void deleteCustom(UUID id) {
         MagicItem item = findById(id);
         customContentSupport.assertCustom(item.getSource());
-        int refs = referenceCleaner.countMagicItemReferences(id);
+        int treasuryRefs = referenceCleaner.countMagicItemReferences(id);
+        int threatRefs = referenceCleaner.countThreatReferences(CampaignContentType.MAGIC_ITEM, id);
+        int refs = treasuryRefs + threatRefs;
         if (refs > 0) {
             throw new IllegalArgumentException(
-                "Cannot delete magic item: referenced by " + refs + " treasury assignment(s)");
+                "Cannot delete magic item: referenced by " + refs + " dependent(s)");
         }
         if (item.getCampaign() != null) {
             referenceCleaner.deletePackageKey(item.getCampaign().getId(), CampaignContentType.MAGIC_ITEM, id);
