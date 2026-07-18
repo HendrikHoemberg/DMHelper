@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.encounter.data;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
 import jakarta.persistence.*;
 import java.util.UUID;
 
@@ -98,6 +99,13 @@ public class Combatant {
     @Column(name = "placement_region_key", length = 100)
     private String placementRegionKey;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "threat_kind", length = 10)
+    private ThreatKind threatKind;
+
+    @Column(name = "threat_id")
+    private UUID threatId;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -187,4 +195,10 @@ public class Combatant {
 
     public String getPlacementRegionKey() { return placementRegionKey; }
     public void setPlacementRegionKey(String placementRegionKey) { this.placementRegionKey = placementRegionKey; }
+
+    public ThreatKind getThreatKind() { return threatKind; }
+    public void setThreatKind(ThreatKind threatKind) { this.threatKind = threatKind; }
+
+    public UUID getThreatId() { return threatId; }
+    public void setThreatId(UUID threatId) { this.threatId = threatId; }
 }

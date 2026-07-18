@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.adventure.data;
 
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
 import jakarta.persistence.*;
 import java.util.UUID;
 
@@ -33,6 +34,13 @@ public class SceneSection {
     @Column(nullable = false)
     private int sortOrder = 0;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "threat_kind", length = 10)
+    private ThreatKind threatKind;
+
+    @Column(name = "threat_id")
+    private UUID threatId;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -53,4 +61,10 @@ public class SceneSection {
 
     public int getSortOrder() { return sortOrder; }
     public void setSortOrder(int sortOrder) { this.sortOrder = sortOrder; }
+
+    public ThreatKind getThreatKind() { return threatKind; }
+    public void setThreatKind(ThreatKind threatKind) { this.threatKind = threatKind; }
+
+    public UUID getThreatId() { return threatId; }
+    public void setThreatId(UUID threatId) { this.threatId = threatId; }
 }
