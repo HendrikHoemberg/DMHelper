@@ -1,8 +1,9 @@
 package dev.hendrikhoemberg.dmhelper.dice.web;
 
 import dev.hendrikhoemberg.dmhelper.dice.DiceResult;
-import dev.hendrikhoemberg.dmhelper.dice.data.DiceRoll;
 import dev.hendrikhoemberg.dmhelper.dice.service.DiceService;
+import dev.hendrikhoemberg.dmhelper.dice.service.RollHistoryItem;
+import dev.hendrikhoemberg.dmhelper.dice.service.RollHistoryService;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +18,11 @@ import java.util.UUID;
 public class DiceApiController {
 
     private final DiceService diceService;
+    private final RollHistoryService rollHistoryService;
 
-    public DiceApiController(DiceService diceService) {
+    public DiceApiController(DiceService diceService, RollHistoryService rollHistoryService) {
         this.diceService = diceService;
+        this.rollHistoryService = rollHistoryService;
     }
 
     @PostMapping
@@ -57,7 +60,7 @@ public class DiceApiController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<List<DiceRoll>> history(@RequestParam UUID campaignId) {
-        return ResponseEntity.ok(diceService.getHistory(campaignId));
+    public ResponseEntity<List<RollHistoryItem>> history(@RequestParam UUID campaignId) {
+        return ResponseEntity.ok(rollHistoryService.recent(campaignId, 20));
     }
 }

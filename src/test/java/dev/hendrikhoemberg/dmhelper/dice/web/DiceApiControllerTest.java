@@ -1,8 +1,10 @@
 package dev.hendrikhoemberg.dmhelper.dice.web;
 
 import dev.hendrikhoemberg.dmhelper.dice.DiceResult;
-import dev.hendrikhoemberg.dmhelper.dice.data.DiceRoll;
 import dev.hendrikhoemberg.dmhelper.dice.service.DiceService;
+import dev.hendrikhoemberg.dmhelper.dice.service.RollHistoryItem;
+import dev.hendrikhoemberg.dmhelper.dice.service.RollHistoryKind;
+import dev.hendrikhoemberg.dmhelper.dice.service.RollHistoryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -10,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +26,7 @@ class DiceApiControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private DiceService diceService;
+    @MockitoBean private RollHistoryService rollHistoryService;
 
     private static final UUID CAMPAIGN_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
@@ -108,17 +112,28 @@ class DiceApiControllerTest {
     }
 
     @Test
-    void shouldGetHistory() throws Exception {
-        DiceRoll roll = new DiceRoll();
-        roll.setExpression("2d6+4");
-        roll.setTotal(12);
-        when(diceService.getHistory(CAMPAIGN_ID)).thenReturn(List.of(roll));
+    void shouldGetMergedHistory() throws Exception {
+        UUID id1 = UUID.randomUUID();
+        UUID id2 = UUID.randomUUID();
+        List<RollHistoryItem> history = List.of(
+                new RollHistoryItem(id1, RollHistoryKind.TABLE, Instant.parse("2026-07-18T12:02:00Z"),
+                        null, 0, "Forest Encounters",
+                        List.of(new RollHistoryItem.RollHistoryOutcome("wolves", "2 wolves"))),
+                new RollHistoryItem(id2, RollHistoryKind.DICE, Instant.parse("2026-07-18T12:01:00Z"),
+                        "1d8", 5, null, null)
+        );
+        when(rollHistoryService.recent(CAMPAIGN_ID, 20)).thenReturn(history);
 
         mockMvc.perform(get("/api/v1/roll/history")
                         .param("campaignId", "00000000-0000-0000-0000-000000000001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].expression").value("2d6+4"))
-                .andExpect(jsonPath("$[0].total").value(12));
+                .andExpect(jsonPath("$[0].kind").value("TABLE"))
+                .andExpect(jsonPath("$[0].tableName").value("Forest Encounters"))
+                .andExpect(jsonPath("$[0].outcomes[0].entryKey").value("wolves"))
+                .andExpect(jsonPath("$[0].outcomes[0].resultText").value("2 wolves"))
+                .andExpect(jsonPath("$[1].kind").value("DICE"))
+                .andExpect(jsonPath("$[1].expression").value("1d8"))
+                .andExpect(jsonPath("$[1].total").value(5));
     }
 
     @Test

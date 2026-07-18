@@ -19,6 +19,11 @@ import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveRepository;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestRepository;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableRollLog;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableRollLogRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollGroupCodec;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollOutcome;
+import dev.hendrikhoemberg.dmhelper.dice.DiceResult;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
@@ -56,6 +61,8 @@ class SessionDraftServiceTest {
     @Mock private SessionObjectiveChangeRepository objectiveChanges;
     @Mock private QuestRepository questRepository;
     @Mock private QuestObjectiveRepository questObjectiveRepository;
+    @Mock private TableRollLogRepository tableRollLogs;
+    @Mock private TableRollGroupCodec codec;
 
     @InjectMocks private SessionDraftService service;
 
@@ -140,15 +147,17 @@ class SessionDraftServiceTest {
         when(quickNotes.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
                 .thenReturn(List.of(qn));
         when(quickNoteService.targetLabel(qn)).thenReturn("The Dark Forest");
+        when(tableRollLogs.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
 
         String draft = service.generate(session, endedAt);
 
         assertThat(draft).contains("Session Date", "In-Game Date", "Attendance", "Scenes", "Encounters",
-                "Loot & Ledger Changes", "Unresolved Quick Notes", "Recap", "Next-Session Hooks");
-        assertThat(draft).contains("Aria — Alice");
+                "Table Rolls", "Loot & Ledger Changes", "Unresolved Quick Notes", "Recap", "Next-Session Hooks");
+        assertThat(draft).contains("Aria \u2014 Alice");
         assertThat(draft).contains("The Dark Forest");
         assertThat(draft).contains("Started: 12 Flamerule 1492", "Ended: 13 Flamerule 1492");
-        assertThat(draft).contains("Goblin Ambush — 4 rounds; defeated: Goblin 1; damage recorded: 37");
+        assertThat(draft).contains("Goblin Ambush \u2014 4 rounds; defeated: Goblin 1; damage recorded: 37");
         assertThat(draft).contains("+100 GP");
         assertThat(draft).contains("SCENE / The Dark Forest: Player asked about the old ruins");
     }
@@ -172,10 +181,12 @@ class SessionDraftServiceTest {
                 .thenReturn(List.of(item));
         when(quickNotes.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
                 .thenReturn(List.of());
+        when(tableRollLogs.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
 
         String draft = service.generate(session, endedAt);
 
-        assertThat(draft).contains("+2× Potion of Healing — party stash");
+        assertThat(draft).contains("+2\u00d7 Potion of Healing \u2014 party stash");
         assertThat(draft).doesNotContain("+0 GP");
     }
 
@@ -203,6 +214,8 @@ class SessionDraftServiceTest {
         when(ledgers.findByCampaignIdAndTimestampBetweenOrderByTimestampAscIdAsc(campaignId, startedAt, endedAt))
                 .thenReturn(List.of());
         when(quickNotes.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(tableRollLogs.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
                 .thenReturn(List.of());
         when(objectiveChanges.findBySessionIdOrderByChangedAtAscIdAsc(session.getId())).thenReturn(List.of());
 
@@ -236,6 +249,8 @@ class SessionDraftServiceTest {
         when(ledgers.findByCampaignIdAndTimestampBetweenOrderByTimestampAscIdAsc(campaignId, startedAt, endedAt))
                 .thenReturn(List.of());
         when(quickNotes.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(tableRollLogs.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
                 .thenReturn(List.of());
         when(objectiveChanges.findBySessionIdOrderByChangedAtAscIdAsc(session.getId())).thenReturn(List.of(change));
         when(questObjectiveRepository.findById(objId)).thenReturn(java.util.Optional.of(obj));
@@ -291,6 +306,8 @@ class SessionDraftServiceTest {
                 .thenReturn(List.of());
         when(quickNotes.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
                 .thenReturn(List.of());
+        when(tableRollLogs.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
         when(objectiveChanges.findBySessionIdOrderByChangedAtAscIdAsc(session.getId())).thenReturn(List.of(first, second));
         when(questObjectiveRepository.findById(objId)).thenReturn(java.util.Optional.of(obj));
         lenient().when(questRepository.findById(questId)).thenReturn(java.util.Optional.of(quest));
@@ -342,6 +359,8 @@ class SessionDraftServiceTest {
                 .thenReturn(List.of());
         when(quickNotes.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
                 .thenReturn(List.of());
+        when(tableRollLogs.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
         when(objectiveChanges.findBySessionIdOrderByChangedAtAscIdAsc(session.getId())).thenReturn(List.of(change1, change2, change3));
         when(questObjectiveRepository.findById(objId)).thenReturn(java.util.Optional.of(obj));
         lenient().when(questRepository.findById(questId)).thenReturn(java.util.Optional.of(quest));
@@ -351,5 +370,47 @@ class SessionDraftServiceTest {
 
         assertThat(draft.indexOf("null \u2192 NOT_STARTED")).isLessThan(draft.indexOf("NOT_STARTED \u2192 ACTIVE"));
         assertThat(draft.indexOf("NOT_STARTED \u2192 ACTIVE")).isLessThan(draft.indexOf("ACTIVE \u2192 COMPLETED"));
+    }
+
+    @Test
+    void includesTableRollsFromSessionWindow() {
+        TableRollLog log1 = new TableRollLog();
+        log1.setId(UUID.randomUUID());
+        log1.setTableNameSnapshot("Forest Encounters");
+        log1.setResultJson("{}");
+
+        TableRollLog log2 = new TableRollLog();
+        log2.setId(UUID.randomUUID());
+        log2.setTableNameSnapshot("Forest Encounters");
+        log2.setResultJson("{}");
+
+        when(calendar.getCurrentDate(campaignId)).thenReturn(new CalendarService.InGameDate(1492, 6, 12));
+        when(visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId())).thenReturn(List.of());
+        when(combatLogs.findSessionEvidence(campaignId, startedAt, endedAt)).thenReturn(List.of());
+        when(ledgers.findByCampaignIdAndTimestampBetweenOrderByTimestampAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(quickNotes.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(tableRollLogs.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of(log1, log2));
+        when(codec.decode("{}", log1.getId())).thenReturn(List.of(
+                new TableRollOutcome("forest-enc", "Forest Encounters",
+                        new DiceResult("1d12", List.of(), 0, 5, false, false),
+                        "old-shrine", "An old shrine", null, List.of(), List.of())
+        ));
+        when(codec.decode("{}", log2.getId())).thenReturn(List.of(
+                new TableRollOutcome("forest-enc", "Forest Encounters",
+                        new DiceResult("1d12", List.of(), 0, 3, false, false),
+                        "wolves", "2 wolves", null, List.of(), List.of()),
+                new TableRollOutcome("forest-enc", "Forest Encounters",
+                        new DiceResult("1d12", List.of(), 0, 8, false, false),
+                        "wolves", "2 wolves", null, List.of(), List.of())
+        ));
+
+        String draft = service.generate(session, endedAt);
+
+        assertThat(draft).contains("## Table Rolls");
+        assertThat(draft).contains("Forest Encounters \u2014 old-shrine \u2014 An old shrine");
+        assertThat(draft).contains("Forest Encounters \u2014 wolves \u2014 2 wolves");
     }
 }

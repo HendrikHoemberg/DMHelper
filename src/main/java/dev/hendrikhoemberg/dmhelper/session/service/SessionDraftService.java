@@ -14,6 +14,10 @@ import dev.hendrikhoemberg.dmhelper.quest.data.Quest;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveRepository;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableRollLog;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableRollLogRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollGroupCodec;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollOutcome;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChangeRepository;
@@ -57,6 +61,8 @@ public class SessionDraftService {
     private final SessionObjectiveChangeRepository objectiveChanges;
     private final QuestRepository questRepository;
     private final QuestObjectiveRepository questObjectiveRepository;
+    private final TableRollLogRepository tableRollLogs;
+    private final TableRollGroupCodec codec;
 
     public SessionDraftService(SessionSceneVisitRepository visits,
                                CombatLogEntryRepository combatLogs,
@@ -67,7 +73,9 @@ public class SessionDraftService {
                                CalendarService calendar,
                                SessionObjectiveChangeRepository objectiveChanges,
                                QuestRepository questRepository,
-                               QuestObjectiveRepository questObjectiveRepository) {
+                               QuestObjectiveRepository questObjectiveRepository,
+                               TableRollLogRepository tableRollLogs,
+                               TableRollGroupCodec codec) {
         this.visits = visits;
         this.combatLogs = combatLogs;
         this.combatants = combatants;
@@ -78,6 +86,8 @@ public class SessionDraftService {
         this.objectiveChanges = objectiveChanges;
         this.questRepository = questRepository;
         this.questObjectiveRepository = questObjectiveRepository;
+        this.tableRollLogs = tableRollLogs;
+        this.codec = codec;
     }
 
     public String generate(CampaignSession session, Instant endedAt) {
@@ -90,6 +100,7 @@ public class SessionDraftService {
         listSection(out, "Scenes", sceneLines(session));
         listSection(out, "Quest Progress", questProgressLines(session));
         listSection(out, "Encounters", encounterLines(campaignId, startedAt, endedAt));
+        listSection(out, "Table Rolls", tableRollLines(campaignId, startedAt, endedAt));
         listSection(out, "Loot & Ledger Changes", ledgerLines(campaignId, startedAt, endedAt));
         listSection(out, "Unresolved Quick Notes", quickNoteLines(campaignId, startedAt, endedAt));
         out.append("## Recap\n\n\n## Next-Session Hooks\n\n");
@@ -209,6 +220,24 @@ public class SessionDraftService {
             log.warn("Ignoring malformed damage payload in combat log {}", entry.getId());
             return 0;
         }
+    }
+
+    private List<String> tableRollLines(UUID campaignId, Instant from, Instant to) {
+        List<TableRollLog> logs = tableRollLogs.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(
+                campaignId, from, to);
+        List<String> lines = new ArrayList<>();
+        for (TableRollLog log : logs) {
+            try {
+                List<TableRollOutcome> outcomes = codec.decode(log.getResultJson(), log.getId());
+                for (TableRollOutcome outcome : outcomes) {
+                    lines.add(outcome.tableName() + " \u2014 " + outcome.entryKey()
+                            + " \u2014 " + outcome.resultText());
+                }
+            } catch (IllegalStateException e) {
+                lines.add(log.getTableNameSnapshot() + " \u2014 unavailable");
+            }
+        }
+        return lines;
     }
 
     private List<String> ledgerLines(UUID campaignId, Instant from, Instant to) {
