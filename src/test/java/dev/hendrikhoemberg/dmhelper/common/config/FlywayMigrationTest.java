@@ -230,6 +230,78 @@ class FlywayMigrationTest {
     }
 
     @Test
+    void v13IsApplied() {
+        Integer applied = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '13' AND \"success\" = TRUE",
+                Integer.class);
+        assertThat(applied).isEqualTo(1);
+    }
+
+    @Test
+    void v13CreatesRollableTable() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'ROLLABLE_TABLE'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v13CreatesRollableTableEntry() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'ROLLABLE_TABLE_ENTRY'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v13CreatesRollableTableEntryReference() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'ROLLABLE_TABLE_ENTRY_REFERENCE'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v13CreatesWorldLocationTableLink() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'WORLD_LOCATION_TABLE_LINK'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v13CreatesTableRollLog() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'TABLE_ROLL_LOG'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v13RollableTableHasExpectedColumns() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'ROLLABLE_TABLE' AND column_name = 'SOURCE'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'ROLLABLE_TABLE' AND column_name = 'CAMPAIGN_ID_FK'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'ROLLABLE_TABLE' AND column_name = 'ADDRESS_MODE'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v13RollableTableHasEntryKeyUniqueConstraint() {
+        String sql = """
+                SELECT COUNT(*) FROM information_schema.table_constraints
+                WHERE table_name = 'ROLLABLE_TABLE_ENTRY'
+                AND constraint_name = 'UQ_ROLLABLE_TABLE_ENTRY_KEY'""";
+        assertThat(jdbc.queryForObject(sql, Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v13CreatesWorldGraphLinkTable() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'WORLD_LOCATION_TABLE_LINK'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
     void v12CreatesWorldGraphTables() {
         Integer applied = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '12' AND \"success\" = TRUE",
