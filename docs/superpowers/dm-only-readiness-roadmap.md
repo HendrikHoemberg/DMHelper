@@ -4,7 +4,7 @@
 
 **Roadmap established after:** commit `36f7c3c`; use the status table together with current Git history
 
-**Current NEXT item:** 3 — Rollable tables and integrations
+**Current NEXT item:** 4 — Traps and hazards
 
 **Terminal goal:** DMHelper can prepare, run, record, export, restore, and resume a representative campaign as an all-in-one **DM-operated** tool.
 
@@ -61,8 +61,8 @@ integration churn and keeps the release gate attributable.
 |---|---|---|---|---|---|---|
 | 1 | P0 browser-smoke release-gate repair | `COMPLETE` | — | Master §§5–6, 21, 23 | [Completed plan](plans/2026-07-18-p0-browser-smoke-release-gate-repair.md) | Native party dialog regression and same-origin sheet setup fixed; `CoreSessionLoopSmokeTest` and full Maven suite green; master blocker note updated. |
 | 2 | Music-provider feasibility spike | `COMPLETE` | 1 | Atmosphere §7.1 and §7.6 | [Completed plan](plans/2026-07-18-music-provider-feasibility.md) | YouTube proven as viable baseline provider on the DM device (Firefox/Linux, 480x270 visible player, all six controls passed). Spotify classified CONDITIONAL (Policy III.6 synchronization). Provider contract frozen. See [decision record](../architecture/music-provider-feasibility.md). |
-| 3 | Rollable tables and integrations | `IN_PROGRESS` | 2 | Atmosphere delivery items 1–2 | [Implementation plan](plans/2026-07-18-p3-rollable-tables.md) | Table model/editor/validation, nested deterministic rolls, log integration, scene/location links, encounter/reward drafts, package round-trip, fixtures, and focused/full tests pass. |
-| 4 | Traps and hazards | `BLOCKED` | 3 | Atmosphere delivery items 3–4 | Create a dated `p3-traps-and-hazards` plan | Structured and prose-compatible traps/hazards, provenance, scene/tracker/map integrations, package round-trip, player-safety coverage, and focused/full tests pass. |
+| 3 | Rollable tables and integrations | `COMPLETE` | 2 | Atmosphere delivery items 1–2 | [Completed plan](plans/2026-07-18-p3-rollable-tables.md) | Table model/editor/validation, nested deterministic rolls, log integration, scene/location links, encounter/reward drafts, package round-trip, fixtures, and focused/full tests pass. |
+| 4 | Traps and hazards | `READY` | 3 | Atmosphere delivery items 3–4 | Create a dated `p3-traps-and-hazards` plan | Structured and prose-compatible traps/hazards, provenance, scene/tracker/map integrations, package round-trip, player-safety coverage, and focused/full tests pass. |
 | 5 | Travel core | `BLOCKED` | 4 | Travel delivery items 1–3 | Create a dated `p3-travel-core` plan | Settings, migrations, routes, legs, authoring/search/dependency rules, journey/watch state machine, persistence, package-key contracts, and focused/full tests pass. |
 | 6 | Manual fog of war | `BLOCKED` | 5 | Atmosphere delivery items 5–6 | Create a dated `p3-manual-fog` plan | Mask model, DM tools, package support, server-side masked projection, reconnect behavior, cache/payload leak security tests, round-trip, and focused/full tests pass. |
 | 7 | Atmosphere and music completion | `BLOCKED` | 6 and the decision from 2 | Atmosphere delivery items 7–8 | Create a dated `p3-atmosphere-music` plan | Provider SPI/reference adapter, local OAuth and token clearing, cue library, cockpit widget, assignments, priority switching, deterministic fake-provider tests, package safety, and bounded outage behavior pass. |
@@ -112,16 +112,16 @@ where the task independently requires current external facts.
 
 ## 7. Current recovery note
 
-As of the music-provider feasibility spike completion on 2026-07-18:
+As of the rollable tables completion on 2026-07-18:
 
 - master delivery items 1–10 are implemented;
 - world graph and faction clocks are implemented;
 - the remaining P3 designs are approved and committed;
 - the P0 browser-smoke plan is implemented, audited, and linked above;
 - the music-provider feasibility spike is complete: YouTube is the viable baseline provider (Firefox/Linux, all six controls passed with visible official player); Spotify is CONDITIONAL (Policy III.6 synchronization prohibition);
-- the detailed P3 rollable-tables plan is committed and is the next implementation action; no trap/fog/full-music/travel implementation plan has yet been created;
+- **the P3 rollable-tables plan is implemented and verified:** all 9 tasks complete (dice bounds, persistence, validation/CRUD, nested roll resolver, DM editor UI, scene/location cockpit links, encounter/reward confirm/discard drafts, package-v2 round-trip, fixtures/docs/acceptance gates); full Maven suite green (1422+ tests, 0 failures); V13 Flyway migration applied; all 6 table categories in feature-complete fixture; published-adventure d100 random-encounter table with nested refs; performance test passes (depth-5 < 100ms); player-safety test passes (no table data leaked to player endpoints);
 - the focused browser gate and complete Maven suite are green;
-- the next action is to execute the linked p3-rollable-tables implementation plan for row 3.
+- the next action is to create and execute a detailed implementation plan for row 4 (traps and hazards).
 - **Pre-existing test note (2026-07-18):** `CoreSessionLoopSmokeTest.exportAndReimportRoundTrip` fails with map name "Test Battle Map20" instead of "Test Battle Map" after reimport. This is pre-existing (before any table edits) and does not block table work.
 
 When conversation context is missing or compacted, resume from the first non-`COMPLETE` row in this
