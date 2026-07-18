@@ -46,33 +46,86 @@ become a readiness dependency. No provider feature is implemented or advertised 
 - https://developer.spotify.com/documentation/web-api/reference/get-information-about-the-users-current-playback
 - https://developer.spotify.com/documentation/web-api/concepts/rate-limits
 
+### Policy Compliance Assessment
+
+| Requirement | Status | Rationale |
+|---|---|---|
+| Synchronization with visual media | CONDITIONAL | Policy III.6 prohibits synchronizing sound recordings with visual media including "slideshow, video, or similar content." DMHelper's automatic scene-triggered cue changes while maps and story content are visible could be interpreted as synchronization. The language is broad and does not clearly exclude tabletop use. |
+| Non-interactive broadcast | SUPPORTED | Policy III.4 prohibits non-interactive internet webcasting to multiple simultaneous listeners. DMHelper plays on a single DM device only. |
+| Personal/non-commercial use | SUPPORTED | Policy III.10 requires personal, non-commercial use. DMHelper is a personal DM tool, not a business-facing product. |
+| Streaming SDA monetization | SUPPORTED | Policy IV.2 prohibits commercial streaming SDA monetization. DMHelper is non-commercial and requires Premium. |
+| Metadata, artwork, attribution | CONDITIONAL | Policy II.5 requires showing relevant cover art and metadata during playback. DMHelper must implement metadata display for Spotify content. |
+| Development-mode distribution | SUPPORTED | February 2026 Dev Mode limits (1 client ID, 5 users, Premium owner) are operational constraints DMHelper can satisfy. |
+
+**Overall Policy Status: CONDITIONAL.** `Spotify status` remains CONDITIONAL because Policy III.6 (synchronization) is a blocking concern. Row 7 must not ship Spotify without later written clearance.
+
 ## DM-Device Playback Proof
 
 The paper assessment is complete. Real YouTube playback remains required before this decision can
 advance the roadmap. Spotify playback is optional and cannot override a policy incompatibility.
 
-## OAuth and Credential Storage
+### Spotify: NOT_EXERCISED
 
-YouTube baseline playback of known public IDs uses no OAuth token or API key. Spotify would use
-Authorization Code with PKCE, a 127.0.0.1 loopback callback, least-privilege playback scopes, an
-in-memory access token, and an owner-only local refresh-token file.
+Functional proof was not executed. Prerequisites (Spotify Premium account, developer application
+with registered 127.0.0.1 loopback redirect, active official client or Connect device) are not
+available in this environment. The policy gate in the Policy Compliance Assessment above
+determines the final Spotify status.
 
-## Capability Limits
+## Spotify Provider Contract
 
-The downstream SPI must declare capabilities instead of presenting every control for every
-provider. Crossfade is unsupported by both baseline paths. YouTube requires a visible official
-player. Spotify requires an active official device.
+providerId=SPOTIFY
+authMode=OAUTH_PKCE
+redirectUri=http://127.0.0.1:8081/settings/audio/oauth/spotify/callback
+scopes=user-read-playback-state user-modify-playback-state
+accessTokenStorage=memory only
+refreshTokenPath=~/.dmhelper/providers/spotify/credentials.json
+providerDirectoryPermissions=0700 where POSIX permissions are available
+credentialFilePermissions=0600 where POSIX permissions are available
+clientSecret=not used
+clearCredentials=delete refresh-token file and in-memory access token
+exportBehavior=exclude all credentials and transient playback state
+logBehavior=never log tokens, authorization codes, provider responses containing tokens, or device ids
 
-## Failure Modes
+Platform handling: on non-POSIX systems, use an owner-only application-data location and fail
+closed with an actionable settings error if owner-only storage cannot be established.
 
-Audio failures remain bounded to the audio widget. Autoplay blocking, unavailable content,
-provider authorization expiry, rate limiting, no active device, and network loss must be visible
-and retryable without interrupting any session action.
+## Provider Capabilities
+
+supportsSearch=true
+supportsKnownTrack=true
+supportsKnownPlaylist=true
+supportsPlayPause=true
+supportsSkip=true
+supportsVolume=device dependent
+supportsQueue=true
+supportsCrossfade=false
+requiresVisiblePlayer=false
+requiresInitialUserGesture=false
+requiresActiveProviderDevice=true
+requiresPremium=true
+developmentModeUserLimit=5
+developmentModeClientIdsPerDeveloper=1
+rateLimitHandling=honor Retry-After on 429
+
+## Provider Failure Mapping
+
+| Failure category | Spotify trigger |
+|---|---|
+| AUTH_REQUIRED | Expired or revoked authorization; six-month refresh-token expiry requiring reauthorization |
+| PREMIUM_REQUIRED | Product or account rejection when the user does not have an active Premium subscription |
+| NO_ACTIVE_DEVICE | No active client or Connect device available for playback commands |
+| CONTENT_UNAVAILABLE | Deleted, market-restricted, or non-playable track or episode references |
+| RATE_LIMITED | 429 response; honor Retry-After header |
+| PROVIDER_OFFLINE | Network error, 5xx response, or request timeout |
+| POLICY_DISABLED | Spotify is not authorized for this product behavior (CONDITIONAL status) |
 
 ## Account and Subscription Prerequisites
 
-YouTube public embeds require no account for known public IDs. Spotify playback requires Premium;
-development-mode ownership and user limits apply.
+YouTube public embeds require no account for known public IDs. Spotify playback requires the
+following:
+- Owner must have an active Premium subscription
+- Development mode limits: 1 client ID per developer, 5 users per app
+- Spotify client or Connect device must be active on the DM machine
 
 ## Downstream Implementation Contract
 
