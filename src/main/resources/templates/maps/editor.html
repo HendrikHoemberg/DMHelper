@@ -589,6 +589,8 @@
         });
         window.mapEditor = editor;
         editor.load();
+        // Alpine init may run before this module assigns window.mapEditor; load pins once ready.
+        editor.loadThreatPins();
     </script>
 </body>
 </html>

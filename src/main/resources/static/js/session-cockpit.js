@@ -387,9 +387,13 @@ function sessionCockpit(config) {
                 this.showGrid = e.detail.showGrid;
             });
             window.addEventListener('battle-maplist', (e) => {
+                const previousMapId = this.currentMapId;
                 this.maps = e.detail.maps;
                 this.currentMapId = e.detail.currentMapId;
                 this.visitedMapIds.add(this.currentMapId);
+                if (this.currentMapId !== previousMapId) {
+                    this.refreshThreatPins();
+                }
             });
             window.addEventListener('tracker-encounter-state', (e) => {
                 this.activeEncounter = e.detail.encounter;
@@ -621,6 +625,7 @@ function sessionCockpit(config) {
             this.presentingMap = this.presentationMode === 'MAP'
                 && this.presentedMapId === mapId;
             history.replaceState(null, '', `/campaigns/${this.campaignId}/session?mapId=${mapId}`);
+            await this.refreshThreatPins();
         },
 
         restoreMapPicker(mapId) {
