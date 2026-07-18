@@ -61,7 +61,7 @@ integration churn and keeps the release gate attributable.
 |---|---|---|---|---|---|---|
 | 1 | P0 browser-smoke release-gate repair | `COMPLETE` | — | Master §§5–6, 21, 23 | [Completed plan](plans/2026-07-18-p0-browser-smoke-release-gate-repair.md) | Native party dialog regression and same-origin sheet setup fixed; `CoreSessionLoopSmokeTest` and full Maven suite green; master blocker note updated. |
 | 2 | Music-provider feasibility spike | `COMPLETE` | 1 | Atmosphere §7.1 and §7.6 | [Completed plan](plans/2026-07-18-music-provider-feasibility.md) | YouTube proven as viable baseline provider on the DM device (Firefox/Linux, 480x270 visible player, all six controls passed). Spotify classified CONDITIONAL (Policy III.6 synchronization). Provider contract frozen. See [decision record](../architecture/music-provider-feasibility.md). |
-| 3 | Rollable tables and integrations | `READY` | 2 | Atmosphere delivery items 1–2 | [Implementation plan](plans/2026-07-18-p3-rollable-tables.md) | Table model/editor/validation, nested deterministic rolls, log integration, scene/location links, encounter/reward drafts, package round-trip, fixtures, and focused/full tests pass. |
+| 3 | Rollable tables and integrations | `IN_PROGRESS` | 2 | Atmosphere delivery items 1–2 | [Implementation plan](plans/2026-07-18-p3-rollable-tables.md) | Table model/editor/validation, nested deterministic rolls, log integration, scene/location links, encounter/reward drafts, package round-trip, fixtures, and focused/full tests pass. |
 | 4 | Traps and hazards | `BLOCKED` | 3 | Atmosphere delivery items 3–4 | Create a dated `p3-traps-and-hazards` plan | Structured and prose-compatible traps/hazards, provenance, scene/tracker/map integrations, package round-trip, player-safety coverage, and focused/full tests pass. |
 | 5 | Travel core | `BLOCKED` | 4 | Travel delivery items 1–3 | Create a dated `p3-travel-core` plan | Settings, migrations, routes, legs, authoring/search/dependency rules, journey/watch state machine, persistence, package-key contracts, and focused/full tests pass. |
 | 6 | Manual fog of war | `BLOCKED` | 5 | Atmosphere delivery items 5–6 | Create a dated `p3-manual-fog` plan | Mask model, DM tools, package support, server-side masked projection, reconnect behavior, cache/payload leak security tests, round-trip, and focused/full tests pass. |
@@ -122,6 +122,7 @@ As of the music-provider feasibility spike completion on 2026-07-18:
 - the detailed P3 rollable-tables plan is committed and is the next implementation action; no trap/fog/full-music/travel implementation plan has yet been created;
 - the focused browser gate and complete Maven suite are green;
 - the next action is to execute the linked p3-rollable-tables implementation plan for row 3.
+- **Pre-existing test note (2026-07-18):** `CoreSessionLoopSmokeTest.exportAndReimportRoundTrip` fails with map name "Test Battle Map20" instead of "Test Battle Map" after reimport. This is pre-existing (before any table edits) and does not block table work.
 
 When conversation context is missing or compacted, resume from the first non-`COMPLETE` row in this
 file and validate its status against the repository before acting.
