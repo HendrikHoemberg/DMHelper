@@ -169,10 +169,10 @@ No P3 work should displace an unfinished P0 or P1 release gate.
 
 ## 6. Workstream A — Existing-path reliability
 
-> **Implementation status (2026-07-18):** Delivery items 1–10 have shipped implementation, and the
-> world-graph/faction-clock slice of item 11 is implemented. Release verification is not green: the
-> current full suite contains two browser-smoke errors, which must be resolved before the readiness
-> claim. The remaining required P3 slices are tracked in §22.
+> **Implementation status (verified 2026-07-18):** Delivery items 1–10 have shipped implementation,
+> and the world-graph/faction-clock slice of item 11 is implemented. The full automated Maven suite
+> is green after repairing the party native-dialog visibility regression and making sheet smoke setup
+> same-origin. The remaining required P3 slices are tracked in §22.
 
 ### 6.1 Quick notes
 
