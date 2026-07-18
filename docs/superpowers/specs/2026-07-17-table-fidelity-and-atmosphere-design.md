@@ -500,8 +500,8 @@ then music (new external dependency, isolated last):
 
 | # | Delivery Item | Depends on | Status |
 |---|--------------|------------|--------|
-| 1 | Rollable tables: model, editor, roll flow, package section | — | `IN_PROGRESS` |
-| 2 | Table integrations: scene/location links, encounter prefill, reward drafts | 1 | `IN_PROGRESS` |
+| 1 | Rollable tables: model, editor, roll flow, package section | — | `IMPLEMENTED` |
+| 2 | Table integrations: scene/location links, encounter prefill, reward drafts | 1 | `IMPLEMENTED` |
 | 3 | Traps/hazards: model, editor, package section, provenance | — | `PLANNED` |
 | 4 | Traps/hazards integration: scene sections, tracker cards, map pins | 3 | `PLANNED` |
 | 5 | Fog of war: mask model, DM tools, package section | — | `PLANNED` |
