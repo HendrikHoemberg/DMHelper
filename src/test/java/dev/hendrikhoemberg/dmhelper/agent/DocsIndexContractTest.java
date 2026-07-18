@@ -35,4 +35,33 @@ class DocsIndexContractTest {
         assertThat(body).contains("PIN");
         assertThat(body).containsIgnoringCase("untrusted");
     }
+
+    @Test
+    void musicProviderFeasibilityDecisionIsIndexedAndComplete() throws Exception {
+        String architectureIndex = Files.readString(Path.of("docs/architecture/README.md"));
+        Path decisionPath = Path.of("docs/architecture/music-provider-feasibility.md");
+
+        assertThat(architectureIndex).contains("music-provider-feasibility.md");
+        assertThat(decisionPath).exists();
+
+        String decision = Files.readString(decisionPath);
+        assertThat(decision)
+                .contains("# Music-Provider Feasibility Decision")
+                .contains("**Official sources checked:**")
+                .containsPattern("\\*\\*Official sources checked:\\*\\* 20\\d{2}-\\d{2}-\\d{2}")
+                .contains("## Decision")
+                .contains("**Readiness provider:**")
+                .contains("**YouTube status:**")
+                .contains("**Spotify status:**")
+                .contains("## Candidate Matrix")
+                .contains("## DM-Device Playback Proof")
+                .contains("## OAuth and Credential Storage")
+                .contains("## Capability Limits")
+                .contains("## Failure Modes")
+                .contains("## Account and Subscription Prerequisites")
+                .contains("## Downstream Implementation Contract")
+                .contains("## Roadmap Outcome")
+                .contains("https://developers.google.com/youtube/iframe_api_reference")
+                .contains("https://developer.spotify.com/policy");
+    }
 }

@@ -7,3 +7,4 @@ This directory documents the architecture of DMHelper.
 - [Session and Player Projection](session-and-player-projection.md) — Workspace selection order and player-safe projection rules.
 - [Security Boundaries](security-boundaries.md) — PIN-gated routes, player-safe endpoints, WebSocket restrictions.
 - [Testing Strategy](testing-strategy.md) — Testing layers and verification approach.
+- [Music-Provider Feasibility](music-provider-feasibility.md) — Spotify/YouTube evidence, DM-device playback proof, credentials boundary, capability limits, and the selected readiness provider.
