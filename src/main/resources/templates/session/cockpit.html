@@ -111,6 +111,11 @@
       <option th:each="handout : ${workspace.handouts}" th:unless="${handout.dmOnly}"
               th:value="${handout.id}" th:text="${handout.title}">Handout</option>
     </select>
+    <select id="cockpitTablePicker" class="form-input" aria-label="Roll linked table"
+            @change="rollLinkedTable($event.target.value, $event.target.options[$event.target.selectedIndex]?.text || ''); $event.target.value = ''">
+      <option value="">Roll linked table…</option>
+      <option th:each="t : ${workspace.linkedTables}" th:value="${t.tableId}" th:text="${t.name}">Table</option>
+    </select>
     <a class="btn btn-ghost" target="_blank" href="/library?tab=rules">Rules</a>
     <a class="btn btn-ghost" target="_blank"
        th:href="@{/campaigns/{id}/calendar(id=${campaignId})}">Calendar</a>
@@ -225,7 +230,7 @@
   <th:block th:replace="~{session/_lifecycle-dialog :: lifecycle-dialog}"></th:block>
 </main>
 <th:block th:replace="~{fragments/_command-palette :: command-palette}"></th:block>
-<th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>
+    <th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>
 <script th:src="@{/vendor/konva.min.js}"></script>
 <script th:inline="javascript">
 window.sessionCockpitConfig = {

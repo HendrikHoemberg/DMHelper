@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="linked-tables(linkedTables)">
+<div class="linked-tables u-mt-sm" th:if="${linkedTables != null and !linkedTables.isEmpty()}">
+  <h5 class="u-text-sm">Linked Tables</h5>
+  <div th:each="t : ${linkedTables}" class="linked-table-row u-flex u-gap-xs u-mb-xs u-items-center">
+    <span class="badge" th:text="${t.source}">SOURCE</span>
+    <span style="flex: 1" th:text="${t.name}">Table name</span>
+    <span class="u-text-xs text-muted" th:text="${t.sourceLabel}">Source label</span>
+    <button class="btn btn-sm btn-primary"
+            th:attr="data-table-id=${t.tableId}, data-table-name=${t.name}"
+            @click="rollLinkedTable($el.dataset.tableId, $el.dataset.tableName)"
+            title="Roll this table">Roll</button>
+  </div>
+</div>
+</th:block>
+</html>

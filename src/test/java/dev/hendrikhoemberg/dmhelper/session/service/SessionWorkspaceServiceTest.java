@@ -11,6 +11,7 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableLinkService;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +41,7 @@ class SessionWorkspaceServiceTest {
     @Mock private PartyMemberRepository party;
     @Mock private CalendarService calendar;
     @Mock private dev.hendrikhoemberg.dmhelper.quest.data.QuestRepository questRepository;
+    @Mock private RollableTableLinkService rollableTableLinkService;
 
     @InjectMocks private SessionWorkspaceService service;
 
@@ -66,6 +68,8 @@ class SessionWorkspaceServiceTest {
         when(party.findByCampaignIdAndActiveTrueOrderByCharacterNameAsc(campaignId)).thenReturn(List.of());
         when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(session));
         when(plans.latest(campaignId)).thenReturn(Optional.empty());
+        org.mockito.Mockito.lenient().when(rollableTableLinkService.forScene(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(java.util.List.of());
     }
 
     private Scene sceneWithMap(GameMap map) {

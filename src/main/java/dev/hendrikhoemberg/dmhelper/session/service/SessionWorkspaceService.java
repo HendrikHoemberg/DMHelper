@@ -15,6 +15,8 @@ import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.quest.data.*;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.LinkedRollableTableView;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableLinkService;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import org.springframework.stereotype.Service;
@@ -57,7 +59,8 @@ public class SessionWorkspaceService {
             List<PartyMember> partyMembers,
             CalendarService.InGameDate currentDate,
             StructuredSceneView structuredSceneView,
-            List<QuestProgressView> questProgressViews) {}
+            List<QuestProgressView> questProgressViews,
+            List<LinkedRollableTableView> linkedTables) {}
 
     private final CampaignRepository campaigns;
     private final CampaignSessionRepository sessions;
@@ -69,6 +72,7 @@ public class SessionWorkspaceService {
     private final PartyMemberRepository party;
     private final CalendarService calendar;
     private final QuestRepository questRepository;
+    private final RollableTableLinkService rollableTableLinkService;
 
     public SessionWorkspaceService(CampaignRepository campaigns,
                                     CampaignSessionRepository sessions,
@@ -79,7 +83,8 @@ public class SessionWorkspaceService {
                                     HandoutRepository handouts,
                                     PartyMemberRepository party,
                                     CalendarService calendar,
-                                    QuestRepository questRepository) {
+                                    QuestRepository questRepository,
+                                    RollableTableLinkService rollableTableLinkService) {
         this.campaigns = campaigns;
         this.sessions = sessions;
         this.adventures = adventures;
@@ -90,6 +95,7 @@ public class SessionWorkspaceService {
         this.party = party;
         this.calendar = calendar;
         this.questRepository = questRepository;
+        this.rollableTableLinkService = rollableTableLinkService;
     }
 
     public SessionWorkspace load(UUID campaignId, UUID requestedMapId) {
@@ -104,6 +110,9 @@ public class SessionWorkspaceService {
         List<Scene> neighbors = editorialNeighbors(current);
         StructuredSceneView ssv = buildStructuredSceneView(current);
         List<QuestProgressView> qpvs = buildQuestProgressViews(campaignId);
+        List<LinkedRollableTableView> linkedTables = current != null
+                ? rollableTableLinkService.forScene(campaignId, current.getId())
+                : List.of();
         return new SessionWorkspace(campaign, session, selection.map(), selection.source(), current,
                 neighbors.get(0), neighbors.get(1), active,
                 encounters.findByCampaignIdOrderByNameAsc(campaignId).stream()
@@ -111,7 +120,7 @@ public class SessionWorkspaceService {
                 plan, maps.findByCampaignIdOrderBySortOrderAsc(campaignId),
                 handouts.findByCampaignIdOrderByTitleAsc(campaignId),
                 party.findByCampaignIdAndActiveTrueOrderByCharacterNameAsc(campaignId),
-                calendar.getCurrentDate(campaignId), ssv, qpvs);
+                calendar.getCurrentDate(campaignId), ssv, qpvs, linkedTables);
     }
 
     private StructuredSceneView buildStructuredSceneView(Scene scene) {

@@ -3,6 +3,8 @@ package dev.hendrikhoemberg.dmhelper.world.web;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLinkRepository;
 import dev.hendrikhoemberg.dmhelper.world.data.*;
 import dev.hendrikhoemberg.dmhelper.world.service.WorldService;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +31,8 @@ class WorldControllerTest {
 
     @MockitoBean private WorldService worldService;
     @MockitoBean private CampaignRepository campaignRepository;
+    @MockitoBean private RollableTableRepository rollableTableRepository;
+    @MockitoBean private WorldLocationTableLinkRepository locationTableLinkRepository;
 
     private UUID campaignId, npcId, locationId, factionId;
     private Campaign campaign;
@@ -144,6 +148,8 @@ class WorldControllerTest {
         loc.setId(locationId);
         loc.setName("Test Location");
         when(worldService.getLocation(campaignId, locationId)).thenReturn(loc);
+        when(locationTableLinkRepository.findByLocationIdOrderBySortOrderAsc(locationId)).thenReturn(List.of());
+        when(rollableTableRepository.findByCampaignIdOrderByNameAsc(campaignId)).thenReturn(List.of());
 
         mockMvc.perform(get("/campaigns/{cid}/world/locations/{lid}", campaignId, locationId))
                 .andExpect(status().isOk())

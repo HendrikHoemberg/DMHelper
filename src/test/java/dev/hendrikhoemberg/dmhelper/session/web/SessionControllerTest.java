@@ -86,7 +86,7 @@ class SessionControllerTest {
                 scene, null, null, null,
                 List.of(), null, List.of(), List.of(), List.of(),
                 new CalendarService.InGameDate(1492, 7, 12),
-                ssv, List.of());
+                ssv, List.of(), List.of());
         when(workspaces.load(campaignId, null)).thenReturn(ws);
 
         mvc.perform(get("/campaigns/{id}/session", campaignId))
@@ -123,7 +123,7 @@ class SessionControllerTest {
                 null, null, null, null,
                 List.of(), null, List.of(), List.of(), List.of(),
                 new CalendarService.InGameDate(1492, 7, 12),
-                null, List.of());
+                null, List.of(), List.of());
     }
 
     static SessionWorkspace mapWorkspace() {
@@ -141,6 +141,6 @@ class SessionControllerTest {
                 null, null, null, null,
                 List.of(), null, List.of(), List.of(), List.of(),
                 new CalendarService.InGameDate(1492, 7, 12),
-                null, List.of());
+                null, List.of(), List.of());
     }
 }

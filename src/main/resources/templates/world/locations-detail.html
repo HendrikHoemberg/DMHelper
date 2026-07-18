@@ -54,6 +54,41 @@
                 <div th:if="${location.tags}" class="u-mb-md" th:text="|Tags: ${location.tags}|">Tags</div>
                 <div th:if="${location.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${location.sourceLocator}|">Source</div>
             </div>
+
+            <!-- Linked Tables -->
+            <div class="detail-section u-mt-md">
+                <h3>Linked Tables</h3>
+                <div th:each="link : ${tableLinks}" class="card card--compact u-mb-xs">
+                    <span th:text="${link.table.name}">Table Name</span>
+                    <span class="badge" th:text="${link.role.name()}">ROLE</span>
+                    <button class="btn btn-danger btn-sm"
+                            th:hx-delete="@{/campaigns/{cid}/world/locations/{lid}/tables/{linkId}(cid=${campaignId},lid=${location.id},linkId=${link.id})}"
+                            hx-confirm="Remove this table link?"
+                            hx-target="body" hx-swap="outerHTML">&times;</button>
+                </div>
+                <div th:if="${#lists.isEmpty(tableLinks)}">
+                    <span class="u-text-sm text-muted">No tables linked</span>
+                </div>
+                <details class="u-mt-xs">
+                    <summary class="u-text-sm">Link a table</summary>
+                    <form class="inline-form u-mt-xs"
+                          th:hx-post="@{/campaigns/{cid}/world/locations/{lid}/tables(cid=${campaignId},lid=${location.id})}"
+                          hx-target="body" hx-swap="outerHTML">
+                        <div class="form-group">
+                            <label class="form-label">Table</label>
+                            <select name="tableId" class="form-input" required>
+                                <option value="">Select table...</option>
+                                <option th:each="t : ${tables}" th:value="${t.id}" th:text="${t.name}">Table</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Sort Order</label>
+                            <input type="number" name="sortOrder" class="form-input" value="0">
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary">Link table</button>
+                    </form>
+                </details>
+            </div>
         </main>
     </div>
 </body>

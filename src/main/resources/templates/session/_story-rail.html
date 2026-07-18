@@ -96,6 +96,7 @@
             </div>
           </div>
         </div>
+        <th:block th:replace="~{session/_linked-tables :: linked-tables(linkedTables=${workspace.linkedTables})}"></th:block>
         <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${workspace.campaign.id}, targetType='SCENE', targetId=${workspace.currentScene.id})}"></th:block>
       </div>
     </th:block>

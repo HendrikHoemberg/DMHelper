@@ -989,7 +989,7 @@
       "additionalProperties": false,
       "required": ["role", "targetRef", "sortOrder"],
       "properties": {
-        "role": { "type": "string", "enum": ["REFERENCE", "HANDOUT", "RULE", "QUEST", "TIMELINE_EVENT", "RELATED_SCENE", "NPC", "LOCATION"] },
+        "role": { "type": "string", "enum": ["REFERENCE", "HANDOUT", "RULE", "QUEST", "TIMELINE_EVENT", "RELATED_SCENE", "NPC", "LOCATION", "RANDOM_ENCOUNTERS"] },
         "targetRef": { "$ref": "#/$defs/contentReference" },
         "displayText": { "type": "string" },
         "condition": { "type": "string" },

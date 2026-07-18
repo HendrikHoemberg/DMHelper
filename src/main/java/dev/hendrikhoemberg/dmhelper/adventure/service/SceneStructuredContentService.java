@@ -2,6 +2,9 @@ package dev.hendrikhoemberg.dmhelper.adventure.service;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +22,7 @@ public class SceneStructuredContentService {
     private final SceneParticipantRepository participantRepository;
     private final SceneLinkRepository linkRepository;
     private final SceneTransitionRepository transitionRepository;
+    private final RollableTableRepository rollableTableRepository;
     private final EntityManager em;
 
     public SceneStructuredContentService(SceneRepository sceneRepository,
@@ -27,6 +31,7 @@ public class SceneStructuredContentService {
                                           SceneParticipantRepository participantRepository,
                                           SceneLinkRepository linkRepository,
                                           SceneTransitionRepository transitionRepository,
+                                          RollableTableRepository rollableTableRepository,
                                           EntityManager em) {
         this.sceneRepository = sceneRepository;
         this.sectionRepository = sectionRepository;
@@ -34,6 +39,7 @@ public class SceneStructuredContentService {
         this.participantRepository = participantRepository;
         this.linkRepository = linkRepository;
         this.transitionRepository = transitionRepository;
+        this.rollableTableRepository = rollableTableRepository;
         this.em = em;
     }
 
@@ -268,6 +274,7 @@ public class SceneStructuredContentService {
 
     public SceneLink addLink(UUID campaignId, UUID sceneId, SceneLinkCommand cmd) {
         Scene scene = findSceneInCampaign(campaignId, sceneId);
+        validateTableLink(campaignId, cmd);
         SceneLink link = new SceneLink();
         link.setScene(scene);
         link.setRole(cmd.role());
@@ -285,6 +292,7 @@ public class SceneStructuredContentService {
 
     public void updateLink(UUID campaignId, UUID sceneId, UUID linkId, SceneLinkCommand cmd) {
         Scene scene = findSceneInCampaign(campaignId, sceneId);
+        validateTableLink(campaignId, cmd);
         SceneLink link = scene.getLinks().stream()
                 .filter(l -> l.getId().equals(linkId))
                 .findFirst()
@@ -398,6 +406,25 @@ public class SceneStructuredContentService {
             }
             if (!hasTarget && !hasExternal) {
                 throw new IllegalArgumentException("ENTRANCE/EXIT transition requires either a target scene or an external destination");
+            }
+        }
+    }
+
+    private void validateTableLink(UUID campaignId, SceneLinkCommand cmd) {
+        if ("ROLLABLE_TABLE".equals(cmd.targetType())) {
+            if (cmd.targetScope() != SceneLinkTargetScope.PACKAGE) {
+                throw new IllegalArgumentException("ROLLABLE_TABLE links require PACKAGE scope");
+            }
+            if (cmd.targetId() == null) {
+                throw new IllegalArgumentException("ROLLABLE_TABLE links require a target ID");
+            }
+            RollableTable table = rollableTableRepository.findById(cmd.targetId())
+                    .orElseThrow(() -> new IllegalArgumentException("ROLLABLE_TABLE not found: " + cmd.targetId()));
+            boolean visible = table.getSource() == ContentSource.SRD
+                    || table.getCampaign() == null
+                    || table.getCampaign().getId().equals(campaignId);
+            if (!visible) {
+                throw new IllegalArgumentException("ROLLABLE_TABLE is not visible to this campaign");
             }
         }
     }

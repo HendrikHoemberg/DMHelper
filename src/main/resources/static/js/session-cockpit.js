@@ -677,6 +677,27 @@ function sessionCockpit(config) {
         openDice() {
             window.dispatchEvent(new CustomEvent('dice-roller-toggle'));
         },
+
+        async rollLinkedTable(tableId, tableName) {
+            if (!tableId) return;
+            try {
+                const cid = this.campaignId;
+                const resp = await window.dmRequest(
+                    `/api/v1/rollable-tables/${tableId}/roll?campaignId=${encodeURIComponent(cid)}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            manualValue: null,
+                            rollCount: 1,
+                            duplicatePolicy: 'ALLOW_DUPLICATES'
+                        })
+                    });
+                window.dispatchEvent(new CustomEvent('table-roll-result', { detail: await resp.json() }));
+            } catch (error) {
+                window.reportActionFailure('Roll failed: ' + (tableName || tableId), error,
+                    () => this.rollLinkedTable(tableId, tableName));
+            }
+        },
     };
 }
 

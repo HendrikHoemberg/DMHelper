@@ -3,6 +3,12 @@ package dev.hendrikhoemberg.dmhelper.world.web;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableLinkRole;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLink;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLinkRepository;
 import dev.hendrikhoemberg.dmhelper.world.data.*;
 import dev.hendrikhoemberg.dmhelper.world.service.WorldService;
 import org.springframework.http.ResponseEntity;
@@ -18,10 +24,17 @@ public class WorldController {
 
     private final WorldService worldService;
     private final CampaignRepository campaignRepository;
+    private final RollableTableRepository rollableTableRepository;
+    private final WorldLocationTableLinkRepository locationTableLinkRepository;
 
-    public WorldController(WorldService worldService, CampaignRepository campaignRepository) {
+    public WorldController(WorldService worldService,
+                           CampaignRepository campaignRepository,
+                           RollableTableRepository rollableTableRepository,
+                           WorldLocationTableLinkRepository locationTableLinkRepository) {
         this.worldService = worldService;
         this.campaignRepository = campaignRepository;
+        this.rollableTableRepository = rollableTableRepository;
+        this.locationTableLinkRepository = locationTableLinkRepository;
     }
 
     @ModelAttribute
@@ -144,6 +157,8 @@ public class WorldController {
     @GetMapping("/locations/{locationId}")
     public String locationDetail(@PathVariable UUID campaignId, @PathVariable UUID locationId, Model model) {
         model.addAttribute("location", worldService.getLocation(campaignId, locationId));
+        model.addAttribute("tableLinks", locationTableLinkRepository.findByLocationIdOrderBySortOrderAsc(locationId));
+        model.addAttribute("tables", rollableTableRepository.findByCampaignIdOrderByNameAsc(campaignId));
         return "world/locations-detail";
     }
 
@@ -383,9 +398,56 @@ public class WorldController {
 
     @DeleteMapping("/factions/{factionId}/clocks/{clockId}")
     public String deleteClock(@PathVariable UUID campaignId,
-                              @PathVariable UUID factionId,
-                              @PathVariable UUID clockId) {
+                               @PathVariable UUID factionId,
+                               @PathVariable UUID clockId) {
         worldService.deleteClock(campaignId, clockId);
         return "redirect:/campaigns/" + campaignId + "/world/factions/" + factionId;
+    }
+
+    // ---- Location table links ----
+
+    @PostMapping("/locations/{locationId}/tables")
+    public String addLocationTableLink(@PathVariable UUID campaignId,
+                                       @PathVariable UUID locationId,
+                                       @RequestParam UUID tableId,
+                                       @RequestParam(defaultValue = "RANDOM_ENCOUNTERS") RollableTableLinkRole role,
+                                       @RequestParam(defaultValue = "0") int sortOrder,
+                                       Model model) {
+        try {
+            WorldLocation location = worldService.getLocation(campaignId, locationId);
+            RollableTable table = rollableTableRepository.findById(tableId)
+                    .orElseThrow(() -> new IllegalArgumentException("Table not found"));
+
+            boolean visible = table.getSource() == ContentSource.SRD
+                    || table.getCampaign() == null
+                    || table.getCampaign().getId().equals(campaignId);
+            if (!visible) {
+                throw new IllegalArgumentException("Table is not visible to this campaign");
+            }
+
+            WorldLocationTableLink link = new WorldLocationTableLink();
+            link.setLocation(location);
+            link.setTable(table);
+            link.setRole(role);
+            link.setSortOrder(sortOrder);
+            locationTableLinkRepository.save(link);
+        } catch (IllegalArgumentException | NotFoundException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "redirect:/campaigns/" + campaignId + "/world/locations/" + locationId;
+    }
+
+    @DeleteMapping("/locations/{locationId}/tables/{linkId}")
+    public String deleteLocationTableLink(@PathVariable UUID campaignId,
+                                           @PathVariable UUID locationId,
+                                           @PathVariable UUID linkId,
+                                           Model model) {
+        try {
+            worldService.getLocation(campaignId, locationId);
+            locationTableLinkRepository.deleteById(linkId);
+        } catch (NotFoundException e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        return "redirect:/campaigns/" + campaignId + "/world/locations/" + locationId;
     }
 }
