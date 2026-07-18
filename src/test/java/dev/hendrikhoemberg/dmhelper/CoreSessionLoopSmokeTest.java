@@ -231,19 +231,25 @@ class CoreSessionLoopSmokeTest {
         dmPage.fill("#gridHeight", "15");
         dmPage.click("button[type='submit']");
 
+        // HTMX swaps the form for the map card; wait for the card on this page (not a fresh
+        // fetch — Playwright waitForFunction+async fetch was flaky under the full class run).
+        dmPage.locator("#map-grid a", new Page.LocatorOptions().setHasText("Test Battle Map")).waitFor();
+
         // Resolve map by campaign + name — never mapRepo.findAll().getFirst() under shared DB.
-        dmPage.waitForFunction("""
-                async ([cid]) => {
-                  const r = await fetch('/campaigns/' + cid + '/maps');
-                  const html = await r.text();
-                  return html.includes('Test Battle Map');
-                }
-                """, List.of(campaignId.toString()));
-        mapId = mapRepo.findByCampaignIdOrderBySortOrderAsc(campaignId).stream()
-                .filter(m -> "Test Battle Map".equals(m.getName()))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Test Battle Map not found for smoke campaign"))
-                .getId();
+        mapId = null;
+        for (int attempt = 0; attempt < 50 && mapId == null; attempt++) {
+            mapId = mapRepo.findByCampaignIdOrderBySortOrderAsc(campaignId).stream()
+                    .filter(m -> "Test Battle Map".equals(m.getName()))
+                    .map(m -> m.getId())
+                    .findFirst()
+                    .orElse(null);
+            if (mapId == null) {
+                dmPage.waitForTimeout(50);
+            }
+        }
+        if (mapId == null) {
+            throw new AssertionError("Test Battle Map not found for smoke campaign " + campaignId);
+        }
 
         secondMapId = gameMapService.create(campaignId, "Fallback Map", 30, 20, 48).getId();
 
