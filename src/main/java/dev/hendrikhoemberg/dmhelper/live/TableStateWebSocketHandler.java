@@ -37,7 +37,7 @@ public class TableStateWebSocketHandler extends TextWebSocketHandler {
         try {
             LiveTableState state = presentationService.getCurrentState();
             String json = objectMapper.writeValueAsString(state);
-            session.sendMessage(new TextMessage(json));
+            sendIfOpen(session, new TextMessage(json));
         } catch (IOException e) {
             log.error("Failed to send initial state to {}", session.getId(), e);
         }
@@ -62,17 +62,23 @@ public class TableStateWebSocketHandler extends TextWebSocketHandler {
             TextMessage msg = new TextMessage(json);
 
             for (WebSocketSession session : sessions) {
-                if (session.isOpen()) {
-                    try {
-                        session.sendMessage(msg);
-                    } catch (IOException e) {
-                        log.warn("Failed to send to session {}", session.getId());
-                        sessions.remove(session);
-                    }
+                try {
+                    sendIfOpen(session, msg);
+                } catch (IOException e) {
+                    log.warn("Failed to send to session {}", session.getId());
+                    sessions.remove(session);
                 }
             }
         } catch (Exception e) {
             log.error("Failed to serialize table state", e);
+        }
+    }
+
+    private void sendIfOpen(WebSocketSession session, TextMessage message) throws IOException {
+        synchronized (session) {
+            if (session.isOpen()) {
+                session.sendMessage(message);
+            }
         }
     }
 }

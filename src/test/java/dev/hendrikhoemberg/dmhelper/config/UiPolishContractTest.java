@@ -168,6 +168,20 @@ class UiPolishContractTest {
     }
 
     @Test
+    void sheetSkillEditorUsesAnOrderedListSupportedBySpel() throws IOException {
+        String detail = read("templates/sheet/detail.html");
+
+        assertThat(detail)
+                .contains("th:each=\"skill : ${T(java.util.List).of(")
+                .contains("'acrobatics'", "'animal_handling'", "'arcana'", "'athletics'",
+                        "'deception'", "'history'", "'insight'", "'intimidation'",
+                        "'investigation'", "'medicine'", "'nature'", "'perception'",
+                        "'performance'", "'persuasion'", "'religion'", "'sleight_of_hand'",
+                        "'stealth'", "'survival'")
+                .doesNotContain("T(java.util.Map).of(");
+    }
+
+    @Test
     void mutedTokenClearsAaOnBothAppBackgrounds() {
         assertThat(contrast(0xb3a88f, 0x17120c)).isGreaterThanOrEqualTo(4.5);
         assertThat(contrast(0xb3a88f, 0x211a12)).isGreaterThanOrEqualTo(4.5);
