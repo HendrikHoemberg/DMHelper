@@ -481,6 +481,31 @@ class CampaignManifestV2ContractTest {
                 dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus.class);
         assertSchemaEnumEqualsJava(defs, "rollableTable", "addressMode",
                 dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode.class);
+        assertSchemaEnumEqualsJava(defs, "rollableTable", "category",
+                dev.hendrikhoemberg.dmhelper.rollabletable.data.TableCategory.class);
+    }
+
+    @Test
+    void rollableTableSchemaRequiresStableIdentityAndEntries() throws Exception {
+        ObjectNode table = validRangeTable();
+        assertThat(schema.validate(withRollableTable(table))).isEmpty();
+
+        table.remove("sourceKey");
+        table.remove("entries");
+        assertThat(schema.validate(withRollableTable(table)))
+                .extracting(CampaignImportProblem::path)
+                .anyMatch(path -> path.startsWith("/rollableTables/0"));
+    }
+
+    @Test
+    void rollableTableSchemaRejectsUnknownEnumsAndMixedAddressFields() throws Exception {
+        ObjectNode table = validRangeTable();
+        table.put("category", "LOOT");
+        ((ObjectNode) table.withArray("entries").get(0)).put("weight", 1);
+
+        assertThat(schema.validate(withRollableTable(table)))
+                .extracting(CampaignImportProblem::code)
+                .contains("SCHEMA_VIOLATION");
     }
 
     @Test
@@ -512,6 +537,29 @@ class CampaignManifestV2ContractTest {
         assertThat(schemaValues)
                 .as("schema enum for %s.%s must match %s", defName, property, javaEnum.getSimpleName())
                 .containsExactlyElementsOf(javaValues);
+    }
+
+    private ObjectNode validRangeTable() {
+        ObjectNode table = mapper.createObjectNode();
+        table.put("key", "table-one");
+        table.put("sourceKey", "table-one");
+        table.put("name", "Table One");
+        table.put("addressMode", "RANGE");
+        table.put("rollExpression", "1d6");
+        table.put("category", "GENERIC");
+        ObjectNode entry = table.putArray("entries").addObject();
+        entry.put("key", "entry-one");
+        entry.put("rangeStart", 1);
+        entry.put("rangeEnd", 6);
+        entry.put("resultText", "A result");
+        return table;
+    }
+
+    private String withRollableTable(ObjectNode table) throws Exception {
+        ObjectNode root = (ObjectNode) mapper.readTree(
+                fixture("campaigns/v2/minimal.dmcampaign.json"));
+        root.putArray("rollableTables").add(table);
+        return mapper.writeValueAsString(root);
     }
 
     private static List<String> collectEntityKeys(JsonNode node) {

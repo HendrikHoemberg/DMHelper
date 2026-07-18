@@ -30,7 +30,13 @@ import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignConten
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.FACTION_CLOCK;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.ROLLABLE_TABLE;
 
-import dev.hendrikhoemberg.dmhelper.dice.DiceExpressionSpec;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableCategory;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableReferenceScope;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableEntryWrite;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableReferenceWrite;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableValidator;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableWrite;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -44,6 +50,7 @@ import java.time.Instant;
 public class CampaignManifestV2SemanticValidator {
 
     private final CampaignCatalogService catalog;
+    private final RollableTableValidator tableStructuralValidator = new RollableTableValidator();
 
     public CampaignManifestV2SemanticValidator(CampaignCatalogService catalog) {
         this.catalog = catalog;
@@ -1130,169 +1137,83 @@ public class CampaignManifestV2SemanticValidator {
         for (int ti = 0; ti < tables.size(); ti++) {
             var table = tables.get(ti);
             String tablePath = "/rollableTables/" + ti;
-
-            if (table.rollExpression() != null) {
-                try {
-                    DiceExpressionSpec.parse(table.rollExpression());
-                } catch (IllegalArgumentException e) {
-                    error(problems, "INVALID_TABLE_EXPRESSION", tablePath + "/rollExpression",
-                            "Invalid dice expression: " + table.rollExpression());
-                }
-            }
-
-            if (table.entries() == null) continue;
-
-            if ("RANGE".equals(table.addressMode())) {
-                int previousEnd = 0;
-                java.util.Map.Entry<Integer, Integer>[] entries = table.entries().stream()
-                        .map(e -> {
-                            int start = e.rangeStart() != null ? e.rangeStart() : 1;
-                            int end = e.rangeEnd() != null ? e.rangeEnd() : start;
-                            return new java.util.AbstractMap.SimpleEntry<>(start, end);
-                        })
-                        .sorted(java.util.Comparator.comparingInt(java.util.Map.Entry::getKey))
-                        .toArray(java.util.Map.Entry[]::new);
-
-                for (int ei = 0; ei < entries.length; ei++) {
-                    int start = entries[ei].getKey();
-                    int end = entries[ei].getValue();
-                    if (start < 1 || end < start) {
-                        error(problems, "TABLE_RANGE_BOUNDS", tablePath + "/entries/" + ei,
-                                "Entry range must have start >= 1 and end >= start");
-                    }
-                    if (ei > 0 && start <= previousEnd) {
-                        if (start < previousEnd) {
-                            error(problems, "TABLE_RANGE_OVERLAP", tablePath + "/entries/" + ei,
-                                    "Entry range overlaps with previous entry");
-                        }
-                    }
-                    if (ei > 0 && start > previousEnd + 1) {
-                        error(problems, "TABLE_RANGE_GAP", tablePath + "/entries/" + ei,
-                                "Gap between entry ranges");
-                    }
-                    if (previousEnd < start) {
-                        previousEnd = Math.max(previousEnd, end);
-                    } else {
-                        previousEnd = Math.max(previousEnd, end);
-                    }
-                }
-            }
-
-            if ("WEIGHTED".equals(table.addressMode())) {
-                for (int ei = 0; ei < table.entries().size(); ei++) {
-                    var entry = table.entries().get(ei);
-                    if (entry.weight() == null || entry.weight() < 1) {
-                        error(problems, "TABLE_WEIGHT_INVALID", tablePath + "/entries/" + ei + "/weight",
-                                "Weighted entry must have a positive weight");
-                    }
-                }
-            }
-
-            for (int ei = 0; ei < table.entries().size(); ei++) {
-                var entry = table.entries().get(ei);
-                String entryPath = tablePath + "/entries/" + ei;
-
-                if (entry.quantityExpression() != null) {
-                    try {
-                        DiceExpressionSpec.parse(entry.quantityExpression());
-                    } catch (IllegalArgumentException e) {
-                        error(problems, "INVALID_QUANTITY_EXPRESSION", entryPath + "/quantityExpression",
-                                "Invalid quantity expression: " + entry.quantityExpression());
-                    }
-                }
-
-                if (entry.references() != null) {
-                    for (int ri = 0; ri < entry.references().size(); ri++) {
-                        var ref = entry.references().get(ri);
-                        if (ref != null) {
-                            String refPath = entryPath + "/references/" + ri;
-                            if (ref.type() == ROLLABLE_TABLE && ref.scope() == ContentReference.Scope.PACKAGE) {
-                                int depth = detectTableRefCycleAndDepth(m, table.key(), new java.util.HashSet<>(), new java.util.HashSet<>(), 0);
-                                if (depth > 5) {
-                                    error(problems, "TABLE_REFERENCE_DEPTH_EXCEEDED", refPath,
-                                            "Table reference depth exceeds maximum (5)");
-                                }
-                            }
-                        }
-                    }
-                }
+            RollableTableWrite write = toRuntimeWrite(table);
+            for (var problem : tableStructuralValidator.collectProblems(write, null)) {
+                error(problems, problem.code(), tablePath + problem.path(), problem.message());
             }
         }
-        detectTableCycles(m, problems);
+        validatePackageTableGraph(m, problems);
     }
 
-    private int detectTableRefCycleAndDepth(CampaignManifestV2 m, String tableKey,
-                                             java.util.Set<String> visiting,
-                                             java.util.Set<String> visited, int depth) {
-        if (depth > 5) return depth;
-        if (visiting.contains(tableKey)) return -1;
-        if (visited.contains(tableKey)) return depth;
-
-        visiting.add(tableKey);
-        var tables = m.rollableTables();
-        if (tables != null) {
-            for (var table : tables) {
-                if (table.key().equals(tableKey) && table.entries() != null) {
-                    for (var entry : table.entries()) {
-                        if (entry.references() != null) {
-                            for (var ref : entry.references()) {
-                                if (ref != null && ref.type() == ROLLABLE_TABLE
-                                        && ref.scope() == ContentReference.Scope.PACKAGE) {
-                                    int result = detectTableRefCycleAndDepth(m, ref.key(), visiting, visited, depth + 1);
-                                    if (result == -1 || result > 5) return result;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        visiting.remove(tableKey);
-        visited.add(tableKey);
-        return depth;
+    private static RollableTableWrite toRuntimeWrite(CampaignManifestV2.RollableTableDto table) {
+        TableAddressMode mode = table.addressMode() == null ? null
+                : TableAddressMode.valueOf(table.addressMode());
+        TableCategory category = table.category() == null ? null
+                : TableCategory.valueOf(table.category());
+        List<RollableTableEntryWrite> entries = table.entries() == null ? null
+                : table.entries().stream().map(entry -> new RollableTableEntryWrite(
+                        entry.key(), entry.rangeStart(), entry.rangeEnd(), entry.weight(),
+                        entry.resultText(), entry.quantityExpression(),
+                        entry.references() == null ? null : entry.references().stream()
+                                .map(CampaignManifestV2SemanticValidator::toRuntimeReference)
+                                .toList())).toList();
+        return new RollableTableWrite(table.sourceKey(), table.name(), table.description(), mode,
+                table.rollExpression(), category, table.tags(), entries);
     }
 
-    private void detectTableCycles(CampaignManifestV2 m, List<CampaignImportProblem> problems) {
-        var tables = m.rollableTables();
-        if (tables == null) return;
+    private static RollableTableReferenceWrite toRuntimeReference(ContentReference ref) {
+        if (ref == null) return null;
+        TableReferenceScope scope = ref.scope() == ContentReference.Scope.CATALOG
+                ? TableReferenceScope.CATALOG : TableReferenceScope.ENTITY;
+        return new RollableTableReferenceWrite(
+                scope, ref.type(), null, ref.ruleset(), ref.sourceKey(), ref.key());
+    }
 
-        java.util.Map<String, java.util.Set<String>> edges = new java.util.HashMap<>();
-        for (var table : tables) {
-            if (table.entries() != null) {
-                for (var entry : table.entries()) {
-                    if (entry.references() != null) {
-                        for (var ref : entry.references()) {
-                            if (ref != null && ref.type() == ROLLABLE_TABLE
-                                    && ref.scope() == ContentReference.Scope.PACKAGE) {
-                                edges.computeIfAbsent(table.key(), k -> new java.util.HashSet<>()).add(ref.key());
-                            }
-                        }
-                    }
-                }
-            }
+    private void validatePackageTableGraph(CampaignManifestV2 manifest,
+                                           List<CampaignImportProblem> problems) {
+        Map<String, IndexedTable> byKey = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < size(manifest.rollableTables()); i++) {
+            byKey.put(manifest.rollableTables().get(i).key(),
+                    new IndexedTable(i, manifest.rollableTables().get(i)));
         }
-
-        for (var start : edges.keySet()) {
-            java.util.Set<String> visiting = new java.util.HashSet<>();
-            java.util.Set<String> visited = new java.util.HashSet<>();
-            if (hasTableCycle(start, edges, visiting, visited)) {
-                error(problems, "TABLE_REFERENCE_CYCLE", "/rollableTables",
-                        "Table reference chain contains a cycle involving " + start);
-                break;
-            }
+        Set<String> reported = new HashSet<>();
+        for (IndexedTable table : byKey.values()) {
+            walkTableGraph(table, 0, new java.util.LinkedHashSet<>(), byKey, reported, problems);
         }
     }
 
-    private boolean hasTableCycle(String node, java.util.Map<String, java.util.Set<String>> edges,
-                                   java.util.Set<String> visiting, java.util.Set<String> visited) {
-        if (visiting.contains(node)) return true;
-        if (visited.contains(node)) return false;
-        visiting.add(node);
-        for (var next : edges.getOrDefault(node, java.util.Set.of())) {
-            if (hasTableCycle(next, edges, visiting, visited)) return true;
+    private void walkTableGraph(IndexedTable indexed, int depth, Set<String> visiting,
+                                Map<String, IndexedTable> byKey, Set<String> reported,
+                                List<CampaignImportProblem> problems) {
+        visiting.add(indexed.table().key());
+        for (int ei = 0; ei < size(indexed.table().entries()); ei++) {
+            var entry = indexed.table().entries().get(ei);
+            for (int ri = 0; ri < size(entry.references()); ri++) {
+                ContentReference ref = entry.references().get(ri);
+                if (ref == null || ref.type() != ROLLABLE_TABLE
+                        || ref.scope() != ContentReference.Scope.PACKAGE) continue;
+                IndexedTable target = byKey.get(ref.key());
+                if (target == null) continue;
+                String path = "/rollableTables/" + indexed.index() + "/entries/" + ei
+                        + "/references/" + ri;
+                if (visiting.contains(ref.key())) {
+                    reportTableGraphProblem(reported, problems, "TABLE_REFERENCE_CYCLE", path,
+                            "Table reference chain contains a cycle involving " + ref.key());
+                } else if (depth >= 5) {
+                    reportTableGraphProblem(reported, problems, "TABLE_REFERENCE_DEPTH_EXCEEDED", path,
+                            "Table reference depth exceeds maximum (5)");
+                } else {
+                    walkTableGraph(target, depth + 1, visiting, byKey, reported, problems);
+                }
+            }
         }
-        visiting.remove(node);
-        visited.add(node);
-        return false;
+        visiting.remove(indexed.table().key());
     }
+
+    private void reportTableGraphProblem(Set<String> reported, List<CampaignImportProblem> problems,
+                                         String code, String path, String message) {
+        if (reported.add(code + ":" + path)) error(problems, code, path, message);
+    }
+
+    private record IndexedTable(int index, CampaignManifestV2.RollableTableDto table) {}
 }

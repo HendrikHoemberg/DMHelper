@@ -1283,6 +1283,7 @@
       "sourceKey": "custom_tavern-rumors",
       "name": "Tavern Rumors",
       "addressMode": "WEIGHTED",
+      "rollExpression": "1d100",
       "category": "RUMOR",
       "tags": ["tavern", "rumors", "information"],
       "createdAt": "2025-07-16T18:03:00Z",

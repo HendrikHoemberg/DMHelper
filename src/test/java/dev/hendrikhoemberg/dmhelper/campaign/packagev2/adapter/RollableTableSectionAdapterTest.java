@@ -29,6 +29,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class RollableTableSectionAdapterTest {
@@ -216,5 +217,45 @@ class RollableTableSectionAdapterTest {
 
         adapter.importSection(manifest, context);
         context.runDeferred();
+    }
+
+    @Test
+    void weightedImportUsesCanonicalRollExpression() {
+        var adapter = new RollableTableSectionAdapter(tableRepo, closureService);
+        var campaign = new Campaign();
+        var source = manifestWithTables(List.of(new RollableTableDto(
+                "weighted-table", "weighted-table", "Weighted", null,
+                "WEIGHTED", "9d9", "RUMOR", List.of(),
+                List.of(
+                        new CampaignManifestV2.RollableTableEntryDto(
+                                "first", null, null, 3, "First", null, List.of()),
+                        new CampaignManifestV2.RollableTableEntryDto(
+                                "second", null, null, 2, "Second", null, List.of())),
+                null, null)));
+        when(tableRepo.save(any())).thenAnswer(invocation -> {
+            RollableTable saved = invocation.getArgument(0);
+            saved.setId(UUID.randomUUID());
+            return saved;
+        });
+        var context = new CampaignImportContext(UUID.randomUUID(),
+                new CampaignSectionAdapterTest.FakeKeyService(),
+                new PendingCampaignImport(UUID.randomUUID(), null, null, null));
+        context.setCampaign(campaign);
+
+        adapter.importSection(source, context);
+
+        verify(tableRepo).save(org.mockito.ArgumentMatchers.argThat(
+                table -> "1d5".equals(table.getRollExpression())));
+    }
+
+    private CampaignManifestV2 manifestWithTables(List<RollableTableDto> tables) {
+        return new CampaignManifestV2(
+                2, new CampaignManifestV2.Metadata("pkg", null, "test", null, null, List.of()),
+                new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null),
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.of(), tables);
     }
 }

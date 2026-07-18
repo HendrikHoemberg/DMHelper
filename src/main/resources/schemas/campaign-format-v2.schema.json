@@ -1183,34 +1183,74 @@
     "rollableTable": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["key", "name", "addressMode", "category"],
+      "required": ["key", "sourceKey", "name", "addressMode", "category", "entries"],
       "properties": {
         "key": { "$ref": "#/$defs/key" },
-        "sourceKey": { "type": "string" },
+        "sourceKey": { "$ref": "#/$defs/key" },
         "name": { "type": "string", "minLength": 1 },
         "description": { "type": "string" },
         "addressMode": { "type": "string", "enum": ["RANGE", "WEIGHTED"] },
         "rollExpression": { "type": "string" },
-        "category": { "type": "string" },
+        "category": { "type": "string", "enum": ["ENCOUNTER", "TREASURE", "WEATHER", "RUMOR", "EVENT", "GENERIC"] },
         "tags": { "type": "array", "items": { "type": "string" } },
-        "entries": { "type": "array", "items": { "$ref": "#/$defs/rollableTableEntry" } },
+        "entries": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/rollableTableEntry" } },
         "provenance": { "$ref": "#/$defs/provenance" },
         "createdAt": { "type": "string", "format": "date-time" }
-      }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "addressMode": { "const": "RANGE" } }, "required": ["addressMode"] },
+          "then": {
+            "required": ["rollExpression"],
+            "properties": { "entries": { "items": { "$ref": "#/$defs/rollableTableRangeEntry" } } }
+          }
+        },
+        {
+          "if": { "properties": { "addressMode": { "const": "WEIGHTED" } }, "required": ["addressMode"] },
+          "then": {
+            "properties": { "entries": { "items": { "$ref": "#/$defs/rollableTableWeightedEntry" } } }
+          }
+        }
+      ]
     },
     "rollableTableEntry": {
+      "oneOf": [
+        { "$ref": "#/$defs/rollableTableRangeEntry" },
+        { "$ref": "#/$defs/rollableTableWeightedEntry" }
+      ]
+    },
+    "rollableTableRangeEntry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["key"],
+      "required": ["key", "rangeStart", "rangeEnd"],
       "properties": {
         "key": { "$ref": "#/$defs/key" },
         "rangeStart": { "type": "integer", "minimum": 1 },
         "rangeEnd": { "type": "integer", "minimum": 1 },
-        "weight": { "type": "integer", "minimum": 1 },
-        "resultText": { "type": "string" },
+        "resultText": { "type": "string", "minLength": 1 },
         "quantityExpression": { "type": "string" },
         "references": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } }
-      }
+      },
+      "anyOf": [
+        { "required": ["resultText"] },
+        { "required": ["references"], "properties": { "references": { "minItems": 1 } } }
+      ]
+    },
+    "rollableTableWeightedEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "weight"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "weight": { "type": "integer", "minimum": 1 },
+        "resultText": { "type": "string", "minLength": 1 },
+        "quantityExpression": { "type": "string" },
+        "references": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } }
+      },
+      "anyOf": [
+        { "required": ["resultText"] },
+        { "required": ["references"], "properties": { "references": { "minItems": 1 } } }
+      ]
     },
     "worldLocationTableLink": {
       "type": "object",

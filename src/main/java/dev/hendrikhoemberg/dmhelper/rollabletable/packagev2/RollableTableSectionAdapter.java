@@ -156,7 +156,7 @@ public class RollableTableSectionAdapter implements CampaignSectionExporter, Cam
             if (dto.addressMode() != null) {
                 entity.setAddressMode(TableAddressMode.valueOf(dto.addressMode()));
             }
-            entity.setRollExpression(dto.rollExpression());
+            entity.setRollExpression(canonicalRollExpression(dto));
             if (dto.category() != null) {
                 entity.setCategory(TableCategory.valueOf(dto.category()));
             }
@@ -231,17 +231,23 @@ public class RollableTableSectionAdapter implements CampaignSectionExporter, Cam
                 RollableTableEntryReference entryRef = entry.getReferences().get(ri);
                 if (ref == null) continue;
                 if (ref.scope() == ContentReference.Scope.PACKAGE) {
-                    try {
-                        Object target = context.require(ref, ref.type(), Object.class);
-                        if (target != null) {
-                            UUID targetId = entityId(target);
-                            entryRef.setTargetId(targetId);
-                        }
-                    } catch (Exception ignored) {
-                    }
+                    Object target = context.require(ref, ref.type(), Object.class);
+                    UUID targetId = entityId(target);
+                    entryRef.setTargetId(targetId);
                 }
             }
         }
+    }
+
+    private static String canonicalRollExpression(RollableTableDto dto) {
+        if (!"WEIGHTED".equals(dto.addressMode()) || dto.entries() == null) {
+            return dto.rollExpression();
+        }
+        int totalWeight = 0;
+        for (RollableTableEntryDto entry : dto.entries()) {
+            totalWeight = Math.addExact(totalWeight, entry.weight());
+        }
+        return "1d" + totalWeight;
     }
 
     private static List<String> parseTags(String tags) {

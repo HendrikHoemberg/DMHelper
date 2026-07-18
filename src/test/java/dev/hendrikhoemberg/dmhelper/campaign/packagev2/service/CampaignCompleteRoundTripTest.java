@@ -8,6 +8,11 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignExportExclu
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.CampaignImportPreviewStore;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignPackageValidationPipeline;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
+import dev.hendrikhoemberg.dmhelper.dice.DiceExpressionSpec;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableRollService;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableDuplicatePolicy;
+import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollRequest;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -39,6 +44,8 @@ class CampaignCompleteRoundTripTest {
     @Autowired CampaignExportCoordinator exporter;
     @Autowired CampaignSemanticSnapshotService snapshots;
     @Autowired CampaignService campaigns;
+    @Autowired RollableTableRepository rollableTables;
+    @Autowired RollableTableRollService tableRolls;
     @TempDir Path temp;
 
     private final JsonMapper mapper = JsonMapper.builder().build();
@@ -67,6 +74,7 @@ class CampaignCompleteRoundTripTest {
         var firstResult = validate(label + "-first", packageBytes, !source.assets().isEmpty());
         assertThat(firstResult.valid()).as(firstResult.problems().toString()).isTrue();
         var campaignA = importer.confirm(previews.retain(firstResult).previewId(), true);
+        assertImportedTablesCanRoll(campaignA.getId());
 
         CampaignSemanticSnapshot sourceSnapshot = CampaignSemanticSnapshot.from(source);
         CampaignSemanticSnapshot snapshotA = snapshots.snapshot(campaignA.getId());
@@ -79,12 +87,23 @@ class CampaignCompleteRoundTripTest {
         var secondResult = validate(label + "-second", exportedBytes, artifact.zipped());
         assertThat(secondResult.valid()).as(secondResult.problems().toString()).isTrue();
         var campaignB = importer.confirm(previews.retain(secondResult).previewId(), true);
+        assertImportedTablesCanRoll(campaignB.getId());
         CampaignSemanticSnapshot snapshotB = snapshots.snapshot(campaignB.getId());
 
         CampaignSemanticComparator.assertEquivalent(snapshotA, snapshotB);
 
         campaigns.delete(campaignA.getId());
         campaigns.delete(campaignB.getId());
+    }
+
+    private void assertImportedTablesCanRoll(java.util.UUID campaignId) {
+        for (var table : rollableTables.findByCampaignIdOrderByNameAsc(campaignId)) {
+            int manualValue = "WEIGHTED".equals(table.getAddressMode().name())
+                    ? 1 : DiceExpressionSpec.parse(table.getRollExpression()).min();
+            var result = tableRolls.roll(campaignId, table.getId(),
+                    new TableRollRequest(manualValue, 1, TableDuplicatePolicy.ALLOW_DUPLICATES));
+            assertThat(result.outcomes()).as(table.getName()).isNotEmpty();
+        }
     }
 
     @ParameterizedTest(name = "combatLog={0}, diceHistory={1}")

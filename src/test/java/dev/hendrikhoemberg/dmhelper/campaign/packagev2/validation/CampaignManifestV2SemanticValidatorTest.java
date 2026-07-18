@@ -397,10 +397,10 @@ class CampaignManifestV2SemanticValidatorTest {
     @Test
     void validRollableTablePasses() {
         var table = new CampaignManifestV2.RollableTableDto(
-                "rt-1", null, "NPC Reactions", null,
+                "rt-1", "rt-1", "NPC Reactions", null,
                 "RANGE", "1d6", "GENERIC", null,
                 List.of(new CampaignManifestV2.RollableTableEntryDto(
-                        "e1", 1, 2, null, "Friendly", null, null)),
+                        "e1", 1, 6, null, "Friendly", null, null)),
                 null, null);
         assertThat(validator.validate(withRollableTables(List.of(table)))).isEmpty();
     }
@@ -474,6 +474,64 @@ class CampaignManifestV2SemanticValidatorTest {
     }
 
     @Test
+    void rangeMustCoverExactDiceMinimumAndMaximum() {
+        var entry = new CampaignManifestV2.RollableTableEntryDto(
+                "e1", 1, 11, null, "Almost", null, null);
+        var table = new CampaignManifestV2.RollableTableDto(
+                "rt-1", "rt-1", "Bounds", null,
+                "RANGE", "2d6", "GENERIC", null, List.of(entry), null, null);
+
+        assertThat(validator.validate(withRollableTables(List.of(table))))
+                .extracting(CampaignImportProblem::path)
+                .contains("/rollableTables/0/entries/0/rangeStart",
+                        "/rollableTables/0/entries/0/rangeEnd");
+    }
+
+    @Test
+    void inclusiveRangeOverlapReportsOriginalEntryIndex() {
+        var later = new CampaignManifestV2.RollableTableEntryDto("later", 3, 6, null, "B", null, null);
+        var first = new CampaignManifestV2.RollableTableEntryDto("first", 1, 3, null, "A", null, null);
+        var table = new CampaignManifestV2.RollableTableDto(
+                "rt-1", "rt-1", "Overlap", null,
+                "RANGE", "1d6", "GENERIC", null, List.of(later, first), null, null);
+
+        assertThat(validator.validate(withRollableTables(List.of(table))))
+                .anySatisfy(problem -> {
+                    assertThat(problem.code()).isEqualTo("TABLE_RANGE_OVERLAP");
+                    assertThat(problem.path()).isEqualTo("/rollableTables/0/entries/0/rangeStart");
+                });
+    }
+
+    @Test
+    void missingResultAndDisallowedReferenceTypeAreRejected() {
+        var entry = new CampaignManifestV2.RollableTableEntryDto(
+                "e1", null, null, 1, " ", null,
+                List.of(ContentReference.packageRef(CampaignContentType.SPELL, "spell-one")));
+        var table = new CampaignManifestV2.RollableTableDto(
+                "rt-1", "rt-1", "Bad ref", null,
+                "WEIGHTED", null, "GENERIC", null, List.of(entry), null, null);
+
+        assertThat(validator.validate(withRollableTables(List.of(table))))
+                .extracting(CampaignImportProblem::code)
+                .contains("INVALID_TABLE_REFERENCE_TYPE");
+    }
+
+    @Test
+    void entryWithoutTextOrReferencesReportsItsOriginalPath() {
+        var entry = new CampaignManifestV2.RollableTableEntryDto(
+                "e1", null, null, 1, " ", null, List.of());
+        var table = new CampaignManifestV2.RollableTableDto(
+                "rt-1", "rt-1", "Missing result", null,
+                "WEIGHTED", null, "GENERIC", null, List.of(entry), null, null);
+
+        assertThat(validator.validate(withRollableTables(List.of(table))))
+                .anySatisfy(problem -> {
+                    assertThat(problem.code()).isEqualTo("TABLE_ENTRY_RESULT_REQUIRED");
+                    assertThat(problem.path()).isEqualTo("/rollableTables/0/entries/0");
+                });
+    }
+
+    @Test
     void tableReferenceCycleDetected() {
         var refA = ContentReference.packageRef(CampaignContentType.ROLLABLE_TABLE, "rt-b");
         var refB = ContentReference.packageRef(CampaignContentType.ROLLABLE_TABLE, "rt-a");
@@ -486,6 +544,29 @@ class CampaignManifestV2SemanticValidatorTest {
         assertThat(validator.validate(withRollableTables(List.of(tA, tB))))
                 .extracting(CampaignImportProblem::code)
                 .contains("TABLE_REFERENCE_CYCLE");
+    }
+
+    @Test
+    void sixthNestedTableLevelReportsExactReferencePath() {
+        var tables = new java.util.ArrayList<CampaignManifestV2.RollableTableDto>();
+        for (int i = 0; i < 7; i++) {
+            List<ContentReference> references = i < 6
+                    ? List.of(ContentReference.packageRef(
+                            CampaignContentType.ROLLABLE_TABLE, "rt-" + (i + 1)))
+                    : List.of();
+            var entry = new CampaignManifestV2.RollableTableEntryDto(
+                    "entry-" + i, null, null, 1, "Level " + i, null, references);
+            tables.add(new CampaignManifestV2.RollableTableDto(
+                    "rt-" + i, "rt-" + i, "Level " + i, null,
+                    "WEIGHTED", null, "GENERIC", null, List.of(entry), null, null));
+        }
+
+        assertThat(validator.validate(withRollableTables(tables)))
+                .anySatisfy(problem -> {
+                    assertThat(problem.code()).isEqualTo("TABLE_REFERENCE_DEPTH_EXCEEDED");
+                    assertThat(problem.path())
+                            .isEqualTo("/rollableTables/5/entries/0/references/0");
+                });
     }
 
     private CampaignManifestV2 withRollableTables(List<CampaignManifestV2.RollableTableDto> tables) {
