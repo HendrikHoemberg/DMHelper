@@ -2286,6 +2286,9 @@ body.dm-mode-off .dice-toggle-btn { display: none; }
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
 }
+dialog.modal:not([open]) {
+  display: none;
+}
 
 /* Grouped numeric rows */
 .form-row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); }

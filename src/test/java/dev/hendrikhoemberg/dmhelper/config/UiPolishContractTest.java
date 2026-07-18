@@ -162,6 +162,12 @@ class UiPolishContractTest {
     }
 
     @Test
+    void closedNativeModalsStayOutOfLayoutAndHitTesting() throws IOException {
+        assertThat(read("static/css/components.css"))
+                .contains("dialog.modal:not([open]) {\n  display: none;\n}");
+    }
+
+    @Test
     void mutedTokenClearsAaOnBothAppBackgrounds() {
         assertThat(contrast(0xb3a88f, 0x17120c)).isGreaterThanOrEqualTo(4.5);
         assertThat(contrast(0xb3a88f, 0x211a12)).isGreaterThanOrEqualTo(4.5);

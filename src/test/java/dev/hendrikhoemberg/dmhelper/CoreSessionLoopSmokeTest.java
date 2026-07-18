@@ -336,6 +336,9 @@ class CoreSessionLoopSmokeTest {
 
         Locator card = dmPage.locator(".party-member-card", new Page.LocatorOptions().setHasText("Dynamic Hero"));
         card.waitFor();
+        assertThat(dmPage.locator("#party-form-modal").isHidden())
+                .as("closed party modal must leave layout and pointer hit testing")
+                .isTrue();
         card.locator(".quicknotes-form input").fill("Added after the card appeared.");
         card.locator(".quicknotes-form button[type='submit']").click();
         card.locator(".quicknote-row").waitFor();
