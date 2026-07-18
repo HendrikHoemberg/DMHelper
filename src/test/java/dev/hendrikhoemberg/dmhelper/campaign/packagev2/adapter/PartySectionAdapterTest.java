@@ -236,7 +236,7 @@ class PartySectionAdapterTest {
                 )),
                 null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         var importContext = new CampaignImportContext(
                 freshCampaign.getId(), new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
@@ -314,7 +314,7 @@ class PartySectionAdapterTest {
                 )),
                 null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         var freshCampaign = new Campaign();
         freshCampaign.setId(UUID.randomUUID());
@@ -354,7 +354,7 @@ class PartySectionAdapterTest {
                 )),
                 null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         var freshCampaign = new Campaign();
         freshCampaign.setId(UUID.randomUUID());
@@ -422,7 +422,7 @@ class PartySectionAdapterTest {
                 )),
                 null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         var freshCampaign = new Campaign();
         freshCampaign.setId(UUID.randomUUID());
@@ -489,7 +489,7 @@ class PartySectionAdapterTest {
                 )),
                 null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         var freshCampaign = new Campaign();
         freshCampaign.setId(UUID.randomUUID());

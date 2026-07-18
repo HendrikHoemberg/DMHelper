@@ -148,7 +148,7 @@ class RollableTableSectionAdapterTest {
                 noAssign, noLedger, noTimeline, noAdv, null, noDice, noQ, noAnn,
                 noNpcs, noLocations, noFactions, noRelationships, noClocks,
                 List.of(new RollableTableDto("table-key", null, "Test Table", null,
-                        "RANGE", "1d6", "GENERIC", null, List.of(), null, null)));
+                        "RANGE", "1d6", "GENERIC", null, List.of(), null, null)), List.of(), List.of());
 
         when(tableRepo.save(any())).thenAnswer(inv -> {
             var t = (RollableTable) inv.getArgument(0);
@@ -208,7 +208,7 @@ class RollableTableSectionAdapterTest {
                 noClass, noSpecies, noBg, noFeat, noHand, noMap, noEnc, noNote, noQn,
                 noAssign, noLedger, noTimeline, noAdv, null, noDice, noQ, noAnn,
                 noNpcs, noLocations, noFactions, noRelationships, noClocks,
-                null);
+                null, List.of(), List.of());
 
         var context = new CampaignImportContext(UUID.randomUUID(),
                 new CampaignSectionAdapterTest.FakeKeyService(),
@@ -256,6 +256,6 @@ class RollableTableSectionAdapterTest {
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                List.of(), tables);
+                List.of(), tables, List.of(), List.of());
     }
 }

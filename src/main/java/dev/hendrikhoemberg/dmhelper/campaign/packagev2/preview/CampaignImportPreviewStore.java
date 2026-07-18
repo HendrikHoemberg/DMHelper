@@ -87,7 +87,8 @@ public class CampaignImportPreviewStore {
                 + size(manifest.customRules()) + size(manifest.customEquipment())
                 + size(manifest.customMagicItems()) + size(manifest.customClasses())
                 + size(manifest.customSpecies()) + size(manifest.customBackgrounds())
-                + size(manifest.customFeats()) + size(manifest.adventures());
+                + size(manifest.customFeats()) + size(manifest.adventures())
+                + size(manifest.traps()) + size(manifest.hazards());
         return new CampaignImportPreview(id, status, result.sourceFormatVersion(), 2, counts(manifest),
                 result.stagedPackage().uploadedBytes(), installed, provenance,
                 Math.max(0, provenanceEligible - provenance), exclusions(manifest), result.migrations(),
@@ -95,7 +96,7 @@ public class CampaignImportPreviewStore {
     }
 
     private static CampaignEntityCounts counts(CampaignManifestV2 m) {
-        if (m == null) return new CampaignEntityCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        if (m == null) return new CampaignEntityCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         int tokens = m.maps().stream().mapToInt(map -> size(map.tokens())).sum();
         int combatants = m.encounters().stream().mapToInt(encounter -> size(encounter.combatants())).sum();
         int chapters = m.adventures().stream().mapToInt(adventure -> size(adventure.chapters())).sum();
@@ -112,7 +113,8 @@ public class CampaignImportPreviewStore {
                 size(m.maps()), tokens, size(m.encounters()), combatants, size(m.notes()), size(m.quickNotes()),
                 size(m.assignments()), size(m.ledgerEntries()), size(m.timelineEvents()), size(m.adventures()),
                 chapters, scenes, size(m.assets()), combatLogEntries, size(m.diceRolls()), noteLinks,
-                m.session() != null ? 1 : 0, sessionSceneVisits);
+                m.session() != null ? 1 : 0, sessionSceneVisits,
+                size(m.traps()), size(m.hazards()));
     }
 
     private static int provenanceCount(CampaignManifestV2 m) {
@@ -131,6 +133,8 @@ public class CampaignImportPreviewStore {
         if (m.customBackgrounds() != null) count += (int) m.customBackgrounds().stream().filter(s -> s.provenance() != null).count();
         if (m.customFeats() != null) count += (int) m.customFeats().stream().filter(s -> s.provenance() != null).count();
         if (m.adventures() != null) count += (int) m.adventures().stream().filter(a -> a.sourceAttribution() != null && !a.sourceAttribution().isBlank()).count();
+        if (m.traps() != null) count += (int) m.traps().stream().filter(t -> t.provenance() != null).count();
+        if (m.hazards() != null) count += (int) m.hazards().stream().filter(h -> h.provenance() != null).count();
         return count;
     }
 

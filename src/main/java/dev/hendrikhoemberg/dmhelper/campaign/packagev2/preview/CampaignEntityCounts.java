@@ -9,5 +9,6 @@ public record CampaignEntityCounts(
         int encounters, int combatants, int notes, int quickNotes, int assignments,
         int ledgerEntries, int timelineEvents, int adventures, int chapters, int scenes,
         int assets, int combatLogEntries, int diceRolls, int noteLinks,
-        int sessions, int sessionSceneVisits
+        int sessions, int sessionSceneVisits,
+        int traps, int hazards
 ) {}

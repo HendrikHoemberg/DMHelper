@@ -224,7 +224,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                     m.document().grid(), layers, list(m.document().primitives()), list(m.document().customTerrain()));
             maps.add(new CampaignManifestV2.MapDto(mapKey, m.name(),
                     new CampaignManifestV2.MapDto.GridDto(m.grid().w(), m.grid().h(), m.grid().cellPx(), m.grid().gridType()),
-                    m.movementMode(), m.showGrid(), document, tokens, i));
+                    m.movementMode(), m.showGrid(), document, tokens, i, List.of()));
         }
 
         Map<String, String> encounterKeys = new LinkedHashMap<>();
@@ -252,7 +252,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                         c.conditionsJson(), c.concentratingOn(), c.concentrationCheckPending(), c.legendaryActionsUsed(),
                         c.legendaryResistancesUsed(), c.legendaryActionsMax(), c.legendaryResistancesMax(),
                         c.rechargedAbilities(), c.notes(),
-                        null, null, null, null));
+                        null, null, null, null, null));
             }
             if (e.map() != null) warning(warnings, ImportProblemCodes.LEGACY_REFERENCE_MIGRATED, "/encounters/" + i + "/map", e.map());
             if (!combatants.isEmpty()) {
@@ -392,7 +392,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 handouts, maps,
                 encounters, notes, quickNotes, assignments, ledger, timeline, adventures, null, List.of(), List.of(), List.of(),
-                List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         return new CampaignPackageValidationResult(source, manifest, 1, assetsByKey, warnings, List.of("MIGRATED_FROM_V1"));
     }
 

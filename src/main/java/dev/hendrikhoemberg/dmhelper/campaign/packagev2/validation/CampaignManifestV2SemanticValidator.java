@@ -29,6 +29,8 @@ import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignConten
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.WORLD_RELATIONSHIP;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.FACTION_CLOCK;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.ROLLABLE_TABLE;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.TRAP;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.HAZARD;
 
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableCategory;
@@ -37,6 +39,16 @@ import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableEntryWrit
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableReferenceWrite;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableValidator;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableWrite;
+import dev.hendrikhoemberg.dmhelper.threat.data.DamageType;
+import dev.hendrikhoemberg.dmhelper.threat.data.HazardExposureMode;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatCheckMode;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatResetMode;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatSeverity;
+import dev.hendrikhoemberg.dmhelper.threat.service.ThreatCheckWrite;
+import dev.hendrikhoemberg.dmhelper.threat.service.ThreatValidator;
+import dev.hendrikhoemberg.dmhelper.threat.service.TrapDisarmMethodWrite;
+import dev.hendrikhoemberg.dmhelper.threat.service.TrapWrite;
+import dev.hendrikhoemberg.dmhelper.threat.service.HazardWrite;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -45,12 +57,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.time.Instant;
+import java.util.UUID;
 
 @Component
 public class CampaignManifestV2SemanticValidator {
 
     private final CampaignCatalogService catalog;
     private final RollableTableValidator tableStructuralValidator = new RollableTableValidator();
+    private final ThreatValidator threatStructuralValidator = new ThreatValidator();
 
     public CampaignManifestV2SemanticValidator(CampaignCatalogService catalog) {
         this.catalog = catalog;
@@ -312,6 +326,10 @@ public class CampaignManifestV2SemanticValidator {
             add(keys, FACTION_CLOCK, m.factionClocks().get(i).key(), "/factionClocks/" + i + "/key", problems);
         for (int i = 0; i < size(m.rollableTables()); i++)
             add(keys, ROLLABLE_TABLE, m.rollableTables().get(i).key(), "/rollableTables/" + i + "/key", problems);
+        for (int i = 0; i < size(m.traps()); i++)
+            add(keys, TRAP, m.traps().get(i).key(), "/traps/" + i + "/key", problems);
+        for (int i = 0; i < size(m.hazards()); i++)
+            add(keys, HAZARD, m.hazards().get(i).key(), "/hazards/" + i + "/key", problems);
 
         validateReferences(m, keys, problems);
         validateSpatialAndState(m, problems);
@@ -322,6 +340,7 @@ public class CampaignManifestV2SemanticValidator {
         validateStructuredAdventureAndQuests(m, keys, problems);
         validateWorldEntities(m, keys, problems);
         validateTables(m, problems);
+        validateThreats(m, keys, problems);
         return problems;
     }
 
@@ -1216,4 +1235,251 @@ public class CampaignManifestV2SemanticValidator {
     }
 
     private record IndexedTable(int index, CampaignManifestV2.RollableTableDto table) {}
+
+    private void validateThreats(CampaignManifestV2 m,
+                                 Map<CampaignContentType, Set<String>> keys,
+                                 List<CampaignImportProblem> problems) {
+        for (int i = 0; i < size(m.traps()); i++) {
+            var trap = m.traps().get(i);
+            String path = "/traps/" + i;
+            for (var problem : threatStructuralValidator.collectTrapProblems(toTrapWrite(trap), null)) {
+                // Structural ref checks require target UUIDs; package refs are validated below.
+                if ("UNRESOLVED_REFERENCE".equals(problem.code())
+                        && problem.path() != null
+                        && (problem.path().startsWith("/references")
+                        || problem.path().startsWith("/statBlockId"))) {
+                    continue;
+                }
+                error(problems, problem.code(), path + problem.path(), problem.message());
+            }
+            validateThreatPackageRefs(trap.conditionRefs(), path + "/conditionRefs",
+                    CampaignContentType.CONDITION, keys, problems);
+            validateThreatPackageRefs(trap.salvageItemRefs(), path + "/salvageItemRefs",
+                    null, keys, problems);
+            if (trap.statBlockRef() != null) {
+                validatePackageOrCatalogRef(trap.statBlockRef(), path + "/statBlockRef",
+                        CampaignContentType.STATBLOCK, keys, problems);
+            }
+        }
+        for (int i = 0; i < size(m.hazards()); i++) {
+            var hazard = m.hazards().get(i);
+            String path = "/hazards/" + i;
+            for (var problem : threatStructuralValidator.collectHazardProblems(toHazardWrite(hazard), null)) {
+                if ("UNRESOLVED_REFERENCE".equals(problem.code())
+                        && problem.path() != null
+                        && problem.path().startsWith("/references")) {
+                    continue;
+                }
+                error(problems, problem.code(), path + problem.path(), problem.message());
+            }
+            validateThreatPackageRefs(hazard.conditionRefs(), path + "/conditionRefs",
+                    CampaignContentType.CONDITION, keys, problems);
+            validateThreatPackageRefs(hazard.salvageItemRefs(), path + "/salvageItemRefs",
+                    null, keys, problems);
+        }
+        validateThreatIntegrations(m, keys, problems);
+    }
+
+    private void validateThreatIntegrations(CampaignManifestV2 m,
+                                            Map<CampaignContentType, Set<String>> keys,
+                                            List<CampaignImportProblem> problems) {
+        for (int ai = 0; ai < size(m.adventures()); ai++) {
+            var adventure = m.adventures().get(ai);
+            for (int ci = 0; ci < size(adventure.chapters()); ci++) {
+                var chapter = adventure.chapters().get(ci);
+                for (int si = 0; si < size(chapter.scenes()); si++) {
+                    var scene = chapter.scenes().get(si);
+                    for (int sec = 0; sec < size(scene.sections()); sec++) {
+                        var section = scene.sections().get(sec);
+                        if (section.threatRef() == null) continue;
+                        String path = "/adventures/" + ai + "/chapters/" + ci + "/scenes/" + si
+                                + "/sections/" + sec + "/threatRef";
+                        CampaignContentType expected = "TRAP".equals(section.kind()) ? TRAP
+                                : "HAZARD".equals(section.kind()) ? HAZARD : null;
+                        if (expected == null) {
+                            error(problems, "INVALID_THREAT_REFERENCE_KIND", path,
+                                    "Only TRAP/HAZARD scene sections may carry a threatRef");
+                            continue;
+                        }
+                        if (section.threatRef().type() != expected) {
+                            error(problems, "INVALID_THREAT_REFERENCE_KIND", path,
+                                    "Scene section kind " + section.kind()
+                                            + " requires threatRef type " + expected);
+                        }
+                        validatePackageOrCatalogRef(section.threatRef(), path, expected, keys, problems);
+                    }
+                }
+            }
+        }
+        for (int ei = 0; ei < size(m.encounters()); ei++) {
+            var encounter = m.encounters().get(ei);
+            for (int ci = 0; ci < size(encounter.combatants()); ci++) {
+                var combatant = encounter.combatants().get(ci);
+                if (combatant.threatRef() == null) continue;
+                String path = "/encounters/" + ei + "/combatants/" + ci + "/threatRef";
+                CampaignContentType expected = "TRAP".equals(combatant.kind()) ? TRAP
+                        : "HAZARD".equals(combatant.kind()) ? HAZARD : null;
+                if (expected == null) {
+                    error(problems, "INVALID_THREAT_REFERENCE_KIND", path,
+                            "Only TRAP/HAZARD combatants may carry a threatRef");
+                    continue;
+                }
+                if (combatant.threatRef().type() != expected) {
+                    error(problems, "INVALID_THREAT_REFERENCE_KIND", path,
+                            "Combatant kind " + combatant.kind()
+                                    + " requires threatRef type " + expected);
+                }
+                validatePackageOrCatalogRef(combatant.threatRef(), path, expected, keys, problems);
+            }
+        }
+        for (int mi = 0; mi < size(m.maps()); mi++) {
+            var map = m.maps().get(mi);
+            int maxX = map.grid() != null ? map.grid().w() * map.grid().cellPx() : Integer.MAX_VALUE;
+            int maxY = map.grid() != null ? map.grid().h() * map.grid().cellPx() : Integer.MAX_VALUE;
+            for (int pi = 0; pi < size(map.threatPins()); pi++) {
+                var pin = map.threatPins().get(pi);
+                String base = "/maps/" + mi + "/threatPins/" + pi;
+                if (pin.x() < 0 || pin.x() >= maxX) {
+                    error(problems, "THREAT_PIN_OUT_OF_BOUNDS", base + "/x",
+                            "Threat pin x must be in [0, " + maxX + ")");
+                }
+                if (pin.y() < 0 || pin.y() >= maxY) {
+                    error(problems, "THREAT_PIN_OUT_OF_BOUNDS", base + "/y",
+                            "Threat pin y must be in [0, " + maxY + ")");
+                }
+                if (pin.threatRef() == null) {
+                    error(problems, "UNRESOLVED_REFERENCE", base + "/threatRef",
+                            "Threat pin requires a threatRef");
+                    continue;
+                }
+                if (pin.threatRef().type() != TRAP && pin.threatRef().type() != HAZARD) {
+                    error(problems, "INVALID_THREAT_REFERENCE_KIND", base + "/threatRef",
+                            "Threat pin must reference TRAP or HAZARD");
+                } else {
+                    validatePackageOrCatalogRef(pin.threatRef(), base + "/threatRef",
+                            pin.threatRef().type(), keys, problems);
+                }
+            }
+        }
+    }
+
+    private void validateThreatPackageRefs(List<ContentReference> refs, String basePath,
+                                           CampaignContentType expectedType,
+                                           Map<CampaignContentType, Set<String>> keys,
+                                           List<CampaignImportProblem> problems) {
+        if (refs == null) return;
+        for (int i = 0; i < refs.size(); i++) {
+            ContentReference ref = refs.get(i);
+            if (ref == null) continue;
+            String path = basePath + "/" + i;
+            if (expectedType != null && ref.type() != expectedType) {
+                error(problems, "INVALID_THREAT_REFERENCE_ROLE_TYPE", path,
+                        "Expected type " + expectedType + " but got " + ref.type());
+                continue;
+            }
+            if (expectedType == null
+                    && ref.type() != CampaignContentType.EQUIPMENT_ITEM
+                    && ref.type() != CampaignContentType.MAGIC_ITEM) {
+                error(problems, "INVALID_THREAT_REFERENCE_ROLE_TYPE", path,
+                        "Salvage item refs must be EQUIPMENT_ITEM or MAGIC_ITEM");
+                continue;
+            }
+            validatePackageOrCatalogRef(ref, path, ref.type(), keys, problems);
+        }
+    }
+
+    private void validatePackageOrCatalogRef(ContentReference ref, String path,
+                                             CampaignContentType expectedType,
+                                             Map<CampaignContentType, Set<String>> keys,
+                                             List<CampaignImportProblem> problems) {
+        if (ref == null) return;
+        if (ref.type() != expectedType) {
+            error(problems, "INVALID_REFERENCE_TYPE", path,
+                    "Expected type " + expectedType + " but got " + ref.type());
+            return;
+        }
+        if (ref.scope() == ContentReference.Scope.CATALOG) {
+            if (catalog.resolve(expectedType, ref.ruleset(), ref.sourceKey()).isEmpty()) {
+                error(problems, "UNRESOLVED_REFERENCE", path,
+                        "Catalog " + expectedType + " '" + ref.sourceKey() + "' not found");
+            }
+            return;
+        }
+        Set<String> packageKeys = keys.get(expectedType);
+        if (packageKeys == null || !packageKeys.contains(ref.key())) {
+            error(problems, "UNRESOLVED_REFERENCE", path,
+                    "Package " + expectedType + " '" + ref.key() + "' not found");
+        }
+    }
+
+    private static TrapWrite toTrapWrite(CampaignManifestV2.TrapDto dto) {
+        ThreatSeverity severity = parseEnum(ThreatSeverity.class, dto.severity());
+        ThreatResetMode resetMode = parseEnum(ThreatResetMode.class, dto.resetMode());
+        List<TrapDisarmMethodWrite> methods = dto.disarmMethods() == null ? null
+                : dto.disarmMethods().stream()
+                .map(m -> new TrapDisarmMethodWrite(
+                        m.key(), m.label(), m.ability(), m.skill(), m.tool(),
+                        m.dc(), m.failureConsequence(), m.sortOrder()))
+                .toList();
+        List<DamageType> damageTypes = null;
+        String damageExpression = null;
+        if (dto.damage() != null) {
+            damageExpression = dto.damage().expression();
+            if (dto.damage().types() != null) {
+                damageTypes = dto.damage().types().stream()
+                        .map(t -> parseEnum(DamageType.class, t))
+                        .filter(t -> t != null)
+                        .toList();
+            }
+        }
+        return new TrapWrite(
+                dto.sourceKey(), dto.name(), dto.description(), severity,
+                dto.minLevel(), dto.maxLevel(), dto.triggerDescription(), dto.triggerAreaHint(),
+                dto.detectionPassiveThreshold(), toCheckWrite(dto.detectionCheck()),
+                methods, dto.attackBonus(), toCheckWrite(dto.save()),
+                damageExpression, damageTypes, dto.additionalEffect(),
+                resetMode, dto.resetTiming(),
+                null, // package-level statblock resolved separately
+                dto.countermeasureNotes(),
+                null);
+    }
+
+    private static HazardWrite toHazardWrite(CampaignManifestV2.HazardDto dto) {
+        ThreatSeverity severity = parseEnum(ThreatSeverity.class, dto.severity());
+        HazardExposureMode exposure = parseEnum(HazardExposureMode.class, dto.exposureMode());
+        List<DamageType> damageTypes = null;
+        String damageExpression = null;
+        if (dto.damage() != null) {
+            damageExpression = dto.damage().expression();
+            if (dto.damage().types() != null) {
+                damageTypes = dto.damage().types().stream()
+                        .map(t -> parseEnum(DamageType.class, t))
+                        .filter(t -> t != null)
+                        .toList();
+            }
+        }
+        return new HazardWrite(
+                dto.sourceKey(), dto.name(), dto.description(), severity,
+                dto.minLevel(), dto.maxLevel(), exposure,
+                dto.exposureText(), dto.areaHint(), toCheckWrite(dto.check()),
+                damageExpression, damageTypes,
+                dto.escalationText(), dto.endingConditions(),
+                null);
+    }
+
+    private static ThreatCheckWrite toCheckWrite(CampaignManifestV2.ThreatCheckDto dto) {
+        if (dto == null) return null;
+        return new ThreatCheckWrite(
+                parseEnum(ThreatCheckMode.class, dto.mode()),
+                dto.ability(), dto.skill(), dto.dc());
+    }
+
+    private static <E extends Enum<E>> E parseEnum(Class<E> type, String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return Enum.valueOf(type, value);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
 }

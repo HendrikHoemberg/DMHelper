@@ -49,7 +49,9 @@ public record CampaignManifestV2(
         List<FactionDto> factions,
         List<WorldRelationshipDto> worldRelationships,
         List<FactionClockDto> factionClocks,
-        List<RollableTableDto> rollableTables
+        List<RollableTableDto> rollableTables,
+        List<TrapDto> traps,
+        List<HazardDto> hazards
 ) {
     public CampaignManifestV2 {
         if (worldNpcs == null) worldNpcs = List.of();
@@ -58,6 +60,8 @@ public record CampaignManifestV2(
         if (worldRelationships == null) worldRelationships = List.of();
         if (factionClocks == null) factionClocks = List.of();
         if (rollableTables == null) rollableTables = List.of();
+        if (traps == null) traps = List.of();
+        if (hazards == null) hazards = List.of();
     }
     public static final int CURRENT_FORMAT_VERSION = 2;
 
@@ -267,8 +271,13 @@ public record CampaignManifestV2(
             boolean showGrid,
             MapDocumentV2 document,
             List<TokenDto> tokens,
-            int sortOrder
+            int sortOrder,
+            List<MapThreatPinDto> threatPins
     ) {
+        public MapDto {
+            if (threatPins == null) threatPins = List.of();
+        }
+
         @JsonInclude(JsonInclude.Include.NON_NULL)
         public record GridDto(int w, int h, int cellPx, String gridType) {}
 
@@ -430,7 +439,8 @@ public record CampaignManifestV2(
             String waveKey,
             Integer startX,
             Integer startY,
-            String placementRegionKey
+            String placementRegionKey,
+            ContentReference threatRef
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -545,7 +555,8 @@ public record CampaignManifestV2(
             String label,
             String body,
             String sourceLocator,
-            int sortOrder
+            int sortOrder,
+            ContentReference threatRef
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -961,4 +972,81 @@ public record CampaignManifestV2(
             String sourceLocator,
             int sortOrder
     ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record ThreatCheckDto(String mode, String ability, String skill, Integer dc) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record ThreatDamageDto(String expression, List<String> types) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record TrapDisarmMethodDto(
+            String key, String label, String ability, String skill, String tool,
+            Integer dc, String failureConsequence, int sortOrder) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record MapThreatPinDto(
+            String key, int x, int y, String label,
+            ContentReference threatRef, int sortOrder) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record TrapDto(
+            String key,
+            String sourceKey,
+            String name,
+            String description,
+            String severity,
+            Integer minLevel,
+            Integer maxLevel,
+            String triggerDescription,
+            String triggerAreaHint,
+            Integer detectionPassiveThreshold,
+            ThreatCheckDto detectionCheck,
+            List<TrapDisarmMethodDto> disarmMethods,
+            Integer attackBonus,
+            ThreatCheckDto save,
+            ThreatDamageDto damage,
+            String additionalEffect,
+            String resetMode,
+            String resetTiming,
+            ContentReference statBlockRef,
+            String countermeasureNotes,
+            List<ContentReference> conditionRefs,
+            List<ContentReference> salvageItemRefs,
+            Instant createdAt,
+            ProvenanceDto provenance
+    ) {
+        public TrapDto {
+            if (disarmMethods == null) disarmMethods = List.of();
+            if (conditionRefs == null) conditionRefs = List.of();
+            if (salvageItemRefs == null) salvageItemRefs = List.of();
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record HazardDto(
+            String key,
+            String sourceKey,
+            String name,
+            String description,
+            String severity,
+            Integer minLevel,
+            Integer maxLevel,
+            String exposureMode,
+            String exposureText,
+            String areaHint,
+            ThreatCheckDto check,
+            ThreatDamageDto damage,
+            String escalationText,
+            String endingConditions,
+            List<ContentReference> conditionRefs,
+            List<ContentReference> salvageItemRefs,
+            Instant createdAt,
+            ProvenanceDto provenance
+    ) {
+        public HazardDto {
+            if (conditionRefs == null) conditionRefs = List.of();
+            if (salvageItemRefs == null) salvageItemRefs = List.of();
+        }
+    }
 }

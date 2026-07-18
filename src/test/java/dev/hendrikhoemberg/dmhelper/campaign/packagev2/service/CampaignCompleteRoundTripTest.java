@@ -13,6 +13,8 @@ import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.RollableTableRollService;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableDuplicatePolicy;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollRequest;
+import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -46,6 +48,8 @@ class CampaignCompleteRoundTripTest {
     @Autowired CampaignService campaigns;
     @Autowired RollableTableRepository rollableTables;
     @Autowired RollableTableRollService tableRolls;
+    @Autowired TrapRepository traps;
+    @Autowired HazardRepository hazards;
     @TempDir Path temp;
 
     private final JsonMapper mapper = JsonMapper.builder().build();
@@ -75,6 +79,7 @@ class CampaignCompleteRoundTripTest {
         assertThat(firstResult.valid()).as(firstResult.problems().toString()).isTrue();
         var campaignA = importer.confirm(previews.retain(firstResult).previewId(), true);
         assertImportedTablesCanRoll(campaignA.getId());
+        assertImportedThreatsLoad(campaignA.getId(), source);
 
         CampaignSemanticSnapshot sourceSnapshot = CampaignSemanticSnapshot.from(source);
         CampaignSemanticSnapshot snapshotA = snapshots.snapshot(campaignA.getId());
@@ -88,6 +93,7 @@ class CampaignCompleteRoundTripTest {
         assertThat(secondResult.valid()).as(secondResult.problems().toString()).isTrue();
         var campaignB = importer.confirm(previews.retain(secondResult).previewId(), true);
         assertImportedTablesCanRoll(campaignB.getId());
+        assertImportedThreatsLoad(campaignB.getId(), source);
         CampaignSemanticSnapshot snapshotB = snapshots.snapshot(campaignB.getId());
 
         CampaignSemanticComparator.assertEquivalent(snapshotA, snapshotB);
@@ -103,6 +109,27 @@ class CampaignCompleteRoundTripTest {
             var result = tableRolls.roll(campaignId, table.getId(),
                     new TableRollRequest(manualValue, 1, TableDuplicatePolicy.ALLOW_DUPLICATES));
             assertThat(result.outcomes()).as(table.getName()).isNotEmpty();
+        }
+    }
+
+    private void assertImportedThreatsLoad(java.util.UUID campaignId, CampaignManifestV2 source) {
+        var loadedTraps = traps.findVisibleByCampaignId(campaignId).stream()
+                .filter(t -> t.getCampaign() != null && campaignId.equals(t.getCampaign().getId()))
+                .toList();
+        var loadedHazards = hazards.findVisibleByCampaignId(campaignId).stream()
+                .filter(h -> h.getCampaign() != null && campaignId.equals(h.getCampaign().getId()))
+                .toList();
+        assertThat(loadedTraps).hasSize(source.traps() == null ? 0 : source.traps().size());
+        assertThat(loadedHazards).hasSize(source.hazards() == null ? 0 : source.hazards().size());
+        for (var trap : loadedTraps) {
+            assertThat(trap.getName()).isNotBlank();
+            assertThat(trap.getDescription()).isNotBlank();
+            assertThat(trap.getSeverity()).isNotNull();
+        }
+        for (var hazard : loadedHazards) {
+            assertThat(hazard.getName()).isNotBlank();
+            assertThat(hazard.getDescription()).isNotBlank();
+            assertThat(hazard.getSeverity()).isNotNull();
         }
     }
 
@@ -161,7 +188,7 @@ class CampaignCompleteRoundTripTest {
                 source.adventures(), source.session(), includeDiceHistory ? source.diceRolls() : List.of(),
                 source.quests(), source.annotations(), source.worldNpcs(), source.worldLocations(),
                 source.factions(), source.worldRelationships(), source.factionClocks(),
-                source.rollableTables());
+                source.rollableTables(), List.of(), List.of());
     }
 
     private CampaignManifestV2 readManifest(String path) throws Exception {

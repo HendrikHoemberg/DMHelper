@@ -42,7 +42,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(),
-                null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
     }
 
     @Test
@@ -63,7 +63,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), List.of(adv, adv2), manifest.session(), manifest.diceRolls(),
-                manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest2))
                 .extracting(CampaignImportProblem::code)
                 .contains("DUPLICATE_KEY");
@@ -81,7 +81,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 List.of(handout), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
-                manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest2))
                 .extracting(CampaignImportProblem::code)
                 .contains("UNRESOLVED_ASSET_REFERENCE");
@@ -108,7 +108,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), List.of(adv), manifest.session(), manifest.diceRolls(),
-                manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         var problems = validator.validate(manifest2);
         assertThat(problems).extracting(CampaignImportProblem::code)
                 .contains("UNRESOLVED_REFERENCE");
@@ -130,7 +130,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), List.of(adv), manifest.session(), manifest.diceRolls(),
-                manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest2))
                 .extracting(CampaignImportProblem::code)
                 .contains("DUPLICATE_KEY");
@@ -150,7 +150,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
-                manifest.quests(), List.of(annotation), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                manifest.quests(), List.of(annotation), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest2))
                 .extracting(CampaignImportProblem::code)
                 .contains("UNRESOLVED_REFERENCE");
@@ -165,7 +165,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 "c1", "Test", 0, 0, 0, 10, 10, 0,
                 "MONSTER", null, false, null, sb, null,
                 false, false, null, null, false, 0, 0, 0, 0, null, null,
-                null, null, null, null);
+                null, null, null, null, null);
         var encounter = new CampaignManifestV2.EncounterDto(
                 "enc1", "Test", List.of(combatant), "PLANNED",
                 0, -1, 0, null, null, null, false, List.of(),
@@ -178,7 +178,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.handouts(), manifest.maps(), List.of(encounter),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
-                manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest2))
                 .extracting(CampaignImportProblem::code)
                 .contains("UNRESOLVED_CATALOG_REFERENCE");
@@ -201,7 +201,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
-                List.of(quest), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                List.of(quest), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         var problems = validator.validate(manifest2);
         assertThat(problems).extracting(CampaignImportProblem::code)
                 .contains("UNRESOLVED_REFERENCE");
@@ -221,7 +221,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
                 manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
-                manifest.quests(), List.of(annotation), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                manifest.quests(), List.of(annotation), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest2))
                 .extracting(CampaignImportProblem::code)
                 .contains("UNRESOLVED_REFERENCE");
@@ -298,7 +298,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 base.handouts(), base.maps(), base.encounters(),
                 base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(),
                 base.timelineEvents(), base.adventures(), base.session(), base.diceRolls(),
-                List.of(quest), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                List.of(quest), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest))
                 .extracting(CampaignImportProblem::code)
                 .contains("INVALID_GIVER");
@@ -322,7 +322,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 base.handouts(), base.maps(), base.encounters(),
                 List.of(note), base.quickNotes(), base.assignments(), base.ledgerEntries(),
                 base.timelineEvents(), base.adventures(), base.session(), base.diceRolls(),
-                List.of(quest), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                List.of(quest), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest))
                 .extracting(CampaignImportProblem::code)
                 .contains("MULTIPLE_GIVERS");
@@ -348,7 +348,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 base.handouts(), base.maps(), base.encounters(),
                 base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(),
                 base.timelineEvents(), List.of(adv), base.session(), base.diceRolls(),
-                base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest))
                 .extracting(CampaignImportProblem::code)
                 .contains("MISSING_SOURCE_ANNOTATION");
@@ -376,7 +376,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 base.handouts(), base.maps(), base.encounters(),
                 List.of(note), base.quickNotes(), base.assignments(), base.ledgerEntries(),
                 base.timelineEvents(), List.of(adv), base.session(), base.diceRolls(),
-                base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest))
                 .extracting(CampaignImportProblem::code)
                 .contains("INVALID_REFERENCE_TYPE");
@@ -569,6 +569,123 @@ class CampaignManifestV2SemanticValidatorTest {
                 });
     }
 
+    @Test
+    void trapBadDamageExpressionReportsExactPath() {
+        var trap = trap("trap-spike", null, null,
+                new CampaignManifestV2.ThreatDamageDto("not-a-dice", List.of("PIERCING")),
+                "NONE", null, List.of(), List.of());
+        assertThat(validator.validate(withTraps(List.of(trap))))
+                .anySatisfy(problem -> {
+                    assertThat(problem.code()).isEqualTo("INVALID_DAMAGE_EXPRESSION");
+                    assertThat(problem.path()).isEqualTo("/traps/0/damageExpression");
+                });
+    }
+
+    @Test
+    void trapAttackAndSaveConflictDetected() {
+        var trap = trap("trap-spike", 5,
+                new CampaignManifestV2.ThreatCheckDto("SAVE", "DEX", null, 13),
+                null, "NONE", null, List.of(), List.of());
+        assertThat(validator.validate(withTraps(List.of(trap))))
+                .extracting(CampaignImportProblem::code)
+                .contains("TRAP_EFFECT_MODE_CONFLICT");
+    }
+
+    @Test
+    void automaticResetRequiresTiming() {
+        var trap = trap("trap-spike", null, null, null, "AUTOMATIC", null, List.of(), List.of());
+        assertThat(validator.validate(withTraps(List.of(trap))))
+                .extracting(CampaignImportProblem::code)
+                .contains("TRAP_RESET_TIMING_REQUIRED");
+    }
+
+    @Test
+    void duplicateDisarmKeysReportExactPath() {
+        var method = new CampaignManifestV2.TrapDisarmMethodDto(
+                "jam", "Jam", "DEX", null, null, 12, null, 0);
+        var trap = trap("trap-spike", null, null, null, "NONE", null, List.of(method, method), List.of());
+        assertThat(validator.validate(withTraps(List.of(trap))))
+                .anySatisfy(problem -> {
+                    assertThat(problem.code()).isEqualTo("DUPLICATE_DISARM_KEY");
+                    assertThat(problem.path()).isEqualTo("/traps/0/disarmMethods/1/key");
+                });
+    }
+
+    @Test
+    void dcOutOfBoundsReportsDisarmPath() {
+        var method = new CampaignManifestV2.TrapDisarmMethodDto(
+                "jam", "Jam", "DEX", null, null, 99, null, 0);
+        var trap = trap("trap-spike", null, null, null, "NONE", null, List.of(method), List.of());
+        assertThat(validator.validate(withTraps(List.of(trap))))
+                .anySatisfy(problem -> {
+                    assertThat(problem.code()).isEqualTo("THREAT_DC_OUT_OF_BOUNDS");
+                    assertThat(problem.path()).isEqualTo("/traps/0/disarmMethods/0/dc");
+                });
+    }
+
+    @Test
+    void unresolvedConditionRefIsRejected() {
+        var trap = trap("trap-spike", null, null, null, "NONE", null, List.of(),
+                List.of(ContentReference.packageRef(CampaignContentType.CONDITION, "missing-condition")));
+        assertThat(validator.validate(withTraps(List.of(trap))))
+                .extracting(CampaignImportProblem::code)
+                .contains("UNRESOLVED_REFERENCE");
+    }
+
+    @Test
+    void sceneSectionKindMismatchIsRejected() {
+        var trap = trap("trap-spike", null, null, null, "NONE", null, List.of(), List.of());
+        var section = new CampaignManifestV2.SceneSectionDto(
+                "READ_ALOUD", "Trap", "body", null, 0,
+                ContentReference.packageRef(CampaignContentType.TRAP, trap.key()));
+        var scene = new CampaignManifestV2.SceneDto(
+                "scene-1", "Scene", "body", "UNVISITED", 0, null, null, null,
+                List.of(), List.of(), null, null, List.of(), null,
+                List.of(section), List.of(), List.of(), List.of(), List.of());
+        var chapter = new CampaignManifestV2.ChapterDto("ch-1", "Ch", null, 0, List.of(scene));
+        var adventure = new CampaignManifestV2.AdventureDto(
+                "adv-1", "Adv", null, null, 0, List.of(chapter), null);
+        var m = minimal();
+        var manifest = new CampaignManifestV2(
+                2, m.metadata(), m.campaign(), m.assets(), m.party(),
+                m.customStatBlocks(), m.customSpells(), m.customConditions(), m.customRules(),
+                m.customEquipment(), m.customMagicItems(), m.customClasses(), m.customSpecies(),
+                m.customBackgrounds(), m.customFeats(),
+                m.handouts(), m.maps(), m.encounters(),
+                m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
+                m.timelineEvents(), List.of(adventure), m.session(), m.diceRolls(),
+                m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.of(), List.of(trap), List.of());
+        assertThat(validator.validate(manifest))
+                .extracting(CampaignImportProblem::code)
+                .contains("INVALID_THREAT_REFERENCE_KIND");
+    }
+
+    private static CampaignManifestV2.TrapDto trap(
+            String key, Integer attackBonus, CampaignManifestV2.ThreatCheckDto save,
+            CampaignManifestV2.ThreatDamageDto damage, String resetMode, String resetTiming,
+            List<CampaignManifestV2.TrapDisarmMethodDto> disarmMethods,
+            List<ContentReference> conditionRefs) {
+        return new CampaignManifestV2.TrapDto(
+                key, key, "Spike Pit", "A pit", "SETBACK", null, null, null, null, null, null,
+                disarmMethods, attackBonus, save, damage, null, resetMode, resetTiming,
+                null, null, conditionRefs, List.of(), null, null);
+    }
+
+    private CampaignManifestV2 withTraps(List<CampaignManifestV2.TrapDto> traps) {
+        var m = minimal();
+        return new CampaignManifestV2(
+                2, m.metadata(), m.campaign(), m.assets(), m.party(),
+                m.customStatBlocks(), m.customSpells(), m.customConditions(), m.customRules(),
+                m.customEquipment(), m.customMagicItems(), m.customClasses(), m.customSpecies(),
+                m.customBackgrounds(), m.customFeats(),
+                m.handouts(), m.maps(), m.encounters(),
+                m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
+                m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
+                m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.of(), traps, List.of());
+    }
+
     private CampaignManifestV2 withRollableTables(List<CampaignManifestV2.RollableTableDto> tables) {
         var m = minimal();
         return new CampaignManifestV2(
@@ -579,7 +696,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 m.handouts(), m.maps(), m.encounters(),
                 m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
                 m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
-                m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), tables);
+                m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), tables, List.of(), List.of());
     }
 
     private CampaignManifestV2 withQuests(List<CampaignManifestV2.QuestDto> quests) {
@@ -592,6 +709,6 @@ class CampaignManifestV2SemanticValidatorTest {
                 m.handouts(), m.maps(), m.encounters(),
                 m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
                 m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
-                quests, m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                quests, m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
     }
 }

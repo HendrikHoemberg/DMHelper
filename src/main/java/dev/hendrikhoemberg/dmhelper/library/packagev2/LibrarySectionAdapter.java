@@ -19,10 +19,13 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestA
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionExporter;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionImporter;
 import dev.hendrikhoemberg.dmhelper.library.data.*;
+import dev.hendrikhoemberg.dmhelper.threat.packagev2.ThreatExportClosureService;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Component
 public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignSectionImporter {
@@ -37,6 +40,7 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
     private final SpeciesRepository speciesRepository;
     private final BackgroundRepository backgroundRepository;
     private final FeatRepository featRepository;
+    private final ThreatExportClosureService threatExportClosureService;
 
     public LibrarySectionAdapter(StatBlockRepository statBlockRepository,
                                   SpellRepository spellRepository,
@@ -47,7 +51,8 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
                                   CharacterClassRepository characterClassRepository,
                                   SpeciesRepository speciesRepository,
                                   BackgroundRepository backgroundRepository,
-                                  FeatRepository featRepository) {
+                                  FeatRepository featRepository,
+                                  ThreatExportClosureService threatExportClosureService) {
         this.statBlockRepository = statBlockRepository;
         this.spellRepository = spellRepository;
         this.conditionRepository = conditionRepository;
@@ -58,6 +63,7 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
         this.speciesRepository = speciesRepository;
         this.backgroundRepository = backgroundRepository;
         this.featRepository = featRepository;
+        this.threatExportClosureService = threatExportClosureService;
     }
 
     @Override
@@ -72,6 +78,8 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
 
     @Override
     public void exportSection(CampaignExportContext context, CampaignManifestAssembler target) {
+        // Threats export at order 250; seed library closures before library serializes sections.
+        seedThreatLibraryClosure(context, target);
         exportStatBlocks(context, target);
         exportSpells(context, target);
         exportConditions(context, target);
@@ -82,6 +90,19 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
         exportSpecies(context, target);
         exportBackgrounds(context, target);
         exportFeats(context, target);
+    }
+
+    private void seedThreatLibraryClosure(CampaignExportContext context, CampaignManifestAssembler target) {
+        var closure = threatExportClosureService.forCampaign(context.campaignId());
+        for (var entry : closure.libraryReferenceIds().entrySet()) {
+            switch (entry.getKey()) {
+                case STATBLOCK -> target.setClosureStatblockIds(entry.getValue());
+                case MAGIC_ITEM -> target.setClosureMagicItemIds(entry.getValue());
+                case EQUIPMENT_ITEM -> target.setClosureEquipmentIds(entry.getValue());
+                case CONDITION -> target.setClosureConditionIds(entry.getValue());
+                default -> { }
+            }
+        }
     }
 
     private void exportStatBlocks(CampaignExportContext context, CampaignManifestAssembler target) {
@@ -143,9 +164,16 @@ public class LibrarySectionAdapter implements CampaignSectionExporter, CampaignS
     }
 
     private void exportConditions(CampaignExportContext context, CampaignManifestAssembler target) {
-        List<CustomConditionDto> dtos = conditionRepository.findByCampaignIdOrderByNameAsc(context.campaignId())
-                .stream()
-                .filter(c -> c.getSource() == ContentSource.CUSTOM)
+        List<Condition> conditions = new java.util.ArrayList<>(
+                conditionRepository.findByCampaignIdOrderByNameAsc(context.campaignId())
+                        .stream()
+                        .filter(c -> c.getSource() == ContentSource.CUSTOM)
+                        .toList());
+        if (target.closureConditionIds() != null) {
+            conditions.addAll(conditionRepository.findAllById(target.closureConditionIds()));
+        }
+        List<CustomConditionDto> dtos = conditions.stream()
+                .distinct()
                 .map(c -> {
                     String key = context.key(CampaignContentType.CONDITION, c.getId(), c.getName());
                     return new CustomConditionDto(

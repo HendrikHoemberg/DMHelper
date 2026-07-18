@@ -520,6 +520,6 @@ class WorldSectionAdapterTest {
                 noSb, noSpell, noCond, noRule, noEquip, noMagic, noClass, noSpecies, noBg, noFeat,
                 noHand, noMap, noEnc, noNote, noQn, noAssign, noLedger, noTimeline,
                 noAdv, null, noDice, noQ, noAnn,
-                npcs, locations, factions, relationships, clocks, List.of());
+                npcs, locations, factions, relationships, clocks, List.of(), List.of(), List.of());
     }
 }

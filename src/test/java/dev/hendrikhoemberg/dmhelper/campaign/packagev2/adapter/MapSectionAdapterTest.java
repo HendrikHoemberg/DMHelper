@@ -66,7 +66,8 @@ class MapSectionAdapterTest {
                         mock(dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository.class),
                         mock(dev.hendrikhoemberg.dmhelper.library.data.EquipmentItemRepository.class),
                         statBlockRepository));
-        adapter = new MapSectionAdapter(gameMapRepo, tokenRepo, statBlockResolver);
+        adapter = new MapSectionAdapter(gameMapRepo, tokenRepo, statBlockResolver,
+                mock(dev.hendrikhoemberg.dmhelper.threat.data.MapThreatPinRepository.class));
         campaign = new Campaign();
         campaign.setId(UUID.randomUUID());
         campaign.setName("Test Campaign");
@@ -295,9 +296,8 @@ class MapSectionAdapterTest {
                                 100, 200, 1, 1, true, srdRef, null,
                                 12, 20, false, "sneaky", "dagger"
                         )),
-                        0
-                )),
-                null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                        0, List.of())),
+                null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         var freshCampaign = new Campaign();
         freshCampaign.setId(UUID.randomUUID());
@@ -389,9 +389,8 @@ class MapSectionAdapterTest {
                                 List.of(), List.of()
                         ),
                         List.of(),
-                        0
-                )),
-                null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                        0, List.of())),
+                null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         // Stage asset file
         Path assetFile = tempDir.resolve(assetKey + ".png");

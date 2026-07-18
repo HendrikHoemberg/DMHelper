@@ -313,7 +313,7 @@ class EncounterSectionAdapterTest {
                 null, null, null, null, null, null, null, null, null,
                 null, null,
                 List.of(encounterDto),
-                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var encounter = invocation.getArgument(0, Encounter.class);
@@ -348,7 +348,7 @@ class EncounterSectionAdapterTest {
                 "MONSTER", null, false, null, srdRef, null,
                 false, false, null, null, false,
                 0, 0, 0, 0, null, null,
-                null, null, null, null);
+                null, null, null, null, null);
         var encounterDto = new EncounterDto(
                 "ambush", "Ambush", List.of(combatantDto), "PLANNED",
                 0, -1, 0, null, null, null, false, List.of(),
@@ -358,7 +358,7 @@ class EncounterSectionAdapterTest {
                 null, null, null, null, null, null, null, null, null,
                 null, null,
                 List.of(encounterDto),
-                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var encounter = invocation.getArgument(0, Encounter.class);

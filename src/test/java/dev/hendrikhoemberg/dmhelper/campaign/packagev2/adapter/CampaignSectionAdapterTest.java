@@ -31,7 +31,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 
-class CampaignSectionAdapterTest {
+public class CampaignSectionAdapterTest {
 
     private CampaignSectionAdapter adapter;
     private CampaignSettingsCodec codec;
@@ -109,7 +109,7 @@ class CampaignSectionAdapterTest {
                         Instant.parse("2025-01-01T00:00:00Z"), null, null),
                 null, null, null,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         var context = new CampaignImportContext(
                 UUID.randomUUID(), new FakeKeyService(), pendingImport());
 
@@ -134,7 +134,7 @@ class CampaignSectionAdapterTest {
                 new CampaignDto("campaign-key", "Test", "desc", Instant.now(), null, sceneRef),
                 null, null, null,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         var context = new CampaignImportContext(
                 UUID.randomUUID(), new FakeKeyService(), pendingImport());
@@ -155,10 +155,10 @@ class CampaignSectionAdapterTest {
         return new PendingCampaignImport(UUID.randomUUID(), null, null, null);
     }
 
-    static class FakeKeyService extends CampaignPackageKeyService {
+    public static class FakeKeyService extends CampaignPackageKeyService {
         final Map<String, String> bindings = new LinkedHashMap<>();
 
-        FakeKeyService() {
+        public FakeKeyService() {
             super(null);
         }
 

@@ -53,10 +53,13 @@ public class CampaignManifestAssembler {
     private List<CampaignManifestV2.WorldRelationshipDto> worldRelationships;
     private List<CampaignManifestV2.FactionClockDto> factionClocks;
     private List<CampaignManifestV2.RollableTableDto> rollableTables;
+    private List<CampaignManifestV2.TrapDto> traps;
+    private List<CampaignManifestV2.HazardDto> hazards;
     private java.util.Set<java.util.UUID> closureStatblockIds;
     private java.util.Set<java.util.UUID> closureMagicItemIds;
     private java.util.Set<java.util.UUID> closureEquipmentIds;
     private java.util.Set<java.util.UUID> closureSpellIds;
+    private java.util.Set<java.util.UUID> closureConditionIds;
     private boolean built;
 
     public void campaign(CampaignDto value) {
@@ -219,10 +222,21 @@ public class CampaignManifestAssembler {
         this.rollableTables = value == null ? List.of() : List.copyOf(value);
     }
 
+    public void traps(List<CampaignManifestV2.TrapDto> value) {
+        checkNotAlreadySet("traps", traps);
+        this.traps = value == null ? List.of() : List.copyOf(value);
+    }
+
+    public void hazards(List<CampaignManifestV2.HazardDto> value) {
+        checkNotAlreadySet("hazards", hazards);
+        this.hazards = value == null ? List.of() : List.copyOf(value);
+    }
+
     public java.util.Set<java.util.UUID> closureStatblockIds() { return closureStatblockIds; }
     public java.util.Set<java.util.UUID> closureMagicItemIds() { return closureMagicItemIds; }
     public java.util.Set<java.util.UUID> closureEquipmentIds() { return closureEquipmentIds; }
     public java.util.Set<java.util.UUID> closureSpellIds() { return closureSpellIds; }
+    public java.util.Set<java.util.UUID> closureConditionIds() { return closureConditionIds; }
 
     public void setClosureStatblockIds(java.util.Set<java.util.UUID> ids) {
         if (closureStatblockIds == null) closureStatblockIds = new java.util.HashSet<>();
@@ -242,6 +256,11 @@ public class CampaignManifestAssembler {
     public void setClosureSpellIds(java.util.Set<java.util.UUID> ids) {
         if (closureSpellIds == null) closureSpellIds = new java.util.HashSet<>();
         closureSpellIds.addAll(ids);
+    }
+
+    public void setClosureConditionIds(java.util.Set<java.util.UUID> ids) {
+        if (closureConditionIds == null) closureConditionIds = new java.util.HashSet<>();
+        closureConditionIds.addAll(ids);
     }
 
     public CampaignManifestV2 build(CampaignManifestV2.Metadata metadata) {
@@ -306,7 +325,9 @@ public class CampaignManifestAssembler {
                 factions == null ? List.of() : factions,
                 worldRelationships == null ? List.of() : worldRelationships,
                 factionClocks == null ? List.of() : factionClocks,
-                rollableTables == null ? List.of() : rollableTables
+                rollableTables == null ? List.of() : rollableTables,
+                traps == null ? List.of() : traps,
+                hazards == null ? List.of() : hazards
         );
     }
 

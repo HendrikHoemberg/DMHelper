@@ -49,8 +49,13 @@ class LibrarySectionAdapterTest {
         speciesRepo = mock(SpeciesRepository.class);
         backgroundRepo = mock(BackgroundRepository.class);
         featRepo = mock(FeatRepository.class);
+        var threatClosure = mock(dev.hendrikhoemberg.dmhelper.threat.packagev2.ThreatExportClosureService.class);
+        when(threatClosure.forCampaign(any())).thenReturn(
+                new dev.hendrikhoemberg.dmhelper.threat.packagev2.ThreatExportClosureService.ClosureResult(
+                        List.of(), List.of(), java.util.Map.of()));
         adapter = new LibrarySectionAdapter(statBlockRepo, spellRepo, conditionRepo, ruleSectionRepo,
-                equipmentItemRepo, magicItemRepo, characterClassRepo, speciesRepo, backgroundRepo, featRepo);
+                equipmentItemRepo, magicItemRepo, characterClassRepo, speciesRepo, backgroundRepo, featRepo,
+                threatClosure);
         campaign = new Campaign();
         campaign.setId(UUID.randomUUID());
         campaign.setName("Test Campaign");
@@ -151,7 +156,7 @@ class LibrarySectionAdapterTest {
                 2, null, null, null,
                 null, manifest2.customStatBlocks(),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         var importContext = new CampaignImportContext(
                 freshCampaign.getId(), new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());

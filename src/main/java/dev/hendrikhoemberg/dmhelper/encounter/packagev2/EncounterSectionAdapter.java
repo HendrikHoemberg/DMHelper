@@ -170,6 +170,16 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
             waveKey = context.key(CampaignContentType.ENCOUNTER_WAVE, combatant.getWave().getId(), seed);
         }
 
+        ContentReference threatRef = null;
+        if (combatant.getThreatId() != null && combatant.getThreatKind() != null) {
+            CampaignContentType threatType = combatant.getThreatKind()
+                    == dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.TRAP
+                    ? CampaignContentType.TRAP
+                    : CampaignContentType.HAZARD;
+            threatRef = context.packageRef(threatType, combatant.getThreatId(),
+                    combatant.getName() != null ? combatant.getName() : threatType.name());
+        }
+
         return new CombatantDto(
                 key, combatant.getName(), combatant.getInitiative(),
                 combatant.getTieBreaker(), combatant.getSortOrder(),
@@ -183,8 +193,8 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                 combatant.getLegendaryActionsMax(), combatant.getLegendaryResistancesMax(),
                 combatant.getRechargedAbilities(), combatant.getNotes(),
                 waveKey, combatant.getStartX(), combatant.getStartY(),
-                combatant.getPlacementRegionKey()
-        );
+                combatant.getPlacementRegionKey(),
+                threatRef);
     }
 
     private CombatLogEntryDto exportCombatLogEntry(CombatLogEntry entry, CampaignExportContext context,
@@ -334,6 +344,20 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                         var pm = context.require(cDto.partyMemberRef(), CampaignContentType.PARTY_MEMBER,
                                 dev.hendrikhoemberg.dmhelper.party.data.PartyMember.class);
                         combatant.setPartyMember(pm);
+                    });
+                }
+                if (cDto.threatRef() != null) {
+                    ContentReference threatRef = cDto.threatRef();
+                    context.defer("combatant threat " + cDto.key(), () -> {
+                        Object target = context.require(threatRef, threatRef.type(), Object.class);
+                        combatant.setThreatKind(threatRef.type() == CampaignContentType.TRAP
+                                ? dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.TRAP
+                                : dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.HAZARD);
+                        try {
+                            combatant.setThreatId((java.util.UUID) target.getClass().getMethod("getId").invoke(target));
+                        } catch (ReflectiveOperationException e) {
+                            throw new IllegalStateException("Cannot resolve threat id", e);
+                        }
                     });
                 }
                 combatantRepository.save(combatant);

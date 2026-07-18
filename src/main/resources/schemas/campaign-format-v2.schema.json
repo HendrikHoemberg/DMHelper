@@ -40,7 +40,9 @@
     "factions": { "type": "array", "items": { "$ref": "#/$defs/faction" } },
     "worldRelationships": { "type": "array", "items": { "$ref": "#/$defs/worldRelationship" } },
     "factionClocks": { "type": "array", "items": { "$ref": "#/$defs/factionClock" } },
-    "rollableTables": { "type": "array", "items": { "$ref": "#/$defs/rollableTable" } }
+    "rollableTables": { "type": "array", "items": { "$ref": "#/$defs/rollableTable" } },
+    "traps": { "type": "array", "items": { "$ref": "#/$defs/trap" } },
+    "hazards": { "type": "array", "items": { "$ref": "#/$defs/hazard" } }
   },
   "$defs": {
     "key": {
@@ -576,7 +578,8 @@
         "showGrid": { "type": "boolean" },
         "document": { "$ref": "https://dmhelper/map-document-v2.schema.json" },
         "tokens": { "type": "array", "items": { "$ref": "#/$defs/token" } },
-        "sortOrder": { "type": "integer" }
+        "sortOrder": { "type": "integer" },
+        "threatPins": { "type": "array", "items": { "$ref": "#/$defs/mapThreatPin" } }
       }
     },
     "mapGrid": {
@@ -707,7 +710,7 @@
         "maxHp": { "type": "integer", "minimum": 0 },
         "currentHp": { "type": "integer", "minimum": 0 },
         "tempHp": { "type": "integer", "minimum": 0 },
-        "kind": { "type": "string", "enum": ["PC", "NPC", "MONSTER", "OBJECT", "HAZARD"] },
+        "kind": { "type": "string", "enum": ["PC", "NPC", "MONSTER", "OBJECT", "HAZARD", "TRAP"] },
         "groupId": { "type": "string" },
         "groupLeader": { "type": "boolean" },
         "tokenRef": { "$ref": "#/$defs/contentReference" },
@@ -727,7 +730,8 @@
         "waveKey": { "$ref": "#/$defs/key" },
         "startX": { "type": "integer" },
         "startY": { "type": "integer" },
-        "placementRegionKey": { "type": "string" }
+        "placementRegionKey": { "type": "string" },
+        "threatRef": { "$ref": "#/$defs/contentReference" }
       }
     },
     "note": {
@@ -912,7 +916,8 @@
         "label": { "type": "string" },
         "body": { "type": "string" },
         "sourceLocator": { "type": "string" },
-        "sortOrder": { "type": "integer" }
+        "sortOrder": { "type": "integer" },
+        "threatRef": { "$ref": "#/$defs/contentReference" }
       }
     },
     "sceneCheck": {
@@ -1260,6 +1265,127 @@
         "role": { "type": "string", "enum": ["RANDOM_ENCOUNTERS", "LOOT", "TABLE_REFERENCE"] },
         "tableRef": { "$ref": "#/$defs/contentReference" },
         "sortOrder": { "type": "integer" }
+      }
+    },
+    "threatCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "type": "string", "enum": ["CHECK", "SAVE"] },
+        "ability": { "type": "string" },
+        "skill": { "type": "string" },
+        "dc": { "type": "integer", "minimum": 0, "maximum": 40 }
+      }
+    },
+    "threatDamage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "expression": { "type": "string" },
+        "types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["ACID", "BLUDGEONING", "COLD", "FIRE", "FORCE", "LIGHTNING", "NECROTIC", "PIERCING", "POISON", "PSYCHIC", "RADIANT", "SLASHING", "THUNDER"]
+          }
+        }
+      }
+    },
+    "trapDisarmMethod": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "label", "sortOrder"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "label": { "type": "string", "minLength": 1 },
+        "ability": { "type": "string" },
+        "skill": { "type": "string" },
+        "tool": { "type": "string" },
+        "dc": { "type": "integer", "minimum": 0, "maximum": 40 },
+        "failureConsequence": { "type": "string" },
+        "sortOrder": { "type": "integer" }
+      }
+    },
+    "mapThreatPin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "x", "y", "threatRef", "sortOrder"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "x": { "type": "integer", "minimum": 0 },
+        "y": { "type": "integer", "minimum": 0 },
+        "label": { "type": "string" },
+        "threatRef": { "$ref": "#/$defs/contentReference" },
+        "sortOrder": { "type": "integer" }
+      }
+    },
+    "trap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "sourceKey", "name", "description", "severity", "resetMode"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "sourceKey": { "$ref": "#/$defs/key" },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string", "enum": ["SETBACK", "DANGEROUS", "DEADLY"] },
+        "minLevel": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "maxLevel": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "triggerDescription": { "type": "string" },
+        "triggerAreaHint": { "type": "string" },
+        "detectionPassiveThreshold": { "type": "integer", "minimum": 0, "maximum": 40 },
+        "detectionCheck": { "$ref": "#/$defs/threatCheck" },
+        "disarmMethods": { "type": "array", "items": { "$ref": "#/$defs/trapDisarmMethod" } },
+        "attackBonus": { "type": "integer" },
+        "save": { "$ref": "#/$defs/threatCheck" },
+        "damage": { "$ref": "#/$defs/threatDamage" },
+        "additionalEffect": { "type": "string" },
+        "resetMode": { "type": "string", "enum": ["NONE", "MANUAL", "AUTOMATIC"] },
+        "resetTiming": { "type": "string" },
+        "statBlockRef": { "$ref": "#/$defs/contentReference" },
+        "countermeasureNotes": { "type": "string" },
+        "conditionRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
+        "salvageItemRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            { "required": ["attackBonus"], "not": { "required": ["save"] } },
+            { "required": ["save"], "not": { "required": ["attackBonus"] } },
+            { "not": { "anyOf": [ { "required": ["attackBonus"] }, { "required": ["save"] } ] } }
+          ]
+        },
+        {
+          "if": { "properties": { "resetMode": { "const": "AUTOMATIC" } }, "required": ["resetMode"] },
+          "then": { "required": ["resetTiming"], "properties": { "resetTiming": { "type": "string", "minLength": 1 } } }
+        }
+      ]
+    },
+    "hazard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "sourceKey", "name", "description", "severity", "exposureMode"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "sourceKey": { "$ref": "#/$defs/key" },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string", "enum": ["SETBACK", "DANGEROUS", "DEADLY"] },
+        "minLevel": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "maxLevel": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "exposureMode": { "type": "string", "enum": ["ON_ENTER", "START_OF_TURN", "PER_ROUND", "CONTINUOUS"] },
+        "exposureText": { "type": "string" },
+        "areaHint": { "type": "string" },
+        "check": { "$ref": "#/$defs/threatCheck" },
+        "damage": { "$ref": "#/$defs/threatDamage" },
+        "escalationText": { "type": "string" },
+        "endingConditions": { "type": "string" },
+        "conditionRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
+        "salvageItemRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "provenance": { "$ref": "#/$defs/provenance" }
       }
     }
   }

@@ -5,6 +5,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.AssetDescriptor;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.MapDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.MapDto.TokenDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.MapThreatPinDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
@@ -20,6 +21,9 @@ import dev.hendrikhoemberg.dmhelper.gamemap.service.MapLayerDto;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.threat.data.MapThreatPin;
+import dev.hendrikhoemberg.dmhelper.threat.data.MapThreatPinRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -35,6 +39,7 @@ import java.util.Base64;
 import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class MapSectionAdapter implements CampaignSectionExporter, CampaignSectionImporter {
@@ -42,14 +47,17 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
     private final GameMapRepository gameMapRepository;
     private final TokenRepository tokenRepository;
     private final StatBlockReferenceResolver statBlockResolver;
+    private final MapThreatPinRepository mapThreatPinRepository;
     private final ObjectMapper objectMapper;
 
     public MapSectionAdapter(GameMapRepository gameMapRepository,
                              TokenRepository tokenRepository,
-                             StatBlockReferenceResolver statBlockResolver) {
+                             StatBlockReferenceResolver statBlockResolver,
+                             MapThreatPinRepository mapThreatPinRepository) {
         this.gameMapRepository = gameMapRepository;
         this.tokenRepository = tokenRepository;
         this.statBlockResolver = statBlockResolver;
+        this.mapThreatPinRepository = mapThreatPinRepository;
         this.objectMapper = JsonMapper.builder().build();
     }
 
@@ -94,12 +102,28 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
                 .map(t -> exportToken(t, context))
                 .toList();
 
+        List<MapThreatPinDto> threatPins = mapThreatPinRepository.findByMapIdOrderBySortOrderAsc(map.getId())
+                .stream()
+                .map(pin -> exportThreatPin(pin, context))
+                .toList();
+
         return new MapDto(
                 key, map.getName(),
                 new MapDto.GridDto(map.getGridWidth(), map.getGridHeight(), map.getCellSizePx(), map.getGridType()),
                 map.getMovementMode(), map.isShowGrid(),
-                docV2, tokenDtos, map.getSortOrder()
+                docV2, tokenDtos, map.getSortOrder(), threatPins
         );
+    }
+
+    private MapThreatPinDto exportThreatPin(MapThreatPin pin, CampaignExportContext context) {
+        CampaignContentType threatType = pin.getThreatKind() == ThreatKind.TRAP
+                ? CampaignContentType.TRAP
+                : CampaignContentType.HAZARD;
+        ContentReference threatRef = context.packageRef(threatType, pin.getThreatId(),
+                pin.getLabel() != null ? pin.getLabel() : threatType.name());
+        return new MapThreatPinDto(
+                pin.getPinKey(), pin.getXPx(), pin.getYPx(), pin.getLabel(),
+                threatRef, pin.getSortOrder());
     }
 
     private CampaignManifestV2.MapDto.MapDocumentV2 toManifestDocument(
@@ -262,6 +286,30 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
 
                 tokenRepository.save(token);
                 context.register(CampaignContentType.TOKEN, tokenDto.key(), token, token.getId());
+            }
+            if (entry.dto.threatPins() != null) {
+                for (MapThreatPinDto pinDto : entry.dto.threatPins()) {
+                    if (pinDto == null || pinDto.threatRef() == null) continue;
+                    MapThreatPin pin = new MapThreatPin();
+                    pin.setMap(entry.map);
+                    pin.setPinKey(pinDto.key());
+                    pin.setXPx(pinDto.x());
+                    pin.setYPx(pinDto.y());
+                    pin.setLabel(pinDto.label());
+                    pin.setSortOrder(pinDto.sortOrder());
+                    ContentReference threatRef = pinDto.threatRef();
+                    context.defer("map-threat-pin:" + entry.dto.key() + ":" + pinDto.key(), () -> {
+                        Object target = context.require(threatRef, threatRef.type(), Object.class);
+                        pin.setThreatKind(threatRef.type() == CampaignContentType.TRAP
+                                ? ThreatKind.TRAP : ThreatKind.HAZARD);
+                        try {
+                            pin.setThreatId((UUID) target.getClass().getMethod("getId").invoke(target));
+                        } catch (ReflectiveOperationException e) {
+                            throw new IllegalStateException("Cannot resolve threat pin target id", e);
+                        }
+                        mapThreatPinRepository.save(pin);
+                    });
+                }
             }
         }
     }

@@ -105,9 +105,21 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                                             List<String> tags = sc.getTags() == null || sc.getTags().isBlank() ? List.of()
                                                     : List.of(sc.getTags().split(","));
                                             List<SceneSectionDto> sectionDtos = sc.getSections().stream()
-                                                    .map(sec -> new SceneSectionDto(
-                                                            sec.getKind().name(), sec.getLabel(), sec.getBody(),
-                                                            sec.getSourceLocator(), sec.getSortOrder()))
+                                                    .map(sec -> {
+                                                        ContentReference threatRef = null;
+                                                        if (sec.getThreatId() != null && sec.getThreatKind() != null) {
+                                                            CampaignContentType threatType = sec.getThreatKind()
+                                                                    == dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.TRAP
+                                                                    ? CampaignContentType.TRAP
+                                                                    : CampaignContentType.HAZARD;
+                                                            threatRef = context.packageRef(
+                                                                    threatType, sec.getThreatId(),
+                                                                    sec.getLabel() != null ? sec.getLabel() : threatType.name());
+                                                        }
+                                                        return new SceneSectionDto(
+                                                                sec.getKind().name(), sec.getLabel(), sec.getBody(),
+                                                                sec.getSourceLocator(), sec.getSortOrder(), threatRef);
+                                                    })
                                                     .toList();
                                             List<SceneCheckDto> checkDtos = sc.getChecks().stream()
                                                     .map(chk -> {
@@ -260,6 +272,17 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                             sec.setBody(secDto.body());
                             sec.setSourceLocator(secDto.sourceLocator());
                             sec.setSortOrder(secDto.sortOrder());
+                            if (secDto.threatRef() != null) {
+                                ContentReference threatRef = secDto.threatRef();
+                                context.defer("scene-section-threat:" + scDto.key() + ":" + secDto.sortOrder(), () -> {
+                                    CampaignContentType expected = threatRef.type();
+                                    Object target = context.require(threatRef, expected, Object.class);
+                                    sec.setThreatKind(expected == CampaignContentType.TRAP
+                                            ? dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.TRAP
+                                            : dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.HAZARD);
+                                    sec.setThreatId(entityId(target));
+                                });
+                            }
                             sc.getSections().add(sec);
                         }
                     }

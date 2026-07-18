@@ -509,6 +509,64 @@ class CampaignManifestV2ContractTest {
     }
 
     @Test
+    void threatEnumsMatchJavaEnums() throws Exception {
+        JsonNode defs = mapper.readTree(fixture("schemas/campaign-format-v2.schema.json")).get("$defs");
+        assertSchemaEnumEqualsJava(defs, "trap", "severity",
+                dev.hendrikhoemberg.dmhelper.threat.data.ThreatSeverity.class);
+        assertSchemaEnumEqualsJava(defs, "trap", "resetMode",
+                dev.hendrikhoemberg.dmhelper.threat.data.ThreatResetMode.class);
+        assertSchemaEnumEqualsJava(defs, "hazard", "severity",
+                dev.hendrikhoemberg.dmhelper.threat.data.ThreatSeverity.class);
+        assertSchemaEnumEqualsJava(defs, "hazard", "exposureMode",
+                dev.hendrikhoemberg.dmhelper.threat.data.HazardExposureMode.class);
+        assertSchemaEnumEqualsJava(defs, "threatCheck", "mode",
+                dev.hendrikhoemberg.dmhelper.threat.data.ThreatCheckMode.class);
+    }
+
+    @Test
+    void trapAndHazardRootsAreOptionalAndClosed() throws Exception {
+        assertThat(schema.validate(fixture("campaigns/v2/minimal.dmcampaign.json"))).isEmpty();
+
+        ObjectNode trap = validTrap();
+        assertThat(schema.validate(withTrap(trap))).isEmpty();
+
+        trap.put("unknownField", true);
+        assertThat(schema.validate(withTrap(trap)))
+                .extracting(CampaignImportProblem::code)
+                .contains("SCHEMA_VIOLATION");
+    }
+
+    @Test
+    void trapSchemaEnforcesAttackSaveExclusivityAndAutomaticResetTiming() throws Exception {
+        ObjectNode trap = validTrap();
+        trap.put("attackBonus", 5);
+        ObjectNode save = trap.putObject("save");
+        save.put("mode", "SAVE");
+        save.put("ability", "DEX");
+        save.put("dc", 13);
+        assertThat(schema.validate(withTrap(trap)))
+                .extracting(CampaignImportProblem::code)
+                .contains("SCHEMA_VIOLATION");
+
+        ObjectNode automatic = validTrap();
+        automatic.put("resetMode", "AUTOMATIC");
+        automatic.remove("resetTiming");
+        assertThat(schema.validate(withTrap(automatic)))
+                .extracting(CampaignImportProblem::code)
+                .contains("SCHEMA_VIOLATION");
+    }
+
+    @Test
+    void trapRequiresIdentityNameDescriptionSeverityAndStableKeys() throws Exception {
+        ObjectNode trap = validTrap();
+        trap.put("key", "BAD KEY");
+        trap.remove("description");
+        assertThat(schema.validate(withTrap(trap)))
+                .extracting(CampaignImportProblem::code)
+                .contains("SCHEMA_VIOLATION");
+    }
+
+    @Test
     void worldGraphEnumsMatchJavaEnums() throws Exception {
         JsonNode defs = mapper.readTree(fixture("schemas/campaign-format-v2.schema.json")).get("$defs");
         assertSchemaEnumEqualsJava(defs, "worldNpc", "disposition",
@@ -559,6 +617,24 @@ class CampaignManifestV2ContractTest {
         ObjectNode root = (ObjectNode) mapper.readTree(
                 fixture("campaigns/v2/minimal.dmcampaign.json"));
         root.putArray("rollableTables").add(table);
+        return mapper.writeValueAsString(root);
+    }
+
+    private ObjectNode validTrap() {
+        ObjectNode trap = mapper.createObjectNode();
+        trap.put("key", "trap-spike");
+        trap.put("sourceKey", "trap-spike");
+        trap.put("name", "Spike Pit");
+        trap.put("description", "A covered pit.");
+        trap.put("severity", "SETBACK");
+        trap.put("resetMode", "NONE");
+        return trap;
+    }
+
+    private String withTrap(ObjectNode trap) throws Exception {
+        ObjectNode root = (ObjectNode) mapper.readTree(
+                fixture("campaigns/v2/minimal.dmcampaign.json"));
+        root.putArray("traps").add(trap);
         return mapper.writeValueAsString(root);
     }
 
