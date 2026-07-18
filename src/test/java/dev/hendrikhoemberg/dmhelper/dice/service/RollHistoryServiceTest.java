@@ -73,8 +73,10 @@ class RollHistoryServiceTest {
         assertThat(history.get(0).kind()).isEqualTo(RollHistoryKind.TABLE);
         assertThat(history.get(0).tableName()).isEqualTo("Forest Encounters");
         assertThat(history.get(0).outcomes()).hasSize(1);
+        assertThat(history.get(0).available()).isTrue();
         assertThat(history.get(0).outcomes().getFirst().entryKey()).isEqualTo("wolves");
         assertThat(history.get(1).kind()).isEqualTo(RollHistoryKind.DICE);
+        assertThat(history.get(1).available()).isTrue();
         assertThat(history.get(1).expression()).isEqualTo("1d8");
         assertThat(history.get(1).total()).isEqualTo(5);
         assertThat(history.get(2).kind()).isEqualTo(RollHistoryKind.DICE);
@@ -106,5 +108,6 @@ class RollHistoryServiceTest {
         assertThat(history.getFirst().kind()).isEqualTo(RollHistoryKind.TABLE);
         assertThat(history.getFirst().tableName()).isEqualTo("Broken Table");
         assertThat(history.getFirst().outcomes()).isNull();
+        assertThat(history.getFirst().available()).isFalse();
     }
 }

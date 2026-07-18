@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLink;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLinkRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.world.data.*;
@@ -338,6 +339,35 @@ class WorldControllerTest {
                         campaignId, factionId, clockId))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/campaigns/" + campaignId + "/world/factions/" + factionId));
+    }
+
+    @Test
+    void cannotDeleteLocationTableLinkOwnedByAnotherLocation() throws Exception {
+        UUID linkId = UUID.randomUUID();
+        UUID otherLocationId = UUID.randomUUID();
+        WorldLocation requestedLocation = new WorldLocation();
+        requestedLocation.setId(locationId);
+        requestedLocation.setCampaign(campaign);
+        WorldLocation otherLocation = new WorldLocation();
+        otherLocation.setId(otherLocationId);
+        Campaign otherCampaign = new Campaign();
+        otherCampaign.setId(UUID.randomUUID());
+        otherLocation.setCampaign(otherCampaign);
+        WorldLocationTableLink foreignLink = new WorldLocationTableLink();
+        foreignLink.setId(linkId);
+        foreignLink.setLocation(otherLocation);
+
+        when(worldService.getLocation(campaignId, locationId)).thenReturn(requestedLocation);
+        when(locationTableLinkRepository.findByIdAndLocationId(linkId, locationId))
+                .thenReturn(Optional.empty());
+
+        mockMvc.perform(delete("/campaigns/{cid}/world/locations/{lid}/tables/{linkId}",
+                        campaignId, locationId, linkId))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/campaigns/" + campaignId + "/world/locations/" + locationId));
+
+        verify(locationTableLinkRepository, never()).delete(any(WorldLocationTableLink.class));
+        verify(locationTableLinkRepository, never()).deleteById(any());
     }
 
     @Test

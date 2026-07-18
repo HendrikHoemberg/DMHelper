@@ -118,9 +118,9 @@ class DiceApiControllerTest {
         List<RollHistoryItem> history = List.of(
                 new RollHistoryItem(id1, RollHistoryKind.TABLE, Instant.parse("2026-07-18T12:02:00Z"),
                         null, 0, "Forest Encounters",
-                        List.of(new RollHistoryItem.RollHistoryOutcome("wolves", "2 wolves"))),
+                        List.of(new RollHistoryItem.RollHistoryOutcome("wolves", "2 wolves")), true),
                 new RollHistoryItem(id2, RollHistoryKind.DICE, Instant.parse("2026-07-18T12:01:00Z"),
-                        "1d8", 5, null, null)
+                        "1d8", 5, null, null, true)
         );
         when(rollHistoryService.recent(CAMPAIGN_ID, 20)).thenReturn(history);
 
@@ -131,6 +131,7 @@ class DiceApiControllerTest {
                 .andExpect(jsonPath("$[0].tableName").value("Forest Encounters"))
                 .andExpect(jsonPath("$[0].outcomes[0].entryKey").value("wolves"))
                 .andExpect(jsonPath("$[0].outcomes[0].resultText").value("2 wolves"))
+                .andExpect(jsonPath("$[0].available").value(true))
                 .andExpect(jsonPath("$[1].kind").value("DICE"))
                 .andExpect(jsonPath("$[1].expression").value("1d8"))
                 .andExpect(jsonPath("$[1].total").value(5));

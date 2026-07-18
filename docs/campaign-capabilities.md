@@ -30,7 +30,7 @@
 | Authoritative 2024 encounter difficulty | `PARTIAL` | Still labeled estimate |
 | Agent SDK | `SUPPORTED` | PIN-free capability manifest, validation error catalog, typed catalog snapshot, schemas, conversion playbook, and executable documentation examples |
 | World graph | `SUPPORTED` | NPCs, locations, factions, relationships, faction clocks; P3 slices deferred |
-| Rollable tables | `SUPPORTED` | DM-only ranged/weighted tables, nested rolls, scene/location links, confirmed encounter/reward drafts, and package-v2 round-trip |
+| Rollable tables | `SUPPORTED` | DM-only ranged/weighted authoring, typed references, nested/grouped rolls, scene/location cockpit access, explicit encounter/reward draft transitions, dependency-aware deletion with preserved history, and package-v2 dependency-closure round-trip |
 | Travel weather | `UNSUPPORTED` | P3 - Deferred |
 | Player interaction | `UNSUPPORTED` | P3 - Deferred |
 | Full fog of war gameplay | `UNSUPPORTED` | Deferred P3 |

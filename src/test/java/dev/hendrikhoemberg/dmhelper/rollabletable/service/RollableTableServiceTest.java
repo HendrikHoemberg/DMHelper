@@ -15,6 +15,8 @@ import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.service.CustomContentSupport;
 import dev.hendrikhoemberg.dmhelper.library.service.LibraryReferenceCleaner;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.*;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldLocation;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldLocationRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,6 +71,15 @@ class RollableTableServiceTest {
     private SceneLinkRepository sceneLinkRepository;
 
     @Autowired
+    private WorldLocationRepository worldLocationRepository;
+
+    @Autowired
+    private WorldLocationTableLinkRepository locationTableLinkRepository;
+
+    @Autowired
+    private TableRollLogRepository tableRollLogRepository;
+
+    @Autowired
     private EntityManager em;
 
     private UUID campaignId;
@@ -77,6 +88,9 @@ class RollableTableServiceTest {
     @BeforeEach
     void setUp() {
         repository.deleteAll();
+        locationTableLinkRepository.deleteAll();
+        tableRollLogRepository.deleteAll();
+        worldLocationRepository.deleteAll();
         referenceRepository.deleteAll();
         statBlockRepository.deleteAll();
         campaignRepository.deleteAll();
@@ -399,6 +413,55 @@ class RollableTableServiceTest {
         UUID tableId = table.getId();
         assertThatCode(() -> service.deleteCustom(tableId, true)).doesNotThrowAnyException();
         assertThat(repository.findById(tableId)).isEmpty();
+    }
+
+    @Test
+    void locationDependencyIsReportedAndConfirmedDeletePreservesRollDraftSnapshot() {
+        RollableTable table = service.create(campaignId, validRangeWrite("location-table", "Location Table"), null);
+        Campaign campaign = campaignRepository.findById(campaignId).orElseThrow();
+
+        WorldLocation location = new WorldLocation();
+        location.setCampaign(campaign);
+        location.setName("Old Ruins");
+        location = worldLocationRepository.save(location);
+        UUID locationId = location.getId();
+
+        WorldLocationTableLink link = new WorldLocationTableLink();
+        link.setLocation(location);
+        link.setTable(table);
+        link.setRole(RollableTableLinkRole.RANDOM_ENCOUNTERS);
+        locationTableLinkRepository.save(link);
+
+        TableRollLog log = new TableRollLog();
+        log.setCampaign(campaign);
+        log.setTable(table);
+        log.setTableKeySnapshot(table.getSourceKey());
+        log.setTableNameSnapshot(table.getName());
+        log.setResultJson("{\"schemaVersion\":1,\"outcomes\":[]}");
+        log.setDraftType(TableDraftType.ENCOUNTER);
+        log.setDraftStatus(TableDraftStatus.PENDING);
+        log = tableRollLogRepository.save(log);
+        UUID logId = log.getId();
+        UUID tableId = table.getId();
+        em.flush();
+
+        assertThat(service.deletionImpact(tableId).dependencies())
+                .anySatisfy(dependency -> {
+                    assertThat(dependency.kind()).isEqualTo(RollableTableService.DEP_KIND_LOCATION);
+                    assertThat(dependency.dependentId()).isEqualTo(locationId);
+                    assertThat(dependency.label()).isEqualTo("Old Ruins");
+                });
+
+        service.deleteCustom(tableId, true);
+        em.flush();
+        em.clear();
+
+        assertThat(locationTableLinkRepository.findById(link.getId())).isEmpty();
+        TableRollLog preserved = tableRollLogRepository.findById(logId).orElseThrow();
+        assertThat(preserved.getTable()).isNull();
+        assertThat(preserved.getTableNameSnapshot()).isEqualTo("Location Table");
+        assertThat(preserved.getDraftStatus()).isEqualTo(TableDraftStatus.PENDING);
+        assertThat(preserved.getResultJson()).contains("schemaVersion");
     }
 
     @Test

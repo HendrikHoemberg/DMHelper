@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkRepository;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableEntryReferenceRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLinkRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,15 +24,18 @@ public class RollableTableDependencyService {
     private final RollableTableEntryReferenceRepository referenceRepository;
     private final SceneLinkRepository sceneLinkRepository;
     private final SceneRepository sceneRepository;
+    private final WorldLocationTableLinkRepository locationTableLinkRepository;
 
     public RollableTableDependencyService(RollableTableRepository rollableTableRepository,
                                            RollableTableEntryReferenceRepository referenceRepository,
                                            SceneLinkRepository sceneLinkRepository,
-                                           SceneRepository sceneRepository) {
+                                           SceneRepository sceneRepository,
+                                           WorldLocationTableLinkRepository locationTableLinkRepository) {
         this.rollableTableRepository = rollableTableRepository;
         this.referenceRepository = referenceRepository;
         this.sceneLinkRepository = sceneLinkRepository;
         this.sceneRepository = sceneRepository;
+        this.locationTableLinkRepository = locationTableLinkRepository;
     }
 
     public TableDeletionImpact computeDeletionImpact(UUID tableId) {
@@ -52,6 +56,13 @@ public class RollableTableDependencyService {
             var scene = link.getScene();
             deps.add(new TableDependency(DEP_KIND_SCENE, scene.getId(),
                     scene.getTitle(), "/links/" + scene.getLinks().indexOf(link)));
+        }
+
+        // World-location quick-access links referencing this table
+        for (var link : locationTableLinkRepository.findByTableId(tableId)) {
+            var location = link.getLocation();
+            deps.add(new TableDependency(DEP_KIND_LOCATION, location.getId(),
+                    location.getName(), "/tableLinks/" + link.getId()));
         }
 
         return new TableDeletionImpact(deps);

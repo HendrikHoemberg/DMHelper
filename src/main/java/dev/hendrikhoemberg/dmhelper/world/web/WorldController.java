@@ -444,7 +444,9 @@ public class WorldController {
                                            Model model) {
         try {
             worldService.getLocation(campaignId, locationId);
-            locationTableLinkRepository.deleteById(linkId);
+            WorldLocationTableLink link = locationTableLinkRepository.findByIdAndLocationId(linkId, locationId)
+                    .orElseThrow(() -> new NotFoundException("Location table link not found in location"));
+            locationTableLinkRepository.delete(link);
         } catch (NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }

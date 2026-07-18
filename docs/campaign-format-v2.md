@@ -874,6 +874,19 @@ RollableTableSectionAdapter  (150) — rollable tables, entries, references
 LibrarySectionAdapter        (200) — custom statblocks
 ```
 
+### Export Closure and Local Roll Evidence
+
+Export begins with campaign-owned tables plus tables linked by campaign scenes and world locations,
+then follows nested table references transitively. Referenced user-global table definitions and the
+exact user-global custom statblocks/items/spells they require are copied into the package with their
+source keys and provenance; on import they become campaign-scoped `CUSTOM` rows. Unreferenced global
+content is excluded. Catalog-scoped SRD entry references remain catalog references.
+
+`table_roll_log` rows—including grouped result JSON, table key/name snapshots, draft status,
+resolution time, and created target IDs—are persistent local operational evidence and are not
+exported. Deleting a table clears the nullable definition link but preserves these snapshots and
+draft states.
+
 ### V1 Compatibility
 
 Legacy v1 scenes (created before the item-6 structured scene migration) receive `null` or empty values for all new item-6 fields:

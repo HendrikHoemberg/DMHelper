@@ -310,4 +310,47 @@ class CommandPaletteServiceTest {
         var results = commandPaletteService.search("Goblin", campaign.getId());
         assertThat(results.getFirst().type()).isEqualTo("rollable-table");
     }
+
+    @Test
+    void rollableTableSearchIsCampaignIsolatedRankedAndDeduplicated() {
+        Campaign otherCampaign = new Campaign();
+        otherCampaign.setName("Other Campaign");
+        otherCampaign = campaignRepository.save(otherCampaign);
+
+        RollableTable campaignTable = table("Shared Oracle", "campaign-oracle", ContentSource.CUSTOM);
+        campaignTable.setCampaign(campaign);
+        campaignTable = rollableTableRepository.save(campaignTable);
+
+        RollableTable globalTable = rollableTableRepository.save(
+                table("Shared Oracle", "global-oracle", ContentSource.CUSTOM));
+
+        RollableTable srdTable = rollableTableRepository.save(
+                table("Shared Oracle", "srd-oracle", ContentSource.SRD));
+
+        RollableTable foreignTable = table("Shared Oracle", "foreign-oracle", ContentSource.CUSTOM);
+        foreignTable.setCampaign(otherCampaign);
+        foreignTable = rollableTableRepository.save(foreignTable);
+
+        var tableResults = commandPaletteService.search("Shared Oracle", campaign.getId()).stream()
+                .filter(result -> result.type().equals("rollable-table"))
+                .toList();
+
+        assertThat(tableResults.getFirst().id()).isEqualTo(campaignTable.getId().toString());
+        assertThat(tableResults).extracting(CommandPaletteService.SearchResultItem::id)
+                .containsExactlyInAnyOrder(
+                        campaignTable.getId().toString(),
+                        globalTable.getId().toString(),
+                        srdTable.getId().toString())
+                .doesNotContain(foreignTable.getId().toString());
+    }
+
+    private RollableTable table(String name, String sourceKey, ContentSource source) {
+        RollableTable table = new RollableTable();
+        table.setName(name);
+        table.setSource(source);
+        table.setAddressMode(TableAddressMode.WEIGHTED);
+        table.setCategory(TableCategory.GENERIC);
+        table.setSourceKey(sourceKey);
+        return table;
+    }
 }

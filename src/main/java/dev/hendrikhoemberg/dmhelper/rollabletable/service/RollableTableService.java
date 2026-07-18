@@ -15,6 +15,8 @@ import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableEntryReferen
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableReferenceScope;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableRollLogRepository;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLinkRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,8 @@ public class RollableTableService {
     private final RollableTableDependencyService dependencyService;
     private final LibraryReferenceCleaner libraryReferenceCleaner;
     private final SceneLinkRepository sceneLinkRepository;
+    private final WorldLocationTableLinkRepository locationTableLinkRepository;
+    private final TableRollLogRepository tableRollLogRepository;
 
     public RollableTableService(RollableTableRepository repository,
                                  CampaignRepository campaignRepository,
@@ -46,7 +50,9 @@ public class RollableTableService {
                                  TableReferenceResolver referenceResolver,
                                  RollableTableDependencyService dependencyService,
                                  LibraryReferenceCleaner libraryReferenceCleaner,
-                                 SceneLinkRepository sceneLinkRepository) {
+                                 SceneLinkRepository sceneLinkRepository,
+                                 WorldLocationTableLinkRepository locationTableLinkRepository,
+                                 TableRollLogRepository tableRollLogRepository) {
         this.repository = repository;
         this.campaignRepository = campaignRepository;
         this.customContentSupport = customContentSupport;
@@ -55,6 +61,8 @@ public class RollableTableService {
         this.dependencyService = dependencyService;
         this.libraryReferenceCleaner = libraryReferenceCleaner;
         this.sceneLinkRepository = sceneLinkRepository;
+        this.locationTableLinkRepository = locationTableLinkRepository;
+        this.tableRollLogRepository = tableRollLogRepository;
     }
 
     @Transactional
@@ -165,6 +173,8 @@ public class RollableTableService {
                 sceneLinkRepository.delete(link);
             }
 
+            locationTableLinkRepository.deleteAll(locationTableLinkRepository.findByTableId(id));
+
             for (var dep : impact.dependencies()) {
                 if (DEP_KIND_TABLE_ENTRY.equals(dep.kind())) {
                     var referencingTable = repository.findById(dep.dependentId());
@@ -194,6 +204,9 @@ public class RollableTableService {
             libraryReferenceCleaner.deletePackageKey(table.getCampaign().getId(),
                     CampaignContentType.ROLLABLE_TABLE, id);
         }
+
+        // Keep grouped results and draft state as operational evidence after definition deletion.
+        tableRollLogRepository.findByTableId(id).forEach(log -> log.setTable(null));
 
         repository.delete(table);
     }

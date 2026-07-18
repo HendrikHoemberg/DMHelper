@@ -8,12 +8,12 @@ The cockpit is organised into five areas:
 
 | Area | Purpose |
 |------|---------|
-| **Story rail** (left sidebar) | Current scene, editorial neighbours, scene links, scene quick notes |
+| **Story rail** (left sidebar) | Current scene, editorial neighbours, scene links, linked rollable tables, scene quick notes |
 | **Table surface** (centre) | Workspace battle map with token, measurement, and AoE tools |
 | **Encounter rail** (right sidebar) | Active encounter tracker, planned encounters list |
 | **Session plan** (bottom strip) | Ordered prepared beats parsed from the latest `SESSION_PLAN` note |
 | **Party bar** (footer) | Party member summary with HP bars, AC, passive perception |
-| **Quick access toolbar** (top bar) | Search, dice roller, handouts, rules reference, calendar, session lifecycle |
+| **Quick access toolbar** (top bar) | Search, dice/table rollers, handouts, rules reference, calendar, session lifecycle |
 
 ## Lifecycle
 
@@ -41,6 +41,14 @@ Edit the draft freely, then provide a title and click **Complete**. A `SESSION_L
 ## Current Scene & Active Encounter
 
 The **current scene** (set via the story rail) and the **active encounter** (set via the encounter rail) are independent state. The cockpit shows both; switching one does not automatically switch the other. A one-click **Switch** action appears when the workspace map differs from the current scene or active encounter map.
+
+## Rollable Tables
+
+Tables linked directly to the current scene, or through one of its linked world locations, appear in
+the story rail. Clicking **Roll** there is the immediate one-action path. The top-bar table picker
+opens the shared roll panel for manual range results, multiple rolls, and duplicate policy. Results,
+nested outcomes, unavailable-history markers, and pending encounter/reward drafts remain visible in
+the cockpit; confirming or discarding a draft is always a separate DM action.
 
 ## Session Log Draft
 

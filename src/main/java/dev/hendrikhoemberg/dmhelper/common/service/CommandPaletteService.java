@@ -19,7 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -172,15 +174,6 @@ public class CommandPaletteService {
                             destinations.campaign(ContentDestinationRegistry.CampaignType.FACTION, campaignId, f.getId(), null)))
                     .forEach(item -> add(results, item, null, q, true));
 
-            rollableTableRepo.findByCampaignIdOrderByNameAsc(campaignId).stream()
-                    .filter(rt -> matches(rt.getName(), q) || matches(rt.getDescription(), q)
-                            || matches(rt.getCategory() != null ? rt.getCategory().name() : null, q)
-                            || matches(rt.getTags(), q))
-                    .map(rt -> new SearchResultItem(rt.getId().toString(), rt.getName(), "rollable-table",
-                            rt.getCategory() != null ? rt.getCategory().name().toLowerCase() : null,
-                            destinations.library(ContentDestinationRegistry.LibraryType.ROLLABLE_TABLE, rt.getId(), rt.getSourceKey(), rt.getName())))
-                    .forEach(item -> add(results, item, null, q, true));
-
             sceneRepo.findByChapterAdventureCampaignId(campaignId).stream()
                     .filter(s -> matches(s.getTitle(), q))
                     .map(s -> {
@@ -246,16 +239,27 @@ public class CommandPaletteService {
                         null, destinations.library(ContentDestinationRegistry.LibraryType.FEAT, f.getId(), null, f.getName())))
                 .forEach(item -> add(results, item, null, q, false));
 
-        rollableTableRepo.findByNameContainingIgnoreCaseOrderByNameAsc(q).stream()
-                .map(rt -> new SearchResultItem(rt.getId().toString(), rt.getName(), "rollable-table",
-                        rt.getCategory() != null ? rt.getCategory().name().toLowerCase() : null,
-                        destinations.library(ContentDestinationRegistry.LibraryType.ROLLABLE_TABLE, rt.getId(), rt.getSourceKey(), rt.getName())))
-                .forEach(item -> add(results, item, null, q, false));
+        rollableTableRepo.findVisibleByCampaignId(campaignId).stream()
+                .filter(rt -> matches(rt.getName(), q) || matches(rt.getDescription(), q)
+                        || matches(rt.getCategory() != null ? rt.getCategory().name() : null, q)
+                        || matches(rt.getTags(), q))
+                .forEach(table -> {
+                    SearchResultItem item = new SearchResultItem(
+                            table.getId().toString(), table.getName(), "rollable-table",
+                            table.getCategory() != null ? table.getCategory().name().toLowerCase() : null,
+                            destinations.library(ContentDestinationRegistry.LibraryType.ROLLABLE_TABLE,
+                                    table.getId(), table.getSourceKey(), table.getName()));
+                    boolean campaignOwned = campaignId != null && table.getCampaign() != null
+                            && campaignId.equals(table.getCampaign().getId());
+                    add(results, item, null, q, campaignOwned);
+                });
 
+        Set<String> seen = new HashSet<>();
         return results.stream()
                 .sorted(Comparator.comparingInt(RankedResult::relevance)
                         .thenComparing(result -> result.item().title(), String.CASE_INSENSITIVE_ORDER)
                         .thenComparing(result -> result.item().type()))
+                .filter(result -> seen.add(result.item().type() + ":" + result.item().id()))
                 .limit(MAX_RESULTS)
                 .map(RankedResult::item)
                 .toList();

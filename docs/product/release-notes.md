@@ -18,7 +18,7 @@ Numbering matches master design §22
 
 ## Delivery Item 11
 
-- **Item 11 (Rollable tables):** DM-only ranged/weighted tables, nested rolls (max depth 5), scene and world location links, confirmed encounter/reward drafts, and campaign package v2 round-trip. Includes flagship fixtures, capability manifest, DM manual chapter, agent mapping rules, performance and player-safety gates, and browser acceptance tests.
+- **Item 11 (Rollable tables):** DM-only ranged/weighted tables with complete editor/reference management, nested grouped rolls (max depth 5), shared detail/cockpit rolling, scene and world-location links, explicit encounter/reward draft confirmation or discard, dependency-aware deletion with preserved roll evidence, and campaign package v2 dependency-closure round-trip. Includes flagship fixtures, capability manifest, DM manual chapter, agent mapping rules, performance and player-safety gates, and browser acceptance tests.
 - **Item 11 (World graph):** NPCs, locations, factions, relationships, faction clocks — campaign-scoped cross-referenced world-building state.
 
 ## Not started

@@ -6,10 +6,16 @@ Rollable tables let you define random-result tables for encounters, treasure, we
 
 Tables can be created at two levels:
 
-- **Campaign-scoped** — visible only within one campaign, included in v2 export/import.
-- **User-global (SRD/library)** — visible across all campaigns, not included in campaign packages.
+- **Campaign-scoped** — visible only within one campaign and included in v2 export/import.
+- **User-global / SRD library** — visible across all campaigns. A global table is included when a
+  campaign scene, location, or exported table references it; unrelated global tables stay out of the
+  package.
 
 Campaign-scoped tables are the primary authoring target. User-global tables are created from the library and linked to a campaign when needed.
+
+The editor supports entry add/remove/reorder controls, mode-specific range or weight fields, inline
+path-aware validation, and a searchable typed-reference picker. The picker is limited to SRD,
+user-global, and current-campaign content.
 
 ## Range vs Weighted Mode
 
@@ -64,6 +70,10 @@ A table can be linked to:
 - **Scene** — via `scene.links[]` with role `RANDOM_ENCOUNTERS`. The table appears in the session cockpit story rail.
 - **World location** — via `worldLocation.tableLinks[]`. The table is available when the party is at that location.
 
+In the cockpit, a story-rail table button rolls immediately. The top-bar table picker opens a roll
+panel so you can choose roll count, duplicate handling, or a manual range result first. Both routes
+show grouped and nested outcomes, keep the roll in shared history, and display any reviewable draft.
+
 ## Draft Confirm / Discard
 
 When a table roll produces an encounter or reward draft:
@@ -77,16 +87,23 @@ Drafts are visible in the session cockpit story rail under "Pending drafts".
 
 Deleting a rollable table:
 
-- Removes all linked scene references (the `links` entry is cleaned up).
-- Removes all world location table links.
-- Removes all pending drafts that reference the table.
+- First shows dependent nested-table references, scenes, and world locations and requires
+  confirmation when any exist.
+- Removes linked scene and world-location references after confirmation.
+- Replaces a nested-table reference with a visible deleted-reference marker on its existing entry.
+- Preserves every grouped roll snapshot and its draft state (`PENDING`, `CONFIRMED`, or `DISCARDED`);
+  history remains readable even though the definition link is cleared.
 - Does NOT affect already-confirmed encounters or treasury entries.
 
 ## Import / Export
 
-Rollable tables are included in campaign package v2 export/import by default. The `rollableTables` array in the manifest carries all tables with their entries and references.
+Rollable tables are included in campaign package v2 export/import by default. The `rollableTables`
+array carries campaign tables plus the transitive global table/library dependency closure needed by
+their scene, location, and nested references. Referenced user-global custom content keeps its
+provenance and imports as campaign-scoped custom content.
 
-User-global tables are NOT included in campaign packages. Reference them via catalog-scoped content references instead.
+Unrelated user-global tables are not exported. Grouped roll history and consequence-draft state are
+local operational evidence and are intentionally not part of the campaign package.
 
 ## Troubleshooting
 

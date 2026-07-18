@@ -39,12 +39,13 @@ public class RollHistoryService {
         for (DiceRoll roll : diceRolls) {
             items.add(new RollHistoryItem(
                     roll.getId(), RollHistoryKind.DICE, roll.getCreatedAt(),
-                    roll.getExpression(), roll.getTotal(), null, null));
+                    roll.getExpression(), roll.getTotal(), null, null, true));
         }
 
         List<TableRollLog> tableRolls = tableRollLogRepository.findByCampaignIdOrderByCreatedAtDesc(campaignId, queryLimit);
         for (TableRollLog log : tableRolls) {
             List<RollHistoryItem.RollHistoryOutcome> outcomes = null;
+            boolean available = true;
             try {
                 List<TableRollOutcome> decoded = codec.decode(log.getResultJson(), log.getId());
                 outcomes = decoded.stream()
@@ -52,10 +53,11 @@ public class RollHistoryService {
                         .toList();
             } catch (IllegalStateException e) {
                 outcomes = null;
+                available = false;
             }
             items.add(new RollHistoryItem(
                     log.getId(), RollHistoryKind.TABLE, log.getCreatedAt(),
-                    null, 0, log.getTableNameSnapshot(), outcomes));
+                    null, 0, log.getTableNameSnapshot(), outcomes, available));
         }
 
         items.sort(Comparator.comparing(RollHistoryItem::createdAt).reversed()

@@ -14,7 +14,8 @@ public record RollHistoryItem(
         String expression,
         int total,
         String tableName,
-        List<RollHistoryOutcome> outcomes) {
+        List<RollHistoryOutcome> outcomes,
+        boolean available) {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record RollHistoryOutcome(

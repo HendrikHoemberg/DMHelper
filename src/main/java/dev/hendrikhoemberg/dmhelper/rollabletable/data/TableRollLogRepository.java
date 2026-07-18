@@ -20,6 +20,8 @@ public interface TableRollLogRepository extends JpaRepository<TableRollLog, UUID
 
     Optional<TableRollLog> findByIdAndCampaignId(UUID id, UUID campaignId);
 
+    List<TableRollLog> findByTableId(UUID tableId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select l from TableRollLog l where l.id = :id and l.campaign.id = :campaignId")
     Optional<TableRollLog> findForResolution(UUID id, UUID campaignId);
