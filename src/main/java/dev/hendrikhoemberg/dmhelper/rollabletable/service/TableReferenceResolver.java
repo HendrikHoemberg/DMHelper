@@ -77,34 +77,32 @@ public class TableReferenceResolver {
                     "UNRESOLVED_REFERENCE: " + ref.targetType() + " " + ref.targetId() + " not found");
         }
 
-        UUID entityCampaignId = extractCampaignId(entity);
-        ContentSource source = extractSource(entity);
-
-        if (campaignIdOrNull != null) {
-            boolean isSrd = source == ContentSource.SRD;
-            boolean isGlobalCustom = source == ContentSource.CUSTOM && entityCampaignId == null;
-
-            if (!isSrd && !isGlobalCustom) {
-                if (entityCampaignId != null && !entityCampaignId.equals(campaignIdOrNull)) {
-                    throw new IllegalArgumentException(
-                            "UNRESOLVED_REFERENCE: " + ref.targetType() + " " + ref.targetId()
-                                    + " belongs to a different campaign");
-                }
-            }
+        if (!isVisible(entity, campaignIdOrNull)) {
+            throw new IllegalArgumentException(
+                    "UNRESOLVED_REFERENCE: " + ref.targetType() + " " + ref.targetId()
+                            + " is not visible in the destination scope");
         }
 
         return new ResolvedTableReference(ref.scope(), ref.targetType(), ref.targetId(),
                 ref.catalogRuleset(), ref.catalogSourceKey(), ref.displayText());
     }
 
-    public boolean isVisibleToCampaign(UUID tableId, UUID campaignId) {
-        return rollableTableRepository.findById(tableId)
-                .map(table -> {
-                    if (table.getSource() == ContentSource.SRD) return true;
-                    if (table.getCampaign() == null) return true; // global custom
-                    return table.getCampaign().getId().equals(campaignId);
-                })
-                .orElse(false);
+    public boolean isVisibleToScope(CampaignContentType type, UUID targetId, UUID campaignIdOrNull) {
+        Object entity = findByTypeAndId(type, targetId);
+        return entity != null && isVisible(entity, campaignIdOrNull);
+    }
+
+    public boolean isVisibleToCampaign(UUID tableId, UUID campaignIdOrNull) {
+        return isVisibleToScope(CampaignContentType.ROLLABLE_TABLE, tableId, campaignIdOrNull);
+    }
+
+    private boolean isVisible(Object entity, UUID campaignIdOrNull) {
+        UUID entityCampaignId = extractCampaignId(entity);
+        ContentSource source = extractSource(entity);
+        if (source == ContentSource.SRD || entityCampaignId == null) {
+            return true;
+        }
+        return campaignIdOrNull != null && entityCampaignId.equals(campaignIdOrNull);
     }
 
     private Object findByTypeAndId(CampaignContentType type, UUID id) {

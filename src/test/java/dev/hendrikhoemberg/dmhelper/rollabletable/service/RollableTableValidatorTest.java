@@ -18,6 +18,35 @@ class RollableTableValidatorTest {
     private final RollableTableValidator validator = new RollableTableValidator();
 
     @Test
+    void requiresTableIdentityModeCategoryAndEntries() {
+        var write = new RollableTableWrite(
+                " ", " ", null, null, null, null, List.of(), List.of());
+
+        assertProblems(write,
+                "TABLE_FIELD_REQUIRED:/sourceKey",
+                "TABLE_FIELD_REQUIRED:/name",
+                "TABLE_FIELD_REQUIRED:/addressMode",
+                "TABLE_FIELD_REQUIRED:/category",
+                "TABLE_ENTRIES_REQUIRED:/entries");
+    }
+
+    @Test
+    void rejectsUnstableTableAndEntryKeysAndDuplicateEntryKeys() {
+        var write = new RollableTableWrite(
+                "Bad Key", "Test", null, TableAddressMode.WEIGHTED,
+                null, TableCategory.GENERIC, List.of(),
+                List.of(
+                        entry("duplicate", null, null, 1, "A", null, List.of()),
+                        entry("duplicate", null, null, 1, "B", null, List.of()),
+                        entry("Bad Entry", null, null, 1, "C", null, List.of())));
+
+        assertProblems(write,
+                "INVALID_STABLE_KEY:/sourceKey",
+                "DUPLICATE_ENTRY_KEY:/entries/1/key",
+                "INVALID_STABLE_KEY:/entries/2/key");
+    }
+
+    @Test
     void invalidTableExpression() {
         var write = new RollableTableWrite(
                 "test", "Test", null, TableAddressMode.RANGE,
@@ -56,6 +85,46 @@ class RollableTableValidatorTest {
                 List.of(entry("a", 3, 6, null, "A", null, List.of()),
                         entry("b", 7, 12, null, "B", null, List.of())));
         assertProblem(write, "TABLE_RANGE_BOUNDS", "/entries/0/rangeStart");
+    }
+
+    @Test
+    void rejectsRangeEndingAboveDiceMaximum() {
+        var write = new RollableTableWrite(
+                "test", "Test", null, TableAddressMode.RANGE,
+                "2d6", TableCategory.GENERIC, List.of(),
+                List.of(entry("a", 2, 13, null, "A", null, List.of())));
+
+        assertProblem(write, "TABLE_RANGE_BOUNDS", "/entries/0/rangeEnd");
+    }
+
+    @Test
+    void rejectsDiceDomainsContainingZeroOrNegativeValues() {
+        var write = new RollableTableWrite(
+                "test", "Test", null, TableAddressMode.RANGE,
+                "1d6-1", TableCategory.GENERIC, List.of(),
+                List.of(entry("a", 0, 5, null, "A", null, List.of())));
+
+        assertProblem(write, "TABLE_RANGE_BOUNDS", "/rollExpression");
+    }
+
+    @Test
+    void validatesQuantityExpressionForRangeEntries() {
+        var write = new RollableTableWrite(
+                "test", "Test", null, TableAddressMode.RANGE,
+                "1d6", TableCategory.GENERIC, List.of(),
+                List.of(entry("a", 1, 6, null, "A", "not-a-die", List.of())));
+
+        assertProblem(write, "INVALID_QUANTITY_EXPRESSION", "/entries/0/quantityExpression");
+    }
+
+    @Test
+    void requiresResultTextOrReferenceForRangeEntries() {
+        var write = new RollableTableWrite(
+                "test", "Test", null, TableAddressMode.RANGE,
+                "1d6", TableCategory.GENERIC, List.of(),
+                List.of(entry("a", 1, 6, null, " ", null, List.of())));
+
+        assertProblem(write, "TABLE_ENTRY_RESULT_REQUIRED", "/entries/0");
     }
 
     @Test
@@ -116,6 +185,28 @@ class RollableTableValidatorTest {
     }
 
     @Test
+    void ignoresSuppliedWeightedRollExpressionBecauseItIsDerived() {
+        var write = new RollableTableWrite(
+                "test-weighted", "Weighted", null, TableAddressMode.WEIGHTED,
+                "not-a-dice", TableCategory.GENERIC, List.of(),
+                List.of(entry("a", null, null, 3, "A", null, List.of())));
+
+        assertThatCode(() -> validator.validate(write, null)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void rejectsTotalWeightOverflow() {
+        var write = new RollableTableWrite(
+                "test-weighted", "Weighted", null, TableAddressMode.WEIGHTED,
+                null, TableCategory.GENERIC, List.of(),
+                List.of(
+                        entry("a", null, null, Integer.MAX_VALUE, "A", null, List.of()),
+                        entry("b", null, null, 1, "B", null, List.of())));
+
+        assertProblem(write, "TABLE_WEIGHT_INVALID", "/entries/1/weight");
+    }
+
+    @Test
     void detectsSelfReferenceCycle() {
         UUID tableId = UUID.randomUUID();
         var refToSelf = new RollableTableReferenceWrite(
@@ -142,6 +233,19 @@ class RollableTableValidatorTest {
                     var ex = (RollableTableValidationException) e;
                     assertThat(ex.problems()).anyMatch(p ->
                             p.code().equals(expectedCode) && p.path().equals(expectedPath));
+                });
+    }
+
+    private void assertProblems(RollableTableWrite write, String... expectedProblems) {
+        assertThatThrownBy(() -> validator.validate(write, null))
+                .isInstanceOf(RollableTableValidationException.class)
+                .satisfies(e -> {
+                    var problems = ((RollableTableValidationException) e).problems();
+                    for (String expected : expectedProblems) {
+                        String[] parts = expected.split(":", 2);
+                        assertThat(problems).anyMatch(p ->
+                                p.code().equals(parts[0]) && p.path().equals(parts[1]));
+                    }
                 });
     }
 

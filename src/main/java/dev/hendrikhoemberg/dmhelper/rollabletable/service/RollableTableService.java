@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.rollabletable.service;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneLinkRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
@@ -58,13 +59,13 @@ public class RollableTableService {
 
     @Transactional
     public RollableTable create(UUID campaignIdOrNull, RollableTableWrite write, ContentProvenance provenance) {
-        validator.validate(write, null);
+        var campaign = requireCampaign(campaignIdOrNull);
+        validator.validate(write, null, campaignIdOrNull);
+        assertAvailableSourceKey(write.sourceKey(), campaignIdOrNull, null);
 
         RollableTable table = new RollableTable();
         table.setSource(ContentSource.CUSTOM);
-        if (campaignIdOrNull != null) {
-            campaignRepository.findById(campaignIdOrNull).ifPresent(table::setCampaign);
-        }
+        table.setCampaign(campaign);
         applyWrite(table, write, provenance);
         return repository.save(table);
     }
@@ -73,8 +74,14 @@ public class RollableTableService {
     public RollableTable updateCustom(UUID id, RollableTableWrite write, ContentProvenance provenance) {
         RollableTable table = findById(id);
         customContentSupport.assertCustom(table.getSource());
-        validator.validate(write, id);
+        UUID campaignIdOrNull = table.getCampaign() == null ? null : table.getCampaign().getId();
+        validator.validate(write, id, campaignIdOrNull);
+        assertAvailableSourceKey(write.sourceKey(), campaignIdOrNull, id);
 
+        // Delete orphaned keyed entries before inserting their replacements so
+        // an unchanged entry key cannot collide with the aggregate unique key.
+        table.getEntries().clear();
+        repository.flush();
         applyWrite(table, write, provenance);
         return repository.save(table);
     }
@@ -82,51 +89,22 @@ public class RollableTableService {
     @Transactional
     public RollableTable cloneAsCustom(UUID sourceId, UUID campaignIdOrNull, String newName) {
         RollableTable original = findById(sourceId);
+        var campaign = requireCampaign(campaignIdOrNull);
+        String cloneName = newName != null && !newName.isBlank()
+                ? newName
+                : original.getName() + " Copy";
+        String cloneSourceKey = customContentSupport.slugify(cloneName);
+        RollableTableWrite cloneWrite = copyWrite(original, cloneSourceKey, cloneName);
+        validator.validate(cloneWrite, null, campaignIdOrNull);
+        assertAvailableSourceKey(cloneSourceKey, campaignIdOrNull, null);
+
         RollableTable clone = new RollableTable();
         clone.setSource(ContentSource.CUSTOM);
-        if (campaignIdOrNull != null) {
-            campaignRepository.findById(campaignIdOrNull).ifPresent(clone::setCampaign);
-        }
-        clone.setName(newName != null && !newName.isBlank() ? newName : original.getName());
-        clone.setSourceKey(customContentSupport.slugify(clone.getName()));
-        clone.setDescription(original.getDescription());
-        clone.setAddressMode(original.getAddressMode());
-        clone.setRollExpression(original.getRollExpression());
-        clone.setCategory(original.getCategory());
-        clone.setTags(original.getTags());
-        if (original.getProvenance() != null) {
-            clone.setProvenance(original.getProvenance());
-        } else {
-            clone.setProvenance(customContentSupport.defaultForSrdClone());
-        }
-
-        int sortOrder = 0;
-        for (var srcEntry : original.getEntries()) {
-            RollableTableEntry entry = new RollableTableEntry();
-            entry.setTable(clone);
-            entry.setEntryKey(srcEntry.getEntryKey());
-            entry.setRangeStart(srcEntry.getRangeStart());
-            entry.setRangeEnd(srcEntry.getRangeEnd());
-            entry.setWeight(srcEntry.getWeight());
-            entry.setResultText(srcEntry.getResultText());
-            entry.setQuantityExpression(srcEntry.getQuantityExpression());
-            entry.setSortOrder(sortOrder++);
-            clone.getEntries().add(entry);
-
-            int refSortOrder = 0;
-            for (var srcRef : srcEntry.getReferences()) {
-                RollableTableEntryReference ref = new RollableTableEntryReference();
-                ref.setEntry(entry);
-                ref.setTargetScope(srcRef.getTargetScope());
-                ref.setTargetType(srcRef.getTargetType());
-                ref.setTargetId(srcRef.getTargetId());
-                ref.setCatalogRuleset(srcRef.getCatalogRuleset());
-                ref.setCatalogSourceKey(srcRef.getCatalogSourceKey());
-                ref.setDisplayText(srcRef.getDisplayText());
-                ref.setSortOrder(refSortOrder++);
-                entry.getReferences().add(ref);
-            }
-        }
+        clone.setCampaign(campaign);
+        ContentProvenance provenance = original.getProvenance() != null
+                ? original.getProvenance()
+                : customContentSupport.defaultForSrdClone();
+        applyWrite(clone, cloneWrite, provenance);
 
         return repository.save(clone);
     }
@@ -139,7 +117,14 @@ public class RollableTableService {
         for (var entry : table.getEntries()) {
             for (var ref : entry.getReferences()) {
                 if (ref.getTargetScope() == TableReferenceScope.ENTITY) {
-                    if (!referenceResolver.isVisibleToCampaign(ref.getTargetId(), null)) {
+                    CampaignContentType targetType;
+                    try {
+                        targetType = CampaignContentType.valueOf(ref.getTargetType());
+                    } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException(
+                                "Cannot promote: unsupported reference type " + ref.getTargetType(), e);
+                    }
+                    if (!referenceResolver.isVisibleToScope(targetType, ref.getTargetId(), null)) {
                         throw new IllegalArgumentException(
                                 "Cannot promote: reference to " + ref.getTargetType() + " " + ref.getTargetId()
                                         + " would cross scope");
@@ -227,7 +212,7 @@ public class RollableTableService {
         }
         if (write.description() != null) table.setDescription(write.description());
         table.setAddressMode(write.addressMode());
-        if (write.addressMode() == TableAddressMode.WEIGHTED && write.rollExpression() == null) {
+        if (write.addressMode() == TableAddressMode.WEIGHTED) {
             int totalWeight = 0;
             if (write.entries() != null) {
                 for (var e : write.entries()) {
@@ -287,5 +272,52 @@ public class RollableTableService {
                 }
             }
         }
+    }
+
+    private Campaign requireCampaign(UUID campaignIdOrNull) {
+        if (campaignIdOrNull == null) {
+            return null;
+        }
+        return campaignRepository.findById(campaignIdOrNull)
+                .orElseThrow(() -> new NotFoundException("Campaign not found: " + campaignIdOrNull));
+    }
+
+    private void assertAvailableSourceKey(String sourceKey, UUID campaignIdOrNull, UUID currentIdOrNull) {
+        customContentSupport.assertAvailableSourceKey(
+                sourceKey,
+                campaignIdOrNull,
+                key -> repository.existsBySourceAndSourceKeyAndCampaignIsNull(ContentSource.SRD, key),
+                (source, key) -> currentIdOrNull == null
+                        ? repository.existsBySourceAndSourceKeyAndCampaignIsNull(source, key)
+                        : repository.existsBySourceAndSourceKeyAndCampaignIsNullAndIdNot(
+                                source, key, currentIdOrNull),
+                (campaignId, key) -> currentIdOrNull == null
+                        ? repository.existsByCampaignIdAndSourceKey(campaignId, key)
+                        : repository.existsByCampaignIdAndSourceKeyAndIdNot(
+                                campaignId, key, currentIdOrNull));
+    }
+
+    private RollableTableWrite copyWrite(RollableTable original, String sourceKey, String name) {
+        List<RollableTableEntryWrite> entries = new ArrayList<>();
+        for (var entry : original.getEntries()) {
+            List<RollableTableReferenceWrite> references = new ArrayList<>();
+            for (var reference : entry.getReferences()) {
+                references.add(new RollableTableReferenceWrite(
+                        reference.getTargetScope(),
+                        CampaignContentType.valueOf(reference.getTargetType()),
+                        reference.getTargetId(),
+                        reference.getCatalogRuleset(),
+                        reference.getCatalogSourceKey(),
+                        reference.getDisplayText()));
+            }
+            entries.add(new RollableTableEntryWrite(
+                    entry.getEntryKey(), entry.getRangeStart(), entry.getRangeEnd(), entry.getWeight(),
+                    entry.getResultText(), entry.getQuantityExpression(), references));
+        }
+        return new RollableTableWrite(
+                sourceKey, name, original.getDescription(), original.getAddressMode(),
+                original.getRollExpression(), original.getCategory(),
+                original.getTags() == null ? List.of() : List.of(original.getTags().split(",\\s*")),
+                entries);
     }
 }

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Component
 public class RollableTableValidator {
@@ -28,6 +29,7 @@ public class RollableTableValidator {
     );
 
     private static final int MAX_REFERENCE_DEPTH = 5;
+    private static final Pattern STABLE_KEY = Pattern.compile("^[a-z0-9][a-z0-9._-]{0,99}$");
 
     private final RollableTableRepository rollableTableRepository;
     private final TableReferenceResolver referenceResolver;
@@ -45,35 +47,109 @@ public class RollableTableValidator {
     }
 
     public void validate(RollableTableWrite write, UUID currentTableId) {
-        List<TableValidationProblem> problems = collectProblems(write, currentTableId);
+        validate(write, currentTableId, null);
+    }
+
+    public void validate(RollableTableWrite write, UUID currentTableId, UUID campaignIdOrNull) {
+        List<TableValidationProblem> problems = collectProblems(write, currentTableId, campaignIdOrNull);
         if (!problems.isEmpty()) {
             throw new RollableTableValidationException(problems);
         }
     }
 
     public List<TableValidationProblem> collectProblems(RollableTableWrite write, UUID currentTableId) {
+        return collectProblems(write, currentTableId, null);
+    }
+
+    public List<TableValidationProblem> collectProblems(RollableTableWrite write, UUID currentTableId,
+                                                         UUID campaignIdOrNull) {
         List<TableValidationProblem> problems = new ArrayList<>();
         validateTableFields(write, problems);
         validateEntries(write, problems);
         validateReferences(write, problems);
-        validateReferenceResolution(write, currentTableId, problems);
+        validateReferenceResolution(write, campaignIdOrNull, problems);
         validateGraph(write, currentTableId, problems);
         return problems;
     }
 
     private void validateTableFields(RollableTableWrite write, List<TableValidationProblem> problems) {
-        if (write.rollExpression() != null && !write.rollExpression().isBlank()) {
+        required(write.sourceKey(), "/sourceKey", problems);
+        if (write.sourceKey() != null && !write.sourceKey().isBlank()
+                && !STABLE_KEY.matcher(write.sourceKey()).matches()) {
+            problems.add(new TableValidationProblem(
+                    "INVALID_STABLE_KEY", "/sourceKey",
+                    "sourceKey must match " + STABLE_KEY.pattern()));
+        }
+        required(write.name(), "/name", problems);
+        if (write.addressMode() == null) {
+            problems.add(requiredProblem("/addressMode"));
+        }
+        if (write.category() == null) {
+            problems.add(requiredProblem("/category"));
+        }
+        if (write.entries() == null || write.entries().isEmpty()) {
+            problems.add(new TableValidationProblem(
+                    "TABLE_ENTRIES_REQUIRED", "/entries", "At least one entry is required"));
+        }
+
+        if (write.addressMode() == TableAddressMode.RANGE
+                && (write.rollExpression() == null || write.rollExpression().isBlank())) {
+            problems.add(requiredProblem("/rollExpression"));
+        } else if (write.addressMode() == TableAddressMode.RANGE) {
             try {
-                DiceExpressionSpec.parse(write.rollExpression());
-            } catch (IllegalArgumentException e) {
+                DiceExpressionSpec spec = DiceExpressionSpec.parse(write.rollExpression());
+                int min = spec.min();
+                int max = spec.max();
+                if (min <= 0 || max <= 0 || max < min) {
+                    problems.add(new TableValidationProblem(
+                            "TABLE_RANGE_BOUNDS", "/rollExpression",
+                            "Roll expression must produce a positive ordered range"));
+                }
+            } catch (IllegalArgumentException | ArithmeticException e) {
                 problems.add(new TableValidationProblem(
                         "INVALID_TABLE_EXPRESSION", "/rollExpression", e.getMessage()));
             }
         }
     }
 
+    private void required(String value, String path, List<TableValidationProblem> problems) {
+        if (value == null || value.isBlank()) {
+            problems.add(requiredProblem(path));
+        }
+    }
+
+    private TableValidationProblem requiredProblem(String path) {
+        return new TableValidationProblem("TABLE_FIELD_REQUIRED", path, "Field is required");
+    }
+
     private void validateEntries(RollableTableWrite write, List<TableValidationProblem> problems) {
         if (write.entries() == null) return;
+
+        Set<String> entryKeys = new HashSet<>();
+        for (int i = 0; i < write.entries().size(); i++) {
+            var entry = write.entries().get(i);
+            String path = "/entries/" + i;
+            if (entry == null) {
+                problems.add(new TableValidationProblem(
+                        "TABLE_FIELD_REQUIRED", path, "Entry is required"));
+                continue;
+            }
+            if (entry.key() == null || entry.key().isBlank()) {
+                problems.add(requiredProblem(path + "/key"));
+            } else {
+                if (!STABLE_KEY.matcher(entry.key()).matches()) {
+                    problems.add(new TableValidationProblem(
+                            "INVALID_STABLE_KEY", path + "/key",
+                            "Entry key must match " + STABLE_KEY.pattern()));
+                }
+                if (!entryKeys.add(entry.key())) {
+                    problems.add(new TableValidationProblem(
+                            "DUPLICATE_ENTRY_KEY", path + "/key",
+                            "Entry key must be unique within the table"));
+                }
+            }
+            validateEntryResultAndQuantity(entry, i, problems);
+        }
 
         if (write.addressMode() == TableAddressMode.RANGE) {
             validateRangeEntries(write, problems);
@@ -82,10 +158,32 @@ public class RollableTableValidator {
         }
     }
 
+    private void validateEntryResultAndQuantity(RollableTableEntryWrite entry, int index,
+                                                List<TableValidationProblem> problems) {
+        if (entry.quantityExpression() != null && !entry.quantityExpression().isBlank()) {
+            try {
+                DiceExpressionSpec.parse(entry.quantityExpression());
+            } catch (IllegalArgumentException e) {
+                problems.add(new TableValidationProblem(
+                        "INVALID_QUANTITY_EXPRESSION", "/entries/" + index + "/quantityExpression",
+                        e.getMessage()));
+            }
+        }
+        boolean hasResultText = entry.resultText() != null && !entry.resultText().isBlank();
+        boolean hasReferences = entry.references() != null && !entry.references().isEmpty();
+        if (!hasResultText && !hasReferences) {
+            problems.add(new TableValidationProblem(
+                    "TABLE_ENTRY_RESULT_REQUIRED", "/entries/" + index,
+                    "Entry must have resultText or at least one reference"));
+        }
+    }
+
     private void validateRangeEntries(RollableTableWrite write, List<TableValidationProblem> problems) {
         var sortedWithIndex = new ArrayList<EntryWithIndex>();
         for (int i = 0; i < write.entries().size(); i++) {
-            sortedWithIndex.add(new EntryWithIndex(write.entries().get(i), i));
+            if (write.entries().get(i) != null) {
+                sortedWithIndex.add(new EntryWithIndex(write.entries().get(i), i));
+            }
         }
         sortedWithIndex.sort(Comparator.comparingInt(
                 ewi -> ewi.entry.rangeStart() != null ? ewi.entry.rangeStart() : Integer.MAX_VALUE));
@@ -119,37 +217,49 @@ public class RollableTableValidator {
             }
         }
 
-        int expectedMin = rollSpec != null ? rollSpec.min() : 1;
-        int expectedMax = rollSpec != null ? rollSpec.max() : 0;
-        int previousEnd = 0;
+        Integer expectedMin = null;
+        Integer expectedMax = null;
+        if (rollSpec != null) {
+            try {
+                expectedMin = rollSpec.min();
+                expectedMax = rollSpec.max();
+            } catch (ArithmeticException ignored) {
+                // The table-field validation already reports the invalid expression.
+            }
+        }
+        Integer previousEnd = null;
+        EntryWithIndex lastValid = null;
 
         for (var ewi : sortedWithIndex) {
             var entry = ewi.entry;
-            if (entry.rangeStart() == null || entry.rangeEnd() == null) continue;
+            if (entry.rangeStart() == null || entry.rangeEnd() == null
+                    || entry.rangeStart() > entry.rangeEnd()) continue;
 
-            if (entry.rangeStart() != previousEnd + 1) {
-                if (previousEnd == 0) {
-                    if (entry.rangeStart() != expectedMin) {
-                        problems.add(new TableValidationProblem(
-                                "TABLE_RANGE_BOUNDS", "/entries/" + ewi.index + "/rangeStart",
-                                "First entry rangeStart should be " + expectedMin + " but was " + entry.rangeStart()));
-                    }
-                } else if (entry.rangeStart() < previousEnd + 1) {
+            if (previousEnd == null) {
+                if (expectedMin != null && !entry.rangeStart().equals(expectedMin)) {
+                    problems.add(new TableValidationProblem(
+                            "TABLE_RANGE_BOUNDS", "/entries/" + ewi.index + "/rangeStart",
+                            "First entry rangeStart should be " + expectedMin + " but was " + entry.rangeStart()));
+                }
+            } else {
+                long next = (long) previousEnd + 1;
+                if (entry.rangeStart() < next) {
                     problems.add(new TableValidationProblem(
                             "TABLE_RANGE_OVERLAP", "/entries/" + ewi.index + "/rangeStart",
                             "Range overlaps with previous entry ending at " + previousEnd));
-                } else {
+                } else if (entry.rangeStart() > next) {
                     problems.add(new TableValidationProblem(
                             "TABLE_RANGE_GAP", "/entries/" + ewi.index + "/rangeStart",
                             "Gap between range end " + previousEnd + " and start " + entry.rangeStart()));
                 }
             }
             previousEnd = entry.rangeEnd();
+            lastValid = ewi;
         }
 
-        if (rollSpec != null && expectedMax > 0 && previousEnd < expectedMax && !sortedWithIndex.isEmpty()) {
+        if (expectedMax != null && previousEnd != null && !previousEnd.equals(expectedMax) && lastValid != null) {
             problems.add(new TableValidationProblem(
-                    "TABLE_RANGE_BOUNDS", "/entries/" + sortedWithIndex.getLast().index + "/rangeEnd",
+                    "TABLE_RANGE_BOUNDS", "/entries/" + lastValid.index + "/rangeEnd",
                     "Last entry ends at " + previousEnd + " but roll max is " + expectedMax));
         }
     }
@@ -157,6 +267,7 @@ public class RollableTableValidator {
     private void validateWeightedEntries(RollableTableWrite write, List<TableValidationProblem> problems) {
         for (int i = 0; i < write.entries().size(); i++) {
             var entry = write.entries().get(i);
+            if (entry == null) continue;
             if (entry.rangeStart() != null || entry.rangeEnd() != null) {
                 problems.add(new TableValidationProblem(
                         "TABLE_WEIGHT_INVALID", "/entries/" + i + "/weight",
@@ -167,36 +278,20 @@ public class RollableTableValidator {
                         "TABLE_WEIGHT_INVALID", "/entries/" + i + "/weight",
                         "Weight must be > 0"));
             }
-            if (entry.quantityExpression() != null && !entry.quantityExpression().isBlank()) {
-                try {
-                    DiceExpressionSpec.parse(entry.quantityExpression());
-                } catch (IllegalArgumentException e) {
-                    problems.add(new TableValidationProblem(
-                            "INVALID_QUANTITY_EXPRESSION", "/entries/" + i + "/quantityExpression",
-                            e.getMessage()));
-                }
-            }
-            boolean hasResultText = entry.resultText() != null && !entry.resultText().isBlank();
-            boolean hasReferences = entry.references() != null && !entry.references().isEmpty();
-            if (!hasResultText && !hasReferences) {
-                problems.add(new TableValidationProblem(
-                        "TABLE_WEIGHT_INVALID", "/entries/" + i + "/weight",
-                        "Entry must have resultText or at least one reference"));
-            }
         }
 
-        if (problems.isEmpty()) {
-            try {
-                int total = 0;
-                for (var entry : write.entries()) {
-                    if (entry.weight() != null) {
-                        total = Math.addExact(total, entry.weight());
-                    }
+        int total = 0;
+        for (int i = 0; i < write.entries().size(); i++) {
+            var entry = write.entries().get(i);
+            if (entry != null && entry.weight() != null && entry.weight() > 0) {
+                try {
+                    total = Math.addExact(total, entry.weight());
+                } catch (ArithmeticException e) {
+                    problems.add(new TableValidationProblem(
+                            "TABLE_WEIGHT_INVALID", "/entries/" + i + "/weight",
+                            "Total weight overflow"));
+                    break;
                 }
-            } catch (ArithmeticException e) {
-                problems.add(new TableValidationProblem(
-                        "TABLE_WEIGHT_INVALID", "/entries/0/weight",
-                        "Total weight overflow"));
             }
         }
     }
@@ -205,10 +300,17 @@ public class RollableTableValidator {
         if (write.entries() == null) return;
         for (int ei = 0; ei < write.entries().size(); ei++) {
             var entry = write.entries().get(ei);
+            if (entry == null) continue;
             if (entry.references() == null) continue;
             for (int ri = 0; ri < entry.references().size(); ri++) {
                 var ref = entry.references().get(ri);
                 String basePath = "/entries/" + ei + "/references/" + ri;
+
+                if (ref == null) {
+                    problems.add(new TableValidationProblem(
+                            "TABLE_FIELD_REQUIRED", basePath, "Reference is required"));
+                    continue;
+                }
 
                 if (!ALLOWED_REFERENCE_TYPES.contains(ref.targetType())) {
                     problems.add(new TableValidationProblem(
@@ -225,18 +327,23 @@ public class RollableTableValidator {
         }
     }
 
-    private void validateReferenceResolution(RollableTableWrite write, UUID currentTableId,
+    private void validateReferenceResolution(RollableTableWrite write, UUID campaignIdOrNull,
                                               List<TableValidationProblem> problems) {
         if (referenceResolver == null) return;
         if (write.entries() == null) return;
         for (int ei = 0; ei < write.entries().size(); ei++) {
             var entry = write.entries().get(ei);
+            if (entry == null) continue;
             if (entry.references() == null) continue;
             for (int ri = 0; ri < entry.references().size(); ri++) {
                 var ref = entry.references().get(ri);
                 String basePath = "/entries/" + ei + "/references/" + ri;
+                if (ref == null || ref.scope() == null
+                        || !ALLOWED_REFERENCE_TYPES.contains(ref.targetType())) {
+                    continue;
+                }
                 try {
-                    referenceResolver.require(null, ref);
+                    referenceResolver.require(campaignIdOrNull, ref);
                 } catch (IllegalArgumentException e) {
                     String msg = e.getMessage();
                     if (msg != null && msg.startsWith("UNRESOLVED_REFERENCE")) {
@@ -270,9 +377,11 @@ public class RollableTableValidator {
         if (write.entries() == null) return;
         for (int ei = 0; ei < write.entries().size(); ei++) {
             var entry = write.entries().get(ei);
+            if (entry == null) continue;
             if (entry.references() == null) continue;
             for (int ri = 0; ri < entry.references().size(); ri++) {
                 var ref = entry.references().get(ri);
+                if (ref == null) continue;
                 if (ref.scope() != TableReferenceScope.ENTITY
                         || ref.targetType() != CampaignContentType.ROLLABLE_TABLE
                         || ref.targetId() == null) {

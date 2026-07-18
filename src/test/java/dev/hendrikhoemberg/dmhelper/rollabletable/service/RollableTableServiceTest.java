@@ -105,6 +105,14 @@ class RollableTableServiceTest {
         ContentProvenance prov = new ContentProvenance();
         prov.setLicenseClassification(LicenseClassification.SRD);
         srd.setProvenance(prov);
+        RollableTableEntry entry = new RollableTableEntry();
+        entry.setTable(srd);
+        entry.setEntryKey("result");
+        entry.setRangeStart(1);
+        entry.setRangeEnd(6);
+        entry.setResultText("Result");
+        entry.setSortOrder(0);
+        srd.getEntries().add(entry);
         srd = repository.save(srd);
         srdTableId = srd.getId();
     }
@@ -174,6 +182,89 @@ class RollableTableServiceTest {
     }
 
     @Test
+    void rejectsMissingCampaignInsteadOfCreatingGlobalTable() {
+        UUID missingCampaignId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> service.create(
+                missingCampaignId, validRangeWrite("missing-campaign", "Missing Campaign"), null))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("Campaign");
+    }
+
+    @Test
+    void rejectsSourceKeyCollisionWithinCampaign() {
+        service.create(campaignId, validRangeWrite("same-key", "First"), null);
+
+        assertThatThrownBy(() -> service.create(
+                campaignId, validRangeWrite("same-key", "Second"), null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("sourceKey");
+    }
+
+    @Test
+    void rejectsSourceKeyCollisionOnUpdateButAllowsUnchangedKey() {
+        RollableTable first = service.create(
+                campaignId, validRangeWrite("first-key", "First"), null);
+        service.create(campaignId, validRangeWrite("second-key", "Second"), null);
+
+        assertThatCode(() -> service.updateCustom(
+                first.getId(), validRangeWrite("first-key", "First Updated"), null))
+                .doesNotThrowAnyException();
+        assertThatThrownBy(() -> service.updateCustom(
+                first.getId(), validRangeWrite("second-key", "Collision"), null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("sourceKey");
+    }
+
+    @Test
+    void rejectsCrossCampaignEntityReference() {
+        Campaign otherCampaign = new Campaign();
+        otherCampaign.setName("Other Campaign");
+        otherCampaign = campaignRepository.save(otherCampaign);
+
+        StatBlock foreign = new StatBlock();
+        foreign.setCampaign(otherCampaign);
+        foreign.setSource(ContentSource.CUSTOM);
+        foreign.setSourceKey("foreign-monster");
+        foreign.setName("Foreign Monster");
+        foreign.setCr("1");
+        foreign.setType("Humanoid");
+        foreign.setAc(12);
+        foreign.setHp("10");
+        foreign.setSpeed("30 ft.");
+        foreign = statBlockRepository.save(foreign);
+        em.flush();
+
+        var ref = new RollableTableReferenceWrite(
+                TableReferenceScope.ENTITY, CampaignContentType.STATBLOCK,
+                foreign.getId(), null, null, "Foreign Monster");
+        var write = new RollableTableWrite(
+                "cross-campaign", "Cross Campaign", null, TableAddressMode.RANGE,
+                "1d6", TableCategory.GENERIC, List.of(),
+                List.of(new RollableTableEntryWrite(
+                        "foreign", 1, 6, null, null, null, List.of(ref))));
+
+        assertThatThrownBy(() -> service.create(campaignId, write, null))
+                .isInstanceOf(RollableTableValidationException.class)
+                .satisfies(e -> assertThat(((RollableTableValidationException) e).problems())
+                        .anyMatch(p -> p.code().equals("UNRESOLVED_REFERENCE")));
+    }
+
+    @Test
+    void canonicalizesSuppliedWeightedRollExpression() {
+        var write = new RollableTableWrite(
+                "weighted", "Weighted", null, TableAddressMode.WEIGHTED,
+                "1d999", TableCategory.GENERIC, List.of(),
+                List.of(
+                        new RollableTableEntryWrite("a", null, null, 3, "A", null, List.of()),
+                        new RollableTableEntryWrite("b", null, null, 2, "B", null, List.of())));
+
+        RollableTable table = service.create(campaignId, write, null);
+
+        assertThat(table.getRollExpression()).isEqualTo("1d5");
+    }
+
+    @Test
     void clonesSrdAsCustom() {
         RollableTable cloned = service.cloneAsCustom(srdTableId, campaignId, "Custom SRD Clone");
         assertThat(cloned.getId()).isNotEqualTo(srdTableId);
@@ -181,6 +272,24 @@ class RollableTableServiceTest {
         assertThat(cloned.getCampaign().getId()).isEqualTo(campaignId);
         assertThat(cloned.getName()).isEqualTo("Custom SRD Clone");
         assertThat(cloned.getAddressMode()).isEqualTo(TableAddressMode.RANGE);
+    }
+
+    @Test
+    void clonesWithoutNameUsingNonCollidingCopyIdentity() {
+        RollableTable cloned = service.cloneAsCustom(srdTableId, campaignId, null);
+
+        assertThat(cloned.getName()).isEqualTo("SRD Table Copy");
+        assertThat(cloned.getSourceKey()).isEqualTo("srd-table-copy");
+    }
+
+    @Test
+    void rejectsCloneSourceKeyCollision() {
+        service.cloneAsCustom(srdTableId, campaignId, "Named Clone");
+
+        assertThatThrownBy(() -> service.cloneAsCustom(
+                srdTableId, campaignId, "Named Clone"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("sourceKey");
     }
 
     @Test
@@ -219,6 +328,33 @@ class RollableTableServiceTest {
         UUID finalTableId = table.getId();
         assertThatThrownBy(() -> service.promoteToGlobal(finalTableId))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void promotesTableWithGlobalReferenceOfNonTableType() {
+        StatBlock global = new StatBlock();
+        global.setSource(ContentSource.CUSTOM);
+        global.setSourceKey("global-monster");
+        global.setName("Global Monster");
+        global.setCr("1");
+        global.setType("Humanoid");
+        global.setAc(12);
+        global.setHp("10");
+        global.setSpeed("30 ft.");
+        global = statBlockRepository.save(global);
+        em.flush();
+
+        var write = new RollableTableWrite(
+                "promote-global-ref", "Promote Global Ref", null, TableAddressMode.WEIGHTED,
+                null, TableCategory.GENERIC, List.of(),
+                List.of(new RollableTableEntryWrite(
+                        "ref", null, null, 1, null, null,
+                        List.of(new RollableTableReferenceWrite(
+                                TableReferenceScope.ENTITY, CampaignContentType.STATBLOCK,
+                                global.getId(), null, null, "Global Monster")))));
+        RollableTable table = service.create(campaignId, write, null);
+
+        assertThat(service.promoteToGlobal(table.getId()).getCampaign()).isNull();
     }
 
     @Test
