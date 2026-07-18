@@ -4,7 +4,7 @@
 
 **Roadmap established after:** commit `36f7c3c`; use the status table together with current Git history
 
-**Current NEXT item:** 4 — Traps and hazards
+**Current NEXT item:** 5 — Travel core
 
 **Terminal goal:** DMHelper can prepare, run, record, export, restore, and resume a representative campaign as an all-in-one **DM-operated** tool.
 
@@ -62,8 +62,8 @@ integration churn and keeps the release gate attributable.
 | 1 | P0 browser-smoke release-gate repair | `COMPLETE` | — | Master §§5–6, 21, 23 | [Completed plan](plans/2026-07-18-p0-browser-smoke-release-gate-repair.md) | Native party dialog regression and same-origin sheet setup fixed; `CoreSessionLoopSmokeTest` and full Maven suite green; master blocker note updated. |
 | 2 | Music-provider feasibility spike | `COMPLETE` | 1 | Atmosphere §7.1 and §7.6 | [Completed plan](plans/2026-07-18-music-provider-feasibility.md) | YouTube proven as viable baseline provider on the DM device (Firefox/Linux, 480x270 visible player, all six controls passed). Spotify classified CONDITIONAL (Policy III.6 synchronization). Provider contract frozen. See [decision record](../architecture/music-provider-feasibility.md). |
 | 3 | Rollable tables and integrations | `COMPLETE` | 2 | Atmosphere delivery items 1–2 | [Completed corrective plan](plans/2026-07-18-rollable-tables-corrective-implementation.md) | Correct API DTOs, campaign-aware validation, complete authoring/rolling UI, consequence state machine, runnable package fidelity, real browser acceptance, and focused/full tests pass. |
-| 4 | Traps and hazards | `IN_PROGRESS` | 3 | Atmosphere delivery items 3–4 | [Implementation plan](plans/2026-07-18-p3-traps-and-hazards.md) | Structured and prose-compatible traps/hazards, provenance, scene/tracker/map integrations, package round-trip, player-safety coverage, and focused/full tests pass. |
-| 5 | Travel core | `BLOCKED` | 4 | Travel delivery items 1–3 | Create a dated `p3-travel-core` plan | Settings, migrations, routes, legs, authoring/search/dependency rules, journey/watch state machine, persistence, package-key contracts, and focused/full tests pass. |
+| 4 | Traps and hazards | `COMPLETE` | 3 | Atmosphere delivery items 3–4 | [Completed plan](plans/2026-07-18-p3-traps-and-hazards.md) | Structured and prose-compatible traps/hazards, provenance, scene/tracker/map integrations, package round-trip, player-safety coverage, and focused/full tests pass. |
+| 5 | Travel core | `READY` | 4 | Travel delivery items 1–3 | Create a dated `p3-travel-core` plan | Settings, migrations, routes, legs, authoring/search/dependency rules, journey/watch state machine, persistence, package-key contracts, and focused/full tests pass. |
 | 6 | Manual fog of war | `BLOCKED` | 5 | Atmosphere delivery items 5–6 | Create a dated `p3-manual-fog` plan | Mask model, DM tools, package support, server-side masked projection, reconnect behavior, cache/payload leak security tests, round-trip, and focused/full tests pass. |
 | 7 | Atmosphere and music completion | `BLOCKED` | 6 and the decision from 2 | Atmosphere delivery items 7–8 | Create a dated `p3-atmosphere-music` plan | Provider SPI/reference adapter, local OAuth and token clearing, cue library, cockpit widget, assignments, priority switching, deterministic fake-provider tests, package safety, and bounded outage behavior pass. |
 | 8 | Travel rules and runtime integrations | `BLOCKED` | 3, 5, 6, 7 | Travel delivery items 4–7 | Create a dated `p3-travel-integrations` plan | Weather, pace, navigation, roles, modes, supply drafts, calendar/ledger/encounter/scene/log connections, cockpit journey panel, and music transitions pass without autonomous mutations. |
@@ -112,17 +112,18 @@ where the task independently requires current external facts.
 
 ## 7. Current recovery note
 
-As of the rollable tables completion on 2026-07-18:
+As of the traps and hazards completion on 2026-07-18 / 2026-07-19:
 
 - master delivery items 1–10 are implemented;
 - world graph and faction clocks are implemented;
 - the remaining P3 designs are approved and committed;
 - the P0 browser-smoke plan is implemented, audited, and linked above;
 - the music-provider feasibility spike is complete: YouTube is the viable baseline provider (Firefox/Linux, all six controls passed with visible official player); Spotify is CONDITIONAL (Policy III.6 synchronization prohibition);
-- **the corrected P3 rollable-tables package is implemented and verified:** the original nine-task delivery plus the [corrective design](specs/2026-07-18-rollable-tables-corrective-design.md) now cover finite API DTOs, campaign-aware authoring and reference validation, complete editor/management controls, shared detail/cockpit rolling, nested outcomes, encounter/reward draft review, strict consequence transitions, runnable weighted imports, closed package schemas, semantic dry-run paths/bounds, dependency-aware deletion, explicit unavailable history, fixtures, docs, performance, and player-safety;
-- **Corrective browser acceptance (2026-07-18):** `CoreSessionLoopSmokeTest` passed all 23 real-browser cases with no failures or skips. Its table flow authored tables through the editor API, linked a scene through the browser request path, rolled from the story rail and top picker, displayed grouped/nested outcomes, edited and discarded a reward draft, edited and confirmed an encounter draft, and verified the resulting treasury and prepared-encounter state;
-- **Corrective automated evidence (2026-07-18):** the focused table/package/controller/template/search/security gate passed; the independent browser gate passed; and a fresh complete Maven run passed 195 suites / 1465 tests with 0 failures, 0 errors, and 0 skips. V13 is applied, all six categories remain in the feature-complete fixture, the published-adventure table is runnable with nested and quantity refs, depth-5 performance is covered, and player endpoints remain free of table data;
-- **Traps/hazards execution started (2026-07-18):** roadmap row 4 is `IN_PROGRESS` under the [implementation plan](plans/2026-07-18-p3-traps-and-hazards.md). Atmosphere delivery items 3–4 are `IN_PROGRESS`. Row 5 (Travel core) remains `BLOCKED`. Predecessor integration baseline (tables/scene/package/map/encounter/search suites) passed with zero failures before status change. The next action is Task 1 of that plan (persistence foundation).
+- the corrected P3 rollable-tables package is implemented and verified (see prior recovery note and [corrective plan](plans/2026-07-18-rollable-tables-corrective-implementation.md));
+- **P3 traps and hazards package is implemented and verified** under [plans/2026-07-18-p3-traps-and-hazards.md](plans/2026-07-18-p3-traps-and-hazards.md): V14 additive `trap`/`hazard` tables; typed authoring with provenance; scene TRAP/HAZARD refs (prose-compatible); cockpit story-rail dice prefill; initiative threat cards and manual action-log evidence; DM-only map threat pins; package-v2 traps/hazards sections, closure, older-v2 defaults, fixtures, and behavioral round-trip; hostile content and player-safety coverage. Atmosphere delivery items 3–4 are `IMPLEMENTED`. Atmosphere item 9 and master overall readiness remain open.
+- **Traps/hazards browser acceptance (automated only, 2026-07-19):** standalone `CoreSessionLoopSmokeTest` **1 suite / 24 tests / 0 failures / 0 errors / 0 skips**, including `threatWorkflowProvesDmSurfacesAndPackageFidelity` (create/clone/promote, dual-scene attach, cockpit prefill, tracker/manual log, DM pin with player absence, export→import→reopen). Do not label this a manual acceptance session.
+- **Traps/hazards automated evidence (2026-07-19):** focused threat/package/controller/template/search/security gate **29 suites / 269 tests / 0 failures / 0 errors / 0 skips**; independent browser gate as above; fresh complete Maven run **213 suites / 1626 tests / 0 failures / 0 errors / 0 skips** (exit 0) after import-code registration, pin/export isolation, and smoke HTMX map-create wait hardening.
+- **Roadmap status:** row 4 `COMPLETE`; row 5 (Travel core) `READY`. Next action: write and execute a dated `p3-travel-core` plan against Travel delivery items 1–3. Do not start fog, music completion, or later rows.
 
 When conversation context is missing or compacted, resume from the first non-`COMPLETE` row in this
 file and validate its status against the repository before acting.

@@ -502,8 +502,8 @@ then music (new external dependency, isolated last):
 |---|--------------|------------|--------|
 | 1 | Rollable tables: model, editor, roll flow, package section | — | `IMPLEMENTED` |
 | 2 | Table integrations: scene/location links, encounter prefill, reward drafts | 1 | `IMPLEMENTED` |
-| 3 | Traps/hazards: model, editor, package section, provenance | — | `IN_PROGRESS` |
-| 4 | Traps/hazards integration: scene sections, tracker cards, map pins | 3 | `IN_PROGRESS` |
+| 3 | Traps/hazards: model, editor, package section, provenance | — | `IMPLEMENTED` |
+| 4 | Traps/hazards integration: scene sections, tracker cards, map pins | 3 | `IMPLEMENTED` |
 | 5 | Fog of war: mask model, DM tools, package section | — | `PLANNED` |
 | 6 | Fog of war: server-side masked projection and security suite | 5 | `PLANNED` |
 | 7 | Audio: provider SPI, auth, cue library, cockpit widget | — | `PLANNED` |
