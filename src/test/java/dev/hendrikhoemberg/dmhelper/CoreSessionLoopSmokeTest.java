@@ -176,10 +176,19 @@ class CoreSessionLoopSmokeTest {
                 "body: 'name=Smoke+Test+Campaign&description=Playwright+smoke+test' " +
                 "})");
 
-        dmPage.waitForTimeout(500);
-        var campaigns = campaignRepo.findAllByOrderByNameAsc();
-        assertThat(campaigns).isNotEmpty();
-        campaignId = campaigns.getFirst().getId();
+        // Shared mem DB retains other tests' campaigns — resolve by exact name, not getFirst().
+        dmPage.waitForFunction("""
+                async () => {
+                  const r = await fetch('/campaigns');
+                  const html = await r.text();
+                  return html.includes('Smoke Test Campaign');
+                }
+                """);
+        campaignId = campaignRepo.findAllByOrderByNameAsc().stream()
+                .filter(c -> "Smoke Test Campaign".equals(c.getName()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Smoke Test Campaign not found after create"))
+                .getId();
     }
 
     @Test
@@ -222,10 +231,19 @@ class CoreSessionLoopSmokeTest {
         dmPage.fill("#gridHeight", "15");
         dmPage.click("button[type='submit']");
 
-        dmPage.waitForTimeout(500);
-        var maps = mapRepo.findAll();
-        assertThat(maps).isNotEmpty();
-        mapId = maps.getFirst().getId();
+        // Resolve map by campaign + name — never mapRepo.findAll().getFirst() under shared DB.
+        dmPage.waitForFunction("""
+                async ([cid]) => {
+                  const r = await fetch('/campaigns/' + cid + '/maps');
+                  const html = await r.text();
+                  return html.includes('Test Battle Map');
+                }
+                """, List.of(campaignId.toString()));
+        mapId = mapRepo.findByCampaignIdOrderBySortOrderAsc(campaignId).stream()
+                .filter(m -> "Test Battle Map".equals(m.getName()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Test Battle Map not found for smoke campaign"))
+                .getId();
 
         secondMapId = gameMapService.create(campaignId, "Fallback Map", 30, 20, 48).getId();
 

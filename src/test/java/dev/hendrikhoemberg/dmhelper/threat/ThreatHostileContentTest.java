@@ -16,6 +16,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateReq
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.ThreatCombatantRequest;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionLifecycleService;
+import dev.hendrikhoemberg.dmhelper.threat.data.DamageType;
 import dev.hendrikhoemberg.dmhelper.threat.data.Hazard;
 import dev.hendrikhoemberg.dmhelper.threat.data.HazardExposureMode;
 import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
@@ -86,6 +87,7 @@ class ThreatHostileContentTest {
         trap.setTriggerDescription(HOSTILE_PLAIN);
         trap.setAdditionalEffect(HOSTILE_PLAIN);
         trap.setDamageExpression("2d6");
+        trap.getDamageTypes().add(DamageType.PIERCING);
         trap.setCountermeasureNotes(HOSTILE_PLAIN);
         trap = trapRepo.save(trap);
 

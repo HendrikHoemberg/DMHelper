@@ -9,6 +9,7 @@ import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.DamageType;
 import dev.hendrikhoemberg.dmhelper.threat.data.MapThreatPin;
 import dev.hendrikhoemberg.dmhelper.threat.data.MapThreatPinRepository;
 import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
@@ -101,6 +102,7 @@ class ThreatPlayerSafetyTest {
         trap.setResetMode(ThreatResetMode.MANUAL);
         trap.setTriggerDescription("Trigger " + MECH_MARKER);
         trap.setDamageExpression("3d6");
+        trap.getDamageTypes().add(DamageType.PIERCING);
         trap.setAdditionalEffect("Effect " + MECH_MARKER);
         trap.setCountermeasureNotes("Counter " + MECH_MARKER);
         trap.setProvenance(provenance);

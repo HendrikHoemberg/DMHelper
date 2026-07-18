@@ -19,6 +19,7 @@ import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
+import dev.hendrikhoemberg.dmhelper.threat.data.DamageType;
 import dev.hendrikhoemberg.dmhelper.threat.data.Hazard;
 import dev.hendrikhoemberg.dmhelper.threat.data.HazardExposureMode;
 import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
@@ -275,6 +276,7 @@ class ThreatEncounterIntegrationTest {
         trap.setSeverity(ThreatSeverity.DANGEROUS);
         trap.setResetMode(ThreatResetMode.NONE);
         trap.setDamageExpression("2d10");
+        trap.getDamageTypes().add(DamageType.PIERCING);
         return trapRepository.save(trap);
     }
 
@@ -288,6 +290,7 @@ class ThreatEncounterIntegrationTest {
         hazard.setSeverity(ThreatSeverity.SETBACK);
         hazard.setExposureMode(HazardExposureMode.ON_ENTER);
         hazard.setDamageExpression("1d6");
+        hazard.getDamageTypes().add(DamageType.POISON);
         return hazardRepository.save(hazard);
     }
 }

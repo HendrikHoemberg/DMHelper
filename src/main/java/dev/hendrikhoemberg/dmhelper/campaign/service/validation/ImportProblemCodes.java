@@ -107,6 +107,22 @@ public final class ImportProblemCodes {
     public static final String TABLE_REFERENCE_CYCLE = "TABLE_REFERENCE_CYCLE";
     public static final String TABLE_REFERENCE_DEPTH_EXCEEDED = "TABLE_REFERENCE_DEPTH_EXCEEDED";
 
+    // Trap / hazard (threat) package validation codes
+    public static final String DAMAGE_TYPE_REQUIRED = "DAMAGE_TYPE_REQUIRED";
+    public static final String DUPLICATE_DISARM_KEY = "DUPLICATE_DISARM_KEY";
+    public static final String HAZARD_EXPOSURE_REQUIRED = "HAZARD_EXPOSURE_REQUIRED";
+    public static final String INVALID_DAMAGE_EXPRESSION = "INVALID_DAMAGE_EXPRESSION";
+    public static final String INVALID_THREAT_REFERENCE_KIND = "INVALID_THREAT_REFERENCE_KIND";
+    public static final String INVALID_THREAT_REFERENCE_ROLE_TYPE = "INVALID_THREAT_REFERENCE_ROLE_TYPE";
+    public static final String THREAT_CHECK_MISSING_ABILITY_OR_SKILL = "THREAT_CHECK_MISSING_ABILITY_OR_SKILL";
+    public static final String THREAT_CHECK_SAVE_HAS_SKILL = "THREAT_CHECK_SAVE_HAS_SKILL";
+    public static final String THREAT_DC_OUT_OF_BOUNDS = "THREAT_DC_OUT_OF_BOUNDS";
+    public static final String THREAT_LEVEL_INVALID = "THREAT_LEVEL_INVALID";
+    public static final String THREAT_PIN_OUT_OF_BOUNDS = "THREAT_PIN_OUT_OF_BOUNDS";
+    public static final String THREAT_SEVERITY_REQUIRED = "THREAT_SEVERITY_REQUIRED";
+    public static final String TRAP_EFFECT_MODE_CONFLICT = "TRAP_EFFECT_MODE_CONFLICT";
+    public static final String TRAP_RESET_TIMING_REQUIRED = "TRAP_RESET_TIMING_REQUIRED";
+
     private static final Set<String> ALL;
 
     static {

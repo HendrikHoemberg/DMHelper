@@ -1,6 +1,10 @@
 package dev.hendrikhoemberg.dmhelper.adventure.web;
 
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.config.PinManager;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +21,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -29,6 +34,12 @@ class PlayerSafeProjectionTest {
 
     @Autowired
     private PinManager pinManager;
+
+    @Autowired
+    private CampaignRepository campaignRepository;
+
+    @Autowired
+    private GameMapRepository gameMapRepository;
 
     @Test
     void playerViewDoesNotLeakAdventureData() throws Exception {
@@ -110,14 +121,41 @@ class PlayerSafeProjectionTest {
 
     @Test
     void pinApiReturns403WithoutValidPin() throws Exception {
-        mockMvc.perform(get("/api/v1/maps/{id}/pins", UUID.randomUUID()))
+        UUID mapId = createMapForPinGate();
+        mockMvc.perform(get("/api/v1/maps/{id}/pins", mapId))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void pinApiReturns200WithValidPin() throws Exception {
+        UUID mapId = createMapForPinGate();
+        mockMvc.perform(get("/api/v1/maps/{id}/pins", mapId)
+                        .cookie(new Cookie("dm_pin", pinManager.getPin())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    void pinApiReturns404ForUnknownMapEvenWithValidPin() throws Exception {
         mockMvc.perform(get("/api/v1/maps/{id}/pins", UUID.randomUUID())
                         .cookie(new Cookie("dm_pin", pinManager.getPin())))
-                .andExpect(status().isOk());
+                .andExpect(status().isNotFound());
+    }
+
+    private UUID createMapForPinGate() {
+        Campaign campaign = new Campaign();
+        campaign.setName("Pin Gate Campaign " + UUID.randomUUID());
+        campaign = campaignRepository.save(campaign);
+
+        GameMap map = new GameMap();
+        map.setCampaign(campaign);
+        map.setName("Pin Gate Map");
+        map.setGridWidth(10);
+        map.setGridHeight(10);
+        map.setCellSizePx(48);
+        map.setDocument("{\"schemaVersion\":2,\"grid\":{\"width\":10,\"height\":10,"
+                + "\"cellSizePx\":48,\"gridType\":\"square\"},\"layers\":[],\"primitives\":[],"
+                + "\"customTerrain\":[]}");
+        return gameMapRepository.save(map).getId();
     }
 }

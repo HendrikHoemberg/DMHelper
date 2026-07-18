@@ -17,6 +17,7 @@ import dev.hendrikhoemberg.dmhelper.library.data.MagicItemRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.LibraryContentReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
+import dev.hendrikhoemberg.dmhelper.threat.data.DamageType;
 import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
 import dev.hendrikhoemberg.dmhelper.threat.data.ThreatResetMode;
 import dev.hendrikhoemberg.dmhelper.threat.data.ThreatSeverity;
@@ -78,6 +79,8 @@ class ThreatSectionAdapterTest {
         trap.setDescription("A pit.");
         trap.setSeverity(ThreatSeverity.SETBACK);
         trap.setResetMode(ThreatResetMode.NONE);
+        trap.setDamageExpression("2d10");
+        trap.getDamageTypes().add(DamageType.PIERCING);
 
         when(closureService.forCampaign(campaignId)).thenReturn(
                 new ThreatExportClosureService.ClosureResult(
@@ -97,6 +100,9 @@ class ThreatSectionAdapterTest {
                 "pkg", null, "test", null, null, List.of()));
         assertThat(manifest.traps()).hasSize(1);
         assertThat(manifest.traps().getFirst().name()).isEqualTo("Spike Pit");
+        assertThat(manifest.traps().getFirst().damage()).isNotNull();
+        assertThat(manifest.traps().getFirst().damage().expression()).isEqualTo("2d10");
+        assertThat(manifest.traps().getFirst().damage().types()).containsExactly("PIERCING");
         assertThat(manifest.hazards()).isEmpty();
     }
 
