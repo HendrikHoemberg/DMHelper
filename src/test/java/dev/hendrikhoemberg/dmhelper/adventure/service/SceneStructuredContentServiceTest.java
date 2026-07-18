@@ -4,8 +4,18 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
+import dev.hendrikhoemberg.dmhelper.threat.data.Hazard;
+import dev.hendrikhoemberg.dmhelper.threat.data.HazardExposureMode;
+import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatResetMode;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatSeverity;
+import dev.hendrikhoemberg.dmhelper.threat.data.Trap;
+import dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository;
+import dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DataJpaTest
 @Import({SceneStructuredContentService.class, AdventureService.class, SceneTransitionService.class,
         SceneRefCleaner.class,
+        ThreatReferenceResolver.class,
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
 class SceneStructuredContentServiceTest {
 
@@ -34,6 +45,8 @@ class SceneStructuredContentServiceTest {
     @Autowired private SceneCheckRepository checkRepository;
     @Autowired private SceneParticipantRepository participantRepository;
     @Autowired private SceneLinkRepository linkRepository;
+    @Autowired private TrapRepository trapRepository;
+    @Autowired private HazardRepository hazardRepository;
     @Autowired private EntityManager em;
     @MockitoBean private SessionActivityRecorder sessionActivity;
     @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
@@ -42,6 +55,9 @@ class SceneStructuredContentServiceTest {
     private Campaign campaign;
     private Campaign otherCampaign;
     private Scene scene;
+    private Trap campaignTrap;
+    private Trap otherCampaignTrap;
+    private Hazard campaignHazard;
 
     @BeforeEach
     void setUp() {
@@ -56,6 +72,34 @@ class SceneStructuredContentServiceTest {
         var a = adventureService.createAdventure(campaign.getId(), "A", null, null);
         var ch = adventureService.createChapter(a.getId(), "Ch", null);
         scene = adventureService.createScene(ch.getId(), "Scene", null, null);
+
+        campaignTrap = newTrap(campaign, "camp-spike", "Campaign Spike");
+        otherCampaignTrap = newTrap(otherCampaign, "other-spike", "Other Spike");
+        campaignHazard = newHazard(campaign, "camp-gas", "Campaign Gas");
+    }
+
+    private Trap newTrap(Campaign owner, String key, String name) {
+        Trap trap = new Trap();
+        trap.setSourceKey(key);
+        trap.setSource(ContentSource.CUSTOM);
+        trap.setCampaign(owner);
+        trap.setName(name);
+        trap.setDescription("A trap description long enough.");
+        trap.setSeverity(ThreatSeverity.SETBACK);
+        trap.setResetMode(ThreatResetMode.NONE);
+        return trapRepository.save(trap);
+    }
+
+    private Hazard newHazard(Campaign owner, String key, String name) {
+        Hazard hazard = new Hazard();
+        hazard.setSourceKey(key);
+        hazard.setSource(ContentSource.CUSTOM);
+        hazard.setCampaign(owner);
+        hazard.setName(name);
+        hazard.setDescription("A hazard description long enough.");
+        hazard.setSeverity(ThreatSeverity.SETBACK);
+        hazard.setExposureMode(HazardExposureMode.ON_ENTER);
+        return hazardRepository.save(hazard);
     }
 
     @Test
@@ -274,5 +318,102 @@ class SceneStructuredContentServiceTest {
         em.flush();
         em.clear();
         assertThat(sceneRepository.findById(scene.getId()).orElseThrow().getTags()).isEqualTo("");
+    }
+
+    @Test
+    void trapSectionAcceptsVisibleTrapButRejectsHazardAndCrossCampaign() {
+        var accepted = structuredService.addSection(campaign.getId(), scene.getId(),
+                new SceneStructuredContentService.SceneSectionCommand(
+                        SceneSectionKind.TRAP, "Spike", "Watch the floor", "PHB p.1", 0,
+                        ThreatKind.TRAP, campaignTrap.getId()));
+        assertThat(accepted.getThreatKind()).isEqualTo(ThreatKind.TRAP);
+        assertThat(accepted.getThreatId()).isEqualTo(campaignTrap.getId());
+
+        assertThatThrownBy(() -> structuredService.addSection(campaign.getId(), scene.getId(),
+                new SceneStructuredContentService.SceneSectionCommand(
+                        SceneSectionKind.TRAP, "Bad", "body", null, 1,
+                        ThreatKind.HAZARD, campaignHazard.getId())))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("TRAP");
+
+        assertThatThrownBy(() -> structuredService.addSection(campaign.getId(), scene.getId(),
+                new SceneStructuredContentService.SceneSectionCommand(
+                        SceneSectionKind.TRAP, "Foreign", "body", null, 1,
+                        ThreatKind.TRAP, otherCampaignTrap.getId())))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void hazardSectionAcceptsVisibleHazardButRejectsTrapAndCrossCampaign() {
+        Hazard otherHazard = newHazard(otherCampaign, "other-gas", "Other Gas");
+
+        var accepted = structuredService.addSection(campaign.getId(), scene.getId(),
+                new SceneStructuredContentService.SceneSectionCommand(
+                        SceneSectionKind.HAZARD, "Gas", "Poison cloud", null, 0,
+                        ThreatKind.HAZARD, campaignHazard.getId()));
+        assertThat(accepted.getThreatKind()).isEqualTo(ThreatKind.HAZARD);
+        assertThat(accepted.getThreatId()).isEqualTo(campaignHazard.getId());
+
+        assertThatThrownBy(() -> structuredService.addSection(campaign.getId(), scene.getId(),
+                new SceneStructuredContentService.SceneSectionCommand(
+                        SceneSectionKind.HAZARD, "Bad", "body", null, 1,
+                        ThreatKind.TRAP, campaignTrap.getId())))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("HAZARD");
+
+        assertThatThrownBy(() -> structuredService.addSection(campaign.getId(), scene.getId(),
+                new SceneStructuredContentService.SceneSectionCommand(
+                        SceneSectionKind.HAZARD, "Foreign", "body", null, 1,
+                        ThreatKind.HAZARD, otherHazard.getId())))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void otherSectionKindsRejectThreatReferences() {
+        assertThatThrownBy(() -> structuredService.addSection(campaign.getId(), scene.getId(),
+                new SceneStructuredContentService.SceneSectionCommand(
+                        SceneSectionKind.READ_ALOUD, "Label", "body", null, 0,
+                        ThreatKind.TRAP, campaignTrap.getId())))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("TRAP/HAZARD");
+
+        assertThatThrownBy(() -> structuredService.addSection(campaign.getId(), scene.getId(),
+                new SceneStructuredContentService.SceneSectionCommand(
+                        SceneSectionKind.FEATURE, "Label", "body", null, 0,
+                        ThreatKind.HAZARD, campaignHazard.getId())))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void removingThreatReferencePreservesProseFields() {
+        var section = structuredService.addSection(campaign.getId(), scene.getId(),
+                new SceneStructuredContentService.SceneSectionCommand(
+                        SceneSectionKind.TRAP, "Spike", "Original body", "Loc p.9", 0,
+                        ThreatKind.TRAP, campaignTrap.getId()));
+
+        structuredService.updateSection(campaign.getId(), scene.getId(), section.getId(),
+                new SceneStructuredContentService.SceneSectionCommand(
+                        SceneSectionKind.TRAP, "Spike", "Original body", "Loc p.9", 0,
+                        null, null));
+
+        em.flush();
+        em.clear();
+
+        SceneSection reloaded = sectionRepository.findById(section.getId()).orElseThrow();
+        assertThat(reloaded.getThreatKind()).isNull();
+        assertThat(reloaded.getThreatId()).isNull();
+        assertThat(reloaded.getLabel()).isEqualTo("Spike");
+        assertThat(reloaded.getBody()).isEqualTo("Original body");
+        assertThat(reloaded.getSourceLocator()).isEqualTo("Loc p.9");
+    }
+
+    @Test
+    void nullThreatReferencePreservesProseOnlySections() {
+        var section = structuredService.addSection(campaign.getId(), scene.getId(),
+                new SceneStructuredContentService.SceneSectionCommand(
+                        SceneSectionKind.TRAP, "Prose trap", "Just prose", null, 0));
+        assertThat(section.getThreatKind()).isNull();
+        assertThat(section.getThreatId()).isNull();
+        assertThat(section.getBody()).isEqualTo("Just prose");
     }
 }

@@ -17,6 +17,7 @@
     <div class="dice-panel-body">
         <div class="dice-input-row">
             <input type="text"
+                   x-ref="expressionInput"
                    x-model="expression"
                    placeholder="e.g. 2d6+4 or typed value"
                    @keydown.enter="roll()"

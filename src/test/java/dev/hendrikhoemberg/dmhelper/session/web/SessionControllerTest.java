@@ -79,7 +79,7 @@ class SessionControllerTest {
         StructuredSceneView ssv = new StructuredSceneView(scene,
                 scene.getSections(), scene.getChecks(),
                 scene.getParticipants(), scene.getTransitions(),
-                scene.getLinks());
+                scene.getLinks(), java.util.Map.of());
         SessionWorkspace ws = new SessionWorkspace(
                 campaign, CampaignSession.idle(campaign),
                 null, SessionWorkspaceService.SelectionSource.NONE,

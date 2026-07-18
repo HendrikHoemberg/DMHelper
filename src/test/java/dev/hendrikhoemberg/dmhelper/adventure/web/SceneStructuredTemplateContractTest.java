@@ -102,6 +102,16 @@ class SceneStructuredTemplateContractTest {
         assertThat(panel).doesNotContain(">Read Aloud</summary>");
     }
 
+    @Test
+    void actionRailExposesThreatSelectorAndMechanicsCardForTrapHazardSections() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+        assertThat(html).contains("name=\"threatId\"");
+        assertThat(html).contains("visibleTraps");
+        assertThat(html).contains("visibleHazards");
+        assertThat(html).contains("threat/_mechanics-card");
+        assertThat(html).contains("sectionThreatCards");
+    }
+
     private static int count(String s, String substring) {
         int count = 0;
         int idx = 0;

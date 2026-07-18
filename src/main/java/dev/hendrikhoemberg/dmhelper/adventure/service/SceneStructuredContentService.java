@@ -5,6 +5,8 @@ import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableReferenceResolver;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
+import dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,7 @@ public class SceneStructuredContentService {
     private final SceneTransitionRepository transitionRepository;
     private final RollableTableRepository rollableTableRepository;
     private final TableReferenceResolver referenceResolver;
+    private final ThreatReferenceResolver threatReferenceResolver;
     private final EntityManager em;
 
     public SceneStructuredContentService(SceneRepository sceneRepository,
@@ -34,6 +37,7 @@ public class SceneStructuredContentService {
                                           SceneTransitionRepository transitionRepository,
                                           RollableTableRepository rollableTableRepository,
                                           TableReferenceResolver referenceResolver,
+                                          ThreatReferenceResolver threatReferenceResolver,
                                           EntityManager em) {
         this.sceneRepository = sceneRepository;
         this.sectionRepository = sectionRepository;
@@ -43,6 +47,7 @@ public class SceneStructuredContentService {
         this.transitionRepository = transitionRepository;
         this.rollableTableRepository = rollableTableRepository;
         this.referenceResolver = referenceResolver;
+        this.threatReferenceResolver = threatReferenceResolver;
         this.em = em;
     }
 
@@ -51,7 +56,14 @@ public class SceneStructuredContentService {
 
     public record SceneSectionCommand(
             SceneSectionKind kind, String label, String body,
-            String sourceLocator, int sortOrder) {}
+            String sourceLocator, int sortOrder,
+            ThreatKind threatKind, UUID threatId) {
+
+        public SceneSectionCommand(SceneSectionKind kind, String label, String body,
+                                   String sourceLocator, int sortOrder) {
+            this(kind, label, body, sourceLocator, sortOrder, null, null);
+        }
+    }
 
     public record SceneCheckCommand(
             String label, String ability, String skill, Integer dc,
@@ -106,6 +118,7 @@ public class SceneStructuredContentService {
         section.setBody(cmd.body());
         section.setSourceLocator(cmd.sourceLocator());
         section.setSortOrder(cmd.sortOrder());
+        applyThreatReference(campaignId, cmd.kind(), cmd.threatKind(), cmd.threatId(), section);
         scene.getSections().add(section);
         return sectionRepository.save(section);
     }
@@ -121,7 +134,34 @@ public class SceneStructuredContentService {
         section.setBody(cmd.body());
         section.setSourceLocator(cmd.sourceLocator());
         section.setSortOrder(cmd.sortOrder());
+        applyThreatReference(campaignId, cmd.kind(), cmd.threatKind(), cmd.threatId(), section);
         sectionRepository.save(section);
+    }
+
+    private void applyThreatReference(UUID campaignId, SceneSectionKind sectionKind,
+                                      ThreatKind threatKind, UUID threatId, SceneSection section) {
+        if (threatKind == null && threatId == null) {
+            section.setThreatKind(null);
+            section.setThreatId(null);
+            return;
+        }
+        if (threatKind == null || threatId == null) {
+            throw new IllegalArgumentException("Threat kind and id must both be set or both null");
+        }
+        if (sectionKind == SceneSectionKind.TRAP) {
+            if (threatKind != ThreatKind.TRAP) {
+                throw new IllegalArgumentException("TRAP sections can only reference traps");
+            }
+        } else if (sectionKind == SceneSectionKind.HAZARD) {
+            if (threatKind != ThreatKind.HAZARD) {
+                throw new IllegalArgumentException("HAZARD sections can only reference hazards");
+            }
+        } else {
+            throw new IllegalArgumentException("Only TRAP/HAZARD sections may reference threats");
+        }
+        threatReferenceResolver.requireVisible(threatKind, threatId, campaignId);
+        section.setThreatKind(threatKind);
+        section.setThreatId(threatId);
     }
 
     public void deleteSection(UUID campaignId, UUID sceneId, UUID sectionId) {

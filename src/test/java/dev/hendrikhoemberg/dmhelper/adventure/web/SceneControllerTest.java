@@ -42,6 +42,8 @@ class SceneControllerTest {
     @MockitoBean private StatBlockRepository statBlockRepository;
     @MockitoBean private HandoutRepository handoutRepository;
     @MockitoBean private MarkdownUtil markdownUtil;
+    @MockitoBean private dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository trapRepository;
+    @MockitoBean private dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository hazardRepository;
 
     private UUID campaignId, adventureId, sceneId, chapterId;
     private Campaign campaign;

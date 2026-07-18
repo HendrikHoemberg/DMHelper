@@ -63,6 +63,16 @@
             <span class="badge" th:text="${section.kind.name()}">SECTION</span>
             <strong th:text="${section.label}">Label</strong>
             <p class="u-text-sm" th:text="${section.body}">Body</p>
+            <div th:if="${section.threatId != null
+                         and workspace.structuredSceneView.sectionThreatCards != null
+                         and workspace.structuredSceneView.sectionThreatCards[section.id] != null}"
+                 class="u-mt-xs"
+                 th:with="card=${workspace.structuredSceneView.sectionThreatCards[section.id]}">
+              <th:block th:if="${card.trap != null}"
+                        th:replace="~{threat/_mechanics-card :: mechanics-card(threat=${card.trap}, kind=${card.kind})}"></th:block>
+              <th:block th:if="${card.hazard != null}"
+                        th:replace="~{threat/_mechanics-card :: mechanics-card(threat=${card.hazard}, kind=${card.kind})}"></th:block>
+            </div>
           </div>
           <!-- Checks (DM-only) -->
           <div th:if="${workspace.structuredSceneView.checks != null and !workspace.structuredSceneView.checks.isEmpty()}"

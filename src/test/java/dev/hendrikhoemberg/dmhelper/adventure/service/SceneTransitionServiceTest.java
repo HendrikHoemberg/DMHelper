@@ -25,6 +25,7 @@ import static org.mockito.Mockito.*;
 @DataJpaTest
 @Import({SceneStructuredContentService.class, AdventureService.class, SceneTransitionService.class,
         SceneRefCleaner.class,
+        dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver.class,
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
 class SceneTransitionServiceTest {
 

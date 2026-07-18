@@ -12,11 +12,20 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.Hazard;
+import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
+import dev.hendrikhoemberg.dmhelper.threat.data.Trap;
+import dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository;
+import dev.hendrikhoemberg.dmhelper.threat.web.ThreatCardView;
+import dev.hendrikhoemberg.dmhelper.threat.web.ThreatWebMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Controller
@@ -31,6 +40,8 @@ public class SceneController {
     private final MarkdownUtil markdownUtil;
     private final SceneStructuredContentService structuredService;
     private final SceneTransitionService transitionService;
+    private final TrapRepository trapRepository;
+    private final HazardRepository hazardRepository;
 
     public SceneController(AdventureService adventureService,
                            CampaignRepository campaignRepository,
@@ -40,7 +51,9 @@ public class SceneController {
                            HandoutRepository handoutRepository,
                            MarkdownUtil markdownUtil,
                            SceneStructuredContentService structuredService,
-                           SceneTransitionService transitionService) {
+                           SceneTransitionService transitionService,
+                           TrapRepository trapRepository,
+                           HazardRepository hazardRepository) {
         this.adventureService = adventureService;
         this.campaignRepository = campaignRepository;
         this.gameMapRepository = gameMapRepository;
@@ -48,6 +61,8 @@ public class SceneController {
         this.statBlockRepository = statBlockRepository;
         this.handoutRepository = handoutRepository;
         this.markdownUtil = markdownUtil;
+        this.trapRepository = trapRepository;
+        this.hazardRepository = hazardRepository;
         this.structuredService = structuredService;
         this.transitionService = transitionService;
     }
@@ -70,6 +85,9 @@ public class SceneController {
         model.addAttribute("encounters", encounterRepository.findByCampaignIdOrderByNameAsc(campaignId));
         model.addAttribute("statBlocks", statBlockRepository.findByCampaignIdOrderByNameAsc(campaignId));
         model.addAttribute("handouts", handoutRepository.findByCampaignIdOrderByTitleAsc(campaignId));
+        model.addAttribute("visibleTraps", trapRepository.findVisibleByCampaignId(campaignId));
+        model.addAttribute("visibleHazards", hazardRepository.findVisibleByCampaignId(campaignId));
+        model.addAttribute("sectionThreatCards", buildSectionThreatCards(scene));
         adventureService.getCurrentScene(campaignId).ifPresent(s -> model.addAttribute("currentScene", s));
         return "adventure/scene-detail";
     }
@@ -301,11 +319,13 @@ public class SceneController {
                              @RequestParam String body,
                              @RequestParam(required = false) String sourceLocator,
                              @RequestParam(defaultValue = "0") int sortOrder,
+                             @RequestParam(required = false) UUID threatId,
                              Model model) {
         try {
+            ThreatKind threatKind = resolveSectionThreatKind(kind, threatId);
             structuredService.addSection(campaignId, sceneId,
                     new SceneStructuredContentService.SceneSectionCommand(
-                            kind, label, body, sourceLocator, sortOrder));
+                            kind, label, body, sourceLocator, sortOrder, threatKind, threatId));
         } catch (IllegalArgumentException | NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }
@@ -323,15 +343,28 @@ public class SceneController {
                                 @RequestParam String body,
                                 @RequestParam(required = false) String sourceLocator,
                                 @RequestParam(defaultValue = "0") int sortOrder,
+                                @RequestParam(required = false) UUID threatId,
                                 Model model) {
         try {
+            ThreatKind threatKind = resolveSectionThreatKind(kind, threatId);
             structuredService.updateSection(campaignId, sceneId, sectionId,
                     new SceneStructuredContentService.SceneSectionCommand(
-                            kind, label, body, sourceLocator, sortOrder));
+                            kind, label, body, sourceLocator, sortOrder, threatKind, threatId));
         } catch (IllegalArgumentException | NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }
         return loadActionRail(campaignId, adventureId, sceneId, model);
+    }
+
+    private static ThreatKind resolveSectionThreatKind(SceneSectionKind kind, UUID threatId) {
+        if (threatId == null) {
+            return null;
+        }
+        return switch (kind) {
+            case TRAP -> ThreatKind.TRAP;
+            case HAZARD -> ThreatKind.HAZARD;
+            default -> null;
+        };
     }
 
     @DeleteMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/sections/{sectionId}")
@@ -626,6 +659,37 @@ public class SceneController {
         model.addAttribute("encounters", encounterRepository.findByCampaignIdOrderByNameAsc(campaignId));
         model.addAttribute("statBlocks", statBlockRepository.findByCampaignIdOrderByNameAsc(campaignId));
         model.addAttribute("handouts", handoutRepository.findByCampaignIdOrderByTitleAsc(campaignId));
+        model.addAttribute("visibleTraps", trapRepository.findVisibleByCampaignId(campaignId));
+        model.addAttribute("visibleHazards", hazardRepository.findVisibleByCampaignId(campaignId));
+        model.addAttribute("sectionThreatCards", buildSectionThreatCards(scene));
         return "adventure/_action-rail :: actionRail";
+    }
+
+    private Map<UUID, ThreatCardView> buildSectionThreatCards(Scene scene) {
+        Map<UUID, ThreatCardView> cards = new HashMap<>();
+        if (scene.getSections() == null) {
+            return cards;
+        }
+        for (SceneSection section : scene.getSections()) {
+            if (section.getThreatKind() == null || section.getThreatId() == null || section.getId() == null) {
+                continue;
+            }
+            ThreatCardView card = switch (section.getThreatKind()) {
+                case TRAP -> trapRepository.findDetailedById(section.getThreatId())
+                        .map(t -> ThreatWebMapper.cardFromTrap(t, htmlDescription(t.getDescription())))
+                        .orElse(null);
+                case HAZARD -> hazardRepository.findDetailedById(section.getThreatId())
+                        .map(h -> ThreatWebMapper.cardFromHazard(h, htmlDescription(h.getDescription())))
+                        .orElse(null);
+            };
+            if (card != null) {
+                cards.put(section.getId(), card);
+            }
+        }
+        return cards;
+    }
+
+    private String htmlDescription(String markdown) {
+        return markdown != null ? markdownUtil.toHtml(markdown) : "";
     }
 }

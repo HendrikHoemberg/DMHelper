@@ -104,10 +104,26 @@ class SessionCockpitTemplateContractTest {
         String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
         String navbar = Files.readString(Path.of("src/main/resources/templates/fragments/navbar.html"));
         String history = Files.readString(Path.of("src/main/resources/templates/fragments/_dice-roller.html"));
+        String diceJs = Files.readString(Path.of("src/main/resources/static/js/dice-roller.js"));
 
-        assertThat(html).contains("table-history-refresh");
-        assertThat(navbar).contains("table-history-refresh");
+        assertThat(html).contains("/js/dice-roller.js");
+        assertThat(navbar).contains("/js/dice-roller.js");
+        assertThat(diceJs).contains("table-history-refresh");
         assertThat(history).contains("Result unavailable");
+    }
+
+    @Test
+    void storyRailRendersInlineThreatMechanicsCards() throws IOException {
+        String story = Files.readString(Path.of("src/main/resources/templates/session/_story-rail.html"));
+        assertThat(story).contains("threat/_mechanics-card");
+        assertThat(story).contains("sectionThreatCards");
+        assertThat(story).contains("section.threatId");
+    }
+
+    @Test
+    void cockpitLoadsSharedDiceRollerScript() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
+        assertThat(html).contains("/js/dice-roller.js");
     }
 
     private static int count(String s, String substring) {

@@ -32,7 +32,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import({AdventureService.class, SceneTransitionService.class, SceneRefCleaner.class, SceneStructuredContentService.class, dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
+@Import({AdventureService.class, SceneTransitionService.class, SceneRefCleaner.class, SceneStructuredContentService.class,
+        dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver.class,
+        dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class})
 class SceneRefCleanerTest {
 
     @Autowired private AdventureService adventureService;
