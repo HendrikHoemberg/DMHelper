@@ -96,7 +96,7 @@ public class RollableTableRollService {
         log.setTableNameSnapshot(table.getName());
         log.setResultJson(resultJson);
         log.setDraftType(draftType);
-        log.setDraftStatus(TableDraftStatus.NONE);
+        log.setDraftStatus(draftType != null ? TableDraftStatus.PENDING : TableDraftStatus.NONE);
         log.setCreatedAt(Instant.now());
         log = logRepository.save(log);
 
@@ -206,28 +206,38 @@ public class RollableTableRollService {
                 .reduce((a, b) -> a + ", " + b).orElse("");
         return switch (category) {
             case ENCOUNTER -> {
-                List<EncounterCreatureDraft> creatures = outcomes.stream()
-                        .flatMap(o -> o.references().stream())
-                        .filter(ref -> ref.targetType() == CampaignContentType.STATBLOCK)
-                        .map(ref -> new EncounterCreatureDraft(
-                                ref.targetId(), ref.displayText(), 1))
-                        .distinct()
-                        .toList();
+                java.util.Map<UUID, EncounterCreatureDraft> aggregated = new java.util.LinkedHashMap<>();
+                for (TableRollOutcome outcome : outcomes) {
+                    int qty = outcome.quantityRoll() != null ? Math.max(1, outcome.quantityRoll().total()) : 1;
+                    for (TableResolvedReference ref : outcome.references()) {
+                        if (ref.targetType() != CampaignContentType.STATBLOCK) continue;
+                        aggregated.merge(ref.targetId(),
+                                new EncounterCreatureDraft(ref.targetId(), ref.displayText(), qty),
+                                (existing, incoming) -> new EncounterCreatureDraft(
+                                        existing.statBlockId(), existing.displayName(),
+                                        existing.quantity() + qty));
+                    }
+                }
                 yield new EncounterTableDraft(
                         outcomes.getFirst().resultText(),
                         sourceText,
-                        creatures);
+                        List.copyOf(aggregated.values()));
             }
             case TREASURE -> {
-                List<RewardItemDraft> items = outcomes.stream()
-                        .flatMap(o -> o.references().stream())
-                        .filter(ref -> ref.targetType() == CampaignContentType.EQUIPMENT_ITEM
-                                || ref.targetType() == CampaignContentType.MAGIC_ITEM)
-                        .map(ref -> new RewardItemDraft(
-                                ref.targetType(), ref.targetId(), ref.displayText(), 1))
-                        .distinct()
-                        .toList();
-                yield new RewardTableDraft(sourceText, items);
+                java.util.Map<UUID, RewardItemDraft> aggregated = new java.util.LinkedHashMap<>();
+                for (TableRollOutcome outcome : outcomes) {
+                    int qty = outcome.quantityRoll() != null ? Math.max(1, outcome.quantityRoll().total()) : 1;
+                    for (TableResolvedReference ref : outcome.references()) {
+                        if (ref.targetType() != CampaignContentType.EQUIPMENT_ITEM
+                                && ref.targetType() != CampaignContentType.MAGIC_ITEM) continue;
+                        aggregated.merge(ref.targetId(),
+                                new RewardItemDraft(ref.targetType(), ref.targetId(), ref.displayText(), qty),
+                                (existing, incoming) -> new RewardItemDraft(
+                                        existing.type(), existing.targetId(), existing.displayName(),
+                                        existing.quantity() + qty));
+                    }
+                }
+                yield new RewardTableDraft(sourceText, List.copyOf(aggregated.values()));
             }
             default -> null;
         };
