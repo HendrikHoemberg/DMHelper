@@ -10,6 +10,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.AddFromLi
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantUpdateRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.ThreatCombatantRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.ConcentrationCheckRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.ConcentrationRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
@@ -123,6 +124,12 @@ public class EncounterApiController {
     public ResponseEntity<CombatantDto> addCombatant(@PathVariable UUID id,
                                                      @RequestBody CombatantCreateRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.addCombatant(id, req));
+    }
+
+    @PostMapping("/encounters/{id}/combatants/from-threat")
+    public ResponseEntity<CombatantDto> addThreatCombatant(@PathVariable UUID id,
+                                                           @RequestBody ThreatCombatantRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.addThreatCombatant(id, req));
     }
 
     @PostMapping("/encounters/{id}/combatants/from-library")

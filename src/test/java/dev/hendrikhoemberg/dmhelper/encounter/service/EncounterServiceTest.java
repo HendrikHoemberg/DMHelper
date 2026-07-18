@@ -34,7 +34,10 @@ import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
 @Import({EncounterService.class, CombatDifficultyCalculator.class, GameMapService.class, DiceEngine.class, SceneRefCleaner.class,
-        dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class, EncounterServiceTest.MockConfig.class})
+        dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
+        dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver.class,
+        dev.hendrikhoemberg.dmhelper.config.MarkdownUtil.class,
+        EncounterServiceTest.MockConfig.class})
 class EncounterServiceTest {
 
     @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
@@ -105,6 +108,9 @@ class EncounterServiceTest {
         assertThat(c.maxHp()).isEqualTo(7);
         assertThat(c.currentHp()).isEqualTo(7);
         assertThat(c.kind()).isEqualTo("MONSTER");
+        assertThat(c.threatKind()).isNull();
+        assertThat(c.threatId()).isNull();
+        assertThat(c.threatCard()).isNull();
     }
 
     @Test

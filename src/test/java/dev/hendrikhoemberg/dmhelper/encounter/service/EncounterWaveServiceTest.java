@@ -29,6 +29,8 @@ import static org.assertj.core.api.Assertions.*;
 @Import({EncounterService.class, CombatDifficultyCalculator.class,
         DiceEngine.class, SceneRefCleaner.class,
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
+        dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver.class,
+        dev.hendrikhoemberg.dmhelper.config.MarkdownUtil.class,
         EncounterWaveServiceTest.MockConfig.class})
 class EncounterWaveServiceTest {
 

@@ -24,7 +24,10 @@ import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
 @Import({EncounterService.class, CombatDifficultyCalculator.class, GameMapService.class, DiceEngine.class, SceneRefCleaner.class,
-        dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class, EncounterCompletionTest.MockConfig.class})
+        dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
+        dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver.class,
+        dev.hendrikhoemberg.dmhelper.config.MarkdownUtil.class,
+        EncounterCompletionTest.MockConfig.class})
 class EncounterCompletionTest {
 
     @MockitoBean

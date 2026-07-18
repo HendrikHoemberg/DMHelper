@@ -23,6 +23,7 @@ function sessionCockpit(config) {
         currentAoEPresets: [],
         encounterDropdownOpen: false,
         activeEncounter: null,
+        activeCombatants: [],
         plannedEncounters: [],
         presentingMap: config.presentationMode === 'MAP'
             && config.presentedMapId === config.mapId,
@@ -384,6 +385,9 @@ function sessionCockpit(config) {
             });
             window.addEventListener('tracker-encounter-state', (e) => {
                 this.activeEncounter = e.detail.encounter;
+                // combatants may include threatKind/threatId/threatCard for trap/hazard turns;
+                // the shared tracker renders the active-turn mechanics card only.
+                this.activeCombatants = e.detail.combatants || [];
                 if (this.activeEncounter) {
                     this.showTracker = true;
                     this.activeTab = 'tracker';

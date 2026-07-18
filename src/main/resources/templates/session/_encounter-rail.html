@@ -9,6 +9,7 @@
                     && (workspace.workspaceMap == null || workspace.workspaceMap.id != workspace.activeEncounter.map.id)}"
               th:attr="data-map-id=${workspace.activeEncounter.map.id}"
               @click="switchMap($el.dataset.mapId)">Switch to encounter map</button>
+      <!-- Tracker owns active-turn threat cards via combatant.threatCard JSON -->
       <div th:replace="~{encounter/_tracker :: tracker}"></div>
     </th:block>
     <th:block th:if="${workspace.activeEncounter == null}">

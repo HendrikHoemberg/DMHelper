@@ -121,6 +121,19 @@ class SessionCockpitTemplateContractTest {
     }
 
     @Test
+    void encounterRailUsesTrackerActiveThreatCard() throws IOException {
+        String rail = Files.readString(Path.of("src/main/resources/templates/session/_encounter-rail.html"));
+        String tracker = Files.readString(Path.of("src/main/resources/templates/encounter/_tracker.html"));
+        String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
+        assertThat(rail).contains("encounter/_tracker :: tracker");
+        assertThat(rail).contains("threatCard");
+        assertThat(tracker).contains("activeThreatCard");
+        assertThat(tracker).contains("data-active-threat-card");
+        assertThat(js).contains("threatCard");
+        assertThat(js).contains("activeCombatants");
+    }
+
+    @Test
     void cockpitLoadsSharedDiceRollerScript() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
         assertThat(html).contains("/js/dice-roller.js");

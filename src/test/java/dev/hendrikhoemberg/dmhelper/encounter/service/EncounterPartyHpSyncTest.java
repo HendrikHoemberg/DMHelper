@@ -43,6 +43,8 @@ import static org.mockito.Mockito.when;
 @Import({SheetService.class, EncounterService.class, CombatDifficultyCalculator.class,
         GameMapService.class, DiceEngine.class, SceneRefCleaner.class,
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
+        dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver.class,
+        dev.hendrikhoemberg.dmhelper.config.MarkdownUtil.class,
         EncounterPartyHpSyncTest.MockConfig.class})
 class EncounterPartyHpSyncTest {
 

@@ -1,0 +1,96 @@
+<div th:fragment="threat-add(campaignId, encounterId)"
+     x-data="threatAdd"
+     th:attr="data-encounter-id=${encounterId}, data-campaign-id=${campaignId}">
+    <h3>Add Trap / Hazard</h3>
+    <div class="threat-add-search u-flex u-gap-sm u-items-center">
+        <select x-model="kind" class="u-w-sm" @change="results = []; query = ''">
+            <option value="TRAP">Trap</option>
+            <option value="HAZARD">Hazard</option>
+        </select>
+        <input type="text" x-model="query" @input.debounce.300ms="search"
+               placeholder="Search traps and hazards..." class="u-flex-1">
+        <input type="number" x-model="initiative" placeholder="Init" class="u-w-sm" title="Initiative">
+        <select x-model="waveId" class="u-w-sm">
+            <option value="">Main wave</option>
+            <option th:each="w : ${waves}" th:value="${w.id}" th:text="${w.name}">Wave</option>
+        </select>
+    </div>
+    <div class="threat-add-results u-mt-sm">
+        <template x-if="results.length">
+            <div class="card-grid u-mt-sm">
+                <template x-for="item in results" :key="item.id">
+                    <div class="card" x-data="{adding: false}">
+                        <div class="card-body">
+                            <h4 x-text="item.name" class="card-title">Name</h4>
+                            <p class="text-muted u-text-sm">
+                                <span x-text="item.kind"></span>
+                                <span x-show="item.severity"> · <span x-text="item.severity"></span></span>
+                                <span x-show="item.source"> · <span x-text="item.source"></span></span>
+                            </p>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-sm btn-primary" @click="addThreat(item)"
+                                    x-text="adding ? 'Adding...' : 'Add'"
+                                    :disabled="adding">
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </template>
+        <p x-show="query.length >= 1 && !results.length && !searching" class="text-muted u-text-sm">No results found.</p>
+    </div>
+</div>
+<script th:inline="javascript">
+document.addEventListener('alpine:init', () => {
+    Alpine.data('threatAdd', () => ({
+        query: '',
+        kind: 'TRAP',
+        initiative: '',
+        waveId: '',
+        results: [],
+        searching: false,
+        encounterId: document.querySelector('[data-encounter-id]')?.dataset?.encounterId,
+        campaignId: document.querySelector('[data-campaign-id]')?.dataset?.campaignId,
+
+        async search() {
+            if (this.query.length < 1) { this.results = []; return; }
+            this.searching = true;
+            try {
+                const base = this.kind === 'HAZARD' ? '/api/v1/hazards/search' : '/api/v1/traps/search';
+                const url = `${base}?campaignId=${encodeURIComponent(this.campaignId || '')}&q=${encodeURIComponent(this.query)}`;
+                const resp = await window.dmRequest(url);
+                this.results = await resp.json();
+            } catch (e) {
+                window.reportActionFailure('Threat search failed', e, () => this.search());
+            } finally {
+                this.searching = false;
+            }
+        },
+
+        async addThreat(item) {
+            try {
+                const body = JSON.stringify({
+                    threatKind: item.kind || this.kind,
+                    threatId: item.id,
+                    name: null,
+                    initiative: this.initiative === '' ? null : Number(this.initiative),
+                    waveId: this.waveId || null
+                });
+                await window.dmRequest(
+                    `/api/v1/encounters/${this.encounterId}/combatants/from-threat`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body
+                    });
+                window.showToast(`Added ${item.name}`, 'success');
+                window.location.reload();
+            } catch (e) {
+                window.reportActionFailure('Failed to add threat combatant', e,
+                    () => this.addThreat(item));
+            }
+        }
+    }));
+});
+</script>
+</div>

@@ -92,6 +92,29 @@
                 return this.encounter?.lairActionName != null;
             },
 
+            get activeThreatCard() {
+                const active = this.activeCombatant;
+                if (!active || !active.threatCard) return null;
+                return active.threatCard;
+            },
+
+            get activeThreatMechanics() {
+                const card = this.activeThreatCard;
+                if (!card) return null;
+                return card.trap || card.hazard || null;
+            },
+
+            prefillDice(expression, label) {
+                window.dispatchEvent(new CustomEvent('dice-roller-prefill', {
+                    detail: { expression: expression || '1d20', label: label || '' }
+                }));
+            },
+
+            signedBonus(bonus) {
+                if (bonus == null) return '';
+                return bonus >= 0 ? '+' + bonus : String(bonus);
+            },
+
             async init() {
                 window.addEventListener('dm-mode-changed', (e) => {
                     this.dmMode = e.detail.dmMode;
@@ -643,6 +666,144 @@
                 </span>
                 <button class="btn btn-ghost" style="padding: 2px 8px;" @click="nextTurn()"
                         data-action="next-turn">Next ▶</button>
+            </div>
+
+            <!-- Active threat mechanics card (TRAP/HAZARD turn only) -->
+            <div class="active-threat-card threat-mechanics-card"
+                 x-show="activeThreatCard && dmMode"
+                 x-cloak
+                 data-active-threat-card>
+                <div class="detail-meta" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                    <strong x-text="activeThreatCard?.name"></strong>
+                    <span class="badge" x-text="activeThreatCard?.kind"></span>
+                    <span class="badge" x-show="activeThreatMechanics?.severity"
+                          x-text="activeThreatMechanics?.severity"></span>
+                </div>
+
+                <!-- Trap mechanics -->
+                <template x-if="activeThreatCard?.trap">
+                    <div class="u-mt-sm">
+                        <div x-show="activeThreatMechanics.triggerDescription">
+                            <strong>Trigger</strong>
+                            <p x-text="activeThreatMechanics.triggerDescription"></p>
+                        </div>
+                        <div x-show="activeThreatMechanics.detectionCheck">
+                            <strong>Detection</strong>
+                            <p>
+                                <span x-text="activeThreatMechanics.detectionCheck?.mode"></span>
+                                <span x-text="activeThreatMechanics.detectionCheck?.ability"></span>
+                                <span x-show="activeThreatMechanics.detectionCheck?.dc"
+                                      x-text="'DC ' + activeThreatMechanics.detectionCheck?.dc"></span>
+                                <button type="button" class="btn btn-sm btn-ghost"
+                                        @click="prefillDice('1d20', 'Detection' + (activeThreatMechanics.detectionCheck?.dc != null ? ' DC ' + activeThreatMechanics.detectionCheck.dc : ''))">
+                                    Prefill 1d20
+                                </button>
+                            </p>
+                        </div>
+                        <div x-show="activeThreatMechanics.attackBonus != null">
+                            <strong>Attack</strong>
+                            <p>
+                                <span x-text="signedBonus(activeThreatMechanics.attackBonus)"></span>
+                                <button type="button" class="btn btn-sm btn-ghost"
+                                        @click="prefillDice('1d20' + signedBonus(activeThreatMechanics.attackBonus), 'Attack ' + signedBonus(activeThreatMechanics.attackBonus))">
+                                    Prefill attack
+                                </button>
+                            </p>
+                        </div>
+                        <div x-show="activeThreatMechanics.save">
+                            <strong>Save</strong>
+                            <p>
+                                <span x-text="activeThreatMechanics.save?.mode"></span>
+                                <span x-text="activeThreatMechanics.save?.ability"></span>
+                                <span x-show="activeThreatMechanics.save?.dc"
+                                      x-text="'DC ' + activeThreatMechanics.save?.dc"></span>
+                                <button type="button" class="btn btn-sm btn-ghost"
+                                        @click="prefillDice('1d20', 'Save' + (activeThreatMechanics.save?.dc != null ? ' DC ' + activeThreatMechanics.save.dc : ''))">
+                                    Prefill 1d20
+                                </button>
+                            </p>
+                        </div>
+                        <div x-show="activeThreatMechanics.damageExpression">
+                            <strong>Damage</strong>
+                            <p>
+                                <span x-text="activeThreatMechanics.damageExpression"></span>
+                                <button type="button" class="btn btn-sm btn-ghost"
+                                        @click="prefillDice(activeThreatMechanics.damageExpression, 'Damage ' + activeThreatMechanics.damageExpression)">
+                                    Prefill damage
+                                </button>
+                            </p>
+                        </div>
+                        <div x-show="activeThreatMechanics.additionalEffect">
+                            <strong>Additional Effect</strong>
+                            <p x-text="activeThreatMechanics.additionalEffect"></p>
+                        </div>
+                        <template x-if="activeThreatMechanics.disarmMethods && activeThreatMechanics.disarmMethods.length">
+                            <div>
+                                <strong>Disarm</strong>
+                                <ul>
+                                    <template x-for="m in activeThreatMechanics.disarmMethods" :key="m.id || m.key || m.label">
+                                        <li>
+                                            <span x-text="m.label"></span>
+                                            <span x-show="m.dc != null" x-text="' (DC ' + m.dc + ')'"></span>
+                                            <button type="button" class="btn btn-sm btn-ghost"
+                                                    @click="prefillDice('1d20', (m.label || 'Disarm') + (m.dc != null ? ' DC ' + m.dc : ''))">
+                                                Prefill 1d20
+                                            </button>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Hazard mechanics -->
+                <template x-if="activeThreatCard?.hazard">
+                    <div class="u-mt-sm">
+                        <div x-show="activeThreatMechanics.exposureMode">
+                            <strong>Exposure</strong>
+                            <p x-text="activeThreatMechanics.exposureMode"></p>
+                        </div>
+                        <div x-show="activeThreatMechanics.exposureText">
+                            <strong>Exposure Details</strong>
+                            <p x-text="activeThreatMechanics.exposureText"></p>
+                        </div>
+                        <div x-show="activeThreatMechanics.check">
+                            <strong>Check / Save</strong>
+                            <p>
+                                <span x-text="activeThreatMechanics.check?.mode"></span>
+                                <span x-text="activeThreatMechanics.check?.ability"></span>
+                                <span x-show="activeThreatMechanics.check?.dc"
+                                      x-text="'DC ' + activeThreatMechanics.check?.dc"></span>
+                                <button type="button" class="btn btn-sm btn-ghost"
+                                        @click="prefillDice('1d20', 'Check/Save' + (activeThreatMechanics.check?.dc != null ? ' DC ' + activeThreatMechanics.check.dc : ''))">
+                                    Prefill 1d20
+                                </button>
+                            </p>
+                        </div>
+                        <div x-show="activeThreatMechanics.damageExpression">
+                            <strong>Damage</strong>
+                            <p>
+                                <span x-text="activeThreatMechanics.damageExpression"></span>
+                                <button type="button" class="btn btn-sm btn-ghost"
+                                        @click="prefillDice(activeThreatMechanics.damageExpression, 'Damage ' + activeThreatMechanics.damageExpression)">
+                                    Prefill damage
+                                </button>
+                            </p>
+                        </div>
+                        <div x-show="activeThreatMechanics.escalationText">
+                            <strong>Escalation</strong>
+                            <p x-text="activeThreatMechanics.escalationText"></p>
+                        </div>
+                        <div x-show="activeThreatMechanics.endingConditions">
+                            <strong>Ending Conditions</strong>
+                            <p x-text="activeThreatMechanics.endingConditions"></p>
+                        </div>
+                    </div>
+                </template>
+                <p class="text-muted u-text-sm u-mt-xs">
+                    Prefills only — log damage/conditions with the existing tracker controls.
+                </p>
             </div>
 
             <!-- Recharge banner -->

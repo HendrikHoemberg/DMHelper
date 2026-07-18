@@ -14,10 +14,35 @@ class EncounterTemplateContractTest {
     void detailIncludesLibraryAddWavePrepRewardsSummary() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/encounter/detail.html"));
         assertThat(html).contains("encounter/_library-add :: library-add");
+        assertThat(html).contains("encounter/_threat-add :: threat-add");
         assertThat(html).contains("encounter/_waves :: waves");
         assertThat(html).contains("encounter/_prep :: prep");
         assertThat(html).contains("encounter/_rewards :: rewards");
         assertThat(html).contains("encounter/_summary-modal :: summary-modal");
+    }
+
+    @Test
+    void threatAddSearchesVisibleDefinitionsAndPostsFromThreat() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/encounter/_threat-add.html"));
+        assertThat(html).contains("threatAdd");
+        assertThat(html).contains("@input.debounce.300ms");
+        assertThat(html).contains("/api/v1/traps/search");
+        assertThat(html).contains("/api/v1/hazards/search");
+        assertThat(html).contains("/api/v1/encounters/${this.encounterId}/combatants/from-threat");
+        assertThat(html).contains("window.dmRequest");
+        assertThat(html).contains("threatKind");
+        assertThat(html).contains("threatId");
+    }
+
+    @Test
+    void trackerRendersActiveThreatCardOnly() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/encounter/_tracker.html"));
+        assertThat(html).contains("activeThreatCard");
+        assertThat(html).contains("data-active-threat-card");
+        assertThat(html).contains("x-show=\"activeThreatCard && dmMode\"");
+        assertThat(html).contains("dice-roller-prefill");
+        assertThat(html).contains("Prefills only");
+        assertThat(html).doesNotContain("/api/v1/combatants/${activeCombatantId}/damage");
     }
 
     @Test

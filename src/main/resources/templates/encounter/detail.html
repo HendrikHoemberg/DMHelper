@@ -152,6 +152,10 @@
 
                 <hr class="u-my-lg">
 
+                <div class="u-mb-lg" th:replace="~{encounter/_threat-add :: threat-add(${campaignId}, ${encounter.id})}"></div>
+
+                <hr class="u-my-lg">
+
                 <div class="u-mb-lg" th:replace="~{encounter/_waves :: waves(${campaignId}, ${encounter})}"></div>
 
                 <hr class="u-my-lg">

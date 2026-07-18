@@ -3,7 +3,9 @@ package dev.hendrikhoemberg.dmhelper.encounter.web;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.ThreatCombatantRequest;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -92,6 +94,18 @@ public class EncounterController {
                                @RequestParam(defaultValue = "10") int maxHp,
                                @RequestParam(defaultValue = "NPC") String kind) {
         encounterService.addCombatant(encounterId, new CombatantCreateRequest(name, maxHp, kind, null, null, null));
+        return "redirect:/campaigns/" + campaignId + "/encounters/" + encounterId;
+    }
+
+    @PostMapping("/{encounterId}/combatants/from-threat")
+    public String addThreatCombatant(@PathVariable UUID campaignId, @PathVariable UUID encounterId,
+                                     @RequestParam ThreatKind threatKind,
+                                     @RequestParam UUID threatId,
+                                     @RequestParam(required = false) String name,
+                                     @RequestParam(required = false) Integer initiative,
+                                     @RequestParam(required = false) UUID waveId) {
+        encounterService.addThreatCombatant(encounterId,
+                new ThreatCombatantRequest(threatKind, threatId, name, initiative, waveId));
         return "redirect:/campaigns/" + campaignId + "/encounters/" + encounterId;
     }
 

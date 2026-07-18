@@ -128,6 +128,27 @@ public class ThreatApiController {
         return ResponseEntity.ok(referenceOptions(campaignId, type, q));
     }
 
+    @GetMapping("/api/v1/traps/search")
+    public ResponseEntity<List<Map<String, Object>>> searchTraps(
+            @RequestParam(required = false) UUID campaignId,
+            @RequestParam(required = false, defaultValue = "") String q) {
+        String query = q == null ? "" : q.trim().toLowerCase();
+        List<Map<String, Object>> results = trapService.findVisible(campaignId).stream()
+                .filter(t -> query.isEmpty() || t.getName().toLowerCase().contains(query))
+                .limit(25)
+                .map(t -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("id", t.getId());
+                    row.put("name", t.getName());
+                    row.put("kind", "TRAP");
+                    row.put("severity", t.getSeverity() != null ? t.getSeverity().name() : null);
+                    row.put("source", t.getSource() != null ? t.getSource().name() : null);
+                    return row;
+                })
+                .toList();
+        return ResponseEntity.ok(results);
+    }
+
     // ── Hazards ────────────────────────────────────────────────────────────
 
     @PostMapping("/api/v1/hazards")
@@ -189,6 +210,27 @@ public class ThreatApiController {
             @RequestParam String type,
             @RequestParam(required = false) String q) {
         return ResponseEntity.ok(referenceOptions(campaignId, type, q));
+    }
+
+    @GetMapping("/api/v1/hazards/search")
+    public ResponseEntity<List<Map<String, Object>>> searchHazards(
+            @RequestParam(required = false) UUID campaignId,
+            @RequestParam(required = false, defaultValue = "") String q) {
+        String query = q == null ? "" : q.trim().toLowerCase();
+        List<Map<String, Object>> results = hazardService.findVisible(campaignId).stream()
+                .filter(h -> query.isEmpty() || h.getName().toLowerCase().contains(query))
+                .limit(25)
+                .map(h -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("id", h.getId());
+                    row.put("name", h.getName());
+                    row.put("kind", "HAZARD");
+                    row.put("severity", h.getSeverity() != null ? h.getSeverity().name() : null);
+                    row.put("source", h.getSource() != null ? h.getSource().name() : null);
+                    return row;
+                })
+                .toList();
+        return ResponseEntity.ok(results);
     }
 
     // ── Shared helpers ─────────────────────────────────────────────────────

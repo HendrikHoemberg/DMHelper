@@ -37,7 +37,7 @@ class EncounterApiControllerTest {
                 null, null, null,
                 false, false, false, List.of(),
                 null, false, 0, 0, 0, 0, null,
-                null, null, null, null);
+                null, null, null, null, null, null, null);
     }
 
     @Test
@@ -139,5 +139,30 @@ class EncounterApiControllerTest {
         mockMvc.perform(get("/api/v1/encounters/{id}/combatants", encId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    void shouldAddThreatCombatant() throws Exception {
+        UUID encId = UUID.randomUUID();
+        UUID threatId = UUID.randomUUID();
+        CombatantDto trapCombatant = new CombatantDto(
+                UUID.randomUUID(), encId, "Spike Trap", 15, 0,
+                0, 0, 0, "TRAP", null, false,
+                null, null, null,
+                false, false, false, List.of(),
+                null, false, 0, 0, 0, 0, null,
+                null, null, null, null,
+                dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.TRAP, threatId, null);
+        when(service.addThreatCombatant(eq(encId), any())).thenReturn(trapCombatant);
+
+        mockMvc.perform(post("/api/v1/encounters/{id}/combatants/from-threat", encId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"threatKind\":\"TRAP\",\"threatId\":\"" + threatId
+                                + "\",\"name\":null,\"initiative\":15,\"waveId\":null}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.kind").value("TRAP"))
+                .andExpect(jsonPath("$.threatKind").value("TRAP"))
+                .andExpect(jsonPath("$.name").value("Spike Trap"))
+                .andExpect(jsonPath("$.maxHp").value(0));
     }
 }

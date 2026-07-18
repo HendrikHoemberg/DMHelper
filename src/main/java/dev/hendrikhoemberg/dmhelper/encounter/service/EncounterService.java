@@ -7,6 +7,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.config.MarkdownUtil;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntry;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntryRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
@@ -34,6 +35,14 @@ import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveRepository;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus;
+import dev.hendrikhoemberg.dmhelper.threat.data.Hazard;
+import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
+import dev.hendrikhoemberg.dmhelper.threat.data.Trap;
+import dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository;
+import dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver;
+import dev.hendrikhoemberg.dmhelper.threat.web.ThreatCardView;
+import dev.hendrikhoemberg.dmhelper.threat.web.ThreatWebMapper;
 import dev.hendrikhoemberg.dmhelper.treasury.data.InventoryState;
 import dev.hendrikhoemberg.dmhelper.treasury.service.TreasuryService;
 import jakarta.persistence.EntityManager;
@@ -86,6 +95,10 @@ public class EncounterService {
     private final ObjectProvider<TreasuryService> treasuryService;
     private final ObjectProvider<CampaignPackageKeyService> packageKeyService;
     private final ObjectProvider<QuestObjectiveRepository> questObjectiveRepository;
+    private final ThreatReferenceResolver threatReferenceResolver;
+    private final TrapRepository trapRepository;
+    private final HazardRepository hazardRepository;
+    private final MarkdownUtil markdownUtil;
 
     public EncounterService(EncounterRepository encounterRepo, CampaignRepository campaignRepo,
                             EntityManager em, GameMapRepository mapRepo,
@@ -99,7 +112,11 @@ public class EncounterService {
                             ObjectProvider<LedgerService> ledgerService,
                             ObjectProvider<TreasuryService> treasuryService,
                             ObjectProvider<CampaignPackageKeyService> packageKeyService,
-                            ObjectProvider<QuestObjectiveRepository> questObjectiveRepository) {
+                            ObjectProvider<QuestObjectiveRepository> questObjectiveRepository,
+                            ThreatReferenceResolver threatReferenceResolver,
+                            TrapRepository trapRepository,
+                            HazardRepository hazardRepository,
+                            MarkdownUtil markdownUtil) {
         this.encounterRepo = encounterRepo;
         this.campaignRepo = campaignRepo;
         this.em = em;
@@ -118,6 +135,10 @@ public class EncounterService {
         this.treasuryService = treasuryService;
         this.packageKeyService = packageKeyService;
         this.questObjectiveRepository = questObjectiveRepository;
+        this.threatReferenceResolver = threatReferenceResolver;
+        this.trapRepository = trapRepository;
+        this.hazardRepository = hazardRepository;
+        this.markdownUtil = markdownUtil;
     }
 
     public record CreateRequest(String name, UUID mapId) {}
@@ -142,10 +163,15 @@ public class EncounterService {
                                int legendaryActionsUsed, int legendaryActionsMax,
                                int legendaryResistancesUsed, int legendaryResistancesMax,
                                String notes,
-                               UUID waveId, Integer startX, Integer startY, String placementRegionKey) {}
+                               UUID waveId, Integer startX, Integer startY, String placementRegionKey,
+                               ThreatKind threatKind, UUID threatId, ThreatCardView threatCard) {}
 
     public record CombatantCreateRequest(String name, int maxHp, String kind,
                                          UUID tokenId, UUID statBlockId, UUID partyMemberId) {}
+
+    public record ThreatCombatantRequest(
+            ThreatKind threatKind, UUID threatId, String name,
+            Integer initiative, UUID waveId) {}
 
     public record CombatantUpdateRequest(String name, Integer initiative, Integer sortOrder,
                                          Integer currentHp, Integer maxHp, Integer tempHp,
@@ -237,7 +263,7 @@ public class EncounterService {
                 List.of(), List.of());
     }
 
-    static CombatantDto toDto(Combatant c) {
+    CombatantDto toDto(Combatant c) {
         List<ConditionStateDto> conditions;
         try {
             conditions = JSON_MAPPER.readValue(c.getConditionsJson(),
@@ -261,7 +287,26 @@ public class EncounterService {
                 c.getLegendaryResistancesUsed(), c.getLegendaryResistancesMax(),
                 c.getNotes(),
                 c.getWave() != null ? c.getWave().getId() : null,
-                c.getStartX(), c.getStartY(), c.getPlacementRegionKey());
+                c.getStartX(), c.getStartY(), c.getPlacementRegionKey(),
+                c.getThreatKind(), c.getThreatId(), resolveThreatCard(c));
+    }
+
+    private ThreatCardView resolveThreatCard(Combatant c) {
+        if (c.getThreatKind() == null || c.getThreatId() == null) {
+            return null;
+        }
+        return switch (c.getThreatKind()) {
+            case TRAP -> trapRepository.findDetailedById(c.getThreatId())
+                    .map(t -> ThreatWebMapper.cardFromTrap(t, htmlDescription(t.getDescription())))
+                    .orElse(null);
+            case HAZARD -> hazardRepository.findDetailedById(c.getThreatId())
+                    .map(h -> ThreatWebMapper.cardFromHazard(h, htmlDescription(h.getDescription())))
+                    .orElse(null);
+        };
+    }
+
+    private String htmlDescription(String markdown) {
+        return markdown != null ? markdownUtil.toHtml(markdown) : "";
     }
 
     public EncounterDto create(UUID campaignId, CreateRequest req) {
@@ -584,6 +629,64 @@ public class EncounterService {
         }
     }
 
+    public CombatantDto addThreatCombatant(UUID encounterId, ThreatCombatantRequest req) {
+        if (req == null || req.threatKind() == null || req.threatId() == null) {
+            throw new IllegalArgumentException("threatKind and threatId are required");
+        }
+        Encounter e = findEntityById(encounterId);
+        UUID campaignId = e.getCampaign().getId();
+        Object resolved = threatReferenceResolver.requireVisible(
+                req.threatKind(), req.threatId(), campaignId);
+
+        String name = req.name();
+        if (name == null || name.isBlank()) {
+            name = switch (resolved) {
+                case Trap t -> t.getName();
+                case Hazard h -> h.getName();
+                default -> req.threatKind().name();
+            };
+        }
+
+        Combatant c = new Combatant();
+        c.setEncounter(e);
+        c.setName(name.trim());
+        c.setKind(req.threatKind().name());
+        c.setMaxHp(0);
+        c.setCurrentHp(0);
+        c.setTempHp(0);
+        c.setThreatKind(req.threatKind());
+        c.setThreatId(req.threatId());
+        if (req.initiative() != null) {
+            c.setInitiative(req.initiative());
+        }
+        if (req.waveId() != null) {
+            EncounterWave wave = waveRepo.findById(req.waveId())
+                    .orElseThrow(() -> new NotFoundException("Wave not found: " + req.waveId()));
+            if (!wave.getEncounter().getId().equals(encounterId)) {
+                throw new IllegalArgumentException("Wave does not belong to this encounter");
+            }
+            c.setWave(wave);
+        }
+        c.setSortOrder((int) combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).size());
+
+        Combatant saved = combatantRepo.save(c);
+        try {
+            String payload = JSON_MAPPER.writeValueAsString(Map.of(
+                    "name", saved.getName(),
+                    "initiative", saved.getInitiative(),
+                    "maxHp", saved.getMaxHp(),
+                    "kind", saved.getKind(),
+                    "threatKind", saved.getThreatKind().name(),
+                    "threatId", saved.getThreatId().toString()));
+            logEntry(encounterId, CombatLogEntry.EntryType.COMBATANT_ADDED,
+                    saved.getId().toString(), payload);
+        } catch (Exception ex) { /* ignore */ }
+        if (req.initiative() != null) {
+            resortCombatants(encounterId);
+        }
+        return toDto(saved);
+    }
+
     public CombatantDto addCombatant(UUID encounterId, CombatantCreateRequest req) {
         Encounter e = findEntityById(encounterId);
         Combatant c = new Combatant();
@@ -724,7 +827,13 @@ public class EncounterService {
         if (req.currentHp() != null) c.setCurrentHp(req.currentHp());
         if (req.maxHp() != null) c.setMaxHp(req.maxHp());
         if (req.tempHp() != null) c.setTempHp(req.tempHp());
-        if (req.kind() != null) c.setKind(req.kind());
+        if (req.kind() != null) {
+            if (c.getThreatKind() != null && !c.getThreatKind().name().equals(req.kind())) {
+                throw new IllegalArgumentException(
+                        "Cannot change kind of threat combatant; expected " + c.getThreatKind().name());
+            }
+            c.setKind(req.kind());
+        }
         if (req.groupId() != null) c.setGroupId(req.groupId());
         if (req.groupLeader() != null) c.setGroupLeader(req.groupLeader());
         if (req.defeated() != null) c.setDefeated(req.defeated());
@@ -820,7 +929,7 @@ public class EncounterService {
     public List<CombatantDto> getCombatants(UUID encounterId) {
         return combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).stream()
                 .filter(this::isOnActiveWave)
-                .map(EncounterService::toDto).toList();
+                .map(this::toDto).toList();
     }
 
     private boolean isOnActiveWave(Combatant c) {
