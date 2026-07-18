@@ -60,7 +60,7 @@ integration churn and keeps the release gate attributable.
 | # | Work package | Status | Depends on | Design scope | Implementation plan | Exit gate |
 |---|---|---|---|---|---|---|
 | 1 | P0 browser-smoke release-gate repair | `COMPLETE` | — | Master §§5–6, 21, 23 | [Completed plan](plans/2026-07-18-p0-browser-smoke-release-gate-repair.md) | Native party dialog regression and same-origin sheet setup fixed; `CoreSessionLoopSmokeTest` and full Maven suite green; master blocker note updated. |
-| 2 | Music-provider feasibility spike | `READY` | 1 | Atmosphere §7.1 and §7.6 | Create a dated `music-provider-feasibility` plan | Using current official provider documentation, commit `docs/architecture/music-provider-feasibility.md` identifying one viable provider, OAuth/token-storage approach, DM-device playback-control proof, capability limits, failure modes, and any account/subscription prerequisites. No readiness feature is marked complete by the spike. |
+| 2 | Music-provider feasibility spike | `READY` | 1 | Atmosphere §7.1 and §7.6 | [Ready plan](plans/2026-07-18-music-provider-feasibility.md) | Using current official Spotify and YouTube documentation, commit `docs/architecture/music-provider-feasibility.md` identifying one viable provider, OAuth/token-storage approach, DM-device playback-control proof, capability limits, failure modes, and any account/subscription prerequisites. No readiness feature is marked complete by the spike. |
 | 3 | Rollable tables and integrations | `BLOCKED` | 2 | Atmosphere delivery items 1–2 | Create a dated `p3-rollable-tables` plan | Table model/editor/validation, nested deterministic rolls, log integration, scene/location links, encounter/reward drafts, package round-trip, fixtures, and focused/full tests pass. |
 | 4 | Traps and hazards | `BLOCKED` | 3 | Atmosphere delivery items 3–4 | Create a dated `p3-traps-and-hazards` plan | Structured and prose-compatible traps/hazards, provenance, scene/tracker/map integrations, package round-trip, player-safety coverage, and focused/full tests pass. |
 | 5 | Travel core | `BLOCKED` | 4 | Travel delivery items 1–3 | Create a dated `p3-travel-core` plan | Settings, migrations, routes, legs, authoring/search/dependency rules, journey/watch state machine, persistence, package-key contracts, and focused/full tests pass. |
@@ -118,9 +118,9 @@ As of the P0 post-implementation audit on 2026-07-18:
 - world graph and faction clocks are implemented;
 - the remaining P3 designs are approved and committed;
 - the P0 browser-smoke plan is implemented, audited, and linked above;
-- no P3 table/trap/fog/music/travel implementation plan has yet been created;
+- the music-provider feasibility plan is written; no P3 table/trap/fog/full-music/travel implementation plan has yet been created;
 - the focused browser gate and complete Maven suite are green;
-- the next action is to write and execute the music-provider feasibility-spike plan for row 2.
+- the next action is to execute the linked music-provider feasibility-spike plan for row 2.
 
 When conversation context is missing or compacted, resume from the first non-`COMPLETE` row in this
 file and validate its status against the repository before acting.
