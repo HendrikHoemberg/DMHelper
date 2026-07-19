@@ -1,18 +1,30 @@
 package dev.hendrikhoemberg.dmhelper.audio.service;
 
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCategory;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioTransitionPreference;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class AudioCueValidatorTest {
 
-    private final AudioCueValidator validator = new AudioCueValidator();
+    private final AudioCueRepository repository = mock(AudioCueRepository.class);
+    private final AudioCueValidator validator = new AudioCueValidator(repository);
+
+    @BeforeEach
+    void setUp() {
+        when(repository.findByCampaignIdAndCueKey(any(), any())).thenReturn(Optional.empty());
+    }
 
     @Test
     void rejectsNullWrite() {

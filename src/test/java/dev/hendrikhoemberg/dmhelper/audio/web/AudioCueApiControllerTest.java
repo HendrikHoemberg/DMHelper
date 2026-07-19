@@ -9,6 +9,7 @@ import dev.hendrikhoemberg.dmhelper.audio.service.AudioCueDependency;
 import dev.hendrikhoemberg.dmhelper.audio.service.AudioCueService;
 import dev.hendrikhoemberg.dmhelper.audio.service.AudioCueValidationException;
 import dev.hendrikhoemberg.dmhelper.audio.service.AudioCueValidationProblem;
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -36,9 +37,17 @@ class AudioCueApiControllerTest {
 
     private final UUID campaignId = UUID.randomUUID();
 
+    private Campaign campaign(UUID id) {
+        Campaign c = new Campaign();
+        c.setId(id);
+        c.setName("Test Campaign");
+        return c;
+    }
+
     private AudioCue cue(UUID id, String name) {
         AudioCue c = new AudioCue();
         c.setId(id);
+        c.setCampaign(campaign(campaignId));
         c.setCueKey(name.toLowerCase().replace(' ', '-'));
         c.setName(name);
         c.setReferenceKind(AudioReferenceKind.VIDEO);
@@ -96,6 +105,21 @@ class AudioCueApiControllerTest {
         mockMvc.perform(get("/api/v1/campaigns/{campaignId}/audio/cues/{cueId}", campaignId, id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Detail Cue"));
+    }
+
+    @Test
+    void getReturns404WhenCueBelongsToDifferentCampaign() throws Exception {
+        UUID id = UUID.randomUUID();
+        AudioCue c = cue(id, "Detail Cue");
+        UUID otherCampaignId = UUID.randomUUID();
+        Campaign otherCampaign = new Campaign();
+        otherCampaign.setId(otherCampaignId);
+        otherCampaign.setName("Other Campaign");
+        c.setCampaign(otherCampaign);
+        when(service.findById(id)).thenReturn(c);
+
+        mockMvc.perform(get("/api/v1/campaigns/{campaignId}/audio/cues/{cueId}", campaignId, id))
+                .andExpect(status().isNotFound());
     }
 
     @Test

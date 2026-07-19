@@ -53,9 +53,12 @@ public class AudioCueApiController {
     }
 
     @GetMapping("/{cueId}")
-    public ResponseEntity<AudioCueResponse> get(@PathVariable UUID campaignId,
-                                                 @PathVariable UUID cueId) {
+    public ResponseEntity<?> get(@PathVariable UUID campaignId,
+                                  @PathVariable UUID cueId) {
         var cue = service.findById(cueId);
+        if (!cue.getCampaign().getId().equals(campaignId)) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.ok(AudioCueWebMapper.fromCue(cue));
     }
 

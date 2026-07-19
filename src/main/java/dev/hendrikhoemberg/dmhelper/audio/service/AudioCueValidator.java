@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.audio.service;
 
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCategory;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioReferenceKind;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioTransitionPreference;
 import dev.hendrikhoemberg.dmhelper.audio.provider.AudioProviderRegistry;
@@ -23,6 +24,12 @@ public class AudioCueValidator {
     static final int MAX_VOLUME = 100;
     static final int MIN_DURATION = 1;
 
+    private final AudioCueRepository audioCueRepository;
+
+    public AudioCueValidator(AudioCueRepository audioCueRepository) {
+        this.audioCueRepository = audioCueRepository;
+    }
+
     public void validate(AudioCueWrite write, UUID campaignIdOrNull) {
         List<AudioCueValidationProblem> problems = collectProblems(write, campaignIdOrNull);
         if (!problems.isEmpty()) {
@@ -41,11 +48,13 @@ public class AudioCueValidator {
         validateName(write.name(), problems);
         validateProviderId(write.providerId(), problems);
         validateReference(write.referenceKind(), write.providerReference(), problems);
+        validateReferenceParseable(write.providerId(), write.providerReference(), problems);
         validateCategory(write.category(), problems);
         validateTransitionPreference(write.transitionPreference(), problems);
         validateVolume(write.volumeHint(), problems);
         validateDuration(write.durationSeconds(), problems);
         validateMetadataLength(write.cachedTitle(), write.artistOrOwner(), write.artworkUrl(), write.notes(), problems);
+        validateDuplicateCueKey(write.cueKey(), campaignIdOrNull, write.id(), problems);
 
         return problems;
     }
@@ -82,6 +91,38 @@ public class AudioCueValidator {
         }
         if (providerReference == null || providerReference.isBlank()) {
             problems.add(problem("INVALID_REFERENCE", "/providerReference", "Provider reference is required"));
+        }
+    }
+
+    private void validateReferenceParseable(String providerId, String providerReference,
+                                            List<AudioCueValidationProblem> problems) {
+        if (providerReference == null || providerReference.isBlank()) {
+            return;
+        }
+        if (providerId == null || providerId.isBlank()) {
+            return;
+        }
+        try {
+            var adapter = AudioProviderRegistry.lookup(providerId);
+            adapter.parseReference(providerReference);
+        } catch (Exception e) {
+            problems.add(problem("INVALID_REFERENCE", "/providerReference",
+                    "Provider reference could not be parsed: " + e.getMessage()));
+        }
+    }
+
+    private void validateDuplicateCueKey(String cueKey, UUID campaignIdOrNull, UUID excludeCueId,
+                                         List<AudioCueValidationProblem> problems) {
+        if (cueKey == null || cueKey.isBlank()) {
+            return;
+        }
+        if (campaignIdOrNull == null) {
+            return;
+        }
+        var existing = audioCueRepository.findByCampaignIdAndCueKey(campaignIdOrNull, cueKey);
+        if (existing.isPresent() && !existing.get().getId().equals(excludeCueId)) {
+            problems.add(problem("DUPLICATE_CUE_KEY", "/cueKey",
+                    "Cue key '" + cueKey + "' already exists in this campaign"));
         }
     }
 

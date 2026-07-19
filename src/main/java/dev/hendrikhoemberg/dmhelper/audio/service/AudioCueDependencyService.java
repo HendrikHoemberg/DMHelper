@@ -34,29 +34,25 @@ public class AudioCueDependencyService {
         List<AudioCueDependency> deps = new ArrayList<>();
         UUID cueId = cue.getId();
 
-        var allStates = sessionAudioStateRepository.findAll();
-        for (var state : allStates) {
-            UUID sessionId = state.getSession().getId();
-            if (state.getManualOverrideCue() != null && cueId.equals(state.getManualOverrideCue().getId())) {
-                deps.add(new AudioCueDependency(DEP_KIND_SESSION_OVERRIDE, sessionId,
-                        "Session manual override", "/sessions/" + sessionId));
-            }
-            if (state.getAcceptedAutomaticCue() != null && cueId.equals(state.getAcceptedAutomaticCue().getId())) {
-                deps.add(new AudioCueDependency(DEP_KIND_SESSION_ACCEPTED, sessionId,
-                        "Session accepted cue", "/sessions/" + sessionId));
-            }
-            if (state.getPendingCue() != null && cueId.equals(state.getPendingCue().getId())) {
-                deps.add(new AudioCueDependency(DEP_KIND_SESSION_PENDING, sessionId,
-                        "Session pending cue", "/sessions/" + sessionId));
-            }
-            if (state.getDismissedCandidateCue() != null && cueId.equals(state.getDismissedCandidateCue().getId())) {
-                deps.add(new AudioCueDependency(DEP_KIND_SESSION_DISMISSED, sessionId,
-                        "Session dismissed cue", "/sessions/" + sessionId));
-            }
-            if (state.getTemporaryVictoryCue() != null && cueId.equals(state.getTemporaryVictoryCue().getId())) {
-                deps.add(new AudioCueDependency(DEP_KIND_SESSION_VICTORY, sessionId,
-                        "Session victory cue", "/sessions/" + sessionId));
-            }
+        for (var state : sessionAudioStateRepository.findByManualOverrideCueId(cueId)) {
+            deps.add(new AudioCueDependency(DEP_KIND_SESSION_OVERRIDE, state.getSession().getId(),
+                    "Session manual override", "/sessions/" + state.getSession().getId()));
+        }
+        for (var state : sessionAudioStateRepository.findByAcceptedAutomaticCueId(cueId)) {
+            deps.add(new AudioCueDependency(DEP_KIND_SESSION_ACCEPTED, state.getSession().getId(),
+                    "Session accepted cue", "/sessions/" + state.getSession().getId()));
+        }
+        for (var state : sessionAudioStateRepository.findByPendingCueId(cueId)) {
+            deps.add(new AudioCueDependency(DEP_KIND_SESSION_PENDING, state.getSession().getId(),
+                    "Session pending cue", "/sessions/" + state.getSession().getId()));
+        }
+        for (var state : sessionAudioStateRepository.findByDismissedCandidateCueId(cueId)) {
+            deps.add(new AudioCueDependency(DEP_KIND_SESSION_DISMISSED, state.getSession().getId(),
+                    "Session dismissed cue", "/sessions/" + state.getSession().getId()));
+        }
+        for (var state : sessionAudioStateRepository.findByTemporaryVictoryCueId(cueId)) {
+            deps.add(new AudioCueDependency(DEP_KIND_SESSION_VICTORY, state.getSession().getId(),
+                    "Session victory cue", "/sessions/" + state.getSession().getId()));
         }
 
         return new AudioCueDeletionImpact(cue.getId(), cue.getName(), List.copyOf(deps));
