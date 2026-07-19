@@ -47,6 +47,13 @@ public final class CampaignSemanticComparator {
             object.remove("catalogVersion");
             object.remove("catalogSha256");
         }
+        JsonNode campaign = root.get("campaign");
+        if (campaign instanceof ObjectNode cNode) {
+            JsonNode settings = cNode.get("settings");
+            if (settings instanceof ObjectNode sNode) {
+                sNode.remove("audioSwitchMode");
+            }
+        }
         replaceAssetReferences(root);
         sortIdentityCollections(root, null);
         return root;

@@ -57,7 +57,7 @@ class CampaignExportCoordinatorTest {
         @Override
         public void exportSection(CampaignExportContext context, CampaignManifestAssembler target) {
             target.campaign(new CampaignManifestV2.CampaignDto(
-                    "INVALID KEY", "Campaign", null, java.time.Instant.EPOCH, null, null));
+                    "INVALID KEY", "Campaign", null, java.time.Instant.EPOCH, null, null, null));
             target.party(List.of());
             target.customStatBlocks(List.of());
             target.customSpells(List.of());

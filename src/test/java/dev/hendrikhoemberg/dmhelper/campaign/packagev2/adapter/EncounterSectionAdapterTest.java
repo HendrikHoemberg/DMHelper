@@ -307,13 +307,13 @@ class EncounterSectionAdapterTest {
         var encounterDto = new EncounterDto(
                 "ambush", "Ambush", List.of(), "ACTIVE",
                 1, 0, 1, null, null, null, false, List.of(logDto),
-                null, null, null);
+                null, null, null, null, null, null);
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
                 null, null,
                 List.of(encounterDto),
-                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var encounter = invocation.getArgument(0, Encounter.class);
@@ -352,13 +352,13 @@ class EncounterSectionAdapterTest {
         var encounterDto = new EncounterDto(
                 "ambush", "Ambush", List.of(combatantDto), "PLANNED",
                 0, -1, 0, null, null, null, false, List.of(),
-                null, null, null);
+                null, null, null, null, null, null);
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
                 null, null,
                 List.of(encounterDto),
-                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var encounter = invocation.getArgument(0, Encounter.class);
@@ -426,7 +426,8 @@ class EncounterSectionAdapterTest {
         a.adventures(List.of());
         a.session(null);
         a.diceRolls(List.of());
-        a.campaign(new CampaignManifestV2.CampaignDto("key", "test", null, null, null, null));
+        a.campaign(new CampaignManifestV2.CampaignDto("key", "test", null, null, null, null, null));
+        a.audioCues(List.of());
         return a;
     }
 

@@ -202,7 +202,7 @@ class TreasurySectionAdapterTest {
                                 "armor", null, null,
                                 ContentReference.catalogRef(CampaignContentType.EQUIPMENT_ITEM, "SRD_5_2", "srd-2024_chain-mail"),
                                 null, 1, false, "CARRIED")),
-                null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         var context = new CampaignImportContext(
                 campaignId, new CampaignSectionAdapterTest.FakeKeyService(),
                 new PendingCampaignImport(UUID.randomUUID(), null, null, null));
@@ -224,7 +224,7 @@ class TreasurySectionAdapterTest {
     private CampaignManifestAssembler assembler() {
         var a = new CampaignManifestAssembler();
         a.assets(List.of());
-        a.campaign(new CampaignManifestV2.CampaignDto("key", "test", null, null, null, null));
+        a.campaign(new CampaignManifestV2.CampaignDto("key", "test", null, null, null, null, null));
         a.party(List.of());
         a.customStatBlocks(List.of());
         a.customSpells(List.of());

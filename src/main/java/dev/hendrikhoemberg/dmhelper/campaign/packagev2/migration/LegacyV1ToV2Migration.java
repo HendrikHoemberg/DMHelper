@@ -87,9 +87,9 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                 "DMHelper/0.0.1-SNAPSHOT", catalog.version(), catalog.sha256(), List.of());
         String campaignKey = key(keyResolver, CampaignContentType.CAMPAIGN, "/campaign", v1.campaign().name(), sourceHash);
         var defaultSettings = new CampaignManifestV2.CampaignSettingsDto(
-                CampaignManifestV2.LevelingMode.XP, null, null);
+                CampaignManifestV2.LevelingMode.XP, null, null, null);
         var campaign = new CampaignManifestV2.CampaignDto(campaignKey, v1.campaign().name(), v1.campaign().description(),
-                Instant.EPOCH, defaultSettings, null);
+                Instant.EPOCH, defaultSettings, null, null);
         warning(warnings, ImportProblemCodes.LEGACY_STATE_DEFAULTED, "/campaign/settings", "Campaign settings defaulted to XP leveling");
         warning(warnings, ImportProblemCodes.LEGACY_STATE_DEFAULTED, "/campaign/createdAt", "Campaign createdAt defaulted to epoch");
         warning(warnings, ImportProblemCodes.LEGACY_STATE_DEFAULTED, "/campaign/currentSceneRef", "Current scene ref defaulted to null");
@@ -266,7 +266,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
             encounters.add(new CampaignManifestV2.EncounterDto(encounterKeys.get(e.name()), e.name(), combatants, e.status(),
                     e.round(), e.activeTurnIndex(), e.logSequence(), e.lairActionName(), e.lairActionDescription(),
                     ref(CampaignContentType.MAP, mapKeys, e.map()), false, List.of(),
-                    null, null, null));
+                    null, null, null, null, null, null));
         }
 
         Map<String, String> noteKeys = new LinkedHashMap<>();
@@ -350,7 +350,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                             ref(CampaignContentType.ENCOUNTER, encounterKeys, s.encounter()),
                             list(s.statblocks()).stream().map(value -> ref(CampaignContentType.STATBLOCK, statKeys, value)).toList(),
                             list(s.handouts()).stream().map(value -> ref(CampaignContentType.HANDOUT, handoutKeys, value)).toList(),
-                            null, null, null, null, null, null, null, null, null));
+                            null, null, null, null, null, null, null, null, null, null));
                 }
                 chapters.add(new CampaignManifestV2.ChapterDto(
                         key(keyResolver, CampaignContentType.CHAPTER,
@@ -392,7 +392,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 handouts, maps,
                 encounters, notes, quickNotes, assignments, ledger, timeline, adventures, null, List.of(), List.of(), List.of(),
-                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         return new CampaignPackageValidationResult(source, manifest, 1, assetsByKey, warnings, List.of("MIGRATED_FROM_V1"));
     }
 

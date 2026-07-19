@@ -147,7 +147,7 @@ class LedgerSectionAdapterTest {
     private CampaignManifestAssembler assembler() {
         var a = new CampaignManifestAssembler();
         a.assets(List.of());
-        a.campaign(new CampaignManifestV2.CampaignDto("key", "test", null, null, null, null));
+        a.campaign(new CampaignManifestV2.CampaignDto("key", "test", null, null, null, null, null));
         a.party(List.of());
         a.customStatBlocks(List.of());
         a.customSpells(List.of());

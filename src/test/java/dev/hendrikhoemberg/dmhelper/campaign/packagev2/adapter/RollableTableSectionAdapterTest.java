@@ -74,7 +74,7 @@ class RollableTableSectionAdapterTest {
                 new CampaignSectionAdapterTest.FakeKeyService(),
                 new CampaignAssetCollector());
         var assembler = new CampaignManifestAssembler();
-        assembler.campaign(new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null));
+        assembler.campaign(new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null, null));
         assembler.assets(List.of());
         assembler.party(List.of());
         assembler.customStatBlocks(List.of());
@@ -142,13 +142,13 @@ class RollableTableSectionAdapterTest {
         var manifest = new CampaignManifestV2(
                 2,
                 new CampaignManifestV2.Metadata("pkg", null, "test", null, null, List.of()),
-                new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null),
+                new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null, null),
                 noAssets, noParty, noSb, noSpell, noCond, noRule, noEquip, noMagic,
                 noClass, noSpecies, noBg, noFeat, noHand, noMap, noEnc, noNote, noQn,
                 noAssign, noLedger, noTimeline, noAdv, null, noDice, noQ, noAnn,
                 noNpcs, noLocations, noFactions, noRelationships, noClocks,
                 List.of(new RollableTableDto("table-key", null, "Test Table", null,
-                        "RANGE", "1d6", "GENERIC", null, List.of(), null, null)), List.of(), List.of());
+                        "RANGE", "1d6", "GENERIC", null, List.of(), null, null)), List.of(), List.of(), List.of());
 
         when(tableRepo.save(any())).thenAnswer(inv -> {
             var t = (RollableTable) inv.getArgument(0);
@@ -203,12 +203,12 @@ class RollableTableSectionAdapterTest {
         var manifest = new CampaignManifestV2(
                 2,
                 new CampaignManifestV2.Metadata("pkg", null, "test", null, null, List.of()),
-                new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null),
+                new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null, null),
                 noAssets, noParty, noSb, noSpell, noCond, noRule, noEquip, noMagic,
                 noClass, noSpecies, noBg, noFeat, noHand, noMap, noEnc, noNote, noQn,
                 noAssign, noLedger, noTimeline, noAdv, null, noDice, noQ, noAnn,
                 noNpcs, noLocations, noFactions, noRelationships, noClocks,
-                null, List.of(), List.of());
+                null, List.of(), List.of(), List.of());
 
         var context = new CampaignImportContext(UUID.randomUUID(),
                 new CampaignSectionAdapterTest.FakeKeyService(),
@@ -251,11 +251,11 @@ class RollableTableSectionAdapterTest {
     private CampaignManifestV2 manifestWithTables(List<RollableTableDto> tables) {
         return new CampaignManifestV2(
                 2, new CampaignManifestV2.Metadata("pkg", null, "test", null, null, List.of()),
-                new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null),
+                new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null, null),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                List.of(), tables, List.of(), List.of());
+                List.of(), tables, List.of(), List.of(), List.of());
     }
 }

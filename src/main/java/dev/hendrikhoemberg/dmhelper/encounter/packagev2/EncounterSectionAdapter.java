@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.encounter.packagev2;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.CombatLogEntryDto;
@@ -107,6 +108,15 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                 .map(w -> exportWave(w, context))
                 .toList();
 
+        ContentReference combatCueRef = encounter.getCombatAudioCue() != null
+                ? context.packageRef(CampaignContentType.AUDIO_CUE,
+                        encounter.getCombatAudioCue().getId(), encounter.getCombatAudioCue().getName())
+                : null;
+        ContentReference victoryCueRef = encounter.getVictoryAudioCue() != null
+                ? context.packageRef(CampaignContentType.AUDIO_CUE,
+                        encounter.getVictoryAudioCue().getId(), encounter.getVictoryAudioCue().getName())
+                : null;
+
         CampaignManifestV2.EncounterPrep prep = parsePrep(encounter);
         CampaignManifestV2.EncounterRewards rewards = parseRewards(encounter);
 
@@ -116,7 +126,8 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                 encounter.getActiveTurnIndex(), encounter.getLogSequence(),
                 encounter.getLairActionName(), encounter.getLairActionDescription(),
                 mapRef, encounter.isLairActionTriggered(), combatLogDtos,
-                prep, rewards, waveDtos
+                prep, rewards, waveDtos,
+                combatCueRef, victoryCueRef, encounter.getVictoryCueDurationSeconds()
         );
     }
 
@@ -248,6 +259,9 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
             encounter.setLairActionName(dto.lairActionName());
                 encounter.setLairActionDescription(dto.lairActionDescription());
             encounter.setLairActionTriggered(dto.lairActionTriggered());
+            if (dto.victoryCueDurationSeconds() != null) {
+                encounter.setVictoryCueDurationSeconds(dto.victoryCueDurationSeconds());
+            }
             if (dto.prep() != null) {
                 try {
                     encounter.setPrepJson(MAPPER.writeValueAsString(dto.prep()));
@@ -263,6 +277,18 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                     var map = context.require(dto.mapRef(), CampaignContentType.MAP,
                             dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap.class);
                     encounter.setMap(map);
+                });
+            }
+            if (dto.combatCueRef() != null) {
+                context.defer("encounter-combat-cue:" + dto.key(), () -> {
+                    AudioCue cue = context.require(dto.combatCueRef(), CampaignContentType.AUDIO_CUE, AudioCue.class);
+                    encounter.setCombatAudioCue(cue);
+                });
+            }
+            if (dto.victoryCueRef() != null) {
+                context.defer("encounter-victory-cue:" + dto.key(), () -> {
+                    AudioCue cue = context.require(dto.victoryCueRef(), CampaignContentType.AUDIO_CUE, AudioCue.class);
+                    encounter.setVictoryAudioCue(cue);
                 });
             }
             encounterRepository.save(encounter);

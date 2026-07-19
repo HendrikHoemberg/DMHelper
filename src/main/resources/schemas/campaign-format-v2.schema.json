@@ -42,7 +42,8 @@
     "factionClocks": { "type": "array", "items": { "$ref": "#/$defs/factionClock" } },
     "rollableTables": { "type": "array", "items": { "$ref": "#/$defs/rollableTable" } },
     "traps": { "type": "array", "items": { "$ref": "#/$defs/trap" } },
-    "hazards": { "type": "array", "items": { "$ref": "#/$defs/hazard" } }
+    "hazards": { "type": "array", "items": { "$ref": "#/$defs/hazard" } },
+    "audioCues": { "type": "array", "items": { "$ref": "#/$defs/audioCue" } }
   },
   "$defs": {
     "key": {
@@ -91,7 +92,8 @@
         "CLASS", "SPECIES", "BACKGROUND", "FEAT",
         "DICE_ROLL",
         "TRANSITION", "QUEST", "OBJECTIVE", "SOURCE_ANNOTATION", "SESSION_OBJECTIVE_CHANGE",
-        "WORLD_NPC", "WORLD_LOCATION", "FACTION", "WORLD_RELATIONSHIP", "FACTION_CLOCK"
+        "WORLD_NPC", "WORLD_LOCATION", "FACTION", "WORLD_RELATIONSHIP", "FACTION_CLOCK",
+        "AUDIO_CUE"
       ]
     },
     "metadata": {
@@ -121,7 +123,8 @@
         "description": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "settings": { "$ref": "#/$defs/campaignSettings" },
-        "currentSceneRef": { "$ref": "#/$defs/contentReference" }
+        "currentSceneRef": { "$ref": "#/$defs/contentReference" },
+        "defaultCueRef": { "$ref": "#/$defs/contentReference" }
       }
     },
     "campaignSettings": {
@@ -131,7 +134,8 @@
       "properties": {
         "levelingMode": { "type": "string", "enum": ["XP", "MILESTONE"] },
         "calendar": { "$ref": "#/$defs/calendarConfig" },
-        "currentDate": { "$ref": "#/$defs/inGameDate" }
+        "currentDate": { "$ref": "#/$defs/inGameDate" },
+        "audioSwitchMode": { "type": "string", "enum": ["AUTOMATIC", "CONFIRM"] }
       }
     },
     "calendarConfig": {
@@ -635,7 +639,10 @@
         "combatLog": { "type": "array", "items": { "$ref": "#/$defs/combatLogEntry" } },
         "prep": { "$ref": "#/$defs/encounterPrep" },
         "rewards": { "$ref": "#/$defs/encounterRewards" },
-        "waves": { "type": "array", "items": { "$ref": "#/$defs/encounterWave" } }
+        "waves": { "type": "array", "items": { "$ref": "#/$defs/encounterWave" } },
+        "combatCueRef": { "$ref": "#/$defs/contentReference" },
+        "victoryCueRef": { "$ref": "#/$defs/contentReference" },
+        "victoryCueDurationSeconds": { "type": "integer", "minimum": 0 }
       }
     },
     "encounterPrep": {
@@ -865,7 +872,8 @@
         "checks": { "type": "array", "items": { "$ref": "#/$defs/sceneCheck" } },
         "participants": { "type": "array", "items": { "$ref": "#/$defs/sceneParticipant" } },
         "transitions": { "type": "array", "items": { "$ref": "#/$defs/sceneTransition" } },
-        "links": { "type": "array", "items": { "$ref": "#/$defs/sceneLink" } }
+        "links": { "type": "array", "items": { "$ref": "#/$defs/sceneLink" } },
+        "sceneCueRef": { "$ref": "#/$defs/contentReference" }
       }
     },
     "combatLogEntry": {
@@ -1132,7 +1140,8 @@
         "tags": { "type": "array", "items": { "type": "string" } },
         "sourceLocator": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
-        "tableLinks": { "type": "array", "items": { "$ref": "#/$defs/worldLocationTableLink" } }
+        "tableLinks": { "type": "array", "items": { "$ref": "#/$defs/worldLocationTableLink" } },
+        "locationCueRef": { "$ref": "#/$defs/contentReference" }
       }
     },
     "faction": {
@@ -1386,6 +1395,26 @@
         "salvageItemRefs": { "type": "array", "items": { "$ref": "#/$defs/contentReference" } },
         "createdAt": { "type": "string", "format": "date-time" },
         "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "audioCue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "name", "referenceKind", "providerReference", "category", "transitionPreference"],
+      "properties": {
+        "key": { "$ref": "#/$defs/key" },
+        "name": { "type": "string", "minLength": 1 },
+        "providerId": { "type": "string" },
+        "referenceKind": { "type": "string", "enum": ["VIDEO", "PLAYLIST"] },
+        "providerReference": { "type": "string", "minLength": 1 },
+        "cachedTitle": { "type": "string" },
+        "artistOrOwner": { "type": "string" },
+        "artworkUrl": { "type": "string" },
+        "durationSeconds": { "type": "integer", "minimum": 0 },
+        "category": { "type": "string", "enum": ["AMBIENT", "EXPLORATION", "TENSION", "COMBAT", "TRIUMPH", "SORROW", "CUSTOM"] },
+        "volumeHint": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "transitionPreference": { "type": "string", "enum": ["CROSSFADE", "CUT"] },
+        "notes": { "type": "string" }
       }
     }
   }

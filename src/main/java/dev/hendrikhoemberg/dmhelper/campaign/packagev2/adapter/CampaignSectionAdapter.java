@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.CalendarConfigDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.CampaignDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.CampaignSettingsDto;
@@ -58,9 +59,15 @@ public class CampaignSectionAdapter implements CampaignSectionExporter, Campaign
                     campaign.getCurrentSceneId(), "current-scene");
         }
 
+        ContentReference defaultCueRef = null;
+        if (campaign.getDefaultAudioCue() != null) {
+            defaultCueRef = context.packageRef(CampaignContentType.AUDIO_CUE,
+                    campaign.getDefaultAudioCue().getId(), campaign.getDefaultAudioCue().getName());
+        }
+
         CampaignDto campaignDto = new CampaignDto(
                 key, campaign.getName(), campaign.getDescription(),
-                campaign.getCreatedAt(), settingsDto, currentSceneRef
+                campaign.getCreatedAt(), settingsDto, currentSceneRef, defaultCueRef
         );
         target.campaign(campaignDto);
     }
@@ -88,6 +95,13 @@ public class CampaignSectionAdapter implements CampaignSectionExporter, Campaign
                 captured.setCurrentSceneId(scene.getId());
             });
         }
+        if (campaignDto.defaultCueRef() != null) {
+            Campaign captured = campaign;
+            context.defer("defaultAudioCue", () -> {
+                var cue = context.require(campaignDto.defaultCueRef(), CampaignContentType.AUDIO_CUE, AudioCue.class);
+                captured.setDefaultAudioCue(cue);
+            });
+        }
     }
 
     private static Campaign resolveCampaign(CampaignImportContext context) {
@@ -113,12 +127,16 @@ public class CampaignSectionAdapter implements CampaignSectionExporter, Campaign
                         settings.currentDate().year(),
                         settings.currentDate().month(),
                         settings.currentDate().day()
-                )
+                ),
+                settings.audioSwitchMode() != null ? settings.audioSwitchMode().name() : null
         );
     }
 
     static CampaignSettings fromSettingsDto(CampaignSettingsDto dto) {
         CampaignSettings defaults = CampaignSettings.defaults();
+        var audioSwitchMode = dto.audioSwitchMode() != null
+                ? dev.hendrikhoemberg.dmhelper.audio.data.AudioSwitchMode.valueOf(dto.audioSwitchMode())
+                : defaults.audioSwitchMode();
         return new CampaignSettings(
                 dto.levelingMode() != null ? dto.levelingMode() : defaults.levelingMode(),
                 dto.calendar() != null
@@ -130,7 +148,7 @@ public class CampaignSectionAdapter implements CampaignSectionExporter, Campaign
                 dto.currentDate() != null
                         ? new InGameDate(dto.currentDate().year(), dto.currentDate().month(), dto.currentDate().day())
                         : defaults.currentDate(),
-                defaults.audioSwitchMode()
+                audioSwitchMode
         );
     }
 }

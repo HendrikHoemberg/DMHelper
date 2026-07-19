@@ -108,7 +108,7 @@ class DiceSectionAdapterTest {
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null,
-                null, null, null, null, null, List.of(dto), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, List.of(dto), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         var keys = new CampaignSectionAdapterTest.FakeKeyService();
         var context = new CampaignImportContext(
                 campaignId, keys, new PendingCampaignImport(UUID.randomUUID(), null, null, null));
@@ -130,7 +130,7 @@ class DiceSectionAdapterTest {
     private CampaignManifestAssembler assembler() {
         var a = new CampaignManifestAssembler();
         a.assets(List.of());
-        a.campaign(new CampaignManifestV2.CampaignDto("key", "test", null, null, null, null));
+        a.campaign(new CampaignManifestV2.CampaignDto("key", "test", null, null, null, null, null));
         a.party(List.of());
         a.customStatBlocks(List.of());
         a.customSpells(List.of());

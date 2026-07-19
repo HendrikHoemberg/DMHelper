@@ -31,6 +31,7 @@ import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignConten
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.ROLLABLE_TABLE;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.TRAP;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.HAZARD;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.AUDIO_CUE;
 
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableCategory;
@@ -330,7 +331,10 @@ public class CampaignManifestV2SemanticValidator {
             add(keys, TRAP, m.traps().get(i).key(), "/traps/" + i + "/key", problems);
         for (int i = 0; i < size(m.hazards()); i++)
             add(keys, HAZARD, m.hazards().get(i).key(), "/hazards/" + i + "/key", problems);
+        for (int i = 0; i < size(m.audioCues()); i++)
+            add(keys, AUDIO_CUE, m.audioCues().get(i).key(), "/audioCues/" + i + "/key", problems);
 
+        validateAudioCues(m, problems);
         validateReferences(m, keys, problems);
         validateSpatialAndState(m, problems);
         validateAssets(m, problems);
@@ -706,6 +710,36 @@ public class CampaignManifestV2SemanticValidator {
         }
     }
 
+    private void validateAudioCues(CampaignManifestV2 m, List<CampaignImportProblem> problems) {
+        Set<String> cueKeys = new HashSet<>();
+        for (int i = 0; i < size(m.audioCues()); i++) {
+            var cue = m.audioCues().get(i);
+            if (!cueKeys.add(cue.key())) {
+                warning(problems, "DUPLICATE_AUDIO_CUE_KEY", "/audioCues/" + i + "/key",
+                        "Duplicate audio cue key within the package: " + cue.key());
+            }
+            if (cue.providerReference() != null && !cue.providerReference().isBlank()) {
+                String norm = cue.providerReference().strip().toLowerCase();
+                for (int j = 0; j < i; j++) {
+                    var other = m.audioCues().get(j);
+                    if (other.providerReference() != null && !other.providerReference().isBlank()
+                            && other.providerReference().strip().toLowerCase().equals(norm)) {
+                        warning(problems, "DUPLICATE_NORMALIZED_PROVIDER_REF", "/audioCues/" + i + "/providerReference",
+                                "Duplicate normalized provider reference");
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < size(m.encounters()); i++) {
+            var enc = m.encounters().get(i);
+            if (enc.victoryCueDurationSeconds() != null && enc.victoryCueRef() == null) {
+                warning(problems, "VICTORY_DURATION_WITHOUT_CUE",
+                        "/encounters/" + i + "/victoryCueDurationSeconds",
+                        "Victory cue duration set but no victory cue reference");
+            }
+        }
+    }
+
     private void validateReferences(CampaignManifestV2 m, Map<CampaignContentType, Set<String>> keys,
                                     List<CampaignImportProblem> problems) {
         if (m.session() != null) {
@@ -844,6 +878,31 @@ public class CampaignManifestV2SemanticValidator {
             check(dto.factionRef(), "/factionClocks/" + i + "/factionRef", keys, problems);
             check(dto.objectiveRef(), "/factionClocks/" + i + "/objectiveRef", keys, problems);
             check(dto.sceneRef(), "/factionClocks/" + i + "/sceneRef", keys, problems);
+        }
+
+        // Audio cue reference cross-checks
+        var campaignDto = m.campaign();
+        if (campaignDto != null) {
+            check(campaignDto.defaultCueRef(), "/campaign/defaultCueRef", keys, problems);
+        }
+        for (int ai = 0; ai < size(m.adventures()); ai++) {
+            for (int ci = 0; ci < size(m.adventures().get(ai).chapters()); ci++) {
+                for (int si = 0; si < size(m.adventures().get(ai).chapters().get(ci).scenes()); si++) {
+                    var scene = m.adventures().get(ai).chapters().get(ci).scenes().get(si);
+                    check(scene.sceneCueRef(),
+                            "/adventures/" + ai + "/chapters/" + ci + "/scenes/" + si + "/sceneCueRef",
+                            keys, problems);
+                }
+            }
+        }
+        for (int i = 0; i < size(m.encounters()); i++) {
+            var enc = m.encounters().get(i);
+            check(enc.combatCueRef(), "/encounters/" + i + "/combatCueRef", keys, problems);
+            check(enc.victoryCueRef(), "/encounters/" + i + "/victoryCueRef", keys, problems);
+        }
+        for (int i = 0; i < size(m.worldLocations()); i++) {
+            check(m.worldLocations().get(i).locationCueRef(),
+                    "/worldLocations/" + i + "/locationCueRef", keys, problems);
         }
     }
 

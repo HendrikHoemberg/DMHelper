@@ -1429,7 +1429,7 @@ class CoreSessionLoopSmokeTest {
                                                         || link.targetRef().type() == null
                                                         || !"ROLLABLE_TABLE".equals(link.targetRef().type().name()))
                                                 .toList()
-                                )).toList()
+                                , null)).toList()
                         )).toList(),
                         adv.createdAt()))
                 .toList();
@@ -1451,7 +1451,7 @@ class CoreSessionLoopSmokeTest {
                 source.quests(), source.annotations(), source.worldNpcs(), source.worldLocations(),
                 source.factions(), source.worldRelationships(), source.factionClocks(),
                 List.of(), // rollableTables
-                source.traps(), source.hazards());
+                source.traps(), source.hazards(), List.of());
     }
 
     private UUID createTrapThroughEditorApi(String sourceKey, String name,

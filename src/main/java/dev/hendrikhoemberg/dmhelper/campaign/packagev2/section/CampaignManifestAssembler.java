@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.AssetDescriptor;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.AdventureDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.AssignmentDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.AudioCueDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.CampaignDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.DiceRollDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.EncounterDto;
@@ -55,6 +56,7 @@ public class CampaignManifestAssembler {
     private List<CampaignManifestV2.RollableTableDto> rollableTables;
     private List<CampaignManifestV2.TrapDto> traps;
     private List<CampaignManifestV2.HazardDto> hazards;
+    private List<AudioCueDto> audioCues;
     private java.util.Set<java.util.UUID> closureStatblockIds;
     private java.util.Set<java.util.UUID> closureMagicItemIds;
     private java.util.Set<java.util.UUID> closureEquipmentIds;
@@ -232,6 +234,11 @@ public class CampaignManifestAssembler {
         this.hazards = value == null ? List.of() : List.copyOf(value);
     }
 
+    public void audioCues(List<AudioCueDto> value) {
+        checkNotAlreadySet("audioCues", audioCues);
+        this.audioCues = value == null ? List.of() : List.copyOf(value);
+    }
+
     public java.util.Set<java.util.UUID> closureStatblockIds() { return closureStatblockIds; }
     public java.util.Set<java.util.UUID> closureMagicItemIds() { return closureMagicItemIds; }
     public java.util.Set<java.util.UUID> closureEquipmentIds() { return closureEquipmentIds; }
@@ -290,6 +297,7 @@ public class CampaignManifestAssembler {
         checkRequired("timelineEvents", timelineEvents);
         checkRequired("adventures", adventures);
         checkRequired("diceRolls", diceRolls);
+        checkRequired("audioCues", audioCues);
         built = true;
         return new CampaignManifestV2(
                 CampaignManifestV2.CURRENT_FORMAT_VERSION,
@@ -327,7 +335,8 @@ public class CampaignManifestAssembler {
                 factionClocks == null ? List.of() : factionClocks,
                 rollableTables == null ? List.of() : rollableTables,
                 traps == null ? List.of() : traps,
-                hazards == null ? List.of() : hazards
+                hazards == null ? List.of() : hazards,
+                audioCues == null ? List.of() : audioCues
         );
     }
 

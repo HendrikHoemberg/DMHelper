@@ -68,7 +68,7 @@ class CampaignPackageWriterTest {
                     base.customBackgrounds(), base.customFeats(),
                     base.handouts(), base.maps(), base.encounters(),
                     base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(), base.timelineEvents(),
-                    base.adventures(), base.session(), base.diceRolls(), base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                    base.adventures(), base.session(), base.diceRolls(), base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         }
     }
 }

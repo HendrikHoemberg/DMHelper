@@ -332,7 +332,7 @@ class WorldSectionAdapterTest {
     void importsLocationAndBindsKey() {
         var locationDto = new CampaignManifestV2.WorldLocationDto(
                 "loc-key", "Test Location", "SITE", null, null, null, null,
-                "Summary", "Services", "Secrets", null, null, null, null, null, null, null);
+                "Summary", "Services", "Secrets", null, null, null, null, null, null, null, null);
 
         when(locationRepo.save(any())).thenAnswer(inv -> {
             WorldLocation l = inv.getArgument(0);
@@ -449,7 +449,7 @@ class WorldSectionAdapterTest {
     }
 
     private void fillRest(CampaignManifestAssembler a) {
-        a.campaign(new CampaignManifestV2.CampaignDto("campaign-key", "test", null, null, null, null));
+        a.campaign(new CampaignManifestV2.CampaignDto("campaign-key", "test", null, null, null, null, null));
         a.party(List.of());
         a.customStatBlocks(List.of());
         a.customSpells(List.of());
@@ -472,6 +472,7 @@ class WorldSectionAdapterTest {
         a.adventures(List.of());
         a.session(null);
         a.diceRolls(List.of());
+        a.audioCues(List.of());
     }
 
     private CampaignManifestV2 buildManifest(CampaignManifestAssembler a) {
@@ -520,6 +521,6 @@ class WorldSectionAdapterTest {
                 noSb, noSpell, noCond, noRule, noEquip, noMagic, noClass, noSpecies, noBg, noFeat,
                 noHand, noMap, noEnc, noNote, noQn, noAssign, noLedger, noTimeline,
                 noAdv, null, noDice, noQ, noAnn,
-                npcs, locations, factions, relationships, clocks, List.of(), List.of(), List.of());
+                npcs, locations, factions, relationships, clocks, List.of(), List.of(), List.of(), List.of());
     }
 }

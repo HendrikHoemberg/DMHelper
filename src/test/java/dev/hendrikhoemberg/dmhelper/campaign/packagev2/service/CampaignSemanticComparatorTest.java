@@ -21,13 +21,13 @@ class CampaignSemanticComparatorTest {
                 base.formatVersion(), base.metadata(),
                 new CampaignManifestV2.CampaignDto(
                         base.campaign().key(), "Changed", base.campaign().description(),
-                        base.campaign().createdAt(), base.campaign().settings(), base.campaign().currentSceneRef()),
+                        base.campaign().createdAt(), base.campaign().settings(), base.campaign().currentSceneRef(), null),
                 base.assets(), base.party(), base.customStatBlocks(), base.customSpells(), base.customConditions(), base.customRules(),
                 base.customEquipment(), base.customMagicItems(), base.customClasses(), base.customSpecies(),
                 base.customBackgrounds(), base.customFeats(),
                 base.handouts(), base.maps(),
                 base.encounters(), base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(),
-                base.timelineEvents(), base.adventures(), base.session(), base.diceRolls(), base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                base.timelineEvents(), base.adventures(), base.session(), base.diceRolls(), base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         assertThatThrownBy(() -> CampaignSemanticComparator.assertEquivalent(
                 CampaignSemanticSnapshot.from(base), CampaignSemanticSnapshot.from(changed)))
@@ -49,7 +49,7 @@ class CampaignSemanticComparatorTest {
                 base.customBackgrounds(), base.customFeats(),
                 base.handouts(), base.maps(), base.encounters(), base.notes(),
                 base.quickNotes(), base.assignments(), base.ledgerEntries(), base.timelineEvents(),
-                base.adventures(), base.session(), base.diceRolls(), base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                base.adventures(), base.session(), base.diceRolls(), base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         assertThatCode(() -> CampaignSemanticComparator.assertEquivalent(
                 CampaignSemanticSnapshot.from(base), CampaignSemanticSnapshot.from(changed)))
@@ -99,7 +99,7 @@ class CampaignSemanticComparatorTest {
         var scene = new CampaignManifestV2.SceneDto(
                 "scene", "Scene", null, "UNVISITED", 0,
                 null, null, null, java.util.List.of(), refs,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null);
         var chapter = new CampaignManifestV2.ChapterDto(
                 "chapter", "Chapter", null, 0, java.util.List.of(scene));
         var adventure = new CampaignManifestV2.AdventureDto(
@@ -112,7 +112,7 @@ class CampaignSemanticComparatorTest {
                 base.customBackgrounds(), base.customFeats(),
                 base.handouts(), base.maps(), base.encounters(), base.notes(),
                 base.quickNotes(), base.assignments(), base.ledgerEntries(), base.timelineEvents(),
-                java.util.List.of(adventure), base.session(), base.diceRolls(), base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                java.util.List.of(adventure), base.session(), base.diceRolls(), base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
     }
 
     private CampaignManifestV2 withLedgerAmount(CampaignManifestV2 base, java.math.BigDecimal amount) {
@@ -126,7 +126,7 @@ class CampaignSemanticComparatorTest {
                 base.customBackgrounds(), base.customFeats(),
                 base.handouts(), base.maps(), base.encounters(), base.notes(),
                 base.quickNotes(), base.assignments(), java.util.List.of(entry), base.timelineEvents(),
-                base.adventures(), base.session(), base.diceRolls(), base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                base.adventures(), base.session(), base.diceRolls(), base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
     }
 
     private CampaignManifestV2 minimal() throws Exception {

@@ -12,6 +12,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneSection;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneStatus;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransition;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.AdventureDto;
@@ -170,6 +171,10 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                                                             toContentRef(l, context),
                                                             l.getDisplayText(), l.getCondition(), l.getSortOrder()))
                                                     .toList();
+                                            ContentReference sceneCueRef = sc.getSceneAudioCue() != null
+                                                    ? context.packageRef(CampaignContentType.AUDIO_CUE,
+                                                            sc.getSceneAudioCue().getId(), sc.getSceneAudioCue().getName())
+                                                    : null;
                                             return new SceneDto(
                                                     scKey, sc.getTitle(), sc.getBody(),
                                                     sc.getStatus().name(), sc.getSortOrder(),
@@ -178,7 +183,8 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                                                     sc.getSummary(), sc.getSourceLocator(), tags,
                                                     sc.getMapRegionKey(),
                                                     sectionDtos, checkDtos, participantDtos,
-                                                    transitionDtos, linkDtos
+                                                    transitionDtos, linkDtos,
+                                                    sceneCueRef
                                             );
                                         }).toList();
                                 return new ChapterDto(chKey, ch.getTitle(), ch.getIntro(), ch.getSortOrder(), sceneDtos);
@@ -364,6 +370,13 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                     }
                     sceneRepo.save(sc);
                     context.register(CampaignContentType.SCENE, scDto.key(), sc, sc.getId());
+
+                    if (scDto.sceneCueRef() != null) {
+                        context.defer("scene-audio-cue:" + scDto.key(), () -> {
+                            AudioCue cue = context.require(scDto.sceneCueRef(), CampaignContentType.AUDIO_CUE, AudioCue.class);
+                            sc.setSceneAudioCue(cue);
+                        });
+                    }
 
                     context.defer("scene-relations:" + scDto.key(), () -> {
                         Scene scene = context.require(

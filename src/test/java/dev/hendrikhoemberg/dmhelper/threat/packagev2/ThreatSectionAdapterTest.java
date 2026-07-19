@@ -135,7 +135,7 @@ class ThreatSectionAdapterTest {
 
     private static CampaignManifestAssembler primedAssembler() {
         var assembler = new CampaignManifestAssembler();
-        assembler.campaign(new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null));
+        assembler.campaign(new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null, null));
         assembler.assets(List.of());
         assembler.party(List.of());
         assembler.customStatBlocks(List.of());
@@ -165,12 +165,12 @@ class ThreatSectionAdapterTest {
         return new CampaignManifestV2(
                 2,
                 new CampaignManifestV2.Metadata("pkg", null, "test", null, null, List.of()),
-                new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null),
+                new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null, null),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(), List.of(), null, List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                traps, List.of());
+                traps, List.of(), List.of());
     }
 
     private static dev.hendrikhoemberg.dmhelper.library.data.SpellRepository mockSpell() {

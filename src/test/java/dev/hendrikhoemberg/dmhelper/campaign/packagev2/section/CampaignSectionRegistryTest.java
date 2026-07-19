@@ -125,7 +125,7 @@ class CampaignSectionRegistryTest {
         void buildsManifestWithAllSections() {
             var assembler = new CampaignManifestAssembler();
             var campaign = new CampaignManifestV2.CampaignDto(
-                    "test-key", "Test", "desc", null, null, null);
+                    "test-key", "Test", "desc", null, null, null, null);
             assembler.campaign(campaign);
             assembler.assets(List.of());
             assembler.party(List.of());
@@ -149,6 +149,7 @@ class CampaignSectionRegistryTest {
             assembler.timelineEvents(List.of());
             assembler.adventures(List.of());
             assembler.diceRolls(List.of());
+            assembler.audioCues(List.of());
 
             var metadata = new CampaignManifestV2.Metadata(
                     "pkg-key", null, "test", null, null, List.of());
@@ -172,7 +173,7 @@ class CampaignSectionRegistryTest {
         void rejectsMissingSectionOnBuild() {
             var assembler = new CampaignManifestAssembler();
             var campaign = new CampaignManifestV2.CampaignDto(
-                    "test-key", "Test", "desc", null, null, null);
+                    "test-key", "Test", "desc", null, null, null, null);
             assembler.campaign(campaign);
             assembler.assets(List.of());
             assembler.party(List.of());
@@ -195,6 +196,7 @@ class CampaignSectionRegistryTest {
             assembler.ledgerEntries(List.of());
             assembler.timelineEvents(List.of());
             assembler.adventures(List.of());
+            assembler.audioCues(List.of());
             // diceRolls omitted
 
             var metadata = new CampaignManifestV2.Metadata(

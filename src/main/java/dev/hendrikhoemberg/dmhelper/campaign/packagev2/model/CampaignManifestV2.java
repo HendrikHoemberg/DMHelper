@@ -51,7 +51,8 @@ public record CampaignManifestV2(
         List<FactionClockDto> factionClocks,
         List<RollableTableDto> rollableTables,
         List<TrapDto> traps,
-        List<HazardDto> hazards
+        List<HazardDto> hazards,
+        List<AudioCueDto> audioCues
 ) {
     public CampaignManifestV2 {
         if (worldNpcs == null) worldNpcs = List.of();
@@ -62,6 +63,7 @@ public record CampaignManifestV2(
         if (rollableTables == null) rollableTables = List.of();
         if (traps == null) traps = List.of();
         if (hazards == null) hazards = List.of();
+        if (audioCues == null) audioCues = List.of();
     }
     public static final int CURRENT_FORMAT_VERSION = 2;
 
@@ -84,14 +86,16 @@ public record CampaignManifestV2(
             String description,
             Instant createdAt,
             CampaignSettingsDto settings,
-            ContentReference currentSceneRef
+            ContentReference currentSceneRef,
+            ContentReference defaultCueRef
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record CampaignSettingsDto(
             LevelingMode levelingMode,
             CalendarConfigDto calendar,
-            InGameDateDto currentDate
+            InGameDateDto currentDate,
+            String audioSwitchMode
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -363,7 +367,10 @@ public record CampaignManifestV2(
             List<CombatLogEntryDto> combatLog,
             EncounterPrep prep,
             EncounterRewards rewards,
-            List<WaveDto> waves
+            List<WaveDto> waves,
+            ContentReference combatCueRef,
+            ContentReference victoryCueRef,
+            Integer victoryCueDurationSeconds
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -546,7 +553,8 @@ public record CampaignManifestV2(
             List<SceneCheckDto> checks,
             List<SceneParticipantDto> participants,
             List<SceneTransitionDto> transitions,
-            List<SceneLinkDto> links
+            List<SceneLinkDto> links,
+            ContentReference sceneCueRef
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -896,7 +904,8 @@ public record CampaignManifestV2(
             List<String> tags,
             String sourceLocator,
             Instant createdAt,
-            List<WorldLocationTableLinkDto> tableLinks
+            List<WorldLocationTableLinkDto> tableLinks,
+            ContentReference locationCueRef
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -1047,6 +1056,27 @@ public record CampaignManifestV2(
         public HazardDto {
             if (conditionRefs == null) conditionRefs = List.of();
             if (salvageItemRefs == null) salvageItemRefs = List.of();
+        }
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record AudioCueDto(
+            String key,
+            String name,
+            String providerId,
+            String referenceKind,
+            String providerReference,
+            String cachedTitle,
+            String artistOrOwner,
+            String artworkUrl,
+            Integer durationSeconds,
+            String category,
+            Integer volumeHint,
+            String transitionPreference,
+            String notes
+    ) {
+        public AudioCueDto {
+            if (providerId == null) providerId = "";
         }
     }
 }

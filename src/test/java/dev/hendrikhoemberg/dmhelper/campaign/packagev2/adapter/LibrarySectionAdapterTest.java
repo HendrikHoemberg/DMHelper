@@ -156,7 +156,7 @@ class LibrarySectionAdapterTest {
                 2, null, null, null,
                 null, manifest2.customStatBlocks(),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         var importContext = new CampaignImportContext(
                 freshCampaign.getId(), new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
@@ -240,7 +240,7 @@ class LibrarySectionAdapterTest {
     }
 
     private void fillRest(CampaignManifestAssembler a) {
-        a.campaign(new CampaignManifestV2.CampaignDto("campaign-key", "test", null, null, null, null));
+        a.campaign(new CampaignManifestV2.CampaignDto("campaign-key", "test", null, null, null, null, null));
         a.party(List.of());
         a.handouts(List.of());
         a.maps(List.of());

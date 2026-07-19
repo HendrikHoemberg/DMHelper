@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.Adventure;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Chapter;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransition;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.calendar.data.TimelineEvent;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
@@ -394,5 +395,6 @@ public class CampaignSemanticSnapshotService {
             new OwnershipQuery(CampaignContentType.FACTION_CLOCK, FactionClock.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.ROLLABLE_TABLE, RollableTable.class, "campaign.id"),
             new OwnershipQuery(CampaignContentType.TRAP, Trap.class, "campaign.id"),
-            new OwnershipQuery(CampaignContentType.HAZARD, Hazard.class, "campaign.id"));
+            new OwnershipQuery(CampaignContentType.HAZARD, Hazard.class, "campaign.id"),
+            new OwnershipQuery(CampaignContentType.AUDIO_CUE, AudioCue.class, "campaign.id"));
 }

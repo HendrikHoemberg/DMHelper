@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.world.packagev2;
 
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.FactionClockDto;
@@ -121,12 +122,16 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
                                     link.getTable().getId(), link.getTable().getName()),
                             link.getSortOrder()))
                     .toList();
+            ContentReference locationCueRef = l.getLocationAudioCue() != null
+                    ? context.packageRef(CampaignContentType.AUDIO_CUE,
+                            l.getLocationAudioCue().getId(), l.getLocationAudioCue().getName())
+                    : null;
             return new WorldLocationDto(key, l.getName(), l.getKind().name(),
                     parentRef, mapRef, l.getMapRegionKey(), noteRef,
                     l.getSummary(), l.getServices(), l.getSecrets(),
                     occupants, encounterRefs, travelRefs,
                     parseTags(l.getTags()), l.getSourceLocator(), l.getCreatedAt(),
-                    tableLinkDtos);
+                    tableLinkDtos, locationCueRef);
         }).toList();
         target.worldLocations(locationDtos);
 
@@ -277,22 +282,26 @@ public class WorldSectionAdapter implements CampaignSectionExporter, CampaignSec
                             }
                         }
                     }
-                    if (dto.tableLinks() != null) {
-                        for (WorldLocationTableLinkDto linkDto : dto.tableLinks()) {
-                            WorldLocationTableLink link = new WorldLocationTableLink();
-                            link.setLocation(l);
-                            if (linkDto.tableRef() != null) {
-                                RollableTable table = context.require(linkDto.tableRef(),
-                                        CampaignContentType.ROLLABLE_TABLE, RollableTable.class);
-                                link.setTable(table);
-                            }
-                            if (linkDto.role() != null) {
-                                link.setRole(RollableTableLinkRole.valueOf(linkDto.role()));
-                            }
-                            link.setSortOrder(linkDto.sortOrder());
-                            tableLinkRepo.save(link);
+                if (dto.tableLinks() != null) {
+                    for (WorldLocationTableLinkDto linkDto : dto.tableLinks()) {
+                        WorldLocationTableLink link = new WorldLocationTableLink();
+                        link.setLocation(l);
+                        if (linkDto.tableRef() != null) {
+                            RollableTable table = context.require(linkDto.tableRef(),
+                                    CampaignContentType.ROLLABLE_TABLE, RollableTable.class);
+                            link.setTable(table);
                         }
+                        if (linkDto.role() != null) {
+                            link.setRole(RollableTableLinkRole.valueOf(linkDto.role()));
+                        }
+                        link.setSortOrder(linkDto.sortOrder());
+                        tableLinkRepo.save(link);
                     }
+                }
+                if (dto.locationCueRef() != null) {
+                    AudioCue cue = context.require(dto.locationCueRef(), CampaignContentType.AUDIO_CUE, AudioCue.class);
+                    l.setLocationAudioCue(cue);
+                }
                 });
             }
         }
