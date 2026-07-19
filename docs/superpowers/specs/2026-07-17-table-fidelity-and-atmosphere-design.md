@@ -418,8 +418,8 @@ isolated last):
 | 2 | Table integrations: scene/location links, encounter prefill, reward drafts | 1 | `IMPLEMENTED` |
 | 3 | Traps/hazards: model, editor, package section, provenance | — | `IMPLEMENTED` |
 | 4 | Traps/hazards integration: scene sections, tracker cards, map pins | 3 | `IMPLEMENTED` |
-| 5 | Audio: provider SPI, auth, cue library, cockpit widget | — | `PLANNED` |
-| 6 | Audio: scene/encounter assignments and dynamic switching | 5 | `PLANNED` |
+| 5 | Audio: provider SPI, auth, cue library, cockpit widget | — | `IN_PROGRESS` |
+| 6 | Audio: scene/encounter assignments and dynamic switching | 5 | `IN_PROGRESS` |
 | 7 | Fixtures, docs, capability matrix, agent playbook updates | 1–6 | `PLANNED` |
 
 Items 1–2 and 3–4 are implemented. Items 5–6 form the remaining music package; item 7 closes this
