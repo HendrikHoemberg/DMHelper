@@ -4,7 +4,7 @@
 
 **Roadmap established after:** commit `36f7c3c`; use the status table together with current Git history
 
-**Current NEXT item:** 5 — Atmosphere and music completion
+**Current NEXT item:** 6 — Music-focused readiness closeout
 
 **Terminal goal:** DMHelper can prepare, run, record, export, restore, and resume a representative
 campaign as an all-in-one **DM-operated** tool, including the intended DM-side music experience.
@@ -67,8 +67,8 @@ intentionally serial to minimize integration churn and keep the release gate att
 | 2 | Music-provider feasibility spike | `COMPLETE` | 1 | Atmosphere §6.1 and §6.6 | [Completed plan](plans/2026-07-18-music-provider-feasibility.md) | YouTube proven as viable baseline provider on the DM device (Firefox/Linux, 480x270 visible player, all six controls passed). Spotify classified CONDITIONAL (Policy III.6 synchronization). Provider contract frozen. See [decision record](../architecture/music-provider-feasibility.md). |
 | 3 | Rollable tables and integrations | `COMPLETE` | 2 | Atmosphere delivery items 1–2 | [Completed corrective plan](plans/2026-07-18-rollable-tables-corrective-implementation.md) | Correct API DTOs, campaign-aware validation, complete authoring/rolling UI, consequence state machine, runnable package fidelity, real browser acceptance, and focused/full tests pass. |
 | 4 | Traps and hazards | `COMPLETE` | 3 | Atmosphere delivery items 3–4 | [Completed plan](plans/2026-07-18-p3-traps-and-hazards.md) | Structured and prose-compatible traps/hazards, provenance, scene/tracker/map integrations, package round-trip, player-safety coverage, and focused/full tests pass. |
-| 5 | Atmosphere and music completion | `IN_PROGRESS` | 2, 4 | Atmosphere delivery items 5–6 | [Implementation plan](plans/2026-07-19-p3-atmosphere-music.md) | Provider SPI/reference adapter, local credentials/token clearing where required, cue library, cockpit widget, assignments, priority switching, deterministic fake-provider tests, package safety, and bounded outage behavior pass. |
-| 6 | Music-focused readiness closeout | `BLOCKED` | 5 | Atmosphere item 7; master §§19–23 | Create a dated `dm-readiness-music-closeout` plan | Feature-complete and published-adventure fixtures cover tables, traps, and music; schemas/catalogs/playbook/manual/capability matrix agree; full round-trip and player-safety suites pass. |
+| 5 | Atmosphere and music completion | `COMPLETE` | 2, 4 | Atmosphere delivery items 5–6 | [Completed implementation plan](plans/2026-07-19-p3-atmosphere-music.md) | Provider SPI/reference adapter, cue library, cockpit widget, campaign-scoped assignments, deterministic priority/confirm/victory switching, fake-provider browser acceptance, package safety, player isolation, and bounded outage behavior pass. |
+| 6 | Music-focused readiness closeout | `READY` | 5 | Atmosphere item 7; master §§19–23 | Create a dated `dm-readiness-music-closeout` plan | Feature-complete and published-adventure fixtures cover tables, traps, and music; schemas/catalogs/playbook/manual/capability matrix agree; full round-trip and player-safety suites pass. |
 | 7 | Final readiness verification and release decision | `BLOCKED` | 6 | Master §§21 and 23 | Create a dated `dm-readiness-release-verification` plan | Full automated suite, security gates, documentation audit, real-provider music exercise, and recorded representative manual acceptance session pass. Only then may master item 11 and the DM-only readiness claim be marked complete. |
 
 ## 5. Why this order is fixed
@@ -134,6 +134,18 @@ As of the scope re-baseline on 2026-07-19:
   reproduced 2 `CoreSessionLoopSmokeTest` errors and code review found incomplete ownership,
   dependency deletion, confirm/victory state, provider routing, visibility, and fake-provider
   acceptance behavior. Row 6 is blocked until the row-5 exit gate is genuinely green.
+- **Corrective completion (2026-07-19):** all audit findings are repaired. The focused audio,
+  package, session, security, and contract gate passes **41 suites / 492 tests / 0 failures /
+  0 errors / 0 skips**; `CoreSessionLoopSmokeTest` passes **1 suite / 25 tests / 0 failures /
+  0 errors / 0 skips**, including offline fake-provider switching under 500 ms, victory expiry,
+  override, confirmation, mute, bounded retry, player isolation, and browser export/import; the
+  clean complete Maven suite passes **239 suites / 1994 tests / 0 failures / 0 errors / 0 skips**.
+  Fresh Flyway startup validates 17 migrations and ends at V17; a populated V14 database is
+  contract-tested through the V15–V17 upgrade with its campaign row preserved. Current official
+  YouTube requirements were rechecked: playback remains gesture-enabled, the official IFrame API
+  is loaded only on the DM surface, the player stays visible at 480×270, and scripted playback is
+  gated on document visibility and more-than-half intersection. Live-provider release acceptance
+  remains owned by row 7.
 
 When conversation context is missing or compacted, resume from the first non-`COMPLETE` row in this
 file and validate its status against the repository before acting.

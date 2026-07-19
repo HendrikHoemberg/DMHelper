@@ -1025,7 +1025,7 @@ Delivery item 11 is tracked by required DM-only slices:
 |---|---|---|
 | World graph and faction clocks | `IMPLEMENTED` | `../plans/2026-07-17-p3-world-graph.md` |
 | Rollable tables and traps/hazards | `IMPLEMENTED` | `2026-07-17-table-fidelity-and-atmosphere-design.md` |
-| Atmosphere and music | `PLANNED` | `2026-07-17-table-fidelity-and-atmosphere-design.md` |
+| Atmosphere and music | `IMPLEMENTED` | `2026-07-17-table-fidelity-and-atmosphere-design.md` |
 
 Delivery status records shipped scope, not release verification. The readiness claim remains
 blocked until the full suite, documentation consistency audit, security gates, and manual

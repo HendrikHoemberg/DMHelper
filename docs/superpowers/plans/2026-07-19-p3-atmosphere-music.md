@@ -677,40 +677,41 @@ DM cockpit action
 11. export/import and prove authored cues/assignments survive while runtime state is absent;
 12. open `/player` and inspect DOM/network/WebSocket state for zero audio exposure.
 
-- [ ] Extend `CoreSessionLoopSmokeTest` with the deterministic fake provider and the complete flow
+- [x] Extend `CoreSessionLoopSmokeTest` with the deterministic fake provider and the complete flow
   above. Do not intercept or call YouTube.
-- [ ] Attach the existing browser failure collector to audio API failures. Expected injected outage
+- [x] Attach the existing browser failure collector to audio API failures. Expected injected outage
   responses must be explicitly registered; all unexpected console/page/request failures fail.
-- [ ] Run the focused audio gate:
+- [x] Run the focused audio gate:
 
 ```bash
 ./mvnw -q -Duser.home=/tmp/dmhelper-p3-atmosphere-music \
   -Dtest='Audio*Test,CampaignSettingsCodecTest,CampaignSectionAdapterTest,AdventureSectionAdapterTest,EncounterSectionAdapterTest,WorldSectionAdapterTest,CampaignManifestV2ContractTest,CampaignManifestV2SemanticValidatorTest,CampaignCompleteRoundTripTest,CampaignSemanticComparatorTest,SessionApiControllerTest,SessionControllerTest,SessionWorkspaceServiceTest,SessionCockpitTemplateContractTest,EncounterTemplateContractTest,PlayerViewSecurityContractTest,PlayerSafeMapProjectionTest,TableStateWebSocketHandlerTest' test
 ```
 
-- [ ] Run `CoreSessionLoopSmokeTest` separately and inspect its fresh Surefire XML for zero
+- [x] Run `CoreSessionLoopSmokeTest` separately and inspect its fresh Surefire XML for zero
   failures/errors/skips.
-- [ ] Run the complete Maven suite from a clean target directory:
+- [x] Run the complete Maven suite from a clean target directory:
 
 ```bash
 ./mvnw -q clean test -Duser.home=/tmp/dmhelper-p3-atmosphere-music-full
 ```
 
-- [ ] Count fresh Surefire suites/tests/failures/errors/skips and record exact values in the roadmap
+- [x] Count fresh Surefire suites/tests/failures/errors/skips and record exact values in the roadmap
   recovery note.
-- [ ] Start the application against a fresh H2 database and verify Flyway ends at V15. Verify an
-  upgrade from a copied V14 database also succeeds without cue rows or assignment changes.
-- [ ] Inspect `git status --short`, `git diff --check`, committed source diff, generated package
+- [x] Start the application against a fresh H2 database and verify Flyway ends at V17. Verify a
+  populated V14 database upgrades through the original V15–V16 migrations and corrective V17
+  without changing its campaign row.
+- [x] Inspect `git status --short`, `git diff --check`, committed source diff, generated package
   examples, and all audio/player boundary claims.
-- [ ] Do **not** claim final real-provider acceptance here. Record that row 7 still owns the live
+- [x] Do **not** claim final real-provider acceptance here. Record that row 7 still owns the live
   YouTube release exercise.
-- [ ] Only after every row-5 gate passes: set roadmap row 5 `COMPLETE`, row 6 `READY`, and atmosphere
+- [x] Only after every row-5 gate passes: set roadmap row 5 `COMPLETE`, row 6 `READY`, and atmosphere
   items 5–6 `IMPLEMENTED`. Leave atmosphere item 7 `PLANNED` for row 6.
-- [ ] Commit `docs(roadmap): close atmosphere and music package`.
+- [x] Commit `docs(roadmap): close atmosphere and music package`.
 
 ## Completion evidence required before row 5 may be marked complete
 
-- V15 installs cleanly on fresh and V14 databases.
+- V15–V17 install cleanly on fresh and populated V14 databases.
 - YouTube references normalize safely without an API key, OAuth, metadata fetch, or credential path.
 - Cue CRUD, deletion impact, all four assignment contexts, and switching configuration work.
 - Priority resolution is deterministic and fully covered, including victory, override, mute, and
