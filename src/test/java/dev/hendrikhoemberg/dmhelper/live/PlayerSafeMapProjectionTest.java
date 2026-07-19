@@ -124,4 +124,62 @@ class PlayerSafeMapProjectionTest {
         assertThat(result).isNotNull();
         assertThat(result.layers()).hasSize(1);
     }
+
+    @Test
+    void playerProjectionStripsAudioFieldsFromDocument() throws Exception {
+        var doc = new MapDocumentDto(
+                2,
+                new MapDocumentDto.GridDto(20, 15, 48, "square", "GRID", true),
+                List.of(
+                        new MapLayerDto("terrain", "Terrain", MapLayerDto.LayerType.TERRAIN,
+                                true, false, List.of(), List.of(), null, true)
+                ),
+                List.of(),
+                List.of()
+        );
+
+        gameMap.setDocument(mapper.writeValueAsString(doc));
+        em.merge(gameMap);
+        em.flush();
+
+        var result = projection.projectMapDocument(gameMap);
+        assertThat(result).isNotNull();
+        String json = mapper.writeValueAsString(result);
+        assertThat(json).doesNotContain("audio");
+    }
+
+    @Test
+    void playerTokensNeverContainAudio() throws Exception {
+        Campaign campaign = new Campaign();
+        campaign.setName("Token Audio Safety");
+        em.persist(campaign);
+        em.flush();
+
+        var map = new GameMap();
+        map.setCampaign(campaign);
+        map.setName("Audio Safe Map");
+        map.setGridWidth(10);
+        map.setGridHeight(10);
+        map.setCellSizePx(48);
+        em.persist(map);
+        em.flush();
+
+        var result = projection.projectTokens(map);
+        assertThat(result).isEmpty();
+
+        map.setDocument(mapper.writeValueAsString(new MapDocumentDto(
+                2,
+                new MapDocumentDto.GridDto(10, 10, 48, "square", "GRID", true),
+                List.of(),
+                List.of(),
+                List.of()
+        )));
+        em.merge(map);
+        em.flush();
+
+        var projected = projection.projectMapDocument(map);
+        assertThat(projected).isNotNull();
+        String json = mapper.writeValueAsString(projected);
+        assertThat(json).doesNotContain("audio");
+    }
 }

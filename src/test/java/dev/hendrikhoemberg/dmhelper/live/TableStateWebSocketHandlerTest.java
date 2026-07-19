@@ -19,6 +19,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 class TableStateWebSocketHandlerTest {
@@ -90,6 +91,33 @@ class TableStateWebSocketHandlerTest {
         assertThat(threadFailure.get()).isNull();
         assertThat(writesOverlapped).as("a WebSocketSession must have at most one writer").isFalse();
         verify(session, times(2)).sendMessage(any(TextMessage.class));
+    }
+
+    @Test
+    void initialMessageNeverContainsAudioData() throws Exception {
+        AtomicReference<Runnable> stateChange = new AtomicReference<>();
+        doAnswer(invocation -> {
+            stateChange.set(invocation.getArgument(0));
+            return null;
+        }).when(presentationService).setOnStateChange(any());
+
+        when(presentationService.getCurrentState()).thenReturn(LiveTableState.curtain());
+        when(objectMapper.writeValueAsString(any())).thenReturn("{\"type\":\"TABLE_STATE\",\"mode\":\"CURTAIN\"}");
+        when(session.getId()).thenReturn("player-safety");
+        when(session.isOpen()).thenReturn(true);
+
+        TableStateWebSocketHandler handler =
+                new TableStateWebSocketHandler(objectMapper, presentationService);
+
+        var captured = ArgumentCaptor.forClass(TextMessage.class);
+        handler.afterConnectionEstablished(session);
+        verify(session).sendMessage(captured.capture());
+        String payload = captured.getValue().getPayload();
+        assertThat(payload)
+                .doesNotContain("audio")
+                .doesNotContain("cue")
+                .doesNotContain("provider")
+                .doesNotContain("YOUTUBE");
     }
 
     private Thread thread(String name, AtomicReference<Throwable> failure, Runnable action) {

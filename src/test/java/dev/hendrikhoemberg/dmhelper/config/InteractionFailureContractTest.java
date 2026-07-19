@@ -38,4 +38,69 @@ class InteractionFailureContractTest {
         assertThat(read("static/js/session-cockpit.js"))
                 .contains("window.dmRequest", "window.reportActionFailure");
     }
+
+    @Test
+    void audioWidgetUsesCheckedRequestsNotBareFetch() throws IOException {
+        assertThat(read("static/js/audio-widget.js"))
+                .contains("window.dmRequest")
+                .contains("window.reportActionFailure");
+    }
+
+    @Test
+    void audioWidgetMutationPathsHaveNoEmptyCatches() throws IOException {
+        String js = read("static/js/audio-widget.js");
+        for (var mutation : new String[]{"confirmCue:", "declineCue:", "setOverride:", "clearOverride:", "toggleMute:"}) {
+            int fnStart = js.indexOf(mutation);
+            int fnEnd = js.indexOf("},", fnStart);
+            String fnBody = js.substring(fnStart, fnEnd);
+            assertThat(fnBody)
+                    .as("Mutation function '" + mutation.replace(":", "") + "' must not have empty catches")
+                    .doesNotContain(".catch(function () {})")
+                    .doesNotContain(".catch(function() {})");
+        }
+    }
+
+    @Test
+    void audioCueEditorHandlesServerErrors() throws IOException {
+        String editor = read("static/js/audio-cue-editor.js");
+        assertThat(editor)
+                .contains("this.unsupportedMessage = 'Server error: ' + res.status")
+                .contains("this.unsupportedMessage = 'Network error: ' + err.message");
+    }
+
+    @Test
+    void errorSurfacesNeverContainRawProviderResponse() throws IOException {
+        assertThat(read("static/js/audio-widget.js"))
+                .doesNotContain("rawProviderResponse");
+        assertThat(read("static/js/audio-provider-youtube.js"))
+                .doesNotContain("rawProviderResponse");
+    }
+
+    @Test
+    void errorSurfacesNeverLeakAccessCredentials() throws IOException {
+        assertThat(read("static/js/audio-widget.js"))
+                .doesNotContain("accessToken")
+                .doesNotContain("refreshToken")
+                .doesNotContain("deviceId")
+                .doesNotContain("authorizationCode");
+        assertThat(read("static/js/audio-provider-youtube.js"))
+                .doesNotContain("accessToken")
+                .doesNotContain("refreshToken")
+                .doesNotContain("deviceId")
+                .doesNotContain("authorizationCode");
+    }
+
+    @Test
+    void audioWidgetRetryIsUserInitiatedNotAutomaticLoop() throws IOException {
+        String js = read("static/js/audio-widget.js");
+        int retryStart = js.indexOf("retry:");
+        int retryEnd = js.indexOf("},", retryStart);
+        String retryFn = js.substring(retryStart, retryEnd);
+        assertThat(retryFn)
+                .contains("errorMessage = ''")
+                .contains("fetchState()")
+                .doesNotContain("setTimeout")
+                .doesNotContain("setInterval")
+                .doesNotContain("location.reload");
+    }
 }
