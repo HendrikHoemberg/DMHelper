@@ -96,6 +96,20 @@ class EncounterTemplateContractTest {
     }
 
     @Test
+    void summaryModalDispatchesCockpitEventInsteadOfReload() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/encounter/_summary-modal.html"));
+        assertThat(html).doesNotContain("window.location.reload()")
+                .as("summary-modal should dispatch events instead of reloading the page");
+    }
+
+    @Test
+    void trackerEndEncounterDispatchesEncounterEndEvent() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/encounter/_tracker.html"));
+        assertThat(html).contains("dispatchEvent(new CustomEvent('cockpit-encounter-ended'")
+                .as("tracker endEncounter should dispatch a cockpit-encounter-ended event");
+    }
+
+    @Test
     void summaryModalHasEndEncounterAlpine() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/encounter/_summary-modal.html"));
         assertThat(html).contains("endEncounterModal");

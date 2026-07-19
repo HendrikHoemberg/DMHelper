@@ -49,6 +49,9 @@
                     self.fetchState();
                     self.fetchCues();
                 });
+                document.addEventListener('cockpit-rails-refreshed', function () {
+                    self.fetchState();
+                });
             },
 
             buildAdapter: function () {

@@ -139,6 +139,72 @@ class SessionCockpitTemplateContractTest {
         assertThat(html).contains("/js/dice-roller.js");
     }
 
+    @Test
+    void setCurrentSceneDoesNotReloadPage() throws IOException {
+        String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
+        assertThat(extractFunction(js, "setCurrentScene"))
+                .doesNotContain("window.location.reload()")
+                .as("setCurrentScene should update rails in place, not reload");
+    }
+
+    @Test
+    void stepSceneDoesNotReloadPage() throws IOException {
+        String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
+        assertThat(extractFunction(js, "stepScene"))
+                .doesNotContain("window.location.reload()")
+                .as("stepScene should update rails in place, not reload");
+    }
+
+    @Test
+    void followTransitionDoesNotReloadPage() throws IOException {
+        String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
+        assertThat(extractFunction(js, "followTransition"))
+                .doesNotContain("window.location.reload()")
+                .as("followTransition should update rails in place, not reload");
+    }
+
+    @Test
+    void activateEncounterDoesNotReloadPage() throws IOException {
+        String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
+        assertThat(extractFunction(js, "activateEncounter"))
+                .doesNotContain("window.location.reload()")
+                .as("activateEncounter should update rails in place, not reload");
+    }
+
+    @Test
+    void cockpitHasRefreshRailsHelper() throws IOException {
+        String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
+        assertThat(js).contains("refreshRails();")
+                .as("cockpit JS should call refreshRails after scene mutations");
+    }
+
+    @Test
+    void railFragmentEndpointsExist() throws IOException {
+        String java = Files.readString(Path.of(
+                "src/main/java/dev/hendrikhoemberg/dmhelper/session/web/SessionController.java"));
+        assertThat(java).contains("/session/rails/story",
+                "/session/rails/encounter")
+                .as("SessionController should have story/encounter rail fragment endpoints");
+    }
+
+    private static String extractFunction(String js, String name) {
+        int start = js.indexOf("async " + name + "(");
+        if (start < 0) start = js.indexOf(name + ": async function(");
+        if (start < 0) start = js.indexOf(name + "(");
+        if (start < 0) return "";
+        int brace = js.indexOf('{', start);
+        if (brace < 0) return "";
+        int depth = 1;
+        int end = brace + 1;
+        while (depth > 0 && end < js.length()) {
+            char c = js.charAt(end);
+            if (c == '{') depth++;
+            else if (c == '}') depth--;
+            end++;
+        }
+        return js.substring(brace, end);
+    }
+
     private static int count(String s, String substring) {
         int count = 0;
         int idx = 0;

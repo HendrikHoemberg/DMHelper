@@ -72,7 +72,7 @@
                         });
                     if (window.showToast) window.showToast('Rewards confirmed', 'success');
                     this.showModal = false;
-                    window.location.reload();
+                    window.dispatchEvent(new CustomEvent('cockpit-encounter-ended'));
                 } catch (e) {
                     window.reportActionFailure('Failed to apply rewards', e,
                         () => this.confirmRewards());
@@ -81,7 +81,7 @@
 
             skip() {
                 this.showModal = false;
-                window.location.reload();
+                window.dispatchEvent(new CustomEvent('cockpit-encounter-ended'));
             }
         }));
     });

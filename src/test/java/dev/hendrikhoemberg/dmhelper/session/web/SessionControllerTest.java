@@ -95,6 +95,24 @@ class SessionControllerTest {
     }
 
     @Test
+    void storyRailFragmentReturnsPartialHtml() throws Exception {
+        SessionWorkspace ws = emptyWorkspace();
+        when(workspaces.load(campaignId, null)).thenReturn(ws);
+        mvc.perform(get("/campaigns/{id}/session/rails/story", campaignId))
+                .andExpect(status().isOk())
+                .andExpect(view().name("session/_story-rail :: story"));
+    }
+
+    @Test
+    void encounterRailFragmentReturnsPartialHtml() throws Exception {
+        SessionWorkspace ws = emptyWorkspace();
+        when(workspaces.load(campaignId, null)).thenReturn(ws);
+        mvc.perform(get("/campaigns/{id}/session/rails/encounter", campaignId))
+                .andExpect(status().isOk())
+                .andExpect(view().name("session/_encounter-rail :: encounters"));
+    }
+
+    @Test
     void attendanceEditorIncludesAnInactiveStoredAttendee() throws Exception {
         SessionWorkspace ws = emptyWorkspace();
         PartyMember inactive = new PartyMember();

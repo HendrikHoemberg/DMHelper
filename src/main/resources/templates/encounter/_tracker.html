@@ -503,6 +503,7 @@
                         this.selectedCombatantId = null;
                         this._encounterId = null;
                         this.dispatchState();
+                        window.dispatchEvent(new CustomEvent('cockpit-encounter-ended'));
                     });
             },
 

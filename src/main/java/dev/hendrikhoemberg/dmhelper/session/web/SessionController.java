@@ -42,4 +42,20 @@ public class SessionController {
         model.addAttribute("attendanceMembers", attendanceMembers);
         return "session/cockpit";
     }
+
+    @GetMapping("/campaigns/{campaignId}/session/rails/story")
+    public String storyRail(@PathVariable UUID campaignId, Model model) {
+        SessionWorkspaceService.SessionWorkspace workspace = workspaces.load(campaignId, null);
+        model.addAttribute("workspace", workspace);
+        model.addAttribute("campaignId", campaignId);
+        return "session/_story-rail :: story";
+    }
+
+    @GetMapping("/campaigns/{campaignId}/session/rails/encounter")
+    public String encounterRail(@PathVariable UUID campaignId, Model model) {
+        SessionWorkspaceService.SessionWorkspace workspace = workspaces.load(campaignId, null);
+        model.addAttribute("workspace", workspace);
+        model.addAttribute("campaignId", campaignId);
+        return "session/_encounter-rail :: encounters";
+    }
 }
