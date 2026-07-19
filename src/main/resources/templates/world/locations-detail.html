@@ -53,6 +53,11 @@
                 </div>
                 <div th:if="${location.tags}" class="u-mb-md" th:text="|Tags: ${location.tags}|">Tags</div>
                 <div th:if="${location.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${location.sourceLocator}|">Source</div>
+                <div th:if="${location.locationAudioCue != null}" class="u-mb-md">
+                    <strong>Audio Cue:</strong>
+                    <span th:text="${location.locationAudioCue.name}">Cue Name</span>
+                    <span class="u-text-xs text-muted" th:text="'(' + ${location.locationAudioCue.providerId} + ' / ' + ${location.locationAudioCue.category} + ')'">(provider/category)</span>
+                </div>
             </div>
 
             <!-- Linked Tables -->

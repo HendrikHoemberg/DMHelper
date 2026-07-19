@@ -18,4 +18,6 @@ public interface SceneRepository extends JpaRepository<Scene, UUID> {
 
     @Query("SELECT s FROM Scene s JOIN s.chapter c JOIN c.adventure a WHERE a.campaign.id = :campaignId AND s.id = :sceneId")
     Optional<Scene> findByIdAndCampaignId(@Param("campaignId") UUID campaignId, @Param("sceneId") UUID sceneId);
+
+    List<Scene> findBySceneAudioCueId(UUID cueId);
 }

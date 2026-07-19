@@ -1,5 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.encounter.web;
 
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
@@ -19,10 +21,16 @@ public class EncounterController {
 
     private final EncounterService encounterService;
     private final GameMapRepository mapRepo;
+    private final AudioCueRepository audioCueRepository;
+    private final EncounterRepository encounterRepository;
 
-    public EncounterController(EncounterService encounterService, GameMapRepository mapRepo) {
+    public EncounterController(EncounterService encounterService, GameMapRepository mapRepo,
+                               AudioCueRepository audioCueRepository,
+                               EncounterRepository encounterRepository) {
         this.encounterService = encounterService;
         this.mapRepo = mapRepo;
+        this.audioCueRepository = audioCueRepository;
+        this.encounterRepository = encounterRepository;
     }
 
     @GetMapping
@@ -37,6 +45,7 @@ public class EncounterController {
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("encounter", null);
         model.addAttribute("maps", mapRepo.findByCampaignIdOrderBySortOrderAsc(campaignId));
+        model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
         return "encounter/_form :: form";
     }
 
@@ -53,6 +62,10 @@ public class EncounterController {
         model.addAttribute("encounter", encounterService.getById(id));
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("maps", mapRepo.findByCampaignIdOrderBySortOrderAsc(campaignId));
+        model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
+        encounterRepository.findById(id).ifPresent(e -> {
+            model.addAttribute("encounterEntity", e);
+        });
         return "encounter/_form :: form";
     }
 
@@ -130,6 +143,12 @@ public class EncounterController {
         model.addAttribute("combatants", encounterService.getCombatants(id));
         model.addAttribute("difficulty", encounterService.calculateDifficulty(campaignId, id));
         model.addAttribute("campaignId", campaignId);
+        model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
+        encounterRepository.findById(id).ifPresent(e -> {
+            model.addAttribute("encounterCombatCue", e.getCombatAudioCue());
+            model.addAttribute("encounterVictoryCue", e.getVictoryAudioCue());
+            model.addAttribute("encounterVictoryDuration", e.getVictoryCueDurationSeconds());
+        });
         model.addAttribute("waves", encounterService.listWaves(id));
         model.addAttribute("prep", encounterService.getPrep(id));
         model.addAttribute("rewards", encounterService.getRewards(id));

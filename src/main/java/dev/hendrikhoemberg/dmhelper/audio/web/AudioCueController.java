@@ -1,8 +1,12 @@
 package dev.hendrikhoemberg.dmhelper.audio.web;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.audio.service.AudioCueService;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.config.MarkdownUtil;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldLocationRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,13 +23,25 @@ public class AudioCueController {
     private final AudioCueService service;
     private final AudioCueRepository repository;
     private final MarkdownUtil markdownUtil;
+    private final SceneRepository sceneRepository;
+    private final EncounterRepository encounterRepository;
+    private final WorldLocationRepository locationRepository;
+    private final CampaignRepository campaignRepository;
 
     public AudioCueController(AudioCueService service,
                               AudioCueRepository repository,
-                              MarkdownUtil markdownUtil) {
+                              MarkdownUtil markdownUtil,
+                              SceneRepository sceneRepository,
+                              EncounterRepository encounterRepository,
+                              WorldLocationRepository locationRepository,
+                              CampaignRepository campaignRepository) {
         this.service = service;
         this.repository = repository;
         this.markdownUtil = markdownUtil;
+        this.sceneRepository = sceneRepository;
+        this.encounterRepository = encounterRepository;
+        this.locationRepository = locationRepository;
+        this.campaignRepository = campaignRepository;
     }
 
     @GetMapping
@@ -69,6 +85,13 @@ public class AudioCueController {
         model.addAttribute("listLabel", "Audio Cues");
         model.addAttribute("editHref", "/campaigns/" + campaignId + "/audio/cues/" + cueId + "/edit");
         model.addAttribute("apiBase", "/api/v1/campaigns/" + campaignId + "/audio/cues");
+        model.addAttribute("usedByScenes", sceneRepository.findBySceneAudioCueId(cueId));
+        model.addAttribute("usedByCombatEncounters", encounterRepository.findByCombatAudioCueId(cueId));
+        model.addAttribute("usedByVictoryEncounters", encounterRepository.findByVictoryAudioCueId(cueId));
+        model.addAttribute("usedByLocations", locationRepository.findByLocationAudioCueId(cueId));
+        model.addAttribute("usedByCampaigns", campaignRepository.findAll().stream()
+                .filter(c -> c.getDefaultAudioCue() != null && c.getDefaultAudioCue().getId().equals(cueId))
+                .toList());
         return "audio/detail";
     }
 

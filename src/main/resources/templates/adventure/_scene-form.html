@@ -101,6 +101,18 @@
       </div>
     </div>
     <div class="form-group">
+      <label class="form-label">Audio Cue</label>
+      <select name="audioCueId" class="form-input"
+              th:hx-put="@{/api/v1/campaigns/{cid}/audio/assignments/scenes/{sid}(cid=${campaignId},sid=${scene.id})}"
+              hx-target="this" hx-swap="none"
+              hx-trigger="change">
+        <option value="">— None —</option>
+        <option th:each="c : ${audioCues}" th:value="${c.id}"
+                th:selected="${scene.sceneAudioCue != null and scene.sceneAudioCue.id == c.id}"
+                th:text="${c.name + ' (' + c.providerId + ' / ' + c.category + ')'}">Cue Name</option>
+      </select>
+    </div>
+    <div class="form-group">
       <label class="form-label">Linked Handouts</label>
       <select name="handoutId" class="form-input"
               th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/add-handout(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"

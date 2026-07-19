@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.world.web;
 
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
@@ -36,6 +37,7 @@ class WorldControllerTest {
     @MockitoBean private RollableTableRepository rollableTableRepository;
     @MockitoBean private WorldLocationTableLinkRepository locationTableLinkRepository;
     @MockitoBean private TableReferenceResolver referenceResolver;
+    @MockitoBean private AudioCueRepository audioCueRepository;
 
     private UUID campaignId, npcId, locationId, factionId;
     private Campaign campaign;

@@ -1,5 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.encounter.web;
 
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPrep;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterRewards;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
@@ -38,6 +40,12 @@ class EncounterControllerTest {
 
     @MockitoBean
     private GameMapRepository mapRepo;
+
+    @MockitoBean
+    private AudioCueRepository audioCueRepository;
+
+    @MockitoBean
+    private EncounterRepository encounterRepository;
 
     private final UUID campaignId = UUID.randomUUID();
 

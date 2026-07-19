@@ -8,4 +8,6 @@ import java.util.UUID;
 public interface WorldLocationRepository extends JpaRepository<WorldLocation, UUID> {
     List<WorldLocation> findByCampaignIdOrderByNameAscIdAsc(UUID campaignId);
     Optional<WorldLocation> findByIdAndCampaignId(UUID id, UUID campaignId);
+
+    List<WorldLocation> findByLocationAudioCueId(UUID cueId);
 }

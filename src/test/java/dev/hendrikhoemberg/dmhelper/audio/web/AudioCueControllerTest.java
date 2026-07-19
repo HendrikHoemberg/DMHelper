@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.audio.web;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCategory;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
@@ -7,7 +8,10 @@ import dev.hendrikhoemberg.dmhelper.audio.data.AudioReferenceKind;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioTransitionPreference;
 import dev.hendrikhoemberg.dmhelper.audio.service.AudioCueService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.config.MarkdownUtil;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.world.data.WorldLocationRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -37,6 +41,18 @@ class AudioCueControllerTest {
 
     @MockitoBean
     private MarkdownUtil markdownUtil;
+
+    @MockitoBean
+    private SceneRepository sceneRepository;
+
+    @MockitoBean
+    private EncounterRepository encounterRepository;
+
+    @MockitoBean
+    private WorldLocationRepository locationRepository;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private final UUID campaignId = UUID.randomUUID();
 

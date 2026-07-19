@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.web;
 
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
@@ -41,6 +42,9 @@ class CampaignControllerTest {
 
     @MockitoBean
     private PartyMemberService partyMemberService;
+
+    @MockitoBean
+    private AudioCueRepository audioCueRepository;
 
     private Campaign sampleCampaign() {
         Campaign c = new Campaign();

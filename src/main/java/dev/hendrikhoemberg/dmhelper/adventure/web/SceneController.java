@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneStructuredContentService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneTransitionService;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
@@ -38,6 +39,7 @@ public class SceneController {
     private final TrapRepository trapRepository;
     private final HazardRepository hazardRepository;
     private final ThreatCardAssembler threatCardAssembler;
+    private final AudioCueRepository audioCueRepository;
 
     public SceneController(AdventureService adventureService,
                            CampaignRepository campaignRepository,
@@ -50,7 +52,8 @@ public class SceneController {
                            SceneTransitionService transitionService,
                            TrapRepository trapRepository,
                            HazardRepository hazardRepository,
-                           ThreatCardAssembler threatCardAssembler) {
+                           ThreatCardAssembler threatCardAssembler,
+                           AudioCueRepository audioCueRepository) {
         this.adventureService = adventureService;
         this.campaignRepository = campaignRepository;
         this.gameMapRepository = gameMapRepository;
@@ -60,6 +63,7 @@ public class SceneController {
         this.markdownUtil = markdownUtil;
         this.trapRepository = trapRepository;
         this.hazardRepository = hazardRepository;
+        this.audioCueRepository = audioCueRepository;
         this.structuredService = structuredService;
         this.transitionService = transitionService;
         this.threatCardAssembler = threatCardAssembler;
@@ -85,6 +89,7 @@ public class SceneController {
         model.addAttribute("handouts", handoutRepository.findByCampaignIdOrderByTitleAsc(campaignId));
         model.addAttribute("visibleTraps", trapRepository.findVisibleByCampaignId(campaignId));
         model.addAttribute("visibleHazards", hazardRepository.findVisibleByCampaignId(campaignId));
+        model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
         model.addAttribute("sectionThreatCards", threatCardAssembler.forScene(scene));
         adventureService.getCurrentScene(campaignId).ifPresent(s -> model.addAttribute("currentScene", s));
         return "adventure/scene-detail";
@@ -103,6 +108,7 @@ public class SceneController {
         model.addAttribute("encounters", encounterRepository.findByCampaignIdOrderByNameAsc(campaignId));
         model.addAttribute("statBlocks", statBlockRepository.findByCampaignIdOrderByNameAsc(campaignId));
         model.addAttribute("handouts", handoutRepository.findByCampaignIdOrderByTitleAsc(campaignId));
+        model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
         return "adventure/_scene-form :: form";
     }
 
@@ -659,6 +665,7 @@ public class SceneController {
         model.addAttribute("handouts", handoutRepository.findByCampaignIdOrderByTitleAsc(campaignId));
         model.addAttribute("visibleTraps", trapRepository.findVisibleByCampaignId(campaignId));
         model.addAttribute("visibleHazards", hazardRepository.findVisibleByCampaignId(campaignId));
+        model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
         model.addAttribute("sectionThreatCards", threatCardAssembler.forScene(scene));
         return "adventure/_action-rail :: actionRail";
     }

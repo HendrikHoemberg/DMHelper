@@ -138,6 +138,21 @@
                     </ul>
                 </details>
 
+                <div class="u-mb-lg" th:if="${encounterCombatCue != null or encounterVictoryCue != null}">
+                    <h2>Audio</h2>
+                    <div th:if="${encounterCombatCue != null}">
+                        <strong>Combat:</strong>
+                        <span th:text="${encounterCombatCue.name}">Combat Cue</span>
+                        <span class="u-text-xs text-muted" th:text="'(' + ${encounterCombatCue.providerId} + ' / ' + ${encounterCombatCue.category} + ')'">(provider/category)</span>
+                    </div>
+                    <div th:if="${encounterVictoryCue != null}">
+                        <strong>Victory:</strong>
+                        <span th:text="${encounterVictoryCue.name}">Victory Cue</span>
+                        <span class="u-text-xs text-muted" th:text="'(' + ${encounterVictoryCue.providerId} + ' / ' + ${encounterVictoryCue.category} + ')'">(provider/category)</span>
+                        <span th:if="${encounterVictoryDuration != null}" class="u-text-xs text-muted" th:text="' · ' + ${encounterVictoryDuration} + 's'">30s</span>
+                    </div>
+                </div>
+
                 <th:block th:if="${encounter.lairActionName != null and !encounter.lairActionName.isBlank()}">
                     <h2>Lair Actions</h2>
                     <div class="detail-description">

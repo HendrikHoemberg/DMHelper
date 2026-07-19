@@ -92,6 +92,18 @@
                 </section>
 
                 <section class="card dash-card" style="--stagger: 2">
+                    <h3>Default Audio Cue</h3>
+                    <select class="form-input"
+                            th:hx-put="@{/api/v1/campaigns/{cid}/audio/assignments/campaign(cid=${campaign.id})}"
+                            hx-target="this" hx-swap="none"
+                            hx-trigger="change">
+                        <option value="">— None —</option>
+                        <option th:each="c : ${audioCues}" th:value="${c.id}"
+                                th:selected="${campaign.defaultAudioCue != null and campaign.defaultAudioCue.id == c.id}"
+                                th:text="${c.name + ' (' + c.providerId + ' / ' + c.category + ')'}">Cue Name</option>
+                    </select>
+                </section>
+                <section class="card dash-card" style="--stagger: 2">
                     <h3>Edit Campaign</h3>
                     <form th:hx-put="@{/campaigns/{id}(id=${campaign.id})}"
                           hx-target="body"

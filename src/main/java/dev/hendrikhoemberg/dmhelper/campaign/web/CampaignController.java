@@ -1,5 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.campaign.web;
 
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
@@ -32,11 +34,15 @@ public class CampaignController {
     private final CampaignService service;
     private final NoteService noteService;
     private final PartyMemberService partyMemberService;
+    private final AudioCueRepository audioCueRepository;
 
-    public CampaignController(CampaignService service, NoteService noteService, PartyMemberService partyMemberService) {
+    public CampaignController(CampaignService service, NoteService noteService,
+                              PartyMemberService partyMemberService,
+                              AudioCueRepository audioCueRepository) {
         this.service = service;
         this.noteService = noteService;
         this.partyMemberService = partyMemberService;
+        this.audioCueRepository = audioCueRepository;
     }
 
     @GetMapping("/new")
@@ -102,6 +108,7 @@ public class CampaignController {
             model.addAttribute("sessionPlan", plans.get(0));
         }
         model.addAttribute("partyMembers", partyMemberService.findActiveByCampaignId(id));
+        model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(id));
         model.addAttribute("recentNotes", noteService.findByCampaignId(id).stream()
                 .sorted(java.util.Comparator.comparing(Note::getCreatedAt).reversed())
                 .limit(5)
@@ -117,6 +124,7 @@ public class CampaignController {
         Campaign campaign = service.update(id, name, description);
         model.addAttribute("campaign", campaign);
         model.addAttribute("partyMembers", partyMemberService.findActiveByCampaignId(id));
+        model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(id));
         model.addAttribute("recentNotes", noteService.findByCampaignId(id).stream()
                 .sorted(java.util.Comparator.comparing(Note::getCreatedAt).reversed())
                 .limit(5)

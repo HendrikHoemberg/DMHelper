@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.world.web;
 
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
@@ -27,17 +28,20 @@ public class WorldController {
     private final RollableTableRepository rollableTableRepository;
     private final WorldLocationTableLinkRepository locationTableLinkRepository;
     private final TableReferenceResolver referenceResolver;
+    private final AudioCueRepository audioCueRepository;
 
     public WorldController(WorldService worldService,
                            CampaignRepository campaignRepository,
                            RollableTableRepository rollableTableRepository,
                            WorldLocationTableLinkRepository locationTableLinkRepository,
-                           TableReferenceResolver referenceResolver) {
+                           TableReferenceResolver referenceResolver,
+                           AudioCueRepository audioCueRepository) {
         this.worldService = worldService;
         this.campaignRepository = campaignRepository;
         this.rollableTableRepository = rollableTableRepository;
         this.locationTableLinkRepository = locationTableLinkRepository;
         this.referenceResolver = referenceResolver;
+        this.audioCueRepository = audioCueRepository;
     }
 
     @ModelAttribute
@@ -162,6 +166,7 @@ public class WorldController {
         model.addAttribute("location", worldService.getLocation(campaignId, locationId));
         model.addAttribute("tableLinks", locationTableLinkRepository.findByLocationIdOrderBySortOrderAsc(locationId));
         model.addAttribute("tables", rollableTableRepository.findByCampaignIdOrderByNameAsc(campaignId));
+        model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
         return "world/locations-detail";
     }
 
@@ -169,6 +174,7 @@ public class WorldController {
     public String newLocationForm(@PathVariable UUID campaignId, Model model) {
         model.addAttribute("location", new WorldLocation());
         model.addAttribute("allLocations", worldService.getLocations(campaignId));
+        model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
         return "world/locations-form";
     }
 
@@ -200,6 +206,7 @@ public class WorldController {
     public String editLocationForm(@PathVariable UUID campaignId, @PathVariable UUID locationId, Model model) {
         model.addAttribute("location", worldService.getLocation(campaignId, locationId));
         model.addAttribute("allLocations", worldService.getLocations(campaignId));
+        model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
         return "world/locations-form";
     }
 

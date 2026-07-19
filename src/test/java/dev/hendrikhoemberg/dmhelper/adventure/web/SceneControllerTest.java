@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneStructuredContentService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneTransitionService;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
@@ -45,6 +46,7 @@ class SceneControllerTest {
     @MockitoBean private dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository trapRepository;
     @MockitoBean private dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository hazardRepository;
     @MockitoBean private dev.hendrikhoemberg.dmhelper.threat.service.ThreatCardAssembler threatCardAssembler;
+    @MockitoBean private AudioCueRepository audioCueRepository;
 
     private UUID campaignId, adventureId, sceneId, chapterId;
     private Campaign campaign;

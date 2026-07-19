@@ -28,6 +28,41 @@
                 <span th:text="${encounter.status}">PLANNED</span>
             </div>
         </th:block>
+        <th:block th:if="${encounterEntity != null}">
+            <div class="form-group">
+                <label class="form-label">Combat Audio Cue</label>
+                <select class="form-input"
+                        th:hx-put="@{/api/v1/campaigns/{cid}/audio/assignments/encounters/{eid}(cid=${campaignId},eid=${encounterEntity.id})}"
+                        hx-target="this" hx-swap="none"
+                        hx-trigger="change">
+                    <option value="">— None —</option>
+                    <option th:each="c : ${audioCues}" th:value="${c.id}"
+                            th:selected="${encounterEntity.combatAudioCue != null and encounterEntity.combatAudioCue.id == c.id}"
+                            th:text="${c.name + ' (' + c.providerId + ' / ' + c.category + ')'}">Cue Name</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Victory Audio Cue</label>
+                <select class="form-input"
+                        th:hx-put="@{/api/v1/campaigns/{cid}/audio/assignments/encounters/{eid}(cid=${campaignId},eid=${encounterEntity.id})}"
+                        hx-target="this" hx-swap="none"
+                        hx-trigger="change"
+                        hx-vals='{"role":"victory"}'>
+                    <option value="">— None —</option>
+                    <option th:each="c : ${audioCues}" th:value="${c.id}"
+                            th:selected="${encounterEntity.victoryAudioCue != null and encounterEntity.victoryAudioCue.id == c.id}"
+                            th:text="${c.name + ' (' + c.providerId + ' / ' + c.category + ')'}">Cue Name</option>
+                </select>
+            </div>
+            <div class="form-group" th:if="${encounterEntity.victoryAudioCue != null}">
+                <label class="form-label">Victory Duration (5–600s)</label>
+                <input type="number" class="form-input" min="5" max="600"
+                       th:value="${encounterEntity.victoryCueDurationSeconds}"
+                       th:attr="hx-put=@{/api/v1/campaigns/{cid}/audio/assignments/encounters/{eid}(cid=${campaignId},eid=${encounterEntity.id})},
+                                hx-vals='{&quot;role&quot;:&quot;victory&quot;,&quot;cueId&quot;:&quot;' + ${encounterEntity.victoryAudioCue.id} + '&quot;,&quot;durationSeconds&quot;:value}'"
+                       hx-trigger="change" hx-target="this" hx-swap="none">
+            </div>
+        </th:block>
         <div class="form-actions">
             <button type="button" class="btn btn-ghost"
                     th:attr="hx-get=@{/campaigns/{cid}/encounters(cid=${campaignId})}"

@@ -46,6 +46,29 @@
                     <h3>Notes</h3>
                     <div class="detail-description" th:utext="${markdownNotes}"></div>
                 </div>
+                <div class="u-mt-lg" th:unless="${#lists.isEmpty(usedByScenes)} or ${#lists.isEmpty(usedByCombatEncounters)} or ${#lists.isEmpty(usedByVictoryEncounters)} or ${#lists.isEmpty(usedByLocations)} or ${#lists.isEmpty(usedByCampaigns)}">
+                    <h3>Used By</h3>
+                    <div th:if="${not #lists.isEmpty(usedByScenes)}">
+                        <strong>Scenes:</strong>
+                        <div th:each="s : ${usedByScenes}" th:text="${s.title}">Scene Title</div>
+                    </div>
+                    <div th:if="${not #lists.isEmpty(usedByCombatEncounters)}">
+                        <strong>Encounters (combat):</strong>
+                        <div th:each="e : ${usedByCombatEncounters}" th:text="${e.name}">Encounter Name</div>
+                    </div>
+                    <div th:if="${not #lists.isEmpty(usedByVictoryEncounters)}">
+                        <strong>Encounters (victory):</strong>
+                        <div th:each="e : ${usedByVictoryEncounters}" th:text="${e.name}">Encounter Name</div>
+                    </div>
+                    <div th:if="${not #lists.isEmpty(usedByLocations)}">
+                        <strong>Locations:</strong>
+                        <div th:each="l : ${usedByLocations}" th:text="${l.name}">Location Name</div>
+                    </div>
+                    <div th:if="${not #lists.isEmpty(usedByCampaigns)}">
+                        <strong>Campaign defaults:</strong>
+                        <div th:each="c : ${usedByCampaigns}" th:text="${c.name}">Campaign Name</div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
