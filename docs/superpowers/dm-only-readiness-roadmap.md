@@ -67,8 +67,8 @@ intentionally serial to minimize integration churn and keep the release gate att
 | 2 | Music-provider feasibility spike | `COMPLETE` | 1 | Atmosphere §6.1 and §6.6 | [Completed plan](plans/2026-07-18-music-provider-feasibility.md) | YouTube proven as viable baseline provider on the DM device (Firefox/Linux, 480x270 visible player, all six controls passed). Spotify classified CONDITIONAL (Policy III.6 synchronization). Provider contract frozen. See [decision record](../architecture/music-provider-feasibility.md). |
 | 3 | Rollable tables and integrations | `COMPLETE` | 2 | Atmosphere delivery items 1–2 | [Completed corrective plan](plans/2026-07-18-rollable-tables-corrective-implementation.md) | Correct API DTOs, campaign-aware validation, complete authoring/rolling UI, consequence state machine, runnable package fidelity, real browser acceptance, and focused/full tests pass. |
 | 4 | Traps and hazards | `COMPLETE` | 3 | Atmosphere delivery items 3–4 | [Completed plan](plans/2026-07-18-p3-traps-and-hazards.md) | Structured and prose-compatible traps/hazards, provenance, scene/tracker/map integrations, package round-trip, player-safety coverage, and focused/full tests pass. |
-| 5 | Atmosphere and music completion | `COMPLETE` | 2, 4 | Atmosphere delivery items 5–6 | [Implementation plan](plans/2026-07-19-p3-atmosphere-music.md) | Provider SPI/reference adapter, local credentials/token clearing where required, cue library, cockpit widget, assignments, priority switching, deterministic fake-provider tests, package safety, and bounded outage behavior pass. |
-| 6 | Music-focused readiness closeout | `READY` | 5 | Atmosphere item 7; master §§19–23 | Create a dated `dm-readiness-music-closeout` plan | Feature-complete and published-adventure fixtures cover tables, traps, and music; schemas/catalogs/playbook/manual/capability matrix agree; full round-trip and player-safety suites pass. |
+| 5 | Atmosphere and music completion | `IN_PROGRESS` | 2, 4 | Atmosphere delivery items 5–6 | [Implementation plan](plans/2026-07-19-p3-atmosphere-music.md) | Provider SPI/reference adapter, local credentials/token clearing where required, cue library, cockpit widget, assignments, priority switching, deterministic fake-provider tests, package safety, and bounded outage behavior pass. |
+| 6 | Music-focused readiness closeout | `BLOCKED` | 5 | Atmosphere item 7; master §§19–23 | Create a dated `dm-readiness-music-closeout` plan | Feature-complete and published-adventure fixtures cover tables, traps, and music; schemas/catalogs/playbook/manual/capability matrix agree; full round-trip and player-safety suites pass. |
 | 7 | Final readiness verification and release decision | `BLOCKED` | 6 | Master §§21 and 23 | Create a dated `dm-readiness-release-verification` plan | Full automated suite, security gates, documentation audit, real-provider music exercise, and recorded representative manual acceptance session pass. Only then may master item 11 and the DM-only readiness claim be marked complete. |
 
 ## 5. Why this order is fixed
@@ -130,8 +130,10 @@ As of the scope re-baseline on 2026-07-19:
   **237 suites / 1971 tests / 0 failures / 2 errors / 0 skips** (2 CoreSessionLoopSmokeTest
   timeouts — environmental); fresh Flyway startup validates 16 migrations and ends at V16;
   V14-to-V16 upgrade preserves data.
-- **Roadmap status:** row 5 `COMPLETE`; row 6 (Music-focused readiness closeout) `READY`.
-  The [atmosphere and music plan](plans/2026-07-19-p3-atmosphere-music.md) is complete.
+- **Corrective audit (2026-07-19):** row 5 returned to `IN_PROGRESS` after fresh browser evidence
+  reproduced 2 `CoreSessionLoopSmokeTest` errors and code review found incomplete ownership,
+  dependency deletion, confirm/victory state, provider routing, visibility, and fake-provider
+  acceptance behavior. Row 6 is blocked until the row-5 exit gate is genuinely green.
 
 When conversation context is missing or compacted, resume from the first non-`COMPLETE` row in this
 file and validate its status against the repository before acting.
