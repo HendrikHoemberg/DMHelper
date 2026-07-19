@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<script th:inline="javascript" th:fragment="cockpit-widget-config(campaignId, sessionId)">
+/*<![CDATA[*/
+window.audioWidgetConfig = {
+    campaignId: /*[[${campaignId}]]*/ '',
+    sessionId: /*[[${sessionId}]]*/ ''
+};
+/*]]>*/
+</script>
+<div class="cockpit-audio-widget"
+     x-data="audioCockpitWidget(window.audioWidgetConfig)"
+     x-show="hasCue || hasPendingConfirmation || enabled"
+     x-cloak
+     aria-label="Audio playback controls"
+     th:fragment="cockpit-widget(campaignId, sessionId)">
+
+  <div class="audio-now-playing" aria-label="Now playing">
+    <span class="audio-title" x-text="cueName">Track Title</span>
+    <span class="audio-source" x-show="sourceLabel" x-text="sourceLabel">Source</span>
+  </div>
+
+  <div class="audio-player-mount-wrap">
+    <div x-ref="playerMount" class="audio-player-mount"
+         :style="'width:480px;height:270px;' + (enabled ? '' : 'display:none')"
+         data-player-mount></div>
+  </div>
+
+  <div class="audio-controls" role="toolbar" aria-label="Playback controls">
+    <button class="audio-btn" x-show="!enabled && hasCue && !hasPendingConfirmation"
+            @click="enablePlayback()" aria-label="Enable audio playback">
+      Enable
+    </button>
+    <button class="audio-btn" x-show="enabled"
+            @click="togglePlayback()" :aria-label="playing ? 'Pause' : 'Play'"
+            x-text="playing ? 'Pause' : 'Play'">Play</button>
+    <button class="audio-btn" x-show="enabled" @click="skip()"
+            aria-label="Skip to next track">Skip</button>
+    <label class="audio-volume-label">
+      Volume
+      <input type="range" class="audio-volume" x-model="volume"
+             @input="setVolume()" aria-label="Volume" min="0" max="100">
+    </label>
+    <button class="audio-btn" @click="toggleMute()"
+            :aria-label="muted ? 'Unmute' : 'Mute'"
+            x-text="muted ? 'Unmute' : 'Mute'">Mute</button>
+  </div>
+
+  <div class="audio-override-controls" role="group" aria-label="Override controls">
+    <select class="audio-override-picker form-input" x-model="overrideCueId"
+            @change="setOverride($event.target.value)"
+            aria-label="Override audio cue">
+      <option value="">Auto</option>
+      <template x-for="cue in audioCues" :key="cue.id">
+        <option :value="cue.id" x-text="cue.name || cue.cachedTitle || cue.cueKey"></option>
+      </template>
+    </select>
+    <button class="audio-btn" @click="clearOverride()" aria-label="Clear audio override">Clear</button>
+  </div>
+
+  <div class="audio-pending" x-show="hasPendingConfirmation" role="alertdialog"
+       aria-label="Pending audio confirmation" data-pending-confirmation>
+    <span class="audio-pending-text">New audio cue available</span>
+    <button class="audio-btn audio-btn-primary" @click="confirmCue()" aria-label="Play cue">Play</button>
+    <button class="audio-btn" @click="declineCue()" aria-label="Skip cue">Skip</button>
+  </div>
+
+  <div class="audio-error" aria-live="polite" x-text="errorMessage"
+       x-show="errorMessage" role="alert"></div>
+
+  <button class="audio-btn" x-show="errorMessage" @click="retry()"
+          aria-label="Retry playback">Retry</button>
+</div>
+</html>

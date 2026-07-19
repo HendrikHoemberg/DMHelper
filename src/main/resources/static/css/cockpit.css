@@ -324,3 +324,111 @@
   .cockpit-grid { display: flex; flex-direction: column; overflow: auto; }
   .cockpit-story, .cockpit-encounter { max-height: none; }
 }
+
+.cockpit-audio-section {
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: var(--space-sm) var(--space-md);
+}
+.cockpit-audio-widget {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--text-sm);
+}
+.audio-now-playing {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.audio-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.audio-source {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.audio-player-mount-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.audio-player-mount {
+  width: 480px;
+  height: 270px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.audio-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.audio-btn {
+  padding: 4px 10px;
+  font-size: var(--text-sm);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.audio-btn:hover {
+  background: var(--color-surface-hover);
+}
+.audio-btn-primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg);
+}
+.audio-btn-primary:hover {
+  opacity: 0.9;
+}
+.audio-volume-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.audio-volume {
+  width: 80px;
+  accent-color: var(--color-accent);
+}
+.audio-override-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.audio-override-picker {
+  max-width: 160px;
+  padding: 2px 6px;
+  font-size: var(--text-sm);
+}
+.audio-pending {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 4px 8px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-warning);
+  border-radius: 4px;
+}
+.audio-pending-text {
+  font-size: var(--text-sm);
+  color: var(--color-warning);
+}
+.audio-error {
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+  padding: 2px 8px;
+}

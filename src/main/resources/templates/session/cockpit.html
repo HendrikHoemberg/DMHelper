@@ -18,6 +18,9 @@
     <script th:src="@{/js/session-cockpit.js}"></script>
     <script th:src="@{/js/rollable-table-roll.js}"></script>
     <script th:src="@{/js/dice-roller.js}"></script>
+    <script th:src="@{/js/audio-provider-registry.js}"></script>
+    <script th:src="@{/js/audio-provider-youtube.js}"></script>
+    <script th:src="@{/js/audio-widget.js}"></script>
     <script th:src="@{/vendor/alpine.min.js}" defer></script>
     <title th:text="${workspace.campaign.name + ' — Session'}">Campaign — Session</title>
 </head>
@@ -190,6 +193,9 @@
   </section>
   <section class="cockpit-plan" aria-label="Session plan"
            th:replace="~{session/_session-plan :: plan(workspace=${workspace})}"></section>
+  <th:block th:replace="~{audio/_cockpit-widget :: cockpit-widget-config(campaignId=${campaignId}, sessionId=${workspace.session.id})}"></th:block>
+  <section class="cockpit-audio-section" aria-label="Audio playback"
+           th:replace="~{audio/_cockpit-widget :: cockpit-widget(campaignId=${campaignId}, sessionId=${workspace.session.id})}"></section>
   <footer class="cockpit-partybar">
     <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${workspace.partyMembers}, oob=null)}"></th:block>
   </footer>
@@ -201,6 +207,7 @@
 <script th:inline="javascript">
 window.sessionCockpitConfig = {
     campaignId: /*[[${campaignId}]]*/ '',
+    sessionId: /*[[${workspace.session.id}]]*/ null,
     mapId: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.id : null}]]*/ null,
     sessionStatus: /*[[${workspace.session.status}]]*/ 'IDLE',
     presentationMode: /*[[${workspace.session.presentationMode}]]*/ 'CURTAIN',
