@@ -55,6 +55,7 @@ public class AudioCueValidator {
         validateDuration(write.durationSeconds(), problems);
         validateMetadataLength(write.cachedTitle(), write.artistOrOwner(), write.artworkUrl(), write.notes(), problems);
         validateDuplicateCueKey(write.cueKey(), campaignIdOrNull, write.id(), problems);
+        validateDuplicateProviderReference(write, campaignIdOrNull, problems);
 
         return problems;
     }
@@ -75,12 +76,15 @@ public class AudioCueValidator {
     }
 
     private void validateProviderId(String providerId, List<AudioCueValidationProblem> problems) {
-        if (providerId != null && !providerId.isBlank()) {
-            boolean known = AudioProviderRegistry.all().stream()
-                    .anyMatch(a -> a.id().id().equals(providerId));
-            if (!known) {
-                problems.add(problem("UNKNOWN_PROVIDER", "/providerId", "Unknown provider: " + providerId));
-            }
+        if (providerId == null || providerId.isBlank()) {
+            problems.add(problem("CUE_FIELD_REQUIRED", "/providerId", "Provider is required"));
+            return;
+        }
+        String normalized = providerId.toLowerCase();
+        boolean known = AudioProviderRegistry.all().stream()
+                .anyMatch(a -> a.id().id().equals(normalized));
+        if (!known) {
+            problems.add(problem("UNKNOWN_PROVIDER", "/providerId", "Unknown provider: " + providerId));
         }
     }
 
@@ -123,6 +127,27 @@ public class AudioCueValidator {
         if (existing.isPresent() && !existing.get().getId().equals(excludeCueId)) {
             problems.add(problem("DUPLICATE_CUE_KEY", "/cueKey",
                     "Cue key '" + cueKey + "' already exists in this campaign"));
+        }
+    }
+
+    private void validateDuplicateProviderReference(AudioCueWrite write, UUID campaignId,
+                                                    List<AudioCueValidationProblem> problems) {
+        if (campaignId == null || write.providerId() == null || write.providerId().isBlank()
+                || write.providerReference() == null || write.providerReference().isBlank()) {
+            return;
+        }
+        try {
+            var adapter = AudioProviderRegistry.lookup(write.providerId());
+            var parsed = adapter.parseReference(write.providerReference());
+            boolean duplicate = audioCueRepository.findByProviderReference(
+                            campaignId, adapter.id().id(), parsed.kind(), parsed.id()).stream()
+                    .anyMatch(existing -> !existing.getId().equals(write.id()));
+            if (duplicate) {
+                problems.add(problem("DUPLICATE_PROVIDER_REFERENCE", "/providerReference",
+                        "This provider reference is already used by another cue in the campaign"));
+            }
+        } catch (RuntimeException ignored) {
+            // The parse-specific validator reports the actionable reference problem.
         }
     }
 

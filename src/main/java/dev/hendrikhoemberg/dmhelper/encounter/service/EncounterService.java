@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.encounter.service;
 
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
+import dev.hendrikhoemberg.dmhelper.audio.service.EncounterVictoryAudioRequested;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
@@ -47,6 +48,7 @@ import dev.hendrikhoemberg.dmhelper.treasury.data.InventoryState;
 import dev.hendrikhoemberg.dmhelper.treasury.service.TreasuryService;
 import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
@@ -99,6 +101,7 @@ public class EncounterService {
     private final TrapRepository trapRepository;
     private final HazardRepository hazardRepository;
     private final MarkdownUtil markdownUtil;
+    private final ApplicationEventPublisher events;
 
     public EncounterService(EncounterRepository encounterRepo, CampaignRepository campaignRepo,
                             EntityManager em, GameMapRepository mapRepo,
@@ -116,7 +119,8 @@ public class EncounterService {
                             ThreatReferenceResolver threatReferenceResolver,
                             TrapRepository trapRepository,
                             HazardRepository hazardRepository,
-                            MarkdownUtil markdownUtil) {
+                            MarkdownUtil markdownUtil,
+                            ApplicationEventPublisher events) {
         this.encounterRepo = encounterRepo;
         this.campaignRepo = campaignRepo;
         this.em = em;
@@ -139,6 +143,7 @@ public class EncounterService {
         this.trapRepository = trapRepository;
         this.hazardRepository = hazardRepository;
         this.markdownUtil = markdownUtil;
+        this.events = events;
     }
 
     public record CreateRequest(String name, UUID mapId) {}
@@ -395,6 +400,12 @@ public class EncounterService {
                 "{\"endedAt\":\"" + Instant.now().toString() + "\"}");
         tablePresentationService.updateAoEs(e.getCampaign().getId(), List.of());
         tablePresentationService.broadcastCurrentState(e.getCampaign().getId());
+        if (e.getVictoryAudioCue() != null && e.getVictoryCueDurationSeconds() != null
+                && e.getVictoryCueDurationSeconds() > 0) {
+            events.publishEvent(new EncounterVictoryAudioRequested(
+                    e.getCampaign().getId(), e.getId(), e.getName(),
+                    e.getVictoryAudioCue().getId(), e.getVictoryCueDurationSeconds()));
+        }
         return dto;
     }
 

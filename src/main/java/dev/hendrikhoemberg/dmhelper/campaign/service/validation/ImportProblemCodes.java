@@ -112,6 +112,7 @@ public final class ImportProblemCodes {
     public static final String DUPLICATE_AUDIO_CUE_KEY = "DUPLICATE_AUDIO_CUE_KEY";
     public static final String DUPLICATE_CUE_KEY = "DUPLICATE_CUE_KEY";
     public static final String DUPLICATE_NORMALIZED_PROVIDER_REF = "DUPLICATE_NORMALIZED_PROVIDER_REF";
+    public static final String DUPLICATE_PROVIDER_REFERENCE = "DUPLICATE_PROVIDER_REFERENCE";
     public static final String DURATION_OUT_OF_BOUNDS = "DURATION_OUT_OF_BOUNDS";
     public static final String INVALID_CUE_KEY = "INVALID_CUE_KEY";
     public static final String INVALID_REFERENCE = "INVALID_REFERENCE";

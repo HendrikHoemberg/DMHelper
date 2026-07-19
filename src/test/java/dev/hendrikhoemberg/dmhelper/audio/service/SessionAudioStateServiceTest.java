@@ -6,6 +6,8 @@ import dev.hendrikhoemberg.dmhelper.audio.data.SessionAudioState;
 import dev.hendrikhoemberg.dmhelper.audio.data.SessionAudioStateRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignSettings;
+import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignSettingsCodec;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class SessionAudioStateServiceTest {
@@ -36,6 +39,7 @@ class SessionAudioStateServiceTest {
     @Mock private SessionAudioStateRepository stateRepository;
     @Mock private CampaignSessionRepository sessionRepository;
     @Mock private CampaignRepository campaignRepository;
+    @Mock private CampaignSettingsCodec settingsCodec;
     @Mock private AudioCueResolver resolver;
 
     @InjectMocks private SessionAudioStateService service;
@@ -67,6 +71,8 @@ class SessionAudioStateServiceTest {
         cue = new AudioCue();
         cue.setId(UUID.randomUUID());
         cue.setName("Test Cue");
+        cue.setCampaign(campaign);
+        lenient().when(settingsCodec.read(campaign)).thenReturn(CampaignSettings.defaults());
     }
 
     @Test
@@ -177,6 +183,9 @@ class SessionAudioStateServiceTest {
         existing.setSession(session);
         existing.setAcceptedAutomaticCue(null);
         existing.setPendingCue(cue);
+        existing.setPendingSourceKind(AudioCueSource.SourceKind.SCENE.name());
+        existing.setPendingSourceId(UUID.randomUUID());
+        existing.setPendingSourceLabel("Scene: Hall");
         existing.setDismissedCandidateCue(null);
 
         when(stateRepository.findBySessionId(sessionId)).thenReturn(Optional.of(existing));
@@ -186,7 +195,32 @@ class SessionAudioStateServiceTest {
 
         assertThat(result.getAcceptedAutomaticCue().getId()).isEqualTo(cue.getId());
         assertThat(result.getPendingCue()).isNull();
+        assertThat(result.getAcceptedSourceKind()).isEqualTo(AudioCueSource.SourceKind.SCENE.name());
+        assertThat(result.getAcceptedSourceLabel()).isEqualTo("Scene: Hall");
+        assertThat(result.getPendingSourceKind()).isNull();
         assertThat(result.getDismissedCandidateCue()).isNull();
+    }
+
+    @Test
+    void scopedStateMutationRejectsSessionFromAnotherCampaign() {
+        when(stateRepository.findBySessionId(sessionId)).thenReturn(Optional.of(state));
+
+        assertThatThrownBy(() -> service.mute(sessionId, UUID.randomUUID()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("No audio state for campaign session");
+    }
+
+    @Test
+    void scopedOverrideRejectsCueFromAnotherCampaign() {
+        Campaign foreign = new Campaign();
+        foreign.setId(UUID.randomUUID());
+        AudioCue foreignCue = new AudioCue();
+        foreignCue.setCampaign(foreign);
+        when(stateRepository.findBySessionId(sessionId)).thenReturn(Optional.of(state));
+
+        assertThatThrownBy(() -> service.setManualOverride(sessionId, campaignId, foreignCue))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Audio cue not found in campaign");
     }
 
     @Test
@@ -224,7 +258,18 @@ class SessionAudioStateServiceTest {
 
     @Test
     void acknowledgePlaybackDoesNothing() {
+        when(stateRepository.findBySessionId(sessionId)).thenReturn(Optional.of(state));
         service.acknowledgePlaybackResult(sessionId, "completed");
+    }
+
+    @Test
+    void acknowledgeRejectsRawProviderMessages() {
+        when(stateRepository.findBySessionId(sessionId)).thenReturn(Optional.of(state));
+
+        assertThatThrownBy(() -> service.acknowledgePlaybackResult(
+                sessionId, campaignId, "provider stack: secret"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Unsupported playback result");
     }
 
     @Test
@@ -239,12 +284,17 @@ class SessionAudioStateServiceTest {
         state.setMuted(true);
         state.setSwitchMode(AudioSwitchMode.CONFIRM);
         state.setPendingCue(cue);
+        CampaignSettings defaults = CampaignSettings.defaults();
+        when(settingsCodec.read(campaign)).thenReturn(new CampaignSettings(
+                defaults.levelingMode(), defaults.calendar(), defaults.currentDate(),
+                AudioSwitchMode.CONFIRM));
 
         ResolvedAudioCue resolved = new ResolvedAudioCue(
                 cue,
                 new AudioCueSource(AudioCueSource.SourceKind.SCENE, null, null));
 
         when(stateRepository.findBySessionId(sessionId)).thenReturn(Optional.of(state));
+        when(campaignRepository.findById(campaignId)).thenReturn(Optional.of(campaign));
         when(resolver.resolve(state, campaignId)).thenReturn(resolved);
 
         AudioRuntimeView view = service.getRuntimeView(sessionId, campaignId);
@@ -261,6 +311,7 @@ class SessionAudioStateServiceTest {
                 new AudioCueSource(AudioCueSource.SourceKind.CAMPAIGN_DEFAULT, null, null));
 
         when(stateRepository.findBySessionId(sessionId)).thenReturn(Optional.of(state));
+        when(campaignRepository.findById(campaignId)).thenReturn(Optional.of(campaign));
         when(resolver.resolve(state, campaignId)).thenReturn(silence);
 
         AudioRuntimeView view = service.getRuntimeView(sessionId, campaignId);
@@ -275,6 +326,7 @@ class SessionAudioStateServiceTest {
                 new AudioCueSource(AudioCueSource.SourceKind.COMBAT, null, null));
 
         when(stateRepository.findBySessionId(sessionId)).thenReturn(Optional.of(state));
+        when(campaignRepository.findById(campaignId)).thenReturn(Optional.of(campaign));
         when(resolver.resolve(state, campaignId)).thenReturn(resolved);
 
         AudioRuntimeView view = service.getRuntimeView(sessionId, campaignId);

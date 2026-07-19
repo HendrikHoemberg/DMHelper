@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org"
+      th:attr="data-test-audio-provider=${testAudioProvider ? 'FAKE' : null}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,6 +21,7 @@
     <script th:src="@{/js/dice-roller.js}"></script>
     <script th:src="@{/js/audio-provider-registry.js}"></script>
     <script th:src="@{/js/audio-provider-youtube.js}"></script>
+    <script th:if="${testAudioProvider}" th:src="@{/js/audio-provider-fake.js}"></script>
     <script th:src="@{/js/audio-widget.js}"></script>
     <script th:src="@{/vendor/alpine.min.js}" defer></script>
     <title th:text="${workspace.campaign.name + ' — Session'}">Campaign — Session</title>
@@ -60,7 +62,7 @@
   <th:block th:replace="~{rollable-table/_roll-panel :: roll-panel(tableId=${null}, compact=${true})}"></th:block>
   <section class="cockpit-grid">
     <aside class="cockpit-story" aria-label="Story rail"
-           th:replace="~{session/_story-rail :: story(workspace=${workspace})}"></aside>
+           th:insert="~{session/_story-rail :: story(workspace=${workspace})}"></aside>
     <section class="cockpit-table" aria-label="Table surface"
              th:attr="data-selection-source=${workspace.selectionSource}">
       <div class="battle-toolbar" aria-label="Battle map controls">
@@ -190,10 +192,10 @@
       </div>
     </section>
     <aside class="cockpit-encounter" aria-label="Encounter rail"
-           th:replace="~{session/_encounter-rail :: encounters(workspace=${workspace})}"></aside>
+           th:insert="~{session/_encounter-rail :: encounters(workspace=${workspace})}"></aside>
   </section>
   <section class="cockpit-plan" aria-label="Session plan"
-           th:replace="~{session/_session-plan :: plan(workspace=${workspace})}"></section>
+           th:insert="~{session/_session-plan :: plan(workspace=${workspace})}"></section>
   <th:block th:replace="~{audio/_cockpit-widget :: cockpit-widget-config(campaignId=${campaignId}, sessionId=${workspace.session.id})}"></th:block>
   <section class="cockpit-audio-section" aria-label="Audio playback"
            th:replace="~{audio/_cockpit-widget :: cockpit-widget(campaignId=${campaignId}, sessionId=${workspace.session.id})}"></section>

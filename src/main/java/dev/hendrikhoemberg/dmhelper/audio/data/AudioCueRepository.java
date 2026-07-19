@@ -22,6 +22,14 @@ public interface AudioCueRepository extends JpaRepository<AudioCue, UUID> {
             @Param("reference") String providerReference,
             @Param("campaignId") UUID campaignId);
 
+    @Query("SELECT a FROM AudioCue a WHERE a.campaign.id = :campaignId AND a.providerId = :providerId "
+            + "AND a.referenceKind = :kind AND a.providerReference = :reference")
+    List<AudioCue> findByProviderReference(
+            @Param("campaignId") UUID campaignId,
+            @Param("providerId") String providerId,
+            @Param("kind") AudioReferenceKind kind,
+            @Param("reference") String providerReference);
+
     @Query("SELECT a FROM AudioCue a LEFT JOIN FETCH a.campaign WHERE a.id = :id")
     Optional<AudioCue> findDetailedById(@Param("id") UUID id);
 }

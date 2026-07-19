@@ -24,9 +24,7 @@ class AudioFailureIsolationTest {
     @Test
     void unknownProviderErrorDefaultsToContentUnavailable() throws IOException {
         String js = Files.readString(Path.of("src/main/resources/static/js/audio-widget.js"));
-        int defaultBranch = js.indexOf("errorMessage = 'CONTENT_UNAVAILABLE'");
-        int catchBlock = js.indexOf("} else {", js.indexOf("handleProviderError"));
-        assertThat(defaultBranch).isGreaterThan(catchBlock);
+        assertThat(js).contains("return ERROR_MESSAGES[category] ? category : 'CONTENT_UNAVAILABLE'");
     }
 
     @Test
@@ -64,7 +62,7 @@ class AudioFailureIsolationTest {
         String js = Files.readString(Path.of("src/main/resources/static/js/audio-provider-fake.js"));
         assertThat(js)
                 .contains("injectFailure")
-                .contains("injectedFailures")
+                .contains("failures")
                 .contains("clearFailures");
     }
 

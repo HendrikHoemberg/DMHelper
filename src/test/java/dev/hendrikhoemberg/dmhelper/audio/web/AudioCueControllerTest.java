@@ -94,7 +94,7 @@ class AudioCueControllerTest {
         campaign.setId(campaignId);
         campaign.setName("Test");
         c.setCampaign(campaign);
-        when(service.findById(id)).thenReturn(c);
+        when(service.findById(id, campaignId)).thenReturn(c);
         when(markdownUtil.toHtml(any())).thenReturn("");
 
         mockMvc.perform(get("/campaigns/{campaignId}/audio/cues/{cueId}", campaignId, id))
@@ -111,7 +111,7 @@ class AudioCueControllerTest {
         campaign.setId(campaignId);
         campaign.setName("Test");
         c.setCampaign(campaign);
-        when(service.findById(id)).thenReturn(c);
+        when(service.findById(id, campaignId)).thenReturn(c);
 
         mockMvc.perform(get("/campaigns/{campaignId}/audio/cues/{cueId}/edit", campaignId, id))
                 .andExpect(status().isOk())

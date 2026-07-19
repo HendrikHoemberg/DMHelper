@@ -73,6 +73,14 @@ class YouTubeProviderAdapterTest {
     }
 
     @Test
+    void rejectsEveryNonHttpsSchemeCaseInsensitively() {
+        assertThatThrownBy(() -> adapter.parseReference("HTTP://www.youtube.com/watch?v=dQw4w9WgXcQ"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> adapter.parseReference("ftp://www.youtube.com/watch?v=dQw4w9WgXcQ"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void rejectsLookalikeDomain() {
         assertThatThrownBy(() -> adapter.parseReference("https://www.youtubee.com/watch?v=dQw4w9WgXcQ"))
             .isInstanceOf(IllegalArgumentException.class);

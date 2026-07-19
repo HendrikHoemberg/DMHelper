@@ -68,16 +68,16 @@ public class YouTubeProviderAdapter implements AudioProviderAdapter {
     }
 
     private ParsedAudioReference parseUrl(String input) {
-        if (input.startsWith("http://")) {
+        URI uri = URI.create(input);
+        if (!"https".equalsIgnoreCase(uri.getScheme())) {
             throw new IllegalArgumentException("HTTPS only");
         }
-
-        URI uri = URI.create(input);
         String host = uri.getHost();
 
-        if (host == null || !ALLOWED_HOSTS.contains(host)) {
+        if (host == null || !ALLOWED_HOSTS.contains(host.toLowerCase())) {
             throw new IllegalArgumentException("Unsupported host: " + host);
         }
+        host = host.toLowerCase();
 
         if (uri.getUserInfo() != null) {
             throw new IllegalArgumentException("User info not allowed in URL");

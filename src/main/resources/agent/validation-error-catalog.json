@@ -264,6 +264,16 @@
       ]
     },
     {
+      "code": "DUPLICATE_PROVIDER_REFERENCE",
+      "defaultSeverity": "ERROR",
+      "summary": "An audio cue duplicates another cue's normalized provider reference in the campaign.",
+      "when": "Audio cue creation or update in the campaign.",
+      "suggestionTemplate": "Choose a different provider reference or reuse the existing cue.",
+      "repairHints": [
+        "Open the campaign audio-cue library and locate the cue that uses the same provider item."
+      ]
+    },
+    {
       "code": "DURATION_OUT_OF_BOUNDS",
       "defaultSeverity": "ERROR",
       "summary": "The victory cue duration is outside the permitted range.",

@@ -99,4 +99,10 @@ public record AudioCueWrite(
                 cachedTitle, artistOrOwner, artworkUrl, durationSeconds, category, volumeHint,
                 transitionPreference, notes, id);
     }
+
+    public AudioCueWrite withId(UUID id) {
+        return new AudioCueWrite(cueKey, name, providerId, referenceKind, providerReference,
+                cachedTitle, artistOrOwner, artworkUrl, durationSeconds, category, volumeHint,
+                transitionPreference, notes, id);
+    }
 }

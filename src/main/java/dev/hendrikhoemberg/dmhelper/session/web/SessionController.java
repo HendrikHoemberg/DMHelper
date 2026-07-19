@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.session.web;
 
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,9 @@ public class SessionController {
 
     private final SessionWorkspaceService workspaces;
 
+    @Value("${dmhelper.audio.test-provider:false}")
+    private boolean testAudioProvider;
+
     public SessionController(SessionWorkspaceService workspaces) {
         this.workspaces = workspaces;
     }
@@ -27,6 +31,7 @@ public class SessionController {
         SessionWorkspaceService.SessionWorkspace workspace = workspaces.load(campaignId, mapId);
         model.addAttribute("workspace", workspace);
         model.addAttribute("campaignId", campaignId);
+        model.addAttribute("testAudioProvider", testAudioProvider);
         model.addAttribute("attendeeIds", workspace.session().getStatus()
                 == dev.hendrikhoemberg.dmhelper.session.data.CampaignSession.Status.IDLE
                 ? workspace.partyMembers().stream().map(member -> member.getId().toString()).toList()

@@ -52,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.io.ByteArrayOutputStream;
@@ -457,7 +458,8 @@ class CoreSessionLoopSmokeTest {
         assertThat(mapPicker.inputValue()).isEqualTo(mapId.toString());
         assertThat(sessionRepository.findByCampaignId(campaignId).orElseThrow()
                 .getWorkspaceMap().getId()).isEqualTo(mapId);
-        dmPage.locator(".toast-error .toast-action").click();
+        dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(mapCorrelation))
+                .locator(".toast-action").click();
         dmPage.waitForFunction("([id]) => window.battleMap.mapId === id", List.of(secondMapId.toString()));
         mapPicker.selectOption(mapId.toString());
         dmPage.waitForFunction("([id]) => window.battleMap.mapId === id", List.of(mapId.toString()));
@@ -535,7 +537,8 @@ class CoreSessionLoopSmokeTest {
         dmPage.locator(".toast-error",
                 new Page.LocatorOptions().setHasText(completeCorrelation)).waitFor();
         assertThat(draftBody.inputValue()).contains("western seal remains unresolved");
-        dmPage.locator(".toast-error .toast-action").click();
+        dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(completeCorrelation))
+                .locator(".toast-action").click();
         dmPage.waitForURL(url -> url.contains("/notes"));
         assertThat(noteRepository.findByCampaignIdAndTypeOrderByCreatedAtDesc(
                 campaignId, NoteType.SESSION_LOG)).singleElement()
@@ -1409,6 +1412,215 @@ class CoreSessionLoopSmokeTest {
         assertThat(threatCombatant.threatId()).isEqualTo(trapId);
     }
 
+    @Test
+    @Order(25)
+    void audioCockpitUsesFakeProviderAcrossTheRealSessionFlow() throws Exception {
+        startSession();
+        encounterRepository.findByCampaignIdAndStatus(
+                        campaignId, dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.ACTIVE)
+                .ifPresent(active -> encounterService.endEncounter(active.getId()));
+
+        List<Scene> scenes = sceneRepo.findByChapterIdOrderBySortOrderAsc(chapterId);
+        Scene upper = scenes.get(0);
+        Scene lower = scenes.get(1);
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId);
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        UUID defaultCue = createAudioCueThroughApi("browser-default", "Browser Default",
+                "aaaaaaaaaaa", "Browser Default Track");
+        UUID upperCue = createAudioCueThroughApi("browser-upper", "Upper Crypt Ambience",
+                "bbbbbbbbbbb", "Browser Upper Track");
+        UUID lowerCue = createAudioCueThroughApi("browser-lower", "Lower Crypt Ambience",
+                "ccccccccccc", "Browser Lower Track");
+        UUID combatCue = createAudioCueThroughApi("browser-combat", "Guardian Combat",
+                "ddddddddddd", "Guardian Combat Track");
+        UUID victoryCue = createAudioCueThroughApi("browser-victory", "Guardian Victory",
+                "eeeeeeeeeee", "Guardian Victory Track");
+        UUID overrideCue = createAudioCueThroughApi("browser-override", "Manual Suspense",
+                "fffffffffff", "Manual Suspense Track");
+
+        UUID audioEncounterId = encounterService.create(campaignId,
+                new EncounterService.CreateRequest("Audio Guardians", mapId)).id();
+        assignAudioThroughApi("/assignments/campaign?cueId=" + defaultCue);
+        assignAudioThroughApi("/assignments/scenes/" + upper.getId() + "?cueId=" + upperCue);
+        assignAudioThroughApi("/assignments/scenes/" + lower.getId() + "?cueId=" + lowerCue);
+        assignAudioThroughApi("/assignments/encounters/" + audioEncounterId
+                + "?role=combat&cueId=" + combatCue);
+        assignAudioThroughApi("/assignments/encounters/" + audioEncounterId
+                + "?role=victory&cueId=" + victoryCue + "&durationSeconds=5");
+        setAudioSwitchMode("AUTOMATIC");
+        adventureService.setCurrentScene(campaignId, upper.getId());
+
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        Locator widget = dmPage.locator(".cockpit-audio-widget");
+        widget.waitFor();
+        widget.scrollIntoViewIfNeeded();
+        String initialRuntime = (String) dmPage.evaluate("""
+            async ([campaignId]) => {
+                const sessionId = window.audioWidgetConfig.sessionId;
+                const response = await fetch('/api/v1/campaigns/' + campaignId
+                    + '/audio/runtime/state?sessionId=' + sessionId);
+                return await response.text();
+            }
+        """, List.of(campaignId.toString()));
+        assertThat(initialRuntime).as("initial audio runtime state")
+                .contains("Browser Upper Track", "SCENE", "bbbbbbbbbbb");
+        dmPage.waitForFunction("document.querySelector('.audio-title')?.textContent === 'Browser Upper Track'");
+        assertThat(widget.locator(".audio-source").textContent()).contains("Scene: Upper Crypt");
+        assertThat(dmPage.locator("script[src*='audio-provider-fake.js']").count()).isEqualTo(1);
+        assertThat(dmPage.locator("script[src*='youtube.com/iframe_api']").count()).isZero();
+
+        widget.locator("button", new Locator.LocatorOptions().setHasText("Enable")).click();
+        dmPage.waitForFunction("window.__DMHELPER_AUDIO_FAKE__?.commands.some(c => c.command === 'load:VIDEO:bbbbbbbbbbb')");
+        assertThat(dmPage.locator("[data-fake-audio-player='enabled']").count()).isEqualTo(1);
+
+        Locator planned = dmPage.locator(".planned-encounter-row",
+                new Page.LocatorOptions().setHasText("Audio Guardians"));
+        planned.waitFor();
+        Number startedAt = (Number) dmPage.evaluate("performance.now()");
+        planned.locator("button", new Locator.LocatorOptions().setHasText("Activate")).click();
+        widget.scrollIntoViewIfNeeded();
+        dmPage.waitForFunction("window.__DMHELPER_AUDIO_FAKE__.commands.some(c => c.command === 'load:VIDEO:ddddddddddd')");
+        Number combatLoadedAt = (Number) dmPage.evaluate("window.__DMHELPER_AUDIO_FAKE__.commands"
+                + ".find(c => c.command === 'load:VIDEO:ddddddddddd').at");
+        assertThat(combatLoadedAt.doubleValue() - startedAt.doubleValue())
+                .as("fake provider receives the combat switch within 500 ms")
+                .isLessThan(500);
+        assertThat(widget.locator(".audio-source").textContent()).contains("Encounter: Audio Guardians");
+        assertThat(widget.locator(".audio-transition-notice").textContent()).contains("cut");
+
+        dmPage.locator(".tracker-header button", new Page.LocatorOptions().setHasText("End")).click();
+        widget.scrollIntoViewIfNeeded();
+        dmPage.waitForFunction("window.__DMHELPER_AUDIO_FAKE__.commands.some(c => c.command === 'load:VIDEO:eeeeeeeeeee')");
+        assertThat(widget.locator(".audio-source").textContent()).contains("Victory: Audio Guardians");
+        dmPage.waitForFunction("window.__DMHELPER_AUDIO_FAKE__.commands.some(c => c.command === 'load:VIDEO:bbbbbbbbbbb'"
+                + " && c.at > window.__DMHELPER_AUDIO_FAKE__.commands.find(v => v.command === 'load:VIDEO:eeeeeeeeeee').at)",
+                null, new Page.WaitForFunctionOptions().setTimeout(8_000));
+
+        widget.locator("select[aria-label='Override audio cue']").selectOption(overrideCue.toString());
+        dmPage.waitForFunction("window.__DMHELPER_AUDIO_FAKE__.commands.some(c => c.command === 'load:VIDEO:fffffffffff')");
+        dmPage.locator("button[title='Next scene']").click();
+        widget.scrollIntoViewIfNeeded();
+        dmPage.waitForFunction("document.querySelector('[data-current-scene]')?.textContent.includes('Lower Crypt')");
+        assertThat(widget.locator(".audio-title").textContent()).isEqualTo("Manual Suspense Track");
+        widget.locator("button", new Locator.LocatorOptions().setHasText("Clear")).click();
+        dmPage.waitForFunction("document.querySelector('.audio-title')?.textContent === 'Browser Lower Track'");
+
+        setAudioSwitchMode("CONFIRM");
+        dmPage.evaluate("window.dispatchEvent(new CustomEvent('cockpit-rails-refreshed'))");
+        dmPage.waitForTimeout(100);
+        dmPage.locator("button[title='Previous scene']").click();
+        widget.scrollIntoViewIfNeeded();
+        Locator pending = widget.locator("[data-pending-confirmation]");
+        pending.waitFor();
+        assertThat(pending.textContent()).contains("Browser Upper Track");
+        pending.locator("button", new Locator.LocatorOptions().setHasText("Play")).click();
+        dmPage.waitForFunction("document.querySelector('.audio-title')?.textContent === 'Browser Upper Track'"
+                + " && !document.querySelector('[data-pending-confirmation]').offsetParent");
+
+        dmPage.locator("button[title='Next scene']").click();
+        widget.scrollIntoViewIfNeeded();
+        pending.waitFor();
+        assertThat(pending.textContent()).contains("Browser Lower Track");
+        pending.locator("button", new Locator.LocatorOptions().setHasText("Skip")).click();
+        dmPage.waitForFunction("!document.querySelector('[data-pending-confirmation]').offsetParent");
+        assertThat(widget.locator(".audio-title").textContent()).isEqualTo("Browser Upper Track");
+
+        widget.locator("button", new Locator.LocatorOptions().setHasText("Mute")).click();
+        int loadsBeforeMutedSceneChange = ((Number) dmPage.evaluate(
+                "window.__DMHELPER_AUDIO_FAKE__.commands.filter(c => c.command.startsWith('load:')).length")).intValue();
+        dmPage.locator("button[title='Previous scene']").click();
+        widget.scrollIntoViewIfNeeded();
+        dmPage.waitForFunction("document.querySelector('[data-current-scene]')?.textContent.includes('Upper Crypt')");
+        int loadsAfterMutedSceneChange = ((Number) dmPage.evaluate(
+                "window.__DMHELPER_AUDIO_FAKE__.commands.filter(c => c.command.startsWith('load:')).length")).intValue();
+        assertThat(loadsAfterMutedSceneChange).isEqualTo(loadsBeforeMutedSceneChange);
+        widget.locator("button", new Locator.LocatorOptions().setHasText("Unmute")).click();
+
+        setAudioSwitchMode("AUTOMATIC");
+        dmPage.evaluate("window.dispatchEvent(new CustomEvent('cockpit-rails-refreshed'))");
+        dmPage.waitForFunction("document.querySelector('.audio-title')?.textContent === 'Browser Upper Track'");
+        dmPage.evaluate("window.__DMHELPER_AUDIO_FAKE__.injectFailureOn('load', 'PROVIDER_OFFLINE')");
+        dmPage.locator("button[title='Next scene']").click();
+        widget.scrollIntoViewIfNeeded();
+        dmPage.waitForFunction("document.querySelector('.audio-error')?.dataset.errorCategory === 'PROVIDER_OFFLINE'");
+        assertThat(dmPage.locator("[data-current-scene]").textContent()).contains("Lower Crypt");
+        assertThat(widget.locator(".audio-error").textContent()).contains("did not respond");
+        widget.locator("button", new Locator.LocatorOptions().setHasText("Retry")).click();
+        dmPage.waitForFunction("document.querySelector('.audio-title')?.textContent === 'Browser Lower Track'"
+                + " && !document.querySelector('.audio-error').offsetParent");
+
+        List<String> playerAudioRequests = new CopyOnWriteArrayList<>();
+        BrowserContext playerContext = browser.newContext();
+        Page playerPage = guardedPage(playerContext);
+        playerPage.onRequest(request -> {
+            String url = request.url().toLowerCase();
+            if (url.contains("audio") || url.contains("youtube")) playerAudioRequests.add(url);
+        });
+        playerPage.navigate("http://localhost:" + port + "/player");
+        playerPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(playerPage.content()).doesNotContain("audioCockpitWidget", "providerReference",
+                "Browser Upper Track", "Browser Lower Track");
+        assertThat(playerAudioRequests).isEmpty();
+        playerContext.close();
+
+        var audioArtifact = exportCoordinator.export(campaignId, new CampaignExportOptions(false, false));
+        CampaignManifestV2 audioManifest = stripTableAndConflictingEquipment(audioArtifact.manifest());
+        ByteArrayOutputStream audioPackage = new ByteArrayOutputStream();
+        var audioWrite = audioArtifact.writeRequest();
+        new CampaignPackageWriter().write(new CampaignPackageWriteRequest(
+                "audio-rt.dmcampaign", audioManifest, audioWrite.assetSources()), audioPackage);
+
+        String restoredLocation = (String) dmPage.evaluate("""
+            async ([baseUrl, bodyB64, zipped]) => {
+                const binary = Uint8Array.from(atob(bodyB64), c => c.charCodeAt(0));
+                const previewResponse = await fetch(baseUrl + '/campaigns/package-imports/previews', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': zipped
+                            ? 'application/vnd.dmhelper.campaign+zip'
+                            : 'application/json',
+                        'X-DMHelper-Filename': zipped ? 'audio-rt.dmcampaign' : 'audio-rt.dmcampaign.json'
+                    },
+                    body: binary
+                });
+                if (!previewResponse.ok) throw new Error('Audio preview failed: ' + await previewResponse.text());
+                const preview = await previewResponse.json();
+                if (preview.status === 'BLOCKED') {
+                    throw new Error('Audio import blocked: ' + JSON.stringify(preview.problems));
+                }
+                const confirmed = await fetch(baseUrl + '/campaigns/package-imports/' + preview.previewId
+                    + '/confirm?acceptWarnings=true', { method: 'POST' });
+                if (!confirmed.ok) throw new Error('Audio import failed: ' + await confirmed.text());
+                return confirmed.headers.get('Location');
+            }
+        """, Arrays.asList("http://localhost:" + port,
+                Base64.getEncoder().encodeToString(audioPackage.toByteArray()),
+                !audioWrite.assetSources().isEmpty()));
+
+        UUID restoredCampaignId = UUID.fromString(restoredLocation.replace("/campaigns/", ""));
+        CampaignManifestV2 restoredManifest = exportCoordinator.export(restoredCampaignId).manifest();
+        assertThat(restoredManifest.audioCues()).hasSize(6)
+                .extracting(CampaignManifestV2.AudioCueDto::name)
+                .contains("Upper Crypt Ambience", "Lower Crypt Ambience", "Guardian Combat",
+                        "Guardian Victory", "Manual Suspense");
+        assertThat(restoredManifest.campaign().defaultCueRef()).isNotNull();
+        assertThat(restoredManifest.adventures().stream()
+                .flatMap(adventure -> adventure.chapters().stream())
+                .flatMap(chapter -> chapter.scenes().stream())
+                .filter(scene -> scene.sceneCueRef() != null)
+                .count()).isEqualTo(2);
+        assertThat(restoredManifest.encounters()).filteredOn(encounter -> "Audio Guardians".equals(encounter.name()))
+                .singleElement().satisfies(encounter -> {
+                    assertThat(encounter.combatCueRef()).isNotNull();
+                    assertThat(encounter.victoryCueRef()).isNotNull();
+                    assertThat(encounter.victoryCueDurationSeconds()).isEqualTo(5);
+                });
+        String restoredJson = JsonMapper.builder().build().writeValueAsString(restoredManifest);
+        assertThat(restoredJson).doesNotContain("manualOverrideCue", "pendingCue", "temporaryVictoryCue",
+                "victoryUntil", "muted");
+    }
+
     private static CampaignManifestV2 stripTableAndConflictingEquipment(CampaignManifestV2 source) {
         // Drop scene links that targeted rollable tables so table removal stays coherent.
         var adventures = source.adventures().stream()
@@ -1429,7 +1641,7 @@ class CoreSessionLoopSmokeTest {
                                                         || link.targetRef().type() == null
                                                         || !"ROLLABLE_TABLE".equals(link.targetRef().type().name()))
                                                 .toList()
-                                , null)).toList()
+                                , sc.sceneCueRef())).toList()
                         )).toList(),
                         adv.createdAt()))
                 .toList();
@@ -1451,7 +1663,7 @@ class CoreSessionLoopSmokeTest {
                 source.quests(), source.annotations(), source.worldNpcs(), source.worldLocations(),
                 source.factions(), source.worldRelationships(), source.factionClocks(),
                 List.of(), // rollableTables
-                source.traps(), source.hazards(), List.of());
+                source.traps(), source.hazards(), source.audioCues());
     }
 
     private UUID createTrapThroughEditorApi(String sourceKey, String name,
@@ -1501,6 +1713,49 @@ class CoreSessionLoopSmokeTest {
         """, Arrays.asList(campaignId.toString(), sourceKey, name, description,
                 attackBonus, damageExpression));
         return UUID.fromString((String) id);
+    }
+
+    private UUID createAudioCueThroughApi(String cueKey, String name,
+                                          String providerReference, String cachedTitle) {
+        Object id = dmPage.evaluate("""
+            async ([campaignId, cueKey, name, providerReference, cachedTitle]) => {
+                const response = await fetch('/api/v1/campaigns/' + campaignId + '/audio/cues', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        cueKey, name, providerId: 'youtube', referenceKind: 'VIDEO',
+                        providerReference, cachedTitle, artistOrOwner: 'Browser acceptance',
+                        category: 'AMBIENT', volumeHint: 45,
+                        transitionPreference: 'CROSSFADE', notes: 'Browser acceptance cue'
+                    })
+                });
+                if (!response.ok) throw new Error('Audio cue creation failed: ' + await response.text());
+                return (await response.json()).id;
+            }
+        """, Arrays.asList(campaignId.toString(), cueKey, name, providerReference, cachedTitle));
+        return UUID.fromString((String) id);
+    }
+
+    private void assignAudioThroughApi(String assignmentPathAndQuery) {
+        dmPage.evaluate("""
+            async ([campaignId, path]) => {
+                const response = await fetch('/api/v1/campaigns/' + campaignId + '/audio' + path,
+                    { method: 'PUT' });
+                if (!response.ok) throw new Error('Audio assignment failed: ' + await response.text());
+            }
+        """, Arrays.asList(campaignId.toString(), assignmentPathAndQuery));
+    }
+
+    private void setAudioSwitchMode(String mode) {
+        dmPage.evaluate("""
+            async ([campaignId, mode]) => {
+                const response = await fetch('/api/v1/campaigns/' + campaignId + '/audio/settings', {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ audioSwitchMode: mode })
+                });
+                if (!response.ok) throw new Error('Audio settings update failed: ' + await response.text());
+            }
+        """, Arrays.asList(campaignId.toString(), mode));
     }
 
     private UUID createHazardThroughEditorApi(String sourceKey, String name,

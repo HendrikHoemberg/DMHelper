@@ -43,6 +43,19 @@ class SessionControllerTest {
     }
 
     @Test
+    void testProfileInjectsFakeAudioProviderWithoutARequestSwitch() throws Exception {
+        SessionWorkspace ws = emptyWorkspace();
+        when(workspaces.load(campaignId, null)).thenReturn(ws);
+
+        mvc.perform(get("/campaigns/{id}/session", campaignId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "data-test-audio-provider=\"FAKE\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "/js/audio-provider-fake.js")));
+    }
+
+    @Test
     void passesExplicitMapSelectionToWorkspacePolicy() throws Exception {
         UUID mapId = UUID.randomUUID();
         when(workspaces.load(campaignId, mapId)).thenReturn(mapWorkspace());

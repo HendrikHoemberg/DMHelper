@@ -45,6 +45,15 @@ public class AudioCueService {
     }
 
     @Transactional(readOnly = true)
+    public AudioCue findById(UUID id, UUID campaignId) {
+        AudioCue cue = findById(id);
+        if (!cue.getCampaign().getId().equals(campaignId)) {
+            throw new NotFoundException("Audio cue not found: " + id);
+        }
+        return cue;
+    }
+
+    @Transactional(readOnly = true)
     public AudioCue findByCampaignAndKey(UUID campaignId, String cueKey) {
         return repository.findByCampaignIdAndCueKey(campaignId, cueKey)
                 .orElseThrow(() -> new NotFoundException(
@@ -54,7 +63,7 @@ public class AudioCueService {
     public AudioCue create(UUID campaignId, AudioCueWrite write) {
         Campaign campaign = campaignRepository.findById(campaignId)
                 .orElseThrow(() -> new NotFoundException("Campaign not found: " + campaignId));
-        validator.validate(write, campaignId);
+        validator.validate(write.withId(null), campaignId);
 
         AudioCue cue = new AudioCue();
         cue.setCampaign(campaign);
@@ -63,17 +72,14 @@ public class AudioCueService {
     }
 
     public AudioCue update(UUID id, AudioCueWrite write, UUID campaignId) {
-        AudioCue cue = findById(id);
-        if (!cue.getCampaign().getId().equals(campaignId)) {
-            throw new IllegalArgumentException("Cue does not belong to the specified campaign");
-        }
-        validator.validate(write, campaignId);
+        AudioCue cue = findById(id, campaignId);
+        validator.validate(write.withId(cue.getId()), campaignId);
         applyWrite(cue, write);
         return repository.save(cue);
     }
 
     public AudioCue cloneCue(UUID sourceId, UUID campaignId, String newCueKey) {
-        AudioCue original = findById(sourceId);
+        AudioCue original = findById(sourceId, campaignId);
         AudioCueWrite write = new AudioCueWrite(
                 newCueKey, original.getName(),
                 original.getProviderId(), original.getReferenceKind(),
@@ -82,7 +88,11 @@ public class AudioCueService {
                 original.getDurationSeconds(), original.getCategory(),
                 original.getVolumeHint(), original.getTransitionPreference(),
                 original.getNotes(), null);
-        validator.validate(write, campaignId);
+        validator.validate(write, null);
+        if (repository.findByCampaignIdAndCueKey(campaignId, newCueKey).isPresent()) {
+            throw new AudioCueValidationException(List.of(new AudioCueValidationProblem(
+                    "DUPLICATE_CUE_KEY", "/cueKey", "Cue key already exists in this campaign")));
+        }
 
         AudioCue clone = new AudioCue();
         Campaign campaign = campaignRepository.findById(campaignId)
@@ -98,6 +108,11 @@ public class AudioCueService {
         return dependencyService.computeDeletionImpact(cue);
     }
 
+    @Transactional(readOnly = true)
+    public AudioCueDeletionImpact computeDeletionImpact(UUID id, UUID campaignId) {
+        return dependencyService.computeDeletionImpact(findById(id, campaignId));
+    }
+
     public void deleteCue(UUID id, boolean confirmed) {
         AudioCue cue = findById(id);
         if (!confirmed) {
@@ -107,6 +122,26 @@ public class AudioCueService {
                         "Cue has " + impact.dependencies().size()
                                 + " dependent(s); set confirmed=true to proceed");
             }
+        }
+        if (confirmed) {
+            dependencyService.clearDependencies(cue);
+            repository.flush();
+        }
+        repository.delete(cue);
+    }
+
+    public void deleteCue(UUID id, UUID campaignId, boolean confirmed) {
+        AudioCue cue = findById(id, campaignId);
+        if (!confirmed) {
+            AudioCueDeletionImpact impact = dependencyService.computeDeletionImpact(cue);
+            if (impact.hasDependents()) {
+                throw new IllegalArgumentException(
+                        "Cue has " + impact.dependencies().size()
+                                + " dependent(s); set confirmed=true to proceed");
+            }
+        } else {
+            dependencyService.clearDependencies(cue);
+            repository.flush();
         }
         repository.delete(cue);
     }
@@ -118,7 +153,7 @@ public class AudioCueService {
         if (write.providerId() != null && !write.providerId().isBlank()) {
             var adapter = AudioProviderRegistry.lookup(write.providerId());
             ParsedAudioReference parsed = adapter.parseReference(write.providerReference());
-            cue.setProviderId(write.providerId());
+            cue.setProviderId(adapter.id().id());
             cue.setReferenceKind(parsed.kind());
             cue.setProviderReference(parsed.id());
         } else {

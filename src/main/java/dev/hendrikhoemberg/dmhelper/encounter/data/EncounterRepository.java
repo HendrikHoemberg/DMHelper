@@ -14,6 +14,8 @@ public interface EncounterRepository extends JpaRepository<Encounter, UUID> {
 
     Optional<Encounter> findByCampaignIdAndStatus(UUID campaignId, Encounter.Status status);
 
+    Optional<Encounter> findByIdAndCampaignId(UUID id, UUID campaignId);
+
     List<Encounter> findByMapIdOrderByNameAsc(UUID mapId);
 
     List<Encounter> findByCombatAudioCueId(UUID cueId);

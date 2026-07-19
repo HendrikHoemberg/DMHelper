@@ -178,7 +178,7 @@ function sessionCockpit(config) {
                         body: JSON.stringify({ sceneId }),
                 });
                 await resp.json();
-                this.refreshRails();
+                await this.refreshRails();
             } catch (error) {
                 window.reportActionFailure('Could not set the current scene.', error,
                     () => this.setCurrentScene(sceneId));
@@ -193,7 +193,7 @@ function sessionCockpit(config) {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ direction }),
                     });
-                this.refreshRails();
+                await this.refreshRails();
             } catch (error) {
                 window.reportActionFailure('Could not step the scene.', error,
                     () => this.stepScene(direction));
@@ -405,9 +405,6 @@ function sessionCockpit(config) {
                     this.activeTab = 'tracker';
                 }
             });
-            window.addEventListener('cockpit-encounter-ended', () => {
-                this.refreshRails();
-            });
             this.loadMaps();
             this.loadPlannedEncounters();
             this.refreshThreatPins();
@@ -456,7 +453,7 @@ function sessionCockpit(config) {
         async activateEncounter(id) {
             try {
                 await this.request(`/api/v1/encounters/${id}/activate`, { method: 'POST' });
-                this.refreshRails();
+                await this.refreshRails();
             } catch (error) {
                 this.failure('Could not activate the encounter.', error,
                     () => this.activateEncounter(id));
@@ -745,30 +742,31 @@ function sessionCockpit(config) {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ transitionId }),
                     });
-                this.refreshRails();
+                await this.refreshRails();
             } catch (error) {
                 window.reportActionFailure('Could not follow the transition.', error,
                     () => this.followTransition(transitionId));
             }
         },
 
-        refreshRails() {
+        async refreshRails() {
             const cid = this.campaignId;
             const storyUrl = `/campaigns/${cid}/session/rails/story`;
             const encounterUrl = `/campaigns/${cid}/session/rails/encounter`;
-            Promise.all([
+            try {
+                const [storyHtml, encounterHtml] = await Promise.all([
                 this.request(storyUrl).then(r => r.text()),
                 this.request(encounterUrl).then(r => r.text())
-            ]).then(([storyHtml, encounterHtml]) => {
+                ]);
                 const storyEl = document.querySelector('.cockpit-story');
                 const encEl = document.querySelector('.cockpit-encounter');
-                if (storyEl) storyEl.outerHTML = storyHtml;
-                if (encEl) encEl.outerHTML = encounterHtml;
+                if (storyEl) storyEl.innerHTML = storyHtml;
+                if (encEl) encEl.innerHTML = encounterHtml;
                 window.dispatchEvent(new CustomEvent('cockpit-rails-refreshed'));
-            }).catch(error => {
+            } catch (error) {
                 window.reportActionFailure('Could not refresh the cockpit rails.', error,
                     () => this.refreshRails());
-            });
+            }
         },
 
         async setObjectiveStatus(objectiveId, status) {

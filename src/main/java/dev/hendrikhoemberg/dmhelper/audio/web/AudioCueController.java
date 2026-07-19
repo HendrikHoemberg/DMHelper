@@ -76,7 +76,7 @@ public class AudioCueController {
     public String detail(@PathVariable UUID campaignId,
                          @PathVariable UUID cueId,
                          Model model) {
-        var cue = service.findById(cueId);
+        var cue = service.findById(cueId, campaignId);
         String md = cue.getNotes();
         model.addAttribute("cue", cue);
         model.addAttribute("campaignId", campaignId);
@@ -99,7 +99,7 @@ public class AudioCueController {
     public String editForm(@PathVariable UUID campaignId,
                            @PathVariable UUID cueId,
                            Model model) {
-        var cue = service.findById(cueId);
+        var cue = service.findById(cueId, campaignId);
         model.addAttribute("cue", cue);
         model.addAttribute("editorDto", AudioCueWebMapper.fromCue(cue));
         model.addAttribute("campaignId", campaignId);

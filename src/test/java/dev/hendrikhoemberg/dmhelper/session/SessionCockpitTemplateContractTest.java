@@ -126,8 +126,8 @@ class SessionCockpitTemplateContractTest {
         String tracker = Files.readString(Path.of("src/main/resources/templates/encounter/_tracker.html"));
         String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
         assertThat(rail).contains("encounter/_tracker :: tracker");
-        assertThat(rail).contains("threatCard");
         assertThat(tracker).contains("activeThreatCard");
+        assertThat(tracker).contains("threatCard");
         assertThat(tracker).contains("data-active-threat-card");
         assertThat(js).contains("threatCard");
         assertThat(js).contains("activeCombatants");
@@ -176,6 +176,24 @@ class SessionCockpitTemplateContractTest {
         String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
         assertThat(js).contains("refreshRails();")
                 .as("cockpit JS should call refreshRails after scene mutations");
+        String refresh = extractFunction(js, "refreshRails");
+        assertThat(refresh)
+                .contains("storyEl.innerHTML = storyHtml")
+                .contains("encEl.innerHTML = encounterHtml")
+                .doesNotContain("outerHTML");
+    }
+
+    @Test
+    void cockpitKeepsStableRailContainers() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
+        String css = Files.readString(Path.of("src/main/resources/static/css/cockpit.css"));
+        assertThat(html)
+                .contains("class=\"cockpit-story\"")
+                .contains("class=\"cockpit-encounter\"")
+                .contains("th:insert=\"~{session/_story-rail")
+                .contains("th:insert=\"~{session/_encounter-rail")
+                .contains("th:insert=\"~{session/_session-plan");
+        assertThat(css).contains(".cockpit-grid {", "overflow: hidden;");
     }
 
     @Test

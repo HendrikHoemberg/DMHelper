@@ -55,10 +55,7 @@ public class AudioCueApiController {
     @GetMapping("/{cueId}")
     public ResponseEntity<?> get(@PathVariable UUID campaignId,
                                   @PathVariable UUID cueId) {
-        var cue = service.findById(cueId);
-        if (!cue.getCampaign().getId().equals(campaignId)) {
-            return ResponseEntity.notFound().build();
-        }
+        var cue = service.findById(cueId, campaignId);
         return ResponseEntity.ok(AudioCueWebMapper.fromCue(cue));
     }
 
@@ -88,7 +85,7 @@ public class AudioCueApiController {
                                     @PathVariable UUID cueId,
                                     @RequestParam(defaultValue = "false") boolean confirmed) {
         try {
-            service.deleteCue(cueId, confirmed);
+            service.deleteCue(cueId, campaignId, confirmed);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             return conflictProblem(e.getMessage());
@@ -98,7 +95,7 @@ public class AudioCueApiController {
     @GetMapping("/{cueId}/deletion-impact")
     public ResponseEntity<AudioCueDeletionImpact> deletionImpact(@PathVariable UUID campaignId,
                                                                   @PathVariable UUID cueId) {
-        return ResponseEntity.ok(service.computeDeletionImpact(cueId));
+        return ResponseEntity.ok(service.computeDeletionImpact(cueId, campaignId));
     }
 
     private ResponseEntity<ProblemDetail> validationProblem(AudioCueValidationException e) {

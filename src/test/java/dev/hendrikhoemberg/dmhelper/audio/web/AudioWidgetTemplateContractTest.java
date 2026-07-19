@@ -87,8 +87,10 @@ class AudioWidgetTemplateContractTest {
     void widgetHasVisiblePlayerMount() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/audio/_cockpit-widget.html"));
         assertThat(html).contains("playerMount");
+        assertThat(html).contains("playerViewport");
         assertThat(html).contains("480");
         assertThat(html).contains("270");
+        assertThat(html).doesNotContain("display:none");
     }
 
     @Test
@@ -131,6 +133,8 @@ class AudioWidgetTemplateContractTest {
         assertThat(html).contains("audio-provider-registry.js");
         assertThat(html).contains("audio-provider-youtube.js");
         assertThat(html).contains("audio-widget.js");
+        assertThat(html).contains("th:if=\"${testAudioProvider}\"");
+        assertThat(html).contains("data-test-audio-provider");
     }
 
     @Test
@@ -176,7 +180,7 @@ class AudioWidgetTemplateContractTest {
     void fakeAdapterRecordsCommands() throws IOException {
         String js = Files.readString(Path.of("src/main/resources/static/js/audio-provider-fake.js"));
         assertThat(js).contains("commands");
-        assertThat(js).contains("injectFailure");
+        assertThat(js).contains("injectFailure", "injectFailureOn");
     }
 
     @Test
@@ -191,6 +195,41 @@ class AudioWidgetTemplateContractTest {
     void widgetHasAccessibleLabels() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/audio/_cockpit-widget.html"));
         assertThat(html).contains("aria-label");
+    }
+
+    @Test
+    void widgetRoutesFromRuntimeProviderAndNeverAutoEnables() throws IOException {
+        String js = Files.readString(Path.of("src/main/resources/static/js/audio-widget.js"));
+        String loadAndPlay = js.substring(js.indexOf("loadAndPlay:"), js.indexOf("clearProviderError:"));
+        assertThat(js)
+                .contains("window.addEventListener('cockpit-rails-refreshed'")
+                .contains("cue.providerAvailable")
+                .contains("cue.capabilities")
+                .contains("desiredBrowserProvider")
+                .doesNotContain("var providerId = 'YOUTUBE'");
+        assertThat(loadAndPlay).doesNotContain("adapter.enable");
+    }
+
+    @Test
+    void widgetCoalescesStateAndBoundsVictoryAndRetryWork() throws IOException {
+        String js = Files.readString(Path.of("src/main/resources/static/js/audio-widget.js"));
+        assertThat(js)
+                .contains("AbortController")
+                .contains("_stateSequence")
+                .contains("_operationSequence")
+                .contains("_retryInFlight")
+                .contains("scheduleVictoryExpiry")
+                .contains("victory/expire");
+    }
+
+    @Test
+    void youtubeApiLoadHasFailureAndTimeoutBounds() throws IOException {
+        String js = Files.readString(Path.of("src/main/resources/static/js/audio-provider-youtube.js"));
+        assertThat(js)
+                .contains("API_TIMEOUT_MS")
+                .contains("tag.onerror")
+                .contains("readyTimeout")
+                .contains("origin: window.location.origin");
     }
 
     private static int count(String s, String substring) {

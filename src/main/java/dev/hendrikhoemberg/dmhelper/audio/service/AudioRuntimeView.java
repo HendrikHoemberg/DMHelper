@@ -1,18 +1,24 @@
 package dev.hendrikhoemberg.dmhelper.audio.service;
 
-import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioSwitchMode;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public record AudioRuntimeView(
-        AudioCue cue,
+        AudioRuntimeCue cue,
+        AudioRuntimeCue pendingCue,
         String sourceKind,
         UUID sourceId,
         String sourceLabel,
         boolean muted,
         AudioSwitchMode switchMode,
         boolean hasPendingConfirmation,
-        boolean actionableAvailable
+        boolean actionableAvailable,
+        Instant victoryUntil
 ) {
+    public static AudioRuntimeView unavailable() {
+        return new AudioRuntimeView(null, null, null, null, null,
+                false, null, false, false, null);
+    }
 }

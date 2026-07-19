@@ -163,6 +163,23 @@ class AudioCueResolverTest {
     }
 
     @Test
+    void victoryOverlayRequiresConfirmationInConfirmMode() {
+        state.setSwitchMode(AudioSwitchMode.CONFIRM);
+        state.setAcceptedAutomaticCue(sceneCue);
+        state.setTemporaryVictoryCue(victoryCue);
+        state.setVictoryUntil(now.plusSeconds(30));
+        state.setVictorySourceId(UUID.randomUUID());
+        state.setVictorySourceLabel("Victory: Keep");
+
+        ResolvedAudioCue result = resolver.resolve(state, campaignId);
+
+        assertThat(result.cue()).isSameAs(sceneCue);
+        assertThat(state.getPendingCue()).isSameAs(victoryCue);
+        assertThat(state.getPendingSourceKind()).isEqualTo(AudioCueSource.SourceKind.VICTORY.name());
+        assertThat(state.getPendingSourceLabel()).isEqualTo("Victory: Keep");
+    }
+
+    @Test
     void victoryExpiryFallsBack() {
         state.setTemporaryVictoryCue(victoryCue);
         state.setVictoryUntil(now.minusSeconds(1));
@@ -198,6 +215,23 @@ class AudioCueResolverTest {
 
         assertThat(result.cue().getId()).isEqualTo(combatCue.getId());
         assertThat(result.source().kind()).isEqualTo(AudioCueSource.SourceKind.COMBAT);
+    }
+
+    @Test
+    void combatCueUsesCampaignActiveEncounterEvenWhenNotAttachedToCurrentScene() {
+        Encounter encounter = new Encounter();
+        encounter.setId(UUID.randomUUID());
+        encounter.setCampaign(campaign);
+        encounter.setName("Independent encounter");
+        encounter.setStatus(Encounter.Status.ACTIVE);
+        encounter.setCombatAudioCue(combatCue);
+        when(encounterRepository.findByCampaignIdAndStatus(campaignId, Encounter.Status.ACTIVE))
+                .thenReturn(Optional.of(encounter));
+
+        ResolvedAudioCue result = resolver.resolve(state, campaignId);
+
+        assertThat(result.cue()).isSameAs(combatCue);
+        assertThat(result.source().sourceId()).isEqualTo(encounter.getId());
     }
 
     @Test
@@ -383,6 +417,22 @@ class AudioCueResolverTest {
         assertThat(state.getPendingCue()).isNotNull();
         assertThat(state.getPendingCue().getId()).isEqualTo(defaultCue.getId());
         assertThat(state.getDismissedCandidateCue()).isNull();
+    }
+
+    @Test
+    void silenceCountsAsPriorityChangeAfterDecline() {
+        state.setSwitchMode(AudioSwitchMode.CONFIRM);
+        state.setDismissedCandidateCue(sceneCue);
+
+        resolver.resolve(state, campaignId);
+        assertThat(state.getDismissedCandidateCue()).isNull();
+
+        campaign.setCurrentSceneId(UUID.randomUUID());
+        when(sceneRepository.findByIdAndCampaignId(campaignId, campaign.getCurrentSceneId()))
+                .thenReturn(Optional.of(sceneWithCue(sceneCue)));
+        resolver.resolve(state, campaignId);
+
+        assertThat(state.getPendingCue()).isSameAs(sceneCue);
     }
 
     @Test

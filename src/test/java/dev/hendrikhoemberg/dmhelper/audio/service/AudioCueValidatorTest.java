@@ -24,6 +24,7 @@ class AudioCueValidatorTest {
     @BeforeEach
     void setUp() {
         when(repository.findByCampaignIdAndCueKey(any(), any())).thenReturn(Optional.empty());
+        when(repository.findByProviderReference(any(), any(), any(), any())).thenReturn(List.of());
     }
 
     @Test
@@ -55,6 +56,26 @@ class AudioCueValidatorTest {
     void rejectsUnknownProviderId() {
         AudioCueWrite write = validBase();
         assertProblem(write.withProviderId("nonexistent-provider"), "UNKNOWN_PROVIDER", "/providerId");
+    }
+
+    @Test
+    void rejectsBlankProviderId() {
+        assertProblem(validBase().withProviderId(" "), "CUE_FIELD_REQUIRED", "/providerId");
+    }
+
+    @Test
+    void rejectsDuplicateNormalizedProviderReferenceWithinCampaign() {
+        UUID campaignId = UUID.randomUUID();
+        var existing = new dev.hendrikhoemberg.dmhelper.audio.data.AudioCue();
+        existing.setId(UUID.randomUUID());
+        when(repository.findByProviderReference(campaignId, "youtube",
+                dev.hendrikhoemberg.dmhelper.audio.data.AudioReferenceKind.VIDEO,
+                "dQw4w9WgXcQ")).thenReturn(List.of(existing));
+
+        assertThatThrownBy(() -> validator.validate(validBase(), campaignId))
+                .isInstanceOfSatisfying(AudioCueValidationException.class, ex ->
+                        assertThat(ex.problems()).anyMatch(problem ->
+                                problem.code().equals("DUPLICATE_PROVIDER_REFERENCE")));
     }
 
     @Test

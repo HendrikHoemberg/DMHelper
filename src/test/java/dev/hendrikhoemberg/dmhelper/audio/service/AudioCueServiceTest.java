@@ -58,7 +58,8 @@ class AudioCueServiceTest {
     @Test
     void listsCuesByCampaign() {
         service.create(campaignId, validWrite("a", "Alpha"));
-        service.create(campaignId, validWrite("b", "Beta"));
+        service.create(campaignId, validWrite("b", "Beta")
+                .withProviderReference("9bZkp7q19f0"));
         List<AudioCue> cues = service.listByCampaign(campaignId);
         assertThat(cues).hasSize(2);
         assertThat(cues).extracting(AudioCue::getName).containsExactly("Alpha", "Beta");
@@ -116,7 +117,7 @@ class AudioCueServiceTest {
         UUID otherCampaign = UUID.randomUUID();
         AudioCueWrite write = validWrite("original", "Original");
         assertThatThrownBy(() -> service.update(cue.getId(), write, otherCampaign))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(dev.hendrikhoemberg.dmhelper.common.NotFoundException.class);
     }
 
     @Test

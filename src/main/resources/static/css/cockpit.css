@@ -191,6 +191,7 @@
   grid-template-columns: minmax(16rem, 22rem) minmax(24rem, 1fr) minmax(20rem, 26rem);
   min-height: 0;
   flex: 1;
+  overflow: hidden;
 }
 
 .cockpit-story, .cockpit-encounter { overflow: auto; min-height: 0; }
@@ -348,7 +349,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.audio-source {
+.audio-source, .audio-owner {
   font-size: 0.75rem;
   color: var(--color-text-muted);
   white-space: nowrap;
@@ -430,5 +431,11 @@
 .audio-error {
   font-size: var(--text-sm);
   color: var(--color-danger);
+  padding: 2px 8px;
+}
+.audio-transition-notice, .audio-visibility-notice {
+  max-width: 22rem;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
   padding: 2px 8px;
 }

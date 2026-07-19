@@ -45,7 +45,7 @@ public class AudioCueAssignmentApiController {
                                              @PathVariable UUID sceneId,
                                              @RequestParam(required = false) UUID cueId) {
         try {
-            assignmentService.assignSceneCue(sceneId, cueId);
+            assignmentService.assignSceneCue(campaignId, sceneId, cueId);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -60,8 +60,9 @@ public class AudioCueAssignmentApiController {
                                                  @RequestParam(required = false) Integer durationSeconds) {
         try {
             switch (role) {
-                case "combat" -> assignmentService.assignEncounterCombatCue(encounterId, cueId);
-                case "victory" -> assignmentService.assignEncounterVictoryCue(encounterId, cueId, durationSeconds);
+                case "combat" -> assignmentService.assignEncounterCombatCue(campaignId, encounterId, cueId);
+                case "victory" -> assignmentService.assignEncounterVictoryCue(
+                        campaignId, encounterId, cueId, durationSeconds);
                 default -> {
                     return ResponseEntity.badRequest().body(Map.of("error", "Invalid role: " + role));
                 }
@@ -77,7 +78,7 @@ public class AudioCueAssignmentApiController {
                                                 @PathVariable UUID locationId,
                                                 @RequestParam(required = false) UUID cueId) {
         try {
-            assignmentService.assignLocationCue(locationId, cueId);
+            assignmentService.assignLocationCue(campaignId, locationId, cueId);
             return ResponseEntity.ok(Map.of("success", true));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

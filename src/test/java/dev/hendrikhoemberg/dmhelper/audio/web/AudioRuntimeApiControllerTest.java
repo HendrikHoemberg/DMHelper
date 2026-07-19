@@ -6,6 +6,7 @@ import dev.hendrikhoemberg.dmhelper.audio.data.AudioReferenceKind;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioSwitchMode;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioTransitionPreference;
 import dev.hendrikhoemberg.dmhelper.audio.data.SessionAudioState;
+import dev.hendrikhoemberg.dmhelper.audio.service.AudioRuntimeCue;
 import dev.hendrikhoemberg.dmhelper.audio.service.AudioRuntimeView;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.audio.service.SessionAudioStateService;
@@ -82,7 +83,7 @@ class AudioRuntimeApiControllerTest {
                         .param("sessionId", sessionId.toString()))
                 .andExpect(status().isOk());
 
-        verify(audioStateService).mute(sessionId);
+        verify(audioStateService).mute(sessionId, campaignId);
     }
 
     @Test
@@ -92,7 +93,7 @@ class AudioRuntimeApiControllerTest {
                         .param("sessionId", sessionId.toString()))
                 .andExpect(status().isOk());
 
-        verify(audioStateService).unmute(sessionId);
+        verify(audioStateService).unmute(sessionId, campaignId);
     }
 
     @Test
@@ -106,7 +107,7 @@ class AudioRuntimeApiControllerTest {
                         .param("cueId", cueId.toString()))
                 .andExpect(status().isOk());
 
-        verify(audioStateService).setManualOverride(eq(sessionId), any());
+        verify(audioStateService).setManualOverride(eq(sessionId), eq(campaignId), any());
     }
 
     @Test
@@ -116,7 +117,7 @@ class AudioRuntimeApiControllerTest {
                         .param("sessionId", sessionId.toString()))
                 .andExpect(status().isOk());
 
-        verify(audioStateService).clearManualOverride(sessionId);
+        verify(audioStateService).clearManualOverride(sessionId, campaignId);
     }
 
     @Test
@@ -126,7 +127,7 @@ class AudioRuntimeApiControllerTest {
                         .param("sessionId", sessionId.toString()))
                 .andExpect(status().isOk());
 
-        verify(audioStateService).confirm(sessionId);
+        verify(audioStateService).confirm(sessionId, campaignId);
     }
 
     @Test
@@ -136,7 +137,7 @@ class AudioRuntimeApiControllerTest {
                         .param("sessionId", sessionId.toString()))
                 .andExpect(status().isOk());
 
-        verify(audioStateService).decline(sessionId);
+        verify(audioStateService).decline(sessionId, campaignId);
     }
 
     @Test
@@ -146,7 +147,7 @@ class AudioRuntimeApiControllerTest {
                         .param("sessionId", sessionId.toString()))
                 .andExpect(status().isOk());
 
-        verify(audioStateService).expireVictory(sessionId);
+        verify(audioStateService).expireVictory(sessionId, campaignId);
     }
 
     @Test
@@ -157,14 +158,14 @@ class AudioRuntimeApiControllerTest {
                         .param("result", "completed"))
                 .andExpect(status().isOk());
 
-        verify(audioStateService).acknowledgePlaybackResult(sessionId, "completed");
+        verify(audioStateService).acknowledgePlaybackResult(sessionId, campaignId, "completed");
     }
 
     private AudioRuntimeView runtimeView() {
         AudioCue cue = cue();
         return new AudioRuntimeView(
-                cue, "SCENE", UUID.randomUUID(), "Scene",
-                false, AudioSwitchMode.AUTOMATIC, false, true);
+                AudioRuntimeCue.from(cue), null, "SCENE", UUID.randomUUID(), "Scene",
+                false, AudioSwitchMode.AUTOMATIC, false, true, null);
     }
 
     private AudioCue cue() {

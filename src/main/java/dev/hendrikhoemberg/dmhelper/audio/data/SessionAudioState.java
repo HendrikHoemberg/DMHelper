@@ -27,9 +27,27 @@ public class SessionAudioState {
     @JoinColumn(name = "accepted_automatic_cue_id")
     private AudioCue acceptedAutomaticCue;
 
+    @Column(name = "accepted_source_kind", length = 32)
+    private String acceptedSourceKind;
+
+    @Column(name = "accepted_source_id")
+    private UUID acceptedSourceId;
+
+    @Column(name = "accepted_source_label", length = 500)
+    private String acceptedSourceLabel;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pending_cue_id")
     private AudioCue pendingCue;
+
+    @Column(name = "pending_source_kind", length = 32)
+    private String pendingSourceKind;
+
+    @Column(name = "pending_source_id")
+    private UUID pendingSourceId;
+
+    @Column(name = "pending_source_label", length = 500)
+    private String pendingSourceLabel;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dismissed_candidate_cue_id")
@@ -44,6 +62,12 @@ public class SessionAudioState {
 
     @Column(name = "victory_until")
     private Instant victoryUntil;
+
+    @Column(name = "victory_source_id")
+    private UUID victorySourceId;
+
+    @Column(name = "victory_source_label", length = 500)
+    private String victorySourceLabel;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "switch_mode", nullable = false, length = 16)
@@ -71,8 +95,22 @@ public class SessionAudioState {
     public AudioCue getAcceptedAutomaticCue() { return acceptedAutomaticCue; }
     public void setAcceptedAutomaticCue(AudioCue acceptedAutomaticCue) { this.acceptedAutomaticCue = acceptedAutomaticCue; }
 
+    public String getAcceptedSourceKind() { return acceptedSourceKind; }
+    public void setAcceptedSourceKind(String acceptedSourceKind) { this.acceptedSourceKind = acceptedSourceKind; }
+    public UUID getAcceptedSourceId() { return acceptedSourceId; }
+    public void setAcceptedSourceId(UUID acceptedSourceId) { this.acceptedSourceId = acceptedSourceId; }
+    public String getAcceptedSourceLabel() { return acceptedSourceLabel; }
+    public void setAcceptedSourceLabel(String acceptedSourceLabel) { this.acceptedSourceLabel = acceptedSourceLabel; }
+
     public AudioCue getPendingCue() { return pendingCue; }
     public void setPendingCue(AudioCue pendingCue) { this.pendingCue = pendingCue; }
+
+    public String getPendingSourceKind() { return pendingSourceKind; }
+    public void setPendingSourceKind(String pendingSourceKind) { this.pendingSourceKind = pendingSourceKind; }
+    public UUID getPendingSourceId() { return pendingSourceId; }
+    public void setPendingSourceId(UUID pendingSourceId) { this.pendingSourceId = pendingSourceId; }
+    public String getPendingSourceLabel() { return pendingSourceLabel; }
+    public void setPendingSourceLabel(String pendingSourceLabel) { this.pendingSourceLabel = pendingSourceLabel; }
 
     public AudioCue getDismissedCandidateCue() { return dismissedCandidateCue; }
     public void setDismissedCandidateCue(AudioCue dismissedCandidateCue) { this.dismissedCandidateCue = dismissedCandidateCue; }
@@ -85,6 +123,11 @@ public class SessionAudioState {
 
     public Instant getVictoryUntil() { return victoryUntil; }
     public void setVictoryUntil(Instant victoryUntil) { this.victoryUntil = victoryUntil; }
+
+    public UUID getVictorySourceId() { return victorySourceId; }
+    public void setVictorySourceId(UUID victorySourceId) { this.victorySourceId = victorySourceId; }
+    public String getVictorySourceLabel() { return victorySourceLabel; }
+    public void setVictorySourceLabel(String victorySourceLabel) { this.victorySourceLabel = victorySourceLabel; }
 
     public AudioSwitchMode getSwitchMode() { return switchMode; }
     public void setSwitchMode(AudioSwitchMode switchMode) { this.switchMode = switchMode; }

@@ -80,7 +80,7 @@ class AudioCueAssignmentApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(service).assignSceneCue(sceneId, cueId);
+        verify(service).assignSceneCue(campaignId, sceneId, cueId);
     }
 
     @Test
@@ -90,7 +90,7 @@ class AudioCueAssignmentApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(service).assignEncounterCombatCue(encounterId, cueId);
+        verify(service).assignEncounterCombatCue(campaignId, encounterId, cueId);
     }
 
     @Test
@@ -102,7 +102,7 @@ class AudioCueAssignmentApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(service).assignEncounterVictoryCue(encounterId, cueId, 30);
+        verify(service).assignEncounterVictoryCue(campaignId, encounterId, cueId, 30);
     }
 
     @Test
@@ -112,7 +112,7 @@ class AudioCueAssignmentApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
-        verify(service).assignLocationCue(locationId, cueId);
+        verify(service).assignLocationCue(campaignId, locationId, cueId);
     }
 
     @Test
@@ -153,13 +153,15 @@ class AudioCueAssignmentApiControllerTest {
     }
 
     @Test
-    void crossCampaignAttemptReturnsBadRequestWithoutLeakingInfo() throws Exception {
-        doThrow(new IllegalArgumentException("Cue does not belong to the same campaign"))
-                .when(service).assignSceneCue(any(), any());
+    void crossCampaignAttemptReturnsNotFoundWithoutLeakingInfo() throws Exception {
+        doThrow(new dev.hendrikhoemberg.dmhelper.common.NotFoundException(
+                "Audio cue not found in campaign"))
+                .when(service).assignSceneCue(any(), any(), any());
 
         mockMvc.perform(put("/api/v1/campaigns/{campaignId}/audio/assignments/scenes/{sceneId}", campaignId, sceneId)
                         .param("cueId", cueId.toString()))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Cue does not belong to the same campaign"));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value(
+                        "The requested item could not be found. Reload and try again."));
     }
 }

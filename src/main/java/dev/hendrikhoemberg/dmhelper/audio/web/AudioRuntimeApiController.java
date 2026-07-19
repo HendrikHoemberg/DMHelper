@@ -41,7 +41,7 @@ public class AudioRuntimeApiController {
             AudioRuntimeView view = audioStateService.getRuntimeView(sessionId, campaignId);
             return ResponseEntity.ok(view);
         } catch (IllegalStateException e) {
-            return ResponseEntity.ok(new AudioRuntimeView(null, null, null, null, false, null, false, false));
+            return ResponseEntity.ok(AudioRuntimeView.unavailable());
         }
     }
 
@@ -49,7 +49,7 @@ public class AudioRuntimeApiController {
     public ResponseEntity<Void> mute(@PathVariable UUID campaignId,
                                       @RequestParam UUID sessionId) {
         requireCampaign(campaignId);
-        audioStateService.mute(sessionId);
+        audioStateService.mute(sessionId, campaignId);
         return ResponseEntity.ok().build();
     }
 
@@ -57,7 +57,7 @@ public class AudioRuntimeApiController {
     public ResponseEntity<Void> unmute(@PathVariable UUID campaignId,
                                         @RequestParam UUID sessionId) {
         requireCampaign(campaignId);
-        audioStateService.unmute(sessionId);
+        audioStateService.unmute(sessionId, campaignId);
         return ResponseEntity.ok().build();
     }
 
@@ -71,7 +71,7 @@ public class AudioRuntimeApiController {
         if (!cue.getCampaign().getId().equals(campaignId)) {
             return ResponseEntity.notFound().build();
         }
-        audioStateService.setManualOverride(sessionId, cue);
+        audioStateService.setManualOverride(sessionId, campaignId, cue);
         return ResponseEntity.ok().build();
     }
 
@@ -79,7 +79,7 @@ public class AudioRuntimeApiController {
     public ResponseEntity<Void> clearOverride(@PathVariable UUID campaignId,
                                                @RequestParam UUID sessionId) {
         requireCampaign(campaignId);
-        audioStateService.clearManualOverride(sessionId);
+        audioStateService.clearManualOverride(sessionId, campaignId);
         return ResponseEntity.ok().build();
     }
 
@@ -87,7 +87,7 @@ public class AudioRuntimeApiController {
     public ResponseEntity<Void> confirm(@PathVariable UUID campaignId,
                                          @RequestParam UUID sessionId) {
         requireCampaign(campaignId);
-        audioStateService.confirm(sessionId);
+        audioStateService.confirm(sessionId, campaignId);
         return ResponseEntity.ok().build();
     }
 
@@ -95,7 +95,7 @@ public class AudioRuntimeApiController {
     public ResponseEntity<Void> decline(@PathVariable UUID campaignId,
                                          @RequestParam UUID sessionId) {
         requireCampaign(campaignId);
-        audioStateService.decline(sessionId);
+        audioStateService.decline(sessionId, campaignId);
         return ResponseEntity.ok().build();
     }
 
@@ -103,7 +103,7 @@ public class AudioRuntimeApiController {
     public ResponseEntity<Void> expireVictory(@PathVariable UUID campaignId,
                                                @RequestParam UUID sessionId) {
         requireCampaign(campaignId);
-        audioStateService.expireVictory(sessionId);
+        audioStateService.expireVictory(sessionId, campaignId);
         return ResponseEntity.ok().build();
     }
 
@@ -112,7 +112,7 @@ public class AudioRuntimeApiController {
                                              @RequestParam UUID sessionId,
                                              @RequestParam String result) {
         requireCampaign(campaignId);
-        audioStateService.acknowledgePlaybackResult(sessionId, result);
+        audioStateService.acknowledgePlaybackResult(sessionId, campaignId, result);
         return ResponseEntity.ok().build();
     }
 

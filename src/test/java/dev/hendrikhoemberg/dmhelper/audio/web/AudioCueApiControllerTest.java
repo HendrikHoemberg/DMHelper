@@ -100,7 +100,7 @@ class AudioCueApiControllerTest {
     @Test
     void getReturns200() throws Exception {
         UUID id = UUID.randomUUID();
-        when(service.findById(id)).thenReturn(cue(id, "Detail Cue"));
+        when(service.findById(id, campaignId)).thenReturn(cue(id, "Detail Cue"));
 
         mockMvc.perform(get("/api/v1/campaigns/{campaignId}/audio/cues/{cueId}", campaignId, id))
                 .andExpect(status().isOk())
@@ -110,13 +110,8 @@ class AudioCueApiControllerTest {
     @Test
     void getReturns404WhenCueBelongsToDifferentCampaign() throws Exception {
         UUID id = UUID.randomUUID();
-        AudioCue c = cue(id, "Detail Cue");
-        UUID otherCampaignId = UUID.randomUUID();
-        Campaign otherCampaign = new Campaign();
-        otherCampaign.setId(otherCampaignId);
-        otherCampaign.setName("Other Campaign");
-        c.setCampaign(otherCampaign);
-        when(service.findById(id)).thenReturn(c);
+        when(service.findById(id, campaignId)).thenThrow(
+                new dev.hendrikhoemberg.dmhelper.common.NotFoundException("Audio cue not found: " + id));
 
         mockMvc.perform(get("/api/v1/campaigns/{campaignId}/audio/cues/{cueId}", campaignId, id))
                 .andExpect(status().isNotFound());
@@ -164,7 +159,7 @@ class AudioCueApiControllerTest {
         UUID id = UUID.randomUUID();
         var impact = new AudioCueDeletionImpact(id, "Test",
                 List.of(new AudioCueDependency("SESSION_OVERRIDE", UUID.randomUUID(), "Session", "/sessions/x")));
-        when(service.computeDeletionImpact(id)).thenReturn(impact);
+        when(service.computeDeletionImpact(id, campaignId)).thenReturn(impact);
 
         mockMvc.perform(get("/api/v1/campaigns/{campaignId}/audio/cues/{cueId}/deletion-impact", campaignId, id))
                 .andExpect(status().isOk())

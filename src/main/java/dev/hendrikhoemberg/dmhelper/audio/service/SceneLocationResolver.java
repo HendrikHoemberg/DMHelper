@@ -41,4 +41,22 @@ public class SceneLocationResolver {
                 .filter(cue -> cue != null)
                 .findFirst();
     }
+
+    public Optional<AudioCueSource> sourceFor(UUID sceneId, UUID campaignId, UUID cueId) {
+        return sceneLinkRepository.findBySceneIdOrderBySortOrderAsc(sceneId).stream()
+                .filter(link -> link.getRole() == SceneLinkRole.LOCATION)
+                .filter(link -> link.getTargetScope() == SceneLinkTargetScope.PACKAGE)
+                .filter(link -> "WORLD_LOCATION".equals(link.getTargetType()))
+                .filter(link -> link.getTargetId() != null)
+                .sorted(Comparator.comparingInt(SceneLink::getSortOrder)
+                        .thenComparing(SceneLink::getId))
+                .map(link -> worldLocationRepository.findByIdAndCampaignId(link.getTargetId(), campaignId))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .filter(location -> location.getLocationAudioCue() != null
+                        && cueId.equals(location.getLocationAudioCue().getId()))
+                .map(location -> new AudioCueSource(AudioCueSource.SourceKind.LOCATION,
+                        location.getId(), "Location: " + location.getName()))
+                .findFirst();
+    }
 }

@@ -36,6 +36,7 @@ or `src/main/resources/agent/validation-error-catalog.json`.
 | `DUPLICATE_KEY` | ERROR | A key appears more than once in the same namespace. |
 | `DUPLICATE_MANIFEST` | ERROR | More than one manifest entry maps to the same key. |
 | `DUPLICATE_NORMALIZED_PATH` | ERROR | Two entries resolve to the same normalized path. |
+| `DUPLICATE_PROVIDER_REFERENCE` | ERROR | An audio cue duplicates another cue's normalized provider reference in the campaign. |
 | `DUPLICATE_REFERENCE` | WARNING | A reference value appears more than once where uniqueness is required. |
 | `DUPLICATE_REGION_KEY` | ERROR | A placement region key appears more than once. |
 | `DUPLICATE_SESSION_ATTENDEE` | WARNING | The same attendee appears more than once in a session. |

@@ -99,7 +99,8 @@ class AudioCueAssignmentServiceTest {
     @Test
     void rejectsCrossCampaignCueForCampaign() {
         assertThatThrownBy(() -> assignmentService.assignCampaignCue(campaignId, otherCampaignCue.getId()))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Audio cue not found in campaign");
     }
 
     @Test
@@ -137,6 +138,26 @@ class AudioCueAssignmentServiceTest {
         Scene scene = createScene(otherCampaign);
         assertThatThrownBy(() -> assignmentService.assignSceneCue(scene.getId(), campaignCue.getId()))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void scopedSceneAssignmentRejectsForeignTargetBeforeLookingUpCue() {
+        Scene foreignScene = createScene(otherCampaign);
+
+        assertThatThrownBy(() -> assignmentService.assignSceneCue(
+                campaignId, foreignScene.getId(), campaignCue.getId()))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Scene not found in campaign");
+    }
+
+    @Test
+    void scopedSceneAssignmentRejectsForeignCueWithoutLeakingIt() {
+        Scene scene = createScene(campaign);
+
+        assertThatThrownBy(() -> assignmentService.assignSceneCue(
+                campaignId, scene.getId(), otherCampaignCue.getId()))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Audio cue not found in campaign");
     }
 
     @Test
@@ -222,6 +243,16 @@ class AudioCueAssignmentServiceTest {
     }
 
     @Test
+    void scopedEncounterAssignmentRejectsForeignTarget() {
+        Encounter foreignEncounter = createEncounter(otherCampaign);
+
+        assertThatThrownBy(() -> assignmentService.assignEncounterCombatCue(
+                campaignId, foreignEncounter.getId(), campaignCue.getId()))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Encounter not found in campaign");
+    }
+
+    @Test
     void assignsLocationCue() {
         WorldLocation location = createLocation(campaign);
         assignmentService.assignLocationCue(location.getId(), campaignCue.getId());
@@ -256,6 +287,16 @@ class AudioCueAssignmentServiceTest {
         WorldLocation location = createLocation(otherCampaign);
         assertThatThrownBy(() -> assignmentService.assignLocationCue(location.getId(), campaignCue.getId()))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void scopedLocationAssignmentRejectsForeignTarget() {
+        WorldLocation foreignLocation = createLocation(otherCampaign);
+
+        assertThatThrownBy(() -> assignmentService.assignLocationCue(
+                campaignId, foreignLocation.getId(), campaignCue.getId()))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Location not found in campaign");
     }
 
     @Test
