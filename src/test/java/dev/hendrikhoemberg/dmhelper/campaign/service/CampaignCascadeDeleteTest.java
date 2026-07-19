@@ -42,6 +42,8 @@ import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import dev.hendrikhoemberg.dmhelper.quest.data.*;
+import dev.hendrikhoemberg.dmhelper.audio.data.SessionAudioState;
+import dev.hendrikhoemberg.dmhelper.audio.data.SessionAudioStateRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.*;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
 import dev.hendrikhoemberg.dmhelper.world.data.*;
@@ -136,6 +138,7 @@ class CampaignCascadeDeleteTest {
     @Autowired private WorldRelationshipRepository worldRelationshipRepo;
     @Autowired private FactionClockRepository factionClockRepo;
     @Autowired private RollableTableRepository rollableTableRepo;
+    @Autowired private SessionAudioStateRepository audioStateRepo;
     @Autowired private EntityManager em;
 
     /** A campaign with one of everything hanging off it. */
@@ -255,6 +258,9 @@ class CampaignCascadeDeleteTest {
         visit.setVisitedAt(java.time.Instant.parse("2026-07-16T18:15:00Z"));
         sessionVisitRepo.save(visit);
 
+        SessionAudioState audioState = new SessionAudioState();
+        audioState.setSession(session);
+        audioStateRepo.save(audioState);
         em.flush();
         return c;
     }
@@ -286,6 +292,7 @@ class CampaignCascadeDeleteTest {
         assertThat(gameMapService.findByCampaignId(cid)).isEmpty();
         assertThat(sessionRepo.findByCampaignId(cid)).isEmpty();
         assertThat(sessionVisitRepo.count()).isZero();
+        assertThat(audioStateRepo.count()).isZero();
 
         // grandchildren must go too, not just the rows that name the campaign directly
         assertThat(combatantRepo.count()).isZero();

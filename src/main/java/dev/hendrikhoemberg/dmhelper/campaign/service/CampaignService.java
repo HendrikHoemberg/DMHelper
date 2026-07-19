@@ -233,6 +233,12 @@ public class CampaignService {
         // The coordination aggregate points back into scenes, maps, notes, handouts, and party.
         // Remove it first so those established child-deletion paths remain valid.
         campaignSessionRepository.findByCampaignId(cid).ifPresent(session -> {
+            var audioStates = em.createQuery(
+                    "select s from SessionAudioState s where s.session.id = :sid",
+                    dev.hendrikhoemberg.dmhelper.audio.data.SessionAudioState.class)
+                    .setParameter("sid", session.getId())
+                    .getResultList();
+            audioStates.forEach(em::remove);
             sessionSceneVisitRepository.deleteBySessionId(session.getId());
             campaignSessionRepository.delete(session);
         });

@@ -19,4 +19,6 @@ public interface SessionAudioStateRepository extends JpaRepository<SessionAudioS
     List<SessionAudioState> findByDismissedCandidateCueId(UUID cueId);
 
     List<SessionAudioState> findByTemporaryVictoryCueId(UUID cueId);
+
+    void deleteBySessionId(UUID sessionId);
 }

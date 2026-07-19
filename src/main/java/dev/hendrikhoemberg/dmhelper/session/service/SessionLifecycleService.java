@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.session.service;
 
+import dev.hendrikhoemberg.dmhelper.audio.service.SessionAudioStateService;
 import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
@@ -49,6 +50,7 @@ public class SessionLifecycleService {
     private final ApplicationEventPublisher events;
     private final SessionObjectiveChangeRepository objectiveChanges;
     private final SessionReferenceCleaner sessionRefCleaner;
+    private final SessionAudioStateService audioStateService;
 
     public SessionLifecycleService(Clock clock,
                                    CampaignRepository campaigns,
@@ -63,7 +65,8 @@ public class SessionLifecycleService {
                                     CampaignPackageKeyService packageKeys,
                                     ApplicationEventPublisher events,
                                     SessionObjectiveChangeRepository objectiveChanges,
-                                    SessionReferenceCleaner sessionRefCleaner) {
+                                    SessionReferenceCleaner sessionRefCleaner,
+                                    SessionAudioStateService audioStateService) {
         this.clock = clock;
         this.campaigns = campaigns;
         this.sessions = sessions;
@@ -78,6 +81,7 @@ public class SessionLifecycleService {
         this.events = events;
         this.objectiveChanges = objectiveChanges;
         this.sessionRefCleaner = sessionRefCleaner;
+        this.audioStateService = audioStateService;
     }
 
     public CampaignSession start(UUID campaignId, UUID requestedMapId) {
@@ -105,6 +109,7 @@ public class SessionLifecycleService {
         session.getAttendees().addAll(party.findByCampaignIdAndActiveTrueOrderByCharacterNameAsc(campaignId));
         CampaignSession saved = sessions.save(session);
         visits.deleteBySessionId(saved.getId());
+        audioStateService.createOrReset(saved.getId());
         return saved;
     }
 
@@ -176,6 +181,7 @@ public class SessionLifecycleService {
         List<UUID> visitIds = visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId()).stream()
                 .map(SessionSceneVisit::getId).toList();
         sessionRefCleaner.detachSessionObjectiveChanges(session.getId(), campaignId);
+        audioStateService.deleteBySessionId(session.getId());
         resetToIdle(session);
         visits.deleteBySessionId(session.getId());
         packageKeys.deleteBindings(campaignId, CampaignContentType.SESSION_SCENE_VISIT, visitIds);

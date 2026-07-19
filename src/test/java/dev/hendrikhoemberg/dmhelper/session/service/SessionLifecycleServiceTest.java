@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.session.service;
 
+import dev.hendrikhoemberg.dmhelper.audio.service.SessionAudioStateService;
 import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
@@ -54,6 +55,7 @@ class SessionLifecycleServiceTest {
     @Mock private ApplicationEventPublisher events;
     @Mock private SessionObjectiveChangeRepository objectiveChanges;
     @Mock private SessionReferenceCleaner sessionRefCleaner;
+    @Mock private SessionAudioStateService audioStateService;
 
     @InjectMocks private SessionLifecycleService service;
 

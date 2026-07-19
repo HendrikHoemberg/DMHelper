@@ -45,6 +45,10 @@ public class SessionAudioState {
     @Column(name = "victory_until")
     private Instant victoryUntil;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "switch_mode", nullable = false, length = 16)
+    private AudioSwitchMode switchMode = AudioSwitchMode.AUTOMATIC;
+
     @Version
     private long version;
 
@@ -81,6 +85,9 @@ public class SessionAudioState {
 
     public Instant getVictoryUntil() { return victoryUntil; }
     public void setVictoryUntil(Instant victoryUntil) { this.victoryUntil = victoryUntil; }
+
+    public AudioSwitchMode getSwitchMode() { return switchMode; }
+    public void setSwitchMode(AudioSwitchMode switchMode) { this.switchMode = switchMode; }
 
     public long getVersion() { return version; }
     public void setVersion(long version) { this.version = version; }
