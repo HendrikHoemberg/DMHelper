@@ -21,5 +21,6 @@ public enum CampaignContentType {
     WORLD_LOCATION,
     FACTION,
     WORLD_RELATIONSHIP,
-    FACTION_CLOCK
+    FACTION_CLOCK,
+    AUDIO_CUE
 }

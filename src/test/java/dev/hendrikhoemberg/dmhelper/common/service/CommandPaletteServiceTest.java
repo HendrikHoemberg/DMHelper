@@ -15,6 +15,11 @@ import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCategory;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioReferenceKind;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioTransitionPreference;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode;
@@ -56,6 +61,7 @@ class CommandPaletteServiceTest {
     @Autowired private RollableTableRepository rollableTableRepository;
     @Autowired private TrapRepository trapRepository;
     @Autowired private HazardRepository hazardRepository;
+    @Autowired private AudioCueRepository audioCueRepository;
 
     private Campaign campaign;
 
@@ -121,6 +127,16 @@ class CommandPaletteServiceTest {
         scene.setTitle("Throne Room");
         scene.setSceneKey("TR");
         sceneRepository.save(scene);
+
+        AudioCue cue = new AudioCue();
+        cue.setCampaign(campaign);
+        cue.setCueKey("battle-theme");
+        cue.setName("Epic Battle Theme");
+        cue.setReferenceKind(AudioReferenceKind.VIDEO);
+        cue.setProviderReference("dQw4w9WgXcQ");
+        cue.setCategory(AudioCategory.COMBAT);
+        cue.setTransitionPreference(AudioTransitionPreference.CROSSFADE);
+        audioCueRepository.save(cue);
     }
 
     @Test
@@ -145,6 +161,12 @@ class CommandPaletteServiceTest {
     void searchFindsMapsByName() {
         var results = commandPaletteService.search("Tavern", campaign.getId());
         assertThat(results).anyMatch(r -> r.title().equals("Tavern Map") && r.type().equals("map"));
+    }
+
+    @Test
+    void searchFindsAudioCuesByNameAndKey() {
+        var results = commandPaletteService.search("Battle", campaign.getId());
+        assertThat(results).anyMatch(r -> r.title().equals("Epic Battle Theme") && r.type().equals("audio-cue"));
     }
 
     @Test

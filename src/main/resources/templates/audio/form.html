@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org" xmlns:x="http://www.w3.org/1999/xhtml">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — ' + ${editorTitle}">DMHelper — Audio Cue Editor</title>
+</head>
+<body th:attr="data-campaign-id=${campaignId}">
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <div>
+                    <div class="page-header-eyebrow">Audio Cue Editor</div>
+                    <h1 th:text="${editorTitle}">New Audio Cue</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+            </div>
+            <div class="detail-section" x-data="audioCueEditor()">
+                <form @submit.prevent="save()">
+                    <div class="form-group">
+                        <label for="cueKey">Cue Key</label>
+                        <input type="text" id="cueKey" name="cueKey" x-model="form.cueKey"
+                               pattern="[a-z0-9][a-z0-9._-]{0,99}" data-path="/cueKey" required>
+                        <template x-for="problem in problemsFor('/cueKey')" :key="problem.code">
+                            <div class="u-text-danger u-text-sm" x-text="problem.message"></div>
+                        </template>
+                    </div>
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" x-model="form.name"
+                               data-path="/name" required>
+                        <template x-for="problem in problemsFor('/name')" :key="problem.code">
+                            <div class="u-text-danger u-text-sm" x-text="problem.message"></div>
+                        </template>
+                    </div>
+                    <div class="form-group">
+                        <label for="providerId">Provider</label>
+                        <select id="providerId" name="providerId" x-model="form.providerId" data-path="/providerId">
+                            <option value="">-- Select --</option>
+                            <option value="youtube">YouTube</option>
+                        </select>
+                        <template x-for="problem in problemsFor('/providerId')" :key="problem.code">
+                            <div class="u-text-danger u-text-sm" x-text="problem.message"></div>
+                        </template>
+                    </div>
+                    <div class="form-group">
+                        <label for="providerReference">Provider Reference</label>
+                        <input type="text" id="providerReference" name="providerReference"
+                               x-model="form.providerReference" data-path="/providerReference" required
+                               placeholder="YouTube video ID or URL">
+                        <template x-for="problem in problemsFor('/providerReference')" :key="problem.code">
+                            <div class="u-text-danger u-text-sm" x-text="problem.message"></div>
+                        </template>
+                    </div>
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <select id="category" name="category" x-model="form.category" data-path="/category">
+                            <option value="AMBIENT">Ambient</option>
+                            <option value="EXPLORATION">Exploration</option>
+                            <option value="TENSION">Tension</option>
+                            <option value="COMBAT">Combat</option>
+                            <option value="TRIUMPH">Triumph</option>
+                            <option value="SORROW">Sorrow</option>
+                            <option value="CUSTOM">Custom</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="transitionPreference">Transition</label>
+                        <select id="transitionPreference" name="transitionPreference"
+                                x-model="form.transitionPreference" data-path="/transitionPreference">
+                            <option value="CROSSFADE">Crossfade</option>
+                            <option value="CUT">Cut</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="volumeHint">Volume Hint (0-100)</label>
+                        <input type="number" id="volumeHint" name="volumeHint"
+                               x-model.number="form.volumeHint" min="0" max="100"
+                               data-path="/volumeHint">
+                        <template x-for="problem in problemsFor('/volumeHint')" :key="problem.code">
+                            <div class="u-text-danger u-text-sm" x-text="problem.message"></div>
+                        </template>
+                    </div>
+                    <div class="form-group">
+                        <label for="durationSeconds">Duration (seconds)</label>
+                        <input type="number" id="durationSeconds" name="durationSeconds"
+                               x-model.number="form.durationSeconds" min="1"
+                               data-path="/durationSeconds">
+                        <template x-for="problem in problemsFor('/durationSeconds')" :key="problem.code">
+                            <div class="u-text-danger u-text-sm" x-text="problem.message"></div>
+                        </template>
+                    </div>
+                    <div class="form-group">
+                        <label for="cachedTitle">Cached Title</label>
+                        <input type="text" id="cachedTitle" name="cachedTitle" x-model="form.cachedTitle"
+                               data-path="/cachedTitle">
+                    </div>
+                    <div class="form-group">
+                        <label for="artistOrOwner">Artist / Owner</label>
+                        <input type="text" id="artistOrOwner" name="artistOrOwner" x-model="form.artistOrOwner"
+                               data-path="/artistOrOwner">
+                    </div>
+                    <div class="form-group">
+                        <label for="artworkUrl">Artwork URL (text only, not fetched)</label>
+                        <input type="text" id="artworkUrl" name="artworkUrl" x-model="form.artworkUrl"
+                               data-path="/artworkUrl" placeholder="https://example.com/art.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Notes (Markdown)</label>
+                        <textarea id="notes" name="notes" x-model="form.notes"
+                                  rows="4" data-path="/notes"></textarea>
+                    </div>
+                    <div class="form-actions u-mt-lg">
+                        <button type="submit" class="btn btn-primary" :disabled="loading">Save</button>
+                        <a th:href="@{/campaigns/{campaignId}/audio/cues(campaignId=${campaignId})}"
+                           class="btn btn-ghost">Cancel</a>
+                    </div>
+                </form>
+
+                <div class="u-mt-lg" x-show="problems.length > 0">
+                    <h3 class="u-text-danger">Validation Errors</h3>
+                    <template x-for="problem in problems" :key="problem.path + problem.code">
+                        <div class="u-text-danger u-text-sm" x-text="problem.code + ': ' + problem.message"
+                             :data-path-match="problem.path"></div>
+                    </template>
+                </div>
+
+                <div class="card u-mt-lg" x-show="unsupportedMessage" x-cloak>
+                    <div class="u-text-warning u-text-sm" x-text="unsupportedMessage"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    window.CUE_ID = /*[[${cue?.id}]]*/ null;
+    window.CUE_DTO = /*[[${editorDto}]]*/ null;
+    window.CUE_CAMPAIGN_ID = /*[[${campaignId}]]*/ null;
+    /*]]>*/
+    </script>
+    <script th:src="@{/js/audio-cue-editor.js}"></script>
+</body>
+</html>

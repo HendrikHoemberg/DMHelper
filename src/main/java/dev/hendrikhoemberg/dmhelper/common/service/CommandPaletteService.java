@@ -11,6 +11,7 @@ import dev.hendrikhoemberg.dmhelper.world.data.WorldLocationRepository;
 import dev.hendrikhoemberg.dmhelper.world.data.FactionRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTable;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
@@ -61,6 +62,7 @@ public class CommandPaletteService {
     private final RollableTableRepository rollableTableRepo;
     private final TrapRepository trapRepo;
     private final HazardRepository hazardRepo;
+    private final AudioCueRepository audioCueRepo;
 
     public CommandPaletteService(NoteRepository noteRepo, QuickNoteRepository quickNoteRepo,
                                    StatBlockRepository statBlockRepo, SpellRepository spellRepo,
@@ -76,9 +78,10 @@ public class CommandPaletteService {
                                    WorldNpcRepository worldNpcRepo,
                                    WorldLocationRepository worldLocationRepo,
                                    FactionRepository factionRepo,
-                                   RollableTableRepository rollableTableRepo,
-                                   TrapRepository trapRepo,
-                                   HazardRepository hazardRepo) {
+                                    RollableTableRepository rollableTableRepo,
+                                    TrapRepository trapRepo,
+                                    HazardRepository hazardRepo,
+                                    AudioCueRepository audioCueRepo) {
         this.noteRepo = noteRepo;
         this.quickNoteRepo = quickNoteRepo;
         this.statBlockRepo = statBlockRepo;
@@ -104,6 +107,7 @@ public class CommandPaletteService {
         this.rollableTableRepo = rollableTableRepo;
         this.trapRepo = trapRepo;
         this.hazardRepo = hazardRepo;
+        this.audioCueRepo = audioCueRepo;
     }
 
     public List<SearchResultItem> search(String query, UUID campaignId) {
@@ -276,6 +280,13 @@ public class CommandPaletteService {
                             && campaignId.equals(trap.getCampaign().getId());
                     add(results, item, null, q, campaignOwned);
                 });
+
+        audioCueRepo.findByCampaignIdOrderByNameAsc(campaignId).stream()
+                .filter(c -> matches(c.getName(), q) || matches(c.getCueKey(), q))
+                .map(c -> new SearchResultItem(c.getId().toString(), c.getName(), "audio-cue",
+                        c.getCategory() != null ? c.getCategory().name().toLowerCase() : null,
+                        destinations.campaign(ContentDestinationRegistry.CampaignType.AUDIO_CUE, campaignId, c.getId(), null)))
+                .forEach(item -> add(results, item, null, q, true));
 
         hazardRepo.findVisibleByCampaignId(campaignId).stream()
                 .filter(h -> matches(h.getName(), q) || matches(h.getDescription(), q)

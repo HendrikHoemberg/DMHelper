@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="card" th:fragment="card(cue, campaignId)">
+    <h3 th:text="${cue.name}">Cue Name</h3>
+    <p class="text-muted">
+        <span th:text="${cue.cueKey}">cue-key</span>
+        <span th:if="${cue.category != null}" th:text="' · ' + ${cue.category.name()}"> · AMBIENT</span>
+        <span th:if="${cue.providerId != null}" th:text="' · ' + ${cue.providerId}"> · youtube</span>
+    </p>
+    <a class="btn btn-sm btn-primary"
+       th:href="@{/campaigns/{campaignId}/audio/cues/{id}(campaignId=${campaignId}, id=${cue.id})}">View</a>
+</div>
+</html>

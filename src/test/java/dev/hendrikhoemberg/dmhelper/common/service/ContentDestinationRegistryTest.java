@@ -33,6 +33,8 @@ class ContentDestinationRegistryTest {
                 "/adventures/33333333-3333-3333-3333-333333333333/scenes/22222222-2222-2222-2222-222222222222");
         assertThat(registry.campaign(ContentDestinationRegistry.CampaignType.QUICK_NOTE,
                 campaignId, entityId, null)).endsWith("/notes");
+        assertThat(registry.campaign(ContentDestinationRegistry.CampaignType.AUDIO_CUE,
+                campaignId, entityId, null)).endsWith("/audio/cues/" + entityId);
     }
 
     @Test
@@ -64,6 +66,8 @@ class ContentDestinationRegistryTest {
                 entityId, "spike-pit", "Spike Pit")).isEqualTo("/library/traps/" + entityId);
         assertThat(registry.library(ContentDestinationRegistry.LibraryType.HAZARD,
                 entityId, "lava-field", "Lava Field")).isEqualTo("/library/hazards/" + entityId);
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.AUDIO_CUE,
+                entityId, "cave-ambient", "Cave Ambient")).isEqualTo("/library/audio-cues/" + entityId);
     }
 
     @Test
@@ -81,6 +85,8 @@ class ContentDestinationRegistryTest {
                 null, "spike-pit", "Spike Pit")).isEqualTo("/library?tab=traps&search=Spike%20Pit");
         assertThat(registry.library(ContentDestinationRegistry.LibraryType.HAZARD,
                 null, "lava-field", "Lava Field")).isEqualTo("/library?tab=hazards&search=Lava%20Field");
+        assertThat(registry.library(ContentDestinationRegistry.LibraryType.AUDIO_CUE,
+                null, "cave-ambient", "Cave Ambient")).isEqualTo("/library?tab=audio-cues&search=Cave%20Ambient");
     }
 
     @Test

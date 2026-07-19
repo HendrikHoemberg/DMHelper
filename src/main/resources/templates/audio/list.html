@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — ' + ${listTitle}">DMHelper — Audio Cues</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <div>
+                    <div class="page-header-eyebrow">Audio</div>
+                    <h1 th:text="${listTitle}">Audio Cues</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+                <div class="page-header-actions">
+                    <a class="btn btn-primary"
+                       th:href="@{${createHref}}"
+                       th:text="'+ ' + ${createLabel}">+ New Cue</a>
+                    <a th:if="${campaignId != null}" class="btn btn-primary"
+                       th:href="@{/campaigns/{id}(id=${campaignId})}">&larr; Back to Campaign</a>
+                </div>
+            </div>
+            <div class="filter-bar">
+                <form class="u-flex u-gap-sm" method="get">
+                    <input type="text" name="text" placeholder="Search by name or key..."
+                           th:value="${param.text != null ? param.text[0] : ''}">
+                    <button type="submit" class="btn btn-sm">Filter</button>
+                </form>
+            </div>
+            <div id="cue-grid" class="card-grid card-grid--bounded empty-state-host">
+                <th:block th:if="${cues == null or cues.isEmpty()}">
+                    <th:block th:replace="~{common/_empty-state :: empty-state(message='No audio cues yet.', actionText=null, actionHref=null, description=null)}"></th:block>
+                </th:block>
+                <th:block th:each="cue : ${cues}">
+                    <th:block th:replace="~{audio/_card :: card(cue=${cue}, campaignId=${campaignId})}"></th:block>
+                </th:block>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

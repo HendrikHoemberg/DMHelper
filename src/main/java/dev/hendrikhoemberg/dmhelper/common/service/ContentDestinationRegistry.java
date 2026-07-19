@@ -10,14 +10,15 @@ import java.util.UUID;
 public class ContentDestinationRegistry {
     public enum CampaignType {
         NOTE, QUICK_NOTE, MAP, ENCOUNTER, HANDOUT, PARTY_MEMBER, PARTY_MEMBER_SHEET, SCENE,
-        WORLD_NPC, WORLD_LOCATION, FACTION
+        WORLD_NPC, WORLD_LOCATION, FACTION, AUDIO_CUE
     }
 
     public enum LibraryType {
         STATBLOCK(null), SPELL("spells"), CONDITION("conditions"), RULE("rules"),
         EQUIPMENT("equipment"), MAGIC_ITEM("magic-items"), CLASS(null),
         SPECIES("species"), BACKGROUND("backgrounds"), FEAT("feats"),
-        ROLLABLE_TABLE("tables"), TRAP("traps"), HAZARD("hazards");
+        ROLLABLE_TABLE("tables"), TRAP("traps"), HAZARD("hazards"),
+        AUDIO_CUE("audio-cues");
 
         private final String tab;
 
@@ -51,6 +52,10 @@ public class ContentDestinationRegistry {
             case FACTION -> {
                 if (entityId == null) yield root + "/world/factions";
                 yield root + "/world/factions/" + entityId;
+            }
+            case AUDIO_CUE -> {
+                if (entityId == null) yield root + "/audio/cues";
+                yield root + "/audio/cues/" + entityId;
             }
         };
     }
@@ -100,6 +105,9 @@ public class ContentDestinationRegistry {
             case HAZARD -> entityId != null
                     ? "/library/hazards/" + entityId
                     : filtered("hazards", displayName);
+            case AUDIO_CUE -> entityId != null
+                    ? "/library/audio-cues/" + entityId
+                    : filtered("audio-cues", displayName);
         };
     }
 

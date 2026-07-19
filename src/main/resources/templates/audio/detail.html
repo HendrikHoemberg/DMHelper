@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — ' + ${cue.name}">DMHelper — Audio Cue</title>
+</head>
+<body th:attr="data-campaign-id=${campaignId}">
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main" x-data="audioCueManagement()">
+            <div class="page-header">
+                <div>
+                    <div class="page-header-eyebrow" th:text="${listLabel}">Audio Cues</div>
+                    <h1 th:text="${cue.name}">Cue Name</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+                <div class="page-header-actions">
+                    <a th:href="@{${listHref}}" class="btn btn-ghost"
+                       th:text="'&larr; Back to ' + ${listLabel}">&larr; Back</a>
+                    <a class="btn btn-ghost"
+                       th:href="@{${editHref}}">Edit</a>
+                    <button type="button" class="btn btn-ghost" @click="cloneCue()"
+                            :disabled="managementLoading">Clone</button>
+                    <button type="button" class="btn btn-danger" @click="deleteCue()"
+                            :disabled="managementLoading">Delete</button>
+                    <span class="u-text-sm" x-show="managementMessage" x-text="managementMessage"></span>
+                </div>
+            </div>
+            <div class="detail-section"
+                 th:attr="data-cue-id=${cue.id}, data-api-base=${apiBase}, data-list-href=${listHref}"
+                 data-deletion-impact="deletion-impact">
+                <div class="detail-metadata">
+                    <div><strong>Key:</strong> <span th:text="${cue.cueKey}">cue-key</span></div>
+                    <div><strong>Provider:</strong> <span th:text="${cue.providerId}">youtube</span></div>
+                    <div><strong>Reference:</strong> <span th:text="${cue.providerReference}">ref</span></div>
+                    <div><strong>Category:</strong> <span th:text="${cue.category}">AMBIENT</span></div>
+                    <div th:if="${cue.volumeHint != null}"><strong>Volume:</strong> <span th:text="${cue.volumeHint}">80</span></div>
+                    <div><strong>Transition:</strong> <span th:text="${cue.transitionPreference}">CROSSFADE</span></div>
+                    <div th:if="${cue.durationSeconds != null}"><strong>Duration:</strong> <span th:text="${cue.durationSeconds}">212</span>s</div>
+                    <div th:if="${cue.cachedTitle != null}"><strong>Title:</strong> <span th:text="${cue.cachedTitle}">Cached Title</span></div>
+                    <div th:if="${cue.artistOrOwner != null}"><strong>Artist:</strong> <span th:text="${cue.artistOrOwner}">Artist</span></div>
+                    <div th:if="${cue.artworkUrl != null}"><strong>Artwork URL:</strong> <span th:text="${cue.artworkUrl}">https://example.com/art.jpg</span></div>
+                </div>
+                <div class="u-mt-lg" th:if="${cue.notes != null}">
+                    <h3>Notes</h3>
+                    <div class="detail-description" th:utext="${markdownNotes}"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    window.CUE_ID = /*[[${cue.id}]]*/ null;
+    window.CUE_API_BASE = /*[[${apiBase}]]*/ '/api/v1/campaigns/' + /*[[${campaignId}]]*/ null + '/audio/cues';
+    window.CUE_LIST_HREF = /*[[${listHref}]]*/ '/campaigns/' + /*[[${campaignId}]]*/ null + '/audio/cues';
+    /*]]>*/
+    </script>
+    <script th:src="@{/js/audio-cue-editor.js}"></script>
+</body>
+</html>
