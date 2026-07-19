@@ -105,9 +105,7 @@ public class ContentDestinationRegistry {
             case HAZARD -> entityId != null
                     ? "/library/hazards/" + entityId
                     : filtered("hazards", displayName);
-            case AUDIO_CUE -> entityId != null
-                    ? "/library/audio-cues/" + entityId
-                    : filtered("audio-cues", displayName);
+            case AUDIO_CUE -> filtered("audio-cues", displayName);
         };
     }
 

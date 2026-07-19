@@ -64,14 +64,15 @@ class AudioRuntimeApiControllerTest {
     }
 
     @Test
-    void getStateReturns404ForMissingSession() throws Exception {
+    void getStateReturns200ForMissingSession() throws Exception {
         when(campaignRepository.existsById(campaignId)).thenReturn(true);
         when(audioStateService.getRuntimeView(sessionId, campaignId))
                 .thenThrow(new IllegalStateException("No audio state"));
 
         mockMvc.perform(get("/api/v1/campaigns/{campaignId}/audio/runtime/state", campaignId)
                         .param("sessionId", sessionId.toString()))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.actionableAvailable").value(false));
     }
 
     @Test

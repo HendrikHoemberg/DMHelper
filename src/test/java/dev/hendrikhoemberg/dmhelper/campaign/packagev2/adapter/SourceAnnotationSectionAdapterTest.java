@@ -164,6 +164,7 @@ class SourceAnnotationSectionAdapterTest {
         a.session(null);
         a.diceRolls(List.of());
         a.quests(List.of());
+        a.audioCues(List.of());
     }
 
     private CampaignManifestV2 buildManifest(CampaignManifestAssembler a) {

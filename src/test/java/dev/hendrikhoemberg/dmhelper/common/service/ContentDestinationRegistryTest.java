@@ -67,7 +67,7 @@ class ContentDestinationRegistryTest {
         assertThat(registry.library(ContentDestinationRegistry.LibraryType.HAZARD,
                 entityId, "lava-field", "Lava Field")).isEqualTo("/library/hazards/" + entityId);
         assertThat(registry.library(ContentDestinationRegistry.LibraryType.AUDIO_CUE,
-                entityId, "cave-ambient", "Cave Ambient")).isEqualTo("/library/audio-cues/" + entityId);
+                entityId, "cave-ambient", "Cave Ambient")).isEqualTo("/library?tab=audio-cues&search=Cave%20Ambient");
     }
 
     @Test

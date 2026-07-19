@@ -107,6 +107,19 @@ public final class ImportProblemCodes {
     public static final String TABLE_REFERENCE_CYCLE = "TABLE_REFERENCE_CYCLE";
     public static final String TABLE_REFERENCE_DEPTH_EXCEEDED = "TABLE_REFERENCE_DEPTH_EXCEEDED";
 
+    // Audio cue validation codes
+    public static final String CUE_FIELD_REQUIRED = "CUE_FIELD_REQUIRED";
+    public static final String DUPLICATE_AUDIO_CUE_KEY = "DUPLICATE_AUDIO_CUE_KEY";
+    public static final String DUPLICATE_CUE_KEY = "DUPLICATE_CUE_KEY";
+    public static final String DUPLICATE_NORMALIZED_PROVIDER_REF = "DUPLICATE_NORMALIZED_PROVIDER_REF";
+    public static final String DURATION_OUT_OF_BOUNDS = "DURATION_OUT_OF_BOUNDS";
+    public static final String INVALID_CUE_KEY = "INVALID_CUE_KEY";
+    public static final String INVALID_REFERENCE = "INVALID_REFERENCE";
+    public static final String METADATA_TOO_LONG = "METADATA_TOO_LONG";
+    public static final String UNKNOWN_PROVIDER = "UNKNOWN_PROVIDER";
+    public static final String VICTORY_DURATION_WITHOUT_CUE = "VICTORY_DURATION_WITHOUT_CUE";
+    public static final String VOLUME_OUT_OF_BOUNDS = "VOLUME_OUT_OF_BOUNDS";
+
     // Trap / hazard (threat) package validation codes
     public static final String DAMAGE_TYPE_REQUIRED = "DAMAGE_TYPE_REQUIRED";
     public static final String DUPLICATE_DISARM_KEY = "DUPLICATE_DISARM_KEY";

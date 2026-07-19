@@ -158,6 +158,7 @@ class ThreatSectionAdapterTest {
         assembler.timelineEvents(List.of());
         assembler.adventures(List.of());
         assembler.diceRolls(List.of());
+        assembler.audioCues(List.of());
         return assembler;
     }
 

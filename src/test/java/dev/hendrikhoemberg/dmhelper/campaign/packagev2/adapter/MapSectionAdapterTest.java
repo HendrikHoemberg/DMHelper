@@ -565,6 +565,7 @@ class MapSectionAdapterTest {
         a.adventures(List.of());
         a.session(null);
         a.diceRolls(List.of());
+        a.audioCues(List.of());
     }
 
     private CampaignManifestV2 buildManifest(CampaignManifestAssembler a) {

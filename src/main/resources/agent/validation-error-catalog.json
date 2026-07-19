@@ -224,6 +224,116 @@
       ]
     },
     {
+      "code": "CUE_FIELD_REQUIRED",
+      "defaultSeverity": "ERROR",
+      "summary": "A required audio cue field is missing or empty.",
+      "when": "Audio cue validation during cue creation or update.",
+      "suggestionTemplate": "Provide the missing field value.",
+      "repairHints": [
+        "Check the audio cue editor for required fields."
+      ]
+    },
+    {
+      "code": "DUPLICATE_AUDIO_CUE_KEY",
+      "defaultSeverity": "WARNING",
+      "summary": "Two or more audio cues share the same key in the same package.",
+      "when": "Package semantic validation.",
+      "suggestionTemplate": "Rename the duplicate cue keys.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "DUPLICATE_CUE_KEY",
+      "defaultSeverity": "ERROR",
+      "summary": "An audio cue key duplicates an existing cue key in the campaign.",
+      "when": "Audio cue creation or update in the campaign.",
+      "suggestionTemplate": "Choose a different cue key.",
+      "repairHints": [
+        "Use the audio cue editor to pick a unique key."
+      ]
+    },
+    {
+      "code": "DUPLICATE_NORMALIZED_PROVIDER_REF",
+      "defaultSeverity": "WARNING",
+      "summary": "Two or more audio cues resolve to the same normalized provider reference.",
+      "when": "Package semantic validation.",
+      "suggestionTemplate": "Remove or change the duplicate provider references.",
+      "repairHints": [
+        "Use the import validation report to locate the exact source."
+      ]
+    },
+    {
+      "code": "DURATION_OUT_OF_BOUNDS",
+      "defaultSeverity": "ERROR",
+      "summary": "The victory cue duration is outside the permitted range.",
+      "when": "Audio cue validation during cue creation or update.",
+      "suggestionTemplate": "Set a duration between 1 and 3600 seconds.",
+      "repairHints": [
+        "Use the audio cue editor to adjust the duration."
+      ]
+    },
+    {
+      "code": "INVALID_CUE_KEY",
+      "defaultSeverity": "ERROR",
+      "summary": "The audio cue key does not match the required pattern.",
+      "when": "Audio cue validation during cue creation or update.",
+      "suggestionTemplate": "Use a key matching ^[a-z0-9][a-z0-9._-]{0,99}$.",
+      "repairHints": [
+        "Use the audio cue editor to set a valid key."
+      ]
+    },
+    {
+      "code": "INVALID_REFERENCE",
+      "defaultSeverity": "ERROR",
+      "summary": "The provider reference is empty, blank, or invalid.",
+      "when": "Audio cue validation during cue creation or update.",
+      "suggestionTemplate": "Provide a valid provider URI or ID.",
+      "repairHints": [
+        "Use the audio cue editor to set a provider reference."
+      ]
+    },
+    {
+      "code": "METADATA_TOO_LONG",
+      "defaultSeverity": "ERROR",
+      "summary": "An audio cue metadata field exceeds the maximum allowed length.",
+      "when": "Audio cue validation during cue creation or update.",
+      "suggestionTemplate": "Shorten the field value.",
+      "repairHints": [
+        "Use the audio cue editor to reduce the field length."
+      ]
+    },
+    {
+      "code": "UNKNOWN_PROVIDER",
+      "defaultSeverity": "ERROR",
+      "summary": "The audio cue references a provider that is not recognized.",
+      "when": "Audio cue validation during cue creation or update.",
+      "suggestionTemplate": "Use a known provider identifier.",
+      "repairHints": [
+        "Check the list of available providers in settings."
+      ]
+    },
+    {
+      "code": "VICTORY_DURATION_WITHOUT_CUE",
+      "defaultSeverity": "ERROR",
+      "summary": "A victory cue duration is set without a victory cue.",
+      "when": "Audio cue validation during cue creation or update.",
+      "suggestionTemplate": "Remove the duration or assign a victory cue.",
+      "repairHints": [
+        "Use the audio cue editor to set a victory cue or clear the duration."
+      ]
+    },
+    {
+      "code": "VOLUME_OUT_OF_BOUNDS",
+      "defaultSeverity": "ERROR",
+      "summary": "The volume hint is outside the permitted range.",
+      "when": "Audio cue validation during cue creation or update.",
+      "suggestionTemplate": "Set a volume between 0 and 100.",
+      "repairHints": [
+        "Use the audio cue editor to adjust the volume."
+      ]
+    },
+    {
       "code": "DAMAGE_TYPE_REQUIRED",
       "defaultSeverity": "ERROR",
       "summary": "A damage expression is present without damage types.",

@@ -97,6 +97,7 @@ class RollableTableSectionAdapterTest {
         assembler.timelineEvents(List.of());
         assembler.adventures(List.of());
         assembler.diceRolls(List.of());
+        assembler.audioCues(List.of());
 
         adapter.exportSection(ctx, assembler);
 

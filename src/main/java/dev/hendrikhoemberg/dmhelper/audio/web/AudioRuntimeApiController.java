@@ -35,13 +35,13 @@ public class AudioRuntimeApiController {
 
     @GetMapping("/state")
     public ResponseEntity<AudioRuntimeView> getState(@PathVariable UUID campaignId,
-                                                      @RequestParam UUID sessionId) {
+                                                       @RequestParam UUID sessionId) {
         requireCampaign(campaignId);
         try {
             AudioRuntimeView view = audioStateService.getRuntimeView(sessionId, campaignId);
             return ResponseEntity.ok(view);
         } catch (IllegalStateException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(new AudioRuntimeView(null, null, null, null, false, null, false, false));
         }
     }
 

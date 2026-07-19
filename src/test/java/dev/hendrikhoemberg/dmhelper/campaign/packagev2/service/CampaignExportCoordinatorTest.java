@@ -79,6 +79,7 @@ class CampaignExportCoordinatorTest {
             target.timelineEvents(List.of());
             target.adventures(List.of());
             target.diceRolls(List.of());
+            target.audioCues(List.of());
         }
     }
 }

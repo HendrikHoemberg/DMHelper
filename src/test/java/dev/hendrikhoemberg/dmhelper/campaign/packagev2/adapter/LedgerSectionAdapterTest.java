@@ -169,6 +169,7 @@ class LedgerSectionAdapterTest {
         a.adventures(List.of());
         a.session(null);
         a.diceRolls(List.of());
+        a.audioCues(List.of());
         return a;
     }
 
