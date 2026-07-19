@@ -108,7 +108,7 @@
       "name": "World graph",
       "status": "SUPPORTED",
       "deliveryItem": 11,
-      "notes": "NPCs, locations, factions, relationships, faction clocks; travel/fog/audio/players remain deferred P3 slices"
+      "notes": "NPCs, locations, factions, relationships, faction clocks, and simple location adjacency; music remains required readiness work, while structured travel/fog are optional future capabilities"
     },
     {
       "id": "tables.rollable",
@@ -128,13 +128,13 @@
       "id": "map.fog_of_war",
       "name": "Full fog of war gameplay",
       "status": "UNSUPPORTED",
-      "notes": "Deferred P3"
+      "notes": "Optional future capability outside the readiness release; existing server-filtered map presentation remains supported"
     },
     {
       "id": "travel.weather",
-      "name": "Travel weather",
+      "name": "Structured travel/weather automation",
       "status": "UNSUPPORTED",
-      "notes": "P3 - Deferred"
+      "notes": "Optional future capability outside the readiness release; manual workflows use locations, adjacency, notes, calendars, and rollable tables"
     },
     {
       "id": "player.interaction",

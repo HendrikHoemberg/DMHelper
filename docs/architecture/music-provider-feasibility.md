@@ -177,7 +177,7 @@ interrupting scene navigation, encounters, presentation, or any other session ac
 
 ## Provider Interfaces (Planned)
 
-These are the planned provider-neutral interfaces for the row 7 atmosphere/music implementation.
+These are the planned provider-neutral interfaces for the roadmap row 5 atmosphere/music implementation.
 No Java code is committed by this spike.
 
 enum AudioProviderId { YOUTUBE, SPOTIFY }
@@ -211,7 +211,7 @@ interface AudioProviderClient {
 
 ## YouTube Implementation Constraints
 
-The row 7 implementation must observe all of these:
+The roadmap row 5 implementation must observe all of these:
 
 - the official IFrame player is rendered only in the PIN-gated DM cockpit;
 - no YouTube script, reference, state, iframe, thumbnail, or error reaches /player or /ws/table;
@@ -227,7 +227,7 @@ The row 7 implementation must observe all of these:
 
 ## Spotify Implementation Constraints
 
-The row 7 plan includes Spotify only when its status is SUPPORTED. The implementation:
+The roadmap row 5 plan includes Spotify only when its status is SUPPORTED. The implementation:
 
 - is included only when status is SUPPORTED;
 - must not hide policy risk behind a feature flag when status is CONDITIONAL;
@@ -249,7 +249,7 @@ following:
 
 ## Downstream Implementation Contract
 
-No production contract is authorized until the real-provider proof is recorded. The future row 7
+No production contract is authorized until the real-provider proof is recorded. The future row 5
 plan must use a provider SPI, deterministic fake-provider tests, local credential clearing, and a
 strictly DM-only projection boundary.
 

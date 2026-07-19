@@ -1,12 +1,13 @@
 # DM-Only All-in-One Readiness — Canonical Execution Roadmap
 
-**Last updated:** 2026-07-18
+**Last updated:** 2026-07-19
 
 **Roadmap established after:** commit `36f7c3c`; use the status table together with current Git history
 
-**Current NEXT item:** 5 — Travel core
+**Current NEXT item:** 5 — Atmosphere and music completion
 
-**Terminal goal:** DMHelper can prepare, run, record, export, restore, and resume a representative campaign as an all-in-one **DM-operated** tool.
+**Terminal goal:** DMHelper can prepare, run, record, export, restore, and resume a representative
+campaign as an all-in-one **DM-operated** tool, including the intended DM-side music experience.
 
 This file is the durable execution handoff for the remaining readiness work. It exists so a new
 agent can recover the intended sequence from the repository without relying on chat history.
@@ -19,8 +20,9 @@ agent can recover the intended sequence from the repository without relying on c
   editing are not part of this program.
 - Music is required for readiness. Playback is DM-side and streaming-first behind a provider
   abstraction; provider failure must never block the rest of a session.
-- Consequential travel, encounter, calendar, supply, location, fog, and story changes remain under
-  explicit DM confirmation.
+- Progressive fog of war and structured travel/hexcrawl automation are optional future features,
+  not readiness requirements. Existing maps, presentation controls, world-location adjacency,
+  notes, calendars, and rollable tables remain available for manual campaign workflows.
 - The application must not invent rules, campaign facts, or source details to fill missing data.
 - DM-only data is excluded at server projection boundaries, not hidden with CSS.
 
@@ -31,14 +33,17 @@ Use these sources in this order:
 1. The [master readiness specification](specs/2026-07-15-all-in-one-dm-readiness-design.md)
    defines the product goal, release gates, and non-goals.
 2. The approved [table fidelity and atmosphere design](specs/2026-07-17-table-fidelity-and-atmosphere-design.md)
-   and [travel and exploration design](specs/2026-07-18-dm-travel-and-exploration-design.md)
-   define subsystem requirements and acceptance criteria.
+   defines the remaining subsystem requirements and acceptance criteria.
 3. This roadmap defines the serial execution order and current handoff state.
 4. Each implementation plan defines the exact files, tests, and commits for its work package.
 
 If sources disagree, requirements from the authoritative design win over roadmap shorthand. This
 roadmap wins over older chat summaries for execution order. Fresh code inspection and test evidence
 win over a stale status label; correct the label before continuing.
+
+The former travel-and-exploration design and travel-core implementation plan were intentionally
+removed on 2026-07-19. Historical Git commits are not active authority and must not be used to
+resume travel or fog work.
 
 ## 3. Status vocabulary
 
@@ -52,42 +57,31 @@ win over a stale status label; correct the label before continuing.
 | `COMPLETE` | Required implementation, documentation, and exit-gate evidence are committed. |
 
 Only one row may be `READY`, `PLANNING`, `IN_PROGRESS`, or `VERIFYING` at a time. The sequence is
-intentionally serial even where the subsystem specifications permit parallel work; this minimizes
-integration churn and keeps the release gate attributable.
+intentionally serial to minimize integration churn and keep the release gate attributable.
 
 ## 4. Ordered implementation queue
 
 | # | Work package | Status | Depends on | Design scope | Implementation plan | Exit gate |
 |---|---|---|---|---|---|---|
 | 1 | P0 browser-smoke release-gate repair | `COMPLETE` | — | Master §§5–6, 21, 23 | [Completed plan](plans/2026-07-18-p0-browser-smoke-release-gate-repair.md) | Native party dialog regression and same-origin sheet setup fixed; `CoreSessionLoopSmokeTest` and full Maven suite green; master blocker note updated. |
-| 2 | Music-provider feasibility spike | `COMPLETE` | 1 | Atmosphere §7.1 and §7.6 | [Completed plan](plans/2026-07-18-music-provider-feasibility.md) | YouTube proven as viable baseline provider on the DM device (Firefox/Linux, 480x270 visible player, all six controls passed). Spotify classified CONDITIONAL (Policy III.6 synchronization). Provider contract frozen. See [decision record](../architecture/music-provider-feasibility.md). |
+| 2 | Music-provider feasibility spike | `COMPLETE` | 1 | Atmosphere §6.1 and §6.6 | [Completed plan](plans/2026-07-18-music-provider-feasibility.md) | YouTube proven as viable baseline provider on the DM device (Firefox/Linux, 480x270 visible player, all six controls passed). Spotify classified CONDITIONAL (Policy III.6 synchronization). Provider contract frozen. See [decision record](../architecture/music-provider-feasibility.md). |
 | 3 | Rollable tables and integrations | `COMPLETE` | 2 | Atmosphere delivery items 1–2 | [Completed corrective plan](plans/2026-07-18-rollable-tables-corrective-implementation.md) | Correct API DTOs, campaign-aware validation, complete authoring/rolling UI, consequence state machine, runnable package fidelity, real browser acceptance, and focused/full tests pass. |
 | 4 | Traps and hazards | `COMPLETE` | 3 | Atmosphere delivery items 3–4 | [Completed plan](plans/2026-07-18-p3-traps-and-hazards.md) | Structured and prose-compatible traps/hazards, provenance, scene/tracker/map integrations, package round-trip, player-safety coverage, and focused/full tests pass. |
-| 5 | Travel core | `READY` | 4 | Travel delivery items 1–3 | Create a dated `p3-travel-core` plan | Settings, migrations, routes, legs, authoring/search/dependency rules, journey/watch state machine, persistence, package-key contracts, and focused/full tests pass. |
-| 6 | Manual fog of war | `BLOCKED` | 5 | Atmosphere delivery items 5–6 | Create a dated `p3-manual-fog` plan | Mask model, DM tools, package support, server-side masked projection, reconnect behavior, cache/payload leak security tests, round-trip, and focused/full tests pass. |
-| 7 | Atmosphere and music completion | `BLOCKED` | 6 and the decision from 2 | Atmosphere delivery items 7–8 | Create a dated `p3-atmosphere-music` plan | Provider SPI/reference adapter, local OAuth and token clearing, cue library, cockpit widget, assignments, priority switching, deterministic fake-provider tests, package safety, and bounded outage behavior pass. |
-| 8 | Travel rules and runtime integrations | `BLOCKED` | 3, 5, 6, 7 | Travel delivery items 4–7 | Create a dated `p3-travel-integrations` plan | Weather, pace, navigation, roles, modes, supply drafts, calendar/ledger/encounter/scene/log connections, cockpit journey panel, and music transitions pass without autonomous mutations. |
-| 9 | Travel packaging and acceptance gates | `BLOCKED` | 8 | Travel delivery items 8–9 | Create a dated `p3-travel-packaging-and-gates` plan | Package adapters, semantic snapshot, fixtures, documentation, browser/security/performance tests, export/restore/resume, and the travel acceptance scenario pass. |
-| 10 | Cross-spec readiness closeout | `BLOCKED` | 3–9 | Atmosphere item 9; master §§19–23 | Create a dated `dm-readiness-cross-spec-closeout` plan | Feature-complete and published-adventure fixtures cover tables, traps, fog, music, and travel; schemas/catalogs/playbook/manual/capability matrix agree; full round-trip and player-safety suites pass. |
-| 11 | Final readiness verification and release decision | `BLOCKED` | 10 | Master §§21 and 23 | Create a dated `dm-readiness-release-verification` plan | Full automated suite, security gates, documentation audit, real-provider music exercise, and recorded representative manual acceptance session pass. Only then may master item 11 and the DM-only readiness claim be marked complete. |
+| 5 | Atmosphere and music completion | `READY` | 2, 4 | Atmosphere delivery items 5–6 | Create a dated `p3-atmosphere-music` plan | Provider SPI/reference adapter, local credentials/token clearing where required, cue library, cockpit widget, assignments, priority switching, deterministic fake-provider tests, package safety, and bounded outage behavior pass. |
+| 6 | Music-focused readiness closeout | `BLOCKED` | 5 | Atmosphere item 7; master §§19–23 | Create a dated `dm-readiness-music-closeout` plan | Feature-complete and published-adventure fixtures cover tables, traps, and music; schemas/catalogs/playbook/manual/capability matrix agree; full round-trip and player-safety suites pass. |
+| 7 | Final readiness verification and release decision | `BLOCKED` | 6 | Master §§21 and 23 | Create a dated `dm-readiness-release-verification` plan | Full automated suite, security gates, documentation audit, real-provider music exercise, and recorded representative manual acceptance session pass. Only then may master item 11 and the DM-only readiness claim be marked complete. |
 
 ## 5. Why this order is fixed
 
-1. The known red browser gate is repaired before adding breadth.
-2. Provider feasibility is checked early because music is required and is the only approved runtime
-   internet dependency; discovering an unusable control/auth model late would invalidate completed
-   integration work.
-3. Tables land before traps and travel because both consume typed table results and drafts.
-4. Traps reuse the compendium, provenance, package, and typed-reference patterns validated by
-   tables.
-5. The independent travel domain model lands before UI-heavy cross-module integration.
-6. Fog is completed and security-tested before travel's fogged-arrival acceptance flow.
-7. Full music implementation remains isolated until its provider decision and the local content
-   patterns are stable.
-8. Travel integration then composes tables, world locations, encounters, fog-aware arrival, music,
-   calendar, party, ledger, and session lifecycle without inventing duplicate subsystems.
-9. Documentation and cross-spec fixtures close only after the domain behavior is stable.
-10. The release decision is evidence-driven and last; implementation status alone is insufficient.
+1. The known red browser gate was repaired before adding breadth.
+2. Provider feasibility was checked early because music is required and is the only approved
+   runtime internet dependency.
+3. Tables landed before traps so traps could reuse typed results, provenance, package, and
+   reference patterns.
+4. Music now builds on the stable campaign, scene, encounter, cockpit, package, and player-safety
+   contracts established by completed work.
+5. Documentation and fixtures close only after music behavior is stable.
+6. The release decision is evidence-driven and last; implementation status alone is insufficient.
 
 ## 6. Future-agent handoff protocol
 
@@ -96,34 +90,43 @@ At the start of every continuation session:
 1. Read this roadmap, the master specification, and the design/plan linked by the first active row.
 2. Run `git status --short` and `git log -5 --oneline`; preserve unrelated user changes.
 3. Verify the active row's stated baseline with its focused test before editing.
-4. If its plan exists, execute that plan using the required execution skill. If it does not exist,
-   use the writing-plans skill against the already approved design scope named in the row.
+4. If its plan exists, execute it. If it does not exist, write a plan against the already approved
+   design scope named in the row.
 5. Do not begin a later row to work around a failure in the active row.
 6. Update this roadmap in the same commit that closes or changes a work-package status.
 7. Mark a row `COMPLETE` only after its exit gate is demonstrated. Change the immediately following
    row from `BLOCKED` to `READY` in that same status-update commit.
-8. Record deviations in this file with the reason and dependency effect; do not silently reorder
-   packages.
+8. Do not reintroduce progressive fog or structured travel as a readiness dependency. Any future
+   proposal for either requires a new product decision and a separate optional-feature design.
 
-For the provider feasibility package, browse current **official provider documentation** because API
-capabilities, OAuth requirements, subscription rules, and platform policies are time-sensitive.
-For all other packages, prefer repository contracts and the approved specifications; browse only
-where the task independently requires current external facts.
+For music-provider implementation and final real-provider verification, browse current **official
+provider documentation** because API capabilities, OAuth requirements, subscription rules, and
+platform policies are time-sensitive. For other packages, prefer repository contracts and the
+approved specifications; browse only where the task independently requires current external facts.
 
 ## 7. Current recovery note
 
-As of the traps and hazards completion on 2026-07-18 / 2026-07-19:
+As of the scope re-baseline on 2026-07-19:
 
 - master delivery items 1–10 are implemented;
-- world graph and faction clocks are implemented;
-- the remaining P3 designs are approved and committed;
+- world graph and faction clocks are implemented and remain in scope;
 - the P0 browser-smoke plan is implemented, audited, and linked above;
-- the music-provider feasibility spike is complete: YouTube is the viable baseline provider (Firefox/Linux, all six controls passed with visible official player); Spotify is CONDITIONAL (Policy III.6 synchronization prohibition);
-- the corrected P3 rollable-tables package is implemented and verified (see prior recovery note and [corrective plan](plans/2026-07-18-rollable-tables-corrective-implementation.md));
-- **P3 traps and hazards package is implemented and verified** under [plans/2026-07-18-p3-traps-and-hazards.md](plans/2026-07-18-p3-traps-and-hazards.md): V14 additive `trap`/`hazard` tables; typed authoring with provenance; scene TRAP/HAZARD refs (prose-compatible); cockpit story-rail dice prefill; initiative threat cards and manual action-log evidence; DM-only map threat pins; package-v2 traps/hazards sections, closure, older-v2 defaults, fixtures, and behavioral round-trip; hostile content and player-safety coverage. Atmosphere delivery items 3–4 are `IMPLEMENTED`. Atmosphere item 9 and master overall readiness remain open.
-- **Traps/hazards browser acceptance (automated only, 2026-07-19):** standalone `CoreSessionLoopSmokeTest` **1 suite / 24 tests / 0 failures / 0 errors / 0 skips**, including `threatWorkflowProvesDmSurfacesAndPackageFidelity` (create/clone/promote, dual-scene attach, cockpit prefill, tracker/manual log, DM pin with player absence, export→import→reopen). Do not label this a manual acceptance session.
-- **Traps/hazards automated evidence (2026-07-19):** focused threat/package/controller/template/search/security gate **29 suites / 269 tests / 0 failures / 0 errors / 0 skips**; independent browser gate as above; fresh complete Maven run **213 suites / 1626 tests / 0 failures / 0 errors / 0 skips** (exit 0) after import-code registration, pin/export isolation, and smoke HTMX map-create wait hardening.
-- **Roadmap status:** row 4 `COMPLETE`; row 5 (Travel core) `READY`. Next action: write and execute a dated `p3-travel-core` plan against Travel delivery items 1–3. Do not start fog, music completion, or later rows.
+- the music-provider feasibility spike is complete: YouTube is the viable baseline provider
+  (Firefox/Linux, all six controls passed with visible official player); Spotify is CONDITIONAL
+  (Policy III.6 synchronization prohibition);
+- the corrected P3 rollable-tables package is implemented and verified;
+- the P3 traps-and-hazards package is implemented and verified, including package round-trip,
+  browser workflow, hostile-content, and player-safety coverage;
+- the partial travel-core implementation, its V15 migration, tests, UI, execution plan, and
+  authoritative travel design were removed before journey/watch work began;
+- progressive fog and structured travel/hexcrawl automation are optional future capabilities and
+  no longer block DM-only readiness;
+- **Scope-rebaseline verification (2026-07-19):** clean focused settings/package/world/migration/
+  documentation gate **10 suites / 119 tests / 0 failures / 0 errors / 0 skips**; fresh complete
+  Maven run **213 suites / 1627 tests / 0 failures / 0 errors / 0 skips**. Fresh Flyway startup
+  validates 14 migrations and ends at V14; the normal persistent database predates the removed V15.
+- **Roadmap status:** row 4 `COMPLETE`; row 5 (Atmosphere and music completion) `READY`. Next action:
+  write and execute a dated `p3-atmosphere-music` plan against Atmosphere delivery items 5–6.
 
 When conversation context is missing or compacted, resume from the first non-`COMPLETE` row in this
 file and validate its status against the repository before acting.

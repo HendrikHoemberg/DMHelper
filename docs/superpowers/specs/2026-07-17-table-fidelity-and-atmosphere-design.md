@@ -1,31 +1,32 @@
 # DMHelper Table Fidelity and Atmosphere Expansion — Design Specification
 
 **Date:** 2026-07-17
-**Status:** Approved design
+**Status:** Approved design, scope amended 2026-07-19
 **Parent specification:** `2026-07-15-all-in-one-dm-readiness-design.md` (master), delivery item 11 (P3 expansion)
-**Companion specification:** `2026-07-18-dm-travel-and-exploration-design.md`
 **Product premise:** Close the remaining gaps that force a DM running a published or homebrew
-campaign to reach for a book, a separate VTT, or a music app: rollable tables, reusable trap and
-hazard content, progressive map reveal, and in-app atmospheric music.
+campaign to reach for a book or a music app: rollable tables, reusable trap and hazard content,
+and in-app atmospheric music.
 
 ## 1. Purpose and relationship to the master specification
 
 The master specification defined all-in-one DM readiness and delivered items 1–10. This document
-designs one of the two remaining required DM-only P3 slices from item 11. Together with the
-DM Travel and Exploration specification, it closes the feature portion of the required P3 program.
-Interactive player accounts and player-controlled gameplay are explicit non-goals.
+defines the remaining required DM-only P3 feature slice from item 11. Interactive player accounts
+and player-controlled gameplay are explicit non-goals.
 
-This slice contains four subsystems that a DM running a published module today still handles
+This slice contains three subsystems that a DM running a published module today may otherwise handle
 outside the app:
 
 - **Workstream M — Rollable tables:** random encounters, loot, rumors, weather, and other
   die-driven tables as first-class content instead of flattened prose.
 - **Workstream N — Traps and hazards:** reusable, structured compendium entries instead of
   per-scene prose sections.
-- **Workstream O — Fog of war (manual reveal):** persistent revealed/hidden map state with
-  server-enforced player safety.
 - **Workstream P — Atmosphere and music:** streaming-based background music with scene-linked
   dynamic switching.
+
+The 2026-07-19 scope amendment removed progressive fog of war and structured travel/hexcrawl
+automation from the readiness program. Existing DM/player map projection, maps, named regions,
+world-location adjacency, notes, calendars, and rollable tables remain supported; specialized fog
+and travel automation may be proposed later as optional features.
 
 All master-specification principles (§4), quality requirements (§20), and verification strategy
 (§21) apply unless explicitly amended here. This document introduces exactly one principle
@@ -39,7 +40,6 @@ priorities, and acceptance criteria shared between them.
 |---|---|---|---|
 | Rollable tables | Dice engine, roll log, and treasury reward drafts exist | No table entity anywhere; imported tables flatten to prose; DM rolls against text | Not present |
 | Traps/hazards | Typed prose scene sections (`TRAP`, `HAZARD`); non-creature initiative entries | No reusable entry, no structured DCs/damage/effects, no compendium scope or provenance | Prose only |
-| Fog of war | DM/player map layer split; named regions; server-side player projection | No persistent revealed/hidden state; the v2 map format anticipates but does not define it | Not present |
 | Music | None | No audio subsystem at all | Not present |
 
 ## 3. Product principles applied
@@ -68,21 +68,21 @@ frontend build chain.
 
 ### 3.2 Unchanged principles with specific consequences here
 
-- **§4.2 Structured where the app acts:** table entries, trap DCs, reveal state, and audio cue
+- **§4.2 Structured where the app acts:** table entries, trap DCs, and audio cue
   assignments are typed fields, never Markdown conventions.
 - **§4.3 Stable identifiers:** every new entity type (tables, table entries where addressable,
-  traps, hazards, reveal regions, audio cues) has a package-local `key` matching
+  traps, hazards, and audio cues) has a package-local `key` matching
   `^[a-z0-9][a-z0-9._-]{0,99}$`; references use keys.
 - **§4.5 Complete round-trip:** every new persistent field is classified persistent-exported or
   intentionally transient in the same commit that introduces it.
 - **§4.7 Rules provenance:** imported tables, traps, and hazards carry the standard
   `ContentProvenance` record.
-- **§4.8 Player safety at the server boundary:** fog reveal is enforced by the server-side
-  projection; hidden map content never reaches a player client in any payload, including image
-  bytes. Audio is DM-only and absent from player payloads entirely.
+- **§4.8 Player safety at the server boundary:** audio is DM-only and absent from player payloads
+  entirely. Existing map and presentation projections retain their standing server-side safety
+  requirements without adding progressive-fog semantics.
 - **Master §24 non-goal "no autonomous DM decisions":** automatic music switching is a
   presentation behavior, not a story decision, and is therefore permitted; it remains
-  DM-configurable per campaign (§7.4).
+  DM-configurable per campaign (§6.4).
 
 ## 4. Workstream M — Rollable tables
 
@@ -241,88 +241,9 @@ to display as mechanics must be typed.
   structured trap and hazard and passes round-trip deep compare;
 - search/palette destinations are contract-tested.
 
-## 6. Workstream O — Fog of war: manual reveal
+## 6. Workstream P — Atmosphere and music
 
-### 6.1 Scope decision
-
-This workstream delivers **manual reveal only**: the DM controls what is revealed; there is no
-line-of-sight or token-vision computation. The data model must not preclude a future vision
-system (master §13.3), but nothing here depends on walls or sight semantics.
-
-### 6.2 Reveal model
-
-Reveal state is part of the map document and is persistent-exported:
-
-- `fogEnabled` (per map document, default false — enabling fog is an explicit DM action);
-- a **cell mask**: revealed/hidden state at grid-cell resolution, stored as a compact
-  run-length-encoded structure in the map document (grid columns/rows units per master §13.4);
-- **named region toggles:** existing named map regions may be revealed/hidden as a unit; a
-  region toggle writes through to the cell mask (the mask is the single source of truth, so
-  freeform brush edits and region toggles never conflict);
-- freeform maps without a grid use the same mask against an implicit calibration-derived grid;
-- reveal state is per map document, so DM/player layer variants share tokens but may not need
-  separate fog state; the player-presented document’s state is authoritative.
-
-### 6.3 DM tools
-
-- reveal/hide brush with adjustable size, rectangle/polygon reveal, region toggle list,
-  reveal-all and hide-all with confirmation;
-- translucent fog rendering on the DM view (DM always sees everything; hidden areas are dimmed,
-  not blacked out);
-- a “preview player view” toggle rendering exactly what players currently receive;
-- all fog mutations go through the standard visible-error/retry handling (master §6.3) and are
-  covered by the existing map mutation undo expectations where applicable;
-- keyboard-accessible equivalents for reveal-all/hide-all and region toggles (master §20.3).
-
-### 6.4 Player-safe projection
-
-Fog is enforced at the server boundary, not by client-side overlays:
-
-- token, pin, and primitive payload filtering: entities positioned entirely in hidden cells are
-  excluded from player payloads (in addition to existing hidden/DM-only flags);
-- background images: the player view must never receive image bytes for hidden areas. The
-  server serves a **masked composite** of the background image derived from the current mask,
-  cached and keyed by map document version + mask hash; regeneration happens on reveal change
-  and is served with cache-busting URLs;
-- painted terrain layers are filtered cell-wise server-side;
-- reconnecting or newly connecting player clients receive only the current revealed state and
-  cannot obtain earlier or fuller states through history or caching (cache headers and URL
-  keying must guarantee this);
-- if compositing fails, the player view shows the curtain state rather than the unmasked map
-  (fail closed).
-
-### 6.5 Performance budgets
-
-- reveal/hide mutation acknowledged on the DM view in under 200 ms locally (master §20.2);
-- masked composite regeneration for a large map completes in under 2 s; until the new composite
-  is ready the player view keeps the previous composite (never the unmasked image);
-- mask storage stays compact: RLE size for a 100×100 grid map remains under 10 KB in the
-  manifest.
-
-### 6.6 Package, schema, and validation
-
-- map document schema v2 gains the fog structure via `$defs` with units, defaults, and
-  examples; DTO compatibility tests updated;
-- semantic validation: mask dimensions agree with the map grid; region references resolve;
-  RLE decodes to exactly `gridWidth × gridHeight` cells;
-- round-trip: fog state survives export → import → export deep compare;
-- v2 packages authored before this feature import with `fogEnabled: false` and no warnings.
-
-### 6.7 Acceptance criteria
-
-- a DM can enable fog, hide the map, and progressively reveal it with brush and region toggles
-  during a live session without leaving the cockpit;
-- player network payloads contain no hidden tokens, pins, terrain, or image bytes — verified by
-  a security contract test that inspects actual payload and image responses, not the DOM;
-- refresh, reconnect, app restart, and package round-trip all restore identical reveal state;
-- the DM preview matches what a real player client renders;
-- disabling fog restores the pre-fog player projection exactly;
-- browser tests cover reveal → player update → reconnect; security tests cover cache-based and
-  history-based leak attempts.
-
-## 7. Workstream P — Atmosphere and music
-
-### 7.1 Architecture: provider abstraction, streaming-first
+### 6.1 Architecture: provider abstraction, streaming-first
 
 Music is streaming-first per explicit product decision (§3.1). The design isolates all
 provider-specific code behind a single internal SPI so the product contract does not name a
@@ -341,7 +262,7 @@ vendor:
   from settings. An authless public provider path may declare `AudioAuthMode.NONE` and must not
   invent credentials or request unrelated API scopes;
 
-### 7.2 Content model
+### 6.2 Content model
 
 Audio content is referential metadata only:
 
@@ -359,7 +280,7 @@ Audio content is referential metadata only:
 - cached metadata is display-only and refreshable; a cue whose provider content was deleted
   remains valid data and surfaces a visible “unavailable at provider” state.
 
-### 7.3 Runtime behavior and dynamic switching
+### 6.3 Runtime behavior and dynamic switching
 
 Cue selection follows a priority stack, resolved top-down, at most one active cue:
 
@@ -383,7 +304,7 @@ Switching rules:
 - browsing prep screens never changes playback; only cockpit-driven scene/encounter transitions
   do (consistent with master §8.4: browsing must not change the table presentation).
 
-### 7.4 Cockpit integration
+### 6.4 Cockpit integration
 
 - a quick-access audio widget shows now playing (title, artist, artwork), play/pause, skip,
   volume (where supported), the active cue source (“from scene: The Ossuary”), manual override
@@ -398,7 +319,7 @@ Switching rules:
   controls while idle, but it must not collapse or hide that player while audio continues;
   scripted playback is blocked whenever the provider's visibility threshold is not met;
 
-### 7.5 Package, schema, and validation
+### 6.5 Package, schema, and validation
 
 - new manifest section `audioCues` plus cue-reference fields on campaign, scenes, encounters,
   and locations; schemas with `$defs`, closed objects, and examples; DTO compatibility tests;
@@ -410,7 +331,7 @@ Switching rules:
 - round-trip: assignments and cues survive deep compare; playback state is intentionally
   transient and documented as such.
 
-### 7.6 Acceptance criteria
+### 6.6 Acceptance criteria
 
 - with a configured provider, a DM assigns a cue to a scene and hears playback switch on the DM
   device when entering the scene from the cockpit;
@@ -424,79 +345,72 @@ Switching rules:
   encounter operations;
 - cue assignments round-trip in the flagship fixtures.
 
-## 8. Cross-cutting contracts
+## 7. Cross-cutting contracts
 
 - **Content-type and destination registries:** rollable tables, traps, hazards, and audio cues
   register stable type identifiers, key formats, destinations, labels, player-visibility
   eligibility (tables/traps/hazards/cues are all DM-only), and import/export adapters
   (master §17.3);
 - **Capability matrix and manifest:** `docs/campaign-capabilities.md` and the machine-readable
-  capability manifest gain entries for all four subsystems at introduction time, including the
+  capability manifest gain entries for all three subsystems at introduction time, including the
   network-dependency note for music;
-- **Documentation:** the DM manual gains sections for tables, traps/hazards, fog, and audio;
+- **Documentation:** the DM manual gains sections for tables, traps/hazards, and audio;
   the authoring reference and agent guide gain the new schema sections; documentation examples
   remain executable fixtures (master §19);
-- **Flagship fixtures:** the feature-complete fixture is extended with all four subsystems; the
-  published-adventure-shaped fixture gains a random-encounter table, a structured trap, and a
-  fogged dungeon map;
+- **Flagship fixtures:** the feature-complete fixture is extended with all three subsystems; the
+  published-adventure-shaped fixture gains a random-encounter table and a structured trap;
 - **Agent conversion:** the conversion playbook gains mapping rules for source tables
   (die column parsing, range normalization) and trap statblocks; the non-invention rule applies —
   a converter must not invent DCs, ranges, or damage to satisfy validation.
 
-## 9. Quality requirements
+## 8. Quality requirements
 
-### 9.1 Correctness
+### 8.1 Correctness
 
 - table range validation is exhaustive: any gap or overlap is an ERROR with the entry path;
-- fog masks are the single source of truth; region toggles and brush edits never produce
-  divergent state;
 - audio cue resolution is deterministic from the priority stack; two clients observing the same
   session state derive the same active cue.
 
-### 9.2 Performance
+### 8.2 Performance
 
 - table roll with nested resolution: under 100 ms locally;
-- fog budgets per §6.5;
 - audio switch request issued within 500 ms of the triggering cockpit action (provider latency
   is outside the budget and shown as pending state).
 
-### 9.3 Security and privacy
+### 8.3 Security and privacy
 
 - provider tokens live only in local app data with owner-only file permissions; they never
   appear in exports, logs, or error responses;
-- fog leak tests per §6.7 join the standing security suite;
 - imported packages containing audio sections are untrusted input like everything else; provider
   URIs are treated as opaque strings and never fetched during import.
 
-### 9.4 Data safety
+### 8.4 Data safety
 
-- enabling fog, reveal-all, and hide-all are confirmable; package import never silently enables
-  fog on existing maps;
 - deleting a table/trap/hazard/cue follows the documented reference rules (master §10.4):
   dependents are listed and the DM confirms.
 
-## 10. Verification strategy
+## 9. Verification strategy
 
 - **Contract tests:** schemas ↔ DTOs for all new sections; registry coverage; fixture
   migrations from current v2 packages produce no warnings;
 - **Round-trip tests:** extended flagship fixtures pass schema validate → dry-run → import →
   export → re-import → semantic deep compare;
 - **Browser tests:** roll a table from the cockpit and confirm a reward draft; open a trap card
-  from the story rail; enable fog, reveal a region, verify the player view and a reconnect;
-  simulated-provider audio widget flow (a fake provider implementation backs browser tests so
+  from the story rail; exercise the simulated-provider audio widget flow (a fake provider backs
+  browser tests so
   they stay offline and deterministic);
-- **Security tests:** fog payload/image/cache leak attempts; token absence from exports and
-  error responses; hostile table/trap content (Markdown/HTML) rendering safely;
-- **Manual acceptance:** the master §21.5 acceptance session is re-run after workstreams M–P land,
-  now including a random-encounter roll, a trap resolution, and a fogged dungeon crawl; the
-  music subsystem is exercised with a real configured provider in the same release-acceptance
+- **Security tests:** token absence from exports and error responses; audio absence from player
+  payloads; hostile table/trap content (Markdown/HTML) rendering safely;
+- **Manual acceptance:** the master §21.5 acceptance session is re-run after workstreams M, N, and
+  P land, including a random-encounter roll and trap resolution; the music subsystem is exercised
+  with a real configured provider in the same release-acceptance
   session. Provider-independent automated coverage continues to use a deterministic fake provider.
 
-## 11. Delivery decomposition
+## 10. Delivery decomposition
 
 Recommended sequence — tables first (pure content, unblocks conversion fidelity), then traps
-(reuses the compendium pattern tables re-validate), then fog (touches the projection boundary),
-then music (new external dependency, isolated last):
+(reuses the compendium patterns tables re-validated), then music (new external dependency,
+isolated last):
 
 | # | Delivery Item | Depends on | Status |
 |---|--------------|------------|--------|
@@ -504,47 +418,44 @@ then music (new external dependency, isolated last):
 | 2 | Table integrations: scene/location links, encounter prefill, reward drafts | 1 | `IMPLEMENTED` |
 | 3 | Traps/hazards: model, editor, package section, provenance | — | `IMPLEMENTED` |
 | 4 | Traps/hazards integration: scene sections, tracker cards, map pins | 3 | `IMPLEMENTED` |
-| 5 | Fog of war: mask model, DM tools, package section | — | `PLANNED` |
-| 6 | Fog of war: server-side masked projection and security suite | 5 | `PLANNED` |
-| 7 | Audio: provider SPI, auth, cue library, cockpit widget | — | `PLANNED` |
-| 8 | Audio: scene/encounter assignments and dynamic switching | 7 | `PLANNED` |
-| 9 | Fixtures, docs, capability matrix, agent playbook updates | 1–8 | `PLANNED` |
+| 5 | Audio: provider SPI, auth, cue library, cockpit widget | — | `PLANNED` |
+| 6 | Audio: scene/encounter assignments and dynamic switching | 5 | `PLANNED` |
+| 7 | Fixtures, docs, capability matrix, agent playbook updates | 1–6 | `PLANNED` |
 
-Items 1–2, 3–4, 5–6, and 7–8 are independent pairs and may proceed in parallel where staffing
-allows; item 9 closes this specification. Required DM-only P3 feature delivery is complete only
-after the companion travel and exploration specification is also implemented and verified.
+Items 1–2 and 3–4 are implemented. Items 5–6 form the remaining music package; item 7 closes this
+specification. Progressive fog and structured travel/hexcrawl automation are not prerequisites.
 
-## 12. Explicit non-goals
+## 11. Explicit non-goals
 
-- line-of-sight, token vision, or lighting computation (future work the fog model must not
-  preclude);
+- progressive fog of war, line-of-sight, token vision, and lighting computation;
+- structured travel/hexcrawl automation, including routes, journeys, watches, weather state,
+  navigation, pace, and supply calculation;
 - automatic application of trap/hazard damage or conditions to combatants;
 - hosting, caching, transcoding, or redistributing audio files;
 - synchronized audio playback on player devices;
 - player accounts, player-controlled tokens, player rolling, or player sheet editing;
 - bundling copyrighted tables, traps, or music with the application;
-- weather/travel simulation within this slice (tables may *represent* weather; stateful weather
-  and journey operation are defined by the companion DM Travel and Exploration specification);
+- stateful weather simulation; rollable tables may still represent weather results;
 - circumventing any provider’s licensing, DRM, or terms of service.
 
-## 13. Decisions captured by this specification
+## 12. Decisions captured by this specification
 
 1. Rollable tables become first-class compendium content with exhaustive range validation and
    draft-based consequence application.
 2. Traps and hazards become reusable structured compendium entries; resolution remains advisory
    and manual.
-3. Fog of war ships as manual reveal with a cell-mask source of truth and strictly server-side
-   player enforcement, including masked image compositing.
-4. The music subsystem is streaming-first behind a provider SPI — the single approved exception
+3. The music subsystem is streaming-first behind a provider SPI — the single approved exception
    to the offline principle — with playback on the DM device.
-5. Music switching is automatic on cockpit scene/encounter transitions by default, with a
+4. Music switching is automatic on cockpit scene/encounter transitions by default, with a
    per-campaign confirmation mode and a session mute.
-6. Audio content is referenced, never stored; credentials never leave local app data.
-7. All four subsystems join the v2 package, the registries, the capability matrix, the flagship
-   fixtures, and the security suite in the same delivery program.
-8. All four subsystems, including music, are required for the DM-only readiness claim; an
+5. Audio content is referenced, never stored; credentials never leave local app data.
+6. Tables, traps/hazards, and music join the v2 package, registries, capability matrix, flagship
+   fixtures, and security suite in the same delivery program.
+7. Music is required for the DM-only readiness claim; an
    individual campaign may intentionally use silence, but the released product must provide and
    acceptance-test at least one working real provider integration.
-9. This specification and the DM Travel and Exploration specification together close the required
-   feature portion of delivery item 11. Reliability, documentation consistency, and the master
-   manual acceptance gate remain separate release-verification obligations.
+8. Progressive fog and structured travel/hexcrawl automation are optional future features and do
+   not block readiness.
+9. This specification closes the required feature portion of delivery item 11. Reliability,
+   documentation consistency, and the master manual acceptance gate remain separate
+   release-verification obligations.

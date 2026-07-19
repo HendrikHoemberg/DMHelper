@@ -9,6 +9,10 @@
 > did not observe. The focused commits, decision record, user-confirmed audible proof, cleanup
 > checks, and independent verification are the authoritative execution evidence.
 
+> **Scope-numbering note (2026-07-19):** This completed historical plan predates the removal of
+> fog and travel from the readiness program. References below to roadmap row 7 and Atmosphere §7
+> now map to roadmap row 5 and Atmosphere §6. The canonical roadmap and amended design control.
+
 **Goal:** Commit an evidence-backed provider decision that proves YouTube can supply the baseline DM-device music path and classifies Spotify as supported, conditional, or rejected without building the production music subsystem.
 
 **Architecture:** This is a documentation-and-proof spike, not atmosphere feature implementation. It evaluates only the public YouTube IFrame Player API and Spotify Web API, performs disposable real-provider proofs outside the repository, and commits sanitized evidence plus the exact downstream provider contract. YouTube is the required baseline because it has public playback controls without a paid account; Spotify is an optional enhanced adapter whose policy, Premium, OAuth, device, and development-mode constraints must not become readiness prerequisites.

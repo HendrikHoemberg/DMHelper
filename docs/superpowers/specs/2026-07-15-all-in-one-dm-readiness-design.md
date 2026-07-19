@@ -1,7 +1,7 @@
 # DMHelper All-in-One DM Readiness — Master Design Specification
 
 **Date:** 2026-07-15
-**Status:** Approved master design
+**Status:** Approved master design, scope amended 2026-07-19
 **Product premise:** A D&D DM can prepare and run a complete campaign using DMHelper alone,
 without consulting PDFs, books, spreadsheets, or separate map, initiative, notes, handout, and
 character-management tools.
@@ -74,7 +74,7 @@ The following table is a product assessment, not a code-coverage report.
 | Handouts | Image storage and player presentation | Image-only, state not fully exported, unsafe imported filenames | Partial |
 | Search | Global command palette concept | Multiple generated destinations do not exist; no shared route contract | Broken path |
 | Treasury/ledger | Assignments, attunement, transactions | Weak connection to encounters, shops, consumables, encumbrance | Partial |
-| Calendar/timeline | Custom month lengths/names and dated events | Campaign settings are not exported; travel/weather not modeled | Partial |
+| Calendar/timeline | Custom month lengths/names and dated events | Campaign settings are not exported | Partial |
 | Player view | Server-filtered read-only live projection | Presentation controls and reveal semantics can go deeper | Strong partial |
 | Documentation | Large vision spec and feature design history | Aspirational and implemented behavior are mixed | Partial |
 
@@ -164,8 +164,11 @@ These issues are release blockers because they affect existing advertised workfl
 
 - structured world entities and relationships;
 - quest objectives and campaign clocks;
-- traps, hazards, travel, weather, and rollable tables;
-- manual fog of war and DM-operated atmosphere/music.
+- traps, hazards, and rollable tables;
+- DM-operated atmosphere/music.
+
+Progressive fog of war and structured travel/hexcrawl automation are optional future features.
+They are not release gates for this DM-operated readiness program.
 
 No P3 work should displace an unfinished P0 or P1 release gate.
 
@@ -174,7 +177,7 @@ No P3 work should displace an unfinished P0 or P1 release gate.
 > **Implementation status (verified 2026-07-18):** Delivery items 1–10 have shipped implementation,
 > and the world-graph/faction-clock slice of item 11 is implemented. The full automated Maven suite
 > is green after repairing the party native-dialog visibility regression and making sheet smoke setup
-> same-origin. The remaining required P3 slices are tracked in §22.
+> same-origin. The remaining required P3 work is tracked in §22.
 
 ### 6.1 Quick notes
 
@@ -661,11 +664,11 @@ Maps may optionally model doors, secret doors, difficult terrain, hazards, cover
 lighting, walls, and reveal regions. These semantics remain advisory unless a separately approved
 automation feature consumes them.
 
-### 13.3 Fog and reveal
+### 13.3 Optional fog and reveal
 
-Manual fog and persistent reveal state are required by the table-fidelity and atmosphere
-specification. Line-of-sight, token vision, and lighting automation remain post-readiness features.
-Player-safe projection remains the enforcement boundary.
+Progressive fog, persistent reveal state, line-of-sight, token vision, and lighting automation are
+post-readiness optional features. Existing player-safe map and presentation projections remain
+supported and continue to enforce DM-only boundaries on the server.
 
 ### 13.4 Spatial contract
 
@@ -731,16 +734,17 @@ Minimum useful structures:
 
 - campaign package preserves full calendar configuration and current date;
 - calendars support eras and optional leap/intercalary rules without assuming Gregorian months;
-- scene, quest, faction-clock, travel, and session events may create reviewable timeline drafts;
+- scene, quest, faction-clock, manually authored travel, and session events may create reviewable
+  timeline drafts;
 - date validation uses the selected campaign calendar;
 - timeline links use stable keys, not titles.
 
-### 15.3 Travel and exploration
+### 15.3 Manual travel workflow boundary
 
-The required DM-only P3 travel slice adds routes, pace, watches, weather, navigation checks,
-supplies, and random encounter tables according to the DM Travel and Exploration specification.
-It integrates with the calendar, party resources, maps, scenes, and session log rather than
-becoming another isolated calculator.
+Locations, adjacency links, maps, notes, calendar events, rollable encounter/weather tables, and
+session logs provide the readiness-level travel workflow. Structured routes, journeys, watches,
+pace/navigation rules, stateful weather, and supply automation are optional future features rather
+than required subsystems.
 
 ## 16. Workstream K — Player presentation
 
@@ -999,7 +1003,7 @@ Recommended sequence:
 8. **Character-sheet completion:** creation, choices, actions, inventory, spells, and rest state.
 9. **Encounter and map depth:** prep waves/rewards and published-map workflow.
 10. **Documentation/agent SDK release:** generated references, catalogs, fixtures, and playbook.
-11. **P3 expansion:** world graph, clocks, tables, traps/hazards, fog, music, travel, and weather.
+11. **P3 expansion:** world graph, clocks, tables, traps/hazards, and music.
 
 | # | Delivery Item | Status |
 |---|--------------|--------|
@@ -1020,8 +1024,8 @@ Delivery item 11 is tracked by required DM-only slices:
 | P3 Slice | Status | Authoritative design |
 |---|---|---|
 | World graph and faction clocks | `IMPLEMENTED` | `../plans/2026-07-17-p3-world-graph.md` |
-| Rollable tables, traps/hazards, manual fog, and music | `PLANNED` | `2026-07-17-table-fidelity-and-atmosphere-design.md` |
-| Travel, weather, navigation, watches, and supplies | `PLANNED` | `2026-07-18-dm-travel-and-exploration-design.md` |
+| Rollable tables and traps/hazards | `IMPLEMENTED` | `2026-07-17-table-fidelity-and-atmosphere-design.md` |
+| Atmosphere and music | `PLANNED` | `2026-07-17-table-fidelity-and-atmosphere-design.md` |
 
 Delivery status records shipped scope, not release verification. The readiness claim remains
 blocked until the full suite, documentation consistency audit, security gates, and manual
@@ -1063,6 +1067,9 @@ unsupported information explicit instead of losing or inventing it.
 - autonomous DM decisions or automatic execution of story transitions;
 - mandatory digital dice;
 - replacing human review of ambiguous source conversion;
+- progressive fog of war, line-of-sight, token vision, and lighting automation;
+- structured travel/hexcrawl automation, including routes, journeys, watches, pace/navigation,
+  stateful weather, and supply calculation;
 - completing optional tabletop features outside the required DM-only P3 slices before the
   readiness claim;
 - rewriting the existing application in another stack.
@@ -1084,3 +1091,5 @@ unsupported information explicit instead of losing or inventing it.
 12. Require atmosphere/music for readiness through a provider abstraction while containing its
     network dependency so provider failure cannot affect the rest of a session.
 13. Track P3 through explicit child slices rather than one ambiguous planned/implemented label.
+14. Keep progressive fog and structured travel/hexcrawl automation outside the readiness release;
+    existing maps, presentation, locations, notes, calendars, and tables cover the manual baseline.

@@ -24,4 +24,6 @@ Numbering matches master design §22
 
 ## Not started
 
-- Travel/weather, fog gameplay, audio, optional player interaction — deferred.
+- Atmosphere/music is the remaining required P3 feature package.
+- Structured travel/weather automation and fog gameplay are optional future capabilities outside
+  the readiness release. Optional player interaction remains deferred.

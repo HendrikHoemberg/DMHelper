@@ -29,9 +29,9 @@
 | DM/player map layer split (shared tokens) | `SUPPORTED` | playerVisible flags |
 | Authoritative 2024 encounter difficulty | `PARTIAL` | Still labeled estimate |
 | Agent SDK | `SUPPORTED` | PIN-free capability manifest, validation error catalog, typed catalog snapshot, schemas, conversion playbook, and executable documentation examples |
-| World graph | `SUPPORTED` | NPCs, locations, factions, relationships, faction clocks; P3 slices deferred |
+| World graph | `SUPPORTED` | NPCs, locations, factions, relationships, faction clocks, and simple location adjacency; music remains the active readiness slice. |
 | Rollable tables | `SUPPORTED` | DM-only ranged/weighted authoring, typed references, nested/grouped rolls, scene/location cockpit access, explicit encounter/reward draft transitions, dependency-aware deletion with preserved history, and package-v2 dependency-closure round-trip |
 | Traps and hazards | `SUPPORTED` | DM-only trap/hazard definitions with provenance, scene sections, encounter tracker cards, DM-only map pins, dice prefill (no auto-resolution), and package-v2 dependency-closure round-trip |
-| Travel weather | `UNSUPPORTED` | P3 - Deferred |
+| Structured travel/weather automation | `UNSUPPORTED` | Optional future capability; outside the readiness release. Manual workflows use locations, adjacency, notes, calendars, and rollable tables. |
 | Player interaction | `UNSUPPORTED` | P3 - Deferred |
-| Full fog of war gameplay | `UNSUPPORTED` | Deferred P3 |
+| Full fog of war gameplay | `UNSUPPORTED` | Optional future capability; outside the readiness release. Existing server-filtered map presentation remains supported. |
