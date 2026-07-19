@@ -2,11 +2,7 @@ package dev.hendrikhoemberg.dmhelper.audio.provider;
 
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioReferenceKind;
 
-public class UnsupportedAudioProviderAdapter implements AudioProviderAdapter {
-
-    private static final AudioProviderCapabilities NO_CAPABILITIES = new AudioProviderCapabilities(
-        false, false, false, false, false, false, false, false, false, false
-    );
+public final class UnsupportedAudioProviderAdapter implements AudioProviderAdapter {
 
     private final AudioProviderId providerId;
 
@@ -26,7 +22,7 @@ public class UnsupportedAudioProviderAdapter implements AudioProviderAdapter {
 
     @Override
     public AudioProviderCapabilities capabilities() {
-        return NO_CAPABILITIES;
+        return AudioProviderCapabilities.NONE;
     }
 
     @Override

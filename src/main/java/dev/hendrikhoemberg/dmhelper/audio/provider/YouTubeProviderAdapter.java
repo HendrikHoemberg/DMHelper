@@ -15,8 +15,6 @@ public class YouTubeProviderAdapter implements AudioProviderAdapter {
         "www.youtube.com", "youtube.com", "youtu.be", "m.youtube.com"
     );
 
-    private static final Set<String> PLAYLIST_PREFIXES = Set.of("PL", "RD", "UU", "FL", "OL", "TL", "LL");
-
     private static final AudioProviderCapabilities YOUTUBE_CAPABILITIES = new AudioProviderCapabilities(
         true, true, true, true, true, true, false, false, true, true
     );
@@ -59,7 +57,14 @@ public class YouTubeProviderAdapter implements AudioProviderAdapter {
     }
 
     private boolean looksLikeUrl(String input) {
-        return input.startsWith("https://") || input.startsWith("http://");
+        int colon = input.indexOf(':');
+        if (colon > 0 && colon < 10) {
+            String scheme = input.substring(0, colon);
+            if (scheme.chars().allMatch(Character::isLetter)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private ParsedAudioReference parseUrl(String input) {
@@ -137,10 +142,10 @@ public class YouTubeProviderAdapter implements AudioProviderAdapter {
     }
 
     private ParsedAudioReference parseRawId(String input) {
-        if (PLAYLIST_PREFIXES.stream().anyMatch(input::startsWith)) {
-            return validateAndCreatePlaylist(input);
+        if (VIDEO_ID_PATTERN.matcher(input).matches()) {
+            return validateAndCreateVideo(input);
         }
-        return validateAndCreateVideo(input);
+        return validateAndCreatePlaylist(input);
     }
 
     private ParsedAudioReference validateAndCreateVideo(String id) {

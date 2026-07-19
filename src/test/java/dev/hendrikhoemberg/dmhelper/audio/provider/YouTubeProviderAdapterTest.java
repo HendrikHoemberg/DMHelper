@@ -18,6 +18,13 @@ class YouTubeProviderAdapterTest {
     }
 
     @Test
+    void parsesRawVideoIdThatStartsWithPlaylistPrefix() {
+        ParsedAudioReference ref = adapter.parseReference("PLdQw4w9WgX");
+        assertThat(ref.kind()).isEqualTo(AudioReferenceKind.VIDEO);
+        assertThat(ref.id()).isEqualTo("PLdQw4w9WgX");
+    }
+
+    @Test
     void parsesRawPlaylistId() {
         ParsedAudioReference ref = adapter.parseReference("PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf");
         assertThat(ref.kind()).isEqualTo(AudioReferenceKind.PLAYLIST);
