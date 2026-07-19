@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.encounter.data;
 
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import jakarta.persistence.*;
@@ -60,6 +61,17 @@ public class Encounter {
     @Column(name = "rewards_json", columnDefinition = "CLOB")
     private String rewardsJson;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "combat_audio_cue_id")
+    private AudioCue combatAudioCue;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "victory_audio_cue_id")
+    private AudioCue victoryAudioCue;
+
+    @Column(name = "victory_cue_duration_seconds")
+    private Integer victoryCueDurationSeconds;
+
     public String getEncounterKey() { return encounterKey; }
     public void setEncounterKey(String encounterKey) { this.encounterKey = encounterKey; }
 
@@ -101,4 +113,13 @@ public class Encounter {
 
     public boolean isLairActionTriggered() { return lairActionTriggered; }
     public void setLairActionTriggered(boolean lairActionTriggered) { this.lairActionTriggered = lairActionTriggered; }
+
+    public AudioCue getCombatAudioCue() { return combatAudioCue; }
+    public void setCombatAudioCue(AudioCue combatAudioCue) { this.combatAudioCue = combatAudioCue; }
+
+    public AudioCue getVictoryAudioCue() { return victoryAudioCue; }
+    public void setVictoryAudioCue(AudioCue victoryAudioCue) { this.victoryAudioCue = victoryAudioCue; }
+
+    public Integer getVictoryCueDurationSeconds() { return victoryCueDurationSeconds; }
+    public void setVictoryCueDurationSeconds(Integer victoryCueDurationSeconds) { this.victoryCueDurationSeconds = victoryCueDurationSeconds; }
 }

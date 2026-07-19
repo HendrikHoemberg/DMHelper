@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.data;
 
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
 import java.time.Instant;
@@ -30,6 +31,10 @@ public class Campaign {
     @Column
     private UUID currentSceneId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "default_audio_cue_id")
+    private AudioCue defaultAudioCue;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -57,6 +62,9 @@ public class Campaign {
 
     public UUID getCurrentSceneId() { return currentSceneId; }
     public void setCurrentSceneId(UUID currentSceneId) { this.currentSceneId = currentSceneId; }
+
+    public AudioCue getDefaultAudioCue() { return defaultAudioCue; }
+    public void setDefaultAudioCue(AudioCue defaultAudioCue) { this.defaultAudioCue = defaultAudioCue; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

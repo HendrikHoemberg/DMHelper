@@ -1,5 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.campaign.service;
 
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioSwitchMode;
+import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService;
 import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService.CalendarConfig;
 import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService.InGameDate;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
@@ -93,7 +95,8 @@ class CampaignSettingsCodecTest {
         CampaignSettings original = new CampaignSettings(
                 LevelingMode.MILESTONE,
                 new CalendarConfig(new int[]{30, 30}, new String[]{"A", "B"}, new String[]{"X", "Y"}),
-                new InGameDate(1500, 1, 15)
+                new InGameDate(1500, 1, 15),
+                AudioSwitchMode.AUTOMATIC
         );
         codec.write(campaign, original);
 
@@ -102,6 +105,49 @@ class CampaignSettingsCodecTest {
 
         CampaignSettings readBack = codec.read(campaign);
         assertThat(readBack).isEqualTo(original);
+    }
+
+    @Test
+    void shouldDefaultAudioSwitchModeToAutomaticForLegacyJson() {
+        Campaign campaign = createCampaignWithSettings("""
+                {"calendarConfig":{"monthLengths":[31,28,31,30,31,30,31,31,30,31,30,31],
+                "monthNames":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+                "weekdayNames":["Mo","Tu","We","Th","Fr","Sa","Su"]},
+                "currentInGameDate":{"year":1492,"month":2,"day":15}}""");
+
+        CampaignSettings settings = codec.read(campaign);
+        assertThat(settings.audioSwitchMode()).isEqualTo(AudioSwitchMode.AUTOMATIC);
+    }
+
+    @Test
+    void shouldReadExplicitAudioSwitchMode() {
+        Campaign campaign = createCampaignWithSettings("""
+                {"audioSwitchMode":"CONFIRM",
+                "calendarConfig":{"monthLengths":[31,28,31,30,31,30,31,31,30,31,30,31],
+                "monthNames":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+                "weekdayNames":["Mo","Tu","We","Th","Fr","Sa","Su"]},
+                "currentInGameDate":{"year":1492,"month":2,"day":15}}""");
+
+        CampaignSettings settings = codec.read(campaign);
+        assertThat(settings.audioSwitchMode()).isEqualTo(AudioSwitchMode.CONFIRM);
+    }
+
+    @Test
+    void shouldRoundTripAudioSwitchMode() {
+        Campaign campaign = new Campaign();
+        campaign.setName("test");
+        campaign.setSettings("");
+
+        CampaignSettings original = new CampaignSettings(
+                LevelingMode.XP,
+                CalendarService.DEFAULT_CALENDAR,
+                new InGameDate(1492, 0, 1),
+                AudioSwitchMode.CONFIRM
+        );
+        codec.write(campaign, original);
+
+        CampaignSettings readBack = codec.read(campaign);
+        assertThat(readBack.audioSwitchMode()).isEqualTo(AudioSwitchMode.CONFIRM);
     }
 
     @Test

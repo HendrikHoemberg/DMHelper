@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.adventure.data;
 
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
@@ -52,6 +53,10 @@ public class Scene {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "encounter_id")
     private Encounter encounter;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "scene_audio_cue_id")
+    private AudioCue sceneAudioCue;
 
     @ManyToMany
     @JoinTable(name = "scene_statblock",
@@ -131,6 +136,9 @@ public class Scene {
 
     public Encounter getEncounter() { return encounter; }
     public void setEncounter(Encounter encounter) { this.encounter = encounter; }
+
+    public AudioCue getSceneAudioCue() { return sceneAudioCue; }
+    public void setSceneAudioCue(AudioCue sceneAudioCue) { this.sceneAudioCue = sceneAudioCue; }
 
     public List<StatBlock> getStatBlocks() { return statBlocks; }
     public void setStatBlocks(List<StatBlock> statBlocks) { this.statBlocks = statBlocks; }

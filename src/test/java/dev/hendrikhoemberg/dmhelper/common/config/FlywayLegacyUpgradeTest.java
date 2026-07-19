@@ -176,6 +176,24 @@ class FlywayLegacyUpgradeTest {
     }
 
     @Test
+    void appliesV15AfterBaseline() {
+        Integer appliedV15 = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '15' AND \"success\" = TRUE",
+                Integer.class);
+        assertThat(appliedV15).isEqualTo(1);
+    }
+
+    @Test
+    void v15TablesExistAfterUpgrade() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'AUDIO_CUE'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'SESSION_AUDIO_STATE'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
     void legacySceneHasNullStructuredFieldsAfterV5() {
         Integer count = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM adventure_scene WHERE summary IS NULL AND source_locator IS NULL AND tags IS NULL AND map_region_key IS NULL",

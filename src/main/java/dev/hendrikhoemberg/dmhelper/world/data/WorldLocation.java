@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.world.data;
 
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
@@ -43,6 +44,10 @@ public class WorldLocation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "note_id")
     private Note note;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location_audio_cue_id")
+    private AudioCue locationAudioCue;
 
     @Column(columnDefinition = "CLOB")
     private String summary;
@@ -106,6 +111,9 @@ public class WorldLocation {
 
     public Note getNote() { return note; }
     public void setNote(Note note) { this.note = note; }
+
+    public AudioCue getLocationAudioCue() { return locationAudioCue; }
+    public void setLocationAudioCue(AudioCue locationAudioCue) { this.locationAudioCue = locationAudioCue; }
 
     public String getSummary() { return summary; }
     public void setSummary(String summary) { this.summary = summary; }

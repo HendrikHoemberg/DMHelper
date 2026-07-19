@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.service;
 
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioSwitchMode;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.LevelingMode;
 import org.springframework.stereotype.Component;
@@ -30,7 +31,10 @@ public class CampaignSettingsCodec {
                 LevelingMode mode = campaign.isMilestoneLeveling()
                         ? LevelingMode.MILESTONE
                         : LevelingMode.XP;
-                settings = new CampaignSettings(mode, settings.calendar(), settings.currentDate());
+                settings = new CampaignSettings(mode, settings.calendar(), settings.currentDate(), settings.audioSwitchMode());
+            }
+            if (!root.has("audioSwitchMode")) {
+                settings = new CampaignSettings(settings.levelingMode(), settings.calendar(), settings.currentDate(), AudioSwitchMode.AUTOMATIC);
             }
             return settings;
         } catch (Exception e) {

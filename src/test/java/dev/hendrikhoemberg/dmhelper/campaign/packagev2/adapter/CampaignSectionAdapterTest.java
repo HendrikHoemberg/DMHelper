@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService;
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioSwitchMode;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.CampaignDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.LevelingMode;
@@ -55,7 +56,8 @@ public class CampaignSectionAdapterTest {
         campaign.setDescription("A test description");
         var settings = new CampaignSettings(LevelingMode.MILESTONE,
                 new CalendarConfig(new int[]{30}, new String[]{"A"}, new String[]{"X"}),
-                new InGameDate(1500, 1, 15));
+                new InGameDate(1500, 1, 15),
+                AudioSwitchMode.AUTOMATIC);
         codec.write(campaign, settings);
         campaign.setCurrentSceneId(UUID.randomUUID());
         campaign.setCreatedAt(Instant.parse("2025-06-01T12:00:00Z"));

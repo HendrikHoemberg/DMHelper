@@ -295,6 +295,58 @@ class FlywayMigrationTest {
     }
 
     @Test
+    void v15IsApplied() {
+        Integer applied = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '15' AND \"success\" = TRUE",
+                Integer.class);
+        assertThat(applied).isEqualTo(1);
+    }
+
+    @Test
+    void v15CreatesAudioCueTable() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'AUDIO_CUE'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'SESSION_AUDIO_STATE'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v15AddsAudioCueColumnsToCampaign() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'CAMPAIGN' AND column_name = 'DEFAULT_AUDIO_CUE_ID'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v15AddsAudioCueColumnsToAdventureScene() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'ADVENTURE_SCENE' AND column_name = 'SCENE_AUDIO_CUE_ID'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v15AddsAudioCueColumnsToEncounter() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'ENCOUNTER' AND column_name = 'COMBAT_AUDIO_CUE_ID'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'ENCOUNTER' AND column_name = 'VICTORY_AUDIO_CUE_ID'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'ENCOUNTER' AND column_name = 'VICTORY_CUE_DURATION_SECONDS'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v15AddsAudioCueColumnsToWorldLocation() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'WORLD_LOCATION' AND column_name = 'LOCATION_AUDIO_CUE_ID'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
     void v12CreatesWorldGraphTables() {
         Integer applied = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '12' AND \"success\" = TRUE",

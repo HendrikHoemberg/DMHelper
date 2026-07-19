@@ -129,7 +129,8 @@ public class CampaignSectionAdapter implements CampaignSectionExporter, Campaign
                         : defaults.calendar(),
                 dto.currentDate() != null
                         ? new InGameDate(dto.currentDate().year(), dto.currentDate().month(), dto.currentDate().day())
-                        : defaults.currentDate()
+                        : defaults.currentDate(),
+                defaults.audioSwitchMode()
         );
     }
 }

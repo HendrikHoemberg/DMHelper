@@ -78,7 +78,7 @@ public class CalendarService {
         Campaign campaign = campaignRepository.findById(campaignId)
                 .orElseThrow(() -> new NotFoundException("Campaign not found"));
         CampaignSettings settings = settingsCodec.read(campaign);
-        CampaignSettings updated = new CampaignSettings(settings.levelingMode(), config, settings.currentDate());
+        CampaignSettings updated = new CampaignSettings(settings.levelingMode(), config, settings.currentDate(), settings.audioSwitchMode());
         settingsCodec.write(campaign, updated);
         campaignRepository.save(campaign);
     }
@@ -95,7 +95,7 @@ public class CalendarService {
         Campaign campaign = campaignRepository.findById(campaignId)
                 .orElseThrow(() -> new NotFoundException("Campaign not found"));
         CampaignSettings settings = settingsCodec.read(campaign);
-        CampaignSettings updated = new CampaignSettings(settings.levelingMode(), settings.calendar(), date);
+        CampaignSettings updated = new CampaignSettings(settings.levelingMode(), settings.calendar(), date, settings.audioSwitchMode());
         settingsCodec.write(campaign, updated);
         campaignRepository.save(campaign);
     }
