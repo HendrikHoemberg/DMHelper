@@ -6,7 +6,10 @@
         Weight (total lb): <strong th:text="${totalWeight}">0</strong>
     </div>
     <div th:if="${not #lists.isEmpty(assignments)}" style="display:flex; flex-direction:column; gap: var(--space-sm);">
-        <div th:each="a : ${assignments}" th:replace="~{sheet/_inventory :: itemCard(assignment=${a}, campaignId=${campaignId})}"></div>
+        <!-- th:each on an outer wrapper: th:replace outranks th:each, so on the same tag it runs once with a null 'a'. -->
+        <th:block th:each="a : ${assignments}">
+            <div th:replace="~{sheet/_inventory :: itemCard(assignment=${a}, campaignId=${campaignId})}"></div>
+        </th:block>
     </div>
     <div th:if="${#lists.isEmpty(assignments)}" class="empty-state">No items</div>
 </div>

@@ -38,7 +38,10 @@
             <!-- Transaction History -->
             <h2>Transaction History</h2>
             <div style="display:flex; flex-direction:column; gap: var(--space-sm);" id="ledger-entries">
-                <div th:replace="~{ledger/_card :: card(entry=${e})}" th:each="e : ${entries}"></div>
+                <!-- th:each on an outer wrapper: th:replace outranks th:each, so on the same tag it runs once with a null 'e'. -->
+                <th:block th:each="e : ${entries}">
+                    <div th:replace="~{ledger/_card :: card(entry=${e})}"></div>
+                </th:block>
             </div>
             <th:block th:if="${#lists.isEmpty(entries)}"><th:block th:replace="~{common/_empty-state :: empty-state('No transactions recorded', null, null, null)}"></th:block></th:block>
         </main>

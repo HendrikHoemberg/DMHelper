@@ -75,22 +75,27 @@
                 <div class="text-muted u-text-sm">No rolls yet</div>
             </template>
             <template x-for="item in history" :key="item.id">
-                <template x-if="item.kind === 'TABLE'">
-                    <div class="dice-history-item">
-                        <span class="expr" x-text="item.tableName"></span>
-                        <span class="value" x-show="item.outcomes !== null"
-                              x-text="item.outcomes ? item.outcomes.map(o => o.resultText).join(', ') : ''"></span>
-                        <span class="value text-muted" x-show="item.available === false">Result unavailable</span>
-                    </div>
-                </template>
-                <template x-if="item.kind === 'DICE' || !item.kind">
-                    <div class="dice-history-item">
-                        <span class="expr" x-text="item.expression"></span>
-                        <span class="value"
-                              :class="historyCritClass(item)"
-                              x-text="item.total"></span>
-                    </div>
-                </template>
+                <!-- Single root element per x-for iteration: Alpine errors if a
+                     templated loop has more than one root, which two sibling
+                     <template x-if> blocks would be. -->
+                <div class="dice-history-row">
+                    <template x-if="item.kind === 'TABLE'">
+                        <div class="dice-history-item">
+                            <span class="expr" x-text="item.tableName"></span>
+                            <span class="value" x-show="item.outcomes !== null"
+                                  x-text="item.outcomes ? item.outcomes.map(o => o.resultText).join(', ') : ''"></span>
+                            <span class="value text-muted" x-show="item.available === false">Result unavailable</span>
+                        </div>
+                    </template>
+                    <template x-if="item.kind === 'DICE' || !item.kind">
+                        <div class="dice-history-item">
+                            <span class="expr" x-text="item.expression"></span>
+                            <span class="value"
+                                  :class="historyCritClass(item)"
+                                  x-text="item.total"></span>
+                        </div>
+                    </template>
+                </div>
             </template>
         </div>
     </div>

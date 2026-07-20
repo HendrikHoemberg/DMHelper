@@ -853,7 +853,7 @@
 
                         <!-- Name + group indicator -->
                         <span class="combatant-name">
-                            <template x-if="c.groupId && !c.groupLeader">├ </template>
+                            <template x-if="c.groupId && !c.groupLeader"><span class="group-branch">├ </span></template>
                             <span x-text="c.name"></span>
                             <template x-if="c.groupId && c.groupLeader">
                                 <span class="group-count" style="font-size: 0.7rem; color: var(--color-text-muted); margin-left: 2px;" x-text="'(' + groupCount(c.groupId) + ')'"></span>
