@@ -32,6 +32,7 @@
 | World graph | `SUPPORTED` | NPCs, locations, factions, relationships, faction clocks, and simple location adjacency; music remains the active readiness slice. |
 | Rollable tables | `SUPPORTED` | DM-only ranged/weighted authoring, typed references, nested/grouped rolls, scene/location cockpit access, explicit encounter/reward draft transitions, dependency-aware deletion with preserved history, and package-v2 dependency-closure round-trip |
 | Traps and hazards | `SUPPORTED` | DM-only trap/hazard definitions with provenance, scene sections, encounter tracker cards, DM-only map pins, dice prefill (no auto-resolution), and package-v2 dependency-closure round-trip |
+| Atmosphere & music | `SUPPORTED` | DM-side streaming music behind a provider SPI; scene/encounter/location cue switching, manual override, per-campaign confirm and per-session mute. Requires internet and possibly a provider account — the only approved runtime network dependency; provider failure never blocks a session. DM-only, absent from player payloads. |
 | Structured travel/weather automation | `UNSUPPORTED` | Optional future capability; outside the readiness release. Manual workflows use locations, adjacency, notes, calendars, and rollable tables. |
 | Player interaction | `UNSUPPORTED` | P3 - Deferred |
 | Full fog of war gameplay | `UNSUPPORTED` | Optional future capability; outside the readiness release. Existing server-filtered map presentation remains supported. |

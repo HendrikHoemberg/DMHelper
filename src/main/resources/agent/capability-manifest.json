@@ -125,6 +125,13 @@
       "notes": "DM-only trap/hazard definitions, scene/tracker/pin integrations, dice prefill without auto-resolution, player-safe projections, and package-v2 dependency-closure round-trip"
     },
     {
+      "id": "atmosphere.music",
+      "name": "Atmosphere & music",
+      "status": "SUPPORTED",
+      "deliveryItem": 11,
+      "notes": "DM-side streaming music behind a provider SPI with scene/encounter/location cue switching. Requires internet and may require a provider account; the only approved runtime network dependency. Provider failure degrades only the audio widget and never blocks a session. Audio is DM-only and absent from player payloads."
+    },
+    {
       "id": "map.fog_of_war",
       "name": "Full fog of war gameplay",
       "status": "UNSUPPORTED",
@@ -157,6 +164,7 @@
     "ROLLABLE_TABLE",
     "TRAP",
     "HAZARD",
+    "AUDIO_CUE",
     "TRANSITION",
     "SESSION_OBJECTIVE_CHANGE",
     "QUEST",
