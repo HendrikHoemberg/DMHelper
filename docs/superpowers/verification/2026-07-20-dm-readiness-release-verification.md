@@ -30,6 +30,28 @@
 - Proves round-trip evidence is not vacuous for music
 
 ## 3. Browser gate (§21.3)
+
+### Browser smoke (CoreSessionLoopSmokeTest)
+- Command: `./mvnw -q test -Dtest=CoreSessionLoopSmokeTest -Duser.home=/tmp/dmhelper-release-verify`
+- Result: 1 suite / 25 tests / 0 failures / 0 errors / 0 skips — BUILD SUCCESS (Maven exit 0; `-q` suppresses grepable “Tests run:” / “BUILD SUCCESS” banners — counts from Surefire)
+- Covers: §21.3 quick-note create/promote, palette result types, cockpit resume from current scene and active encounter, encounter activate/end + session-log draft, curtain/map/handout presentation to the player view; music closeout offline fake-provider cue switching, victory expiry, override, confirm, mute, bounded retry, and player isolation
+
+### Browser-failure guard (BrowserFailureCollector)
+- Command: `./mvnw -q test -Dtest=BrowserFailureCollectorTest -Duser.home=/tmp/dmhelper-release-verify`
+- Result: 1 suite / 3 tests / 0 failures / 0 errors / 0 skips — BUILD SUCCESS (Maven exit 0; same `-q` banner note as above)
+- Collector source evidence (`src/test/java/dev/hendrikhoemberg/dmhelper/BrowserFailureCollector.java`):
+  - L60–61: `page.onConsoleMessage` / `page.onPageError` record into the failure list
+  - L62–65: `page.onRequestFailed` records non-`net::ERR_ABORTED` request failures
+  - L87–97: console errors and HTTP status ≥ 400 (unexpected 4xx/5xx) recorded as failures
+  - L99–103: `assertNoFailures()` asserts the failure list is empty (and declared expected HTTP failures were seen)
+- Unit tests prove unexpected console/resource errors *fail* the guard (`unexpectedResourceConsoleErrorsStillFailTheSmokeGuard`, `declaredFailureDoesNotHideAResourceErrorFromAnotherUrl`); declared failures only suppress their matching resource console error
+
+### Player-payload isolation
+- Command: `./mvnw -q test -Dtest='PlayerViewSecurityContractTest,AudioPlayerSafetyTest' -Duser.home=/tmp/dmhelper-release-verify`
+- Suites: PlayerViewSecurityContractTest (6), AudioPlayerSafetyTest (17)
+- Result: 2 suites / 23 tests / 0 failures / 0 errors / 0 skips — BUILD SUCCESS (Maven exit 0; same `-q` banner note as above)
+- Confirms DM-only scene/token/note/encounter/asset/audio data is absent from player network payloads (§21.3 final bullet; excluded at the projection boundary, not via CSS — roadmap §1)
+
 ## 4. Security gate (§21.4)
 ## 5. Documentation consistency audit (§19, §20)
 ## 6. Real-provider music exercise
