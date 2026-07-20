@@ -1019,6 +1019,109 @@ Legacy v1 scenes (created before the item-6 structured scene migration) receive 
 
 Legacy campaigns (without a `quests` or `annotations` array) simply omit these sections. The import adapter treats `null` section arrays as empty — no migration defaulting is required.
 
+## Audio Cues
+
+The manifest carries an optional top-level `audioCues` array. Each entry defines a reusable audio
+cue — a reference to an external track or playlist that can be played during a session. Cues are
+assigned to campaigns, scenes, encounters, and world locations via typed content references.
+
+### AudioCueDto
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | string | Package key |
+| `name` | string | Display name |
+| `referenceKind` | string | `VIDEO` or `PLAYLIST` |
+| `providerReference` | string | Provider-specific track/playlist identifier |
+| `category` | string | `AMBIENT`, `EXPLORATION`, `TENSION`, `COMBAT`, `TRIUMPH`, `SORROW`, or `CUSTOM` |
+| `transitionPreference` | string | `CROSSFADE` or `CUT` |
+| `providerId` | string \| null | Provider identifier (e.g. `"FAKE"`, `"SPOTIFY"`, `"YOUTUBE"`); unknown providers import with a WARNING and the cue shows as unavailable |
+| `cachedTitle` | string \| null | Cached display title from the provider |
+| `artistOrOwner` | string \| null | Cached artist or owner display name |
+| `artworkUrl` | string \| null | Cached artwork URL |
+| `durationSeconds` | int \| null | Approximate duration in seconds |
+| `volumeHint` | int \| null | Suggested volume 0–100 |
+| `notes` | string \| null | DM-only notes |
+
+### Cue-Reference Assignment
+
+Cue references are typed `ContentReference` objects with `"scope": "PACKAGE"`,
+`"type": "AUDIO_CUE"`, and a `"key"` matching an entry in the `audioCues` array. They are
+carried on four entity types:
+
+| Entity | Field | Description |
+|--------|-------|-------------|
+| `campaign` | `defaultCueRef` | Default ambient cue for the campaign (played when no scene/encounter cue overrides) |
+| `scene` | `sceneCueRef` | Ambient cue for a scene |
+| `encounter` | `combatCueRef` | Combat music cue |
+| `encounter` | `victoryCueRef` | Victory sting or post-combat music |
+| `encounter` | `victoryCueDurationSeconds` | How long the victory cue plays before returning to the ambient cue |
+| `worldLocation` | `locationCueRef` | Ambient cue for a world location |
+
+### Export and Round-Trip Rules
+
+Cues export as keys + provider references + cached display metadata only. Audio content
+and provider credentials are never included. Playback state (current position, volume,
+playing/paused) is intentionally transient and not exported.
+
+### Semantic Validation
+
+- Cue references must resolve to an entry in `audioCues`; unresolved references produce
+  `UNRESOLVED_REFERENCE` validation errors.
+- `category` and `transitionPreference` must be valid enum values.
+- `volumeHint` must be 0–100 when present.
+- An unknown `providerId` imports with a WARNING; the cue is preserved in the manifest
+  but rendered as unavailable in the UI.
+
+### Example
+
+```json
+{
+  "key": "cue-hall-ambience",
+  "name": "Great Hall Ambience",
+  "providerId": "FAKE",
+  "referenceKind": "PLAYLIST",
+  "providerReference": "fake-playlist-ambient-hall",
+  "cachedTitle": "Great Hall Ambience",
+  "artistOrOwner": "DMHelper Fixture Library",
+  "artworkUrl": "https://example.invalid/art/hall.png",
+  "durationSeconds": 3600,
+  "category": "AMBIENT",
+  "volumeHint": 45,
+  "transitionPreference": "CROSSFADE",
+  "notes": "Default campaign ambience. Synthetic fixture reference — not a real track."
+}
+```
+
+```json
+{
+  "defaultCueRef": null
+}
+```
+
+The `defaultCueRef` is `null` when no campaign-wide default is set. Encounter cue references
+use the same `ContentReference` pattern:
+
+```json
+{
+  "combatCueRef": { "scope": "PACKAGE", "type": "AUDIO_CUE", "key": "cue-crypt-combat" },
+  "victoryCueRef": { "scope": "PACKAGE", "type": "AUDIO_CUE", "key": "cue-crypt-victory" },
+  "victoryCueDurationSeconds": 15
+}
+```
+
+### Module Adapter
+
+Audio cues are managed by their own adapter at a position before scenes and encounters:
+
+```text
+AudioCueSectionAdapter      (140) — audio cues
+RollableTableSectionAdapter (150) — rollable tables, entries, references
+```
+
+This ensures cues are registered in the key registry before scenes and encounters that
+reference them are exported.
+
 ## mapRegionKey Note
 
 `mapRegionKey` is stored as **unvalidated free-text**. It is not resolved against any map region registry during import or export. A future delivery item (item 9) may introduce a proper typed reference. Until then, importing a package with `mapRegionKey` set simply preserves the string value; no referential integrity check is performed.
