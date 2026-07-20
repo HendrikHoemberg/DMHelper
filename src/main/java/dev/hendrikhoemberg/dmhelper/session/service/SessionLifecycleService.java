@@ -21,6 +21,7 @@ import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChangeRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
+import org.hibernate.Hibernate;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -110,6 +111,7 @@ public class SessionLifecycleService {
         CampaignSession saved = sessions.save(session);
         visits.deleteBySessionId(saved.getId());
         audioStateService.createOrReset(saved.getId());
+        Hibernate.initialize(saved.getAttendees());
         return saved;
     }
 
@@ -118,7 +120,7 @@ public class SessionLifecycleService {
         requireStatus(session, CampaignSession.Status.RUNNING, "Only a running session can be paused.");
         session.setStatus(CampaignSession.Status.PAUSED);
         session.setPausedAt(clock.instant());
-        return sessions.save(session);
+        return saveForState(session);
     }
 
     public CampaignSession resume(UUID campaignId) {
@@ -126,7 +128,7 @@ public class SessionLifecycleService {
         requireStatus(session, CampaignSession.Status.PAUSED, "Only a paused session can be resumed.");
         session.setStatus(CampaignSession.Status.RUNNING);
         session.setPausedAt(null);
-        return sessions.save(session);
+        return saveForState(session);
     }
 
     public CampaignSession cancelReview(UUID campaignId) {
@@ -135,7 +137,7 @@ public class SessionLifecycleService {
         session.setStatus(CampaignSession.Status.PAUSED);
         session.setReviewStartedAt(null);
         session.setDraftBody(null);
-        return sessions.save(session);
+        return saveForState(session);
     }
 
     public CampaignSession setAttendees(UUID campaignId, List<UUID> ids) {
@@ -150,13 +152,13 @@ public class SessionLifecycleService {
         session.getAttendees().clear();
         session.getAttendees().addAll(selected.stream()
                 .sorted(Comparator.comparing(PartyMember::getCharacterName)).toList());
-        return sessions.save(session);
+        return saveForState(session);
     }
 
     public CampaignSession setWorkspaceMap(UUID campaignId, UUID mapId) {
         CampaignSession session = requireOpenSession(campaignId);
         session.setWorkspaceMap(mapId == null ? null : requireCampaignMap(campaignId, mapId));
-        return sessions.save(session);
+        return saveForState(session);
     }
 
     public CampaignSession beginReview(UUID campaignId) {
@@ -167,7 +169,7 @@ public class SessionLifecycleService {
         session.setStatus(CampaignSession.Status.REVIEW);
         session.setReviewStartedAt(now);
         session.setDraftBody(drafts.generate(session, now));
-        return sessions.save(session);
+        return saveForState(session);
     }
 
     public Note complete(UUID campaignId, String title, String body) {
@@ -187,6 +189,18 @@ public class SessionLifecycleService {
         packageKeys.deleteBindings(campaignId, CampaignContentType.SESSION_SCENE_VISIT, visitIds);
         sessions.save(session);
         return note;
+    }
+
+    /**
+     * Persist a session that will be mapped to the API state DTO, eagerly materializing the
+     * {@code attendees} bag the controller reads after this transaction commits. With
+     * open-in-view=false the returned entity is detached, so the lazy collection must be
+     * hydrated here or the mapper throws LazyInitializationException.
+     */
+    private CampaignSession saveForState(CampaignSession session) {
+        CampaignSession saved = sessions.save(session);
+        Hibernate.initialize(saved.getAttendees());
+        return saved;
     }
 
     private void resetToIdle(CampaignSession session) {
