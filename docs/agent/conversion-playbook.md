@@ -18,6 +18,22 @@ generic fallback. Prefer ERROR/WARNING visibility over silent guesses.
 - **Roll expressions**: Use the source's die expression verbatim (e.g. `"1d12"`, `"1d100"`).
   Never substitute a different die.
 
+### Audio cue non-invention rules
+
+Audio is DM-only and referential. The converter never invents provider references, tracks,
+artists, or provider URIs. When the source states music or ambience without a specific track,
+emit a cue with `providerId: "UNKNOWN"` and no `providerReference` — an unresolved cue is valid;
+a fabricated one is not.
+
+- **Provider references**: Copy verbatim from the source or omit. Never generate `spotify:track:xxx`
+  or similar opaque strings.
+- **Mood-only cues**: Map mood words to `category` per the mapping rules; leave the provider
+  reference absent.
+- **Cue placement**: Assign to `worldLocation.locationCueRef`, `scene.sceneCueRef`,
+  `encounter.combatCueRef`, or `campaign.defaultCueRef` as the source structure dictates.
+- **No player-facing artifacts**: A `handout` or `scene.document` must never reference an audio
+  cue directly; cues are GM-side only.
+
 ### Trap and hazard non-invention rules
 
 - **DCs**: Never invent detection, disarm, save, or passive thresholds. Omit the field and emit a

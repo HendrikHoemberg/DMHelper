@@ -7,6 +7,10 @@
 - [ ] dry-run: zero ERROR
 - [ ] warnings reviewed and accepted consciously
 - [ ] flagship-shaped smoke: cockpit, encounter, handout, export/import
+- [ ] every `audioCue` has a valid `key`, `category`, and `transitionPreference`
+- [ ] every cue reference (`defaultCueRef` / `sceneCueRef` / `combatCueRef` / `victoryCueRef` / `locationCueRef`) resolves to an existing cue key
+- [ ] no cue contains credentials or embedded audio; `providerReference` is an opaque string only
+- [ ] no player-facing artifact references a cue
 
 ## Detailed steps
 

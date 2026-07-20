@@ -207,6 +207,53 @@ satisfy the schema.
 Published traps should carry `provenance` (title, locator, license, converter, confidence). Leave
 numeric mechanics absent rather than inventing them; pair omissions with `SOURCE_ANNOTATION`.
 
+## Audio cue mapping
+
+Source material rarely names specific music. A converter maps an explicit "suggested soundtrack" or
+"ambience" note to an `AudioCue` **only when the source states it**. It MUST NOT invent tracks,
+artists, providers, or provider URIs (non-invention rule).
+
+### Unresolved music
+
+When the source names a mood but no track, emit a cue with `providerId: "UNKNOWN"` and a
+descriptive `name`/`category`. Leave `providerReference` absent (null) rather than fabricating
+a value.
+
+### Category mapping from source mood words
+
+| Source mood / context | `category` value |
+|---|---|
+| ambient, background | `AMBIENT` |
+| travel, exploration | `EXPLORATION` |
+| suspense, dread | `TENSION` |
+| battle, combat | `COMBAT` |
+| victory, triumph | `TRIUMPH` |
+| grief, loss | `SORROW` |
+| anything else | `CUSTOM` |
+
+### Cue assignment by structure
+
+- A whole-region ambience note → `worldLocation.locationCueRef`
+- A scene's stated ambience → `scene.sceneCueRef`
+- An encounter's battle music → `encounter.combatCueRef`
+- The campaign-wide default → `campaign.defaultCueRef`
+
+```json
+{ "campaign": {
+    "defaultCueRef": { "scope": "PACKAGE", "type": "AUDIO_CUE", "key": "campaign-theme" },
+    "audioCues": [
+      { "key": "campaign-theme", "name": "Main Theme",
+        "category": "AMBIENT", "transitionPreference": "CROSSFADE" }
+    ]
+  }
+}
+```
+
+### Provenance
+
+Published modules that specify soundtrack notes should carry `provenance`. A converter never
+invents a `providerReference`; any unresolved music becomes an `UNKNOWN` cue, not a fabricated one.
+
 ## When to emit SOURCE_ANNOTATION instead of inventing data
 
 If the source material is ambiguous or missing a required field:
