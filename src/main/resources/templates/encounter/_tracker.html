@@ -151,7 +151,15 @@
             async loadActiveEncounter() {
                 try {
                     const resp = await this.request(`/api/v1/campaigns/${this.campaignId}/encounters/active`);
+                    // 204 No Content = no active encounter (empty body is not JSON)
+                    if (resp.status === 204) {
+                        this.encounter = null;
+                        this.combatants = [];
+                        this._encounterId = null;
+                        return;
+                    }
                     const data = await resp.json();
+                    if (!data || !data.id) return;
                     await this.loadEncounter(data.id);
                 } catch (error) {
                     if (error?.status === 404) return;

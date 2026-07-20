@@ -204,7 +204,7 @@ public class SessionAudioStateService {
     public AudioRuntimeView getRuntimeView(UUID sessionId, UUID campaignId) {
         Campaign campaign = campaignRepository.findById(campaignId)
                 .orElseThrow(() -> new IllegalStateException("Campaign not found"));
-        SessionAudioState state = getState(sessionId, campaignId);
+        SessionAudioState state = ensureStateForOpenSession(sessionId, campaignId);
         AudioSwitchMode configured = settingsCodec.read(campaign).audioSwitchMode();
         if (configured != state.getSwitchMode()) state.setSwitchMode(configured);
 
@@ -222,6 +222,21 @@ public class SessionAudioStateService {
                 resolved.cue() != null || state.getPendingCue() != null,
                 state.getVictoryUntil()
         );
+    }
+
+    /**
+     * Open sessions should always have audio state (created on start). If a session was left
+     * RUNNING without a row (partial failure / legacy data), create it instead of returning empty.
+     */
+    private SessionAudioState ensureStateForOpenSession(UUID sessionId, UUID campaignId) {
+        return stateRepository.findBySessionId(sessionId)
+                .map(existing -> {
+                    if (!campaignId.equals(existing.getSession().getCampaign().getId())) {
+                        throw new IllegalStateException("No audio state for campaign session");
+                    }
+                    return existing;
+                })
+                .orElseGet(() -> createOrReset(sessionId));
     }
 
     private UUID campaignIdFor(UUID sessionId) {

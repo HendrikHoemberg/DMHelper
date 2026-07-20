@@ -21,6 +21,7 @@ import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import dev.hendrikhoemberg.dmhelper.threat.service.ThreatCardAssembler;
 import dev.hendrikhoemberg.dmhelper.threat.web.ThreatCardView;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -109,37 +110,101 @@ public class SessionWorkspaceService {
                 .orElseThrow(() -> new NotFoundException("Campaign not found"));
         CampaignSession session = sessions.findByCampaignId(campaignId)
                 .orElseGet(() -> CampaignSession.idle(campaign));
+        // open-in-view=false: controller/templates touch these after the TX ends
+        initializeSessionForView(session);
         Scene current = adventures.getCurrentScene(campaignId).orElse(null);
+        initializeSceneForView(current);
         Encounter active = encounters.findByCampaignIdAndStatus(campaignId, Encounter.Status.ACTIVE).orElse(null);
+        initializeEncounterForView(active);
         SessionPlanService.SessionPlan plan = plans.latest(campaignId).orElse(null);
         Selection selection = select(session, active, current, plan, requestedMapId, campaignId);
         List<Scene> neighbors = editorialNeighbors(current);
+        initializeSceneForView(neighbors.get(0));
+        initializeSceneForView(neighbors.get(1));
         StructuredSceneView ssv = buildStructuredSceneView(current);
         List<QuestProgressView> qpvs = buildQuestProgressViews(campaignId);
         List<LinkedRollableTableView> linkedTables = current != null
                 ? rollableTableLinkService.forScene(campaignId, current.getId())
                 : List.of();
+        List<Encounter> planned = encounters.findByCampaignIdOrderByNameAsc(campaignId).stream()
+                .filter(e -> e.getStatus() == Encounter.Status.PLANNED)
+                .toList();
+        planned.forEach(SessionWorkspaceService::initializeEncounterForView);
         return new SessionWorkspace(campaign, session, selection.map(), selection.source(), current,
                 neighbors.get(0), neighbors.get(1), active,
-                encounters.findByCampaignIdOrderByNameAsc(campaignId).stream()
-                        .filter(e -> e.getStatus() == Encounter.Status.PLANNED).toList(),
+                planned,
                 plan, maps.findByCampaignIdOrderBySortOrderAsc(campaignId),
                 handouts.findByCampaignIdOrderByTitleAsc(campaignId),
                 party.findByCampaignIdAndActiveTrueOrderByCharacterNameAsc(campaignId),
                 calendar.getCurrentDate(campaignId), ssv, qpvs, linkedTables);
     }
 
+    /**
+     * Eagerly materialize associations the cockpit reads after this transactional method returns.
+     * Transient idle placeholders (no id) already hold plain collections.
+     */
+    private static void initializeSessionForView(CampaignSession session) {
+        if (session.getId() == null) {
+            return;
+        }
+        Hibernate.initialize(session.getAttendees());
+        Hibernate.initialize(session.getWorkspaceMap());
+        Hibernate.initialize(session.getPresentedMap());
+        Hibernate.initialize(session.getPresentedHandout());
+        Hibernate.initialize(session.getPlanNote());
+    }
+
+    /**
+     * Story rail touches statBlocks/handouts/map/encounter/chapter.adventure and structured
+     * collections after the transaction ends.
+     */
+    private static void initializeSceneForView(Scene scene) {
+        if (scene == null || scene.getId() == null) {
+            return;
+        }
+        Hibernate.initialize(scene.getStatBlocks());
+        Hibernate.initialize(scene.getHandouts());
+        Hibernate.initialize(scene.getMap());
+        Hibernate.initialize(scene.getEncounter());
+        Hibernate.initialize(scene.getSceneAudioCue());
+        Hibernate.initialize(scene.getSections());
+        Hibernate.initialize(scene.getChecks());
+        Hibernate.initialize(scene.getParticipants());
+        Hibernate.initialize(scene.getTransitions());
+        for (SceneTransition transition : scene.getTransitions()) {
+            Hibernate.initialize(transition.getTargetScene());
+        }
+        Hibernate.initialize(scene.getLinks());
+        if (scene.getChapter() != null) {
+            Hibernate.initialize(scene.getChapter());
+            if (scene.getChapter().getAdventure() != null) {
+                Hibernate.initialize(scene.getChapter().getAdventure());
+            }
+        }
+    }
+
+    private static void initializeEncounterForView(Encounter encounter) {
+        if (encounter == null || encounter.getId() == null) {
+            return;
+        }
+        Hibernate.initialize(encounter.getMap());
+    }
+
     private StructuredSceneView buildStructuredSceneView(Scene scene) {
         if (scene == null) return null;
+        // Collections already initialized for view; copy to plain lists for the view record.
         return new StructuredSceneView(scene,
-                scene.getSections(), scene.getChecks(),
-                scene.getParticipants(), scene.getTransitions(),
-                scene.getLinks(), threatCardAssembler.forScene(scene));
+                List.copyOf(scene.getSections()), List.copyOf(scene.getChecks()),
+                List.copyOf(scene.getParticipants()), List.copyOf(scene.getTransitions()),
+                List.copyOf(scene.getLinks()), threatCardAssembler.forScene(scene));
     }
 
     private List<QuestProgressView> buildQuestProgressViews(UUID campaignId) {
         return questRepository.findByCampaignIdOrderByCreatedAtAscIdAsc(campaignId).stream()
-                .map(q -> new QuestProgressView(q, q.getObjectives()))
+                .map(q -> {
+                    Hibernate.initialize(q.getObjectives());
+                    return new QuestProgressView(q, List.copyOf(q.getObjectives()));
+                })
                 .toList();
     }
 

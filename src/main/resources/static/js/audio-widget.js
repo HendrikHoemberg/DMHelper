@@ -153,6 +153,14 @@
 
             fetchState: function () {
                 var self = this;
+                // No session yet (cockpit open while status is IDLE) — nothing to resolve.
+                if (!self.sessionId || self.sessionId === 'null') {
+                    self.hasCue = false;
+                    self._pendingCue = null;
+                    self.errorCategory = '';
+                    self.errorMessage = '';
+                    return Promise.resolve();
+                }
                 var sequence = ++self._stateSequence;
                 if (self._stateAbortController) self._stateAbortController.abort();
                 self._stateAbortController = new AbortController();
@@ -166,6 +174,7 @@
                     })
                     .catch(function (error) {
                         if (sequence !== self._stateSequence) return;
+                        if (error && error.name === 'AbortError') return;
                         self.errorCategory = 'PROVIDER_OFFLINE';
                         self.errorMessage = 'Audio state could not be refreshed. Retry when ready.';
                     });

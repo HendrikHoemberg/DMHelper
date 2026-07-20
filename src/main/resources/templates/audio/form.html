@@ -45,6 +45,21 @@
                         </template>
                     </div>
                     <div class="form-group">
+                        <label for="referenceKind">Reference Kind</label>
+                        <select id="referenceKind" name="referenceKind" x-model="form.referenceKind"
+                                data-path="/referenceKind">
+                            <option value="VIDEO">Video</option>
+                            <option value="PLAYLIST">Playlist</option>
+                        </select>
+                        <template x-for="problem in problemsFor('/referenceKind')" :key="problem.code">
+                            <div class="u-text-danger u-text-sm" x-text="problem.message"></div>
+                        </template>
+                        <p class="u-text-sm text-muted">
+                            Use Video for a single watch URL/ID; Playlist for a playlist URL/ID.
+                            The server also normalizes kind from a full YouTube URL on save.
+                        </p>
+                    </div>
+                    <div class="form-group">
                         <label for="providerReference">Provider Reference</label>
                         <input type="text" id="providerReference" name="providerReference"
                                x-model="form.providerReference" data-path="/providerReference" required

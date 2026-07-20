@@ -14,6 +14,7 @@
             cueKey: dto.cueKey || '',
             name: dto.name || '',
             providerId: dto.providerId || '',
+            referenceKind: dto.referenceKind || 'VIDEO',
             providerReference: dto.providerReference || '',
             category: dto.category || 'AMBIENT',
             transitionPreference: dto.transitionPreference || 'CROSSFADE',
