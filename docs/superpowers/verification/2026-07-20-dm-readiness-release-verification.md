@@ -53,6 +53,37 @@
 - Confirms DM-only scene/token/note/encounter/asset/audio data is absent from player network payloads (§21.3 final bullet; excluded at the projection boundary, not via CSS — roadmap §1)
 
 ## 4. Security gate (§21.4)
+
+No OWASP/dependency-scanner plugin in the build; security gate = security test suites + manual review of this plan’s diff.
+
+### §21.4 Package / asset attack-surface
+- Command: `./mvnw -q test -Duser.home=/tmp/dmhelper-release-verify -Dtest='AudioPackageSecurityTest,FileServeControllerSecurityTest,AudioHostileContentTest,ThreatHostileContentTest'`
+- Suites: AudioPackageSecurityTest (6), FileServeControllerSecurityTest (4), AudioHostileContentTest (19), ThreatHostileContentTest (1)
+- Result: 4 suites / 30 tests / 0 failures / 0 errors / 0 skips — BUILD SUCCESS (Maven exit 0; `-q` suppresses grepable “Tests run:” / “BUILD SUCCESS” banners — counts from Surefire)
+- Covers: path traversal, absolute paths, symlinks, duplicate paths, archive bombs, MIME spoofing, oversized packages, and hostile Markdown/HTML
+
+### §21.4 PIN / route-authorization
+- Command: `./mvnw -q test -Duser.home=/tmp/dmhelper-release-verify -Dtest='PinInterceptorTest,PinInterceptorRateLimitTest,SessionCockpitSecurityTest,AudioCockpitSecurityTest,MapPinAccessControlTest,AudioCredentialBoundaryTest'`
+- Suites (run sequentially as separate Maven invocations so in-process PIN rate-limit state does not cross-contaminate suites): PinInterceptorTest (8), PinInterceptorRateLimitTest (3), SessionCockpitSecurityTest (5), AudioCockpitSecurityTest (7), MapPinAccessControlTest (2), AudioCredentialBoundaryTest (3)
+- Result: 6 suites / 28 tests / 0 failures / 0 errors / 0 skips — BUILD SUCCESS per suite (Maven exit 0 each; same `-q` banner note as above)
+- Note: a single multi-class `-Dtest=` JVM can return **429** instead of **403** on later PIN-gate suites (shared rate-limit window after `PinInterceptorTest` / rate-limit tests). Isolation re-run of each suite is green; Task 1 full suite was also green. Not a product security gap.
+- Covers: PIN-bypass attempts for cockpit/presentation/quest/map/audio routes, player asset access before/after presentation, and no provider credentials in cues (`AudioCredentialBoundaryTest`)
+
+### §21.4 Atomic rollback on import failure
+- Grep hits under `src/test/java/.../campaign/packagev2` for `rollback|atomic|staged|no partial|leaves no`: includes `CampaignImportAtomicityTest`, `CampaignImportPreviewStoreTest`, `CampaignImportCoordinatorTest`, `CampaignPackageReaderTest`, `CampaignPackageValidationPipelineTest`, etc.
+- Brief wildcards `*ImportRollback*,*AtomicImport*,*PackageImportPreview*` match **no** Surefire class names; real class used: **`CampaignImportAtomicityTest`** (plus related preview/coordinator coverage)
+- Command: `./mvnw -q test -Duser.home=/tmp/dmhelper-release-verify -Dtest='CampaignImportAtomicityTest,CampaignImportPreviewStoreTest,CampaignImportCoordinatorTest'`
+- Suites: CampaignImportAtomicityTest (2), CampaignImportPreviewStoreTest (2), CampaignImportCoordinatorTest (1)
+- Result: 3 suites / 5 tests / 0 failures / 0 errors / 0 skips — BUILD SUCCESS (Maven exit 0; same `-q` banner note)
+- `CampaignImportAtomicityTest` forces failure after every section-adapter boundary and on deferred setters; asserts campaign rows, package keys, domain table counts, and handout files roll back, and that the import preview remains retryable
+
+### Manual boundary review of this plan’s diff
+- Command: `git diff --stat Main...HEAD` (default branch is `Main`, capital M)
+- Stat at Task 4 recording:
+  - `docs/superpowers/dm-only-readiness-roadmap.md` (M) — status/NEXT bookkeeping only
+  - `docs/superpowers/verification/2026-07-20-dm-readiness-release-verification.md` (A) — verification record only
+- **Confirmation:** plan branch introduces **docs only** — no new runtime route, no new asset endpoint, no player-payload change, no production Java/HTML/JS/CSS. (Plan will later add a docs-only contract test and more docs in subsequent tasks; none of those are production attack surface.) Code security-review skill not required for a verification-only docs diff.
+
 ## 5. Documentation consistency audit (§19, §20)
 ## 6. Real-provider music exercise
 ## 7. Manual acceptance session (§21.5)
