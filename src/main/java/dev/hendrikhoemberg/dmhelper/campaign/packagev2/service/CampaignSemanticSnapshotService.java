@@ -314,6 +314,7 @@ public class CampaignSemanticSnapshotService {
                 && field.getAnnotation(Id.class) == null
                 && field.getAnnotation(Version.class) == null
                 && field.getAnnotation(Transient.class) == null
+                && !"createdAt".equals(field.getName())
                 && !"updatedAt".equals(field.getName())
 ;
     }

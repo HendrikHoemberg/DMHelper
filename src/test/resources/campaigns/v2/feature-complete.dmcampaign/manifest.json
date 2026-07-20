@@ -64,7 +64,8 @@
       "scope": "PACKAGE",
       "type": "SCENE",
       "key": "scene-crypt-entry"
-    }
+    },
+    "defaultCueRef": { "scope": "PACKAGE", "type": "AUDIO_CUE", "key": "cue-hall-ambience" }
   },
   "assets": [
     {
@@ -804,6 +805,9 @@
           "notes": "Arrives at round 3 from the south corridor"
         }
       ],
+      "combatCueRef": { "scope": "PACKAGE", "type": "AUDIO_CUE", "key": "cue-crypt-combat" },
+      "victoryCueRef": { "scope": "PACKAGE", "type": "AUDIO_CUE", "key": "cue-crypt-victory" },
+      "victoryCueDurationSeconds": 15,
       "status": "ACTIVE",
       "round": 3,
       "activeTurnIndex": 1,
@@ -1090,6 +1094,7 @@
                   "key": "handout-players-map"
                 }
               ],
+              "sceneCueRef": { "scope": "PACKAGE", "type": "AUDIO_CUE", "key": "cue-crypt-exploration" },
               "sections": [
                 {
                   "kind": "TRAP",
@@ -1512,6 +1517,64 @@
           "resultText": "Stares into the distance"
         }
       ]
+    }
+  ],
+  "audioCues": [
+    {
+      "key": "cue-hall-ambience",
+      "name": "Great Hall Ambience",
+      "providerId": "FAKE",
+      "referenceKind": "PLAYLIST",
+      "providerReference": "fake-playlist-ambient-hall",
+      "cachedTitle": "Great Hall Ambience",
+      "artistOrOwner": "DMHelper Fixture Library",
+      "artworkUrl": "https://example.invalid/art/hall.png",
+      "durationSeconds": 3600,
+      "category": "AMBIENT",
+      "volumeHint": 45,
+      "transitionPreference": "CROSSFADE",
+      "notes": "Default campaign ambience. Synthetic fixture reference \u2014 not a real track."
+    },
+    {
+      "key": "cue-crypt-exploration",
+      "name": "Crypt Exploration",
+      "providerId": "FAKE",
+      "referenceKind": "PLAYLIST",
+      "providerReference": "fake-playlist-exploration-crypt",
+      "cachedTitle": "Crypt Exploration",
+      "artistOrOwner": "DMHelper Fixture Library",
+      "durationSeconds": 2700,
+      "category": "EXPLORATION",
+      "volumeHint": 50,
+      "transitionPreference": "CROSSFADE",
+      "notes": "Scene cue. Synthetic fixture reference."
+    },
+    {
+      "key": "cue-crypt-combat",
+      "name": "Crypt Combat",
+      "providerId": "FAKE",
+      "referenceKind": "PLAYLIST",
+      "providerReference": "fake-playlist-combat-crypt",
+      "cachedTitle": "Crypt Combat",
+      "artistOrOwner": "DMHelper Fixture Library",
+      "durationSeconds": 1800,
+      "category": "COMBAT",
+      "volumeHint": 65,
+      "transitionPreference": "CUT",
+      "notes": "Encounter combat cue. Synthetic fixture reference."
+    },
+    {
+      "key": "cue-crypt-victory",
+      "name": "Crypt Victory Sting",
+      "providerId": "FAKE",
+      "referenceKind": "VIDEO",
+      "providerReference": "fake-video-victory-sting",
+      "cachedTitle": "Victory Sting",
+      "artistOrOwner": "DMHelper Fixture Library",
+      "durationSeconds": 20,
+      "category": "TRIUMPH",
+      "transitionPreference": "CUT",
+      "notes": "Post-combat victory cue. Synthetic fixture reference."
     }
   ],
   "traps": [

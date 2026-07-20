@@ -338,6 +338,11 @@ public class CampaignService {
         worldFactionRepo.deleteAll(worldFactionRepo.findByCampaignIdOrderByNameAscIdAsc(cid));
         em.flush();
 
+        // The campaign can row-reference an audio cue as its default. Null the FK out so the
+        // DELETE does not trip FK_CAMPAIGN_DEFAULT_AUDIO_CUE.
+        campaign.setDefaultAudioCue(null);
+        em.flush();
+
         repository.delete(campaign);
     }
 

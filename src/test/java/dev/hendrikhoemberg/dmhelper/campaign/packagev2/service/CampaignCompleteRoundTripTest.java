@@ -173,7 +173,8 @@ class CampaignCompleteRoundTripTest {
                         encounter.lairActionName(), encounter.lairActionDescription(), encounter.mapRef(),
                         encounter.lairActionTriggered(),
                         includeCombatLog ? encounter.combatLog() : List.of(),
-                        encounter.prep(), encounter.rewards(), encounter.waves(), null, null, null))
+                        encounter.prep(), encounter.rewards(), encounter.waves(),
+                        encounter.combatCueRef(), encounter.victoryCueRef(), encounter.victoryCueDurationSeconds()))
                 .toList();
         var metadata = new CampaignManifestV2.Metadata(
                 source.metadata().packageKey(), source.metadata().createdAt(), source.metadata().generator(),
@@ -188,7 +189,7 @@ class CampaignCompleteRoundTripTest {
                 source.adventures(), source.session(), includeDiceHistory ? source.diceRolls() : List.of(),
                 source.quests(), source.annotations(), source.worldNpcs(), source.worldLocations(),
                 source.factions(), source.worldRelationships(), source.factionClocks(),
-                source.rollableTables(), source.traps(), source.hazards(), List.of());
+                source.rollableTables(), source.traps(), source.hazards(), source.audioCues());
     }
 
     private CampaignManifestV2 readManifest(String path) throws Exception {
