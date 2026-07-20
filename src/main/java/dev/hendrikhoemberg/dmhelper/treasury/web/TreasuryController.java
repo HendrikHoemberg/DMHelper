@@ -48,7 +48,19 @@ public class TreasuryController {
 
     @GetMapping
     String overview(@PathVariable UUID campaignId, Model model) {
-        model.addAttribute("assignments", treasuryService.findByCampaignId(campaignId));
+        var assignments = treasuryService.findByCampaignId(campaignId);
+        model.addAttribute("assignments", assignments);
+        // Group items per holder here: Thymeleaf's SpEL selections can't see the outer
+        // loop variable, so the template can't filter assignments by party member itself.
+        var byMember = new java.util.LinkedHashMap<UUID, java.util.List<TreasuryService.AssignmentDto>>();
+        partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(campaignId)
+                .forEach(pm -> byMember.put(pm.getId(), new java.util.ArrayList<>()));
+        for (var a : assignments) {
+            if (a.partyMemberId() != null && byMember.containsKey(a.partyMemberId())) {
+                byMember.get(a.partyMemberId()).add(a);
+            }
+        }
+        model.addAttribute("assignmentsByMember", byMember);
         model.addAttribute("balances", ledgerService.computeAllGoldBalances(campaignId));
         model.addAttribute("magicItems", magicItemRepository.findAllByOrderByNameAsc());
         model.addAttribute("equipmentItems", equipmentItemRepository.findAllByOrderByNameAsc());

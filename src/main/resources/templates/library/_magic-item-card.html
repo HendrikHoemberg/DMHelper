@@ -11,9 +11,9 @@
     </div>
 </th:block>
 
-<th:block th:fragment="magic-item-card-list">
+<th:block th:fragment="magic-item-card-list" th:with="cap=60">
     <div class="card-grid" th:if="${magicItems != null and !magicItems.isEmpty()}">
-        <div th:each="m : ${magicItems}" class="card">
+        <div th:each="m,iter : ${magicItems}" th:if="${iter.index < cap}" class="card">
             <h3 class="card-title library-card__title" th:text="${m.name}">Name</h3>
             <div class="badge-group library-card__meta">
                 <span class="badge" th:classappend="'badge-' + ${m.rarity?.toLowerCase()}" th:text="${m.rarity}">Rarity</span>
@@ -27,4 +27,6 @@
     <div class="empty-state" th:if="${magicItems == null or magicItems.isEmpty()}">
         <p class="empty-state__title">No magic items match your search.</p>
     </div>
+    <th:block th:if="${magicItems != null and magicItems.size() > cap}"
+              th:replace="~{library/_card :: more-results(shown=${cap}, total=${magicItems.size()})}"></th:block>
 </th:block>

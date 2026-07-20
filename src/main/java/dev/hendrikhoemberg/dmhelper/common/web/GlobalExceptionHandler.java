@@ -41,11 +41,28 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return mav;
     }
 
+    /** True for full-page browser navigations, which need an HTML page rather than a JSON ProblemDetail. */
+    private boolean prefersHtml(HttpServletRequest request) {
+        String accept = request.getHeader("Accept");
+        return accept != null && accept.contains("text/html");
+    }
+
+    private ModelAndView htmlErrorPage(HttpStatus status, HttpServletRequest request) {
+        ModelAndView mav = new ModelAndView("error");
+        mav.addObject("status", status.value());
+        mav.addObject(CorrelationIdFilter.ATTRIBUTE, CorrelationIdFilter.current(request));
+        mav.setStatus(status);
+        return mav;
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public Object handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
         String message = "The request was not valid. Check the entered values and try again.";
         if ("true".equals(request.getHeader("HX-Request"))) {
             return htmxError(HttpStatus.BAD_REQUEST, message, request);
+        }
+        if (prefersHtml(request)) {
+            return htmlErrorPage(HttpStatus.BAD_REQUEST, request);
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem(
                 HttpStatus.BAD_REQUEST,
@@ -61,6 +78,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         if ("true".equals(request.getHeader("HX-Request"))) {
             return htmxError(HttpStatus.NOT_FOUND, message, request);
         }
+        if (prefersHtml(request)) {
+            return htmlErrorPage(HttpStatus.NOT_FOUND, request);
+        }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem(
                 HttpStatus.NOT_FOUND,
                 "urn:dmhelper:not-found",
@@ -74,6 +94,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         String message = "The item changed before this request completed. Reload and try again.";
         if ("true".equals(request.getHeader("HX-Request"))) {
             return htmxError(HttpStatus.CONFLICT, message, request);
+        }
+        if (prefersHtml(request)) {
+            return htmlErrorPage(HttpStatus.CONFLICT, request);
         }
         return ResponseEntity.status(HttpStatus.CONFLICT).body(problem(
                 HttpStatus.CONFLICT,
@@ -129,6 +152,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         String message = "The request could not be completed.";
         if ("true".equals(request.getHeader("HX-Request"))) {
             return htmxError(HttpStatus.INTERNAL_SERVER_ERROR, message, request);
+        }
+        if (prefersHtml(request)) {
+            return htmlErrorPage(HttpStatus.INTERNAL_SERVER_ERROR, request);
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem(
                 HttpStatus.INTERNAL_SERVER_ERROR,

@@ -9,7 +9,9 @@
         <span th:if="${encounter.status == 'ACTIVE'}" style="color: var(--color-success);">ACTIVE</span>
         <span th:if="${encounter.status == 'PLANNED'}" style="color: var(--color-info);">PLANNED</span>
         <span th:if="${encounter.status == 'DONE'}" style="color: var(--color-text-muted);">DONE</span>
-        <span th:if="${encounter.mapId != null}" th:text="' · Map: ' + ${encounter.mapId}"></span>
+        <span th:if="${encounter.mapId != null}"
+              th:text="' · Map: ' + (${mapNames != null and mapNames.containsKey(encounter.mapId)}
+                                     ? ${mapNames[encounter.mapId]} : 'linked map')"></span>
         <span th:if="${encounter.round > 0}" th:text="' · Round ' + ${encounter.round}"></span>
     </div>
     <div class="card-actions">

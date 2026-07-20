@@ -24,12 +24,16 @@
     </div>
 </div>
 
-<div class="card-grid" th:fragment="spell-card-list(spells)" th:if="${spells != null}">
-    <th:block th:if="${spells.isEmpty()}">
-        <div class="empty-state"><p>No spells match your search.</p></div>
-    </th:block>
-    <th:block th:each="spell : ${spells}">
-        <th:block th:replace="~{library/_spell-card :: spell-card(spell=${spell})}"></th:block>
-    </th:block>
-</div>
+<th:block th:fragment="spell-card-list(spells)" th:with="cap=60">
+    <div class="card-grid" th:if="${spells != null}">
+        <th:block th:if="${spells.isEmpty()}">
+            <div class="empty-state"><p>No spells match your search.</p></div>
+        </th:block>
+        <th:block th:each="spell,iter : ${spells}" th:if="${iter.index < cap}">
+            <th:block th:replace="~{library/_spell-card :: spell-card(spell=${spell})}"></th:block>
+        </th:block>
+    </div>
+    <th:block th:if="${spells != null and spells.size() > cap}"
+              th:replace="~{library/_card :: more-results(shown=${cap}, total=${spells.size()})}"></th:block>
+</th:block>
 </html>

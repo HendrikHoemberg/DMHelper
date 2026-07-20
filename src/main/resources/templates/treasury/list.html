@@ -46,11 +46,14 @@
 
             <!-- Item Assignments by Holder -->
             <div th:each="pm : ${partyMembers}" class="detail-section">
-                <th:block th:with="holderItems=${#lists.toList(assignments).?[partyMemberId() != null && partyMemberId().equals(pm.id)]}">
-                    <h2 th:text="${pm.characterName} + '&apos;s Items'">PC's Items</h2>
-                    <div th:if="${not #lists.isEmpty(holderItems)}" class="card-grid card-grid--bounded">
-                        <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=${#lists.toList(holderItems).?[attuned()].size()})}"
-                             th:each="a : ${holderItems}"></div>
+                <th:block th:with="holderItems=${assignmentsByMember.get(pm.id)}">
+                    <h2 th:text="|${pm.characterName}&apos;s Items|">PC's Items</h2>
+                    <div th:if="${not #lists.isEmpty(holderItems)}" class="card-grid card-grid--bounded"
+                         th:with="attunementCount=${#lists.toList(holderItems).?[attuned()].size()}">
+                        <!-- th:each on an outer wrapper: th:replace would otherwise outrank it and run once with a null 'a'. -->
+                        <th:block th:each="a : ${holderItems}">
+                            <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=${attunementCount})}"></div>
+                        </th:block>
                     </div>
                     <th:block th:if="${#lists.isEmpty(holderItems)}"><th:block th:replace="~{common/_empty-state :: empty-state('No items assigned', null, null, null)}"></th:block></th:block>
                 </th:block>
@@ -61,8 +64,9 @@
                 <th:block th:with="stashItems=${#lists.toList(assignments).?[partyMemberId() == null]}">
                     <h2>Party Stash</h2>
                     <div th:if="${not #lists.isEmpty(stashItems)}" class="card-grid card-grid--bounded">
-                        <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=0)}"
-                             th:each="a : ${stashItems}"></div>
+                        <th:block th:each="a : ${stashItems}">
+                            <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=0)}"></div>
+                        </th:block>
                     </div>
                     <th:block th:if="${#lists.isEmpty(stashItems)}">
                         <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(

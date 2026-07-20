@@ -2,7 +2,7 @@
     <span th:text="${item.name}"></span>
 </th:block>
 
-<th:block th:fragment="equipment-card-list">
+<th:block th:fragment="equipment-card-list" th:with="cap=60">
     <table class="equipment-table settle-in" th:if="${equipment != null and !equipment.isEmpty()}">
         <thead>
             <tr>
@@ -14,7 +14,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr th:each="e : ${equipment}">
+            <tr th:each="e,iter : ${equipment}" th:if="${iter.index < cap}">
                 <td class="library-table__name" th:text="${e.name}">Name</td>
                 <td class="library-table__meta" th:text="${e.category}">Category</td>
                 <td th:text="${e.cost}">Cost</td>
@@ -23,6 +23,8 @@
             </tr>
         </tbody>
     </table>
+    <th:block th:if="${equipment != null and equipment.size() > cap}"
+              th:replace="~{library/_card :: more-results(shown=${cap}, total=${equipment.size()})}"></th:block>
     <div class="empty-state" th:if="${equipment == null or equipment.isEmpty()}">
         <p class="empty-state__title">No equipment matches your search.</p>
     </div>

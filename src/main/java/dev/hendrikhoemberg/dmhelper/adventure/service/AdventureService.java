@@ -281,6 +281,9 @@ public class AdventureService {
             campaign.setCurrentSceneId(null);
             campaignRepository.save(campaign);
         }
+        // Templates build "resume" links from scene.chapter.adventure; initialise the lazy
+        // chain inside this transaction so it survives rendering (open-in-view is disabled).
+        scene.ifPresent(s -> s.getChapter().getAdventure().getId());
         return scene;
     }
 

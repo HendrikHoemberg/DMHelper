@@ -41,7 +41,7 @@
     </div>
 </div>
 
-<div th:fragment="card-list(statblocks)" th:if="${statblocks != null}" class="settle-in">
+<div th:fragment="card-list(statblocks)" th:if="${statblocks != null}" class="settle-in" th:with="cap=60">
     <div class="result-count"
          th:text="${statblocks.size()} + (${statblocks.size()} == 1 ? ' monster' : ' monsters')">312 monsters</div>
     <div class="card-grid card-grid--library"
@@ -49,9 +49,17 @@
         <th:block th:if="${statblocks.isEmpty()}">
             <th:block th:replace="~{common/_empty-state :: empty-state('Nothing in the bestiary matches that.', null, null, 'Try a broader search, or clear a filter.')}"></th:block>
         </th:block>
-        <th:block th:each="sb : ${statblocks}">
+        <!-- Cap the rendered cards; the full SRD bestiary is hundreds of entries. -->
+        <th:block th:each="sb,iter : ${statblocks}" th:if="${iter.index < cap}">
             <th:block th:replace="~{library/_card :: card(sb=${sb})}"></th:block>
         </th:block>
     </div>
+    <th:block th:if="${statblocks.size() > cap}"
+              th:replace="~{library/_card :: more-results(shown=${cap}, total=${statblocks.size()})}"></th:block>
+</div>
+
+<div th:fragment="more-results(shown, total)" class="result-truncated text-muted u-text-sm u-mt-md">
+    Showing the first <span th:text="${shown}">60</span> of <span th:text="${total}">312</span>.
+    Refine your search or filters to narrow the list.
 </div>
 </html>

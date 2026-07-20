@@ -2,7 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <div th:fragment="timelineList" id="timeline-list" class="detail-section empty-state-host">
     <div th:if="${not #lists.isEmpty(events)}" class="u-flex-col u-gap-sm">
-        <div th:replace="~{calendar/_event-card :: eventCard(event=${e})}" th:each="e : ${events}"></div>
+        <!-- th:replace outranks th:each on the same tag, so iterate on an outer element;
+             otherwise the fragment runs once with a null 'e' and event.id() blows up. -->
+        <th:block th:each="e : ${events}">
+            <div th:replace="~{calendar/_event-card :: eventCard(event=${e})}"></div>
+        </th:block>
     </div>
     <th:block th:if="${#lists.isEmpty(events)}">
         <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(

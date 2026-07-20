@@ -182,15 +182,25 @@
 .session-cockpit {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  /* min-height (not a rigid height) so the fixed plan/audio/party strips can't
+     starve the grid below its content and make the columns overlap the plan;
+     when everything fits, flex:1 on the grid still fills the viewport. */
+  min-height: 100vh;
   background: var(--color-bg);
 }
 
 .cockpit-grid {
   display: grid;
   grid-template-columns: minmax(16rem, 22rem) minmax(24rem, 1fr) minmax(20rem, 26rem);
-  min-height: 0;
-  flex: 1;
+  /* Bound the single row to the grid's own height so each column scrolls internally
+     instead of stretching the row to its tallest content. */
+  grid-template-rows: minmax(0, 1fr);
+  /* Never collapse below the columns' own height (they are 24rem tall), and never
+     grow past ~the viewport: the rails scroll internally, the plan/audio/party
+     strips sit just below and are reached by scrolling the page. */
+  min-height: 24rem;
+  max-height: calc(100dvh - 3.5rem);
+  flex: 1 1 auto;
   overflow: hidden;
 }
 

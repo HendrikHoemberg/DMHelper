@@ -198,7 +198,7 @@
            th:insert="~{session/_session-plan :: plan(workspace=${workspace})}"></section>
   <th:block th:replace="~{audio/_cockpit-widget :: cockpit-widget-config(campaignId=${campaignId}, sessionId=${workspace.session.id})}"></th:block>
   <section class="cockpit-audio-section" aria-label="Audio playback"
-           th:replace="~{audio/_cockpit-widget :: cockpit-widget(campaignId=${campaignId}, sessionId=${workspace.session.id})}"></section>
+           th:insert="~{audio/_cockpit-widget :: cockpit-widget(campaignId=${campaignId}, sessionId=${workspace.session.id})}"></section>
   <footer class="cockpit-partybar">
     <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${workspace.partyMembers}, oob=null)}"></th:block>
   </footer>

@@ -23,7 +23,6 @@
         <div><dt>P. Insight</dt><dd th:text="${pm.passiveInsight}">12</dd></div>
         <div><dt>P. Investigation</dt><dd th:text="${pm.passiveInvestigation}">14</dd></div>
     </dl>
-    <span th:if="${pm.characterSheet != null}" class="badge badge-success">Sheet</span>
     <div class="pm-actions">
         <a th:if="${pm.characterSheet != null}"
            th:href="@{/campaigns/{cid}/party/{pid}/sheet(cid=${pm.campaign.id}, pid=${pm.id})}"

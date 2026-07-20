@@ -37,6 +37,11 @@ public class EncounterController {
     public String list(@PathVariable UUID campaignId, Model model) {
         model.addAttribute("encounters", encounterService.list(campaignId));
         model.addAttribute("campaignId", campaignId);
+        // Encounters store a bare mapId; give the cards a name to show instead of a raw UUID.
+        var mapNames = new java.util.HashMap<UUID, String>();
+        mapRepo.findByCampaignIdOrderBySortOrderAsc(campaignId)
+                .forEach(m -> mapNames.put(m.getId(), m.getName()));
+        model.addAttribute("mapNames", mapNames);
         return "encounter/list";
     }
 
