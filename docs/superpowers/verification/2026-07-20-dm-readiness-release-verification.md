@@ -119,6 +119,34 @@ No OWASP/dependency-scanner plugin in the build; security gate = security test s
 - `src/main/resources/agent/capability-manifest.json` World graph notes still say “music remains required readiness work” (status already `SUPPORTED` for Atmosphere & music; matrix status sync is green)
 
 ## 6. Real-provider music exercise
+
+### Exercise script
+- Path: [`docs/superpowers/verification/live-music-provider-exercise.md`](live-music-provider-exercise.md)
+- Scope: six provider controls, runtime-policy checks (visibility/intersection, user-gesture, DM-surface-only IFrame), and provider-failure isolation against the real YouTube IFrame API on the DM cockpit (Firefox/Linux).
+
+### YouTube policy recheck (official docs)
+- **Checked date:** 2026-07-20
+- **URLs checked:**
+  - https://developers.google.com/youtube/iframe_api_reference
+  - https://developers.google.com/youtube/terms/required-minimum-functionality (page last updated 2026-04-28 UTC)
+  - https://developers.google.com/youtube/terms/api-services-terms-of-service (page last updated 2026-04-28 UTC)
+- **Findings (not blocking):**
+  - **Player size:** embedded players must be ≥ 200×200 CSS px; 16:9 recommended minimum remains **480×270**. A visible official player at 480×270 stays compliant.
+  - **Visibility / autoplay:** required-minimum-functionality still forbids initiating automatic/scripted playback until the player is visible and **more than half** of the player is on-screen; at most one autoplaying player per page/screen; no overlays obscuring the player or controls.
+  - **Gesture / browser autoplay:** IFrame API still surfaces `onAutoplayBlocked` when the browser blocks autoplay or scripted playback (e.g. unmuted playback without user interaction). Intended design (user-gesture enable, then scripted control while visible) remains aligned.
+  - **Client identity:** RMF requires a non-suppressed `HTTP Referer` (or equivalent client identification). IFrame API `onError` code **153** (documented 2025-07-09) covers missing Referer/client identity — relevant for WebView-style hosts; normal Firefox/HTTP(S) cockpit origin continues to send Referer.
+  - **Terms:** API Services ToS still permits official embedded-player use under the Agreement / RMF / developer policies. **No policy change found that prohibits** DM-cockpit-only, gesture-gated, visible official IFrame use at 480×270.
+- **Policy gate status:** **CLEAR** (not blocking). Does not substitute for the live DM-device exercise.
+
+### Live exercise result
+- **Status:** **AWAITING_DM_RUN**
+- Agent cannot exercise a real streaming provider on the DM's device (human-in-the-loop). DM must execute `live-music-provider-exercise.md` and return the filled Result block for transcription here.
+- Date/browser/OS: _(pending DM run)_
+- All controls: **AWAITING_DM_RUN**
+- Policy checks: **AWAITING_DM_RUN**
+- Failure isolation: **AWAITING_DM_RUN**
+- Blocking observations: none from policy recheck; live run not yet performed.
+
 ## 7. Manual acceptance session (§21.5)
 ## 8. Observation triage
 ## 9. §23 readiness condition checklist
