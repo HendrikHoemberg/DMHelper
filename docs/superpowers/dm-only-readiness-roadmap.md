@@ -1,10 +1,10 @@
 # DM-Only All-in-One Readiness — Canonical Execution Roadmap
 
-**Last updated:** 2026-07-19
+**Last updated:** 2026-07-20
 
 **Roadmap established after:** commit `36f7c3c`; use the status table together with current Git history
 
-**Current NEXT item:** 6 — Music-focused readiness closeout
+**Current NEXT item:** 7 — Final readiness verification and release decision
 
 **Terminal goal:** DMHelper can prepare, run, record, export, restore, and resume a representative
 campaign as an all-in-one **DM-operated** tool, including the intended DM-side music experience.
@@ -68,8 +68,8 @@ intentionally serial to minimize integration churn and keep the release gate att
 | 3 | Rollable tables and integrations | `COMPLETE` | 2 | Atmosphere delivery items 1–2 | [Completed corrective plan](plans/2026-07-18-rollable-tables-corrective-implementation.md) | Correct API DTOs, campaign-aware validation, complete authoring/rolling UI, consequence state machine, runnable package fidelity, real browser acceptance, and focused/full tests pass. |
 | 4 | Traps and hazards | `COMPLETE` | 3 | Atmosphere delivery items 3–4 | [Completed plan](plans/2026-07-18-p3-traps-and-hazards.md) | Structured and prose-compatible traps/hazards, provenance, scene/tracker/map integrations, package round-trip, player-safety coverage, and focused/full tests pass. |
 | 5 | Atmosphere and music completion | `COMPLETE` | 2, 4 | Atmosphere delivery items 5–6 | [Completed implementation plan](plans/2026-07-19-p3-atmosphere-music.md) | Provider SPI/reference adapter, cue library, cockpit widget, campaign-scoped assignments, deterministic priority/confirm/victory switching, fake-provider browser acceptance, package safety, player isolation, and bounded outage behavior pass. |
-| 6 | Music-focused readiness closeout | `READY` | 5 | Atmosphere item 7; master §§19–23 | Create a dated `dm-readiness-music-closeout` plan | Feature-complete and published-adventure fixtures cover tables, traps, and music; schemas/catalogs/playbook/manual/capability matrix agree; full round-trip and player-safety suites pass. |
-| 7 | Final readiness verification and release decision | `BLOCKED` | 6 | Master §§21 and 23 | Create a dated `dm-readiness-release-verification` plan | Full automated suite, security gates, documentation audit, real-provider music exercise, and recorded representative manual acceptance session pass. Only then may master item 11 and the DM-only readiness claim be marked complete. |
+| 6 | Music-focused readiness closeout | `COMPLETE` | 5 | Atmosphere item 7; master §§19–23 | [Completed plan](plans/2026-07-20-dm-readiness-music-closeout.md) | Feature-complete and published-adventure fixtures cover tables, traps, and music; schemas/catalogs/playbook/manual/capability matrix agree; full round-trip and player-safety suites pass. |
+| 7 | Final readiness verification and release decision | `READY` | 6 | Master §§21 and 23 | Create a dated `dm-readiness-release-verification` plan | Full automated suite, security gates, documentation audit, real-provider music exercise, and recorded representative manual acceptance session pass. Only then may master item 11 and the DM-only readiness claim be marked complete. |
 
 ## 5. Why this order is fixed
 
@@ -146,6 +146,16 @@ As of the scope re-baseline on 2026-07-19:
   is loaded only on the DM surface, the player stays visible at 480×270, and scripted playback is
   gated on document visibility and more-than-half intersection. Live-provider release acceptance
   remains owned by row 7.
+
+- **Music closeout verification (2026-07-20):** fixtures now carry audio cues + assignments in both
+  flagship packages (feature-complete: 4 cues covering default/scene/combat/victory roles;
+  published-adventure: 3 cues covering location/scene/combat roles). Capability matrix/manifest,
+  DM manual chapter 09, authoring reference, and agent playbook now cover music. Focused closeout
+  gate **17 tests / 0 failures / 0 errors / 0 skips**; focused audio gate **328 tests / 0 failures /
+  0 errors / 0 skips**; clean complete Maven suite **1994 tests / 0 failures / 0 errors / 0 skips**.
+  Runtime fixes included: `createdAt` exclusion from `CampaignSemanticSnapshotService` persistence
+  projection, `defaultAudioCue` FK cleanup in `CampaignService.delete()`, and `audioCues()` history
+  coverage in `CampaignCompleteRoundTripTest.withHistorySelection()`.
 
 When conversation context is missing or compacted, resume from the first non-`COMPLETE` row in this
 file and validate its status against the repository before acting.
