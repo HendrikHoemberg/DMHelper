@@ -21,9 +21,9 @@ Numbering matches master design §22
 - **Item 11 (Rollable tables):** DM-only ranged/weighted tables with complete editor/reference management, nested grouped rolls (max depth 5), shared detail/cockpit rolling, scene and world-location links, explicit encounter/reward draft confirmation or discard, dependency-aware deletion with preserved roll evidence, and campaign package v2 dependency-closure round-trip. Includes flagship fixtures, capability manifest, DM manual chapter, agent mapping rules, performance and player-safety gates, and browser acceptance tests.
 - **Item 11 (Traps and hazards):** DM-only trap/hazard definitions with provenance, scene story cards, encounter tracker cards, DM-only map pins, dice prefill without automatic resolution, player-safe projections, package-v2 dependency-closure round-trip, flagship fixtures, DM manual chapter, agent non-invention rules, hostile-content and PIN gates, and browser acceptance.
 - **Item 11 (World graph):** NPCs, locations, factions, relationships, faction clocks — campaign-scoped cross-referenced world-building state.
+- **Item 11 (Atmosphere and music):** DM-side streaming music behind a provider SPI with a reference/fake adapter and a YouTube adapter; a campaign cue library; a cockpit playback widget; per-campaign cue assignments; deterministic scene/encounter/location priority switching with manual override, per-campaign confirmation, per-session mute, victory expiry, and bounded provider-outage retry; package-v2 dependency-closure round-trip; player-payload isolation; flagship-fixture cues; DM manual chapter 09; authoring reference; agent cue-mapping and non-invention rules; and hostile-content, credential-boundary, and PIN gates.
 
 ## Not started
 
-- Atmosphere/music is the remaining required P3 feature package.
 - Structured travel/weather automation and fog gameplay are optional future capabilities outside
   the readiness release. Optional player interaction remains deferred.

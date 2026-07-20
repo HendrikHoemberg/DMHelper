@@ -29,7 +29,7 @@
 | DM/player map layer split (shared tokens) | `SUPPORTED` | playerVisible flags |
 | Authoritative 2024 encounter difficulty | `PARTIAL` | Still labeled estimate |
 | Agent SDK | `SUPPORTED` | PIN-free capability manifest, validation error catalog, typed catalog snapshot, schemas, conversion playbook, and executable documentation examples |
-| World graph | `SUPPORTED` | NPCs, locations, factions, relationships, faction clocks, and simple location adjacency; music remains the active readiness slice. |
+| World graph | `SUPPORTED` | NPCs, locations, factions, relationships, faction clocks, and simple location adjacency. |
 | Rollable tables | `SUPPORTED` | DM-only ranged/weighted authoring, typed references, nested/grouped rolls, scene/location cockpit access, explicit encounter/reward draft transitions, dependency-aware deletion with preserved history, and package-v2 dependency-closure round-trip |
 | Traps and hazards | `SUPPORTED` | DM-only trap/hazard definitions with provenance, scene sections, encounter tracker cards, DM-only map pins, dice prefill (no auto-resolution), and package-v2 dependency-closure round-trip |
 | Atmosphere & music | `SUPPORTED` | DM-side streaming music behind a provider SPI; scene/encounter/location cue switching, manual override, per-campaign confirm and per-session mute. Requires internet and possibly a provider account — the only approved runtime network dependency; provider failure never blocks a session. DM-only, absent from player payloads. |

@@ -84,7 +84,40 @@ No OWASP/dependency-scanner plugin in the build; security gate = security test s
   - `docs/superpowers/verification/2026-07-20-dm-readiness-release-verification.md` (A) — verification record only
 - **Confirmation:** plan branch introduces **docs only** — no new runtime route, no new asset endpoint, no player-payload change, no production Java/HTML/JS/CSS. (Plan will later add a docs-only contract test and more docs in subsequent tasks; none of those are production attack surface.) Code security-review skill not required for a verification-only docs diff.
 
-## 5. Documentation consistency audit (§19, §20)
+## 5. Documentation consistency audit (§19, §20.1)
+
+### Baseline doc-contract gate (pre-fix)
+- Command: `./mvnw test -Duser.home=/tmp/dmhelper-release-verify -Dtest='DmManualContractTest,DocsIndexContractTest,CapabilityManifestContractTest,CapabilityMatrixMarkdownSyncTest,AgentGuideContractTest,DocumentationExampleValidationTest,ThreatDocumentationContractTest'`
+- Suites: AgentGuideContractTest (3), CapabilityManifestContractTest (5), CapabilityMatrixMarkdownSyncTest (1), DmManualContractTest (3), DocsIndexContractTest (5), DocumentationExampleValidationTest (4), ThreatDocumentationContractTest (8)
+- Result: 7 suites / 29 tests / 0 failures / 0 errors / 0 skips — BUILD SUCCESS
+
+### Manual drift scan
+- Command: `grep -niE "not started|remaining required|planned|todo|in progress|coming soon" docs/product/release-notes.md docs/campaign-capabilities.md docs/README.md`
+- Hits:
+  - `docs/product/release-notes.md:25` `## Not started` — section heading (kept; still has optional deferred items)
+  - `docs/product/release-notes.md:27` `Atmosphere/music is the remaining required P3 feature package.` — **stale** (roadmap row 6 shipped atmosphere/music)
+- Additional audit hit (broader scan of capability notes): `docs/campaign-capabilities.md` World graph notes still said “music remains the active readiness slice” — **stale**
+- `docs/README.md`: no matching stale hits
+
+### Regression guard (TDD)
+- Added `src/test/java/dev/hendrikhoemberg/dmhelper/agent/ReleaseNotesConsistencyTest.java`
+- RED (before doc fix): `./mvnw test -Dtest=ReleaseNotesConsistencyTest -Duser.home=/tmp/dmhelper-release-verify` → **Tests run: 2, Failures: 1** — `atmosphereMusicIsNoLongerDescribedAsUnstarted` failed; BUILD FAILURE
+- GREEN (after doc fix): same command → **Tests run: 2, Failures: 0, Errors: 0, Skipped: 0** — BUILD SUCCESS
+
+### Docs edited
+- `docs/product/release-notes.md` — added Delivery Item 11 atmosphere/music bullet; removed stale “remaining required P3” Not started line
+- `docs/campaign-capabilities.md` — removed “music remains the active readiness slice” from World graph notes (status unchanged: `SUPPORTED`)
+- No changes required to `docs/agent/verification-checklist.md` or `docs/README.md`
+
+### Full doc-contract gate (post-fix, includes guard)
+- Command: `./mvnw test -Duser.home=/tmp/dmhelper-release-verify -Dtest='DmManualContractTest,DocsIndexContractTest,CapabilityManifestContractTest,CapabilityMatrixMarkdownSyncTest,AgentGuideContractTest,DocumentationExampleValidationTest,ReleaseNotesConsistencyTest'`
+- Suites: ReleaseNotesConsistencyTest (2), AgentGuideContractTest (3), CapabilityManifestContractTest (5), CapabilityMatrixMarkdownSyncTest (1), DmManualContractTest (3), DocsIndexContractTest (5), DocumentationExampleValidationTest (4)
+- Result: 7 suites / 23 tests / 0 failures / 0 errors / 0 skips — BUILD SUCCESS
+
+### Residual notes (out of Task 5 edit list; not blocking this gate)
+- `docs/product/known-limitations.md` still lists Atmosphere/music under UNSUPPORTED as “not implemented yet”
+- `src/main/resources/agent/capability-manifest.json` World graph notes still say “music remains required readiness work” (status already `SUPPORTED` for Atmosphere & music; matrix status sync is green)
+
 ## 6. Real-provider music exercise
 ## 7. Manual acceptance session (§21.5)
 ## 8. Observation triage
