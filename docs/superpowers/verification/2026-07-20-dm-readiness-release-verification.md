@@ -148,6 +148,36 @@ No OWASP/dependency-scanner plugin in the build; security gate = security test s
 - Blocking observations: none from policy recheck; live run not yet performed.
 
 ## 7. Manual acceptance session (§21.5)
+
+### Template
+- Path: [`docs/superpowers/verification/manual-acceptance-session-template.md`](manual-acceptance-session-template.md)
+- Scope: representative ~4-hour session from a converted synthetic adventure; DMHelper as the only campaign tool; log every forced context switch, missing datum, broken link, and manual duplication.
+
+### Setup notes (for the DM)
+- Import `feature-complete.dmcampaign` (or an equivalent converted synthetic adventure) via package import; dry-run must show zero ERROR.
+- Enter through the session cockpit (the normal runtime entry point).
+- During play: prep → run → record loop (activate scenes, ≥2 encounters, ≥1 rollable table, ≥1 trap/hazard, curtain/map/handout to player view); music cue switches; party HP/conditions/rest; ≥3 quick notes + one promote + palette find; mid/late export → restore → resume.
+
+### Session result
+- **Status:** **AWAITING_DM_SESSION**
+- Agent cannot run a real four-hour DM session (human-in-the-loop). DM must execute the template and return the filled observation log and Result block for transcription here.
+- Session length: _(pending DM session)_
+- Had to open another campaign tool? _(pending DM session)_
+- Blocking observations count: _(pending DM session)_
+- Convenience observations count: _(pending DM session)_
+- Observation log: none recorded yet (session not run).
+
 ## 8. Observation triage
+
+### Pending observations
+| Time | Type | Description | Blocking? | Disposition |
+|------|------|-------------|-----------|-------------|
+| _(none)_ | — | Zero observations recorded so far; session not yet run. | — | — |
+
+### Blocking vs convenience (§21.5 rule)
+- **Blocking** (forced context switch to another campaign tool, missing datum that stalled play, broken link, or lost/duplicated state): **0** recorded. Any blocking observation from the completed session withholds the release and must be filed as a release issue (`gh issue create` or listed here if `gh` is unavailable) before Task 8.
+- **Convenience** (non-blocking UX friction): **0** recorded. Listed separately when returned; triaged for later, not release-blocking.
+- No issues invented; no `gh` issues filed from this gate yet (nothing to file until the DM returns the filled log).
+
 ## 9. §23 readiness condition checklist
 ## 10. Release decision
