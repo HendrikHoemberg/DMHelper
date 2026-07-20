@@ -813,7 +813,18 @@
         "key": "map-ruins"
       },
       "lairActionTriggered": false,
-      "combatLog": []
+      "combatLog": [],
+      "combatCueRef": {
+        "scope": "PACKAGE",
+        "type": "AUDIO_CUE",
+        "key": "pa-cue-depths-combat"
+      },
+      "victoryCueRef": {
+        "scope": "PACKAGE",
+        "type": "AUDIO_CUE",
+        "key": "pa-cue-depths-tension"
+      },
+      "victoryCueDurationSeconds": 10
     },
     {
       "key": "encounter-tomb-guardians",
@@ -1147,7 +1158,12 @@
                   "displayText": "Random encounters",
                   "sortOrder": 1
                 }
-              ]
+              ],
+              "sceneCueRef": {
+                "scope": "PACKAGE",
+                "type": "AUDIO_CUE",
+                "key": "pa-cue-depths-tension"
+              }
             },
             {
               "key": "sc-ruins-entrance",
@@ -1471,7 +1487,12 @@
           },
           "sortOrder": 1
         }
-      ]
+      ],
+      "locationCueRef": {
+        "scope": "PACKAGE",
+        "type": "AUDIO_CUE",
+        "key": "pa-cue-village-calm"
+      }
     }
   ],
   "rollableTables": [
@@ -1703,6 +1724,47 @@
       "sourceLocator": "p.42",
       "status": "OPEN",
       "createdAt": "2025-07-01T10:00:00Z"
+    }
+  ],
+  "audioCues": [
+    {
+      "key": "pa-cue-village-calm",
+      "name": "Village Calm",
+      "providerId": "FAKE",
+      "referenceKind": "PLAYLIST",
+      "providerReference": "fake-playlist-village-calm",
+      "cachedTitle": "Village Calm",
+      "artistOrOwner": "DMHelper Fixture Library",
+      "durationSeconds": 3000,
+      "category": "AMBIENT",
+      "transitionPreference": "CROSSFADE",
+      "notes": "Location cue for the starting village. Synthetic fixture reference."
+    },
+    {
+      "key": "pa-cue-depths-tension",
+      "name": "The Depths",
+      "providerId": "FAKE",
+      "referenceKind": "PLAYLIST",
+      "providerReference": "fake-playlist-depths-tension",
+      "cachedTitle": "The Depths",
+      "artistOrOwner": "DMHelper Fixture Library",
+      "durationSeconds": 2400,
+      "category": "TENSION",
+      "transitionPreference": "CROSSFADE",
+      "notes": "Scene cue for the dungeon depths. Synthetic fixture reference."
+    },
+    {
+      "key": "pa-cue-depths-combat",
+      "name": "Depths Combat",
+      "providerId": "FAKE",
+      "referenceKind": "PLAYLIST",
+      "providerReference": "fake-playlist-depths-combat",
+      "cachedTitle": "Depths Combat",
+      "artistOrOwner": "DMHelper Fixture Library",
+      "durationSeconds": 1500,
+      "category": "COMBAT",
+      "transitionPreference": "CUT",
+      "notes": "Combat cue for the boss encounter. Synthetic fixture reference."
     }
   ]
 }
