@@ -1073,7 +1073,8 @@ public record CampaignManifestV2(
             String category,
             Integer volumeHint,
             String transitionPreference,
-            String notes
+            String notes,
+            Instant createdAt
     ) {
         public AudioCueDto {
             if (providerId == null) providerId = "";

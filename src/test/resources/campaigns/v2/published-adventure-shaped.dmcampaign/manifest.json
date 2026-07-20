@@ -1738,7 +1738,8 @@
       "durationSeconds": 3000,
       "category": "AMBIENT",
       "transitionPreference": "CROSSFADE",
-      "notes": "Location cue for the starting village. Synthetic fixture reference."
+      "notes": "Location cue for the starting village. Synthetic fixture reference.",
+      "createdAt": "2025-07-16T18:00:00Z"
     },
     {
       "key": "pa-cue-depths-tension",
@@ -1751,7 +1752,8 @@
       "durationSeconds": 2400,
       "category": "TENSION",
       "transitionPreference": "CROSSFADE",
-      "notes": "Scene cue for the dungeon depths. Synthetic fixture reference."
+      "notes": "Scene cue for the dungeon depths. Synthetic fixture reference.",
+      "createdAt": "2025-07-16T18:05:00Z"
     },
     {
       "key": "pa-cue-depths-combat",
@@ -1764,7 +1766,8 @@
       "durationSeconds": 1500,
       "category": "COMBAT",
       "transitionPreference": "CUT",
-      "notes": "Combat cue for the boss encounter. Synthetic fixture reference."
+      "notes": "Combat cue for the boss encounter. Synthetic fixture reference.",
+      "createdAt": "2025-07-16T18:10:00Z"
     }
   ]
 }

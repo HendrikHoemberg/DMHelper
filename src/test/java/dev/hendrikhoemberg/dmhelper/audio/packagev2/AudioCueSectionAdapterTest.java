@@ -91,7 +91,7 @@ class AudioCueSectionAdapterTest {
                 List.of(),
                 List.of(new AudioCueDto("cue-key", "Imported Cue", null, "VIDEO",
                         "https://example.com/track", "My Track", "Artist",
-                        null, 120, "AMBIENT", 75, "CROSSFADE", "Some notes")));
+                        null, 120, "AMBIENT", 75, "CROSSFADE", "Some notes", null)));
 
         adapter.importSection(manifest, context);
 
@@ -115,7 +115,7 @@ class AudioCueSectionAdapterTest {
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(),
                 List.of(new AudioCueDto("cue-key", "Cue", "unknown-provider", "VIDEO",
-                        "ref123", null, null, null, null, "CUSTOM", null, "CROSSFADE", null)));
+                        "ref123", null, null, null, null, "CUSTOM", null, "CROSSFADE", null, null)));
 
         adapter.importSection(manifest, context);
 

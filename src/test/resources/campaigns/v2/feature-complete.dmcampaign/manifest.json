@@ -65,7 +65,11 @@
       "type": "SCENE",
       "key": "scene-crypt-entry"
     },
-    "defaultCueRef": { "scope": "PACKAGE", "type": "AUDIO_CUE", "key": "cue-hall-ambience" }
+    "defaultCueRef": {
+      "scope": "PACKAGE",
+      "type": "AUDIO_CUE",
+      "key": "cue-hall-ambience"
+    }
   },
   "assets": [
     {
@@ -805,8 +809,16 @@
           "notes": "Arrives at round 3 from the south corridor"
         }
       ],
-      "combatCueRef": { "scope": "PACKAGE", "type": "AUDIO_CUE", "key": "cue-crypt-combat" },
-      "victoryCueRef": { "scope": "PACKAGE", "type": "AUDIO_CUE", "key": "cue-crypt-victory" },
+      "combatCueRef": {
+        "scope": "PACKAGE",
+        "type": "AUDIO_CUE",
+        "key": "cue-crypt-combat"
+      },
+      "victoryCueRef": {
+        "scope": "PACKAGE",
+        "type": "AUDIO_CUE",
+        "key": "cue-crypt-victory"
+      },
       "victoryCueDurationSeconds": 15,
       "status": "ACTIVE",
       "round": 3,
@@ -1094,7 +1106,11 @@
                   "key": "handout-players-map"
                 }
               ],
-              "sceneCueRef": { "scope": "PACKAGE", "type": "AUDIO_CUE", "key": "cue-crypt-exploration" },
+              "sceneCueRef": {
+                "scope": "PACKAGE",
+                "type": "AUDIO_CUE",
+                "key": "cue-crypt-exploration"
+              },
               "sections": [
                 {
                   "kind": "TRAP",
@@ -1533,7 +1549,8 @@
       "category": "AMBIENT",
       "volumeHint": 45,
       "transitionPreference": "CROSSFADE",
-      "notes": "Default campaign ambience. Synthetic fixture reference \u2014 not a real track."
+      "notes": "Default campaign ambience. Synthetic fixture reference \u2014 not a real track.",
+      "createdAt": "2025-07-16T18:00:00Z"
     },
     {
       "key": "cue-crypt-exploration",
@@ -1547,7 +1564,8 @@
       "category": "EXPLORATION",
       "volumeHint": 50,
       "transitionPreference": "CROSSFADE",
-      "notes": "Scene cue. Synthetic fixture reference."
+      "notes": "Scene cue. Synthetic fixture reference.",
+      "createdAt": "2025-07-16T18:05:00Z"
     },
     {
       "key": "cue-crypt-combat",
@@ -1561,7 +1579,8 @@
       "category": "COMBAT",
       "volumeHint": 65,
       "transitionPreference": "CUT",
-      "notes": "Encounter combat cue. Synthetic fixture reference."
+      "notes": "Encounter combat cue. Synthetic fixture reference.",
+      "createdAt": "2025-07-16T18:10:00Z"
     },
     {
       "key": "cue-crypt-victory",
@@ -1574,7 +1593,8 @@
       "durationSeconds": 20,
       "category": "TRIUMPH",
       "transitionPreference": "CUT",
-      "notes": "Post-combat victory cue. Synthetic fixture reference."
+      "notes": "Post-combat victory cue. Synthetic fixture reference.",
+      "createdAt": "2025-07-16T18:15:00Z"
     }
   ],
   "traps": [

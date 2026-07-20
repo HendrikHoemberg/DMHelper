@@ -1042,6 +1042,7 @@ assigned to campaigns, scenes, encounters, and world locations via typed content
 | `durationSeconds` | int \| null | Approximate duration in seconds |
 | `volumeHint` | int \| null | Suggested volume 0–100 |
 | `notes` | string \| null | DM-only notes |
+| `createdAt` | string (ISO-8601) \| null | Creation timestamp; server-assigned when absent, then preserved across round-trip |
 
 ### Cue-Reference Assignment
 

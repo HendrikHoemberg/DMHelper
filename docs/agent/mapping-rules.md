@@ -215,9 +215,16 @@ artists, providers, or provider URIs (non-invention rule).
 
 ### Unresolved music
 
-When the source names a mood but no track, emit a cue with `providerId: "UNKNOWN"` and a
-descriptive `name`/`category`. Leave `providerReference` absent (null) rather than fabricating
-a value.
+`referenceKind`, `providerReference`, `category`, and `transitionPreference` are **required** on
+every `audioCue`; `providerReference` must be a non-empty opaque string. So there are two cases:
+
+- **A track/playlist is named but its provider is not installed here** — emit a cue with the real
+  `providerReference` and set `providerId: "UNKNOWN"`. It imports with a WARNING and shows as
+  unavailable until the DM reconnects the provider.
+- **The source names only a mood, with no resolvable track** — do **not** emit a cue at all
+  (you would have to fabricate the required `providerReference`, which the non-invention rule
+  forbids). Emit a `SOURCE_ANNOTATION` recording the soundtrack suggestion so the DM can assign a
+  real cue later.
 
 ### Category mapping from source mood words
 
@@ -238,14 +245,25 @@ a value.
 - An encounter's battle music → `encounter.combatCueRef`
 - The campaign-wide default → `campaign.defaultCueRef`
 
+`audioCues` is a **manifest-root** array (a sibling of `campaign`, not nested inside it); only the
+`*CueRef` assignment fields live on `campaign`, `scene`, `encounter`, and `worldLocation`:
+
 ```json
-{ "campaign": {
-    "defaultCueRef": { "scope": "PACKAGE", "type": "AUDIO_CUE", "key": "campaign-theme" },
-    "audioCues": [
-      { "key": "campaign-theme", "name": "Main Theme",
-        "category": "AMBIENT", "transitionPreference": "CROSSFADE" }
-    ]
-  }
+{
+  "campaign": {
+    "defaultCueRef": { "scope": "PACKAGE", "type": "AUDIO_CUE", "key": "campaign-theme" }
+  },
+  "audioCues": [
+    {
+      "key": "campaign-theme",
+      "name": "Main Theme",
+      "providerId": "UNKNOWN",
+      "referenceKind": "PLAYLIST",
+      "providerReference": "provider-playlist-id",
+      "category": "AMBIENT",
+      "transitionPreference": "CROSSFADE"
+    }
+  ]
 }
 ```
 

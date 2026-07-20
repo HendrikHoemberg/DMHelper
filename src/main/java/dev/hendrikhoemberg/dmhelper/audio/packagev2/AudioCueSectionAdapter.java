@@ -52,7 +52,8 @@ public class AudioCueSectionAdapter implements CampaignSectionExporter, Campaign
                             cue.getCategory().name(),
                             cue.getVolumeHint(),
                             cue.getTransitionPreference().name(),
-                            cue.getNotes()
+                            cue.getNotes(),
+                            cue.getCreatedAt()
                     );
                 })
                 .toList();
@@ -92,6 +93,7 @@ public class AudioCueSectionAdapter implements CampaignSectionExporter, Campaign
                 cue.setTransitionPreference(dev.hendrikhoemberg.dmhelper.audio.data.AudioTransitionPreference.CROSSFADE);
             }
             cue.setNotes(dto.notes());
+            cue.setCreatedAt(dto.createdAt());
 
             audioCueRepository.save(cue);
             context.register(CampaignContentType.AUDIO_CUE, dto.key(), cue, cue.getId());

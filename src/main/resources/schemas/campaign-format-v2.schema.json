@@ -1414,7 +1414,8 @@
         "category": { "type": "string", "enum": ["AMBIENT", "EXPLORATION", "TENSION", "COMBAT", "TRIUMPH", "SORROW", "CUSTOM"] },
         "volumeHint": { "type": "integer", "minimum": 0, "maximum": 100 },
         "transitionPreference": { "type": "string", "enum": ["CROSSFADE", "CUT"] },
-        "notes": { "type": "string" }
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       }
     }
   }
