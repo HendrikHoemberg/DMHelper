@@ -106,8 +106,8 @@ class SessionWorkspaceServiceTest {
 
         SessionWorkspaceService.SessionWorkspace result = service.load(campaignId, null);
 
-        assertThat(result.selectionSource()).isEqualTo(SessionWorkspaceService.SelectionSource.STORED_SESSION);
-        assertThat(result.workspaceMap()).isNull();
+        assertThat(result.selectionSource()).isEqualTo(SessionWorkspaceService.SelectionSource.ACTIVE_ENCOUNTER);
+        assertThat(result.workspaceMap()).isEqualTo(encounterMap);
     }
 
     @Test

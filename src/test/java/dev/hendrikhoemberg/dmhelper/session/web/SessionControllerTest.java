@@ -34,6 +34,9 @@ class SessionControllerTest {
     @MockitoBean
     private CampaignRepository campaignRepository;
 
+    @MockitoBean(name = "calendarService")
+    private CalendarService calendarService;
+
     private final UUID campaignId = UUID.randomUUID();
 
     @Test
