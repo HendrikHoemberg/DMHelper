@@ -10,6 +10,7 @@ import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -138,7 +139,10 @@ public class AdventureService {
 
     @Transactional(readOnly = true)
     public List<Chapter> findChaptersByAdventure(UUID adventureId) {
-        return chapterRepository.findByAdventureIdOrderBySortOrderAsc(adventureId);
+        List<Chapter> chapters = chapterRepository.findByAdventureIdOrderBySortOrderAsc(adventureId);
+        // open-in-view=false: the chapter list template iterates ch.scenes after the TX ends.
+        chapters.forEach(ch -> Hibernate.initialize(ch.getScenes()));
+        return chapters;
     }
 
     public Chapter updateChapter(UUID id, String title, String intro) {
