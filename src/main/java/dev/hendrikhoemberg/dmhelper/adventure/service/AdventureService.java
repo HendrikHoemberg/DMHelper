@@ -146,8 +146,16 @@ public class AdventureService {
     @Transactional(readOnly = true)
     public List<Chapter> findChaptersByAdventure(UUID adventureId) {
         List<Chapter> chapters = chapterRepository.findByAdventureIdOrderBySortOrderAsc(adventureId);
-        // open-in-view=false: the chapter list template iterates ch.scenes after the TX ends.
-        chapters.forEach(ch -> Hibernate.initialize(ch.getScenes()));
+        // open-in-view=false: the chapter list template iterates scene collections after the TX ends.
+        chapters.forEach(ch -> {
+            Hibernate.initialize(ch.getScenes());
+            ch.getScenes().forEach(s -> {
+                Hibernate.initialize(s.getSections());
+                Hibernate.initialize(s.getChecks());
+                Hibernate.initialize(s.getParticipants());
+                Hibernate.initialize(s.getTransitions());
+            });
+        });
         return chapters;
     }
 
