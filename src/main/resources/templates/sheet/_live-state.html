@@ -6,10 +6,10 @@
               tempHp: parseInt(document.getElementById("ls-tempHp").value) || 0,
               inspiration: document.getElementById("ls-inspiration").checked,
               exhaustion: parseInt(document.getElementById("ls-exhaustion").value) || 0,
-              deathSaveSuccesses: parseInt(document.getElementById("ls-dss").value) || 0,
-              deathSaveFailures: parseInt(document.getElementById("ls-dsf").value) || 0,
+               deathSaveSuccesses: document.querySelectorAll(".ls-dss:checked").length,
+               deathSaveFailures: document.querySelectorAll(".ls-dsf:checked").length,
               concentratingOn: document.getElementById("ls-conc").value || null,
-              conditionsJson: document.getElementById("ls-conditions").value || null,
+               conditionsJson: JSON.stringify(Array.from(document.querySelectorAll(".ls-condition:checked")).map(cb => cb.value)),
               currentHp: parseInt(document.getElementById("ls-currentHp").value) || 0
           }'
           hx-swap="none"
@@ -49,11 +49,18 @@
             </div>
             <div>
                 <dt>Death Saves</dt>
-                <dd>
-                    S <input id="ls-dss" type="number" min="0" max="3" class="small-input"
-                             th:value="${member.deathSaveSuccesses}">
-                    F <input id="ls-dsf" type="number" min="0" max="3" class="small-input"
-                             th:value="${member.deathSaveFailures}">
+                <dd class="death-saves">
+                    <span class="pip-group" title="Successes">
+                        <input type="checkbox" class="ls-dss" th:each="i : ${#numbers.sequence(1,3)}"
+                               th:checked="${member.deathSaveSuccesses >= i}"
+                               th:aria-label="'Death save success ' + ${i}">
+                    </span>
+                    /
+                    <span class="pip-group" title="Failures">
+                        <input type="checkbox" class="ls-dsf" th:each="i : ${#numbers.sequence(1,3)}"
+                               th:checked="${member.deathSaveFailures >= i}"
+                               th:aria-label="'Death save failure ' + ${i}">
+                    </span>
                 </dd>
             </div>
             <div>
@@ -63,11 +70,16 @@
                            th:value="${member.concentratingOn}" placeholder="—">
                 </dd>
             </div>
-            <div>
-                <dt>Conditions (JSON)</dt>
-                <dd>
-                    <input id="ls-conditions" type="text" class="small-input" style="min-width: 16rem"
-                           th:value="${member.conditionsJson}" placeholder="[]">
+            <div style="flex-basis: 100%">
+                <dt>Conditions</dt>
+                <dd class="condition-picker"
+                    th:with="activeConditions=${member.conditionsJson != null ? member.conditionsJson : '[]'}">
+                    <label class="condition-chip"
+                           th:each="cond : ${T(java.util.List).of('Blinded','Charmed','Deafened','Frightened','Grappled','Incapacitated','Invisible','Paralyzed','Petrified','Poisoned','Prone','Restrained','Stunned','Unconscious')}">
+                        <input type="checkbox" class="ls-condition" th:value="${cond}"
+                               th:checked="${#strings.contains(activeConditions, '&quot;' + cond + '&quot;')}">
+                        <span th:text="${cond}">Blinded</span>
+                    </label>
                 </dd>
             </div>
         </dl>

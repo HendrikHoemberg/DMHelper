@@ -26,4 +26,12 @@ class SheetTemplateContractTest {
         String derived = Files.readString(Path.of("src/main/resources/templates/sheet/_derived-stats.html"));
         assertThat(derived).contains("stat-grid stat-grid--tiles");
     }
+
+    @Test
+    void liveStateHasConditionChipsNotRawJson() throws IOException {
+        String live = Files.readString(Path.of("src/main/resources/templates/sheet/_live-state.html"));
+        assertThat(live).contains("condition-picker");
+        assertThat(live).contains("death-saves");
+        assertThat(live).doesNotContain("Conditions (JSON)");
+    }
 }
