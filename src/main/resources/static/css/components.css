@@ -2844,7 +2844,15 @@ dialog.modal:not([open]) {
 
 .status-legend {
   display: flex;
+  align-items: center;
   gap: var(--space-xs);
+}
+
+.status-legend__caption {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
 }
 
 .chapter-block {
@@ -2860,11 +2868,32 @@ dialog.modal:not([open]) {
   justify-content: space-between;
   gap: var(--space-sm);
   cursor: pointer;
+  /* display:flex suppresses the native ::marker, so the chevron below replaces it.
+     Without one, a collapsed chapter reads as a static card and nobody clicks it. */
+  list-style: none;
+}
+
+.chapter-summary::-webkit-details-marker { display: none; }
+
+.chapter-summary::before {
+  content: '\25B8';
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  line-height: 1;
+  transition: transform var(--duration-micro) var(--ease-out);
+  transform-origin: 45% 55%;
+}
+
+.chapter-block[open] > .chapter-summary::before {
+  transform: rotate(90deg);
 }
 
 .chapter-title {
   font-family: var(--font-display);
   font-size: var(--text-lg);
+  /* Absorbs the free space so the progress counter stays hard right once the
+     chevron makes this a three-item flex row. */
+  flex: 1;
 }
 
 .chapter-progress {

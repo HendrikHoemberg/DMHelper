@@ -13,7 +13,9 @@
       <input type="search" id="sceneFilter" class="form-input" data-scene-filter
              placeholder="Filter scenes by title or key&hellip;"
              oninput="window.dmHelperFilterScenes &amp;&amp; window.dmHelperFilterScenes(this.value)">
+      <!-- Sits next to the filter input, so it must not read as a row of filter buttons. -->
       <div class="status-legend" data-status-legend>
+        <span class="status-legend__caption">Status key</span>
         <span class="badge">Unvisited</span>
         <span class="badge badge-warning">Visited</span>
         <span class="badge badge-success">Done</span>

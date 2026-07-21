@@ -47,7 +47,7 @@
                         <h3 th:text="${item.name}">Name</h3>
                         <p class="text-muted">
                             <span th:text="${#enums.label(item.severity)}">Severity</span>
-                            <span th:if="${item.source != null}" th:text="' · ' + ${item.source}"> · CUSTOM</span>
+                            <span th:if="${item.source != null}" th:text="' · ' + ${#enums.label(item.source)}"> · Custom</span>
                         </p>
                         <a class="btn btn-sm btn-primary"
                            th:href="@{${detailBase} + '/' + ${item.id}}">View</a>

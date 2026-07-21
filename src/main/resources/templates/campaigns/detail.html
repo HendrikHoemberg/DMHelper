@@ -55,11 +55,16 @@
                     <span class="scale-tile__value" th:text="${scale.factions}">0</span>
                     <span class="scale-tile__label">Factions</span>
                 </a>
-                <a class="scale-tile" data-scale="threats" href="/library/traps">
+                <!-- The library routes are global by default; without campaignId they list
+                     only global content, so these tiles would report a count and then land
+                     the DM on "No items yet". -->
+                <a class="scale-tile" data-scale="threats"
+                   th:href="@{/library/traps(campaignId=${campaign.id})}">
                     <span class="scale-tile__value" th:text="${scale.traps + scale.hazards}">0</span>
                     <span class="scale-tile__label">Traps &amp; hazards</span>
                 </a>
-                <a class="scale-tile" data-scale="tables" href="/library/tables">
+                <a class="scale-tile" data-scale="tables"
+                   th:href="@{/library/tables(campaignId=${campaign.id})}">
                     <span class="scale-tile__value" th:text="${scale.tables}">0</span>
                     <span class="scale-tile__label">Rollable tables</span>
                 </a>

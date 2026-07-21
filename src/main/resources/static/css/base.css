@@ -137,6 +137,15 @@ fieldset {
   margin-bottom: var(--space-xs);
 }
 
+/* Detail pages (scene, NPC, location, faction, quest) put breadcrumb, h1 and actions
+   in as three flex siblings, so space-between stranded the title in mid-air between
+   the trail and the buttons. Giving the breadcrumb its own row leaves h1 and actions
+   as the only two items, which is the layout the index pages already get. */
+.page-header .breadcrumb {
+  flex-basis: 100%;
+  margin-bottom: var(--space-xs);
+}
+
 .page-header .page-header-eyebrow {
   font-family: var(--font-ui);
   font-size: var(--text-xs);

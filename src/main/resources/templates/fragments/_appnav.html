@@ -46,12 +46,14 @@
                th:href="@{/campaigns/{id}/calendar(id=${campaignId})}"><span class="appnav-text">Calendar</span></a>
             <a class="appnav-link" data-icon="&#x1F4DA;" data-label="Library"
                href="/library"><span class="appnav-text">Library</span></a>
+            <!-- Carry campaignId: these routes list global content only when it is absent,
+                 which hides everything the current campaign imported. -->
             <a class="appnav-link" data-icon="&#x1F3B2;" data-label="Tables"
-               href="/library/tables"><span class="appnav-text">Tables</span></a>
+               th:href="@{/library/tables(campaignId=${campaignId})}"><span class="appnav-text">Tables</span></a>
             <a class="appnav-link" data-icon="&#x1F4A5;" data-label="Traps"
-               href="/library/traps"><span class="appnav-text">Traps</span></a>
+               th:href="@{/library/traps(campaignId=${campaignId})}"><span class="appnav-text">Traps</span></a>
             <a class="appnav-link" data-icon="&#x26A0;" data-label="Hazards"
-               href="/library/hazards"><span class="appnav-text">Hazards</span></a>
+               th:href="@{/library/hazards(campaignId=${campaignId})}"><span class="appnav-text">Hazards</span></a>
         </div>
 
         <div class="appnav-footer">
