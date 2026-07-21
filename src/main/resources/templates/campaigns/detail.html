@@ -20,47 +20,6 @@
             <div class="dash-actions u-mb-lg">
                 <a class="btn btn-primary" th:href="@{/campaigns/{id}/session(id=${campaign.id})}">Run Session</a>
                 <a class="btn" th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">Plan Adventures</a>
-                <div class="export-package-group">
-                    <form th:action="@{/campaigns/{id}/package(id=${campaign.id})}"
-                          method="GET">
-                        <input type="hidden" name="includeCombatLog" value="true" id="includeCombatLog">
-                        <input type="hidden" name="includeDiceHistory" value="true" id="includeDiceHistory">
-                        <label class="checkbox-label">
-                            <input type="checkbox" checked
-                                   onchange="document.getElementById('includeCombatLog').value=this.checked">
-                            Combat Log
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" checked
-                                   onchange="document.getElementById('includeDiceHistory').value=this.checked">
-                            Dice History
-                        </label>
-                        <button type="submit" class="btn">Export Campaign Package</button>
-                    </form>
-                </div>
-                <a th:href="@{/campaigns/{id}/export(id=${campaign.id})}"
-                   class="btn" download>Export Legacy v1 JSON</a>
-                <button class="btn"
-                        onclick="Alpine.$data(document.querySelector('[x-data=\'campaignImport\']')).openDialog()">
-                    Import Campaign Package
-                </button>
-                <form hx-post="/campaigns/import"
-                      hx-encoding="multipart/form-data"
-                      class="u-contents">
-                    <label class="btn">
-                        Import Legacy v1 JSON
-                        <input type="file" name="file" accept=".dmcampaign.json,application/json"
-                               onchange="this.form.requestSubmit()"
-                               class="hidden">
-                    </label>
-                </form>
-                <button class="btn btn-danger"
-                        th:hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
-                        hx-confirm="Delete this campaign?"
-                        hx-target="body"
-                        hx-swap="outerHTML">
-                    Delete Campaign
-                </button>
             </div>
 
             <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${partyMembers}, oob=null)}"></th:block>
@@ -124,6 +83,53 @@
                     </form>
                 </section>
             </div>
+
+            <details class="dash-data-tools u-mt-lg">
+                <summary>Data &amp; import/export</summary>
+                <div class="dash-data-tools__body">
+                    <div class="export-package-group">
+                        <form th:action="@{/campaigns/{id}/package(id=${campaign.id})}"
+                              method="GET">
+                            <input type="hidden" name="includeCombatLog" value="true" id="includeCombatLog">
+                            <input type="hidden" name="includeDiceHistory" value="true" id="includeDiceHistory">
+                            <label class="checkbox-label">
+                                <input type="checkbox" checked
+                                       onchange="document.getElementById('includeCombatLog').value=this.checked">
+                                Combat Log
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" checked
+                                       onchange="document.getElementById('includeDiceHistory').value=this.checked">
+                                Dice History
+                            </label>
+                            <button type="submit" class="btn">Export Campaign Package</button>
+                        </form>
+                    </div>
+                    <a th:href="@{/campaigns/{id}/export(id=${campaign.id})}"
+                       class="btn" download>Export Legacy v1 JSON</a>
+                    <button class="btn"
+                            onclick="Alpine.$data(document.querySelector('[x-data=\'campaignImport\']')).openDialog()">
+                        Import Campaign Package
+                    </button>
+                    <form hx-post="/campaigns/import"
+                          hx-encoding="multipart/form-data"
+                          class="u-contents">
+                        <label class="btn">
+                            Import Legacy v1 JSON
+                            <input type="file" name="file" accept=".dmcampaign.json,application/json"
+                                   onchange="this.form.requestSubmit()"
+                                   class="hidden">
+                        </label>
+                    </form>
+                    <button class="btn btn-danger"
+                            th:hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
+                            hx-confirm="Delete this campaign?"
+                            hx-target="body"
+                            hx-swap="outerHTML">
+                        Delete Campaign
+                    </button>
+                </div>
+            </details>
         </main>
     </div>
     <th:block th:replace="~{campaigns/_import-dialog :: import-dialog}"></th:block>

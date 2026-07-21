@@ -2679,3 +2679,24 @@ dialog.modal:not([open]) {
 /* Death-save pips. */
 .death-saves { display: flex; align-items: center; gap: var(--space-sm); }
 .death-saves .pip-group { display: inline-flex; gap: 4px; }
+
+.dash-data-tools {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: var(--space-sm) var(--space-md);
+}
+.dash-data-tools summary {
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.dash-data-tools__body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+    padding-top: var(--space-md);
+}
+.dash-data-tools .btn-danger { margin-left: auto; }
