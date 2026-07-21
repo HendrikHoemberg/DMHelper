@@ -31,7 +31,7 @@
                 <h1 th:text="${condition.name}">Condition Name</h1>
                 <div class="detail-body" th:utext="${condition.description}"></div>
             </div>
-            <th:block th:if="${condition.source.name() == 'CUSTOM'}" th:replace="~{library/_provenance-fields :: provenance(entity=${condition})}"></th:block>
+            <th:block th:if="${condition.source.name() == 'CUSTOM'}"><th:block th:replace="~{library/_provenance-fields :: provenance(entity=${condition})}"></th:block></th:block>
             <th:block th:if="${campaignId != null}">
                 <div class="u-mt-lg">
                     <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='CONDITION', targetId=${condition.id})}"></th:block>

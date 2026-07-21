@@ -144,8 +144,6 @@ export class BattleMap {
     }
 
     setupEvents() {
-        const s = this.cellSizePx;
-
         this.stage.on('mousedown touchstart', (e) => {
             if (e.evt.button !== 0) return;
             const pos = this.stage.getRelativePointerPosition();
@@ -161,7 +159,7 @@ export class BattleMap {
         });
 
         this.stage.on('mousemove touchmove', () => {
-            const p = cellPos(this.stage, s);
+            const p = cellPos(this.stage, this.cellSizePx);
             if (p && this.cursorInfoEl) {
                 this.cursorInfoEl.textContent = `(${p.col}, ${p.row})`;
             }
@@ -1166,6 +1164,7 @@ export class BattleMap {
             this.mapId = mapId;
             this.gridWidth = mapData.gridWidth;
             this.gridHeight = mapData.gridHeight;
+            this.cellSizePx = mapData.cellSizePx;
             this.movementMode = mapData.movementMode;
             this.showGrid = mapData.showGrid;
             this.docVersion = documentData.version;

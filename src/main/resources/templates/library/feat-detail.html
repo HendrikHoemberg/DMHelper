@@ -37,7 +37,7 @@
                 </div>
                 <div class="detail-body" th:utext="${#markdown.toHtml(feat.benefit)}"></div>
             </div>
-            <th:block th:if="${feat.source.name() == 'CUSTOM'}" th:replace="~{library/_provenance-fields :: provenance(entity=${feat})}"></th:block>
+            <th:block th:if="${feat.source.name() == 'CUSTOM'}"><th:block th:replace="~{library/_provenance-fields :: provenance(entity=${feat})}"></th:block></th:block>
             <th:block th:if="${campaignId != null}">
                 <div class="u-mt-lg">
                     <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='FEAT', targetId=${feat.id})}"></th:block>

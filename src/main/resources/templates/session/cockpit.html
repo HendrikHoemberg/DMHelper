@@ -106,8 +106,9 @@
       </div>
       <div class="battle-body">
         <div th:if="${workspace.workspaceMap != null}" id="battleCanvasWrap"></div>
-        <th:block th:unless="${workspace.workspaceMap != null}"
-                  th:replace="~{session/_empty-table :: empty(workspace=${workspace})}"></th:block>
+        <th:block th:unless="${workspace.workspaceMap != null}">
+          <th:block th:replace="~{session/_empty-table :: empty(workspace=${workspace})}"></th:block>
+        </th:block>
         <aside class="battle-sidebar" th:if="${workspace.workspaceMap != null}" aria-label="Map tokens">
           <section class="sidebar-section">
             <h3>From Library</h3>
@@ -213,6 +214,11 @@ window.sessionCockpitConfig = {
     campaignId: /*[[${campaignId}]]*/ '',
     sessionId: /*[[${workspace.session.id}]]*/ null,
     mapId: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.id : null}]]*/ null,
+    gridWidth: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.gridWidth : null}]]*/ null,
+    gridHeight: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.gridHeight : null}]]*/ null,
+    cellSizePx: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.cellSizePx : null}]]*/ null,
+    movementMode: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.movementMode : null}]]*/ null,
+    showGrid: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.showGrid : true}]]*/ true,
     sessionStatus: /*[[${workspace.session.status}]]*/ 'IDLE',
     presentationMode: /*[[${workspace.session.presentationMode}]]*/ 'CURTAIN',
     presentedMapId: /*[[${workspace.session.presentedMap != null ? workspace.session.presentedMap.id : null}]]*/ null,

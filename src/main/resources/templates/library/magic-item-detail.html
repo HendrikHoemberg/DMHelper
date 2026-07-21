@@ -42,7 +42,7 @@
                 </div>
                 <div class="detail-body" th:utext="${#markdown.toHtml(magicItem.description)}"></div>
             </div>
-            <th:block th:if="${magicItem.source.name() == 'CUSTOM'}" th:replace="~{library/_provenance-fields :: provenance(entity=${magicItem})}"></th:block>
+            <th:block th:if="${magicItem.source.name() == 'CUSTOM'}"><th:block th:replace="~{library/_provenance-fields :: provenance(entity=${magicItem})}"></th:block></th:block>
             <th:block th:if="${campaignId != null}">
                 <div class="u-mt-lg">
                     <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='MAGIC_ITEM', targetId=${magicItem.id})}"></th:block>

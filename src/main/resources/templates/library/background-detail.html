@@ -31,7 +31,7 @@
                 <h1 th:text="${background.name}">Background Name</h1>
                 <div class="detail-body" th:utext="${#markdown.toHtml(background.description)}"></div>
             </div>
-            <th:block th:if="${background.source.name() == 'CUSTOM'}" th:replace="~{library/_provenance-fields :: provenance(entity=${background})}"></th:block>
+            <th:block th:if="${background.source.name() == 'CUSTOM'}"><th:block th:replace="~{library/_provenance-fields :: provenance(entity=${background})}"></th:block></th:block>
             <th:block th:if="${campaignId != null}">
                 <div class="u-mt-lg">
                     <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='BACKGROUND', targetId=${background.id})}"></th:block>

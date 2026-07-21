@@ -34,7 +34,7 @@
                 </div>
                 <div class="detail-body" th:utext="${#markdown.toHtml(rule.body)}"></div>
             </div>
-            <th:block th:if="${rule.source.name() == 'CUSTOM'}" th:replace="~{library/_provenance-fields :: provenance(entity=${rule})}"></th:block>
+            <th:block th:if="${rule.source.name() == 'CUSTOM'}"><th:block th:replace="~{library/_provenance-fields :: provenance(entity=${rule})}"></th:block></th:block>
             <th:block th:if="${campaignId != null}">
                 <div class="u-mt-lg">
                     <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='RULE', targetId=${rule.id})}"></th:block>
