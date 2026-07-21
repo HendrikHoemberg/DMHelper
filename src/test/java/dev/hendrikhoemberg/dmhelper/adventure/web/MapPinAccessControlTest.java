@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -31,6 +32,9 @@ class MapPinAccessControlTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private MapThreatPinService mapThreatPinService;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     @Test
     void returnsPinsSuccessfullyWhenPinDisabled() throws Exception {

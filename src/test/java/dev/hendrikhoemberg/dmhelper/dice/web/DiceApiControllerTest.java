@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(DiceApiController.class)
 class DiceApiControllerTest {
@@ -27,6 +28,9 @@ class DiceApiControllerTest {
     @Autowired private MockMvc mockMvc;
     @MockitoBean private DiceService diceService;
     @MockitoBean private RollHistoryService rollHistoryService;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private static final UUID CAMPAIGN_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 

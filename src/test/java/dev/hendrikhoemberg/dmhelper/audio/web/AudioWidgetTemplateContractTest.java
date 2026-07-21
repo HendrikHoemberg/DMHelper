@@ -7,8 +7,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class AudioWidgetTemplateContractTest {
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     @Test
     void widgetHasNowPlayingArea() throws IOException {

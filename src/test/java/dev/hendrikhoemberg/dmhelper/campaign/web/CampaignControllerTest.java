@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(CampaignController.class)
 class CampaignControllerTest {
@@ -45,6 +46,9 @@ class CampaignControllerTest {
 
     @MockitoBean
     private AudioCueRepository audioCueRepository;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private Campaign sampleCampaign() {
         Campaign c = new Campaign();

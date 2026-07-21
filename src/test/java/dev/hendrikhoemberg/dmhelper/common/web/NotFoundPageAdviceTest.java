@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(CampaignController.class)
 class NotFoundPageAdviceTest {
@@ -34,6 +35,9 @@ class NotFoundPageAdviceTest {
 
     @MockitoBean
     private AudioCueRepository audioCueRepository;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     @Test
     void browserNavigationGetsStyled404Page() throws Exception {

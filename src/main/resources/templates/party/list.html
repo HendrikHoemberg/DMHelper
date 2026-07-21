@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper -- Party | ' + ${campaign.name}">DMHelper -- Party</title>
+    <title th:text="|Party — ${campaign.name}|">DMHelper — Party</title>
 </head>
 <body>
     <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
@@ -11,8 +11,8 @@
         <main class="app-main">
             <div class="page-header">
                 <div>
-                    <div class="page-header-eyebrow">Party</div>
-                    <h1 th:text="${campaign.name + ' -- Party'}">Campaign -- Party</h1>
+                    <div class="page-header-eyebrow" th:text="${campaign.name}">Campaign</div>
+                    <h1>Party</h1>
                     <div class="rule-taper rule-taper--gold"></div>
                 </div>
                 <div class="page-header-actions">

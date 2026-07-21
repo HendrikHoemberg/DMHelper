@@ -13,12 +13,16 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(CommandPaletteApiController.class)
 class CommandPaletteApiControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private CommandPaletteService commandPaletteService;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     @Test
     void searchReturnsJsonResults() throws Exception {

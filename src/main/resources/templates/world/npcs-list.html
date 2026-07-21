@@ -10,8 +10,13 @@
         <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
         <main class="app-main">
             <div class="page-header">
-                <h1>NPCs</h1>
+                <div>
+                    <div class="page-header-eyebrow" th:text="${campaign.name}">Campaign</div>
+                    <h1>NPCs</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
                 <div class="page-header-actions">
+                    <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
                     <a class="btn btn-primary"
                        th:href="@{/campaigns/{cid}/world/npcs/new(cid=${campaignId})}">+ New NPC</a>
                 </div>

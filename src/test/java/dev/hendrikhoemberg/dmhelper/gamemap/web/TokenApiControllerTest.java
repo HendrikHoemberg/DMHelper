@@ -16,12 +16,16 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(TokenApiController.class)
 class TokenApiControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private TokenService service;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private TokenDto token(String name) {
         return new TokenDto(UUID.randomUUID(), name, "NPC", 0, 0, 1, 1,

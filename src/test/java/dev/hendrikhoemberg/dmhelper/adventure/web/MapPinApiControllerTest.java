@@ -24,6 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(MapPinApiController.class)
 class MapPinApiControllerTest {
@@ -31,6 +32,9 @@ class MapPinApiControllerTest {
     @Autowired private MockMvc mockMvc;
 
     @MockitoBean private MapThreatPinService mapThreatPinService;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     @Test
     void returnsCombinedSceneAndThreatPinsAsJson() throws Exception {

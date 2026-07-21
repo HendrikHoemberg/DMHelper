@@ -11,11 +11,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @WebMvcTest(SchemaController.class)
 class SchemaControllerTest {
 
     @Autowired private MockMvc mockMvc;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     @Test
     void servesCampaignSchemaWithCorrectContentTypeAndId() throws Exception {

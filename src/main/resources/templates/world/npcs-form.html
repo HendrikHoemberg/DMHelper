@@ -95,11 +95,11 @@
                     <input type="text" name="sourceLocator" class="form-input" th:value="${npc.sourceLocator}">
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary" th:text="${npc.id != null} ? 'Update' : 'Create'">Save</button>
                     <a class="btn btn-ghost"
                        th:href="@{${npc.id != null}
                            ? '/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${npc.id})'
                            : '/campaigns/{cid}/world/npcs(cid=${campaignId})'}">Cancel</a>
+                    <button type="submit" class="btn btn-primary" th:text="${npc.id != null} ? 'Update' : 'Create'">Save</button>
                 </div>
             </form>
         </main>

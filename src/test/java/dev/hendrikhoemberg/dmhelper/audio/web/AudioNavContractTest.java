@@ -6,8 +6,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class AudioNavContractTest {
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     @Test
     void appnavExposesCampaignMusicCuesLink() throws IOException {

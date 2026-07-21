@@ -19,12 +19,16 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(GameMapApiController.class)
 class GameMapApiControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private GameMapService service;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private GameMap map(String name, long version) {
         GameMap m = new GameMap();

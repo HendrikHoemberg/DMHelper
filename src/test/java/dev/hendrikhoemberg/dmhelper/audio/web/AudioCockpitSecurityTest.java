@@ -12,6 +12,8 @@ import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -21,6 +23,9 @@ class AudioCockpitSecurityTest {
 
     @Autowired
     private MockMvc mvc;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     @Test
     void getStateIsPinGated() throws Exception {

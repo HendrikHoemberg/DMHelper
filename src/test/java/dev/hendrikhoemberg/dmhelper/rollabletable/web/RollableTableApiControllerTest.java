@@ -46,6 +46,7 @@ import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(RollableTableApiController.class)
 class RollableTableApiControllerTest {
@@ -88,6 +89,9 @@ class RollableTableApiControllerTest {
 
     @MockitoBean
     private TableReferenceResolver referenceResolver;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private final UUID campaignId = UUID.randomUUID();
 

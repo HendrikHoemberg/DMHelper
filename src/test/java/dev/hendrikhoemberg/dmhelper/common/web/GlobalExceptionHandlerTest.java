@@ -16,8 +16,13 @@ import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class GlobalExceptionHandlerTest {
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private MockMvc mvc;
 

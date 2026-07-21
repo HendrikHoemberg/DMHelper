@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(SheetApiController.class)
 class PartyBatchOperationsTest {
@@ -37,6 +38,9 @@ class PartyBatchOperationsTest {
 
     @MockitoBean
     private TreasuryService treasuryService;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final UUID campaignId = UUID.randomUUID();

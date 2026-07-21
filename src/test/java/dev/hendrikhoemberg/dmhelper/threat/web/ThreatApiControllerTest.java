@@ -42,6 +42,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(ThreatApiController.class)
 class ThreatApiControllerTest {
@@ -72,6 +73,9 @@ class ThreatApiControllerTest {
 
     @MockitoBean
     private StatBlockRepository statBlockRepository;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private final UUID campaignId = UUID.randomUUID();
 

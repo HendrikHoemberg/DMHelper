@@ -9,8 +9,13 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class CorrelationIdFilterTest {
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private final CorrelationIdFilter filter = new CorrelationIdFilter();
 

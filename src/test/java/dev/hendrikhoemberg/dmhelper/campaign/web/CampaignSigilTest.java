@@ -4,8 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class CampaignSigilTest {
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
   @Test
   void sameIdAlwaysProducesSameSigil() {

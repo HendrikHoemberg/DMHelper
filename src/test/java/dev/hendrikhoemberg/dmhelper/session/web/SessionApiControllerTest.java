@@ -23,6 +23,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(SessionApiController.class)
 class SessionApiControllerTest {
@@ -44,6 +45,9 @@ class SessionApiControllerTest {
 
     @MockitoBean
     private QuestService questService;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private final UUID campaignId = UUID.randomUUID();
 

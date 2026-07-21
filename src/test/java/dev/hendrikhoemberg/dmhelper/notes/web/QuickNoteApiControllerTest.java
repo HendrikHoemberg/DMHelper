@@ -17,6 +17,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(QuickNoteApiController.class)
 class QuickNoteApiControllerTest {
@@ -25,6 +26,9 @@ class QuickNoteApiControllerTest {
 
     @MockitoBean
     private QuickNoteService quickNoteService;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     @Test
     void deleteScopesTheMutationToThePathCampaign() throws Exception {

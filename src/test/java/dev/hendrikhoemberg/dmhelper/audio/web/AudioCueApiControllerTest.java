@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(AudioCueApiController.class)
 class AudioCueApiControllerTest {
@@ -34,6 +35,9 @@ class AudioCueApiControllerTest {
 
     @MockitoBean
     private AudioCueService service;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private final UUID campaignId = UUID.randomUUID();
 

@@ -12,6 +12,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.config.MarkdownUtil;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.world.data.WorldLocationRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -19,6 +20,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
@@ -55,6 +57,14 @@ class AudioCueControllerTest {
     private CampaignRepository campaignRepository;
 
     private final UUID campaignId = UUID.randomUUID();
+
+    @BeforeEach
+    void setUp() {
+        Campaign campaign = new Campaign();
+        campaign.setId(campaignId);
+        campaign.setName("Test Campaign");
+        when(campaignRepository.findById(campaignId)).thenReturn(Optional.of(campaign));
+    }
 
     private AudioCue cue(UUID id, String name) {
         AudioCue c = new AudioCue();

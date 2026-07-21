@@ -19,12 +19,16 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(EncounterApiController.class)
 class EncounterApiControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private EncounterService service;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private EncounterDto enc(UUID id, String name, String status) {
         return new EncounterDto(id, UUID.randomUUID(), UUID.randomUUID(), name, status,

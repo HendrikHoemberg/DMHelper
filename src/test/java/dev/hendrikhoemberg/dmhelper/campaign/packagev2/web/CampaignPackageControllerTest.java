@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.CampaignImportPreviewStore;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignPackageArtifact;
@@ -41,6 +42,7 @@ class CampaignPackageControllerTest {
     @MockitoBean CampaignImportPreviewStore previews;
     @MockitoBean CampaignImportCoordinator importer;
     @MockitoBean CampaignExportCoordinator exporter;
+    @MockitoBean CampaignRepository campaignRepository;
 
     @Test
     void assetBearingExportStreamsAValidZipResponse() throws Exception {

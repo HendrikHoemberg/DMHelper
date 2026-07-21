@@ -13,6 +13,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -20,7 +22,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AgentContractControllerTest {
 
     @Autowired
-    MockMvc mvc;
+    private MockMvc mvc;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     @Test
     void validationErrorsArePinFree() throws Exception {

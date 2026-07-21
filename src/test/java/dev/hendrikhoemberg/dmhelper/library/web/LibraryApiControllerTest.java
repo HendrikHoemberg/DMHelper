@@ -14,6 +14,7 @@ import java.util.List;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(LibraryApiController.class)
 class LibraryApiControllerTest {
@@ -29,6 +30,9 @@ class LibraryApiControllerTest {
     @MockitoBean private SpeciesService speciesService;
     @MockitoBean private BackgroundService backgroundService;
     @MockitoBean private FeatService featService;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private StatBlock srd(String key) {
         StatBlock sb = new StatBlock();

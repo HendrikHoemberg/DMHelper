@@ -23,12 +23,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(SessionController.class)
 class SessionControllerTest {
 
     @Autowired private MockMvc mvc;
     @MockitoBean private SessionWorkspaceService workspaces;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private final UUID campaignId = UUID.randomUUID();
 

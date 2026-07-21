@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(LibraryController.class)
 class LibraryControllerCustomContentTest {
@@ -38,6 +39,9 @@ class LibraryControllerCustomContentTest {
     @MockitoBean private BackgroundService backgroundService;
     @MockitoBean private FeatService featService;
     @MockitoBean private CustomContentSupport customContentSupport;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private Spell sampleSpell() {
         Spell spell = new Spell();

@@ -10,8 +10,13 @@ import java.util.UUID;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class CampaignTableControllerTest {
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     @Test
     void refreshAndAoeUpdatesRetainCampaignScope() {

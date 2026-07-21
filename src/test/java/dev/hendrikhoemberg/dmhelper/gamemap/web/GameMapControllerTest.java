@@ -1,7 +1,10 @@
 package dev.hendrikhoemberg.dmhelper.gamemap.web;
 
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -9,6 +12,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -21,6 +25,17 @@ class GameMapControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private GameMapService service;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
+
+    @BeforeEach
+    void setUp() {
+        Campaign campaign = new Campaign();
+        campaign.setId(UUID.randomUUID());
+        campaign.setName("Test Campaign");
+        when(campaignRepository.findById(any())).thenReturn(Optional.of(campaign));
+    }
 
     private GameMap map(String name) {
         GameMap m = new GameMap();

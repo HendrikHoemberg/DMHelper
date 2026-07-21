@@ -12,8 +12,11 @@ import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateReq
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.EncounterDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.UpdateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.WaveDto;
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -21,6 +24,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
@@ -47,7 +51,18 @@ class EncounterControllerTest {
     @MockitoBean
     private EncounterRepository encounterRepository;
 
+    @MockitoBean
+    private CampaignRepository campaignRepository;
+
     private final UUID campaignId = UUID.randomUUID();
+
+    @BeforeEach
+    void setUp() {
+        Campaign campaign = new Campaign();
+        campaign.setId(campaignId);
+        campaign.setName("Test Campaign");
+        when(campaignRepository.findById(campaignId)).thenReturn(Optional.of(campaign));
+    }
 
     private EncounterDto enc(UUID id, String name, String status) {
         return new EncounterDto(id, campaignId, null, name, status,

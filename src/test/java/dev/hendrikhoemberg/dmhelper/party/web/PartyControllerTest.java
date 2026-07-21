@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(PartyController.class)
 class PartyControllerTest {
@@ -36,6 +37,9 @@ class PartyControllerTest {
 
     @MockitoBean
     private CharacterClassRepository classRepository;
+
+    @MockitoBean
+    private CampaignRepository campaignRepository;
 
     private UUID campaignId = UUID.randomUUID();
 
