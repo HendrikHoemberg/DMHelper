@@ -16,7 +16,7 @@
                        th:href="@{/campaigns/{cid}/world/locations/new(cid=${campaignId})}">+ New Location</a>
                 </div>
             </div>
-            <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
+            <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
             <div th:if="${locations.empty}" class="empty-state">No locations yet.</div>
             <div th:unless="${locations.empty}" class="card-grid">
                 <div th:each="loc : ${locations}" class="card">

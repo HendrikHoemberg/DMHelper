@@ -29,7 +29,7 @@
                             hx-target="body" hx-swap="outerHTML">Delete</button>
                 </div>
             </div>
-            <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
+            <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
             <div id="factionForm"></div>
 
             <div class="detail-section">

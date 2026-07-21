@@ -1,5 +1,5 @@
 <div th:fragment="linkList" xmlns:th="http://www.thymeleaf.org">
-  <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
+  <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
   <div th:if="${quest.links.empty}" class="empty-state">No links yet.</div>
   <div th:unless="${quest.links.empty}">
     <div th:each="link : ${quest.links}" class="card card--compact u-mb-xs">

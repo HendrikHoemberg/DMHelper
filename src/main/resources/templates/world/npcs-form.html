@@ -12,7 +12,7 @@
             <div class="page-header">
                 <h1 th:text="${npc.id != null} ? 'Edit NPC' : 'New NPC'">NPC Form</h1>
             </div>
-            <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
+            <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
             <form class="inline-form"
                   th:action="@{${npc.id != null}
                       ? '/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${npc.id})'

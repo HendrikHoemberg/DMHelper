@@ -12,7 +12,7 @@
             <div class="page-header">
                 <h1 th:text="${faction.id != null} ? 'Edit Faction' : 'New Faction'">Faction Form</h1>
             </div>
-            <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
+            <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
             <form class="inline-form"
                   th:action="@{${faction.id != null}
                       ? '/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${faction.id})'

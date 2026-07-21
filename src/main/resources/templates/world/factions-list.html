@@ -16,7 +16,7 @@
                        th:href="@{/campaigns/{cid}/world/factions/new(cid=${campaignId})}">+ New Faction</a>
                 </div>
             </div>
-            <div th:if="${error != null}" th:replace="~{common/_error :: error(message=${error})}"></div>
+            <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
             <div th:if="${factions.empty}" class="empty-state">No factions yet.</div>
             <div th:unless="${factions.empty}" class="card-grid">
                 <div th:each="faction : ${factions}" class="card">
