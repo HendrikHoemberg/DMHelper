@@ -208,6 +208,7 @@ body.dm-mode-off .navbar {
 }
 body.dm-mode-off .dm-shield-badge { display: inline-block; }
 
+.u-nowrap { white-space: nowrap; }
 .hidden { display: none !important; }
 [x-cloak] { display: none !important; }
 

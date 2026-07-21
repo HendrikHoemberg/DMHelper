@@ -83,6 +83,15 @@ public class CalendarService {
         campaignRepository.save(campaign);
     }
 
+    /** "15 April 1492" using the campaign's month names; falls back to "Month N". */
+    public String formatDate(UUID campaignId, InGameDate date) {
+        CalendarConfig config = getCalendarConfig(campaignId);
+        String month = config.monthNames() != null && config.monthNames().length > date.month()
+                ? config.monthNames()[date.month()]
+                : "Month " + (date.month() + 1);
+        return date.day() + " " + month + " " + date.year();
+    }
+
     // --- Current Date ---
 
     public InGameDate getCurrentDate(UUID campaignId) {

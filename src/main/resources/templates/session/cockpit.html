@@ -37,7 +37,7 @@
   <header class="cockpit-topbar">
     <h1 style="font-family: var(--font-display); font-size: var(--text-lg); margin: 0;" th:text="${workspace.campaign.name}">Campaign</h1>
     <span class="badge" x-text="sessionStatus" th:attr="data-session-status=${workspace.session.status}">IDLE</span>
-    <span th:text="${workspace.currentDate.year + '-' + (workspace.currentDate.month + 1) + '-' + workspace.currentDate.day}">1492-7-12</span>
+    <span class="u-nowrap" th:text="${@calendarService.formatDate(campaignId, workspace.currentDate)}">12 July 1492</span>
     <span style="flex: 1"></span>
     <button class="btn btn-ghost" @click="openSearch()">Search</button>
     <button class="btn btn-ghost" @click="openDice()">Dice</button>
