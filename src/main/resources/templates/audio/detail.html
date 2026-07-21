@@ -34,9 +34,9 @@
                     <div><strong>Key:</strong> <span th:text="${cue.cueKey}">cue-key</span></div>
                     <div><strong>Provider:</strong> <span th:text="${cue.providerId}">youtube</span></div>
                     <div><strong>Reference:</strong> <span th:text="${cue.providerReference}">ref</span></div>
-                    <div><strong>Category:</strong> <span th:text="${cue.category}">AMBIENT</span></div>
+                    <div><strong>Category:</strong> <span th:text="${#enums.label(cue.category)}">Ambient</span></div>
                     <div th:if="${cue.volumeHint != null}"><strong>Volume:</strong> <span th:text="${cue.volumeHint}">80</span></div>
-                    <div><strong>Transition:</strong> <span th:text="${cue.transitionPreference}">CROSSFADE</span></div>
+                    <div><strong>Transition:</strong> <span th:text="${#enums.label(cue.transitionPreference)}">Crossfade</span></div>
                     <div th:if="${cue.durationSeconds != null}"><strong>Duration:</strong> <span th:text="${cue.durationSeconds}">212</span>s</div>
                     <div th:if="${cue.cachedTitle != null}"><strong>Title:</strong> <span th:text="${cue.cachedTitle}">Cached Title</span></div>
                     <div th:if="${cue.artistOrOwner != null}"><strong>Artist:</strong> <span th:text="${cue.artistOrOwner}">Artist</span></div>

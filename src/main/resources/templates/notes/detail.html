@@ -23,7 +23,7 @@
 
             <div class="detail-section">
                 <div class="detail-meta">
-                    <span class="badge" th:text="${note.type}">TYPE</span>
+                    <span class="badge" th:text="${#enums.label(note.type)}">Type</span>
                     <span style="margin-left: var(--space-md);"
                           th:text="'Created ' + ${#temporals.format(note.createdAt, 'yyyy-MM-dd HH:mm')}">Date</span>
                     <th:block th:if="${note.tags != null and !note.tags.isBlank()}">
@@ -54,7 +54,7 @@
                     <li th:each="bl : ${backlinks}" style="padding: var(--space-xs) 0;">
                         <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaignId}, nid=${bl.id})}"
                            th:text="${bl.title}">Backlink</a>
-                        <span class="badge" th:text="${bl.type}" style="margin-left: var(--space-sm); font-size: 0.7rem;">TYPE</span>
+                        <span class="badge" th:text="${#enums.label(bl.type)}" style="margin-left: var(--space-sm); font-size: 0.7rem;">Type</span>
                     </li>
                 </ul>
             </div>

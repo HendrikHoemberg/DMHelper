@@ -47,7 +47,7 @@
                 <th:block th:each="t : ${tables}">
                     <div class="card">
                         <h3 th:text="${t.name}">Table Name</h3>
-                        <p class="text-muted" th:text="${t.category}">CATEGORY</p>
+                        <p class="text-muted" th:text="${#enums.label(t.category)}">Category</p>
                         <a class="btn btn-sm btn-primary"
                            th:href="@{/library/tables/{id}(id=${t.id})}">View</a>
                     </div>

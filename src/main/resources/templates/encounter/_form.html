@@ -25,7 +25,7 @@
         <th:block th:if="${encounter != null}">
             <div class="form-group">
                 <label>Status</label>
-                <span th:text="${encounter.status}">PLANNED</span>
+                <span th:text="${#enums.label(encounter.status)}">Planned</span>
             </div>
         </th:block>
         <th:block th:if="${encounterEntity != null}">

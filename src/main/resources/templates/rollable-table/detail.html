@@ -33,8 +33,8 @@
             </div>
             <div class="detail-section" th:attr="data-table-id=${table.id}">
                 <div class="detail-meta">
-                    <span class="badge" th:text="${table.category}">CATEGORY</span>
-                    <span class="badge" th:text="${table.addressMode}">MODE</span>
+                    <span class="badge" th:text="${#enums.label(table.category)}">Category</span>
+                    <span class="badge" th:text="${#enums.label(table.addressMode)}">Mode</span>
                     <span class="badge" th:text="${table.rollExpression}">EXPR</span>
                 </div>
                 <div class="detail-description" th:utext="${markdownDescription}"></div>
