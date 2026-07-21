@@ -2579,3 +2579,102 @@ dialog.modal:not([open]) {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
+
+/* ---- Sheet redesign primitives (2026-07-21 UI polish) ---- */
+
+/* Inline label-over-value stat row; replaces bare <dl> stacking on sheet pages. */
+.stat-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm) var(--space-lg);
+    margin: 0;
+}
+.stat-grid > div { min-width: 72px; }
+.stat-grid dt {
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+.stat-grid dd {
+    margin: 0;
+    font-weight: 600;
+    font-size: var(--text-lg);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Hero variant: boxed tiles for AC / HP / Init / Speed. */
+.stat-grid--tiles > div {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: var(--space-sm) var(--space-md);
+    text-align: center;
+}
+
+/* The ability form must not count as one grid child. */
+.sheet-ability-grid { max-width: none; }
+.sheet-ability-grid > form { display: contents; }
+.sheet-ability-grid {
+    grid-template-columns: repeat(auto-fit, minmax(88px, 110px));
+}
+.sheet-ability-grid .btn { grid-column: 1 / -1; justify-self: start; }
+
+/* Two-column sheet: sticky section nav + content. */
+.sheet-layout {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: var(--space-lg);
+    align-items: start;
+}
+.sheet-toc {
+    position: sticky;
+    top: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+}
+.sheet-toc a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+    padding: 2px var(--space-sm);
+    border-left: 2px solid transparent;
+}
+.sheet-toc a:hover {
+    color: var(--color-accent);
+    border-left-color: var(--color-gold-soft);
+}
+@media (max-width: 900px) {
+    .sheet-layout { grid-template-columns: 1fr; }
+    .sheet-toc { position: static; flex-direction: row; flex-wrap: wrap; }
+}
+
+/* Condition picker chips (replaces the raw JSON input). */
+.condition-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+}
+.condition-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: var(--text-sm);
+    cursor: pointer;
+    user-select: none;
+}
+.condition-chip:has(input:checked) {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background: var(--color-gold-soft);
+}
+.condition-chip input { position: absolute; opacity: 0; pointer-events: none; }
+
+/* Death-save pips. */
+.death-saves { display: flex; align-items: center; gap: var(--space-sm); }
+.death-saves .pip-group { display: inline-flex; gap: 4px; }
