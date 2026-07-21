@@ -39,7 +39,7 @@ public class AdventureController {
 
     @GetMapping
     public String list(@PathVariable UUID campaignId, Model model) {
-        model.addAttribute("adventures", adventureService.findAdventuresByCampaign(campaignId));
+        model.addAttribute("adventures", adventureService.adventureSummaries(campaignId));
         adventureService.getCurrentScene(campaignId).ifPresent(s -> model.addAttribute("currentScene", s));
         return "adventure/list";
     }
@@ -94,7 +94,7 @@ public class AdventureController {
     public String move(@PathVariable UUID campaignId, @PathVariable UUID id,
                        @RequestParam int direction, Model model) {
         adventureService.moveAdventure(id, direction);
-        model.addAttribute("adventures", adventureService.findAdventuresByCampaign(campaignId));
+        model.addAttribute("adventures", adventureService.adventureSummaries(campaignId));
         adventureService.getCurrentScene(campaignId).ifPresent(s -> model.addAttribute("currentScene", s));
         return "adventure/_adventure-list :: adventureList";
     }

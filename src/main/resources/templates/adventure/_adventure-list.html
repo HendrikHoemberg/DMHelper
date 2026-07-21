@@ -9,32 +9,38 @@
     <div th:each="a : ${adventures}" class="card">
       <div class="card-header">
         <h3>
-          <a th:href="@{/campaigns/{cid}/adventures/{id}(cid=${campaignId},id=${a.id})}"
-             th:text="${a.name}">Adventure</a>
+          <a th:href="@{/campaigns/{cid}/adventures/{id}(cid=${campaignId},id=${a.adventure.id})}"
+             th:text="${a.adventure.name}">Adventure</a>
         </h3>
-        <div class="card-actions">
-          <button class="btn btn-ghost btn-sm"
-                  th:hx-put="@{/campaigns/{cid}/adventures/{id}/move(cid=${campaignId},id=${a.id})}"
-                  hx-vals='{"direction": -1}'
-                  hx-target="closest .detail-section"
-                  hx-swap="outerHTML">↑</button>
-          <button class="btn btn-ghost btn-sm"
-                  th:hx-put="@{/campaigns/{cid}/adventures/{id}/move(cid=${campaignId},id=${a.id})}"
-                  hx-vals='{"direction": 1}'
-                  hx-target="closest .detail-section"
-                  hx-swap="outerHTML">↓</button>
-          <button class="btn btn-ghost btn-sm"
-                  th:hx-get="@{/campaigns/{cid}/adventures/{id}/edit(cid=${campaignId},id=${a.id})}"
-                  hx-target="closest .card"
-                  hx-swap="outerHTML">Edit</button>
-          <button class="btn btn-danger btn-sm"
-                  th:hx-delete="@{/campaigns/{cid}/adventures/{id}(cid=${campaignId},id=${a.id})}"
-                  hx-confirm="Delete this adventure and all its chapters and scenes?"
-                  hx-target="body" hx-swap="outerHTML">Delete</button>
-        </div>
+        <span class="badge" th:if="${a.sceneCount > 0}"
+              th:text="|${a.doneCount}/${a.sceneCount} done|">0/0 done</span>
       </div>
-      <div class="card-meta" th:if="${a.sourceAttribution}" th:text="${a.sourceAttribution}">Source</div>
-      <div class="card-body" th:if="${a.description}" th:text="${a.description}">Description</div>
+      <div class="card-meta" data-adventure-counts
+           th:text="|${a.chapterCount} chapters · ${a.sceneCount} scenes|">0 chapters · 0 scenes</div>
+      <div class="card-meta" th:if="${a.adventure.sourceAttribution}"
+           th:text="${a.adventure.sourceAttribution}">Source</div>
+      <div class="card-body" th:if="${a.adventure.description}"
+           th:text="${a.adventure.description}">Description</div>
+      <div class="card-actions">
+        <button class="btn btn-ghost btn-sm"
+                th:hx-put="@{/campaigns/{cid}/adventures/{id}/move(cid=${campaignId},id=${a.adventure.id})}"
+                hx-vals='{"direction": -1}'
+                hx-target="closest .detail-section"
+                hx-swap="outerHTML">↑</button>
+        <button class="btn btn-ghost btn-sm"
+                th:hx-put="@{/campaigns/{cid}/adventures/{id}/move(cid=${campaignId},id=${a.adventure.id})}"
+                hx-vals='{"direction": 1}'
+                hx-target="closest .detail-section"
+                hx-swap="outerHTML">↓</button>
+        <button class="btn btn-ghost btn-sm"
+                th:hx-get="@{/campaigns/{cid}/adventures/{id}/edit(cid=${campaignId},id=${a.adventure.id})}"
+                hx-target="closest .card"
+                hx-swap="outerHTML">Edit</button>
+        <button class="btn btn-danger btn-sm"
+                th:hx-delete="@{/campaigns/{cid}/adventures/{id}(cid=${campaignId},id=${a.adventure.id})}"
+                hx-confirm="Delete this adventure and all its chapters and scenes?"
+                hx-target="body" hx-swap="outerHTML">Delete</button>
+      </div>
     </div>
   </div>
 </div>

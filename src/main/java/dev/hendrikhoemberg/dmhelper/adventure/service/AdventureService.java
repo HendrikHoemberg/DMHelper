@@ -479,4 +479,29 @@ public class AdventureService {
         }
         return groups;
     }
+
+    /** An adventure with its structural counts, for the adventures index. */
+    public record AdventureSummary(Adventure adventure, long chapterCount,
+                                   long sceneCount, long doneCount) {}
+
+    /**
+     * Adventures with chapter/scene counts and completion progress. The index previously
+     * rendered a single title row for an adventure containing 90 scenes.
+     */
+    @Transactional(readOnly = true)
+    public List<AdventureSummary> adventureSummaries(UUID campaignId) {
+        List<AdventureSummary> summaries = new ArrayList<>();
+        for (Adventure adventure : adventureRepository.findByCampaignIdOrderBySortOrderAscIdAsc(campaignId)) {
+            List<Chapter> chapters = chapterRepository.findByAdventureIdOrderBySortOrderAscIdAsc(adventure.getId());
+            long sceneCount = 0;
+            long doneCount = 0;
+            for (Chapter chapter : chapters) {
+                List<Scene> scenes = sceneRepository.findByChapterIdOrderBySortOrderAscIdAsc(chapter.getId());
+                sceneCount += scenes.size();
+                doneCount += scenes.stream().filter(s -> s.getStatus() == SceneStatus.DONE).count();
+            }
+            summaries.add(new AdventureSummary(adventure, chapters.size(), sceneCount, doneCount));
+        }
+        return summaries;
+    }
 }
