@@ -21,49 +21,60 @@
         </div>
 
         <div th:if="${hasSheet}">
-            <div class="detail-section">
-                <h2>Overview</h2>
-                <dl>
-                    <dt>Class &amp; Level</dt>
-                    <dd th:text="${sheet.derivedValues().classAndLevel()}">Fighter 5</dd>
-                    <dt>Total Level</dt>
-                    <dd th:text="${sheet.derivedValues().totalLevel()}">5</dd>
-                    <dt>Proficiency Bonus</dt>
-                    <dd th:text="'+' + ${sheet.derivedValues().proficiencyBonus()}">+3</dd>
-                    <dt>Species</dt>
-                    <dd th:text="${sheet.speciesName() != null ? sheet.speciesName() : '—'}">Human</dd>
-                    <dt>Background</dt>
-                    <dd th:text="${sheet.backgroundName() != null ? sheet.backgroundName() : '—'}">Soldier</dd>
-                    <dt th:if="${levelingMode == null or levelingMode == 'XP'}">XP</dt>
-                    <dd th:if="${levelingMode == null or levelingMode == 'XP'}" th:text="${sheet.xp()}">6500</dd>
-                    <dt th:if="${levelingMode == 'MILESTONE'}">Mode</dt>
-                    <dd th:if="${levelingMode == 'MILESTONE'}">Milestone</dd>
-                </dl>
-            </div>
+            <div class="sheet-layout">
+                <nav class="sheet-toc" aria-label="Sheet sections">
+                    <a href="#sheet-overview">Overview</a>
+                    <a href="#sheet-abilities">Abilities</a>
+                    <a href="#sheet-combat">Combat</a>
+                    <a href="#sheet-live">Live State</a>
+                    <a href="#sheet-saves">Saves</a>
+                    <a href="#sheet-skills">Skills</a>
+                    <a href="#sheet-passives">Passives</a>
+                    <a href="#sheet-attacks">Attacks</a>
+                    <a href="#sheet-features">Features</a>
+                    <a href="#sheet-spells">Spells</a>
+                    <a href="#sheet-resources">Resources</a>
+                    <a href="#sheet-overrides">Overrides</a>
+                    <a href="#sheet-proficiencies">Proficiencies</a>
+                    <a href="#sheet-inventory">Inventory</a>
+                </nav>
+                <div>
+                <div class="detail-section" id="sheet-overview">
+                    <h2>Overview</h2>
+                    <dl class="stat-grid">
+                        <div><dt>Class &amp; Level</dt><dd th:text="${sheet.derivedValues().classAndLevel()}">Fighter 5</dd></div>
+                        <div><dt>Total Level</dt><dd th:text="${sheet.derivedValues().totalLevel()}">5</dd></div>
+                        <div><dt>Prof. Bonus</dt><dd th:text="'+' + ${sheet.derivedValues().proficiencyBonus()}">+3</dd></div>
+                        <div><dt>Species</dt><dd th:text="${sheet.speciesName() != null ? sheet.speciesName() : '—'}">Human</dd></div>
+                        <div><dt>Background</dt><dd th:text="${sheet.backgroundName() != null ? sheet.backgroundName() : '—'}">Soldier</dd></div>
+                        <div th:if="${levelingMode == null or levelingMode == 'XP'}"><dt>XP</dt><dd th:text="${sheet.xp()}">6500</dd></div>
+                        <div th:if="${levelingMode == 'MILESTONE'}"><dt>Mode</dt><dd>Milestone</dd></div>
+                    </dl>
+                </div>
 
-            <div class="detail-section">
+            <div class="detail-section" id="sheet-abilities">
                 <h2>Ability Scores</h2>
                 <div th:replace="~{sheet/_ability-scores :: abilityScores(sheet=${sheet}, campaignId=${campaign.id}, memberId=${member.id})}"></div>
             </div>
 
-            <div class="detail-section">
+            <div class="detail-section" id="sheet-combat">
                 <h2>Combat</h2>
                 <div th:replace="~{sheet/_derived-stats :: derivedStats(sheet=${sheet})}"></div>
-                <div class="pm-stats" style="margin-top: var(--space-sm)">
+                <dl class="stat-grid" style="margin-top: var(--space-sm)">
                     <div><dt>Hit Dice</dt>
                         <dd th:text="${sheet.derivedValues().remainingHitDice()} + ' / ' + ${sheet.derivedValues().totalHitDice()}">5 / 5</dd>
                     </div>
-                </div>
+                </dl>
             </div>
 
-            <div class="detail-section">
+            <div class="detail-section" id="sheet-live">
                 <h2>Live State</h2>
                 <div th:replace="~{sheet/_live-state :: liveState(campaignId=${campaign.id}, member=${member})}"></div>
             </div>
 
-            <div class="detail-section">
+            <div class="detail-section" id="sheet-saves">
                 <h2>Saving Throws</h2>
-                <dl class="pm-stats">
+                <dl class="stat-grid">
                     <div><dt>STR</dt><dd><span th:text="'+' + ${sheet.derivedValues().saveStr()}">+7</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveStr()}'" type="button" title="STR save">d20</button></dd></div>
                     <div><dt>DEX</dt><dd><span th:text="'+' + ${sheet.derivedValues().saveDex()}">+2</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveDex()}'" type="button" title="DEX save">d20</button></dd></div>
                     <div><dt>CON</dt><dd><span th:text="'+' + ${sheet.derivedValues().saveCon()}">+6</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveCon()}'" type="button" title="CON save">d20</button></dd></div>
@@ -73,7 +84,7 @@
                 </dl>
             </div>
 
-            <div class="detail-section">
+            <div class="detail-section" id="sheet-skills">
                 <h2>Skills</h2>
                 <div class="sheet-skill-list">
                     <div class="sheet-skill" th:each="entry : ${sheet.derivedValues().skillBonuses()}">
@@ -84,44 +95,44 @@
                 </div>
             </div>
 
-            <div class="detail-section">
+            <div class="detail-section" id="sheet-passives">
                 <h2>Passive Scores</h2>
-                <dl class="pm-stats">
+                <dl class="stat-grid">
                     <div><dt>Perception</dt><dd th:text="${sheet.derivedValues().passivePerception()}">14</dd></div>
                     <div><dt>Insight</dt><dd th:text="${sheet.derivedValues().passiveInsight()}">11</dd></div>
                     <div><dt>Investigation</dt><dd th:text="${sheet.derivedValues().passiveInvestigation()}">9</dd></div>
                 </dl>
             </div>
 
-            <div class="detail-section" th:if="${!sheet.derivedValues().classSpellcastingAbilities().isEmpty()}">
+            <div class="detail-section" id="sheet-spellcasting" th:if="${!sheet.derivedValues().classSpellcastingAbilities().isEmpty()}">
                 <h2>Spellcasting</h2>
-                <dl>
-                    <dt>Spell Save DC</dt>
-                    <dd th:text="${sheet.derivedValues().spellSaveDC()}">13</dd>
-                    <dt>Spell Attack Bonus</dt>
-                    <dd><span th:text="'+' + ${sheet.derivedValues().spellAttackBonus()}">+5</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().spellAttackBonus()}'" type="button" title="Spell attack">d20</button></dd>
+                <dl class="stat-grid">
+                    <div><dt>Spell Save DC</dt>
+                    <dd th:text="${sheet.derivedValues().spellSaveDC()}">13</dd></div>
+                    <div><dt>Spell Attack Bonus</dt>
+                    <dd><span th:text="'+' + ${sheet.derivedValues().spellAttackBonus()}">+5</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().spellAttackBonus()}'" type="button" title="Spell attack">d20</button></dd></div>
                 </dl>
                 <div th:each="entry : ${sheet.derivedValues().classSpellcastingAbilities()}">
                     <span th:text="${entry.key + ': ' + entry.value}">wizard: int</span>
                 </div>
             </div>
 
-            <div class="detail-section">
+            <div class="detail-section" id="sheet-attacks">
                 <h2>Attacks</h2>
                 <div th:replace="~{sheet/_attacks :: attacks(sheet=${sheet}, campaignId=${campaign.id}, memberId=${member.id})}"></div>
             </div>
 
-            <div class="detail-section">
+            <div class="detail-section" id="sheet-features">
                 <h2>Features &amp; Actions</h2>
                 <div th:replace="~{sheet/_features :: features(sheet=${sheet}, campaignId=${campaign.id}, memberId=${member.id})}"></div>
             </div>
 
-            <div class="detail-section">
+            <div class="detail-section" id="sheet-spells">
                 <h2>Spells</h2>
                 <div th:replace="~{sheet/_spell-list :: spellList(sheet=${sheet}, campaignId=${campaignId}, memberId=${member.id})}"></div>
             </div>
 
-            <div class="detail-section">
+            <div class="detail-section" id="sheet-resources">
                 <h2>Resources</h2>
                 <div th:replace="~{sheet/_resources :: resources(sheet=${sheet})}"></div>
             </div>
@@ -145,7 +156,7 @@
                 </div>
             </div>
 
-            <div class="detail-section">
+            <div class="detail-section" id="sheet-overrides">
                 <h2>Overrides</h2>
                 <div id="overrides-editor">
                     <table class="override-table">
@@ -186,7 +197,7 @@
                 </div>
             </div>
 
-            <div class="detail-section">
+            <div class="detail-section" id="sheet-proficiencies">
                 <h2>Proficiencies</h2>
                 <div class="proficiency-editor">
                     <div class="prof-group">
@@ -253,7 +264,9 @@
 
             <dialog id="rest-preview-dialog" class="sheet-dialog"></dialog>
 
-            <div th:replace="~{sheet/_inventory :: inventory(assignments=${assignments}, totalWeight=${totalWeight}, campaignId=${campaign.id})}"></div>
+            <div id="sheet-inventory" th:replace="~{sheet/_inventory :: inventory(assignments=${assignments}, totalWeight=${totalWeight}, campaignId=${campaign.id})}"></div>
+                </div>
+            </div>
         </div>
 
         <th:block th:unless="${hasSheet}"><div th:replace="~{common/_empty-state :: empty-state('No character sheet yet.', 'Create Sheet', @{/campaigns/{cid}/party/{pid}/sheet/create(cid=${campaign.id}, pid=${member.id})}, null)}"></div></th:block>
@@ -261,8 +274,6 @@
 </div>
 
 <div th:replace="~{sheet/_level-up-dialog :: levelUpDialog(${campaign.id}, ${member.id})}"></div>
-    </main>
-</div>
 <script>
 function addOverrideRow() {
     const tbody = document.getElementById('overrides-rows');
