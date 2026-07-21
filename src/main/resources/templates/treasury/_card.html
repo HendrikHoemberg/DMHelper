@@ -21,14 +21,18 @@
         <form th:method="'put'"
               th:hx-put="@{/campaigns/{cid}/treasury/{id}/attune(cid=${assignment.campaignId()}, id=${assignment.id()})}"
               hx-target="closest .detail-section" hx-swap="outerHTML" class="u-inline">
-            <button class="btn btn-ghost btn-xs">Attune</button>
+            <button class="btn btn-ghost btn-xs"
+                    th:text="${assignment.attuned()} ? 'Unattune' : 'Attune'">Attune</button>
         </form>
         <form th:method="'put'"
               th:hx-put="@{/campaigns/{cid}/treasury/{id}/quantity(cid=${assignment.campaignId()}, id=${assignment.id()})}"
               hx-target="closest .card" hx-swap="outerHTML" class="u-flex u-gap-xs">
-            <input type="number" name="quantity" th:value="${assignment.quantity()}" min="1"
-                   class="qty-input" />
-            <button class="btn btn-ghost btn-xs">Qty</button>
+            <label class="u-flex u-gap-xs" style="align-items: center;">
+                <span class="text-muted u-text-xs">Qty</span>
+                <input type="number" name="quantity" th:value="${assignment.quantity()}" min="1"
+                       class="qty-input" aria-label="Quantity" />
+            </label>
+            <button class="btn btn-ghost btn-xs">Set</button>
         </form>
         <button class="btn btn-danger btn-xs"
                 th:hx-delete="@{/campaigns/{cid}/treasury/{id}(cid=${assignment.campaignId()}, id=${assignment.id()})}"

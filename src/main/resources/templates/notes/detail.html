@@ -26,9 +26,10 @@
                     <span class="badge" th:text="${note.type}">TYPE</span>
                     <span style="margin-left: var(--space-md);"
                           th:text="'Created ' + ${#temporals.format(note.createdAt, 'yyyy-MM-dd HH:mm')}">Date</span>
-                    <span th:if="${note.tags != null and !note.tags.isBlank()}"
-                          style="margin-left: var(--space-md); color: var(--color-text-muted);"
-                          th:text="'Tags: ' + ${note.tags}">Tags</span>
+                    <th:block th:if="${note.tags != null and !note.tags.isBlank()}">
+                        <span class="badge" th:each="tag : ${note.tags.split(',')}"
+                              th:text="${#strings.trim(tag)}">tag</span>
+                    </th:block>
                 </div>
 
                 <div class="note-body" th:utext="${renderedBody}">

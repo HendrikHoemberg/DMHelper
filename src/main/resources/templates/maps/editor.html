@@ -86,7 +86,7 @@
         .editor-statusbar {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: var(--space-md);
             padding: 2px var(--space-md);
             background: var(--color-surface);
             border-top: 1px solid var(--color-border);
@@ -94,6 +94,7 @@
             color: var(--color-text-muted);
             flex-shrink: 0;
         }
+        .editor-statusbar #saveIndicator { margin-left: auto; }
         .save-indicator.save-saved { color: var(--color-success); }
         .save-indicator.save-saving,
         .save-indicator.save-unsaved { color: var(--color-warning); }
@@ -398,8 +399,6 @@
                 </div>
             </div>
         </div>
-
-        <div class="editor-statusbar">
 
         <div class="editor-statusbar">
             <span id="statusMessage">Ready</span>
