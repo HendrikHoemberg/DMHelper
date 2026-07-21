@@ -2700,3 +2700,49 @@ dialog.modal:not([open]) {
     padding-top: var(--space-md);
 }
 .dash-data-tools .btn-danger { margin-left: auto; }
+
+/* Structured scene sections — shared by the prep-time scene page and the session
+   story rail. Deliberately NOT built on .card: the global `.card p` two-line clamp
+   (see line 63) is correct for index summaries and wrong for verbatim boxed text. */
+.structured-block {
+  background: var(--color-surface);
+  border-left: 3px solid var(--color-border);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.structured-block > p {
+  margin-top: var(--space-xs);
+  line-height: 1.6;
+  display: block;
+  -webkit-line-clamp: none;
+  overflow: visible;
+}
+
+.structured-block > strong {
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+
+.structured-read-aloud {
+  border-left-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+}
+
+.structured-read-aloud > p {
+  font-family: var(--font-book);
+  font-size: var(--text-base);
+  line-height: 1.75;
+  color: var(--color-text);
+}
+
+.structured-dm > p {
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.scene-sections {
+  margin-top: var(--space-lg);
+}

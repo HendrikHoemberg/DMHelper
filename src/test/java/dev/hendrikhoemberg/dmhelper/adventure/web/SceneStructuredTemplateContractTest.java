@@ -34,8 +34,8 @@ class SceneStructuredTemplateContractTest {
     }
 
     @Test
-    void actionRailShowsSourceLocatorForSections() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+    void sceneSectionsShowsSourceLocatorForSections() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-sections.html"));
         assertThat(html).contains("section.sourceLocator");
     }
 
@@ -108,16 +108,21 @@ class SceneStructuredTemplateContractTest {
     }
 
     @Test
-    void actionRailExposesThreatSelectorAndMechanicsCardForTrapHazardSections() throws IOException {
+    void actionRailHasThreatSelectorForSections() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
         assertThat(html).contains("name=\"threatId\"");
         assertThat(html).contains("visibleTraps");
         assertThat(html).contains("visibleHazards");
-        assertThat(html).contains("threat/_mechanics-card");
-        assertThat(html).contains("sectionThreatCards");
         assertThat(html).contains("dmHelperFilterSectionThreatOptions");
         assertThat(html).contains("data-threat-kind=\"TRAP\"");
         assertThat(html).contains("data-threat-kind=\"HAZARD\"");
+    }
+
+    @Test
+    void sceneSectionsExposesThreatMechanicsCards() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-sections.html"));
+        assertThat(html).contains("threat/_mechanics-card");
+        assertThat(html).contains("sectionThreatCards");
     }
 
     private static int count(String s, String substring) {

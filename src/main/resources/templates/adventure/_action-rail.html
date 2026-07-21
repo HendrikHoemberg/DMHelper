@@ -69,10 +69,10 @@
       </div>
     </div>
 
-    <!-- Structured metadata -->
-    <div class="u-mb-md" data-structured-metadata>
-      <h4 class="u-text-sm u-mb-xs">Structured metadata</h4>
-      <form class="inline-form"
+    <!-- Structured metadata: prep-time admin, collapsed so content outranks it. -->
+    <details class="u-mb-md" data-structured-metadata>
+      <summary class="u-text-sm">Edit metadata</summary>
+      <form class="inline-form u-mt-xs"
             th:hx-post="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/metadata(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id})}"
             hx-target="#actionRail" hx-swap="innerHTML">
         <div class="form-group">
@@ -96,7 +96,7 @@
         </div>
         <button type="submit" class="btn btn-sm btn-primary">Save metadata</button>
       </form>
-    </div>
+    </details>
 
     <!-- Sections grouped by kind -->
     <div class="u-mb-md" data-structured-sections>
@@ -105,18 +105,6 @@
            th:attr="data-section-id=${section.id}">
         <span class="badge" th:text="${section.kind.name()}">KIND</span>
         <strong th:text="${section.label}">Label</strong>
-        <p class="u-text-sm" th:text="${section.body}">Body</p>
-        <span th:if="${section.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${section.sourceLocator}|">Source</span>
-        <div th:if="${section.threatId != null and sectionThreatCards != null and sectionThreatCards[section.id] != null}"
-             class="u-mt-xs" th:with="card=${sectionThreatCards[section.id]}">
-          <!-- Nest th:if outside th:replace: replace has higher precedence than if. -->
-          <th:block th:if="${card.trap != null}">
-            <th:block th:replace="~{threat/_mechanics-card :: mechanics-card(threat=${card.trap}, kind=${card.kind})}"></th:block>
-          </th:block>
-          <th:block th:if="${card.hazard != null}">
-            <th:block th:replace="~{threat/_mechanics-card :: mechanics-card(threat=${card.hazard}, kind=${card.kind})}"></th:block>
-          </th:block>
-        </div>
         <div class="u-flex u-gap-xs u-mt-xs">
           <button class="btn btn-danger btn-sm"
                   th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/sections/{sectionId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},sectionId=${section.id})}"
