@@ -5,6 +5,7 @@
   <div class="sidebar-section">
     <h3>Story</h3>
     <th:block th:if="${workspace.currentScene != null}">
+      <th:block th:replace="~{session/_scene-picker :: scenePicker(campaignId=${workspace.campaign.id}, currentSceneId=${workspace.currentScene.id})}"></th:block>
       <div class="scene-card" data-current-scene>
         <span class="scene-status-badge" th:text="${workspace.currentScene.status}">UNVISITED</span>
         <h4 th:text="${workspace.currentScene.title}">Scene Title</h4>
@@ -114,7 +115,8 @@
       </div>
     </th:block>
     <th:block th:if="${workspace.currentScene == null}">
-      <div class="empty-state">No current scene. Set one from an adventure.</div>
+      <div class="empty-state">No current scene yet — pick one to begin.</div>
+      <th:block th:replace="~{session/_scene-picker :: scenePicker(campaignId=${workspace.campaign.id}, currentSceneId=${null})}"></th:block>
       <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${workspace.campaign.id}, targetType='CAMPAIGN', targetId=${workspace.campaign.id})}"></th:block>
     </th:block>
   </div>

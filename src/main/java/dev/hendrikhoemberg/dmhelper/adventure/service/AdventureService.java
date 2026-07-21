@@ -450,4 +450,33 @@ public class AdventureService {
         }
         return -1;
     }
+
+    /** One selectable scene in the cockpit picker. */
+    public record ScenePickerOption(UUID id, String title, String sceneKey) {}
+
+    /** One <optgroup> in the cockpit picker: "Adventure — Chapter". */
+    public record ScenePickerGroup(String label, List<ScenePickerOption> scenes) {}
+
+    /**
+     * Every scene in the campaign, grouped by chapter, for the session cockpit's scene
+     * selector. Flattened into records inside the transaction so the cockpit template never
+     * touches a lazy proxy (spring.jpa.open-in-view=false).
+     */
+    @Transactional(readOnly = true)
+    public List<ScenePickerGroup> scenePickerGroups(UUID campaignId) {
+        List<ScenePickerGroup> groups = new ArrayList<>();
+        for (Adventure adventure : adventureRepository.findByCampaignIdOrderBySortOrderAscIdAsc(campaignId)) {
+            for (Chapter chapter : chapterRepository.findByAdventureIdOrderBySortOrderAscIdAsc(adventure.getId())) {
+                List<ScenePickerOption> options =
+                        sceneRepository.findByChapterIdOrderBySortOrderAscIdAsc(chapter.getId()).stream()
+                                .map(s -> new ScenePickerOption(s.getId(), s.getTitle(), s.getSceneKey()))
+                                .toList();
+                if (!options.isEmpty()) {
+                    groups.add(new ScenePickerGroup(
+                            adventure.getName() + " — " + chapter.getTitle(), options));
+                }
+            }
+        }
+        return groups;
+    }
 }

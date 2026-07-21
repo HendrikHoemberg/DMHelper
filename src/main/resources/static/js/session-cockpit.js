@@ -170,6 +170,7 @@ function sessionCockpit(config) {
         },
 
         async setCurrentScene(sceneId) {
+            if (!sceneId) return;
             try {
                 const resp = await window.dmRequest(
                     `/api/v1/campaigns/${this.campaignId}/session/current-scene`, {

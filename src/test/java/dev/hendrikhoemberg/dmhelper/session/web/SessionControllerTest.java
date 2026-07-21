@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.session.web;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransition;
+import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
@@ -30,6 +31,7 @@ class SessionControllerTest {
 
     @Autowired private MockMvc mvc;
     @MockitoBean private SessionWorkspaceService workspaces;
+    @MockitoBean private AdventureService adventures;
 
     @MockitoBean
     private CampaignRepository campaignRepository;

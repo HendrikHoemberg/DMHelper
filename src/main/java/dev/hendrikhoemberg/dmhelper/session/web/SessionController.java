@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.session.web;
 
+import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -16,12 +17,15 @@ import java.util.UUID;
 public class SessionController {
 
     private final SessionWorkspaceService workspaces;
+    private final AdventureService adventures;
 
     @Value("${dmhelper.audio.test-provider:false}")
     private boolean testAudioProvider;
 
-    public SessionController(SessionWorkspaceService workspaces) {
+    public SessionController(SessionWorkspaceService workspaces,
+                             AdventureService adventures) {
         this.workspaces = workspaces;
+        this.adventures = adventures;
     }
 
     @GetMapping("/campaigns/{campaignId}/session")
@@ -31,6 +35,7 @@ public class SessionController {
         SessionWorkspaceService.SessionWorkspace workspace = workspaces.load(campaignId, mapId);
         model.addAttribute("workspace", workspace);
         model.addAttribute("campaignId", campaignId);
+        model.addAttribute("scenePickerGroups", adventures.scenePickerGroups(campaignId));
         model.addAttribute("testAudioProvider", testAudioProvider);
         model.addAttribute("attendeeIds", workspace.session().getStatus()
                 == dev.hendrikhoemberg.dmhelper.session.data.CampaignSession.Status.IDLE
@@ -53,6 +58,7 @@ public class SessionController {
         SessionWorkspaceService.SessionWorkspace workspace = workspaces.load(campaignId, null);
         model.addAttribute("workspace", workspace);
         model.addAttribute("campaignId", campaignId);
+        model.addAttribute("scenePickerGroups", adventures.scenePickerGroups(campaignId));
         return "session/_story-rail :: story";
     }
 

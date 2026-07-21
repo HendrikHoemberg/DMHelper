@@ -1,0 +1,17 @@
+<div th:fragment="scenePicker(campaignId, currentSceneId)" xmlns:th="http://www.thymeleaf.org"
+     class="scene-picker">
+  <label for="cockpitScenePicker" class="sr-only">Set current scene</label>
+  <select id="cockpitScenePicker" class="form-input u-w-full"
+          aria-label="Set current scene"
+          @change="setCurrentScene($event.target.value)">
+    <option value="">Jump to scene…</option>
+    <optgroup th:each="group : ${scenePickerGroups}" th:label="${group.label}">
+      <option th:each="opt : ${group.scenes}"
+              th:value="${opt.id}"
+              th:selected="${currentSceneId != null and currentSceneId.toString() == opt.id.toString()}"
+              th:text="${opt.sceneKey != null ? opt.sceneKey + ' · ' + opt.title : opt.title}">Scene</option>
+    </optgroup>
+  </select>
+  <div th:if="${scenePickerGroups == null or scenePickerGroups.isEmpty()}"
+       class="u-text-xs text-muted">No scenes in this campaign yet.</div>
+</div>
