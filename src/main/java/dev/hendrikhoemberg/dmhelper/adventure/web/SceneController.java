@@ -74,7 +74,8 @@ public class SceneController {
                               @PathVariable UUID adventureId,
                               @PathVariable UUID id,
                               Model model) {
-        Scene scene = adventureService.findSceneById(id);
+        AdventureService.SceneDetailView view = adventureService.findSceneDetailView(id);
+        Scene scene = view.scene();
         Campaign campaign = campaignRepository.findById(campaignId)
                 .orElseThrow(() -> new NotFoundException("Campaign not found"));
         model.addAttribute("campaign", campaign);
@@ -90,7 +91,7 @@ public class SceneController {
         model.addAttribute("visibleTraps", trapRepository.findVisibleByCampaignId(campaignId));
         model.addAttribute("visibleHazards", hazardRepository.findVisibleByCampaignId(campaignId));
         model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
-        model.addAttribute("sectionThreatCards", threatCardAssembler.forScene(scene));
+        model.addAttribute("sectionThreatCards", view.sectionThreatCards());
         adventureService.getCurrentScene(campaignId).ifPresent(s -> model.addAttribute("currentScene", s));
         return "adventure/scene-detail";
     }

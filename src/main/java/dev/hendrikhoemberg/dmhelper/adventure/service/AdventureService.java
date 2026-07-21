@@ -10,12 +10,15 @@ import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
+import dev.hendrikhoemberg.dmhelper.threat.service.ThreatCardAssembler;
+import dev.hendrikhoemberg.dmhelper.threat.web.ThreatCardView;
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,6 +38,7 @@ public class AdventureService {
     private final SessionReferenceCleaner sessionRefCleaner;
     private final SceneTransitionService sceneTransitionService;
     private final SceneRefCleaner sceneRefCleaner;
+    private final ThreatCardAssembler threatCardAssembler;
 
     public AdventureService(AdventureRepository adventureRepository,
                             ChapterRepository chapterRepository,
@@ -47,7 +51,8 @@ public class AdventureService {
                             SessionActivityRecorder sessionActivity,
                             SessionReferenceCleaner sessionRefCleaner,
                             SceneTransitionService sceneTransitionService,
-                            SceneRefCleaner sceneRefCleaner) {
+                            SceneRefCleaner sceneRefCleaner,
+                            ThreatCardAssembler threatCardAssembler) {
         this.adventureRepository = adventureRepository;
         this.chapterRepository = chapterRepository;
         this.sceneRepository = sceneRepository;
@@ -60,6 +65,7 @@ public class AdventureService {
         this.sessionRefCleaner = sessionRefCleaner;
         this.sceneTransitionService = sceneTransitionService;
         this.sceneRefCleaner = sceneRefCleaner;
+        this.threatCardAssembler = threatCardAssembler;
     }
 
     // ---- Adventures ----
@@ -190,6 +196,29 @@ public class AdventureService {
     public Scene findSceneById(UUID id) {
         return sceneRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Scene not found"));
+    }
+
+    public record SceneDetailView(Scene scene, Map<UUID, ThreatCardView> sectionThreatCards) {}
+
+    @Transactional(readOnly = true)
+    public SceneDetailView findSceneDetailView(UUID id) {
+        Scene scene = findSceneById(id);
+        Hibernate.initialize(scene.getStatBlocks());
+        Hibernate.initialize(scene.getHandouts());
+        Hibernate.initialize(scene.getMap());
+        Hibernate.initialize(scene.getEncounter());
+        Hibernate.initialize(scene.getSceneAudioCue());
+        Hibernate.initialize(scene.getSections());
+        Hibernate.initialize(scene.getChecks());
+        Hibernate.initialize(scene.getParticipants());
+        Hibernate.initialize(scene.getTransitions());
+        scene.getTransitions().forEach(t -> Hibernate.initialize(t.getTargetScene()));
+        Hibernate.initialize(scene.getLinks());
+        if (scene.getChapter() != null) {
+            Hibernate.initialize(scene.getChapter());
+            Hibernate.initialize(scene.getChapter().getAdventure());
+        }
+        return new SceneDetailView(scene, threatCardAssembler.forScene(scene));
     }
 
     public Scene updateScene(UUID id, String title, String sceneKey, String body) {

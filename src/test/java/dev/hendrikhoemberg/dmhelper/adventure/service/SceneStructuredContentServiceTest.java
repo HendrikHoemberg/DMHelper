@@ -8,6 +8,7 @@ import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableReferenceResolver;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
 import dev.hendrikhoemberg.dmhelper.threat.data.Hazard;
+import dev.hendrikhoemberg.dmhelper.threat.service.ThreatCardAssembler;
 import dev.hendrikhoemberg.dmhelper.threat.data.HazardExposureMode;
 import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
 import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
@@ -51,6 +52,7 @@ class SceneStructuredContentServiceTest {
     @MockitoBean private SessionActivityRecorder sessionActivity;
     @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
     @MockitoBean private TableReferenceResolver referenceResolver;
+    @MockitoBean private ThreatCardAssembler threatCardAssembler;
 
     private Campaign campaign;
     private Campaign otherCampaign;

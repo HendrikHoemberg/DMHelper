@@ -47,6 +47,7 @@ import dev.hendrikhoemberg.dmhelper.audio.data.SessionAudioStateRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.*;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
 import dev.hendrikhoemberg.dmhelper.world.data.*;
+import dev.hendrikhoemberg.dmhelper.threat.service.ThreatCardAssembler;
 import dev.hendrikhoemberg.dmhelper.world.service.WorldLocationCycleValidator;
 import dev.hendrikhoemberg.dmhelper.world.service.WorldReferenceCleaner;
 import dev.hendrikhoemberg.dmhelper.world.service.WorldService;
@@ -108,6 +109,7 @@ class CampaignCascadeDeleteTest {
     @Autowired private HandoutService handoutService;
     @MockitoBean private SessionActivityRecorder sessionActivity;
     @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
+    @MockitoBean private ThreatCardAssembler threatCardAssembler;
     @Autowired private NoteService noteService;
 
     @Autowired private CampaignRepository campaignRepo;

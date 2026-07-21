@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.adventure.web;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
+import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService.SceneDetailView;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneStructuredContentService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneTransitionService;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
@@ -21,6 +22,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -85,7 +87,7 @@ class SceneControllerTest {
     @Test
     void detailRendersScene() throws Exception {
         when(adventureService.findAdventureById(adventureId)).thenReturn(scene.getChapter().getAdventure());
-        when(adventureService.findSceneById(sceneId)).thenReturn(scene);
+        when(adventureService.findSceneDetailView(sceneId)).thenReturn(new SceneDetailView(scene, Map.of()));
         when(adventureService.getCurrentScene(campaignId)).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/campaigns/{cid}/adventures/{aid}/scenes/{sid}",
@@ -97,7 +99,7 @@ class SceneControllerTest {
     @Test
     void detailRendersQuickNotesForTheSceneTarget() throws Exception {
         when(adventureService.findAdventureById(adventureId)).thenReturn(scene.getChapter().getAdventure());
-        when(adventureService.findSceneById(sceneId)).thenReturn(scene);
+        when(adventureService.findSceneDetailView(sceneId)).thenReturn(new SceneDetailView(scene, Map.of()));
         when(adventureService.getCurrentScene(campaignId)).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/campaigns/{cid}/adventures/{aid}/scenes/{sid}",
@@ -148,6 +150,7 @@ class SceneControllerTest {
 
     private void setupSceneDetailMocks() {
         when(adventureService.findAdventureById(adventureId)).thenReturn(scene.getChapter().getAdventure());
+        when(adventureService.findSceneDetailView(sceneId)).thenReturn(new SceneDetailView(scene, Map.of()));
         when(adventureService.findSceneById(sceneId)).thenReturn(scene);
         when(adventureService.getCurrentScene(campaignId)).thenReturn(Optional.empty());
     }

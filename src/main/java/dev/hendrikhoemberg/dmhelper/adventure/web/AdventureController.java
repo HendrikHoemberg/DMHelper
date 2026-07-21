@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.adventure.web;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.Adventure;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Chapter;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneStatus;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
@@ -31,6 +32,7 @@ public class AdventureController {
                 .orElseThrow(() -> new NotFoundException("Campaign not found"));
         model.addAttribute("campaign", campaign);
         model.addAttribute("campaignId", campaignId);
+        model.addAttribute("SceneStatus", SceneStatus.class);
     }
 
     // ---- Adventures ----

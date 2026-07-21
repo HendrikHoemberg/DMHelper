@@ -42,6 +42,7 @@ import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import dev.hendrikhoemberg.dmhelper.notes.service.WikiLinkParser;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
+import dev.hendrikhoemberg.dmhelper.threat.service.ThreatCardAssembler;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignment;
 import dev.hendrikhoemberg.dmhelper.treasury.data.ItemAssignmentRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -108,6 +109,7 @@ class CampaignImportExportRoundTripTest {
     @Autowired private AdventureService adventureService;
     @MockitoBean private SessionActivityRecorder sessionActivity;
     @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
+    @MockitoBean private ThreatCardAssembler threatCardAssembler;
     @Autowired private AdventureRepository adventureRepo;
     @Autowired private ChapterRepository chapterRepo;
     @Autowired private SceneRepository sceneRepo;
