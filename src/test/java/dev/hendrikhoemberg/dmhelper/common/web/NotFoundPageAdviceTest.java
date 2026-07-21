@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.common.web;
 
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignScaleService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
 import dev.hendrikhoemberg.dmhelper.campaign.web.CampaignController;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
@@ -38,6 +39,9 @@ class NotFoundPageAdviceTest {
 
     @MockitoBean
     private CampaignRepository campaignRepository;
+
+    @MockitoBean
+    private CampaignScaleService scaleService;
 
     @Test
     void browserNavigationGetsStyled404Page() throws Exception {

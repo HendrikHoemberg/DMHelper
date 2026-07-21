@@ -29,4 +29,5 @@ public interface NoteRepository extends JpaRepository<Note, UUID> {
                                         @Param("title") String title);
 
     Optional<Note> findByIdAndCampaignId(UUID id, UUID campaignId);
+    long countByCampaignId(UUID campaignId);
 }

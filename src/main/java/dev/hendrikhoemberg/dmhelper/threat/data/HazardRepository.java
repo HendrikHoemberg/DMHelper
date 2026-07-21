@@ -30,4 +30,5 @@ public interface HazardRepository extends JpaRepository<Hazard, UUID> {
     boolean existsBySourceAndSourceKeyAndCampaignIsNullAndIdNot(ContentSource source, String key, UUID id);
 
     boolean existsByCampaignIdAndSourceKeyAndIdNot(UUID campaignId, String key, UUID id);
+    long countByCampaignId(UUID campaignId);
 }

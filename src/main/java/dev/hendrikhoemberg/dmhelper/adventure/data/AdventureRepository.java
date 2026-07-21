@@ -7,4 +7,5 @@ import java.util.UUID;
 public interface AdventureRepository extends JpaRepository<Adventure, UUID> {
     List<Adventure> findByCampaignIdOrderBySortOrderAsc(UUID campaignId);
     List<Adventure> findByCampaignIdOrderBySortOrderAscIdAsc(UUID campaignId);
+    long countByCampaignId(UUID campaignId);
 }

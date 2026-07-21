@@ -14,6 +14,8 @@ public interface WorldNpcRepository extends JpaRepository<WorldNpc, UUID> {
     @EntityGraph(attributePaths = {"faction", "location"})
     Optional<WorldNpc> findByIdAndCampaignId(UUID id, UUID campaignId);
 
+    long countByCampaignId(UUID campaignId);
+
     List<WorldNpc> findByLocationId(UUID locationId);
     List<WorldNpc> findByFactionId(UUID factionId);
 }

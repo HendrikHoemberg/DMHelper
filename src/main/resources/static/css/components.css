@@ -2760,3 +2760,60 @@ dialog.modal:not([open]) {
   flex-shrink: 0;
   align-self: flex-start;
 }
+
+/* Campaign scale tiles: what this campaign actually carries, with a way into each. */
+.scale-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+.scale-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--color-text);
+  transition: border-color var(--duration-micro) var(--ease-out),
+              background var(--duration-micro) var(--ease-out);
+}
+
+.scale-tile:hover {
+  border-color: var(--color-accent);
+  background: var(--color-surface-hover);
+}
+
+.scale-tile__value {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  line-height: 1.1;
+  color: var(--color-accent);
+}
+
+.scale-tile__label {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.dash-edit {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-sm) var(--space-md);
+}
+
+.dash-edit summary {
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dash-edit[open] .form-group {
+  margin-top: var(--space-md);
+}

@@ -33,4 +33,5 @@ public interface TrapRepository extends JpaRepository<Trap, UUID> {
     boolean existsByCampaignIdAndSourceKeyAndIdNot(UUID campaignId, String key, UUID id);
 
     long countByStatBlockId(UUID statBlockId);
+    long countByCampaignId(UUID campaignId);
 }

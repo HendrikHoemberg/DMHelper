@@ -29,4 +29,5 @@ public interface RollableTableRepository extends JpaRepository<RollableTable, UU
             ContentSource source, String sourceKey, UUID id);
 
     boolean existsByCampaignIdAndSourceKeyAndIdNot(UUID campaignId, String sourceKey, UUID id);
+    long countByCampaignId(UUID campaignId);
 }

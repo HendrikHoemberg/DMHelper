@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.campaign.web;
 
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignScaleService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignValidationResult;
@@ -49,6 +50,9 @@ class CampaignControllerTest {
 
     @MockitoBean
     private CampaignRepository campaignRepository;
+
+    @MockitoBean
+    private CampaignScaleService scaleService;
 
     private Campaign sampleCampaign() {
         Campaign c = new Campaign();
@@ -120,6 +124,7 @@ class CampaignControllerTest {
         when(noteService.findByCampaignIdAndType(eq(c.getId()), any())).thenReturn(List.of());
         when(noteService.findByCampaignId(c.getId())).thenReturn(List.of());
         when(partyMemberService.findActiveByCampaignId(c.getId())).thenReturn(List.of());
+        when(scaleService.scaleOf(any())).thenReturn(new CampaignScaleService.CampaignScale(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
         mockMvc.perform(get("/campaigns/{id}", c.getId()))
                 .andExpect(status().isOk())
@@ -132,6 +137,7 @@ class CampaignControllerTest {
     void shouldRenderDetail() throws Exception {
         Campaign c = sampleCampaign();
         when(service.findById(c.getId())).thenReturn(c);
+        when(scaleService.scaleOf(any())).thenReturn(new CampaignScaleService.CampaignScale(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
         mockMvc.perform(get("/campaigns/{id}", c.getId()))
                 .andExpect(status().isOk())
@@ -143,6 +149,7 @@ class CampaignControllerTest {
         Campaign c = sampleCampaign();
         c.setName("Updated Name");
         when(service.update(eq(c.getId()), eq("Updated Name"), any())).thenReturn(c);
+        when(scaleService.scaleOf(any())).thenReturn(new CampaignScaleService.CampaignScale(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
         mockMvc.perform(put("/campaigns/{id}", c.getId())
                         .param("name", "Updated Name")

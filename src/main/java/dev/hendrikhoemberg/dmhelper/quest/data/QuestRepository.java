@@ -8,4 +8,5 @@ import java.util.UUID;
 public interface QuestRepository extends JpaRepository<Quest, UUID> {
     List<Quest> findByCampaignIdOrderByCreatedAtAscIdAsc(UUID campaignId);
     Optional<Quest> findByIdAndCampaignId(UUID id, UUID campaignId);
+    long countByCampaignId(UUID campaignId);
 }

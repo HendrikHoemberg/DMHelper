@@ -24,6 +24,57 @@
 
             <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${partyMembers}, oob=null)}"></th:block>
 
+            <section class="scale-panel" data-scale-panel aria-label="Campaign contents">
+                <a class="scale-tile" data-scale="adventures"
+                   th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">
+                    <span class="scale-tile__value" th:text="${scale.adventures}">0</span>
+                    <span class="scale-tile__label">Adventures</span>
+                </a>
+                <a class="scale-tile" data-scale="scenes"
+                   th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">
+                    <span class="scale-tile__value" th:text="${scale.scenes}">0</span>
+                    <span class="scale-tile__label" th:text="|Scenes in ${scale.chapters} chapters|">Scenes</span>
+                </a>
+                <a class="scale-tile" data-scale="quests"
+                   th:href="@{/campaigns/{id}/quests(id=${campaign.id})}">
+                    <span class="scale-tile__value" th:text="${scale.quests}">0</span>
+                    <span class="scale-tile__label">Quests</span>
+                </a>
+                <a class="scale-tile" data-scale="npcs"
+                   th:href="@{/campaigns/{id}/world/npcs(id=${campaign.id})}">
+                    <span class="scale-tile__value" th:text="${scale.npcs}">0</span>
+                    <span class="scale-tile__label">NPCs</span>
+                </a>
+                <a class="scale-tile" data-scale="locations"
+                   th:href="@{/campaigns/{id}/world/locations(id=${campaign.id})}">
+                    <span class="scale-tile__value" th:text="${scale.locations}">0</span>
+                    <span class="scale-tile__label">Locations</span>
+                </a>
+                <a class="scale-tile" data-scale="factions"
+                   th:href="@{/campaigns/{id}/world/factions(id=${campaign.id})}">
+                    <span class="scale-tile__value" th:text="${scale.factions}">0</span>
+                    <span class="scale-tile__label">Factions</span>
+                </a>
+                <a class="scale-tile" data-scale="threats" href="/library/traps">
+                    <span class="scale-tile__value" th:text="${scale.traps + scale.hazards}">0</span>
+                    <span class="scale-tile__label">Traps &amp; hazards</span>
+                </a>
+                <a class="scale-tile" data-scale="tables" href="/library/tables">
+                    <span class="scale-tile__value" th:text="${scale.tables}">0</span>
+                    <span class="scale-tile__label">Rollable tables</span>
+                </a>
+                <a class="scale-tile" data-scale="handouts"
+                   th:href="@{/campaigns/{id}/handouts(id=${campaign.id})}">
+                    <span class="scale-tile__value" th:text="${scale.handouts}">0</span>
+                    <span class="scale-tile__label">Handouts</span>
+                </a>
+                <a class="scale-tile" data-scale="maps"
+                   th:href="@{/campaigns/{id}/maps(id=${campaign.id})}">
+                    <span class="scale-tile__value" th:text="${scale.maps}">0</span>
+                    <span class="scale-tile__label">Maps</span>
+                </a>
+            </section>
+
             <div class="dash-grid">
                 <section class="card dash-card dm-only" style="--stagger: 0">
                     <h3>Session Plan</h3>
@@ -62,27 +113,28 @@
                                 th:text="${c.name + ' (' + c.providerId + ' / ' + c.category + ')'}">Cue Name</option>
                     </select>
                 </section>
-                <section class="card dash-card" style="--stagger: 2">
-                    <h3>Edit Campaign</h3>
-                    <form th:hx-put="@{/campaigns/{id}(id=${campaign.id})}"
-                          hx-target="body"
-                          hx-swap="outerHTML">
-                        <div class="form-group">
-                            <label for="editName">Name</label>
-                            <input type="text" id="editName" name="name" required
-                                   th:value="${campaign.name}">
-                        </div>
-                        <div class="form-group">
-                            <label for="editDescription">Description</label>
-                            <textarea id="editDescription" name="description"
-                                      th:text="${campaign.description}"></textarea>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
-                        </div>
-                    </form>
-                </section>
             </div>
+
+            <details class="dash-edit u-mt-lg">
+                <summary>Edit campaign details</summary>
+                <form th:hx-put="@{/campaigns/{id}(id=${campaign.id})}"
+                      hx-target="body"
+                      hx-swap="outerHTML">
+                    <div class="form-group">
+                        <label for="editName">Name</label>
+                        <input type="text" id="editName" name="name" required
+                               th:value="${campaign.name}">
+                    </div>
+                    <div class="form-group">
+                        <label for="editDescription">Description</label>
+                        <textarea id="editDescription" name="description"
+                                  th:text="${campaign.description}"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </details>
 
             <details class="dash-data-tools u-mt-lg">
                 <summary>Data &amp; import/export</summary>

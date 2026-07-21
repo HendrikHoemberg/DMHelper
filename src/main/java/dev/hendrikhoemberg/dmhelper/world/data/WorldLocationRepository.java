@@ -14,5 +14,7 @@ public interface WorldLocationRepository extends JpaRepository<WorldLocation, UU
     @EntityGraph(attributePaths = {"parentLocation", "locationAudioCue"})
     Optional<WorldLocation> findByIdAndCampaignId(UUID id, UUID campaignId);
 
+    long countByCampaignId(UUID campaignId);
+
     List<WorldLocation> findByLocationAudioCueId(UUID cueId);
 }
