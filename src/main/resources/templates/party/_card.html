@@ -14,14 +14,14 @@
         <span th:if="${pm.classAndLevel != null and !pm.classAndLevel.isBlank()}"
               th:text="${hasPlayer} ? ' | ' + ${pm.classAndLevel} : ${pm.classAndLevel}">Class</span>
     </div>
-    <dl class="pm-stats">
+    <dl class="pm-stats stat-grid">
         <div><dt>AC</dt><dd th:text="${pm.ac}">16</dd></div>
         <div><dt>HP</dt><dd th:text="${pm.maxHp}">38</dd></div>
         <div><dt>Init</dt><dd th:text="'+' + ${pm.initiativeBonus}">+4</dd></div>
         <div><dt>Speed</dt><dd th:text="${pm.speed + ' ft.'}">30 ft.</dd></div>
-        <div><dt>P. Perception</dt><dd th:text="${pm.passivePerception}">17</dd></div>
-        <div><dt>P. Insight</dt><dd th:text="${pm.passiveInsight}">12</dd></div>
-        <div><dt>P. Investigation</dt><dd th:text="${pm.passiveInvestigation}">14</dd></div>
+        <div><dt>Perception</dt><dd th:text="${pm.passivePerception}">17</dd></div>
+        <div><dt>Insight</dt><dd th:text="${pm.passiveInsight}">12</dd></div>
+        <div><dt>Investigation</dt><dd th:text="${pm.passiveInvestigation}">14</dd></div>
     </dl>
     <div class="pm-actions">
         <a th:if="${pm.characterSheet != null}"

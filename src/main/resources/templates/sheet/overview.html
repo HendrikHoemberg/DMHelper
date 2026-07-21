@@ -56,12 +56,12 @@
                     <span th:if="${pm.classAndLevel != null and !pm.classAndLevel.isBlank()}"
                           th:text="${pm.classAndLevel}"></span>
                 </div>
-                <dl class="pm-stats">
+                <dl class="pm-stats stat-grid">
                     <div><dt>AC</dt><dd th:text="${pm.ac}">16</dd></div>
                     <div><dt>HP</dt><dd th:text="${pm.maxHp}">38</dd></div>
                     <div><dt>Init</dt><dd th:text="'+' + ${pm.initiativeBonus}">+4</dd></div>
                     <div><dt>Speed</dt><dd th:text="${pm.speed + ' ft.'}">30 ft.</dd></div>
-                    <div><dt>P. Perception</dt><dd th:text="${pm.passivePerception}">17</dd></div>
+                    <div><dt>Perception</dt><dd th:text="${pm.passivePerception}">17</dd></div>
                 </dl>
                 <div th:if="${pm.characterSheet != null}" class="badge badge-success">Sheet</div>
                 <div th:unless="${pm.characterSheet != null}" class="badge">Manual</div>
