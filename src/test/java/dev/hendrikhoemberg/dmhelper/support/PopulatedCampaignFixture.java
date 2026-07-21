@@ -6,6 +6,9 @@ import dev.hendrikhoemberg.dmhelper.adventure.service.SceneStructuredContentServ
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneStructuredContentService.*;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.quest.data.Quest;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveCompletionMode;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus;
@@ -60,9 +63,18 @@ public class PopulatedCampaignFixture {
             + "auf Anhieb erkennt \u2014 bis euch auff\u00e4llt, dass die Unterschrift ein einzelnes "
             + "Wort ist, das ihr sehr wohl kennt.";
 
+    /** DM prose describing the room before the players discover it. */
+    public static final String SCENE_SUMMARY =
+            "Der Bote der Schwarzen Spinne hat den Brief hier liegen lassen.";
+
     public static final String SECRET_BODY =
             "Der Brief stammt von der Schwarzen Spinne. Wer ihn liest und Zwergisch beherrscht, "
             + "erf\u00e4hrt, dass die Mine bereits besetzt ist.";
+
+    /** Stats of the participant-linked statblock, asserted on by the rendering tests. */
+    public static final String PARTICIPANT_STATBLOCK_NAME = "Rotbrenner-Schläger";
+    public static final int PARTICIPANT_STATBLOCK_AC = 14;
+    public static final String PARTICIPANT_STATBLOCK_HP = "16 (3W8+3)";
 
     public static final String TREASURE_BODY =
             "In der verschlossenen Truhe unter dem Schreibtisch liegen 120 gp und ein Paar "
@@ -76,6 +88,7 @@ public class PopulatedCampaignFixture {
     private final TrapService traps;
     private final HazardService hazards;
     private final RollableTableService tables;
+    private final StatBlockRepository statBlocks;
 
     public PopulatedCampaignFixture(CampaignRepository campaigns,
                                     AdventureService adventures,
@@ -84,7 +97,8 @@ public class PopulatedCampaignFixture {
                                     QuestService quests,
                                     TrapService traps,
                                     HazardService hazards,
-                                    RollableTableService tables) {
+                                    RollableTableService tables,
+                                    StatBlockRepository statBlocks) {
         this.campaigns = campaigns;
         this.adventures = adventures;
         this.structured = structured;
@@ -93,6 +107,7 @@ public class PopulatedCampaignFixture {
         this.traps = traps;
         this.hazards = hazards;
         this.tables = tables;
+        this.statBlocks = statBlocks;
     }
 
     @Transactional
@@ -118,6 +133,9 @@ public class PopulatedCampaignFixture {
             adventures.createScene(two.getId(), "Raum " + i, "R" + i, "Beschreibung f\u00fcr Raum " + i + ".");
         }
 
+        structured.updateMetadata(campaignId, rich.getId(), new SceneMetadataCommand(
+                SCENE_SUMMARY, "Fixture, S. 22", "brief,spinne", null));
+
         structured.addSection(campaignId, rich.getId(), new SceneSectionCommand(
                 SceneSectionKind.READ_ALOUD, "Der Brief", READ_ALOUD_BODY, "Fixture, S. 22", 0));
         structured.addSection(campaignId, rich.getId(), new SceneSectionCommand(
@@ -131,9 +149,26 @@ public class PopulatedCampaignFixture {
                 "Brief entziffern", "int", "investigation", 13, SceneCheckVisibility.PLAYER_FACING,
                 "Der Absender wird klar.", "Nichts.", null, null, null, null, "Fixture, S. 22", 0));
 
+        // The real LMoP package resolves 65 of its 67 participants to a statblock, so the
+        // fixture must too -- a participant with statBlockId=null hid the fact that the UI
+        // never rendered the link at all.
+        StatBlock spaeher = new StatBlock();
+        spaeher.setSource(ContentSource.CUSTOM);
+        spaeher.setName(PARTICIPANT_STATBLOCK_NAME);
+        spaeher.setCr("1/2");
+        spaeher.setType("Humanoider (Mensch)");
+        spaeher.setAc(PARTICIPANT_STATBLOCK_AC);
+        spaeher.setHp(PARTICIPANT_STATBLOCK_HP);
+        spaeher = statBlocks.save(spaeher);
+
         structured.addParticipant(campaignId, rich.getId(), new SceneParticipantCommand(
                 "Sp\u00e4her der Redbrands", 2, SceneParticipantDisposition.HOSTILE,
-                "Hinter der T\u00fcr", null, null, "Fixture, S. 22", 0));
+                "Hinter der T\u00fcr", spaeher.getId(), null, "Fixture, S. 22", 0));
+
+        // One participant deliberately left unlinked, mirroring the 2 of 67 in the real package.
+        structured.addParticipant(campaignId, rich.getId(), new SceneParticipantCommand(
+                "Namenloser Bote", 1, SceneParticipantDisposition.NEUTRAL,
+                "Am Eingang", null, null, "Fixture, S. 22", 1));
 
         structured.addTransition(campaignId, rich.getId(), new SceneTransitionCommand(
                 SceneTransitionKind.CHOICE, "Weiter in den Gang", second.getId(),

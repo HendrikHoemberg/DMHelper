@@ -58,6 +58,13 @@
     <a class="btn btn-ghost" target="_blank" href="/library?tab=rules">Rules</a>
     <a class="btn btn-ghost" target="_blank"
        th:href="@{/campaigns/{id}/calendar(id=${campaignId})}">Calendar</a>
+    <!-- The cockpit renders its own topbar rather than fragments/navbar, so it needs its own
+         DM Mode control: this is the screen facing the table when the laptop gets turned. -->
+    <label class="switch-control" title="DM Mode toggles player-safe projection">
+      <input type="checkbox" id="dmModeCheckbox" checked>
+      <span class="switch-track"></span>
+      <span class="switch-label">DM Mode</span>
+    </label>
     <button class="btn btn-ghost" x-ref="sessionButton" @click="openLifecycle()">Session</button>
   </header>
   <th:block th:replace="~{rollable-table/_roll-panel :: roll-panel(tableId=${null}, compact=${true})}"></th:block>
@@ -225,6 +232,27 @@ window.sessionCockpitConfig = {
     attendeeIds: /*[[${attendeeIds}]]*/ [],
     draftBody: /*[[${workspace.session.draftBody}]]*/ null
 };
+// DM Mode: mirrors fragments/navbar.html, which the cockpit does not include.
+(function () {
+    const checkbox = document.getElementById('dmModeCheckbox');
+    if (!checkbox) return;
+    const apply = (animate) => window.setDmMode(checkbox.checked, animate ? undefined : { animate: false });
+    checkbox.addEventListener('change', () => {
+        window.setDmMode(checkbox.checked);
+        window.dispatchEvent(new CustomEvent('dm-mode-changed', { detail: { dmMode: checkbox.checked } }));
+    });
+    window.addEventListener('dm-mode-toggle', () => {
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event('change'));
+    });
+    // setDmMode is defined by ui-elevation.js on DOM ready, which is after this script parses.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => apply(false));
+    } else {
+        apply(false);
+    }
+})();
+
 // DM-only threat map pins: open library detail when a pin is clicked on the battle map.
 window.addEventListener('threat-card-open', (event) => {
     const detail = event.detail || {};

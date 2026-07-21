@@ -2756,6 +2756,45 @@ dialog.modal:not([open]) {
   margin-top: var(--space-lg);
 }
 
+/* Participant → statblock: the stats a DM needs mid-combat, inline, one click from the
+   full block. The import resolves most participants to one; before this they were invisible. */
+.participant-statblock {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: 2px;
+  text-decoration: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.participant-statblock:hover {
+  color: var(--color-accent);
+}
+
+.participant-statblock__name {
+  font-family: var(--font-ui);
+  color: var(--color-accent);
+}
+
+.participant-statblock__stat {
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0 5px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.participant-row {
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.participant-row:last-child {
+  border-bottom: none;
+}
+
 /* Card headers: keep the trailing status badge on the title's baseline rather than
    letting a long title wrap it onto a second line. */
 .card-header {

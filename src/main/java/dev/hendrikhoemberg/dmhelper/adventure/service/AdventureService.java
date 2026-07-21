@@ -219,6 +219,11 @@ public class AdventureService {
         Hibernate.initialize(scene.getSections());
         Hibernate.initialize(scene.getChecks());
         Hibernate.initialize(scene.getParticipants());
+        // Templates read participant.statBlock for AC/HP. open-in-view is false, so the
+        // proxy must be resolved here or Thymeleaf throws mid-render and truncates the page.
+        for (SceneParticipant participant : scene.getParticipants()) {
+            Hibernate.initialize(participant.getStatBlock());
+        }
         Hibernate.initialize(scene.getTransitions());
         scene.getTransitions().forEach(t -> Hibernate.initialize(t.getTargetScene()));
         Hibernate.initialize(scene.getLinks());

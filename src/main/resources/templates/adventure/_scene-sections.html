@@ -13,9 +13,11 @@
           th:text="|Source: ${section.sourceLocator}|">Source</span>
   </div>
 
+  <!-- Everything that is not READ_ALOUD is prep material: secrets, treasure, DM advice,
+       trap mechanics. dm-only hides it when the DM turns the laptop toward the table. -->
   <div th:each="section : ${scene.sections}"
        th:if="${section.kind.name() != 'READ_ALOUD'}"
-       class="structured-block structured-dm"
+       class="structured-block structured-dm dm-only"
        th:attr="data-section-id=${section.id}">
     <span class="badge" th:text="${#enums.label(section.kind)}">KIND</span>
     <strong th:text="${section.label}">Label</strong>

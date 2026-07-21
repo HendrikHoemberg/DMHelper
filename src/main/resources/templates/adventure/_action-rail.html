@@ -197,7 +197,7 @@
     <!-- Checks -->
     <div class="u-mb-md" data-structured-checks>
       <h4 class="u-text-sm u-mb-xs">Checks</h4>
-      <div th:each="check : ${scene.checks}" class="card card--compact u-mb-xs"
+      <div th:each="check : ${scene.checks}" class="card card--compact dm-only u-mb-xs"
            th:attr="data-check-id=${check.id}">
         <strong th:text="${check.label}">Check Label</strong>
         <span class="badge" th:text="|DC ${check.dc}|" th:if="${check.dc != null}">DC</span>
@@ -271,11 +271,20 @@
     <!-- Participants -->
     <div class="u-mb-md" data-structured-participants>
       <h4 class="u-text-sm u-mb-xs">Participants</h4>
-      <div th:each="p : ${scene.participants}" class="card card--compact u-mb-xs"
+      <div th:each="p : ${scene.participants}" class="card card--compact dm-only u-mb-xs"
            th:attr="data-participant-id=${p.id}">
         <strong th:text="${p.displayName}">Name</strong>
         <span class="badge" th:text="|x${p.quantity}|" th:if="${p.quantity > 1}">Qty</span>
         <span class="badge" th:text="${#enums.label(p.disposition)}" th:if="${p.disposition != null}">Disp</span>
+        <!-- The import resolves most participants to a statblock; surface the stats the DM
+             actually needs rather than making them go hunting in the bestiary. -->
+        <a th:if="${p.statBlock != null}" class="participant-statblock" target="_blank"
+           th:href="@{/library/statblocks/{id}(id=${p.statBlock.id})}"
+           th:title="|Open ${p.statBlock.name}|">
+          <span class="participant-statblock__name" th:text="${p.statBlock.name}">Statblock</span>
+          <span class="participant-statblock__stat" th:text="|AC ${p.statBlock.ac}|">AC 14</span>
+          <span class="participant-statblock__stat" th:text="|HP ${p.statBlock.hp}|">HP 16</span>
+        </a>
         <span th:if="${p.placementHint}" class="u-text-xs" th:text="${p.placementHint}">Placement</span>
         <span th:if="${p.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${p.sourceLocator}|">Source</span>
         <div class="u-flex u-gap-xs u-mt-xs">
@@ -329,7 +338,7 @@
     <!-- Transitions -->
     <div class="u-mb-md" data-structured-transitions>
       <h4 class="u-text-sm u-mb-xs">Transitions</h4>
-      <div th:each="t : ${scene.transitions}" class="card card--compact u-mb-xs"
+      <div th:each="t : ${scene.transitions}" class="card card--compact dm-only u-mb-xs"
            th:attr="data-transition-id=${t.id}">
         <span class="badge" th:text="${#enums.label(t.kind)}">KIND</span>
         <strong th:text="${t.label}">Label</strong>
