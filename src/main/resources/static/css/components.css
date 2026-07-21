@@ -1114,6 +1114,15 @@
     color: var(--color-bg);
 }
 
+/* Marks read-aloud blocks in the scene page and the cockpit story rail. Both templates
+   already used .badge-info; the rule itself was never written, so the label rendered
+   identically to a generic section-kind badge. */
+.badge-info {
+    background: var(--color-accent);
+    color: var(--color-bg);
+    letter-spacing: 0.06em;
+}
+
 .badge-tag {
     background: var(--color-surface-hover);
     font-size: 0.7rem;

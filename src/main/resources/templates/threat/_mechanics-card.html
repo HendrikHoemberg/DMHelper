@@ -3,12 +3,12 @@
 <th:block th:fragment="mechanics-card(threat, kind)">
     <div class="threat-mechanics-card" th:attr="data-threat-kind=${kind}">
         <div class="detail-meta">
-            <span class="badge" th:text="${threat.severity}">SEVERITY</span>
+            <span class="badge" th:text="${#enums.label(threat.severity)}">SEVERITY</span>
             <span class="badge" th:if="${threat.minLevel != null}">
                 Lv <span th:text="${threat.minLevel}">1</span>
                 <span th:if="${threat.maxLevel != null}">–<span th:text="${threat.maxLevel}">5</span></span>
             </span>
-            <span class="badge" th:text="${threat.source}">CUSTOM</span>
+            <span class="badge" th:text="${#enums.label(threat.source)}">CUSTOM</span>
         </div>
 
         <!-- Trap-specific mechanics (escaped typed text) -->
@@ -28,7 +28,7 @@
             <div th:if="${threat.detectionCheck != null}">
                 <strong>Detection Check</strong>
                 <p>
-                    <span th:text="${threat.detectionCheck.mode}">CHECK</span>
+                    <span th:text="${#enums.label(threat.detectionCheck.mode)}">CHECK</span>
                     <span th:if="${threat.detectionCheck.ability != null}" th:text="${threat.detectionCheck.ability}"></span>
                     <span th:if="${threat.detectionCheck.skill != null}" th:text="'(' + ${threat.detectionCheck.skill} + ')'"></span>
                     <span th:if="${threat.detectionCheck.dc != null}">DC <span th:text="${threat.detectionCheck.dc}"></span></span>
@@ -70,7 +70,7 @@
             <div th:if="${threat.save != null}">
                 <strong>Save</strong>
                 <p>
-                    <span th:text="${threat.save.mode}">SAVE</span>
+                    <span th:text="${#enums.label(threat.save.mode)}">SAVE</span>
                     <span th:if="${threat.save.ability != null}" th:text="${threat.save.ability}"></span>
                     <span th:if="${threat.save.dc != null}">DC <span th:text="${threat.save.dc}"></span></span>
                     <button type="button" class="btn btn-sm btn-ghost"
@@ -102,7 +102,7 @@
             <div th:if="${threat.resetMode != null}">
                 <strong>Reset</strong>
                 <p>
-                    <span th:text="${threat.resetMode}">NONE</span>
+                    <span th:text="${#enums.label(threat.resetMode)}">NONE</span>
                     <span th:if="${threat.resetTiming != null}" th:text="' — ' + ${threat.resetTiming}"></span>
                 </p>
             </div>
@@ -116,7 +116,7 @@
         <th:block th:if="${kind.name() == 'HAZARD'}">
             <div class="u-mt-md" th:if="${threat.exposureMode != null}">
                 <strong>Exposure</strong>
-                <p th:text="${threat.exposureMode}">ON_ENTER</p>
+                <p th:text="${#enums.label(threat.exposureMode)}">ON_ENTER</p>
             </div>
             <div th:if="${threat.exposureText != null}">
                 <strong>Exposure Details</strong>
@@ -129,7 +129,7 @@
             <div th:if="${threat.check != null}">
                 <strong>Check / Save</strong>
                 <p>
-                    <span th:text="${threat.check.mode}">CHECK</span>
+                    <span th:text="${#enums.label(threat.check.mode)}">CHECK</span>
                     <span th:if="${threat.check.ability != null}" th:text="${threat.check.ability}"></span>
                     <span th:if="${threat.check.skill != null}" th:text="'(' + ${threat.check.skill} + ')'"></span>
                     <span th:if="${threat.check.dc != null}">DC <span th:text="${threat.check.dc}"></span></span>
@@ -169,7 +169,7 @@
             <strong>References</strong>
             <ul>
                 <li th:each="ref : ${threat.references}">
-                    <span th:text="${ref.role}">ROLE</span>:
+                    <span th:text="${#enums.label(ref.role)}">ROLE</span>:
                     <span th:text="${ref.displayText != null ? ref.displayText : ref.targetType}">Target</span>
                 </li>
             </ul>

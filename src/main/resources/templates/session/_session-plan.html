@@ -8,7 +8,7 @@
     <th:block th:each="beat : ${workspace.sessionPlan.beats()}">
       <div class="plan-beat" th:classappend="${!beat.resolved()} ? 'beat-broken' : ''">
         <span class="beat-position" th:text="${beat.position() + 1}">1</span>
-        <span class="beat-type" th:text="${beat.type()}">SCENE</span>
+        <span class="beat-type" th:text="${#enums.labelOf(beat.type())}">Scene</span>
         <span class="beat-label" th:text="${beat.label()}">Label</span>
         <th:block th:if="${beat.resolved()}">
           <a class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;"
