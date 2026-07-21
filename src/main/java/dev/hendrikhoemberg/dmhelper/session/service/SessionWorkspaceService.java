@@ -212,7 +212,13 @@ public class SessionWorkspaceService {
 
     private Selection select(CampaignSession session, Encounter active, Scene current,
                              SessionPlanService.SessionPlan plan, UUID requestedMapId, UUID campaignId) {
-        if (session.isOpen())
+        if (requestedMapId != null) {
+            GameMap requested = maps.findById(requestedMapId)
+                    .filter(m -> m.getCampaign().getId().equals(campaignId))
+                    .orElseThrow(() -> new NotFoundException("Map not found in campaign"));
+            return new Selection(requested, SelectionSource.EXPLICIT_MAP);
+        }
+        if (session.isOpen() && session.getWorkspaceMap() != null)
             return new Selection(session.getWorkspaceMap(), SelectionSource.STORED_SESSION);
         if (active != null && active.getMap() != null)
             return new Selection(active.getMap(), SelectionSource.ACTIVE_ENCOUNTER);
@@ -226,12 +232,6 @@ public class SessionWorkspaceService {
                     .map(maps::findById).flatMap(Optional::stream)
                     .filter(m -> m.getCampaign().getId().equals(campaignId)).findFirst();
             if (firstPlanMap.isPresent()) return new Selection(firstPlanMap.get(), SelectionSource.SESSION_PLAN);
-        }
-        if (requestedMapId != null) {
-            GameMap requested = maps.findById(requestedMapId)
-                    .filter(m -> m.getCampaign().getId().equals(campaignId))
-                    .orElseThrow(() -> new NotFoundException("Map not found in campaign"));
-            return new Selection(requested, SelectionSource.EXPLICIT_MAP);
         }
         return new Selection(null, SelectionSource.NONE);
     }
