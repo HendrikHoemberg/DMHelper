@@ -349,6 +349,12 @@ export class MapEditor {
     }
 
     addShapeNode(konvaLayer, shape) {
+        // Imported/older map data can contain null or truncated shape records;
+        // a single bad record must not take down the whole canvas.
+        if (!shape || typeof shape !== 'object' || !Array.isArray(shape.points)) {
+            console.warn('Skipping malformed shape record', shape);
+            return null;
+        }
         const px = (v) => v * this.cellSizePx;
         const pts = shape.points || [];
         const fill = shape.fill || SHAPE_COLORS.fill;
