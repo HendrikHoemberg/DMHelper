@@ -534,3 +534,12 @@ body.dm-sweeping-on #dm-shield-sweep {
     scroll-behavior: auto !important;
   }
 }
+
+/* Unclassed anchors inside content default to the accent, not browser blue. */
+.app-main a:not([class]) {
+    color: var(--color-accent-hover);
+    text-decoration: none;
+}
+.app-main a:not([class]):hover {
+    text-decoration: underline;
+}
