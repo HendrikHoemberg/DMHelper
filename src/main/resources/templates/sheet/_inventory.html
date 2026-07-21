@@ -23,7 +23,7 @@
                 <span th:if="${assignment.attuned()}" class="badge badge-attune">attuned</span>
                 <span class="badge"
                       th:classappend="'badge-state-' + ${assignment.inventoryState().name().toLowerCase()}"
-                      th:text="${assignment.inventoryState().name()}">CARRIED</span>
+                      th:text="${#enums.label(assignment.inventoryState())}">CARRIED</span>
             </div>
         </div>
         <div class="u-flex u-gap-xs u-shrink-0">

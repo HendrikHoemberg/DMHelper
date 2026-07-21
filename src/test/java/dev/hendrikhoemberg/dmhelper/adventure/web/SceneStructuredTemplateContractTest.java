@@ -60,7 +60,7 @@ class SceneStructuredTemplateContractTest {
     @Test
     void actionRailShowsLinkRoleAndCondition() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
-        assertThat(html).contains("link.role.name()", "link.condition");
+        assertThat(html).contains("#enums.label(link.role)", "link.condition");
     }
 
     @Test

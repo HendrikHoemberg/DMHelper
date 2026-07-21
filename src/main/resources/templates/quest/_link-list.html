@@ -3,7 +3,7 @@
   <div th:if="${quest.links.empty}" class="empty-state">No links yet.</div>
   <div th:unless="${quest.links.empty}">
     <div th:each="link : ${quest.links}" class="card card--compact u-mb-xs">
-      <span class="badge" th:text="${link.role.name()}">ROLE</span>
+      <span class="badge" th:text="${#enums.label(link.role)}">ROLE</span>
       <span th:text="${link.displayText ?: link.targetType}">Target</span>
       <span th:if="${link.condition}" class="u-text-xs" th:text="|Condition: ${link.condition}|">Condition</span>
       <span class="u-text-xs text-muted" th:text="|${link.targetScope} / ${link.targetType}|">Scope/Type</span>

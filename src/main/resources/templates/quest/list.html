@@ -28,7 +28,7 @@
                     <div class="card-header">
                         <a th:href="@{/campaigns/{cid}/quests/{qid}(cid=${campaignId},qid=${quest.id})}"
                            th:text="${quest.title}">Quest Title</a>
-                        <span class="badge" th:text="${quest.status.name()}">STATUS</span>
+                        <span class="badge" th:text="${#enums.label(quest.status)}">STATUS</span>
                     </div>
                     <div th:if="${quest.summary}" class="card-body" th:text="${quest.summary}">Summary</div>
                     <div class="card-footer">

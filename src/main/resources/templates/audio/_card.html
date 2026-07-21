@@ -4,7 +4,7 @@
     <h3 th:text="${cue.name}">Cue Name</h3>
     <p class="text-muted">
         <span th:text="${cue.cueKey}">cue-key</span>
-        <span th:if="${cue.category != null}" th:text="' · ' + ${cue.category.name()}"> · AMBIENT</span>
+        <span th:if="${cue.category != null}" th:text="' · ' + ${#enums.label(cue.category)}"> · AMBIENT</span>
         <span th:if="${cue.providerId != null}" th:text="' · ' + ${cue.providerId}"> · youtube</span>
     </p>
     <a class="btn btn-sm btn-primary"

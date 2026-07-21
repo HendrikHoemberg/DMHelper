@@ -103,7 +103,7 @@
       <h4 class="u-text-sm u-mb-xs">Sections</h4>
       <div th:each="section : ${scene.sections}" class="card card--compact u-mb-xs"
            th:attr="data-section-id=${section.id}">
-        <span class="badge" th:text="${section.kind.name()}">KIND</span>
+        <span class="badge" th:text="${#enums.label(section.kind)}">KIND</span>
         <strong th:text="${section.label}">Label</strong>
         <div class="u-flex u-gap-xs u-mt-xs">
           <button class="btn btn-danger btn-sm"
@@ -201,7 +201,7 @@
            th:attr="data-check-id=${check.id}">
         <strong th:text="${check.label}">Check Label</strong>
         <span class="badge" th:text="|DC ${check.dc}|" th:if="${check.dc != null}">DC</span>
-        <span class="badge" th:text="${check.visibility}" th:if="${check.visibility != null}">VISIBILITY</span>
+        <span class="badge" th:text="${#enums.label(check.visibility)}" th:if="${check.visibility != null}">VISIBILITY</span>
         <span th:if="${check.ability}" class="u-text-xs" th:text="|${check.ability} ${check.skill}|">Ability/Skill</span>
         <span th:if="${check.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${check.sourceLocator}|">Source</span>
         <div th:if="${check.success}" class="u-text-xs">Success: <span th:text="${check.success}">Success</span></div>
@@ -275,7 +275,7 @@
            th:attr="data-participant-id=${p.id}">
         <strong th:text="${p.displayName}">Name</strong>
         <span class="badge" th:text="|x${p.quantity}|" th:if="${p.quantity > 1}">Qty</span>
-        <span class="badge" th:text="${p.disposition}" th:if="${p.disposition != null}">Disp</span>
+        <span class="badge" th:text="${#enums.label(p.disposition)}" th:if="${p.disposition != null}">Disp</span>
         <span th:if="${p.placementHint}" class="u-text-xs" th:text="${p.placementHint}">Placement</span>
         <span th:if="${p.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${p.sourceLocator}|">Source</span>
         <div class="u-flex u-gap-xs u-mt-xs">
@@ -331,7 +331,7 @@
       <h4 class="u-text-sm u-mb-xs">Transitions</h4>
       <div th:each="t : ${scene.transitions}" class="card card--compact u-mb-xs"
            th:attr="data-transition-id=${t.id}">
-        <span class="badge" th:text="${t.kind.name()}">KIND</span>
+        <span class="badge" th:text="${#enums.label(t.kind)}">KIND</span>
         <strong th:text="${t.label}">Label</strong>
         <span th:if="${t.targetScene != null}" th:text="${t.targetScene.title}">Target</span>
         <span th:if="${t.externalDestination}" class="u-text-xs" th:text="|→ ${t.externalDestination}|">External</span>
@@ -395,7 +395,7 @@
       <h4 class="u-text-sm u-mb-xs">Links</h4>
       <div th:each="link : ${scene.links}" class="card card--compact u-mb-xs"
            th:attr="data-link-id=${link.id}">
-        <span class="badge" th:text="${link.role.name()}">ROLE</span>
+        <span class="badge" th:text="${#enums.label(link.role)}">ROLE</span>
         <span th:text="${link.displayText ?: link.targetType}">Target</span>
         <span th:if="${link.condition}" class="u-text-xs">Condition: <span th:text="${link.condition}">Condition</span></span>
         <div class="u-flex u-gap-xs u-mt-xs">
@@ -482,6 +482,6 @@
     <span class="badge"
           th:classappend="${scene.status.name() == 'DONE'} ? 'badge-success' :
                           (${scene.status.name() == 'VISITED'} ? 'badge-warning' : '')"
-          th:text="${scene.status.name()}">STATUS</span>
+          th:text="${#enums.label(scene.status)}">STATUS</span>
   </div>
 </div>

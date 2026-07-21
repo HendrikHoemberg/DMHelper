@@ -28,7 +28,7 @@
                     <div class="card-header">
                         <a th:href="@{/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${npc.id})}"
                            th:text="${npc.name}">NPC Name</a>
-                        <span class="badge" th:text="${npc.status.name()}">STATUS</span>
+                        <span class="badge" th:text="${#enums.label(npc.status)}">STATUS</span>
                     </div>
                     <div th:if="${npc.role}" class="card-body" th:text="${npc.role}">Role</div>
                     <div class="card-footer">

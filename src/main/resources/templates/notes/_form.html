@@ -23,7 +23,7 @@
         <select id="noteType" name="type" required>
             <option th:each="t : ${noteTypes}"
                     th:value="${t.name()}"
-                    th:text="${t.name()}"
+                    th:text="${#enums.label(t)}"
                     th:selected="${note != null and note.type == t}">TYPE</option>
         </select>
         <style>

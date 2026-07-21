@@ -19,7 +19,7 @@
                 </div>
                 <h1 th:text="${location.name}">Location Name</h1>
                 <div class="page-header-actions">
-                    <span class="badge" th:text="${location.kind.name()}">KIND</span>
+                    <span class="badge" th:text="${#enums.label(location.kind)}">KIND</span>
                     <button class="btn btn-ghost"
                             th:hx-get="@{/campaigns/{cid}/world/locations/{lid}/edit(cid=${campaignId},lid=${location.id})}"
                             hx-target="#locationForm"
@@ -33,7 +33,7 @@
             <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
             <div id="locationForm"></div>
             <div class="detail-section">
-                <div th:if="${location.kind}" class="u-mb-md" th:text="|Kind: ${location.kind.name()}|">Kind</div>
+                <div th:if="${location.kind}" class="u-mb-md" th:text="|Kind: ${#enums.label(location.kind)}|">Kind</div>
                 <div th:if="${location.parentLocation}" class="u-mb-md">
                     <span>Parent Location: </span>
                     <a th:href="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${location.parentLocation.id})}"
@@ -65,7 +65,7 @@
                 <h3>Linked Tables</h3>
                 <div th:each="link : ${tableLinks}" class="card card--compact u-mb-xs">
                     <span th:text="${link.table.name}">Table Name</span>
-                    <span class="badge" th:text="${link.role.name()}">ROLE</span>
+                    <span class="badge" th:text="${#enums.label(link.role)}">ROLE</span>
                     <button class="btn btn-danger btn-sm"
                             th:hx-delete="@{/campaigns/{cid}/world/locations/{lid}/tables/{linkId}(cid=${campaignId},lid=${location.id},linkId=${link.id})}"
                             hx-confirm="Remove this table link?"

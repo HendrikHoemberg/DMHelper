@@ -2746,3 +2746,17 @@ dialog.modal:not([open]) {
 .scene-sections {
   margin-top: var(--space-lg);
 }
+
+/* Card headers: keep the trailing status badge on the title's baseline rather than
+   letting a long title wrap it onto a second line. */
+.card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.card-header > .badge {
+  flex-shrink: 0;
+  align-self: flex-start;
+}

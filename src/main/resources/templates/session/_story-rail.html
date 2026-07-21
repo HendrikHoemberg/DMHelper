@@ -7,7 +7,7 @@
     <th:block th:if="${workspace.currentScene != null}">
       <th:block th:replace="~{session/_scene-picker :: scenePicker(campaignId=${workspace.campaign.id}, currentSceneId=${workspace.currentScene.id})}"></th:block>
       <div class="scene-card" data-current-scene>
-        <span class="scene-status-badge" th:text="${workspace.currentScene.status}">UNVISITED</span>
+        <span class="scene-status-badge" th:text="${#enums.label(workspace.currentScene.status)}">UNVISITED</span>
         <h4 th:text="${workspace.currentScene.title}">Scene Title</h4>
         <span class="scene-key" th:if="${workspace.currentScene.sceneKey}" th:text="${workspace.currentScene.sceneKey}">key</span>
         <div class="scene-summary" th:if="${workspace.currentScene.summary}"
@@ -61,7 +61,7 @@
           <div th:each="section : ${workspace.structuredSceneView.sections}"
                th:if="${section.kind.name() != 'READ_ALOUD'}"
                class="structured-block structured-dm u-mb-xs">
-            <span class="badge" th:text="${section.kind.name()}">SECTION</span>
+            <span class="badge" th:text="${#enums.label(section.kind)}">SECTION</span>
             <strong th:text="${section.label}">Label</strong>
             <p class="u-text-sm" th:text="${section.body}">Body</p>
             <div th:if="${section.threatId != null
@@ -85,7 +85,7 @@
             <div th:each="check : ${workspace.structuredSceneView.checks}" class="check-row u-mb-xs">
               <strong th:text="${check.label}">Check</strong>
               <span class="badge" th:if="${check.dc != null}" th:text="|DC ${check.dc}|">DC</span>
-              <span class="badge" th:if="${check.visibility != null}" th:text="${check.visibility.name()}">VIS</span>
+              <span class="badge" th:if="${check.visibility != null}" th:text="${#enums.label(check.visibility)}">VIS</span>
               <span th:if="${check.ability}" class="u-text-xs" th:text="|${check.ability} ${check.skill}|">Ability</span>
               <div th:if="${check.success}" class="u-text-xs">Success: <span th:text="${check.success}"></span></div>
               <div th:if="${check.failure}" class="u-text-xs">Failure: <span th:text="${check.failure}"></span></div>
@@ -106,7 +106,7 @@
             </div>
             <div th:if="${t.kind.name() != 'CHOICE' or t.targetScene == null}"
                  class="transition-text u-text-xs text-muted u-mb-xs">
-              <span th:text="|${t.kind.name()}: ${t.label ?: t.externalDestination ?: 'Unknown'}|">Transition</span>
+              <span th:text="|${#enums.label(t.kind)}: ${t.label ?: t.externalDestination ?: 'Unknown'}|">Transition</span>
             </div>
           </div>
         </div>

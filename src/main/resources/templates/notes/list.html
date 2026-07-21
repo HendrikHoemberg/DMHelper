@@ -45,7 +45,7 @@
                         <option value="" th:selected="${selectedType == null}">All Types</option>
                         <option th:each="t : ${noteTypes}"
                                 th:value="${t.name()}"
-                                th:text="${t.name()}"
+                                th:text="${#enums.label(t)}"
                                 th:selected="${selectedType != null and selectedType.name() == t.name()}">Type</option>
                     </select>
                 </div>

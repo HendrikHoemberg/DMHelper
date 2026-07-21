@@ -19,7 +19,7 @@
                 </div>
                 <h1 th:text="${npc.name}">NPC Name</h1>
                 <div class="page-header-actions">
-                    <span class="badge" th:text="${npc.status.name()}">STATUS</span>
+                    <span class="badge" th:text="${#enums.label(npc.status)}">STATUS</span>
                     <button class="btn btn-ghost"
                             th:hx-get="@{/campaigns/{cid}/world/npcs/{nid}/edit(cid=${campaignId},nid=${npc.id})}"
                             hx-target="#npcForm"
@@ -34,7 +34,7 @@
             <div id="npcForm"></div>
             <div class="detail-section">
                 <div th:if="${npc.role}" class="u-mb-md" th:text="|Role: ${npc.role}|">Role</div>
-                <div th:if="${npc.disposition}" class="u-mb-md" th:text="|Disposition: ${npc.disposition.name()}|">Disposition</div>
+                <div th:if="${npc.disposition}" class="u-mb-md" th:text="|Disposition: ${#enums.label(npc.disposition)}|">Disposition</div>
                 <div th:if="${npc.faction}" class="u-mb-md">
                     <span>Faction: </span>
                     <a th:href="@{/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${npc.faction.id})}"

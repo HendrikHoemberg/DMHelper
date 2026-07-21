@@ -64,7 +64,7 @@ class QuestTemplateContractTest {
     @Test
     void linkListShowsRoleAndCondition() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/quest/_link-list.html"));
-        assertThat(html).contains("link.role.name()", "link.displayText", "link.condition");
+        assertThat(html).contains("#enums.label(link.role)", "link.displayText", "link.condition");
         assertThat(html).contains("hx-confirm=\"Delete this link?\"");
     }
 

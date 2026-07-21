@@ -43,7 +43,7 @@
     <div th:each="qpv : ${workspace.questProgressViews}" class="quest-progress-card u-mb-sm"
          th:attr="data-quest-id=${qpv.quest.id}">
       <div class="u-flex u-gap-xs u-items-center">
-        <span class="badge" th:text="${qpv.quest.status.name()}">STATUS</span>
+        <span class="badge" th:text="${#enums.label(qpv.quest.status)}">STATUS</span>
         <strong th:text="${qpv.quest.title}">Quest Title</strong>
       </div>
       <div th:if="${qpv.objectives != null and !qpv.objectives.isEmpty()}" class="objective-list u-mt-xs">
@@ -51,7 +51,7 @@
              th:attr="data-objective-id=${obj.id}">
           <span class="badge"
                 th:classappend="${obj.status.name() == 'COMPLETED'} ? 'badge-success' : (${obj.status.name() == 'ACTIVE'} ? 'badge-warning' : '')"
-                th:text="${obj.status.name()}">STATUS</span>
+                th:text="${#enums.label(obj.status)}">STATUS</span>
           <span th:text="${obj.title}">Objective</span>
           <select class="form-input objective-status-select"
                   th:attr="data-objective-id=${obj.id}"

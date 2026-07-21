@@ -44,7 +44,7 @@
                         <li th:each="n : ${recentNotes}">
                             <a class="dash-link" th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaign.id}, nid=${n.id})}"
                                th:text="${n.title}">Note</a>
-                            <span class="text-muted u-text-sm" th:text="${n.type}">TYPE</span>
+                            <span class="text-muted u-text-sm" th:text="${#enums.label(n.type)}">TYPE</span>
                         </li>
                         <li th:if="${recentNotes.isEmpty()}" class="text-muted u-text-sm">Nothing written yet.</li>
                     </ul>

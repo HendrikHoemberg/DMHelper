@@ -17,7 +17,7 @@
        th:if="${section.kind.name() != 'READ_ALOUD'}"
        class="structured-block structured-dm"
        th:attr="data-section-id=${section.id}">
-    <span class="badge" th:text="${section.kind.name()}">KIND</span>
+    <span class="badge" th:text="${#enums.label(section.kind)}">KIND</span>
     <strong th:text="${section.label}">Label</strong>
     <p th:text="${section.body}">Body</p>
     <span th:if="${section.sourceLocator}" class="u-text-xs text-muted"

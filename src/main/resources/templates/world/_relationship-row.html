@@ -14,11 +14,11 @@
         </thead>
         <tbody>
             <tr th:each="rel : ${relationships}">
-                <td th:text="${rel.kind.name()}">Kind</td>
+                <td th:text="${#enums.label(rel.kind)}">Kind</td>
                 <td th:text="|${rel.fromType}:${rel.fromId}|">From</td>
                 <td th:text="|${rel.toType}:${rel.toId}|">To</td>
-                <td th:text="${rel.knowledge.name()}">Knowledge</td>
-                <td th:text="${rel.status.name()}">Status</td>
+                <td th:text="${#enums.label(rel.knowledge)}">Knowledge</td>
+                <td th:text="${#enums.label(rel.status)}">Status</td>
                 <td th:text="${rel.notes}">Notes</td>
                 <td>
                     <form th:action="@{/campaigns/{cid}/world/factions/{fid}/relationships/{rid}(cid=${campaignId},fid=${factionId},rid=${rel.id})}"

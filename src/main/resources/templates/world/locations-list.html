@@ -28,7 +28,7 @@
                     <div class="card-header">
                         <a th:href="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${loc.id})}"
                            th:text="${loc.name}">Location Name</a>
-                        <span class="badge" th:text="${loc.kind.name()}">KIND</span>
+                        <span class="badge" th:text="${#enums.label(loc.kind)}">KIND</span>
                     </div>
                     <div th:if="${loc.summary}" class="card-body" th:text="${loc.summary}">Summary</div>
                     <div class="card-footer">
