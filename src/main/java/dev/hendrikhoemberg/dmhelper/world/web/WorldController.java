@@ -256,9 +256,7 @@ public class WorldController {
         Faction faction = worldService.getFaction(campaignId, factionId);
         model.addAttribute("faction", faction);
         model.addAttribute("relationships", worldService.getRelationships(campaignId));
-        model.addAttribute("clocks", worldService.getClocks(campaignId).stream()
-                .filter(c -> c.getFaction() != null && c.getFaction().getId().equals(factionId))
-                .toList());
+        model.addAttribute("clocks", worldService.getClocksForFaction(campaignId, factionId));
         model.addAttribute("members", worldService.getNpcs(campaignId).stream()
                 .filter(n -> n.getFaction() != null && n.getFaction().getId().equals(factionId))
                 .toList());

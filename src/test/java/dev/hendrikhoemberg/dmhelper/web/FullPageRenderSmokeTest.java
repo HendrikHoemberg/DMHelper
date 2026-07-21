@@ -1,12 +1,9 @@
 package dev.hendrikhoemberg.dmhelper.web;
 
-import dev.hendrikhoemberg.dmhelper.adventure.data.Adventure;
-import dev.hendrikhoemberg.dmhelper.adventure.data.Chapter;
-import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
-import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
-import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
-import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.support.LazyInitLogCapture;
+import dev.hendrikhoemberg.dmhelper.support.PopulatedCampaignFixture;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -18,8 +15,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,37 +25,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FullPageRenderSmokeTest {
 
     @LocalServerPort private int port;
-    @Autowired private CampaignRepository campaignRepository;
-    @Autowired private AdventureService adventureService;
+    @Autowired private PopulatedCampaignFixture fixture;
 
-    private final HttpClient http = HttpClient.newHttpClient();
-    private UUID campaignId;
-    private UUID adventureId;
-    private UUID sceneId;
+    private final HttpClient http = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
+
+    private PopulatedCampaignFixture.Seeded seeded;
 
     @BeforeAll
     void seed() {
-        Campaign campaign = new Campaign();
-        campaign.setName("Smoke Campaign");
-        campaign.setDescription("Render-smoke fixture");
-        campaignId = campaignRepository.save(campaign).getId();
-
-        Adventure adventure = adventureService.createAdventure(
-                campaignId, "Smoke Adventure", "desc", null);
-        adventureId = adventure.getId();
-        Chapter chapter = adventureService.createChapter(adventureId, "Chapter One", "intro");
-        Scene scene = adventureService.createScene(chapter.getId(), "Opening Scene", "S1", "The hallway is dark.");
-        sceneId = scene.getId();
+        seeded = fixture.seed();
     }
 
     List<String> pages() {
-        String c = "/campaigns/" + campaignId;
+        String c = "/campaigns/" + seeded.campaignId();
         return List.of(
                 "/campaigns",
                 c,
                 c + "/adventures",
-                c + "/adventures/" + adventureId,
-                c + "/adventures/" + adventureId + "/scenes/" + sceneId,
+                c + "/adventures/" + seeded.adventureId(),
+                c + "/adventures/" + seeded.adventureId() + "/scenes/" + seeded.richSceneId(),
                 c + "/encounters",
                 c + "/maps",
                 c + "/handouts",
@@ -69,29 +56,30 @@ class FullPageRenderSmokeTest {
                 c + "/treasury",
                 c + "/ledger",
                 c + "/world/npcs",
+                c + "/world/npcs/" + seeded.npcId(),
                 c + "/world/locations",
+                c + "/world/locations/" + seeded.locationId(),
+                c + "/world/locations/" + seeded.childLocationId(),
                 c + "/world/factions",
+                c + "/world/factions/" + seeded.factionId(),
                 c + "/quests",
+                c + "/quests/" + seeded.questId(),
                 c + "/calendar",
                 c + "/session",
                 "/library",
                 "/library/tables",
+                "/library/tables/" + seeded.tableId(),
                 "/library/traps",
-                "/library/hazards"
+                "/library/traps/" + seeded.trapId(),
+                "/library/hazards",
+                "/library/hazards/" + seeded.hazardId()
         );
     }
 
     @ParameterizedTest
     @MethodSource("pages")
     void pageRendersCompletely(String path) throws Exception {
-        String url = "http://localhost:" + port + path;
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Accept", "text/html")
-                .GET()
-                .build();
-
-        HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = get(path);
 
         assertThat(response.statusCode())
                 .as("status for %s", path)
@@ -102,5 +90,27 @@ class FullPageRenderSmokeTest {
         assertThat(response.body().strip())
                 .as("body for %s must end with </html> (truncation = lazy-init mid-render)", path)
                 .endsWith("</html>");
+    }
+
+    @Test
+    void fullSweepLogsNoLazyInitializationException() throws Exception {
+        try (LazyInitLogCapture capture = new LazyInitLogCapture()) {
+            for (String path : pages()) {
+                get(path);
+            }
+            assertThat(capture.lazyInitFailures())
+                    .as("no LazyInitializationException may be logged during a full page sweep")
+                    .isEmpty();
+        }
+    }
+
+    private HttpResponse<String> get(String path) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + path))
+                .header("Accept", "text/html")
+                .timeout(Duration.ofSeconds(30))
+                .GET()
+                .build();
+        return http.send(request, HttpResponse.BodyHandlers.ofString());
     }
 }

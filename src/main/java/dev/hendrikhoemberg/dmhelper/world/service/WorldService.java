@@ -450,6 +450,12 @@ public class WorldService {
         return clockRepository.findByCampaignIdOrderBySortOrderAscIdAsc(campaignId);
     }
 
+    @Transactional(readOnly = true)
+    public List<FactionClock> getClocksForFaction(UUID campaignId, UUID factionId) {
+        findFactionInCampaign(campaignId, factionId);
+        return clockRepository.findByFactionIdOrderBySortOrderAscIdAsc(factionId);
+    }
+
     private void validateClockFilled(int segments, int filled) {
         if (segments < 1) {
             throw new IllegalArgumentException("Clock must have at least 1 segment");
