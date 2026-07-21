@@ -72,6 +72,7 @@ public class LibraryController {
                          @RequestParam(required = false) String cr,
                          @RequestParam(required = false) String type,
                          @RequestParam(required = false) String source,
+                         @RequestParam(required = false, defaultValue = "60") int limit,
                          Model model) {
         ContentSource sourceEnum = null;
         if (source != null && !source.isBlank()) {
@@ -81,6 +82,11 @@ public class LibraryController {
         model.addAttribute("statblocks", results);
         // When the source filter is on, every badge on screen says the same thing.
         model.addAttribute("sourceFiltered", sourceEnum != null);
+        model.addAttribute("cap", limit);
+        model.addAttribute("filterSearch", search);
+        model.addAttribute("filterCr", cr);
+        model.addAttribute("filterType", type);
+        model.addAttribute("filterSource", source);
         return "library/_card :: card-list";
     }
 

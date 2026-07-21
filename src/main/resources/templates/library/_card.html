@@ -41,10 +41,10 @@
     </div>
 </div>
 
-<div th:fragment="card-list(statblocks)" th:if="${statblocks != null}" class="settle-in" th:with="cap=60">
+<div th:fragment="card-list(statblocks)" th:if="${statblocks != null}" class="settle-in" th:with="cap=${cap != null ? cap : 60}">
     <div class="result-count"
          th:text="${statblocks.size()} + (${statblocks.size()} == 1 ? ' monster' : ' monsters')">312 monsters</div>
-    <div class="card-grid card-grid--library"
+    <div class="card-grid card-grid--library" id="statblock-results"
          th:classappend="${sourceFiltered} ? 'card-grid--source-filtered'">
         <th:block th:if="${statblocks.isEmpty()}">
             <th:block th:replace="~{common/_empty-state :: empty-state('Nothing in the bestiary matches that.', null, null, 'Try a broader search, or clear a filter.')}"></th:block>
@@ -54,8 +54,18 @@
             <th:block th:replace="~{library/_card :: card(sb=${sb})}"></th:block>
         </th:block>
     </div>
-    <th:block th:if="${statblocks.size() > cap}"
-              th:replace="~{library/_card :: more-results(shown=${cap}, total=${statblocks.size()})}"></th:block>
+    <th:block th:if="${statblocks.size() > cap}">
+        <div class="result-truncated u-mt-md">
+            <span class="u-text-sm text-muted">Showing the first <span th:text="${cap}">60</span> of <span th:text="${statblocks.size()}">312</span>.</span>
+            <button class="btn btn-ghost btn-xs u-ml-md"
+                    th:hx-get="@{/library/statblocks(limit=${cap + 120})}"
+                    hx-include="#librarySearch,#libraryCr,#libraryType,#librarySource"
+                    hx-target="#statblock-results"
+                    hx-swap="outerHTML">
+                Show <span th:text="${statblocks.size() - cap}">252</span> more
+            </button>
+        </div>
+    </th:block>
 </div>
 
 <div th:fragment="more-results(shown, total)" class="result-truncated text-muted u-text-sm u-mt-md">

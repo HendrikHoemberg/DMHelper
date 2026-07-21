@@ -332,6 +332,7 @@
   font-size: var(--text-lg);
   font-weight: 700;
   line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 .library-card__title a { color: var(--color-text); text-decoration: none; }
 .library-card__title a:hover { color: var(--color-accent); }
