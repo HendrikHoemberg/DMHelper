@@ -87,4 +87,16 @@ public class HandoutController {
         model.addAttribute("campaignId", campaignId);
         return "handout/_present-overlay :: overlay";
     }
+
+    @PostMapping("/{sourceId}/derivatives")
+    public ResponseEntity<Void> createDerivative(@PathVariable UUID campaignId,
+                                                  @PathVariable UUID sourceId,
+                                                  @RequestParam String title,
+                                                  @RequestParam("recipe") String recipeJson,
+                                                  @RequestParam("file") MultipartFile file) throws IOException {
+        Handout derivative = handoutService.createDerivative(campaignId, sourceId, title, recipeJson, file);
+        return ResponseEntity.ok()
+                .header("HX-Redirect", "/campaigns/" + campaignId + "/handouts#handout-" + derivative.getId())
+                .build();
+    }
 }

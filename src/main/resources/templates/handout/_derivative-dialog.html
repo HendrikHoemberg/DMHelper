@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      x-data="derivativeEditor()"
+      x-init="init()">
+<div th:fragment="dialog" class="modal-overlay" id="derivativeDialog"
+     x-show="open"
+     x-transition
+     @keydown.window.escape="close()"
+     style="display: none;">
+    <div class="modal" @click.away="close()">
+        <div class="modal-header">
+            <h2>Create Player Derivative</h2>
+            <button class="btn btn-ghost" @click="close()" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="derivativeTitle">Title</label>
+                <input type="text" id="derivativeTitle" x-model="title" class="form-control">
+            </div>
+            <div class="canvas-wrap">
+                <canvas id="derivativeCanvas"
+                        @pointerdown="onPointerDown($event)"
+                        @pointermove="onPointerMove($event)"
+                        @pointerup="onPointerUp($event)"
+                        style="max-width: 100%; border: 1px solid var(--color-border); cursor: crosshair;"></canvas>
+            </div>
+            <div class="crop-inputs">
+                <div class="form-group">
+                    <label for="cropX">Crop X</label>
+                    <input type="number" id="cropX" x-model.number="cropX" class="form-control" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="cropY">Crop Y</label>
+                    <input type="number" id="cropY" x-model.number="cropY" class="form-control" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="cropWidth">Width</label>
+                    <input type="number" id="cropWidth" x-model.number="cropWidth" class="form-control" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="cropHeight">Height</label>
+                    <input type="number" id="cropHeight" x-model.number="cropHeight" class="form-control" min="1">
+                </div>
+            </div>
+            <div class="redactions-section">
+                <h3>Redactions</h3>
+                <template x-for="(r, index) in redactions" :key="index">
+                    <div class="redaction-row">
+                        <input type="number" x-model.number="r.x" class="form-control" placeholder="X" min="0">
+                        <input type="number" x-model.number="r.y" class="form-control" placeholder="Y" min="0">
+                        <input type="number" x-model.number="r.width" class="form-control" placeholder="W" min="1">
+                        <input type="number" x-model.number="r.height" class="form-control" placeholder="H" min="1">
+                        <button class="btn btn-danger btn-sm" @click="removeRedaction(index)">&times;</button>
+                    </div>
+                </template>
+                <button class="btn btn-ghost" @click="addRedaction()">Add Redaction</button>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" @click="close()">Cancel</button>
+            <button class="btn btn-primary" @click="save()" :disabled="saving">
+                <span x-text="saving ? 'Saving...' : 'Save Derivative'"></span>
+            </button>
+        </div>
+    </div>
+</div>
+</html>

@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.handout.data.DerivativeRecipe;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
@@ -247,6 +248,85 @@ public class HandoutService {
                 delete.run();
             }
         });
+    }
+
+    public Handout createDerivative(UUID campaignId, UUID sourceId, String title,
+                                     String recipeJson, MultipartFile png) throws IOException {
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new NotFoundException("Campaign not found: " + campaignId));
+
+        Handout source = handoutRepository.findByCampaignIdAndId(campaignId, sourceId)
+                .orElseThrow(() -> new NotFoundException("Handout not found in campaign: " + sourceId));
+
+        if (png.getContentType() == null || !png.getContentType().equals("image/png")) {
+            throw new IllegalArgumentException("Derivative must be image/png");
+        }
+
+        DerivativeRecipe recipe;
+        try {
+            recipe = new tools.jackson.databind.json.JsonMapper()
+                    .readValue(recipeJson, DerivativeRecipe.class);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid recipe JSON", e);
+        }
+
+        if (recipe.sourceWidth() <= 0 || recipe.sourceHeight() <= 0
+                || recipe.cropWidth() <= 0 || recipe.cropHeight() <= 0) {
+            throw new IllegalArgumentException("Crop dimensions must be positive");
+        }
+
+        if (recipe.cropX() < 0 || recipe.cropY() < 0
+                || recipe.cropX() + recipe.cropWidth() > recipe.sourceWidth()
+                || recipe.cropY() + recipe.cropHeight() > recipe.sourceHeight()) {
+            throw new IllegalArgumentException("Crop bounds exceed source dimensions");
+        }
+
+        for (var r : recipe.redactions()) {
+            if (r.width() <= 0 || r.height() <= 0) {
+                throw new IllegalArgumentException("Redaction dimensions must be positive");
+            }
+            if (r.x() < recipe.cropX() || r.y() < recipe.cropY()
+                    || r.x() + r.width() > recipe.cropX() + recipe.cropWidth()
+                    || r.y() + r.height() > recipe.cropY() + recipe.cropHeight()) {
+                throw new IllegalArgumentException("Redaction bounds exceed crop area");
+            }
+        }
+
+        var sourceImg = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(
+                getFileContent(source.getId())));
+        if (sourceImg == null) {
+            throw new IllegalArgumentException("Source image is not readable");
+        }
+        if (sourceImg.getWidth() != recipe.sourceWidth() || sourceImg.getHeight() != recipe.sourceHeight()) {
+            throw new IllegalArgumentException("Recipe source dimensions do not match stored image");
+        }
+
+        var pngImg = javax.imageio.ImageIO.read(png.getInputStream());
+        if (pngImg == null) {
+            throw new IllegalArgumentException("Uploaded file is not a valid PNG");
+        }
+        if (pngImg.getWidth() != recipe.cropWidth() || pngImg.getHeight() != recipe.cropHeight()) {
+            throw new IllegalArgumentException(
+                    "Uploaded PNG dimensions do not match crop dimensions");
+        }
+
+        Handout derivative = new Handout();
+        derivative.setCampaign(campaign);
+        derivative.setTitle(title != null && !title.isBlank() ? title.trim() : source.getTitle() + " (derived)");
+        derivative.setTags(source.getTags());
+        derivative.setContentType("image/png");
+        derivative.setSafetyClassification(Handout.SafetyClassification.PLAYER_DERIVATIVE);
+        derivative.setSourceHandout(source);
+        derivative.setDerivativeRecipe(recipeJson);
+
+        UUID fileId = UUID.randomUUID();
+        String fileName = fileId + ".png";
+        derivative.setFileName(fileName);
+
+        storeFile(png, fileName);
+        registerRollbackCleanup(filesDir.resolve(fileName));
+
+        return handoutRepository.save(derivative);
     }
 
     public byte[] getFileContent(UUID id) throws IOException {

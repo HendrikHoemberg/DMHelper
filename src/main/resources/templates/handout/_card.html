@@ -48,8 +48,7 @@
                 Mark as DM source
             </button>
             <button class="btn btn-ghost"
-                    disabled
-                    title="Coming soon">
+                    th:onclick="'openDerivativeDialog(\'' + ${handout.id} + '\', \'' + ${handout.campaign.id} + '\')'">
                 Create player derivative
             </button>
         </th:block>
