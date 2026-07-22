@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.session.web;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransition;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneEncounterSeedService;
 import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
@@ -32,6 +33,7 @@ class SessionControllerTest {
     @Autowired private MockMvc mvc;
     @MockitoBean private SessionWorkspaceService workspaces;
     @MockitoBean private AdventureService adventures;
+    @MockitoBean private SceneEncounterSeedService encounterSeeder;
 
     @MockitoBean
     private CampaignRepository campaignRepository;
@@ -75,45 +77,29 @@ class SessionControllerTest {
 
     @Test
     void structuredSceneViewPopulatedWhenCurrentScene() throws Exception {
-        Campaign campaign = new Campaign();
-        campaign.setId(campaignId);
-        campaign.setName("Test Campaign");
-        var adv = new dev.hendrikhoemberg.dmhelper.adventure.data.Adventure();
-        adv.setId(UUID.randomUUID());
-        adv.setName("Test Adv");
-        var ch = new dev.hendrikhoemberg.dmhelper.adventure.data.Chapter();
-        ch.setId(UUID.randomUUID());
-        ch.setTitle("Ch 1");
-        ch.setAdventure(adv);
-        Scene scene = new Scene();
-        scene.setId(UUID.randomUUID());
-        scene.setTitle("Throne Room");
-        scene.setChapter(ch);
-        SceneTransition transition = new SceneTransition();
-        transition.setId(UUID.randomUUID());
-        transition.setKind(dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransitionKind.CHOICE);
-        transition.setLabel("Go outside");
-        Scene targetScene = new Scene();
-        targetScene.setId(UUID.randomUUID());
-        targetScene.setTitle("Next Room");
-        transition.setTargetScene(targetScene);
-        scene.setTransitions(List.of(transition));
-        StructuredSceneView ssv = new StructuredSceneView(scene,
-                scene.getSections(), scene.getChecks(),
-                scene.getParticipants(), scene.getTransitions(),
-                scene.getLinks(), java.util.Map.of());
-        SessionWorkspace ws = new SessionWorkspace(
-                campaign, CampaignSession.idle(campaign),
-                null, SessionWorkspaceService.SelectionSource.NONE,
-                scene, null, null, null,
-                List.of(), null, List.of(), List.of(), List.of(),
-                new CalendarService.InGameDate(1492, 7, 12),
-                ssv, List.of(), List.of());
+        SessionWorkspace ws = workspaceWithCurrentScene();
         when(workspaces.load(campaignId, null)).thenReturn(ws);
 
         mvc.perform(get("/campaigns/{id}/session", campaignId))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeExists("workspace"));
+    }
+
+    @Test
+    void storyModuleOffersEncounterCreationForAnEligibleCurrentScene() throws Exception {
+        SessionWorkspace ws = workspaceWithCurrentScene();
+        UUID sceneId = ws.currentScene().getId();
+        when(workspaces.load(campaignId, null)).thenReturn(ws);
+        when(encounterSeeder.canSeed(campaignId, sceneId)).thenReturn(true);
+
+        mvc.perform(get("/campaigns/{id}/session/rails/story", campaignId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "Start encounter from this scene")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "data-scene-id=\"" + sceneId + "\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "seedCurrentScene($el.dataset.sceneId)")));
     }
 
     @Test
@@ -149,6 +135,33 @@ class SessionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("attendanceMembers", List.of(inactive)))
                 .andExpect(model().attribute("attendeeIds", List.of(inactive.getId().toString())));
+    }
+
+    private SessionWorkspace workspaceWithCurrentScene() {
+        Campaign campaign = new Campaign();
+        campaign.setId(campaignId);
+        campaign.setName("Test Campaign");
+        var adventure = new dev.hendrikhoemberg.dmhelper.adventure.data.Adventure();
+        adventure.setId(UUID.randomUUID());
+        adventure.setName("Test Adventure");
+        adventure.setCampaign(campaign);
+        var chapter = new dev.hendrikhoemberg.dmhelper.adventure.data.Chapter();
+        chapter.setId(UUID.randomUUID());
+        chapter.setTitle("Chapter 1");
+        chapter.setAdventure(adventure);
+        Scene scene = new Scene();
+        scene.setId(UUID.randomUUID());
+        scene.setTitle("Throne Room");
+        scene.setChapter(chapter);
+        StructuredSceneView structured = new StructuredSceneView(scene,
+                scene.getSections(), scene.getChecks(), scene.getParticipants(),
+                scene.getTransitions(), scene.getLinks(), java.util.Map.of());
+        return new SessionWorkspace(campaign, CampaignSession.idle(campaign),
+                null, SessionWorkspaceService.SelectionSource.NONE,
+                scene, null, null, null,
+                List.of(), null, List.of(), List.of(), List.of(),
+                new CalendarService.InGameDate(1492, 7, 12),
+                structured, List.of(), List.of());
     }
 
     static SessionWorkspace emptyWorkspace() {

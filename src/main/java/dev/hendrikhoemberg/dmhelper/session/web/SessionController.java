@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.session.web;
 
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneEncounterSeedService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -18,14 +19,17 @@ public class SessionController {
 
     private final SessionWorkspaceService workspaces;
     private final AdventureService adventures;
+    private final SceneEncounterSeedService encounterSeeder;
 
     @Value("${dmhelper.audio.test-provider:false}")
     private boolean testAudioProvider;
 
     public SessionController(SessionWorkspaceService workspaces,
-                             AdventureService adventures) {
+                             AdventureService adventures,
+                             SceneEncounterSeedService encounterSeeder) {
         this.workspaces = workspaces;
         this.adventures = adventures;
+        this.encounterSeeder = encounterSeeder;
     }
 
     @GetMapping("/campaigns/{campaignId}/session")
@@ -50,6 +54,7 @@ public class SessionController {
                 dev.hendrikhoemberg.dmhelper.party.data.PartyMember::getCharacterName,
                 String.CASE_INSENSITIVE_ORDER));
         model.addAttribute("attendanceMembers", attendanceMembers);
+        addSeedEligibility(campaignId, workspace, model);
         return "session/cockpit";
     }
 
@@ -59,6 +64,7 @@ public class SessionController {
         model.addAttribute("workspace", workspace);
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("scenePickerGroups", adventures.scenePickerGroups(campaignId));
+        addSeedEligibility(campaignId, workspace, model);
         return "session/_story-rail :: story";
     }
 
@@ -68,5 +74,14 @@ public class SessionController {
         model.addAttribute("workspace", workspace);
         model.addAttribute("campaignId", campaignId);
         return "session/_encounter-rail :: encounters";
+    }
+
+    private void addSeedEligibility(UUID campaignId,
+                                    SessionWorkspaceService.SessionWorkspace workspace,
+                                    Model model) {
+        boolean eligible = workspace.currentScene() != null
+                && workspace.currentScene().getEncounter() == null
+                && encounterSeeder.canSeed(campaignId, workspace.currentScene().getId());
+        model.addAttribute("canSeedEncounter", eligible);
     }
 }

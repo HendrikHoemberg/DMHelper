@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.session.web;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneEncounterSeedService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneTransitionService;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
@@ -46,17 +47,20 @@ public class SessionApiController {
     private final SessionWorkspaceService workspaces;
     private final SceneTransitionService sceneTransitionService;
     private final QuestService questService;
+    private final SceneEncounterSeedService encounterSeeder;
 
     public SessionApiController(SessionLifecycleService lifecycle,
                                 AdventureService adventures,
                                 SessionWorkspaceService workspaces,
                                 SceneTransitionService sceneTransitionService,
-                                QuestService questService) {
+                                QuestService questService,
+                                SceneEncounterSeedService encounterSeeder) {
         this.lifecycle = lifecycle;
         this.adventures = adventures;
         this.workspaces = workspaces;
         this.sceneTransitionService = sceneTransitionService;
         this.questService = questService;
+        this.encounterSeeder = encounterSeeder;
     }
 
     @PostMapping("/start")
@@ -112,6 +116,12 @@ public class SessionApiController {
     SessionSceneDto followTransition(@PathVariable UUID campaignId, @RequestBody FollowTransitionRequest request) {
         Scene target = sceneTransitionService.followTransition(campaignId, request.transitionId());
         return sceneData(target, campaignId);
+    }
+
+    @PostMapping("/scenes/{sceneId}/seed-encounter")
+    SceneEncounterSeedService.SeedResult seedEncounter(@PathVariable UUID campaignId,
+                                                        @PathVariable UUID sceneId) {
+        return encounterSeeder.seedFromScene(campaignId, sceneId);
     }
 
     @PostMapping("/complete")

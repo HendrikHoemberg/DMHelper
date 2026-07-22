@@ -33,6 +33,12 @@
                   th:attr="data-map-id=${workspace.currentScene.map.id}"
                   @click="sendToTableWithMap($el.dataset.mapId)"
                   title="Present scene map">Present map</button>
+          <button class="btn btn-primary"
+                  th:if="${workspace.currentScene.encounter == null and canSeedEncounter}"
+                  th:attr="data-scene-id=${workspace.currentScene.id}"
+                  @click="seedCurrentScene($el.dataset.sceneId)">
+            Start encounter from this scene
+          </button>
         </div>
         <div class="scene-links">
           <span th:if="${workspace.currentScene.map != null}">

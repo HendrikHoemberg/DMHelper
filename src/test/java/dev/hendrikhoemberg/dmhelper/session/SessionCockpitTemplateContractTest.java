@@ -172,6 +172,23 @@ class SessionCockpitTemplateContractTest {
     }
 
     @Test
+    void storyCanSeedAnEncounterAndRefreshBothRails() throws IOException {
+        String story = Files.readString(
+                Path.of("src/main/resources/templates/session/_story-rail.html"));
+        String script = Files.readString(
+                Path.of("src/main/resources/static/js/session-cockpit.js"));
+
+        assertThat(story)
+                .contains("Start encounter from this scene")
+                .contains("seedCurrentScene");
+        assertThat(script)
+                .contains("async seedCurrentScene(sceneId)")
+                .contains("/session/scenes/${sceneId}/seed-encounter")
+                .contains("await this.refreshRails()")
+                .contains("Could not create the scene encounter");
+    }
+
+    @Test
     void cockpitHasRefreshRailsHelper() throws IOException {
         String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
         assertThat(js).contains("refreshRails();")

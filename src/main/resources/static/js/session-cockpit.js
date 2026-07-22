@@ -755,6 +755,28 @@ function sessionCockpit(config) {
             }
         },
 
+        async seedCurrentScene(sceneId) {
+            try {
+                const response = await this.request(
+                    `/api/v1/campaigns/${this.campaignId}/session/scenes/${sceneId}/seed-encounter`,
+                    { method: 'POST' });
+                const result = await response.json();
+                await this.refreshRails();
+                const skipped = result.skippedParticipants || [];
+                const message = result.alreadyExisted
+                    ? `${result.encounterName} was already linked.`
+                    : `${result.encounterName}: ${result.combatantsAdded} combatants added`
+                        + (skipped.length ? `; skipped: ${skipped.join(', ')}` : '');
+                const status = document.getElementById('battleStatusMessage');
+                if (status) status.textContent = message;
+                window.showToast?.(message, skipped.length ? 'warning' : 'success');
+            } catch (error) {
+                window.reportActionFailure(
+                    'Could not create the scene encounter.', error,
+                    () => this.seedCurrentScene(sceneId));
+            }
+        },
+
         async refreshRails() {
             const cid = this.campaignId;
             const storyUrl = `/campaigns/${cid}/session/rails/story`;

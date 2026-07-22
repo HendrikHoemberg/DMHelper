@@ -23,6 +23,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneEncounterSeedService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 
 @WebMvcTest(SessionApiController.class)
@@ -45,6 +46,9 @@ class SessionApiControllerTest {
 
     @MockitoBean
     private QuestService questService;
+
+    @MockitoBean
+    private SceneEncounterSeedService encounterSeeder;
 
     @MockitoBean
     private CampaignRepository campaignRepository;
@@ -107,5 +111,25 @@ class SessionApiControllerTest {
                         .contentType(APPLICATION_JSON).content("{\"direction\":0}"))
                 .andExpect(status().isBadRequest());
         verifyNoInteractions(adventures);
+    }
+
+    @Test
+    void seedsTheCurrentStorySceneAndReturnsTheTypedReport() throws Exception {
+        UUID sceneId = UUID.randomUUID();
+        UUID encounterId = UUID.randomUUID();
+        when(encounterSeeder.seedFromScene(campaignId, sceneId))
+                .thenReturn(new SceneEncounterSeedService.SeedResult(
+                        encounterId, "Encounter: Klarg", 4,
+                        List.of("Unresolved wolf"), false));
+
+        mvc.perform(post("/api/v1/campaigns/{campaignId}/session/scenes/{sceneId}/seed-encounter",
+                        campaignId, sceneId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.encounterId").value(encounterId.toString()))
+                .andExpect(jsonPath("$.combatantsAdded").value(4))
+                .andExpect(jsonPath("$.skippedParticipants[0]").value("Unresolved wolf"))
+                .andExpect(jsonPath("$.alreadyExisted").value(false));
+
+        verify(encounterSeeder).seedFromScene(campaignId, sceneId);
     }
 }
