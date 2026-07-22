@@ -42,6 +42,17 @@ Edit the draft freely, then provide a title and click **Complete**. A `SESSION_L
 
 The **current scene** (set via the story rail) and the **active encounter** (set via the encounter rail) are independent state. The cockpit shows both; switching one does not automatically switch the other. A one-click **Switch** action appears when the workspace map differs from the current scene or active encounter map.
 
+### Starting an encounter from the current scene
+
+When the current scene contains at least one participant linked to a statblock and has no linked
+encounter, the Story module shows **Start encounter from this scene**. The action creates one
+encounter, adds the resolved participant quantities, links it back to the scene, and refreshes the
+Story and Encounter modules.
+
+Participants without statblocks are named in the result instead of disappearing or receiving
+invented statistics. Add those participants manually if they should enter combat. Repeating the
+action is safe: DMHelper reports the existing linked encounter and does not duplicate combatants.
+
 ## Rollable Tables
 
 Tables linked directly to the current scene, or through one of its linked world locations, appear in
