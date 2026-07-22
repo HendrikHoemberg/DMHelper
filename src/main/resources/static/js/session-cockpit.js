@@ -324,8 +324,17 @@ function sessionCockpit(config) {
         },
 
         closeLifecycle() {
+            if (this.$refs.lifecycleDialog?.open) {
+                this.$refs.lifecycleDialog.close();
+            }
             this.lifecycleOpen = false;
-            this.$nextTick(() => this.$refs.sessionButton?.focus());
+            this.$nextTick(() => {
+                const target = this._lastActiveElement?.isConnected
+                    ? this._lastActiveElement
+                    : this.$refs.sessionButton;
+                target?.focus();
+                this._lastActiveElement = null;
+            });
         },
 
         lifecycleFocusable(container) {
@@ -339,9 +348,13 @@ function sessionCockpit(config) {
         },
 
         openLifecycle() {
+            this._lastActiveElement = document.activeElement;
             this.lifecycleOpen = true;
+            if (this.$refs.lifecycleDialog && !this.$refs.lifecycleDialog.open) {
+                this.$refs.lifecycleDialog.showModal();
+            }
             this.$nextTick(() => {
-                const dialog = document.querySelector('[aria-label="Session lifecycle"]');
+                const dialog = this.$refs.lifecycleDialog;
                 if (dialog) this.lifecycleFocusable(dialog)[0]?.focus();
             });
         },

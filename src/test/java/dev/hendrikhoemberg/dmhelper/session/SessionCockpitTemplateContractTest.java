@@ -76,13 +76,25 @@ class SessionCockpitTemplateContractTest {
         assertThat(js).doesNotContain("palette.__x", "dice.__x");
         assertThat(story).doesNotContain("@click=\"presentScene(");
         assertThat(lifecycle).contains("@keydown.tab=\"trapLifecycleFocus($event)\"",
-                "@click.away=\"closeLifecycle()\"");
+                "@click.self=\"closeLifecycle()\"");
         assertThat(js).contains("trapLifecycleFocus(event)", "closeLifecycle()",
                 "openLifecycle()", "lifecycleFocusable(container)");
+        assertThat(js).contains("showModal()", ".close()");
         assertThat(js).contains("const previousMapId", "if (!switched) {",
                 "await bm.switchToMap(previousMapId)");
         assertThat(battleMap).contains("const documentResponse", "const tokenResponse",
                 "return true;", "return false;");
+    }
+
+    @Test
+    void lifecycleDialogIsNativeModal() throws IOException {
+        String lifecycle = Files.readString(Path.of(
+                "src/main/resources/templates/session/_lifecycle-dialog.html"));
+        assertThat(lifecycle).contains("<dialog");
+        assertThat(lifecycle).contains("@cancel.prevent=\"closeLifecycle()\"");
+        assertThat(lifecycle).contains("@click.self=\"closeLifecycle()\"");
+        assertThat(lifecycle).doesNotContain("x-show=\"lifecycleOpen\"");
+        assertThat(lifecycle).doesNotContain(":hidden");
     }
 
     @Test

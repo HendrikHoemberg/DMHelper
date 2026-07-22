@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper;
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.WaitForSelectorState;
+import com.microsoft.playwright.options.BoundingBox;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Adventure;
 import dev.hendrikhoemberg.dmhelper.adventure.data.AdventureRepository;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Chapter;
@@ -570,7 +571,7 @@ class CoreSessionLoopSmokeTest {
                 .as("shortcut diagnostics: %s", shortcutDiagnostics)
                 .isEqualTo(true);
         dmPage.locator("button[x-ref='sessionButton']").click();
-        Locator lifecycle = dmPage.locator("[aria-label='Session lifecycle']");
+        Locator lifecycle = dmPage.locator("#sessionLifecycleDialog");
         lifecycle.waitFor();
         dmPage.keyboard().press("Control+K");
         dmPage.keyboard().press("Control+R");
@@ -609,7 +610,7 @@ class CoreSessionLoopSmokeTest {
 
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.locator("button[x-ref='sessionButton']").click();
-        lifecycle = dmPage.locator("[aria-label='Session lifecycle']");
+        lifecycle = dmPage.locator("#sessionLifecycleDialog");
         lifecycle.locator("button", new Locator.LocatorOptions().setHasText("Start")).click();
         dmPage.waitForFunction("document.querySelector('[data-session-status]').textContent === 'RUNNING'");
         dmPage.reload();
@@ -1682,6 +1683,61 @@ class CoreSessionLoopSmokeTest {
         String restoredJson = JsonMapper.builder().build().writeValueAsString(restoredManifest);
         assertThat(restoredJson).doesNotContain("manualOverrideCue", "pendingCue", "temporaryVictoryCue",
                 "victoryUntil", "muted");
+    }
+
+    @Test
+    @Order(27)
+    void lifecycleDialogGeometryAndFocusAtMultipleViewports() {
+        dmPage.setViewportSize(1366, 768);
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+
+        Object scrollBefore = dmPage.evaluate("document.documentElement.scrollHeight");
+        dmPage.locator("button[x-ref='sessionButton']").click();
+        Locator lifecycle = dmPage.locator("#sessionLifecycleDialog");
+        lifecycle.waitFor();
+
+        BoundingBox box = lifecycle.boundingBox();
+        assertThat(box.x).isGreaterThan(0);
+        assertThat(box.y).isGreaterThan(0);
+        assertThat(box.x + box.width).isLessThanOrEqualTo(1366.0);
+        assertThat(box.y + box.height).isLessThanOrEqualTo(768.0);
+        assertThat(dmPage.evaluate("document.documentElement.scrollHeight"))
+                .isEqualTo(scrollBefore);
+
+        assertThat((boolean) dmPage.evaluate(
+                "document.activeElement?.closest('#sessionLifecycleDialog') !== null"))
+                .as("initial focus inside lifecycle")
+                .isTrue();
+
+        dmPage.keyboard().press("Tab");
+        assertThat((boolean) dmPage.evaluate(
+                "document.activeElement?.closest('#sessionLifecycleDialog') !== null"))
+                .as("Tab stays inside lifecycle")
+                .isTrue();
+
+        dmPage.keyboard().press("Shift+Tab");
+        assertThat((boolean) dmPage.evaluate(
+                "document.activeElement?.closest('#sessionLifecycleDialog') !== null"))
+                .as("Shift+Tab stays inside lifecycle")
+                .isTrue();
+
+        dmPage.keyboard().press("Escape");
+
+        assertThat(lifecycle.isVisible()).isFalse();
+        assertThat((boolean) dmPage.evaluate("document.activeElement === document.querySelector('button[x-ref=\"sessionButton\"]')"))
+                .as("focus restored to session button after Escape")
+                .isTrue();
+
+        dmPage.setViewportSize(1920, 1080);
+        dmPage.locator("button[x-ref='sessionButton']").click();
+        lifecycle = dmPage.locator("#sessionLifecycleDialog");
+        lifecycle.waitFor();
+        box = lifecycle.boundingBox();
+        assertThat(box.x).isGreaterThan(0);
+        assertThat(box.y).isGreaterThan(0);
+        assertThat(box.x + box.width).isLessThanOrEqualTo(1920.0);
+        assertThat(box.y + box.height).isLessThanOrEqualTo(1080.0);
     }
 
     private static CampaignManifestV2 stripTableAndConflictingEquipment(CampaignManifestV2 source) {
