@@ -7,6 +7,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.AssetDescriptor;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.HandoutDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.Metadata;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.PendingCampaignImport;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignAssetCollector;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.service.CampaignExportOptions;
@@ -15,6 +16,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportCon
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignPackageValidationResult;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout.SafetyClassification;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.handout.packagev2.HandoutSectionAdapter;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
@@ -64,7 +66,8 @@ class HandoutSectionAdapterTest {
     @Test
     void exportsHandoutsWithAssetRef() throws Exception {
         UUID handoutId = UUID.randomUUID();
-        Handout handout = handout(handoutId, "Map", "quest,important", "image/png", "stored.png", true, false);
+        Handout handout = handout(handoutId, "Map", "quest,important", "image/png", "stored.png", true, false,
+                SafetyClassification.DM_SOURCE, null, null);
         byte[] fileData = "fake-image-data".getBytes();
 
         when(handoutRepo.findByCampaignIdOrderByTitleAsc(campaign.getId()))
@@ -106,8 +109,10 @@ class HandoutSectionAdapterTest {
     void exportsPresentedAndDmOnlyFlags() throws Exception {
         UUID h1id = UUID.randomUUID();
         UUID h2id = UUID.randomUUID();
-        Handout dmOnly = handout(h1id, "Secret", "", "image/png", "s.png", true, false);
-        Handout presented = handout(h2id, "Revealed", "", "image/png", "r.png", false, true);
+        Handout dmOnly = handout(h1id, "Secret", "", "image/png", "s.png", true, false,
+                SafetyClassification.DM_SOURCE, null, null);
+        Handout presented = handout(h2id, "Revealed", "", "image/png", "r.png", false, true,
+                SafetyClassification.PLAYER_SAFE, null, null);
 
         when(handoutRepo.findByCampaignIdOrderByTitleAsc(campaign.getId()))
                 .thenReturn(List.of(dmOnly, presented));
@@ -143,7 +148,7 @@ class HandoutSectionAdapterTest {
                 null, null, null, null, null, null, null, null, null,
                 List.of(new HandoutDto(
                         "handout-map", "Map", List.of("quest", "important"),
-                        assetKey, "image/png", false, true
+                        assetKey, "image/png", false, true, "PLAYER_SAFE", null, null
                 )),
                 null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
@@ -199,11 +204,14 @@ class HandoutSectionAdapterTest {
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
                 List.of(
-                        new HandoutDto("h1", "DM Only", List.of(), assetKey, "image/png", true, false),
-                        new HandoutDto("h2", "Presented", List.of(), assetKey, "image/png", false, true),
-                        new HandoutDto("h3", "Both False", List.of(), assetKey, "image/png", false, false),
-                        new HandoutDto("h4", "Both True", List.of(), assetKey, "image/png", true, true)
-
+                        new HandoutDto("h1", "DM Only", List.of(), assetKey, "image/png", true, false,
+                                null, null, null),
+                        new HandoutDto("h2", "Presented", List.of(), assetKey, "image/png", false, true,
+                                "PLAYER_SAFE", null, null),
+                        new HandoutDto("h3", "Both False", List.of(), assetKey, "image/png", false, false,
+                                null, null, null),
+                        new HandoutDto("h4", "Both True", List.of(), assetKey, "image/png", true, true,
+                                null, null, null)
                 ),
                 null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
@@ -247,7 +255,7 @@ class HandoutSectionAdapterTest {
                 h.getTitle().equals("Both False") && !h.isDmOnly() && !h.isPresented()
         ));
         verify(handoutRepo).save(argThat(h ->
-                h.getTitle().equals("Both True") && h.isDmOnly() && h.isPresented()
+                h.getTitle().equals("Both True") && h.isDmOnly() && !h.isPresented()
         ));
     }
 
@@ -255,8 +263,10 @@ class HandoutSectionAdapterTest {
     void generatesDistinctStorageNames() throws Exception {
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
-        Handout h1 = handout(id1, "A", "", "image/png", "a.png", true, false);
-        Handout h2 = handout(id2, "B", "", "image/png", "b.png", true, false);
+        Handout h1 = handout(id1, "A", "", "image/png", "a.png", true, false,
+                SafetyClassification.DM_SOURCE, null, null);
+        Handout h2 = handout(id2, "B", "", "image/png", "b.png", true, false,
+                SafetyClassification.DM_SOURCE, null, null);
 
         when(handoutRepo.findByCampaignIdOrderByTitleAsc(campaign.getId()))
                 .thenReturn(List.of(h1, h2));
@@ -280,8 +290,101 @@ class HandoutSectionAdapterTest {
         assertThat(descriptors.get(0).path()).isNotEqualTo(descriptors.get(1).path());
     }
 
+    @Test
+    void exportsSourceAndDerivativeWithSafetyMetadata() throws Exception {
+        UUID sourceId = UUID.randomUUID();
+        Handout source = handout(sourceId, "Source Map", "original", "image/png", "source.png",
+                true, false, SafetyClassification.DM_SOURCE, null, null);
+        UUID derivativeId = UUID.randomUUID();
+        Handout derivative = handout(derivativeId, "Player Crop", "derived", "image/png", "crop.png",
+                false, true, SafetyClassification.PLAYER_DERIVATIVE, source, "cropWidth=800");
+
+        when(handoutRepo.findByCampaignIdOrderByTitleAsc(campaign.getId()))
+                .thenReturn(List.of(source, derivative));
+        when(handoutService.getFileContent(any())).thenReturn("data".getBytes());
+
+        var keyService = new CampaignSectionAdapterTest.FakeKeyService();
+        var collector = new CampaignAssetCollector();
+        var assembler = new CampaignManifestAssembler();
+        assembler.assets(List.of());
+        var ctx = new CampaignExportContext(
+                campaign.getId(), campaign, CampaignExportOptions.complete(),
+                keyService, collector);
+        adapter.exportSection(ctx, assembler);
+        fillRest(assembler);
+        var manifest = buildManifest(assembler);
+
+        var dtos = manifest.handouts();
+        assertThat(dtos).hasSize(2);
+
+        var sourceDto = dtos.stream().filter(d -> d.key().contains("source-map")).findFirst().orElseThrow();
+        assertThat(sourceDto.safetyClassification()).isEqualTo("DM_SOURCE");
+        assertThat(sourceDto.sourceRef()).isNull();
+        assertThat(sourceDto.derivativeRecipe()).isNull();
+
+        var derivativeDto = dtos.stream().filter(d -> d.key().contains("player-crop")).findFirst().orElseThrow();
+        assertThat(derivativeDto.safetyClassification()).isEqualTo("PLAYER_DERIVATIVE");
+        assertThat(derivativeDto.sourceRef()).isNotNull();
+        assertThat(derivativeDto.sourceRef().key()).isEqualTo(sourceDto.key());
+        assertThat(derivativeDto.derivativeRecipe()).contains("cropWidth");
+    }
+
+    @Test
+    void importsOldV2HandoutWithoutSafetyDefaultsToConservative(@TempDir Path tempDir) throws Exception {
+        byte[] imageBytes = "old-data".getBytes();
+        String assetKey = "old-hk";
+        var manifest = new CampaignManifestV2(
+                2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                List.of(new HandoutDto(
+                        "old-h1", "Old V2 Handout", List.of(),
+                        assetKey, "image/png", false, false, null, null, null
+                )),
+                null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+
+        Path assetFile = tempDir.resolve(assetKey + ".png");
+        Files.write(assetFile, imageBytes);
+
+        var freshCampaign = new Campaign();
+        freshCampaign.setId(UUID.randomUUID());
+
+        var validationResult = new CampaignPackageValidationResult(
+                null, manifest, 2, Map.of(assetKey, assetFile), List.of(), List.of());
+        var pendingImport = new PendingCampaignImport(
+                UUID.randomUUID(), validationResult, null, null);
+
+        Handout saved = new Handout();
+        saved.setId(UUID.randomUUID());
+        saved.setCampaign(freshCampaign);
+        saved.setTitle("Old V2 Handout");
+        saved.setTags("");
+        saved.setContentType("image/png");
+        saved.setFileName("stored-" + UUID.randomUUID() + ".png");
+        saved.setDmOnly(false);
+        saved.setPresented(false);
+
+        when(handoutService.createImported(eq(freshCampaign.getId()), eq("Old V2 Handout"), eq(""),
+                anyString(), eq("image/png"), eq(imageBytes)))
+                .thenReturn(saved);
+        when(handoutRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        var importContext = new CampaignImportContext(
+                freshCampaign.getId(), new CampaignSectionAdapterTest.FakeKeyService(), pendingImport);
+        importContext.setCampaign(freshCampaign);
+        importContext.register(CampaignContentType.CAMPAIGN, "campaign-key", freshCampaign, freshCampaign.getId());
+
+        adapter.importSection(manifest, importContext);
+
+        verify(handoutRepo, atLeastOnce()).save(argThat(h ->
+                h.getSafetyClassification() == SafetyClassification.UNREVIEWED
+                        && !h.isPresented()
+        ));
+    }
+
     private Handout handout(UUID id, String title, String tags, String contentType,
-                            String fileName, boolean dmOnly, boolean presented) {
+                            String fileName, boolean dmOnly, boolean presented,
+                            SafetyClassification safetyClassification,
+                            Handout sourceHandout, String derivativeRecipe) {
         Handout h = new Handout();
         h.setId(id);
         h.setCampaign(campaign);
@@ -291,6 +394,9 @@ class HandoutSectionAdapterTest {
         h.setFileName(fileName);
         h.setDmOnly(dmOnly);
         h.setPresented(presented);
+        if (safetyClassification != null) h.setSafetyClassification(safetyClassification);
+        if (sourceHandout != null) h.setSourceHandout(sourceHandout);
+        if (derivativeRecipe != null) h.setDerivativeRecipe(derivativeRecipe);
         return h;
     }
 

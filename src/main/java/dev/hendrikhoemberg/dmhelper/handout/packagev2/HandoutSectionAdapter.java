@@ -4,12 +4,14 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.AssetDescriptor;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.HandoutDto;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionExporter;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionImporter;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout.SafetyClassification;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import org.springframework.stereotype.Component;
@@ -75,10 +77,22 @@ public class HandoutSectionAdapter implements CampaignSectionExporter, CampaignS
 
         List<String> tagsList = parseTags(handout.getTags());
 
+        String safetyClassification = handout.getSafetyClassification().name();
+        ContentReference sourceRef = null;
+        String derivativeRecipe = null;
+        if (handout.isDerivative()) {
+            Handout source = handout.getSourceHandout();
+            if (source != null) {
+                sourceRef = context.packageRef(CampaignContentType.HANDOUT, source.getId(), source.getTitle());
+            }
+            derivativeRecipe = handout.getDerivativeRecipe();
+        }
+
         return new HandoutDto(
                 key, handout.getTitle(), tagsList,
                 assetKey, handout.getContentType(),
-                handout.isDmOnly(), handout.isPresented()
+                handout.isDmOnly(), handout.isPresented(),
+                safetyClassification, sourceRef, derivativeRecipe
         );
     }
 
@@ -88,6 +102,8 @@ public class HandoutSectionAdapter implements CampaignSectionExporter, CampaignS
         if (dtos == null) return;
 
         var campaign = context.campaign();
+
+        List<Handout> created = new ArrayList<>();
 
         for (HandoutDto dto : dtos) {
             byte[] bytes;
@@ -115,10 +131,30 @@ public class HandoutSectionAdapter implements CampaignSectionExporter, CampaignS
             }
 
             handout.setDmOnly(dto.dmOnly());
-            handout.setPresented(dto.presented());
+            SafetyClassification classification;
+            if (dto.safetyClassification() != null) {
+                classification = SafetyClassification.valueOf(dto.safetyClassification());
+            } else {
+                classification = dto.dmOnly() ? SafetyClassification.DM_SOURCE : SafetyClassification.UNREVIEWED;
+            }
+            handout.setSafetyClassification(classification);
+            handout.setPresented(classification.isPresentable() && dto.presented());
             handoutRepository.save(handout);
 
             context.register(CampaignContentType.HANDOUT, dto.key(), handout, handout.getId());
+            created.add(handout);
+        }
+
+        for (HandoutDto dto : dtos) {
+            if (dto.sourceRef() != null) {
+                Handout derivative = context.require(
+                        ContentReference.packageRef(CampaignContentType.HANDOUT, dto.key()),
+                        CampaignContentType.HANDOUT, Handout.class);
+                Handout sourceHandout = context.require(dto.sourceRef(), CampaignContentType.HANDOUT, Handout.class);
+                derivative.setSourceHandout(sourceHandout);
+                derivative.setDerivativeRecipe(dto.derivativeRecipe());
+                handoutRepository.save(derivative);
+            }
         }
     }
 

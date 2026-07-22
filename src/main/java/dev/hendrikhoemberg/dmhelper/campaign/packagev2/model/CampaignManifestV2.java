@@ -263,7 +263,10 @@ public record CampaignManifestV2(
             String assetRef,
             String contentType,
             boolean dmOnly,
-            boolean presented
+            boolean presented,
+            String safetyClassification,
+            ContentReference sourceRef,
+            String derivativeRecipe
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

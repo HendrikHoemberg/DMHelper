@@ -72,7 +72,7 @@ class CampaignManifestV2SemanticValidatorTest {
     @Test
     void crossCampaignTargetIsDetected() {
         var manifest = minimal();
-        var handout = new CampaignManifestV2.HandoutDto("h1", "Cross", List.of(), "missing-asset", "image/png", false, false);
+        var handout = new CampaignManifestV2.HandoutDto("h1", "Cross", List.of(), "missing-asset", "image/png", false, false, null, null, null);
         var manifest2 = new CampaignManifestV2(
                 2, manifest.metadata(), manifest.campaign(), List.of(), manifest.party(),
                 manifest.customStatBlocks(), manifest.customSpells(), manifest.customConditions(), manifest.customRules(),

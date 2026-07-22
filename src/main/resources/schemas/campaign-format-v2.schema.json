@@ -567,7 +567,13 @@
         "assetRef": { "$ref": "#/$defs/key" },
         "contentType": { "type": "string", "enum": ["image/png", "image/jpeg", "image/gif", "image/webp"] },
         "dmOnly": { "type": "boolean" },
-        "presented": { "type": "boolean" }
+        "presented": { "type": "boolean" },
+        "safetyClassification": {
+          "type": "string",
+          "enum": ["DM_SOURCE", "PLAYER_SAFE", "PLAYER_DERIVATIVE", "UNREVIEWED"]
+        },
+        "sourceRef": { "$ref": "#/$defs/contentReference" },
+        "derivativeRecipe": { "type": "string", "minLength": 2 }
       }
     },
     "map": {

@@ -240,7 +240,8 @@
       "assetRef": "asset-warning-plaque",
       "contentType": "image/png",
       "dmOnly": false,
-      "presented": false
+      "presented": false,
+      "safetyClassification": "UNREVIEWED"
     }
   ],
   "maps": [

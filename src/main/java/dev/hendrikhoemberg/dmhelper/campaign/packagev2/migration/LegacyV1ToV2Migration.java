@@ -174,7 +174,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                         h.fileName(), h.imageData());
             }
             handouts.add(new CampaignManifestV2.HandoutDto(handoutKey, h.title(), list(h.tags()), assetKey, h.contentType(),
-                    true, false));
+                    true, false, "DM_SOURCE", null, null));
         }
 
         Map<String, String> mapKeys = new LinkedHashMap<>();

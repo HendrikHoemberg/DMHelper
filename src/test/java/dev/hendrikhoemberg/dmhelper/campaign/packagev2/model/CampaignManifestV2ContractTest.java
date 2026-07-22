@@ -166,6 +166,50 @@ class CampaignManifestV2ContractTest {
         }
     }
 
+    private String minimalWithHandout(String extraFields) {
+        return """
+                {
+                  "formatVersion": 2,
+                  "metadata": {
+                    "packageKey": "test-pkg",
+                    "createdAt": "2025-01-01T00:00:00Z",
+                    "generator": "DMHelper",
+                    "catalogVersion": "1.0",
+                    "catalogSha256": "abc123",
+                    "exclusions": []
+                  },
+                  "campaign": {
+                    "key": "campaign-minimal",
+                    "name": "Test Campaign",
+                    "createdAt": "2025-01-01T00:00:00Z",
+                    "settings": { "levelingMode": "XP" }
+                  },
+                  "assets": [],
+                  "party": [],
+                  "customStatBlocks": [],
+                  "customSpells": [],
+                  "customConditions": [],
+                  "customRules": [],
+                  "customEquipment": [],
+                  "customMagicItems": [],
+                  "customClasses": [],
+                  "customSpecies": [],
+                  "customBackgrounds": [],
+                  "customFeats": [],
+                  "handouts": [{"key":"h1","title":"T","assetRef":"a1","contentType":"image/png","dmOnly":false,"presented":false%s}],
+                  "maps": [],
+                  "encounters": [],
+                  "notes": [],
+                  "quickNotes": [],
+                  "assignments": [],
+                  "ledgerEntries": [],
+                  "timelineEvents": [],
+                  "adventures": [],
+                  "diceRolls": []
+                }
+                """.formatted(extraFields);
+    }
+
     private String minimalWithReference(String referenceJson) {
         return """
                 {
@@ -226,6 +270,29 @@ class CampaignManifestV2ContractTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    void handoutSchemaAcceptsSafetyClassificationValues() throws Exception {
+        assertThat(schema.validate(minimalWithHandout("""
+                ,"safetyClassification":"DM_SOURCE"
+                """))).isEmpty();
+        assertThat(schema.validate(minimalWithHandout("""
+                ,"safetyClassification":"PLAYER_SAFE"
+                """))).isEmpty();
+        assertThat(schema.validate(minimalWithHandout("""
+                ,"safetyClassification":"PLAYER_DERIVATIVE"
+                """))).isEmpty();
+        assertThat(schema.validate(minimalWithHandout("""
+                ,"safetyClassification":"UNREVIEWED"
+                """))).isEmpty();
+    }
+
+    @Test
+    void handoutSchemaAcceptsOptionalSourceRefAndRecipe() throws Exception {
+        assertThat(schema.validate(minimalWithHandout("""
+                ,"sourceRef":{"scope":"PACKAGE","type":"HANDOUT","key":"source-h1"},"derivativeRecipe":"cropWidth=800"
+                """))).isEmpty();
     }
 
     @Test

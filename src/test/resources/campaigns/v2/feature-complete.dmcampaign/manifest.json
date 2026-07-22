@@ -432,7 +432,8 @@
       "assetRef": "asset-players-map",
       "contentType": "image/png",
       "dmOnly": false,
-      "presented": true
+      "presented": true,
+      "safetyClassification": "PLAYER_SAFE"
     },
     {
       "key": "handout-dm-notes",
@@ -444,7 +445,8 @@
       "assetRef": "asset-players-map",
       "contentType": "image/png",
       "dmOnly": true,
-      "presented": false
+      "presented": false,
+      "safetyClassification": "DM_SOURCE"
     }
   ],
   "maps": [
