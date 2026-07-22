@@ -49,6 +49,9 @@
       </div>
     </div>
 
+    <!-- An imported campaign carries no encounters at all, so combat used to start with the
+         DM retyping monsters the app already knows. Offered only when there is something to
+         build from, and only until the scene actually has an encounter. -->
     <div th:if="${scene.encounter == null and canSeedEncounter}" class="u-mb-md">
       <button class="btn btn-sm btn-primary"
               th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/seed-encounter(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
@@ -61,6 +64,8 @@
       <strong th:text="${seedResult.encounterName}">Encounter</strong>
       <span class="u-text-xs"
             th:text="|${seedResult.combatantsAdded} combatants added|">0 combatants added</span>
+      <!-- 2 of 67 real participants carry no statblock. Naming them beats inventing their HP,
+           and beats letting them disappear. -->
       <div th:if="${!seedResult.skippedParticipants.isEmpty()}" class="u-text-xs u-mt-xs">
         <span th:text="|${#lists.size(seedResult.skippedParticipants)} participant(s) skipped — no statblock:|">Skipped:</span>
         <span th:text="${#strings.listJoin(seedResult.skippedParticipants, ', ')}">Names</span>

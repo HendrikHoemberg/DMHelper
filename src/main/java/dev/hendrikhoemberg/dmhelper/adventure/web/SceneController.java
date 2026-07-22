@@ -54,9 +54,9 @@ public class SceneController {
                            SceneTransitionService transitionService,
                            TrapRepository trapRepository,
                            HazardRepository hazardRepository,
-                            ThreatCardAssembler threatCardAssembler,
-                            AudioCueRepository audioCueRepository,
-                            SceneEncounterSeedService encounterSeeder) {
+                           ThreatCardAssembler threatCardAssembler,
+                           AudioCueRepository audioCueRepository,
+                           SceneEncounterSeedService encounterSeeder) {
         this.adventureService = adventureService;
         this.campaignRepository = campaignRepository;
         this.gameMapRepository = gameMapRepository;
@@ -218,6 +218,11 @@ public class SceneController {
         return loadActionRail(campaignId, adventureId, id, model);
     }
 
+    /**
+     * The app already knows every combatant in a scene, its count and its statblock, so the
+     * DM should not have to retype them when initiative starts. Returns the action rail so the
+     * new Linked Encounter block and the seed report swap in together.
+     */
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/seed-encounter")
     public String seedEncounter(@PathVariable UUID campaignId,
                                 @PathVariable UUID adventureId,
