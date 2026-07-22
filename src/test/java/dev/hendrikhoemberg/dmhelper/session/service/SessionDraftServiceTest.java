@@ -124,7 +124,7 @@ class SessionDraftServiceTest {
         goblin.setId(UUID.randomUUID());
         goblin.setName("Goblin 1");
         CombatLogEntry defeated = log(enc, CombatLogEntry.EntryType.DEFEATED, 3,
-                goblin.getId().toString(), "{}");
+                goblin.getId().toString(), "{\"name\":\"Goblin 1\"}");
         CombatLogEntry damageOne = log(enc, CombatLogEntry.EntryType.DAMAGE, 2,
                 goblin.getId().toString(), "{\"amount\":-20}");
         CombatLogEntry damageTwo = log(enc, CombatLogEntry.EntryType.DAMAGE, 4,

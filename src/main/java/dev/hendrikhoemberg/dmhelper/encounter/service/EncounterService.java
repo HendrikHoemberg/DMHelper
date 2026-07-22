@@ -492,6 +492,14 @@ public class EncounterService {
         );
     }
 
+    private String defeatedStatePayload(Combatant combatant) {
+        try {
+            return JSON_MAPPER.writeValueAsString(Map.of("name", combatant.getName()));
+        } catch (Exception failure) {
+            throw new IllegalStateException("Could not record defeated-state evidence", failure);
+        }
+    }
+
     private int extractAmount(String payload) {
         try {
             return JSON_MAPPER.readTree(payload).get("amount").asInt(0);
@@ -1204,7 +1212,7 @@ public class EncounterService {
         if (c.getCurrentHp() <= 0 && !"PC".equals(c.getKind()) && !c.isDefeated()) {
             c.setDefeated(true);
             logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.DEFEATED,
-                combatantId.toString(), "{}");
+                combatantId.toString(), defeatedStatePayload(c));
         }
         if (amount < 0 && c.getConcentratingOn() != null && !c.getConcentratingOn().isEmpty()) {
             c.setConcentrationCheckPending(true);
@@ -1232,7 +1240,7 @@ public class EncounterService {
         if (c.getCurrentHp() <= 0 && !"PC".equals(c.getKind()) && !c.isDefeated()) {
             c.setDefeated(true);
             logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.DEFEATED,
-                combatantId.toString(), "{}");
+                combatantId.toString(), defeatedStatePayload(c));
         }
         Combatant saved = combatantRepo.save(c);
         syncCombatantToPartyMember(saved);
@@ -1251,7 +1259,7 @@ public class EncounterService {
         c.setDefeated(defeated);
         Combatant saved = combatantRepo.save(c);
         CombatLogEntry.EntryType type = defeated ? CombatLogEntry.EntryType.DEFEATED : CombatLogEntry.EntryType.REVIVED;
-        logEntry(c.getEncounter().getId(), type, combatantId.toString(), "{}");
+        logEntry(c.getEncounter().getId(), type, combatantId.toString(), defeatedStatePayload(c));
         return toDto(saved);
     }
 

@@ -217,15 +217,36 @@ public class SessionDraftService {
             Encounter encounter = evidence.getFirst().getEncounter();
             int rounds = evidence.stream().mapToInt(CombatLogEntry::getRound).max().orElse(0);
             rounds = Math.max(rounds, encounter.getRound());
-            Set<UUID> defeatedIds = finalDefeatedIds(evidence);
-            Map<UUID, String> defeatedNames = new LinkedHashMap<>();
-            for (Combatant combatant : combatants.findAllById(defeatedIds)) {
-                defeatedNames.put(combatant.getId(), combatant.getName());
+            LinkedHashMap<UUID, DefeatState> finalStates = finalDefeatedState(evidence);
+            List<Map.Entry<UUID, DefeatState>> defeatedEntries = finalStates.entrySet().stream()
+                    .filter(e -> e.getValue().defeated())
+                    .toList();
+            List<String> names = new ArrayList<>();
+            Set<UUID> idsWithoutNames = new LinkedHashSet<>();
+            for (Map.Entry<UUID, DefeatState> entry : defeatedEntries) {
+                if (entry.getValue().name() != null) {
+                    names.add(entry.getValue().name());
+                } else {
+                    idsWithoutNames.add(entry.getKey());
+                }
             }
-            List<String> names = defeatedIds.stream().map(defeatedNames::get).filter(Objects::nonNull).toList();
+            if (!idsWithoutNames.isEmpty()) {
+                Map<UUID, String> fallbackNames = new LinkedHashMap<>();
+                for (Combatant combatant : combatants.findAllById(idsWithoutNames)) {
+                    fallbackNames.put(combatant.getId(), combatant.getName());
+                }
+                for (UUID id : idsWithoutNames) {
+                    String resolvedName = fallbackNames.get(id);
+                    if (resolvedName != null) names.add(resolvedName);
+                }
+            }
             long damage = evidence.stream()
                     .filter(entry -> entry.getType() == CombatLogEntry.EntryType.DAMAGE)
                     .mapToLong(this::recordedDamage).sum();
+            if (names.isEmpty() && damage == 0) {
+                lines.add(encounter.getName() + " \u2014 completed; no defeat or damage evidence recorded");
+                continue;
+            }
             StringBuilder line = new StringBuilder(encounter.getName()).append(" \u2014 ");
             if (rounds > 0) line.append(rounds).append(rounds == 1 ? " round" : " rounds");
             else line.append("completed");
@@ -236,20 +257,36 @@ public class SessionDraftService {
         return lines;
     }
 
-    private Set<UUID> finalDefeatedIds(List<CombatLogEntry> evidence) {
-        Set<UUID> result = new LinkedHashSet<>();
+    private record DefeatState(String name, boolean defeated) {}
+
+    private LinkedHashMap<UUID, DefeatState> finalDefeatedState(List<CombatLogEntry> evidence) {
+        LinkedHashMap<UUID, DefeatState> state = new LinkedHashMap<>();
         for (CombatLogEntry entry : evidence) {
             if (entry.getType() != CombatLogEntry.EntryType.DEFEATED
                     && entry.getType() != CombatLogEntry.EntryType.REVIVED) continue;
             try {
                 UUID id = UUID.fromString(entry.getCombatantId());
-                if (entry.getType() == CombatLogEntry.EntryType.DEFEATED) result.add(id);
-                else result.remove(id);
-            } catch (IllegalArgumentException ignored) {
-                // An empty or malformed combatant ID is not reliable evidence.
+                boolean defeated = entry.getType() == CombatLogEntry.EntryType.DEFEATED;
+                String name = extractNameFromPayload(entry.getPayload());
+                if (name == null && !defeated && state.containsKey(id)) {
+                    name = state.get(id).name();
+                }
+                state.put(id, new DefeatState(name, defeated));
+            } catch (IllegalArgumentException e) {
+                log.warn("Ignoring malformed combatant ID in defeat/revive entry {}", entry.getId());
             }
         }
-        return result;
+        return state;
+    }
+
+    private String extractNameFromPayload(String payload) {
+        if (payload == null || payload.isEmpty()) return null;
+        try {
+            var node = JSON.readTree(payload);
+            return node.has("name") ? node.get("name").asText(null) : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private long recordedDamage(CombatLogEntry entry) {
