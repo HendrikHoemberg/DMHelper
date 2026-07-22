@@ -62,6 +62,16 @@ public class HandoutController {
         return "handout/_card :: card";
     }
 
+    @PutMapping("/{id}/dm-only")
+    public String setDmOnly(@PathVariable UUID campaignId,
+                            @PathVariable UUID id,
+                            @RequestParam boolean dmOnly,
+                            Model model) {
+        Handout handout = handoutService.setDmOnly(id, dmOnly);
+        model.addAttribute("handout", handout);
+        return "handout/_card :: card";
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID campaignId, @PathVariable UUID id) {
         handoutService.delete(id);

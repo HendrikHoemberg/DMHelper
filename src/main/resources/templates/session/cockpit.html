@@ -45,8 +45,10 @@
        th:href="@{/campaigns/{id}/handouts(id=${campaignId})}">Handouts</a>
     <select id="cockpitHandoutPicker" class="form-input" aria-label="Present handout"
             :disabled="sessionStatus === 'IDLE'"
+            th:with="presentable=${#lists.size(workspace.handouts.?[!dmOnly])}"
             @change="presentHandout($event.target.value); $event.target.value = ''">
-      <option value="">Present handout…</option>
+      <option value="" th:if="${presentable > 0}">Present handout…</option>
+      <option value="" th:if="${presentable == 0}">All handouts are DM-only — flip one on the Handouts page</option>
       <option th:each="handout : ${workspace.handouts}" th:unless="${handout.dmOnly}"
               th:value="${handout.id}" th:text="${handout.title}">Handout</option>
     </select>

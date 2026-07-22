@@ -6,6 +6,8 @@ import dev.hendrikhoemberg.dmhelper.adventure.service.SceneStructuredContentServ
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneStructuredContentService.*;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
+import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
@@ -52,7 +54,9 @@ public class PopulatedCampaignFixture {
             UUID questId,
             UUID trapId,
             UUID hazardId,
-            UUID tableId) {}
+            UUID tableId,
+            UUID dmOnlyHandoutId,
+            UUID playerHandoutId) {}
 
     public static final int CHAPTER_TWO_SCENE_COUNT = 12;
 
@@ -91,6 +95,8 @@ public class PopulatedCampaignFixture {
     public static final String QUEST_OUTCOME_NOTES =
             "Wenn die Gruppe die Karte verliert, f\u00fchrt Sildar sie stattdessen zur H\u00f6hle.";
     public static final String LOCATION_SECRETS = "Die Redbrands halten den Ort.";
+    public static final String DM_ONLY_HANDOUT_TITLE = "Karte: Cragmaw-Versteck";
+    public static final String PLAYER_HANDOUT_TITLE = "Regionalkarte: Schwertküste";
     public static final String FACTION_REPUTATION_NOTES =
             "Der Orden traut der Gruppe erst nach der Befreiung von Phandalin.";
 
@@ -102,6 +108,7 @@ public class PopulatedCampaignFixture {
     private final TrapService traps;
     private final HazardService hazards;
     private final RollableTableService tables;
+    private final HandoutRepository handouts;
     private final StatBlockRepository statBlocks;
 
     public PopulatedCampaignFixture(CampaignRepository campaigns,
@@ -111,8 +118,9 @@ public class PopulatedCampaignFixture {
                                     QuestService quests,
                                     TrapService traps,
                                     HazardService hazards,
-                                    RollableTableService tables,
-                                    StatBlockRepository statBlocks) {
+                                     RollableTableService tables,
+                                     HandoutRepository handouts,
+                                     StatBlockRepository statBlocks) {
         this.campaigns = campaigns;
         this.adventures = adventures;
         this.structured = structured;
@@ -121,6 +129,7 @@ public class PopulatedCampaignFixture {
         this.traps = traps;
         this.hazards = hazards;
         this.tables = tables;
+        this.handouts = handouts;
         this.statBlocks = statBlocks;
     }
 
@@ -252,8 +261,25 @@ public class PopulatedCampaignFixture {
                         new RollableTableEntryWrite("nothing", 4, 6, null, "Nichts passiert", null, List.of())
                 )), null);
 
+        Campaign campaignRef = campaigns.findById(campaignId).orElseThrow();
+        Handout dmHandout = handout(campaignRef, DM_ONLY_HANDOUT_TITLE, "karte,versteck", true);
+        Handout playerHandout = handout(campaignRef, PLAYER_HANDOUT_TITLE, "karte,region", false);
+
         return new Seeded(campaignId, adventureId, one.getId(), two.getId(),
                 rich.getId(), second.getId(), faction.getId(), parent.getId(), child.getId(),
-                npc.getId(), quest.getId(), trap.getId(), hazard.getId(), table.getId());
+                npc.getId(), quest.getId(), trap.getId(), hazard.getId(), table.getId(),
+                dmHandout.getId(), playerHandout.getId());
+    }
+
+    private Handout handout(Campaign campaign, String title, String tags, boolean dmOnly) {
+        Handout handout = new Handout();
+        handout.setCampaign(campaign);
+        handout.setTitle(title);
+        handout.setTags(tags);
+        handout.setContentType("image/png");
+        handout.setFileName(UUID.randomUUID() + ".png");
+        handout.setDmOnly(dmOnly);
+        handout.setPresented(false);
+        return handouts.save(handout);
     }
 }
