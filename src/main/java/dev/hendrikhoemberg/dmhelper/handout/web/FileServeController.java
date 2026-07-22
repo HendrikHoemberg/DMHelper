@@ -24,6 +24,13 @@ public class FileServeController {
         this.tablePresentationService = tablePresentationService;
     }
 
+    @GetMapping("/api/v1/campaigns/{campaignId}/table/handouts/{id}/preview-file")
+    public ResponseEntity<byte[]> servePreviewFile(@PathVariable UUID campaignId,
+                                                    @PathVariable UUID id) throws IOException {
+        tablePresentationService.previewHandout(campaignId, id);
+        return serveFileInternal(id, CacheControl.noStore());
+    }
+
     @GetMapping("/files/{id}")
     public ResponseEntity<byte[]> serveFile(@PathVariable UUID id) throws IOException {
         var handout = handoutService.findById(id);
@@ -39,12 +46,17 @@ public class FileServeController {
         return serveFileInternal(handout, CacheControl.noStore());
     }
 
-    private ResponseEntity<byte[]> serveFileInternal(Handout handout, CacheControl cacheControl) throws IOException {
-        byte[] content = handoutService.getFileContent(handout.getId());
+    private ResponseEntity<byte[]> serveFileInternal(UUID handoutId, CacheControl cacheControl) throws IOException {
+        byte[] content = handoutService.getFileContent(handoutId);
+        Handout handout = handoutService.findById(handoutId);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(
                         handout.getContentType() != null ? handout.getContentType() : "application/octet-stream"))
                 .cacheControl(cacheControl)
                 .body(content);
+    }
+
+    private ResponseEntity<byte[]> serveFileInternal(Handout handout, CacheControl cacheControl) throws IOException {
+        return serveFileInternal(handout.getId(), cacheControl);
     }
 }

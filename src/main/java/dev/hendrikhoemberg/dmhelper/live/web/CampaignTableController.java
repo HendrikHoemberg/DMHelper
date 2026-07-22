@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.live.web;
 
 import dev.hendrikhoemberg.dmhelper.live.LiveTableState;
 import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,13 +25,21 @@ public class CampaignTableController {
 
     @PutMapping("/presentation")
     public LiveTableState setPresentation(@PathVariable UUID campaignId,
-                                          @RequestBody PresentationRequest request) {
+                                           @RequestBody PresentationRequest request) {
         return switch (request.mode()) {
             case "MAP" -> presentationService.presentMap(campaignId, UUID.fromString(request.ref()));
-            case "HANDOUT" -> presentationService.presentHandout(campaignId, UUID.fromString(request.ref()));
+            case "HANDOUT" -> presentationService.presentHandout(campaignId, UUID.fromString(request.ref()),
+                    request.emergencyOverride != null && request.emergencyOverride,
+                    request.acknowledgement);
             case "CURTAIN" -> presentationService.curtain(campaignId);
             default -> throw new IllegalArgumentException("Unknown presentation mode: " + request.mode());
         };
+    }
+
+    @GetMapping("/handouts/{id}/preview")
+    public TablePresentationService.HandoutPreview previewHandout(@PathVariable UUID campaignId,
+                                                                   @PathVariable UUID id) {
+        return presentationService.previewHandout(campaignId, id);
     }
 
     @PostMapping("/refresh")
@@ -45,5 +54,5 @@ public class CampaignTableController {
         return presentationService.broadcastCurrentState(campaignId);
     }
 
-    public record PresentationRequest(String mode, String ref) {}
+    public record PresentationRequest(String mode, String ref, Boolean emergencyOverride, String acknowledgement) {}
 }

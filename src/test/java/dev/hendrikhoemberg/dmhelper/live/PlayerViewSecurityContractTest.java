@@ -12,16 +12,28 @@ class PlayerViewSecurityContractTest {
 
     @Test
     void importedPresentationLabelsAreWrittenAsTextRatherThanHtml() throws IOException {
-        String javascript = Files.readString(
+        String handoutRenderer = Files.readString(
+                Path.of("src/main/resources/static/js/player/handout-renderer.js"));
+        String playerView = Files.readString(
                 Path.of("src/main/resources/static/js/player/player-view.js"));
-        String projectionRendering = javascript.substring(
-                javascript.indexOf("function showHandout"),
-                javascript.indexOf("function updateTokensOnly"));
 
+        assertThat(handoutRenderer)
+                .contains("image.alt = state.handout.title || ''")
+                .doesNotContain("innerHTML", "insertAdjacentHTML");
+
+        String projectionRendering = playerView.substring(
+                playerView.indexOf("function showHandout"),
+                playerView.indexOf("function updateTokensOnly"));
         assertThat(projectionRendering)
-                .contains("image.alt = state.handout.title || ''",
-                        "name.textContent = combatant.name || ''",
-                        "dot.textContent = String(condition)")
+                .contains("renderHandout(content, state)")
+                .doesNotContain("innerHTML", "insertAdjacentHTML");
+
+        String initiativeFn = playerView.substring(
+                playerView.indexOf("function showInitiative"),
+                playerView.indexOf("function updateTokensOnly"));
+        assertThat(initiativeFn)
+                .contains("name.textContent = combatant.name || ''")
+                .contains("dot.textContent = String(condition)")
                 .doesNotContain("innerHTML", "insertAdjacentHTML", "${state.handout.title}", "${c.name}");
     }
 
@@ -38,15 +50,11 @@ class PlayerViewSecurityContractTest {
 
     @Test
     void playerViewSetsImageAltFromTitleOnly() throws IOException {
-        String js = Files.readString(
-                Path.of("src/main/resources/static/js/player/player-view.js"));
-        int showHandout = js.indexOf("function showHandout");
-        int showInitiative = js.indexOf("function showInitiative");
-        String handoutFn = js.substring(showHandout, showInitiative);
-        assertThat(handoutFn)
+        String renderer = Files.readString(
+                Path.of("src/main/resources/static/js/player/handout-renderer.js"));
+        assertThat(renderer)
                 .contains("image.alt = state.handout.title || ''")
-                .doesNotContain("image.src = state.handout")
-                .contains("image.src = `/player/files/");
+                .contains("image.src = state.handout.fileUrl");
     }
 
     @Test
@@ -78,6 +86,17 @@ class PlayerViewSecurityContractTest {
         assertThat(js)
                 .doesNotContain("createElement('iframe')")
                 .doesNotContain("createElement('script')")
+                .doesNotContain("insertAdjacentHTML");
+    }
+
+    @Test
+    void handoutRendererIsDomSafe() throws IOException {
+        String js = Files.readString(
+                Path.of("src/main/resources/static/js/player/handout-renderer.js"));
+        assertThat(js)
+                .contains("image.src = state.handout.fileUrl")
+                .contains("image.alt = state.handout.title || ''")
+                .doesNotContain("innerHTML")
                 .doesNotContain("insertAdjacentHTML");
     }
 }

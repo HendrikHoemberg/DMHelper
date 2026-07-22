@@ -17,6 +17,7 @@
     <script th:src="@{/js/quicknotes.js}"></script>
     <script th:src="@{/js/ui-elevation.js}"></script>
     <script th:src="@{/js/campaign-import.js}" defer></script>
+    <script type="module" th:src="@{/js/player/handout-renderer.js}"></script>
     <script th:src="@{/js/session-cockpit.js}"></script>
     <script th:src="@{/js/rollable-table-roll.js}"></script>
     <script th:src="@{/js/dice-roller.js}"></script>
@@ -214,6 +215,7 @@
     <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${workspace.partyMembers}, oob=null)}"></th:block>
   </footer>
   <th:block th:replace="~{session/_lifecycle-dialog :: lifecycle-dialog}"></th:block>
+  <th:block th:replace="~{session/_presentation-preview}"></th:block>
 </main>
 <th:block th:replace="~{fragments/_command-palette :: command-palette}"></th:block>
     <th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>

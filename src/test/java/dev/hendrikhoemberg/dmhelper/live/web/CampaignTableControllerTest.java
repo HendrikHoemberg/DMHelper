@@ -10,13 +10,8 @@ import java.util.UUID;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class CampaignTableControllerTest {
-
-    @MockitoBean
-    private CampaignRepository campaignRepository;
 
     @Test
     void refreshAndAoeUpdatesRetainCampaignScope() {
@@ -31,5 +26,23 @@ class CampaignTableControllerTest {
 
         verify(service).updateAoEs(campaignId, aoes);
         verify(service, org.mockito.Mockito.times(2)).broadcastCurrentState(campaignId);
+    }
+
+    @Test
+    void previewEndpointDelegatesToService() {
+        TablePresentationService service = mock(TablePresentationService.class);
+        CampaignTableController controller = new CampaignTableController(service);
+        UUID campaignId = UUID.randomUUID();
+        UUID handoutId = UUID.randomUUID();
+        var preview = new TablePresentationService.HandoutPreview(
+                LiveTableState.curtain(), "DM_SOURCE", true);
+        when(service.previewHandout(campaignId, handoutId)).thenReturn(preview);
+
+        var result = controller.previewHandout(campaignId, handoutId);
+
+        verify(service).previewHandout(campaignId, handoutId);
+        assert result.state().mode().equals("CURTAIN");
+        assert result.classification().equals("DM_SOURCE");
+        assert result.requiresOverride();
     }
 }

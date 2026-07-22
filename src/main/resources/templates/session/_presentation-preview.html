@@ -1,0 +1,26 @@
+<div id="presentationPreview" class="presentation-preview" x-show="showPreview" x-cloak>
+    <div class="presentation-preview-backdrop" @click="closePreview()"></div>
+    <div class="presentation-preview-panel">
+        <div class="presentation-preview-header">
+            <h2>Preview handout</h2>
+            <button class="btn btn-ghost" @click="closePreview()">×</button>
+        </div>
+        <div class="presentation-preview-classification">
+            Classification: <span class="badge" x-text="previewClassification"></span>
+        </div>
+        <div id="previewContainer" class="presentation-preview-content"></div>
+        <div class="presentation-preview-actions" x-show="!previewRequiresOverride">
+            <button class="btn btn-primary" @click="confirmPresent()">Present to table</button>
+            <button class="btn btn-ghost" @click="closePreview()">Cancel</button>
+        </div>
+        <div class="presentation-preview-override" x-show="previewRequiresOverride">
+            <div class="presentation-preview-warning">
+                This handout contains DM-only content. Presenting it will expose DM information to players.
+            </div>
+            <div class="presentation-preview-actions">
+                <button class="btn btn-danger" @click="confirmEmergencyPresent()">Confirm emergency presentation</button>
+                <button class="btn btn-ghost" @click="closePreview()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>

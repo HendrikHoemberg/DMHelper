@@ -251,20 +251,75 @@ function sessionCockpit(config) {
             }
         },
 
+        previewHandoutId: null,
+        showPreview: false,
+        previewClassification: '',
+        previewRequiresOverride: false,
+
         async presentHandout(handoutId) {
             if (!handoutId) return;
+            try {
+                const resp = await window.dmRequest(
+                    `/api/v1/campaigns/${this.campaignId}/table/handouts/${handoutId}/preview`);
+                const preview = await resp.json();
+                this.previewHandoutId = handoutId;
+                this.previewClassification = preview.classification;
+                this.previewRequiresOverride = preview.requiresOverride;
+                this.showPreview = true;
+                this.$nextTick(() => {
+                    const container = document.getElementById('previewContainer');
+                    if (container && window.dmhelperRenderHandout) {
+                        window.dmhelperRenderHandout(container, preview.state);
+                    }
+                });
+            } catch (error) {
+                window.reportActionFailure('Could not preview this handout.', error,
+                    () => this.presentHandout(handoutId));
+            }
+        },
+
+        closePreview() {
+            this.showPreview = false;
+            this.previewHandoutId = null;
+        },
+
+        async confirmPresent() {
+            if (!this.previewHandoutId) return;
+            const id = this.previewHandoutId;
+            this.closePreview();
             try {
                 await window.dmRequest(`/api/v1/campaigns/${this.campaignId}/table/presentation`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ mode: 'HANDOUT', ref: handoutId }),
+                    body: JSON.stringify({ mode: 'HANDOUT', ref: id }),
                 });
                 this.presentingMap = false;
                 this.presentedMapId = '';
                 this.presentationMode = 'HANDOUT';
             } catch (error) {
-                window.reportActionFailure('Could not show this handout to the table.', error,
-                    () => this.presentHandout(handoutId));
+                window.reportActionFailure('Could not show this handout to the table.', error);
+            }
+        },
+
+        async confirmEmergencyPresent() {
+            if (!this.previewHandoutId) return;
+            const id = this.previewHandoutId;
+            this.closePreview();
+            try {
+                await window.dmRequest(`/api/v1/campaigns/${this.campaignId}/table/presentation`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mode: 'HANDOUT', ref: id,
+                        emergencyOverride: true,
+                        acknowledgement: 'I understand this may expose DM content',
+                    }),
+                });
+                this.presentingMap = false;
+                this.presentedMapId = '';
+                this.presentationMode = 'HANDOUT';
+            } catch (error) {
+                window.reportActionFailure('Could not show this handout to the table.', error);
             }
         },
 

@@ -60,7 +60,8 @@ public record LiveTableState(
     public record HandoutRef(
             String id,
             String title,
-            String contentType
+            String contentType,
+            String fileUrl
     ) {}
 
     public record CombatantSnapshot(

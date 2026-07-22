@@ -42,6 +42,7 @@ class FileServeControllerSecurityTest {
         unpublished.setContentType("image/png");
         unpublished.setPresented(false);
         unpublished.setDmOnly(true);
+        unpublished.setSafetyClassification(Handout.SafetyClassification.DM_SOURCE);
     }
 
     @Test
@@ -80,5 +81,19 @@ class FileServeControllerSecurityTest {
 
         mockMvc.perform(get("/files/" + handoutId))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void previewFileEndpointReturnsFileWithNoStore() throws Exception {
+        UUID campaignId = UUID.randomUUID();
+        var preview = new dev.hendrikhoemberg.dmhelper.live.TablePresentationService.HandoutPreview(
+                dev.hendrikhoemberg.dmhelper.live.LiveTableState.curtain(), "DM_SOURCE", true);
+        when(tablePresentationService.previewHandout(campaignId, handoutId)).thenReturn(preview);
+        when(handoutService.findById(handoutId)).thenReturn(unpublished);
+        when(handoutService.getFileContent(handoutId)).thenReturn(new byte[]{1,2,3});
+
+        mockMvc.perform(get("/api/v1/campaigns/" + campaignId + "/table/handouts/" + handoutId + "/preview-file"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")));
     }
 }

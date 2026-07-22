@@ -11,6 +11,8 @@ import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntry;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntryRepository;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.PresentationInvalidated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +38,7 @@ public class TablePresentationService {
     private final CombatantRepository combatantRepository;
     private final HandoutRepository handoutRepository;
     private final CampaignSessionRepository sessionRepository;
+    private final SessionAuditEntryRepository auditEntryRepository;
 
     private volatile LiveTableState currentState;
     private volatile UUID currentCampaignId;
@@ -43,18 +46,32 @@ public class TablePresentationService {
 
     private volatile List<LiveTableState.AoeTemplateSnapshot> currentAoEs = List.of();
 
+    public record HandoutPreview(LiveTableState state, String classification, boolean requiresOverride) {}
+
+    public HandoutPreview previewHandout(UUID campaignId, UUID handoutId) {
+        Handout handout = requireCampaignHandout(campaignId, handoutId);
+        String previewUrl = "/api/v1/campaigns/" + campaignId + "/table/handouts/" + handoutId + "/preview-file";
+        LiveTableState state = LiveTableState.full("HANDOUT", null,
+                new LiveTableState.HandoutRef(handout.getId().toString(), handout.getTitle(),
+                        handout.getContentType(), previewUrl),
+                null, null);
+        return new HandoutPreview(state, handout.getSafetyClassification().name(), !handout.isPresentable());
+    }
+
     public TablePresentationService(PlayerSafeProjectionService projectionService,
                                     GameMapRepository gameMapRepository,
                                     EncounterRepository encounterRepository,
                                     CombatantRepository combatantRepository,
                                     HandoutRepository handoutRepository,
-                                    CampaignSessionRepository sessionRepository) {
+                                    CampaignSessionRepository sessionRepository,
+                                    SessionAuditEntryRepository auditEntryRepository) {
         this.projectionService = projectionService;
         this.gameMapRepository = gameMapRepository;
         this.encounterRepository = encounterRepository;
         this.combatantRepository = combatantRepository;
         this.handoutRepository = handoutRepository;
         this.sessionRepository = sessionRepository;
+        this.auditEntryRepository = auditEntryRepository;
         this.currentState = LiveTableState.curtain();
     }
 
@@ -124,19 +141,39 @@ public class TablePresentationService {
     }
 
     @Transactional
-    public LiveTableState presentHandout(UUID campaignId, UUID handoutId) {
+    public LiveTableState presentHandout(UUID campaignId, UUID handoutId,
+                                         boolean emergencyOverride, String acknowledgement) {
+        Handout handout = requireCampaignHandout(campaignId, handoutId);
         CampaignSession session = requireOpenSession(campaignId);
-        Handout handout = handoutRepository.findById(handoutId)
-                .filter(value -> value.getCampaign().getId().equals(campaignId) && !value.isDmOnly())
-                .orElseThrow(() -> new NotFoundException("Presentable handout not found in campaign"));
+
+        if (!handout.isPresentable()) {
+            if (!emergencyOverride || !"I understand this may expose DM content".equals(acknowledgement)) {
+                throw new NotFoundException("Presentable handout not found in campaign");
+            }
+            SessionAuditEntry audit = new SessionAuditEntry();
+            audit.setSession(session);
+            audit.setEntryType(SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE);
+            audit.setContentType("HANDOUT");
+            audit.setContentId(handoutId);
+            audit.setDetails("{\"title\":\"" + escapeJson(handout.getTitle())
+                    + "\",\"classification\":\"" + handout.getSafetyClassification().name() + "\"}");
+            auditEntryRepository.saveAndFlush(audit);
+        }
+
         session.setPresentationMode(CampaignSession.PresentationMode.HANDOUT);
         session.setPresentedMap(null);
         session.setPresentedHandout(handout);
         sessionRepository.saveAndFlush(session);
         currentCampaignId = campaignId;
-        currentState = projectHandout(handout);
+        currentState = projectHandout(handout, "/player/files/" + handoutId);
         broadcast();
         return currentState;
+    }
+
+    private Handout requireCampaignHandout(UUID campaignId, UUID handoutId) {
+        return handoutRepository.findById(handoutId)
+                .filter(h -> h.getCampaign().getId().equals(campaignId))
+                .orElseThrow(() -> new NotFoundException("Handout not found in campaign"));
     }
 
     @Transactional
@@ -171,10 +208,11 @@ public class TablePresentationService {
                     yield currentState;
                 }
                 case HANDOUT -> {
-                    if (session.getPresentedHandout() == null || session.getPresentedHandout().isDmOnly())
+                    Handout h = session.getPresentedHandout();
+                    if (h == null || !h.isPresentable())
                         throw new IllegalStateException("Missing handout");
                     currentCampaignId = campaignId;
-                    currentState = projectHandout(session.getPresentedHandout());
+                    currentState = projectHandout(h, "/player/files/" + h.getId());
                     broadcast();
                     yield currentState;
                 }
@@ -237,10 +275,15 @@ public class TablePresentationService {
                 ), null, combatants, activeTurnIndex);
     }
 
-    private LiveTableState projectHandout(Handout handout) {
+    private LiveTableState projectHandout(Handout handout, String fileUrl) {
         return LiveTableState.full("HANDOUT", null,
-                new LiveTableState.HandoutRef(handout.getId().toString(), handout.getTitle(), handout.getContentType()),
+                new LiveTableState.HandoutRef(handout.getId().toString(), handout.getTitle(),
+                        handout.getContentType(), fileUrl),
                 null, null);
+    }
+
+    private static String escapeJson(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private CampaignSession requireOpenSession(UUID campaignId) {

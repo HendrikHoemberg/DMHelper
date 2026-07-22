@@ -1,4 +1,5 @@
 import { expandPrimitives } from '../map/shared.js';
+import { renderHandout } from './handout-renderer.js';
 
 const WS_URL = `ws://${window.location.host}/ws/table`;
 
@@ -289,14 +290,7 @@ function showHandout(state) {
         return;
     }
     const content = document.getElementById('playerContent');
-    content.replaceChildren();
-    const wrapper = document.createElement('div');
-    wrapper.className = 'pv-handout';
-    const image = document.createElement('img');
-    image.src = `/player/files/${encodeURIComponent(state.handout.id)}`;
-    image.alt = state.handout.title || '';
-    wrapper.appendChild(image);
-    content.appendChild(wrapper);
+    renderHandout(content, state);
 }
 
 function showInitiative(state) {
