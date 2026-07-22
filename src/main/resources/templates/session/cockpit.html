@@ -13,6 +13,7 @@
     <script th:src="@{/vendor/htmx.min.js}"></script>
     <script th:src="@{/js/dm-request.js}"></script>
     <script th:src="@{/js/keyboard.js}"></script>
+    <script th:src="@{/js/screen-safety.js}"></script>
     <script th:src="@{/js/command-palette.js}"></script>
     <script th:src="@{/js/quicknotes.js}"></script>
     <script th:src="@{/js/ui-elevation.js}"></script>
@@ -62,21 +63,22 @@
     <a class="btn btn-ghost" target="_blank"
        th:href="@{/campaigns/{id}/calendar(id=${campaignId})}">Calendar</a>
     <!-- The cockpit renders its own topbar rather than fragments/navbar, so it needs its own
-         DM Mode control: this is the screen facing the table when the laptop gets turned. -->
-    <label class="switch-control" title="DM Mode toggles player-safe projection">
-      <input type="checkbox" id="dmModeCheckbox" checked>
+         Screen Safety control: this is the screen facing the table when the laptop gets turned. -->
+    <label class="switch-control" title="Screen Safety toggles table-safe projection">
+      <span class="screen-safety-badge">Table-safe</span>
+      <input type="checkbox" id="screenSafetyCheckbox">
       <span class="switch-track"></span>
-      <span class="switch-label">DM Mode</span>
+      <span class="switch-label">Private</span>
     </label>
     <button class="btn btn-ghost" x-ref="sessionButton" @click="openLifecycle()">Session</button>
   </header>
   <th:block th:replace="~{rollable-table/_roll-panel :: roll-panel(tableId=${null}, compact=${true})}"></th:block>
   <section class="cockpit-grid">
-    <aside class="cockpit-story" aria-label="Story rail"
+    <aside class="cockpit-story" data-runtime-module="story" data-table-safe-behavior="FILTER" aria-label="Story rail"
            th:insert="~{session/_story-rail :: story(workspace=${workspace})}"></aside>
-    <section class="cockpit-table" aria-label="Table surface"
+    <section class="cockpit-table" data-runtime-module="map" data-table-safe-behavior="FILTER" aria-label="Table surface"
              th:attr="data-selection-source=${workspace.selectionSource}">
-      <div class="battle-toolbar" aria-label="Battle map controls">
+      <div class="battle-toolbar" data-screen-sensitive aria-label="Battle map controls">
         <div class="tool-group map-switcher">
           <label for="cockpitMapPicker" class="sr-only">Workspace map</label>
           <select id="cockpitMapPicker" aria-label="Workspace map" :value="currentMapId"
@@ -119,7 +121,7 @@
         <th:block th:unless="${workspace.workspaceMap != null}">
           <th:block th:replace="~{session/_empty-table :: empty(workspace=${workspace})}"></th:block>
         </th:block>
-        <aside class="battle-sidebar" th:if="${workspace.workspaceMap != null}" aria-label="Map tokens">
+        <aside class="battle-sidebar" data-screen-sensitive th:if="${workspace.workspaceMap != null}" aria-label="Map tokens">
           <section class="sidebar-section">
             <h3>From Library</h3>
             <div class="statblock-search">
@@ -135,7 +137,7 @@
               </div>
             </div>
           </section>
-          <section class="sidebar-section threat-pin-section" data-threat-pins>
+          <section class="sidebar-section threat-pin-section" data-screen-sensitive data-threat-pins>
             <h3>Threat pins</h3>
             <p class="text-muted u-text-xs">DM-only. Click a diamond marker on the map to open the card.</p>
             <label class="u-block u-text-sm">Type
@@ -203,15 +205,15 @@
         <span id="battleSaveIndicator" class="save-indicator save-saved">Saved</span>
       </div>
     </section>
-    <aside class="cockpit-encounter" aria-label="Encounter rail"
+    <aside class="cockpit-encounter" data-runtime-module="encounter" data-table-safe-behavior="HIDE" aria-label="Encounter rail"
            th:insert="~{session/_encounter-rail :: encounters(workspace=${workspace})}"></aside>
   </section>
-  <section class="cockpit-plan" aria-label="Session plan"
+  <section class="cockpit-plan" data-runtime-module="session-plan" data-table-safe-behavior="HIDE" aria-label="Session plan"
            th:insert="~{session/_session-plan :: plan(workspace=${workspace})}"></section>
   <th:block th:replace="~{audio/_cockpit-widget :: cockpit-widget-config(campaignId=${campaignId}, sessionId=${workspace.session.id})}"></th:block>
   <section class="cockpit-audio-section" aria-label="Audio playback"
            th:insert="~{audio/_cockpit-widget :: cockpit-widget(campaignId=${campaignId}, sessionId=${workspace.session.id})}"></section>
-  <footer class="cockpit-partybar">
+  <footer class="cockpit-partybar" data-runtime-module="party" data-table-safe-behavior="FILTER">
     <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${workspace.partyMembers}, oob=null)}"></th:block>
   </footer>
   <th:block th:replace="~{session/_lifecycle-dialog :: lifecycle-dialog}"></th:block>
@@ -236,20 +238,19 @@ window.sessionCockpitConfig = {
     attendeeIds: /*[[${attendeeIds}]]*/ [],
     draftBody: /*[[${workspace.session.draftBody}]]*/ null
 };
-// DM Mode: mirrors fragments/navbar.html, which the cockpit does not include.
+// Screen Safety: mirrors fragments/navbar.html, which the cockpit does not include.
 (function () {
-    const checkbox = document.getElementById('dmModeCheckbox');
+    const checkbox = document.getElementById('screenSafetyCheckbox');
     if (!checkbox) return;
-    const apply = (animate) => window.setDmMode(checkbox.checked, animate ? undefined : { animate: false });
+    const apply = (animate) => window.setScreenSafety(checkbox.checked ? 'TABLE_SAFE' : 'PRIVATE', animate ? undefined : { animate: false });
     checkbox.addEventListener('change', () => {
-        window.setDmMode(checkbox.checked);
-        window.dispatchEvent(new CustomEvent('dm-mode-changed', { detail: { dmMode: checkbox.checked } }));
+        window.setScreenSafety(checkbox.checked ? 'TABLE_SAFE' : 'PRIVATE');
+        window.dispatchEvent(new CustomEvent('screen-safety-changed', { detail: { mode: checkbox.checked ? 'TABLE_SAFE' : 'PRIVATE' } }));
     });
-    window.addEventListener('dm-mode-toggle', () => {
+    window.addEventListener('screen-safety-toggle', () => {
         checkbox.checked = !checkbox.checked;
         checkbox.dispatchEvent(new Event('change'));
     });
-    // setDmMode is defined by ui-elevation.js on DOM ready, which is after this script parses.
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => apply(false));
     } else {

@@ -5,7 +5,7 @@
   'use strict';
 
   const SHORTCUTS = {
-    'd': { ctrl: true, shift: true, event: 'dm-mode-toggle' },
+    'd': { ctrl: true, shift: true, event: 'screen-safety-toggle' },
     'k': { ctrl: true, shift: false, event: 'command-palette-toggle' },
     'r': { ctrl: true, shift: false, event: 'dice-roller-toggle' },
   };

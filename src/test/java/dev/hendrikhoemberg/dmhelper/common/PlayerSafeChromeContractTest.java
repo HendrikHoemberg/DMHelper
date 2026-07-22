@@ -11,20 +11,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PlayerSafeChromeContractTest {
 
     @Test
-    void pinDisplayIsHiddenInPlayerSafeMode() throws IOException {
+    void pinDisplayIsHiddenInTableSafeMode() throws IOException {
         String navbar = Files.readString(
                 Path.of("src/main/resources/templates/fragments/navbar.html"));
         assertThat(navbar)
-                .as("PIN must carry dm-only so player-safe mode hides it")
-                .contains("class=\"pin-display dm-only\"");
+                .as("PIN must carry data-screen-sensitive so table-safe mode hides it")
+                .contains("data-screen-sensitive");
     }
 
     @Test
-    void recentNotesCardIsHiddenInPlayerSafeMode() throws IOException {
+    void recentNotesCardIsHiddenInTableSafeMode() throws IOException {
         String dashboard = Files.readString(
                 Path.of("src/main/resources/templates/campaigns/detail.html"));
         assertThat(dashboard)
-                .as("Recent note titles can spoil quests; hide the card in player-safe mode")
-                .contains("card dash-card dm-only");
+                .as("Recent note titles can spoil quests; hide the card in table-safe mode")
+                .contains("data-screen-sensitive");
     }
 }

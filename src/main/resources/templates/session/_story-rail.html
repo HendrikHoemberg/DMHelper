@@ -10,9 +10,9 @@
         <span class="scene-status-badge" th:text="${#enums.label(workspace.currentScene.status)}">UNVISITED</span>
         <h4 th:text="${workspace.currentScene.title}">Scene Title</h4>
         <span class="scene-key" th:if="${workspace.currentScene.sceneKey}" th:text="${workspace.currentScene.sceneKey}">key</span>
-        <div class="scene-summary dm-only" th:if="${workspace.currentScene.summary}"
+        <div class="scene-summary" data-screen-sensitive th:if="${workspace.currentScene.summary}"
              th:text="${workspace.currentScene.summary}">Scene summary</div>
-        <div class="scene-body dm-only" th:if="${workspace.currentScene.body}" th:text="${workspace.currentScene.body}">Scene notes</div>
+        <div class="scene-body" data-screen-sensitive th:if="${workspace.currentScene.body}" th:text="${workspace.currentScene.body}">Scene notes</div>
         <div class="scene-editorial">
           <button class="btn btn-ghost" th:if="${workspace.previousScene != null}"
                   @click="stepScene(-1)" title="Previous scene">&larr; Prev</button>
@@ -70,7 +70,7 @@
           <!-- DM sections -->
           <div th:each="section : ${workspace.structuredSceneView.sections}"
                th:if="${section.kind.name() != 'READ_ALOUD'}"
-               class="structured-block structured-dm dm-only u-mb-xs">
+               class="structured-block structured-dm u-mb-xs" data-screen-sensitive>
             <span class="badge" th:text="${#enums.label(section.kind)}">SECTION</span>
             <strong th:text="${section.label}">Label</strong>
             <p class="u-text-sm" th:text="${section.body}">Body</p>
@@ -91,7 +91,7 @@
           <!-- Who is in the room. The workspace always carried these; the rail never showed
                them, so at the table the DM could not see what they were about to fight. -->
           <div th:if="${workspace.structuredSceneView.participants != null and !workspace.structuredSceneView.participants.isEmpty()}"
-               class="scene-participants dm-only u-mt-sm">
+               class="scene-participants u-mt-sm" data-screen-sensitive>
             <h5 class="u-text-sm">Participants</h5>
             <div th:each="p : ${workspace.structuredSceneView.participants}" class="participant-row u-mb-xs">
               <strong th:text="${p.displayName}">Name</strong>
@@ -111,7 +111,7 @@
           </div>
           <!-- Checks (DM-only) -->
           <div th:if="${workspace.structuredSceneView.checks != null and !workspace.structuredSceneView.checks.isEmpty()}"
-               class="scene-checks dm-only u-mt-sm">
+               class="scene-checks u-mt-sm" data-screen-sensitive>
             <h5 class="u-text-sm">Checks</h5>
             <div th:each="check : ${workspace.structuredSceneView.checks}" class="check-row u-mb-xs">
               <strong th:text="${check.label}">Check</strong>
@@ -125,7 +125,7 @@
         </div>
         <!-- Outgoing CHOICE transitions as actionable buttons -->
         <div th:if="${workspace.structuredSceneView != null and !workspace.structuredSceneView.transitions.isEmpty()}"
-             class="scene-transitions dm-only u-mt-sm">
+             class="scene-transitions u-mt-sm" data-screen-sensitive>
           <h5 class="u-text-sm">Transitions</h5>
           <div th:each="t : ${workspace.structuredSceneView.transitions}">
             <div th:if="${t.kind.name() == 'CHOICE' and t.targetScene != null}"

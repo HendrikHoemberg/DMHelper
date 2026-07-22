@@ -15,17 +15,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 /**
- * DM Mode is the app's only defence when a DM turns the laptop toward the table: the navbar
- * toggle sets body.dm-mode-off, and CSS then hides .dm-only / [data-dm-only]. The machinery
- * and the "PLAYER-SAFE" badge shipped, but almost nothing was tagged -- a section labelled
- * "Secret" stayed on screen underneath the badge.
+ * Screen safety is the app's defence when a DM turns the laptop toward the table: the toggle
+ * sets {@code data-screen-safety="TABLE_SAFE"} on the body, and JS/CSS then hides content
+ * marked {@code data-screen-sensitive}. The machinery shipped, but untagged content stayed on
+ * screen underneath the badge.
  *
  * <p>These tests pin which content must carry the tag. Read-aloud text is deliberately
  * excluded: it is the one kind a DM is meant to show or read to the table.
  */
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class DmModeCoverageTest {
+class ScreenSafetyCoverageTest {
 
     @Autowired private WebApplicationContext context;
     @Autowired private PopulatedCampaignFixture fixture;
@@ -81,32 +81,32 @@ class DmModeCoverageTest {
     }
 
     private static String abbreviate(String s) {
-        return s.length() <= 40 ? s : s.substring(0, 40) + "…";
+        return s.length() <= 40 ? s : s.substring(0, 40) + "\u2026";
     }
 
-    private static void assertBlockIsDmOnly(String html, String needle) {
+    private static void assertBlockIsScreenSensitive(String html, String needle) {
         String tag = enclosingTag(html, needle, "structured-block");
         assertThat(tag)
                 .as("a .structured-block must enclose %s", abbreviate(needle))
                 .isNotNull();
         assertThat(tag)
-                .as("this block is DM-facing and must be hidden when DM Mode is off: %s", abbreviate(needle))
-                .contains("dm-only");
+                .as("this block is DM-facing and must be hidden when screen safety is TABLE_SAFE: %s", abbreviate(needle))
+                .contains("data-screen-sensitive");
     }
 
     @Test
     void sceneSecretSectionIsHiddenFromTheTable() throws Exception {
-        assertBlockIsDmOnly(scenePage(), PopulatedCampaignFixture.SECRET_BODY);
+        assertBlockIsScreenSensitive(scenePage(), PopulatedCampaignFixture.SECRET_BODY);
     }
 
     @Test
     void sceneTreasureSectionIsHiddenFromTheTable() throws Exception {
-        assertBlockIsDmOnly(scenePage(), PopulatedCampaignFixture.TREASURE_BODY);
+        assertBlockIsScreenSensitive(scenePage(), PopulatedCampaignFixture.TREASURE_BODY);
     }
 
     @Test
     void sceneDmAdviceIsHiddenFromTheTable() throws Exception {
-        assertBlockIsDmOnly(scenePage(), "Lass die Gruppe suchen.");
+        assertBlockIsScreenSensitive(scenePage(), "Lass die Gruppe suchen.");
     }
 
     @Test
@@ -115,45 +115,43 @@ class DmModeCoverageTest {
         assertThat(tag).isNotNull();
         assertThat(tag)
                 .as("read-aloud is the one section kind a DM shows the table; tagging it would defeat the feature")
-                .doesNotContain("dm-only");
+                .doesNotContain("data-screen-sensitive");
     }
 
     @Test
     void cockpitSecretSectionIsHiddenFromTheTable() throws Exception {
-        assertBlockIsDmOnly(cockpit(), PopulatedCampaignFixture.SECRET_BODY);
+        assertBlockIsScreenSensitive(cockpit(), PopulatedCampaignFixture.SECRET_BODY);
     }
 
     @Test
     void cockpitReadAloudStaysVisible() throws Exception {
         String tag = enclosingTag(cockpit(), PopulatedCampaignFixture.READ_ALOUD_BODY, "structured-block");
         assertThat(tag).isNotNull();
-        assertThat(tag).doesNotContain("dm-only");
+        assertThat(tag).doesNotContain("data-screen-sensitive");
     }
 
     /** Opening tag of the nearest enclosing element carrying {@code marker}, any element type. */
-    private static void assertNearestMarkedBlockIsDmOnly(String html, String needle, String marker) {
+    private static void assertNearestMarkedBlockIsScreenSensitive(String html, String needle, String marker) {
         String tag = enclosingTag(html, needle, marker);
-        assertThat(tag).as("a .%s must enclose %s", marker, abbreviate(needle)).isNotNull();
+        assertThat(tag).as("a [%s] must enclose %s", marker, abbreviate(needle)).isNotNull();
         assertThat(tag)
                 .as("DM-facing detail must be hidden when the laptop faces the table: %s", abbreviate(needle))
-                .contains("dm-only");
+                .contains("data-screen-sensitive");
     }
 
     @Test
     void sceneChecksAreHiddenFromTheTable() throws Exception {
-        // A DC and its success/failure outcomes tell players exactly what to roll and expect.
-        assertNearestMarkedBlockIsDmOnly(scenePage(), "Der Absender wird klar.", "data-check-id");
+        assertNearestMarkedBlockIsScreenSensitive(scenePage(), "Der Absender wird klar.", "data-check-id");
     }
 
     @Test
     void sceneParticipantsAreHiddenFromTheTable() throws Exception {
-        // Monster counts and placement hints are the ambush.
-        assertNearestMarkedBlockIsDmOnly(scenePage(), "Hinter der T", "data-participant-id");
+        assertNearestMarkedBlockIsScreenSensitive(scenePage(), "Hinter der T", "data-participant-id");
     }
 
     @Test
     void sceneTransitionDmNotesAreHiddenFromTheTable() throws Exception {
-        assertNearestMarkedBlockIsDmOnly(scenePage(), "Nur wenn die Truhe offen ist.", "data-transition-id");
+        assertNearestMarkedBlockIsScreenSensitive(scenePage(), "Nur wenn die Truhe offen ist.", "data-transition-id");
     }
 
     @Test
@@ -162,22 +160,19 @@ class DmModeCoverageTest {
         int at = html.indexOf("Der Absender wird klar.");
         assertThat(at).as("cockpit must render the check").isGreaterThan(-1);
         assertThat(html.substring(Math.max(0, at - 600), at))
-                .as("cockpit checks are DM-only")
-                .contains("dm-only");
+                .as("cockpit checks must be screen-sensitive")
+                .contains("data-screen-sensitive");
     }
 
     @Test
-    void cockpitOffersItsOwnDmModeToggle() throws Exception {
-        // The cockpit renders its own topbar instead of fragments/navbar, so it inherited
-        // neither the toggle nor the script that initialises it -- leaving the one screen
-        // that is actually open at the table with no way to hide DM content.
+    void cockpitOffersItsOwnScreenSafetyToggle() throws Exception {
         assertThat(cockpit())
-                .as("the cockpit must be able to go player-safe without navigating away")
-                .contains("dmModeCheckbox");
+                .as("the cockpit must be able to go table-safe without navigating away")
+                .contains("screenSafetyCheckbox");
     }
 
-    /** Asserts the element carrying {@code cssClass} also carries dm-only. */
-    private static void assertClassIsDmOnly(String html, String cssClass, String why) {
+    /** Asserts the element carrying {@code cssClass} also carries data-screen-sensitive. */
+    private static void assertClassIsScreenSensitive(String html, String cssClass, String why) {
         int at = html.indexOf("class=\"" + cssClass);
         if (at < 0) {
             at = html.indexOf(cssClass);
@@ -186,43 +181,43 @@ class DmModeCoverageTest {
         int open = html.lastIndexOf('<', at);
         int close = html.indexOf('>', at);
         String tag = html.substring(open, close < 0 ? html.length() : close + 1);
-        assertThat(tag).as("%s -- tag was: %s", why, tag).contains("dm-only");
+        assertThat(tag).as("%s -- tag was: %s", why, tag).contains("data-screen-sensitive");
     }
 
     @Test
     void cockpitSceneSummaryIsHiddenFromTheTable() throws Exception {
-        assertClassIsDmOnly(cockpit(), "scene-summary",
+        assertClassIsScreenSensitive(cockpit(), "scene-summary",
                 "the scene summary is DM prose describing the room before players discover it");
     }
 
     @Test
     void cockpitSceneNotesAreHiddenFromTheTable() throws Exception {
-        assertClassIsDmOnly(cockpit(), "scene-body",
+        assertClassIsScreenSensitive(cockpit(), "scene-body",
                 "the scene body is the DM's own notes");
     }
 
     @Test
     void cockpitTransitionsAreHiddenFromTheTable() throws Exception {
-        assertClassIsDmOnly(cockpit(), "scene-transitions",
+        assertClassIsScreenSensitive(cockpit(), "scene-transitions",
                 "transitions spell out where the plot goes next");
     }
 
     @Test
     void cockpitQuestProgressIsHiddenFromTheTable() throws Exception {
-        assertClassIsDmOnly(cockpit(), "quest-progress-panel",
+        assertClassIsScreenSensitive(cockpit(), "quest-progress-panel",
                 "quest names and objective states are plot structure the table should not read");
     }
 
     @Test
     void npcSecretIsHiddenFromTheTable() throws Exception {
         String html = npcPage();
-        String needle = "War früher Ritter.";
+        String needle = "War fr\u00fcher Ritter.";
         int at = html.indexOf(needle);
         assertThat(at).as("NPC secret must render").isGreaterThan(-1);
         String before = html.substring(Math.max(0, at - 300), at);
         assertThat(before)
                 .as("an NPC's secret must be hidden when the laptop faces the table")
-                .contains("dm-only");
+                .contains("data-screen-sensitive");
     }
 
     private String questPage() throws Exception {
@@ -242,47 +237,46 @@ class DmModeCoverageTest {
                 .andReturn().getResponse().getContentAsString();
     }
 
-    /** The field's own `u-mb-md` wrapper must carry dm-only. */
-    private static void assertFieldBlockIsDmOnly(String html, String needle, String why) {
+    /** The field's own `u-mb-md` wrapper must carry data-screen-sensitive. */
+    private static void assertFieldBlockIsScreenSensitive(String html, String needle, String why) {
         String tag = enclosingTag(html, needle, "u-mb-md");
         assertThat(tag).as("a .u-mb-md block must enclose %s", abbreviate(needle)).isNotNull();
-        assertThat(tag).as("%s -- tag was: %s", why, tag).contains("dm-only");
+        assertThat(tag).as("%s -- tag was: %s", why, tag).contains("data-screen-sensitive");
     }
 
     @Test
     void questPrerequisitesAreHiddenFromTheTable() throws Exception {
-        assertFieldBlockIsDmOnly(questPage(), PopulatedCampaignFixture.QUEST_PREREQUISITES,
+        assertFieldBlockIsScreenSensitive(questPage(), PopulatedCampaignFixture.QUEST_PREREQUISITES,
                 "prerequisites tell players exactly what gates the plot");
     }
 
     @Test
     void questRewardsAreHiddenFromTheTable() throws Exception {
-        assertFieldBlockIsDmOnly(questPage(), PopulatedCampaignFixture.QUEST_REWARDS,
+        assertFieldBlockIsScreenSensitive(questPage(), PopulatedCampaignFixture.QUEST_REWARDS,
                 "rewards are the payoff the DM has not offered yet");
     }
 
     @Test
     void questOutcomeNotesAreHiddenFromTheTable() throws Exception {
-        assertFieldBlockIsDmOnly(questPage(), PopulatedCampaignFixture.QUEST_OUTCOME_NOTES,
+        assertFieldBlockIsScreenSensitive(questPage(), PopulatedCampaignFixture.QUEST_OUTCOME_NOTES,
                 "outcome notes describe how the quest resolves");
     }
 
     @Test
     void locationSecretsAreHiddenFromTheTable() throws Exception {
-        // A section literally labelled "Secrets" stayed on screen under the PLAYER-SAFE badge.
-        assertFieldBlockIsDmOnly(locationPage(), PopulatedCampaignFixture.LOCATION_SECRETS,
+        assertFieldBlockIsScreenSensitive(locationPage(), PopulatedCampaignFixture.LOCATION_SECRETS,
                 "a location's secrets are the thing players are meant to discover");
     }
 
     @Test
     void factionGoalsAreHiddenFromTheTable() throws Exception {
-        assertFieldBlockIsDmOnly(factionPage(), "Ordnung herstellen",
+        assertFieldBlockIsScreenSensitive(factionPage(), "Ordnung herstellen",
                 "faction goals are plot structure the table should not read");
     }
 
     @Test
     void factionReputationNotesAreHiddenFromTheTable() throws Exception {
-        assertFieldBlockIsDmOnly(factionPage(), PopulatedCampaignFixture.FACTION_REPUTATION_NOTES,
+        assertFieldBlockIsScreenSensitive(factionPage(), PopulatedCampaignFixture.FACTION_REPUTATION_NOTES,
                 "reputation notes record how the faction privately regards the party");
     }
 }

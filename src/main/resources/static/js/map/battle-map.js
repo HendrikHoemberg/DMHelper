@@ -45,7 +45,7 @@ export class BattleMap {
         this.cellSizePx = cellSizePx;
         this.movementMode = movementMode;
         this.showGrid = showGrid;
-        this.dmMode = true;
+        this.tableSafe = false;
         this.statusEl = statusEl;
         this.saveIndicatorEl = saveIndicatorEl;
         this.cursorInfoEl = cursorInfoEl;
@@ -326,7 +326,7 @@ export class BattleMap {
         const py = token.positionY;
         const w = token.sizeCols * s;
         const h = token.sizeRows * s;
-        const isDm = this.dmMode;
+        const isPrivate = !this.tableSafe;
 
         const group = new Konva.Group({ x: px, y: py, draggable: !token.dead, name: 'token' });
         group._tokenId = token.id;
@@ -339,7 +339,7 @@ export class BattleMap {
             stroke: selected ? SELECTION_GOLD : (KIND_RING_COLORS[token.kind] || '#fff'),
             strokeWidth: selected ? 3 : 2,
             cornerRadius: 4,
-            opacity: (!isDm && token.hidden) ? 0.3 : (token.dead ? 0.6 : 1),
+            opacity: (this.tableSafe && token.hidden) ? 0.3 : (token.dead ? 0.6 : 1),
         });
         group.add(body);
 
@@ -392,7 +392,7 @@ export class BattleMap {
         const hasHp = token.currentHp != null && token.maxHp != null && token.maxHp > 0;
         const hpBar = new Konva.Rect({
             y: h, width: w, height: hpBarHeight,
-            fill: HP_COLORS.high, visible: isDm && hasHp,
+            fill: HP_COLORS.high, visible: isPrivate && hasHp,
         });
         group.add(hpBar);
 
@@ -400,7 +400,7 @@ export class BattleMap {
             y: h + hpBarHeight + 2,
             text: hasHp ? `${token.currentHp}/${token.maxHp}` : '',
             fontSize: 10, fill: '#ccc', align: 'center', width: w,
-            visible: isDm && hasHp,
+            visible: isPrivate && hasHp,
         });
         group.add(hpText);
 
@@ -702,11 +702,11 @@ export class BattleMap {
         });
     }
 
-    setDmMode(dm) {
-        this.dmMode = dm;
+    setScreenSafety(tableSafe) {
+        this.tableSafe = tableSafe;
         this.renderTokens();
         this.renderConditionIndicators();
-        if (dm) this.showPins();
+        if (!tableSafe) this.showPins();
         else this.hidePins();
     }
 
@@ -1064,7 +1064,7 @@ export class BattleMap {
     /* ---- Pins (scene + DM-only threat markers) ---- */
     async loadPins(mapId) {
         this.pinLayer.destroyChildren();
-        if (!this.dmMode) return;
+        if (this.tableSafe) return;
         try {
             const res = await this._request(`/api/v1/maps/${mapId}/pins`);
             const pins = await res.json();

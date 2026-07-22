@@ -10,7 +10,7 @@ function sessionCockpit(config) {
         tool: 'select',
         movementMode: 'GRID',
         showGrid: true,
-        dmMode: true,
+        tableSafe: false,
         showTracker: false,
         activeTab: 'tokens',
         currentMapId: config.mapId || '',
@@ -417,7 +417,7 @@ function sessionCockpit(config) {
                 && config.presentedMapId === config.mapId;
             this.presentedMapId = config.presentedMapId || '';
             this.draftBody = config.draftBody || '';
-            window.setDmMode(this.dmMode, { animate: false });
+            window.setScreenSafety(this.tableSafe ? 'TABLE_SAFE' : 'PRIVATE', { animate: false });
             window.addEventListener('battle-state-changed', () => {
                 if (this.presentingMap) {
                     const cid = this.campaignId;
@@ -591,11 +591,12 @@ function sessionCockpit(config) {
         async toggleShowGrid() {
             await window.battleMap?.setShowGrid(!this.showGrid);
         },
-        toggleDmMode() {
-            this.dmMode = !this.dmMode;
-            window.setDmMode(this.dmMode);
-            window.battleMap?.setDmMode(this.dmMode);
-            window.dispatchEvent(new CustomEvent('dm-mode-changed', { detail: { dmMode: this.dmMode } }));
+        toggleScreenSafety() {
+            this.tableSafe = !this.tableSafe;
+            const mode = this.tableSafe ? 'TABLE_SAFE' : 'PRIVATE';
+            window.setScreenSafety(mode);
+            window.battleMap?.setScreenSafety(this.tableSafe);
+            window.dispatchEvent(new CustomEvent('screen-safety-changed', { detail: { mode: mode } }));
         },
         async sendToTable() {
             try {

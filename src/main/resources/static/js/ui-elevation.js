@@ -266,63 +266,10 @@
     });
   }
 
-  /* DM Mode (§6.3) — the safety feature as theatre. Shared, because the battle
+  /* Screen Safety — the safety feature. Shared, because the battle
      map has its own toggle and no top bar, and both must behave identically.
-     Player-safe is a safety feature before it is theatre: whatever happens to
-     the animation, `dm-mode-off` must end up applied. The fade only delays
-     *hiding* DM content by one 200ms beat while the wash covers the screen, and
-     the timers below are the only path that can defer it — both are cleared on
-     re-entry, so a fast double-toggle can never strand the app mid-transition. */
-  const FADE_MS = 200;   // matches --duration-standard
-  const SWEEP_MS = 600;
-  let sweepTimer = null;
-  let fadeTimer = null;
-
-  function ensureShieldSweep() {
-    let sweep = document.getElementById('dm-shield-sweep');
-    if (!sweep && document.body) {
-      sweep = document.createElement('div');
-      sweep.id = 'dm-shield-sweep';
-      document.body.appendChild(sweep);
-    }
-    return sweep;
-  }
-
-  /* Defined eagerly rather than on DOM ready: the battle map loads Alpine with
-     `defer`, so its x-init runs before DOMContentLoaded and calls this on the way up. */
-  window.setDmMode = function (on, options = {}) {
-    const body = document.body;
-    if (!body) return;
-    ensureShieldSweep();
-
-    const animate = options.animate !== false && !prefersReducedMotion();
-
-    clearTimeout(sweepTimer);
-    clearTimeout(fadeTimer);
-    body.classList.remove('dm-fading', 'dm-sweeping-off', 'dm-sweeping-on');
-
-    if (!animate) {
-      body.classList.toggle('dm-mode-off', !on);
-      body.classList.toggle('dm-mode-on', on);
-      return;
-    }
-
-    body.classList.add(on ? 'dm-sweeping-on' : 'dm-sweeping-off');
-    sweepTimer = setTimeout(() => {
-      body.classList.remove('dm-sweeping-off', 'dm-sweeping-on');
-    }, SWEEP_MS);
-
-    if (on) {
-      body.classList.remove('dm-mode-off');
-      body.classList.add('dm-mode-on');
-    } else {
-      body.classList.add('dm-fading');
-      fadeTimer = setTimeout(() => {
-        body.classList.remove('dm-fading', 'dm-mode-on');
-        body.classList.add('dm-mode-off');
-      }, FADE_MS);
-    }
-  };
+     Table-safe is a safety feature before it is theatre: whatever happens to
+     the animation, `data-screen-safety="TABLE_SAFE"` must end up applied. */
 
   function initViewTransitions() {
     window.addEventListener('pageswap', (e) => {
@@ -436,7 +383,6 @@
     initLoadingFilament();
     initToasts();
     initShortcutOverlay();
-    ensureShieldSweep();
     initSideSheet();
     initViewTransitions();
   }

@@ -18,13 +18,14 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * DM Mode's coverage used to be a whitelist: DmModeCoverageTest asserts tagging on the
- * surfaces it names, so a new DM-facing field shipped exposed and the suite stayed green.
+ * Screen safety coverage used to be a whitelist: ScreenSafetyCoverageTest asserts tagging on
+ * the surfaces it names, so a new DM-facing field shipped exposed and the suite stayed green.
  * A section labelled "Secret" sat on screen underneath a badge reading PLAYER-SAFE.
  *
  * <p>This test inverts that. It walks every template and fails when a DM-sensitive entity
- * field is rendered outside a {@code dm-only} subtree. To add a genuinely player-facing
- * field, you must either tag its block or justify an entry below -- not simply forget.
+ * field is rendered outside a {@code data-screen-sensitive} subtree. To add a genuinely
+ * player-facing field, you must either tag its block or justify an entry below -- not simply
+ * forget.
  */
 class DmSensitiveFieldCoverageTest {
 
@@ -67,7 +68,7 @@ class DmSensitiveFieldCoverageTest {
     }
 
     @Test
-    void everyDmSensitiveFieldRendersInsideADmOnlySubtree() throws IOException {
+    void everyDmSensitiveFieldRendersInsideAScreenSensitiveSubtree() throws IOException {
         List<Violation> violations = new ArrayList<>();
         List<Path> scanned = new ArrayList<>();
 
@@ -78,14 +79,11 @@ class DmSensitiveFieldCoverageTest {
                 }
                 scanned.add(template);
                 String source = Files.readString(template);
-                // htmlParser (not xmlParser): templates are fragments with unclosed <img>,
-                // <th:block> and bare attributes. The HTML parser builds the same tree the
-                // browser would, which is the tree dm-only's CSS descendant selector matches.
                 Document doc = Jsoup.parse(source, "", Parser.htmlParser());
 
                 for (Element element : doc.getAllElements()) {
                     String expression = dmSensitiveExpression(element);
-                    if (expression == null || hasDmOnly(element)) {
+                    if (expression == null || isScreenSensitive(element)) {
                         continue;
                     }
                     violations.add(new Violation(
@@ -102,9 +100,9 @@ class DmSensitiveFieldCoverageTest {
 
         assertThat(violations)
                 .as("""
-                    These render DM-facing content outside any dm-only subtree, so they stay on \
-                    screen when a DM turns the laptop to the table under the PLAYER-SAFE badge. \
-                    Add dm-only to the enclosing block -- never to a READ_ALOUD body.""")
+                    These render DM-facing content outside any data-screen-sensitive subtree, so they stay on \
+                    screen when a DM turns the laptop to the table under the TABLE-SAFE badge. \
+                    Add data-screen-sensitive to the enclosing block -- never to a READ_ALOUD body.""")
                 .isEmpty();
     }
 
@@ -121,21 +119,17 @@ class DmSensitiveFieldCoverageTest {
         return null;
     }
 
-    /** True if this element or any ancestor carries dm-only or data-dm-only. */
-    private static boolean hasDmOnly(Element element) {
-        if (isTagged(element)) {
+    /** True if this element or any ancestor carries data-screen-sensitive. */
+    private static boolean isScreenSensitive(Element element) {
+        if (element.hasAttr("data-screen-sensitive")) {
             return true;
         }
         for (Element ancestor : element.parents()) {
-            if (isTagged(ancestor)) {
+            if (ancestor.hasAttr("data-screen-sensitive")) {
                 return true;
             }
         }
         return false;
-    }
-
-    private static boolean isTagged(Element element) {
-        return element.hasClass("dm-only") || element.hasAttr("data-dm-only");
     }
 
     /** Line number of the expression in the source, for a message a human can act on. */
@@ -147,7 +141,7 @@ class DmSensitiveFieldCoverageTest {
 
     /**
      * A rule nobody can read is a rule that gets deleted. READ_ALOUD is the one section kind
-     * a DM shows the table, and tagging it defeats DM Mode entirely.
+     * a DM shows the table, and tagging it defeats screen safety entirely.
      */
     @Test
     void readAloudBlockIsNotTagged() throws IOException {
@@ -157,7 +151,7 @@ class DmSensitiveFieldCoverageTest {
         String openingTag = sections.substring(sections.lastIndexOf('<', readAloudBlock),
                 sections.indexOf('>', readAloudBlock) + 1);
         assertThat(openingTag)
-                .as("read-aloud is meant to be shown; tagging it defeats DM Mode")
-                .doesNotContain("dm-only");
+                .as("read-aloud is meant to be shown; tagging it defeats screen safety")
+                .doesNotContain("data-screen-sensitive");
     }
 }

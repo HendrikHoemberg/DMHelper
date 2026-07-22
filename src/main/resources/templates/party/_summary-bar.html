@@ -14,7 +14,7 @@
                      th:style="'width:' + (${pm.maxHp} > 0 ? (${pm.currentHp} * 100 / ${pm.maxHp}) : 0) + '%'"
                      th:classappend="${pm.maxHp > 0 && pm.currentHp * 2 < pm.maxHp} ? 'low' : ''"></div>
             </div>
-            <span class="chip-stats">
+            <span class="chip-stats" data-screen-sensitive>
                 <span th:text="'AC ' + ${pm.ac}">AC 16</span>
                 <span th:text="'PP ' + ${pm.passivePerception}">PP 17</span>
             </span>

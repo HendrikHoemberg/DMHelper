@@ -334,7 +334,7 @@ class CoreSessionLoopSmokeTest {
 
     @Test
     @Order(7)
-    void verifyPlayerSafeProjectionStripsDmOnly() {
+    void verifyPlayerSafeProjectionStripsSensitiveContent() {
         startSession();
         presentationService.presentMap(campaignId, mapId);
 
@@ -344,13 +344,76 @@ class CoreSessionLoopSmokeTest {
         playerPage.waitForLoadState(LoadState.NETWORKIDLE);
 
         String pageContent = playerPage.content();
-        assertThat(pageContent).doesNotContain("dm-only", "dmMode");
+        assertThat(pageContent).doesNotContain("data-screen-sensitive");
 
         playerContext.close();
     }
 
     @Test
     @Order(8)
+    void screenSafetyToggleHidesAndDisablesSensitiveContent() {
+        startSession();
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+
+        // Toggle screen safety off (TABLE_SAFE mode)
+        dmPage.evaluate("document.getElementById('screenSafetyCheckbox')?.click()");
+        dmPage.waitForTimeout(300);
+
+        // No visible sensitive content
+        assertThat(dmPage.locator("[data-screen-sensitive]:visible").count()).isZero();
+
+        // No visible focusable elements inside sensitive subtrees
+        int focusableInSensitive = ((Number) dmPage.evaluate("""
+                () => {
+                    const sensitive = document.querySelectorAll('[data-screen-sensitive]');
+                    let count = 0;
+                    sensitive.forEach(el => {
+                        if (el.offsetParent === null) return;
+                        const focusable = el.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\"-1\"])');
+                        focusable.forEach(f => { if (f.offsetParent !== null) count++; });
+                    });
+                    return count;
+                }
+                """)).intValue();
+        assertThat(focusableInSensitive).isZero();
+
+        // The story rail module root itself remains as a visible container
+        assertThat(dmPage.locator("[data-runtime-module='story']:visible").count())
+                .isGreaterThan(0);
+
+        // Tab repeatedly — none may land inside a visible sensitive subtree
+        boolean tabIntoSensitive = (boolean) dmPage.evaluate("""
+                () => {
+                    const focusable = Array.from(document.querySelectorAll(
+                        'button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
+                        'textarea:not([disabled]), [href], [tabindex]:not([tabindex=\"-1\"])'))
+                        .filter(el => el.offsetParent !== null);
+                    for (let i = 0; i < Math.min(focusable.length, 30); i++) {
+                        focusable[i].focus();
+                        if (document.activeElement && document.activeElement.closest('[data-screen-sensitive]')) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                """);
+        assertThat(tabIntoSensitive).as("Tab focus must not land inside screen-sensitive subtrees").isFalse();
+
+        // Command bar visibly says Table-safe
+        String badge = (String) dmPage.evaluate("document.querySelector('.screen-safety-badge')?.textContent");
+        assertThat(badge).contains("Table-safe");
+
+        // No DM Mode or PLAYER-SAFE copy
+        assertThat(dmPage.content()).doesNotContain("DM Mode", "PLAYER-SAFE", "dmMode");
+
+        // Toggle back to PRIVATE mode
+        dmPage.evaluate("document.getElementById('screenSafetyCheckbox')?.click()");
+        dmPage.waitForTimeout(200);
+    }
+
+    @Test
+    @Order(9)
     void createQuickNoteWithoutTemplateOrRequestErrors() {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/adventures");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
@@ -363,7 +426,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(9)
+    @Order(10)
     void quickNotesWorkOnAFirstPartyMemberInsertedByHtmx() {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/party");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
@@ -393,7 +456,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(10)
+    @Order(11)
     void libraryDeepLinkActivatesAndFiltersTheRequestedTab() {
         dmPage.navigate("http://localhost:" + port + "/library?tab=spells&search=Fireball");
         dmPage.locator("#tab-spells.active").waitFor();
@@ -404,7 +467,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(11)
+    @Order(12)
     void runsTheCompleteCockpitFlowThroughVisibleControls() throws Exception {
         encounterService.endEncounter(encounterId);
         UUID plannedEncounterId = encounterService.create(campaignId,
@@ -560,7 +623,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(12)
+    @Order(13)
     void exportAndReimportRoundTrip() throws Exception {
         var directArtifact = exportCoordinator.export(campaignId);
         new CampaignPackageWriter().write(directArtifact.writeRequest(), new ByteArrayOutputStream());
@@ -685,7 +748,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(13)
+    @Order(14)
     void failedTokenMoveRollsBackAndRetryPersists() {
         Token before = tokenRepo.findByMapIdOrderByNameAsc(mapId).getFirst();
         int oldX = before.getPositionX();
@@ -714,7 +777,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(14)
+    @Order(15)
     void failedNextTurnKeepsTrackerStateAndRetryAdvances() {
         String corr = "turn-failure-1234";
         failOnce(dmPage, "**/api/v1/encounters/*/next-turn", "POST",
@@ -747,7 +810,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(15)
+    @Order(16)
     void failedPresentationKeepsCurtainAndRetryShowsMap() {
         startSession();
         presentationService.curtain(campaignId);
@@ -776,7 +839,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(16)
+    @Order(17)
     void failedDiceRollKeepsExpressionAndRetryCompletes() {
         String corr = "dice-failure-1234";
         failOnce(dmPage, "**/api/v1/roll", "POST",
@@ -796,7 +859,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(17)
+    @Order(18)
     void failedDefeatedToggleRestoresThePersistedAndVisibleState() {
         Token before = tokenRepo.findByMapIdOrderByNameAsc(mapId).getFirst();
         boolean originalDead = before.isDead();
@@ -820,7 +883,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(18)
+    @Order(19)
     void failedStatblockTokenCreationRetainsTheSearchForRetry() {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
                 + "/session?mapId=" + mapId);
@@ -851,7 +914,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(19)
+    @Order(20)
     void aRejectedRetryRemainsVisibleAndDoesNotBecomeAnUnhandledPageError() {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId);
         dmPage.evaluate("() => window.showToast('Initial failure', 'error', 15000, {"
@@ -868,7 +931,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(20)
+    @Order(21)
     void failedQuickNoteAddRetainsTextAndRetrySavesIt() {
         String corr = "quicknote-failure-1234";
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/adventures");
@@ -888,7 +951,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(21)
+    @Order(22)
     void sheetDetailAndLiveStateEditing() {
         PartyMember member = partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(campaignId)
                 .stream().filter(m -> "Dynamic Hero".equals(m.getCharacterName()))
@@ -944,7 +1007,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(22)
+    @Order(23)
     void rollableTableCreatesTreasureRollAndConfirmAddsToPartyStash() {
         startSession();
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
@@ -1000,7 +1063,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(23)
+    @Order(24)
     void rollableTableCreatesEncounterRollAndConfirmProducesPlannedEncounter() {
         startSession();
 
@@ -1042,7 +1105,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(24)
+    @Order(25)
     void threatWorkflowProvesDmSurfacesAndPackageFidelity() throws Exception {
         startSession();
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
@@ -1413,7 +1476,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(25)
+    @Order(26)
     void audioCockpitUsesFakeProviderAcrossTheRealSessionFlow() throws Exception {
         startSession();
         encounterRepository.findByCampaignIdAndStatus(

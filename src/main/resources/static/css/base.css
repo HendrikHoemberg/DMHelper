@@ -166,12 +166,12 @@ fieldset {
 }
 
 /* ==============================
-   DM Mode — player-safe indicator (M7)
+   Screen Safety — table-safe indicator
    ============================== */
 
-/* Player-safe. The gold goes cold: every accent in the app becomes shielded
+/* Table-safe. The gold goes cold: every accent in the app becomes shielded
    steel, so the state is legible from across the room long after the sweep. */
-body.dm-mode-off {
+body[data-screen-safety="TABLE_SAFE"] {
     --color-accent: var(--color-shield);
     --color-accent-hover: var(--color-shield-hover);
     --color-gold-soft: var(--color-shield-soft);
@@ -180,32 +180,24 @@ body.dm-mode-off {
     border-top: none;
 }
 
-body.dm-mode-off .dm-only,
-body.dm-mode-off [data-dm-only] {
+body[data-screen-safety="TABLE_SAFE"] [data-table-safe-behavior="HIDE"],
+body[data-screen-safety="TABLE_SAFE"] [data-screen-sensitive] {
     display: none !important;
 }
 
-/* ...but they fade out behind the sweep first, rather than blinking away.
-   `dm-mode-off` (which hides them outright) lands only once this fade is done. */
-body.dm-fading .dm-only,
-body.dm-fading [data-dm-only] {
-    opacity: 0;
-    transition: opacity var(--duration-standard) var(--ease-out);
-}
+body[data-screen-safety="TABLE_SAFE"] .party-summary-bar { display: none; }
+body[data-screen-safety="TABLE_SAFE"] .map-switcher-name { display: none; }
+body[data-screen-safety="TABLE_SAFE"] .statblock-full { display: none; }
+body[data-screen-safety="TABLE_SAFE"] .encounter-prep { display: none; }
+body[data-screen-safety="TABLE_SAFE"] .note-dm-only { display: none; }
 
-body.dm-mode-off .party-summary-bar { display: none; }
-body.dm-mode-off .map-switcher-name { display: none; }
-body.dm-mode-off .statblock-full { display: none; }
-body.dm-mode-off .encounter-prep { display: none; }
-body.dm-mode-off .note-dm-only { display: none; }
-
-/* Toolbar visual indicator when DM Mode is off */
-body.dm-mode-off .navbar {
+/* Toolbar visual indicator when screen safety is TABLE_SAFE */
+body[data-screen-safety="TABLE_SAFE"] .navbar {
   border-bottom: 3px solid var(--color-shield);
   background: color-mix(in srgb, var(--color-shield) 7%, var(--color-surface));
 }
-/* DM Mode off = screen is player-safe. Must be readable from across the room. */
-.dm-shield-badge {
+/* Screen safety badge */
+.screen-safety-badge {
   display: none;
   font-family: var(--font-display);
   font-size: var(--text-xs);
@@ -215,7 +207,7 @@ body.dm-mode-off .navbar {
   border-radius: var(--radius);
   color: var(--color-shield);
 }
-body.dm-mode-off .dm-shield-badge { display: inline-block; }
+body[data-screen-safety="TABLE_SAFE"] .screen-safety-badge { display: inline-block; }
 
 .u-nowrap { white-space: nowrap; }
 /* Visually hidden but readable by assistive tech. */
@@ -410,7 +402,7 @@ body.loading #loading-filament {
   font-size: var(--text-xs);
 }
 
-/* ── Switch control (DM Mode, settings toggles) ── */
+/* ── Switch control (Screen Safety, settings toggles) ── */
 .switch-control {
   display: inline-flex;
   align-items: center;
@@ -513,10 +505,10 @@ body.loading #loading-filament {
 
 .dash-header { view-transition-name: campaign-cover; }
 
-/* ── DM Mode shield sweep ──
+/* ── Screen Safety shield sweep ──
    Driven by classes the toggle adds and then removes, so the wash plays on the
    state *change* only — never on page load. */
-#dm-shield-sweep {
+#screen-safety-sweep {
   position: fixed;
   inset: 0;
   z-index: 9998;
@@ -524,11 +516,11 @@ body.loading #loading-filament {
   transform: translateX(-100%);
   opacity: 0;
 }
-body.dm-sweeping-off #dm-shield-sweep {
+body.safety-sweeping-off #screen-safety-sweep {
   background: linear-gradient(90deg, transparent 0%, rgba(138, 154, 165, 0.4) 50%, transparent 100%);
   animation: shield-sweep 600ms var(--ease-out) forwards;
 }
-body.dm-sweeping-on #dm-shield-sweep {
+body.safety-sweeping-on #screen-safety-sweep {
   background: linear-gradient(90deg, transparent 0%, rgba(201, 163, 92, 0.35) 50%, transparent 100%);
   animation: shield-sweep-reverse 600ms var(--ease-out) forwards;
 }
@@ -543,9 +535,9 @@ body.dm-sweeping-on #dm-shield-sweep {
   100% { transform: translateX(-100%); opacity: 0; }
 }
 
-/* Reduced motion: instant swap, tint still applies (§6.3). */
+/* Reduced motion: instant swap, tint still applies. */
 @media (prefers-reduced-motion: reduce) {
-  #dm-shield-sweep { display: none; }
+  #screen-safety-sweep { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

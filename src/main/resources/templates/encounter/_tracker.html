@@ -37,7 +37,7 @@
             editHp: '',
             editTempHp: 0,
             hpDelta: '',
-            dmMode: true,
+            tableSafe: false,
             rechargePrompts: [],
             conditionsCatalog: [],
             showConditionMenu: null,
@@ -116,9 +116,8 @@
             },
 
             async init() {
-                window.addEventListener('dm-mode-changed', (e) => {
-                    this.dmMode = e.detail.dmMode;
-                    // Hidden combatants appear or vanish, so the rows move under the marker.
+                window.addEventListener('screen-safety-changed', (e) => {
+                    this.tableSafe = e.detail.mode === 'TABLE_SAFE';
                     this._positionTurnMarker();
                 });
                 window.addEventListener('battle-tokenselect', (e) => {
@@ -679,7 +678,7 @@
 
             <!-- Active threat mechanics card (TRAP/HAZARD turn only) -->
             <div class="active-threat-card threat-mechanics-card"
-                 x-show="activeThreatCard && dmMode"
+                 x-show="activeThreatCard && !tableSafe"
                  x-cloak
                  data-active-threat-card>
                 <div class="detail-meta" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
@@ -846,7 +845,7 @@
                     <div class="combatant-row"
                          :data-cid="c.id"
                          :class="{ active: c.id === activeCombatantId, defeated: c.defeated, hidden: c.hidden, bloodied: c.bloodied }"
-                         x-show="dmMode || !c.hidden"
+                         x-show="!tableSafe || !c.hidden"
                          @click="selectCombatant(c.id)">
                         <!-- Initiative badge -->
                         <span class="init-badge" x-text="c.initiative || '—'"></span>
@@ -861,7 +860,7 @@
                         </span>
 
                         <!-- HP bar mini — DM only -->
-                        <div class="hp-mini" x-show="dmMode">
+                        <div class="hp-mini" x-show="!tableSafe">
                             <div class="hp-mini-fill"
                                  :style="{ width: hpPercent(c) + '%' }"
                                  :class="{ bloodied: c.bloodied, dead: c.defeated }"></div>
@@ -870,7 +869,7 @@
                         <!-- HP delta quick-entry — DM only -->
                         <input type="text" class="hp-delta-input"
                                placeholder="±HP"
-                               x-show="dmMode"
+                                x-show="!tableSafe"
                                @keydown.enter="applyHpDelta(c.id)"
                                x-model="hpDelta">
 
@@ -883,13 +882,13 @@
                                       x-text="cond.durationRounds > 0 ? cond.durationRounds : '∞'"></span>
                             </template>
                             <button class="btn btn-ghost" style="padding: 0 2px; font-size: 0.7rem; line-height: 1;"
-                                    x-show="dmMode"
+                                    x-show="!tableSafe"
                                     @click.stop="openConditionMenu(c.id)">＋</button>
                         </div>
 
                         <!-- Concentration badge -->
                         <span x-show="c.concentratingOn" class="conc-badge"
-                              :title="dmMode ? c.concentratingOn : 'Concentrating'">⏀</span>
+                              :title="!tableSafe ? c.concentratingOn : 'Concentrating'">⏀</span>
                     </div>
                 </template>
 
@@ -906,7 +905,7 @@
             </div>
 
             <!-- Selected combatant detail — DM only -->
-            <div class="combatant-detail" x-show="selectedCombatantId && dmMode && selected" x-effect="tickNumber($refs.hpDisplay, selected?.currentHp || 0, 300)">
+            <div class="combatant-detail" x-show="selectedCombatantId && !tableSafe && selected" x-effect="tickNumber($refs.hpDisplay, selected?.currentHp || 0, 300)">
                 <!-- HP section -->
                 <div class="detail-hp">
                     <label>HP</label>

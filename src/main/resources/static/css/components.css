@@ -1601,9 +1601,9 @@
     pointer-events: none;
 }
 
-/* ── DM Mode ── */
-body.dm-mode-off .dice-panel,
-body.dm-mode-off .dice-toggle-btn { display: none; }
+/* ── Screen Safety ── */
+body[data-screen-safety="TABLE_SAFE"] .dice-panel,
+body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 
 /* ── Command Palette ── */
 .command-palette-overlay {

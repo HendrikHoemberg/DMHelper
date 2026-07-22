@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <th:block th:fragment="lifecycle-dialog">
-<div class="dialog-overlay" x-show="lifecycleOpen" x-cloak
+<div class="dialog-overlay" data-runtime-module="session-log" data-table-safe-behavior="HIDE" x-show="lifecycleOpen" x-cloak
      :hidden="!lifecycleOpen" @click.away="closeLifecycle()" role="dialog"
      @keydown.tab="trapLifecycleFocus($event)"
      @keydown.escape.window="if (lifecycleOpen) closeLifecycle()"

@@ -29,11 +29,11 @@
                 Scan to join
             </div>
         </div>
-        <span class="dm-shield-badge">PLAYER-SAFE</span>
-        <label class="switch-control" title="DM Mode toggles player-safe projection">
-            <input type="checkbox" id="dmModeCheckbox">
+        <span class="screen-safety-badge">Table-safe</span>
+        <label class="switch-control" title="Screen Safety toggles table-safe projection">
+            <input type="checkbox" id="screenSafetyCheckbox">
             <span class="switch-track"></span>
-            <span class="switch-label">DM Mode</span>
+            <span class="switch-label">Private</span>
         </label>
         <script th:inline="javascript">
         /*<![CDATA[*/
@@ -42,30 +42,24 @@
         </script>
         <script>
         (function() {
-            const checkbox = document.getElementById('dmModeCheckbox');
+            const checkbox = document.getElementById('screenSafetyCheckbox');
 
             checkbox.addEventListener('change', () => {
-                const on = checkbox.checked;
-                window.setDmMode(on);
-                window.dispatchEvent(new CustomEvent('dm-mode-changed', { detail: { dmMode: on } }));
+                const mode = checkbox.checked ? 'TABLE_SAFE' : 'PRIVATE';
+                window.setScreenSafety(mode);
+                window.dispatchEvent(new CustomEvent('screen-safety-changed', { detail: { mode: mode } }));
             });
 
-            checkbox.checked = true;
-            // setDmMode is defined by ui-elevation.js on DOM ready, which is after
-            // this inline script parses.
+            checkbox.checked = false;
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded',
-                    () => window.setDmMode(true, { animate: false }));
+                    () => window.setScreenSafety('PRIVATE', { animate: false }));
             } else {
-                window.setDmMode(true, { animate: false });
+                window.setScreenSafety('PRIVATE', { animate: false });
             }
 
-            window.addEventListener('dm-mode-toggle', () => {
+            window.addEventListener('screen-safety-toggle', () => {
                 checkbox.checked = !checkbox.checked;
-                checkbox.dispatchEvent(new Event('change'));
-            });
-            window.addEventListener('tracker-dm-mode-grown', (e) => {
-                checkbox.checked = e.detail.dmMode;
                 checkbox.dispatchEvent(new Event('change'));
             });
 
@@ -75,7 +69,7 @@
             }
         })();
         </script>
-        <span class="pin-display dm-only" id="pinDisplay"
+        <span class="pin-display" id="pinDisplay" data-screen-sensitive
               th:text="${pinDisplay}">PIN: -----</span>
     </div>
     <th:block th:replace="~{fragments/_command-palette :: command-palette}"></th:block>
@@ -88,6 +82,7 @@
     <th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>
 </th:block>
 
+<script th:src="@{/js/screen-safety.js}"></script>
 <script th:src="@{/js/dice-roller.js}"></script>
 <script>
 document.addEventListener('click', async (e) => {

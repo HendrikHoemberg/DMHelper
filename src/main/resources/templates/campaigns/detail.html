@@ -81,7 +81,7 @@
             </section>
 
             <div class="dash-grid">
-                <section class="card dash-card dm-only" style="--stagger: 0">
+                <section class="card dash-card" data-screen-sensitive style="--stagger: 0">
                     <h3>Session Plan</h3>
                     <th:block th:if="${sessionPlan != null}">
                         <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaign.id}, nid=${sessionPlan.id})}"
@@ -94,7 +94,7 @@
                     </p>
                 </section>
 
-                <section class="card dash-card dm-only" style="--stagger: 1">
+                <section class="card dash-card" data-screen-sensitive style="--stagger: 1">
                     <h3>Recent Notes</h3>
                     <ul class="dash-list">
                         <li th:each="n : ${recentNotes}">

@@ -44,7 +44,7 @@ class EncounterTemplateContractTest {
         String html = Files.readString(Path.of("src/main/resources/templates/encounter/_tracker.html"));
         assertThat(html).contains("activeThreatCard");
         assertThat(html).contains("data-active-threat-card");
-        assertThat(html).contains("x-show=\"activeThreatCard && dmMode\"");
+        assertThat(html).contains("x-show=\"activeThreatCard && !tableSafe\"");
         assertThat(html).contains("dice-roller-prefill");
         assertThat(html).contains("Prefills only");
         assertThat(html).doesNotContain("/api/v1/combatants/${activeCombatantId}/damage");
