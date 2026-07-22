@@ -471,6 +471,66 @@
 .lifecycle-dialog__panel {
   padding: var(--space-md);
 }
+
+.presentation-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 10020;
+  display: grid;
+  place-items: center;
+  padding: var(--space-md);
+}
+.presentation-preview-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 7, 4, 0.78);
+  backdrop-filter: blur(4px);
+}
+.presentation-preview-panel {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: var(--space-sm);
+  width: min(72rem, calc(100vw - 2rem));
+  height: min(48rem, calc(100dvh - 2rem));
+  padding: var(--space-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+}
+.presentation-preview-header,
+.presentation-preview-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+.presentation-preview-header h2 { margin: 0; }
+.presentation-preview-content {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: #000;
+}
+.presentation-preview-override {
+  display: grid;
+  gap: var(--space-sm);
+}
+.presentation-preview-warning {
+  padding: var(--space-sm);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius);
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
+}
+.presentation-preview-override--armed .presentation-preview-warning {
+  border-width: 2px;
+}
 @media (prefers-reduced-motion: reduce) {
   .lifecycle-dialog,
   .lifecycle-dialog::backdrop {

@@ -222,12 +222,15 @@ class RuntimeModuleSafetyContractTest {
     @Test
     void screenSafetyEventNamesAreUsed() throws IOException {
         String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
+        String safetyJs = Files.readString(Path.of("src/main/resources/static/js/screen-safety.js"));
         String keyboardJs = Files.readString(Path.of("src/main/resources/static/js/keyboard.js"));
-        String uiElevationJs = Files.readString(Path.of("src/main/resources/static/js/ui-elevation.js"));
 
-        assertThat(js)
-                .as("session-cockpit.js must dispatch screen-safety-changed")
+        assertThat(safetyJs)
+                .as("the central screen-safety controller must dispatch screen-safety-changed")
                 .contains("screen-safety-changed");
+        assertThat(js)
+                .as("session-cockpit.js must not duplicate the central change event")
+                .doesNotContain("new CustomEvent('screen-safety-changed'");
         assertThat(keyboardJs)
                 .as("keyboard.js must dispatch screen-safety-toggle")
                 .contains("screen-safety-toggle");

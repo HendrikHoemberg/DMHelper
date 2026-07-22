@@ -112,8 +112,20 @@ public class CampaignManifestV2SemanticValidator {
                 m.customBackgrounds().get(i).key(), "/customBackgrounds/" + i + "/key", problems);
         for (int i = 0; i < size(m.customFeats()); i++) add(keys, CampaignContentType.FEAT,
                 m.customFeats().get(i).key(), "/customFeats/" + i + "/key", problems);
-        for (int i = 0; i < size(m.handouts()); i++) add(keys, CampaignContentType.HANDOUT,
-                m.handouts().get(i).key(), "/handouts/" + i + "/key", problems);
+        for (int i = 0; i < size(m.handouts()); i++) {
+            var handout = m.handouts().get(i);
+            String path = "/handouts/" + i;
+            add(keys, CampaignContentType.HANDOUT, handout.key(), path + "/key", problems);
+            boolean derivative = "PLAYER_DERIVATIVE".equals(handout.safetyClassification());
+            boolean hasSource = handout.sourceRef() != null;
+            boolean hasRecipe = handout.derivativeRecipe() != null && !handout.derivativeRecipe().isBlank();
+            if ((derivative && (!hasSource || !hasRecipe))
+                    || (!derivative && (hasSource || handout.derivativeRecipe() != null))) {
+                error(problems, "INVALID_HANDOUT_DERIVATIVE_METADATA", path,
+                        "PLAYER_DERIVATIVE requires a source and recipe; other classifications forbid them");
+            }
+            requireRefType(handout.sourceRef(), HANDOUT, path + "/sourceRef", problems);
+        }
         for (int i = 0; i < size(m.maps()); i++) {
             var map = m.maps().get(i);
             add(keys, CampaignContentType.MAP, map.key(), "/maps/" + i + "/key", problems);
@@ -742,6 +754,9 @@ public class CampaignManifestV2SemanticValidator {
 
     private void validateReferences(CampaignManifestV2 m, Map<CampaignContentType, Set<String>> keys,
                                     List<CampaignImportProblem> problems) {
+        for (int i = 0; i < size(m.handouts()); i++) {
+            check(m.handouts().get(i).sourceRef(), "/handouts/" + i + "/sourceRef", keys, problems);
+        }
         if (m.session() != null) {
             check(m.session().planNoteRef(), "/session/planNoteRef", keys, problems);
             check(m.session().workspaceMapRef(), "/session/workspaceMapRef", keys, problems);

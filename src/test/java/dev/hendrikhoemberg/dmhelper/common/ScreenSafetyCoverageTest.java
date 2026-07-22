@@ -11,6 +11,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
@@ -171,6 +174,32 @@ class ScreenSafetyCoverageTest {
                 .contains("screenSafetyCheckbox");
     }
 
+    @Test
+    void tableSafeMaskingIsImmediateAndInvalidModulesFailClosed() throws Exception {
+        String js = Files.readString(Path.of("src/main/resources/static/js/screen-safety.js"));
+        int tableSafeState = js.indexOf("body.dataset.screenSafety = 'TABLE_SAFE'");
+        int animation = js.indexOf("body.classList.add(goingTableSafe");
+
+        assertThat(tableSafeState).isGreaterThan(-1).isLessThan(animation);
+        assertThat(js).doesNotContain("FADE_MS", "fadeTimer");
+        assertThat(js).contains("const behavior = validateModule(module)")
+                .contains("showToast")
+                .contains("data-screen-safety-managed");
+    }
+
+    @Test
+    void screenSafetyControllerIsTheOnlyChangeEventProducer() throws Exception {
+        String controller = Files.readString(Path.of("src/main/resources/static/js/screen-safety.js"));
+        String cockpit = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
+        String navbar = Files.readString(Path.of("src/main/resources/templates/fragments/navbar.html"));
+        String cockpitJs = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
+
+        assertThat(count(controller, "new CustomEvent('screen-safety-changed'")).isEqualTo(1);
+        assertThat(cockpit).doesNotContain("new CustomEvent('screen-safety-changed'");
+        assertThat(navbar).doesNotContain("new CustomEvent('screen-safety-changed'");
+        assertThat(cockpitJs).doesNotContain("new CustomEvent('screen-safety-changed'");
+    }
+
     /** Asserts the element carrying {@code cssClass} also carries data-screen-sensitive. */
     private static void assertClassIsScreenSensitive(String html, String cssClass, String why) {
         int at = html.indexOf("class=\"" + cssClass);
@@ -278,5 +307,13 @@ class ScreenSafetyCoverageTest {
     void factionReputationNotesAreHiddenFromTheTable() throws Exception {
         assertFieldBlockIsScreenSensitive(factionPage(), PopulatedCampaignFixture.FACTION_REPUTATION_NOTES,
                 "reputation notes record how the faction privately regards the party");
+    }
+
+    private static int count(String value, String needle) {
+        int count = 0;
+        for (int index = 0; (index = value.indexOf(needle, index)) >= 0; index += needle.length()) {
+            count++;
+        }
+        return count;
     }
 }

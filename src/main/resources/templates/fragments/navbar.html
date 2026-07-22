@@ -47,7 +47,6 @@
             checkbox.addEventListener('change', () => {
                 const mode = checkbox.checked ? 'TABLE_SAFE' : 'PRIVATE';
                 window.setScreenSafety(mode);
-                window.dispatchEvent(new CustomEvent('screen-safety-changed', { detail: { mode: mode } }));
             });
 
             checkbox.checked = false;

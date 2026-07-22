@@ -6,11 +6,13 @@
     <title>DMHelper — Player View</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1510'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' fill='%23c9a24a' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
     <link rel="stylesheet" th:href="@{/css/tokens.css}">
+    <link rel="stylesheet" th:href="@{/css/player-projection.css}">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: var(--color-bg); color: var(--color-text);
                font-family: var(--font-ui);
                display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        #playerContent { display: flex; flex: 1; min-height: 0; }
         .pv-canvas-wrap { flex: 1; overflow: hidden; position: relative; background: color-mix(in srgb, var(--color-bg), var(--color-accent) 5%); }
         .pv-initiative { display: flex; gap: 8px; padding: 8px 16px; background: var(--color-surface);
                          border-top: 1px solid var(--color-border); min-height: 48px; align-items: center; overflow-x: auto; }
@@ -21,9 +23,6 @@
         .pv-initiative .combatant-chip.defeated { opacity: 0.4; text-decoration: line-through; }
         .pv-curtain { display: flex; align-items: center; justify-content: center; flex: 1;
                       background: var(--color-bg); color: var(--color-text-muted); font-size: 1.5rem; }
-        .pv-handout { display: flex; align-items: center; justify-content: center; flex: 1;
-                      background: rgba(0,0,0,0.95); }
-        .pv-handout img { max-width: 95vw; max-height: 95vh; object-fit: contain; border-radius: 4px; }
         .pv-status { position: absolute; bottom: 8px; right: 8px; font-size: 0.7rem;
                      color: var(--color-text-muted); }
         .cond-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--color-accent);

@@ -152,6 +152,36 @@ class SessionCockpitTemplateContractTest {
     }
 
     @Test
+    void handoutPreviewIncludesUnsafeChoicesAndRequiresTwoExplicitOverrideSteps() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
+        String preview = Files.readString(
+                Path.of("src/main/resources/templates/session/_presentation-preview.html"));
+        String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
+        String css = Files.readString(Path.of("src/main/resources/static/css/cockpit.css"));
+
+        assertThat(html).doesNotContain("workspace.handouts.?[!dmOnly]", "th:unless=\"${handout.dmOnly}\"");
+        assertThat(html).contains("handout.safetyClassification", "/css/player-projection.css");
+        assertThat(preview).contains("Present anyway…", "previewOverrideArmed",
+                "Confirm emergency presentation", "role=\"dialog\"", "aria-modal=\"true\"");
+        assertThat(js).contains("previewOverrideArmed: false", "armEmergencyOverride()")
+                .contains("this.previewOverrideArmed = false");
+        assertThat(css).contains(".presentation-preview {", ".presentation-preview-backdrop",
+                ".presentation-preview-panel", ".presentation-preview-content");
+    }
+
+    @Test
+    void cockpitAndPlayerUseTheSameHandoutProjectionStyles() throws IOException {
+        String cockpit = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
+        String player = Files.readString(Path.of("src/main/resources/templates/player/view.html"));
+        String projection = Files.readString(
+                Path.of("src/main/resources/static/css/player-projection.css"));
+
+        assertThat(cockpit).contains("/css/player-projection.css");
+        assertThat(player).contains("/css/player-projection.css");
+        assertThat(projection).contains(".pv-handout", ".pv-handout img");
+    }
+
+    @Test
     void setCurrentSceneDoesNotReloadPage() throws IOException {
         String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
         assertThat(extractFunction(js, "setCurrentScene"))

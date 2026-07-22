@@ -450,6 +450,14 @@ class SessionDraftServiceTest {
         audit.setContentId(UUID.randomUUID());
         audit.setDetails("{\"title\":\"Scanned page 12\",\"classification\":\"DM_SOURCE\"}");
         audit.setCreatedAt(Instant.parse("2026-07-16T19:00:00Z"));
+        SessionAuditEntry malformed = new SessionAuditEntry();
+        malformed.setId(UUID.randomUUID());
+        malformed.setSession(session);
+        malformed.setEntryType(SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE);
+        malformed.setContentType("HANDOUT");
+        malformed.setContentId(UUID.randomUUID());
+        malformed.setDetails("not json");
+        malformed.setCreatedAt(Instant.parse("2026-07-16T19:01:00Z"));
 
         when(calendar.getCurrentDate(campaignId)).thenReturn(new CalendarService.InGameDate(1492, 6, 12));
         when(visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId())).thenReturn(List.of());
@@ -462,7 +470,7 @@ class SessionDraftServiceTest {
                 .thenReturn(List.of());
         when(auditRepo.findBySession_IdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(
                 session.getId(), startedAt, endedAt))
-                .thenReturn(List.of(audit));
+                .thenReturn(List.of(audit, malformed));
 
         String draft = service.generate(session, endedAt);
 
@@ -471,5 +479,6 @@ class SessionDraftServiceTest {
         assertThat(draft).contains("DM_SOURCE");
         assertThat(draft).contains("21:00");
         assertThat(draft).contains("Europe/Berlin");
+        assertThat(draft).doesNotContain("- null");
     }
 }

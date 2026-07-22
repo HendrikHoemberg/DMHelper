@@ -2,18 +2,12 @@
     'use strict';
 
     window.openDerivativeDialog = function (sourceId, campaignId) {
-        const el = document.querySelector('[x-data="derivativeEditor()"]');
-        if (el && el.__x) {
-            el.__x.$data.openDialog(sourceId, campaignId);
-        } else {
-            // Fallback: dispatch an event that Alpine can pick up
-            document.dispatchEvent(new CustomEvent('open-derivative-dialog', {
-                detail: { sourceId, campaignId }
-            }));
-        }
+        window.dispatchEvent(new CustomEvent('open-derivative-dialog', {
+            detail: { sourceId, campaignId }
+        }));
     };
 
-    document.addEventListener('alpine:init', () => {
+    function registerDerivativeEditor() {
         Alpine.data('derivativeEditor', () => ({
             open: false,
             sourceId: null,
@@ -36,9 +30,6 @@
                 this.$watch('cropWidth', () => this.render());
                 this.$watch('cropHeight', () => this.render());
                 this.$watch('redactions', () => this.render(), { deep: true });
-                document.addEventListener('open-derivative-dialog', (e) => {
-                    this.openDialog(e.detail.sourceId, e.detail.campaignId);
-                });
             },
 
             openDialog(sourceId, campaignId) {
@@ -58,6 +49,11 @@
                     this.redactions = [];
                     this.setupCanvas();
                     this.render();
+                };
+                this.image.onerror = () => {
+                    this.close();
+                    window.reportActionFailure('Could not load the source handout.',
+                        new Error('Source image failed to load'));
                 };
                 this.image.src = '/files/' + sourceId;
             },
@@ -143,8 +139,8 @@
                 this.redactions.push({
                     x: this.cropX + Math.round(this.cropWidth * 0.1),
                     y: this.cropY + Math.round(this.cropHeight * 0.1),
-                    width: Math.round(this.cropWidth * 0.3),
-                    height: Math.round(this.cropHeight * 0.1)
+                    width: Math.max(1, Math.round(this.cropWidth * 0.3)),
+                    height: Math.max(1, Math.round(this.cropHeight * 0.1))
                 });
             },
 
@@ -202,10 +198,9 @@
 
                     const redirect = response.headers.get('HX-Redirect');
                     if (redirect) {
-                        window.location.href = redirect;
-                    } else {
-                        window.location.reload();
+                        window.history.replaceState(null, '', redirect);
                     }
+                    window.location.reload();
                 } catch (error) {
                     window.reportActionFailure('Could not create derivative', error, () => this.save());
                 } finally {
@@ -213,5 +208,11 @@
                 }
             }
         }));
-    });
+    }
+
+    if (window.Alpine) {
+        registerDerivativeEditor();
+    } else {
+        document.addEventListener('alpine:init', registerDerivativeEditor, { once: true });
+    }
 })();

@@ -15,6 +15,36 @@ The cockpit is organised into five areas:
 | **Party bar** (footer) | Party member summary with HP bars, AC, passive perception |
 | **Quick access toolbar** (top bar) | Search, dice/table rollers, handouts, rules reference, calendar, session lifecycle |
 
+## Screen Safety
+
+The cockpit provides two display modes controlled via the checkbox toggle (`Ctrl+Shift+D`):
+
+| Mode | Badge | Behaviour |
+|------|-------|-----------|
+| **Private** | *none* | Full DM interface shown. All content visible. |
+| **Table-safe** | `Table-safe` | Content marked `data-screen-sensitive` is hidden and not focusable via Tab. |
+
+### What disappears
+
+When table-safe is active:
+
+- Scene summaries, body text, and transitions
+- Quest progress panels and rewards
+- NPC secrets and faction goals
+- Scene checks, participants, and treasure sections
+- Encounter mechanics and threat cards
+- Any element tagged `data-screen-sensitive`
+
+### What stays visible
+
+- **Read-aloud text** — this is the one section kind a DM is meant to show or read to the table; tagging it as sensitive would defeat the feature.
+- **Player preview content** — any element rendered specifically for player consumption.
+- **The story rail module root** — remains as a visible container.
+
+## Timezone
+
+Session times in the end-review draft and saved log are formatted in the server-configured timezone. When a session starts before midnight and ends after, the formatting handles the cross-midnight boundary correctly: start and end times are computed from the server's configured zone, not UTC.
+
 ## Lifecycle
 
 ### Start
@@ -35,6 +65,19 @@ Click **End Review** to generate a deterministic Markdown draft containing:
 - Defeated combatant names, summed damage
 - Ledger rows and unresolved quick notes created during the session
 - Free-form recap and next-session hooks
+- Any `PRESENTATION_OVERRIDE` audit entries (handout title and original classification)
+
+### Defeated / Revived Evidence
+
+The draft reconstructs per-combatant final state by replaying the combat log for each ended encounter. For each combatant, the draft records the **latest** entry in the log:
+
+| Last entry type | Draft result |
+|----------------|--------------|
+| `DEFEATED` | Combatant is listed as defeated |
+| `REVIVED` | Combatant is NOT listed (alive at encounter end) |
+| `DEFEATED` after a `REVIVED` | Combatant is listed as finally defeated |
+
+This means a token that was defeated, revived, and then defeated again appears in the draft as defeated with the correct final state.
 
 Edit the draft freely, then provide a title and click **Complete**. A `SESSION_LOG` note is created, the player view is curtained, and the session resets to `IDLE`.
 

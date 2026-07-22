@@ -2229,6 +2229,22 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 }
 
 /* ── Modal dialog (native <dialog>) ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  background: var(--color-overlay);
+  backdrop-filter: blur(4px);
+}
+
+.derivative-modal-panel {
+  width: min(760px, calc(100vw - 2 * var(--space-lg)));
+}
+
 .modal {
   padding: 0;
   border: none;

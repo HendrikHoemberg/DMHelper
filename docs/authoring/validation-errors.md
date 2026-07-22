@@ -52,6 +52,7 @@ or `src/main/resources/agent/validation-error-catalog.json`.
 | `INVALID_DAMAGE_EXPRESSION` | ERROR | A damage expression is not a valid dice expression. |
 | `INVALID_GEOMETRY` | ERROR | A geometric shape has invalid or degenerate coordinates. |
 | `INVALID_GIVER` | ERROR | The giver reference in a quest is not valid. |
+| `INVALID_HANDOUT_DERIVATIVE_METADATA` | ERROR | Handout derivative provenance is incomplete or attached to a non-derivative handout. |
 | `INVALID_JSON` | ERROR | The content is not valid JSON. |
 | `INVALID_PARTY_CURRENT_HP` | ERROR | The party member current HP value is invalid. |
 | `INVALID_REFERENCE_TYPE` | ERROR | A reference points at an entity of the wrong type. |

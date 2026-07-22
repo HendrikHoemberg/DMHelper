@@ -73,19 +73,19 @@ class HandoutDmOnlyToggleTest {
     }
 
     @Test
-    void cockpitPickerListsNonDmOnlyHandouts() throws Exception {
+    void cockpitPickerListsEveryHandoutForExactPreviewWithClassification() throws Exception {
         adventures.setCurrentScene(seeded.campaignId(), seeded.richSceneId());
         String html = mvc.perform(get("/campaigns/{c}/session", seeded.campaignId()))
                 .andReturn().getResponse().getContentAsString();
 
-        assertThat(html).contains(PopulatedCampaignFixture.PLAYER_HANDOUT_TITLE);
         assertThat(html)
-                .as("a DM-only handout must never appear in the player-facing picker")
-                .doesNotContain(PopulatedCampaignFixture.DM_ONLY_HANDOUT_TITLE);
+                .contains(PopulatedCampaignFixture.PLAYER_HANDOUT_TITLE,
+                        PopulatedCampaignFixture.DM_ONLY_HANDOUT_TITLE,
+                        "PLAYER_SAFE", "DM_SOURCE");
     }
 
     @Test
-    void cockpitPickerSaysSoWhenEveryHandoutIsDmOnly() throws Exception {
+    void cockpitPickerStillOffersExactPreviewWhenEveryHandoutIsUnsafe() throws Exception {
         handoutService.setDmOnly(seeded.playerHandoutId(), true);
         try {
             adventures.setCurrentScene(seeded.campaignId(), seeded.richSceneId());
@@ -93,8 +93,10 @@ class HandoutDmOnlyToggleTest {
                     .andReturn().getResponse().getContentAsString();
 
             assertThat(html)
-                    .as("an empty picker is indistinguishable from a broken one")
-                    .contains("All handouts are DM-only");
+                    .as("unsafe handouts remain previewable but require the override workflow")
+                    .contains(PopulatedCampaignFixture.PLAYER_HANDOUT_TITLE,
+                            PopulatedCampaignFixture.DM_ONLY_HANDOUT_TITLE)
+                    .doesNotContain("All handouts are DM-only");
         } finally {
             handoutService.setDmOnly(seeded.playerHandoutId(), false);
         }

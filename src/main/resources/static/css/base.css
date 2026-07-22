@@ -192,7 +192,8 @@ body[data-screen-safety="TABLE_SAFE"] .encounter-prep { display: none; }
 body[data-screen-safety="TABLE_SAFE"] .note-dm-only { display: none; }
 
 /* Toolbar visual indicator when screen safety is TABLE_SAFE */
-body[data-screen-safety="TABLE_SAFE"] .navbar {
+body[data-screen-safety="TABLE_SAFE"] .navbar,
+body[data-screen-safety="TABLE_SAFE"] .cockpit-topbar {
   border-bottom: 3px solid var(--color-shield);
   background: color-mix(in srgb, var(--color-shield) 7%, var(--color-surface));
 }

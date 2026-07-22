@@ -49,6 +49,7 @@ public final class ImportProblemCodes {
     public static final String INVALID_CURRENT_SCENE_REF = "INVALID_CURRENT_SCENE_REF";
     public static final String INVALID_GEOMETRY = "INVALID_GEOMETRY";
     public static final String INVALID_GIVER = "INVALID_GIVER";
+    public static final String INVALID_HANDOUT_DERIVATIVE_METADATA = "INVALID_HANDOUT_DERIVATIVE_METADATA";
     public static final String INVALID_JSON = "INVALID_JSON";
     public static final String INVALID_PARTY_CURRENT_HP = "INVALID_PARTY_CURRENT_HP";
     public static final String INVALID_REFERENCE_TYPE = "INVALID_REFERENCE_TYPE";

@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.handout.data;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import jakarta.persistence.*;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
@@ -45,15 +46,16 @@ public class Handout {
     @Column(nullable = false)
     private boolean presented = false;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "safety_classification", nullable = false, length = 24)
-    private String safetyClassification = "UNREVIEWED";
+    private SafetyClassification safetyClassification = SafetyClassification.UNREVIEWED;
 
     public SafetyClassification getSafetyClassification() {
-        return SafetyClassification.valueOf(safetyClassification);
+        return safetyClassification;
     }
 
     public void setSafetyClassification(SafetyClassification sc) {
-        this.safetyClassification = sc.name();
+        this.safetyClassification = Objects.requireNonNull(sc, "safety classification");
     }
 
     public boolean isPresentable() { return getSafetyClassification().isPresentable(); }

@@ -25,7 +25,10 @@ import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntry;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntryRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
@@ -53,10 +56,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -97,6 +107,7 @@ class CoreSessionLoopSmokeTest {
     @Autowired private dev.hendrikhoemberg.dmhelper.adventure.data.SceneSectionRepository sceneSectionRepository;
     @Autowired private dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntryRepository combatLogEntryRepository;
     @Autowired private dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableRepository rollableTableRepository;
+    @Autowired private SessionAuditEntryRepository auditEntryRepository;
 
     private static Playwright playwright;
     private static Browser browser;
@@ -133,6 +144,7 @@ class CoreSessionLoopSmokeTest {
     private UUID encounterId;
     private UUID chapterId;
     private UUID handoutId;
+    private final String campaignName = "Smoke Test Campaign " + UUID.randomUUID();
 
     @BeforeAll
     static void launchBrowser() {
@@ -172,24 +184,26 @@ class CoreSessionLoopSmokeTest {
         dmPage.navigate("http://localhost:" + port + "/campaigns");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
 
-        dmPage.evaluate("fetch('/campaigns', { " +
-                "method: 'POST', " +
-                "headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, " +
-                "body: 'name=Smoke+Test+Campaign&description=Playwright+smoke+test' " +
-                "})");
+        dmPage.evaluate("""
+                name => fetch('/campaigns', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ name, description: 'Playwright smoke test' })
+                })
+                """, campaignName);
 
         // Shared mem DB retains other tests' campaigns — resolve by exact name, not getFirst().
         dmPage.waitForFunction("""
-                async () => {
+                async name => {
                   const r = await fetch('/campaigns');
                   const html = await r.text();
-                  return html.includes('Smoke Test Campaign');
+                  return html.includes(name);
                 }
-                """);
+                """, campaignName);
         campaignId = campaignRepo.findAllByOrderByNameAsc().stream()
-                .filter(c -> "Smoke Test Campaign".equals(c.getName()))
+                .filter(c -> campaignName.equals(c.getName()))
                 .findFirst()
-                .orElseThrow(() -> new AssertionError("Smoke Test Campaign not found after create"))
+                .orElseThrow(() -> new AssertionError(campaignName + " not found after create"))
                 .getId();
     }
 
@@ -250,7 +264,12 @@ class CoreSessionLoopSmokeTest {
             }
         }
         if (mapId == null) {
-            throw new AssertionError("Test Battle Map not found for smoke campaign " + campaignId);
+            String persistedMaps = mapRepo.findAll().stream()
+                    .map(m -> m.getName() + "@" + m.getCampaign().getId())
+                    .toList()
+                    .toString();
+            throw new AssertionError("Test Battle Map not found for smoke campaign " + campaignId
+                    + "; current URL=" + dmPage.url() + "; persisted maps=" + persistedMaps);
         }
 
         secondMapId = gameMapService.create(campaignId, "Fallback Map", 30, 20, 48).getId();
@@ -479,7 +498,7 @@ class CoreSessionLoopSmokeTest {
                 "seal.png", "image/png", Base64.getDecoder().decode(
                         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="));
         handoutId = handout.getId();
-        handoutService.setDmOnly(handoutId, false);
+        handoutService.classify(campaignId, handoutId, Handout.SafetyClassification.PLAYER_SAFE);
 
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/maps");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
@@ -537,6 +556,12 @@ class CoreSessionLoopSmokeTest {
                 new Locator.WaitForOptions().setState(WaitForSelectorState.ATTACHED));
         assertThat(presentationService.getCurrentState().mode()).isEqualTo("MAP");
         dmPage.locator("#cockpitHandoutPicker").selectOption(handoutId.toString());
+        Locator handoutPreview = dmPage.locator("#presentationPreview");
+        handoutPreview.waitFor();
+        assertThat(handoutPreview.locator(".pv-handout img").getAttribute("alt"))
+                .isEqualTo("<img src=x onerror=window.playerXss=true>");
+        handoutPreview.locator("button",
+                new Locator.LocatorOptions().setHasText("Present to table")).click();
         Locator playerHandout = playerPage.locator(".pv-handout img");
         playerHandout.waitFor();
         assertThat(playerHandout.getAttribute("alt"))
@@ -673,7 +698,7 @@ class CoreSessionLoopSmokeTest {
         // Campaign detail page
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + restoredId);
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
-        assertThat(dmPage.textContent("body")).contains("Smoke Test Campaign");
+        assertThat(dmPage.textContent("body")).contains(campaignName);
 
         // Maps page
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + restoredId + "/maps");
@@ -1738,6 +1763,299 @@ class CoreSessionLoopSmokeTest {
         assertThat(box.y).isGreaterThan(0);
         assertThat(box.x + box.width).isLessThanOrEqualTo(1920.0);
         assertThat(box.y + box.height).isLessThanOrEqualTo(1080.0);
+    }
+
+    @Test
+    @Order(28)
+    void previewAndStorySurviveScreenSafety() {
+        startSession();
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+
+        // Story rail remains visible when table-safe
+        assertThat(dmPage.locator("[data-runtime-module='story']:visible").count())
+                .as("story rail must be visible before toggle")
+                .isGreaterThan(0);
+
+        // Enter table-safe mode
+        dmPage.evaluate("document.getElementById('screenSafetyCheckbox')?.click()");
+        assertThat(dmPage.evaluate("document.body.dataset.screenSafety")).isEqualTo("TABLE_SAFE");
+        assertThat(dmPage.locator("[data-screen-sensitive][inert]").count())
+                .as("sensitive content must lose focusability synchronously")
+                .isGreaterThan(0);
+
+        // The screen safety badge is shown
+        assertThat(dmPage.locator(".screen-safety-badge:visible").count())
+                .as("screen safety badge must be visible")
+                .isGreaterThan(0);
+
+        // Story rail module root remains as a visible container
+        assertThat(dmPage.locator("[data-runtime-module='story']:visible").count())
+                .as("story rail must remain visible in table-safe mode")
+                .isGreaterThan(0);
+
+        // Toggle back to PRIVATE
+        dmPage.evaluate("document.getElementById('screenSafetyCheckbox')?.click()");
+        dmPage.waitForTimeout(200);
+    }
+
+    @Test
+    @Order(29)
+    void unreviewedHandoutRejectedAndRecovers() throws Exception {
+        startSession();
+        var handout = handoutService.createImported(campaignId,
+                "<p>Secret map</p>", "", "secret.png", "image/png",
+                Base64.getDecoder().decode(
+                        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="));
+        UUID unreviewedId = handout.getId();
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+
+        dmPage.locator("#cockpitHandoutPicker").selectOption(unreviewedId.toString());
+        Locator preview = dmPage.locator("#presentationPreview");
+        preview.waitFor();
+        assertThat(preview.locator(".presentation-preview-classification").textContent())
+                .contains("UNREVIEWED");
+        assertThat(preview.locator("button",
+                new Locator.LocatorOptions().setHasText("Present anyway…")).isVisible()).isTrue();
+        assertThat(preview.locator("button",
+                new Locator.LocatorOptions().setHasText("Confirm emergency presentation")).isVisible()).isFalse();
+        preview.locator("button:visible",
+                new Locator.LocatorOptions().setHasText("Cancel")).click();
+
+        browserFailures.expectHttpFailure("PUT", Pattern.compile(".*/table/presentation"), 404);
+
+        // Attempt ordinary presentation — must fail with non-2xx
+        String result = (String) dmPage.evaluate("""
+            async ([cid, hid]) => {
+                const r = await fetch('/api/v1/campaigns/' + cid + '/table/presentation', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: 'HANDOUT', ref: hid })
+                });
+                if (r.ok) return 'OK:' + r.status;
+                return 'FAIL:' + r.status;
+            }
+        """, Arrays.asList(campaignId.toString(), unreviewedId.toString()));
+        assertThat(result).startsWith("FAIL:");
+
+        handoutService.classify(campaignId, unreviewedId, Handout.SafetyClassification.PLAYER_SAFE);
+        dmPage.reload();
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        dmPage.locator("#cockpitHandoutPicker").selectOption(unreviewedId.toString());
+        Locator safePreview = dmPage.locator("#presentationPreview");
+        safePreview.waitFor();
+        safePreview.locator("button",
+                new Locator.LocatorOptions().setHasText("Present to table")).click();
+        dmPage.waitForFunction("([hid]) => fetch('/api/v1/table/state').then(r => r.json())"
+                        + ".then(state => state.handout?.id === hid)",
+                List.of(unreviewedId.toString()));
+        assertThat(presentationService.getCurrentState().handout().id())
+                .isEqualTo(unreviewedId.toString());
+    }
+
+    @Test
+    @Order(30)
+    void derivativeWorkflowPlayerByteParity() throws Exception {
+        startSession();
+        byte[] sourceBytes = createSinglePixelPng("source");
+        Handout source = handoutService.createImported(campaignId,
+                "Source Map", "", "source.png", "image/png", sourceBytes);
+        handoutService.classify(campaignId, source.getId(), Handout.SafetyClassification.DM_SOURCE);
+
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/handouts");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        Locator sourceCard = dmPage.locator("#handout-" + source.getId());
+        sourceCard.locator("button",
+                new Locator.LocatorOptions().setHasText("Create player derivative")).click();
+        Locator dialog = dmPage.locator("#derivativeDialog");
+        dialog.waitFor();
+        dmPage.waitForFunction("document.getElementById('derivativeCanvas')?.width === 1");
+        dialog.locator("#derivativeTitle").fill("Derived Map");
+        dialog.locator("button", new Locator.LocatorOptions().setHasText("Save Derivative")).click();
+        dmPage.getByText("Derived Map", new Page.GetByTextOptions().setExact(true)).waitFor();
+
+        Handout derivative = handoutService.findByCampaignId(campaignId).stream()
+                .filter(value -> "Derived Map".equals(value.getTitle()))
+                .findFirst().orElseThrow();
+        assertThat(derivative.getSafetyClassification())
+                .isEqualTo(Handout.SafetyClassification.PLAYER_DERIVATIVE);
+        assertThat(derivative.getSourceHandout().getId()).isEqualTo(source.getId());
+
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        dmPage.locator("#cockpitHandoutPicker").selectOption(derivative.getId().toString());
+        Locator preview = dmPage.locator("#presentationPreview");
+        preview.waitFor();
+        assertThat(preview.locator(".presentation-preview-classification").textContent())
+                .contains("PLAYER_DERIVATIVE");
+        String previewB64 = (String) dmPage.evaluate("""
+            async ([cid, hid]) => {
+                const r = await fetch('/api/v1/campaigns/' + cid + '/table/handouts/' + hid + '/preview-file');
+                if (!r.ok) return 'ERROR:' + r.status;
+                const bytes = new Uint8Array(await r.arrayBuffer());
+                let binary = '';
+                for (const value of bytes) binary += String.fromCharCode(value);
+                return btoa(binary);
+            }
+        """, Arrays.asList(campaignId.toString(), derivative.getId().toString()));
+        preview.locator("button",
+                new Locator.LocatorOptions().setHasText("Present to table")).click();
+        dmPage.waitForFunction("([hid]) => fetch('/api/v1/table/state').then(r => r.json())"
+                        + ".then(state => state.handout?.id === hid)",
+                List.of(derivative.getId().toString()));
+
+        String playerB64 = (String) dmPage.evaluate("""
+            async ([hid]) => {
+                const r = await fetch('/player/files/' + hid);
+                if (!r.ok) return 'ERROR:' + r.status;
+                const buf = await r.arrayBuffer();
+                const bytes = new Uint8Array(buf);
+                let binary = '';
+                for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+                return btoa(binary);
+            }
+        """, List.of(derivative.getId().toString()));
+        assertThat(playerB64).as("player file fetch status").doesNotStartWith("ERROR:");
+        assertThat(playerB64).isEqualTo(previewB64);
+    }
+
+    @Test
+    @Order(31)
+    void emergencyOverrideCreatesAuditRow() throws Exception {
+        startSession();
+        var handout = handoutService.createImported(campaignId,
+                "Emergency content", "", "emergency.png", "image/png",
+                Base64.getDecoder().decode(
+                        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="));
+        UUID unreviewedId = handout.getId();
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+
+        browserFailures.expectHttpFailure("PUT", Pattern.compile(".*/table/presentation"), 404);
+
+        // Emergency override with wrong acknowledgement must be rejected
+        String wrongResult = (String) dmPage.evaluate("""
+            async ([cid, hid]) => {
+                const r = await fetch('/api/v1/campaigns/' + cid + '/table/presentation', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mode: 'HANDOUT', ref: hid,
+                        emergencyOverride: true,
+                        acknowledgement: 'wrong text'
+                    })
+                });
+                return r.ok ? 'OK:' + r.status : 'FAIL:' + r.status;
+            }
+        """, Arrays.asList(campaignId.toString(), unreviewedId.toString()));
+        assertThat(wrongResult).startsWith("FAIL:");
+
+        dmPage.locator("#cockpitHandoutPicker").selectOption(unreviewedId.toString());
+        Locator preview = dmPage.locator("#presentationPreview");
+        preview.waitFor();
+        preview.locator("button",
+                new Locator.LocatorOptions().setHasText("Present anyway…")).click();
+        Locator finalConfirmation = preview.locator("button",
+                new Locator.LocatorOptions().setHasText("Confirm emergency presentation"));
+        finalConfirmation.waitFor();
+        finalConfirmation.click();
+        dmPage.waitForFunction("([hid]) => fetch('/api/v1/table/state').then(r => r.json())"
+                        + ".then(state => state.handout?.id === hid)",
+                List.of(unreviewedId.toString()));
+        assertThat(presentationService.getCurrentState().handout().id())
+                .isEqualTo(unreviewedId.toString());
+
+        // Verify audit row exists
+        var session = sessionRepository.findByCampaignId(campaignId).orElseThrow();
+        var audits = auditEntryRepository.findBySession_IdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(
+                session.getId(), java.time.Instant.EPOCH, java.time.Instant.now());
+        assertThat(audits)
+                .anySatisfy(a -> {
+                    assertThat(a.getEntryType()).isEqualTo(SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE);
+                    assertThat(a.getContentType()).isEqualTo("HANDOUT");
+                    assertThat(a.getContentId()).isEqualTo(unreviewedId);
+                    assertThat(a.getDetails()).contains("Emergency content");
+                });
+        presentationService.curtain(campaignId);
+    }
+
+    @Test
+    @Order(32)
+    void crossMidnightSessionWithDefeatSequence() {
+        startSession();
+        UUID defeatEncounterId = encounterService.create(campaignId,
+                new EncounterService.CreateRequest("Defeat Sequence", mapId)).id();
+        encounterService.prefillFromMap(defeatEncounterId, mapId);
+        encounterService.activate(defeatEncounterId);
+
+        var combatants = encounterService.getCombatants(defeatEncounterId);
+        assertThat(combatants).isNotEmpty();
+        UUID combatantId = combatants.getFirst().id();
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        Locator tracker = dmPage.locator(".tracker-panel");
+        tracker.locator("[data-action='next-turn']").waitFor();
+        tracker.locator("[data-action='next-turn']").click();
+
+        Locator combatantRow = tracker.locator("[data-cid='" + combatantId + "']");
+        combatantRow.click();
+        Locator detail = tracker.locator(".combatant-detail");
+        detail.locator("button", new Locator.LocatorOptions().setHasText("Defeat")).click();
+        detail.locator("button", new Locator.LocatorOptions().setHasText("Revive")).waitFor();
+        detail.locator("button", new Locator.LocatorOptions().setHasText("Revive")).click();
+        detail.locator("button", new Locator.LocatorOptions().setHasText("Defeat")).waitFor();
+        detail.locator("button", new Locator.LocatorOptions().setHasText("Defeat")).click();
+
+        tracker.locator(".tracker-header button",
+                new Locator.LocatorOptions().setHasText("End")).click();
+        tracker.locator(".empty-state").waitFor();
+
+        ZoneId berlin = ZoneId.of("Europe/Berlin");
+        ZonedDateTime startedLocal = ZonedDateTime.now(berlin).minusDays(1)
+                .withHour(23).withMinute(30).withSecond(0).withNano(0);
+        var persistedSession = sessionRepository.findByCampaignId(campaignId).orElseThrow();
+        persistedSession.setStartedAt(startedLocal.toInstant());
+        sessionRepository.saveAndFlush(persistedSession);
+
+        dmPage.locator("button[x-ref='sessionButton']").click();
+        Locator lifecycle = dmPage.locator("#sessionLifecycleDialog");
+        lifecycle.waitFor();
+        lifecycle.locator("button", new Locator.LocatorOptions().setHasText("Review & Complete")).click();
+        Locator draftBody = lifecycle.locator("#sessionDraftBody");
+        draftBody.waitFor();
+
+        // Verify the draft correctly reports the final defeated state
+        String body = draftBody.inputValue();
+        String combatantName = combatants.getFirst().name();
+        DateTimeFormatter date = DateTimeFormatter.ofPattern("d MMMM uuuu", Locale.ENGLISH);
+        assertThat(body).contains(date.format(startedLocal), date.format(ZonedDateTime.now(berlin)),
+                "Europe/Berlin");
+        assertThat(body).contains(combatantName);
+        assertThat(body).contains("defeated");
+
+        // Verify the combatant appears only once in the defeated list
+        int nameCount = countOccurrences(body, combatantName);
+        assertThat(nameCount).as("combatant should appear once, not double-counted after revive")
+                .isLessThan(2);
+    }
+
+    private static byte[] createSinglePixelPng(String label) throws IOException {
+        BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+        img.setRGB(0, 0, 0xFF000000 | (label.hashCode() & 0x00FFFFFF));
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(img, "png", baos);
+        return baos.toByteArray();
+    }
+
+    private static int countOccurrences(String haystack, String needle) {
+        int count = 0;
+        int idx = 0;
+        while ((idx = haystack.indexOf(needle, idx)) != -1) {
+            count++;
+            idx += needle.length();
+        }
+        return count;
     }
 
     private static CampaignManifestV2 stripTableAndConflictingEquipment(CampaignManifestV2 source) {

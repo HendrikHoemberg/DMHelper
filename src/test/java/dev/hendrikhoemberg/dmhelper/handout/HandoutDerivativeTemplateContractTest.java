@@ -55,6 +55,8 @@ class HandoutDerivativeTemplateContractTest {
         assertThat(js).contains("FormData");
         assertThat(js).contains("append");
         assertThat(js).contains("/derivatives");
+        assertThat(js).contains("window.history.replaceState(null, '', redirect)")
+                .contains("window.location.reload()");
     }
 
     @Test
@@ -78,12 +80,55 @@ class HandoutDerivativeTemplateContractTest {
     }
 
     @Test
+    void derivativeDialogUsesARealViewportOverlayAndScopedPanel() throws IOException {
+        String html = Files.readString(
+                Path.of("src/main/resources/templates/handout/_derivative-dialog.html"));
+        String css = Files.readString(
+                Path.of("src/main/resources/static/css/components.css"));
+
+        assertThat(html).contains("role=\"dialog\"", "aria-modal=\"true\"",
+                "class=\"modal-panel derivative-modal-panel\"")
+                .doesNotContain("class=\"modal\"");
+        assertThat(css).contains(".modal-overlay {", "position: fixed;", "inset: 0;",
+                ".derivative-modal-panel {");
+    }
+
+    @Test
     void cardHtmlHasEnabledDerivativeButton() throws IOException {
         String card = Files.readString(
                 Path.of("src/main/resources/templates/handout/_card.html"));
         // The previously disabled "Create player derivative" button should now be enabled
         // and should open the derivative dialog
         assertThat(card).doesNotContain("Coming soon");
-        assertThat(card).contains("openDerivativeDialog");
+        assertThat(card).contains("openDerivativeDialog", "data-source-id", "data-campaign-id")
+                .doesNotContain("th:onclick");
+    }
+
+    @Test
+    void fragmentOwnsItsAlpineControllerAndScriptLoadsBeforeAlpineStarts() throws IOException {
+        String dialog = Files.readString(
+                Path.of("src/main/resources/templates/handout/_derivative-dialog.html"));
+        String list = Files.readString(Path.of("src/main/resources/templates/handout/list.html"));
+        String js = Files.readString(
+                Path.of("src/main/resources/static/js/handout-derivative-editor.js"));
+
+        int fragment = dialog.indexOf("th:fragment=\"dialog\"");
+        assertThat(fragment).isGreaterThan(-1);
+        assertThat(dialog.substring(Math.max(0, fragment - 120), fragment + 180))
+                .contains("x-data=\"derivativeEditor()\"")
+                .contains("x-init=\"init()\"");
+        assertThat(dialog).contains("@open-derivative-dialog.window");
+        assertThat(list).contains("handout-derivative-editor.js}")
+                .doesNotContain("handout-derivative-editor.js}\" defer");
+        assertThat(js).doesNotContain(".__x");
+        assertThat(js).contains("window.dispatchEvent(new CustomEvent('open-derivative-dialog'");
+    }
+
+    @Test
+    void defaultRedactionAlwaysHasPositiveDimensions() throws IOException {
+        String js = Files.readString(
+                Path.of("src/main/resources/static/js/handout-derivative-editor.js"));
+        assertThat(js).contains("Math.max(1, Math.round(this.cropWidth * 0.3))")
+                .contains("Math.max(1, Math.round(this.cropHeight * 0.1))");
     }
 }

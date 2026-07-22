@@ -48,7 +48,8 @@
                 Mark as DM source
             </button>
             <button class="btn btn-ghost"
-                    th:onclick="'openDerivativeDialog(\'' + ${handout.id} + '\', \'' + ${handout.campaign.id} + '\')'">
+                    th:attr="data-source-id=${handout.id},data-campaign-id=${handout.campaign.id}"
+                    onclick="openDerivativeDialog(this.dataset.sourceId, this.dataset.campaignId)">
                 Create player derivative
             </button>
         </th:block>

@@ -54,9 +54,24 @@ public final class CampaignSemanticComparator {
                 sNode.remove("audioSwitchMode");
             }
         }
+        normalizeHandoutCompatibilityFields(root);
         replaceAssetReferences(root);
         sortIdentityCollections(root, null);
         return root;
+    }
+
+    private static void normalizeHandoutCompatibilityFields(ObjectNode root) {
+        JsonNode handouts = root.get("handouts");
+        if (!(handouts instanceof ArrayNode array)) return;
+        for (JsonNode handout : array) {
+            if (handout instanceof ObjectNode object
+                    && object.path("safetyClassification").isTextual()) {
+                // safetyClassification is authoritative in A2 packages. dmOnly remains in the
+                // wire format for old V2 readers, but import deliberately synchronizes it to the
+                // conservative classification and may therefore change the redundant old value.
+                object.remove("dmOnly");
+            }
+        }
     }
 
     private static void sortIdentityCollections(JsonNode node, String fieldName) {

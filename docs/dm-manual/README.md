@@ -15,6 +15,7 @@ Operational reference for running campaigns with DMHelper.
 | 07 | [Rollable Tables](07-rollable-tables.md) | Creating, rolling, nesting, linking, and troubleshooting random tables |
 | 08 | [Traps & Hazards](08-traps-and-hazards.md) | DM-only threats, scene/tracker/pin workflows, dice prefill, package fidelity |
 | 09 | [Atmosphere & Music](09-atmosphere-and-music.md) | DM-side streaming music: providers, cue library, assignments, priority switching, cockpit widget, graceful degradation |
+| 10 | [Campaign Packages](10-campaign-packages.md) | Export, import, safety classification on old packages, derivative round-trip, additive import |
 
 ## Reference
 

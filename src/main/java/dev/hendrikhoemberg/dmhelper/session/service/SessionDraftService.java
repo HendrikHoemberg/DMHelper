@@ -131,6 +131,7 @@ public class SessionDraftService {
                 .stream()
                 .filter(e -> e.getEntryType() == SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE)
                 .map(this::auditOverrideLine)
+                .filter(Objects::nonNull)
                 .toList();
     }
 

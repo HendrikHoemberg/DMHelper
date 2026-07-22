@@ -316,6 +316,7 @@ public class HandoutService {
         derivative.setTags(source.getTags());
         derivative.setContentType("image/png");
         derivative.setSafetyClassification(Handout.SafetyClassification.PLAYER_DERIVATIVE);
+        derivative.setDmOnly(false);
         derivative.setSourceHandout(source);
         derivative.setDerivativeRecipe(recipeJson);
 

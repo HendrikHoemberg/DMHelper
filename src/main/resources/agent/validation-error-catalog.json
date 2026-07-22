@@ -596,6 +596,17 @@
       ]
     },
     {
+      "code": "INVALID_HANDOUT_DERIVATIVE_METADATA",
+      "defaultSeverity": "ERROR",
+      "summary": "Handout derivative provenance is incomplete or attached to a non-derivative handout.",
+      "when": "Handout safety and provenance validation during package import.",
+      "suggestionTemplate": "Give each PLAYER_DERIVATIVE handout a sourceRef and non-blank derivativeRecipe, and remove derivative metadata from other classifications.",
+      "repairHints": [
+        "Use a package-local HANDOUT sourceRef that resolves to the original handout.",
+        "Record a non-blank derivativeRecipe describing the player-safe transformation."
+      ]
+    },
+    {
       "code": "INVALID_JSON",
       "defaultSeverity": "ERROR",
       "summary": "The content is not valid JSON.",

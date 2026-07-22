@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import tools.jackson.databind.json.JsonMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -259,6 +260,23 @@ class TablePresentationServiceTest {
         assertThat(entry.getContentId()).isEqualTo(handout.getId());
         assertThat(entry.getDetails()).contains(handout.getTitle());
         assertThat(entry.getDetails()).contains(handout.getSafetyClassification().name());
+    }
+
+    @Test
+    void overrideAuditDetailsRemainValidJsonForControlCharacters() throws Exception {
+        Handout handout = createHandout(UUID.randomUUID(), Handout.SafetyClassification.DM_SOURCE);
+        handout.setTitle("Secret note\nsecond line\t\"quoted\"");
+        when(handouts.findById(handout.getId())).thenReturn(Optional.of(handout));
+        when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(session));
+
+        service.presentHandout(campaignId, handout.getId(),
+                true, "I understand this may expose DM content");
+
+        ArgumentCaptor<SessionAuditEntry> captor = ArgumentCaptor.forClass(SessionAuditEntry.class);
+        verify(auditEntryRepository).saveAndFlush(captor.capture());
+        var details = JsonMapper.builder().build().readTree(captor.getValue().getDetails());
+        assertThat(details.get("title").asText()).isEqualTo(handout.getTitle());
+        assertThat(details.get("classification").asText()).isEqualTo("DM_SOURCE");
     }
 
     @Test

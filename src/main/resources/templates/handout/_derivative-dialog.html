@@ -1,15 +1,20 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      x-data="derivativeEditor()"
-      x-init="init()">
+<html xmlns:th="http://www.thymeleaf.org">
 <div th:fragment="dialog" class="modal-overlay" id="derivativeDialog"
+     x-data="derivativeEditor()"
+     x-init="init()"
      x-show="open"
+     x-cloak
      x-transition
+     @open-derivative-dialog.window="openDialog($event.detail.sourceId, $event.detail.campaignId)"
      @keydown.window.escape="close()"
-     style="display: none;">
-    <div class="modal" @click.away="close()">
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="derivative-dialog-title"
+     @click.self="close()">
+    <div class="modal-panel derivative-modal-panel">
         <div class="modal-header">
-            <h2>Create Player Derivative</h2>
+            <h2 id="derivative-dialog-title">Create Player Derivative</h2>
             <button class="btn btn-ghost" @click="close()" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">

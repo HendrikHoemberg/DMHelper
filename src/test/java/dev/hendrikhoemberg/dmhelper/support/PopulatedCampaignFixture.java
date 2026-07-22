@@ -343,6 +343,9 @@ public class PopulatedCampaignFixture {
         handout.setContentType("image/png");
         handout.setFileName(UUID.randomUUID() + ".png");
         handout.setDmOnly(dmOnly);
+        handout.setSafetyClassification(dmOnly
+                ? Handout.SafetyClassification.DM_SOURCE
+                : Handout.SafetyClassification.PLAYER_SAFE);
         handout.setPresented(false);
         return handouts.save(handout);
     }

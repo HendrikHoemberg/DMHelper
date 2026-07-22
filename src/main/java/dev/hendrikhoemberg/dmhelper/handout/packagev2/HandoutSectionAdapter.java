@@ -82,9 +82,12 @@ public class HandoutSectionAdapter implements CampaignSectionExporter, CampaignS
         String derivativeRecipe = null;
         if (handout.isDerivative()) {
             Handout source = handout.getSourceHandout();
-            if (source != null) {
-                sourceRef = context.packageRef(CampaignContentType.HANDOUT, source.getId(), source.getTitle());
+            if (source == null || handout.getDerivativeRecipe() == null
+                    || handout.getDerivativeRecipe().isBlank()) {
+                throw new IllegalStateException("Derivative handout is missing its source or recipe: "
+                        + handout.getId());
             }
+            sourceRef = context.packageRef(CampaignContentType.HANDOUT, source.getId(), source.getTitle());
             derivativeRecipe = handout.getDerivativeRecipe();
         }
 
@@ -103,7 +106,9 @@ public class HandoutSectionAdapter implements CampaignSectionExporter, CampaignS
 
         var campaign = context.campaign();
 
-        List<Handout> created = new ArrayList<>();
+        for (HandoutDto dto : dtos) {
+            validateSafetyMetadata(dto);
+        }
 
         for (HandoutDto dto : dtos) {
             byte[] bytes;
@@ -130,19 +135,13 @@ public class HandoutSectionAdapter implements CampaignSectionExporter, CampaignS
                 throw new RuntimeException("Failed to create imported handout: " + dto.title(), e);
             }
 
-            handout.setDmOnly(dto.dmOnly());
-            SafetyClassification classification;
-            if (dto.safetyClassification() != null) {
-                classification = SafetyClassification.valueOf(dto.safetyClassification());
-            } else {
-                classification = dto.dmOnly() ? SafetyClassification.DM_SOURCE : SafetyClassification.UNREVIEWED;
-            }
+            SafetyClassification classification = classificationOf(dto);
             handout.setSafetyClassification(classification);
+            handout.setDmOnly(!classification.isPresentable());
             handout.setPresented(classification.isPresentable() && dto.presented());
             handoutRepository.save(handout);
 
             context.register(CampaignContentType.HANDOUT, dto.key(), handout, handout.getId());
-            created.add(handout);
         }
 
         for (HandoutDto dto : dtos) {
@@ -155,6 +154,28 @@ public class HandoutSectionAdapter implements CampaignSectionExporter, CampaignS
                 derivative.setDerivativeRecipe(dto.derivativeRecipe());
                 handoutRepository.save(derivative);
             }
+        }
+    }
+
+    private static SafetyClassification classificationOf(HandoutDto dto) {
+        if (dto.safetyClassification() != null) {
+            return SafetyClassification.valueOf(dto.safetyClassification());
+        }
+        return dto.dmOnly() ? SafetyClassification.DM_SOURCE : SafetyClassification.UNREVIEWED;
+    }
+
+    private static void validateSafetyMetadata(HandoutDto dto) {
+        SafetyClassification classification = classificationOf(dto);
+        boolean hasSource = dto.sourceRef() != null;
+        boolean hasRecipe = dto.derivativeRecipe() != null && !dto.derivativeRecipe().isBlank();
+        if (classification == SafetyClassification.PLAYER_DERIVATIVE) {
+            if (!hasSource || !hasRecipe) {
+                throw new IllegalArgumentException("PLAYER_DERIVATIVE handout must have a source and recipe: "
+                        + dto.key());
+            }
+        } else if (hasSource || dto.derivativeRecipe() != null) {
+            throw new IllegalArgumentException("Only PLAYER_DERIVATIVE handouts may have derivative metadata: "
+                    + dto.key());
         }
     }
 

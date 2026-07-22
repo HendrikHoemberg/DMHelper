@@ -359,6 +359,20 @@ class FlywayMigrationTest {
     }
 
     @Test
+    void v19EnforcesHandoutAndAuditSafetyInvariants() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '19' AND \"success\" = TRUE",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.table_constraints
+                WHERE constraint_name IN (
+                    'CK_HANDOUT_SAFETY_CLASSIFICATION',
+                    'CK_HANDOUT_DERIVATIVE_SOURCE',
+                    'CK_SESSION_AUDIT_TYPE')
+                """, Integer.class)).isEqualTo(3);
+    }
+
+    @Test
     void v12CreatesWorldGraphTables() {
         Integer applied = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '12' AND \"success\" = TRUE",

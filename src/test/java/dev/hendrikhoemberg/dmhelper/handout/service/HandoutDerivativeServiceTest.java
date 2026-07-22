@@ -73,6 +73,7 @@ class HandoutDerivativeServiceTest {
                 campaignId, source.getId(), "Derived Title", toJson(recipe), png);
 
         assertThat(derivative.getSafetyClassification()).isEqualTo(PLAYER_DERIVATIVE);
+        assertThat(derivative.isDmOnly()).isFalse();
         assertThat(derivative.getSourceHandout().getId()).isEqualTo(source.getId());
         assertThat(derivative.getContentType()).isEqualTo("image/png");
         assertThat(handoutService.getFileContent(source.getId())).isEqualTo(sourceBytes);

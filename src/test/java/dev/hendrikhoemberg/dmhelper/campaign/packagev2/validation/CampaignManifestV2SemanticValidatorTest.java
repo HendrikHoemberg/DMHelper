@@ -51,6 +51,29 @@ class CampaignManifestV2SemanticValidatorTest {
     }
 
     @Test
+    void playerDerivativeRequiresBothSourceAndRecipe() {
+        var derivative = new CampaignManifestV2.HandoutDto(
+                "derived", "Player Map", List.of(), null, "image/png", false, false,
+                "PLAYER_DERIVATIVE", null, null);
+
+        assertThat(validator.validate(withHandouts(List.of(derivative))))
+                .extracting(CampaignImportProblem::code)
+                .contains("INVALID_HANDOUT_DERIVATIVE_METADATA");
+    }
+
+    @Test
+    void nonDerivativeRejectsDerivativeMetadata() {
+        var sourceRef = ContentReference.packageRef(CampaignContentType.HANDOUT, "source");
+        var safe = new CampaignManifestV2.HandoutDto(
+                "safe", "Safe Map", List.of(), null, "image/png", false, false,
+                "PLAYER_SAFE", sourceRef, "{\"crop\":true}");
+
+        assertThat(validator.validate(withHandouts(List.of(safe))))
+                .extracting(CampaignImportProblem::code)
+                .contains("INVALID_HANDOUT_DERIVATIVE_METADATA");
+    }
+
+    @Test
     void duplicateKeysAreDetected() {
         var manifest = minimal();
         var adv = new CampaignManifestV2.AdventureDto("dup", "Dup", null, null, 1, List.of(), null);
@@ -783,6 +806,20 @@ class CampaignManifestV2SemanticValidatorTest {
                 m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
                 m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), traps, List.of(), List.of());
+    }
+
+    private CampaignManifestV2 withHandouts(List<CampaignManifestV2.HandoutDto> handouts) {
+        var m = minimal();
+        return new CampaignManifestV2(
+                2, m.metadata(), m.campaign(), m.assets(), m.party(),
+                m.customStatBlocks(), m.customSpells(), m.customConditions(), m.customRules(),
+                m.customEquipment(), m.customMagicItems(), m.customClasses(), m.customSpecies(),
+                m.customBackgrounds(), m.customFeats(),
+                handouts, m.maps(), m.encounters(),
+                m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
+                m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
+                m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.of(), List.of(), List.of(), List.of());
     }
 
     private CampaignManifestV2 withRollableTables(List<CampaignManifestV2.RollableTableDto> tables) {

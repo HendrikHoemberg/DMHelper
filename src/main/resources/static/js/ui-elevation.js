@@ -57,8 +57,11 @@
         container.id = 'toast-container';
         container.setAttribute('role', 'status');
         container.setAttribute('aria-live', 'polite');
-        document.body.appendChild(container);
       }
+      /* A native modal dialog lives in the browser's top layer. A fixed toast under
+         document.body can be visible yet cannot receive pointer events through it. */
+      const parent = document.querySelector('dialog[open]') || document.body;
+      if (container.parentElement !== parent) parent.appendChild(container);
       return container;
     }
 

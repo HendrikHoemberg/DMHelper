@@ -24,13 +24,16 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import tools.jackson.databind.json.JsonMapper;
 
 @Service
 public class TablePresentationService {
 
     private static final Logger log = LoggerFactory.getLogger(TablePresentationService.class);
+    private static final tools.jackson.databind.ObjectMapper JSON = JsonMapper.builder().build();
 
     private final PlayerSafeProjectionService projectionService;
     private final GameMapRepository gameMapRepository;
@@ -155,8 +158,7 @@ public class TablePresentationService {
             audit.setEntryType(SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE);
             audit.setContentType("HANDOUT");
             audit.setContentId(handoutId);
-            audit.setDetails("{\"title\":\"" + escapeJson(handout.getTitle())
-                    + "\",\"classification\":\"" + handout.getSafetyClassification().name() + "\"}");
+            audit.setDetails(serializeAuditDetails(handout));
             auditEntryRepository.saveAndFlush(audit);
         }
 
@@ -282,8 +284,14 @@ public class TablePresentationService {
                 null, null);
     }
 
-    private static String escapeJson(String value) {
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
+    private static String serializeAuditDetails(Handout handout) {
+        try {
+            return JSON.writeValueAsString(Map.of(
+                    "title", handout.getTitle(),
+                    "classification", handout.getSafetyClassification().name()));
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not serialize presentation audit details", e);
+        }
     }
 
     private CampaignSession requireOpenSession(UUID campaignId) {

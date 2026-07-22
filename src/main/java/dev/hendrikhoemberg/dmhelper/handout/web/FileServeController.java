@@ -40,7 +40,7 @@ public class FileServeController {
     @GetMapping("/player/files/{id}")
     public ResponseEntity<byte[]> servePlayerFile(@PathVariable UUID id) throws IOException {
         var handout = handoutService.findById(id);
-        if (handout.isDmOnly() || !tablePresentationService.isCurrentlyPresentedHandout(id)) {
+        if (!tablePresentationService.isCurrentlyPresentedHandout(id)) {
             return ResponseEntity.notFound().build();
         }
         return serveFileInternal(handout, CacheControl.noStore());

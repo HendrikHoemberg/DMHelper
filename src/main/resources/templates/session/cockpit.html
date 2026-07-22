@@ -10,6 +10,7 @@
     <link rel="stylesheet" th:href="@{/css/components.css}">
     <link rel="stylesheet" th:href="@{/css/book.css}">
     <link rel="stylesheet" th:href="@{/css/cockpit.css}">
+    <link rel="stylesheet" th:href="@{/css/player-projection.css}">
     <script th:src="@{/vendor/htmx.min.js}"></script>
     <script th:src="@{/js/dm-request.js}"></script>
     <script th:src="@{/js/keyboard.js}"></script>
@@ -47,12 +48,11 @@
        th:href="@{/campaigns/{id}/handouts(id=${campaignId})}">Handouts</a>
     <select id="cockpitHandoutPicker" class="form-input" aria-label="Present handout"
             :disabled="sessionStatus === 'IDLE'"
-            th:with="presentable=${#lists.size(workspace.handouts.?[!dmOnly])}"
             @change="presentHandout($event.target.value); $event.target.value = ''">
-      <option value="" th:if="${presentable > 0}">Present handout…</option>
-      <option value="" th:if="${presentable == 0}">All handouts are DM-only — flip one on the Handouts page</option>
-      <option th:each="handout : ${workspace.handouts}" th:unless="${handout.dmOnly}"
-              th:value="${handout.id}" th:text="${handout.title}">Handout</option>
+      <option value="">Preview handout…</option>
+      <option th:each="handout : ${workspace.handouts}"
+              th:value="${handout.id}"
+              th:text="|${handout.title} — ${handout.safetyClassification}|">Handout</option>
     </select>
     <select id="cockpitTablePicker" class="form-input" aria-label="Roll linked table"
             @change="openLinkedTable($event.target.value, $event.target.options[$event.target.selectedIndex]?.text || ''); $event.target.value = ''">
@@ -245,7 +245,6 @@ window.sessionCockpitConfig = {
     const apply = (animate) => window.setScreenSafety(checkbox.checked ? 'TABLE_SAFE' : 'PRIVATE', animate ? undefined : { animate: false });
     checkbox.addEventListener('change', () => {
         window.setScreenSafety(checkbox.checked ? 'TABLE_SAFE' : 'PRIVATE');
-        window.dispatchEvent(new CustomEvent('screen-safety-changed', { detail: { mode: checkbox.checked ? 'TABLE_SAFE' : 'PRIVATE' } }));
     });
     window.addEventListener('screen-safety-toggle', () => {
         checkbox.checked = !checkbox.checked;

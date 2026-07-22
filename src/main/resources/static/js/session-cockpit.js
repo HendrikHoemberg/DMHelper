@@ -255,6 +255,7 @@ function sessionCockpit(config) {
         showPreview: false,
         previewClassification: '',
         previewRequiresOverride: false,
+        previewOverrideArmed: false,
 
         async presentHandout(handoutId) {
             if (!handoutId) return;
@@ -265,6 +266,7 @@ function sessionCockpit(config) {
                 this.previewHandoutId = handoutId;
                 this.previewClassification = preview.classification;
                 this.previewRequiresOverride = preview.requiresOverride;
+                this.previewOverrideArmed = false;
                 this.showPreview = true;
                 this.$nextTick(() => {
                     const container = document.getElementById('previewContainer');
@@ -281,6 +283,11 @@ function sessionCockpit(config) {
         closePreview() {
             this.showPreview = false;
             this.previewHandoutId = null;
+            this.previewOverrideArmed = false;
+        },
+
+        armEmergencyOverride() {
+            this.previewOverrideArmed = true;
         },
 
         async confirmPresent() {
@@ -609,7 +616,6 @@ function sessionCockpit(config) {
             const mode = this.tableSafe ? 'TABLE_SAFE' : 'PRIVATE';
             window.setScreenSafety(mode);
             window.battleMap?.setScreenSafety(this.tableSafe);
-            window.dispatchEvent(new CustomEvent('screen-safety-changed', { detail: { mode: mode } }));
         },
         async sendToTable() {
             try {

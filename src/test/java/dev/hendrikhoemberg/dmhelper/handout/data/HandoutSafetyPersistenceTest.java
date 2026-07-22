@@ -7,6 +7,8 @@ import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntry;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntryRepository;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +16,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.lang.reflect.Field;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,6 +40,13 @@ class HandoutSafetyPersistenceTest {
 
     @Autowired
     private EntityManager em;
+
+    @Test
+    void mapsSafetyClassificationAsAnEnum() throws Exception {
+        Field field = Handout.class.getDeclaredField("safetyClassification");
+        assertThat(field.getType()).isEqualTo(Handout.SafetyClassification.class);
+        assertThat(field.getAnnotation(Enumerated.class).value()).isEqualTo(EnumType.STRING);
+    }
 
     @Test
     void persistsSafetyClassificationAndAuditEntry() {

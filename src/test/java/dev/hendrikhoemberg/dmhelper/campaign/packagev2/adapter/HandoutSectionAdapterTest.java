@@ -194,7 +194,7 @@ class HandoutSectionAdapterTest {
     }
 
     @Test
-    void importsSetsFlagsExactlyWithoutDerivation(@TempDir Path tempDir) throws Exception {
+    void importsSynchronizeLegacyFlagsFromConservativeSafetyClassification(@TempDir Path tempDir) throws Exception {
         byte[] imageBytes = "more-data".getBytes();
         String assetKey = "handout-key-2";
         String digest = HexFormat.of().formatHex(
@@ -244,7 +244,8 @@ class HandoutSectionAdapterTest {
 
         adapter.importSection(manifest, importContext);
 
-        // Verify each handout was saved with the exact dmOnly/presented values
+        // Safety classification is authoritative. Legacy booleans are synchronized rather
+        // than trusted when an older package lacks the classification field.
         verify(handoutRepo).save(argThat(h ->
                 h.getTitle().equals("DM Only") && h.isDmOnly() && !h.isPresented()
         ));
@@ -252,7 +253,7 @@ class HandoutSectionAdapterTest {
                 h.getTitle().equals("Presented") && !h.isDmOnly() && h.isPresented()
         ));
         verify(handoutRepo).save(argThat(h ->
-                h.getTitle().equals("Both False") && !h.isDmOnly() && !h.isPresented()
+                h.getTitle().equals("Both False") && h.isDmOnly() && !h.isPresented()
         ));
         verify(handoutRepo).save(argThat(h ->
                 h.getTitle().equals("Both True") && h.isDmOnly() && !h.isPresented()
@@ -377,6 +378,7 @@ class HandoutSectionAdapterTest {
 
         verify(handoutRepo, atLeastOnce()).save(argThat(h ->
                 h.getSafetyClassification() == SafetyClassification.UNREVIEWED
+                        && h.isDmOnly()
                         && !h.isPresented()
         ));
     }

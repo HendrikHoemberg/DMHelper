@@ -2,10 +2,8 @@
   'use strict';
 
   const VALID_BEHAVIORS = new Set(['FILTER', 'HIDE', 'PLAYER_PROJECTION']);
-  const FADE_MS = 200;
   const SWEEP_MS = 600;
   let sweepTimer = null;
-  let fadeTimer = null;
 
   function prefersReducedMotion() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -21,54 +19,76 @@
     return sweep;
   }
 
+  function reportInvalidModule(el, message) {
+    console.warn('[screen-safety] ' + message, el.getAttribute('data-runtime-module') || 'unnamed');
+    if (!el.hasAttribute('data-screen-safety-warning-reported')) {
+      el.setAttribute('data-screen-safety-warning-reported', '');
+      if (window.showToast) {
+        window.showToast('A screen-safety module was invalid and has been hidden.', 'warning');
+      }
+    }
+  }
+
   function validateModule(el) {
     const behavior = el.getAttribute('data-table-safe-behavior');
     if (!behavior) {
-      console.warn('[screen-safety] Module missing data-table-safe-behavior:', el.getAttribute('data-runtime-module') || 'unnamed');
+      reportInvalidModule(el, 'Module missing data-table-safe-behavior; defaulting to HIDE:');
       return 'HIDE';
     }
     if (!VALID_BEHAVIORS.has(behavior)) {
-      console.warn('[screen-safety] Unknown behavior "' + behavior + '" on module', el.getAttribute('data-runtime-module'), '- defaulting to HIDE');
+      reportInvalidModule(el, 'Unknown behavior "' + behavior + '"; defaulting to HIDE:');
       return 'HIDE';
     }
     return behavior;
   }
 
+  function protect(el) {
+    el.setAttribute('data-screen-safety-managed', '');
+    if (!el.hasAttribute('inert')) {
+      el.setAttribute('inert', '');
+      el.setAttribute('data-screen-safety-added-inert', '');
+    }
+    if (el.getAttribute('aria-hidden') !== 'true') {
+      if (el.hasAttribute('aria-hidden')) {
+        el.setAttribute('data-screen-safety-previous-aria-hidden', el.getAttribute('aria-hidden'));
+      }
+      el.setAttribute('data-screen-safety-changed-aria', '');
+      el.setAttribute('aria-hidden', 'true');
+    }
+  }
+
   function applyPrivate() {
-    document.querySelectorAll('[data-runtime-module]').forEach(function (module) {
-      module.removeAttribute('inert');
-      module.removeAttribute('aria-hidden');
-      module.querySelectorAll('[data-screen-sensitive]').forEach(function (el) {
+    document.querySelectorAll('[data-screen-safety-managed]').forEach(function (el) {
+      if (el.hasAttribute('data-screen-safety-added-inert')) {
         el.removeAttribute('inert');
-        el.removeAttribute('aria-hidden');
-      });
+      }
+      if (el.hasAttribute('data-screen-safety-changed-aria')) {
+        if (el.hasAttribute('data-screen-safety-previous-aria-hidden')) {
+          el.setAttribute('aria-hidden', el.getAttribute('data-screen-safety-previous-aria-hidden'));
+        } else {
+          el.removeAttribute('aria-hidden');
+        }
+      }
+      el.removeAttribute('data-screen-safety-managed');
+      el.removeAttribute('data-screen-safety-added-inert');
+      el.removeAttribute('data-screen-safety-changed-aria');
+      el.removeAttribute('data-screen-safety-previous-aria-hidden');
     });
   }
 
   function applyTableSafe() {
     document.querySelectorAll('[data-runtime-module]').forEach(function (module) {
-      validateModule(module);
-
-      const behavior = module.getAttribute('data-table-safe-behavior');
-
+      const behavior = validateModule(module);
       if (behavior === 'HIDE') {
-        module.setAttribute('inert', '');
-        module.setAttribute('aria-hidden', 'true');
+        protect(module);
       } else if (behavior === 'FILTER') {
-        module.querySelectorAll('[data-screen-sensitive]').forEach(function (el) {
-          el.setAttribute('inert', '');
-          el.setAttribute('aria-hidden', 'true');
-        });
-      }
-
-      if (behavior === 'PLAYER_PROJECTION') {
+        module.querySelectorAll('[data-screen-sensitive]').forEach(protect);
       }
     });
 
     document.querySelectorAll('[data-screen-sensitive]').forEach(function (el) {
       if (!el.closest('[data-runtime-module]')) {
-        el.setAttribute('inert', '');
-        el.setAttribute('aria-hidden', 'true');
+        protect(el);
       }
     });
   }
@@ -83,42 +103,25 @@
     if (!body) return;
     ensureSweep();
 
-    const animate = options && options.animate !== false && !prefersReducedMotion();
-
-    clearTimeout(sweepTimer);
-    clearTimeout(fadeTimer);
-    body.classList.remove('safety-fading', 'safety-sweeping-off', 'safety-sweeping-on');
-
-    if (!animate) {
-      if (mode === 'TABLE_SAFE') {
-        applyTableSafe();
-        body.dataset.screenSafety = 'TABLE_SAFE';
-      } else {
-        applyPrivate();
-        body.dataset.screenSafety = 'PRIVATE';
-      }
-      window.dispatchEvent(new CustomEvent('screen-safety-changed', { detail: { mode: mode } }));
-      return;
-    }
-
     const goingTableSafe = mode === 'TABLE_SAFE';
-    body.classList.add(goingTableSafe ? 'safety-sweeping-off' : 'safety-sweeping-on');
-    sweepTimer = setTimeout(function () {
-      body.classList.remove('safety-sweeping-off', 'safety-sweeping-on');
-    }, SWEEP_MS);
-
     if (goingTableSafe) {
-      body.classList.add('safety-fading');
-      fadeTimer = setTimeout(function () {
-        body.classList.remove('safety-fading');
-        applyTableSafe();
-        body.dataset.screenSafety = 'TABLE_SAFE';
-        window.dispatchEvent(new CustomEvent('screen-safety-changed', { detail: { mode: mode } }));
-      }, FADE_MS);
+      body.dataset.screenSafety = 'TABLE_SAFE';
+      applyTableSafe();
     } else {
       body.dataset.screenSafety = 'PRIVATE';
       applyPrivate();
-      window.dispatchEvent(new CustomEvent('screen-safety-changed', { detail: { mode: mode } }));
+    }
+
+    window.dispatchEvent(new CustomEvent('screen-safety-changed', { detail: { mode: mode } }));
+
+    const animate = (!options || options.animate !== false) && !prefersReducedMotion();
+    clearTimeout(sweepTimer);
+    body.classList.remove('safety-sweeping-off', 'safety-sweeping-on');
+    if (animate) {
+      body.classList.add(goingTableSafe ? 'safety-sweeping-off' : 'safety-sweeping-on');
+      sweepTimer = setTimeout(function () {
+        body.classList.remove('safety-sweeping-off', 'safety-sweeping-on');
+      }, SWEEP_MS);
     }
   };
 })();

@@ -66,12 +66,14 @@ class FileServeControllerSecurityTest {
     }
 
     @Test
-    void playerFileEndpointReturns404ForPresentedDmOnlyHandout() throws Exception {
+    void playerFileEndpointServesAnAuthorizedEmergencyOverrideDespiteLegacyDmOnlyFlag() throws Exception {
         when(handoutService.findById(handoutId)).thenReturn(unpublished);
+        when(handoutService.getFileContent(handoutId)).thenReturn(new byte[]{1,2,3});
         when(tablePresentationService.isCurrentlyPresentedHandout(handoutId)).thenReturn(true);
 
         mockMvc.perform(get("/player/files/" + handoutId))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")));
     }
 
     @Test
