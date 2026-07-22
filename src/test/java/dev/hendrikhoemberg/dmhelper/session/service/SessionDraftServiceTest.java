@@ -26,6 +26,8 @@ import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollOutcome;
 import dev.hendrikhoemberg.dmhelper.dice.DiceResult;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntry;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntryRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChangeRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
@@ -39,6 +41,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -63,8 +66,10 @@ class SessionDraftServiceTest {
     @Mock private QuestObjectiveRepository questObjectiveRepository;
     @Mock private TableRollLogRepository tableRollLogs;
     @Mock private TableRollGroupCodec codec;
+    @Mock private SessionAuditEntryRepository auditRepo;
 
-    @InjectMocks private SessionDraftService service;
+    private SessionDraftService service;
+    private final ZoneId zone = ZoneId.of("Europe/Berlin");
 
     private UUID campaignId;
     private Campaign campaign;
@@ -86,6 +91,11 @@ class SessionDraftServiceTest {
         startedAt = Instant.parse("2026-07-16T18:00:00Z");
         endedAt = Instant.parse("2026-07-16T22:30:00Z");
         lenient().when(calendar.getCalendarConfig(campaignId)).thenReturn(CalendarService.DEFAULT_CALENDAR);
+        lenient().when(auditRepo.findBySession_IdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(
+                any(), any(), any())).thenReturn(List.of());
+        service = new SessionDraftService(visits, combatLogs, combatants, ledgers, quickNotes,
+                quickNoteService, calendar, objectiveChanges, questRepository,
+                questObjectiveRepository, tableRollLogs, codec, auditRepo, zone);
     }
 
     @Test
@@ -412,5 +422,54 @@ class SessionDraftServiceTest {
         assertThat(draft).contains("## Table Rolls");
         assertThat(draft).contains("Forest Encounters \u2014 old-shrine \u2014 An old shrine");
         assertThat(draft).contains("Forest Encounters \u2014 wolves \u2014 2 wolves");
+    }
+
+    @Test
+    void formatsSessionRangeOnSameDay() {
+        assertThat(service.formatSessionRange(
+                Instant.parse("2026-07-16T18:00:00Z"),
+                Instant.parse("2026-07-16T20:30:00Z")))
+                .isEqualTo("16 July 2026, 20:00\u201322:30 Europe/Berlin");
+    }
+
+    @Test
+    void formatsSessionRangeAcrossMidnight() {
+        assertThat(service.formatSessionRange(
+                Instant.parse("2026-07-16T21:30:00Z"),
+                Instant.parse("2026-07-16T22:30:00Z")))
+                .isEqualTo("16 July 2026, 23:30 Europe/Berlin\u201317 July 2026, 00:30 Europe/Berlin");
+    }
+
+    @Test
+    void includesSafetyOverrides() {
+        SessionAuditEntry audit = new SessionAuditEntry();
+        audit.setId(UUID.randomUUID());
+        audit.setSession(session);
+        audit.setEntryType(SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE);
+        audit.setContentType("HANDOUT");
+        audit.setContentId(UUID.randomUUID());
+        audit.setDetails("{\"title\":\"Scanned page 12\",\"classification\":\"DM_SOURCE\"}");
+        audit.setCreatedAt(Instant.parse("2026-07-16T19:00:00Z"));
+
+        when(calendar.getCurrentDate(campaignId)).thenReturn(new CalendarService.InGameDate(1492, 6, 12));
+        when(visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId())).thenReturn(List.of());
+        when(combatLogs.findSessionEvidence(campaignId, startedAt, endedAt)).thenReturn(List.of());
+        when(ledgers.findByCampaignIdAndTimestampBetweenOrderByTimestampAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(quickNotes.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(tableRollLogs.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(auditRepo.findBySession_IdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(
+                session.getId(), startedAt, endedAt))
+                .thenReturn(List.of(audit));
+
+        String draft = service.generate(session, endedAt);
+
+        assertThat(draft).contains("## Presentation Safety Overrides");
+        assertThat(draft).contains("Scanned page 12");
+        assertThat(draft).contains("DM_SOURCE");
+        assertThat(draft).contains("21:00");
+        assertThat(draft).contains("Europe/Berlin");
     }
 }

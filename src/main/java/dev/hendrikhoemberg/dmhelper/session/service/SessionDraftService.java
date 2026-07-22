@@ -19,6 +19,8 @@ import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableRollLogRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollGroupCodec;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollOutcome;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntry;
+import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntryRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChangeRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
@@ -28,7 +30,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ArrayList;
@@ -46,10 +49,10 @@ import tools.jackson.databind.json.JsonMapper;
 public class SessionDraftService {
     private static final Logger log = LoggerFactory.getLogger(SessionDraftService.class);
     private static final tools.jackson.databind.ObjectMapper JSON = JsonMapper.builder().build();
-    private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("d MMMM uuuu, HH:mm")
-            .withLocale(Locale.ENGLISH).withZone(ZoneOffset.UTC);
-    private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm 'UTC'")
-            .withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("d MMMM uuuu, HH:mm")
+            .withLocale(Locale.ENGLISH);
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm")
+            .withLocale(Locale.ENGLISH);
 
     private final SessionSceneVisitRepository visits;
     private final CombatLogEntryRepository combatLogs;
@@ -63,6 +66,8 @@ public class SessionDraftService {
     private final QuestObjectiveRepository questObjectiveRepository;
     private final TableRollLogRepository tableRollLogs;
     private final TableRollGroupCodec codec;
+    private final SessionAuditEntryRepository auditRepo;
+    private final ZoneId zone;
 
     public SessionDraftService(SessionSceneVisitRepository visits,
                                CombatLogEntryRepository combatLogs,
@@ -75,7 +80,9 @@ public class SessionDraftService {
                                QuestRepository questRepository,
                                QuestObjectiveRepository questObjectiveRepository,
                                TableRollLogRepository tableRollLogs,
-                               TableRollGroupCodec codec) {
+                               TableRollGroupCodec codec,
+                               SessionAuditEntryRepository auditRepo,
+                               ZoneId zone) {
         this.visits = visits;
         this.combatLogs = combatLogs;
         this.combatants = combatants;
@@ -88,23 +95,56 @@ public class SessionDraftService {
         this.questObjectiveRepository = questObjectiveRepository;
         this.tableRollLogs = tableRollLogs;
         this.codec = codec;
+        this.auditRepo = auditRepo;
+        this.zone = zone;
     }
 
     public String generate(CampaignSession session, Instant endedAt) {
         UUID campaignId = session.getCampaign().getId();
         Instant startedAt = Objects.requireNonNull(session.getStartedAt(), "Session start time is required.");
         StringBuilder out = new StringBuilder();
-        section(out, "Session Date", DAY.format(startedAt) + "–" + TIME.format(endedAt));
+        section(out, "Session Date", formatSessionRange(startedAt, endedAt));
         section(out, "In-Game Date", formatGameDates(session, calendar.getCurrentDate(campaignId)));
         listSection(out, "Attendance", attendanceLines(session));
         listSection(out, "Scenes", sceneLines(session));
         listSection(out, "Quest Progress", questProgressLines(session));
         listSection(out, "Encounters", encounterLines(campaignId, startedAt, endedAt));
         listSection(out, "Table Rolls", tableRollLines(campaignId, startedAt, endedAt));
+        listSection(out, "Presentation Safety Overrides", auditOverrideLines(session, startedAt, endedAt));
         listSection(out, "Loot & Ledger Changes", ledgerLines(campaignId, startedAt, endedAt));
         listSection(out, "Unresolved Quick Notes", quickNoteLines(campaignId, startedAt, endedAt));
         out.append("## Recap\n\n\n## Next-Session Hooks\n\n");
         return out.toString();
+    }
+
+    public String formatSessionRange(Instant startedAt, Instant endedAt) {
+        ZonedDateTime start = startedAt.atZone(zone);
+        ZonedDateTime end = endedAt.atZone(zone);
+        if (start.toLocalDate().equals(end.toLocalDate())) {
+            return DATE_FMT.format(start) + "\u2013" + TIME_FMT.format(end) + " " + zone.getId();
+        }
+        return DATE_FMT.format(start) + " " + zone.getId() + "\u2013" + DATE_FMT.format(end) + " " + zone.getId();
+    }
+
+    private List<String> auditOverrideLines(CampaignSession session, Instant from, Instant to) {
+        return auditRepo.findBySession_IdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(session.getId(), from, to)
+                .stream()
+                .filter(e -> e.getEntryType() == SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE)
+                .map(this::auditOverrideLine)
+                .toList();
+    }
+
+    private String auditOverrideLine(SessionAuditEntry entry) {
+        try {
+            var json = JSON.readTree(entry.getDetails());
+            String title = json.get("title").asText();
+            String classification = json.get("classification").asText();
+            String timestamp = DATE_FMT.format(entry.getCreatedAt().atZone(zone)) + " " + zone.getId();
+            return "Asset: " + title + " \u2014 Classification: " + classification + " \u2014 " + timestamp;
+        } catch (Exception e) {
+            log.warn("Ignoring malformed audit entry {}", entry.getId());
+            return null;
+        }
     }
 
     private void section(StringBuilder out, String title, String body) {
