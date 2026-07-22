@@ -347,6 +347,18 @@ class FlywayMigrationTest {
     }
 
     @Test
+    void v18AddsSafetyClassificationAndSessionAudit() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns "
+                        + "WHERE table_name='HANDOUT' AND column_name='SAFETY_CLASSIFICATION'",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables "
+                        + "WHERE table_name='SESSION_AUDIT_ENTRY'",
+                Integer.class)).isEqualTo(1);
+    }
+
+    @Test
     void v12CreatesWorldGraphTables() {
         Integer applied = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '12' AND \"success\" = TRUE",

@@ -60,6 +60,10 @@ class FlywayLegacyUpgradeTest {
                     + "SELECT RANDOM_UUID(), a.id, 'Chapter 1', 0 FROM adventure a WHERE a.name = 'Castle Ravenloft'");
             stmt.execute("INSERT INTO adventure_scene (id, chapter_id, title, sort_order, status) "
                     + "SELECT RANDOM_UUID(), ac.id, 'The Gate', 0, 'UNVISITED' FROM adventure_chapter ac WHERE ac.title = 'Chapter 1'");
+            stmt.execute("INSERT INTO handout (id, campaign_id, title, file_name, dm_only, presented) "
+                    + "SELECT RANDOM_UUID(), id, 'DM-only map', 'dmmap.png', TRUE, FALSE FROM campaign WHERE name = 'Curse of Strahd'");
+            stmt.execute("INSERT INTO handout (id, campaign_id, title, file_name, dm_only, presented) "
+                    + "SELECT RANDOM_UUID(), id, 'Player visible', 'player.png', FALSE, FALSE FROM campaign WHERE name = 'Curse of Strahd'");
         }
     }
 
@@ -191,6 +195,13 @@ class FlywayLegacyUpgradeTest {
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'SESSION_AUDIO_STATE'",
                 Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v18DefaultsLegacyHandoutsWithoutTrustingTheOldPlayerVisibleToggle() {
+        assertThat(jdbc.queryForList(
+                "SELECT safety_classification FROM handout ORDER BY title", String.class))
+                .containsExactly("DM_SOURCE", "UNREVIEWED");
     }
 
     @Test

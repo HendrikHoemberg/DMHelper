@@ -6,9 +6,18 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "handout", indexes = {
-    @Index(name = "idx_handout_campaign", columnList = "campaign_id")
+    @Index(name = "idx_handout_campaign", columnList = "campaign_id"),
+    @Index(name = "idx_handout_source", columnList = "source_handout_id")
 })
 public class Handout {
+
+    public enum SafetyClassification {
+        DM_SOURCE, PLAYER_SAFE, PLAYER_DERIVATIVE, UNREVIEWED;
+
+        public boolean isPresentable() {
+            return this == PLAYER_SAFE || this == PLAYER_DERIVATIVE;
+        }
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -36,6 +45,27 @@ public class Handout {
     @Column(nullable = false)
     private boolean presented = false;
 
+    @Column(name = "safety_classification", nullable = false, length = 24)
+    private String safetyClassification = "UNREVIEWED";
+
+    public SafetyClassification getSafetyClassification() {
+        return SafetyClassification.valueOf(safetyClassification);
+    }
+
+    public void setSafetyClassification(SafetyClassification sc) {
+        this.safetyClassification = sc.name();
+    }
+
+    public boolean isPresentable() { return getSafetyClassification().isPresentable(); }
+    public boolean isDerivative() { return getSafetyClassification() == SafetyClassification.PLAYER_DERIVATIVE; }
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_handout_id")
+    private Handout sourceHandout;
+
+    @Column(name = "derivative_recipe", columnDefinition = "CLOB")
+    private String derivativeRecipe;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
@@ -59,4 +89,10 @@ public class Handout {
 
     public boolean isPresented() { return presented; }
     public void setPresented(boolean presented) { this.presented = presented; }
+
+    public Handout getSourceHandout() { return sourceHandout; }
+    public void setSourceHandout(Handout sourceHandout) { this.sourceHandout = sourceHandout; }
+
+    public String getDerivativeRecipe() { return derivativeRecipe; }
+    public void setDerivativeRecipe(String derivativeRecipe) { this.derivativeRecipe = derivativeRecipe; }
 }
