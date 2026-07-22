@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.adventure.web;
 import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService.SceneDetailView;
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneEncounterSeedService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneStructuredContentService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneTransitionService;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
@@ -49,6 +50,7 @@ class SceneControllerTest {
     @MockitoBean private dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository hazardRepository;
     @MockitoBean private dev.hendrikhoemberg.dmhelper.threat.service.ThreatCardAssembler threatCardAssembler;
     @MockitoBean private AudioCueRepository audioCueRepository;
+    @MockitoBean private SceneEncounterSeedService encounterSeeder;
 
     private UUID campaignId, adventureId, sceneId, chapterId;
     private Campaign campaign;

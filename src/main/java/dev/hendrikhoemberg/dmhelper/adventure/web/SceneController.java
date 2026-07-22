@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.adventure.web;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.*;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneEncounterSeedService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneStructuredContentService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneTransitionService;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
@@ -40,6 +41,7 @@ public class SceneController {
     private final HazardRepository hazardRepository;
     private final ThreatCardAssembler threatCardAssembler;
     private final AudioCueRepository audioCueRepository;
+    private final SceneEncounterSeedService encounterSeeder;
 
     public SceneController(AdventureService adventureService,
                            CampaignRepository campaignRepository,
@@ -52,8 +54,9 @@ public class SceneController {
                            SceneTransitionService transitionService,
                            TrapRepository trapRepository,
                            HazardRepository hazardRepository,
-                           ThreatCardAssembler threatCardAssembler,
-                           AudioCueRepository audioCueRepository) {
+                            ThreatCardAssembler threatCardAssembler,
+                            AudioCueRepository audioCueRepository,
+                            SceneEncounterSeedService encounterSeeder) {
         this.adventureService = adventureService;
         this.campaignRepository = campaignRepository;
         this.gameMapRepository = gameMapRepository;
@@ -67,6 +70,7 @@ public class SceneController {
         this.structuredService = structuredService;
         this.transitionService = transitionService;
         this.threatCardAssembler = threatCardAssembler;
+        this.encounterSeeder = encounterSeeder;
     }
 
     @GetMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}")
@@ -80,6 +84,7 @@ public class SceneController {
                 .orElseThrow(() -> new NotFoundException("Campaign not found"));
         model.addAttribute("campaign", campaign);
         model.addAttribute("scene", scene);
+        model.addAttribute("canSeedEncounter", encounterSeeder.canSeed(scene));
         model.addAttribute("adventure", adventureService.findAdventureById(adventureId));
         model.addAttribute("chapters", adventureService.findChaptersByAdventure(adventureId));
         model.addAttribute("campaignId", campaignId);
@@ -210,6 +215,15 @@ public class SceneController {
                                   @PathVariable UUID id,
                                   Model model) {
         adventureService.unlinkEncounter(id);
+        return loadActionRail(campaignId, adventureId, id, model);
+    }
+
+    @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/seed-encounter")
+    public String seedEncounter(@PathVariable UUID campaignId,
+                                @PathVariable UUID adventureId,
+                                @PathVariable UUID id,
+                                Model model) {
+        model.addAttribute("seedResult", encounterSeeder.seedFromScene(campaignId, id));
         return loadActionRail(campaignId, adventureId, id, model);
     }
 
@@ -658,6 +672,7 @@ public class SceneController {
     private String loadActionRail(UUID campaignId, UUID adventureId, UUID sceneId, Model model) {
         Scene scene = adventureService.findSceneById(sceneId);
         model.addAttribute("scene", scene);
+        model.addAttribute("canSeedEncounter", encounterSeeder.canSeed(scene));
         model.addAttribute("adventure", adventureService.findAdventureById(adventureId));
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("maps", gameMapRepository.findByCampaignIdOrderBySortOrderAsc(campaignId));

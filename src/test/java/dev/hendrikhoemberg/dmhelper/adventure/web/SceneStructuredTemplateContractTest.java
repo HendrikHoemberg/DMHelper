@@ -125,6 +125,23 @@ class SceneStructuredTemplateContractTest {
         assertThat(html).contains("sectionThreatCards");
     }
 
+    @Test
+    void actionRailOffersSeedEncounterOnlyWhenTheSceneHasResolvableParticipants() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+        assertThat(html).contains("seed-encounter");
+        assertThat(html).contains("canSeedEncounter");
+        assertThat(html)
+                .as("re-running must not be offered once the scene already has an encounter")
+                .contains("scene.encounter == null");
+    }
+
+    @Test
+    void actionRailReportsParticipantsTheSeedCouldNotResolve() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+        assertThat(html).contains("seedResult.skippedParticipants");
+        assertThat(html).contains("seedResult.combatantsAdded");
+    }
+
     private static int count(String s, String substring) {
         int count = 0;
         int idx = 0;

@@ -49,6 +49,24 @@
       </div>
     </div>
 
+    <div th:if="${scene.encounter == null and canSeedEncounter}" class="u-mb-md">
+      <button class="btn btn-sm btn-primary"
+              th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/seed-encounter(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+              hx-target="#actionRail" hx-swap="innerHTML">
+        Start encounter from this scene
+      </button>
+    </div>
+
+    <div th:if="${seedResult != null and !seedResult.alreadyExisted}" class="card card--compact u-mb-md">
+      <strong th:text="${seedResult.encounterName}">Encounter</strong>
+      <span class="u-text-xs"
+            th:text="|${seedResult.combatantsAdded} combatants added|">0 combatants added</span>
+      <div th:if="${!seedResult.skippedParticipants.isEmpty()}" class="u-text-xs u-mt-xs">
+        <span th:text="|${#lists.size(seedResult.skippedParticipants)} participant(s) skipped — no statblock:|">Skipped:</span>
+        <span th:text="${#strings.listJoin(seedResult.skippedParticipants, ', ')}">Names</span>
+      </div>
+    </div>
+
     <div th:if="${scene.statBlocks != null and !scene.statBlocks.isEmpty()}" class="u-mb-md">
       <h4 class="u-text-sm u-mb-xs">Linked Statblocks</h4>
       <div th:each="sb : ${scene.statBlocks}" class="card card--compact">
