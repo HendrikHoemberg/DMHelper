@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.adventure.service;
 
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.support.PopulatedCampaignFixture;
@@ -18,6 +19,7 @@ class SceneEncounterSeedServiceTest {
     @Autowired private SceneEncounterSeedService seeder;
     @Autowired private EncounterService encounters;
     @Autowired private EncounterRepository encounterRepository;
+    @Autowired private SceneParticipantRepository participantRepository;
     @Autowired private AdventureService adventures;
     @Autowired private PopulatedCampaignFixture fixture;
 
@@ -55,6 +57,36 @@ class SceneEncounterSeedServiceTest {
         assertThat(result.skippedParticipants())
                 .as("a participant that silently vanishes is a monster the DM forgets to run")
                 .containsExactly("Namenloser Bote");
+    }
+
+    @Test
+    void reportsAnUnnamedUnresolvedParticipantWithoutFailingTheSeed() {
+        var unresolved = participantRepository
+                .findBySceneIdOrderBySortOrderAsc(seeded.richSceneId()).stream()
+                .filter(participant -> participant.getStatBlock() == null)
+                .findFirst()
+                .orElseThrow();
+        unresolved.setDisplayName(null);
+        participantRepository.save(unresolved);
+
+        var result = seeder.seedFromScene(seeded.campaignId(), seeded.richSceneId());
+
+        assertThat(result.skippedParticipants()).containsExactly("Unnamed participant");
+    }
+
+    @Test
+    void reportsABlankUnresolvedParticipantWithoutFailingTheSeed() {
+        var unresolved = participantRepository
+                .findBySceneIdOrderBySortOrderAsc(seeded.richSceneId()).stream()
+                .filter(participant -> participant.getStatBlock() == null)
+                .findFirst()
+                .orElseThrow();
+        unresolved.setDisplayName("   ");
+        participantRepository.save(unresolved);
+
+        var result = seeder.seedFromScene(seeded.campaignId(), seeded.richSceneId());
+
+        assertThat(result.skippedParticipants()).containsExactly("Unnamed participant");
     }
 
     @Test

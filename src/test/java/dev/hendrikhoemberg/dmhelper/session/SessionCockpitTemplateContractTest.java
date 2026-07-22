@@ -180,11 +180,16 @@ class SessionCockpitTemplateContractTest {
 
         assertThat(story)
                 .contains("Start encounter from this scene")
-                .contains("seedCurrentScene");
+                .contains("seedCurrentScene")
+                .contains(":disabled=\"seedingSceneEncounter\"");
         assertThat(script)
+                .contains("seedingSceneEncounter: false")
                 .contains("async seedCurrentScene(sceneId)")
+                .contains("if (this.seedingSceneEncounter) return")
                 .contains("/session/scenes/${sceneId}/seed-encounter")
                 .contains("await this.refreshRails()")
+                .contains("this.seedingSceneEncounter = false")
+                .contains("was created, but the cockpit rails could not refresh")
                 .contains("Could not create the scene encounter");
     }
 

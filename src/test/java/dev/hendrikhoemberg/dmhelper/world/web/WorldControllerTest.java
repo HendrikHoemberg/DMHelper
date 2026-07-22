@@ -153,7 +153,7 @@ class WorldControllerTest {
         loc.setId(locationId);
         loc.setName("Test Location");
         when(worldService.getLocation(campaignId, locationId)).thenReturn(loc);
-        when(locationTableLinkRepository.findByLocationIdOrderBySortOrderAsc(locationId)).thenReturn(List.of());
+        when(locationTableLinkRepository.findByLocationIdWithTable(locationId)).thenReturn(List.of());
         when(rollableTableRepository.findByCampaignIdOrderByNameAsc(campaignId)).thenReturn(List.of());
 
         mockMvc.perform(get("/campaigns/{cid}/world/locations/{lid}", campaignId, locationId))

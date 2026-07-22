@@ -1,5 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.adventure.data;
 
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +21,11 @@ public interface SceneRepository extends JpaRepository<Scene, UUID> {
 
     @Query("SELECT s FROM Scene s JOIN s.chapter c JOIN c.adventure a WHERE a.campaign.id = :campaignId AND s.id = :sceneId")
     Optional<Scene> findByIdAndCampaignId(@Param("campaignId") UUID campaignId, @Param("sceneId") UUID sceneId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Scene s JOIN s.chapter c JOIN c.adventure a WHERE a.campaign.id = :campaignId AND s.id = :sceneId")
+    Optional<Scene> findByIdAndCampaignIdForEncounterSeed(
+            @Param("campaignId") UUID campaignId, @Param("sceneId") UUID sceneId);
 
     List<Scene> findBySceneAudioCueId(UUID cueId);
 }

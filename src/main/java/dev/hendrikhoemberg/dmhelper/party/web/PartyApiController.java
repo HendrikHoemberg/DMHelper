@@ -19,11 +19,11 @@ public class PartyApiController {
     }
 
     @PutMapping("/{memberId}/live-state")
-    public ResponseEntity<PartyMember> updateLiveState(
+    public ResponseEntity<PartyLiveStateDto> updateLiveState(
             @PathVariable UUID campaignId,
             @PathVariable UUID memberId,
             @RequestBody PartyLiveStateDto body) {
         PartyMember updated = partyService.updateLiveState(memberId, body);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(PartyLiveStateDto.from(updated));
     }
 }

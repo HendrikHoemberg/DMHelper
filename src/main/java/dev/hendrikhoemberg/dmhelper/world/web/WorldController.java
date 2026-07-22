@@ -164,7 +164,7 @@ public class WorldController {
     @GetMapping("/locations/{locationId}")
     public String locationDetail(@PathVariable UUID campaignId, @PathVariable UUID locationId, Model model) {
         model.addAttribute("location", worldService.getLocation(campaignId, locationId));
-        model.addAttribute("tableLinks", locationTableLinkRepository.findByLocationIdOrderBySortOrderAsc(locationId));
+        model.addAttribute("tableLinks", locationTableLinkRepository.findByLocationIdWithTable(locationId));
         model.addAttribute("tables", rollableTableRepository.findByCampaignIdOrderByNameAsc(campaignId));
         model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
         return "world/locations-detail";

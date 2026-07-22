@@ -182,5 +182,18 @@ public class PartyMemberService {
             String conditionsJson,
             Integer currentHp,
             Integer maxHp
-    ) {}
+    ) {
+        public static PartyLiveStateDto from(PartyMember member) {
+            return new PartyLiveStateDto(
+                    member.getTempHp(),
+                    member.isInspiration(),
+                    member.getExhaustion(),
+                    member.getDeathSaveSuccesses(),
+                    member.getDeathSaveFailures(),
+                    member.getConcentratingOn(),
+                    member.getConditionsJson(),
+                    member.getCurrentHp(),
+                    member.getMaxHp());
+        }
+    }
 }

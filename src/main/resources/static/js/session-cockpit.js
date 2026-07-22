@@ -30,6 +30,7 @@ function sessionCockpit(config) {
         playerViewUrl: window.location.origin + '/player',
         lifecycleOpen: false,
         campaignId: config.campaignId || '',
+        seedingSceneEncounter: false,
         sessionStatus: config.sessionStatus || 'IDLE',
         presentationMode: config.presentationMode || 'CURTAIN',
         presentedMapId: config.presentedMapId || '',
@@ -756,11 +757,14 @@ function sessionCockpit(config) {
         },
 
         async seedCurrentScene(sceneId) {
+            if (this.seedingSceneEncounter) return;
+            this.seedingSceneEncounter = true;
+            let result = null;
             try {
                 const response = await this.request(
                     `/api/v1/campaigns/${this.campaignId}/session/scenes/${sceneId}/seed-encounter`,
                     { method: 'POST' });
-                const result = await response.json();
+                result = await response.json();
                 await this.refreshRails();
                 const skipped = result.skippedParticipants || [];
                 const message = result.alreadyExisted
@@ -771,9 +775,17 @@ function sessionCockpit(config) {
                 if (status) status.textContent = message;
                 window.showToast?.(message, skipped.length ? 'warning' : 'success');
             } catch (error) {
-                window.reportActionFailure(
-                    'Could not create the scene encounter.', error,
-                    () => this.seedCurrentScene(sceneId));
+                if (result) {
+                    window.reportActionFailure(
+                        `${result.encounterName} was created, but the cockpit rails could not refresh.`,
+                        error, () => this.refreshRails());
+                } else {
+                    window.reportActionFailure(
+                        'Could not create the scene encounter.', error,
+                        () => this.seedCurrentScene(sceneId));
+                }
+            } finally {
+                this.seedingSceneEncounter = false;
             }
         },
 
@@ -781,20 +793,15 @@ function sessionCockpit(config) {
             const cid = this.campaignId;
             const storyUrl = `/campaigns/${cid}/session/rails/story`;
             const encounterUrl = `/campaigns/${cid}/session/rails/encounter`;
-            try {
-                const [storyHtml, encounterHtml] = await Promise.all([
+            const [storyHtml, encounterHtml] = await Promise.all([
                 this.request(storyUrl).then(r => r.text()),
                 this.request(encounterUrl).then(r => r.text())
-                ]);
-                const storyEl = document.querySelector('.cockpit-story');
-                const encEl = document.querySelector('.cockpit-encounter');
-                if (storyEl) storyEl.innerHTML = storyHtml;
-                if (encEl) encEl.innerHTML = encounterHtml;
-                window.dispatchEvent(new CustomEvent('cockpit-rails-refreshed'));
-            } catch (error) {
-                window.reportActionFailure('Could not refresh the cockpit rails.', error,
-                    () => this.refreshRails());
-            }
+            ]);
+            const storyEl = document.querySelector('.cockpit-story');
+            const encEl = document.querySelector('.cockpit-encounter');
+            if (storyEl) storyEl.innerHTML = storyHtml;
+            if (encEl) encEl.innerHTML = encounterHtml;
+            window.dispatchEvent(new CustomEvent('cockpit-rails-refreshed'));
         },
 
         async setObjectiveStatus(objectiveId, status) {

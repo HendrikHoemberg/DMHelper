@@ -44,7 +44,11 @@ public class SceneEncounterSeedService {
 
     @Transactional
     public SeedResult seedFromScene(UUID campaignId, UUID sceneId) {
-        Scene scene = findSceneInCampaign(campaignId, sceneId);
+        // Serialize creation for one scene. The cockpit action is a network request, so a
+        // double-click can otherwise pass the null encounter check in two transactions and
+        // leave an orphaned duplicate encounter behind.
+        Scene scene = scenes.findByIdAndCampaignIdForEncounterSeed(campaignId, sceneId)
+                .orElseThrow(() -> new NotFoundException("Scene not found in campaign"));
         Hibernate.initialize(scene.getParticipants());
         for (SceneParticipant participant : scene.getParticipants()) {
             Hibernate.initialize(participant.getStatBlock());
@@ -63,15 +67,16 @@ public class SceneEncounterSeedService {
         int added = 0;
         List<String> skipped = new ArrayList<>();
         for (SceneParticipant participant : scene.getParticipants()) {
+            String participantName = participantLabel(participant);
             if (participant.getStatBlock() == null) {
-                skipped.add(participant.getDisplayName());
+                skipped.add(participantName);
                 continue;
             }
             var combatants = encounters.addFromLibrary(encounter.id(),
                     new EncounterService.AddFromLibraryRequest(
                             participant.getStatBlock().getId(),
                             Math.max(1, participant.getQuantity()),
-                            participant.getDisplayName(),
+                            participantName,
                             null, null, null, null));
             added += combatants.size();
         }
@@ -83,5 +88,17 @@ public class SceneEncounterSeedService {
     private Scene findSceneInCampaign(UUID campaignId, UUID sceneId) {
         return scenes.findByIdAndCampaignId(campaignId, sceneId)
                 .orElseThrow(() -> new NotFoundException("Scene not found in campaign"));
+    }
+
+    private String participantLabel(SceneParticipant participant) {
+        if (participant.getDisplayName() != null && !participant.getDisplayName().isBlank()) {
+            return participant.getDisplayName().trim();
+        }
+        if (participant.getStatBlock() != null
+                && participant.getStatBlock().getName() != null
+                && !participant.getStatBlock().getName().isBlank()) {
+            return participant.getStatBlock().getName().trim();
+        }
+        return "Unnamed participant";
     }
 }

@@ -108,7 +108,17 @@ public class QuestService {
 
     @Transactional(readOnly = true)
     public Quest getQuest(UUID campaignId, UUID questId) {
-        return findQuestInCampaign(campaignId, questId);
+        Quest quest = findQuestInCampaign(campaignId, questId);
+        // The detail page renders all three collections after this transaction has closed.
+        // Keep the production open-in-view=false boundary honest by hydrating that view here.
+        quest.getLinks().size();
+        quest.getObjectives().forEach(objective -> {
+            objective.getDependencies().forEach(dependency -> {
+                dependency.getObjective().getId();
+                dependency.getPrerequisiteObjective().getTitle();
+            });
+        });
+        return quest;
     }
 
     // ---- Objective management ----
