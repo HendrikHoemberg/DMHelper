@@ -29,6 +29,14 @@ import dev.hendrikhoemberg.dmhelper.threat.service.HazardWrite;
 import dev.hendrikhoemberg.dmhelper.threat.service.TrapService;
 import dev.hendrikhoemberg.dmhelper.threat.service.TrapWrite;
 import dev.hendrikhoemberg.dmhelper.world.data.*;
+import dev.hendrikhoemberg.dmhelper.notes.data.Note;
+import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
+import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableLinkRole;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLink;
+import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLinkRepository;
+import dev.hendrikhoemberg.dmhelper.threat.data.ThreatCheckMode;
+import dev.hendrikhoemberg.dmhelper.threat.service.ThreatCheckWrite;
 import dev.hendrikhoemberg.dmhelper.world.service.WorldService;
 import dev.hendrikhoemberg.dmhelper.world.service.WorldService.*;
 import org.springframework.stereotype.Component;
@@ -110,6 +118,8 @@ public class PopulatedCampaignFixture {
     private final RollableTableService tables;
     private final HandoutRepository handouts;
     private final StatBlockRepository statBlocks;
+    private final NoteService notes;
+    private final WorldLocationTableLinkRepository locationTableLinks;
 
     public PopulatedCampaignFixture(CampaignRepository campaigns,
                                     AdventureService adventures,
@@ -120,7 +130,9 @@ public class PopulatedCampaignFixture {
                                     HazardService hazards,
                                      RollableTableService tables,
                                      HandoutRepository handouts,
-                                     StatBlockRepository statBlocks) {
+                                     StatBlockRepository statBlocks,
+                                     NoteService notes,
+                                     WorldLocationTableLinkRepository locationTableLinks) {
         this.campaigns = campaigns;
         this.adventures = adventures;
         this.structured = structured;
@@ -131,6 +143,8 @@ public class PopulatedCampaignFixture {
         this.tables = tables;
         this.handouts = handouts;
         this.statBlocks = statBlocks;
+        this.notes = notes;
+        this.locationTableLinks = locationTableLinks;
     }
 
     @Transactional
@@ -172,6 +186,12 @@ public class PopulatedCampaignFixture {
                 "Brief entziffern", "int", "investigation", 13, SceneCheckVisibility.PLAYER_FACING,
                 "Der Absender wird klar.", "Nichts.", null, null, null, null, "Fixture, S. 22", 0));
 
+        structured.addCheck(campaignId, rich.getId(), new SceneCheckCommand(
+                "Siegel erkennen", "int", "history", 15, SceneCheckVisibility.DM_FACING,
+                "Die Gruppe erkennt das Wappen sofort.", "Nichts.",
+                "Die Gruppe erkennt es als adelig, aber nicht welches Haus.",
+                null, null, null, "Fixture, S. 22", 1));
+
         // The real LMoP package resolves 65 of its 67 participants to a statblock, so the
         // fixture must too -- a participant with statBlockId=null hid the fact that the UI
         // never rendered the link at all.
@@ -188,14 +208,22 @@ public class PopulatedCampaignFixture {
                 "Sp\u00e4her der Redbrands", 2, SceneParticipantDisposition.HOSTILE,
                 "Hinter der T\u00fcr", spaeher.getId(), null, "Fixture, S. 22", 0));
 
-        // One participant deliberately left unlinked, mirroring the 2 of 67 in the real package.
+        Note boteNote = notes.create(campaignId, NoteType.NPC, "Der Bote",
+                "Trug den Brief, kennt den Absender nicht.", "bote", true);
+
+        // One participant deliberately left unlinked from statblock, mirroring the 2 of 67 in the real package.
         structured.addParticipant(campaignId, rich.getId(), new SceneParticipantCommand(
                 "Namenloser Bote", 1, SceneParticipantDisposition.NEUTRAL,
-                "Am Eingang", null, null, "Fixture, S. 22", 1));
+                "Am Eingang", null, boteNote.getId(), "Fixture, S. 22", 1));
 
         structured.addTransition(campaignId, rich.getId(), new SceneTransitionCommand(
                 SceneTransitionKind.CHOICE, "Weiter in den Gang", second.getId(),
                 null, null, "Nur wenn die Truhe offen ist.", "Fixture, S. 23", 0));
+
+        structured.addTransition(campaignId, rich.getId(), new SceneTransitionCommand(
+                SceneTransitionKind.EXIT, "Zur\u00fcck nach Phandalin", null,
+                "Phandalin, Kapitel 2", "Nur bei Tageslicht.",
+                "Die Gruppe verliert einen halben Tag.", "Fixture, S. 23", 1));
 
         structured.addLink(campaignId, rich.getId(), new SceneLinkCommand(
                 SceneLinkRole.RELATED_SCENE, SceneLinkTargetScope.PACKAGE, "SCENE", second.getId(),
@@ -216,9 +244,12 @@ public class PopulatedCampaignFixture {
                 "Das Gasthaus am Platz.", "Zimmer, Bier", null,
                 null, null, "inn", "Fixture, S. 29"));
 
+        Note daranNote = notes.create(campaignId, NoteType.NPC, "Daran Edermath",
+                "Wei\u00df, wo die Karte liegt.", "npc", true);
+
         WorldNpc npc = world.createNpc(campaignId, new NpcCommand(
                 "Daran Edermath", "Obstbauer und Ex-Ritter", WorldDisposition.FRIENDLY,
-                faction.getId(), child.getId(), null, null,
+                faction.getId(), child.getId(), daranNote.getId(), spaeher.getId(),
                 "Ein hochgewachsener Halbelf mit wei\u00dfem Haar.", "Ruhig, bedacht",
                 "Will den Orden wiederbeleben.", "War fr\u00fcher Ritter.", "Langschwert",
                 WorldNpcStatus.ALIVE, "ally", "Fixture, S. 30"));
@@ -242,16 +273,40 @@ public class PopulatedCampaignFixture {
 
         Trap trap = traps.create(campaignId, new TrapWrite(
                 "pit-trap", "Fallgrube", "Eine zehn Fu\u00df tiefe Grube unter loser Erde.",
-                ThreatSeverity.SETBACK, null, null, null, null, null, null,
-                List.of(), null, null, null, List.of(), null,
-                ThreatResetMode.MANUAL, null, null, null, List.of()), null);
+                ThreatSeverity.SETBACK, 1, 4,
+                "Wer auf die lose Erde tritt.", "Der Gang vor der T\u00fcr",
+                12, new ThreatCheckWrite(ThreatCheckMode.CHECK, "wis", "perception", 12),
+                List.of(), null,
+                new ThreatCheckWrite(ThreatCheckMode.SAVE, "dex", null, 13),
+                "2d6", List.of(DamageType.BLUDGEONING),
+                "Das Opfer liegt am Boden.",
+                ThreatResetMode.MANUAL, null, null,
+                "Ein Brett \u00fcber der Grube macht sie harmlos.", List.of()), null);
 
         Hazard hazard = hazards.create(campaignId, new HazardWrite(
                 "green-slime", "Gr\u00fcner Schleim", "\u00c4tzender Schleim an der Decke.",
                 ThreatSeverity.SETBACK, 1, 4, HazardExposureMode.ON_ENTER,
-                "Beim Betreten des Feldes", "10-Fu\u00df-Feld", null,
-                "1d6", List.of(DamageType.ACID), null, "Wird mit Feuer zerst\u00f6rt.",
+                "Beim Betreten des Feldes", "10-Fu\u00df-Feld",
+                new ThreatCheckWrite(ThreatCheckMode.CHECK, "int", "nature", 11),
+                "1d6", List.of(DamageType.ACID),
+                "Der Schleim frisst sich durch R\u00fcstung.",
+                "Feuer oder K\u00e4lte zerst\u00f6ren ihn.",
                 List.of()), null);
+
+        structured.addSection(campaignId, rich.getId(), new SceneSectionCommand(
+                SceneSectionKind.TRAP, "Fallgrube im Gang",
+                "Der Gang vor der T\u00fcr ist untergraben.", "Fixture, S. 23", 4,
+                ThreatKind.TRAP, trap.getId()));
+        structured.addSection(campaignId, rich.getId(), new SceneSectionCommand(
+                SceneSectionKind.HAZARD, "Schleim an der Decke",
+                "\u00dcber dem Schreibtisch h\u00e4ngt gr\u00fcner Schleim.", "Fixture, S. 23", 5,
+                ThreatKind.HAZARD, hazard.getId()));
+        structured.addSection(campaignId, rich.getId(), new SceneSectionCommand(
+                SceneSectionKind.SCALING, "F\u00fcr gr\u00f6\u00dfere Gruppen",
+                "Bei f\u00fcnf oder mehr Charakteren: ein weiterer Sp\u00e4her.", "Fixture, S. 23", 6));
+        structured.addSection(campaignId, rich.getId(), new SceneSectionCommand(
+                SceneSectionKind.DEVELOPMENT, "Wenn die Gruppe zu lange braucht",
+                "Der Bote kehrt zur\u00fcck und schl\u00e4gt Alarm.", "Fixture, S. 23", 7));
 
         RollableTable table = tables.create(campaignId, new RollableTableWrite(
                 "wilderness", "Zufallsbegegnungen Wildnis", "F\u00fcr Reisen zwischen Orten.",
@@ -261,9 +316,18 @@ public class PopulatedCampaignFixture {
                         new RollableTableEntryWrite("nothing", 4, 6, null, "Nichts passiert", null, List.of())
                 )), null);
 
+        WorldLocationTableLink locationTable = new WorldLocationTableLink();
+        locationTable.setLocation(parent);
+        locationTable.setTable(table);
+        locationTable.setRole(RollableTableLinkRole.RANDOM_ENCOUNTERS);
+        locationTable.setSortOrder(0);
+        locationTableLinks.save(locationTable);
+
         Campaign campaignRef = campaigns.findById(campaignId).orElseThrow();
         Handout dmHandout = handout(campaignRef, DM_ONLY_HANDOUT_TITLE, "karte,versteck", true);
         Handout playerHandout = handout(campaignRef, PLAYER_HANDOUT_TITLE, "karte,region", false);
+        playerHandout.setPresented(true);
+        handouts.save(playerHandout);
 
         return new Seeded(campaignId, adventureId, one.getId(), two.getId(),
                 rich.getId(), second.getId(), faction.getId(), parent.getId(), child.getId(),
