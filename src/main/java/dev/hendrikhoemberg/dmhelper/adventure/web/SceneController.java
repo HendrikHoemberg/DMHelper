@@ -17,7 +17,6 @@ import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.threat.data.HazardRepository;
 import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
 import dev.hendrikhoemberg.dmhelper.threat.data.TrapRepository;
-import dev.hendrikhoemberg.dmhelper.threat.service.ThreatCardAssembler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -39,7 +38,6 @@ public class SceneController {
     private final SceneTransitionService transitionService;
     private final TrapRepository trapRepository;
     private final HazardRepository hazardRepository;
-    private final ThreatCardAssembler threatCardAssembler;
     private final AudioCueRepository audioCueRepository;
     private final SceneEncounterSeedService encounterSeeder;
 
@@ -53,10 +51,9 @@ public class SceneController {
                            SceneStructuredContentService structuredService,
                            SceneTransitionService transitionService,
                            TrapRepository trapRepository,
-                           HazardRepository hazardRepository,
-                           ThreatCardAssembler threatCardAssembler,
-                           AudioCueRepository audioCueRepository,
-                           SceneEncounterSeedService encounterSeeder) {
+                            HazardRepository hazardRepository,
+                            AudioCueRepository audioCueRepository,
+                            SceneEncounterSeedService encounterSeeder) {
         this.adventureService = adventureService;
         this.campaignRepository = campaignRepository;
         this.gameMapRepository = gameMapRepository;
@@ -69,7 +66,6 @@ public class SceneController {
         this.audioCueRepository = audioCueRepository;
         this.structuredService = structuredService;
         this.transitionService = transitionService;
-        this.threatCardAssembler = threatCardAssembler;
         this.encounterSeeder = encounterSeeder;
     }
 
@@ -84,7 +80,7 @@ public class SceneController {
                 .orElseThrow(() -> new NotFoundException("Campaign not found"));
         model.addAttribute("campaign", campaign);
         model.addAttribute("scene", scene);
-        model.addAttribute("canSeedEncounter", encounterSeeder.canSeed(scene));
+        model.addAttribute("canSeedEncounter", encounterSeeder.canSeed(campaignId, id));
         model.addAttribute("adventure", adventureService.findAdventureById(adventureId));
         model.addAttribute("chapters", adventureService.findChaptersByAdventure(adventureId));
         model.addAttribute("campaignId", campaignId);
@@ -675,9 +671,10 @@ public class SceneController {
     }
 
     private String loadActionRail(UUID campaignId, UUID adventureId, UUID sceneId, Model model) {
-        Scene scene = adventureService.findSceneById(sceneId);
+        AdventureService.SceneDetailView view = adventureService.findSceneDetailView(sceneId);
+        Scene scene = view.scene();
         model.addAttribute("scene", scene);
-        model.addAttribute("canSeedEncounter", encounterSeeder.canSeed(scene));
+        model.addAttribute("canSeedEncounter", encounterSeeder.canSeed(campaignId, sceneId));
         model.addAttribute("adventure", adventureService.findAdventureById(adventureId));
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("maps", gameMapRepository.findByCampaignIdOrderBySortOrderAsc(campaignId));
@@ -687,7 +684,7 @@ public class SceneController {
         model.addAttribute("visibleTraps", trapRepository.findVisibleByCampaignId(campaignId));
         model.addAttribute("visibleHazards", hazardRepository.findVisibleByCampaignId(campaignId));
         model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
-        model.addAttribute("sectionThreatCards", threatCardAssembler.forScene(scene));
+        model.addAttribute("sectionThreatCards", view.sectionThreatCards());
         return "adventure/_action-rail :: actionRail";
     }
 }

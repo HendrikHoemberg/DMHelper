@@ -1,10 +1,10 @@
 package dev.hendrikhoemberg.dmhelper.adventure.web;
 
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.support.PopulatedCampaignFixture;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
@@ -17,17 +17,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SceneSeedEncounterControllerTest {
 
     @Autowired private WebApplicationContext context;
     @Autowired private PopulatedCampaignFixture fixture;
     @Autowired private AdventureService adventures;
+    @Autowired private EncounterRepository encounterRepository;
 
     private MockMvc mvc;
     private PopulatedCampaignFixture.Seeded seeded;
 
-    @BeforeAll
+    @BeforeEach
     void setUp() {
         mvc = MockMvcBuilders.webAppContextSetup(context).build();
         seeded = fixture.seed();
@@ -41,6 +41,8 @@ class SceneSeedEncounterControllerTest {
                 .andReturn().getResponse().getContentAsString();
         assertThat(before).contains("Start encounter from this scene");
 
+        long encountersBefore = encounterRepository.count();
+
         String rail = mvc.perform(post("/campaigns/{c}/adventures/{a}/scenes/{s}/seed-encounter",
                         seeded.campaignId(), seeded.adventureId(), seeded.richSceneId()))
                 .andExpect(status().isOk())
@@ -49,7 +51,14 @@ class SceneSeedEncounterControllerTest {
         assertThat(rail)
                 .as("the rail must come back showing what was built and what was not")
                 .contains("Encounter: Der Schreibtisch")
-                .contains("Namenloser Bote");
+                .contains("Namenloser Bote")
+                .contains("Linked Encounter");
+
+        mvc.perform(post("/campaigns/{c}/adventures/{a}/scenes/{s}/seed-encounter",
+                        seeded.campaignId(), seeded.adventureId(), seeded.richSceneId()))
+                .andExpect(status().isOk());
+
+        assertThat(encounterRepository.count()).isEqualTo(encountersBefore + 1);
 
         String after = mvc.perform(get("/campaigns/{c}/adventures/{a}/scenes/{s}",
                         seeded.campaignId(), seeded.adventureId(), seeded.richSceneId()))

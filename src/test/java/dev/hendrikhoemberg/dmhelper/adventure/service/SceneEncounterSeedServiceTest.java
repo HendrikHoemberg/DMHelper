@@ -1,29 +1,29 @@
 package dev.hendrikhoemberg.dmhelper.adventure.service;
 
+import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.support.PopulatedCampaignFixture;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@Transactional
 class SceneEncounterSeedServiceTest {
 
     @Autowired private SceneEncounterSeedService seeder;
     @Autowired private EncounterService encounters;
+    @Autowired private EncounterRepository encounterRepository;
     @Autowired private AdventureService adventures;
     @Autowired private PopulatedCampaignFixture fixture;
 
     private PopulatedCampaignFixture.Seeded seeded;
 
-    @BeforeAll
+    @BeforeEach
     void setUp() {
         seeded = fixture.seed();
     }
@@ -79,12 +79,22 @@ class SceneEncounterSeedServiceTest {
 
     @Test
     void aSceneWithNoStatblockLinkedParticipantsCannotBeSeeded() {
-        var empty = adventures.findSceneById(seeded.secondSceneId());
-        assertThat(seeder.canSeed(empty))
+        assertThat(seeder.canSeed(seeded.campaignId(), seeded.secondSceneId()))
                 .as("the action must be absent for a scene the app knows nothing about")
                 .isFalse();
+        assertThat(seeder.canSeed(seeded.campaignId(), seeded.richSceneId())).isTrue();
+    }
 
-        var rich = adventures.findSceneById(seeded.richSceneId());
-        assertThat(seeder.canSeed(rich)).isTrue();
+    @Test
+    void rejectsASceneFromAnotherCampaignWithoutCreatingAnEncounter() {
+        PopulatedCampaignFixture.Seeded otherCampaign = fixture.seed();
+        long before = encounterRepository.count();
+
+        assertThatThrownBy(() ->
+                seeder.seedFromScene(seeded.campaignId(), otherCampaign.richSceneId()))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Scene not found in campaign");
+
+        assertThat(encounterRepository.count()).isEqualTo(before);
     }
 }
