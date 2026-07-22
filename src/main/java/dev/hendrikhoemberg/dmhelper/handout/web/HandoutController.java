@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.handout.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout.SafetyClassification;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -62,12 +63,12 @@ public class HandoutController {
         return "handout/_card :: card";
     }
 
-    @PutMapping("/{id}/dm-only")
-    public String setDmOnly(@PathVariable UUID campaignId,
-                            @PathVariable UUID id,
-                            @RequestParam boolean dmOnly,
-                            Model model) {
-        Handout handout = handoutService.setDmOnly(id, dmOnly);
+    @PutMapping("/{id}/classification")
+    public String classify(@PathVariable UUID campaignId,
+                           @PathVariable UUID id,
+                           @RequestParam("classification") SafetyClassification classification,
+                           Model model) {
+        Handout handout = handoutService.classify(campaignId, id, classification);
         model.addAttribute("handout", handout);
         return "handout/_card :: card";
     }

@@ -22,6 +22,7 @@ import java.security.MessageDigest;
 import java.util.HexFormat;
 
 import static org.assertj.core.api.Assertions.*;
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout.SafetyClassification;
 
 @DataJpaTest
 @Import({HandoutService.class, SceneRefCleaner.class,
@@ -186,6 +187,59 @@ class HandoutServiceTest {
         try (var files = Files.list(directory)) {
             return files.count();
         }
+    }
+
+    @Test
+    void classifyRejectsCrossCampaignRequest() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("f", "map.png", "image/png", "data".getBytes());
+        Handout h = service.create(campaignId, "Map", "", file);
+
+        UUID wrongCampaign = UUID.randomUUID();
+        assertThatThrownBy(() -> service.classify(wrongCampaign, h.getId(), SafetyClassification.PLAYER_SAFE))
+                .isInstanceOf(dev.hendrikhoemberg.dmhelper.common.NotFoundException.class);
+    }
+
+    @Test
+    void classifyRejectsPlayerDerivative() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("f", "map.png", "image/png", "data".getBytes());
+        Handout h = service.create(campaignId, "Map", "", file);
+
+        assertThatThrownBy(() -> service.classify(campaignId, h.getId(), SafetyClassification.PLAYER_DERIVATIVE))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void classifyDmSourceDetachesPresentedHandout() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("f", "map.png", "image/png", "data".getBytes());
+        Handout h = service.create(campaignId, "Map", "", file);
+
+        service.classify(campaignId, h.getId(), SafetyClassification.PLAYER_SAFE);
+        assertThat(h.isPresentable()).isTrue();
+
+        service.setPresented(h.getId(), true);
+        assertThat(service.findById(h.getId()).isPresented()).isTrue();
+
+        service.classify(campaignId, h.getId(), SafetyClassification.DM_SOURCE);
+
+        var after = service.findById(h.getId());
+        assertThat(after.isPresented()).isFalse();
+        assertThat(after.isPresentable()).isFalse();
+    }
+
+    @Test
+    void classifyUpdatesDmOnlyFlag() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("f", "map.png", "image/png", "data".getBytes());
+        Handout h = service.create(campaignId, "Map", "", file);
+        assertThat(h.isDmOnly()).isTrue();
+
+        Handout safe = service.classify(campaignId, h.getId(), SafetyClassification.PLAYER_SAFE);
+        assertThat(safe.isDmOnly()).isFalse();
+
+        Handout dmSource = service.classify(campaignId, h.getId(), SafetyClassification.DM_SOURCE);
+        assertThat(dmSource.isDmOnly()).isTrue();
+
+        Handout unreviewed = service.classify(campaignId, h.getId(), SafetyClassification.UNREVIEWED);
+        assertThat(unreviewed.isDmOnly()).isTrue();
     }
 
     @Test

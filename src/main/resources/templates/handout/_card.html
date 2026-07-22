@@ -13,7 +13,12 @@
             </h3>
             <div class="handout-badges">
                 <span th:if="${handout.presented}" class="badge badge-success">Given to players</span>
-                <span th:if="${handout.dmOnly}" class="badge badge-warning">DM only</span>
+                <th:block th:switch="${handout.safetyClassification.name()}">
+                    <span th:case="'DM_SOURCE'" class="badge badge-warning">DM source</span>
+                    <span th:case="'PLAYER_SAFE'" class="badge badge-success">Reviewed player-safe</span>
+                    <span th:case="'PLAYER_DERIVATIVE'" class="badge badge-info">Player derivative</span>
+                    <span th:case="'UNREVIEWED'" class="badge badge-secondary">Unreviewed</span>
+                </th:block>
                 <span th:each="tag : ${#strings.arraySplit(handout.tags, ',')}"
                       th:if="${!#strings.isEmpty(tag.trim())}"
                       th:text="${tag.trim()}"
@@ -27,14 +32,36 @@
                 hx-target="body" hx-swap="beforeend">
             Present
         </button>
-        <button class="btn btn-ghost"
-                th:hx-put="@{/campaigns/{cid}/handouts/{id}/dm-only(cid=${handout.campaign.id},id=${handout.id})}"
-                th:attr="hx-vals='{&quot;dmOnly&quot;: ' + ${!handout.dmOnly} + '}'"
-                th:hx-target="${'#handout-' + handout.id}"
-                hx-swap="outerHTML"
-                th:text="${handout.dmOnly} ? 'Make player-visible' : 'Mark DM only'">
-            Make player-visible
-        </button>
+        <th:block th:if="${!handout.safetyClassification.isPresentable()}">
+            <button class="btn btn-ghost"
+                    th:hx-put="@{/campaigns/{cid}/handouts/{id}/classification(cid=${handout.campaign.id},id=${handout.id})}"
+                    th:attr="hx-vals='{&quot;classification&quot;: &quot;PLAYER_SAFE&quot;}'"
+                    th:hx-target="${'#handout-' + handout.id}"
+                    hx-swap="outerHTML">
+                Review as player-safe
+            </button>
+            <button class="btn btn-ghost"
+                    th:hx-put="@{/campaigns/{cid}/handouts/{id}/classification(cid=${handout.campaign.id},id=${handout.id})}"
+                    th:attr="hx-vals='{&quot;classification&quot;: &quot;DM_SOURCE&quot;}'"
+                    th:hx-target="${'#handout-' + handout.id}"
+                    hx-swap="outerHTML">
+                Mark as DM source
+            </button>
+            <button class="btn btn-ghost"
+                    disabled
+                    title="Coming soon">
+                Create player derivative
+            </button>
+        </th:block>
+        <th:block th:if="${handout.safetyClassification.isPresentable()}">
+            <button class="btn btn-ghost"
+                    th:hx-put="@{/campaigns/{cid}/handouts/{id}/classification(cid=${handout.campaign.id},id=${handout.id})}"
+                    th:attr="hx-vals='{&quot;classification&quot;: &quot;UNREVIEWED&quot;}'"
+                    th:hx-target="${'#handout-' + handout.id}"
+                    hx-swap="outerHTML">
+                Mark unreviewed
+            </button>
+        </th:block>
         <button class="btn btn-danger"
                 th:hx-delete="@{/campaigns/{cid}/handouts/{id}(cid=${handout.campaign.id},id=${handout.id})}"
                 hx-confirm="Delete this handout?"

@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.handout.web;
 
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout.SafetyClassification;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,22 +19,19 @@ public class HandoutApiController {
     }
 
     @GetMapping("/campaigns/{campaignId}/handouts")
-    public List<Handout> list(@PathVariable UUID campaignId) {
-        return handoutService.findByCampaignId(campaignId);
+    public List<HandoutViewDto> list(@PathVariable UUID campaignId) {
+        return handoutService.findByCampaignId(campaignId).stream()
+                .map(HandoutViewDto::from)
+                .toList();
     }
 
     @GetMapping("/handouts/{id}")
-    public Handout get(@PathVariable UUID id) {
-        return handoutService.findById(id);
+    public HandoutViewDto get(@PathVariable UUID id) {
+        return HandoutViewDto.from(handoutService.findById(id));
     }
 
     @PutMapping("/handouts/{id}/present")
-    public Handout setPresented(@PathVariable UUID id, @RequestParam boolean presented) {
-        return handoutService.setPresented(id, presented);
-    }
-
-    @PutMapping("/handouts/{id}/dm-only")
-    public Handout setDmOnly(@PathVariable UUID id, @RequestParam boolean dmOnly) {
-        return handoutService.setDmOnly(id, dmOnly);
+    public HandoutViewDto setPresented(@PathVariable UUID id, @RequestParam boolean presented) {
+        return HandoutViewDto.from(handoutService.setPresented(id, presented));
     }
 }

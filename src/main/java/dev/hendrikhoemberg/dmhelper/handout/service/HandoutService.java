@@ -200,6 +200,27 @@ public class HandoutService {
         return handoutRepository.save(handout);
     }
 
+    public Handout classify(UUID campaignId, UUID handoutId, Handout.SafetyClassification classification) {
+        Handout handout = handoutRepository.findByCampaignIdAndId(campaignId, handoutId)
+                .orElseThrow(() -> new NotFoundException("Handout not found in campaign: " + handoutId));
+
+        if (classification == Handout.SafetyClassification.PLAYER_DERIVATIVE) {
+            throw new IllegalArgumentException("PLAYER_DERIVATIVE can only be set by the derivative workflow");
+        }
+
+        handout.setSafetyClassification(classification);
+        handout.setSourceHandout(null);
+        handout.setDerivativeRecipe(null);
+        handout.setDmOnly(!classification.isPresentable());
+
+        if (!classification.isPresentable()) {
+            handout.setPresented(false);
+            sessionRefCleaner.detachHandout(handoutId);
+        }
+
+        return handoutRepository.save(handout);
+    }
+
     public void delete(UUID id) {
         sessionRefCleaner.detachHandout(id);
         sceneRefCleaner.detachHandout(id);

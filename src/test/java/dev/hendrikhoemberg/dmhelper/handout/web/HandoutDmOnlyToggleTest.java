@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.handout.web;
 
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import dev.hendrikhoemberg.dmhelper.support.PopulatedCampaignFixture;
@@ -17,6 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.hamcrest.Matchers.containsString;
 
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -38,30 +41,19 @@ class HandoutDmOnlyToggleTest {
     }
 
     @Test
-    void handoutCardOffersAControlToLeaveDmOnly() throws Exception {
-        String html = mvc.perform(get("/campaigns/{c}/handouts", seeded.campaignId()))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-
-        assertThat(html)
-                .as("a DM must be able to fix their own import without calling the API by hand")
-                .contains("/dm-only");
+    void unreviewedUploadCannotBecomePlayerVisibleThroughTheLegacyBooleanRoute() throws Exception {
+        mvc.perform(put("/campaigns/{c}/handouts/{h}/dm-only", seeded.campaignId(), seeded.dmOnlyHandoutId())
+                        .param("dmOnly", "false"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void togglingDmOnlyOffMakesTheHandoutPresentable() throws Exception {
-        String card = mvc.perform(put("/campaigns/{c}/handouts/{h}/dm-only",
-                        seeded.campaignId(), seeded.dmOnlyHandoutId())
-                        .param("dmOnly", "false"))
+    void explicitReviewCanClassifyAnAssetPlayerSafe() throws Exception {
+        mvc.perform(put("/campaigns/{c}/handouts/{h}/classification", seeded.campaignId(), seeded.dmOnlyHandoutId())
+                        .param("classification", "PLAYER_SAFE"))
                 .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-
-        assertThat(handouts.findById(seeded.dmOnlyHandoutId()).orElseThrow().isDmOnly())
-                .isFalse();
-        assertThat(card)
-                .as("the endpoint must return the refreshed card so htmx can swap it in place")
-                .contains(PopulatedCampaignFixture.DM_ONLY_HANDOUT_TITLE)
-                .doesNotContain(">DM only<");
+                .andExpect(content().string(containsString("Reviewed player-safe")));
+        assertThat(handouts.findById(seeded.dmOnlyHandoutId()).orElseThrow().isPresentable()).isTrue();
     }
 
     @Test
