@@ -130,6 +130,17 @@
 			<version>1.54.0</version>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- Test-scope only. DmSensitiveFieldCoverageTest needs a real ancestor walk over
+		     template markup; the hand-rolled backwards scan in DmModeCoverageTest is already
+		     at the edge of what is maintainable and cannot see nesting. Version is pinned
+		     because Spring Boot's BOM does not manage jsoup. -->
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>1.17.2</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>

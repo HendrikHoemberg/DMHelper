@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <th:block th:fragment="mechanics-card(threat, kind)">
-    <div class="threat-mechanics-card" th:attr="data-threat-kind=${kind}">
+    <!-- Trap and hazard mechanics -- detection DCs, saves, damage -- are DM-facing wherever
+         this fragment lands, including threat/detail.html, which is the one caller that does
+         not already sit inside a dm-only block. Tagging the fragment root makes it
+         self-sufficient; nesting it inside another dm-only block is harmless. -->
+    <div class="threat-mechanics-card dm-only" th:attr="data-threat-kind=${kind}">
         <div class="detail-meta">
             <span class="badge" th:text="${#enums.label(threat.severity)}">SEVERITY</span>
             <span class="badge" th:if="${threat.minLevel != null}">
