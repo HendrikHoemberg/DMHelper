@@ -33,7 +33,7 @@
             <div id="factionForm"></div>
 
             <div class="detail-section">
-                <div th:if="${faction.goals}" class="u-mb-md">
+                <div th:if="${faction.goals}" class="u-mb-md dm-only">
                     <h4>Goals</h4>
                     <p th:text="${faction.goals}">Goals</p>
                 </div>
@@ -41,7 +41,7 @@
                     <h4>Resources</h4>
                     <p th:text="${faction.resources}">Resources</p>
                 </div>
-                <div th:if="${faction.reputationNotes}" class="u-mb-md">
+                <div th:if="${faction.reputationNotes}" class="u-mb-md dm-only">
                     <h4>Reputation Notes</h4>
                     <p th:text="${faction.reputationNotes}">Reputation Notes</p>
                 </div>

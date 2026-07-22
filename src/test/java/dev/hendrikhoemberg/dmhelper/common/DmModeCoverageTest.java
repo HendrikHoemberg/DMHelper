@@ -224,4 +224,65 @@ class DmModeCoverageTest {
                 .as("an NPC's secret must be hidden when the laptop faces the table")
                 .contains("dm-only");
     }
+
+    private String questPage() throws Exception {
+        return mvc.perform(get("/campaigns/{c}/quests/{q}", seeded.campaignId(), seeded.questId()))
+                .andReturn().getResponse().getContentAsString();
+    }
+
+    private String locationPage() throws Exception {
+        return mvc.perform(get("/campaigns/{c}/world/locations/{l}",
+                        seeded.campaignId(), seeded.locationId()))
+                .andReturn().getResponse().getContentAsString();
+    }
+
+    private String factionPage() throws Exception {
+        return mvc.perform(get("/campaigns/{c}/world/factions/{f}",
+                        seeded.campaignId(), seeded.factionId()))
+                .andReturn().getResponse().getContentAsString();
+    }
+
+    /** The field's own `u-mb-md` wrapper must carry dm-only. */
+    private static void assertFieldBlockIsDmOnly(String html, String needle, String why) {
+        String tag = enclosingTag(html, needle, "u-mb-md");
+        assertThat(tag).as("a .u-mb-md block must enclose %s", abbreviate(needle)).isNotNull();
+        assertThat(tag).as("%s -- tag was: %s", why, tag).contains("dm-only");
+    }
+
+    @Test
+    void questPrerequisitesAreHiddenFromTheTable() throws Exception {
+        assertFieldBlockIsDmOnly(questPage(), PopulatedCampaignFixture.QUEST_PREREQUISITES,
+                "prerequisites tell players exactly what gates the plot");
+    }
+
+    @Test
+    void questRewardsAreHiddenFromTheTable() throws Exception {
+        assertFieldBlockIsDmOnly(questPage(), PopulatedCampaignFixture.QUEST_REWARDS,
+                "rewards are the payoff the DM has not offered yet");
+    }
+
+    @Test
+    void questOutcomeNotesAreHiddenFromTheTable() throws Exception {
+        assertFieldBlockIsDmOnly(questPage(), PopulatedCampaignFixture.QUEST_OUTCOME_NOTES,
+                "outcome notes describe how the quest resolves");
+    }
+
+    @Test
+    void locationSecretsAreHiddenFromTheTable() throws Exception {
+        // A section literally labelled "Secrets" stayed on screen under the PLAYER-SAFE badge.
+        assertFieldBlockIsDmOnly(locationPage(), PopulatedCampaignFixture.LOCATION_SECRETS,
+                "a location's secrets are the thing players are meant to discover");
+    }
+
+    @Test
+    void factionGoalsAreHiddenFromTheTable() throws Exception {
+        assertFieldBlockIsDmOnly(factionPage(), "Ordnung herstellen",
+                "faction goals are plot structure the table should not read");
+    }
+
+    @Test
+    void factionReputationNotesAreHiddenFromTheTable() throws Exception {
+        assertFieldBlockIsDmOnly(factionPage(), PopulatedCampaignFixture.FACTION_REPUTATION_NOTES,
+                "reputation notes record how the faction privately regards the party");
+    }
 }

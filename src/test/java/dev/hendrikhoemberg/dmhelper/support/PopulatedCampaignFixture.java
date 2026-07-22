@@ -80,6 +80,20 @@ public class PopulatedCampaignFixture {
             "In der verschlossenen Truhe unter dem Schreibtisch liegen 120 gp und ein Paar "
             + "Stiefel der Elfenhaftigkeit.";
 
+    /**
+     * DM-facing detail fields on the quest / location / faction detail pages. The real package
+     * populates all of these (quest.rewards 12/13, quest.outcomeNotes 3/13, quest.prerequisites
+     * 1/13, worldLocation.secrets 6/11, faction.reputationNotes 9/9), and every one of them
+     * rendered under the PLAYER-SAFE badge until this fixture could prove otherwise.
+     */
+    public static final String QUEST_PREREQUISITES = "Teil 1 abgeschlossen";
+    public static final String QUEST_REWARDS = "500 gp";
+    public static final String QUEST_OUTCOME_NOTES =
+            "Wenn die Gruppe die Karte verliert, f\u00fchrt Sildar sie stattdessen zur H\u00f6hle.";
+    public static final String LOCATION_SECRETS = "Die Redbrands halten den Ort.";
+    public static final String FACTION_REPUTATION_NOTES =
+            "Der Orden traut der Gruppe erst nach der Befreiung von Phandalin.";
+
     private final CampaignRepository campaigns;
     private final AdventureService adventures;
     private final SceneStructuredContentService structured;
@@ -179,12 +193,13 @@ public class PopulatedCampaignFixture {
                 null, null, "Der Gang", null, 0));
 
         Faction faction = world.createFaction(campaignId, new FactionCommand(
-                "Orden des Panzerhandschuhs", "Ordnung herstellen", "Kontakte", null,
+                "Orden des Panzerhandschuhs", "Ordnung herstellen", "Kontakte",
+                FACTION_REPUTATION_NOTES,
                 null, "order", "Fixture, S. 30"));
 
         WorldLocation parent = world.createLocation(campaignId, new LocationCommand(
                 "Phandalin", LocationKind.SETTLEMENT, null, null, null, null,
-                "Ein Grenzdorf.", "Schmied, Gasthaus", "Die Redbrands halten den Ort.",
+                "Ein Grenzdorf.", "Schmied, Gasthaus", LOCATION_SECRETS,
                 null, null, "town", "Fixture, S. 28"));
 
         WorldLocation child = world.createLocation(campaignId, new LocationCommand(
@@ -211,7 +226,7 @@ public class PopulatedCampaignFixture {
         Quest quest = quests.createQuest(campaignId, new QuestCommand(
                 "Die Mine finden", QuestStatus.NOT_STARTED,
                 "Findet den Eingang zur Wave Echo Cave.", "Fixture, S. 40",
-                "main", "500 gp", "Teil 1 abgeschlossen", null));
+                "main", QUEST_REWARDS, QUEST_PREREQUISITES, QUEST_OUTCOME_NOTES));
         quests.addObjective(campaignId, quest.getId(), new QuestObjectiveCommand(
                 "Karte beschaffen", "Die Karte liegt bei Daran.", QuestObjectiveStatus.NOT_STARTED,
                 QuestObjectiveCompletionMode.ALL, 0, "Fixture, S. 40"));
