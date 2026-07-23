@@ -188,8 +188,76 @@
       this.bindEditInteractions();
       this.bindSplitters();
       this.bindFocusChrome();
+      this.bindPresetShortcuts();
+      this.bindTabKeyboard();
       this.bindAttention();
       this.bindModuleState();
+    }
+
+    /**
+     * Alt+Shift+1…5 selects the five immutable built-ins when no modal or text field
+     * owns the keystroke. Custom presets are never on this shortcut strip.
+     */
+    bindPresetShortcuts() {
+      const BUILTIN_BY_DIGIT = {
+        Digit1: 'builtin:exploration',
+        Digit2: 'builtin:combat',
+        Digit3: 'builtin:theatre-of-mind',
+        Digit4: 'builtin:presentation',
+        Digit5: 'builtin:session-review'
+      };
+      document.addEventListener('keydown', (event) => {
+        if (!event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey) return;
+        const presetKey = BUILTIN_BY_DIGIT[event.code];
+        if (!presetKey) return;
+        if (this.isModalOpen()) return;
+        if (this.isEditableTarget(event.target)) return;
+        event.preventDefault();
+        this.applyPreset(presetKey);
+      });
+    }
+
+    /**
+     * Roving tabindex + arrow-key selection for zone tablists (WAI-ARIA tabs pattern).
+     */
+    bindTabKeyboard() {
+      this.workbench.addEventListener('keydown', (event) => {
+        const tab = event.target.closest('[role="tab"][data-module-tab]');
+        if (!tab || !this.workbench.contains(tab)) return;
+        const tabsEl = tab.closest('[role="tablist"]');
+        if (!tabsEl) return;
+        const tabs = Array.from(tabsEl.querySelectorAll('[role="tab"][data-module-tab]'));
+        if (tabs.length === 0) return;
+        const index = tabs.indexOf(tab);
+        if (index < 0) return;
+        let next = -1;
+        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+          next = (index + 1) % tabs.length;
+        } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+          next = (index - 1 + tabs.length) % tabs.length;
+        } else if (event.key === 'Home') {
+          next = 0;
+        } else if (event.key === 'End') {
+          next = tabs.length - 1;
+        } else {
+          return;
+        }
+        event.preventDefault();
+        const zoneEl = tab.closest('[data-cockpit-zone]');
+        if (!zoneEl) return;
+        const zone = zoneEl.getAttribute('data-cockpit-zone');
+        const key = tabs[next].getAttribute('data-module-tab');
+        this.selectTab(zone, key);
+        const focused = tabsEl.querySelector(`[role="tab"][data-module-tab="${key}"]`);
+        focused?.focus();
+      });
+    }
+
+    isEditableTarget(target) {
+      if (!target || !(target instanceof Element)) return false;
+      if (target.isContentEditable) return true;
+      const el = target.closest('input, textarea, select, [contenteditable="true"]');
+      return !!el;
     }
 
     bindEditInteractions() {
@@ -1336,7 +1404,12 @@
         const focusBtn = document.querySelector(
           `[data-module-key="${key}"] [data-module-focus]`
         );
-        (prefer && document.contains(prefer) ? prefer : focusBtn)?.focus?.();
+        // Prefer the module Focus control so Escape/Return always restore an actionable
+        // trigger, even when focus was entered programmatically or from another control.
+        const target = (focusBtn && document.contains(focusBtn))
+          ? focusBtn
+          : (prefer && document.contains(prefer) ? prefer : null);
+        target?.focus?.();
       } else {
         this._focusReturnEl = null;
       }

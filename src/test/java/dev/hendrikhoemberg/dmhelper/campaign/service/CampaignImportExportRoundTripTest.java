@@ -124,6 +124,7 @@ class CampaignImportExportRoundTripTest {
     @Autowired private MagicItemRepository magicItemRepo;
     @Autowired private EquipmentItemRepository equipmentItemRepo;
     @Autowired private CampaignSchemaValidator schemaValidator;
+    @Autowired private dev.hendrikhoemberg.dmhelper.session.data.CockpitLayoutPresetRepository cockpitLayoutPresetRepository;
 
     private final ObjectMapper objectMapper = JsonMapper.builder()
             .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
@@ -781,6 +782,36 @@ class CampaignImportExportRoundTripTest {
 
         campaignService.importFromJson(source);
         assertThat(campaignRepo.count()).isEqualTo(campaignCount + 1);
+    }
+
+    @Test
+    void customCockpitLayoutPresetsAreExcludedFromCampaignJsonExportAndSurviveImport() {
+        Campaign campaign = campaignService.create("Layout Export Guard", "presets stay local");
+        persistSentinelLayoutPreset();
+
+        String json = campaignService.exportToJson(campaign.getId());
+        assertThat(json).doesNotContain(
+                "PRIVATE_LAYOUT_SENTINEL_9D4F", "cockpitLayout", "layoutPreset");
+
+        Campaign imported = campaignService.importFromJson(json);
+        assertThat(imported.getId()).isNotEqualTo(campaign.getId());
+
+        assertThat(cockpitLayoutPresetRepository.findAllByOrderByNormalizedNameAsc())
+                .filteredOn(preset -> "PRIVATE_LAYOUT_SENTINEL_9D4F".equals(preset.getName()))
+                .as("campaign import must neither create nor delete application-local presets")
+                .hasSize(1);
+    }
+
+    private void persistSentinelLayoutPreset() {
+        if (cockpitLayoutPresetRepository.existsByNormalizedName("private_layout_sentinel_9d4f")) {
+            return;
+        }
+        var entity = new dev.hendrikhoemberg.dmhelper.session.data.CockpitLayoutPreset();
+        entity.setName("PRIVATE_LAYOUT_SENTINEL_9D4F");
+        entity.setNormalizedName("private_layout_sentinel_9d4f");
+        entity.setLayoutSchemaVersion(1);
+        entity.setLayoutJson("{\"schemaVersion\":1,\"name\":\"PRIVATE_LAYOUT_SENTINEL_9D4F\"}");
+        cockpitLayoutPresetRepository.saveAndFlush(entity);
     }
 
     private void assertCurrentV1SemanticsEqual(UUID id1, UUID id2) throws Exception {

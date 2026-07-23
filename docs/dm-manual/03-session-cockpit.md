@@ -2,17 +2,81 @@
 
 The session cockpit at `/campaigns/{campaignId}/session` is the central during-play interface.
 
-## Layout
+## Layout workbench
 
-The cockpit is organised into five areas:
+The play surface is a four-zone workbench owned by the viewport. The **document itself does not scroll**; each module scrolls internally.
+
+| Zone | Role |
+|------|------|
+| **Primary** (centre) | Dominant stage for the active table surface (Map, Encounter, Session log, …) |
+| **Left support** | Secondary rail (Story, Session plan, Party, …) |
+| **Right support** | Secondary rail (Encounter, Presentation, Party, …) |
+| **Bottom utility** | Compact strip (Quick notes, Audio, Session log, …) that may collapse |
+
+Ten modules ship in the registry: Story, Map, Encounter, Party, Presentation, Session plan, Quick notes, Audio, Session log, and the transitional content shells they host. Every module appears at most once. Module bodies still use transitional in-page content in B1; lazy endpoint shells land in **B2**.
+
+Command chrome (identity, preset picker, Edit layout, Screen Safety, presentation, Search, Dice, Session) stays reachable above the workbench.
+
+### Locked default and Edit layout
+
+Every page load starts **locked**. While locked:
+
+- dividers, Add module, Remove, docking, and reorder are unavailable;
+- Story / Encounter / Map content remain fully operable;
+- combat and scene changes **never** switch layouts — hidden or inactive modules only receive **attention badges**.
+
+Click **Edit layout** once to unlock layout chrome. Click **Done** (the same control) once to leave edit:
+
+- no changes → locks immediately;
+- dirty layout → Save preset / Discard changes dialog.
+
+**Save preset** writes a named custom preset (or updates the open custom one). **Discard changes** restores the snapshot from when you entered edit and leaves all campaign/session state untouched.
+
+### Built-in presets and shortcuts
+
+Five immutable built-ins ship with the app:
+
+| Shortcut | Preset | Typical primary |
+|----------|--------|-----------------|
+| `Alt+Shift+1` | Exploration | Story |
+| `Alt+Shift+2` | Combat | Map |
+| `Alt+Shift+3` | Theatre of Mind | Encounter |
+| `Alt+Shift+4` | Presentation | Map |
+| `Alt+Shift+5` | Session Review | Session log |
+
+Shortcuts apply only when no modal or text field owns the keystroke. Preset changes are always manual; layout chrome settles within 100 ms.
+
+### Custom presets
+
+Use the overflow actions to **Duplicate**, **Rename**, **Delete**, or **Restore** a built-in after local edits. Custom presets persist in local application data (not inside a campaign package). They never ride campaign export/import.
+
+### Add, arrange, dock, and separators
+
+In edit mode:
+
+- **Add module** opens a dialog of modules not currently placed (no duplicates);
+- each module’s **Arrange** menu is the keyboard equivalent of pointer docking (zone moves, earlier/later tab order);
+- drag a module header onto a zone dock target for pointer docking;
+- Map cannot leave Primary; Primary always keeps at least one module;
+- separators resize only adjacent zones and clamp to ratio plus module minima (`aria-valuenow` updates; arrows step 2%, Shift+arrows 10%).
+
+### Focus and Return
+
+Modules that support Focus open a full-workbench focus layer. **Return** (or Escape) restores the previous layout and puts keyboard focus back on the Focus control. Focus never mutates a named preset.
+
+### Device-only recovery
+
+Last preset, active tabs, and unfinished edit drafts live in browser `localStorage` keys under `dmhelper.cockpit.*`. Corrupt values are ignored with a non-blocking notice. Failed preset saves keep edit mode and the recoverable draft.
+
+## Module content map (transitional B1 bodies)
 
 | Area | Purpose |
 |------|---------|
-| **Story rail** (left sidebar) | Current scene, editorial neighbours, scene links, linked rollable tables, scene quick notes |
-| **Table surface** (centre) | Workspace battle map with token, measurement, and AoE tools |
-| **Encounter rail** (right sidebar) | Active encounter tracker, planned encounters list |
-| **Session plan** (bottom strip) | Ordered prepared beats parsed from the latest `SESSION_PLAN` note |
-| **Party bar** (footer) | Party member summary with HP bars, AC, passive perception |
+| **Story** | Current scene, editorial neighbours, scene links, linked rollable tables, scene quick notes |
+| **Map** | Workspace battle map with token, measurement, and AoE tools |
+| **Encounter** | Active encounter tracker, planned encounters list |
+| **Session plan** | Ordered prepared beats parsed from the latest `SESSION_PLAN` note |
+| **Party** | Party member summary with HP bars, AC, passive perception |
 | **Quick access toolbar** (top bar) | Search, dice/table rollers, handouts, rules reference, calendar, session lifecycle |
 
 ## Screen Safety
@@ -138,10 +202,13 @@ When no modal or input is focused:
 
 | Key | Action |
 |-----|--------|
+| `Alt+Shift+1`…`5` | Select built-in Exploration / Combat / Theatre of Mind / Presentation / Session Review |
 | `[` / `]` | Step to previous / next scene |
 | `n` | Advance encounter turn |
 | `q` | Focus quick notes input |
 | `h` | Focus handout picker |
 | `p` | Present current map to player table |
+| Arrow keys on zone tabs | Move selection among tabs in that zone |
+| Escape | Close the topmost layer (focus, dialog) and restore its trigger when possible |
 
 All cockpit routes are covered by the PIN interceptor.

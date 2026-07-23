@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper;
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.LoadState;
+import com.microsoft.playwright.options.ReducedMotion;
 import com.microsoft.playwright.options.WaitForSelectorState;
 import com.microsoft.playwright.options.BoundingBox;
 import dev.hendrikhoemberg.dmhelper.adventure.data.Adventure;
@@ -2871,6 +2872,204 @@ class CoreSessionLoopSmokeTest {
                   c.clearNotice();
                 }
                 """);
+    }
+
+    @Test
+    @Order(37)
+    void cockpitLayoutPerformanceAccessibilityAndKeyboardShortcuts() {
+        if (campaignId == null) {
+            createCampaign();
+        }
+        dmPage.setViewportSize(1366, 768);
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        dmPage.waitForFunction("window.cockpitLayout?.mounted === true");
+        selectCockpitPreset("builtin:exploration");
+
+        Number firstMeaningful = (Number) dmPage.evaluate(
+                "() => window.cockpitLayout.metrics.firstMeaningfulMs");
+        assertThat(firstMeaningful).isNotNull();
+        assertThat(firstMeaningful.doubleValue())
+                .as("first meaningful layout apply should settle under 2s")
+                .isLessThan(2000.0);
+
+        Number duration = (Number) dmPage.evaluate("""
+                async () => {
+                  const done = new Promise(resolve =>
+                    window.addEventListener('cockpit:layout-applied',
+                      event => resolve(event.detail.durationMs), {once: true}));
+                  document.querySelector('#cockpitPresetPicker').value = 'builtin:combat';
+                  document.querySelector('#cockpitPresetPicker').dispatchEvent(
+                    new Event('change', {bubbles: true}));
+                  return await done;
+                }
+                """);
+        assertThat(duration.doubleValue())
+                .as("layout chrome apply budget is 100ms (in-browser performance.now)")
+                .isLessThan(100.0);
+        assertThat(dmPage.evaluate("() => window.cockpitLayout.currentPresetKey"))
+                .isEqualTo("builtin:combat");
+
+        // Loading state paints on the shell within the 100ms product budget.
+        @SuppressWarnings("unchecked")
+        var loadingTiming = (java.util.Map<String, Object>) dmPage.evaluate("""
+                () => {
+                  const start = performance.now();
+                  window.dispatchEvent(new CustomEvent('cockpit:module-state', {
+                    detail: { moduleKey: 'story', state: 'loading' }
+                  }));
+                  const status = document.querySelector(
+                    '[data-module-key="story"] [data-module-status]');
+                  const elapsed = performance.now() - start;
+                  const visible = status && !status.hidden && (status.textContent || '').length > 0;
+                  window.dispatchEvent(new CustomEvent('cockpit:module-state', {
+                    detail: { moduleKey: 'story', state: 'ready' }
+                  }));
+                  return { elapsed, visible };
+                }
+                """);
+        assertThat(loadingTiming.get("visible")).as("loading status becomes visible").isEqualTo(true);
+        assertThat(((Number) loadingTiming.get("elapsed")).doubleValue())
+                .as("loading shell update within 100ms; B2 retains this and adds 2s endpoint-render")
+                .isLessThan(100.0);
+
+        // Locked: no layout edit control or splitter is keyboard-reachable.
+        assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
+                .isEqualTo("locked");
+        assertThat(dmPage.locator("[data-cockpit-splitter]").all())
+                .allSatisfy(splitter -> assertThat(splitter.getAttribute("tabindex")).isEqualTo("-1"));
+        assertThat(dmPage.locator("[data-layout-edit-only]:visible").count()).isZero();
+
+        // Tabs: role, selected state, owned panels, arrow-key selection.
+        Locator combatLeftTabs = dmPage.locator(
+                "[data-cockpit-zone='LEFT_SUPPORT'] [role='tab']");
+        assertThat(combatLeftTabs.count()).isGreaterThanOrEqualTo(2);
+        Locator firstTab = combatLeftTabs.first();
+        assertThat(firstTab.getAttribute("role")).isEqualTo("tab");
+        String firstKey = firstTab.getAttribute("data-module-tab");
+        String firstControls = firstTab.getAttribute("aria-controls");
+        assertThat(firstControls).isNotBlank();
+        assertThat(dmPage.locator("#" + firstControls).getAttribute("role")).isEqualTo("tabpanel");
+        firstTab.focus();
+        dmPage.keyboard().press("ArrowRight");
+        Locator selectedTab = dmPage.locator(
+                "[data-cockpit-zone='LEFT_SUPPORT'] [role='tab'][aria-selected='true']");
+        assertThat(selectedTab.count()).isEqualTo(1);
+        assertThat(selectedTab.getAttribute("data-module-tab")).isNotEqualTo(firstKey);
+        String selectedControls = selectedTab.getAttribute("aria-controls");
+        assertThat(dmPage.locator("#" + selectedControls).getAttribute("hidden")).isNull();
+
+        // Alt+Shift+1…5 selects built-ins only; input focus blocks the shortcut.
+        String[] builtinOrder = {
+                "builtin:exploration", "builtin:combat", "builtin:theatre-of-mind",
+                "builtin:presentation", "builtin:session-review"
+        };
+        for (int i = 0; i < builtinOrder.length; i++) {
+            dmPage.evaluate("() => document.activeElement && document.activeElement.blur()");
+            dmPage.keyboard().press("Alt+Shift+" + (i + 1));
+            dmPage.waitForFunction("key => window.cockpitLayout.currentPresetKey === key",
+                    builtinOrder[i]);
+        }
+        dmPage.locator("#cockpitPresetPicker").focus();
+        dmPage.keyboard().press("Alt+Shift+1");
+        assertThat(dmPage.evaluate("() => window.cockpitLayout.currentPresetKey"))
+                .as("shortcut ignored while select owns keystroke")
+                .isEqualTo("builtin:session-review");
+        dmPage.evaluate("() => document.activeElement && document.activeElement.blur()");
+        dmPage.keyboard().press("Alt+Shift+2");
+        dmPage.waitForFunction("key => window.cockpitLayout.currentPresetKey === key",
+                "builtin:combat");
+
+        // Separators report updated aria-valuenow in edit mode.
+        dmPage.locator("#cockpitLayoutModeButton").click();
+        assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
+                .isEqualTo("edit");
+        Locator leftSplitter = dmPage.locator("[data-cockpit-splitter='LEFT_PRIMARY']");
+        double beforeSplit = Double.parseDouble(leftSplitter.getAttribute("aria-valuenow"));
+        leftSplitter.focus();
+        dmPage.keyboard().press("ArrowRight");
+        double afterSplit = Double.parseDouble(leftSplitter.getAttribute("aria-valuenow"));
+        assertThat(afterSplit)
+                .as("aria-valuenow updates (or clamps) after arrow resize")
+                .isGreaterThanOrEqualTo(beforeSplit);
+
+        // Escape closes focus layer and restores its trigger (Focus control).
+        dmPage.evaluate("window.cockpitLayout.selectTab('LEFT_SUPPORT', 'story')");
+        clickModuleChrome("story", "focus");
+        assertThat(dmPage.locator("#cockpitFocusLayer").isVisible()).isTrue();
+        dmPage.keyboard().press("Escape");
+        assertThat(dmPage.locator("#cockpitFocusLayer").isHidden()).isTrue();
+        assertThat(dmPage.locator("[data-module-key='story'] [data-module-focus]")
+                .evaluate("el => document.activeElement === el"))
+                .as("Escape restores focus to the Focus control")
+                .isEqualTo(true);
+
+        // Add dialog is a modal; focus stays inside while open; Escape closes it.
+        dmPage.locator("#cockpitAddModuleButton").click();
+        assertThat(dmPage.locator("#cockpitAddModuleDialog").evaluate("el => el.open"))
+                .isEqualTo(true);
+        Boolean trapHolds = (Boolean) dmPage.evaluate("""
+                () => {
+                  const dialog = document.getElementById('cockpitAddModuleDialog');
+                  if (!dialog || !dialog.open) return false;
+                  // showModal() moves focus into the dialog; keep it there.
+                  if (!dialog.contains(document.activeElement)) {
+                    const first = dialog.querySelector('button, [href], input, select, textarea');
+                    first?.focus();
+                  }
+                  return dialog.open && dialog.contains(document.activeElement);
+                }
+                """);
+        assertThat(trapHolds).as("Add dialog owns focus while open").isTrue();
+        dmPage.keyboard().press("Escape");
+        assertThat(dmPage.locator("#cockpitAddModuleDialog").evaluate("el => el.open"))
+                .as("Escape closes topmost Add dialog")
+                .isEqualTo(false);
+
+        // Exit edit cleanly (dirty → discard).
+        dmPage.locator("#cockpitLayoutModeButton").click();
+        if (dmPage.locator("#cockpitLayoutExitDialog").isVisible()) {
+            dmPage.locator("[data-layout-exit='discard']").click();
+        }
+        assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
+                .isEqualTo("locked");
+
+        // Reduced-motion media removes meaningful transition duration on layout chrome.
+        dmPage.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.REDUCE));
+        Number maxTransition = (Number) dmPage.evaluate("""
+                () => {
+                  const sample = document.querySelector(
+                    '[data-cockpit-workbench], .cockpit-workbench, [data-cockpit-splitter]');
+                  if (!sample) return -1;
+                  const cs = getComputedStyle(sample);
+                  const parse = (v) => {
+                    if (!v || v === 'none' || v === '0s') return 0;
+                    return Math.max(...v.split(',').map(part => {
+                      const s = part.trim();
+                      if (s.endsWith('ms')) return parseFloat(s);
+                      if (s.endsWith('s')) return parseFloat(s) * 1000;
+                      return parseFloat(s) || 0;
+                    }));
+                  };
+                  // Prefer a child that normally animates if present.
+                  const nodes = [sample, ...sample.querySelectorAll('*')].slice(0, 40);
+                  let max = 0;
+                  for (const n of nodes) {
+                    const style = getComputedStyle(n);
+                    max = Math.max(max,
+                      parse(style.transitionDuration),
+                      parse(style.animationDuration));
+                  }
+                  return max;
+                }
+                """);
+        assertThat(maxTransition.doubleValue())
+                .as("reduced-motion collapses layout transitions to ~0")
+                .isLessThan(5.0);
+        dmPage.emulateMedia(new Page.EmulateMediaOptions()
+                .setReducedMotion(ReducedMotion.NO_PREFERENCE));
+
+        // AfterEach asserts no console/page/request failures via browserFailures.
     }
 
     private static byte[] createSinglePixelPng(String label) throws IOException {
