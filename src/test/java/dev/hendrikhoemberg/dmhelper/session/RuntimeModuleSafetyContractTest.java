@@ -75,8 +75,7 @@ class RuntimeModuleSafetyContractTest {
     private static final List<String> SHELL_FRAGMENTS = List.of(
             "session/cockpit.html",
             "session/_cockpit-workbench.html",
-            "session/_cockpit-module-shell.html",
-            "session/_cockpit-deferred-modules.html"
+            "session/_cockpit-module-shell.html"
     );
 
     @Autowired
@@ -148,10 +147,8 @@ class RuntimeModuleSafetyContractTest {
                     .isEqualTo(definition.key());
         }
 
-        assertThat(document.select(".cockpit-story")).hasSize(1);
-        assertThat(document.select(".cockpit-encounter")).hasSize(1);
-        assertThat(document.select(".cockpit-story[data-runtime-module]")).isEmpty();
-        assertThat(document.select(".cockpit-encounter[data-runtime-module]")).isEmpty();
+        assertThat(document.select(".runtime-story")).hasSize(1);
+        assertThat(document.select(".runtime-story[data-runtime-module]")).isEmpty();
     }
 
     @Test

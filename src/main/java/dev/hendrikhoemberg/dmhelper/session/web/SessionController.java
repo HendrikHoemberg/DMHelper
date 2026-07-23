@@ -51,6 +51,7 @@ public class SessionController {
     public String cockpit(@PathVariable UUID campaignId,
                           @RequestParam(required = false) UUID mapId,
                           Model model) {
+        var standardMode = dev.hendrikhoemberg.dmhelper.session.runtime.CockpitModuleMode.STANDARD;
         SessionWorkspaceService.SessionWorkspace workspace = workspaces.load(campaignId, mapId);
         model.addAttribute("workspace", workspace);
         model.addAttribute("campaignId", campaignId);
@@ -71,6 +72,11 @@ public class SessionController {
         model.addAttribute("attendanceMembers", attendanceMembers);
         model.addAttribute("cockpitModules", cockpitModules.all());
         model.addAttribute("cockpitModuleByKey", moduleByKey(cockpitModules));
+        model.addAttribute("cockpitModuleStandardMode", standardMode);
+        model.addAttribute("initialStoryView", moduleViews.story(campaignId));
+        model.addAttribute("initialSessionPlanView", moduleViews.sessionPlan(campaignId));
+        model.addAttribute("initialPartyView", moduleViews.party(campaignId));
+        model.addAttribute("initialQuickNotesView", moduleViews.quickNotes(campaignId));
         model.addAttribute("cockpitPresets", cockpitPresets.list());
         model.addAttribute("cockpitDefaultPresetKey", "builtin:exploration");
         addSeedEligibility(campaignId, workspace, model);

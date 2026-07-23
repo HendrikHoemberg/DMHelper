@@ -448,9 +448,6 @@ body:has(.session-cockpit) {
   clip: rect(0 0 0 0);
 }
 
-.cockpit-deferred-body {
-  padding: var(--space-sm);
-}
 
 .cockpit-topbar__overflow,
 .cockpit-preset-overflow {
@@ -630,29 +627,6 @@ body:has(.session-cockpit) {
 .cockpit-layout-dialog:focus-visible {
   outline: 3px solid var(--color-accent);
   outline-offset: 2px;
-}
-
-/* Map module fills its shell body like the old table column. */
-.cockpit-module[data-module-key="map"] .cockpit-module__body,
-.cockpit-module[data-module-key="map"] .cockpit-table {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  height: 100%;
-}
-
-.cockpit-module[data-module-key="map"] .battle-body {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-/* Story / encounter rails scroll inside the module body only. */
-.cockpit-module .cockpit-story,
-.cockpit-module .cockpit-encounter {
-  min-height: 0;
-  height: 100%;
-  overflow: auto;
-  overscroll-behavior: contain;
 }
 
 @media (prefers-reduced-motion: reduce) {

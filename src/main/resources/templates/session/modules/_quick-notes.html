@@ -6,9 +6,9 @@
     <div class="quicknotes-module-body">
       <!-- targetType=CAMPAIGN -->
       <div class="quicknotes-form u-px-sm u-pt-sm"
-           id="quicknotes-CAMPAIGN-[[${view.targetId}]]"
+           id="|quicknotes-CAMPAIGN-${campaignId}|"
            data-target-type="CAMPAIGN"
-           th:attr="data-target-id=${view.targetId}, data-target-type-name=${view.targetType}">
+           th:attr="data-target-id=${campaignId}, data-target-type-name='CAMPAIGN'">
         <input type="text" class="form-input" x-model="newBody"
                placeholder="Quick note\u2026" aria-label="Quick note"
                data-persist-new-body="true" />

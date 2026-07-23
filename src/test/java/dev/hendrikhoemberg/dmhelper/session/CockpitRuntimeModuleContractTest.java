@@ -6,9 +6,71 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import java.util.List;
+import java.util.Set;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class CockpitRuntimeModuleContractTest {
+
+    private static final Set<String> ALL_MODULE_KEYS = Set.of(
+            "story", "map", "encounter", "session-plan", "party",
+            "quick-notes", "presentation", "reference", "audio", "session-log");
+
+    @Test
+    void allTenModulesRenderAllRuntimeStates() throws IOException {
+        for (String key : ALL_MODULE_KEYS) {
+            Path fragmentPath = Path.of(
+                    "src/main/resources/templates/session/modules/_" + key + ".html");
+        
+            String fragment = Files.readString(fragmentPath);
+
+            // empty state
+            assertThat(fragment)
+                    .as("module %s must declare data-module-empty", key)
+                    .contains("data-module-empty");
+
+            // populated state: data-module-content-root
+            assertThat(fragment)
+                    .as("module %s must declare data-module-content-root", key)
+                    .contains("data-module-content-root");
+
+            // mode support
+            assertThat(fragment)
+                    .as("module %s must declare data-module-mode", key)
+                    .contains("data-module-mode");
+
+            // module identity
+            assertThat(fragment)
+                    .as("module %s must declare data-cockpit-module-fragment", key)
+                    .contains("data-cockpit-module-fragment");
+
+            // Private / Table-safe handled via screen-safety.css, not template-level
+            // loading / error / attention handled by shell chrome, not body fragment
+            // refresh-without-shell-replacement: body fragments use th:replace/th:insert into stable shell
+        }
+    }
+
+    @Test
+    void moduleShellNoTransitionalSwitch() throws IOException {
+        String shell = Files.readString(Path.of(
+                "src/main/resources/templates/session/_cockpit-module-shell.html"));
+        assertThat(shell).doesNotContain("th:switch");
+        assertThat(shell).doesNotContain("th:case");
+    }
+
+    @Test
+    void workbenchDoesNotUseDeferredModules() throws IOException {
+        String workbench = Files.readString(Path.of(
+                "src/main/resources/templates/session/_cockpit-workbench.html"));
+        assertThat(workbench).doesNotContain("deferred-modules");
+    }
+
+    @Test
+    void deletedDeferredModulesFileIsGone() {
+        assertThat(Path.of("src/main/resources/templates/session/_cockpit-deferred-modules.html"))
+                .doesNotExist();
+    }
 
     @Test
     void moduleShellDeclaresEndpointDataAttributes() throws IOException {
@@ -473,9 +535,9 @@ class CockpitRuntimeModuleContractTest {
     void quickNotesFragmentHasUniqueDomId() throws IOException {
         String fragment = Files.readString(Path.of(
                 "src/main/resources/templates/session/modules/_quick-notes.html"));
-        assertThat(fragment).contains("id=\"quicknotes-");
-        assertThat(fragment).contains("view.targetType");
-        assertThat(fragment).contains("view.targetId");
+        assertThat(fragment).contains("id=\"|quicknotes-");
+        assertThat(fragment).contains("data-target-type=\"CAMPAIGN\"");
+        assertThat(fragment).contains("data-target-id=${campaignId}");
     }
 
     @Test
@@ -602,6 +664,92 @@ class CockpitRuntimeModuleContractTest {
         // Command bar must contain no audio-specific action
         assertThat(fragment).doesNotContain("audio-action");
         assertThat(fragment).doesNotContain("data-audio-command");
+    }
+
+    @Test
+    void sessionLogFragmentDeclaresModuleAttributes() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-log.html"));
+        assertThat(fragment).contains("data-cockpit-module-fragment");
+        assertThat(fragment).contains("data-module-mode");
+        assertThat(fragment).contains("data-module-empty");
+        assertThat(fragment).contains("data-module-content-root");
+        assertThat(fragment).contains("runtime-session-log");
+    }
+
+    @Test
+    void sessionLogFragmentShowsSessionStatusAndTime() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-log.html"));
+        assertThat(fragment).contains("view.sessionStatus");
+        assertThat(fragment).contains("view.timeRange");
+    }
+
+    @Test
+    void sessionLogFragmentShowsEvents() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-log.html"));
+        assertThat(fragment).contains("view.currentEvents");
+        assertThat(fragment).contains("evt.occurredAt");
+        assertThat(fragment).contains("evt.kind");
+        assertThat(fragment).contains("evt.title");
+        assertThat(fragment).contains("evt.warning");
+    }
+
+    @Test
+    void sessionLogFragmentShowsSavedLogs() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-log.html"));
+        assertThat(fragment).contains("view.recentSavedLogs");
+        assertThat(fragment).contains("sl.url");
+        assertThat(fragment).contains("sl.title");
+    }
+
+    @Test
+    void sessionLogFragmentShowsUnresolvedQuickNotesBadge() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-log.html"));
+        assertThat(fragment).contains("view.unresolvedQuickNoteCount");
+    }
+
+    @Test
+    void sessionLogFragmentShowsReviewDraft() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-log.html"));
+        assertThat(fragment).contains("view.reviewDraft");
+    }
+
+    @Test
+    void sessionLogFragmentHasEmptyState() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-log.html"));
+        assertThat(fragment).contains("empty-state");
+        assertThat(fragment).contains("Session events will appear after play begins");
+    }
+
+    @Test
+    void sessionLogCompactModeShowsLimitedContent() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-log.html"));
+        assertThat(fragment).contains("mode.name() == 'COMPACT'");
+        assertThat(fragment).contains("view.unresolvedQuickNoteCount");
+    }
+
+    @Test
+    void sessionLogHasModeClassExpression() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-log.html"));
+        assertThat(fragment).contains("runtime-session-log");
+        assertThat(fragment).contains("th:classappend");
+        assertThat(fragment).contains("mode.name()");
+    }
+
+    @Test
+    void sessionLogFocusedModeShowsReviewContent() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-log.html"));
+        assertThat(fragment).contains("view.sessionStatus == 'REVIEW'");
+        assertThat(fragment).contains("data-action=\"review-session\"");
     }
 
     private static int count(String s, String substring) {

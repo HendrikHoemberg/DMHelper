@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<!--
-  Accessible module chrome. Body content is selected by module key so Thymeleaf does not need
-  dynamic fragment expressions. Callers pass workspace/campaignId for existing module bodies.
--->
-<article th:fragment="shell(module, workspace, campaignId, initiallyRendered)"
+<article th:fragment="shell(module, initialBody)"
          class="cockpit-module"
          th:id="|cockpitModule-${module.key}|"
          th:attr="data-module-key=${module.key},
@@ -30,43 +26,15 @@
               th:attr="aria-label=|Remove ${module.title}|">Remove</button>
     </div>
   </header>
-  <!-- Live region for loading/empty; existing body content is preserved across states. -->
   <div class="cockpit-module__status" data-module-status aria-live="polite" hidden></div>
   <div class="cockpit-module__body" data-module-body
        th:attr="aria-labelledby=|cockpitModuleTitle-${module.key}|">
     <div data-module-content
          th:attr="data-module-endpoint=${module.source.value},
-                  data-module-loaded=${initiallyRendered},
+                  data-module-loaded=${initialBody != null},
                   data-module-stale='false'">
-      <th:block th:if="${initiallyRendered}">
-        <th:block th:switch="${module.key}">
-          <!-- SSR initial content replaced by cockpit module loader on first refresh. -->
-          <div th:case="'story'" class="cockpit-story">
-            <p class="text-muted">Loading story\u2026</p>
-          </div>
-          <th:block th:case="'map'"
-                    th:insert="~{session/_map-module :: map-module(workspace=${workspace})}"></th:block>
-          <div th:case="'encounter'" class="cockpit-encounter">
-            <p class="text-muted">Loading encounter\u2026</p>
-          </div>
-          <th:block th:case="'session-plan'"
-                    th:insert="~{session/_session-plan :: plan(workspace=${workspace})}"></th:block>
-          <th:block th:case="'party'"
-                    th:replace="~{party/_summary-bar :: summary-bar(view=${workspace.partyMembers}, mode=${null})}"></th:block>
-          <th:block th:case="'quick-notes'"
-                    th:insert="~{session/_cockpit-deferred-modules :: quick-notes}"></th:block>
-          <th:block th:case="'presentation'"
-                    th:insert="~{session/_cockpit-deferred-modules :: presentation}"></th:block>
-          <th:block th:case="'reference'"
-                    th:insert="~{session/_cockpit-deferred-modules :: reference}"></th:block>
-          <th:block th:case="'audio'"
-                    th:insert="~{audio/_cockpit-widget :: cockpit-widget(campaignId=${campaignId}, sessionId=${workspace.session.id})}"></th:block>
-          <th:block th:case="'session-log'"
-                    th:insert="~{session/_cockpit-deferred-modules :: session-log}"></th:block>
-          <th:block th:case="*">
-            <p class="text-muted" th:text="${module.states.emptyMessage}">Module unavailable.</p>
-          </th:block>
-        </th:block>
+      <th:block th:if="${initialBody != null}">
+        <th:block th:insert="${initialBody}"></th:block>
       </th:block>
     </div>
   </div>

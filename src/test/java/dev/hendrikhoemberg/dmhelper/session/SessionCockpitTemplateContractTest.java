@@ -277,10 +277,9 @@ class SessionCockpitTemplateContractTest {
                 .contains("cockpitModuleByKey['encounter']");
         assertThat(shell)
                 .contains("class=\"cockpit-module\"", "data-module-body")
-                .contains("class=\"cockpit-story\"")
-                .contains("class=\"cockpit-encounter\"")
-                .contains("session/_session-plan")
-                .contains("session/_map-module :: map-module");
+                .contains("data-module-content")
+                .contains("data-module-loaded")
+                .contains("data-module-endpoint");
         String encounterModule = Files.readString(Path.of(
                 "src/main/resources/templates/session/modules/_encounter.html"));
         assertThat(encounterModule).contains("session/_encounter-rail");
@@ -301,6 +300,43 @@ class SessionCockpitTemplateContractTest {
                 "data-runtime-module=${module.key}",
                 "data-table-safe-behavior=${module.screenSafetyBehavior}");
         assertThat(workbench).contains("cockpitModuleByKey['encounter']");
+    }
+
+    @Test
+    void transitionalModuleShellRemoved() throws IOException {
+        String shell = Files.readString(Path.of(
+                "src/main/resources/templates/session/_cockpit-module-shell.html"));
+        assertThat(shell).doesNotContain("th:switch");
+        assertThat(shell).doesNotContain("workspace");
+        assertThat(shell).doesNotContain("campaignId");
+        assertThat(shell).doesNotContain("initiallyRendered");
+        assertThat(shell).contains("shell(module, initialBody)");
+        assertThat(shell).contains("th:insert=\"${initialBody}\"");
+    }
+
+    @Test
+    void deferredModulesFileDeleted() {
+        assertThat(Path.of("src/main/resources/templates/session/_cockpit-deferred-modules.html"))
+                .doesNotExist();
+    }
+
+    @Test
+    void workbenchNoLongerReferencesDeferredModules() throws IOException {
+        String workbench = Files.readString(Path.of(
+                "src/main/resources/templates/session/_cockpit-workbench.html"));
+        assertThat(workbench).doesNotContain("_cockpit-deferred-modules");
+        assertThat(workbench).contains("module=${cockpitModuleByKey");
+        assertThat(workbench).contains("initialBody=");
+    }
+
+    @Test
+    void sessionControllerHasInitialModuleViews() throws IOException {
+        String java = Files.readString(Path.of(
+                "src/main/java/dev/hendrikhoemberg/dmhelper/session/web/SessionController.java"));
+        assertThat(java).contains("initialStoryView");
+        assertThat(java).contains("initialSessionPlanView");
+        assertThat(java).contains("initialPartyView");
+        assertThat(java).contains("initialQuickNotesView");
     }
 
     @Test

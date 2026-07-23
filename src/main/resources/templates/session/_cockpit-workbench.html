@@ -32,9 +32,7 @@
            data-module-panel="session-plan">
         <th:block th:replace="~{session/_cockpit-module-shell :: shell(
             module=${cockpitModuleByKey['session-plan']},
-            workspace=${workspace},
-            campaignId=${campaignId},
-            initiallyRendered=${true})}"></th:block>
+            initialBody=~{session/modules/_session-plan :: body(${initialSessionPlanView}, ${cockpitModuleStandardMode})})}"></th:block>
       </div>
     </div>
   </div>
@@ -63,9 +61,7 @@
            data-module-panel="story">
         <th:block th:replace="~{session/_cockpit-module-shell :: shell(
             module=${cockpitModuleByKey['story']},
-            workspace=${workspace},
-            campaignId=${campaignId},
-            initiallyRendered=${true})}"></th:block>
+            initialBody=~{session/modules/_story :: body(${initialStoryView}, ${cockpitModuleStandardMode})})}"></th:block>
       </div>
     </div>
   </div>
@@ -100,9 +96,7 @@
            data-module-panel="party">
         <th:block th:replace="~{session/_cockpit-module-shell :: shell(
             module=${cockpitModuleByKey['party']},
-            workspace=${workspace},
-            campaignId=${campaignId},
-            initiallyRendered=${true})}"></th:block>
+            initialBody=~{session/modules/_party :: body(${initialPartyView}, ${cockpitModuleStandardMode})})}"></th:block>
       </div>
       <div class="cockpit-zone__panel" role="tabpanel"
            id="cockpitPanel-RIGHT_SUPPORT-quick-notes"
@@ -111,9 +105,7 @@
            hidden inert>
         <th:block th:replace="~{session/_cockpit-module-shell :: shell(
             module=${cockpitModuleByKey['quick-notes']},
-            workspace=${workspace},
-            campaignId=${campaignId},
-            initiallyRendered=${true})}"></th:block>
+            initialBody=~{session/modules/_quick-notes :: body(${initialQuickNotesView}, ${cockpitModuleStandardMode})})}"></th:block>
       </div>
     </div>
   </div>
@@ -148,9 +140,7 @@
            data-module-panel="audio">
         <th:block th:replace="~{session/_cockpit-module-shell :: shell(
             module=${cockpitModuleByKey['audio']},
-            workspace=${workspace},
-            campaignId=${campaignId},
-            initiallyRendered=${false})}"></th:block>
+            initialBody=${null})}"></th:block>
       </div>
       <div class="cockpit-zone__panel" role="tabpanel"
            id="cockpitPanel-BOTTOM_UTILITY-session-log"
@@ -159,9 +149,7 @@
            hidden inert>
         <th:block th:replace="~{session/_cockpit-module-shell :: shell(
             module=${cockpitModuleByKey['session-log']},
-            workspace=${workspace},
-            campaignId=${campaignId},
-            initiallyRendered=${false})}"></th:block>
+            initialBody=${null})}"></th:block>
       </div>
     </div>
   </div>
@@ -171,24 +159,16 @@
 <div class="cockpit-module-depot" data-cockpit-depot hidden>
   <th:block th:replace="~{session/_cockpit-module-shell :: shell(
       module=${cockpitModuleByKey['map']},
-      workspace=${workspace},
-      campaignId=${campaignId},
-      initiallyRendered=${false})}"></th:block>
+      initialBody=${null})}"></th:block>
   <th:block th:replace="~{session/_cockpit-module-shell :: shell(
       module=${cockpitModuleByKey['encounter']},
-      workspace=${workspace},
-      campaignId=${campaignId},
-      initiallyRendered=${false})}"></th:block>
+      initialBody=${null})}"></th:block>
   <th:block th:replace="~{session/_cockpit-module-shell :: shell(
       module=${cockpitModuleByKey['presentation']},
-      workspace=${workspace},
-      campaignId=${campaignId},
-      initiallyRendered=${false})}"></th:block>
+      initialBody=${null})}"></th:block>
   <th:block th:replace="~{session/_cockpit-module-shell :: shell(
       module=${cockpitModuleByKey['reference']},
-      workspace=${workspace},
-      campaignId=${campaignId},
-      initiallyRendered=${false})}"></th:block>
+      initialBody=${null})}"></th:block>
 </div>
 
 <!-- Focus layer -->

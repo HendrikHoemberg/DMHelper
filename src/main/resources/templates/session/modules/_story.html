@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<section th:fragment="body"
+<section th:fragment="body(view, mode)"
          data-cockpit-module-fragment="story"
          th:attr="data-module-mode=${mode}, data-module-empty=${view == null}">
   <div data-module-content-root class="runtime-story"
