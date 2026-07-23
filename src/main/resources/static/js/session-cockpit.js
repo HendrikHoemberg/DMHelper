@@ -409,7 +409,11 @@ function sessionCockpit(config) {
                     break;
                 case 'q':
                     event.preventDefault();
-                    document.querySelector('.quicknotes-form input')?.focus();
+                    if (window.cockpitLayout?.revealQuickNotesCapture) {
+                        window.cockpitLayout.revealQuickNotesCapture();
+                    } else {
+                        document.querySelector('.quicknotes-form input')?.focus();
+                    }
                     break;
                 case 'h':
                     event.preventDefault();

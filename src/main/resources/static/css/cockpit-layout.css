@@ -47,8 +47,54 @@ body:has(.session-cockpit) {
   gap: var(--space-sm);
   padding: 0 var(--space-md);
   overflow: visible;
+  container-type: inline-size;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-gold-soft);
+}
+
+.cockpit-topbar__title {
+  min-width: 0;
+  max-width: 18rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cockpit-topbar > .badge,
+.cockpit-topbar > .u-nowrap {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cockpit-topbar > .badge,
+.cockpit-topbar > label,
+.cockpit-topbar > button,
+.cockpit-topbar > details,
+.cockpit-topbar > .switch-control {
+  flex-shrink: 0;
+}
+
+.cockpit-topbar > label {
+  min-width: 0;
+}
+
+.cockpit-topbar > label .form-input {
+  min-width: 0;
+  max-width: 10rem;
+}
+
+.cockpit-topbar > button,
+.cockpit-topbar > details > summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@container (max-width: 70rem) {
+  .cockpit-topbar__date {
+    display: none;
+  }
 }
 
 .cockpit-commandbar .btn,

@@ -808,7 +808,7 @@
                                    :value="c.initiative ?? ''"
                                    :aria-label="'Initiative for ' + c.name"
                                    placeholder="Unset"
-                                   :disabled="setupBusy"
+                                   :disabled="setupBusy || setupSaveCount > 0"
                                    @change="saveSetupInitiative(c.id, $event.target.value)">
                         </li>
                     </template>

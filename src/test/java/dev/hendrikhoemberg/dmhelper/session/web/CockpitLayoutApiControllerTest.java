@@ -91,4 +91,16 @@ class CockpitLayoutApiControllerTest {
         verify(presets).update(eq(CUSTOM_ID), any());
         verify(presets).delete(CUSTOM_ID);
     }
+
+    @Test
+    void rejectsExplicitNullPresetBodies() throws Exception {
+        mvc.perform(post("/api/v1/cockpit-layout/presets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("null"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(put("/api/v1/cockpit-layout/presets/{id}", CUSTOM_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("null"))
+                .andExpect(status().isBadRequest());
+    }
 }

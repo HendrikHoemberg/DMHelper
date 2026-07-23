@@ -49,6 +49,7 @@
       this._splitterPointer = null;
       this.addDialog = document.getElementById('cockpitAddModuleDialog');
       this.addButton = document.getElementById('cockpitAddModuleButton');
+      this.bottomToggle = document.getElementById('cockpitBottomUtilityToggle');
       this.arrangeMenu = document.getElementById('cockpitModuleArrangeMenu');
       this.focusLayer = document.getElementById('cockpitFocusLayer');
       this.focusReturn = document.getElementById('cockpitFocusReturn');
@@ -85,6 +86,7 @@
 
       let startKey = this.readLastPreset() || this.config.defaultPresetKey || DEFAULT_KEY;
       if (!this.presets.has(startKey)) {
+        this.forgetKey('last-preset');
         startKey = DEFAULT_KEY;
       }
 
@@ -324,6 +326,16 @@
       if (this.addButton) {
         this.addButton.addEventListener('click', () => this.openAddModuleDialog());
       }
+      if (this.bottomToggle) {
+        this.bottomToggle.addEventListener('click', () => this.toggleBottomUtility());
+      }
+
+      document.addEventListener('click', (event) => {
+        const quickNotes = event.target.closest('[data-open-quick-notes]');
+        if (!quickNotes) return;
+        event.preventDefault();
+        this.revealQuickNotesCapture();
+      });
 
       if (this.addDialog) {
         this.addDialog.addEventListener('click', (event) => {
@@ -481,6 +493,12 @@
         const fallback = this.presets.get(key);
         if (!fallback) return false;
         return this.applyPreset(key, { skipDirtyCheck: true });
+      }
+
+      // Focus temporarily moves a live module shell outside its zone. Restore it
+      // before zone panels are rebuilt so a preset change cannot orphan that shell.
+      if (this.focusedModuleKey) {
+        this.restoreFocus({ silent: true });
       }
 
       const started = performance.now();
@@ -668,6 +686,11 @@
 
       const bottom = layout.zones?.BOTTOM_UTILITY;
       this.workbench.dataset.bottomCollapsed = bottom?.collapsed ? 'true' : 'false';
+      if (this.bottomToggle) {
+        const expanded = !bottom?.collapsed;
+        this.bottomToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        this.bottomToggle.textContent = expanded ? 'Hide utilities' : 'Show utilities';
+      }
 
       document.querySelectorAll('[data-module-key]').forEach((shell) => {
         const key = shell.getAttribute('data-module-key');
@@ -770,6 +793,21 @@
       this.emitAllVisibility();
     }
 
+    revealQuickNotesCapture() {
+      const zone = this.findModuleZone('story');
+      const input = document.querySelector(
+        '[data-module-key="story"] .quicknotes-form input'
+      );
+      if (!zone || !input) {
+        this.showNotice('Add the Story module to use quick-note capture.');
+        return false;
+      }
+      this.selectTab(zone, 'story');
+      input.scrollIntoView?.({ block: 'nearest' });
+      input.focus();
+      return document.activeElement === input;
+    }
+
     assertEditing() {
       if (this.workbench.dataset.layoutMode !== 'edit') {
         throw new Error('Layout changes require edit mode.');
@@ -834,6 +872,16 @@
       if (!keys.includes(zoneLayout.activeModuleKey)) {
         zoneLayout.activeModuleKey = keys[0] || null;
       }
+    }
+
+    toggleBottomUtility() {
+      this.prepareLayoutMutation();
+      const bottom = this.ensureZoneLayout('BOTTOM_UTILITY');
+      bottom.collapsed = !bottom.collapsed;
+      this.renderLayout();
+      this.persistDraft();
+      this.emitAllVisibility();
+      return !bottom.collapsed;
     }
 
     moveModule(key, targetZone, index) {
@@ -1654,9 +1702,62 @@
     maybeOfferDraftRecovery() {
       if (this._draftPromptShown) return;
       const draft = this.readJson('edit-draft');
-      if (!draft || !draft.layout || !draft.layout.zones) return;
+      if (!draft) return;
+      if (!this.isValidDraftLayout(draft.layout)) {
+        this.forgetKey('edit-draft');
+        return;
+      }
       this._draftPromptShown = true;
       this.showDraftRecovery(draft);
+    }
+
+    isValidDraftLayout(layout) {
+      if (!layout || typeof layout !== 'object' || layout.schemaVersion !== 1) return false;
+      if (typeof layout.name !== 'string'
+          || !layout.name.trim()
+          || layout.name.trim().length > 80) return false;
+      if (!layout.zones || typeof layout.zones !== 'object') return false;
+
+      const seen = new Set();
+      const placed = new Set();
+      for (const zone of ZONES) {
+        const zoneLayout = layout.zones[zone];
+        if (!zoneLayout || !Array.isArray(zoneLayout.moduleKeys)
+            || typeof zoneLayout.collapsed !== 'boolean') return false;
+        if (zone !== 'BOTTOM_UTILITY' && zoneLayout.collapsed) return false;
+        if (zone === 'PRIMARY' && zoneLayout.moduleKeys.length === 0) return false;
+
+        for (const key of zoneLayout.moduleKeys) {
+          const def = this.modules.get(key);
+          if (!def || seen.has(key) || !this.allowedZonesFor(def).includes(zone)) return false;
+          seen.add(key);
+          placed.add(key);
+        }
+        const active = zoneLayout.activeModuleKey;
+        if (zoneLayout.moduleKeys.length === 0) {
+          if (active != null) return false;
+        } else if (!zoneLayout.moduleKeys.includes(active)) {
+          return false;
+        }
+      }
+      if (Object.keys(layout.zones).some((zone) => !ZONES.includes(zone))) return false;
+
+      const ratios = layout.ratios;
+      const values = ratios && [ratios.left, ratios.primary, ratios.right, ratios.bottom];
+      if (!values || values.some((value) => !Number.isFinite(value))) return false;
+      if (Math.abs(ratios.left + ratios.primary + ratios.right - 1) > 0.001) return false;
+      if (ratios.primary < 0.5 || ratios.primary > 0.65) return false;
+      if (ratios.bottom < 0.16 || ratios.bottom > 0.4) return false;
+      if (ratios.left <= 0 || ratios.right <= 0) return false;
+
+      if (!Array.isArray(layout.compactModuleKeys)) return false;
+      const compact = new Set();
+      for (const key of layout.compactModuleKeys) {
+        const def = this.modules.get(key);
+        if (!def || !def.compactSupported || !placed.has(key) || compact.has(key)) return false;
+        compact.add(key);
+      }
+      return true;
     }
 
     showDraftRecovery(draft) {
@@ -1689,7 +1790,10 @@
      * draft vs preset; working layout (current) comes from the draft.
      */
     resumeDraft(draft) {
-      if (!draft || !draft.layout) return;
+      if (!draft || !this.isValidDraftLayout(draft.layout)) {
+        this.forgetKey('edit-draft');
+        return false;
+      }
       let presetKey = null;
       if (draft.presetKey && this.presets.has(draft.presetKey)) {
         presetKey = draft.presetKey;
@@ -1710,6 +1814,7 @@
       this.renderLayout();
       this.emitAllVisibility();
       this.enterEditMode({ preserveSnapshot: true });
+      return true;
     }
 
     async duplicatePreset() {

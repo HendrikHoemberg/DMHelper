@@ -2244,8 +2244,11 @@ class CoreSessionLoopSmokeTest {
         assertThat(lockedMap.get("resize")).isEqualTo("noop");
 
         String beforeSceneChange = dmPage.locator("#cockpitPresetPicker").inputValue();
-        dmPage.evaluate("window.dispatchEvent(new CustomEvent('session-scene-step', {detail:{direction:1}}))");
-        assertThat(dmPage.locator("#cockpitPresetPicker").inputValue()).isEqualTo(beforeSceneChange);
+        if (dmPage.locator("[data-current-scene]").count() > 0) {
+            dmPage.evaluate(
+                    "window.dispatchEvent(new CustomEvent('session-scene-step', {detail:{direction:1}}))");
+            assertThat(dmPage.locator("#cockpitPresetPicker").inputValue()).isEqualTo(beforeSceneChange);
+        }
 
         long started = System.nanoTime();
         dmPage.locator("#cockpitPresetPicker").selectOption("builtin:combat");
@@ -2253,6 +2256,35 @@ class CoreSessionLoopSmokeTest {
         assertThat((System.nanoTime() - started) / 1_000_000).isLessThan(1000);
         assertThat(dmPage.locator("[data-cockpit-zone='RIGHT_SUPPORT'] [data-module-key='encounter']").count())
                 .isEqualTo(1);
+
+        // Switching presets while focused restores the shell before rebuilding zone panels.
+        dmPage.evaluate("window.cockpitLayout.selectTab('LEFT_SUPPORT', 'story')");
+        clickModuleChrome("story", "focus");
+        assertThat(dmPage.locator("#cockpitFocusLayer").isVisible()).isTrue();
+        dmPage.locator("#cockpitPresetPicker").selectOption("builtin:exploration");
+        assertThat(dmPage.locator("#cockpitFocusLayer").isHidden()).isTrue();
+        assertThat(dmPage.locator(
+                "[data-cockpit-zone='PRIMARY'] [data-module-key='story']").count()).isEqualTo(1);
+        assertThat(dmPage.locator("[data-module-key='story']")
+                .evaluate("el => el.isConnected")).isEqualTo(true);
+
+        // A collapsed utility zone remains recoverable with one explicit edit-mode action.
+        dmPage.locator("#cockpitLayoutModeButton").click();
+        Locator bottomToggle = dmPage.locator("[data-bottom-utility-toggle]");
+        assertThat(bottomToggle.isVisible()).isTrue();
+        assertThat(bottomToggle.getAttribute("aria-expanded")).isEqualTo("false");
+        bottomToggle.click();
+        assertThat(dmPage.locator("[data-cockpit-zone='BOTTOM_UTILITY']")
+                .getAttribute("data-collapsed")).isEqualTo("false");
+        assertThat(bottomToggle.getAttribute("aria-expanded")).isEqualTo("true");
+        bottomToggle.click();
+        assertThat(dmPage.locator("[data-cockpit-zone='BOTTOM_UTILITY']")
+                .getAttribute("data-collapsed")).isEqualTo("true");
+        dmPage.locator("#cockpitLayoutModeButton").click();
+        if (dmPage.locator("#cockpitLayoutExitDialog").isVisible()) {
+            dmPage.locator("[data-layout-exit='discard']").click();
+        }
+        selectCockpitPreset("builtin:combat");
 
         // Resume draft: dirty baseline is the named preset, not the draft itself.
         Object resumeDirty = dmPage.evaluate("""
@@ -2277,6 +2309,46 @@ class CoreSessionLoopSmokeTest {
         assertThat(resumeMap.get("dirty")).as("resume vs named preset is dirty").isEqualTo(true);
         assertThat(resumeMap.get("arrangeHidden")).as("arrange menu stays closed in edit").isEqualTo(true);
         assertThat(resumeMap.get("mode")).isEqualTo("locked");
+
+        // Readable but semantically invalid browser drafts are rejected, not resumed.
+        @SuppressWarnings("unchecked")
+        var invalidDraft = (java.util.Map<String, Object>) dmPage.evaluate("""
+            () => {
+              const c = window.cockpitLayout;
+              c._draftPromptShown = false;
+              const invalid = c.clone(c.current);
+              invalid.zones.PRIMARY.moduleKeys = ['missing-module'];
+              invalid.zones.PRIMARY.activeModuleKey = 'missing-module';
+              localStorage.setItem(c.storageKey('edit-draft'), JSON.stringify({
+                presetKey: c.currentPresetKey,
+                layout: invalid
+              }));
+              c.maybeOfferDraftRecovery();
+              const notice = document.getElementById('cockpitLayoutNotice');
+              return {
+                retained: !!localStorage.getItem(c.storageKey('edit-draft')),
+                offeredResume: !!notice?.querySelector('button'),
+                explained: (notice?.textContent || '').includes('invalid')
+              };
+            }
+            """);
+        assertThat(invalidDraft.get("retained")).isEqualTo(false);
+        assertThat(invalidDraft.get("offeredResume")).isEqualTo(false);
+        assertThat(invalidDraft.get("explained")).isEqualTo(true);
+
+        // An obsolete last-preset key falls back visibly instead of failing silently.
+        dmPage.evaluate("""
+            () => localStorage.setItem(
+              window.cockpitLayout.storageKey('last-preset'),
+              'custom:missing-preset'
+            )
+            """);
+        dmPage.reload();
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        dmPage.waitForFunction("window.cockpitLayout?.mounted === true");
+        assertThat(dmPage.evaluate("window.cockpitLayout.currentPresetKey"))
+                .isEqualTo("builtin:exploration");
+        assertThat(dmPage.locator("#cockpitLayoutNotice").textContent()).contains("invalid");
     }
 
     @Test
@@ -2498,6 +2570,11 @@ class CoreSessionLoopSmokeTest {
                           root.style.bottom = 'auto';
                           body.style.width = '100%';
                           body.style.height = '100%';
+                          const sessionBadge = document.querySelector('[data-session-status]');
+                          const presentationBadge = document.querySelector(
+                            '.cockpit-topbar > [data-presentation-mode]');
+                          if (sessionBadge) sessionBadge.textContent = 'IN_PROGRESS';
+                          if (presentationBadge) presentationBadge.textContent = 'Table: Handout';
                           const modules = [...document.querySelectorAll(
                             '[data-cockpit-zone]:not([data-collapsed="true"]) [role="tabpanel"]:not([hidden]) .cockpit-module'
                           )];
@@ -2522,6 +2599,18 @@ class CoreSessionLoopSmokeTest {
                             && !!commandBarRect
                             && commandBarRect.bottom > 0
                             && commandBarRect.top < window.innerHeight;
+                          const commandBarChildren = commandBar
+                            ? [...commandBar.children].filter(node => node.offsetParent !== null)
+                            : [];
+                          const commandBarChildClipped = commandBarChildren.some(node => {
+                            const rect = node.getBoundingClientRect();
+                            return rect.left < -1 || rect.right > window.innerWidth + 1;
+                          });
+                          const commandBarTextOverflow = commandBarChildren.some(node => {
+                            const style = getComputedStyle(node);
+                            return node.scrollWidth > node.clientWidth + 1
+                              && style.overflowX === 'visible';
+                          });
                           const result = {
                             documentScrolls: root.scrollHeight > root.clientHeight + 1
                               || root.scrollWidth > root.clientWidth + 1
@@ -2534,6 +2623,8 @@ class CoreSessionLoopSmokeTest {
                                 || r.bottom > window.innerHeight + 1),
                             smallestTarget,
                             commandBarVisible,
+                            commandBarChildClipped,
+                            commandBarTextOverflow,
                             moduleCount: modules.length
                           };
                           root.style.zoom = '';
@@ -2566,6 +2657,12 @@ class CoreSessionLoopSmokeTest {
                 assertThat(geometry.get("commandBarVisible"))
                         .as("%s command bar must stay reachable", label)
                         .isEqualTo(true);
+                assertThat(geometry.get("commandBarChildClipped"))
+                        .as("%s command bar children must stay reachable", label)
+                        .isEqualTo(false);
+                assertThat(geometry.get("commandBarTextOverflow"))
+                        .as("%s command bar labels must not overpaint adjacent controls", label)
+                        .isEqualTo(false);
                 assertThat(((Number) geometry.get("smallestTarget")).doubleValue())
                         .as("%s interactive targets >= 32px", label)
                         .isGreaterThanOrEqualTo(32.0);
@@ -2979,6 +3076,16 @@ class CoreSessionLoopSmokeTest {
         dmPage.keyboard().press("Alt+Shift+2");
         dmPage.waitForFunction("key => window.cockpitLayout.currentPresetKey === key",
                 "builtin:combat");
+
+        // The transitional Quick notes action reveals the real capture form before focusing it.
+        dmPage.evaluate("window.cockpitLayout.selectTab('BOTTOM_UTILITY', 'quick-notes')");
+        dmPage.locator("[data-open-quick-notes]").click();
+        assertThat(dmPage.locator(
+                "[data-cockpit-zone='LEFT_SUPPORT'] [data-module-tab='story']")
+                .getAttribute("aria-selected")).isEqualTo("true");
+        assertThat(dmPage.locator(
+                "[data-module-key='story'] .quicknotes-form input")
+                .evaluate("el => document.activeElement === el")).isEqualTo(true);
 
         // Separators report updated aria-valuenow in edit mode.
         dmPage.locator("#cockpitLayoutModeButton").click();

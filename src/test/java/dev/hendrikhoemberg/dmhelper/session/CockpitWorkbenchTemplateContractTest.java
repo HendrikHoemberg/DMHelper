@@ -145,6 +145,11 @@ class CockpitWorkbenchTemplateContractTest {
                     assertThat(el.attr("aria-disabled")).isEqualTo("true");
                 });
         assertThat(document.select("#cockpitFocusReturn")).hasSize(1);
+        assertThat(document.select("[data-bottom-utility-toggle]")).singleElement()
+                .satisfies(el -> {
+                    assertThat(el.hasAttr("hidden")).isTrue();
+                    assertThat(el.attr("aria-expanded")).isEqualTo("false");
+                });
         assertThat(document.select("#cockpitAddModuleDialog")).hasSize(1);
         assertThat(document.select("#cockpitLayoutExitDialog")).hasSize(1);
         assertThat(document.select("#cockpitPresetNameDialog")).hasSize(1);

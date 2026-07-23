@@ -40,9 +40,12 @@
       @cockpit-encounter-ended.window="refreshRails()"
       @keydown.window="handleKeyboard($event)">
   <header class="cockpit-topbar">
-    <h1 style="font-family: var(--font-display); font-size: var(--text-lg); margin: 0;" th:text="${workspace.campaign.name}">Campaign</h1>
+    <h1 class="cockpit-topbar__title"
+        style="font-family: var(--font-display); font-size: var(--text-lg); margin: 0;"
+        th:text="${workspace.campaign.name}">Campaign</h1>
     <span class="badge" x-text="sessionStatus" th:attr="data-session-status=${workspace.session.status}">IDLE</span>
-    <span class="u-nowrap" th:text="${@calendarService.formatDate(campaignId, workspace.currentDate)}">12 July 1492</span>
+    <span class="u-nowrap cockpit-topbar__date"
+          th:text="${@calendarService.formatDate(campaignId, workspace.currentDate)}">12 July 1492</span>
     <span class="badge" th:attr="data-presentation-mode=${workspace.session.presentationMode}"
           :data-presentation-mode="presentationMode"
           x-text="presentationMode === 'CURTAIN' ? 'Table: Curtain' : (presentationMode === 'MAP' ? 'Table: Map' : 'Table: Handout')">
@@ -59,7 +62,7 @@
       </select>
     </label>
     <details id="cockpitPresetOverflow" class="cockpit-preset-overflow" hidden>
-      <summary class="btn btn-ghost">Preset actions</summary>
+      <summary class="btn btn-ghost" aria-label="Preset actions">Preset</summary>
       <div class="cockpit-preset-overflow__panel" role="menu" aria-label="Preset actions">
         <button type="button" class="btn btn-ghost" role="menuitem"
                 data-preset-action="duplicate" disabled aria-disabled="true">Duplicate preset</button>
@@ -75,6 +78,10 @@
             disabled aria-disabled="true">Edit layout</button>
     <button type="button" id="cockpitAddModuleButton" class="btn btn-ghost"
             data-layout-edit-only hidden disabled aria-disabled="true">Add module</button>
+    <button type="button" id="cockpitBottomUtilityToggle" class="btn btn-ghost"
+            data-bottom-utility-toggle data-layout-edit-only hidden disabled
+            aria-disabled="true" aria-expanded="false"
+            aria-controls="cockpitBottomUtility">Show utilities</button>
     <span style="flex: 1"></span>
     <button class="btn btn-ghost" @click="openSearch()">Search</button>
     <button class="btn btn-ghost" @click="openDice()">Dice</button>
