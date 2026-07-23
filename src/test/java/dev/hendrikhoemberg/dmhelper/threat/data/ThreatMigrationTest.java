@@ -41,16 +41,16 @@ class ThreatMigrationTest {
     }
 
     @Test
-    void flywayReportsTwentyMigrations() {
+    void flywayReportsTwentyOneMigrations() {
         // Count only versioned migrations (exclude SCHEMA/BASELINE marker rows if present).
         Integer count = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"success\" = TRUE AND \"version\" IS NOT NULL",
                 Integer.class);
-        assertThat(count).isEqualTo(20);
+        assertThat(count).isEqualTo(21);
         String current = jdbc.queryForObject(
                 "SELECT \"version\" FROM \"flyway_schema_history\" WHERE \"success\" = TRUE ORDER BY \"installed_rank\" DESC FETCH FIRST 1 ROWS ONLY",
                 String.class);
-        assertThat(current).isEqualTo("20");
+        assertThat(current).isEqualTo("21");
     }
 
     @Test

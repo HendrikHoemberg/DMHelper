@@ -109,25 +109,22 @@ class EncounterWaveServiceTest {
         var reserveC = service.addFromLibrary(enc.id(), new EncounterService.AddFromLibraryRequest(
                 wolf.getId(), 1, "Wolf C", reserve.id(), null, null, null)).getFirst();
 
-        // Set initiatives: mainB=20 (first), mainA=5 (second)
+        // The reserve sorts before both active-wave combatants globally, but must not
+        // become the current turn merely because its wave is spawned.
         service.setInitiative(mainB.id(), 20);
         service.setInitiative(mainA.id(), 5);
-        // Reserve wolf has unset initiative — accept with true
-        service.startCombat(enc.id(), true);
+        service.setInitiative(reserveC.id(), 30);
+        service.startCombat(enc.id(), false);
         assertThat(service.getById(enc.id()).activeTurnIndex()).isEqualTo(0);
         assertThat(service.getCombatants(enc.id()).get(0).name()).isEqualTo("Wolf B");
 
-        // Set reserve initiative to 15 so it inserts between B and A
-        service.setInitiative(reserveC.id(), 15);
         service.spawnWave(enc.id(), reserve.id());
 
         var afterSpawn = service.getById(enc.id());
         assertThat(afterSpawn.combatPhase()).isEqualTo("RUNNING");
-        // After spawn: sorted order should be Wolf B (20), Wolf C (15), Wolf A (5)
         var combatants = service.getCombatants(enc.id());
         assertThat(combatants).extracting(EncounterService.CombatantDto::name)
-                .containsExactly("Wolf B", "Wolf C", "Wolf A");
-        // Active turn index should still point to Wolf B
+                .containsExactly("Wolf C", "Wolf B", "Wolf A");
         assertThat(combatants.get(afterSpawn.activeTurnIndex()).id()).isEqualTo(mainB.id());
     }
 

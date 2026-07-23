@@ -193,7 +193,10 @@ public class EncounterApiController {
         return service.startCombat(id, request.acceptUnset());
     }
 
-    @GetMapping("/encounters/{id}/setup-combatants")
+    @GetMapping({
+            "/encounters/{id}/initiative-setup/combatants",
+            "/encounters/{id}/setup-combatants"
+    })
     public List<CombatantDto> getSetupCombatants(@PathVariable UUID id) {
         return service.getInitiativeSetupCombatants(id);
     }

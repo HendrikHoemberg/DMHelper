@@ -599,6 +599,34 @@ class EncounterServiceTest {
     }
 
     @Test
+    void undoPreservesTheMaximumRetainedLogSequenceWhenHistoryHasGaps() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Gapped Log", null));
+        service.activate(enc.id());
+        CombatantDto combatant = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("A", 10, "NPC", null, null, null));
+        service.applyDamage(combatant.id(), 1);
+
+        var log = combatLogRepo.findByEncounterIdOrderBySequenceAsc(enc.id());
+        log.get(1).setSequence(4);
+        log.get(2).setSequence(5);
+        combatLogRepo.saveAll(log);
+        Encounter encounter = em.find(Encounter.class, enc.id());
+        encounter.setLogSequence(5);
+        em.flush();
+        em.clear();
+
+        service.undo(enc.id());
+        service.setInitiative(combatant.id(), 12);
+
+        var afterUndo = combatLogRepo.findByEncounterIdOrderBySequenceAsc(enc.id());
+        assertThat(afterUndo).extracting(CombatLogEntry::getSequence)
+                .doesNotHaveDuplicates()
+                .isSorted();
+        assertThat(em.find(Encounter.class, enc.id()).getLogSequence())
+                .isEqualTo(afterUndo.getLast().getSequence());
+    }
+
+    @Test
     void undoDoesNotDiscardInitiativeBasedReordering() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         service.activate(enc.id());

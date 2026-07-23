@@ -186,10 +186,19 @@ class EncounterApiControllerTest {
         UUID encId = UUID.randomUUID();
         when(service.getInitiativeSetupCombatants(encId)).thenReturn(List.of());
 
-        mockMvc.perform(get("/api/v1/encounters/{id}/setup-combatants", encId))
+        mockMvc.perform(get("/api/v1/encounters/{id}/initiative-setup/combatants", encId))
                 .andExpect(status().isOk());
 
         verify(service).getInitiativeSetupCombatants(encId);
+    }
+
+    @Test
+    void legacySetupCombatantsRouteRemainsAvailable() throws Exception {
+        UUID encId = UUID.randomUUID();
+        when(service.getInitiativeSetupCombatants(encId)).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/v1/encounters/{id}/setup-combatants", encId))
+                .andExpect(status().isOk());
     }
 
     @Test

@@ -3,12 +3,15 @@ package dev.hendrikhoemberg.dmhelper.common.config;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Guards the failure mode that made the first Flyway attempt look broken: on Spring Boot 4,
@@ -389,7 +392,35 @@ class FlywayMigrationTest {
                 WHERE table_name = 'COMBATANT'
                   AND column_name = 'INITIATIVE'
                   AND is_nullable = 'YES'
+            """, Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void combatPhaseIsRestrictedToKnownDomainValues() {
+        assertThat(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.table_constraints
+                WHERE table_name = 'ENCOUNTER'
+                  AND constraint_name = 'CK_ENCOUNTER_COMBAT_PHASE'
+                  AND constraint_type = 'CHECK'
                 """, Integer.class)).isEqualTo(1);
+
+        UUID campaignId = UUID.randomUUID();
+        UUID encounterId = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO campaign (milestone_leveling, created_at, id, name)
+                VALUES (FALSE, CURRENT_TIMESTAMP, ?, 'Constraint Test')
+                """, campaignId);
+        try {
+            assertThatThrownBy(() -> jdbc.update("""
+                    INSERT INTO encounter (
+                        active_turn_index, lair_action_triggered, round, log_sequence,
+                        campaign_id, id, name, status, combat_phase
+                    ) VALUES (-1, FALSE, 0, 0, ?, ?, 'Invalid Phase', 'PLANNED', 'INVALID')
+                    """, campaignId, encounterId))
+                    .isInstanceOf(DataIntegrityViolationException.class);
+        } finally {
+            jdbc.update("DELETE FROM campaign WHERE id = ?", campaignId);
+        }
     }
 
     @Test

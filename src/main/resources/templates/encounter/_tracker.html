@@ -46,6 +46,7 @@
             spawnError: '',
             acceptUnset: false,
             setupBusy: false,
+            setupSaveCount: 0,
 
             request(url, options = {}) {
                 return window.dmRequest(url, options);
@@ -236,7 +237,7 @@
                 if (!this._encounterId) return;
                 try {
                     const combatantUrl = this.inInitiativeSetup
-                        ? `/api/v1/encounters/${this._encounterId}/setup-combatants`
+                        ? `/api/v1/encounters/${this._encounterId}/initiative-setup/combatants`
                         : `/api/v1/encounters/${this._encounterId}/combatants`;
                     const resp = await this.request(combatantUrl);
                     const before = this._capturePositions();
@@ -427,11 +428,17 @@
             async saveSetupInitiative(combatantId, rawValue) {
                 const initiative = rawValue === '' ? null : Number(rawValue);
                 if (initiative !== null && !Number.isInteger(initiative)) return;
-                await this.setInitiative(combatantId, initiative);
+                this.setupSaveCount += 1;
+                try {
+                    await this.setInitiative(combatantId, initiative);
+                } finally {
+                    this.setupSaveCount -= 1;
+                }
             },
 
             async rollUnsetNpcs() {
-                if (!this._encounterId || this.unsetNpcCount === 0) return;
+                if (!this._encounterId || this.unsetNpcCount === 0
+                    || this.setupSaveCount > 0) return;
                 this.setupBusy = true;
                 try {
                     await this.mutate(
@@ -448,7 +455,8 @@
             },
 
             async startCombat() {
-                if (!this._encounterId || !this.canStartCombat) return;
+                if (!this._encounterId || !this.canStartCombat
+                    || this.setupSaveCount > 0) return;
                 this.setupBusy = true;
                 try {
                     await this.mutate(
@@ -777,7 +785,7 @@
                     </div>
                     <button type="button"
                             class="btn btn-ghost btn-xs"
-                            :disabled="setupBusy || unsetNpcCount === 0"
+                            :disabled="setupBusy || setupSaveCount > 0 || unsetNpcCount === 0"
                             @click="rollUnsetNpcs()">
                         Roll unset NPCs
                     </button>
@@ -800,6 +808,7 @@
                                    :value="c.initiative ?? ''"
                                    :aria-label="'Initiative for ' + c.name"
                                    placeholder="Unset"
+                                   :disabled="setupBusy"
                                    @change="saveSetupInitiative(c.id, $event.target.value)">
                         </li>
                     </template>
@@ -819,7 +828,7 @@
                 <button type="button"
                         class="btn btn-primary"
                         data-action="start-combat"
-                        :disabled="setupBusy || !canStartCombat"
+                        :disabled="setupBusy || setupSaveCount > 0 || !canStartCombat"
                         @click="startCombat()">
                     Start combat
                 </button>

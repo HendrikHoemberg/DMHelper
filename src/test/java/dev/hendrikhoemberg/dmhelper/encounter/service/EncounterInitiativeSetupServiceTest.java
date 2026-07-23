@@ -195,6 +195,16 @@ class EncounterInitiativeSetupServiceTest {
     }
 
     @Test
+    void turnEndpointsKeepLifecycleErrorsDistinctFromSetupConflicts() {
+        EncounterDto planned = service.create(campaign.getId(), new CreateRequest("Still planned", null));
+        add(planned.id(), "Fighter", "PC");
+
+        assertThatThrownBy(() -> service.nextTurn(planned.id()))
+                .isInstanceOf(IllegalStateException.class)
+                .isNotInstanceOf(InitiativeSetupIncompleteException.class);
+    }
+
+    @Test
     void orderingPlacesUnsetLastAndPreservesZeroAndNegative() {
         EncounterDto enc = activeEncounter("Ordering");
         CombatantDto unset = add(enc.id(), "Unset", "PC");
@@ -231,18 +241,64 @@ class EncounterInitiativeSetupServiceTest {
     }
 
     @Test
+    void manuallyReorderingDuringCombatPreservesActiveCombatantIdentity() {
+        EncounterDto enc = activeEncounter("Manual Reorder During Combat");
+        CombatantDto a = add(enc.id(), "A", "PC");
+        CombatantDto b = add(enc.id(), "B", "PC");
+
+        service.setInitiative(a.id(), 20);
+        service.setInitiative(b.id(), 10);
+        service.startCombat(enc.id(), false);
+
+        service.reorderCombatants(enc.id(), List.of(b.id(), a.id()));
+
+        EncounterDto reordered = service.getById(enc.id());
+        UUID activeId = service.getCombatants(enc.id()).get(reordered.activeTurnIndex()).id();
+        assertThat(activeId).isEqualTo(a.id());
+    }
+
+    @Test
+    void undoAfterMidCombatInitiativeChangePreservesActiveCombatantIdentity() {
+        EncounterDto enc = activeEncounter("Undo Reorder During Combat");
+        CombatantDto a = add(enc.id(), "A", "PC");
+        CombatantDto b = add(enc.id(), "B", "PC");
+        service.setInitiative(a.id(), 20);
+        service.setInitiative(b.id(), 10);
+        service.startCombat(enc.id(), false);
+
+        service.setInitiative(b.id(), 25);
+        service.applyDamage(a.id(), 1);
+        service.undo(enc.id());
+
+        EncounterDto restored = service.getById(enc.id());
+        UUID activeId = service.getCombatants(enc.id()).get(restored.activeTurnIndex()).id();
+        assertThat(activeId).isEqualTo(a.id());
+    }
+
+    @Test
     void nullableInitiativeRoundTripsThroughUndoEvidence() {
         EncounterDto enc = activeEncounter("Undo Init");
         CombatantDto pc = add(enc.id(), "Hero", "PC");
 
         service.setInitiative(pc.id(), 0);
         service.setInitiative(pc.id(), null);
-        // Undo removes the last log entry (SORT_ORDER), but the INITIATIVE_SET(null) is still replayed
-        // so initiative remains null after undo
         service.undo(enc.id());
 
-        // After undoing the SORT_ORDER, the INITIATIVE_SET(null) replay still applies
-        // and initiative is null. The test verifies null round-trips through the undo log correctly.
-        assertThat(service.getCombatant(pc.id()).initiative()).isNull();
+        assertThat(service.getCombatant(pc.id()).initiative()).isZero();
+    }
+
+    @Test
+    void undoingCombatStartReturnsToRoundZeroSetup() {
+        EncounterDto enc = activeEncounter("Undo Start");
+        CombatantDto pc = add(enc.id(), "Hero", "PC");
+        service.setInitiative(pc.id(), 12);
+        service.startCombat(enc.id(), false);
+
+        service.undo(enc.id());
+
+        EncounterDto setup = service.getById(enc.id());
+        assertThat(setup.combatPhase()).isEqualTo("SETUP");
+        assertThat(setup.round()).isZero();
+        assertThat(setup.activeTurnIndex()).isEqualTo(-1);
     }
 }
