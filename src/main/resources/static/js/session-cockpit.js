@@ -180,7 +180,7 @@ function sessionCockpit(config) {
                         body: JSON.stringify({ sceneId }),
                 });
                 await resp.json();
-                await this.refreshRails();
+                this.refreshModules(['story'], 'scene-selected');
             } catch (error) {
                 window.reportActionFailure('Could not set the current scene.', error,
                     () => this.setCurrentScene(sceneId));
@@ -195,7 +195,7 @@ function sessionCockpit(config) {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ direction }),
                     });
-                await this.refreshRails();
+                this.refreshModules(['story'], 'scene-stepped');
             } catch (error) {
                 window.reportActionFailure('Could not step the scene.', error,
                     () => this.stepScene(direction));
@@ -586,7 +586,7 @@ function sessionCockpit(config) {
         async activateEncounter(id) {
             try {
                 await this.request(`/api/v1/encounters/${id}/activate`, { method: 'POST' });
-                await this.refreshRails();
+                this.refreshModules(['story', 'encounter'], 'encounter-activated');
             } catch (error) {
                 this.failure('Could not activate the encounter.', error,
                     () => this.activateEncounter(id));
@@ -875,7 +875,7 @@ function sessionCockpit(config) {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ transitionId }),
                     });
-                await this.refreshRails();
+                this.refreshModules(['story'], 'transition-followed');
             } catch (error) {
                 window.reportActionFailure('Could not follow the transition.', error,
                     () => this.followTransition(transitionId));
@@ -891,7 +891,7 @@ function sessionCockpit(config) {
                     `/api/v1/campaigns/${this.campaignId}/session/scenes/${sceneId}/seed-encounter`,
                     { method: 'POST' });
                 result = await response.json();
-                await this.refreshRails();
+                this.refreshModules(['story', 'encounter'], 'encounter-seeded');
                 const skipped = result.skippedParticipants || [];
                 const message = result.alreadyExisted
                     ? `${result.encounterName} was already linked.`
@@ -903,8 +903,8 @@ function sessionCockpit(config) {
             } catch (error) {
                 if (result) {
                     window.reportActionFailure(
-                        `${result.encounterName} was created, but the cockpit rails could not refresh.`,
-                        error, () => this.refreshRails());
+                        `${result.encounterName} was created, but the cockpit modules could not refresh.`,
+                        error, () => this.refreshModules(['story', 'encounter'], 'encounter-seeded'));
                 } else {
                     window.reportActionFailure(
                         'Could not create the scene encounter.', error,
@@ -915,19 +915,12 @@ function sessionCockpit(config) {
             }
         },
 
-        async refreshRails() {
-            const cid = this.campaignId;
-            const storyUrl = `/campaigns/${cid}/session/rails/story`;
-            const encounterUrl = `/campaigns/${cid}/session/rails/encounter`;
-            const [storyHtml, encounterHtml] = await Promise.all([
-                this.request(storyUrl).then(r => r.text()),
-                this.request(encounterUrl).then(r => r.text())
-            ]);
-            const storyEl = document.querySelector('.cockpit-story');
-            const encEl = document.querySelector('.cockpit-encounter');
-            if (storyEl) storyEl.innerHTML = storyHtml;
-            if (encEl) encEl.innerHTML = encounterHtml;
-            window.dispatchEvent(new CustomEvent('cockpit-rails-refreshed'));
+        refreshModules(keys, reason) {
+            for (const moduleKey of keys) {
+                window.dispatchEvent(new CustomEvent('cockpit:module-refresh', {
+                    detail: { moduleKey, reason }
+                }));
+            }
         },
 
         async setObjectiveStatus(objectiveId, status) {

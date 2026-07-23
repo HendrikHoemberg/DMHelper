@@ -1,155 +1,114 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<th:block th:fragment="story(workspace)">
+<th:block th:fragment="story(view, mode, campaignId)">
 <div class="story-rail-inner">
   <div class="sidebar-section">
     <h3>Story</h3>
-    <th:block th:if="${workspace.currentScene != null}">
-      <th:block th:replace="~{session/_scene-picker :: scenePicker(campaignId=${workspace.campaign.id}, currentSceneId=${workspace.currentScene.id})}"></th:block>
-      <div class="scene-card" data-current-scene>
-        <span class="scene-status-badge" th:text="${#enums.label(workspace.currentScene.status)}">UNVISITED</span>
-        <h4 th:text="${workspace.currentScene.title}">Scene Title</h4>
-        <span class="scene-key" th:if="${workspace.currentScene.sceneKey}" th:text="${workspace.currentScene.sceneKey}">key</span>
-        <div class="scene-summary" data-screen-sensitive th:if="${workspace.currentScene.summary}"
-             th:text="${workspace.currentScene.summary}">Scene summary</div>
-        <div class="scene-body" data-screen-sensitive th:if="${workspace.currentScene.body}" th:text="${workspace.currentScene.body}">Scene notes</div>
-        <div class="scene-editorial">
-          <button class="btn btn-ghost" th:if="${workspace.previousScene != null}"
-                  @click="stepScene(-1)" title="Previous scene">&larr; Prev</button>
-          <button class="btn btn-ghost" th:if="${workspace.nextScene != null}"
-                  @click="stepScene(1)" title="Next scene">Next &rarr;</button>
+    <div class="scene-card" data-current-scene>
+      <h4 th:text="${view.title}">Scene Title</h4>
+      <th:block th:if="${view.readAloud != null}">
+        <div class="structured-block structured-read-aloud u-mb-xs">
+          <span class="badge badge-info">Read Aloud</span>
+          <p th:text="${view.readAloud}">Read aloud text</p>
         </div>
-        <div class="scene-actions" th:if="${workspace.currentScene != null}">
-          <a class="btn btn-ghost" target="_blank"
-             th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${workspace.campaign.id},aid=${workspace.currentScene.chapter.adventure.id},sid=${workspace.currentScene.id})}"
-             title="Open scene details">Open</a>
-          <button class="btn btn-ghost"
-                  th:if="${workspace.currentScene.map != null}"
-                  th:attr="data-map-id=${workspace.currentScene.map.id}"
-                  @click="switchMap($el.dataset.mapId)"
-                  title="Switch to scene map">Map</button>
-          <button class="btn btn-ghost"
-                  th:if="${workspace.currentScene.map != null}"
-                  th:attr="data-map-id=${workspace.currentScene.map.id}"
-                  @click="sendToTableWithMap($el.dataset.mapId)"
-                  title="Present scene map">Present map</button>
-          <button class="btn btn-primary"
-                  th:if="${workspace.currentScene.encounter == null and canSeedEncounter}"
-                  th:attr="data-scene-id=${workspace.currentScene.id}"
-                  :disabled="seedingSceneEncounter"
-                  :aria-busy="seedingSceneEncounter"
-                  @click="seedCurrentScene($el.dataset.sceneId)">
-            <span x-text="seedingSceneEncounter ? 'Creating encounter…' : 'Start encounter from this scene'">
-              Start encounter from this scene
-            </span>
-          </button>
-        </div>
-        <div class="scene-links">
-          <span th:if="${workspace.currentScene.map != null}">
-            Map: <span th:text="${workspace.currentScene.map.name}">Map name</span>
-          </span>
-          <span th:if="${workspace.currentScene.encounter != null}">
-            Encounter: <span th:text="${workspace.currentScene.encounter.name}">Encounter name</span>
-          </span>
-          <span th:if="${!workspace.currentScene.statBlocks.isEmpty()}">
-            Statblocks: <span th:text="${#lists.size(workspace.currentScene.statBlocks)} + ' linked'"></span>
-          </span>
-          <span th:if="${!workspace.currentScene.handouts.isEmpty()}">
-            Handouts: <span th:text="${#lists.size(workspace.currentScene.handouts)} + ' linked'"></span>
-          </span>
-        </div>
-        <!-- Structured scene content -->
-        <div th:if="${workspace.structuredSceneView != null}" class="scene-structured-content u-mt-sm">
-          <!-- Read-aloud sections -->
-          <div th:each="section : ${workspace.structuredSceneView.sections}"
-               th:if="${section.kind.name() == 'READ_ALOUD'}"
-               class="structured-block structured-read-aloud u-mb-xs">
-            <span class="badge badge-info">Read Aloud</span>
-            <p th:text="${section.body}">Read aloud text</p>
+      </th:block>
+      <th:block th:if="${view.sections != null and !view.sections.isEmpty() and mode.name() != 'COMPACT'}">
+        <div th:each="section : ${view.sections}" class="structured-block u-mb-xs" data-screen-sensitive>
+          <span class="badge" th:text="${section.kind}">SECTION</span>
+          <strong th:text="${section.label}">Label</strong>
+          <p class="u-text-sm" th:text="${section.body}">Body</p>
+          <div th:if="${view.sectionThreatCards != null and view.sectionThreatCards[section.id] != null}"
+               class="u-mt-xs"
+               th:with="card=${view.sectionThreatCards[section.id]}">
+            <th:block th:if="${card.trap != null}">
+              <th:block th:replace="~{threat/_mechanics-card :: mechanics-card(threat=${card.trap}, kind=${card.kind})}"></th:block>
+            </th:block>
+            <th:block th:if="${card.hazard != null}">
+              <th:block th:replace="~{threat/_mechanics-card :: mechanics-card(threat=${card.hazard}, kind=${card.kind})}"></th:block>
+            </th:block>
           </div>
-          <!-- DM sections -->
-          <div th:each="section : ${workspace.structuredSceneView.sections}"
-               th:if="${section.kind.name() != 'READ_ALOUD'}"
-               class="structured-block structured-dm u-mb-xs" data-screen-sensitive>
-            <span class="badge" th:text="${#enums.label(section.kind)}">SECTION</span>
-            <strong th:text="${section.label}">Label</strong>
-            <p class="u-text-sm" th:text="${section.body}">Body</p>
-            <div th:if="${section.threatId != null
-                         and workspace.structuredSceneView.sectionThreatCards != null
-                         and workspace.structuredSceneView.sectionThreatCards[section.id] != null}"
-                 class="u-mt-xs"
-                 th:with="card=${workspace.structuredSceneView.sectionThreatCards[section.id]}">
-              <!-- Nest th:if outside th:replace: replace has higher precedence than if. -->
-              <th:block th:if="${card.trap != null}">
-                <th:block th:replace="~{threat/_mechanics-card :: mechanics-card(threat=${card.trap}, kind=${card.kind})}"></th:block>
-              </th:block>
-              <th:block th:if="${card.hazard != null}">
-                <th:block th:replace="~{threat/_mechanics-card :: mechanics-card(threat=${card.hazard}, kind=${card.kind})}"></th:block>
-              </th:block>
+        </div>
+      </th:block>
+      <th:block th:if="${view.participants != null and !view.participants.isEmpty() and mode.name() != 'COMPACT'}">
+        <div class="scene-participants u-mt-sm" data-screen-sensitive>
+          <h5 class="u-text-sm">Participants</h5>
+          <div th:each="p : ${view.participants}" class="participant-row u-mb-xs">
+            <strong th:text="${p.displayName}">Name</strong>
+            <span class="badge" th:if="${p.quantity > 1}" th:text="|x${p.quantity}|">Qty</span>
+            <span class="badge" th:if="${p.disposition != null}" th:text="${p.disposition}">Disp</span>
+            <div th:if="${p.statBlockName != null}" class="participant-statblock">
+              <span th:text="${p.statBlockName}">Statblock</span>
+              <span class="u-text-xs" th:if="${p.statBlockAc != null}" th:text="|AC ${p.statBlockAc}|">AC</span>
+              <span class="u-text-xs" th:if="${p.statBlockHp != null}" th:text="|HP ${p.statBlockHp}|">HP</span>
             </div>
-          </div>
-          <!-- Who is in the room. The workspace always carried these; the rail never showed
-               them, so at the table the DM could not see what they were about to fight. -->
-          <div th:if="${workspace.structuredSceneView.participants != null and !workspace.structuredSceneView.participants.isEmpty()}"
-               class="scene-participants u-mt-sm" data-screen-sensitive>
-            <h5 class="u-text-sm">Participants</h5>
-            <div th:each="p : ${workspace.structuredSceneView.participants}" class="participant-row u-mb-xs">
-              <strong th:text="${p.displayName}">Name</strong>
-              <span class="badge" th:if="${p.quantity > 1}" th:text="|x${p.quantity}|">Qty</span>
-              <span class="badge" th:if="${p.disposition != null}"
-                    th:text="${#enums.label(p.disposition)}">Disp</span>
-              <a th:if="${p.statBlock != null}" class="participant-statblock" target="_blank"
-                 th:href="@{/library/statblocks/{id}(id=${p.statBlock.id})}"
-                 th:title="|Open ${p.statBlock.name}|">
-                <span class="participant-statblock__name" th:text="${p.statBlock.name}">Statblock</span>
-                <span class="participant-statblock__stat" th:text="|AC ${p.statBlock.ac}|">AC 14</span>
-                <span class="participant-statblock__stat" th:text="|HP ${p.statBlock.hp}|">HP 16</span>
-              </a>
-              <div th:if="${p.placementHint}" class="u-text-xs text-muted"
-                   th:text="${p.placementHint}">Placement</div>
-            </div>
-          </div>
-          <!-- Checks (DM-only) -->
-          <div th:if="${workspace.structuredSceneView.checks != null and !workspace.structuredSceneView.checks.isEmpty()}"
-               class="scene-checks u-mt-sm" data-screen-sensitive>
-            <h5 class="u-text-sm">Checks</h5>
-            <div th:each="check : ${workspace.structuredSceneView.checks}" class="check-row u-mb-xs">
-              <strong th:text="${check.label}">Check</strong>
-              <span class="badge" th:if="${check.dc != null}" th:text="|DC ${check.dc}|">DC</span>
-              <span class="badge" th:if="${check.visibility != null}" th:text="${#enums.label(check.visibility)}">VIS</span>
-              <span th:if="${check.ability}" class="u-text-xs" th:text="|${check.ability} ${check.skill}|">Ability</span>
-              <div th:if="${check.success}" class="u-text-xs">Success: <span th:text="${check.success}"></span></div>
-              <div th:if="${check.failure}" class="u-text-xs">Failure: <span th:text="${check.failure}"></span></div>
-            </div>
+            <div th:if="${p.placementHint}" class="u-text-xs text-muted" th:text="${p.placementHint}">Placement</div>
           </div>
         </div>
-        <!-- Outgoing CHOICE transitions as actionable buttons -->
-        <div th:if="${workspace.structuredSceneView != null and !workspace.structuredSceneView.transitions.isEmpty()}"
-             class="scene-transitions u-mt-sm" data-screen-sensitive>
+      </th:block>
+      <th:block th:if="${view.checks != null and !view.checks.isEmpty() and mode.name() != 'COMPACT'}">
+        <div class="scene-checks u-mt-sm" data-screen-sensitive>
+          <h5 class="u-text-sm">Checks</h5>
+          <div th:each="check : ${view.checks}" class="check-row u-mb-xs">
+            <strong th:text="${check.label}">Check</strong>
+            <span class="badge" th:if="${check.dc != null}" th:text="|DC ${check.dc}|">DC</span>
+            <span th:if="${check.ability}" class="u-text-xs" th:text="|${check.ability} ${check.skill}|">Ability</span>
+            <div th:if="${check.success}" class="u-text-xs">Success: <span th:text="${check.success}"></span></div>
+            <div th:if="${check.failure}" class="u-text-xs">Failure: <span th:text="${check.failure}"></span></div>
+          </div>
+        </div>
+      </th:block>
+      <th:block th:if="${view.transitions != null and !view.transitions.isEmpty() and mode.name() != 'COMPACT'}">
+        <div class="scene-transitions u-mt-sm" data-screen-sensitive>
           <h5 class="u-text-sm">Transitions</h5>
-          <div th:each="t : ${workspace.structuredSceneView.transitions}">
-            <div th:if="${t.kind.name() == 'CHOICE' and t.targetScene != null}"
+          <div th:each="t : ${view.transitions}">
+            <div th:if="${t.kind == 'CHOICE' and t.targetSceneTitle != null}"
                  class="transition-choice u-mb-xs">
               <button class="btn btn-sm btn-primary"
                       th:attr="data-transition-id=${t.id}"
                       @click="followTransition($el.dataset.transitionId)"
-                      th:text="${t.label ?: t.targetScene.title}">Follow</button>
+                      th:text="${t.label ?: t.targetSceneTitle}">Follow</button>
             </div>
-            <div th:if="${t.kind.name() != 'CHOICE' or t.targetScene == null}"
+            <div th:if="${t.kind != 'CHOICE' or t.targetSceneTitle == null}"
                  class="transition-text u-text-xs text-muted u-mb-xs">
-              <span th:text="|${#enums.label(t.kind)}: ${t.label ?: t.externalDestination ?: 'Unknown'}|">Transition</span>
+              <span th:text="|${t.kind}: ${t.label ?: t.externalDestination ?: 'Unknown'}|">Transition</span>
             </div>
           </div>
         </div>
-        <th:block th:replace="~{session/_linked-tables :: linked-tables(linkedTables=${workspace.linkedTables})}"></th:block>
-        <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${workspace.campaign.id}, targetType='SCENE', targetId=${workspace.currentScene.id})}"></th:block>
+      </th:block>
+      <div class="scene-editorial">
+        <button class="btn btn-ghost" th:if="${view.hasPrevious}"
+                @click="stepScene(-1)" title="Previous scene">&larr; Prev</button>
+        <button class="btn btn-ghost" th:if="${view.hasNext}"
+                @click="stepScene(1)" title="Next scene">Next &rarr;</button>
       </div>
-    </th:block>
-    <th:block th:if="${workspace.currentScene == null}">
-      <div class="empty-state">No current scene yet — pick one to begin.</div>
-      <th:block th:replace="~{session/_scene-picker :: scenePicker(campaignId=${workspace.campaign.id}, currentSceneId=${null})}"></th:block>
-      <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${workspace.campaign.id}, targetType='CAMPAIGN', targetId=${workspace.campaign.id})}"></th:block>
-    </th:block>
+      <div class="scene-actions">
+        <a class="btn btn-ghost" target="_blank"
+           th:if="${view.adventureId != null}"
+           th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${view.adventureId},sid=${view.sceneId})}"
+           title="Open scene details">Open</a>
+        <button class="btn btn-ghost"
+                th:if="${view.mapId != null}"
+                th:attr="data-map-id=${view.mapId}"
+                @click="switchMap($el.dataset.mapId)"
+                title="Switch to scene map">Map</button>
+        <button class="btn btn-primary"
+                th:if="${view.canSeedEncounter}"
+                th:attr="data-scene-id=${view.sceneId}"
+                :disabled="seedingSceneEncounter"
+                :aria-busy="seedingSceneEncounter"
+                @click="seedCurrentScene($el.dataset.sceneId)">
+          <span x-text="seedingSceneEncounter ? 'Creating encounter\u2026' : 'Start encounter from this scene'">
+            Start encounter from this scene
+          </span>
+        </button>
+      </div>
+      <div th:if="${view.links != null and !view.links.isEmpty()}" class="scene-links">
+        <div th:each="link : ${view.links}">
+          <span th:text="${link.label}">Link</span>
+          <span th:if="${link.role}" class="u-text-xs text-muted" th:text="|(${link.role})|">Role</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 </th:block>

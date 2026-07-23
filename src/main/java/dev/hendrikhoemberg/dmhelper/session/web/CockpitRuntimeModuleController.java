@@ -36,6 +36,7 @@ public class CockpitRuntimeModuleController {
         requireMode(def, mode);
         model.addAttribute("view", views.story(campaignId));
         model.addAttribute("mode", mode);
+        model.addAttribute("campaignId", campaignId);
         return "session/modules/_story :: body";
     }
 

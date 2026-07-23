@@ -40,9 +40,9 @@
                   data-module-stale='false'">
       <th:block th:if="${initiallyRendered}">
         <th:block th:switch="${module.key}">
-          <!-- Stable refresh roots for session-cockpit.js refreshRails(); keep outside fragment HTML. -->
+          <!-- SSR initial content replaced by cockpit module loader on first refresh. -->
           <div th:case="'story'" class="cockpit-story">
-            <th:block th:insert="~{session/_story-rail :: story(workspace=${workspace})}"></th:block>
+            <p class="text-muted">Loading story\u2026</p>
           </div>
           <th:block th:case="'map'"
                     th:insert="~{session/_map-module :: map-module(workspace=${workspace})}"></th:block>

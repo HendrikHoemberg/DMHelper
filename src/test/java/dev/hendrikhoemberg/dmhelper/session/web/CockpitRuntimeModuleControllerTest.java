@@ -48,7 +48,8 @@ class CockpitRuntimeModuleControllerTest {
         when(registry.require("story")).thenReturn(CockpitModuleRegistry.standard().require("story"));
         var view = new CockpitRuntimeModuleViewService.StoryView(
                 UUID.randomUUID(), "Test Scene", "Read aloud text",
-                List.of(), List.of(), List.of(), List.of(), List.of(), java.util.Map.of(), false);
+                List.of(), List.of(), List.of(), List.of(), List.of(), java.util.Map.of(), false,
+                false, false, UUID.randomUUID(), null, null);
         when(views.story(campaignId)).thenReturn(view);
 
         mvc.perform(get("/campaigns/{cid}/session/modules/story", campaignId)

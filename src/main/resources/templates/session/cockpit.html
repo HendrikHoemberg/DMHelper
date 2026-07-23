@@ -39,7 +39,7 @@
       x-data="sessionCockpit(window.sessionCockpitConfig)"
       @session-next-turn.window="nextTurn()"
       @session-scene-step.window="stepScene($event.detail.direction)"
-      @cockpit-encounter-ended.window="refreshRails()"
+      @cockpit-encounter-ended.window="refreshModules(['story', 'encounter'], 'encounter-ended')"
       @keydown.window="handleKeyboard($event)">
   <header class="cockpit-topbar">
     <h1 class="cockpit-topbar__title"

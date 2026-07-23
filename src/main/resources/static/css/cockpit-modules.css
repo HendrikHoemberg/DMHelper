@@ -51,3 +51,19 @@
 .session-log-module-body {
   padding: var(--space-sm);
 }
+
+.runtime-story .story-rail-inner {
+  padding: var(--space-sm);
+}
+.runtime-story .scene-card h4 {
+  margin: 0 0 var(--space-xs);
+  font-size: var(--text-md);
+}
+.runtime-story .scene-editorial {
+  display: flex;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+.runtime-story .scene-actions {
+  margin-top: var(--space-sm);
+}

@@ -39,17 +39,19 @@ public class CockpitRuntimeModuleViewService {
                             List<SectionView> sections, List<CheckView> checks,
                             List<ParticipantView> participants, List<TransitionView> transitions,
                             List<LinkView> links, Map<UUID, ThreatCardView> sectionThreatCards,
-                            boolean canSeedEncounter) {}
+                            boolean canSeedEncounter, boolean hasPrevious, boolean hasNext,
+                            UUID adventureId, UUID mapId, String mapName) {}
 
-    public record SectionView(String label, String body, String kind) {}
+    public record SectionView(UUID id, String label, String body, String kind) {}
 
-    public record CheckView(String label, String ability, String skill, Integer dc) {}
+    public record CheckView(String label, String ability, String skill, Integer dc,
+                            String success, String failure) {}
 
     public record ParticipantView(String displayName, int quantity, String disposition,
                                   String statBlockName, Integer statBlockAc, String statBlockHp,
                                   String placementHint) {}
 
-    public record TransitionView(String kind, String label, String targetSceneTitle,
+    public record TransitionView(UUID id, String kind, String label, String targetSceneTitle,
                                  String externalDestination, String condition) {}
 
     public record LinkView(String label, String role) {}
@@ -153,16 +155,26 @@ public class CockpitRuntimeModuleViewService {
         Map<UUID, ThreatCardView> threatCards = threatCardAssembler.forScene(current);
         boolean canSeed = current.getEncounter() == null;
 
+        List<Scene> flat = adventures.flattenedScenes(current.getChapter().getAdventure().getId());
+        int idx = indexOf(flat, current.getId());
+        boolean hasPrev = idx > 0;
+        boolean hasNext = idx < flat.size() - 1;
+        UUID adventureId = current.getChapter().getAdventure().getId();
+        UUID mapId = current.getMap() != null ? current.getMap().getId() : null;
+        String mapName = current.getMap() != null ? current.getMap().getName() : null;
+
         return new StoryView(
                 current.getId(), current.getTitle(), readAloud,
                 List.copyOf(current.getSections().stream()
-                        .map(s -> new SectionView(s.getLabel(), s.getBody(), s.getKind().name()))
+                        .map(s -> new SectionView(s.getId(), s.getLabel(), s.getBody(), s.getKind().name()))
                         .toList()),
                 List.copyOf(current.getChecks().stream()
                         .map(c -> new CheckView(c.getLabel(),
                                 c.getAbility(),
                                 c.getSkill(),
-                                c.getDc()))
+                                c.getDc(),
+                                c.getSuccess(),
+                                c.getFailure()))
                         .toList()),
                 List.copyOf(current.getParticipants().stream()
                         .map(p -> new ParticipantView(p.getDisplayName(), p.getQuantity(),
@@ -173,7 +185,7 @@ public class CockpitRuntimeModuleViewService {
                                 p.getPlacementHint()))
                         .toList()),
                 List.copyOf(current.getTransitions().stream()
-                        .map(t -> new TransitionView(t.getKind().name(), t.getLabel(),
+                        .map(t -> new TransitionView(t.getId(), t.getKind().name(), t.getLabel(),
                                 t.getTargetScene() != null ? t.getTargetScene().getTitle() : null,
                                 t.getExternalDestination(), t.getCondition()))
                         .toList()),
@@ -182,7 +194,14 @@ public class CockpitRuntimeModuleViewService {
                                 l.getRole() != null ? l.getRole().name() : null))
                         .toList()),
                 Map.copyOf(threatCards),
-                canSeed);
+                canSeed, hasPrev, hasNext, adventureId, mapId, mapName);
+    }
+
+    private static int indexOf(List<Scene> scenes, UUID id) {
+        for (int i = 0; i < scenes.size(); i++) {
+            if (scenes.get(i).getId().equals(id)) return i;
+        }
+        return -1;
     }
 
     public MapView map(UUID campaignId, UUID requestedMapId) {

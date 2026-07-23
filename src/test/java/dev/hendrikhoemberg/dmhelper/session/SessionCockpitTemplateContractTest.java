@@ -17,9 +17,8 @@ class SessionCockpitTemplateContractTest {
         assertThat(story).contains("transition-choice");
         assertThat(story).contains("stepScene");
         assertThat(story).contains("followTransition");
-        assertThat(story).contains("scene-summary");
         assertThat(story).contains("scene-checks");
-        assertThat(story).contains("structuredSceneView.checks");
+        assertThat(story).contains("view.checks");
     }
 
     @Test
@@ -56,7 +55,9 @@ class SessionCockpitTemplateContractTest {
         assertThat(html.indexOf("session/_lifecycle-dialog :: lifecycle-dialog"))
                 .isLessThan(html.indexOf("</main>"));
         assertThat(story).contains("scene-actions");
-        assertThat(story).contains("notes/_quicknotes-strip :: strip");
+        assertThat(Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_story.html")))
+                .contains("scenePicker");
         assertThat(plan).contains("Present");
         assertThat(html).contains(">Handouts<", ">Rules<", ">Calendar<");
         assertThat(mapModule).contains("aria-label=\"Battle map controls\"", "aria-label=\"Workspace map\"",
@@ -137,7 +138,7 @@ class SessionCockpitTemplateContractTest {
         String story = Files.readString(Path.of("src/main/resources/templates/session/_story-rail.html"));
         assertThat(story).contains("threat/_mechanics-card");
         assertThat(story).contains("sectionThreatCards");
-        assertThat(story).contains("section.threatId");
+        assertThat(story).contains("section.id");
     }
 
     @Test
@@ -222,7 +223,7 @@ class SessionCockpitTemplateContractTest {
     }
 
     @Test
-    void storyCanSeedAnEncounterAndRefreshBothRails() throws IOException {
+    void storyCanSeedAnEncounterAndRefreshBothModules() throws IOException {
         String story = Files.readString(
                 Path.of("src/main/resources/templates/session/_story-rail.html"));
         String script = Files.readString(
@@ -237,22 +238,21 @@ class SessionCockpitTemplateContractTest {
                 .contains("async seedCurrentScene(sceneId)")
                 .contains("if (this.seedingSceneEncounter) return")
                 .contains("/session/scenes/${sceneId}/seed-encounter")
-                .contains("await this.refreshRails()")
+                .contains("refreshModules(['story', 'encounter']")
                 .contains("this.seedingSceneEncounter = false")
-                .contains("was created, but the cockpit rails could not refresh")
+                .contains("was created, but the cockpit modules could not refresh")
                 .contains("Could not create the scene encounter");
     }
 
     @Test
-    void cockpitHasRefreshRailsHelper() throws IOException {
+    void cockpitHasRefreshModulesHelper() throws IOException {
         String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
-        assertThat(js).contains("refreshRails();")
-                .as("cockpit JS should call refreshRails after scene mutations");
-        String refresh = extractFunction(js, "refreshRails");
-        assertThat(refresh)
-                .contains("storyEl.innerHTML = storyHtml")
-                .contains("encEl.innerHTML = encounterHtml")
-                .doesNotContain("outerHTML");
+        assertThat(js).contains("refreshModules(")
+                .as("cockpit JS should call refreshModules after scene mutations");
+        assertThat(js)
+                .contains("dispatchEvent(new CustomEvent('cockpit:module-refresh'")
+                .doesNotContain("storyEl.innerHTML")
+                .doesNotContain("encEl.innerHTML");
     }
 
     @Test
@@ -277,10 +277,12 @@ class SessionCockpitTemplateContractTest {
                 .contains("class=\"cockpit-module\"", "data-module-body")
                 .contains("class=\"cockpit-story\"")
                 .contains("class=\"cockpit-encounter\"")
-                .contains("session/_story-rail")
                 .contains("session/_encounter-rail")
                 .contains("session/_session-plan")
                 .contains("session/_map-module :: map-module");
+        assertThat(Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_story.html")))
+                .contains("session/_story-rail");
         assertThat(mapModule).contains("th:fragment=\"map-module(workspace)\"", "battleCanvasWrap");
         assertThat(layoutCss).contains(".cockpit-workbench {", "overflow: hidden;");
     }
