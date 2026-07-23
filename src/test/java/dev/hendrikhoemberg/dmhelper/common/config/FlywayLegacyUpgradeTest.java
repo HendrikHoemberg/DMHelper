@@ -284,4 +284,12 @@ class FlywayLegacyUpgradeTest {
                 Integer.class);
         assertThat(count).isGreaterThanOrEqualTo(1);
     }
+
+    @Test
+    void appliesV22WithoutChangingTheLegacyCampaign() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '22' AND \"success\" = TRUE",
+                Integer.class)).isEqualTo(1);
+        assertThat(campaigns.findAll()).extracting(Campaign::getName).contains("Curse of Strahd");
+    }
 }
