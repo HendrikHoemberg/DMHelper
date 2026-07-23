@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<section th:fragment="body(view, mode)"
+         th:attr="data-cockpit-module-fragment='session-plan', data-module-mode=${mode}, data-module-empty=${view == null or view.title == null}">
+  <div data-module-content-root>
+    <div class="session-plan-module-inner">
+      <th:block th:if="${view != null and view.title != null}">
+        <h3 class="u-text-sm" th:text="${view.title}">Session Plan</h3>
+        <div class="plan-beats">
+          <th:block th:if="${view.beats != null and !view.beats.isEmpty()}">
+            <div th:each="beat : ${view.beats}" class="plan-beat">
+              <span class="beat-position" th:text="${beat.position + 1}">1</span>
+              <span class="beat-type" th:text="${beat.type}">Scene</span>
+              <span class="beat-label" th:text="${beat.label}">Label</span>
+              <th:block th:if="${!beat.resolved}">
+                <span class="beat-broken-label">Broken link</span>
+              </th:block>
+            </div>
+          </th:block>
+          <th:block th:if="${view.beats == null or view.beats.isEmpty()}">
+            <p class="text-muted u-text-sm">No beats in this plan.</p>
+          </th:block>
+        </div>
+      </th:block>
+      <th:block th:if="${view == null or view.title == null}">
+        <p class="text-muted">No session plan yet. Create one from a note.</p>
+      </th:block>
+    </div>
+  </div>
+</section>
+</html>

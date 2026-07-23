@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<section th:fragment="body(view, mode)"
+         th:attr="data-cockpit-module-fragment='presentation', data-module-mode=${mode}, data-module-empty=${view == null}">
+  <div data-module-content-root>
+    <div class="presentation-module-body">
+      <p data-presentation-summary>
+        Table output is controlled by the current presentation status.
+        <span class="badge" th:text="'Table: ' + ${view != null ? view.mode : 'CURTAIN'}">Table: Curtain</span>
+      </p>
+      <th:block th:if="${view != null and view.presentedMapId != null}">
+        <p class="u-text-sm">Presented Map ID: <span th:text="${view.presentedMapId}">map-id</span></p>
+      </th:block>
+      <th:block th:if="${view != null and view.presentedHandoutTitle != null}">
+        <p class="u-text-sm">Presented Handout: <span th:text="${view.presentedHandoutTitle}">Handout title</span></p>
+      </th:block>
+    </div>
+  </div>
+</section>
+</html>

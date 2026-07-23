@@ -11,6 +11,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
+import dev.hendrikhoemberg.dmhelper.session.runtime.CockpitMapSelection;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
@@ -27,8 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -213,32 +212,11 @@ public class SessionWorkspaceService {
                 .toList();
     }
 
-    private record Selection(GameMap map, SelectionSource source) {}
+    public record Selection(GameMap map, SelectionSource source) {}
 
-    private Selection select(CampaignSession session, Encounter active, Scene current,
-                             SessionPlanService.SessionPlan plan, UUID requestedMapId, UUID campaignId) {
-        if (requestedMapId != null) {
-            GameMap requested = maps.findById(requestedMapId)
-                    .filter(m -> m.getCampaign().getId().equals(campaignId))
-                    .orElseThrow(() -> new NotFoundException("Map not found in campaign"));
-            return new Selection(requested, SelectionSource.EXPLICIT_MAP);
-        }
-        if (session.isOpen() && session.getWorkspaceMap() != null)
-            return new Selection(session.getWorkspaceMap(), SelectionSource.STORED_SESSION);
-        if (active != null && active.getMap() != null)
-            return new Selection(active.getMap(), SelectionSource.ACTIVE_ENCOUNTER);
-        if (current != null && current.getMap() != null)
-            return new Selection(current.getMap(), SelectionSource.CURRENT_SCENE);
-        if (plan != null) {
-            Optional<GameMap> firstPlanMap = plan.beats().stream()
-                    .filter(SessionPlanService.SessionPlanBeat::resolved)
-                    .map(SessionPlanService.SessionPlanBeat::mapId)
-                    .filter(Objects::nonNull)
-                    .map(maps::findById).flatMap(Optional::stream)
-                    .filter(m -> m.getCampaign().getId().equals(campaignId)).findFirst();
-            if (firstPlanMap.isPresent()) return new Selection(firstPlanMap.get(), SelectionSource.SESSION_PLAN);
-        }
-        return new Selection(null, SelectionSource.NONE);
+    public Selection select(CampaignSession session, Encounter active, Scene current,
+                            SessionPlanService.SessionPlan plan, UUID requestedMapId, UUID campaignId) {
+        return CockpitMapSelection.resolve(session, active, current, plan, requestedMapId, campaignId, maps);
     }
 
     private List<Scene> editorialNeighbors(Scene current) {

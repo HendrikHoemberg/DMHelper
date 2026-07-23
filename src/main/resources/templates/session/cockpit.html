@@ -11,6 +11,7 @@
     <link rel="stylesheet" th:href="@{/css/book.css}">
     <link rel="stylesheet" th:href="@{/css/cockpit.css}">
     <link rel="stylesheet" th:href="@{/css/cockpit-layout.css}">
+    <link rel="stylesheet" th:href="@{/css/cockpit-modules.css}">
     <link rel="stylesheet" th:href="@{/css/player-projection.css}">
     <script th:src="@{/vendor/htmx.min.js}"></script>
     <script th:src="@{/js/dm-request.js}"></script>
@@ -155,7 +156,7 @@ window.cockpitLayoutConfig = {
     modules: /*[[${cockpitModules}]]*/ [],
     presets: /*[[${cockpitPresets}]]*/ [],
     defaultPresetKey: /*[[${cockpitDefaultPresetKey}]]*/ 'builtin:exploration',
-    runtimeModulesEnabled: false,
+    runtimeModulesEnabled: true,
     mapId: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.id : null}]]*/ null
 };
 // Screen Safety: mirrors fragments/navbar.html, which the cockpit does not include.

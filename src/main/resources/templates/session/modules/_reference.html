@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<section th:fragment="body(view, mode)"
+         th:attr="data-cockpit-module-fragment='reference', data-module-mode=${mode}, data-module-empty=${false}">
+  <div data-module-content-root>
+    <div class="reference-module-body">
+      <p>Search rules and compendium entries from the cockpit.</p>
+      <p class="text-muted u-text-sm">Use the Search button in the top bar to find rules content.</p>
+    </div>
+  </div>
+</section>
+</html>

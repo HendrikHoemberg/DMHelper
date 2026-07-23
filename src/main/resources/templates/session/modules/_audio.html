@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<section th:fragment="body(view, mode)"
+         th:attr="data-cockpit-module-fragment='audio', data-module-mode=${mode}, data-module-empty=${false}">
+  <div data-module-content-root>
+    <div class="audio-module-body">
+      <p class="text-muted">Audio controls are rendered by the cockpit widget.</p>
+    </div>
+  </div>
+</section>
+</html>

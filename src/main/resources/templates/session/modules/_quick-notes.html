@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<section th:fragment="body(view, mode)"
+         th:attr="data-cockpit-module-fragment='quick-notes', data-module-mode=${mode}, data-module-empty=${view == null or view.notes.isEmpty()}">
+  <div data-module-content-root>
+    <th:block th:if="${view == null or view.notes.isEmpty()}">
+      <div class="empty-state" style="color: var(--color-text-muted);">
+        <p>No quick notes yet. Capture a note from the command palette.</p>
+      </div>
+    </th:block>
+    <th:block th:if="${view != null and !view.notes.isEmpty()}">
+      <div class="quicknotes-module-list">
+        <div th:each="n : ${view.notes}" class="quicknote-row u-mb-xs">
+          <p class="quicknote-body u-text-sm" th:text="${n.body}">Note body</p>
+          <span class="u-text-xs text-muted" th:text="${n.createdAt}">Date</span>
+        </div>
+      </div>
+    </th:block>
+  </div>
+</section>
+</html>

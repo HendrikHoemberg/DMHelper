@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<section th:fragment="body(view, mode)"
+         th:attr="data-cockpit-module-fragment='session-log', data-module-mode=${mode}, data-module-empty=${false}">
+  <div data-module-content-root>
+    <div class="session-log-module-body">
+      <p>Review the current session timeline and completed-session note.</p>
+      <p class="text-muted u-text-sm">Session events will appear after play begins.</p>
+    </div>
+  </div>
+</section>
+</html>
