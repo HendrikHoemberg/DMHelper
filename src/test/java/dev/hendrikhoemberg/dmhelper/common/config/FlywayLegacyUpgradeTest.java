@@ -64,6 +64,60 @@ class FlywayLegacyUpgradeTest {
                     + "SELECT RANDOM_UUID(), id, 'DM-only map', 'dmmap.png', TRUE, FALSE FROM campaign WHERE name = 'Curse of Strahd'");
             stmt.execute("INSERT INTO handout (id, campaign_id, title, file_name, dm_only, presented) "
                     + "SELECT RANDOM_UUID(), id, 'Player visible', 'player.png', FALSE, FALSE FROM campaign WHERE name = 'Curse of Strahd'");
+            stmt.execute("""
+                    INSERT INTO encounter (
+                        id, campaign_id, name, status, round, active_turn_index,
+                        log_sequence, lair_action_triggered)
+                    SELECT RANDOM_UUID(), id, 'Legacy Setup', 'ACTIVE', 1, -1, 0, FALSE
+                    FROM campaign WHERE name = 'Curse of Strahd'
+                    """);
+            stmt.execute("""
+                    INSERT INTO encounter (
+                        id, campaign_id, name, status, round, active_turn_index,
+                        log_sequence, lair_action_triggered)
+                    SELECT RANDOM_UUID(), id, 'Legacy Running', 'ACTIVE', 1, 0, 0, FALSE
+                    FROM campaign WHERE name = 'Curse of Strahd'
+                    """);
+            stmt.execute("""
+                    INSERT INTO encounter (
+                        id, campaign_id, name, status, round, active_turn_index,
+                        log_sequence, lair_action_triggered)
+                    SELECT RANDOM_UUID(), id, 'Legacy Manual', 'PLANNED', 0, -1, 0, FALSE
+                    FROM campaign WHERE name = 'Curse of Strahd'
+                    """);
+            stmt.execute("""
+                    INSERT INTO combatant (
+                        id, encounter_id, name, kind, initiative, tie_breaker, sort_order,
+                        max_hp, current_hp, temp_hp, defeated, hidden, group_leader,
+                        concentration_check_pending, legendary_actions_used,
+                        legendary_actions_max, legendary_resistances_used,
+                        legendary_resistances_max)
+                    SELECT RANDOM_UUID(), e.id, 'Unset Goblin', 'NPC', 0, 0, 0,
+                           10, 10, 0, FALSE, FALSE, FALSE, FALSE, 0, 0, 0, 0
+                    FROM encounter e WHERE e.name = 'Legacy Setup'
+                    """);
+            stmt.execute("""
+                    INSERT INTO combatant (
+                        id, encounter_id, name, kind, initiative, tie_breaker, sort_order,
+                        max_hp, current_hp, temp_hp, defeated, hidden, group_leader,
+                        concentration_check_pending, legendary_actions_used,
+                        legendary_actions_max, legendary_resistances_used,
+                        legendary_resistances_max)
+                    SELECT RANDOM_UUID(), e.id, 'Zero Rogue', 'PC', 0, 0, 0,
+                           10, 10, 0, FALSE, FALSE, FALSE, FALSE, 0, 0, 0, 0
+                    FROM encounter e WHERE e.name = 'Legacy Running'
+                    """);
+            stmt.execute("""
+                    INSERT INTO combatant (
+                        id, encounter_id, name, kind, initiative, tie_breaker, sort_order,
+                        max_hp, current_hp, temp_hp, defeated, hidden, group_leader,
+                        concentration_check_pending, legendary_actions_used,
+                        legendary_actions_max, legendary_resistances_used,
+                        legendary_resistances_max)
+                    SELECT RANDOM_UUID(), e.id, 'Manual Orc', 'NPC', 12, 0, 0,
+                           10, 10, 0, FALSE, FALSE, FALSE, FALSE, 0, 0, 0, 0
+                    FROM encounter e WHERE e.name = 'Legacy Manual'
+                    """);
         }
     }
 
@@ -202,6 +256,25 @@ class FlywayLegacyUpgradeTest {
         assertThat(jdbc.queryForList(
                 "SELECT safety_classification FROM handout ORDER BY title", String.class))
                 .containsExactly("DM_SOURCE", "UNREVIEWED");
+    }
+
+    @Test
+    void v20ConservativelyClassifiesLegacyInitiativeState() {
+        assertThat(jdbc.queryForObject(
+                "SELECT combat_phase FROM encounter WHERE name='Legacy Setup'", String.class))
+                .isEqualTo("SETUP");
+        assertThat(jdbc.queryForObject(
+                "SELECT initiative FROM combatant WHERE name='Unset Goblin'", Integer.class))
+                .isNull();
+        assertThat(jdbc.queryForObject(
+                "SELECT combat_phase FROM encounter WHERE name='Legacy Running'", String.class))
+                .isEqualTo("RUNNING");
+        assertThat(jdbc.queryForObject(
+                "SELECT initiative FROM combatant WHERE name='Zero Rogue'", Integer.class))
+                .isZero();
+        assertThat(jdbc.queryForObject(
+                "SELECT initiative FROM combatant WHERE name='Manual Orc'", Integer.class))
+                .isEqualTo(12);
     }
 
     @Test

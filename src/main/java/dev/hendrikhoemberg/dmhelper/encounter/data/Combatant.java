@@ -25,8 +25,8 @@ public class Combatant {
     @Column(nullable = false, length = 255)
     private String name;
 
-    @Column(nullable = false)
-    private int initiative;
+    @Column
+    private Integer initiative;
 
     private int tieBreaker;
 
@@ -115,8 +115,8 @@ public class Combatant {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    public int getInitiative() { return initiative; }
-    public void setInitiative(int initiative) { this.initiative = initiative; }
+    public Integer getInitiative() { return initiative; }
+    public void setInitiative(Integer initiative) { this.initiative = initiative; }
 
     public int getTieBreaker() { return tieBreaker; }
     public void setTieBreaker(int tieBreaker) { this.tieBreaker = tieBreaker; }

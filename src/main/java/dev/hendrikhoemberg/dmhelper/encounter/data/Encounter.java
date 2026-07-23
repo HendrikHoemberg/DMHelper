@@ -14,6 +14,7 @@ import java.util.UUID;
 public class Encounter {
 
     public enum Status { PLANNED, ACTIVE, DONE }
+    public enum CombatPhase { SETUP, RUNNING }
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -51,6 +52,10 @@ public class Encounter {
 
     @Column(nullable = false)
     private boolean lairActionTriggered = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "combat_phase", nullable = false, length = 16)
+    private CombatPhase combatPhase = CombatPhase.SETUP;
 
     @Column(name = "encounter_key", length = 100)
     private String encounterKey;
@@ -113,6 +118,11 @@ public class Encounter {
 
     public boolean isLairActionTriggered() { return lairActionTriggered; }
     public void setLairActionTriggered(boolean lairActionTriggered) { this.lairActionTriggered = lairActionTriggered; }
+
+    public CombatPhase getCombatPhase() { return combatPhase; }
+    public void setCombatPhase(CombatPhase combatPhase) {
+        this.combatPhase = combatPhase == null ? CombatPhase.SETUP : combatPhase;
+    }
 
     public AudioCue getCombatAudioCue() { return combatAudioCue; }
     public void setCombatAudioCue(AudioCue combatAudioCue) { this.combatAudioCue = combatAudioCue; }

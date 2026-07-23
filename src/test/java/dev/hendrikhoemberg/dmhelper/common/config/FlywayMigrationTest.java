@@ -373,6 +373,26 @@ class FlywayMigrationTest {
     }
 
     @Test
+    void v20AddsExplicitInitiativeSetupState() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" "
+                        + "WHERE \"version\" = '20' AND \"success\" = TRUE",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_name = 'ENCOUNTER'
+                  AND column_name = 'COMBAT_PHASE'
+                  AND is_nullable = 'NO'
+                """, Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_name = 'COMBATANT'
+                  AND column_name = 'INITIATIVE'
+                  AND is_nullable = 'YES'
+                """, Integer.class)).isEqualTo(1);
+    }
+
+    @Test
     void v12CreatesWorldGraphTables() {
         Integer applied = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '12' AND \"success\" = TRUE",
