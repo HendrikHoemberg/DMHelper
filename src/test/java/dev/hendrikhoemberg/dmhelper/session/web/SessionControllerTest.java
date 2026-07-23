@@ -111,10 +111,12 @@ class SessionControllerTest {
 
     @Test
     void storyModuleOffersEncounterCreationForAnEligibleCurrentScene() throws Exception {
-        SessionWorkspace ws = workspaceWithCurrentScene();
-        UUID sceneId = ws.currentScene().getId();
-        when(workspaces.load(campaignId, null)).thenReturn(ws);
-        when(encounterSeeder.canSeed(campaignId, sceneId)).thenReturn(true);
+        UUID sceneId = UUID.randomUUID();
+        var view = new CockpitRuntimeModuleViewService.StoryView(
+                sceneId, "Throne Room", null, null, null,
+                List.of(), List.of(), List.of(), List.of(), List.of(), java.util.Map.of(),
+                true, false, false, UUID.randomUUID(), null, null);
+        when(moduleViews.story(campaignId)).thenReturn(view);
 
         mvc.perform(get("/campaigns/{id}/session/rails/story", campaignId))
                 .andExpect(status().isOk())
@@ -128,11 +130,9 @@ class SessionControllerTest {
 
     @Test
     void storyRailFragmentReturnsPartialHtml() throws Exception {
-        SessionWorkspace ws = emptyWorkspace();
-        when(workspaces.load(campaignId, null)).thenReturn(ws);
         mvc.perform(get("/campaigns/{id}/session/rails/story", campaignId))
                 .andExpect(status().isOk())
-                .andExpect(view().name("session/_story-rail :: story"));
+                .andExpect(view().name("session/modules/_story :: body"));
     }
 
     @Test

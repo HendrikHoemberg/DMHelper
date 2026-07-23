@@ -210,8 +210,12 @@ class CockpitRuntimeModuleContractTest {
         assertThat(tracker).contains("data-initiative-setup");
         assertThat(tracker).contains("encounter?.combatPhase === 'SETUP'");
         assertThat(tracker).contains("x-show=\"encounter?.combatPhase === 'RUNNING'\"");
-        assertThat(tracker).contains("activeTurnIndex");
         assertThat(tracker).contains("round-counter");
+        // The tracker's Alpine component logic (including activeTurnIndex handling) lives in
+        // combat-tracker.js, loaded globally from cockpit.html rather than inlined in the template.
+        String trackerJs = Files.readString(Path.of(
+                "src/main/resources/static/js/combat-tracker.js"));
+        assertThat(trackerJs).contains("activeTurnIndex");
         // Rail must embed the tracker
         String rail = Files.readString(Path.of(
                 "src/main/resources/templates/session/_encounter-rail.html"));

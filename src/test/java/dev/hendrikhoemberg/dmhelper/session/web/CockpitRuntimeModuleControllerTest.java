@@ -47,7 +47,7 @@ class CockpitRuntimeModuleControllerTest {
     void storyRouteReturnsModuleFragment() throws Exception {
         when(registry.require("story")).thenReturn(CockpitModuleRegistry.standard().require("story"));
         var view = new CockpitRuntimeModuleViewService.StoryView(
-                UUID.randomUUID(), "Test Scene", "Read aloud text",
+                UUID.randomUUID(), "Test Scene", null, null, "Read aloud text",
                 List.of(), List.of(), List.of(), List.of(), List.of(), java.util.Map.of(), false,
                 false, false, UUID.randomUUID(), null, null);
         when(views.story(campaignId)).thenReturn(view);

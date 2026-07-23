@@ -19,6 +19,7 @@ import dev.hendrikhoemberg.dmhelper.notes.data.QuickNote;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionPlanService;
@@ -43,7 +44,7 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class CockpitRuntimeModuleViewService {
 
-    public record StoryView(UUID sceneId, String title, String readAloud,
+    public record StoryView(UUID sceneId, String title, String summary, String body, String readAloud,
                             List<SectionView> sections, List<CheckView> checks,
                             List<ParticipantView> participants, List<TransitionView> transitions,
                             List<LinkView> links, Map<UUID, ThreatCardView> sectionThreatCards,
@@ -80,10 +81,12 @@ public class CockpitRuntimeModuleViewService {
     public record PlannedEncounterView(UUID id, String name, UUID mapId) {}
 
     public record SessionPlanView(String title, List<BeatView> beats,
-                                  List<QuestProgressView> quests) {}
+                                  List<QuestProgressView> questProgress,
+                                  List<BeatView> upcoming) {}
 
     public record BeatView(int position, String type, UUID targetId, String label,
-                           String url, UUID mapId, boolean resolved) {}
+                           String url, UUID mapId, boolean resolved,
+                           boolean current, boolean upcoming) {}
 
     public record QuestProgressView(UUID questId, String title, String status,
                                     List<ObjectiveView> objectives) {}
@@ -92,7 +95,7 @@ public class CockpitRuntimeModuleViewService {
 
     public record PartyView(List<PartyMemberView> members) {}
 
-    public record PartyMemberView(UUID id, String name, int ac, int maxHp, int currentHp,
+    public record PartyMemberView(UUID id, String name, int ac, int speed, int maxHp, int currentHp,
                                   int tempHp, int passivePerception, int passiveInsight,
                                   int passiveInvestigation, int deathSaveSuccesses,
                                   int deathSaveFailures, String conditionsJson,
@@ -125,6 +128,7 @@ public class CockpitRuntimeModuleViewService {
     private final HandoutService handoutService;
     private final ThreatCardAssembler threatCardAssembler;
     private final SessionLogModuleService sessionLogService;
+    private final QuestRepository questRepository;
 
     public CockpitRuntimeModuleViewService(AdventureService adventures,
                                            EncounterRepository encounters,
@@ -136,7 +140,8 @@ public class CockpitRuntimeModuleViewService {
                                            SessionPlanService plans,
                                            HandoutService handoutService,
                                            ThreatCardAssembler threatCardAssembler,
-                                           SessionLogModuleService sessionLogService) {
+                                           SessionLogModuleService sessionLogService,
+                                           QuestRepository questRepository) {
         this.adventures = adventures;
         this.encounters = encounters;
         this.combatants = combatants;
@@ -148,6 +153,7 @@ public class CockpitRuntimeModuleViewService {
         this.handoutService = handoutService;
         this.threatCardAssembler = threatCardAssembler;
         this.sessionLogService = sessionLogService;
+        this.questRepository = questRepository;
     }
 
     public StoryView story(UUID campaignId) {
@@ -182,7 +188,7 @@ public class CockpitRuntimeModuleViewService {
         String mapName = current.getMap() != null ? current.getMap().getName() : null;
 
         return new StoryView(
-                current.getId(), current.getTitle(), readAloud,
+                current.getId(), current.getTitle(), current.getSummary(), current.getBody(), readAloud,
                 List.copyOf(current.getSections().stream()
                         .map(s -> new SectionView(s.getId(), s.getLabel(), s.getBody(), s.getKind().name()))
                         .toList()),
@@ -298,22 +304,43 @@ public class CockpitRuntimeModuleViewService {
     }
 
     public SessionPlanView sessionPlan(UUID campaignId) {
+        List<QuestProgressView> questProgress = List.copyOf(
+                questRepository.findByCampaignIdOrderByCreatedAtAscIdAsc(campaignId).stream()
+                        .map(q -> {
+                            Hibernate.initialize(q.getObjectives());
+                            return new QuestProgressView(q.getId(), q.getTitle(), q.getStatus().name(),
+                                    List.copyOf(q.getObjectives().stream()
+                                            .map(o -> new ObjectiveView(o.getId(), o.getTitle(),
+                                                    o.getStatus().name()))
+                                            .toList()));
+                        })
+                        .toList());
         var plan = plans.latest(campaignId).orElse(null);
-        if (plan == null) return new SessionPlanView(null, List.of(), List.of());
-        return new SessionPlanView(
-                plan.title(),
-                List.copyOf(plan.beats().stream()
-                        .map(b -> new BeatView(b.position(), b.type(), b.targetId(),
-                                b.label(), b.url(), b.mapId(), b.resolved()))
-                        .toList()),
-                List.of());
+        if (plan == null) return new SessionPlanView(null, List.of(), questProgress, List.of());
+
+        var planBeats = plan.beats();
+        int firstUnresolved = -1;
+        for (int i = 0; i < planBeats.size(); i++) {
+            if (!planBeats.get(i).resolved()) { firstUnresolved = i; break; }
+        }
+        final int currentIdx = firstUnresolved;
+        List<BeatView> beats = java.util.stream.IntStream.range(0, planBeats.size())
+                .mapToObj(i -> {
+                    var b = planBeats.get(i);
+                    return new BeatView(b.position(), b.type(), b.targetId(), b.label(),
+                            b.url(), b.mapId(), b.resolved(),
+                            i == currentIdx, currentIdx >= 0 && i > currentIdx);
+                })
+                .toList();
+        List<BeatView> upcoming = List.copyOf(beats.stream().filter(BeatView::upcoming).toList());
+        return new SessionPlanView(plan.title(), List.copyOf(beats), questProgress, upcoming);
     }
 
     public PartyView party(UUID campaignId) {
         List<PartyMember> members = party.findByCampaignIdAndActiveTrueOrderByCharacterNameAsc(campaignId);
         return new PartyView(List.copyOf(members.stream()
                 .map(m -> new PartyMemberView(
-                        m.getId(), m.getCharacterName(), m.getAc(), m.getMaxHp(), m.getCurrentHp(),
+                        m.getId(), m.getCharacterName(), m.getAc(), m.getSpeed(), m.getMaxHp(), m.getCurrentHp(),
                         m.getTempHp(), m.getPassivePerception(), m.getPassiveInsight(),
                         m.getPassiveInvestigation(), m.getDeathSaveSuccesses(), m.getDeathSaveFailures(),
                         m.getConditionsJson(),

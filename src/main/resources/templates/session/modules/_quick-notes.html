@@ -18,17 +18,14 @@
       <th:block th:if="${view != null and view.notes != null and !view.notes.isEmpty()}">
         <div class="quicknotes-module-list">
           <div th:each="n : ${view.notes}"
-               class="quicknote-row u-mb-xs"
-               th:classappend="${n.unresolved} ? 'quicknote-unresolved' : ''">
+               class="quicknote-row quicknote-unresolved u-mb-xs">
             <div class="quicknote-content u-flex u-gap-xs u-items-center">
               <p class="quicknote-body u-text-sm u-flex-1" th:text="${n.body}">Note body</p>
               <span class="u-text-xs text-muted" th:text="${n.createdAt}">Date</span>
             </div>
             <div class="quicknote-actions u-flex u-gap-xs">
-              <th:block th:if="${n.unresolved}">
-                <button class="btn btn-ghost btn-xs" @click="promote(n)"
-                        aria-label="Promote note to full note">Promote</button>
-              </th:block>
+              <button class="btn btn-ghost btn-xs" @click="promote(n)"
+                      aria-label="Promote note to full note">Promote</button>
               <button class="btn btn-ghost btn-xs" @click="remove(n.id)"
                       aria-label="Delete quick note">Delete</button>
             </div>

@@ -23,11 +23,13 @@
         .pv-initiative .combatant-chip.defeated { opacity: 0.4; text-decoration: line-through; }
         .pv-curtain { display: flex; align-items: center; justify-content: center; flex: 1;
                       background: var(--color-bg); color: var(--color-text-muted); font-size: 1.5rem; }
-        .pv-status { position: absolute; bottom: 8px; right: 8px; font-size: 0.7rem;
-                     color: var(--color-text-muted); }
         .cond-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--color-accent);
                     display: flex; align-items: center; justify-content: center;
                     font-size: 0.625rem; color: var(--color-bg); }
+    </style>
+    <style th:if="${!embedded}">
+        .pv-status { position: absolute; bottom: 8px; right: 8px; font-size: 0.7rem;
+                     color: var(--color-text-muted); }
     </style>
 </head>
 <body th:classappend="${embedded} ? 'pv-embedded' : null">

@@ -4,6 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheet;
 import jakarta.persistence.*;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -146,6 +150,26 @@ public class PartyMember {
 
     public String getConditionsJson() { return conditionsJson; }
     public void setConditionsJson(String conditionsJson) { this.conditionsJson = conditionsJson; }
+
+    private static final ObjectMapper CONDITIONS_JSON = new ObjectMapper();
+    private static final TypeReference<List<String>> CONDITIONS_TYPE = new TypeReference<>() {};
+
+    /**
+     * Derived accessor so templates (e.g. party/_summary-bar.html) that reference
+     * {@code m.conditions} can render this entity the same way they render
+     * {@code PartyMemberView}, without SpringEL throwing on a missing property.
+     * Never throws: null/blank/malformed JSON yields an empty list.
+     */
+    public List<String> getConditions() {
+        if (conditionsJson == null || conditionsJson.isBlank() || "[]".equals(conditionsJson)) {
+            return List.of();
+        }
+        try {
+            return CONDITIONS_JSON.readValue(conditionsJson, CONDITIONS_TYPE);
+        } catch (JacksonException e) {
+            return List.of();
+        }
+    }
 
     public int getXp() { return xp; }
     public void setXp(int xp) { this.xp = xp; }

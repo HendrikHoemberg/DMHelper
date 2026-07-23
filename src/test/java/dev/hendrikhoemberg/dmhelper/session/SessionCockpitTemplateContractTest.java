@@ -61,9 +61,12 @@ class SessionCockpitTemplateContractTest {
                 "src/main/resources/templates/session/modules/_story.html")))
                 .contains("scenePicker");
         assertThat(plan).contains("Present");
-        assertThat(html).contains(">Handouts<", ">Rules<", ">Calendar<");
-        assertThat(mapModule).contains("aria-label=\"Battle map controls\"", "aria-label=\"Workspace map\"",
-                "Present current map", ">Curtain<", "data-presentation-mode");
+        assertThat(html).contains(">Rules<", ">Calendar<");
+        assertThat(mapModule).contains("aria-label=\"Battle map controls\"", "aria-label=\"Workspace map\"");
+        // Curtain / Present current map / presentation status moved to the Presentation module (Task 8).
+        String presentationModule = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_presentation.html"));
+        assertThat(presentationModule).contains("Present current map", ">Curtain<");
         assertThat(mapModule).contains("@click=\"addToken()\"", "@click=\"addParty()\"",
                 "x-for=\"t in tokens\"");
         assertThat(html).contains("cockpitLayoutConfig",
@@ -147,11 +150,14 @@ class SessionCockpitTemplateContractTest {
     void encounterRailUsesTrackerActiveThreatCard() throws IOException {
         String rail = Files.readString(Path.of("src/main/resources/templates/session/_encounter-rail.html"));
         String tracker = Files.readString(Path.of("src/main/resources/templates/encounter/_tracker.html"));
+        // The tracker's Alpine component logic lives in combat-tracker.js (loaded globally
+        // from cockpit.html) rather than inline, so lazily-inserted tracker markup can find it.
+        String trackerJs = Files.readString(Path.of("src/main/resources/static/js/combat-tracker.js"));
         String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
         assertThat(rail).contains("encounter/_tracker :: tracker");
         assertThat(tracker).contains("activeThreatCard");
-        assertThat(tracker).contains("threatCard");
         assertThat(tracker).contains("data-active-threat-card");
+        assertThat(trackerJs).contains("threatCard");
         assertThat(js).contains("threatCard");
         assertThat(js).contains("activeCombatants");
     }
@@ -171,7 +177,11 @@ class SessionCockpitTemplateContractTest {
         String css = Files.readString(Path.of("src/main/resources/static/css/cockpit.css"));
 
         assertThat(html).doesNotContain("workspace.handouts.?[!dmOnly]", "th:unless=\"${handout.dmOnly}\"");
-        assertThat(html).contains("handout.safetyClassification", "/css/player-projection.css");
+        assertThat(html).contains("/css/player-projection.css");
+        // Handout safety gating moved into the Presentation module (Task 8), keyed on handout.safety.
+        String presentationModule = Files.readString(
+                Path.of("src/main/resources/templates/session/modules/_presentation.html"));
+        assertThat(presentationModule).contains("handout.safety", "UNREVIEWED", "DM_SOURCE");
         assertThat(preview).contains("Present anyway…", "previewOverrideArmed",
                 "Confirm emergency presentation", "role=\"dialog\"", "aria-modal=\"true\"");
         assertThat(js).contains("previewOverrideArmed: false", "armEmergencyOverride()")
@@ -286,7 +296,7 @@ class SessionCockpitTemplateContractTest {
         assertThat(Files.readString(Path.of(
                 "src/main/resources/templates/session/modules/_story.html")))
                 .contains("session/_story-rail");
-        assertThat(mapModule).contains("th:fragment=\"map-module(workspace)\"", "battleCanvasWrap");
+        assertThat(mapModule).contains("th:fragment=\"map-module-runtime\"", "battleCanvasWrap");
         assertThat(layoutCss).contains(".cockpit-workbench {", "overflow: hidden;");
     }
 

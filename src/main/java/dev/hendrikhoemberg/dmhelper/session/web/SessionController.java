@@ -85,12 +85,11 @@ public class SessionController {
 
     @GetMapping("/campaigns/{campaignId}/session/rails/story")
     public String storyRail(@PathVariable UUID campaignId, Model model) {
-        SessionWorkspaceService.SessionWorkspace workspace = workspaces.load(campaignId, null);
-        model.addAttribute("workspace", workspace);
+        model.addAttribute("view", moduleViews.story(campaignId));
+        model.addAttribute("mode", dev.hendrikhoemberg.dmhelper.session.runtime.CockpitModuleMode.STANDARD);
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("scenePickerGroups", adventures.scenePickerGroups(campaignId));
-        addSeedEligibility(campaignId, workspace, model);
-        return "session/_story-rail :: story";
+        return "session/modules/_story :: body";
     }
 
     @GetMapping("/campaigns/{campaignId}/session/rails/encounter")

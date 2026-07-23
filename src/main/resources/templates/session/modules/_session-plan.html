@@ -22,15 +22,6 @@
             <p class="text-muted u-text-sm">No beats in this plan.</p>
           </th:block>
         </div>
-        <th:block th:if="${view.questProgress != null}">
-          <div class="quest-progress-summary" data-quest-progress>
-            <h4 class="u-text-xs text-muted">Quest Progress</h4>
-            <div th:each="qp : ${view.questProgress}" class="quest-progress-item u-text-sm">
-              <span class="badge" th:text="${qp.status}">STATUS</span>
-              <span th:text="${qp.title}">Quest</span>
-            </div>
-          </div>
-        </th:block>
         <th:block th:if="${mode != null and mode.name() == 'COMPACT'}">
           <div class="plan-upcoming" th:if="${view.upcoming != null}">
             <h4 class="u-text-xs text-muted">Upcoming</h4>
@@ -40,20 +31,20 @@
             </div>
           </div>
         </th:block>
-        <th:block th:if="${mode != null and mode.name() == 'FOCUSED'}">
-          <div class="plan-focused-context" th:if="${view.focusedBeat != null}">
-            <h4 class="u-text-xs text-muted">Beat Context</h4>
-            <div class="focused-beat-detail">
-              <p th:text="${view.focusedBeat.label}">Label</p>
-              <p class="text-muted u-text-xs" th:text="${view.focusedBeat.detail}">Detail</p>
-            </div>
-          </div>
-        </th:block>
       </th:block>
       <th:block th:if="${view == null or view.title == null}">
         <div class="empty-state">
           <p class="text-muted">No session plan yet. Create one from a note.</p>
           <span class="u-text-xs text-muted">Capture ideas in quick notes or use the command bar to start planning.</span>
+        </div>
+      </th:block>
+      <th:block th:if="${view != null and view.questProgress != null and !view.questProgress.isEmpty()}">
+        <div class="quest-progress-summary quest-progress-panel" data-quest-progress data-screen-sensitive>
+          <h4 class="u-text-xs text-muted">Quest Progress</h4>
+          <div th:each="qp : ${view.questProgress}" class="quest-progress-item u-text-sm">
+            <span class="badge" th:text="${qp.status}">STATUS</span>
+            <span th:text="${qp.title}">Quest</span>
+          </div>
         </div>
       </th:block>
     </div>

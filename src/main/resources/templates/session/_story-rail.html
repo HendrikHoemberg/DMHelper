@@ -12,6 +12,12 @@
           <p th:text="${view.readAloud}">Read aloud text</p>
         </div>
       </th:block>
+      <div class="structured-block scene-summary u-mb-xs" data-screen-sensitive
+           th:if="${view.summary != null and mode.name() != 'COMPACT'}"
+           th:text="${view.summary}">Scene summary</div>
+      <div class="structured-block scene-body u-mb-xs" data-screen-sensitive
+           th:if="${view.body != null and mode.name() != 'COMPACT'}"
+           th:text="${view.body}">Scene notes</div>
       <th:block th:if="${view.sections != null and !view.sections.isEmpty() and mode.name() != 'COMPACT'}">
         <div th:each="section : ${view.sections}" class="structured-block u-mb-xs" data-screen-sensitive>
           <span class="badge" th:text="${section.kind}">SECTION</span>

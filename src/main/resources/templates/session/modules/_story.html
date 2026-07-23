@@ -10,7 +10,9 @@
       <th:block th:replace="~{session/_scene-picker :: scenePicker(campaignId=${campaignId}, currentSceneId=${null})}"></th:block>
     </th:block>
     <th:block th:if="${view != null}">
-      <th:block th:if="${mode.name() != 'COMPACT'}" th:replace="~{session/_scene-picker :: scenePicker(campaignId=${campaignId}, currentSceneId=${view.sceneId})}"></th:block>
+      <th:block th:if="${mode.name() != 'COMPACT'}">
+        <th:block th:replace="~{session/_scene-picker :: scenePicker(campaignId=${campaignId}, currentSceneId=${view.sceneId})}"></th:block>
+      </th:block>
       <th:block th:replace="~{session/_story-rail :: story(view=${view}, mode=${mode}, campaignId=${campaignId})}"></th:block>
     </th:block>
   </div>
