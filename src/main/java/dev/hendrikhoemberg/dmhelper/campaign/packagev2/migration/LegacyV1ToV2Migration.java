@@ -259,12 +259,14 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                 warning(warnings, ImportProblemCodes.LEGACY_STATE_DEFAULTED, "/encounters/" + i + "/combatants/kind",
                         "Combatant kinds normalized to runtime vocabulary");
             }
+            String combatPhase = "DONE".equals(e.status()) || e.activeTurnIndex() >= 0 || e.round() > 1
+                    ? "RUNNING" : "SETUP";
             warning(warnings, ImportProblemCodes.LEGACY_STATE_DEFAULTED, "/encounters/" + i + "/combatLog",
                     "Combat log defaulted to empty");
             warning(warnings, ImportProblemCodes.LEGACY_STATE_DEFAULTED, "/encounters/" + i + "/lairActionTriggered",
                     "Lair action triggered defaulted to false");
             encounters.add(new CampaignManifestV2.EncounterDto(encounterKeys.get(e.name()), e.name(), combatants, e.status(),
-                    e.round(), e.activeTurnIndex(), e.logSequence(), e.lairActionName(), e.lairActionDescription(),
+                    e.round(), e.activeTurnIndex(), combatPhase, e.logSequence(), e.lairActionName(), e.lairActionDescription(),
                     ref(CampaignContentType.MAP, mapKeys, e.map()), false, List.of(),
                     null, null, null, null, null, null));
         }

@@ -170,6 +170,7 @@ public record CampaignExportDto(
             String status,
             int round,
             int activeTurnIndex,
+            String combatPhase,
             long logSequence,
             String lairActionName,
             String lairActionDescription,
@@ -181,7 +182,8 @@ public record CampaignExportDto(
                 List<CombatantExportDto> combatants) {
             return new EncounterExportDto(
                     enc.getName(), combatants, enc.getStatus().name(),
-                    enc.getRound(), enc.getActiveTurnIndex(), enc.getLogSequence(),
+                    enc.getRound(), enc.getActiveTurnIndex(), enc.getCombatPhase().name(),
+                    enc.getLogSequence(),
                     enc.getLairActionName(), enc.getLairActionDescription(),
                     enc.getEncounterKey(),
                     enc.getMap() != null ? enc.getMap().getName() : null);
@@ -190,7 +192,7 @@ public record CampaignExportDto(
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record CombatantExportDto(
-            String name, int initiative, int tieBreaker, int sortOrder,
+            String name, Integer initiative, int tieBreaker, int sortOrder,
             int maxHp, int currentHp, int tempHp,
             String kind, String groupId, boolean groupLeader,
             String tokenId, String statBlockKey, String partyMemberName,

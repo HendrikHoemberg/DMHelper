@@ -796,6 +796,11 @@ public class CampaignService {
                 encounter.setCampaign(saved);
                 encounter.setName(encDto.name());
                 encounter.setStatus(dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.valueOf(encDto.status()));
+                encounter.setCombatPhase(encDto.combatPhase() != null
+                        ? dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.CombatPhase.valueOf(encDto.combatPhase())
+                        : ("DONE".equals(encDto.status()) || encDto.activeTurnIndex() >= 0 || encDto.round() > 1
+                                ? dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.CombatPhase.RUNNING
+                                : dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.CombatPhase.SETUP));
                 encounter.setRound(encDto.round());
                 encounter.setActiveTurnIndex(encDto.activeTurnIndex());
                 encounter.setLogSequence(encDto.logSequence());

@@ -213,6 +213,7 @@
         "status": { "type": "string", "enum": ["PLANNED", "ACTIVE", "DONE"] },
         "round": { "type": "integer", "minimum": 0 },
         "activeTurnIndex": { "type": "integer" },
+        "combatPhase": { "type": "string", "enum": ["SETUP", "RUNNING"] },
         "logSequence": { "type": "integer", "minimum": 0 },
         "lairActionName": { "type": "string" },
         "lairActionDescription": { "type": "string" },
@@ -223,10 +224,10 @@
     "combatant": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "initiative", "tieBreaker", "sortOrder", "maxHp", "currentHp", "tempHp", "kind", "groupLeader", "defeated", "hidden", "concentrationCheckPending", "legendaryActionsUsed", "legendaryResistancesUsed", "legendaryActionsMax", "legendaryResistancesMax"],
+      "required": ["name", "tieBreaker", "sortOrder", "maxHp", "currentHp", "tempHp", "kind", "groupLeader", "defeated", "hidden", "concentrationCheckPending", "legendaryActionsUsed", "legendaryResistancesUsed", "legendaryActionsMax", "legendaryResistancesMax"],
       "properties": {
         "name": { "type": "string" },
-        "initiative": { "type": "integer" },
+        "initiative": { "type": ["integer", "null"] },
         "tieBreaker": { "type": "integer" },
         "sortOrder": { "type": "integer" },
         "maxHp": { "type": "integer", "minimum": 0 },

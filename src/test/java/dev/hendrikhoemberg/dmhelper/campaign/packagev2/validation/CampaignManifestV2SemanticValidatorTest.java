@@ -191,7 +191,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 null, null, null, null, null);
         var encounter = new CampaignManifestV2.EncounterDto(
                 "enc1", "Test", List.of(combatant), "PLANNED",
-                0, -1, 0, null, null, null, false, List.of(),
+                0, -1, null, 0, null, null, null, false, List.of(),
                 null, null, null, null, null, null);
         var manifest2 = new CampaignManifestV2(
                 2, manifest.metadata(), manifest.campaign(), manifest.assets(), manifest.party(),
@@ -723,7 +723,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 ContentReference.packageRef(CampaignContentType.HAZARD, "hazard-lava"));
         var encounter = new CampaignManifestV2.EncounterDto(
                 "enc1", "Trap Enc", List.of(combatant), "PLANNED",
-                0, -1, 0, null, null, null, false, List.of(),
+                0, -1, null, 0, null, null, null, false, List.of(),
                 null, null, null, null, null, null);
         var m = minimal();
         var manifest = new CampaignManifestV2(
@@ -833,6 +833,41 @@ class CampaignManifestV2SemanticValidatorTest {
                 m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
                 m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
                 m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), tables, List.of(), List.of(), List.of());
+    }
+
+    @Test
+    void setupPhaseRejectsEstablishedActiveTurn() {
+        var encounter = new CampaignManifestV2.EncounterDto(
+                "enc1", "Test", List.of(), "ACTIVE",
+                0, 0, "SETUP", 0, null, null, null, false, List.of(),
+                null, null, null, null, null, null);
+        assertThat(validator.validate(withEncounter(encounter)))
+                .extracting(CampaignImportProblem::code)
+                .contains("INVALID_STATE");
+    }
+
+    @Test
+    void activeRunningPhaseRequiresPositiveRoundAndActiveTurn() {
+        var encounter = new CampaignManifestV2.EncounterDto(
+                "enc1", "Test", List.of(), "ACTIVE",
+                0, -1, "RUNNING", 0, null, null, null, false, List.of(),
+                null, null, null, null, null, null);
+        assertThat(validator.validate(withEncounter(encounter)))
+                .extracting(CampaignImportProblem::code)
+                .contains("INVALID_STATE");
+    }
+
+    private CampaignManifestV2 withEncounter(CampaignManifestV2.EncounterDto encounter) {
+        var m = minimal();
+        return new CampaignManifestV2(
+                2, m.metadata(), m.campaign(), m.assets(), m.party(),
+                m.customStatBlocks(), m.customSpells(), m.customConditions(), m.customRules(),
+                m.customEquipment(), m.customMagicItems(), m.customClasses(), m.customSpecies(),
+                m.customBackgrounds(), m.customFeats(),
+                m.handouts(), m.maps(), List.of(encounter),
+                m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
+                m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
+                m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
     }
 
     private CampaignManifestV2 withQuests(List<CampaignManifestV2.QuestDto> quests) {

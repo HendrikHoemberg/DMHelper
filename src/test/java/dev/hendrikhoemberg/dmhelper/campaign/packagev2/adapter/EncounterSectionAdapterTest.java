@@ -38,9 +38,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.mockito.ArgumentCaptor;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -306,7 +309,7 @@ class EncounterSectionAdapterTest {
                 Instant.parse("2025-06-01T12:00:00Z"));
         var encounterDto = new EncounterDto(
                 "ambush", "Ambush", List.of(), "ACTIVE",
-                1, 0, 1, null, null, null, false, List.of(logDto),
+                1, 0, null, 1, null, null, null, false, List.of(logDto),
                 null, null, null, null, null, null);
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
@@ -351,7 +354,7 @@ class EncounterSectionAdapterTest {
                 null, null, null, null, null);
         var encounterDto = new EncounterDto(
                 "ambush", "Ambush", List.of(combatantDto), "PLANNED",
-                0, -1, 0, null, null, null, false, List.of(),
+                0, -1, null, 0, null, null, null, false, List.of(),
                 null, null, null, null, null, null);
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
@@ -381,6 +384,119 @@ class EncounterSectionAdapterTest {
 
         org.mockito.Mockito.verify(combatantRepository).save(org.mockito.ArgumentMatchers.argThat(
                 combatant -> combatant.getStatBlock() == srd));
+    }
+
+    @Test
+    void roundTripsSetupPhaseWithUnsetZeroAndNegativeInitiative() {
+        var c1 = new CombatantDto("c1", "C1", null, 0, 0, 10, 10, 0,
+                "MONSTER", null, false, null, null, null,
+                false, false, null, null, false,
+                0, 0, 0, 0, null, null,
+                null, null, null, null, null);
+        var c2 = new CombatantDto("c2", "C2", 0, 0, 1, 10, 10, 0,
+                "MONSTER", null, false, null, null, null,
+                false, false, null, null, false,
+                0, 0, 0, 0, null, null,
+                null, null, null, null, null);
+        var c3 = new CombatantDto("c3", "C3", -2, 0, 2, 10, 10, 0,
+                "MONSTER", null, false, null, null, null,
+                false, false, null, null, false,
+                0, 0, 0, 0, null, null,
+                null, null, null, null, null);
+        var encounterDto = new EncounterDto(
+                "e1", "Test", List.of(c1, c2, c3), "ACTIVE",
+                0, -1, "SETUP", 0, null, null, null, false, List.of(),
+                null, null, null, null, null, null);
+        var manifest = new CampaignManifestV2(
+                2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null,
+                List.of(encounterDto),
+                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+
+        when(encounterRepository.save(any())).thenAnswer(invocation -> {
+            var e = invocation.getArgument(0, Encounter.class);
+            e.setId(UUID.randomUUID());
+            return e;
+        });
+        when(combatantRepository.save(any())).thenAnswer(invocation -> {
+            var c = invocation.getArgument(0, Combatant.class);
+            c.setId(UUID.randomUUID());
+            return c;
+        });
+
+        var context = new CampaignImportContext(
+                campaignId, new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
+        context.setCampaign(campaign);
+        adapter.importSection(manifest, context);
+
+        var encounterCaptor = ArgumentCaptor.forClass(Encounter.class);
+        verify(encounterRepository).save(encounterCaptor.capture());
+        assertThat(encounterCaptor.getValue().getCombatPhase()).isEqualTo(Encounter.CombatPhase.SETUP);
+
+        var combatantCaptor = ArgumentCaptor.forClass(Combatant.class);
+        verify(combatantRepository, org.mockito.Mockito.times(3)).save(combatantCaptor.capture());
+        assertThat(combatantCaptor.getAllValues())
+                .extracting(Combatant::getInitiative)
+                .containsExactly(null, 0, -2);
+    }
+
+    @Test
+    void olderPackageWithoutCombatPhaseInfersSetup() {
+        var encounterDto = new EncounterDto(
+                "e1", "Test", List.of(), "ACTIVE",
+                1, -1, null, 0, null, null, null, false, List.of(),
+                null, null, null, null, null, null);
+        var manifest = new CampaignManifestV2(
+                2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null,
+                List.of(encounterDto),
+                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+
+        when(encounterRepository.save(any())).thenAnswer(invocation -> {
+            var e = invocation.getArgument(0, Encounter.class);
+            e.setId(UUID.randomUUID());
+            return e;
+        });
+
+        var context = new CampaignImportContext(
+                campaignId, new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
+        context.setCampaign(campaign);
+        adapter.importSection(manifest, context);
+
+        var captor = ArgumentCaptor.forClass(Encounter.class);
+        verify(encounterRepository).save(captor.capture());
+        assertThat(captor.getValue().getCombatPhase()).isEqualTo(Encounter.CombatPhase.SETUP);
+    }
+
+    @Test
+    void olderPackageWithActiveTurnInfersRunning() {
+        var encounterDto = new EncounterDto(
+                "e1", "Test", List.of(), "ACTIVE",
+                1, 0, null, 0, null, null, null, false, List.of(),
+                null, null, null, null, null, null);
+        var manifest = new CampaignManifestV2(
+                2, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null,
+                List.of(encounterDto),
+                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+
+        when(encounterRepository.save(any())).thenAnswer(invocation -> {
+            var e = invocation.getArgument(0, Encounter.class);
+            e.setId(UUID.randomUUID());
+            return e;
+        });
+
+        var context = new CampaignImportContext(
+                campaignId, new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
+        context.setCampaign(campaign);
+        adapter.importSection(manifest, context);
+
+        var captor = ArgumentCaptor.forClass(Encounter.class);
+        verify(encounterRepository).save(captor.capture());
+        assertThat(captor.getValue().getCombatPhase()).isEqualTo(Encounter.CombatPhase.RUNNING);
     }
 
     private Encounter createEncounter(String name, Encounter.Status status, int round, int activeTurnIndex) {

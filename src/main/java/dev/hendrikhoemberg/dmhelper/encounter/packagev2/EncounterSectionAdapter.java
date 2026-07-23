@@ -123,7 +123,8 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
         return new EncounterDto(
                 key, encounter.getName(), combatantDtos,
                 encounter.getStatus().name(), encounter.getRound(),
-                encounter.getActiveTurnIndex(), encounter.getLogSequence(),
+                encounter.getActiveTurnIndex(), encounter.getCombatPhase().name(),
+                encounter.getLogSequence(),
                 encounter.getLairActionName(), encounter.getLairActionDescription(),
                 mapRef, encounter.isLairActionTriggered(), combatLogDtos,
                 prep, rewards, waveDtos,
@@ -191,9 +192,8 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                     combatant.getName() != null ? combatant.getName() : threatType.name());
         }
 
-        Integer initiative = combatant.getInitiative();
         return new CombatantDto(
-                key, combatant.getName(), initiative != null ? initiative : 0,
+                key, combatant.getName(), combatant.getInitiative(),
                 combatant.getTieBreaker(), combatant.getSortOrder(),
                 combatant.getMaxHp(), combatant.getCurrentHp(), combatant.getTempHp(),
                 combatant.getKind(), combatant.getGroupId(), combatant.isGroupLeader(),
@@ -254,6 +254,7 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
             encounter.setName(dto.name());
             encounter.setEncounterKey(dto.key());
             encounter.setStatus(dto.status() != null ? Encounter.Status.valueOf(dto.status()) : Encounter.Status.PLANNED);
+            encounter.setCombatPhase(importedPhase(dto));
             encounter.setRound(dto.round());
             encounter.setActiveTurnIndex(dto.activeTurnIndex());
             encounter.setLogSequence(dto.logSequence());
@@ -427,6 +428,17 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                         savedLogEntry, savedLogEntry.getId());
             }
         }
+    }
+
+    private Encounter.CombatPhase importedPhase(EncounterDto dto) {
+        if (dto.combatPhase() != null) {
+            return Encounter.CombatPhase.valueOf(dto.combatPhase());
+        }
+        return (dto.status() != null && "DONE".equals(dto.status()))
+                || dto.activeTurnIndex() >= 0
+                || dto.round() > 1
+                ? Encounter.CombatPhase.RUNNING
+                : Encounter.CombatPhase.SETUP;
     }
 
     private static class ImportedEncounter {

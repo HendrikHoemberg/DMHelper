@@ -959,6 +959,25 @@ public class CampaignManifestV2SemanticValidator {
             if (e.activeTurnIndex() < -1 || e.activeTurnIndex() >= size(e.combatants())) {
                 error(problems, "INVALID_ACTIVE_TURN", "/encounters/" + i + "/activeTurnIndex", "Active turn index is invalid");
             }
+            if (e.combatPhase() != null) {
+                String phase = e.combatPhase();
+                if ("SETUP".equals(phase)) {
+                    if (e.activeTurnIndex() >= 0 || e.round() > 1) {
+                        error(problems, "INVALID_STATE", "/encounters/" + i + "/combatPhase",
+                                "SETUP encounter must have activeTurnIndex -1 and round 0");
+                    }
+                } else if ("RUNNING".equals(phase)) {
+                    boolean done = "DONE".equals(e.status());
+                    boolean active = "ACTIVE".equals(e.status());
+                    if (done && e.round() < 0) {
+                        error(problems, "INVALID_STATE", "/encounters/" + i + "/combatPhase",
+                                "DONE running encounter must have round >= 0");
+                    } else if (active && (e.round() < 1 || e.activeTurnIndex() < 0)) {
+                        error(problems, "INVALID_STATE", "/encounters/" + i + "/combatPhase",
+                                "ACTIVE running encounter must have round >= 1 and activeTurnIndex >= 0");
+                    }
+                }
+            }
         }
         if (activeEncounters > 1) error(problems, "MULTIPLE_ACTIVE_ENCOUNTERS", "/encounters", "Only one encounter may be active");
     }

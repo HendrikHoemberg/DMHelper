@@ -93,6 +93,47 @@ class CampaignSemanticComparatorTest {
                 .hasMessageContaining("/adventures/0/chapters/0/scenes/0/handoutRefs/0/key");
     }
 
+    @Test
+    void treatsNullInitiativeAsEquivalentToOmittedInitiative() throws Exception {
+        var base = minimal();
+        var a = withCombatantInitiative(base, null);
+        var b = withCombatantInitiative(base, null);
+        assertThatCode(() -> CampaignSemanticComparator.assertEquivalent(
+                CampaignSemanticSnapshot.from(a), CampaignSemanticSnapshot.from(b)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void distinguishesNullFromZeroInitiative() throws Exception {
+        var base = minimal();
+        var withNull = withCombatantInitiative(base, null);
+        var withZero = withCombatantInitiative(base, 0);
+        assertThatThrownBy(() -> CampaignSemanticComparator.assertEquivalent(
+                CampaignSemanticSnapshot.from(withNull), CampaignSemanticSnapshot.from(withZero)))
+                .isInstanceOf(AssertionError.class);
+    }
+
+    private CampaignManifestV2 withCombatantInitiative(CampaignManifestV2 base, Integer initiative) {
+        var combatant = new CampaignManifestV2.CombatantDto(
+                "c1", "Goblin", initiative, 0, 0, 7, 7, 0,
+                "MONSTER", null, false, null, null, null,
+                false, false, null, null, false,
+                0, 0, 0, 0, null, null,
+                null, null, null, null, null);
+        var encounter = new CampaignManifestV2.EncounterDto(
+                "enc1", "Test", List.of(combatant), "PLANNED",
+                0, -1, null, 0, null, null, null, false, List.of(),
+                null, null, null, null, null, null);
+        return new CampaignManifestV2(
+                base.formatVersion(), base.metadata(), base.campaign(), base.assets(), base.party(),
+                base.customStatBlocks(), base.customSpells(), base.customConditions(), base.customRules(),
+                base.customEquipment(), base.customMagicItems(), base.customClasses(), base.customSpecies(),
+                base.customBackgrounds(), base.customFeats(),
+                base.handouts(), base.maps(), List.of(encounter), base.notes(),
+                base.quickNotes(), base.assignments(), base.ledgerEntries(), base.timelineEvents(),
+                base.adventures(), base.session(), base.diceRolls(), base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+    }
+
     private CampaignManifestV2 withSceneHandouts(
             CampaignManifestV2 base,
             java.util.List<dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference> refs) {

@@ -362,6 +362,7 @@ public record CampaignManifestV2(
             String status,
             int round,
             int activeTurnIndex,
+            String combatPhase,
             long logSequence,
             String lairActionName,
             String lairActionDescription,
@@ -423,7 +424,7 @@ public record CampaignManifestV2(
     public record CombatantDto(
             String key,
             String name,
-            int initiative,
+            Integer initiative,
             int tieBreaker,
             int sortOrder,
             int maxHp,

@@ -842,7 +842,7 @@ class CampaignImportExportRoundTripTest {
                                                 c.legendaryActionsMax(), c.legendaryResistancesMax(),
                                                 c.rechargedAbilities(), c.notes()))
                                         .toList() : null,
-                                e.status(), e.round(), e.activeTurnIndex(), e.logSequence(),
+                                e.status(), e.round(), e.activeTurnIndex(), e.combatPhase(), e.logSequence(),
                                 e.lairActionName(), e.lairActionDescription(),
                                 e.encounterKey(), e.map()))
                         .toList() : null,

@@ -55,6 +55,7 @@ public final class CampaignSemanticComparator {
             }
         }
         normalizeHandoutCompatibilityFields(root);
+        normalizeEncounterCombatPhase(root);
         replaceAssetReferences(root);
         sortIdentityCollections(root, null);
         return root;
@@ -112,6 +113,22 @@ public final class CampaignSemanticComparator {
         sorted.sort(java.util.Comparator.comparing(JsonNode::toString));
         array.removeAll();
         sorted.forEach(array::add);
+    }
+
+    private static void normalizeEncounterCombatPhase(ObjectNode root) {
+        JsonNode encounters = root.get("encounters");
+        if (!(encounters instanceof ArrayNode array)) return;
+        for (JsonNode encounter : array) {
+            if (encounter instanceof ObjectNode object
+                    && (!object.has("combatPhase") || object.path("combatPhase").isNull())) {
+                String status = object.path("status").asText();
+                int activeTurnIndex = object.path("activeTurnIndex").asInt(-1);
+                int round = object.path("round").asInt(0);
+                String phase = "DONE".equals(status) || activeTurnIndex >= 0 || round > 1
+                        ? "RUNNING" : "SETUP";
+                object.put("combatPhase", phase);
+            }
+        }
     }
 
     private static void replaceAssetReferences(ObjectNode root) {
