@@ -134,4 +134,33 @@ class EncounterTemplateContractTest {
         assertThat(java).contains("model.addAttribute(\"prep\"");
         assertThat(java).contains("model.addAttribute(\"rewards\"");
     }
+
+    @Test
+    void trackerExposesAccessibleInitiativeSetupActions() throws IOException {
+        String html = Files.readString(
+                Path.of("src/main/resources/templates/encounter/_tracker.html"));
+
+        assertThat(html).contains(
+                "data-initiative-setup",
+                "encounter?.combatPhase === 'SETUP'",
+                "Roll unset NPCs",
+                "Start combat",
+                "acceptUnset",
+                "/start-combat",
+                "/auto-roll",
+                "c.initiative ?? '\u2014'",
+                "type=\"number\"",
+                "aria-label");
+        assertThat(html).doesNotContain("c.initiative || '\u2014'");
+    }
+
+    @Test
+    void runningTurnControlsAreHiddenDuringSetup() throws IOException {
+        String html = Files.readString(
+                Path.of("src/main/resources/templates/encounter/_tracker.html"));
+
+        assertThat(html).contains(
+                "data-running-turn-controls",
+                "x-show=\"encounter?.combatPhase === 'RUNNING'\"");
+    }
 }

@@ -261,6 +261,14 @@ class SessionCockpitTemplateContractTest {
     }
 
     @Test
+    void encounterModuleHidesDuringTableSafe() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
+        assertThat(html).contains(
+                "data-runtime-module=\"encounter\"",
+                "data-table-safe-behavior=\"HIDE\"");
+    }
+
+    @Test
     void railFragmentEndpointsExist() throws IOException {
         String java = Files.readString(Path.of(
                 "src/main/java/dev/hendrikhoemberg/dmhelper/session/web/SessionController.java"));

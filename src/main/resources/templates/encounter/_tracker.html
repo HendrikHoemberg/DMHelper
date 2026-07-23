@@ -44,6 +44,8 @@
             conditionDuration: '',
             waves: [],
             spawnError: '',
+            acceptUnset: false,
+            setupBusy: false,
 
             request(url, options = {}) {
                 return window.dmRequest(url, options);
@@ -102,6 +104,53 @@
                 const card = this.activeThreatCard;
                 if (!card) return null;
                 return card.trap || card.hazard || null;
+            },
+
+            get inInitiativeSetup() {
+                return this.encounter?.combatPhase === 'SETUP';
+            },
+
+            get unsetCombatants() {
+                return this.combatants.filter(c => c.initiative == null);
+            },
+
+            get unsetNpcCount() {
+                return this.unsetCombatants.filter(c => c.kind !== 'PC').length;
+            },
+
+            get activeSetupCombatants() {
+                return this.combatants.filter(c => {
+                    const wave = this.waveFor(c);
+                    return wave == null || wave.status === 'ACTIVE';
+                });
+            },
+
+            get canStartCombat() {
+                return this.activeSetupCombatants.length > 0
+                    && (this.unsetCombatants.length === 0 || this.acceptUnset);
+            },
+
+            get initiativeTies() {
+                const counts = new Map();
+                this.combatants
+                    .filter(c => c.initiative != null)
+                    .forEach(c => counts.set(c.initiative, (counts.get(c.initiative) || 0) + 1));
+                return new Set([...counts.entries()]
+                    .filter(([, count]) => count > 1)
+                    .map(([initiative]) => initiative));
+            },
+
+            waveFor(combatant) {
+                return combatant.waveId == null
+                    ? null
+                    : this.waves.find(w => w.id === combatant.waveId) || null;
+            },
+
+            waveLabel(combatant) {
+                const wave = this.waveFor(combatant);
+                return wave != null && wave.status !== 'ACTIVE'
+                    ? `${wave.name} · later wave`
+                    : '';
             },
 
             prefillDice(expression, label) {
@@ -169,11 +218,12 @@
 
             async loadEncounter(encounterId) {
                 this._encounterId = encounterId;
+                this.acceptUnset = false;
                 try {
                     const resp = await this.request(`/api/v1/encounters/${encounterId}`);
                     this.encounter = await resp.json();
-                    await this.reloadCombatants();
                     await this.loadWaves();
+                    await this.reloadCombatants();
                     this.dispatchState();
                     this.dispatchTurnEvent();
                 } catch (error) {
@@ -185,7 +235,10 @@
             async reloadCombatants() {
                 if (!this._encounterId) return;
                 try {
-                    const resp = await this.request(`/api/v1/encounters/${this._encounterId}/combatants`);
+                    const combatantUrl = this.inInitiativeSetup
+                        ? `/api/v1/encounters/${this._encounterId}/setup-combatants`
+                        : `/api/v1/encounters/${this._encounterId}/combatants`;
+                    const resp = await this.request(combatantUrl);
                     const before = this._capturePositions();
                     this.combatants = await resp.json();
                     this.deriveActiveCombatant();
@@ -369,6 +422,53 @@
                         await this.reloadCombatants();
                         this.dispatchState();
                     });
+            },
+
+            async saveSetupInitiative(combatantId, rawValue) {
+                const initiative = rawValue === '' ? null : Number(rawValue);
+                if (initiative !== null && !Number.isInteger(initiative)) return;
+                await this.setInitiative(combatantId, initiative);
+            },
+
+            async rollUnsetNpcs() {
+                if (!this._encounterId || this.unsetNpcCount === 0) return;
+                this.setupBusy = true;
+                try {
+                    await this.mutate(
+                        'Could not roll unset NPC initiatives. Manual values were kept.',
+                        `/api/v1/encounters/${this._encounterId}/auto-roll`,
+                        { method: 'POST' },
+                        async () => {
+                            await this.reloadCombatants();
+                            this.dispatchState();
+                        });
+                } finally {
+                    this.setupBusy = false;
+                }
+            },
+
+            async startCombat() {
+                if (!this._encounterId || !this.canStartCombat) return;
+                this.setupBusy = true;
+                try {
+                    await this.mutate(
+                        'Could not start combat. Initiative setup was kept.',
+                        `/api/v1/encounters/${this._encounterId}/start-combat`,
+                        {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ acceptUnset: this.acceptUnset }),
+                        },
+                        async response => {
+                            this.encounter = await response.json();
+                            await this.reloadCombatants();
+                            this.deriveActiveCombatant();
+                            this.dispatchTurnEvent();
+                            this.dispatchState();
+                        });
+                } finally {
+                    this.setupBusy = false;
+                }
             },
 
             async applyHpDelta(combatantId) {
@@ -665,8 +765,70 @@
                 <button class="btn btn-danger" style="padding: 2px 8px; font-size: 0.75rem;" @click="endEncounter()">End</button>
             </div>
 
+            <!-- Initiative setup panel -->
+            <section class="initiative-setup"
+                     data-initiative-setup
+                     x-show="encounter?.combatPhase === 'SETUP'"
+                     x-cloak>
+                <div class="initiative-setup__header">
+                    <div>
+                        <strong>Set initiative</strong>
+                        <p>Enter party rolls, then roll any remaining NPCs.</p>
+                    </div>
+                    <button type="button"
+                            class="btn btn-ghost btn-xs"
+                            :disabled="setupBusy || unsetNpcCount === 0"
+                            @click="rollUnsetNpcs()">
+                        Roll unset NPCs
+                    </button>
+                </div>
+
+                <ol class="initiative-setup__order" aria-label="Resulting initiative order">
+                    <template x-for="(c, index) in combatants" :key="c.id">
+                        <li class="initiative-setup__row"
+                            :class="{ 'initiative-setup__row--unset': c.initiative == null }">
+                            <span class="initiative-setup__position" x-text="index + 1"></span>
+                            <span class="initiative-setup__name" x-text="c.name"></span>
+                            <span class="badge" x-text="c.kind"></span>
+                            <span class="badge"
+                                  x-show="waveLabel(c)"
+                                  x-text="waveLabel(c)"></span>
+                            <span class="badge badge-warning"
+                                  x-show="initiativeTies.has(c.initiative)">Tie</span>
+                            <input type="number"
+                                   inputmode="numeric"
+                                   :value="c.initiative ?? ''"
+                                   :aria-label="'Initiative for ' + c.name"
+                                   placeholder="Unset"
+                                   @change="saveSetupInitiative(c.id, $event.target.value)">
+                        </li>
+                    </template>
+                </ol>
+
+                <p class="initiative-setup__tie-help">
+                    Ties keep the displayed order: higher tie-breaker first, then prior order, then name.
+                    Accepted unset combatants act after resolved initiatives.
+                </p>
+
+                <label class="initiative-setup__accept" x-show="unsetCombatants.length > 0">
+                    <input type="checkbox" x-model="acceptUnset">
+                    Start with <span x-text="unsetCombatants.length"></span> unset
+                    <span>— they remain last in the displayed order</span>
+                </label>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        data-action="start-combat"
+                        :disabled="setupBusy || !canStartCombat"
+                        @click="startCombat()">
+                    Start combat
+                </button>
+            </section>
+
             <!-- Turn controls -->
-            <div class="tracker-turns">
+            <div class="tracker-turns"
+                 data-running-turn-controls
+                 x-show="encounter?.combatPhase === 'RUNNING'">
                 <button class="btn btn-ghost" style="padding: 2px 8px;" @click="previousTurn()"
                         data-action="previous-turn">◀ Prev</button>
                 <span style="font-size: var(--text-sm);">
@@ -848,7 +1010,7 @@
                          x-show="!tableSafe || !c.hidden"
                          @click="selectCombatant(c.id)">
                         <!-- Initiative badge -->
-                        <span class="init-badge" x-text="c.initiative || '—'"></span>
+                        <span class="init-badge" x-text="c.initiative ?? '—'"></span>
 
                         <!-- Name + group indicator -->
                         <span class="combatant-name">

@@ -880,6 +880,89 @@
 .lair-action-row { border: 1px dashed var(--color-text-muted); margin: 4px var(--space-md); padding: var(--space-xs); border-radius: var(--radius); display: flex; align-items: center; gap: var(--space-xs); }
 .lair-init { background: var(--color-text-muted); }
 
+.initiative-setup {
+    display: grid;
+    gap: var(--space-sm);
+    min-height: 0;
+    padding: var(--space-sm) var(--space-md);
+    overflow: auto;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.initiative-setup__header,
+.initiative-setup__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.initiative-setup__header {
+    justify-content: space-between;
+}
+
+.initiative-setup__header p,
+.initiative-setup__tie-help {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+}
+
+.initiative-setup__order {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.initiative-setup__row {
+    min-height: 34px;
+    padding: 3px var(--space-xs);
+    border-radius: var(--radius);
+    background: var(--elevation-raised-bg);
+}
+
+.initiative-setup__row--unset {
+    border-left: 2px solid var(--color-warning);
+}
+
+.initiative-setup__position {
+    width: 2ch;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.initiative-setup__name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.initiative-setup input[type="number"] {
+    width: 5.5rem;
+    min-width: 0;
+}
+
+.initiative-setup__accept {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+}
+
+@media (max-width: 760px) {
+    .initiative-setup__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .initiative-setup__row {
+        flex-wrap: wrap;
+    }
+}
+
 /* ==============================
    Handout Gallery (M7)
    ============================== */
