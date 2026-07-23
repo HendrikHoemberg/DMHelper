@@ -1,19 +1,62 @@
-/* B1 structural baseline for the four-zone module workbench.
-   Task 8 expands edit/zoom/focus/target-size/reduced-motion rules. */
+/* B1 four-zone module workbench — viewport, grid, edit chrome, focus, reduced motion. */
 
-html:has(.session-cockpit),
+/* Pin the page to the visual viewport so the document never becomes a scroll root.
+   Only <html> is position:fixed (viewport-relative). <body> and .session-cockpit use
+   height:100% so they follow the html box — required for synthetic CSS zoom stress. */
+html:has(.session-cockpit) {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 body:has(.session-cockpit) {
   width: 100%;
   height: 100%;
+  min-height: 0; /* override base body min-height:100vh so the shell can shrink */
+  max-width: 100%;
+  max-height: 100%;
   overflow: hidden;
+  overscroll-behavior: none;
 }
 
 .session-cockpit {
-  height: 100dvh;
+  position: relative;
+  width: 100%;
+  height: 100%;
   min-height: 0;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: var(--color-bg);
+}
+
+/* Command bar (topbar is the live markup class; commandbar is the contract alias). */
+.cockpit-commandbar,
+.cockpit-topbar {
+  min-height: 3rem;
+  max-height: 3rem;
+  flex: 0 0 3rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0 var(--space-md);
+  overflow: visible;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-gold-soft);
+}
+
+.cockpit-commandbar .btn,
+.cockpit-topbar .btn,
+.cockpit-commandbar button,
+.cockpit-topbar button {
+  min-width: 32px;
+  min-height: 32px;
 }
 
 .cockpit-workbench {
@@ -37,15 +80,65 @@ body:has(.session-cockpit) {
   overflow: hidden;
 }
 
-.cockpit-zone--left { grid-column: 1; grid-row: 1; }
-.cockpit-splitter--left { grid-column: 2; grid-row: 1; }
-.cockpit-zone--primary { grid-column: 3; grid-row: 1; }
-.cockpit-splitter--right { grid-column: 4; grid-row: 1; }
-.cockpit-zone--right { grid-column: 5; grid-row: 1; }
-.cockpit-splitter--bottom { grid-column: 1 / -1; grid-row: 2; }
-.cockpit-zone--bottom { grid-column: 1 / -1; grid-row: 3; }
+.cockpit-zone--left {
+  grid-column: 1;
+  grid-row: 1;
+}
 
-.cockpit-zone,
+.cockpit-splitter--left {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.cockpit-zone--primary {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.cockpit-splitter--right {
+  grid-column: 4;
+  grid-row: 1;
+}
+
+.cockpit-zone--right {
+  grid-column: 5;
+  grid-row: 1;
+}
+
+.cockpit-splitter--bottom {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.cockpit-zone--bottom {
+  grid-column: 1 / -1;
+  grid-row: 3;
+}
+
+.cockpit-zone {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid transparent;
+  background: var(--color-bg);
+}
+
+.cockpit-zone[data-collapsed="true"] {
+  display: none;
+}
+
+.cockpit-workbench[data-bottom-collapsed="true"] {
+  --top-size: 1fr;
+  --bottom-size: 0fr;
+  grid-template-rows: minmax(0, 1fr) 0 minmax(0, 0fr);
+}
+
+.cockpit-workbench[data-bottom-collapsed="true"] .cockpit-splitter--bottom {
+  display: none;
+}
+
 .cockpit-module,
 .cockpit-module__body,
 [data-zone-panels],
@@ -54,15 +147,11 @@ body:has(.session-cockpit) {
   min-height: 0;
 }
 
-.cockpit-zone,
 .cockpit-module {
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-.cockpit-module {
-  height: 100%;
 }
 
 .cockpit-module__body {
@@ -82,41 +171,45 @@ body:has(.session-cockpit) {
   display: none !important;
 }
 
-.cockpit-zone[data-collapsed="true"],
-.cockpit-workbench[data-bottom-collapsed="true"] .cockpit-splitter--bottom {
-  display: none;
-}
-
-.cockpit-workbench[data-bottom-collapsed="true"] {
-  --top-size: 1fr;
-  --bottom-size: 0fr;
-  grid-template-rows: minmax(0, 1fr) 0 minmax(0, 0fr);
-}
-
+/* ── Tabs ── */
 .cockpit-zone__tabs {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 2px;
   flex-shrink: 0;
+  min-height: 0;
   padding: 2px 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior: contain;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
 }
 
+.cockpit-tab,
 .cockpit-zone__tab {
+  flex: 0 0 auto;
+  min-width: 32px;
+  min-height: 32px;
   font-size: var(--text-sm);
-  padding: 4px 8px;
+  padding: 4px 10px;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-bottom-width: 2px;
+  border-radius: 4px 4px 0 0;
   background: transparent;
   color: var(--color-text-muted);
   cursor: pointer;
+  white-space: nowrap;
 }
 
+.cockpit-tab[aria-selected="true"],
 .cockpit-zone__tab[aria-selected="true"] {
   color: var(--color-text);
+  font-weight: 600;
   border-color: var(--color-border);
+  border-bottom-color: var(--color-accent);
   background: var(--color-bg);
+  box-shadow: inset 0 -2px 0 var(--color-accent);
 }
 
 .cockpit-zone__panels {
@@ -138,12 +231,14 @@ body:has(.session-cockpit) {
   display: none !important;
 }
 
+/* ── Module chrome ── */
 .cockpit-module__header {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
   flex-shrink: 0;
-  padding: 4px 8px;
+  min-height: 36px;
+  padding: 2px 8px;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
 }
@@ -154,6 +249,9 @@ body:has(.session-cockpit) {
   font-weight: 600;
   flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cockpit-module__actions {
@@ -162,9 +260,16 @@ body:has(.session-cockpit) {
   flex-shrink: 0;
 }
 
-.cockpit-module__actions button {
+.cockpit-module__actions button,
+.cockpit-module__header button,
+[data-module-focus],
+[data-module-menu],
+[data-module-remove],
+[data-module-retry] {
+  min-width: 32px;
+  min-height: 32px;
   font-size: var(--text-xs);
-  padding: 2px 6px;
+  padding: 2px 8px;
   border: 1px solid var(--color-border);
   border-radius: 4px;
   background: transparent;
@@ -172,16 +277,56 @@ body:has(.session-cockpit) {
   cursor: pointer;
 }
 
+.cockpit-module__actions button:hover,
+.cockpit-module__header button:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-gold-soft);
+}
+
+/* ── Splitters: locked = invisible + inert; edit = 6px line + 32px hit target ── */
 .cockpit-splitter {
+  position: relative;
   margin: 0;
   padding: 0;
   border: none;
+  background: transparent;
+  pointer-events: none;
+  cursor: default;
+  z-index: 1;
+}
+
+.cockpit-workbench[data-layout-mode="edit"] .cockpit-splitter {
   background: var(--color-border);
+  pointer-events: auto;
   cursor: col-resize;
 }
 
-.cockpit-splitter--bottom {
+.cockpit-workbench[data-layout-mode="edit"] .cockpit-splitter--bottom {
   cursor: row-resize;
+}
+
+/* Transparent 32px hit expansion around the 6px visual track. */
+.cockpit-workbench[data-layout-mode="edit"] .cockpit-splitter::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+}
+
+.cockpit-workbench[data-layout-mode="edit"] .cockpit-splitter--left::after,
+.cockpit-workbench[data-layout-mode="edit"] .cockpit-splitter--right::after {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 32px;
+  transform: translateX(-50%);
+}
+
+.cockpit-workbench[data-layout-mode="edit"] .cockpit-splitter--bottom::after {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 32px;
+  transform: translateY(-50%);
 }
 
 .cockpit-splitter:focus-visible {
@@ -189,21 +334,31 @@ body:has(.session-cockpit) {
   outline-offset: -1px;
 }
 
-.cockpit-module-depot {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
+/* ── Docking targets (edit mode) ── */
+.cockpit-workbench[data-layout-mode="edit"] .cockpit-zone[data-dock-target] {
+  outline: 1px dashed color-mix(in srgb, var(--color-shield) 55%, transparent);
+  outline-offset: -2px;
 }
 
+.cockpit-workbench[data-layout-mode="edit"] .cockpit-zone[data-dock-active="true"] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--color-gold-soft) 35%, var(--color-bg));
+  box-shadow: inset 0 0 0 1px var(--color-shield-soft);
+}
+
+/* ── Focus layer fills the workbench band under the command bar ── */
 .cockpit-focus-layer {
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  top: 3rem;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 40;
   display: flex;
   flex-direction: column;
   background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
 }
 
 .cockpit-focus-layer[hidden] {
@@ -214,44 +369,81 @@ body:has(.session-cockpit) {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  flex-shrink: 0;
+  min-height: 36px;
   padding: var(--space-sm) var(--space-md);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
+}
+
+.cockpit-focus-layer__bar .btn {
+  min-width: 32px;
+  min-height: 32px;
 }
 
 .cockpit-focus-layer__mount {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cockpit-focus-layer__mount > .cockpit-module {
+  flex: 1 1 auto;
+}
+
+/* ── Depot, notices, overflow menus ── */
+.cockpit-module-depot {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
 }
 
 .cockpit-deferred-body {
   padding: var(--space-sm);
 }
 
-.cockpit-topbar__overflow summary {
-  list-style: none;
-  cursor: pointer;
+.cockpit-topbar__overflow,
+.cockpit-preset-overflow {
+  position: relative;
 }
 
-.cockpit-topbar__overflow summary::-webkit-details-marker {
+.cockpit-topbar__overflow summary,
+.cockpit-preset-overflow summary {
+  list-style: none;
+  cursor: pointer;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.cockpit-topbar__overflow summary::-webkit-details-marker,
+.cockpit-preset-overflow summary::-webkit-details-marker {
   display: none;
 }
 
-.cockpit-topbar__overflow-panel {
+.cockpit-topbar__overflow-panel,
+.cockpit-preset-overflow__panel {
   position: absolute;
-  right: var(--space-md);
-  z-index: 20;
+  right: 0;
+  z-index: 30;
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
   min-width: 16rem;
   margin-top: 4px;
   padding: var(--space-sm);
-  background: var(--color-surface);
+  background: var(--elevation-floating-bg);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.cockpit-preset-overflow__panel {
+  min-width: 12rem;
+  gap: 2px;
 }
 
 .cockpit-layout-notice {
@@ -266,32 +458,132 @@ body:has(.session-cockpit) {
   padding-bottom: 2px;
 }
 
-.cockpit-preset-overflow {
-  position: relative;
-}
-
-.cockpit-preset-overflow summary {
-  list-style: none;
-  cursor: pointer;
-}
-
-.cockpit-preset-overflow summary::-webkit-details-marker {
-  display: none;
-}
-
-.cockpit-preset-overflow__panel {
-  position: absolute;
-  z-index: 20;
+/* ── Arrange menu + layout dialogs (elevation / focus model) ── */
+.cockpit-arrange-menu {
+  position: fixed;
+  z-index: 50;
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 12rem;
-  margin-top: 4px;
-  padding: var(--space-sm);
-  background: var(--color-surface);
+  padding: var(--space-xs);
+  background: var(--elevation-floating-bg);
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.cockpit-arrange-menu[hidden] {
+  display: none !important;
+}
+
+.cockpit-arrange-menu button {
+  min-height: 32px;
+  text-align: left;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: var(--text-sm);
+}
+
+.cockpit-arrange-menu button:hover,
+.cockpit-arrange-menu button:focus-visible {
+  background: var(--color-surface-hover);
+  border-color: var(--color-gold-soft);
+}
+
+.cockpit-dialog,
+.cockpit-layout-dialog {
+  max-inline-size: min(28rem, calc(100vw - 2rem));
+  max-block-size: calc(100dvh - 2rem);
+  margin: auto;
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--elevation-floating-bg);
+  color: var(--color-text);
+  box-shadow: var(--shadow);
+}
+
+.cockpit-dialog::backdrop,
+.cockpit-layout-dialog::backdrop {
+  background: var(--color-overlay);
+  backdrop-filter: blur(4px);
+}
+
+.cockpit-dialog:not([open]),
+.cockpit-layout-dialog:not([open]) {
+  display: none;
+}
+
+.cockpit-dialog h2,
+.cockpit-layout-dialog h2 {
+  margin: 0 0 var(--space-sm);
+  font-size: var(--text-lg);
+}
+
+.cockpit-dialog p,
+.cockpit-layout-dialog p {
+  margin: 0 0 var(--space-md);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.cockpit-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+  margin-top: var(--space-md);
+}
+
+.cockpit-dialog__actions .btn,
+.cockpit-dialog .btn,
+.cockpit-layout-dialog .btn {
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.cockpit-dialog [data-add-module-list] {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 16rem;
+  overflow: auto;
+}
+
+.cockpit-dialog [data-add-module] {
+  min-height: 32px;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.cockpit-dialog [data-add-module]:hover,
+.cockpit-dialog [data-add-module]:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-surface-hover);
+}
+
+/* ── Focus outline ── */
+.session-cockpit :focus-visible,
+.cockpit-workbench :focus-visible,
+.cockpit-focus-layer :focus-visible,
+.cockpit-dialog:focus-visible,
+.cockpit-layout-dialog:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 /* Map module fills its shell body like the old table column. */
@@ -306,4 +598,26 @@ body:has(.session-cockpit) {
 .cockpit-module[data-module-key="map"] .battle-body {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/* Story / encounter rails scroll inside the module body only. */
+.cockpit-module .cockpit-story,
+.cockpit-module .cockpit-encounter {
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cockpit-workbench *,
+  .cockpit-focus-layer *,
+  .cockpit-layout-dialog *,
+  .cockpit-dialog *,
+  .cockpit-arrange-menu * {
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

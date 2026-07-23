@@ -2461,6 +2461,117 @@ class CoreSessionLoopSmokeTest {
                 .isEqualTo(1);
     }
 
+    @Test
+    @Order(35)
+    void cockpitViewportGeometryHoldsAcrossSizesAndZoom() {
+        if (campaignId == null) {
+            createCampaign();
+        }
+        int[][] viewports = {{1366, 768}, {1920, 1080}};
+        double[] zooms = {0.8, 1.0, 1.25};
+
+        for (int[] viewport : viewports) {
+            dmPage.setViewportSize(viewport[0], viewport[1]);
+            dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+            dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+            dmPage.waitForFunction("window.cockpitLayout?.mounted === true");
+            selectCockpitPreset("builtin:combat");
+            dmPage.waitForFunction(
+                    "document.querySelector('[data-cockpit-zone=\"PRIMARY\"] [data-module-key=\"map\"]')");
+
+            for (double zoom : zooms) {
+                @SuppressWarnings("unchecked")
+                var geometry = (java.util.Map<String, Object>) dmPage.evaluate("""
+                        (factor) => {
+                          const root = document.documentElement;
+                          const body = document.body;
+                          // CSS zoom multiplies used lengths. Size the fixed root in pre-zoom
+                          // coordinates so post-zoom visual size matches the viewport (synthetic
+                          // stand-in for browser zoom; Task 10 uses real browser zoom).
+                          const vw = window.innerWidth;
+                          const vh = window.innerHeight;
+                          root.style.zoom = String(factor);
+                          root.style.width = (vw / factor) + 'px';
+                          root.style.height = (vh / factor) + 'px';
+                          root.style.right = 'auto';
+                          root.style.bottom = 'auto';
+                          body.style.width = '100%';
+                          body.style.height = '100%';
+                          const modules = [...document.querySelectorAll(
+                            '[data-cockpit-zone]:not([data-collapsed="true"]) [role="tabpanel"]:not([hidden]) .cockpit-module'
+                          )];
+                          const rectangles = modules.map(node => node.getBoundingClientRect());
+                          const overlaps = rectangles.some((a, i) => rectangles.some((b, j) =>
+                            i < j
+                              && a.left < b.right && a.right > b.left
+                              && a.top < b.bottom && a.bottom > b.top
+                          ));
+                          const targets = [...document.querySelectorAll(
+                            '.cockpit-commandbar button, .cockpit-topbar button, .cockpit-tab, .cockpit-zone__tab, [data-module-focus]'
+                          )].filter(node => node.offsetParent !== null);
+                          const smallestTarget = targets.length === 0
+                            ? 0
+                            : Math.min(...targets.map(node =>
+                                Math.min(node.offsetWidth, node.offsetHeight)
+                              ));
+                          const commandBar = document.querySelector('.cockpit-commandbar, .cockpit-topbar');
+                          const commandBarRect = commandBar ? commandBar.getBoundingClientRect() : null;
+                          const commandBarVisible = !!commandBar
+                            && commandBar.offsetParent !== null
+                            && !!commandBarRect
+                            && commandBarRect.bottom > 0
+                            && commandBarRect.top < window.innerHeight;
+                          const result = {
+                            documentScrolls: root.scrollHeight > root.clientHeight + 1
+                              || root.scrollWidth > root.clientWidth + 1
+                              || body.scrollHeight > body.clientHeight + 1
+                              || body.scrollWidth > body.clientWidth + 1,
+                            overlaps,
+                            clipped: rectangles.some(r =>
+                              r.left < -1 || r.top < -1
+                                || r.right > window.innerWidth + 1
+                                || r.bottom > window.innerHeight + 1),
+                            smallestTarget,
+                            commandBarVisible,
+                            moduleCount: modules.length
+                          };
+                          root.style.zoom = '';
+                          root.style.width = '';
+                          root.style.height = '';
+                          root.style.right = '';
+                          root.style.bottom = '';
+                          body.style.width = '';
+                          body.style.height = '';
+                          return result;
+                        }
+                        """, zoom);
+
+                String label = viewport[0] + "x" + viewport[1] + "@" + zoom;
+                assertThat(geometry.get("moduleCount"))
+                        .as("%s should render visible modules", label)
+                        .isInstanceOf(Number.class);
+                assertThat(((Number) geometry.get("moduleCount")).intValue())
+                        .as("%s module count", label)
+                        .isGreaterThanOrEqualTo(3);
+                assertThat(geometry.get("documentScrolls"))
+                        .as("%s must not scroll the document", label)
+                        .isEqualTo(false);
+                assertThat(geometry.get("overlaps"))
+                        .as("%s modules must not overlap", label)
+                        .isEqualTo(false);
+                assertThat(geometry.get("clipped"))
+                        .as("%s modules must stay inside the viewport", label)
+                        .isEqualTo(false);
+                assertThat(geometry.get("commandBarVisible"))
+                        .as("%s command bar must stay reachable", label)
+                        .isEqualTo(true);
+                assertThat(((Number) geometry.get("smallestTarget")).doubleValue())
+                        .as("%s interactive targets >= 32px", label)
+                        .isGreaterThanOrEqualTo(32.0);
+            }
+        }
+    }
+
     private static byte[] createSinglePixelPng(String label) throws IOException {
         BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
         img.setRGB(0, 0, 0xFF000000 | (label.hashCode() & 0x00FFFFFF));
