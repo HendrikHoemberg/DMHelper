@@ -72,7 +72,13 @@ body:has(.session-cockpit) {
 }
 
 .cockpit-workbench [hidden],
-.cockpit-module-depot[hidden] {
+.cockpit-module-depot[hidden],
+[data-layout-edit-only][hidden] {
+  display: none !important;
+}
+
+/* .btn rules can override the UA [hidden] stylesheet; force lock-mode chrome off. */
+.session-cockpit:has([data-layout-mode="locked"]) [data-layout-edit-only] {
   display: none !important;
 }
 
@@ -258,6 +264,34 @@ body:has(.session-cockpit) {
 .cockpit-layout-notice:not(:empty) {
   padding-top: 2px;
   padding-bottom: 2px;
+}
+
+.cockpit-preset-overflow {
+  position: relative;
+}
+
+.cockpit-preset-overflow summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.cockpit-preset-overflow summary::-webkit-details-marker {
+  display: none;
+}
+
+.cockpit-preset-overflow__panel {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 12rem;
+  margin-top: 4px;
+  padding: var(--space-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 /* Map module fills its shell body like the old table column. */

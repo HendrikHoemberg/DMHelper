@@ -139,6 +139,20 @@ class CoreSessionLoopSmokeTest {
         });
     }
 
+    private void selectCockpitPreset(String key) {
+        dmPage.waitForFunction("window.cockpitLayout?.mounted === true");
+        Locator picker = dmPage.locator("#cockpitPresetPicker");
+        if (!key.equals(picker.inputValue())) picker.selectOption(key);
+        dmPage.waitForFunction("key => window.cockpitLayout.currentPresetKey === key", key);
+    }
+
+    /** Opens the compact topbar "More" menu so overflow pickers become actionable. */
+    private void openCockpitMoreMenu() {
+        Locator details = dmPage.locator("details.cockpit-topbar__overflow");
+        details.locator("summary").click();
+        details.locator(".cockpit-topbar__overflow-panel").waitFor();
+    }
+
     private UUID campaignId;
     private UUID mapId;
     private UUID secondMapId;
@@ -377,6 +391,7 @@ class CoreSessionLoopSmokeTest {
         startSession();
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        selectCockpitPreset("builtin:combat");
 
         // Toggle screen safety off (TABLE_SAFE mode)
         dmPage.evaluate("document.getElementById('screenSafetyCheckbox')?.click()");
@@ -519,6 +534,7 @@ class CoreSessionLoopSmokeTest {
         dmPage.locator(".palette-result", new Page.LocatorOptions().setHasText("Test Battle Map")).waitFor();
         dmPage.locator(".palette-result", new Page.LocatorOptions().setHasText("Test Battle Map")).click();
         dmPage.waitForURL(url -> url.contains("/session"));
+        selectCockpitPreset("builtin:combat");
 
         assertThat(dmPage.url()).contains("/session");
         dmPage.locator("[aria-label='Battle map controls']").waitFor();
@@ -527,7 +543,8 @@ class CoreSessionLoopSmokeTest {
         assertThat(domContentLoaded.doubleValue()).isLessThan(2_000);
         assertThat(dmPage.locator("button", new Page.LocatorOptions().setHasText("Present current map")).count())
                 .isEqualTo(1);
-        assertThat(dmPage.locator("[data-presentation-mode]").count()).isEqualTo(1);
+        // Topbar badge + map chrome + presentation module each mirror presentation mode.
+        assertThat(dmPage.locator("[data-presentation-mode]").count()).isGreaterThanOrEqualTo(1);
 
         dmPage.keyboard().press("]");
         dmPage.locator("[data-current-scene]",
@@ -613,6 +630,7 @@ class CoreSessionLoopSmokeTest {
         playerPage.locator("#pvCanvas").waitFor(
                 new Locator.WaitForOptions().setState(WaitForSelectorState.ATTACHED));
         assertThat(presentationService.getCurrentState().mode()).isEqualTo("MAP");
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitHandoutPicker").selectOption(handoutId.toString());
         Locator handoutPreview = dmPage.locator("#presentationPreview");
         handoutPreview.waitFor();
@@ -629,13 +647,13 @@ class CoreSessionLoopSmokeTest {
         playerPage.locator(".pv-curtain").waitFor();
         playerContext.close();
 
-        dmPage.locator("button", new Page.LocatorOptions().setHasText("Search")).click();
+        dmPage.locator(".cockpit-topbar > button", new Page.LocatorOptions().setHasText("Search")).click();
         dmPage.locator(".command-palette-overlay").waitFor();
         dmPage.keyboard().press("Escape");
         dmPage.locator(".command-palette-overlay").waitFor(
                 new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
 
-        dmPage.locator("button", new Page.LocatorOptions().setHasText("Dice")).click();
+        dmPage.locator(".cockpit-topbar > button", new Page.LocatorOptions().setHasText("Dice")).click();
         dmPage.locator(".dice-panel").waitFor();
         dmPage.keyboard().press("Escape");
         dmPage.locator(".dice-panel").waitFor(
@@ -843,6 +861,7 @@ class CoreSessionLoopSmokeTest {
 
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
                 + "/session?mapId=" + mapId);
+        selectCockpitPreset("builtin:combat");
         dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");
         dmPage.evaluate("([id]) => window.battleMap.saveTokenMove(id, 333, 222)",
                 List.of(before.getId().toString()));
@@ -870,6 +889,7 @@ class CoreSessionLoopSmokeTest {
 
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
                 + "/session?mapId=" + mapId);
+        selectCockpitPreset("builtin:combat");
         dmPage.waitForFunction("window.battleMap && document.querySelector(\"[data-action='next-turn']\")");
 
         // Exercise the real Alpine tracker action rather than the request helper in isolation.
@@ -903,6 +923,7 @@ class CoreSessionLoopSmokeTest {
                 Pattern.compile(".*/api/v1/campaigns/.+/table/presentation"), corr);
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
                 + "/session?mapId=" + mapId);
+        selectCockpitPreset("builtin:combat");
         dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");
 
         dmPage.evaluate("([cid, mid, corr]) => { window.dmRequest(`/api/v1/campaigns/${cid}/table/presentation`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'MAP', ref: mid }) }).catch(e => window.reportActionFailure('Could not show this map to the table.', e, () => window.dmRequest(`/api/v1/campaigns/${cid}/table/presentation`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'MAP', ref: mid }) }))); }", Arrays.asList(campaignId.toString(), mapId.toString(), corr));
@@ -953,6 +974,7 @@ class CoreSessionLoopSmokeTest {
 
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
                 + "/session?mapId=" + mapId);
+        selectCockpitPreset("builtin:combat");
         dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");
         dmPage.evaluate("([id]) => window.battleMap.selectToken(id)",
                 List.of(before.getId().toString()));
@@ -971,6 +993,7 @@ class CoreSessionLoopSmokeTest {
     void failedStatblockTokenCreationRetainsTheSearchForRetry() {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
                 + "/session?mapId=" + mapId);
+        selectCockpitPreset("builtin:combat");
         dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");
 
         String sbId = (String) dmPage.evaluate("""
@@ -1130,6 +1153,7 @@ class CoreSessionLoopSmokeTest {
                 .filter(item -> equipment.getId().equals(item.equipmentItemId())).count())
                 .isEqualTo(initialStashRows);
 
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitTablePicker").selectOption(tableId.toString());
         dmPage.locator(".roll-panel button:has-text('Roll')").click();
         rewardDraft.waitFor();
@@ -1161,6 +1185,7 @@ class CoreSessionLoopSmokeTest {
 
         dmPage.reload();
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitTablePicker").selectOption(tableId.toString());
         Locator panel = dmPage.locator(".roll-panel");
         panel.waitFor();
@@ -1194,6 +1219,7 @@ class CoreSessionLoopSmokeTest {
         startSession();
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        selectCockpitPreset("builtin:combat");
 
         // 1. Create trap/hazard through editor request paths
         UUID trapId = createTrapThroughEditorApi("browser_spike", "Browser Spike Pit",
@@ -1229,6 +1255,7 @@ class CoreSessionLoopSmokeTest {
         // 4. Open story card in cockpit (mechanics card shows trigger/damage, not definition name)
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        selectCockpitPreset("builtin:combat");
         assertThat(dmPage.textContent("body")).contains("Browser Spike Pit");
         Locator storyCard = dmPage.locator(".threat-mechanics-card")
                 .filter(new Locator.FilterOptions().setHasText("2d10"));
@@ -1342,6 +1369,7 @@ class CoreSessionLoopSmokeTest {
 
         dmPage.reload();
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        selectCockpitPreset("builtin:combat");
         dmPage.waitForFunction("""
                 () => {
                   const name = document.querySelector('[data-active-threat-card] strong, .active-threat-card strong');
@@ -1550,6 +1578,7 @@ class CoreSessionLoopSmokeTest {
         adventureService.setCurrentScene(restoredId, restoredScenes.getFirst().getId());
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + restoredId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        selectCockpitPreset("builtin:combat");
         assertThat(dmPage.textContent("body")).contains("Browser Spike Pit");
         Locator restoredStoryCard = dmPage.locator(".threat-mechanics-card")
                 .filter(new Locator.FilterOptions().setHasText("2d10"));
@@ -1599,6 +1628,22 @@ class CoreSessionLoopSmokeTest {
 
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        selectCockpitPreset("builtin:combat");
+        // Combat places Audio as a secondary Bottom tab (Quick notes is active by default).
+        dmPage.evaluate("window.cockpitLayout.selectTab('BOTTOM_UTILITY', 'audio')");
+        // Bottom zone is short relative to the 270px player mount; force the playback gate open
+        // so Enable can load without requiring half the player to intersect the viewport.
+        dmPage.evaluate("""
+            () => {
+              const el = document.querySelector('.cockpit-audio-widget');
+              const data = el && window.Alpine ? Alpine.$data(el) : null;
+              if (data) {
+                data.visible = true;
+                data.pageVisible = true;
+                data.checkPlaybackGate();
+              }
+            }
+            """);
         Locator widget = dmPage.locator(".cockpit-audio-widget");
         widget.waitFor();
         widget.scrollIntoViewIfNeeded();
@@ -1618,6 +1663,18 @@ class CoreSessionLoopSmokeTest {
         assertThat(dmPage.locator("script[src*='youtube.com/iframe_api']").count()).isZero();
 
         widget.locator("button", new Locator.LocatorOptions().setHasText("Enable")).click();
+        // Re-assert the visibility gate after Enable; IntersectionObserver can flip it off.
+        dmPage.evaluate("""
+            () => {
+              const el = document.querySelector('.cockpit-audio-widget');
+              const data = el && window.Alpine ? Alpine.$data(el) : null;
+              if (data) {
+                data.visible = true;
+                data.pageVisible = true;
+                data.checkPlaybackGate();
+              }
+            }
+            """);
         dmPage.waitForFunction("window.__DMHELPER_AUDIO_FAKE__?.commands.some(c => c.command === 'load:VIDEO:bbbbbbbbbbb')");
         assertThat(dmPage.locator("[data-fake-audio-player='enabled']").count()).isEqualTo(1);
 
@@ -1869,6 +1926,7 @@ class CoreSessionLoopSmokeTest {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
 
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitHandoutPicker").selectOption(unreviewedId.toString());
         Locator preview = dmPage.locator("#presentationPreview");
         preview.waitFor();
@@ -1900,6 +1958,7 @@ class CoreSessionLoopSmokeTest {
         handoutService.classify(campaignId, unreviewedId, Handout.SafetyClassification.PLAYER_SAFE);
         dmPage.reload();
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitHandoutPicker").selectOption(unreviewedId.toString());
         Locator safePreview = dmPage.locator("#presentationPreview");
         safePreview.waitFor();
@@ -1942,6 +2001,7 @@ class CoreSessionLoopSmokeTest {
 
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitHandoutPicker").selectOption(derivative.getId().toString());
         Locator preview = dmPage.locator("#presentationPreview");
         preview.waitFor();
@@ -2009,6 +2069,7 @@ class CoreSessionLoopSmokeTest {
         """, Arrays.asList(campaignId.toString(), unreviewedId.toString()));
         assertThat(wrongResult).startsWith("FAIL:");
 
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitHandoutPicker").selectOption(unreviewedId.toString());
         Locator preview = dmPage.locator("#presentationPreview");
         preview.waitFor();
@@ -2054,6 +2115,7 @@ class CoreSessionLoopSmokeTest {
         encounterService.startCombat(defeatEncounterId, true);
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        selectCockpitPreset("builtin:combat");
         Locator tracker = dmPage.locator(".tracker-panel");
         tracker.locator("[data-action='next-turn']").waitFor();
         tracker.locator("[data-action='next-turn']").click();
@@ -2098,6 +2160,32 @@ class CoreSessionLoopSmokeTest {
         int nameCount = countOccurrences(body, combatantName);
         assertThat(nameCount).as("combatant should appear once, not double-counted after revive")
                 .isLessThan(2);
+    }
+
+    @Test
+    @Order(33)
+    void cockpitLayoutStartsLockedAndSwitchesOnlyOnExplicitPresetChoice() {
+        dmPage.setViewportSize(1366, 768);
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        dmPage.waitForFunction("window.cockpitLayout?.mounted === true");
+
+        assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
+                .isEqualTo("locked");
+        assertThat(dmPage.locator("[data-cockpit-splitter]").all())
+                .allSatisfy(splitter -> assertThat(splitter.getAttribute("tabindex")).isEqualTo("-1"));
+        assertThat(dmPage.locator("[data-layout-edit-only]:visible").count()).isZero();
+
+        String beforeSceneChange = dmPage.locator("#cockpitPresetPicker").inputValue();
+        dmPage.evaluate("window.dispatchEvent(new CustomEvent('session-scene-step', {detail:{direction:1}}))");
+        assertThat(dmPage.locator("#cockpitPresetPicker").inputValue()).isEqualTo(beforeSceneChange);
+
+        long started = System.nanoTime();
+        dmPage.locator("#cockpitPresetPicker").selectOption("builtin:combat");
+        dmPage.waitForFunction("document.querySelector('[data-cockpit-zone=\"PRIMARY\"] [data-module-key=\"map\"]')");
+        assertThat((System.nanoTime() - started) / 1_000_000).isLessThan(1000);
+        assertThat(dmPage.locator("[data-cockpit-zone='RIGHT_SUPPORT'] [data-module-key='encounter']").count())
+                .isEqualTo(1);
     }
 
     private static byte[] createSinglePixelPng(String label) throws IOException {

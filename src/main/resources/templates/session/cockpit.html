@@ -28,6 +28,7 @@
     <script th:src="@{/js/audio-provider-youtube.js}"></script>
     <script th:if="${testAudioProvider}" th:src="@{/js/audio-provider-fake.js}"></script>
     <script th:src="@{/js/audio-widget.js}"></script>
+    <script th:src="@{/js/cockpit-layout.js}" defer></script>
     <script th:src="@{/vendor/alpine.min.js}" defer></script>
     <title th:text="${workspace.campaign.name + ' — Session'}">Campaign — Session</title>
 </head>
@@ -57,6 +58,19 @@
                 th:selected="${preset.key == cockpitDefaultPresetKey}">Exploration</option>
       </select>
     </label>
+    <details id="cockpitPresetOverflow" class="cockpit-preset-overflow" hidden>
+      <summary class="btn btn-ghost">Preset actions</summary>
+      <div class="cockpit-preset-overflow__panel" role="menu" aria-label="Preset actions">
+        <button type="button" class="btn btn-ghost" role="menuitem"
+                data-preset-action="duplicate" disabled aria-disabled="true">Duplicate preset</button>
+        <button type="button" class="btn btn-ghost" role="menuitem"
+                data-preset-action="rename" disabled aria-disabled="true">Rename preset</button>
+        <button type="button" class="btn btn-ghost" role="menuitem"
+                data-preset-action="delete" disabled aria-disabled="true">Delete preset</button>
+        <button type="button" class="btn btn-ghost" role="menuitem"
+                data-preset-action="restore" disabled aria-disabled="true">Restore built-in</button>
+      </div>
+    </details>
     <button type="button" id="cockpitLayoutModeButton" class="btn btn-ghost"
             disabled aria-disabled="true">Edit layout</button>
     <button type="button" id="cockpitAddModuleButton" class="btn btn-ghost"
