@@ -257,6 +257,10 @@ function sessionCockpit(config) {
         previewRequiresOverride: false,
         previewOverrideArmed: false,
 
+        async previewFromModule(handoutId) {
+            await this.presentHandout(handoutId);
+        },
+
         async presentHandout(handoutId) {
             if (!handoutId) return;
             try {
@@ -417,7 +421,7 @@ function sessionCockpit(config) {
                     break;
                 case 'h':
                     event.preventDefault();
-                    document.getElementById('cockpitHandoutPicker')?.focus();
+                    document.getElementById('presentationHandoutPicker')?.focus();
                     break;
                 case 'p':
                     if (!this.currentMapId) break;
@@ -692,6 +696,10 @@ function sessionCockpit(config) {
             window.setScreenSafety(mode);
             window.battleMap?.setScreenSafety(this.tableSafe);
         },
+        async presentMap() {
+            await this.sendToTable();
+        },
+
         async sendToTable() {
             try {
                 const cid = this.campaignId;

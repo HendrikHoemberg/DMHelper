@@ -413,6 +413,28 @@ class CoreSessionLoopSmokeTest {
 
     @Test
     @Order(8)
+    void embeddedPlayerViewLoadsWithoutOuterChrome() {
+        startSession();
+        presentationService.curtain(campaignId);
+
+        BrowserContext playerContext = browser.newContext();
+        Page playerPage = guardedPage(playerContext);
+        playerPage.navigate("http://localhost:" + port + "/player?embedded=true");
+        playerPage.waitForLoadState(LoadState.NETWORKIDLE);
+
+        String pageHtml = playerPage.content();
+        assertThat(pageHtml).doesNotContain("pv-status");
+        assertThat(pageHtml).contains("pv-curtain");
+
+        String fullPlayerHtml = (String) dmPage.evaluate(
+                "() => fetch('/player').then(r => r.text())");
+        assertThat(fullPlayerHtml).contains("pv-status");
+
+        playerContext.close();
+    }
+
+    @Test
+    @Order(9)
     void screenSafetyToggleHidesAndDisablesSensitiveContent() {
         startSession();
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
@@ -476,7 +498,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(9)
+    @Order(10)
     void createQuickNoteWithoutTemplateOrRequestErrors() {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/adventures");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
@@ -489,7 +511,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(10)
+    @Order(11)
     void quickNotesWorkOnAFirstPartyMemberInsertedByHtmx() {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/party");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
@@ -519,7 +541,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(11)
+    @Order(12)
     void libraryDeepLinkActivatesAndFiltersTheRequestedTab() {
         dmPage.navigate("http://localhost:" + port + "/library?tab=spells&search=Fireball");
         dmPage.locator("#tab-spells.active").waitFor();
@@ -530,7 +552,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(12)
+    @Order(13)
     void runsTheCompleteCockpitFlowThroughVisibleControls() throws Exception {
         encounterService.endEncounter(encounterId);
         UUID plannedEncounterId = encounterService.create(campaignId,
@@ -656,8 +678,7 @@ class CoreSessionLoopSmokeTest {
         playerPage.locator("#pvCanvas").waitFor(
                 new Locator.WaitForOptions().setState(WaitForSelectorState.ATTACHED));
         assertThat(presentationService.getCurrentState().mode()).isEqualTo("MAP");
-        openCockpitMoreMenu();
-        dmPage.locator("#cockpitHandoutPicker").selectOption(handoutId.toString());
+        dmPage.evaluate("([hid]) => window.Alpine.$data(document.querySelector('[x-data]')).presentHandout(hid)", List.of(handoutId.toString()));
         Locator handoutPreview = dmPage.locator("#presentationPreview");
         handoutPreview.waitFor();
         assertThat(handoutPreview.locator(".pv-handout img").getAttribute("alt"))
@@ -751,7 +772,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(13)
+    @Order(14)
     void exportAndReimportRoundTrip() throws Exception {
         var directArtifact = exportCoordinator.export(campaignId);
         new CampaignPackageWriter().write(directArtifact.writeRequest(), new ByteArrayOutputStream());
@@ -876,7 +897,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(14)
+    @Order(15)
     void failedTokenMoveRollsBackAndRetryPersists() {
         Token before = tokenRepo.findByMapIdOrderByNameAsc(mapId).getFirst();
         int oldX = before.getPositionX();
@@ -906,7 +927,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(15)
+    @Order(16)
     void failedNextTurnKeepsTrackerStateAndRetryAdvances() {
         String corr = "turn-failure-1234";
         failOnce(dmPage, "**/api/v1/encounters/*/next-turn", "POST",
@@ -940,7 +961,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(16)
+    @Order(17)
     void failedPresentationKeepsCurtainAndRetryShowsMap() {
         startSession();
         presentationService.curtain(campaignId);
@@ -970,7 +991,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(17)
+    @Order(18)
     void failedDiceRollKeepsExpressionAndRetryCompletes() {
         String corr = "dice-failure-1234";
         failOnce(dmPage, "**/api/v1/roll", "POST",
@@ -990,7 +1011,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(18)
+    @Order(19)
     void failedDefeatedToggleRestoresThePersistedAndVisibleState() {
         Token before = tokenRepo.findByMapIdOrderByNameAsc(mapId).getFirst();
         boolean originalDead = before.isDead();
@@ -1015,7 +1036,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(19)
+    @Order(20)
     void failedStatblockTokenCreationRetainsTheSearchForRetry() {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
                 + "/session?mapId=" + mapId);
@@ -1047,7 +1068,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(20)
+    @Order(21)
     void aRejectedRetryRemainsVisibleAndDoesNotBecomeAnUnhandledPageError() {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId);
         dmPage.evaluate("() => window.showToast('Initial failure', 'error', 15000, {"
@@ -1064,7 +1085,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(21)
+    @Order(22)
     void failedQuickNoteAddRetainsTextAndRetrySavesIt() {
         String corr = "quicknote-failure-1234";
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/adventures");
@@ -1084,7 +1105,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(22)
+    @Order(23)
     void sheetDetailAndLiveStateEditing() {
         PartyMember member = partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(campaignId)
                 .stream().filter(m -> "Dynamic Hero".equals(m.getCharacterName()))
@@ -1140,7 +1161,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(23)
+    @Order(24)
     void rollableTableCreatesTreasureRollAndConfirmAddsToPartyStash() {
         startSession();
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
@@ -1197,7 +1218,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(24)
+    @Order(25)
     void rollableTableCreatesEncounterRollAndConfirmProducesPlannedEncounter() {
         startSession();
 
@@ -1240,7 +1261,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(25)
+    @Order(26)
     void threatWorkflowProvesDmSurfacesAndPackageFidelity() throws Exception {
         startSession();
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
@@ -1615,7 +1636,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(26)
+    @Order(27)
     void audioCockpitUsesFakeProviderAcrossTheRealSessionFlow() throws Exception {
         startSession();
         encounterRepository.findByCampaignIdAndStatus(
@@ -1852,7 +1873,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(27)
+    @Order(28)
     void lifecycleDialogGeometryAndFocusAtMultipleViewports() {
         dmPage.setViewportSize(1366, 768);
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
@@ -1907,7 +1928,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(28)
+    @Order(29)
     void previewAndStorySurviveScreenSafety() {
         startSession();
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
@@ -1941,7 +1962,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(29)
+    @Order(30)
     void unreviewedHandoutRejectedAndRecovers() throws Exception {
         startSession();
         var handout = handoutService.createImported(campaignId,
@@ -1952,8 +1973,7 @@ class CoreSessionLoopSmokeTest {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
 
-        openCockpitMoreMenu();
-        dmPage.locator("#cockpitHandoutPicker").selectOption(unreviewedId.toString());
+        dmPage.evaluate("([hid]) => window.Alpine.$data(document.querySelector('[x-data]')).presentHandout(hid)", List.of(unreviewedId.toString()));
         Locator preview = dmPage.locator("#presentationPreview");
         preview.waitFor();
         assertThat(preview.locator(".presentation-preview-classification").textContent())
@@ -1984,8 +2004,7 @@ class CoreSessionLoopSmokeTest {
         handoutService.classify(campaignId, unreviewedId, Handout.SafetyClassification.PLAYER_SAFE);
         dmPage.reload();
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
-        openCockpitMoreMenu();
-        dmPage.locator("#cockpitHandoutPicker").selectOption(unreviewedId.toString());
+        dmPage.evaluate("([hid]) => window.Alpine.$data(document.querySelector('[x-data]')).presentHandout(hid)", List.of(unreviewedId.toString()));
         Locator safePreview = dmPage.locator("#presentationPreview");
         safePreview.waitFor();
         safePreview.locator("button",
@@ -1998,7 +2017,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(30)
+    @Order(31)
     void derivativeWorkflowPlayerByteParity() throws Exception {
         startSession();
         byte[] sourceBytes = createSinglePixelPng("source");
@@ -2027,8 +2046,7 @@ class CoreSessionLoopSmokeTest {
 
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
-        openCockpitMoreMenu();
-        dmPage.locator("#cockpitHandoutPicker").selectOption(derivative.getId().toString());
+        dmPage.evaluate("([hid]) => window.Alpine.$data(document.querySelector('[x-data]')).presentHandout(hid)", List.of(derivative.getId().toString()));
         Locator preview = dmPage.locator("#presentationPreview");
         preview.waitFor();
         assertThat(preview.locator(".presentation-preview-classification").textContent())
@@ -2065,7 +2083,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(31)
+    @Order(32)
     void emergencyOverrideCreatesAuditRow() throws Exception {
         startSession();
         var handout = handoutService.createImported(campaignId,
@@ -2095,8 +2113,7 @@ class CoreSessionLoopSmokeTest {
         """, Arrays.asList(campaignId.toString(), unreviewedId.toString()));
         assertThat(wrongResult).startsWith("FAIL:");
 
-        openCockpitMoreMenu();
-        dmPage.locator("#cockpitHandoutPicker").selectOption(unreviewedId.toString());
+        dmPage.evaluate("([hid]) => window.Alpine.$data(document.querySelector('[x-data]')).presentHandout(hid)", List.of(unreviewedId.toString()));
         Locator preview = dmPage.locator("#presentationPreview");
         preview.waitFor();
         preview.locator("button",
@@ -2126,7 +2143,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(32)
+    @Order(33)
     void crossMidnightSessionWithDefeatSequence() {
         startSession();
         UUID defeatEncounterId = encounterService.create(campaignId,
@@ -2189,7 +2206,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(33)
+    @Order(34)
     void cockpitLayoutStartsLockedAndSwitchesOnlyOnExplicitPresetChoice() {
         // Self-sufficient when run alone (campaignId is normally set by @Order(1)).
         if (campaignId == null) {
@@ -2352,7 +2369,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(34)
+    @Order(35)
     void cockpitLayoutEditSupportsDockingSplittersFocusAndAddRemove() {
         if (campaignId == null) {
             createCampaign();
@@ -2535,7 +2552,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(35)
+    @Order(36)
     void cockpitViewportGeometryHoldsAcrossSizesAndZoom() {
         if (campaignId == null) {
             createCampaign();
@@ -2671,7 +2688,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(36)
+    @Order(37)
     void cockpitPreservesRuntimeStateAndIsolatesModuleFailures() {
         if (campaignId == null) {
             createCampaign();
@@ -2972,7 +2989,7 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(37)
+    @Order(38)
     void cockpitLayoutPerformanceAccessibilityAndKeyboardShortcuts() {
         if (campaignId == null) {
             createCampaign();

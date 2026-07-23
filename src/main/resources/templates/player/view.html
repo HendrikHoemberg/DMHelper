@@ -30,7 +30,7 @@
                     font-size: 0.625rem; color: var(--color-bg); }
     </style>
 </head>
-<body>
+<body th:classappend="${embedded} ? 'pv-embedded' : null">
     <div id="playerContent">
         <div class="pv-curtain" id="pvCurtain">
             <div style="text-align: center;">
@@ -39,7 +39,7 @@
             </div>
         </div>
     </div>
-    <div class="pv-status" id="pvStatus">Disconnected</div>
+    <div class="pv-status" id="pvStatus" th:if="${!embedded}">Disconnected</div>
 
     <script th:src="@{/vendor/konva.min.js}"></script>
     <script type="module" th:src="@{/js/player/player-view.js}"></script>

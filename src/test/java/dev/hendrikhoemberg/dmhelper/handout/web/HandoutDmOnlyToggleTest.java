@@ -20,6 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.hamcrest.Matchers.containsString;
+import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -75,13 +76,22 @@ class HandoutDmOnlyToggleTest {
     @Test
     void cockpitPickerListsEveryHandoutForExactPreviewWithClassification() throws Exception {
         adventures.setCurrentScene(seeded.campaignId(), seeded.richSceneId());
-        String html = mvc.perform(get("/campaigns/{c}/session", seeded.campaignId()))
+        String html = mvc.perform(get("/campaigns/{c}/session/modules/presentation", seeded.campaignId())
+                        .param("mode", "STANDARD"))
                 .andReturn().getResponse().getContentAsString();
+
+        var dbHandouts = handoutService.findByCampaignId(seeded.campaignId());
+        assertThat(dbHandouts).isNotEmpty();
+        assertThat(dbHandouts)
+                .extracting(Handout::getSafetyClassification)
+                .contains(Handout.SafetyClassification.PLAYER_SAFE,
+                          Handout.SafetyClassification.DM_SOURCE);
 
         assertThat(html)
                 .contains(PopulatedCampaignFixture.PLAYER_HANDOUT_TITLE,
                         PopulatedCampaignFixture.DM_ONLY_HANDOUT_TITLE,
-                        "PLAYER_SAFE", "DM_SOURCE");
+                        "PLAYER_SAFE", "DM_SOURCE")
+                .contains("presentationHandoutPicker");
     }
 
     @Test
@@ -89,7 +99,8 @@ class HandoutDmOnlyToggleTest {
         handoutService.setDmOnly(seeded.playerHandoutId(), true);
         try {
             adventures.setCurrentScene(seeded.campaignId(), seeded.richSceneId());
-            String html = mvc.perform(get("/campaigns/{c}/session", seeded.campaignId()))
+            String html = mvc.perform(get("/campaigns/{c}/session/modules/presentation", seeded.campaignId())
+                            .param("mode", "STANDARD"))
                     .andReturn().getResponse().getContentAsString();
 
             assertThat(html)

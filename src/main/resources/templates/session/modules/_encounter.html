@@ -1,44 +1,19 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<section th:fragment="body(view, mode)"
-         th:attr="data-cockpit-module-fragment='encounter', data-module-mode=${mode}, data-module-empty=${view == null or (view.activeEncounterId == null and view.planned.isEmpty())}">
-  <div data-module-content-root>
-    <div class="encounter-module-inner">
-      <div class="sidebar-section">
-        <h3>Active Encounter</h3>
-        <th:block th:if="${view != null and view.activeEncounterId != null}">
-          <div class="active-encounter-info">
-            <strong th:text="${view.activeEncounterName}">Active Encounter</strong>
-            <span class="badge" th:text="${view.combatPhase}">Phase</span>
-          </div>
-          <th:block th:if="${view.combatants != null and !view.combatants.isEmpty()}">
-            <div class="combatant-list">
-              <div th:each="c : ${view.combatants}" class="combatant-row u-text-sm">
-                <span th:text="${c.name}">Name</span>
-                <span th:if="${c.initiative > 0}" class="badge" th:text="'Init: ' + ${c.initiative}">Init</span>
-                <span th:if="${c.maxHp > 0}" class="u-text-xs" th:text="|HP: ${c.currentHp}/${c.maxHp}|">HP</span>
-                <span th:if="${c.statBlockName != null}" class="u-text-xs" th:text="|(${c.statBlockName})|">Type</span>
-              </div>
-            </div>
-          </th:block>
-        </th:block>
-        <th:block th:if="${view == null or view.activeEncounterId == null}">
-          <div class="empty-state" style="font-size: var(--text-sm); color: var(--color-text-muted);">No active encounter</div>
-        </th:block>
+<section th:fragment="body"
+         data-cockpit-module-fragment="encounter"
+         th:attr="data-module-mode=${mode}, data-module-empty=${view == null or (view.activeEncounterId == null and view.planned.isEmpty())}">
+  <div data-module-content-root class="runtime-encounter"
+       th:attr="data-encounter-id=${view != null ? view.activeEncounterId : null}">
+    <th:block th:if="${view == null or (view.activeEncounterId == null and view.planned.isEmpty())}">
+      <div class="empty-state" style="padding: var(--space-lg);">
+        <p>No active encounter</p>
+        <span style="font-size: var(--text-sm); color: var(--color-text-muted);">Link or create an encounter</span>
       </div>
-      <div class="sidebar-section">
-        <h3>Planned Encounters</h3>
-        <th:block th:if="${view != null and view.planned != null and !view.planned.isEmpty()}">
-          <div th:each="enc : ${view.planned}" class="planned-encounter-row">
-            <span th:text="${enc.name}">Encounter name</span>
-            <span th:if="${enc.mapId != null}" class="u-text-xs text-muted">Has map</span>
-          </div>
-        </th:block>
-        <th:block th:if="${view == null or view.planned == null or view.planned.isEmpty()}">
-          <div class="empty-state" style="font-size: var(--text-sm); color: var(--color-text-muted);">No planned encounters</div>
-        </th:block>
-      </div>
-    </div>
+    </th:block>
+    <th:block th:if="${view != null and (view.activeEncounterId != null or !view.planned.isEmpty())}">
+      <th:block th:replace="~{session/_encounter-rail :: encounters(view=${view}, mode=${mode})}"></th:block>
+    </th:block>
   </div>
 </section>
 </html>

@@ -84,4 +84,52 @@ class SessionCockpitMapContractTest {
                 .contains("_pendingMapInit")
                 .contains("_battleMapInitStarted");
     }
+
+    @Test
+    void contentReadyEventResizesExistingBattleMap() throws IOException {
+        String cockpitJs = Files.readString(
+                Path.of("src/main/resources/static/js/session-cockpit.js"));
+        assertThat(cockpitJs)
+                .as("when map module content reloads and battleMap already exists, must resize and resume without recreating")
+                .contains("cockpit:module-content-ready");
+    }
+
+    @Test
+    void singleBattleMapInstanceIsNotRecreated() throws IOException {
+        String cockpitJs = Files.readString(
+                Path.of("src/main/resources/static/js/session-cockpit.js"));
+        assertThat(cockpitJs)
+                .as("constructBattleMap must guard against creating a second instance when window.battleMap exists")
+                .contains("window.battleMap) return");
+    }
+
+    @Test
+    void mapModuleIsPreservedInModuleSystem() throws IOException {
+        String modulesJs = Files.readString(
+                Path.of("src/main/resources/static/js/cockpit-modules.js"));
+        assertThat(modulesJs)
+                .as("cockpit module system must treat 'map' as a preserved module whose content is never replaced")
+                .contains("PRESERVED_KEYS")
+                .contains("'map'");
+    }
+
+    @Test
+    void runtimeMapTemplateDelegatesToMapModule() throws IOException {
+        String mapTemplate = Files.readString(
+                Path.of("src/main/resources/templates/session/modules/_map.html"));
+        assertThat(mapTemplate)
+                .as("runtime map module must delegate to _map-module with MapView fields, not inline its own map UI")
+                .contains("_map-module");
+    }
+
+    @Test
+    void mapModuleRemovesPresentationControls() throws IOException {
+        String mapModule = Files.readString(
+                Path.of("src/main/resources/templates/session/_map-module.html"));
+        assertThat(mapModule)
+                .as("Curtain/present/preview-table controls belong in the Presentation module (Task 8), not in the map module")
+                .doesNotContain("Curtain")
+                .doesNotContain("Present current map")
+                .doesNotContain("Preview table");
+    }
 }

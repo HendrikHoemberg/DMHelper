@@ -46,7 +46,9 @@ class SessionCockpitTemplateContractTest {
                 "src/main/resources/static/js/map/battle-map.js"));
         assertThat(count(mapModule, "id=\"battleCanvasWrap\"")).isEqualTo(1);
         assertThat(count(rail, "encounter/_tracker :: tracker")).isEqualTo(1);
-        assertThat(count(shell, "session/_encounter-rail :: encounters")).isEqualTo(1);
+        String encounterModule = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_encounter.html"));
+        assertThat(count(encounterModule, "session/_encounter-rail :: encounters")).isEqualTo(1);
         assertThat(js).contains("new BattleMap(");
         assertThat(js).doesNotContain("nextTurn(id)", "applyDamage(combatant", "projectTokens(");
         assertThat(shell).contains("aria-label=${module.title}", "aria-live=\"polite\"");
@@ -277,9 +279,11 @@ class SessionCockpitTemplateContractTest {
                 .contains("class=\"cockpit-module\"", "data-module-body")
                 .contains("class=\"cockpit-story\"")
                 .contains("class=\"cockpit-encounter\"")
-                .contains("session/_encounter-rail")
                 .contains("session/_session-plan")
                 .contains("session/_map-module :: map-module");
+        String encounterModule = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_encounter.html"));
+        assertThat(encounterModule).contains("session/_encounter-rail");
         assertThat(Files.readString(Path.of(
                 "src/main/resources/templates/session/modules/_story.html")))
                 .contains("session/_story-rail");

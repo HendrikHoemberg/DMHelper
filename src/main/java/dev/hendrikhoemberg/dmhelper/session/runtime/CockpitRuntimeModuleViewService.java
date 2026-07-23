@@ -14,6 +14,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNote;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
@@ -102,7 +103,10 @@ public class CockpitRuntimeModuleViewService {
 
     public record QuickNoteView(UUID id, String body, String createdAt) {}
 
-    public record PresentationView(String mode, UUID presentedMapId, String presentedHandoutTitle) {}
+    public record PresentationView(String mode, UUID presentedMapId, String presentedHandoutTitle,
+                                    List<HandoutItemView> handouts) {}
+
+    public record HandoutItemView(UUID id, String title, String safety) {}
 
     public record ReferenceView() {}
 
@@ -118,6 +122,7 @@ public class CockpitRuntimeModuleViewService {
     private final CampaignSessionRepository sessions;
     private final QuickNoteRepository quickNotes;
     private final SessionPlanService plans;
+    private final HandoutService handoutService;
     private final ThreatCardAssembler threatCardAssembler;
 
     public CockpitRuntimeModuleViewService(AdventureService adventures,
@@ -128,6 +133,7 @@ public class CockpitRuntimeModuleViewService {
                                            CampaignSessionRepository sessions,
                                            QuickNoteRepository quickNotes,
                                            SessionPlanService plans,
+                                           HandoutService handoutService,
                                            ThreatCardAssembler threatCardAssembler) {
         this.adventures = adventures;
         this.encounters = encounters;
@@ -137,6 +143,7 @@ public class CockpitRuntimeModuleViewService {
         this.sessions = sessions;
         this.quickNotes = quickNotes;
         this.plans = plans;
+        this.handoutService = handoutService;
         this.threatCardAssembler = threatCardAssembler;
     }
 
@@ -323,13 +330,19 @@ public class CockpitRuntimeModuleViewService {
 
     public PresentationView presentation(UUID campaignId) {
         CampaignSession session = sessions.findByCampaignId(campaignId).orElse(null);
-        if (session == null) return new PresentationView("CURTAIN", null, null);
+        var handouts = handoutService.findByCampaignId(campaignId);
+        var handoutViews = List.copyOf(handouts.stream()
+                .map(h -> new HandoutItemView(h.getId(), h.getTitle(),
+                        h.getSafetyClassification() != null ? h.getSafetyClassification().name() : "UNREVIEWED"))
+                .toList());
+        if (session == null) return new PresentationView("CURTAIN", null, null, handoutViews);
         Hibernate.initialize(session.getPresentedMap());
         Hibernate.initialize(session.getPresentedHandout());
         return new PresentationView(
                 session.getPresentationMode().name(),
                 session.getPresentedMap() != null ? session.getPresentedMap().getId() : null,
-                session.getPresentedHandout() != null ? session.getPresentedHandout().getTitle() : null);
+                session.getPresentedHandout() != null ? session.getPresentedHandout().getTitle() : null,
+                handoutViews);
     }
 
     public ReferenceView reference(UUID campaignId) {

@@ -1,51 +1,14 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<section th:fragment="body(view, mode)"
-         th:attr="data-cockpit-module-fragment='map', data-module-mode=${mode}, data-module-empty=${view == null}">
+<section th:fragment="body"
+         data-cockpit-module-fragment="map"
+         th:attr="data-module-mode=${mode}, data-module-empty=${view == null}">
   <div data-module-content-root>
     <th:block th:if="${view == null}">
       <div class="empty-state">No map selected. Choose a map to display or create one.</div>
     </th:block>
     <th:block th:if="${view != null}">
-      <div class="cockpit-table" th:attr="data-selection-source=${view.selectionSource}">
-        <div class="battle-toolbar" data-screen-sensitive aria-label="Battle map controls">
-          <div class="tool-group map-switcher">
-            <label for="runtimeMapPicker" class="sr-only">Workspace map</label>
-            <select id="runtimeMapPicker" aria-label="Workspace map">
-              <option value="">No map</option>
-              <option th:each="m : ${view.maps}" th:value="${m.id}" th:text="${m.name}"
-                      th:selected="${m.id == view.mapId}">Map name</option>
-            </select>
-          </div>
-          <div class="tool-group">
-            <button class="tool-btn" disabled>Select</button>
-            <button class="tool-btn" disabled>Measure</button>
-            <button class="tool-btn" disabled>+ Token</button>
-          </div>
-          <div class="tool-group">
-            <button class="tool-btn" disabled>Grid lines</button>
-          </div>
-          <div class="tool-group table-presentation-controls">
-            <span class="badge" th:text="'Table: ' + ${view.presentationMode}">Table: Curtain</span>
-            <button class="tool-btn" disabled>Present current map</button>
-          </div>
-        </div>
-        <div class="battle-body">
-          <div id="battleCanvasWrap"></div>
-          <aside class="battle-sidebar" data-screen-sensitive aria-label="Map tokens">
-            <section class="sidebar-section">
-              <h3>From Library</h3>
-              <p class="text-muted u-text-sm">Search and add statblock tokens.</p>
-            </section>
-            <section class="sidebar-section">
-              <h3>Tokens (<span>0</span>)</h3>
-            </section>
-          </aside>
-        </div>
-        <div class="battle-statusbar" aria-live="polite">
-          <span id="runtimeBattleStatusMessage">Ready</span>
-        </div>
-      </div>
+      <th:block th:replace="~{session/_map-module :: map-module-runtime}"></th:block>
     </th:block>
   </div>
 </section>

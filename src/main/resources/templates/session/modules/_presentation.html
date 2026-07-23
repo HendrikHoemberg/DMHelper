@@ -8,6 +8,50 @@
         Table output is controlled by the current presentation status.
         <span class="badge" th:text="'Table: ' + ${view != null ? view.mode : 'CURTAIN'}">Table: Curtain</span>
       </p>
+
+      <div class="presentation-embedded-preview" th:if="${mode.name() != 'COMPACT'}">
+        <iframe th:src="@{/player?embedded=true}" title="Player preview"
+                class="presentation-iframe"
+                loading="lazy"></iframe>
+      </div>
+
+      <div class="presentation-controls" th:if="${mode.name() != 'COMPACT'}">
+        <button type="button" class="btn btn-ghost" @click="curtain()"
+                :disabled="sessionStatus === 'IDLE'">Curtain</button>
+
+        <button type="button" class="btn btn-ghost" @click="presentMap()"
+                :disabled="sessionStatus === 'IDLE' || !currentMapId">Present current map</button>
+
+        <label>Preview handout
+          <select id="presentationHandoutPicker" class="form-input"
+                  :disabled="sessionStatus === 'IDLE'"
+                  @change="previewFromModule($event.target.value); $event.target.value = ''">
+            <option value="">Choose handout...</option>
+            <th:block th:if="${view != null}">
+              <option th:each="handout : ${view.handouts}"
+                      th:value="${handout.id}"
+                      th:disabled="${handout.safety == 'UNREVIEWED' or handout.safety == 'DM_SOURCE'}"
+                      th:text="|${handout.title} — ${handout.safety}|">Handout</option>
+            </th:block>
+          </select>
+        </label>
+
+        <button type="button" class="btn btn-ghost"
+                @click="window.open('/player', '_blank', 'noopener')">Open external display</button>
+      </div>
+
+      <div class="presentation-emergency-override" th:if="${mode.name() != 'COMPACT'}"
+           x-show="previewRequiresOverride && !previewOverrideArmed" x-cloak>
+        <p class="u-text-sm u-text-warning">This handout contains DM-only content. Presenting it will expose DM information to players.</p>
+        <button type="button" class="btn btn-danger" @click="armEmergencyOverride()">Present anyway...</button>
+      </div>
+
+      <div class="presentation-emergency-override presentation-emergency-override--armed" th:if="${mode.name() != 'COMPACT'}"
+           x-show="previewRequiresOverride && previewOverrideArmed" x-cloak>
+        <p class="u-text-sm u-text-danger" role="alert">Final check: this bypasses the player-safety classification and will be recorded in the session audit.</p>
+        <button type="button" class="btn btn-danger" @click="confirmEmergencyPresent()">Confirm emergency presentation</button>
+      </div>
+
       <th:block th:if="${view != null and view.presentedMapId != null}">
         <p class="u-text-sm">Presented Map ID: <span th:text="${view.presentedMapId}">map-id</span></p>
       </th:block>

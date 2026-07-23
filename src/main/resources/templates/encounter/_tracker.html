@@ -1,4 +1,4 @@
-<th:block th:fragment="tracker">
+<th:block th:fragment="tracker(mode)">
 <script th:inline="javascript">
     /* Condition colors for icon dots */
     const CONDITION_COLORS = {
@@ -47,6 +47,9 @@
             acceptUnset: false,
             setupBusy: false,
             setupSaveCount: 0,
+            trackerMode: options.trackerMode || 'STANDARD',
+            focusedStatblock: null,
+            focusedStatblockLoading: false,
 
             request(url, options = {}) {
                 return window.dmRequest(url, options);
@@ -271,6 +274,7 @@
                     await this.request(`/api/v1/encounters/${this._encounterId}/waves/${waveId}/spawn`, { method: 'POST' });
                     await this.reloadCombatants();
                     await this.loadWaves();
+                    window.dispatchEvent(new CustomEvent('cockpit-encounter-wave-changed'));
                 } catch (error) {
                     this.spawnError = error?.message || 'Failed to spawn wave';
                 }
@@ -638,6 +642,22 @@
                     this.editHp = this.selected.currentHp;
                     this.editTempHp = this.selected.tempHp || 0;
                 }
+                if (this.trackerMode === 'FOCUSED' && this.selected?.statBlockId) {
+                    this.loadFocusedStatblock(this.selected.statBlockId);
+                }
+            },
+
+            async loadFocusedStatblock(statBlockId) {
+                if (!statBlockId) return;
+                this.focusedStatblockLoading = true;
+                try {
+                    const resp = await this.request(`/api/v1/library/statblocks/${statBlockId}`);
+                    this.focusedStatblock = await resp.json();
+                } catch (error) {
+                    this.focusedStatblock = null;
+                } finally {
+                    this.focusedStatblockLoading = false;
+                }
             },
 
             openConditionMenu(id) {
@@ -749,8 +769,9 @@
     }
 </script>
 
-<div x-data="combatTracker({ campaignId: '' })"
-     th:attr="x-data=|combatTracker({ campaignId: '${campaignId}' })|"
+<div x-data="combatTracker({ campaignId: '', trackerMode: '' })"
+     th:attr="x-data=|combatTracker({ campaignId: '${campaignId}', trackerMode: '${mode}' })|,
+              data-tracker-mode=${mode}"
      x-init="init()"
      class="tracker-panel">
 
@@ -983,6 +1004,47 @@
                 <p class="text-muted u-text-sm u-mt-xs">
                     Prefills only — log damage/conditions with the existing tracker controls.
                 </p>
+                <!-- Focused mode: expanded mechanics -->
+                <div class="focused-mechanics" x-show="trackerMode === 'FOCUSED' && activeThreatCard"
+                     x-cloak>
+                    <template x-if="activeThreatCard?.trap">
+                        <div class="u-mt-sm">
+                            <div x-show="activeThreatMechanics?.initiativeBonus != null">
+                                <strong>Initiative Bonus</strong>
+                                <span x-text="signedBonus(activeThreatMechanics.initiativeBonus)"></span>
+                            </div>
+                            <div x-show="activeThreatMechanics?.stealthBonus != null">
+                                <strong>Stealth Modifier</strong>
+                                <span x-text="signedBonus(activeThreatMechanics.stealthBonus)"></span>
+                            </div>
+                            <div x-show="activeThreatMechanics?.resetDescription">
+                                <strong>Reset</strong>
+                                <p x-text="activeThreatMechanics.resetDescription"></p>
+                            </div>
+                            <div x-show="activeThreatMechanics?.countermeasures && activeThreatMechanics.countermeasures.length">
+                                <strong>Countermeasures</strong>
+                                <template x-for="cm in activeThreatMechanics.countermeasures" :key="cm.label || cm.key">
+                                    <div class="u-text-xs">
+                                        <span x-text="cm.label"></span>
+                                        <span x-show="cm.dc != null" x-text="' (DC ' + cm.dc + ')'"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="activeThreatCard?.hazard">
+                        <div class="u-mt-sm">
+                            <div x-show="activeThreatMechanics?.duration">
+                                <strong>Duration</strong>
+                                <span x-text="activeThreatMechanics.duration"></span>
+                            </div>
+                            <div x-show="activeThreatMechanics?.initiativeBehavior">
+                                <strong>Initiative</strong>
+                                <span x-text="activeThreatMechanics.initiativeBehavior"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             </div>
 
             <!-- Recharge banner -->
@@ -1141,6 +1203,97 @@
                     <div style="font-size: var(--text-sm);">
                         Resistances: <span x-text="selected?.legendaryResistancesUsed || 0"></span> / <span x-text="selected?.legendaryResistancesMax || 0"></span>
                         <button class="btn btn-ghost" style="padding: 1px 6px; font-size: 0.7rem;" @click="useLegendaryResistance(selected.id)">Use</button>
+                    </div>
+                </div>
+
+                <!-- Focused mode: expanded statblock -->
+                <div class="detail-focused-statblock" x-show="trackerMode === 'FOCUSED'">
+                    <h4>Statblock</h4>
+                    <div x-show="focusedStatblockLoading" style="font-size: var(--text-sm); color: var(--color-text-muted);">Loading...</div>
+                    <div x-show="!focusedStatblockLoading && focusedStatblock" style="font-size: var(--text-sm);">
+                        <div x-show="focusedStatblock.size" class="u-text-xs">
+                            <span>Size: </span><span x-text="focusedStatblock.size"></span>
+                        </div>
+                        <div x-show="focusedStatblock.type" class="u-text-xs">
+                            <span>Type: </span><span x-text="focusedStatblock.type"></span>
+                        </div>
+                        <div x-show="focusedStatblock.armorClass" class="u-text-xs">
+                            <span>AC: </span><span x-text="focusedStatblock.armorClass"></span>
+                        </div>
+                        <div class="u-mt-xs" x-show="focusedStatblock.abilityScores">
+                            <strong class="u-text-xs">Abilities</strong>
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px;">
+                                <template x-for="(score, key) in focusedStatblock.abilityScores" :key="key">
+                                    <span class="badge" style="font-size: 0.65rem;" x-text="key.toUpperCase() + ' ' + score"></span>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="u-mt-xs" x-show="focusedStatblock.savingThrows && focusedStatblock.savingThrows.length">
+                            <strong class="u-text-xs">Saving Throws</strong>
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px;">
+                                <template x-for="st in focusedStatblock.savingThrows" :key="st.ability">
+                                    <span class="badge" style="font-size: 0.65rem;" x-text="st.ability.toUpperCase() + ' +' + st.modifier"></span>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="u-mt-xs" x-show="focusedStatblock.skills && focusedStatblock.skills.length">
+                            <strong class="u-text-xs">Skills</strong>
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px;">
+                                <template x-for="skill in focusedStatblock.skills" :key="skill.name">
+                                    <span class="badge" style="font-size: 0.65rem;" x-text="skill.name + ' +' + skill.modifier"></span>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="u-mt-xs" x-show="focusedStatblock.speed">
+                            <span class="u-text-xs">Speed: </span><span class="u-text-xs" x-text="focusedStatblock.speed"></span>
+                        </div>
+                        <div class="u-mt-xs" x-show="focusedStatblock.senses">
+                            <span class="u-text-xs">Senses: </span><span class="u-text-xs" x-text="focusedStatblock.senses"></span>
+                        </div>
+                        <div class="u-mt-xs" x-show="focusedStatblock.languages">
+                            <span class="u-text-xs">Languages: </span><span class="u-text-xs" x-text="focusedStatblock.languages"></span>
+                        </div>
+                        <div class="u-mt-xs" x-show="focusedStatblock.traits && focusedStatblock.traits.length">
+                            <strong class="u-text-xs">Traits</strong>
+                            <template x-for="trait in focusedStatblock.traits" :key="trait.name">
+                                <div style="margin-top: 2px;">
+                                    <span class="u-text-xs" style="font-weight: 600;" x-text="trait.name + '.'"></span>
+                                    <span class="u-text-xs" x-text="trait.description"></span>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="u-mt-xs" x-show="focusedStatblock.actions && focusedStatblock.actions.length">
+                            <strong class="u-text-xs">Actions</strong>
+                            <template x-for="action in focusedStatblock.actions" :key="action.name">
+                                <div style="margin-top: 2px;">
+                                    <span class="u-text-xs" style="font-weight: 600;" x-text="action.name + '.'"></span>
+                                    <span class="u-text-xs" x-text="action.description"></span>
+                                    <span class="badge" style="font-size: 0.65rem;"
+                                          x-show="action.attackBonus != null"
+                                          x-text="'Atk +' + action.attackBonus"></span>
+                                    <span class="badge" style="font-size: 0.65rem;"
+                                          x-show="action.damageExpression"
+                                          x-text="action.damageExpression"></span>
+                                    <button type="button" class="btn btn-sm btn-ghost"
+                                            style="padding: 0 4px; font-size: 0.65rem;"
+                                            x-show="action.damageExpression"
+                                            @click="prefillDice(action.damageExpression, action.name + ' damage')">
+                                        Prefill
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="u-mt-xs" x-show="focusedStatblock.spellcasting && focusedStatblock.spellcasting.length">
+                            <strong class="u-text-xs">Spellcasting</strong>
+                            <template x-for="spellEntry in focusedStatblock.spellcasting" :key="spellEntry.description || spellEntry.ability">
+                                <div style="margin-top: 2px;">
+                                    <span class="u-text-xs" x-text="spellEntry.description"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div x-show="!focusedStatblockLoading && !focusedStatblock && selected?.statBlockId" class="u-text-xs text-muted">
+                        Statblock unavailable
                     </div>
                 </div>
 

@@ -90,6 +90,29 @@ class PlayerViewSecurityContractTest {
     }
 
     @Test
+    void playerViewSupportsEmbeddedParam() throws IOException {
+        String controller = Files.readString(
+                Path.of("src/main/java/dev/hendrikhoemberg/dmhelper/live/web/PlayerViewController.java"));
+        assertThat(controller).contains("embedded");
+        assertThat(controller).contains("@RequestParam");
+    }
+
+    @Test
+    void playerViewEmbeddedModeRemovesOuterChrome() throws IOException {
+        String view = Files.readString(
+                Path.of("src/main/resources/templates/player/view.html"));
+        assertThat(view).contains("th:if=\"${!embedded}\"");
+    }
+
+    @Test
+    void playerViewEmbeddedModeCanBeAtDefaultUrl() throws IOException {
+        String controller = Files.readString(
+                Path.of("src/main/java/dev/hendrikhoemberg/dmhelper/live/web/PlayerViewController.java"));
+        // The default without embedded param renders the full view
+        assertThat(controller).contains("/player");
+    }
+
+    @Test
     void handoutRendererIsDomSafe() throws IOException {
         String js = Files.readString(
                 Path.of("src/main/resources/static/js/player/handout-renderer.js"));

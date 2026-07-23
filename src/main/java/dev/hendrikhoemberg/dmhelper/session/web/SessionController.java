@@ -5,6 +5,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.service.SceneEncounterSeedService;
 import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleDefinition;
 import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleRegistry;
 import dev.hendrikhoemberg.dmhelper.session.service.CockpitLayoutPresetService;
+import dev.hendrikhoemberg.dmhelper.session.runtime.CockpitRuntimeModuleViewService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -25,6 +26,7 @@ public class SessionController {
     private final SessionWorkspaceService workspaces;
     private final AdventureService adventures;
     private final SceneEncounterSeedService encounterSeeder;
+    private final CockpitRuntimeModuleViewService moduleViews;
     private final CockpitModuleRegistry cockpitModules;
     private final CockpitLayoutPresetService cockpitPresets;
 
@@ -34,11 +36,13 @@ public class SessionController {
     public SessionController(SessionWorkspaceService workspaces,
                              AdventureService adventures,
                              SceneEncounterSeedService encounterSeeder,
+                             CockpitRuntimeModuleViewService moduleViews,
                              CockpitModuleRegistry cockpitModules,
                              CockpitLayoutPresetService cockpitPresets) {
         this.workspaces = workspaces;
         this.adventures = adventures;
         this.encounterSeeder = encounterSeeder;
+        this.moduleViews = moduleViews;
         this.cockpitModules = cockpitModules;
         this.cockpitPresets = cockpitPresets;
     }
@@ -85,9 +89,9 @@ public class SessionController {
 
     @GetMapping("/campaigns/{campaignId}/session/rails/encounter")
     public String encounterRail(@PathVariable UUID campaignId, Model model) {
-        SessionWorkspaceService.SessionWorkspace workspace = workspaces.load(campaignId, null);
-        model.addAttribute("workspace", workspace);
+        model.addAttribute("view", moduleViews.encounter(campaignId));
         model.addAttribute("campaignId", campaignId);
+        model.addAttribute("mode", dev.hendrikhoemberg.dmhelper.session.runtime.CockpitModuleMode.STANDARD);
         return "session/_encounter-rail :: encounters";
     }
 

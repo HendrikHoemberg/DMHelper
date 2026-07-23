@@ -297,6 +297,95 @@ class CockpitRuntimeModuleContractTest {
         assertThat(bar).contains("deathSaveFailures");
         assertThat(bar).contains("chip-status");
     }
+    @Test
+    void presentationFragmentDeclaresModuleAttributes() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_presentation.html"));
+        assertThat(fragment).contains("data-cockpit-module-fragment");
+        assertThat(fragment).contains("data-module-mode");
+        assertThat(fragment).contains("data-module-empty");
+        assertThat(fragment).contains("data-module-content-root");
+    }
+
+    @Test
+    void presentationFragmentShowsModeAndIdentifiers() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_presentation.html"));
+        assertThat(fragment).contains("view.mode");
+        assertThat(fragment).contains("view.presentedMapId");
+        assertThat(fragment).contains("view.presentedHandoutTitle");
+    }
+
+    @Test
+    void presentationFragmentHasCurtainControl() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_presentation.html"));
+        assertThat(fragment).contains("curtain");
+    }
+
+    @Test
+    void presentationFragmentHasPresentMapControl() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_presentation.html"));
+        assertThat(fragment).contains("presentMap");
+    }
+
+    @Test
+    void presentationFragmentHasHandoutPreviewAndPresent() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_presentation.html"));
+        assertThat(fragment).contains("previewFromModule");
+    }
+
+    @Test
+    void presentationFragmentHasEmergencyOverrideTwoStep() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_presentation.html"));
+        assertThat(fragment).contains("armEmergencyOverride");
+        assertThat(fragment).contains("previewRequiresOverride");
+        assertThat(fragment).contains("previewOverrideArmed");
+    }
+
+    @Test
+    void presentationFragmentHasEmbeddedPreviewIframe() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_presentation.html"));
+        assertThat(fragment).contains("iframe");
+        assertThat(fragment).contains("embedded=true");
+    }
+
+    @Test
+    void presentationFragmentHasOpenExternalPlayerButton() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_presentation.html"));
+        assertThat(fragment).contains("window.open");
+        assertThat(fragment).contains("/player");
+    }
+
+    @Test
+    void presentationFragmentBlocksUnreviewedAndDmSourceByDefault() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_presentation.html"));
+        assertThat(fragment).contains("UNREVIEWED");
+        assertThat(fragment).contains("DM_SOURCE");
+    }
+
+    @Test
+    void presentationFragmentNeverChangesSourceClassificationInOverride() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_presentation.html"));
+        // Override never re-classifies
+        assertThat(fragment).doesNotContain("reclassify");
+        assertThat(fragment).doesNotContain("changeClassification");
+        assertThat(fragment).doesNotContain("setClassification");
+    }
+
+    @Test
+    void presentationCompactModeShowsStatusBadgeOnly() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_presentation.html"));
+        assertThat(fragment).contains("data-presentation-summary");
+    }
 
     @Test
     void partyModuleUsesRuntimePartyClass() throws IOException {

@@ -11,6 +11,7 @@ import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleDefinition;
 import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleRegistry;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.session.service.CockpitLayoutPresetService;
+import dev.hendrikhoemberg.dmhelper.session.runtime.CockpitRuntimeModuleViewService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService.SessionWorkspace;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService.StructuredSceneView;
@@ -42,6 +43,9 @@ class SessionControllerTest {
 
     @MockitoBean
     private CampaignRepository campaignRepository;
+
+    @MockitoBean
+    private CockpitRuntimeModuleViewService moduleViews;
 
     @MockitoBean(name = "calendarService")
     private CalendarService calendarService;
@@ -133,8 +137,9 @@ class SessionControllerTest {
 
     @Test
     void encounterRailFragmentReturnsPartialHtml() throws Exception {
-        SessionWorkspace ws = emptyWorkspace();
-        when(workspaces.load(campaignId, null)).thenReturn(ws);
+        var view = new CockpitRuntimeModuleViewService.EncounterView(
+                null, null, null, List.of(), List.of());
+        when(moduleViews.encounter(campaignId)).thenReturn(view);
         mvc.perform(get("/campaigns/{id}/session/rails/encounter", campaignId))
                 .andExpect(status().isOk())
                 .andExpect(view().name("session/_encounter-rail :: encounters"));

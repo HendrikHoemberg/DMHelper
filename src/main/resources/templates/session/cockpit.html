@@ -96,19 +96,9 @@
       <span class="switch-label">Private</span>
     </label>
     <button class="btn btn-ghost" x-ref="sessionButton" @click="openLifecycle()">Session</button>
-    <details class="cockpit-topbar__overflow">
+        <details class="cockpit-topbar__overflow">
       <summary class="btn btn-ghost">More</summary>
       <div class="cockpit-topbar__overflow-panel">
-        <a class="btn btn-ghost" target="_blank"
-           th:href="@{/campaigns/{id}/handouts(id=${campaignId})}">Handouts</a>
-        <select id="cockpitHandoutPicker" class="form-input" aria-label="Present handout"
-                :disabled="sessionStatus === 'IDLE'"
-                @change="presentHandout($event.target.value); $event.target.value = ''">
-          <option value="">Preview handout…</option>
-          <option th:each="handout : ${workspace.handouts}"
-                  th:value="${handout.id}"
-                  th:text="|${handout.title} — ${handout.safetyClassification}|">Handout</option>
-        </select>
         <select id="cockpitTablePicker" class="form-input" aria-label="Roll linked table"
                 @change="openLinkedTable($event.target.value, $event.target.options[$event.target.selectedIndex]?.text || ''); $event.target.value = ''">
           <option value="">Roll linked table…</option>
