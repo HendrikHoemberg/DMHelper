@@ -33,7 +33,8 @@
         <th:block th:replace="~{session/_cockpit-module-shell :: shell(
             module=${cockpitModuleByKey['session-plan']},
             workspace=${workspace},
-            campaignId=${campaignId})}"></th:block>
+            campaignId=${campaignId},
+            initiallyRendered=${true})}"></th:block>
       </div>
     </div>
   </div>
@@ -63,7 +64,8 @@
         <th:block th:replace="~{session/_cockpit-module-shell :: shell(
             module=${cockpitModuleByKey['story']},
             workspace=${workspace},
-            campaignId=${campaignId})}"></th:block>
+            campaignId=${campaignId},
+            initiallyRendered=${true})}"></th:block>
       </div>
     </div>
   </div>
@@ -99,7 +101,8 @@
         <th:block th:replace="~{session/_cockpit-module-shell :: shell(
             module=${cockpitModuleByKey['party']},
             workspace=${workspace},
-            campaignId=${campaignId})}"></th:block>
+            campaignId=${campaignId},
+            initiallyRendered=${true})}"></th:block>
       </div>
       <div class="cockpit-zone__panel" role="tabpanel"
            id="cockpitPanel-RIGHT_SUPPORT-quick-notes"
@@ -109,7 +112,8 @@
         <th:block th:replace="~{session/_cockpit-module-shell :: shell(
             module=${cockpitModuleByKey['quick-notes']},
             workspace=${workspace},
-            campaignId=${campaignId})}"></th:block>
+            campaignId=${campaignId},
+            initiallyRendered=${true})}"></th:block>
       </div>
     </div>
   </div>
@@ -145,7 +149,8 @@
         <th:block th:replace="~{session/_cockpit-module-shell :: shell(
             module=${cockpitModuleByKey['audio']},
             workspace=${workspace},
-            campaignId=${campaignId})}"></th:block>
+            campaignId=${campaignId},
+            initiallyRendered=${false})}"></th:block>
       </div>
       <div class="cockpit-zone__panel" role="tabpanel"
            id="cockpitPanel-BOTTOM_UTILITY-session-log"
@@ -155,7 +160,8 @@
         <th:block th:replace="~{session/_cockpit-module-shell :: shell(
             module=${cockpitModuleByKey['session-log']},
             workspace=${workspace},
-            campaignId=${campaignId})}"></th:block>
+            campaignId=${campaignId},
+            initiallyRendered=${false})}"></th:block>
       </div>
     </div>
   </div>
@@ -166,19 +172,23 @@
   <th:block th:replace="~{session/_cockpit-module-shell :: shell(
       module=${cockpitModuleByKey['map']},
       workspace=${workspace},
-      campaignId=${campaignId})}"></th:block>
+      campaignId=${campaignId},
+      initiallyRendered=${false})}"></th:block>
   <th:block th:replace="~{session/_cockpit-module-shell :: shell(
       module=${cockpitModuleByKey['encounter']},
       workspace=${workspace},
-      campaignId=${campaignId})}"></th:block>
+      campaignId=${campaignId},
+      initiallyRendered=${false})}"></th:block>
   <th:block th:replace="~{session/_cockpit-module-shell :: shell(
       module=${cockpitModuleByKey['presentation']},
       workspace=${workspace},
-      campaignId=${campaignId})}"></th:block>
+      campaignId=${campaignId},
+      initiallyRendered=${false})}"></th:block>
   <th:block th:replace="~{session/_cockpit-module-shell :: shell(
       module=${cockpitModuleByKey['reference']},
       workspace=${workspace},
-      campaignId=${campaignId})}"></th:block>
+      campaignId=${campaignId},
+      initiallyRendered=${false})}"></th:block>
 </div>
 
 <!-- Focus layer -->

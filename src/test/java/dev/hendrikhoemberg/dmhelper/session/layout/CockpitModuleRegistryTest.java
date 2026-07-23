@@ -47,6 +47,17 @@ class CockpitModuleRegistryTest {
     }
 
     @Test
+    void allModulesUseEndpointSources() {
+        assertThat(registry.all())
+                .allSatisfy(module -> {
+                    assertThat(module.source().kind())
+                            .isEqualTo(CockpitModuleSource.Kind.ENDPOINT);
+                    assertThat(module.source().value())
+                            .isEqualTo("/campaigns/{campaignId}/session/modules/" + module.key());
+                });
+    }
+
+    @Test
     void duplicateRegistryKeysFailAtStartup() {
         CockpitModuleDefinition story = registry.require("story");
         assertThatThrownBy(() -> new CockpitModuleRegistry(List.of(story, story)))
