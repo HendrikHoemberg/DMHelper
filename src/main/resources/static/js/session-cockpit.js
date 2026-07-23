@@ -438,6 +438,10 @@ function sessionCockpit(config) {
             this.presentedMapId = config.presentedMapId || '';
             this.draftBody = config.draftBody || '';
             window.setScreenSafety(this.tableSafe ? 'TABLE_SAFE' : 'PRIVATE', { animate: false });
+            window.addEventListener('screen-safety-changed', (e) => {
+                this.tableSafe = e.detail?.mode === 'TABLE_SAFE';
+                window.battleMap?.setScreenSafety(this.tableSafe);
+            });
             window.addEventListener('battle-state-changed', () => {
                 if (this.presentingMap) {
                     const cid = this.campaignId;

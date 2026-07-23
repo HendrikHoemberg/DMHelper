@@ -726,7 +726,13 @@ export class BattleMap {
             layer.listening(next);
             layer.visible(next);
         }
-        if (next) this.stage.batchDraw();
+        if (next) {
+            // Force-visible layers can re-show pin/safety-gated content; restore policy.
+            if (typeof this.tableSafe === 'boolean') {
+                this.setScreenSafety(this.tableSafe);
+            }
+            this.stage.batchDraw();
+        }
     }
 
     isRenderingActive() {
