@@ -86,7 +86,8 @@ class EncounterServiceTest {
         EncounterDto dto = service.create(campaign.getId(), new CreateRequest("Activate Me", null));
         EncounterDto activated = service.activate(dto.id());
         assertThat(activated.status()).isEqualTo("ACTIVE");
-        assertThat(activated.round()).isEqualTo(1);
+        assertThat(activated.combatPhase()).isEqualTo("SETUP");
+        assertThat(activated.round()).isEqualTo(0);
         assertThat(activated.activeTurnIndex()).isEqualTo(-1);
     }
 
@@ -223,20 +224,22 @@ class EncounterServiceTest {
         service.setInitiative(a.id(), 10);
         service.setInitiative(b.id(), 5);
 
-        // Activate sets round=1, activeTurnIndex=-1
-        // First nextTurn advances to index 0, round stays at 1 (no wrap)
+        service.startCombat(enc.id(), false);
+        // startCombat sets round=1, activeTurnIndex=0 (A)
+
+        // First nextTurn advances to index 1 (B)
         EncounterDto turn1 = service.nextTurn(enc.id());
-        assertThat(turn1.activeTurnIndex()).isEqualTo(0);
+        assertThat(turn1.activeTurnIndex()).isEqualTo(1);
         assertThat(turn1.round()).isEqualTo(1);
 
-        // Second turn moves to next combatant
-        EncounterDto turn2 = service.nextTurn(enc.id());
-        assertThat(turn2.activeTurnIndex()).isEqualTo(1);
-        assertThat(turn2.round()).isEqualTo(1);
-
         // Wrap back from last combatant to index 0 increments round
+        EncounterDto turn2 = service.nextTurn(enc.id());
+        assertThat(turn2.activeTurnIndex()).isEqualTo(0);
+        assertThat(turn2.round()).isEqualTo(2);
+
+        // Advance again
         EncounterDto turn3 = service.nextTurn(enc.id());
-        assertThat(turn3.activeTurnIndex()).isEqualTo(0);
+        assertThat(turn3.activeTurnIndex()).isEqualTo(1);
         assertThat(turn3.round()).isEqualTo(2);
     }
 
@@ -255,11 +258,12 @@ class EncounterServiceTest {
         service.setInitiative(c.id(), 5);
         service.markDefeated(b.id(), true);
 
-        EncounterDto turn1 = service.nextTurn(enc.id());
-        assertThat(turn1.activeTurnIndex()).isEqualTo(0);
+        service.startCombat(enc.id(), false);
+        // startCombat sets activeTurnIndex=0 (A, initiative 15)
 
-        EncounterDto turn2 = service.nextTurn(enc.id());
-        assertThat(turn2.activeTurnIndex()).isEqualTo(2);
+        // nextTurn skips B (defeated), goes to C (index 2)
+        EncounterDto turn1 = service.nextTurn(enc.id());
+        assertThat(turn1.activeTurnIndex()).isEqualTo(2);
     }
 
     @Test
@@ -399,8 +403,19 @@ class EncounterServiceTest {
         assertThat(afterUpdate.legendaryActionsUsed()).isEqualTo(3);
         assertThat(afterUpdate.legendaryResistancesUsed()).isEqualTo(2);
 
-        service.nextTurn(enc.id());
-        service.nextTurn(enc.id());
+        service.startCombat(enc.id(), false);
+        // startCombat resets legendary actions on the active combatant (c)
+        afterUpdate = service.getCombatant(c.id());
+        assertThat(afterUpdate.legendaryActionsUsed()).isEqualTo(0);
+
+        service.updateCombatant(c.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
+                null, null, null, null, null, null, null, 3, null, 2, null, null, null, null, null, null));
+
+        afterUpdate = service.getCombatant(c.id());
+        assertThat(afterUpdate.legendaryActionsUsed()).isEqualTo(3);
+
+        service.nextTurn(enc.id()); // advance to d (index 1)
+        service.nextTurn(enc.id()); // wrap to c (index 0), round 2
         EncounterDto round2 = service.nextTurn(enc.id());
         assertThat(round2.round()).isEqualTo(2);
 
@@ -478,8 +493,9 @@ class EncounterServiceTest {
         service.setInitiative(b.id(), 5);
 
         service.toggleCondition(a.id(), "poisoned", 1);
-        // Advance past both combatants (idx -1 → 0, 0 → 1)
-        service.nextTurn(enc.id());
+        // startCombat sets activeTurnIndex=0 (a, initiative 10)
+        service.startCombat(enc.id(), false);
+        // Advance past both combatants (idx 0 → 1)
         service.nextTurn(enc.id());
         // Wrap back to idx 0: increments round → triggers tickConditionDurations
         EncounterDto afterWrap = service.nextTurn(enc.id());
@@ -632,9 +648,10 @@ class EncounterServiceTest {
         service.setInitiative(service.getCombatants(enc.id()).get(0).id(), 10);
         service.setInitiative(service.getCombatants(enc.id()).get(1).id(), 5);
 
-        service.nextTurn(enc.id());
-        service.nextTurn(enc.id());
-        EncounterDto round2 = service.nextTurn(enc.id());
+        service.startCombat(enc.id(), false);
+        // startCombat sets activeTurnIndex=0 (A)
+        service.nextTurn(enc.id()); // advance to B (index 1)
+        EncounterDto round2 = service.nextTurn(enc.id()); // wrap to A (index 0), round 2
         assertThat(round2.round()).isEqualTo(2);
 
         EncounterDto prev = service.previousTurn(enc.id());
@@ -665,6 +682,8 @@ class EncounterServiceTest {
         service.updateCombatant(goblin2.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
                 null, groupId, false, null, null, null, null, null, null, null, null, null, null, null, null, null));
 
+        service.startCombat(enc.id(), true);
+        // startCombat sets activeTurnIndex=0 (leader)
         service.setActiveTurn(enc.id(), leader.id());
 
         // Should skip goblin1 and goblin2, stop at fighter (index 3)

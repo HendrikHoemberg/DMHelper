@@ -55,7 +55,7 @@ class DiceServiceTest {
         when(campaignRepo.getReferenceById(campaignId)).thenReturn(campaign);
         when(encounterService.findActiveByCampaignId(campaignId))
                 .thenReturn(Optional.of(new EncounterService.EncounterDto(encounterId, campaignId, null, "Active Encounter", "ACTIVE",
-                        0, 0, 0, null, null, false, Collections.emptyList(), Collections.emptyList())));
+                        0, 0, "RUNNING", 0, null, null, false, Collections.emptyList(), Collections.emptyList())));
 
         DiceResult result = diceService.roll("2d6+4", encounterId, campaignId);
 

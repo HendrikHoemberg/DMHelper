@@ -66,7 +66,7 @@ class EncounterControllerTest {
 
     private EncounterDto enc(UUID id, String name, String status) {
         return new EncounterDto(id, campaignId, null, name, status,
-                0, -1, 0, null, null, false, List.of(), List.of());
+                0, -1, "SETUP", 0, null, null, false, List.of(), List.of());
     }
 
     @Test

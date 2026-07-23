@@ -200,6 +200,8 @@ class ThreatEncounterIntegrationTest {
         encounterService.setInitiative(fighter.id(), 12);
 
         encounterService.activate(encounterId);
+        encounterService.startCombat(encounterId, false);
+
         long logAfterActivate = combatLogRepo.findByEncounterIdOrderBySequenceAsc(encounterId).stream()
                 .filter(e -> e.getType() == CombatLogEntry.EntryType.DAMAGE
                         || e.getType() == CombatLogEntry.EntryType.CONDITION_ADDED)
@@ -232,6 +234,7 @@ class ThreatEncounterIntegrationTest {
         encounterService.setInitiative(goblin.id(), 8);
 
         encounterService.activate(encounterId);
+        encounterService.startCombat(encounterId, false);
         encounterService.setActiveTurn(encounterId, trap.id());
 
         List<CombatLogEntry> beforeManual = combatLogRepo.findByEncounterIdOrderBySequenceAsc(encounterId);

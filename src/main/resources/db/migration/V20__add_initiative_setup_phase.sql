@@ -7,10 +7,6 @@ set combat_phase = case
     else 'SETUP'
 end;
 
-alter table encounter
-    add constraint ck_encounter_combat_phase
-    check (combat_phase in ('SETUP', 'RUNNING'));
-
 alter table combatant
     alter column initiative drop not null;
 

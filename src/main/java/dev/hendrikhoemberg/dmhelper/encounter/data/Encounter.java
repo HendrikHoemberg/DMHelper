@@ -54,6 +54,7 @@ public class Encounter {
     private boolean lairActionTriggered = false;
 
     @Enumerated(EnumType.STRING)
+    @org.hibernate.annotations.JdbcTypeCode(java.sql.Types.VARCHAR)
     @Column(name = "combat_phase", nullable = false, length = 16)
     private CombatPhase combatPhase = CombatPhase.SETUP;
 

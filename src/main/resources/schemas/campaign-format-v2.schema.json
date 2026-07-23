@@ -888,7 +888,7 @@
       "required": ["key", "round", "sequence", "type"],
       "properties": {
         "key": { "$ref": "#/$defs/key" },
-        "round": { "type": "integer", "minimum": 1 },
+        "round": { "type": "integer", "minimum": 0 },
         "sequence": { "type": "integer", "minimum": 0 },
         "type": { "type": "string" },
         "combatantRef": { "$ref": "#/$defs/contentReference" },

@@ -19,7 +19,10 @@ import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.PrefillMa
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.RechargeCheckRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.RechargePrompt;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.UpdateRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.StartCombatRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.InitiativeSetupIncompleteException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -182,7 +185,17 @@ public class EncounterApiController {
 
     @PostMapping("/encounters/{id}/auto-roll")
     public List<CombatantDto> autoRollInitiative(@PathVariable UUID id) {
-        return service.autoRollInitiative(id);
+        return service.rollUnsetNpcInitiatives(id);
+    }
+
+    @PostMapping("/encounters/{id}/start-combat")
+    public EncounterDto startCombat(@PathVariable UUID id, @RequestBody StartCombatRequest request) {
+        return service.startCombat(id, request.acceptUnset());
+    }
+
+    @GetMapping("/encounters/{id}/setup-combatants")
+    public List<CombatantDto> getSetupCombatants(@PathVariable UUID id) {
+        return service.getInitiativeSetupCombatants(id);
     }
 
     @PutMapping("/encounters/{id}/combatants/reorder")
@@ -316,5 +329,13 @@ public class EncounterApiController {
     public ResponseEntity<Void> resolveRecharge(@PathVariable UUID id, @RequestBody RechargeCheckRequest req) {
         service.resolveRecharge(id, req.abilityName(), req.rollResult());
         return ResponseEntity.ok().build();
+    }
+
+    @ExceptionHandler(InitiativeSetupIncompleteException.class)
+    public ResponseEntity<ProblemDetail> initiativeSetupConflict(InitiativeSetupIncompleteException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Initiative Setup Incomplete");
+        problem.setProperty("unsetCount", ex.unsetCount());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
     }
 }

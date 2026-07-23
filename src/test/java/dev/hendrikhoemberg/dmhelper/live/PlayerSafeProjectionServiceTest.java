@@ -132,6 +132,59 @@ class PlayerSafeProjectionServiceTest {
     }
 
     @Test
+    void nullZeroNegativeInitiativeAllDistinct() {
+        Encounter enc = new Encounter();
+        enc.setCampaign(gameMap.getCampaign());
+        enc.setName("Init Test");
+        enc.setStatus(Encounter.Status.ACTIVE);
+        enc.setRound(1);
+        em.persist(enc);
+
+        Combatant nullInit = new Combatant();
+        nullInit.setEncounter(enc);
+        nullInit.setName("Null Init");
+        nullInit.setInitiative(null);
+        nullInit.setSortOrder(0);
+        nullInit.setKind("MONSTER");
+        nullInit.setHidden(false);
+        nullInit.setMaxHp(10);
+        nullInit.setCurrentHp(10);
+        em.persist(nullInit);
+
+        Combatant zeroInit = new Combatant();
+        zeroInit.setEncounter(enc);
+        zeroInit.setName("Zero Init");
+        zeroInit.setInitiative(0);
+        zeroInit.setSortOrder(1);
+        zeroInit.setKind("MONSTER");
+        zeroInit.setHidden(false);
+        zeroInit.setMaxHp(10);
+        zeroInit.setCurrentHp(10);
+        em.persist(zeroInit);
+
+        Combatant negInit = new Combatant();
+        negInit.setEncounter(enc);
+        negInit.setName("Negative Init");
+        negInit.setInitiative(-3);
+        negInit.setSortOrder(2);
+        negInit.setKind("MONSTER");
+        negInit.setHidden(false);
+        negInit.setMaxHp(10);
+        negInit.setCurrentHp(10);
+        em.persist(negInit);
+        em.flush();
+
+        var snapshots = service.projectCombatants(List.of(negInit, zeroInit, nullInit), -1);
+        assertThat(snapshots).hasSize(3);
+        assertThat(snapshots).filteredOn(s -> "Null Init".equals(s.name()))
+                .allMatch(s -> s.initiative() == null);
+        assertThat(snapshots).filteredOn(s -> "Zero Init".equals(s.name()))
+                .allMatch(s -> s.initiative() == 0);
+        assertThat(snapshots).filteredOn(s -> "Negative Init".equals(s.name()))
+                .allMatch(s -> s.initiative() == -3);
+    }
+
+    @Test
     void playerPayloadOmitsPrepRewardsAndDmOnlyRegions() throws Exception {
         JsonMapper mapper = new JsonMapper();
 

@@ -65,7 +65,7 @@ class EncounterCompletionTest {
         service.applyDamage(goblin.id(), -10);
         var result = service.endEncounterWithSummary(enc.id());
         assertThat(result.summary().defeatedCount()).isEqualTo(1);
-        assertThat(result.summary().rounds()).isGreaterThanOrEqualTo(1);
+        assertThat(result.summary().rounds()).isGreaterThanOrEqualTo(0);
         assertThat(result.encounter().status()).isEqualTo("DONE");
     }
 

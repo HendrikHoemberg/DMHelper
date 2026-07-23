@@ -322,11 +322,13 @@ class CoreSessionLoopSmokeTest {
         var combatants = encounterService.getCombatants(encounterId);
         assertThat(combatants).isNotEmpty();
 
+        encounterService.setInitiative(combatants.get(0).id(), 10);
+        encounterService.startCombat(encounterId, false);
         encounterService.nextTurn(encounterId);
 
         var encounter = encounterService.getById(encounterId);
-        assertThat(encounter.round()).isEqualTo(1);
-        assertThat(encounter.activeTurnIndex()).isGreaterThanOrEqualTo(0);
+        assertThat(encounter.round()).isEqualTo(2);
+        assertThat(encounter.activeTurnIndex()).isEqualTo(0);
     }
 
     @Test
@@ -525,6 +527,11 @@ class CoreSessionLoopSmokeTest {
         planned.locator("button", new Locator.LocatorOptions().setHasText("Activate")).click();
         dmPage.locator("[data-action='next-turn']").waitFor();
         encounterId = plannedEncounterId;
+        var activeCombatants = encounterService.getCombatants(encounterId);
+        for (var c : activeCombatants) {
+            encounterService.setInitiative(c.id(), 10);
+        }
+        encounterService.startCombat(encounterId, true);
         var beforeTurn = encounterService.getById(encounterId);
         dmPage.keyboard().press("n");
         dmPage.waitForFunction("([eid, round, turn]) => fetch('/api/v1/encounters/' + eid)"
@@ -1279,8 +1286,8 @@ class CoreSessionLoopSmokeTest {
                 .findFirst().orElseThrow().id();
         encounterService.setInitiative(fighterIdEarly, 5);
         encounterService.activate(threatEncounterId);
-        // Activation leaves activeTurnIndex at -1 until the first next-turn.
-        encounterService.nextTurn(threatEncounterId);
+        // Activation enters SETUP phase; start combat to begin turns.
+        encounterService.startCombat(threatEncounterId, false);
 
         dmPage.reload();
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
@@ -1992,6 +1999,8 @@ class CoreSessionLoopSmokeTest {
         var combatants = encounterService.getCombatants(defeatEncounterId);
         assertThat(combatants).isNotEmpty();
         UUID combatantId = combatants.getFirst().id();
+        encounterService.setInitiative(combatantId, 10);
+        encounterService.startCombat(defeatEncounterId, true);
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
         Locator tracker = dmPage.locator(".tracker-panel");

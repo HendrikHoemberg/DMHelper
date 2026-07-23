@@ -128,7 +128,7 @@ class TableConsequenceServiceTest {
         UUID encId = UUID.randomUUID();
         when(encounterService.create(eq(campaignId), any()))
                 .thenReturn(new EncounterService.EncounterDto(encId, campaignId, null, "4 goblins appear",
-                        "PLANNED", 0, -1, 0, null, null, false, List.of(), List.of()));
+                        "PLANNED", 0, -1, "SETUP", 0, null, null, false, List.of(), List.of()));
 
         service.confirmEncounter(rollId, campaignId,
                 new TableConsequenceService.ConfirmEncounterRequest("4 goblins appear", null,
@@ -219,7 +219,7 @@ class TableConsequenceServiceTest {
         UUID encounterId = UUID.randomUUID();
         when(encounterService.create(eq(campaignId), any())).thenReturn(
                 new EncounterService.EncounterDto(encounterId, campaignId, null, "Nested",
-                        "PLANNED", 0, -1, 0, null, null, false, List.of(), List.of()));
+                        "PLANNED", 0, -1, "SETUP", 0, null, null, false, List.of(), List.of()));
 
         service.confirmEncounter(rollId, campaignId,
                 new TableConsequenceService.ConfirmEncounterRequest("Nested", null,

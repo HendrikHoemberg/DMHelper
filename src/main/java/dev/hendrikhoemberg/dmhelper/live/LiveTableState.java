@@ -67,7 +67,7 @@ public record LiveTableState(
     public record CombatantSnapshot(
             String id,
             String name,
-            int initiative,
+            Integer initiative,
             boolean defeated,
             boolean active,
             List<String> conditions

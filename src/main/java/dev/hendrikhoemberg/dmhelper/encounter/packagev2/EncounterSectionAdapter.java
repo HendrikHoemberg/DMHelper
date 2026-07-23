@@ -191,8 +191,9 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                     combatant.getName() != null ? combatant.getName() : threatType.name());
         }
 
+        Integer initiative = combatant.getInitiative();
         return new CombatantDto(
-                key, combatant.getName(), combatant.getInitiative(),
+                key, combatant.getName(), initiative != null ? initiative : 0,
                 combatant.getTieBreaker(), combatant.getSortOrder(),
                 combatant.getMaxHp(), combatant.getCurrentHp(), combatant.getTempHp(),
                 combatant.getKind(), combatant.getGroupId(), combatant.isGroupLeader(),
