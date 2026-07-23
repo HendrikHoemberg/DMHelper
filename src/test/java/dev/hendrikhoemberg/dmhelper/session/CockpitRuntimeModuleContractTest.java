@@ -394,6 +394,216 @@ class CockpitRuntimeModuleContractTest {
         assertThat(fragment).contains("runtime-party");
     }
 
+    // --- Session Plan ---
+
+    @Test
+    void sessionPlanFragmentDeclaresModuleAttributes() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-plan.html"));
+        assertThat(fragment).contains("data-cockpit-module-fragment");
+        assertThat(fragment).contains("data-module-mode");
+        assertThat(fragment).contains("data-module-empty");
+        assertThat(fragment).contains("data-module-content-root");
+    }
+
+    @Test
+    void sessionPlanFragmentShowsOrderedBeats() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-plan.html"));
+        assertThat(fragment).contains("view.beats");
+        assertThat(fragment).contains("beat.position");
+        assertThat(fragment).contains("beat.type");
+        assertThat(fragment).contains("beat.label");
+    }
+
+    @Test
+    void sessionPlanFragmentShowsBrokenLinkState() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-plan.html"));
+        assertThat(fragment).contains("beat.resolved");
+        assertThat(fragment).contains("Broken link");
+    }
+
+    @Test
+    void sessionPlanEmptyStateHasNextAction() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-plan.html"));
+        // Empty when view == null or no title
+        assertThat(fragment).contains("view.title");
+        assertThat(fragment).contains("No session plan");
+        assertThat(fragment).contains("empty-state");
+    }
+
+    @Test
+    void sessionPlanHasQuestProgressView() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-plan.html"));
+        assertThat(fragment).contains("view.questProgress");
+    }
+
+    @Test
+    void sessionPlanCompactModeShowsNextBeatsOnly() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_session-plan.html"));
+        assertThat(fragment).contains("mode.name() == 'COMPACT'");
+        assertThat(fragment).contains("view.upcoming");
+    }
+
+    // --- Quick Notes ---
+
+    @Test
+    void quickNotesFragmentDeclaresModuleAttributes() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_quick-notes.html"));
+        assertThat(fragment).contains("data-cockpit-module-fragment");
+        assertThat(fragment).contains("data-module-mode");
+        assertThat(fragment).contains("data-module-empty");
+        assertThat(fragment).contains("data-module-content-root");
+    }
+
+    @Test
+    void quickNotesFragmentHasCampaignScopeCapture() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_quick-notes.html"));
+        assertThat(fragment).contains("targetType=CAMPAIGN");
+        assertThat(fragment).contains("quicknotes-form");
+    }
+
+    @Test
+    void quickNotesFragmentHasUniqueDomId() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_quick-notes.html"));
+        assertThat(fragment).contains("id=\"quicknotes-");
+        assertThat(fragment).contains("view.targetType");
+        assertThat(fragment).contains("view.targetId");
+    }
+
+    @Test
+    void quickNotesFragmentListsUnresolvedNotes() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_quick-notes.html"));
+        assertThat(fragment).contains("view.notes");
+        assertThat(fragment).contains("n.body");
+        assertThat(fragment).contains("n.createdAt");
+    }
+
+    @Test
+    void quickNotesFragmentHasPromoteAndDeleteActions() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_quick-notes.html"));
+        assertThat(fragment).contains("promote(");
+        assertThat(fragment).contains("remove(");
+        assertThat(fragment).contains("x-model=\"newBody\"");
+        assertThat(fragment).contains("unresolved");
+    }
+
+    @Test
+    void quickNotesPreservesUnsentInput() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_quick-notes.html"));
+        assertThat(fragment).contains("x-model=\"newBody\"");
+        assertThat(fragment).contains("persist-new-body");
+    }
+
+    @Test
+    void quickNotesFragmentHasEmptyState() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_quick-notes.html"));
+        assertThat(fragment).contains("empty-state");
+        assertThat(fragment).contains("No quick notes");
+    }
+
+    // --- Reference ---
+
+    @Test
+    void referenceFragmentDeclaresModuleAttributes() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_reference.html"));
+        assertThat(fragment).contains("data-cockpit-module-fragment");
+        assertThat(fragment).contains("data-module-mode");
+        assertThat(fragment).contains("data-module-empty");
+        assertThat(fragment).contains("data-module-content-root");
+    }
+
+    @Test
+    void referenceFragmentUsesCockpitReferenceComponent() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_reference.html"));
+        assertThat(fragment).contains("x-data=\"cockpitReference\"");
+    }
+
+    @Test
+    void referenceFragmentHasSearchInput() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_reference.html"));
+        assertThat(fragment).contains("x-model=\"query\"");
+        assertThat(fragment).contains("type=\"search\"");
+        assertThat(fragment).contains("placeholder");
+    }
+
+    @Test
+    void referenceFragmentHasGroupedResults() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_reference.html"));
+        assertThat(fragment).contains("x-text");
+        assertThat(fragment).contains("results");
+        assertThat(fragment).contains("group");
+    }
+
+    @Test
+    void referenceFragmentPreventsHtmlInjection() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_reference.html"));
+        assertThat(fragment).contains("x-text");
+        assertThat(fragment).doesNotContain("x-html");
+    }
+
+    @Test
+    void referenceFragmentEmptyStateIsVisible() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_reference.html"));
+        assertThat(fragment).contains("empty");
+        assertThat(fragment).contains("search");
+        assertThat(fragment).contains("hint");
+    }
+
+    // --- Audio ---
+
+    @Test
+    void audioFragmentDeclaresModuleAttributes() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_audio.html"));
+        assertThat(fragment).contains("data-cockpit-module-fragment");
+        assertThat(fragment).contains("data-module-mode");
+        assertThat(fragment).contains("data-module-empty");
+        assertThat(fragment).contains("data-module-content-root");
+    }
+
+    @Test
+    void audioFragmentRendersCockpitWidget() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_audio.html"));
+        assertThat(fragment).contains("cockpit-widget");
+        assertThat(fragment).contains("audio/_cockpit-widget");
+    }
+
+    @Test
+    void audioFragmentAssertExactlyOneInteractiveWidgetBody() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_audio.html"));
+        assertThat(fragment).contains("x-data=\"audioCockpitWidget");
+        assertThat(count(fragment, "x-data=\"audioCockpitWidget")).isEqualTo(1);
+    }
+
+    @Test
+    void audioFragmentHasNoCommandBarAction() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_audio.html"));
+        // Command bar must contain no audio-specific action
+        assertThat(fragment).doesNotContain("audio-action");
+        assertThat(fragment).doesNotContain("data-audio-command");
+    }
+
     private static int count(String s, String substring) {
         int count = 0;
         int idx = 0;

@@ -8,7 +8,8 @@
         <h3 class="u-text-sm" th:text="${view.title}">Session Plan</h3>
         <div class="plan-beats">
           <th:block th:if="${view.beats != null and !view.beats.isEmpty()}">
-            <div th:each="beat : ${view.beats}" class="plan-beat">
+            <div th:each="beat : ${view.beats}" class="plan-beat"
+                 th:classappend="${beat.current} ? 'beat-current' : (${beat.upcoming} ? 'beat-upcoming' : '')">
               <span class="beat-position" th:text="${beat.position + 1}">1</span>
               <span class="beat-type" th:text="${beat.type}">Scene</span>
               <span class="beat-label" th:text="${beat.label}">Label</span>
@@ -21,9 +22,39 @@
             <p class="text-muted u-text-sm">No beats in this plan.</p>
           </th:block>
         </div>
+        <th:block th:if="${view.questProgress != null}">
+          <div class="quest-progress-summary" data-quest-progress>
+            <h4 class="u-text-xs text-muted">Quest Progress</h4>
+            <div th:each="qp : ${view.questProgress}" class="quest-progress-item u-text-sm">
+              <span class="badge" th:text="${qp.status}">STATUS</span>
+              <span th:text="${qp.title}">Quest</span>
+            </div>
+          </div>
+        </th:block>
+        <th:block th:if="${mode != null and mode.name() == 'COMPACT'}">
+          <div class="plan-upcoming" th:if="${view.upcoming != null}">
+            <h4 class="u-text-xs text-muted">Upcoming</h4>
+            <div th:each="beat : ${view.upcoming}" class="plan-upcoming-beat u-text-xs">
+              <span th:text="${beat.type}">Type</span>
+              <span th:text="${beat.label}">Label</span>
+            </div>
+          </div>
+        </th:block>
+        <th:block th:if="${mode != null and mode.name() == 'FOCUSED'}">
+          <div class="plan-focused-context" th:if="${view.focusedBeat != null}">
+            <h4 class="u-text-xs text-muted">Beat Context</h4>
+            <div class="focused-beat-detail">
+              <p th:text="${view.focusedBeat.label}">Label</p>
+              <p class="text-muted u-text-xs" th:text="${view.focusedBeat.detail}">Detail</p>
+            </div>
+          </div>
+        </th:block>
       </th:block>
       <th:block th:if="${view == null or view.title == null}">
-        <p class="text-muted">No session plan yet. Create one from a note.</p>
+        <div class="empty-state">
+          <p class="text-muted">No session plan yet. Create one from a note.</p>
+          <span class="u-text-xs text-muted">Capture ideas in quick notes or use the command bar to start planning.</span>
+        </div>
       </th:block>
     </div>
   </div>

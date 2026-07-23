@@ -54,6 +54,7 @@
           );
           this.items.push(await response.json());
           this.newBody = '';
+          this._notifyModuleRefresh();
         } catch (error) {
           this.newBody = body;
           this.reportFailure('Could not save the quick note. Your text has been kept.', error,
@@ -68,6 +69,7 @@
             { method: 'DELETE' }
           );
           this.items = this.items.filter(item => item.id !== id);
+          this._notifyModuleRefresh();
         } catch (error) {
           this.reportFailure('Could not delete the quick note. Nothing was changed.', error,
             () => this.remove(id));
@@ -82,6 +84,7 @@
           );
           const result = await response.json();
           this.items = this.items.filter(item => item.id !== quicknote.id);
+          this._notifyModuleRefresh();
           window.location = result.url;
         } catch (error) {
           this.reportFailure('Could not promote the quick note. Nothing was changed.', error,
@@ -92,6 +95,15 @@
       formatTime(iso) {
         if (!iso) return '';
         return new Date(iso).toLocaleString();
+      },
+
+      _notifyModuleRefresh() {
+        window.dispatchEvent(new CustomEvent('cockpit:module-refresh', {
+          detail: { moduleKey: 'quick-notes', reason: 'quicknote-mutated' }
+        }));
+        window.dispatchEvent(new CustomEvent('cockpit:module-invalidate', {
+          detail: { moduleKey: 'session-log', reason: 'quicknote-mutated' }
+        }));
       }
     }));
   });

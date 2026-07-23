@@ -3,19 +3,44 @@
 <section th:fragment="body(view, mode)"
          th:attr="data-cockpit-module-fragment='quick-notes', data-module-mode=${mode}, data-module-empty=${view == null or view.notes.isEmpty()}">
   <div data-module-content-root>
-    <th:block th:if="${view == null or view.notes.isEmpty()}">
-      <div class="empty-state" style="color: var(--color-text-muted);">
-        <p>No quick notes yet. Capture a note from the command palette.</p>
+    <div class="quicknotes-module-body">
+      <!-- targetType=CAMPAIGN -->
+      <div class="quicknotes-form u-px-sm u-pt-sm"
+           id="quicknotes-CAMPAIGN-[[${view.targetId}]]"
+           data-target-type="CAMPAIGN"
+           th:attr="data-target-id=${view.targetId}, data-target-type-name=${view.targetType}">
+        <input type="text" class="form-input" x-model="newBody"
+               placeholder="Quick note\u2026" aria-label="Quick note"
+               data-persist-new-body="true" />
+        <button class="btn btn-primary btn-sm" @click="add()"
+                aria-label="Save quick note">+</button>
       </div>
-    </th:block>
-    <th:block th:if="${view != null and !view.notes.isEmpty()}">
-      <div class="quicknotes-module-list">
-        <div th:each="n : ${view.notes}" class="quicknote-row u-mb-xs">
-          <p class="quicknote-body u-text-sm" th:text="${n.body}">Note body</p>
-          <span class="u-text-xs text-muted" th:text="${n.createdAt}">Date</span>
+      <th:block th:if="${view != null and view.notes != null and !view.notes.isEmpty()}">
+        <div class="quicknotes-module-list">
+          <div th:each="n : ${view.notes}"
+               class="quicknote-row u-mb-xs"
+               th:classappend="${n.unresolved} ? 'quicknote-unresolved' : ''">
+            <div class="quicknote-content u-flex u-gap-xs u-items-center">
+              <p class="quicknote-body u-text-sm u-flex-1" th:text="${n.body}">Note body</p>
+              <span class="u-text-xs text-muted" th:text="${n.createdAt}">Date</span>
+            </div>
+            <div class="quicknote-actions u-flex u-gap-xs">
+              <th:block th:if="${n.unresolved}">
+                <button class="btn btn-ghost btn-xs" @click="promote(n)"
+                        aria-label="Promote note to full note">Promote</button>
+              </th:block>
+              <button class="btn btn-ghost btn-xs" @click="remove(n.id)"
+                      aria-label="Delete quick note">Delete</button>
+            </div>
+          </div>
         </div>
-      </div>
-    </th:block>
+      </th:block>
+      <th:block th:if="${view == null or view.notes == null or view.notes.isEmpty()}">
+        <div class="empty-state u-p-sm">
+          <p class="text-muted">No quick notes yet. Capture a note from the command palette.</p>
+        </div>
+      </th:block>
+    </div>
   </div>
 </section>
 </html>

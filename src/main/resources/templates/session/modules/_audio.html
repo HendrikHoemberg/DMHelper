@@ -4,7 +4,51 @@
          th:attr="data-cockpit-module-fragment='audio', data-module-mode=${mode}, data-module-empty=${false}">
   <div data-module-content-root>
     <div class="audio-module-body">
-      <p class="text-muted">Audio controls are rendered by the cockpit widget.</p>
+      <!-- Reuses audio/_cockpit-widget :: cockpit-widget -->
+      <div class="cockpit-audio-widget"
+           x-data="audioCockpitWidget(window.audioWidgetConfig)"
+           x-show="hasCue || hasPendingConfirmation || enabled || errorMessage"
+           x-cloak
+           aria-label="Audio playback controls">
+        <div class="audio-now-playing" aria-label="Now playing">
+          <span class="audio-title" x-text="cueName">Track Title</span>
+          <span class="audio-owner" data-screen-sensitive x-show="cueOwner" x-text="cueOwner">Artist or owner</span>
+          <span class="audio-source" data-screen-sensitive x-show="sourceLabel" x-text="sourceLabel">Source</span>
+        </div>
+        <div class="audio-controls" role="toolbar" aria-label="Playback controls">
+          <button class="audio-btn" x-show="!enabled && hasCue && !hasPendingConfirmation"
+                  @click="enablePlayback()" aria-label="Enable audio playback">Enable</button>
+          <button class="audio-btn" x-show="enabled"
+                  @click="togglePlayback()" :aria-label="playing ? 'Pause' : 'Play'"
+                  x-text="playing ? 'Pause' : 'Play'">Play</button>
+          <button class="audio-btn" x-show="enabled && canSkip" @click="skip()"
+                  aria-label="Skip to next track">Skip</button>
+          <label class="audio-volume-label" x-show="canVolume">
+            Volume
+            <input type="range" class="audio-volume" x-model="volume"
+                   @input="setVolume()" aria-label="Volume" min="0" max="100">
+          </label>
+          <button class="audio-btn" @click="toggleMute()"
+                  :aria-label="muted ? 'Unmute' : 'Mute'"
+                  x-text="muted ? 'Unmute' : 'Mute'">Mute</button>
+        </div>
+        <div class="audio-pending" x-show="hasPendingConfirmation" role="alertdialog"
+             aria-label="Pending audio confirmation" data-pending-confirmation>
+          <span class="audio-pending-text">
+            New audio cue: <strong x-text="pendingCueName">Cue</strong>
+          </span>
+          <button class="audio-btn audio-btn-primary" @click="confirmCue()" aria-label="Play cue">Play</button>
+          <button class="audio-btn" @click="declineCue()" aria-label="Skip cue">Skip</button>
+        </div>
+        <div class="audio-transition-notice" aria-live="polite" x-text="transitionNotice"
+             x-show="transitionNotice"></div>
+        <div class="audio-visibility-notice" aria-live="polite" x-text="visibilityNotice"
+             x-show="visibilityNotice"></div>
+        <div class="audio-error" aria-live="polite" x-text="errorMessage"
+             :data-error-category="errorCategory" x-show="errorMessage" role="alert"></div>
+        <button class="audio-btn" x-show="errorMessage" @click="retry()"
+                aria-label="Retry playback">Retry</button>
+      </div>
     </div>
   </div>
 </section>

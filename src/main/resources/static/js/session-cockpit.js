@@ -180,7 +180,7 @@ function sessionCockpit(config) {
                         body: JSON.stringify({ sceneId }),
                 });
                 await resp.json();
-                this.refreshModules(['story'], 'scene-selected');
+                this.refreshModules(['story', 'session-plan'], 'scene-selected');
             } catch (error) {
                 window.reportActionFailure('Could not set the current scene.', error,
                     () => this.setCurrentScene(sceneId));
@@ -195,7 +195,7 @@ function sessionCockpit(config) {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ direction }),
                     });
-                this.refreshModules(['story'], 'scene-stepped');
+                this.refreshModules(['story', 'session-plan'], 'scene-stepped');
             } catch (error) {
                 window.reportActionFailure('Could not step the scene.', error,
                     () => this.stepScene(direction));
@@ -963,7 +963,10 @@ function sessionCockpit(config) {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ status }),
                     });
-                window.location.reload();
+                this.refreshModules(['session-plan'], 'objective-mutated');
+                window.dispatchEvent(new CustomEvent('cockpit:module-invalidate', {
+                    detail: { moduleKey: 'session-log', reason: 'objective-mutated' }
+                }));
             } catch (error) {
                 window.reportActionFailure('Could not update the objective status.', error,
                     () => this.setObjectiveStatus(objectiveId, status));

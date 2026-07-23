@@ -204,6 +204,9 @@
                     this.errorCategory = '';
                     this.errorMessage = '';
                     this.transitionNotice = '';
+                    window.dispatchEvent(new CustomEvent('cockpit:module-invalidate', {
+                        detail: { moduleKey: 'session-log', reason: 'audio-cue-changed' }
+                    }));
                 }
 
                 this._pendingCue = cue;

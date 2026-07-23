@@ -1,11 +1,40 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <section th:fragment="body(view, mode)"
-         th:attr="data-cockpit-module-fragment='reference', data-module-mode=${mode}, data-module-empty=${false}">
+         th:attr="data-cockpit-module-fragment='reference', data-module-mode=${mode}, data-module-empty=${view == null}">
   <div data-module-content-root>
-    <div class="reference-module-body">
-      <p>Search rules and compendium entries from the cockpit.</p>
-      <p class="text-muted u-text-sm">Use the Search button in the top bar to find rules content.</p>
+    <div class="reference-module-body" x-data="cockpitReference">
+      <div class="reference-search-form u-flex u-gap-xs u-mb-sm">
+        <input type="search" class="form-input" x-model="query"
+               placeholder="Search rules, statblocks, conditions\u2026"
+               aria-label="Search reference"
+               @input.debounce.250ms="search()" />
+      </div>
+      <div class="reference-empty-hint u-text-sm text-muted"
+           x-show="!query && !errorMessage && results.length === 0">
+        <p class="empty">Type at least 2 characters to search the compendium.</p>
+        <p class="hint u-text-xs">Search covers rules, statblocks, and conditions.</p>
+      </div>
+      <div class="reference-error text-danger u-text-sm" x-show="errorMessage"
+           x-text="errorMessage" role="alert"></div>
+      <div class="reference-no-results u-text-sm text-muted"
+           x-show="query && query.length >= 2 && results.length === 0 && !errorMessage && !loading">
+        <p>No results found. Try different search terms.</p>
+      </div>
+      <div class="reference-results" x-show="results.length > 0">
+        <template x-for="group in results" :key="group.label">
+          <div class="reference-group u-mb-sm">
+            <h4 class="u-text-xs text-muted u-mb-xs" x-text="group.label"></h4>
+            <template x-for="item in group.items" :key="item.id">
+              <div class="reference-item u-text-sm u-px-xs u-py-xs"
+                   @click="selectItem(item)">
+                <span x-text="item.name"></span>
+                <span class="u-text-xs text-muted" x-text="item.source"></span>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
     </div>
   </div>
 </section>
