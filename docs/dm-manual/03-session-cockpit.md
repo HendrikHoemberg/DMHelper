@@ -68,16 +68,81 @@ Modules that support Focus open a full-workbench focus layer. **Return** (or Esc
 
 Last preset, active tabs, and unfinished edit drafts live in browser `localStorage` keys under `dmhelper.cockpit.*`. Corrupt values are ignored with a non-blocking notice. Failed preset saves keep edit mode and the recoverable draft.
 
-## Module content map (transitional B1 bodies)
+## Module responsibilities
 
-| Area | Purpose |
-|------|---------|
-| **Story** | Current scene, editorial neighbours, scene links, linked rollable tables, scene quick notes |
-| **Map** | Workspace battle map with token, measurement, and AoE tools |
-| **Encounter** | Active encounter tracker, planned encounters list |
-| **Session plan** | Ordered prepared beats parsed from the latest `SESSION_PLAN` note |
-| **Party** | Party member summary with HP bars, AC, passive perception |
-| **Quick access toolbar** (top bar) | Search, dice/table rollers, handouts, rules reference, calendar, session lifecycle |
+Ten runtime modules ship in the cockpit registry. Each module body is **lazy-loaded** via its own endpoint on first visibility; no module fetches data until the zone tab is active.
+
+| Module | Responsibility | Endpoint | Lazy |
+|--------|---------------|----------|------|
+| **Story** | Current scene, editorial neighbours, scene links, linked rollable tables, scene quick notes | story | yes |
+| **Map** | Workspace battle map with token, measurement, and AoE tools | map | yes |
+| **Encounter** | Active encounter tracker, planned encounters list | encounter | yes |
+| **Session plan** | Ordered prepared beats parsed from the latest `SESSION_PLAN` note | session-plan | yes |
+| **Party** | Party member summary with HP bars, AC, passive perception | party | yes |
+| **Quick notes** | Create, view, and resolve quick notes during play | quick-notes | yes |
+| **Presentation** | Preview and present content to the player table | presentation | yes |
+| **Reference** | Rules reference, spells, conditions lookup | reference | yes |
+| **Audio** | Ambient music, soundscapes, and encounter-linked cues | audio | yes |
+| **Session log** | Running timeline of events during the session | session-log | yes |
+
+### Lazy loading and retry behaviour
+
+- Each module loads its body via a `GET` to `/campaigns/{cid}/session/modules/{key}?mode=STANDARD|COMPACT`.
+- Visible modules load on `cockpit:layout-applied`; invisible modules load when their tab is first selected.
+- The shell shows a **live region** (`aria-live="polite"`) during loading without moving focus.
+- On fetch failure the shell persists the loaded body, shows an **error banner** (`role="alert"`), and makes a **Retry** button keyboard-reachable.
+- A rejected Retry shows a new error — the module does not unload or fall back to an empty shell.
+- Rapid preset switching never triggers duplicate requests for the same module.
+
+### Compact vs Focus behaviour
+
+- Modules serving in the **Bottom utility** zone render in `COMPACT` mode (condensed header, fewer details).
+- All other zones render in `STANDARD` mode.
+- Modules that support **Focus** open a full-workbench overlay. **Return** (or `Escape`) restores the previous layout and returns keyboard focus to the Focus trigger.
+
+### Where actions live
+
+| Action | Location |
+|--------|----------|
+| **Map** controls | Map module (Primary in combat preset) |
+| **Encounter** tracker + planned encounters | Encounter module (Right support in combat preset) |
+| **Handout** picker + preview | Presentation module or top-bar Handout picker |
+| **Presentation** to table | Presentation module + button in Map module |
+| **Reference** lookup | Reference module (via top-bar Search or `?` shortcut) |
+| **Audio** widget | Audio module (Bottom utility tab in combat preset) |
+| **Quick notes** | Quick notes module (Bottom utility default tab) |
+| **Session log** timeline | Session log module (Primary in session-review preset) |
+
+### Player preview guarantees
+
+- Handout preview in the Presentation module always shows the **correct classification** (PLAYER_SAFE / DM_SOURCE / UNREVIEWED / PLAYER_DERIVATIVE).
+- Unreviewed handouts cannot be presented without **emergency override** (two-click acknowledgement).
+- Presented content reaches the player view **byte-identical** to the DM preview.
+- The player page never receives DM-only content, audio provider references, or threat pin markers.
+
+### No automatic preset switching
+
+Combat and scene changes never switch the active preset. Hidden or inactive modules receive **attention badges** instead — the DM must choose to switch presets manually (picker, keyboard shortcut, or edit-mode add).
+
+### Runtime vs Edit/Admin boundary
+
+- Runtime module bodies are rendered by dedicated `CockpitRuntimeModuleController` endpoints and do **not** depend on the larger campaign edit view model.
+- Edit/Admin pages (maps, encounters, handouts, party, library, notes) exist on separate URL trees and are not part of the session cockpit runtime.
+- The command palette, dice panel, session lifecycle dialog, and keyboard shortcut overlay are **top-bar actions**, not module content.
+
+### Keyboard workflow
+
+| Key | Action |
+|-----|--------|
+| `Alt+Shift+1`…`5` | Select built-in preset |
+| `[` / `]` | Step previous / next scene |
+| `n` | Advance encounter turn |
+| `q` | Focus quick notes input |
+| `h` | Focus handout picker |
+| `p` | Present current map |
+| `?` | Open keyboard shortcut help |
+| `Escape` | Close topmost layer and restore focus trigger |
+| Arrow keys / `Tab` | Navigate zone tabs and module chrome |
 
 ## Screen Safety
 

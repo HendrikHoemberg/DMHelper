@@ -305,7 +305,16 @@ class CockpitRuntimeModuleViewServiceTest {
     @Test
     void sessionLogViewIsDetachedSafe() {
         var seeded = fixture.seed();
-        var view = service.sessionLog(seeded.campaignId());
+        Campaign campaign = campaignRepository.findById(seeded.campaignId()).orElseThrow();
+        CampaignSession session = new CampaignSession();
+        session.setCampaign(campaign);
+        session.setStatus(CampaignSession.Status.RUNNING);
+        session.setStartedAt(Instant.now().minusSeconds(3600));
+        session.setUpdatedAt(Instant.now());
+        sessionRepository.save(session);
+        entityManager.flush();
+
+        var view = service.sessionLog(seeded.campaignId(), CockpitModuleMode.STANDARD);
         entityManager.clear();
         assertThat(view).isNotNull();
         assertThat(allRecordComponentTypes(view.getClass()))

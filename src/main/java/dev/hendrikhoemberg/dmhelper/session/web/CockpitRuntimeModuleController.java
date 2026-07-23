@@ -135,7 +135,7 @@ public class CockpitRuntimeModuleController {
                              Model model) {
         CockpitModuleDefinition def = requireModule("session-log");
         requireMode(def, mode);
-        model.addAttribute("view", views.sessionLog(campaignId));
+        model.addAttribute("view", views.sessionLog(campaignId, mode));
         model.addAttribute("mode", mode);
         return "session/modules/_session-log :: body";
     }

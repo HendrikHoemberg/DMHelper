@@ -30,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tools.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
@@ -124,6 +124,7 @@ public class CockpitRuntimeModuleViewService {
     private final SessionPlanService plans;
     private final HandoutService handoutService;
     private final ThreatCardAssembler threatCardAssembler;
+    private final SessionLogModuleService sessionLogService;
 
     public CockpitRuntimeModuleViewService(AdventureService adventures,
                                            EncounterRepository encounters,
@@ -134,7 +135,8 @@ public class CockpitRuntimeModuleViewService {
                                            QuickNoteRepository quickNotes,
                                            SessionPlanService plans,
                                            HandoutService handoutService,
-                                           ThreatCardAssembler threatCardAssembler) {
+                                           ThreatCardAssembler threatCardAssembler,
+                                           SessionLogModuleService sessionLogService) {
         this.adventures = adventures;
         this.encounters = encounters;
         this.combatants = combatants;
@@ -145,6 +147,7 @@ public class CockpitRuntimeModuleViewService {
         this.plans = plans;
         this.handoutService = handoutService;
         this.threatCardAssembler = threatCardAssembler;
+        this.sessionLogService = sessionLogService;
     }
 
     public StoryView story(UUID campaignId) {
@@ -222,7 +225,7 @@ public class CockpitRuntimeModuleViewService {
         }
         try {
             return JSON.readValue(conditionsJson, CONDITIONS_TYPE);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.warn("Malformed conditionsJson, using empty list: {}", e.getMessage());
             return List.of();
         }
@@ -353,7 +356,7 @@ public class CockpitRuntimeModuleViewService {
         return new AudioView();
     }
 
-    public SessionLogView sessionLog(UUID campaignId) {
-        return new SessionLogView();
+    public SessionLogModuleService.SessionLogView sessionLog(UUID campaignId, CockpitModuleMode mode) {
+        return sessionLogService.sessionLog(campaignId, mode);
     }
 }

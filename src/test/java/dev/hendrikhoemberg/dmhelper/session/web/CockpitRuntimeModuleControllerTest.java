@@ -167,7 +167,9 @@ class CockpitRuntimeModuleControllerTest {
     @Test
     void sessionLogRouteReturnsModuleFragment() throws Exception {
         when(registry.require("session-log")).thenReturn(CockpitModuleRegistry.standard().require("session-log"));
-        when(views.sessionLog(campaignId)).thenReturn(new SessionLogView());
+        var sessionLogView = new dev.hendrikhoemberg.dmhelper.session.runtime.SessionLogModuleService.SessionLogView(
+                "IDLE", null, List.of(), List.of(), 0, null);
+        when(views.sessionLog(any(), any())).thenReturn(sessionLogView);
 
         mvc.perform(get("/campaigns/{cid}/session/modules/session-log", campaignId)
                         .param("mode", "STANDARD"))

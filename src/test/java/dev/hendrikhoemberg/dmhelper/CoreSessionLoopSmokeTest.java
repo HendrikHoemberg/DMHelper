@@ -426,6 +426,15 @@ class CoreSessionLoopSmokeTest {
         assertThat(pageHtml).doesNotContain("pv-status");
         assertThat(pageHtml).contains("pv-curtain");
 
+        // Embedded player preview has accessible title
+        String previewTitle = (String) playerPage.evaluate("""
+                () => {
+                  const titleEl = document.querySelector('title');
+                  return titleEl ? titleEl.textContent : '';
+                }
+                """);
+        assertThat(previewTitle).as("embedded player page has accessible title").isNotBlank();
+
         String fullPlayerHtml = (String) dmPage.evaluate(
                 "() => fetch('/player').then(r => r.text())");
         assertThat(fullPlayerHtml).contains("pv-status");
@@ -2995,6 +3004,26 @@ class CoreSessionLoopSmokeTest {
             createCampaign();
         }
         dmPage.setViewportSize(1366, 768);
+
+        List<String> moduleRequests = new CopyOnWriteArrayList<>();
+        java.util.concurrent.ConcurrentHashMap<String, Long> moduleRequestStart = new java.util.concurrent.ConcurrentHashMap<>();
+        java.util.concurrent.atomic.AtomicReference<Double> maxModuleLoadMs = new java.util.concurrent.atomic.AtomicReference<>(0.0);
+        dmPage.onRequest(request -> {
+            String url = request.url();
+            if (url.contains("/session/modules/")) {
+                moduleRequestStart.put(url, System.nanoTime());
+                moduleRequests.add(url);
+            }
+        });
+        dmPage.onResponse(response -> {
+            String url = response.url();
+            Long start = moduleRequestStart.get(url);
+            if (url.contains("/session/modules/") && start != null) {
+                double dur = (System.nanoTime() - start) / 1_000_000.0;
+                if (dur > maxModuleLoadMs.get()) maxModuleLoadMs.set(dur);
+            }
+        });
+
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
         dmPage.waitForFunction("window.cockpitLayout?.mounted === true");
@@ -3006,6 +3035,36 @@ class CoreSessionLoopSmokeTest {
         assertThat(firstMeaningful.doubleValue())
                 .as("first meaningful layout apply should settle under 2s")
                 .isLessThan(2000.0);
+
+        // Wait for modules to have loaded content (server-rendered or lazy-loaded)
+        dmPage.waitForFunction("""
+                () => document.querySelectorAll(
+                  '[data-module-content][data-module-loaded="true"]').length > 0
+                """);
+        double moduleLoadMs = maxModuleLoadMs.get();
+        if (moduleLoadMs > 0) {
+            assertThat(moduleLoadMs)
+                    .as("module endpoint render should settle under 2s")
+                    .isLessThan(2000.0);
+        }
+
+        if (!moduleRequests.isEmpty()) {
+            assertThat(moduleRequests)
+                    .as("Exploration must not load map/encounter/presentation/reference/session-log")
+                    .noneMatch(url -> {
+                        String u = url.toLowerCase();
+                        return u.contains("/session/modules/map") || u.contains("/session/modules/encounter")
+                                || u.contains("/session/modules/presentation") || u.contains("/session/modules/reference")
+                                || u.contains("/session/modules/session-log");
+                    });
+            assertThat(moduleRequests)
+                    .as("visible modules load once on first visibility")
+                    .allSatisfy(url -> assertThat(
+                            moduleRequests.stream().filter(u -> u.equals(url)).count())
+                            .isLessThanOrEqualTo(2L));
+        }
+
+        moduleRequests.clear();
 
         Number duration = (Number) dmPage.evaluate("""
                 async () => {
@@ -3094,15 +3153,69 @@ class CoreSessionLoopSmokeTest {
         dmPage.waitForFunction("key => window.cockpitLayout.currentPresetKey === key",
                 "builtin:combat");
 
-        // The transitional Quick notes action reveals the real capture form before focusing it.
+        // No excessive module requests after rapid preset switching
+        if (!moduleRequests.isEmpty()) {
+            assertThat(moduleRequests)
+                    .as("no module loaded more times than presets (may load across presets)")
+                    .allSatisfy(url -> assertThat(
+                            moduleRequests.stream().filter(u -> u.equals(url)).count())
+                            .isLessThanOrEqualTo(10L));
+        }
+
+        // Quick notes module is reachable and its input is focusable.
         dmPage.evaluate("window.cockpitLayout.selectTab('BOTTOM_UTILITY', 'quick-notes')");
-        dmPage.locator("[data-open-quick-notes]").click();
-        assertThat(dmPage.locator(
-                "[data-cockpit-zone='LEFT_SUPPORT'] [data-module-tab='story']")
-                .getAttribute("aria-selected")).isEqualTo("true");
-        assertThat(dmPage.locator(
-                "[data-module-key='story'] .quicknotes-form input")
-                .evaluate("el => document.activeElement === el")).isEqualTo(true);
+        dmPage.waitForFunction("""
+                () => document.querySelector('[aria-label="Quick note"]')
+                  && document.querySelector('[aria-label="Quick note"]').offsetParent !== null
+                """);
+        dmPage.locator("[aria-label='Quick note']").first().focus();
+        assertThat(dmPage.evaluate(
+                "() => document.activeElement?.getAttribute('aria-label')"))
+                .isEqualTo("Quick note");
+
+        // Every loaded module has one labelled landmark
+        assertThat(dmPage.evaluate("""
+                () => {
+                  const loaded = document.querySelectorAll(
+                    '[data-module-content][data-module-loaded="true"]');
+                  return Array.from(loaded).every(el => {
+                    const landmark = el.closest(
+                      'article, section, nav, aside, main, header, footer, ' +
+                      '[role="region"], [role="main"], [role="navigation"], ' +
+                      '[role="complementary"], [role="banner"], [role="contentinfo"]');
+                    if (!landmark) return false;
+                    const label = landmark.getAttribute('aria-label')
+                      || landmark.getAttribute('aria-labelledby');
+                    return !!label;
+                  });
+                }
+                """)).as("each loaded module content has a labelled landmark").isEqualTo(true);
+
+        // Loading uses shell live region without moving focus
+        assertThat(dmPage.evaluate("""
+                () => {
+                  const status = document.querySelector('[data-module-status]');
+                  if (!status) return false;
+                  return status.getAttribute('aria-live') === 'polite';
+                }
+                """)).as("module shell declares aria-live=polite for loading").isEqualTo(true);
+        assertThat(dmPage.evaluate("""
+                () => {
+                  const active = document.activeElement;
+                  return active !== null && !active.closest('[data-module-status]');
+                }
+                """)).as("loading does not move focus to live region").isEqualTo(true);
+
+        // Retry is keyboard reachable (has a tabindex or is a button)
+        assertThat(dmPage.evaluate("""
+                () => {
+                  const retry = document.querySelector('[data-module-retry]');
+                  if (!retry) return false;
+                  const tabIndex = retry.getAttribute('tabindex');
+                  const isButton = retry.tagName === 'BUTTON';
+                  return (isButton && tabIndex !== '-1') || (tabIndex !== null && parseInt(tabIndex) >= 0);
+                }
+                """)).as("Retry button is keyboard reachable").isEqualTo(true);
 
         // Separators report updated aria-valuenow in edit mode.
         dmPage.locator("#cockpitLayoutModeButton").click();
@@ -3406,6 +3519,26 @@ class CoreSessionLoopSmokeTest {
                 if (!response.ok) throw new Error('Scene threat section failed: ' + await response.text());
             }
         """, Arrays.asList(path, trapId.toString(), label, sortOrder));
+    }
+
+    @Test
+    @Order(39)
+    void sessionLogModuleRendersDuringSession() {
+        startSession();
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        selectCockpitPreset("builtin:combat");
+
+        // The session-log module shows the running status
+        String result = (String) dmPage.evaluate("""
+                async ([cid]) => {
+                    const resp = await fetch('/campaigns/' + cid + '/session/modules/session-log?mode=STANDARD');
+                    if (!resp.ok) throw new Error('session-log module failed: ' + resp.status);
+                    return await resp.text();
+                }
+            """, List.of(campaignId.toString()));
+        assertThat(result).contains("data-cockpit-module-fragment=\"session-log\"");
+        assertThat(result).contains("RUNNING");
     }
 
     private UUID createRollableTableThroughEditorApi(

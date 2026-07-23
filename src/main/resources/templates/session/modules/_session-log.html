@@ -1,12 +1,59 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<section th:fragment="body(view, mode)"
-         th:attr="data-cockpit-module-fragment='session-log', data-module-mode=${mode}, data-module-empty=${false}">
-  <div data-module-content-root>
-    <div class="session-log-module-body">
-      <p>Review the current session timeline and completed-session note.</p>
-      <p class="text-muted u-text-sm">Session events will appear after play begins.</p>
-    </div>
+<section th:fragment="body"
+         data-cockpit-module-fragment="session-log"
+         th:attr="data-module-mode=${mode}, data-module-empty=${view == null}">
+  <div data-module-content-root class="runtime-session-log"
+       th:classappend="${view != null} ? |runtime-session-log--${#strings.toLowerCase(mode.name())}| : ''">
+    <th:block th:if="${view == null}">
+      <div class="empty-state">Session events will appear after play begins.</div>
+    </th:block>
+    <th:block th:if="${view != null}">
+      <div class="session-log-header">
+        <span class="session-log-status" th:text="${view.sessionStatus}">RUNNING</span>
+        <span class="session-log-time" th:text="${view.timeRange}">time range</span>
+      </div>
+      <th:block th:if="${mode.name() != 'COMPACT'}">
+        <div class="session-log-saved-logs" th:if="${!view.recentSavedLogs.isEmpty()}">
+          <div class="session-log-section-title">Recent session logs</div>
+          <div th:each="sl : ${view.recentSavedLogs}" class="saved-log-row">
+            <a th:href="${sl.url}" th:text="${sl.title}" class="saved-log-link">log title</a>
+          </div>
+        </div>
+        <th:block th:if="${view.reviewDraft != null}">
+          <div class="session-log-draft">
+            <div class="session-log-section-title">Review draft</div>
+            <div class="session-log-draft-body" th:utext="${view.reviewDraft}">draft</div>
+          </div>
+        </th:block>
+      </th:block>
+      <div class="session-log-events">
+        <div class="session-log-section-title" th:if="${!view.currentEvents.isEmpty()}">
+          Timeline (<span th:text="${view.currentEvents.size()}">0</span> events)
+        </div>
+        <th:block th:if="${view.currentEvents.isEmpty()}">
+          <div class="empty-state-subtle">No events recorded yet.</div>
+        </th:block>
+        <div th:each="evt : ${view.currentEvents}" class="log-event-row"
+             th:classappend="${evt.warning} ? 'log-event-row--warning' : ''">
+          <span class="log-event-time" th:text="${#temporals.format(evt.occurredAt, 'HH:mm')}">time</span>
+          <span class="log-event-kind" th:text="${evt.kind}">kind</span>
+          <span class="log-event-title" th:text="${evt.title}">title</span>
+          <span class="log-event-detail" th:if="${evt.detail != null}" th:text="${evt.detail}">detail</span>
+        </div>
+      </div>
+      <div class="session-log-footer" th:if="${mode.name() == 'COMPACT' && view.unresolvedQuickNoteCount > 0}">
+        <span class="session-log-unresolved-badge" th:text="|${view.unresolvedQuickNoteCount} unresolved quick notes|">0</span>
+      </div>
+      <div class="session-log-footer" th:if="${mode.name() != 'COMPACT' && view.unresolvedQuickNoteCount > 0}">
+        <span class="session-log-unresolved-badge" th:text="|${view.unresolvedQuickNoteCount} unresolved quick note(s)|">0</span>
+      </div>
+      <th:block th:if="${mode.name() != 'COMPACT' && view.sessionStatus == 'REVIEW'}">
+        <div class="session-log-action">
+          <button type="button" class="btn btn-sm btn-primary" data-action="review-session">Review</button>
+        </div>
+      </th:block>
+    </th:block>
   </div>
 </section>
 </html>

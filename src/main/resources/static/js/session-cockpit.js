@@ -38,6 +38,7 @@ function sessionCockpit(config) {
         attendeeIds: config.attendeeIds || [],
         draftTitle: '',
         draftBody: config.draftBody || '',
+        newBody: '',
         threatPinKind: 'TRAP',
         threatPinQuery: '',
         threatPinResults: [],
@@ -507,6 +508,9 @@ function sessionCockpit(config) {
                 this.activeEncounter = null;
                 this.activeCombatants = [];
                 this.refreshModules(['encounter', 'story'], 'encounter-ended');
+                window.dispatchEvent(new CustomEvent('cockpit:module-invalidate', {
+                    detail: { moduleKey: 'session-log', reason: 'encounter-ended' }
+                }));
             });
             window.addEventListener('cockpit-encounter-wave-changed', () => {
                 this.refreshModules(['encounter', 'story'], 'wave-changed');
@@ -517,6 +521,16 @@ function sessionCockpit(config) {
                 } else {
                     this.refreshModules(['party'], 'party-runtime-changed');
                 }
+            });
+            window.addEventListener('quicknote-created', () => {
+                window.dispatchEvent(new CustomEvent('cockpit:module-invalidate', {
+                    detail: { moduleKey: 'session-log', reason: 'quicknote-created' }
+                }));
+            });
+            window.addEventListener('session-lifecycle-changed', () => {
+                window.dispatchEvent(new CustomEvent('cockpit:module-invalidate', {
+                    detail: { moduleKey: 'session-log', reason: 'lifecycle-changed' }
+                }));
             });
             this.loadMaps();
             this.loadPlannedEncounters();
