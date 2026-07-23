@@ -2205,6 +2205,43 @@ class CoreSessionLoopSmokeTest {
                 .allSatisfy(splitter -> assertThat(splitter.getAttribute("tabindex")).isEqualTo("-1"));
         assertThat(dmPage.locator("[data-layout-edit-only]:visible").count()).isZero();
 
+        // Locked mode rejects layout mutations (controller throws / no-ops; layout unchanged).
+        Object lockedReject = dmPage.evaluate("""
+            () => {
+              const c = window.cockpitLayout;
+              const before = JSON.stringify(c.current);
+              const results = {};
+              try {
+                c.moveModule('party', 'RIGHT_SUPPORT');
+                results.move = 'accepted';
+              } catch (e) {
+                results.move = 'threw';
+              }
+              try {
+                c.removeModule('party');
+                results.remove = 'accepted';
+              } catch (e) {
+                results.remove = 'threw';
+              }
+              results.resize = c.resize('LEFT_PRIMARY', 0.05) === false ? 'noop' : 'accepted';
+              const after = JSON.stringify(c.current);
+              return {
+                move: results.move,
+                remove: results.remove,
+                resize: results.resize,
+                unchanged: before === after,
+                mode: c.workbench.dataset.layoutMode
+              };
+            }
+            """);
+        @SuppressWarnings("unchecked")
+        var lockedMap = (java.util.Map<String, Object>) lockedReject;
+        assertThat(lockedMap.get("mode")).isEqualTo("locked");
+        assertThat(lockedMap.get("unchanged")).as("locked layout snapshot unchanged").isEqualTo(true);
+        assertThat(lockedMap.get("move")).isEqualTo("threw");
+        assertThat(lockedMap.get("remove")).isEqualTo("threw");
+        assertThat(lockedMap.get("resize")).isEqualTo("noop");
+
         String beforeSceneChange = dmPage.locator("#cockpitPresetPicker").inputValue();
         dmPage.evaluate("window.dispatchEvent(new CustomEvent('session-scene-step', {detail:{direction:1}}))");
         assertThat(dmPage.locator("#cockpitPresetPicker").inputValue()).isEqualTo(beforeSceneChange);
@@ -2376,6 +2413,38 @@ class CoreSessionLoopSmokeTest {
         assertThat(dmPage.locator("#cockpitFocusLayer").isHidden()).isTrue();
         assertThat(dmPage.locator("[data-module-key='story'] [data-module-focus]")
                 .evaluate("el => document.activeElement === el")).isEqualTo(true);
+
+        // Focus + layout mutation: controller restores focus before muting placement.
+        clickModuleChrome("story", "focus");
+        assertThat(dmPage.locator("#cockpitFocusLayer").isVisible()).isTrue();
+        Object focusThenMutate = dmPage.evaluate("""
+            () => {
+              const c = window.cockpitLayout;
+              const chromeHidden = !!document.querySelector(
+                '[data-cockpit-focus-layer] [data-module-key="story"] [data-module-remove]'
+              )?.hidden;
+              const ok = c.moveModule('story', 'LEFT_SUPPORT');
+              return {
+                ok,
+                focusedAfter: c.focusedModuleKey,
+                layerHidden: document.getElementById('cockpitFocusLayer')?.hidden === true,
+                chromeHidden,
+                onLeft: !!document.querySelector(
+                  '[data-cockpit-zone="LEFT_SUPPORT"] [data-module-key="story"]'
+                ),
+                shells: document.querySelectorAll('[data-module-key="story"]').length
+              };
+            }
+            """);
+        @SuppressWarnings("unchecked")
+        var focusMutateMap = (java.util.Map<String, Object>) focusThenMutate;
+        assertThat(focusMutateMap.get("chromeHidden")).as("edit chrome hidden while focused")
+                .isEqualTo(true);
+        assertThat(focusMutateMap.get("ok")).isEqualTo(true);
+        assertThat(focusMutateMap.get("focusedAfter")).isNull();
+        assertThat(focusMutateMap.get("layerHidden")).isEqualTo(true);
+        assertThat(focusMutateMap.get("onLeft")).isEqualTo(true);
+        assertThat(((Number) focusMutateMap.get("shells")).intValue()).isEqualTo(1);
 
         // Exit once → Discard restores original combat preset placement.
         dmPage.locator("#cockpitLayoutModeButton").click();

@@ -294,6 +294,10 @@
         event.preventDefault();
         event.dataTransfer.dropEffect = 'move';
         const zoneEl = target.closest('[data-cockpit-zone]') || target;
+        // Clear peer zone highlights so only the current drop target stays sticky.
+        document.querySelectorAll('[data-dock-active]').forEach((el) => {
+          if (el !== zoneEl) el.removeAttribute('data-dock-active');
+        });
         zoneEl.setAttribute('data-dock-active', 'true');
       });
 
@@ -585,16 +589,22 @@
     /**
      * Keep edit-only controls, drag handles, and splitter tab order in sync with layoutMode.
      * Called after every render so moved shells do not reappear locked.
+     * Focused shells keep Arrange/Remove hidden (mutations restore focus first).
      */
     syncEditChrome() {
       const editing = this.workbench?.dataset.layoutMode === 'edit';
+      const focusedKey = this.focusedModuleKey;
       document.querySelectorAll('[data-layout-edit-only]').forEach((el) => {
         if (el.id === 'cockpitModuleArrangeMenu' || el.getAttribute('role') === 'menu') {
           // Shared arrange popover stays closed until openArrangeMenu().
           if (!editing) el.hidden = true;
           return;
         }
-        if (editing) {
+        const shell = el.closest('[data-module-key]');
+        const onFocusedShell = !!(focusedKey
+          && shell
+          && shell.getAttribute('data-module-key') === focusedKey);
+        if (editing && !onFocusedShell) {
           el.hidden = false;
           el.removeAttribute('hidden');
           if ('disabled' in el) {
@@ -603,10 +613,17 @@
           }
         } else {
           el.hidden = true;
+          if ('disabled' in el && onFocusedShell) {
+            el.disabled = true;
+          }
         }
       });
       document.querySelectorAll('[data-module-key] .cockpit-module__header').forEach((header) => {
-        header.draggable = editing;
+        const shell = header.closest('[data-module-key]');
+        const onFocusedShell = !!(focusedKey
+          && shell
+          && shell.getAttribute('data-module-key') === focusedKey);
+        header.draggable = editing && !onFocusedShell;
       });
       document.querySelectorAll('[data-cockpit-splitter]').forEach((splitter) => {
         splitter.tabIndex = editing ? 0 : -1;
@@ -652,6 +669,18 @@
     assertEditing() {
       if (this.workbench.dataset.layoutMode !== 'edit') {
         throw new Error('Layout changes require edit mode.');
+      }
+    }
+
+    /**
+     * Layout mutations must run against the workbench placement model.
+     * If a module is focused its shell is outside the workbench — restore first
+     * so render/placement cannot orphan the focused module.
+     */
+    prepareLayoutMutation() {
+      this.assertEditing();
+      if (this.focusedModuleKey) {
+        this.restoreFocus({ silent: true });
       }
     }
 
@@ -704,7 +733,7 @@
     }
 
     moveModule(key, targetZone, index) {
-      this.assertEditing();
+      this.prepareLayoutMutation();
       const def = this.modules.get(key);
       if (!def) {
         this.showNotice(`Unknown module: ${key}`);
@@ -756,7 +785,7 @@
     }
 
     reorderModule(key, delta) {
-      this.assertEditing();
+      this.prepareLayoutMutation();
       const zone = this.findModuleZone(key);
       if (!zone) return false;
       const zl = this.ensureZoneLayout(zone);
@@ -774,7 +803,7 @@
     }
 
     removeModule(key) {
-      this.assertEditing();
+      this.prepareLayoutMutation();
       const zone = this.findModuleZone(key);
       if (!zone) return false;
       if (zone === 'PRIMARY' && this.current.zones.PRIMARY.moduleKeys.length === 1) {
@@ -796,7 +825,7 @@
     }
 
     addModule(key, zone) {
-      this.assertEditing();
+      this.prepareLayoutMutation();
       if (this.placedModuleKeys().has(key)) {
         this.showNotice('That module is already in the workspace.');
         return false;
@@ -810,7 +839,7 @@
 
     openArrangeMenu(key, anchor) {
       if (!this.arrangeMenu) return;
-      this.assertEditing();
+      this.prepareLayoutMutation();
       const def = this.modules.get(key);
       if (!def) return;
       this._arrangeModuleKey = key;
@@ -853,7 +882,7 @@
     }
 
     openAddModuleDialog() {
-      this.assertEditing();
+      this.prepareLayoutMutation();
       if (!this.addDialog) return;
       const list = this.addDialog.querySelector('[data-add-module-list]');
       if (!list) return;
@@ -1240,6 +1269,7 @@
       this.workbench.setAttribute('inert', '');
       this.focusLayer.hidden = false;
       this.clearAttention(key);
+      this.syncEditChrome();
       this.emitAllVisibility();
       this.focusReturn?.focus();
       return true;
@@ -1260,6 +1290,7 @@
       this._focusHomePanel = null;
       this.workbench.removeAttribute('inert');
       if (this.focusLayer) this.focusLayer.hidden = true;
+      this.syncEditChrome();
       this.emitAllVisibility();
       if (!options.silent) {
         const prefer = this._focusReturnEl;
