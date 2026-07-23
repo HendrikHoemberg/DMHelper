@@ -31,12 +31,15 @@
   <div class="cockpit-module__body" data-module-body
        th:attr="aria-labelledby=|cockpitModuleTitle-${module.key}|">
     <th:block th:switch="${module.key}">
-      <th:block th:case="'story'"
-                th:insert="~{session/_story-rail :: story(workspace=${workspace})}"></th:block>
+      <!-- Stable refresh roots for session-cockpit.js refreshRails(); keep outside fragment HTML. -->
+      <div th:case="'story'" class="cockpit-story">
+        <th:block th:insert="~{session/_story-rail :: story(workspace=${workspace})}"></th:block>
+      </div>
       <th:block th:case="'map'"
                 th:insert="~{session/_map-module :: map-module(workspace=${workspace})}"></th:block>
-      <th:block th:case="'encounter'"
-                th:insert="~{session/_encounter-rail :: encounters(workspace=${workspace})}"></th:block>
+      <div th:case="'encounter'" class="cockpit-encounter">
+        <th:block th:insert="~{session/_encounter-rail :: encounters(workspace=${workspace})}"></th:block>
+      </div>
       <th:block th:case="'session-plan'"
                 th:insert="~{session/_session-plan :: plan(workspace=${workspace})}"></th:block>
       <th:block th:case="'party'"

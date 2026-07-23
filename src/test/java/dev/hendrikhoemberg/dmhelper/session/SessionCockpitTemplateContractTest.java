@@ -275,6 +275,8 @@ class SessionCockpitTemplateContractTest {
                 .contains("cockpitModuleByKey['encounter']");
         assertThat(shell)
                 .contains("class=\"cockpit-module\"", "data-module-body")
+                .contains("class=\"cockpit-story\"")
+                .contains("class=\"cockpit-encounter\"")
                 .contains("session/_story-rail")
                 .contains("session/_encounter-rail")
                 .contains("session/_session-plan")

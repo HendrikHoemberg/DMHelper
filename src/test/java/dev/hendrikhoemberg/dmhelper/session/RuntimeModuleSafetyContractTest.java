@@ -1,32 +1,55 @@
 package dev.hendrikhoemberg.dmhelper.session;
 
+import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
+import dev.hendrikhoemberg.dmhelper.adventure.service.SceneEncounterSeedService;
+import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService;
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleDefinition;
 import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleRegistry;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService.SessionWorkspace;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * Every runtime module inserted into or declared on the cockpit page must carry a stable
  * {@code data-runtime-module} key and a {@code data-table-safe-behavior} attribute on its
  * outer module shell. Registry keys are the source of truth for behavior values.
  *
- * <p>The test parses cockpit.html and workbench/shell fragments, collects declarations, and
- * asserts uniqueness, completeness against the registry, and classification parity.
+ * <p>Static source scans catch declaration drift; MockMvc-rendered HTML asserts the
+ * production workbench emits exactly one root per registry key with matching classification.
  */
+@SpringBootTest
 class RuntimeModuleSafetyContractTest {
 
     private static final Path TEMPLATES = Path.of("src/main/resources/templates");
@@ -55,6 +78,81 @@ class RuntimeModuleSafetyContractTest {
             "session/_cockpit-module-shell.html",
             "session/_cockpit-deferred-modules.html"
     );
+
+    @Autowired
+    private WebApplicationContext webContext;
+
+    @Autowired
+    private CockpitModuleRegistry registry;
+
+    @MockitoBean
+    private SessionWorkspaceService workspaces;
+
+    @MockitoBean
+    private AdventureService adventures;
+
+    @MockitoBean
+    private SceneEncounterSeedService encounterSeeder;
+
+    @MockitoBean(name = "calendarService")
+    private CalendarService calendarService;
+
+    private MockMvc mvc;
+    private final UUID campaignId = UUID.randomUUID();
+
+    @BeforeEach
+    void setUp() {
+        mvc = MockMvcBuilders.webAppContextSetup(webContext).build();
+
+        Campaign campaign = new Campaign();
+        campaign.setId(campaignId);
+        campaign.setName("Safety Contract Campaign");
+        SessionWorkspace workspace = new SessionWorkspace(
+                campaign,
+                CampaignSession.idle(campaign),
+                null,
+                SessionWorkspaceService.SelectionSource.NONE,
+                null, null, null, null,
+                List.of(), null, List.of(), List.of(), List.of(),
+                new CalendarService.InGameDate(1492, 7, 12),
+                null, List.of(), List.of());
+        when(workspaces.load(any(UUID.class), isNull())).thenReturn(workspace);
+        when(workspaces.load(any(UUID.class), any(UUID.class))).thenReturn(workspace);
+        when(adventures.scenePickerGroups(any())).thenReturn(List.of());
+        when(encounterSeeder.canSeed(any(), any())).thenReturn(false);
+        when(calendarService.formatDate(any(), any())).thenReturn("12 July 1492");
+    }
+
+    @Test
+    void renderedCockpitHasExactlyOneRootPerRegistryKeyWithMatchingBehavior() throws Exception {
+        Document document = renderCockpit();
+        List<Element> roots = document.select("[data-runtime-module]");
+
+        assertThat(roots)
+                .extracting(el -> el.attr("data-runtime-module"))
+                .as("rendered data-runtime-module keys must match the registry exactly once each")
+                .containsExactlyInAnyOrderElementsOf(
+                        registry.all().stream().map(CockpitModuleDefinition::key).toList());
+
+        for (CockpitModuleDefinition definition : registry.all()) {
+            Element root = document.selectFirst(
+                    "[data-runtime-module=" + definition.key() + "]");
+            assertThat(root)
+                    .as("registry module %s must render a data-runtime-module root", definition.key())
+                    .isNotNull();
+            assertThat(root.attr("data-table-safe-behavior"))
+                    .as("data-table-safe-behavior for %s must match the registry", definition.key())
+                    .isEqualTo(definition.screenSafetyBehavior().name());
+            assertThat(root.attr("data-module-key"))
+                    .as("outer shell for %s should also carry data-module-key", definition.key())
+                    .isEqualTo(definition.key());
+        }
+
+        assertThat(document.select(".cockpit-story")).hasSize(1);
+        assertThat(document.select(".cockpit-encounter")).hasSize(1);
+        assertThat(document.select(".cockpit-story[data-runtime-module]")).isEmpty();
+        assertThat(document.select(".cockpit-encounter[data-runtime-module]")).isEmpty();
+    }
 
     @Test
     void allRegistryModulesHaveExactlyOneAuthoritativeRoot() throws IOException {
@@ -144,6 +242,15 @@ class RuntimeModuleSafetyContractTest {
                 .as("session-cockpit.js must use screen safety terminology")
                 .doesNotContain("dmMode")
                 .contains("tableSafe");
+    }
+
+    private Document renderCockpit() throws Exception {
+        String html = mvc.perform(get("/campaigns/{id}/session", campaignId))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        return Jsoup.parse(html);
     }
 
     /**
