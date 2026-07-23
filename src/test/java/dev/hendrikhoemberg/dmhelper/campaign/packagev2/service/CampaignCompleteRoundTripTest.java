@@ -169,7 +169,8 @@ class CampaignCompleteRoundTripTest {
         var encounters = source.encounters().stream()
                 .map(encounter -> new CampaignManifestV2.EncounterDto(
                         encounter.key(), encounter.name(), encounter.combatants(), encounter.status(),
-                        encounter.round(), encounter.activeTurnIndex(), encounter.logSequence(),
+                        encounter.round(), encounter.activeTurnIndex(), encounter.combatPhase(),
+                        encounter.logSequence(),
                         encounter.lairActionName(), encounter.lairActionDescription(), encounter.mapRef(),
                         encounter.lairActionTriggered(),
                         includeCombatLog ? encounter.combatLog() : List.of(),
