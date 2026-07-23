@@ -96,6 +96,19 @@ Participants without statblocks are named in the result instead of disappearing 
 invented statistics. Add those participants manually if they should enter combat. Repeating the
 action is safe: DMHelper reports the existing linked encounter and does not duplicate combatants.
 
+## Initiative setup
+
+Activating an encounter opens Initiative setup before any turn begins.
+
+1. Enter the party's rolled initiatives directly in the Encounter module.
+2. Enter any manual NPC values you want to preserve.
+3. Choose **Roll unset NPCs** to roll only the remaining non-player combatants.
+4. Review the displayed order. Initiative 0 and negative values are valid; an em dash means unset.
+5. Resolve every unset value, or explicitly check **Start with … unset**. Accepted unset combatants remain last in the displayed order.
+6. Choose **Start combat**. Round 1 begins with the first eligible combatant active.
+
+Ties use the displayed order: higher tie-breaker first, then the existing order, then name.
+
 ## Rollable Tables
 
 Tables linked directly to the current scene, or through one of its linked world locations, appear in

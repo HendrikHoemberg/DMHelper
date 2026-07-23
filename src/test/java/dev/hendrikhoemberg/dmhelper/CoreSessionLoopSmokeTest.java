@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper;
 
 import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.WaitForSelectorState;
 import com.microsoft.playwright.options.BoundingBox;
@@ -324,10 +325,9 @@ class CoreSessionLoopSmokeTest {
 
         encounterService.setInitiative(combatants.get(0).id(), 10);
         encounterService.startCombat(encounterId, false);
-        encounterService.nextTurn(encounterId);
 
         var encounter = encounterService.getById(encounterId);
-        assertThat(encounter.round()).isEqualTo(2);
+        assertThat(encounter.round()).isEqualTo(1);
         assertThat(encounter.activeTurnIndex()).isEqualTo(0);
     }
 
@@ -495,6 +495,16 @@ class CoreSessionLoopSmokeTest {
         UUID plannedEncounterId = encounterService.create(campaignId,
                 new EncounterService.CreateRequest("Crypt Guardians", mapId)).id();
         encounterService.prefillFromMap(plannedEncounterId, mapId);
+        encounterService.addCombatant(plannedEncounterId,
+                new EncounterService.CombatantCreateRequest("Unset Hero", 20, "PC", null, null, null));
+        encounterService.addCombatant(plannedEncounterId,
+                new EncounterService.CombatantCreateRequest("Zero Hero", 20, "PC", null, null, null));
+        encounterService.addCombatant(plannedEncounterId,
+                new EncounterService.CombatantCreateRequest("Slow Hero", 20, "PC", null, null, null));
+        encounterService.addCombatant(plannedEncounterId,
+                new EncounterService.CombatantCreateRequest("Manual Goblin", 10, "NPC", null, null, null));
+        encounterService.addCombatant(plannedEncounterId,
+                new EncounterService.CombatantCreateRequest("Auto Goblin", 10, "NPC", null, null, null));
         var handout = handoutService.createImported(campaignId,
                 "<img src=x onerror=window.playerXss=true>", "",
                 "seal.png", "image/png", Base64.getDecoder().decode(
@@ -525,13 +535,54 @@ class CoreSessionLoopSmokeTest {
         Locator planned = dmPage.locator(".planned-encounter-row",
                 new Page.LocatorOptions().setHasText("Crypt Guardians"));
         planned.locator("button", new Locator.LocatorOptions().setHasText("Activate")).click();
-        dmPage.locator("[data-action='next-turn']").waitFor();
+        Locator setup = dmPage.locator("[data-initiative-setup]");
+        setup.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
+        setup.getByLabel("Initiative for Zero Hero").waitFor();
         encounterId = plannedEncounterId;
-        var activeCombatants = encounterService.getCombatants(encounterId);
-        for (var c : activeCombatants) {
-            encounterService.setInitiative(c.id(), 10);
-        }
-        encounterService.startCombat(encounterId, true);
+
+        Locator zeroInput = setup.getByLabel("Initiative for Zero Hero");
+        zeroInput.fill("0");
+        zeroInput.press("Tab");
+
+        Locator negativeInput = setup.getByLabel("Initiative for Slow Hero");
+        negativeInput.fill("-1");
+        negativeInput.press("Tab");
+
+        Locator manualNpcInput = setup.getByLabel("Initiative for Manual Goblin");
+        manualNpcInput.fill("17");
+        manualNpcInput.press("Tab");
+
+        // Wait for the initiative saves to complete before rolling
+        dmPage.waitForTimeout(200);
+
+        setup.getByRole(AriaRole.BUTTON,
+                new Locator.GetByRoleOptions().setName("Roll unset NPCs")).click();
+
+        // Wait for the roll + reload to complete by checking Auto Goblin gets a value
+        dmPage.waitForFunction("""
+                () => document.querySelector('[aria-label="Initiative for Auto Goblin"]')?.value !== ''
+        """);
+
+        assertThat(zeroInput.inputValue()).isEqualTo("0");
+        assertThat(negativeInput.inputValue()).isEqualTo("-1");
+        assertThat(manualNpcInput.inputValue()).isEqualTo("17");
+        assertThat(setup.getByLabel("Initiative for Unset Hero").inputValue()).isBlank();
+        assertThat(setup.getByRole(AriaRole.BUTTON,
+                new Locator.GetByRoleOptions().setName("Start combat")).isDisabled()).isTrue();
+
+        dmPage.getByLabel(Pattern.compile("Start with 1 unset")).check();
+        setup.getByRole(AriaRole.BUTTON,
+                new Locator.GetByRoleOptions().setName("Start combat")).click();
+        dmPage.locator("[data-running-turn-controls]").waitFor();
+
+        var started = encounterService.getById(plannedEncounterId);
+        assertThat(started.combatPhase()).isEqualTo("RUNNING");
+        assertThat(started.round()).isEqualTo(1);
+        assertThat(started.activeTurnIndex()).isGreaterThanOrEqualTo(0);
+        assertThat(encounterService.getCombatants(plannedEncounterId))
+                .extracting(EncounterService.CombatantDto::initiative)
+                .contains(0, -1, 17, null);
+
         var beforeTurn = encounterService.getById(encounterId);
         dmPage.keyboard().press("n");
         dmPage.waitForFunction("([eid, round, turn]) => fetch('/api/v1/encounters/' + eid)"

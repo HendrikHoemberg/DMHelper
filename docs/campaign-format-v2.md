@@ -398,6 +398,18 @@ Each encounter may include ordered `waves[]`:
 
 Combatants may set `waveKey` (package-local), `startX`/`startY` (pixels from top-left), and `placementRegionKey` (map region key).
 
+### Encounter combat phase and initiative
+
+`encounter.combatPhase` is `SETUP` or `RUNNING`. The field is optional for older v2 packages; import infers it from status, round, and active turn.
+
+`combatant.initiative` is an optional nullable integer:
+
+- omitted or `null`: unset;
+- `0`: resolved initiative zero;
+- negative integer: valid resolved initiative.
+
+Exporters must not substitute `0` for unset initiative.
+
 ### Prep and rewards
 
 `prep` object: tactics, morale, surrender/flee, environment notes, source locator, optional scene ref.
