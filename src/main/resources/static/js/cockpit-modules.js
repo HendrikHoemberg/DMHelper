@@ -1,0 +1,326 @@
+(function () {
+  'use strict';
+
+  const PRESERVED_KEYS = new Set(['map']);
+
+  class CockpitModuleController {
+    constructor(config) {
+      this.config = config;
+      this.requests = new Map();
+      this.revisions = new Map();
+      this.stale = new Set();
+      this.loaded = new Set();
+      this.preserveContent = new Set();
+      this.attention = new Map();
+      this._mounted = false;
+      this._layoutApplied = false;
+      this._shells = new Map();
+    }
+
+    mount() {
+      this.discoverShells();
+      this.registerListeners();
+
+      if (this._layoutApplied) {
+        this._mounted = true;
+        return;
+      }
+
+      window.addEventListener('cockpit:layout-applied', () => {
+        this._layoutApplied = true;
+        this._mounted = true;
+      }, { once: true });
+    }
+
+    discoverShells() {
+      this._shells.clear();
+      document.querySelectorAll('[data-module-key]').forEach((shell) => {
+        const key = shell.getAttribute('data-module-key');
+        if (key) this._shells.set(key, shell);
+      });
+    }
+
+    registerListeners() {
+      window.addEventListener('cockpit:module-visibility', (event) => {
+        if (!this.config.runtimeModulesEnabled) return;
+        const detail = event.detail || {};
+        const key = detail.moduleKey;
+        if (!key || !this._shells.has(key)) return;
+        if (detail.visible && this.attention.has(key)) {
+          this.clearAttention(key);
+        }
+      });
+
+      window.addEventListener('cockpit:module-refresh', (event) => {
+        if (!this.config.runtimeModulesEnabled) return;
+        const detail = event.detail || {};
+        const key = detail.moduleKey;
+        if (!key || !this._shells.has(key)) return;
+        this.refresh(key, detail.reason);
+      });
+
+      window.addEventListener('cockpit:module-invalidate', (event) => {
+        if (!this.config.runtimeModulesEnabled) return;
+        const detail = event.detail || {};
+        const key = detail.moduleKey;
+        if (!key || !this._shells.has(key)) return;
+        this.invalidate(key, detail.reason);
+      });
+
+      window.addEventListener('cockpit:module-mode', (event) => {
+        if (!this.config.runtimeModulesEnabled) return;
+        if (!this._mounted) return;
+        const detail = event.detail || {};
+        const key = detail.moduleKey;
+        if (!key || !this._shells.has(key)) return;
+        if (this.preserveContent.has(key)) return;
+        this.load(key, { mode: detail.mode });
+      });
+
+      window.addEventListener('screen-safety-changed', () => {
+        if (!this.config.runtimeModulesEnabled) return;
+        if (!this._mounted) return;
+        for (const key of this._shells.keys()) {
+          const shell = this._shells.get(key);
+          if (!shell) continue;
+          const behavior = shell.getAttribute('data-table-safe-behavior');
+          if (behavior === 'FILTER') {
+            this.load(key, { force: true });
+          }
+        }
+      });
+    }
+
+    isModuleVisible(key) {
+      const shell = this._shells.get(key);
+      if (!shell) return false;
+      if (shell.offsetParent === null) return false;
+      if (document.body?.dataset?.screenSafety === 'TABLE_SAFE') {
+        const behavior = shell.getAttribute('data-table-safe-behavior');
+        if (behavior === 'HIDE') return false;
+      }
+      if (!document.contains(shell)) return false;
+      return true;
+    }
+
+    modeFor(moduleKey) {
+      if (window.cockpitLayout && typeof window.cockpitLayout.moduleMode === 'function') {
+        return window.cockpitLayout.moduleMode(moduleKey);
+      }
+      const shell = this._shells.get(moduleKey);
+      if (!shell) return 'STANDARD';
+      if (shell.getAttribute('data-compact') === 'true') return 'COMPACT';
+      return 'STANDARD';
+    }
+
+    isLoaded(moduleKey) {
+      return this.loaded.has(moduleKey);
+    }
+
+    load(moduleKey, options = {}) {
+      const shell = this._shells.get(moduleKey);
+      if (!shell) {
+        console.warn('CockpitModuleController: unknown key', moduleKey);
+        return;
+      }
+
+      const visible = this.isModuleVisible(moduleKey);
+
+      if (!options.force && !visible) return;
+
+      if (!options.force
+        && this.loaded.has(moduleKey)
+        && !this.stale.has(moduleKey)
+        && options.mode === this.modeFor(moduleKey)) {
+        return;
+      }
+
+      if (this.requests.has(moduleKey)) {
+        this.requests.get(moduleKey).abort();
+      }
+
+      const revision = (this.revisions.get(moduleKey) || 0) + 1;
+      this.revisions.set(moduleKey, revision);
+
+      this.dispatchState(moduleKey, 'loading');
+
+      const contentEl = shell.querySelector('[data-module-content]');
+      if (!contentEl) {
+        console.warn('CockpitModuleController: no data-module-content for', moduleKey);
+        return;
+      }
+
+      let endpoint = contentEl.getAttribute('data-module-endpoint') || '';
+      endpoint = endpoint.replace('{campaignId}', this.config.campaignId || '');
+
+      const params = new URLSearchParams();
+      params.set('mode', options.mode || this.modeFor(moduleKey));
+      const mapId = options.mapId || this.config.mapId || '';
+      if (mapId) params.set('mapId', mapId);
+      const sep = endpoint.includes('?') ? '&' : '?';
+      endpoint += sep + params.toString();
+
+      const loadStarted = performance.now();
+
+      const controller = new AbortController();
+      this.requests.set(moduleKey, controller);
+
+      const fetchOptions = {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'text/html',
+          'X-Cockpit-Module': moduleKey
+        }
+      };
+
+      window.dmRequest(endpoint, fetchOptions)
+        .then(async (response) => {
+          const html = await response.text();
+          if (this.revisions.get(moduleKey) !== revision) return;
+
+          const template = document.createElement('template');
+          template.innerHTML = html;
+          const fragments = template.content.querySelectorAll(
+            `[data-cockpit-module-fragment="${moduleKey}"]`
+          );
+          if (fragments.length !== 1) {
+            throw new Error(
+              `Module ${moduleKey} response must contain exactly one [data-cockpit-module-fragment="${moduleKey}"], got ${fragments.length}`
+            );
+          }
+          const fragment = fragments[0];
+
+          const focusedId = document.activeElement?.id || null;
+
+          const body = shell.querySelector('[data-module-body]');
+          if (body) {
+            const root = body.querySelector('[data-module-content]') || body;
+            root.replaceChildren(...fragment.childNodes);
+          } else {
+            console.warn('CockpitModuleController: no [data-module-body] for', moduleKey, '- falling back to contentEl');
+            contentEl.replaceChildren(...fragment.childNodes);
+          }
+
+          if (focusedId) {
+            const nextFocus = shell.querySelector(`#${CSS.escape(focusedId)}`);
+            if (nextFocus && document.activeElement !== nextFocus) {
+              nextFocus.focus();
+            }
+          }
+
+          this.loaded.add(moduleKey);
+          this.stale.delete(moduleKey);
+          contentEl.setAttribute('data-module-loaded', 'true');
+          contentEl.setAttribute('data-module-stale', 'false');
+
+          if (PRESERVED_KEYS.has(moduleKey)) {
+            this.preserveContent.add(moduleKey);
+          }
+
+          const durationMs = performance.now() - loadStarted;
+          this.dispatchState(moduleKey, 'ready', { durationMs, revision: this.revisions.get(moduleKey) });
+
+          window.dispatchEvent(new CustomEvent('cockpit:module-content-ready', {
+            detail: { moduleKey }
+          }));
+        })
+        .catch((error) => {
+          if (error.name === 'AbortError') return;
+          if (this.revisions.get(moduleKey) !== revision) return;
+          const retry = () => this.load(moduleKey, { ...options, force: true });
+          window.dispatchEvent(new CustomEvent('cockpit:module-load-failed', {
+            detail: {
+              moduleKey,
+              state: 'error',
+              message: error.message || 'Load failed',
+              retry
+            }
+          }));
+          window.dispatchEvent(new CustomEvent('cockpit:module-state', {
+            detail: {
+              moduleKey,
+              state: 'error',
+              message: error.message || 'Load failed',
+              retry
+            }
+          }));
+        });
+    }
+
+    refresh(moduleKey, reason) {
+      const shell = this._shells.get(moduleKey);
+      if (!shell) return;
+
+      const visible = this.isModuleVisible(moduleKey);
+
+      if (!visible) {
+        this.invalidate(moduleKey, reason);
+        return;
+      }
+
+      if (this.preserveContent.has(moduleKey)) return;
+
+      this.load(moduleKey, { force: true });
+    }
+
+    invalidate(moduleKey, reason) {
+      const shell = this._shells.get(moduleKey);
+      if (!shell) return;
+
+      this.stale.add(moduleKey);
+      const contentEl = shell.querySelector('[data-module-content]');
+      if (contentEl) contentEl.setAttribute('data-module-stale', 'true');
+
+      const visible = this.isModuleVisible(moduleKey);
+      if (!visible) {
+        const count = (this.attention.get(moduleKey) || 0) + 1;
+        this.attention.set(moduleKey, count);
+        shell.setAttribute('data-module-attention', String(count));
+      }
+
+      window.dispatchEvent(new CustomEvent('cockpit:module-state', {
+        detail: { moduleKey, state: 'attention', count: this.attention.get(moduleKey) || 1 }
+      }));
+    }
+
+    clearAttention(moduleKey) {
+      this.attention.delete(moduleKey);
+      const shell = this._shells.get(moduleKey);
+      if (shell) {
+        shell.removeAttribute('data-module-attention');
+      }
+    }
+
+    dispatchState(moduleKey, state, extra = {}) {
+      window.dispatchEvent(new CustomEvent('cockpit:module-state', {
+        detail: { moduleKey, state, ...extra }
+      }));
+      if (state === 'ready') {
+        window.dispatchEvent(new CustomEvent('cockpit:module-loaded', {
+          detail: { moduleKey, state, ...extra }
+        }));
+      }
+    }
+  }
+
+  window.CockpitModuleController = CockpitModuleController;
+
+  function boot() {
+    if (!window.cockpitLayoutConfig) {
+      console.error('cockpitLayoutConfig missing; module controller not mounted.');
+      return;
+    }
+    try {
+      window.cockpitModules = new CockpitModuleController(window.cockpitLayoutConfig);
+      window.cockpitModules.mount();
+    } catch (error) {
+      console.error('Failed to mount cockpit module controller', error);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();

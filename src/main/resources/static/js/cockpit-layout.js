@@ -711,6 +711,11 @@
       this.syncEditChrome();
       // Re-apply authoritative Screen Safety after DOM moves; never reimplement policy here.
       this.reapplyScreenSafety();
+      for (const key of this.modules.keys()) {
+        window.dispatchEvent(new CustomEvent('cockpit:module-mode', {
+          detail: { moduleKey: key, mode: this.moduleMode(key) }
+        }));
+      }
     }
 
     /**
@@ -1424,6 +1429,9 @@
       this.syncEditChrome();
       this.reapplyScreenSafety();
       this.emitAllVisibility();
+      window.dispatchEvent(new CustomEvent('cockpit:module-mode', {
+        detail: { moduleKey: key, mode: this.moduleMode(key) }
+      }));
       this.focusReturn?.focus();
       return true;
     }
@@ -1446,6 +1454,11 @@
       this.syncEditChrome();
       this.reapplyScreenSafety();
       this.emitAllVisibility();
+      for (const mk of this.modules.keys()) {
+        window.dispatchEvent(new CustomEvent('cockpit:module-mode', {
+          detail: { moduleKey: mk, mode: this.moduleMode(mk) }
+        }));
+      }
       if (!options.silent) {
         const prefer = this._focusReturnEl;
         this._focusReturnEl = null;
@@ -1579,6 +1592,13 @@
       if (panel.hidden) return false;
       if (zone.dataset.collapsed === 'true') return false;
       return true;
+    }
+
+    moduleMode(key) {
+      if (this.focusedModuleKey === key) return 'FOCUSED';
+      const shell = document.querySelector(`[data-module-key="${key}"]`);
+      if (shell && shell.getAttribute('data-compact') === 'true') return 'COMPACT';
+      return 'STANDARD';
     }
 
     emitAllVisibility() {

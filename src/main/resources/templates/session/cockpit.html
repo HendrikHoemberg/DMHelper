@@ -29,6 +29,7 @@
     <script th:if="${testAudioProvider}" th:src="@{/js/audio-provider-fake.js}"></script>
     <script th:src="@{/js/audio-widget.js}"></script>
     <script th:src="@{/js/cockpit-layout.js}" defer></script>
+    <script th:src="@{/js/cockpit-modules.js}" defer></script>
     <script th:src="@{/vendor/alpine.min.js}" defer></script>
     <title th:text="${workspace.campaign.name + ' — Session'}">Campaign — Session</title>
 </head>
@@ -153,7 +154,9 @@ window.cockpitLayoutConfig = {
     campaignId: /*[[${campaignId}]]*/ '',
     modules: /*[[${cockpitModules}]]*/ [],
     presets: /*[[${cockpitPresets}]]*/ [],
-    defaultPresetKey: /*[[${cockpitDefaultPresetKey}]]*/ 'builtin:exploration'
+    defaultPresetKey: /*[[${cockpitDefaultPresetKey}]]*/ 'builtin:exploration',
+    runtimeModulesEnabled: false,
+    mapId: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.id : null}]]*/ null
 };
 // Screen Safety: mirrors fragments/navbar.html, which the cockpit does not include.
 (function () {
