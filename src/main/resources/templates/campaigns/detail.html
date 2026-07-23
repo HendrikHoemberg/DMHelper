@@ -22,7 +22,7 @@
                 <a class="btn" th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">Plan Adventures</a>
             </div>
 
-            <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${partyMembers}, oob=null)}"></th:block>
+            <th:block th:replace="~{party/_summary-bar :: summary-bar(view=${partyMembers}, mode=${null})}"></th:block>
 
             <section class="scale-panel" data-scale-panel aria-label="Campaign contents">
                 <a class="scale-tile" data-scale="adventures"

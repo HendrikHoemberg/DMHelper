@@ -1,30 +1,15 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<section th:fragment="body(view, mode)"
-         th:attr="data-cockpit-module-fragment='party', data-module-mode=${mode}, data-module-empty=${view == null or view.members.isEmpty()}">
-  <div data-module-content-root>
+<section th:fragment="body"
+         data-cockpit-module-fragment="party"
+         th:attr="data-module-mode=${mode}, data-module-empty=${view == null or view.members.isEmpty()}">
+  <div data-module-content-root class="runtime-party"
+       th:classappend="${view != null} ? |runtime-party--${#strings.toLowerCase(mode.name())}| : ''">
     <th:block th:if="${view == null or view.members.isEmpty()}">
-      <div class="empty-state" style="color: var(--color-text-muted);">No party members yet.</div>
+      <div class="empty-state">No party members yet — add them in Party Preparation.</div>
     </th:block>
     <th:block th:if="${view != null and !view.members.isEmpty()}">
-      <div class="party-module-list">
-        <div th:each="m : ${view.members}" class="party-member-chip">
-          <span class="chip-name" th:text="${m.name}">Name</span>
-          <div class="chip-stats" data-screen-sensitive>
-            <span class="u-text-xs" th:text="'AC ' + ${m.ac}">AC 16</span>
-            <span class="u-text-xs" th:text="'HP ' + ${m.currentHp} + '/' + ${m.maxHp}">HP 32/32</span>
-            <span class="u-text-xs" th:text="'PP ' + ${m.passivePerception}">PP 14</span>
-            <span class="u-text-xs" th:if="${m.tempHp > 0}" th:text="'THP ' + ${m.tempHp}">THP 0</span>
-          </div>
-          <div class="chip-status u-text-xs" data-screen-sensitive>
-            <span th:if="${m.deathSaveSuccesses > 0 or m.deathSaveFailures > 0}"
-                  th:text="'DS ' + ${m.deathSaveSuccesses} + '/' + ${m.deathSaveFailures}">DS 0/0</span>
-            <span th:if="${m.conditionsJson != null and !m.conditionsJson.isEmpty() and !m.conditionsJson.equals('[]')}"
-                  class="badge badge-warning">Conditions</span>
-          </div>
-          <a class="btn btn-ghost u-text-xs" th:href="${m.sheetUrl}" target="_blank">Sheet</a>
-        </div>
-      </div>
+      <th:block th:replace="~{party/_summary-bar :: summary-bar(view=${view.members}, mode=${mode})}"></th:block>
     </th:block>
   </div>
 </section>

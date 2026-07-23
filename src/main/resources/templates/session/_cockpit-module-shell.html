@@ -47,12 +47,12 @@
           <th:block th:case="'map'"
                     th:insert="~{session/_map-module :: map-module(workspace=${workspace})}"></th:block>
           <div th:case="'encounter'" class="cockpit-encounter">
-            <th:block th:insert="~{session/_encounter-rail :: encounters(workspace=${workspace})}"></th:block>
+            <p class="text-muted">Loading encounter\u2026</p>
           </div>
           <th:block th:case="'session-plan'"
                     th:insert="~{session/_session-plan :: plan(workspace=${workspace})}"></th:block>
           <th:block th:case="'party'"
-                    th:replace="~{party/_summary-bar :: summary-bar(members=${workspace.partyMembers}, oob=null)}"></th:block>
+                    th:replace="~{party/_summary-bar :: summary-bar(view=${workspace.partyMembers}, mode=${null})}"></th:block>
           <th:block th:case="'quick-notes'"
                     th:insert="~{session/_cockpit-deferred-modules :: quick-notes}"></th:block>
           <th:block th:case="'presentation'"

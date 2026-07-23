@@ -27,6 +27,13 @@ import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tools.jackson.core.JsonProcessingException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -88,7 +95,8 @@ public class CockpitRuntimeModuleViewService {
                                   int tempHp, int passivePerception, int passiveInsight,
                                   int passiveInvestigation, int deathSaveSuccesses,
                                   int deathSaveFailures, String conditionsJson,
-                                  String sheetUrl, boolean inspiration, int exhaustion, int xp) {}
+                                  String sheetUrl, boolean inspiration, int exhaustion, int xp,
+                                  List<String> conditions) {}
 
     public record QuickNotesView(List<QuickNoteView> notes) {}
 
@@ -197,6 +205,22 @@ public class CockpitRuntimeModuleViewService {
                 canSeed, hasPrev, hasNext, adventureId, mapId, mapName);
     }
 
+    private static final Logger log = LoggerFactory.getLogger(CockpitRuntimeModuleViewService.class);
+    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final TypeReference<List<String>> CONDITIONS_TYPE = new TypeReference<>() {};
+
+    private static List<String> parseConditions(String conditionsJson) {
+        if (conditionsJson == null || conditionsJson.isBlank() || "[]".equals(conditionsJson)) {
+            return List.of();
+        }
+        try {
+            return JSON.readValue(conditionsJson, CONDITIONS_TYPE);
+        } catch (JsonProcessingException e) {
+            log.warn("Malformed conditionsJson, using empty list: {}", e.getMessage());
+            return List.of();
+        }
+    }
+
     private static int indexOf(List<Scene> scenes, UUID id) {
         for (int i = 0; i < scenes.size(); i++) {
             if (scenes.get(i).getId().equals(id)) return i;
@@ -284,7 +308,8 @@ public class CockpitRuntimeModuleViewService {
                         m.getPassiveInvestigation(), m.getDeathSaveSuccesses(), m.getDeathSaveFailures(),
                         m.getConditionsJson(),
                         "/campaigns/" + campaignId + "/party/" + m.getId() + "/sheet",
-                        m.isInspiration(), m.getExhaustion(), m.getXp()))
+                        m.isInspiration(), m.getExhaustion(), m.getXp(),
+                        parseConditions(m.getConditionsJson())))
                 .toList()));
     }
 

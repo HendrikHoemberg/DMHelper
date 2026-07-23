@@ -1,23 +1,43 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="party-summary-bar" id="party-summary-bar" th:fragment="summary-bar(members, oob)"
-     th:attr="hx-swap-oob=${oob}">
+<div class="party-summary-bar" id="party-summary-bar" th:fragment="summary-bar(view, mode)"
+     th:attr="data-module-mode=${mode}">
     <span class="bar-label">Party</span>
-    <th:block th:if="${members == null or members.isEmpty()}">
-        <span style="color: var(--color-text-muted); font-size: var(--text-sm);">No party members yet.</span>
+    <th:block th:if="${view == null or view.isEmpty()}">
+        <span class="empty-text">No party members yet.</span>
     </th:block>
-    <th:block th:each="pm : ${members}">
-        <div class="party-member-chip">
-            <span class="chip-name" th:text="${pm.characterName}">Name</span>
+    <th:block th:each="m : ${view}">
+        <div class="party-member-chip" th:attr="data-member-id=${m.id}">
+            <span class="chip-name" th:text="${m.name}">Name</span>
             <div class="chip-hp-bar">
                 <div class="chip-hp-fill"
-                     th:style="'width:' + (${pm.maxHp} > 0 ? (${pm.currentHp} * 100 / ${pm.maxHp}) : 0) + '%'"
-                     th:classappend="${pm.maxHp > 0 && pm.currentHp * 2 < pm.maxHp} ? 'low' : ''"></div>
+                     th:style="'width:' + (${m.maxHp} > 0 ? (${m.currentHp} * 100 / ${m.maxHp}) : 0) + '%'"
+                     th:classappend="${m.maxHp > 0 && m.currentHp * 2 < m.maxHp} ? 'low' : ''"></div>
             </div>
-            <span class="chip-stats" data-screen-sensitive>
-                <span th:text="'AC ' + ${pm.ac}">AC 16</span>
-                <span th:text="'PP ' + ${pm.passivePerception}">PP 17</span>
-            </span>
+            <div class="chip-stats" data-screen-sensitive>
+                <span th:text="'AC ' + ${m.ac}">AC 16</span>
+                <span th:text="'HP ' + ${m.currentHp} + '/' + ${m.maxHp}">HP 32/32</span>
+                <span th:text="'PP ' + ${m.passivePerception}">PP 14</span>
+                <span th:if="${m.tempHp > 0}" th:text="'THP ' + ${m.tempHp}">THP 0</span>
+            </div>
+            <th:block th:if="${mode == null or mode.name() != 'COMPACT'}">
+                <div class="chip-detail" data-screen-sensitive>
+                    <span th:if="${m.passiveInsight > 0}" th:text="'PI ' + ${m.passiveInsight}">PI 12</span>
+                    <span th:if="${m.passiveInvestigation > 0}" th:text="'PInv ' + ${m.passiveInvestigation}">PInv 14</span>
+                    <span th:if="${m.speed > 0}" th:text="'Spd ' + ${m.speed}">Spd 30</span>
+                </div>
+                <div class="chip-status" data-screen-sensitive>
+                    <span th:if="${m.deathSaveSuccesses > 0 or m.deathSaveFailures > 0}"
+                          th:text="'DS ' + ${m.deathSaveSuccesses} + '/' + ${m.deathSaveFailures}">DS 0/0</span>
+                    <th:block th:if="${m.conditions != null and !m.conditions.isEmpty()}">
+                        <span class="badge badge-warning" th:each="cond : ${m.conditions}" th:text="${cond}">condition</span>
+                    </th:block>
+                    <th:block th:if="${m.conditions == null and m.conditionsJson != null and !m.conditionsJson.isEmpty() and !m.conditionsJson.equals('[]')}">
+                        <span class="badge badge-warning">Conditions</span>
+                    </th:block>
+                </div>
+            </th:block>
+            <a class="btn btn-ghost u-text-xs" th:href="${m.sheetUrl}" target="_blank">Sheet</a>
         </div>
     </th:block>
 </div>

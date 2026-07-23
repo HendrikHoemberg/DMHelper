@@ -490,6 +490,30 @@ function sessionCockpit(config) {
                     this.activeTab = 'tracker';
                 }
             });
+            window.addEventListener('cockpit:module-content-ready', (event) => {
+                if (event.detail?.moduleKey !== 'map') return;
+                if (!window.battleMap) return;
+                requestAnimationFrame(() => {
+                    window.battleMap.resizeToContainer();
+                    window.battleMap.setRenderingActive(true);
+                });
+            });
+            window.addEventListener('cockpit-encounter-ended', () => {
+                this.showTracker = false;
+                this.activeEncounter = null;
+                this.activeCombatants = [];
+                this.refreshModules(['encounter', 'story'], 'encounter-ended');
+            });
+            window.addEventListener('cockpit-encounter-wave-changed', () => {
+                this.refreshModules(['encounter', 'story'], 'wave-changed');
+            });
+            window.addEventListener('party-runtime-changed', () => {
+                if (window.cockpitModules) {
+                    window.cockpitModules.refresh('party', 'party-runtime-changed');
+                } else {
+                    this.refreshModules(['party'], 'party-runtime-changed');
+                }
+            });
             this.loadMaps();
             this.loadPlannedEncounters();
             this.refreshThreatPins();

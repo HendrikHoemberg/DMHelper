@@ -52,6 +52,6 @@
 <!-- Card plus an out-of-band refresh of the top summary bar (kept in sync after add/edit/toggle). -->
 <th:block th:fragment="cardWithSummary(pm, activeMembers)">
     <th:block th:replace="~{party/_card :: card(pm=${pm})}"></th:block>
-    <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${activeMembers}, oob='true')}"></th:block>
+    <th:block th:replace="~{party/_summary-bar :: summary-bar(view=${activeMembers}, mode=${null})}"></th:block>
 </th:block>
 </html>

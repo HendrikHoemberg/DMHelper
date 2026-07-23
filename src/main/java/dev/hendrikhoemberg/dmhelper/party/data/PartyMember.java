@@ -88,6 +88,8 @@ public class PartyMember {
     public String getCharacterName() { return characterName; }
     public void setCharacterName(String characterName) { this.characterName = characterName; }
 
+    public String getName() { return characterName; }
+
     public String getPlayerName() { return playerName; }
     public void setPlayerName(String playerName) { this.playerName = playerName; }
 
@@ -147,6 +149,13 @@ public class PartyMember {
 
     public int getXp() { return xp; }
     public void setXp(int xp) { this.xp = xp; }
+
+    @JsonIgnore
+    public String getSheetUrl() {
+        return campaign != null
+                ? "/campaigns/" + campaign.getId() + "/party/" + id + "/sheet"
+                : null;
+    }
 
     @OneToOne(mappedBy = "partyMember", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore

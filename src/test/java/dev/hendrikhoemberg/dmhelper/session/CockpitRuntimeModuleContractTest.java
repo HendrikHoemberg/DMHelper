@@ -101,6 +101,84 @@ class CockpitRuntimeModuleContractTest {
     }
 
     @Test
+    void encounterFragmentDeclaresModuleAttributes() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_encounter.html"));
+        assertThat(fragment).contains("data-cockpit-module-fragment");
+        assertThat(fragment).contains("data-module-mode");
+        assertThat(fragment).contains("data-module-empty");
+        assertThat(fragment).contains("data-module-content-root");
+        assertThat(fragment).contains("session/_encounter-rail");
+        assertThat(fragment).contains("runtime-encounter");
+    }
+
+    @Test
+    void encounterRailAcceptsViewAndMode() throws IOException {
+        String rail = Files.readString(Path.of(
+                "src/main/resources/templates/session/_encounter-rail.html"));
+        assertThat(rail).contains("th:fragment=\"encounters(view, mode)");
+        assertThat(rail).doesNotContain("th:fragment=\"encounters(workspace)");
+    }
+
+    @Test
+    void encounterRailUsesViewFieldsNotWorkspace() throws IOException {
+        String rail = Files.readString(Path.of(
+                "src/main/resources/templates/session/_encounter-rail.html"));
+        assertThat(rail).contains("view.planned");
+        assertThat(rail).contains("enc.mapId");
+        assertThat(rail).contains("enc.id");
+        assertThat(rail).contains("enc.name");
+        assertThat(rail).doesNotContain("workspace.activeEncounter");
+        assertThat(rail).doesNotContain("workspace.plannedEncounters");
+        assertThat(rail).doesNotContain("workspace.workspaceMap");
+    }
+
+    @Test
+    void encounterFragmentEmptyStateShowsMessage() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_encounter.html"));
+        assertThat(fragment).contains("Link or create an encounter");
+    }
+
+    @Test
+    void encounterCompactModeShowsEssentials() throws IOException {
+        // Essentials live in the tracker template, which is embedded in the rail
+        String tracker = Files.readString(Path.of(
+                "src/main/resources/templates/encounter/_tracker.html"));
+        assertThat(tracker).contains("data-initiative-setup");
+        assertThat(tracker).contains("encounter?.combatPhase === 'SETUP'");
+        assertThat(tracker).contains("x-show=\"encounter?.combatPhase === 'RUNNING'\"");
+        assertThat(tracker).contains("activeTurnIndex");
+        assertThat(tracker).contains("round-counter");
+        // Rail must embed the tracker
+        String rail = Files.readString(Path.of(
+                "src/main/resources/templates/session/_encounter-rail.html"));
+        assertThat(rail).contains("encounter/_tracker :: tracker");
+    }
+
+    @Test
+    void encounterStandardModeShowsFullTracker() throws IOException {
+        String rail = Files.readString(Path.of(
+                "src/main/resources/templates/session/_encounter-rail.html"));
+        assertThat(rail).contains("encounter/_tracker :: tracker");
+        assertThat(rail).contains("Planned Encounters");
+        assertThat(rail).contains("planned-encounter-row");
+    }
+
+    @Test
+    void encounterFocusedModeShowsExpandedContent() throws IOException {
+        // Expanded content lives in the tracker template
+        String tracker = Files.readString(Path.of(
+                "src/main/resources/templates/encounter/_tracker.html"));
+        assertThat(tracker).contains("active-threat-card");
+        assertThat(tracker).contains("combatant-detail");
+        // Rail embeds the tracker
+        String rail = Files.readString(Path.of(
+                "src/main/resources/templates/session/_encounter-rail.html"));
+        assertThat(rail).contains("encounter/_tracker :: tracker");
+    }
+
+    @Test
     void storyRailIncludesNavAndSeedInAllModes() throws IOException {
         String rail = Files.readString(Path.of(
                 "src/main/resources/templates/session/_story-rail.html"));
@@ -124,6 +202,107 @@ class CockpitRuntimeModuleContractTest {
                 "src/main/resources/templates/session/_story-rail.html"));
         assertThat(rail).contains("view.links");
         assertThat(rail).contains("view.sectionThreatCards");
+    }
+
+    @Test
+    void partyFragmentDeclaresModuleAttributes() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_party.html"));
+        assertThat(fragment).contains("data-cockpit-module-fragment");
+        assertThat(fragment).contains("data-module-mode");
+        assertThat(fragment).contains("data-module-empty");
+        assertThat(fragment).contains("data-module-content-root");
+        assertThat(fragment).contains("party/_summary-bar");
+        assertThat(fragment).contains("runtime-party");
+    }
+
+    @Test
+    void partyFragmentUsesSummaryBarWithViewAndMode() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_party.html"));
+        assertThat(fragment).contains("summary-bar(view=${view.members}, mode=${mode})");
+        assertThat(fragment).doesNotContain("summary-bar(members=");
+    }
+
+    @Test
+    void partyFragmentEmptyStateShowsMessage() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_party.html"));
+        assertThat(fragment).contains("No party members yet");
+    }
+
+    @Test
+    void partySummaryBarAcceptsViewAndMode() throws IOException {
+        String bar = Files.readString(Path.of(
+                "src/main/resources/templates/party/_summary-bar.html"));
+        assertThat(bar).contains("th:fragment=\"summary-bar(view, mode)");
+        assertThat(bar).doesNotContain("th:fragment=\"summary-bar(members");
+    }
+
+    @Test
+    void partySummaryBarUsesViewFieldsNotPartyMemberEntities() throws IOException {
+        String bar = Files.readString(Path.of(
+                "src/main/resources/templates/party/_summary-bar.html"));
+        assertThat(bar).contains("m.name");
+        assertThat(bar).contains("m.ac");
+        assertThat(bar).contains("m.currentHp");
+        assertThat(bar).contains("m.maxHp");
+        assertThat(bar).contains("m.passivePerception");
+        assertThat(bar).contains("m.conditionsJson");
+        assertThat(bar).contains("m.sheetUrl");
+        assertThat(bar).doesNotContain("pm.characterName");
+        assertThat(bar).doesNotContain("pm.ac");
+    }
+
+    @Test
+    void partyCompactModeShowsEssentialsOnly() throws IOException {
+        String bar = Files.readString(Path.of(
+                "src/main/resources/templates/party/_summary-bar.html"));
+        assertThat(bar).contains("mode.name() != 'COMPACT'");
+    }
+
+    @Test
+    void partyModuleNoEditDeleteToggleControls() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_party.html"));
+        assertThat(fragment).doesNotContain("Edit");
+        assertThat(fragment).doesNotContain("toggle-active");
+        assertThat(fragment).doesNotContain("Mark Inactive");
+        assertThat(fragment).doesNotContain("Mark Active");
+    }
+
+    @Test
+    void partySummaryBarParsesConditionsJson() throws IOException {
+        String bar = Files.readString(Path.of(
+                "src/main/resources/templates/party/_summary-bar.html"));
+        assertThat(bar).contains("m.conditions");
+        assertThat(bar).contains("conditionsJson");
+    }
+
+    @Test
+    void partySummaryBarShowsIndividualConditionLabels() throws IOException {
+        String bar = Files.readString(Path.of(
+                "src/main/resources/templates/party/_summary-bar.html"));
+        assertThat(bar).contains("th:each=\"cond : ${m.conditions}\"");
+        assertThat(bar).contains("th:text=\"${cond}\"");
+    }
+
+    @Test
+    void partyStandardModeShowsFullStats() throws IOException {
+        String bar = Files.readString(Path.of(
+                "src/main/resources/templates/party/_summary-bar.html"));
+        assertThat(bar).contains("passiveInsight");
+        assertThat(bar).contains("passiveInvestigation");
+        assertThat(bar).contains("deathSaveSuccesses");
+        assertThat(bar).contains("deathSaveFailures");
+        assertThat(bar).contains("chip-status");
+    }
+
+    @Test
+    void partyModuleUsesRuntimePartyClass() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_party.html"));
+        assertThat(fragment).contains("runtime-party");
     }
 
     private static int count(String s, String substring) {
