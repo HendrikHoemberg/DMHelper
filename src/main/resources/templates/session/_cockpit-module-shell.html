@@ -12,6 +12,9 @@
                   data-min-width=${module.minWidthPx},
                   data-min-height=${module.minHeightPx},
                   data-table-safe-behavior=${module.screenSafetyBehavior},
+                  data-loading-message=${module.states.loadingMessage},
+                  data-empty-message=${module.states.emptyMessage},
+                  data-error-message=${module.states.errorMessage},
                   aria-label=${module.title}"
          tabindex="-1">
   <header class="cockpit-module__header">
@@ -27,6 +30,7 @@
               th:attr="aria-label=|Remove ${module.title}|">Remove</button>
     </div>
   </header>
+  <!-- Live region for loading/empty; existing body content is preserved across states. -->
   <div class="cockpit-module__status" data-module-status aria-live="polite" hidden></div>
   <div class="cockpit-module__body" data-module-body
        th:attr="aria-labelledby=|cockpitModuleTitle-${module.key}|">

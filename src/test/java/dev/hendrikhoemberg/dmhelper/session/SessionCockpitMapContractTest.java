@@ -58,4 +58,30 @@ class SessionCockpitMapContractTest {
                 .as("cockpit map picker label uses sr-only; without the rule it renders visibly")
                 .contains(".sr-only");
     }
+
+    @Test
+    void battleMapExposesRenderingActiveControls() throws IOException {
+        String battleMapJs = Files.readString(
+                Path.of("src/main/resources/static/js/map/battle-map.js"));
+        assertThat(battleMapJs)
+                .as("hidden map modules must pause Konva without discarding world state")
+                .contains("setRenderingActive")
+                .contains("isRenderingActive")
+                .contains("resizeToContainer")
+                .contains("this.renderingActive = true");
+    }
+
+    @Test
+    void sessionCockpitDefersMapInitWhenHiddenAndListensForVisibility() throws IOException {
+        String cockpitJs = Files.readString(
+                Path.of("src/main/resources/static/js/session-cockpit.js"));
+        assertThat(cockpitJs)
+                .as("map construction must wait for module visibility and use the render-active adapter")
+                .contains("cockpit:module-visibility")
+                .contains("isModuleVisible('map')")
+                .contains("setRenderingActive")
+                .contains("resizeToContainer")
+                .contains("_pendingMapInit")
+                .contains("_battleMapInitStarted");
+    }
 }

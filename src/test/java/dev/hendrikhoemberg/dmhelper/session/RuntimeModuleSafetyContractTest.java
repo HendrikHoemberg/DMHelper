@@ -244,6 +244,38 @@ class RuntimeModuleSafetyContractTest {
                 .contains("tableSafe");
     }
 
+    @Test
+    void layoutControllerReappliesScreenSafetyAndHandlesModuleState() throws IOException {
+        String layoutJs = Files.readString(
+                Path.of("src/main/resources/static/js/cockpit-layout.js"));
+        assertThat(layoutJs)
+                .as("layout must re-apply the existing Screen Safety controller after DOM moves")
+                .contains("setScreenSafety")
+                .contains("animate: false")
+                .contains("reapplyScreenSafety");
+        assertThat(layoutJs)
+                .as("layout must consume cockpit:module-state and expose visibility queries")
+                .contains("cockpit:module-state")
+                .contains("isModuleVisible")
+                .contains("_retryCallbacks")
+                .contains("cockpit:module-visibility");
+    }
+
+    @Test
+    void moduleShellDeclaresStateMessageAttributesAndRetry() throws IOException {
+        Path shell = TEMPLATES.resolve("session/_cockpit-module-shell.html");
+        String content = Files.readString(shell);
+        assertThat(content)
+                .as("shell chrome must carry state messages and an inline Retry action")
+                .contains("data-module-status")
+                .contains("data-module-error")
+                .contains("data-module-retry")
+                .contains("data-loading-message")
+                .contains("data-empty-message")
+                .contains("data-error-message")
+                .contains("data-module-body");
+    }
+
     private Document renderCockpit() throws Exception {
         String html = mvc.perform(get("/campaigns/{id}/session", campaignId))
                 .andExpect(status().isOk())

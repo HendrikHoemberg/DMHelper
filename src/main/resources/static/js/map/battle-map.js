@@ -49,6 +49,8 @@ export class BattleMap {
         this.statusEl = statusEl;
         this.saveIndicatorEl = saveIndicatorEl;
         this.cursorInfoEl = cursorInfoEl;
+        /** When false, stage/layers stop listening and drawing; world state is kept. */
+        this.renderingActive = true;
 
         /** @type {TokenData[]} */
         this.tokens = [];
@@ -708,6 +710,36 @@ export class BattleMap {
         this.renderConditionIndicators();
         if (!tableSafe) this.showPins();
         else this.hidePins();
+    }
+
+    /**
+     * Pause or resume Konva interaction/drawing without discarding transform, tokens,
+     * fog, annotations, or selection. Stage position and scale are left untouched.
+     */
+    setRenderingActive(active) {
+        const next = Boolean(active);
+        if (this.renderingActive === next) return;
+        this.renderingActive = next;
+        if (!this.stage) return;
+        this.stage.listening(next);
+        for (const layer of this.stage.getLayers()) {
+            layer.listening(next);
+            layer.visible(next);
+        }
+        if (next) this.stage.batchDraw();
+    }
+
+    isRenderingActive() {
+        return this.renderingActive !== false;
+    }
+
+    resizeToContainer() {
+        if (!this.isRenderingActive() || !this.container?.isConnected || !this.stage) return;
+        const width = this.container.clientWidth;
+        const height = this.container.clientHeight;
+        if (width < 1 || height < 1) return;
+        this.stage.size({ width, height });
+        this.stage.batchDraw();
     }
 
     renderConditionIndicators() {

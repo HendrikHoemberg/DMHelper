@@ -486,16 +486,53 @@ function sessionCockpit(config) {
             this.loadPlannedEncounters();
             this.refreshThreatPins();
             this.loadActiveEncounter();
+            this._bindMapVisibility();
             if (config.mapId) {
                 this.visitedMapIds.add(this.currentMapId);
                 this.initBattleMap();
             }
         },
 
+        _bindMapVisibility() {
+            if (this._mapVisibilityBound) return;
+            this._mapVisibilityBound = true;
+            window.addEventListener('cockpit:module-visibility', (event) => {
+                if (event.detail?.moduleKey !== 'map') return;
+                // Deferred first-time construction when the map module becomes visible.
+                if (!window.battleMap && this._pendingMapInit && event.detail.visible) {
+                    this._pendingMapInit();
+                    return;
+                }
+                if (!window.battleMap) return;
+                window.battleMap.setRenderingActive(Boolean(event.detail.visible));
+                if (event.detail.visible) {
+                    requestAnimationFrame(() => window.battleMap.resizeToContainer());
+                }
+            });
+        },
+
         initBattleMap() {
             const container = document.getElementById('battleCanvasWrap');
-            if (!container) return;
+            if (!container || this._battleMapInitStarted || window.battleMap) return;
+
+            const mapVisible = window.cockpitLayout?.isModuleVisible('map') ?? true;
+            if (!mapVisible) {
+                // One pending initializer; removed after successful construction.
+                if (this._pendingMapInit) return;
+                this._pendingMapInit = () => {
+                    this._pendingMapInit = null;
+                    this._constructBattleMap(container);
+                };
+                return;
+            }
+            this._constructBattleMap(container);
+        },
+
+        _constructBattleMap(container) {
+            if (this._battleMapInitStarted || window.battleMap) return;
+            this._battleMapInitStarted = true;
             import('/js/map/battle-map.js').then(mod => {
+                if (window.battleMap) return;
                 const BattleMap = mod.BattleMap;
                 const bm = new BattleMap({
                     container,
@@ -511,7 +548,13 @@ function sessionCockpit(config) {
                     cursorInfoEl: document.getElementById('battleCursorInfo'),
                 });
                 window.battleMap = bm;
-                bm.load();
+                bm.load().then(() => {
+                    const visible = window.cockpitLayout?.isModuleVisible('map') ?? true;
+                    bm.setRenderingActive(visible);
+                    if (visible) {
+                        requestAnimationFrame(() => bm.resizeToContainer());
+                    }
+                });
             });
         },
 

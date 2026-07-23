@@ -2572,6 +2572,307 @@ class CoreSessionLoopSmokeTest {
         }
     }
 
+    @Test
+    @Order(36)
+    void cockpitPreservesRuntimeStateAndIsolatesModuleFailures() {
+        if (campaignId == null) {
+            createCampaign();
+        }
+        if (mapId == null) {
+            mapId = gameMapService.create(campaignId, "Runtime State Map", 20, 15, 48).getId();
+        }
+        startSession();
+        dmPage.setViewportSize(1366, 768);
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
+                + "/session?mapId=" + mapId);
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        dmPage.waitForFunction("window.cockpitLayout?.mounted === true");
+        selectCockpitPreset("builtin:combat");
+        dmPage.waitForFunction(
+                "() => window.battleMap && window.battleMap.stage && window.cockpitLayout.isModuleVisible('map')");
+
+        // Tag module shells so we can prove DOM identity across preset switches.
+        dmPage.evaluate("""
+                () => {
+                  document.querySelectorAll('[data-module-key]').forEach(shell => {
+                    shell.dataset.identity = crypto.randomUUID();
+                  });
+                }
+                """);
+
+        // Distinctive map transform + draft text + recorded server/runtime state.
+        @SuppressWarnings("unchecked")
+        var baseline = (java.util.Map<String, Object>) dmPage.evaluate("""
+                () => {
+                  const bm = window.battleMap;
+                  bm.stage.scale({ x: 1.37, y: 1.37 });
+                  bm.stage.position({ x: -88, y: -55 });
+                  bm.stage.batchDraw();
+                  const storyBody = document.querySelector(
+                    '[data-module-key="story"] [data-module-body]');
+                  let note = storyBody?.querySelector(
+                    '.quicknotes-form input, input, textarea');
+                  if (!note && storyBody) {
+                    note = document.createElement('input');
+                    note.id = 'runtime-state-draft-probe';
+                    note.setAttribute('data-runtime-draft-probe', 'true');
+                    storyBody.appendChild(note);
+                  }
+                  if (note) {
+                    note.value = 'RUNTIME_DRAFT_KEEP_ME';
+                    note.dispatchEvent(new Event('input', { bubbles: true }));
+                  }
+                  const alpine = window.Alpine?.$data?.(
+                    document.querySelector('[x-data*=sessionStatus], [x-data*=presentationMode], body > div[x-data], [x-data]'));
+                  return {
+                    scale: bm.stage.scaleX(),
+                    x: bm.stage.x(),
+                    y: bm.stage.y(),
+                    draft: note ? note.value : '',
+                    scene: document.querySelector('[data-current-scene]')?.textContent?.trim() || '',
+                    presentation: alpine?.presentationMode
+                      || document.querySelector('[data-presentation-mode]')?.getAttribute('data-presentation-mode')
+                      || '',
+                    encounter: alpine?.activeEncounter?.id || alpine?.activeEncounter || null,
+                    combatant: alpine?.activeCombatants?.[0]?.id
+                      || document.querySelector('[data-active-combatant]')?.getAttribute('data-active-combatant')
+                      || null,
+                    identities: Object.fromEntries(
+                      [...document.querySelectorAll('[data-module-key]')].map(el => [
+                        el.getAttribute('data-module-key'), el.dataset.identity
+                      ]))
+                  };
+                }
+                """);
+        assertThat(baseline.get("draft")).as("quick-note draft should be set").isEqualTo("RUNTIME_DRAFT_KEEP_ME");
+        assertThat(((Number) baseline.get("scale")).doubleValue()).isEqualTo(1.37);
+
+        // Exploration → Combat → Theatre of Mind → Combat
+        for (String preset : List.of(
+                "builtin:exploration", "builtin:combat",
+                "builtin:theatre-of-mind", "builtin:combat")) {
+            selectCockpitPreset(preset);
+        }
+        dmPage.waitForFunction(
+                "() => window.battleMap && window.cockpitLayout.isModuleVisible('map')");
+
+        @SuppressWarnings("unchecked")
+        var afterPresets = (java.util.Map<String, Object>) dmPage.evaluate("""
+                (expected) => {
+                  const bm = window.battleMap;
+                  const note = document.querySelector(
+                    '[data-module-key="story"] [data-runtime-draft-probe], [data-module-key="story"] .quicknotes-form input, [data-module-key="story"] input, [data-module-key="story"] textarea');
+                  const alpine = window.Alpine?.$data?.(
+                    document.querySelector('[x-data*=sessionStatus], [x-data*=presentationMode], body > div[x-data], [x-data]'));
+                  const identities = Object.fromEntries(
+                    [...document.querySelectorAll('[data-module-key]')].map(el => [
+                      el.getAttribute('data-module-key'), el.dataset.identity
+                    ]));
+                  const identityMatch = Object.keys(expected.identities).every(
+                    key => identities[key] === expected.identities[key]);
+                  return {
+                    scale: bm.stage.scaleX(),
+                    x: bm.stage.x(),
+                    y: bm.stage.y(),
+                    draft: note ? note.value : '',
+                    scene: document.querySelector('[data-current-scene]')?.textContent?.trim() || '',
+                    presentation: alpine?.presentationMode
+                      || document.querySelector('[data-presentation-mode]')?.getAttribute('data-presentation-mode')
+                      || '',
+                    encounter: alpine?.activeEncounter?.id || alpine?.activeEncounter || null,
+                    combatant: alpine?.activeCombatants?.[0]?.id
+                      || document.querySelector('[data-active-combatant]')?.getAttribute('data-active-combatant')
+                      || null,
+                    identityMatch,
+                    shellCount: document.querySelectorAll('[data-module-key]').length
+                  };
+                }
+                """, baseline);
+        assertThat(afterPresets.get("identityMatch")).as("module DOM identities preserved").isEqualTo(true);
+        assertThat(((Number) afterPresets.get("scale")).doubleValue()).isEqualTo(1.37);
+        assertThat(((Number) afterPresets.get("x")).doubleValue()).isEqualTo(-88.0);
+        assertThat(((Number) afterPresets.get("y")).doubleValue()).isEqualTo(-55.0);
+        assertThat(afterPresets.get("draft")).isEqualTo(baseline.get("draft"));
+        assertThat(afterPresets.get("scene")).isEqualTo(baseline.get("scene"));
+        assertThat(afterPresets.get("presentation")).isEqualTo(baseline.get("presentation"));
+        assertThat(afterPresets.get("encounter")).isEqualTo(baseline.get("encounter"));
+        assertThat(afterPresets.get("combatant")).isEqualTo(baseline.get("combatant"));
+
+        // Story module-state error keeps body and shows Retry.
+        @SuppressWarnings("unchecked")
+        var storyError = (java.util.Map<String, Object>) dmPage.evaluate("""
+                () => {
+                  const bodyBefore = document.querySelector(
+                    '[data-module-key="story"] [data-module-body]')?.innerHTML || '';
+                  window.dispatchEvent(new CustomEvent('cockpit:module-state', {
+                    detail: {
+                      moduleKey: 'story',
+                      state: 'error',
+                      message: 'Story refresh failed for test.',
+                      retry: () => Promise.resolve()
+                    }
+                  }));
+                  const shell = document.querySelector('[data-module-key="story"]');
+                  const err = shell?.querySelector('[data-module-error]');
+                  const retry = shell?.querySelector('[data-module-retry]');
+                  const body = shell?.querySelector('[data-module-body]');
+                  return {
+                    bodySame: (body?.innerHTML || '') === bodyBefore,
+                    bodyHidden: !!body?.hidden,
+                    errorVisible: err && !err.hidden,
+                    retryVisible: retry && !retry.hidden && retry.offsetParent !== null,
+                    errorText: err?.textContent || ''
+                  };
+                }
+                """);
+        assertThat(storyError.get("bodySame")).isEqualTo(true);
+        assertThat(storyError.get("bodyHidden")).isEqualTo(false);
+        assertThat(storyError.get("errorVisible")).isEqualTo(true);
+        assertThat(storyError.get("retryVisible")).isEqualTo(true);
+        assertThat((String) storyError.get("errorText")).contains("Story refresh failed");
+
+        // Attention on a hidden tab: badge without activation.
+        @SuppressWarnings("unchecked")
+        var attention = (java.util.Map<String, Object>) dmPage.evaluate("""
+                () => {
+                  const c = window.cockpitLayout;
+                  // Combat right is encounter-only; use bottom quick-notes when inactive.
+                  const zone = 'BOTTOM_UTILITY';
+                  const key = 'audio';
+                  const zl = c.current.zones[zone];
+                  if (zl.activeModuleKey === key) {
+                    c.selectTab(zone, zl.moduleKeys.find(k => k !== key) || key);
+                  }
+                  const beforeActive = c.current.zones[zone].activeModuleKey;
+                  const beforePreset = c.currentPresetKey;
+                  window.dispatchEvent(new CustomEvent('cockpit:module-state', {
+                    detail: { moduleKey: key, state: 'attention', count: 2 }
+                  }));
+                  const tab = document.querySelector(
+                    `[data-cockpit-zone="${zone}"] [data-module-tab="${key}"]`);
+                  const badge = tab?.querySelector('.cockpit-module__attention');
+                  return {
+                    badgeText: badge?.textContent || '',
+                    activeUnchanged: c.current.zones[zone].activeModuleKey === beforeActive,
+                    presetUnchanged: c.currentPresetKey === beforePreset
+                  };
+                }
+                """);
+        assertThat(attention.get("badgeText")).isEqualTo("2");
+        assertThat(attention.get("activeUnchanged")).isEqualTo(true);
+        assertThat(attention.get("presetUnchanged")).isEqualTo(true);
+
+        // Table-safe in every built-in: HIDE shells inert/hidden; FILTER keeps safe content only.
+        for (String preset : List.of(
+                "builtin:exploration", "builtin:combat",
+                "builtin:theatre-of-mind", "builtin:presentation", "builtin:session-review")) {
+            selectCockpitPreset(preset);
+            dmPage.evaluate("window.setScreenSafety('TABLE_SAFE', { animate: false })");
+            @SuppressWarnings("unchecked")
+            var safety = (java.util.Map<String, Object>) dmPage.evaluate("""
+                    () => {
+                      const hide = [...document.querySelectorAll(
+                        '[data-table-safe-behavior="HIDE"]')];
+                      const filter = [...document.querySelectorAll(
+                        '[data-table-safe-behavior="FILTER"]')];
+                      const hideOk = hide.every(el =>
+                        el.hasAttribute('inert')
+                        || el.getAttribute('aria-hidden') === 'true'
+                        || getComputedStyle(el).display === 'none');
+                      const filterSensitiveVisible = filter.some(shell =>
+                        [...shell.querySelectorAll('[data-screen-sensitive]')].some(s => {
+                          if (s.offsetParent === null) return false;
+                          if (s.hasAttribute('inert')) return false;
+                          if (s.getAttribute('aria-hidden') === 'true') return false;
+                          const cs = getComputedStyle(s);
+                          return cs.display !== 'none' && cs.visibility !== 'hidden';
+                        }));
+                      return { hideOk, filterSensitiveVisible, hideCount: hide.length };
+                    }
+                    """);
+            assertThat(safety.get("hideOk"))
+                    .as("HIDE shells inert/hidden under %s", preset)
+                    .isEqualTo(true);
+            assertThat(safety.get("filterSensitiveVisible"))
+                    .as("FILTER shells hide sensitive content under %s", preset)
+                    .isEqualTo(false);
+            dmPage.evaluate("window.setScreenSafety('PRIVATE', { animate: false })");
+        }
+
+        // Hide map → rendering inactive; show → transform unchanged.
+        selectCockpitPreset("builtin:combat");
+        dmPage.waitForFunction("() => window.battleMap && window.cockpitLayout.isModuleVisible('map')");
+        dmPage.evaluate("""
+                () => {
+                  const bm = window.battleMap;
+                  bm.stage.scale({ x: 1.37, y: 1.37 });
+                  bm.stage.position({ x: -88, y: -55 });
+                  bm.stage.batchDraw();
+                }
+                """);
+        selectCockpitPreset("builtin:theatre-of-mind");
+        dmPage.waitForFunction("() => window.battleMap && window.battleMap.isRenderingActive() === false");
+        assertThat(dmPage.evaluate("window.battleMap.isRenderingActive()")).isEqualTo(false);
+        selectCockpitPreset("builtin:combat");
+        dmPage.waitForFunction("() => window.battleMap && window.battleMap.isRenderingActive() === true");
+        @SuppressWarnings("unchecked")
+        var transform = (java.util.Map<String, Object>) dmPage.evaluate("""
+                () => {
+                  const bm = window.battleMap;
+                  return { scale: bm.stage.scaleX(), x: bm.stage.x(), y: bm.stage.y() };
+                }
+                """);
+        assertThat(((Number) transform.get("scale")).doubleValue()).isEqualTo(1.37);
+        assertThat(((Number) transform.get("x")).doubleValue()).isEqualTo(-88.0);
+        assertThat(((Number) transform.get("y")).doubleValue()).isEqualTo(-55.0);
+
+        // Failed preset save keeps edit mode, draft, correlation; no success path.
+        final String correlationId = "layout-save-503-test";
+        failOnce(dmPage, "**/api/v1/cockpit-layout/presets", "POST",
+                Pattern.compile(".*/api/v1/cockpit-layout/presets"), correlationId);
+        @SuppressWarnings("unchecked")
+        var saveFail = (java.util.Map<String, Object>) dmPage.evaluate("""
+                async () => {
+                  const c = window.cockpitLayout;
+                  c.enterEditMode();
+                  c.current.ratios = Object.assign({}, c.current.ratios, { left: 0.18 });
+                  c.persistDraft();
+                  const originalPrompt = c.promptName.bind(c);
+                  c.promptName = async () => 'Save Fail Copy';
+                  try {
+                    await c.saveEdit();
+                  } finally {
+                    c.promptName = originalPrompt;
+                  }
+                  const notice = document.getElementById('cockpitLayoutNotice')?.textContent || '';
+                  return {
+                    mode: c.workbench.dataset.layoutMode,
+                    draftExists: !!localStorage.getItem(c.storageKey('edit-draft')),
+                    notice,
+                    hasReference: notice.includes('Reference:')
+                      || notice.includes('layout-save-503-test'),
+                    hasSuccess: /saved|success/i.test(notice)
+                  };
+                }
+                """);
+        assertThat(saveFail.get("mode")).as("edit mode remains after failed save").isEqualTo("edit");
+        assertThat(saveFail.get("draftExists")).as("edit draft retained after 503").isEqualTo(true);
+        assertThat(saveFail.get("hasReference")).as("notice includes correlation reference").isEqualTo(true);
+        assertThat(saveFail.get("hasSuccess")).as("no success message on failed save").isEqualTo(false);
+
+        // Cleanup edit mode without leaving a dirty dialog for later tests.
+        dmPage.evaluate("""
+                () => {
+                  const c = window.cockpitLayout;
+                  if (c.workbench.dataset.layoutMode === 'edit') {
+                    c.discardEdit();
+                  }
+                  c.clearStorage('edit-draft');
+                  c.clearNotice();
+                }
+                """);
+    }
+
     private static byte[] createSinglePixelPng(String label) throws IOException {
         BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
         img.setRGB(0, 0, 0xFF000000 | (label.hashCode() & 0x00FFFFFF));

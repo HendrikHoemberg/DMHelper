@@ -36,6 +36,8 @@
       this._focusReturnEl = null;
       this._focusHomePanel = null;
       this.attention = new Map();
+      /** @type {Map<string, Function>} in-memory only — never serialized */
+      this._retryCallbacks = new Map();
       this.metrics = { firstMeaningfulMs: null, lastApplyMs: null };
       this.mounted = false;
       this._pendingNameResolve = null;
@@ -187,6 +189,7 @@
       this.bindSplitters();
       this.bindFocusChrome();
       this.bindAttention();
+      this.bindModuleState();
     }
 
     bindEditInteractions() {
@@ -358,6 +361,37 @@
         const detail = event.detail || {};
         if (!detail.moduleKey) return;
         this.setAttention(detail.moduleKey, detail.count ?? 1);
+      });
+    }
+
+    bindModuleState() {
+      window.addEventListener('cockpit:module-state', (event) => {
+        const detail = event.detail || {};
+        const key = detail.moduleKey;
+        const state = detail.state;
+        if (!key || !state) return;
+        const allowed = new Set(['loading', 'ready', 'empty', 'error', 'attention']);
+        if (!allowed.has(state)) return;
+        if (state === 'attention') {
+          const prev = this.attention.get(key) || 0;
+          this.setAttention(key, detail.count != null ? detail.count : prev + 1);
+          return;
+        }
+        this.setModuleState(key, state, detail);
+      });
+
+      document.addEventListener('click', (event) => {
+        const retryBtn = event.target.closest('[data-module-retry]');
+        if (!retryBtn) return;
+        const shell = retryBtn.closest('[data-module-key]');
+        if (!shell) return;
+        event.preventDefault();
+        this.retryModule(shell.getAttribute('data-module-key'));
+      });
+
+      // Safety mode changes affect module visibility (HIDE shells leave the workbench).
+      window.addEventListener('screen-safety-changed', () => {
+        this.emitAllVisibility();
       });
     }
 
@@ -584,6 +618,8 @@
       this.workbench.style.setProperty('--bottom-size', `${(ratios.bottom || 0) * 100}fr`);
       this.syncSplitterAria(ratios);
       this.syncEditChrome();
+      // Re-apply authoritative Screen Safety after DOM moves; never reimplement policy here.
+      this.reapplyScreenSafety();
     }
 
     /**
@@ -1270,6 +1306,7 @@
       this.focusLayer.hidden = false;
       this.clearAttention(key);
       this.syncEditChrome();
+      this.reapplyScreenSafety();
       this.emitAllVisibility();
       this.focusReturn?.focus();
       return true;
@@ -1291,6 +1328,7 @@
       this.workbench.removeAttribute('inert');
       if (this.focusLayer) this.focusLayer.hidden = true;
       this.syncEditChrome();
+      this.reapplyScreenSafety();
       this.emitAllVisibility();
       if (!options.silent) {
         const prefer = this._focusReturnEl;
@@ -1304,36 +1342,82 @@
       }
     }
 
+    /**
+     * Standardized module chrome states. Existing body content is retained on
+     * loading/error so failures stay recoverable without destroying runtime DOM.
+     */
     setModuleState(key, state, detail = {}) {
       const shell = document.querySelector(`[data-module-key="${key}"]`);
       if (!shell) return;
       const status = shell.querySelector('[data-module-status]');
       const error = shell.querySelector('[data-module-error]');
+      const body = shell.querySelector('[data-module-body]');
       const def = this.modules.get(key);
+      const loadingMsg = def?.states?.loadingMessage
+        || shell.getAttribute('data-loading-message')
+        || 'Loading…';
+      const emptyMsg = detail.message
+        || def?.states?.emptyMessage
+        || shell.getAttribute('data-empty-message')
+        || '';
+      const errorMsg = detail.message
+        || def?.states?.errorMessage
+        || shell.getAttribute('data-error-message')
+        || 'Refresh failed.';
+
+      if (typeof detail.retry === 'function') {
+        this._retryCallbacks.set(key, detail.retry);
+      } else if (state === 'ready' || state === 'empty') {
+        this._retryCallbacks.delete(key);
+      }
+
       if (status) {
         if (state === 'loading') {
           status.hidden = false;
-          status.textContent = def?.states?.loadingMessage || 'Loading…';
+          status.textContent = loadingMsg;
         } else if (state === 'empty') {
           status.hidden = false;
-          status.textContent = detail.message || def?.states?.emptyMessage || '';
+          status.textContent = emptyMsg;
         } else if (state === 'ready' || state === 'idle') {
+          status.hidden = true;
+          status.textContent = '';
+        } else if (state === 'error') {
+          // Keep any prior loading/empty status cleared; error chrome owns the alert.
           status.hidden = true;
           status.textContent = '';
         } else {
           status.hidden = true;
         }
       }
+
       if (error) {
         if (state === 'error') {
           error.hidden = false;
           const span = error.querySelector('span');
-          if (span) {
-            span.textContent = detail.message || def?.states?.errorMessage || 'Refresh failed.';
-          }
+          if (span) span.textContent = errorMsg;
         } else {
           error.hidden = true;
         }
+      }
+
+      // Ready/empty/error never wipe existing body content; only empty may leave it hidden
+      // when the body has no meaningful children (B2 modules may clear themselves).
+      if (body && (state === 'ready' || state === 'loading' || state === 'error')) {
+        body.hidden = false;
+      }
+    }
+
+    async retryModule(key) {
+      const cb = this._retryCallbacks.get(key);
+      this.setModuleState(key, 'loading');
+      if (typeof cb !== 'function') return;
+      try {
+        await cb();
+      } catch (error) {
+        this.setModuleState(key, 'error', {
+          message: error?.message,
+          retry: cb
+        });
       }
     }
 
@@ -1349,29 +1433,47 @@
       }
     }
 
+    /**
+     * A module is visible when its panel is active, its zone is not collapsed,
+     * Screen Safety is not hiding it (HIDE), and either the workbench or focus layer exposes it.
+     */
+    isModuleVisible(key) {
+      const shell = document.querySelector(`[data-module-key="${key}"]`);
+      if (!shell) return false;
+
+      if (document.body?.dataset?.screenSafety === 'TABLE_SAFE') {
+        const behavior = shell.getAttribute('data-table-safe-behavior');
+        if (behavior === 'HIDE') return false;
+      }
+
+      if (this.focusedModuleKey === key) {
+        return !!(this.focusMount && this.focusMount.contains(shell));
+      }
+
+      if (this.depot && this.depot.contains(shell)) return false;
+
+      const panel = shell.closest('[role="tabpanel"]');
+      const zone = shell.closest('[data-cockpit-zone]');
+      if (!panel || !zone) return false;
+      if (panel.hidden) return false;
+      if (zone.dataset.collapsed === 'true') return false;
+      return true;
+    }
+
     emitAllVisibility() {
       for (const key of this.modules.keys()) {
-        const shell = document.querySelector(`[data-module-key="${key}"]`);
-        let visible = false;
-        if (shell && this.focusedModuleKey === key) {
-          visible = true;
-        } else {
-          const panel = shell?.closest('[role="tabpanel"]');
-          const zone = shell?.closest('[data-cockpit-zone]');
-          visible = !!(
-            shell
-            && zone
-            && panel
-            && !panel.hidden
-            && zone.dataset.collapsed !== 'true'
-            && this.depot
-            && !this.depot.contains(shell)
-          );
-        }
         window.dispatchEvent(new CustomEvent('cockpit:module-visibility', {
-          detail: { moduleKey: key, visible }
+          detail: { moduleKey: key, visible: this.isModuleVisible(key) }
         }));
       }
+    }
+
+    reapplyScreenSafety() {
+      if (typeof window.setScreenSafety !== 'function') return;
+      window.setScreenSafety(
+        document.body?.dataset?.screenSafety || 'PRIVATE',
+        { animate: false }
+      );
     }
 
     enterEditMode(options = {}) {
