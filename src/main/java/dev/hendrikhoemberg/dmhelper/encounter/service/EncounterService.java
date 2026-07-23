@@ -995,28 +995,6 @@ public class EncounterService {
         return toDto(saved);
     }
 
-    public List<CombatantDto> autoRollInitiative(UUID encounterId) {
-        List<Combatant> combatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
-        for (Combatant c : combatants) {
-            if (!"PC".equals(c.getKind())) {
-                int dexMod = 0;
-                if (c.getStatBlock() != null) {
-                    dexMod = dexModifier(c.getStatBlock());
-                }
-                int roll = diceEngine.roll("d20").total();
-                c.setInitiative(roll + dexMod);
-                combatantRepo.save(c);
-                try {
-                    String payload = JSON_MAPPER.writeValueAsString(
-                            Map.of("initiative", c.getInitiative(), "roll", roll, "dexMod", dexMod));
-                    logEntry(encounterId, CombatLogEntry.EntryType.INITIATIVE_SET,
-                            c.getId().toString(), payload);
-                } catch (Exception e) { /* ignore */ }
-            }
-        }
-        resortCombatants(encounterId);
-        return getCombatants(encounterId);
-    }
 
     static int dexModifier(StatBlock sb) {
         return Math.floorDiv(sb.getDexScore() - 10, 2);
