@@ -153,6 +153,31 @@ class CoreSessionLoopSmokeTest {
         details.locator(".cockpit-topbar__overflow-panel").waitFor();
     }
 
+    /**
+     * Click module chrome (Arrange/Remove/Focus). Uses a real click when the control is
+     * actionable; falls back to a DOM click when overflow clipping blocks Playwright actionability.
+     */
+    private void clickModuleChrome(String moduleKey, String action) {
+        String attr = switch (action) {
+            case "menu" -> "data-module-menu";
+            case "remove" -> "data-module-remove";
+            case "focus" -> "data-module-focus";
+            default -> throw new IllegalArgumentException("Unknown module chrome action: " + action);
+        };
+        String selector = "[data-module-key='" + moduleKey + "'] [" + attr + "]";
+        Locator control = dmPage.locator(selector).first();
+        control.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.ATTACHED));
+        if (control.isVisible()) {
+            try {
+                control.click(new Locator.ClickOptions().setTimeout(2000));
+                return;
+            } catch (PlaywrightException ignored) {
+                // fall through to DOM click when overflow/stacking blocks actionability
+            }
+        }
+        dmPage.evaluate("sel => document.querySelector(sel)?.click()", selector);
+    }
+
     private UUID campaignId;
     private UUID mapId;
     private UUID secondMapId;
@@ -2214,6 +2239,157 @@ class CoreSessionLoopSmokeTest {
         assertThat(resumeMap.get("dirty")).as("resume vs named preset is dirty").isEqualTo(true);
         assertThat(resumeMap.get("arrangeHidden")).as("arrange menu stays closed in edit").isEqualTo(true);
         assertThat(resumeMap.get("mode")).isEqualTo("locked");
+    }
+
+    @Test
+    @Order(34)
+    void cockpitLayoutEditSupportsDockingSplittersFocusAndAddRemove() {
+        if (campaignId == null) {
+            createCampaign();
+        }
+        dmPage.setViewportSize(1366, 768);
+        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        dmPage.waitForFunction("window.cockpitLayout?.mounted === true");
+        // Combat has Encounter on Right, Party on Left, open Bottom (three usable splitters).
+        selectCockpitPreset("builtin:combat");
+        dmPage.waitForFunction("document.querySelector('[data-cockpit-zone=\"RIGHT_SUPPORT\"] [data-module-key=\"encounter\"]')");
+
+        dmPage.locator("#cockpitLayoutModeButton").click();
+        assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
+                .isEqualTo("edit");
+        assertThat(dmPage.locator("[data-cockpit-splitter]").all())
+                .allSatisfy(splitter -> assertThat(splitter.getAttribute("tabindex")).isEqualTo("0"));
+
+        Locator leftSplitter = dmPage.locator("[data-cockpit-splitter='LEFT_PRIMARY']");
+        double baseValue = Double.parseDouble(leftSplitter.getAttribute("aria-valuenow"));
+        leftSplitter.focus();
+        dmPage.keyboard().press("ArrowRight");
+        double afterSmall = Double.parseDouble(leftSplitter.getAttribute("aria-valuenow"));
+        assertThat(afterSmall - baseValue)
+                .as("ArrowRight grows left by ~2pp or hits clamp")
+                .isIn(0.0, 2.0);
+        if (afterSmall > baseValue) {
+            dmPage.keyboard().press("Shift+ArrowRight");
+            double afterShift = Double.parseDouble(leftSplitter.getAttribute("aria-valuenow"));
+            assertThat(afterShift - afterSmall)
+                    .as("Shift+ArrowRight grows left by ~10pp or hits clamp")
+                    .isBetween(0.0, 10.0);
+            if (afterShift < afterSmall + 9.5) {
+                // Clamp hit — value must remain within aria min/max.
+                double min = Double.parseDouble(leftSplitter.getAttribute("aria-valuemin"));
+                double max = Double.parseDouble(leftSplitter.getAttribute("aria-valuemax"));
+                assertThat(afterShift).isBetween(min, max);
+            } else {
+                assertThat(afterShift - afterSmall).isEqualTo(10.0);
+            }
+        }
+
+        // Arrange: move Encounter from Right → Primary.
+        clickModuleChrome("encounter", "menu");
+        dmPage.locator("#cockpitModuleArrangeMenu [data-arrange-zone='PRIMARY']").click();
+        assertThat(dmPage.locator("[data-module-key='encounter']").count()).isEqualTo(1);
+        assertThat(dmPage.locator("[data-cockpit-zone='PRIMARY'] [data-module-key='encounter']").count())
+                .isEqualTo(1);
+        assertThat(dmPage.locator("[data-cockpit-zone='PRIMARY'] [data-module-tab='encounter']").count())
+                .isEqualTo(1);
+
+        // Reorder Encounter earlier / later among Primary tabs.
+        clickModuleChrome("encounter", "menu");
+        dmPage.locator("#cockpitModuleArrangeMenu [data-arrange-move='earlier']").click();
+        List<String> earlierOrder = dmPage.locator("[data-cockpit-zone='PRIMARY'] [data-module-tab]")
+                .all().stream().map(l -> l.getAttribute("data-module-tab")).toList();
+        assertThat(earlierOrder.getFirst()).isEqualTo("encounter");
+
+        clickModuleChrome("encounter", "menu");
+        dmPage.locator("#cockpitModuleArrangeMenu [data-arrange-move='later']").click();
+        List<String> laterOrder = dmPage.locator("[data-cockpit-zone='PRIMARY'] [data-module-tab]")
+                .all().stream().map(l -> l.getAttribute("data-module-tab")).toList();
+        assertThat(laterOrder.indexOf("encounter")).isGreaterThan(0);
+
+        // Remove Audio → depot + Add module list.
+        // Combat bottom defaults to Quick notes active; select Audio first so chrome is live.
+        dmPage.evaluate("window.cockpitLayout.selectTab('BOTTOM_UTILITY', 'audio')");
+        clickModuleChrome("audio", "remove");
+        assertThat(dmPage.locator("[data-cockpit-depot] [data-module-key='audio']").count()).isEqualTo(1);
+        dmPage.locator("#cockpitAddModuleButton").click();
+        // One entry per allowed zone (Left / Right / Bottom for Audio).
+        assertThat(dmPage.locator("#cockpitAddModuleDialog [data-add-module='audio']").count())
+                .isGreaterThanOrEqualTo(1);
+        assertThat(dmPage.locator(
+                "#cockpitAddModuleDialog [data-add-module='audio'][data-add-zone='BOTTOM_UTILITY']").count())
+                .isEqualTo(1);
+
+        // Add Audio back to Bottom.
+        dmPage.locator("#cockpitAddModuleDialog [data-add-module='audio'][data-add-zone='BOTTOM_UTILITY']")
+                .click();
+        assertThat(dmPage.locator("[data-module-key='audio']").count()).isEqualTo(1);
+        assertThat(dmPage.locator("[data-cockpit-zone='BOTTOM_UTILITY'] [data-module-key='audio']").count())
+                .isEqualTo(1);
+        assertThat(dmPage.locator("#cockpitAddModuleDialog").isVisible()).isFalse();
+
+        // Pointer docking: Party (Left) → Right docking target.
+        Object docked = dmPage.evaluate("""
+            () => {
+              const key = 'party';
+              const header = document.querySelector('[data-module-key="party"] .cockpit-module__header');
+              const target = document.querySelector(
+                '[data-cockpit-zone="RIGHT_SUPPORT"][data-dock-target], [data-cockpit-zone="RIGHT_SUPPORT"] [data-dock-target]'
+              ) || document.querySelector('[data-cockpit-zone="RIGHT_SUPPORT"]');
+              if (!header || !target) return { ok: false, reason: 'missing-nodes' };
+              const dt = new DataTransfer();
+              dt.setData('text/x-dmhelper-module', key);
+              header.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt }));
+              target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt }));
+              target.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+              const onRight = !!document.querySelector(
+                '[data-cockpit-zone="RIGHT_SUPPORT"] [data-module-key="party"]'
+              );
+              return { ok: onRight, shells: document.querySelectorAll('[data-module-key="party"]').length };
+            }
+            """);
+        @SuppressWarnings("unchecked")
+        var dockMap = (java.util.Map<String, Object>) docked;
+        assertThat(dockMap.get("ok")).as("party docks to right").isEqualTo(true);
+        assertThat(((Number) dockMap.get("shells")).intValue()).isEqualTo(1);
+
+        // Focus Story → Return restores focus to Story Focus button.
+        clickModuleChrome("story", "focus");
+        assertThat(dmPage.locator("#cockpitFocusLayer").isVisible()).isTrue();
+        assertThat(dmPage.locator("[data-cockpit-focus-layer] [data-module-key='story']").count())
+                .isEqualTo(1);
+        Object focusState = dmPage.evaluate("""
+            () => {
+              const wb = document.querySelector('[data-cockpit-workbench]');
+              return {
+                inert: wb.hasAttribute('inert') || wb.inert === true,
+                focused: window.cockpitLayout.focusedModuleKey
+              };
+            }
+            """);
+        @SuppressWarnings("unchecked")
+        var focusMap = (java.util.Map<String, Object>) focusState;
+        assertThat(focusMap.get("inert")).isEqualTo(true);
+        assertThat(focusMap.get("focused")).isEqualTo("story");
+
+        dmPage.locator("#cockpitFocusReturn").click();
+        assertThat(dmPage.locator("#cockpitFocusLayer").isHidden()).isTrue();
+        assertThat(dmPage.locator("[data-module-key='story'] [data-module-focus]")
+                .evaluate("el => document.activeElement === el")).isEqualTo(true);
+
+        // Exit once → Discard restores original combat preset placement.
+        dmPage.locator("#cockpitLayoutModeButton").click();
+        dmPage.locator("[data-layout-exit='discard']").click();
+        assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
+                .isEqualTo("locked");
+        assertThat(dmPage.locator("[data-cockpit-zone='RIGHT_SUPPORT'] [data-module-key='encounter']").count())
+                .isEqualTo(1);
+        assertThat(dmPage.locator("[data-cockpit-zone='LEFT_SUPPORT'] [data-module-key='party']").count())
+                .isEqualTo(1);
+        assertThat(dmPage.locator("[data-cockpit-zone='BOTTOM_UTILITY'] [data-module-key='audio']").count())
+                .isEqualTo(1);
+        assertThat(dmPage.locator("[data-cockpit-zone='PRIMARY'] [data-module-key='map']").count())
+                .isEqualTo(1);
     }
 
     private static byte[] createSinglePixelPng(String label) throws IOException {

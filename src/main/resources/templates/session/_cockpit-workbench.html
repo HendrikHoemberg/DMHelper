@@ -16,6 +16,7 @@
   <!-- LEFT_SUPPORT: session-plan -->
   <div class="cockpit-zone cockpit-zone--left"
        data-cockpit-zone="LEFT_SUPPORT"
+       data-dock-target="LEFT_SUPPORT"
        data-collapsed="false">
     <div class="cockpit-zone__tabs" role="tablist" aria-label="Left support modules">
       <button type="button" class="cockpit-zone__tab" role="tab"
@@ -45,6 +46,7 @@
   <!-- PRIMARY: story -->
   <div class="cockpit-zone cockpit-zone--primary"
        data-cockpit-zone="PRIMARY"
+       data-dock-target="PRIMARY"
        data-collapsed="false">
     <div class="cockpit-zone__tabs" role="tablist" aria-label="Primary modules">
       <button type="button" class="cockpit-zone__tab" role="tab"
@@ -74,6 +76,7 @@
   <!-- RIGHT_SUPPORT: party (active), quick-notes (inactive) -->
   <div class="cockpit-zone cockpit-zone--right"
        data-cockpit-zone="RIGHT_SUPPORT"
+       data-dock-target="RIGHT_SUPPORT"
        data-collapsed="false">
     <div class="cockpit-zone__tabs" role="tablist" aria-label="Right support modules">
       <button type="button" class="cockpit-zone__tab" role="tab"
@@ -119,6 +122,7 @@
   <!-- BOTTOM_UTILITY: audio (active), session-log (inactive), collapsed -->
   <div class="cockpit-zone cockpit-zone--bottom"
        data-cockpit-zone="BOTTOM_UTILITY"
+       data-dock-target="BOTTOM_UTILITY"
        data-collapsed="true">
     <div class="cockpit-zone__tabs" role="tablist" aria-label="Bottom utility modules">
       <button type="button" class="cockpit-zone__tab" role="tab"
@@ -198,10 +202,10 @@
 
 <dialog id="cockpitAddModuleDialog" class="cockpit-dialog" aria-labelledby="cockpitAddModuleTitle">
   <h2 id="cockpitAddModuleTitle">Add module</h2>
-  <p>Choose a module that is not already in the workspace.</p>
+  <p>Choose a module that is not already in the workspace, then pick an allowed zone.</p>
   <ul data-add-module-list></ul>
   <form method="dialog">
-    <button type="submit" class="btn btn-ghost">Close</button>
+    <button type="submit" class="btn btn-ghost" id="cockpitAddModuleClose">Close</button>
   </form>
 </dialog>
 
