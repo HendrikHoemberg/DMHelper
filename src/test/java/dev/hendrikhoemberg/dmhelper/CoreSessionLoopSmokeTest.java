@@ -2165,6 +2165,10 @@ class CoreSessionLoopSmokeTest {
     @Test
     @Order(33)
     void cockpitLayoutStartsLockedAndSwitchesOnlyOnExplicitPresetChoice() {
+        // Self-sufficient when run alone (campaignId is normally set by @Order(1)).
+        if (campaignId == null) {
+            createCampaign();
+        }
         dmPage.setViewportSize(1366, 768);
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
@@ -2186,6 +2190,30 @@ class CoreSessionLoopSmokeTest {
         assertThat((System.nanoTime() - started) / 1_000_000).isLessThan(1000);
         assertThat(dmPage.locator("[data-cockpit-zone='RIGHT_SUPPORT'] [data-module-key='encounter']").count())
                 .isEqualTo(1);
+
+        // Resume draft: dirty baseline is the named preset, not the draft itself.
+        Object resumeDirty = dmPage.evaluate("""
+            () => {
+              const c = window.cockpitLayout;
+              const presetKey = c.currentPresetKey;
+              const named = c.presets.get(presetKey);
+              const draftLayout = c.clone(named.layout);
+              draftLayout.ratios = Object.assign({}, draftLayout.ratios, {
+                left: 0.12, primary: 0.64, right: 0.24
+              });
+              c.resumeDraft({ presetKey, layout: draftLayout });
+              const dirty = c.isDirty();
+              const arrangeHidden = !!document.getElementById('cockpitModuleArrangeMenu')?.hidden;
+              c.discardEdit();
+              c.clearStorage('edit-draft');
+              return { dirty, arrangeHidden, mode: c.workbench.dataset.layoutMode };
+            }
+            """);
+        @SuppressWarnings("unchecked")
+        var resumeMap = (java.util.Map<String, Object>) resumeDirty;
+        assertThat(resumeMap.get("dirty")).as("resume vs named preset is dirty").isEqualTo(true);
+        assertThat(resumeMap.get("arrangeHidden")).as("arrange menu stays closed in edit").isEqualTo(true);
+        assertThat(resumeMap.get("mode")).isEqualTo("locked");
     }
 
     private static byte[] createSinglePixelPng(String label) throws IOException {

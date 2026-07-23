@@ -37,6 +37,7 @@
       this.metrics = { firstMeaningfulMs: null, lastApplyMs: null };
       this.mounted = false;
       this._pendingNameResolve = null;
+      this._nameDialogResult = undefined;
       this._draftPromptShown = false;
     }
 
@@ -155,21 +156,18 @@
             const action = btn.getAttribute('data-preset-name');
             if (action === 'confirm') {
               const value = (this.nameInput?.value || '').trim();
-              this.nameDialog.close();
-              if (this._pendingNameResolve) {
-                const resolve = this._pendingNameResolve;
-                this._pendingNameResolve = null;
-                resolve(value || null);
-              }
+              this._nameDialogResult = value || null;
             } else {
-              this.nameDialog.close();
-              if (this._pendingNameResolve) {
-                const resolve = this._pendingNameResolve;
-                this._pendingNameResolve = null;
-                resolve(null);
-              }
+              this._nameDialogResult = null;
             }
+            this.nameDialog.close();
           });
+        });
+        this.nameDialog.addEventListener('close', () => {
+          this.resolveNamePrompt(
+            this._nameDialogResult === undefined ? null : this._nameDialogResult
+          );
+          this._nameDialogResult = undefined;
         });
       }
     }
@@ -459,11 +457,17 @@
       }
     }
 
-    enterEditMode() {
+    enterEditMode(options = {}) {
       if (!this.current) return;
-      this.editSnapshot = this.clone(this.current);
+      if (!options.preserveSnapshot) {
+        this.editSnapshot = this.clone(this.current);
+      }
       this.workbench.dataset.layoutMode = 'edit';
       document.querySelectorAll('[data-layout-edit-only]').forEach((el) => {
+        // Ephemeral menus stay closed until explicitly opened in edit mode.
+        if (el.id === 'cockpitModuleArrangeMenu' || el.getAttribute('role') === 'menu') {
+          return;
+        }
         el.hidden = false;
         if ('disabled' in el) {
           el.disabled = false;
@@ -589,14 +593,7 @@
       resume.className = 'btn btn-ghost';
       resume.textContent = 'Resume edit';
       resume.addEventListener('click', () => {
-        this.current = this.clone(draft.layout);
-        if (draft.presetKey && this.presets.has(draft.presetKey)) {
-          this.currentPresetKey = draft.presetKey;
-          if (this.picker) this.picker.value = draft.presetKey;
-        }
-        this.renderLayout();
-        this.emitAllVisibility();
-        this.enterEditMode();
+        this.resumeDraft(draft);
         this.clearNotice();
       });
       const discard = document.createElement('button');
@@ -608,6 +605,35 @@
         this.clearNotice();
       });
       this.notice.append(text, resume, document.createTextNode(' '), discard);
+    }
+
+    /**
+     * Resume an unfinished edit-draft.
+     * Baseline (editSnapshot) is the named preset layout so isDirty() reflects
+     * draft vs preset; working layout (current) comes from the draft.
+     */
+    resumeDraft(draft) {
+      if (!draft || !draft.layout) return;
+      let presetKey = null;
+      if (draft.presetKey && this.presets.has(draft.presetKey)) {
+        presetKey = draft.presetKey;
+      } else if (this.presets.has(this.currentPresetKey)) {
+        presetKey = this.currentPresetKey;
+      } else {
+        presetKey = DEFAULT_KEY;
+      }
+
+      this.currentPresetKey = presetKey;
+      if (this.picker) this.picker.value = presetKey;
+
+      const named = this.presets.get(presetKey);
+      // Dirty baseline: named preset layout (not the draft).
+      this.editSnapshot = this.clone(named?.layout || draft.layout);
+      // Working layout: draft contents.
+      this.current = this.clone(draft.layout);
+      this.renderLayout();
+      this.emitAllVisibility();
+      this.enterEditMode({ preserveSnapshot: true });
     }
 
     async duplicatePreset() {
@@ -719,12 +745,22 @@
       this.syncPresetActionState();
     }
 
+    resolveNamePrompt(value) {
+      if (!this._pendingNameResolve) return;
+      const resolve = this._pendingNameResolve;
+      this._pendingNameResolve = null;
+      resolve(value);
+    }
+
     promptName(initial) {
       return new Promise((resolve) => {
         if (!this.nameDialog || !this.nameInput) {
           resolve(window.prompt('Layout name', initial || '') || null);
           return;
         }
+        // Avoid stacking resolvers if a previous prompt is still open.
+        this.resolveNamePrompt(null);
+        this._nameDialogResult = undefined;
         this._pendingNameResolve = resolve;
         this.nameInput.value = initial || '';
         if (typeof this.nameDialog.showModal === 'function') {
@@ -732,6 +768,7 @@
           this.nameInput.focus();
           this.nameInput.select();
         } else {
+          this._pendingNameResolve = null;
           resolve(window.prompt('Layout name', initial || '') || null);
         }
       });
