@@ -2,6 +2,9 @@ package dev.hendrikhoemberg.dmhelper.session.web;
 
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneEncounterSeedService;
+import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleDefinition;
+import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleRegistry;
+import dev.hendrikhoemberg.dmhelper.session.service.CockpitLayoutPresetService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -12,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Controller
@@ -20,16 +25,22 @@ public class SessionController {
     private final SessionWorkspaceService workspaces;
     private final AdventureService adventures;
     private final SceneEncounterSeedService encounterSeeder;
+    private final CockpitModuleRegistry cockpitModules;
+    private final CockpitLayoutPresetService cockpitPresets;
 
     @Value("${dmhelper.audio.test-provider:false}")
     private boolean testAudioProvider;
 
     public SessionController(SessionWorkspaceService workspaces,
                              AdventureService adventures,
-                             SceneEncounterSeedService encounterSeeder) {
+                             SceneEncounterSeedService encounterSeeder,
+                             CockpitModuleRegistry cockpitModules,
+                             CockpitLayoutPresetService cockpitPresets) {
         this.workspaces = workspaces;
         this.adventures = adventures;
         this.encounterSeeder = encounterSeeder;
+        this.cockpitModules = cockpitModules;
+        this.cockpitPresets = cockpitPresets;
     }
 
     @GetMapping("/campaigns/{campaignId}/session")
@@ -54,6 +65,10 @@ public class SessionController {
                 dev.hendrikhoemberg.dmhelper.party.data.PartyMember::getCharacterName,
                 String.CASE_INSENSITIVE_ORDER));
         model.addAttribute("attendanceMembers", attendanceMembers);
+        model.addAttribute("cockpitModules", cockpitModules.all());
+        model.addAttribute("cockpitModuleByKey", moduleByKey(cockpitModules));
+        model.addAttribute("cockpitPresets", cockpitPresets.list());
+        model.addAttribute("cockpitDefaultPresetKey", "builtin:exploration");
         addSeedEligibility(campaignId, workspace, model);
         return "session/cockpit";
     }
@@ -83,5 +98,13 @@ public class SessionController {
                 && workspace.currentScene().getEncounter() == null
                 && encounterSeeder.canSeed(campaignId, workspace.currentScene().getId());
         model.addAttribute("canSeedEncounter", eligible);
+    }
+
+    private static Map<String, CockpitModuleDefinition> moduleByKey(CockpitModuleRegistry registry) {
+        Map<String, CockpitModuleDefinition> byKey = new LinkedHashMap<>();
+        for (CockpitModuleDefinition definition : registry.all()) {
+            byKey.put(definition.key(), definition);
+        }
+        return Map.copyOf(byKey);
     }
 }

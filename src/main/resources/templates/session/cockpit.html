@@ -10,6 +10,7 @@
     <link rel="stylesheet" th:href="@{/css/components.css}">
     <link rel="stylesheet" th:href="@{/css/book.css}">
     <link rel="stylesheet" th:href="@{/css/cockpit.css}">
+    <link rel="stylesheet" th:href="@{/css/cockpit-layout.css}">
     <link rel="stylesheet" th:href="@{/css/player-projection.css}">
     <script th:src="@{/vendor/htmx.min.js}"></script>
     <script th:src="@{/js/dm-request.js}"></script>
@@ -41,27 +42,28 @@
     <h1 style="font-family: var(--font-display); font-size: var(--text-lg); margin: 0;" th:text="${workspace.campaign.name}">Campaign</h1>
     <span class="badge" x-text="sessionStatus" th:attr="data-session-status=${workspace.session.status}">IDLE</span>
     <span class="u-nowrap" th:text="${@calendarService.formatDate(campaignId, workspace.currentDate)}">12 July 1492</span>
+    <span class="badge" th:attr="data-presentation-mode=${workspace.session.presentationMode}"
+          :data-presentation-mode="presentationMode"
+          x-text="presentationMode === 'CURTAIN' ? 'Table: Curtain' : (presentationMode === 'MAP' ? 'Table: Map' : 'Table: Handout')">
+      Table: Curtain
+    </span>
+    <label class="u-nowrap" for="cockpitPresetPicker">
+      <span class="sr-only">Layout preset</span>
+      <select id="cockpitPresetPicker" class="form-input" disabled aria-disabled="true"
+              th:attr="data-default-preset=${cockpitDefaultPresetKey}">
+        <option th:each="preset : ${cockpitPresets}"
+                th:value="${preset.key}"
+                th:text="${preset.name}"
+                th:selected="${preset.key == cockpitDefaultPresetKey}">Exploration</option>
+      </select>
+    </label>
+    <button type="button" id="cockpitLayoutModeButton" class="btn btn-ghost"
+            disabled aria-disabled="true">Edit layout</button>
+    <button type="button" id="cockpitAddModuleButton" class="btn btn-ghost"
+            data-layout-edit-only hidden disabled aria-disabled="true">Add module</button>
     <span style="flex: 1"></span>
     <button class="btn btn-ghost" @click="openSearch()">Search</button>
     <button class="btn btn-ghost" @click="openDice()">Dice</button>
-    <a class="btn btn-ghost" target="_blank"
-       th:href="@{/campaigns/{id}/handouts(id=${campaignId})}">Handouts</a>
-    <select id="cockpitHandoutPicker" class="form-input" aria-label="Present handout"
-            :disabled="sessionStatus === 'IDLE'"
-            @change="presentHandout($event.target.value); $event.target.value = ''">
-      <option value="">Preview handout…</option>
-      <option th:each="handout : ${workspace.handouts}"
-              th:value="${handout.id}"
-              th:text="|${handout.title} — ${handout.safetyClassification}|">Handout</option>
-    </select>
-    <select id="cockpitTablePicker" class="form-input" aria-label="Roll linked table"
-            @change="openLinkedTable($event.target.value, $event.target.options[$event.target.selectedIndex]?.text || ''); $event.target.value = ''">
-      <option value="">Roll linked table…</option>
-      <option th:each="t : ${workspace.linkedTables}" th:value="${t.tableId}" th:text="${t.name}">Table</option>
-    </select>
-    <a class="btn btn-ghost" target="_blank" href="/library?tab=rules">Rules</a>
-    <a class="btn btn-ghost" target="_blank"
-       th:href="@{/campaigns/{id}/calendar(id=${campaignId})}">Calendar</a>
     <!-- The cockpit renders its own topbar rather than fragments/navbar, so it needs its own
          Screen Safety control: this is the screen facing the table when the laptop gets turned. -->
     <label class="switch-control" title="Screen Safety toggles table-safe projection">
@@ -71,151 +73,39 @@
       <span class="switch-label">Private</span>
     </label>
     <button class="btn btn-ghost" x-ref="sessionButton" @click="openLifecycle()">Session</button>
+    <details class="cockpit-topbar__overflow">
+      <summary class="btn btn-ghost">More</summary>
+      <div class="cockpit-topbar__overflow-panel">
+        <a class="btn btn-ghost" target="_blank"
+           th:href="@{/campaigns/{id}/handouts(id=${campaignId})}">Handouts</a>
+        <select id="cockpitHandoutPicker" class="form-input" aria-label="Present handout"
+                :disabled="sessionStatus === 'IDLE'"
+                @change="presentHandout($event.target.value); $event.target.value = ''">
+          <option value="">Preview handout…</option>
+          <option th:each="handout : ${workspace.handouts}"
+                  th:value="${handout.id}"
+                  th:text="|${handout.title} — ${handout.safetyClassification}|">Handout</option>
+        </select>
+        <select id="cockpitTablePicker" class="form-input" aria-label="Roll linked table"
+                @change="openLinkedTable($event.target.value, $event.target.options[$event.target.selectedIndex]?.text || ''); $event.target.value = ''">
+          <option value="">Roll linked table…</option>
+          <option th:each="t : ${workspace.linkedTables}" th:value="${t.tableId}" th:text="${t.name}">Table</option>
+        </select>
+        <a class="btn btn-ghost" target="_blank" href="/library?tab=rules">Rules</a>
+        <a class="btn btn-ghost" target="_blank"
+           th:href="@{/campaigns/{id}/calendar(id=${campaignId})}">Calendar</a>
+      </div>
+    </details>
   </header>
   <th:block th:replace="~{rollable-table/_roll-panel :: roll-panel(tableId=${null}, compact=${true})}"></th:block>
-  <section class="cockpit-grid">
-    <aside class="cockpit-story" data-runtime-module="story" data-table-safe-behavior="FILTER" aria-label="Story rail"
-           th:insert="~{session/_story-rail :: story(workspace=${workspace})}"></aside>
-    <section class="cockpit-table" data-runtime-module="map" data-table-safe-behavior="FILTER" aria-label="Table surface"
-             th:attr="data-selection-source=${workspace.selectionSource}">
-      <div class="battle-toolbar" data-screen-sensitive aria-label="Battle map controls">
-        <div class="tool-group map-switcher">
-          <label for="cockpitMapPicker" class="sr-only">Workspace map</label>
-          <select id="cockpitMapPicker" aria-label="Workspace map" :value="currentMapId"
-                  @change="switchMap($event.target.value)">
-            <option value="" :disabled="sessionStatus === 'IDLE' && !!currentMapId">No map</option>
-            <template x-for="m in maps" :key="m.id">
-              <option :value="m.id" x-text="m.name"></option>
-            </template>
-          </select>
-        </div>
-        <div class="tool-group">
-          <button class="tool-btn" :class="{ active: tool === 'select' }"
-                  @click="setTool('select')" :disabled="!currentMapId">Select</button>
-          <button class="tool-btn" :class="{ active: tool === 'measure' }"
-                  @click="setTool('measure')" :disabled="!currentMapId">Measure</button>
-          <button class="tool-btn" @click="addToken()" :disabled="!currentMapId">+ Token</button>
-          <button class="tool-btn" @click="addParty()" :disabled="!currentMapId">Add Party</button>
-        </div>
-        <div class="tool-group">
-          <button class="tool-btn" :class="{ active: movementMode === 'GRID' }"
-                  @click="toggleMovementMode()" :disabled="!currentMapId"
-                  x-text="movementMode === 'GRID' ? 'Grid movement' : 'Free movement'">Grid movement</button>
-          <button class="tool-btn" :class="{ active: showGrid }"
-                  @click="toggleShowGrid()" :disabled="!currentMapId">Grid lines</button>
-        </div>
-        <div class="tool-group table-presentation-controls">
-          <span class="badge" th:attr="data-presentation-mode=${workspace.session.presentationMode}"
-                :data-presentation-mode="presentationMode"
-                x-text="presentationMode === 'CURTAIN' ? 'Table: Curtain' : (presentationMode === 'MAP' ? 'Table: Map' : 'Table: Handout')">
-            Table: Curtain
-          </span>
-          <button class="tool-btn" :class="{ active: presentingMap }" @click="sendToTable()"
-                  :disabled="sessionStatus === 'IDLE' || !currentMapId">Present current map</button>
-          <button class="tool-btn" @click="curtain()" :disabled="sessionStatus === 'IDLE'">Curtain</button>
-          <a class="tool-btn" href="/player" target="_blank">Preview table</a>
-        </div>
-      </div>
-      <div class="battle-body">
-        <div th:if="${workspace.workspaceMap != null}" id="battleCanvasWrap"></div>
-        <th:block th:unless="${workspace.workspaceMap != null}">
-          <th:block th:replace="~{session/_empty-table :: empty(workspace=${workspace})}"></th:block>
-        </th:block>
-        <aside class="battle-sidebar" data-screen-sensitive th:if="${workspace.workspaceMap != null}" aria-label="Map tokens">
-          <section class="sidebar-section">
-            <h3>From Library</h3>
-            <div class="statblock-search">
-              <input type="search" placeholder="Search statblocks…" aria-label="Search statblocks"
-                     x-model="sbSearch" @input="searchStatblocks()">
-              <div class="sb-results" x-show="sbResults.length > 0 && sbSearch.length > 0" x-cloak>
-                <template x-for="sb in sbResults" :key="sb.id">
-                  <button type="button" class="sb-result-item" @click="addStatblockToken(sb.id)">
-                    <strong x-text="sb.name"></strong>
-                    <span class="sb-cr" x-text="'CR ' + sb.cr"></span>
-                  </button>
-                </template>
-              </div>
-            </div>
-          </section>
-          <section class="sidebar-section threat-pin-section" data-screen-sensitive data-threat-pins>
-            <h3>Threat pins</h3>
-            <p class="text-muted u-text-xs">DM-only. Click a diamond marker on the map to open the card.</p>
-            <label class="u-block u-text-sm">Type
-              <select x-model="threatPinKind" class="u-w-full">
-                <option value="TRAP">Trap</option>
-                <option value="HAZARD">Hazard</option>
-              </select>
-            </label>
-            <label class="u-block u-text-sm">Search
-              <input type="search" x-model="threatPinQuery" @input.debounce.300ms="searchThreatPins()"
-                     placeholder="Find trap/hazard…" class="u-w-full">
-            </label>
-            <div x-show="threatPinResults.length" x-cloak>
-              <template x-for="item in threatPinResults" :key="item.id">
-                <button type="button" class="btn btn-ghost u-w-full" style="justify-content:flex-start"
-                        @click="selectThreatForPin(item)" x-text="item.name"></button>
-              </template>
-            </div>
-            <label class="u-block u-text-sm">Label <input type="text" x-model="threatPinLabel" class="u-w-full"></label>
-            <div class="u-flex u-gap-sm">
-              <label class="u-text-sm">X <input type="number" x-model.number="threatPinX" class="u-w-full"></label>
-              <label class="u-text-sm">Y <input type="number" x-model.number="threatPinY" class="u-w-full"></label>
-            </div>
-            <button type="button" class="btn btn-primary u-w-full" style="margin-top:4px"
-                    @click="createThreatPin()" :disabled="!selectedThreatForPin">Create pin</button>
-            <template x-for="pin in threatPins" :key="pin.id">
-              <div class="u-flex u-items-center u-gap-xs" style="font-size:var(--text-sm);margin-top:4px">
-                <span style="flex:1" x-text="pin.title || pin.key"></span>
-                <button type="button" class="btn btn-ghost" @click="deleteThreatPin(pin.id)">×</button>
-              </div>
-            </template>
-          </section>
-          <section class="sidebar-section">
-            <h3>Tokens (<span x-text="tokens.length">0</span>)</h3>
-            <template x-for="t in tokens" :key="t.id">
-              <div class="token-list-item" @click="focusToken(t.id)">
-                <span class="token-swatch" :style="{ background: t.color }"></span>
-                <span :class="{ 'token-dead': t.dead }" x-text="t.name" style="flex: 1;"></span>
-                <span x-show="t.currentHp != null && t.maxHp != null"
-                      x-text="t.currentHp + '/' + t.maxHp"></span>
-                <button type="button" class="btn btn-ghost" title="Duplicate token"
-                        @click.stop="duplicateToken(t.id)">Copy</button>
-                <button type="button" class="btn btn-ghost" title="Delete token"
-                        @click.stop="deleteToken(t.id)">Delete</button>
-              </div>
-            </template>
-          </section>
-          <template x-if="selectedToken">
-            <section class="sidebar-section">
-              <h3>Selected token</h3>
-              <label>Name <input type="text" x-model="selectedToken.name" @change="updateToken()"></label>
-              <label>Current HP <input type="number" class="hp-input"
-                                       x-model="selectedToken.currentHp" @change="updateToken()"></label>
-              <label>Max HP <input type="number" class="hp-input"
-                                   x-model="selectedToken.maxHp" @change="updateToken()"></label>
-              <label><input type="checkbox" x-model="selectedToken.hidden" @change="updateToken()"> Hidden</label>
-              <label><input type="checkbox" x-model="selectedToken.dead" @change="toggleDead()"> Dead</label>
-            </section>
-          </template>
-        </aside>
-      </div>
-      <div class="battle-statusbar" aria-live="polite">
-        <span id="battleStatusMessage">Ready</span>
-        <span id="battleCursorInfo"></span>
-        <span id="battleSaveIndicator" class="save-indicator save-saved">Saved</span>
-      </div>
-    </section>
-    <aside class="cockpit-encounter" data-runtime-module="encounter" data-table-safe-behavior="HIDE" aria-label="Encounter rail"
-           th:insert="~{session/_encounter-rail :: encounters(workspace=${workspace})}"></aside>
-  </section>
-  <section class="cockpit-plan" data-runtime-module="session-plan" data-table-safe-behavior="HIDE" aria-label="Session plan"
-           th:insert="~{session/_session-plan :: plan(workspace=${workspace})}"></section>
+
   <th:block th:replace="~{audio/_cockpit-widget :: cockpit-widget-config(campaignId=${campaignId}, sessionId=${workspace.session.id})}"></th:block>
-  <section class="cockpit-audio-section" aria-label="Audio playback"
-           th:insert="~{audio/_cockpit-widget :: cockpit-widget(campaignId=${campaignId}, sessionId=${workspace.session.id})}"></section>
-  <footer class="cockpit-partybar" data-runtime-module="party" data-table-safe-behavior="FILTER">
-    <th:block th:replace="~{party/_summary-bar :: summary-bar(members=${workspace.partyMembers}, oob=null)}"></th:block>
-  </footer>
+
+  <th:block th:replace="~{session/_cockpit-workbench :: workbench(
+      workspace=${workspace},
+      campaignId=${campaignId},
+      cockpitModuleByKey=${cockpitModuleByKey})}"></th:block>
+
   <th:block th:replace="~{session/_lifecycle-dialog :: lifecycle-dialog}"></th:block>
   <th:block th:replace="~{session/_presentation-preview}"></th:block>
 </main>
@@ -237,6 +127,12 @@ window.sessionCockpitConfig = {
     presentedMapId: /*[[${workspace.session.presentedMap != null ? workspace.session.presentedMap.id : null}]]*/ null,
     attendeeIds: /*[[${attendeeIds}]]*/ [],
     draftBody: /*[[${workspace.session.draftBody}]]*/ null
+};
+window.cockpitLayoutConfig = {
+    campaignId: /*[[${campaignId}]]*/ '',
+    modules: /*[[${cockpitModules}]]*/ [],
+    presets: /*[[${cockpitPresets}]]*/ [],
+    defaultPresetKey: /*[[${cockpitDefaultPresetKey}]]*/ 'builtin:exploration'
 };
 // Screen Safety: mirrors fragments/navbar.html, which the cockpit does not include.
 (function () {

@@ -33,7 +33,7 @@ public final class CockpitModuleRegistry {
                 module("story", "Story", "session/_story-rail :: story", 240, 220,
                         Set.of(CockpitZone.PRIMARY, CockpitZone.LEFT_SUPPORT), true, true,
                         CockpitScreenSafetyBehavior.FILTER, "Select a scene to begin."),
-                module("map", "Map", "session/cockpit :: map-module", 420, 300,
+                module("map", "Map", "session/_map-module :: map-module", 420, 300,
                         Set.of(CockpitZone.PRIMARY), false, true,
                         CockpitScreenSafetyBehavior.FILTER, "Choose or create a workspace map."),
                 module("encounter", "Encounter", "session/_encounter-rail :: encounters", 280, 260,

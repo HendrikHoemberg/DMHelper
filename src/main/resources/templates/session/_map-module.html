@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="map-module(workspace)">
+    <section class="cockpit-table" aria-label="Table surface"
+             th:attr="data-selection-source=${workspace.selectionSource}">
+      <div class="battle-toolbar" data-screen-sensitive aria-label="Battle map controls">
+        <div class="tool-group map-switcher">
+          <label for="cockpitMapPicker" class="sr-only">Workspace map</label>
+          <select id="cockpitMapPicker" aria-label="Workspace map" :value="currentMapId"
+                  @change="switchMap($event.target.value)">
+            <option value="" :disabled="sessionStatus === 'IDLE' && !!currentMapId">No map</option>
+            <template x-for="m in maps" :key="m.id">
+              <option :value="m.id" x-text="m.name"></option>
+            </template>
+          </select>
+        </div>
+        <div class="tool-group">
+          <button class="tool-btn" :class="{ active: tool === 'select' }"
+                  @click="setTool('select')" :disabled="!currentMapId">Select</button>
+          <button class="tool-btn" :class="{ active: tool === 'measure' }"
+                  @click="setTool('measure')" :disabled="!currentMapId">Measure</button>
+          <button class="tool-btn" @click="addToken()" :disabled="!currentMapId">+ Token</button>
+          <button class="tool-btn" @click="addParty()" :disabled="!currentMapId">Add Party</button>
+        </div>
+        <div class="tool-group">
+          <button class="tool-btn" :class="{ active: movementMode === 'GRID' }"
+                  @click="toggleMovementMode()" :disabled="!currentMapId"
+                  x-text="movementMode === 'GRID' ? 'Grid movement' : 'Free movement'">Grid movement</button>
+          <button class="tool-btn" :class="{ active: showGrid }"
+                  @click="toggleShowGrid()" :disabled="!currentMapId">Grid lines</button>
+        </div>
+        <div class="tool-group table-presentation-controls">
+          <span class="badge" th:attr="data-presentation-mode=${workspace.session.presentationMode}"
+                :data-presentation-mode="presentationMode"
+                x-text="presentationMode === 'CURTAIN' ? 'Table: Curtain' : (presentationMode === 'MAP' ? 'Table: Map' : 'Table: Handout')">
+            Table: Curtain
+          </span>
+          <button class="tool-btn" :class="{ active: presentingMap }" @click="sendToTable()"
+                  :disabled="sessionStatus === 'IDLE' || !currentMapId">Present current map</button>
+          <button class="tool-btn" @click="curtain()" :disabled="sessionStatus === 'IDLE'">Curtain</button>
+          <a class="tool-btn" href="/player" target="_blank">Preview table</a>
+        </div>
+      </div>
+      <div class="battle-body">
+        <div th:if="${workspace.workspaceMap != null}" id="battleCanvasWrap"></div>
+        <th:block th:unless="${workspace.workspaceMap != null}">
+          <th:block th:replace="~{session/_empty-table :: empty(workspace=${workspace})}"></th:block>
+        </th:block>
+        <aside class="battle-sidebar" data-screen-sensitive th:if="${workspace.workspaceMap != null}" aria-label="Map tokens">
+          <section class="sidebar-section">
+            <h3>From Library</h3>
+            <div class="statblock-search">
+              <input type="search" placeholder="Search statblocks…" aria-label="Search statblocks"
+                     x-model="sbSearch" @input="searchStatblocks()">
+              <div class="sb-results" x-show="sbResults.length > 0 && sbSearch.length > 0" x-cloak>
+                <template x-for="sb in sbResults" :key="sb.id">
+                  <button type="button" class="sb-result-item" @click="addStatblockToken(sb.id)">
+                    <strong x-text="sb.name"></strong>
+                    <span class="sb-cr" x-text="'CR ' + sb.cr"></span>
+                  </button>
+                </template>
+              </div>
+            </div>
+          </section>
+          <section class="sidebar-section threat-pin-section" data-screen-sensitive data-threat-pins>
+            <h3>Threat pins</h3>
+            <p class="text-muted u-text-xs">DM-only. Click a diamond marker on the map to open the card.</p>
+            <label class="u-block u-text-sm">Type
+              <select x-model="threatPinKind" class="u-w-full">
+                <option value="TRAP">Trap</option>
+                <option value="HAZARD">Hazard</option>
+              </select>
+            </label>
+            <label class="u-block u-text-sm">Search
+              <input type="search" x-model="threatPinQuery" @input.debounce.300ms="searchThreatPins()"
+                     placeholder="Find trap/hazard…" class="u-w-full">
+            </label>
+            <div x-show="threatPinResults.length" x-cloak>
+              <template x-for="item in threatPinResults" :key="item.id">
+                <button type="button" class="btn btn-ghost u-w-full" style="justify-content:flex-start"
+                        @click="selectThreatForPin(item)" x-text="item.name"></button>
+              </template>
+            </div>
+            <label class="u-block u-text-sm">Label <input type="text" x-model="threatPinLabel" class="u-w-full"></label>
+            <div class="u-flex u-gap-sm">
+              <label class="u-text-sm">X <input type="number" x-model.number="threatPinX" class="u-w-full"></label>
+              <label class="u-text-sm">Y <input type="number" x-model.number="threatPinY" class="u-w-full"></label>
+            </div>
+            <button type="button" class="btn btn-primary u-w-full" style="margin-top:4px"
+                    @click="createThreatPin()" :disabled="!selectedThreatForPin">Create pin</button>
+            <template x-for="pin in threatPins" :key="pin.id">
+              <div class="u-flex u-items-center u-gap-xs" style="font-size:var(--text-sm);margin-top:4px">
+                <span style="flex:1" x-text="pin.title || pin.key"></span>
+                <button type="button" class="btn btn-ghost" @click="deleteThreatPin(pin.id)">×</button>
+              </div>
+            </template>
+          </section>
+          <section class="sidebar-section">
+            <h3>Tokens (<span x-text="tokens.length">0</span>)</h3>
+            <template x-for="t in tokens" :key="t.id">
+              <div class="token-list-item" @click="focusToken(t.id)">
+                <span class="token-swatch" :style="{ background: t.color }"></span>
+                <span :class="{ 'token-dead': t.dead }" x-text="t.name" style="flex: 1;"></span>
+                <span x-show="t.currentHp != null && t.maxHp != null"
+                      x-text="t.currentHp + '/' + t.maxHp"></span>
+                <button type="button" class="btn btn-ghost" title="Duplicate token"
+                        @click.stop="duplicateToken(t.id)">Copy</button>
+                <button type="button" class="btn btn-ghost" title="Delete token"
+                        @click.stop="deleteToken(t.id)">Delete</button>
+              </div>
+            </template>
+          </section>
+          <template x-if="selectedToken">
+            <section class="sidebar-section">
+              <h3>Selected token</h3>
+              <label>Name <input type="text" x-model="selectedToken.name" @change="updateToken()"></label>
+              <label>Current HP <input type="number" class="hp-input"
+                                       x-model="selectedToken.currentHp" @change="updateToken()"></label>
+              <label>Max HP <input type="number" class="hp-input"
+                                   x-model="selectedToken.maxHp" @change="updateToken()"></label>
+              <label><input type="checkbox" x-model="selectedToken.hidden" @change="updateToken()"> Hidden</label>
+              <label><input type="checkbox" x-model="selectedToken.dead" @change="toggleDead()"> Dead</label>
+            </section>
+          </template>
+        </aside>
+      </div>
+      <div class="battle-statusbar" aria-live="polite">
+        <span id="battleStatusMessage">Ready</span>
+        <span id="battleCursorInfo"></span>
+        <span id="battleSaveIndicator" class="save-indicator save-saved">Saved</span>
+      </div>
+    </section>
+</th:block>
+
+</html>

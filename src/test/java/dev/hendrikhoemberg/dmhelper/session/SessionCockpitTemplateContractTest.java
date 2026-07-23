@@ -35,6 +35,8 @@ class SessionCockpitTemplateContractTest {
     @Test
     void cockpitOwnsOneRuntimeIslandAndAccessibleRailControls() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
+        String mapModule = Files.readString(Path.of("src/main/resources/templates/session/_map-module.html"));
+        String shell = Files.readString(Path.of("src/main/resources/templates/session/_cockpit-module-shell.html"));
         String rail = Files.readString(Path.of("src/main/resources/templates/session/_encounter-rail.html"));
         String story = Files.readString(Path.of("src/main/resources/templates/session/_story-rail.html"));
         String plan = Files.readString(Path.of("src/main/resources/templates/session/_session-plan.html"));
@@ -43,13 +45,13 @@ class SessionCockpitTemplateContractTest {
         String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
         String battleMap = Files.readString(Path.of(
                 "src/main/resources/static/js/map/battle-map.js"));
-        assertThat(count(html, "id=\"battleCanvasWrap\"")).isEqualTo(1);
+        assertThat(count(mapModule, "id=\"battleCanvasWrap\"")).isEqualTo(1);
         assertThat(count(rail, "encounter/_tracker :: tracker")).isEqualTo(1);
-        assertThat(count(html, "session/_encounter-rail :: encounters")).isEqualTo(1);
+        assertThat(count(shell, "session/_encounter-rail :: encounters")).isEqualTo(1);
         assertThat(js).contains("new BattleMap(");
         assertThat(js).doesNotContain("nextTurn(id)", "applyDamage(combatant", "projectTokens(");
-        assertThat(html).contains("aria-label=\"Story rail\"", "aria-label=\"Encounter rail\"",
-                "aria-label=\"Session plan\"", "aria-live=\"polite\"");
+        assertThat(shell).contains("aria-label=${module.title}", "aria-live=\"polite\"");
+        assertThat(mapModule).contains("aria-live=\"polite\"");
         assertThat(html).contains("@keydown.window=\"handleKeyboard($event)\"");
         assertThat(html.indexOf("session/_lifecycle-dialog :: lifecycle-dialog"))
                 .isLessThan(html.indexOf("</main>"));
@@ -57,10 +59,16 @@ class SessionCockpitTemplateContractTest {
         assertThat(story).contains("notes/_quicknotes-strip :: strip");
         assertThat(plan).contains("Present");
         assertThat(html).contains(">Handouts<", ">Rules<", ">Calendar<");
-        assertThat(html).contains("aria-label=\"Battle map controls\"", "aria-label=\"Workspace map\"",
+        assertThat(mapModule).contains("aria-label=\"Battle map controls\"", "aria-label=\"Workspace map\"",
                 "Present current map", ">Curtain<", "data-presentation-mode");
-        assertThat(html).contains("@click=\"addToken()\"", "@click=\"addParty()\"",
+        assertThat(mapModule).contains("@click=\"addToken()\"", "@click=\"addParty()\"",
                 "x-for=\"t in tokens\"");
+        assertThat(html).contains("cockpitLayoutConfig",
+                "cockpitPresetPicker", "cockpitLayoutModeButton",
+                "session/_cockpit-workbench");
+        assertThat(Files.readString(Path.of(
+                "src/main/resources/templates/session/_cockpit-workbench.html")))
+                .contains("data-cockpit-workbench");
         assertThat(js).contains("sessionStatus", "presentationMode", "handleKeyboard");
         assertThat(js).contains("startSession", "pauseSession", "resumeSession",
                 "cancelReview", "beginReview", "completeSession");
@@ -250,22 +258,41 @@ class SessionCockpitTemplateContractTest {
     @Test
     void cockpitKeepsStableRailContainers() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
-        String css = Files.readString(Path.of("src/main/resources/static/css/cockpit.css"));
+        String workbench = Files.readString(
+                Path.of("src/main/resources/templates/session/_cockpit-workbench.html"));
+        String shell = Files.readString(
+                Path.of("src/main/resources/templates/session/_cockpit-module-shell.html"));
+        String layoutCss = Files.readString(
+                Path.of("src/main/resources/static/css/cockpit-layout.css"));
+        String mapModule = Files.readString(
+                Path.of("src/main/resources/templates/session/_map-module.html"));
         assertThat(html)
-                .contains("class=\"cockpit-story\"")
-                .contains("class=\"cockpit-encounter\"")
-                .contains("th:insert=\"~{session/_story-rail")
-                .contains("th:insert=\"~{session/_encounter-rail")
-                .contains("th:insert=\"~{session/_session-plan");
-        assertThat(css).contains(".cockpit-grid {", "overflow: hidden;");
+                .contains("session/_cockpit-workbench")
+                .contains("/css/cockpit-layout.css");
+        assertThat(workbench)
+                .contains("data-cockpit-workbench")
+                .contains("data-cockpit-zone")
+                .contains("cockpitModuleByKey['encounter']");
+        assertThat(shell)
+                .contains("class=\"cockpit-module\"", "data-module-body")
+                .contains("session/_story-rail")
+                .contains("session/_encounter-rail")
+                .contains("session/_session-plan")
+                .contains("session/_map-module :: map-module");
+        assertThat(mapModule).contains("th:fragment=\"map-module(workspace)\"", "battleCanvasWrap");
+        assertThat(layoutCss).contains(".cockpit-workbench {", "overflow: hidden;");
     }
 
     @Test
     void encounterModuleHidesDuringTableSafe() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
-        assertThat(html).contains(
-                "data-runtime-module=\"encounter\"",
-                "data-table-safe-behavior=\"HIDE\"");
+        String shell = Files.readString(
+                Path.of("src/main/resources/templates/session/_cockpit-module-shell.html"));
+        String workbench = Files.readString(
+                Path.of("src/main/resources/templates/session/_cockpit-workbench.html"));
+        assertThat(shell).contains(
+                "data-runtime-module=${module.key}",
+                "data-table-safe-behavior=${module.screenSafetyBehavior}");
+        assertThat(workbench).contains("cockpitModuleByKey['encounter']");
     }
 
     @Test

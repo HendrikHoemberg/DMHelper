@@ -1,17 +1,20 @@
 package dev.hendrikhoemberg.dmhelper.session.web;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
-import dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransition;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneEncounterSeedService;
 import dev.hendrikhoemberg.dmhelper.calendar.service.CalendarService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
+import dev.hendrikhoemberg.dmhelper.session.layout.CockpitBuiltInPresetCatalog;
+import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleDefinition;
+import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleRegistry;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
-import dev.hendrikhoemberg.dmhelper.session.service.SessionPlanService;
+import dev.hendrikhoemberg.dmhelper.session.service.CockpitLayoutPresetService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService.SessionWorkspace;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService.StructuredSceneView;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -34,6 +37,8 @@ class SessionControllerTest {
     @MockitoBean private SessionWorkspaceService workspaces;
     @MockitoBean private AdventureService adventures;
     @MockitoBean private SceneEncounterSeedService encounterSeeder;
+    @MockitoBean private CockpitModuleRegistry cockpitModules;
+    @MockitoBean private CockpitLayoutPresetService cockpitPresets;
 
     @MockitoBean
     private CampaignRepository campaignRepository;
@@ -42,6 +47,19 @@ class SessionControllerTest {
     private CalendarService calendarService;
 
     private final UUID campaignId = UUID.randomUUID();
+    private final CockpitModuleRegistry standardRegistry = CockpitModuleRegistry.standard();
+    private final CockpitBuiltInPresetCatalog builtIns = new CockpitBuiltInPresetCatalog();
+
+    @BeforeEach
+    void stubCockpitLayoutCatalog() {
+        List<CockpitModuleDefinition> modules = standardRegistry.all();
+        when(cockpitModules.all()).thenReturn(modules);
+        List<CockpitLayoutPresetService.PresetDto> presets = builtIns.all().stream()
+                .map(preset -> new CockpitLayoutPresetService.PresetDto(
+                        preset.key(), null, preset.name(), true, 0, preset.layout(), List.of()))
+                .toList();
+        when(cockpitPresets.list()).thenReturn(presets);
+    }
 
     @Test
     void rendersCockpitEvenWhenNoMapExists() throws Exception {
@@ -50,7 +68,9 @@ class SessionControllerTest {
         mvc.perform(get("/campaigns/{id}/session", campaignId))
                 .andExpect(status().isOk())
                 .andExpect(view().name("session/cockpit"))
-                .andExpect(model().attribute("workspace", ws));
+                .andExpect(model().attribute("workspace", ws))
+                .andExpect(model().attributeExists("cockpitModules", "cockpitPresets",
+                        "cockpitDefaultPresetKey", "cockpitModuleByKey"));
     }
 
     @Test

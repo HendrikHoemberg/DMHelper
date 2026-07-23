@@ -2,7 +2,6 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <th:block th:fragment="lifecycle-dialog">
 <dialog id="sessionLifecycleDialog" class="lifecycle-dialog" x-ref="lifecycleDialog"
-        data-runtime-module="session-log" data-table-safe-behavior="HIDE"
         @cancel.prevent="closeLifecycle()" @click.self="closeLifecycle()"
         @keydown.tab="trapLifecycleFocus($event)"
         aria-labelledby="sessionLifecycleTitle">

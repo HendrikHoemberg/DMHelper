@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+  Accessible module chrome. Body content is selected by module key so Thymeleaf does not need
+  dynamic fragment expressions. Callers pass workspace/campaignId for existing module bodies.
+-->
+<article th:fragment="shell(module, workspace, campaignId)"
+         class="cockpit-module"
+         th:id="|cockpitModule-${module.key}|"
+         th:attr="data-module-key=${module.key},
+                  data-runtime-module=${module.key},
+                  data-min-width=${module.minWidthPx},
+                  data-min-height=${module.minHeightPx},
+                  data-table-safe-behavior=${module.screenSafetyBehavior},
+                  aria-label=${module.title}"
+         tabindex="-1">
+  <header class="cockpit-module__header">
+    <h2 th:id="|cockpitModuleTitle-${module.key}|" th:text="${module.title}">Module</h2>
+    <span class="cockpit-module__attention" hidden aria-label="0 updates"></span>
+    <div class="cockpit-module__actions">
+      <button type="button" data-module-focus
+              th:if="${module.focusSupported}"
+              th:attr="aria-label=|Focus ${module.title}|">Focus</button>
+      <button type="button" data-module-menu data-layout-edit-only hidden
+              th:attr="aria-label=|Arrange ${module.title}|">Arrange</button>
+      <button type="button" data-module-remove data-layout-edit-only hidden
+              th:attr="aria-label=|Remove ${module.title}|">Remove</button>
+    </div>
+  </header>
+  <div class="cockpit-module__status" data-module-status aria-live="polite" hidden></div>
+  <div class="cockpit-module__body" data-module-body
+       th:attr="aria-labelledby=|cockpitModuleTitle-${module.key}|">
+    <th:block th:switch="${module.key}">
+      <th:block th:case="'story'"
+                th:insert="~{session/_story-rail :: story(workspace=${workspace})}"></th:block>
+      <th:block th:case="'map'"
+                th:insert="~{session/_map-module :: map-module(workspace=${workspace})}"></th:block>
+      <th:block th:case="'encounter'"
+                th:insert="~{session/_encounter-rail :: encounters(workspace=${workspace})}"></th:block>
+      <th:block th:case="'session-plan'"
+                th:insert="~{session/_session-plan :: plan(workspace=${workspace})}"></th:block>
+      <th:block th:case="'party'"
+                th:replace="~{party/_summary-bar :: summary-bar(members=${workspace.partyMembers}, oob=null)}"></th:block>
+      <th:block th:case="'quick-notes'"
+                th:insert="~{session/_cockpit-deferred-modules :: quick-notes}"></th:block>
+      <th:block th:case="'presentation'"
+                th:insert="~{session/_cockpit-deferred-modules :: presentation}"></th:block>
+      <th:block th:case="'reference'"
+                th:insert="~{session/_cockpit-deferred-modules :: reference}"></th:block>
+      <th:block th:case="'audio'"
+                th:insert="~{audio/_cockpit-widget :: cockpit-widget(campaignId=${campaignId}, sessionId=${workspace.session.id})}"></th:block>
+      <th:block th:case="'session-log'"
+                th:insert="~{session/_cockpit-deferred-modules :: session-log}"></th:block>
+      <th:block th:case="*">
+        <p class="text-muted" th:text="${module.states.emptyMessage}">Module unavailable.</p>
+      </th:block>
+    </th:block>
+  </div>
+  <div class="cockpit-module__error" data-module-error role="alert" hidden>
+    <span th:text="${module.states.errorMessage}">Refresh failed.</span>
+    <button type="button" data-module-retry>Retry</button>
+  </div>
+</article>
+</html>

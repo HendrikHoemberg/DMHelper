@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+  Four-zone Exploration layout (server-rendered, no-JS usable).
+  Modules absent from Exploration live in the hidden depot exactly once.
+  cockpitModuleByKey is a Map<String, CockpitModuleDefinition> from SessionController.
+-->
+<th:block th:fragment="workbench(workspace, campaignId, cockpitModuleByKey)">
+
+<section class="cockpit-workbench"
+         data-cockpit-workbench
+         data-layout-mode="locked"
+         data-bottom-collapsed="true"
+         aria-label="Session workspace">
+
+  <!-- LEFT_SUPPORT: session-plan -->
+  <div class="cockpit-zone cockpit-zone--left"
+       data-cockpit-zone="LEFT_SUPPORT"
+       data-collapsed="false">
+    <div class="cockpit-zone__tabs" role="tablist" aria-label="Left support modules">
+      <button type="button" class="cockpit-zone__tab" role="tab"
+              id="cockpitTab-LEFT_SUPPORT-session-plan"
+              aria-controls="cockpitPanel-LEFT_SUPPORT-session-plan"
+              aria-selected="true"
+              data-module-tab="session-plan">Session plan</button>
+    </div>
+    <div class="cockpit-zone__panels" data-zone-panels>
+      <div class="cockpit-zone__panel" role="tabpanel"
+           id="cockpitPanel-LEFT_SUPPORT-session-plan"
+           aria-labelledby="cockpitTab-LEFT_SUPPORT-session-plan"
+           data-module-panel="session-plan">
+        <th:block th:replace="~{session/_cockpit-module-shell :: shell(
+            module=${cockpitModuleByKey['session-plan']},
+            workspace=${workspace},
+            campaignId=${campaignId})}"></th:block>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="cockpit-splitter cockpit-splitter--left"
+          data-cockpit-splitter="LEFT_PRIMARY" role="separator"
+          aria-orientation="vertical" aria-valuemin="10" aria-valuemax="35"
+          aria-valuenow="20" aria-label="Resize left support" tabindex="-1"></button>
+
+  <!-- PRIMARY: story -->
+  <div class="cockpit-zone cockpit-zone--primary"
+       data-cockpit-zone="PRIMARY"
+       data-collapsed="false">
+    <div class="cockpit-zone__tabs" role="tablist" aria-label="Primary modules">
+      <button type="button" class="cockpit-zone__tab" role="tab"
+              id="cockpitTab-PRIMARY-story"
+              aria-controls="cockpitPanel-PRIMARY-story"
+              aria-selected="true"
+              data-module-tab="story">Story</button>
+    </div>
+    <div class="cockpit-zone__panels" data-zone-panels>
+      <div class="cockpit-zone__panel" role="tabpanel"
+           id="cockpitPanel-PRIMARY-story"
+           aria-labelledby="cockpitTab-PRIMARY-story"
+           data-module-panel="story">
+        <th:block th:replace="~{session/_cockpit-module-shell :: shell(
+            module=${cockpitModuleByKey['story']},
+            workspace=${workspace},
+            campaignId=${campaignId})}"></th:block>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="cockpit-splitter cockpit-splitter--right"
+          data-cockpit-splitter="PRIMARY_RIGHT" role="separator"
+          aria-orientation="vertical" aria-valuemin="15" aria-valuemax="35"
+          aria-valuenow="24" aria-label="Resize right support" tabindex="-1"></button>
+
+  <!-- RIGHT_SUPPORT: party (active), quick-notes (inactive) -->
+  <div class="cockpit-zone cockpit-zone--right"
+       data-cockpit-zone="RIGHT_SUPPORT"
+       data-collapsed="false">
+    <div class="cockpit-zone__tabs" role="tablist" aria-label="Right support modules">
+      <button type="button" class="cockpit-zone__tab" role="tab"
+              id="cockpitTab-RIGHT_SUPPORT-party"
+              aria-controls="cockpitPanel-RIGHT_SUPPORT-party"
+              aria-selected="true"
+              data-module-tab="party">Party</button>
+      <button type="button" class="cockpit-zone__tab" role="tab"
+              id="cockpitTab-RIGHT_SUPPORT-quick-notes"
+              aria-controls="cockpitPanel-RIGHT_SUPPORT-quick-notes"
+              aria-selected="false"
+              data-module-tab="quick-notes"
+              tabindex="-1">Quick notes</button>
+    </div>
+    <div class="cockpit-zone__panels" data-zone-panels>
+      <div class="cockpit-zone__panel" role="tabpanel"
+           id="cockpitPanel-RIGHT_SUPPORT-party"
+           aria-labelledby="cockpitTab-RIGHT_SUPPORT-party"
+           data-module-panel="party">
+        <th:block th:replace="~{session/_cockpit-module-shell :: shell(
+            module=${cockpitModuleByKey['party']},
+            workspace=${workspace},
+            campaignId=${campaignId})}"></th:block>
+      </div>
+      <div class="cockpit-zone__panel" role="tabpanel"
+           id="cockpitPanel-RIGHT_SUPPORT-quick-notes"
+           aria-labelledby="cockpitTab-RIGHT_SUPPORT-quick-notes"
+           data-module-panel="quick-notes"
+           hidden inert>
+        <th:block th:replace="~{session/_cockpit-module-shell :: shell(
+            module=${cockpitModuleByKey['quick-notes']},
+            workspace=${workspace},
+            campaignId=${campaignId})}"></th:block>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="cockpit-splitter cockpit-splitter--bottom"
+          data-cockpit-splitter="BOTTOM_UTILITY" role="separator"
+          aria-orientation="horizontal" aria-valuemin="16" aria-valuemax="40"
+          aria-valuenow="24" aria-label="Resize bottom utility" tabindex="-1"></button>
+
+  <!-- BOTTOM_UTILITY: audio (active), session-log (inactive), collapsed -->
+  <div class="cockpit-zone cockpit-zone--bottom"
+       data-cockpit-zone="BOTTOM_UTILITY"
+       data-collapsed="true">
+    <div class="cockpit-zone__tabs" role="tablist" aria-label="Bottom utility modules">
+      <button type="button" class="cockpit-zone__tab" role="tab"
+              id="cockpitTab-BOTTOM_UTILITY-audio"
+              aria-controls="cockpitPanel-BOTTOM_UTILITY-audio"
+              aria-selected="true"
+              data-module-tab="audio">Audio</button>
+      <button type="button" class="cockpit-zone__tab" role="tab"
+              id="cockpitTab-BOTTOM_UTILITY-session-log"
+              aria-controls="cockpitPanel-BOTTOM_UTILITY-session-log"
+              aria-selected="false"
+              data-module-tab="session-log"
+              tabindex="-1">Session log</button>
+    </div>
+    <div class="cockpit-zone__panels" data-zone-panels>
+      <div class="cockpit-zone__panel" role="tabpanel"
+           id="cockpitPanel-BOTTOM_UTILITY-audio"
+           aria-labelledby="cockpitTab-BOTTOM_UTILITY-audio"
+           data-module-panel="audio">
+        <th:block th:replace="~{session/_cockpit-module-shell :: shell(
+            module=${cockpitModuleByKey['audio']},
+            workspace=${workspace},
+            campaignId=${campaignId})}"></th:block>
+      </div>
+      <div class="cockpit-zone__panel" role="tabpanel"
+           id="cockpitPanel-BOTTOM_UTILITY-session-log"
+           aria-labelledby="cockpitTab-BOTTOM_UTILITY-session-log"
+           data-module-panel="session-log"
+           hidden inert>
+        <th:block th:replace="~{session/_cockpit-module-shell :: shell(
+            module=${cockpitModuleByKey['session-log']},
+            workspace=${workspace},
+            campaignId=${campaignId})}"></th:block>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Depot: modules not in the server-rendered Exploration placement -->
+<div class="cockpit-module-depot" data-cockpit-depot hidden>
+  <th:block th:replace="~{session/_cockpit-module-shell :: shell(
+      module=${cockpitModuleByKey['map']},
+      workspace=${workspace},
+      campaignId=${campaignId})}"></th:block>
+  <th:block th:replace="~{session/_cockpit-module-shell :: shell(
+      module=${cockpitModuleByKey['encounter']},
+      workspace=${workspace},
+      campaignId=${campaignId})}"></th:block>
+  <th:block th:replace="~{session/_cockpit-module-shell :: shell(
+      module=${cockpitModuleByKey['presentation']},
+      workspace=${workspace},
+      campaignId=${campaignId})}"></th:block>
+  <th:block th:replace="~{session/_cockpit-module-shell :: shell(
+      module=${cockpitModuleByKey['reference']},
+      workspace=${workspace},
+      campaignId=${campaignId})}"></th:block>
+</div>
+
+<!-- Focus layer -->
+<div id="cockpitFocusLayer" class="cockpit-focus-layer" hidden data-cockpit-focus-layer>
+  <div class="cockpit-focus-layer__bar">
+    <button type="button" id="cockpitFocusReturn" class="btn btn-ghost">Return to layout</button>
+  </div>
+  <div class="cockpit-focus-layer__mount" data-focus-mount></div>
+</div>
+
+<!-- Arrange menu (shared; controller fills targets). Hidden until edit mode. -->
+<div id="cockpitModuleArrangeMenu" class="cockpit-arrange-menu" hidden data-layout-edit-only role="menu"
+     aria-label="Arrange module">
+  <button type="button" role="menuitem" data-arrange-zone="PRIMARY">Move to Primary</button>
+  <button type="button" role="menuitem" data-arrange-zone="LEFT_SUPPORT">Move to Left support</button>
+  <button type="button" role="menuitem" data-arrange-zone="RIGHT_SUPPORT">Move to Right support</button>
+  <button type="button" role="menuitem" data-arrange-zone="BOTTOM_UTILITY">Move to Bottom utility</button>
+  <button type="button" role="menuitem" data-arrange-move="earlier">Move earlier</button>
+  <button type="button" role="menuitem" data-arrange-move="later">Move later</button>
+</div>
+
+<dialog id="cockpitAddModuleDialog" class="cockpit-dialog" aria-labelledby="cockpitAddModuleTitle">
+  <h2 id="cockpitAddModuleTitle">Add module</h2>
+  <p>Choose a module that is not already in the workspace.</p>
+  <ul data-add-module-list></ul>
+  <form method="dialog">
+    <button type="submit" class="btn btn-ghost">Close</button>
+  </form>
+</dialog>
+
+<dialog id="cockpitLayoutExitDialog" class="cockpit-dialog" aria-labelledby="cockpitLayoutExitTitle">
+  <h2 id="cockpitLayoutExitTitle">Leave layout edit?</h2>
+  <p>Save your custom layout, discard changes, or keep editing.</p>
+  <div class="cockpit-dialog__actions">
+    <button type="button" class="btn btn-primary" data-layout-exit="save">Save layout</button>
+    <button type="button" class="btn btn-ghost" data-layout-exit="discard">Discard</button>
+    <button type="button" class="btn btn-ghost" data-layout-exit="cancel">Keep editing</button>
+  </div>
+</dialog>
+
+<dialog id="cockpitPresetNameDialog" class="cockpit-dialog" aria-labelledby="cockpitPresetNameTitle">
+  <h2 id="cockpitPresetNameTitle">Name custom layout</h2>
+  <label for="cockpitPresetNameInput">Layout name
+    <input id="cockpitPresetNameInput" type="text" class="form-input" maxlength="80" autocomplete="off">
+  </label>
+  <div class="cockpit-dialog__actions">
+    <button type="button" class="btn btn-primary" data-preset-name="confirm">Save</button>
+    <button type="button" class="btn btn-ghost" data-preset-name="cancel">Cancel</button>
+  </div>
+</dialog>
+
+<div id="cockpitLayoutNotice" class="cockpit-layout-notice" role="status" aria-live="polite"></div>
+
+</th:block>
+</html>
