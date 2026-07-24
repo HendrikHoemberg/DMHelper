@@ -152,6 +152,7 @@ public class CampaignController {
     public String update(@PathVariable UUID id,
                          @RequestParam String name,
                          @RequestParam(required = false) String description,
+                         @RequestParam(defaultValue = "detail") String returnTo,
                          Model model) {
         Campaign campaign = service.update(id, name, description);
         model.addAttribute("campaign", campaign);
@@ -166,7 +167,7 @@ public class CampaignController {
                 .limit(5)
                 .toList());
         addRunEntryPoints(id, model);
-        return "campaigns/detail";
+        return "campaigns/" + returnTo;
     }
 
     private void addRunEntryPoints(UUID campaignId, Model model) {

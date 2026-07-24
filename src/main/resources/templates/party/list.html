@@ -79,7 +79,7 @@ function toggleSelectAll(el) {
 
 function toggleInactive() {
     const show = document.getElementById('include-inactive').checked;
-    document.querySelectorAll('.party-member-card.pm-inactive').forEach(c => {
+    document.querySelectorAll('.roster-row--inactive').forEach(c => {
         c.style.display = show ? '' : 'none';
     });
     updateBatchCount();
