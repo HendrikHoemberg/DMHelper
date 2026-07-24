@@ -536,8 +536,10 @@ class CoreSessionLoopSmokeTest {
         dmPage.locator("#party-form-modal [name='passiveInvestigation']").fill("11");
         dmPage.locator("#party-form-modal button[type='submit']").click();
 
-        Locator card = dmPage.locator(".party-member-card", new Page.LocatorOptions().setHasText("Dynamic Hero"));
+        Locator card = dmPage.locator(".roster-row", new Page.LocatorOptions().setHasText("Dynamic Hero"));
         card.waitFor();
+        card.locator("summary").click();
+        card.locator(".quicknotes-form").waitFor();
         assertThat(dmPage.locator("#party-form-modal").isHidden())
                 .as("closed party modal must leave layout and pointer hit testing")
                 .isTrue();

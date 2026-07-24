@@ -27,19 +27,22 @@
 
             <th:block th:replace="~{party/_summary-bar :: summary-bar(view=${activeMembers}, mode=${null}, oob=${null})}"></th:block>
 
-            <div class="batch-bar" id="batch-bar">
-                <div class="batch-bar-left">
-                    <label class="batch-toggle">
-                        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
-                        Select All
-                    </label>
-                    <label class="batch-toggle batch-toggle-inactive">
-                        <input type="checkbox" id="include-inactive" onchange="toggleInactive()">
-                        Include inactive
-                    </label>
-                    <span class="batch-count" id="batch-count">0 selected</span>
-                </div>
-                <div class="batch-bar-actions">
+            <details class="party-bulk" id="party-bulk">
+                <summary data-bulk-actions>
+                    <span class="bulk-summary-label">
+                        <label class="batch-toggle">
+                            <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                            Select All
+                        </label>
+                        <label class="batch-toggle batch-toggle-inactive">
+                            <input type="checkbox" id="include-inactive" onchange="toggleInactive()">
+                            Include inactive
+                        </label>
+                        <span class="batch-count" id="batch-count">0 selected</span>
+                    </span>
+                    <span class="bulk-summary-chevron">Bulk Actions</span>
+                </summary>
+                <div class="party-bulk__actions">
                     <button class="btn btn-xs batch-btn" onclick="batchRest('SHORT')" title="Short Rest">Short Rest</button>
                     <button class="btn btn-xs batch-btn" onclick="batchRest('LONG')" title="Long Rest">Long Rest</button>
                     <button class="btn btn-xs batch-btn" onclick="batchXp()">Award XP</button>
@@ -48,17 +51,10 @@
                     <button class="btn btn-xs batch-btn" onclick="batchLoot()">Assign Loot</button>
                     <button class="btn btn-xs batch-btn" onclick="batchClearDeathSaves()">Clear Death Saves</button>
                 </div>
-            </div>
+            </details>
 
-            <div id="party-grid" class="card-grid empty-state-host">
-                <th:block th:if="${members == null or members.isEmpty()}">
-                    <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
-                        'No heroes yet', 'Add member', @{/campaigns/{id}/party/new(id=${campaign.id})},
-                        'Add the player characters so combat, passive senses, and difficulty math work.', '♜')}"></th:block>
-                </th:block>
-                <th:block th:each="pm : ${members}">
-                    <th:block th:replace="~{party/_card :: card(pm=${pm})}"></th:block>
-                </th:block>
+            <div id="party-grid" class="empty-state-host">
+                <th:block th:replace="~{party/_roster :: roster(members=${members}, campaignId=${campaign.id})}"></th:block>
             </div>
             <dialog id="party-form-modal" class="modal"
                     hx-on::after-swap="if(!this.open) this.showModal()"

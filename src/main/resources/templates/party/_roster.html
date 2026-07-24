@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="roster(members, campaignId)">
+    <div class="roster">
+        <div class="roster-header">
+            <span class="roster-col roster-col--select"></span>
+            <span class="roster-col roster-col--name">Name</span>
+            <span class="roster-col roster-col--player">Player</span>
+            <span class="roster-col roster-col--ac">AC</span>
+            <span class="roster-col roster-col--hp">HP</span>
+            <span class="roster-col roster-col--passives">PP / PI / PInv</span>
+            <span class="roster-col roster-col--conditions">Conditions</span>
+        </div>
+        <th:block th:if="${members == null or members.isEmpty()}">
+            <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
+                'No heroes yet', 'Add member', @{/campaigns/{id}/party/new(id=${campaignId})},
+                'Add the player characters so combat, passive senses, and difficulty math work.', '♜')}"></th:block>
+        </th:block>
+        <th:block th:each="pm : ${members}">
+            <th:block th:replace="~{party/_roster :: row(pm=${pm})}"></th:block>
+        </th:block>
+    </div>
+</th:block>
+
+<th:block th:fragment="row(pm)">
+    <details class="roster-row" th:id="'pm-card-' + ${pm.id}"
+             th:classappend="${!pm.active} ? 'roster-row--inactive'">
+        <summary class="roster-row__summary">
+            <span class="roster-col roster-col--select">
+                <input type="checkbox" class="member-select" th:value="${pm.id}"
+                       th:attr="data-active=${pm.active}"
+                       th:id="'sel-' + ${pm.id}">
+            </span>
+            <span class="roster-col roster-col--name" th:text="${pm.characterName}">Name</span>
+            <span class="roster-col roster-col--player">
+                <span th:if="${pm.playerName != null and !pm.playerName.isBlank()}"
+                      th:text="${pm.playerName}">Player</span>
+                <span th:if="${pm.classAndLevel != null and !pm.classAndLevel.isBlank()}"
+                      th:text="' (' + ${pm.classAndLevel} + ')'" class="roster-class"> (Class)</span>
+            </span>
+            <span class="roster-col roster-col--ac" th:text="${pm.ac}">15</span>
+            <span class="roster-col roster-col--hp">
+                <span th:text="${pm.currentHp} + '/' + ${pm.maxHp}">24/24</span>
+                <span th:if="${pm.tempHp > 0}" class="roster-temp-hp" th:text="'+' + ${pm.tempHp}">+5</span>
+                <span class="roster-hp-bar"><span class="roster-hp-fill"
+                      th:style="'width:' + (${pm.maxHp} > 0 ? (${pm.currentHp} * 100 / ${pm.maxHp}) : 0) + '%'"
+                      th:classappend="${pm.maxHp > 0 && pm.currentHp * 2 < pm.maxHp} ? 'low' : ''"></span></span>
+            </span>
+            <span class="roster-col roster-col--passives">
+                <span th:text="${pm.passivePerception}">14</span>
+                <span class="roster-passive-sep">/</span>
+                <span th:text="${pm.passiveInsight}">12</span>
+                <span class="roster-passive-sep">/</span>
+                <span th:text="${pm.passiveInvestigation}">13</span>
+            </span>
+            <span class="roster-col roster-col--conditions">
+                <th:block th:if="${pm.deathSaveFailures > 0 or pm.deathSaveSuccesses > 0}">
+                    <span class="badge badge-danger" th:title="'Death saves: ' + ${pm.deathSaveSuccesses} + '/' + ${pm.deathSaveFailures}"
+                          th:text="'DS ' + ${pm.deathSaveSuccesses} + '/' + ${pm.deathSaveFailures}">DS 0/1</span>
+                </th:block>
+                <th:block th:if="${pm.concentratingOn != null and !pm.concentratingOn.isBlank()}">
+                    <span class="badge badge-info" th:title="'Concentrating: ' + ${pm.concentratingOn}">Concentrating</span>
+                </th:block>
+                <th:block th:if="${pm.conditions != null and !pm.conditions.isEmpty()}">
+                    <span class="badge badge-warning" th:each="cond : ${pm.conditions}" th:text="${cond}">poisoned</span>
+                </th:block>
+                <th:block th:if="${!pm.active}">
+                    <span class="badge badge-muted">Inactive</span>
+                </th:block>
+            </span>
+        </summary>
+        <div class="roster-row__body">
+            <div class="roster-row__meta">
+                <span th:if="${pm.initiativeBonus != 0}" th:text="'Init: +' + ${pm.initiativeBonus}">Init: +4</span>
+                <span th:text="'Speed: ' + ${pm.speed} + ' ft.'">Speed: 30 ft.</span>
+                <span th:if="${pm.exhaustion > 0}" class="badge badge-danger" th:text="'Exhaustion: ' + ${pm.exhaustion}">Exhaustion: 1</span>
+                <span th:if="${pm.inspiration}" class="badge badge-success">Inspiration</span>
+                <span th:if="${pm.characterSheet != null}">
+                    <a th:href="@{/campaigns/{cid}/party/{pid}/sheet(cid=${pm.campaign.id}, pid=${pm.id})}"
+                       class="btn btn-ghost btn-xs">Sheet</a>
+                </span>
+            </div>
+            <div class="roster-row__actions">
+                <button class="btn btn-ghost btn-xs"
+                        th:hx-get="@{/campaigns/{cid}/party/{pid}/edit(cid=${pm.campaign.id}, pid=${pm.id})}"
+                        hx-target="#party-form-modal" hx-swap="innerHTML">Edit</button>
+                <th:block th:if="${pm.active}">
+                    <button class="btn btn-ghost btn-xs"
+                            th:hx-put="@{/campaigns/{cid}/party/{pid}/toggle-active(cid=${pm.campaign.id}, pid=${pm.id})}"
+                            hx-target="closest .roster-row" hx-swap="outerHTML">Mark Inactive</button>
+                </th:block>
+                <th:block th:if="${!pm.active}">
+                    <button class="btn btn-ghost btn-xs"
+                            th:hx-put="@{/campaigns/{cid}/party/{pid}/toggle-active(cid=${pm.campaign.id}, pid=${pm.id})}"
+                            hx-target="closest .roster-row" hx-swap="outerHTML">Mark Active</button>
+                </th:block>
+                <button class="btn btn-danger btn-xs"
+                        th:hx-delete="@{/campaigns/{cid}/party/{pid}(cid=${pm.campaign.id}, pid=${pm.id})}"
+                        hx-confirm="Remove this party member?"
+                        hx-target="closest .roster-row" hx-swap="outerHTML">Remove</button>
+            </div>
+            <div class="roster-row__notes">
+                <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${pm.campaign.id}, targetType='PARTY_MEMBER', targetId=${pm.id})}"></th:block>
+            </div>
+        </div>
+    </details>
+</th:block>
+
+<th:block th:fragment="rowWithSummary(pm, activeMembers)">
+    <th:block th:replace="~{party/_roster :: row(pm=${pm})}"></th:block>
+    <th:block th:replace="~{party/_summary-bar :: summary-bar(view=${activeMembers}, mode=${null}, oob='true')}"></th:block>
+</th:block>
+</html>

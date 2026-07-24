@@ -16,7 +16,7 @@
 }
 
 /* Party cards use .party-member-card (not .card); hide the empty-state for them too. */
-.card-grid:has(.party-member-card) .empty-state {
+.card-grid:has(.roster-row) .empty-state {
   display: none;
 }
 
@@ -1930,7 +1930,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 
 .empty-state__cta { margin-top: var(--space-xs); }
 
-.empty-state-host:has(> .empty-state):not(:has(> .card, > .party-member-card)) {
+.empty-state-host:has(> .empty-state):not(:has(> .card, > .roster-row)) {
   display: flex;
   flex-direction: column;
   align-items: center;

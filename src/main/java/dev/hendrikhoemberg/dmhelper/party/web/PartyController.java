@@ -74,7 +74,7 @@ public class PartyController {
                 passivePerception, passiveInsight, passiveInvestigation, notes);
         model.addAttribute("pm", pm);
         model.addAttribute("activeMembers", partyService.findActiveByCampaignId(campaignId));
-        return "party/_card :: cardWithSummary";
+        return "party/_roster :: rowWithSummary";
     }
 
     @PutMapping("/{id}")
@@ -93,7 +93,7 @@ public class PartyController {
                 passivePerception, passiveInsight, passiveInvestigation, notes);
         model.addAttribute("pm", pm);
         model.addAttribute("activeMembers", partyService.findActiveByCampaignId(campaignId));
-        return "party/_card :: cardWithSummary";
+        return "party/_roster :: rowWithSummary";
     }
 
     @PutMapping("/{id}/toggle-active")
@@ -102,7 +102,7 @@ public class PartyController {
         partyService.setActive(id, !pm.isActive());
         model.addAttribute("pm", partyService.findById(id));
         model.addAttribute("activeMembers", partyService.findActiveByCampaignId(campaignId));
-        return "party/_card :: cardWithSummary";
+        return "party/_roster :: rowWithSummary";
     }
 
     @DeleteMapping("/{id}")
