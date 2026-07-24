@@ -20,6 +20,14 @@ public class Handout {
         }
     }
 
+    public enum AssetKind {
+        PLAYER_HANDOUT, DM_REFERENCE, REGIONAL_MAP, TACTICAL_MAP, ILLUSTRATION, SOURCE_PAGE;
+
+        public boolean isMapLike() {
+            return this == REGIONAL_MAP || this == TACTICAL_MAP;
+        }
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -50,6 +58,10 @@ public class Handout {
     @Column(name = "safety_classification", nullable = false, length = 24)
     private SafetyClassification safetyClassification = SafetyClassification.UNREVIEWED;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "asset_kind", nullable = false, length = 24)
+    private AssetKind assetKind = AssetKind.SOURCE_PAGE;
+
     public SafetyClassification getSafetyClassification() {
         return safetyClassification;
     }
@@ -60,6 +72,11 @@ public class Handout {
 
     public boolean isPresentable() { return getSafetyClassification().isPresentable(); }
     public boolean isDerivative() { return getSafetyClassification() == SafetyClassification.PLAYER_DERIVATIVE; }
+
+    public AssetKind getAssetKind() { return assetKind; }
+    public void setAssetKind(AssetKind assetKind) {
+        this.assetKind = java.util.Objects.requireNonNull(assetKind, "asset kind");
+    }
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "source_handout_id")
