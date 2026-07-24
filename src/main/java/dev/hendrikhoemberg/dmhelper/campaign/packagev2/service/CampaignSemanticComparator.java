@@ -65,12 +65,16 @@ public final class CampaignSemanticComparator {
         JsonNode handouts = root.get("handouts");
         if (!(handouts instanceof ArrayNode array)) return;
         for (JsonNode handout : array) {
-            if (handout instanceof ObjectNode object
-                    && object.path("safetyClassification").isTextual()) {
+            if (!(handout instanceof ObjectNode object)) continue;
+            if (object.path("safetyClassification").isTextual()) {
                 // safetyClassification is authoritative in A2 packages. dmOnly remains in the
                 // wire format for old V2 readers, but import deliberately synchronizes it to the
                 // conservative classification and may therefore change the redundant old value.
                 object.remove("dmOnly");
+            }
+            // assetKind defaults to SOURCE_PAGE; absent (null) is semantically equivalent.
+            if ("SOURCE_PAGE".equals(object.path("assetKind").asText())) {
+                object.remove("assetKind");
             }
         }
     }

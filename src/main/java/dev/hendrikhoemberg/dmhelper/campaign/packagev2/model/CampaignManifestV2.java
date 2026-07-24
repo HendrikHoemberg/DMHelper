@@ -266,8 +266,15 @@ public record CampaignManifestV2(
             boolean presented,
             String safetyClassification,
             ContentReference sourceRef,
-            String derivativeRecipe
-    ) {}
+            String derivativeRecipe,
+            String assetKind
+    ) {
+        public HandoutDto(String key, String title, List<String> tags, String assetRef, String contentType,
+                          boolean dmOnly, boolean presented, String safetyClassification,
+                          ContentReference sourceRef, String derivativeRecipe) {
+            this(key, title, tags, assetRef, contentType, dmOnly, presented, safetyClassification, sourceRef, derivativeRecipe, null);
+        }
+    }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record MapDto(

@@ -573,7 +573,11 @@
           "enum": ["DM_SOURCE", "PLAYER_SAFE", "PLAYER_DERIVATIVE", "UNREVIEWED"]
         },
         "sourceRef": { "$ref": "#/$defs/contentReference" },
-        "derivativeRecipe": { "type": "string", "minLength": 2 }
+        "derivativeRecipe": { "type": "string", "minLength": 2 },
+        "assetKind": {
+          "type": "string",
+          "enum": ["PLAYER_HANDOUT", "DM_REFERENCE", "REGIONAL_MAP", "TACTICAL_MAP", "ILLUSTRATION", "SOURCE_PAGE"]
+        }
       }
     },
     "map": {

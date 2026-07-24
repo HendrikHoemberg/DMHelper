@@ -95,7 +95,8 @@ public class HandoutSectionAdapter implements CampaignSectionExporter, CampaignS
                 key, handout.getTitle(), tagsList,
                 assetKey, handout.getContentType(),
                 handout.isDmOnly(), handout.isPresented(),
-                safetyClassification, sourceRef, derivativeRecipe
+                safetyClassification, sourceRef, derivativeRecipe,
+                handout.getAssetKind().name()
         );
     }
 
@@ -139,6 +140,7 @@ public class HandoutSectionAdapter implements CampaignSectionExporter, CampaignS
             handout.setSafetyClassification(classification);
             handout.setDmOnly(!classification.isPresentable());
             handout.setPresented(classification.isPresentable() && dto.presented());
+            handout.setAssetKind(kindOf(dto));
             handoutRepository.save(handout);
 
             context.register(CampaignContentType.HANDOUT, dto.key(), handout, handout.getId());
@@ -162,6 +164,13 @@ public class HandoutSectionAdapter implements CampaignSectionExporter, CampaignS
             return SafetyClassification.valueOf(dto.safetyClassification());
         }
         return dto.dmOnly() ? SafetyClassification.DM_SOURCE : SafetyClassification.UNREVIEWED;
+    }
+
+    private static Handout.AssetKind kindOf(HandoutDto dto) {
+        if (dto.assetKind() != null && !dto.assetKind().isBlank()) {
+            return Handout.AssetKind.valueOf(dto.assetKind());
+        }
+        return Handout.AssetKind.SOURCE_PAGE;
     }
 
     private static void validateSafetyMetadata(HandoutDto dto) {
