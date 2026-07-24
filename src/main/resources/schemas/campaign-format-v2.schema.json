@@ -7,7 +7,7 @@
   "additionalProperties": false,
   "required": ["formatVersion", "metadata", "campaign", "assets", "party", "customStatBlocks", "customSpells", "customConditions", "customRules", "customEquipment", "customMagicItems", "customClasses", "customSpecies", "customBackgrounds", "customFeats", "handouts", "maps", "encounters", "notes", "quickNotes", "assignments", "ledgerEntries", "timelineEvents", "adventures", "diceRolls"],
   "properties": {
-    "formatVersion": { "type": "integer", "const": 2 },
+    "formatVersion": { "type": "integer", "enum": [2, 3] },
     "metadata": { "$ref": "#/$defs/metadata" },
     "campaign": { "$ref": "#/$defs/campaign" },
     "assets": { "type": "array", "items": { "$ref": "#/$defs/asset" } },

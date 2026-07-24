@@ -31,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.readiness.CampaignReadinessFacade;
 import dev.hendrikhoemberg.dmhelper.campaign.readiness.CampaignReadinessReport;
+import dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessRepairService;
 
 @WebMvcTest(CampaignController.class)
 class CampaignControllerTest {
@@ -58,6 +59,9 @@ class CampaignControllerTest {
 
     @MockitoBean
     private CampaignReadinessFacade readinessFacade;
+
+    @MockitoBean
+    private ReadinessRepairService repairService;
 
     private Campaign sampleCampaign() {
         Campaign c = new Campaign();
