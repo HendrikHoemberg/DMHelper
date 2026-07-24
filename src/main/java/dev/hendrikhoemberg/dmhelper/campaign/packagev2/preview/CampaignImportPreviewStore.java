@@ -108,7 +108,8 @@ public class CampaignImportPreviewStore {
         CampaignReadinessReport readiness = manifest != null && assembler != null && readinessService != null
                 ? readinessService.compute(assembler.fromManifest(manifest), Set.of())
                 : new CampaignReadinessReport(List.of());
-        return new CampaignImportPreview(id, status, result.sourceFormatVersion(), 2, counts(manifest),
+        return new CampaignImportPreview(id, status, result.sourceFormatVersion(),
+                CampaignManifestV2.CURRENT_FORMAT_VERSION, counts(manifest),
                 result.stagedPackage().uploadedBytes(), installed, provenance,
                 Math.max(0, provenanceEligible - provenance), exclusions(manifest), result.migrations(),
                 result.problems(), expiresAt, readiness);

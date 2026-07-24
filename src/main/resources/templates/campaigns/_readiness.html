@@ -15,12 +15,16 @@
       <span class="readiness-item__actions">
         <a th:with="href=${repairService.hrefFor(campaignId, item.repairKind(), item.targetId())}"
            th:if="${href != null}" th:href="${href}" class="readiness-item__repair">Fix in preparation</a>
-        <form th:action="@{|/campaigns/${campaignId}/readiness/accept|}" method="post" class="inline-form">
+        <form th:action="@{|/campaigns/${campaignId}/readiness/accept|}" method="post" class="inline-form"
+              th:hx-post="@{|/campaigns/${campaignId}/readiness/accept|}"
+              hx-target="closest .readiness-panel" hx-swap="outerHTML">
           <input type="hidden" name="itemKey" th:value="${item.key()}"/>
           <button type="submit">Accept</button>
         </form>
         <form th:if="${item.category().name() == 'ASSET'}"
-              th:action="@{|/campaigns/${campaignId}/readiness/assets/${item.targetId()}/kind|}" method="post" class="inline-form">
+              th:action="@{|/campaigns/${campaignId}/readiness/assets/${item.targetId()}/kind|}" method="post" class="inline-form"
+              th:hx-post="@{|/campaigns/${campaignId}/readiness/assets/${item.targetId()}/kind|}"
+              hx-target="closest .readiness-panel" hx-swap="outerHTML">
           <select name="kind">
             <option th:each="k : ${T(dev.hendrikhoemberg.dmhelper.handout.data.Handout.AssetKind).values()}"
                     th:value="${k}" th:text="${k}"></option>

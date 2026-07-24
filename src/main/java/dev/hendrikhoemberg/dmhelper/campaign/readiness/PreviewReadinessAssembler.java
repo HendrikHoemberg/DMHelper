@@ -30,7 +30,7 @@ public class PreviewReadinessAssembler {
                                 if (!resolved) {
                                     links.add(new ReadinessInputs.LinkInput(
                                             scene.title() + ":" + t.key(),
-                                            "Transition '" + t.label() + "' in " + scene.title()
+                                            "Transition '" + t.label() + "' in scene '" + scene.title()
                                                     + "' has no resolved target",
                                             false));
                                 }
