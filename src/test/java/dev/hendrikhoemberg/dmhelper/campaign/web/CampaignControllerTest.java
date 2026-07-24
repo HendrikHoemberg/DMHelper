@@ -29,6 +29,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.readiness.CampaignReadinessFacade;
+import dev.hendrikhoemberg.dmhelper.campaign.readiness.CampaignReadinessReport;
 
 @WebMvcTest(CampaignController.class)
 class CampaignControllerTest {
@@ -53,6 +55,9 @@ class CampaignControllerTest {
 
     @MockitoBean
     private CampaignScaleService scaleService;
+
+    @MockitoBean
+    private CampaignReadinessFacade readinessFacade;
 
     private Campaign sampleCampaign() {
         Campaign c = new Campaign();
@@ -125,6 +130,7 @@ class CampaignControllerTest {
         when(noteService.findByCampaignId(c.getId())).thenReturn(List.of());
         when(partyMemberService.findActiveByCampaignId(c.getId())).thenReturn(List.of());
         when(scaleService.scaleOf(any())).thenReturn(new CampaignScaleService.CampaignScale(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        when(readinessFacade.reportForCampaign(any())).thenReturn(new CampaignReadinessReport(List.of()));
 
         mockMvc.perform(get("/campaigns/{id}", c.getId()))
                 .andExpect(status().isOk())
@@ -138,6 +144,7 @@ class CampaignControllerTest {
         Campaign c = sampleCampaign();
         when(service.findById(c.getId())).thenReturn(c);
         when(scaleService.scaleOf(any())).thenReturn(new CampaignScaleService.CampaignScale(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        when(readinessFacade.reportForCampaign(any())).thenReturn(new CampaignReadinessReport(List.of()));
 
         mockMvc.perform(get("/campaigns/{id}", c.getId()))
                 .andExpect(status().isOk())
@@ -150,6 +157,7 @@ class CampaignControllerTest {
         c.setName("Updated Name");
         when(service.update(eq(c.getId()), eq("Updated Name"), any())).thenReturn(c);
         when(scaleService.scaleOf(any())).thenReturn(new CampaignScaleService.CampaignScale(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        when(readinessFacade.reportForCampaign(any())).thenReturn(new CampaignReadinessReport(List.of()));
 
         mockMvc.perform(put("/campaigns/{id}", c.getId())
                         .param("name", "Updated Name")

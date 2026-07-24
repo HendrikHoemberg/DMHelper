@@ -80,6 +80,8 @@
                 </a>
             </section>
 
+            <div th:replace="~{campaigns/_readiness :: readiness(${readiness}, ${campaignId})}"></div>
+
             <div class="dash-grid">
                 <section class="card dash-card" data-screen-sensitive style="--stagger: 0">
                     <h3>Session Plan</h3>

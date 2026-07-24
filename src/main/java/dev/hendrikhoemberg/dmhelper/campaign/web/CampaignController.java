@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.campaign.web;
 
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.readiness.CampaignReadinessFacade;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignScaleService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
@@ -37,16 +38,19 @@ public class CampaignController {
     private final PartyMemberService partyMemberService;
     private final AudioCueRepository audioCueRepository;
     private final CampaignScaleService scaleService;
+    private final CampaignReadinessFacade readinessFacade;
 
     public CampaignController(CampaignService service, NoteService noteService,
                               PartyMemberService partyMemberService,
                               AudioCueRepository audioCueRepository,
-                              CampaignScaleService scaleService) {
+                              CampaignScaleService scaleService,
+                              CampaignReadinessFacade readinessFacade) {
         this.service = service;
         this.noteService = noteService;
         this.partyMemberService = partyMemberService;
         this.audioCueRepository = audioCueRepository;
         this.scaleService = scaleService;
+        this.readinessFacade = readinessFacade;
     }
 
     @GetMapping("/new")
@@ -107,6 +111,7 @@ public class CampaignController {
     public String detail(@PathVariable UUID id, Model model) {
         model.addAttribute("campaign", service.findById(id));
         model.addAttribute("campaignId", id);
+        model.addAttribute("readiness", readinessFacade.reportForCampaign(id));
         model.addAttribute("scale", scaleService.scaleOf(id));
         var plans = noteService.findByCampaignIdAndType(id, NoteType.SESSION_PLAN);
         if (!plans.isEmpty()) {
@@ -128,6 +133,8 @@ public class CampaignController {
                          Model model) {
         Campaign campaign = service.update(id, name, description);
         model.addAttribute("campaign", campaign);
+        model.addAttribute("campaignId", id);
+        model.addAttribute("readiness", readinessFacade.reportForCampaign(id));
         model.addAttribute("scale", scaleService.scaleOf(id));
         model.addAttribute("partyMembers", partyMemberService.findActiveByCampaignId(id));
         model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(id));

@@ -1,0 +1,28 @@
+<div th:fragment="readiness(report, campaignId)" class="readiness-panel"
+     th:classappend="${report.sessionReady()} ? 'is-ready' : 'is-blocked'">
+  <header class="readiness-panel__head">
+    <h3>Session readiness</h3>
+    <span class="readiness-badge" th:text="${report.label()}">Session-ready</span>
+  </header>
+  <p th:if="${report.sessionReady()}" class="readiness-empty">
+    Every blocker is resolved or accepted. This is distinct from schema validity.
+  </p>
+  <ul th:unless="${report.sessionReady()}" class="readiness-list">
+    <li th:each="item : ${report.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).BLOCKER)}"
+        class="readiness-item readiness-item--blocker">
+      <span class="readiness-item__title" th:text="${item.title()}">Title</span>
+      <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
+    </li>
+  </ul>
+  <th:block th:with="advisories=${report.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).RESOLVED)}">
+    <details class="readiness-advisories" th:if="${!advisories.isEmpty()}">
+      <summary th:text="|Notes &amp; advisories (${advisories.size()})|">Notes &amp; advisories</summary>
+      <ul>
+        <li th:each="item : ${advisories}">
+          <span th:text="${item.title()}">Advisory</span>
+          <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
+        </li>
+      </ul>
+    </details>
+  </th:block>
+</div>
