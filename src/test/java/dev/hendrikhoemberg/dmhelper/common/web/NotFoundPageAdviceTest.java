@@ -18,6 +18,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.readiness.CampaignReadinessFacade;
+import dev.hendrikhoemberg.dmhelper.campaign.readiness.CampaignReadinessReport;
+import dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessRepairService;
 
 @WebMvcTest(CampaignController.class)
 class NotFoundPageAdviceTest {
@@ -42,6 +45,12 @@ class NotFoundPageAdviceTest {
 
     @MockitoBean
     private CampaignScaleService scaleService;
+
+    @MockitoBean
+    private CampaignReadinessFacade readinessFacade;
+
+    @MockitoBean
+    private ReadinessRepairService repairService;
 
     @Test
     void browserNavigationGetsStyled404Page() throws Exception {
