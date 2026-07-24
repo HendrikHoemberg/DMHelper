@@ -37,7 +37,7 @@
     <title th:text="${workspace.campaign.name + ' — Session'}">Campaign — Session</title>
 </head>
 <body th:attr="data-campaign-id=${campaignId}">
-<main class="session-cockpit"
+<main class="session-cockpit" data-surface="run"
       x-data="sessionCockpit(window.sessionCockpitConfig)"
       @session-next-turn.window="nextTurn()"
       @session-scene-step.window="stepScene($event.detail.direction)"

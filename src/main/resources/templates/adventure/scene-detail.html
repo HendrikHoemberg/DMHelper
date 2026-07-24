@@ -8,7 +8,7 @@
     <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
     <div class="app-shell">
             <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
+        <main class="app-main" data-surface="read">
             <div class="page-header">
                 <div class="breadcrumb">
                     <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
