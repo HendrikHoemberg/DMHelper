@@ -565,8 +565,22 @@ public record CampaignManifestV2(
             List<SceneParticipantDto> participants,
             List<SceneTransitionDto> transitions,
             List<SceneLinkDto> links,
-            ContentReference sceneCueRef
-    ) {}
+            ContentReference sceneCueRef,
+            String mapRequirement
+    ) {
+        public SceneDto(String key, String title, String body, String status,
+                        int sortOrder, ContentReference mapRef, Map<String, Integer> pin,
+                        ContentReference encounterRef, List<ContentReference> statblockRefs,
+                        List<ContentReference> handoutRefs, String summary, String sourceLocator,
+                        List<String> tags, String mapRegionKey,
+                        List<SceneSectionDto> sections, List<SceneCheckDto> checks,
+                        List<SceneParticipantDto> participants, List<SceneTransitionDto> transitions,
+                        List<SceneLinkDto> links, ContentReference sceneCueRef) {
+            this(key, title, body, status, sortOrder, mapRef, pin, encounterRef,
+                    statblockRefs, handoutRefs, summary, sourceLocator, tags, mapRegionKey,
+                    sections, checks, participants, transitions, links, sceneCueRef, null);
+        }
+    }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record SceneSectionDto(

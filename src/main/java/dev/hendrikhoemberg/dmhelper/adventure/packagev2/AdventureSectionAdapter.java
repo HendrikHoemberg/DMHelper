@@ -184,7 +184,8 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                                                     sc.getMapRegionKey(),
                                                     sectionDtos, checkDtos, participantDtos,
                                                     transitionDtos, linkDtos,
-                                                    sceneCueRef
+                                                    sceneCueRef,
+                                                    sc.getMapRequirement() == null ? null : sc.getMapRequirement().name()
                                             );
                                         }).toList();
                                 return new ChapterDto(chKey, ch.getTitle(), ch.getIntro(), ch.getSortOrder(), sceneDtos);
@@ -269,6 +270,11 @@ public class AdventureSectionAdapter implements CampaignSectionExporter, Campaig
                         sc.setTags(String.join(",", scDto.tags()));
                     }
                     sc.setMapRegionKey(scDto.mapRegionKey());
+                    if (scDto.mapRequirement() != null && !scDto.mapRequirement().isBlank()) {
+                        sc.setMapRequirement(
+                                dev.hendrikhoemberg.dmhelper.adventure.data.SceneMapRequirement
+                                        .valueOf(scDto.mapRequirement()));
+                    }
                     if (scDto.sections() != null) {
                         for (SceneSectionDto secDto : scDto.sections()) {
                             SceneSection sec = new SceneSection();
