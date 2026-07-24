@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.web;
 
+import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.readiness.CampaignReadinessFacade;
@@ -9,6 +10,8 @@ import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignScaleService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignValidationResult;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
@@ -41,13 +44,17 @@ public class CampaignController {
     private final CampaignScaleService scaleService;
     private final CampaignReadinessFacade readinessFacade;
     private final ReadinessRepairService repairService;
+    private final AdventureService adventureService;
+    private final EncounterRepository encounterRepository;
 
     public CampaignController(CampaignService service, NoteService noteService,
                               PartyMemberService partyMemberService,
                               AudioCueRepository audioCueRepository,
                               CampaignScaleService scaleService,
                               CampaignReadinessFacade readinessFacade,
-                              ReadinessRepairService repairService) {
+                              ReadinessRepairService repairService,
+                              AdventureService adventureService,
+                              EncounterRepository encounterRepository) {
         this.service = service;
         this.noteService = noteService;
         this.partyMemberService = partyMemberService;
@@ -55,6 +62,8 @@ public class CampaignController {
         this.scaleService = scaleService;
         this.readinessFacade = readinessFacade;
         this.repairService = repairService;
+        this.adventureService = adventureService;
+        this.encounterRepository = encounterRepository;
     }
 
     @GetMapping("/new")
@@ -128,7 +137,15 @@ public class CampaignController {
                 .sorted(java.util.Comparator.comparing(Note::getCreatedAt).reversed())
                 .limit(5)
                 .toList());
+        addRunEntryPoints(id, model);
         return "campaigns/detail";
+    }
+
+    @GetMapping("/{id}/settings")
+    public String settings(@PathVariable UUID id, Model model) {
+        model.addAttribute("campaign", service.findById(id));
+        model.addAttribute("campaignId", id);
+        return "campaigns/settings";
     }
 
     @PutMapping("/{id}")
@@ -148,7 +165,14 @@ public class CampaignController {
                 .sorted(java.util.Comparator.comparing(Note::getCreatedAt).reversed())
                 .limit(5)
                 .toList());
+        addRunEntryPoints(id, model);
         return "campaigns/detail";
+    }
+
+    private void addRunEntryPoints(UUID campaignId, Model model) {
+        adventureService.getCurrentScene(campaignId).ifPresent(s -> model.addAttribute("currentScene", s));
+        encounterRepository.findByCampaignIdAndStatus(campaignId, Encounter.Status.ACTIVE)
+                .ifPresent(e -> model.addAttribute("activeEncounterId", e.getId()));
     }
 
     @PutMapping("/{id}/milestone")

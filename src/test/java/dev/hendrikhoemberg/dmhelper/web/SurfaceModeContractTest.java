@@ -28,6 +28,7 @@ class SurfaceModeContractTest {
         map.put("encounter/detail.html", "read");
         map.put("party/list.html", "read");
         map.put("session/cockpit.html", "run");
+        map.put("campaigns/settings.html", "admin");
         return map;
     }
 

@@ -50,13 +50,8 @@ class CampaignDashboardScaleTest {
     }
 
     @Test
-    void editFormIsDemotedBehindADisclosure() {
-        int formAt = body.indexOf("id=\"editName\"");
-        assertThat(formAt).as("edit form must still exist").isGreaterThan(-1);
-        int detailsAt = body.lastIndexOf("<details", formAt);
-        int gridEndAt = body.lastIndexOf("dash-grid", formAt);
-        assertThat(detailsAt)
-                .as("edit form must sit inside a disclosure, not a top-level dashboard card")
-                .isGreaterThan(gridEndAt);
+    void editFormHasBeenMovedToSettings() {
+        assertThat(body).as("the home no longer carries an inline edit form")
+                .doesNotContain("id=\"editName\"");
     }
 }

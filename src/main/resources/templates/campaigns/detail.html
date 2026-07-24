@@ -17,9 +17,17 @@
                    th:text="${campaign.description}">Description</p>
             </div>
 
-            <div class="dash-actions u-mb-lg">
-                <a class="btn btn-primary" th:href="@{/campaigns/{id}/session(id=${campaign.id})}">Run Session</a>
-                <a class="btn" th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">Plan Adventures</a>
+            <div class="dash-run u-mb-lg">
+                <a class="btn btn-primary" data-run-entry="session"
+                   th:href="@{/campaigns/{id}/session(id=${campaign.id})}">Run Session</a>
+                <a class="btn" data-run-entry="scene" th:if="${currentScene != null}"
+                   th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaign.id}, aid=${currentScene.chapter.adventure.id}, sid=${currentScene.id})}">Current scene</a>
+                <a class="btn" data-run-entry="encounter" th:if="${activeEncounterId != null}"
+                   th:href="@{/campaigns/{id}/encounters/{eid}(id=${campaign.id}, eid=${activeEncounterId})}">Active encounter</a>
+                <a class="btn" data-run-entry="adventures"
+                   th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">Plan Adventures</a>
+                <a class="btn" data-run-entry="settings"
+                   th:href="@{/campaigns/{id}/settings(id=${campaign.id})}">Settings</a>
             </div>
 
             <th:block th:replace="~{party/_summary-bar :: summary-bar(view=${partyMembers}, mode=${null}, oob=${null})}"></th:block>
@@ -122,75 +130,8 @@
                 </section>
             </div>
 
-            <details class="dash-edit u-mt-lg">
-                <summary>Edit campaign details</summary>
-                <form th:hx-put="@{/campaigns/{id}(id=${campaign.id})}"
-                      hx-target="body"
-                      hx-swap="outerHTML">
-                    <div class="form-group">
-                        <label for="editName">Name</label>
-                        <input type="text" id="editName" name="name" required
-                               th:value="${campaign.name}">
-                    </div>
-                    <div class="form-group">
-                        <label for="editDescription">Description</label>
-                        <textarea id="editDescription" name="description"
-                                  th:text="${campaign.description}"></textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                    </div>
-                </form>
-            </details>
 
-            <details class="dash-data-tools u-mt-lg">
-                <summary>Data &amp; import/export</summary>
-                <div class="dash-data-tools__body">
-                    <div class="export-package-group">
-                        <form th:action="@{/campaigns/{id}/package(id=${campaign.id})}"
-                              method="GET">
-                            <input type="hidden" name="includeCombatLog" value="true" id="includeCombatLog">
-                            <input type="hidden" name="includeDiceHistory" value="true" id="includeDiceHistory">
-                            <label class="checkbox-label">
-                                <input type="checkbox" checked
-                                       onchange="document.getElementById('includeCombatLog').value=this.checked">
-                                Combat Log
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" checked
-                                       onchange="document.getElementById('includeDiceHistory').value=this.checked">
-                                Dice History
-                            </label>
-                            <button type="submit" class="btn">Export Campaign Package</button>
-                        </form>
-                    </div>
-                    <a th:href="@{/campaigns/{id}/export(id=${campaign.id})}"
-                       class="btn" download>Export Legacy v1 JSON</a>
-                    <button class="btn"
-                            onclick="Alpine.$data(document.querySelector('[x-data=\'campaignImport\']')).openDialog()">
-                        Import Campaign Package
-                    </button>
-                    <form hx-post="/campaigns/import"
-                          hx-encoding="multipart/form-data"
-                          class="u-contents">
-                        <label class="btn">
-                            Import Legacy v1 JSON
-                            <input type="file" name="file" accept=".dmcampaign.json,application/json"
-                                   onchange="this.form.requestSubmit()"
-                                   class="hidden">
-                        </label>
-                    </form>
-                    <button class="btn btn-danger"
-                            th:hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
-                            hx-confirm="Delete this campaign?"
-                            hx-target="body"
-                            hx-swap="outerHTML">
-                        Delete Campaign
-                    </button>
-                </div>
-            </details>
         </main>
     </div>
-    <th:block th:replace="~{campaigns/_import-dialog :: import-dialog}"></th:block>
 </body>
 </html>

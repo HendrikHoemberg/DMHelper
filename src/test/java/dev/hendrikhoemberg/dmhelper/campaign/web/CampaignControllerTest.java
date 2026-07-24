@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.web;
 
+import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignScaleService;
@@ -30,6 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.readiness.CampaignReadinessFacade;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.readiness.CampaignReadinessReport;
 import dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessRepairService;
 
@@ -62,6 +64,12 @@ class CampaignControllerTest {
 
     @MockitoBean
     private ReadinessRepairService repairService;
+
+    @MockitoBean
+    private AdventureService adventureService;
+
+    @MockitoBean
+    private EncounterRepository encounterRepository;
 
     private Campaign sampleCampaign() {
         Campaign c = new Campaign();
@@ -135,6 +143,8 @@ class CampaignControllerTest {
         when(partyMemberService.findActiveByCampaignId(c.getId())).thenReturn(List.of());
         when(scaleService.scaleOf(any())).thenReturn(new CampaignScaleService.CampaignScale(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
         when(readinessFacade.reportForCampaign(any())).thenReturn(new CampaignReadinessReport(List.of()));
+        when(adventureService.getCurrentScene(any())).thenReturn(Optional.empty());
+        when(encounterRepository.findByCampaignIdAndStatus(any(), any())).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/campaigns/{id}", c.getId()))
                 .andExpect(status().isOk())
@@ -149,6 +159,8 @@ class CampaignControllerTest {
         when(service.findById(c.getId())).thenReturn(c);
         when(scaleService.scaleOf(any())).thenReturn(new CampaignScaleService.CampaignScale(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
         when(readinessFacade.reportForCampaign(any())).thenReturn(new CampaignReadinessReport(List.of()));
+        when(adventureService.getCurrentScene(any())).thenReturn(Optional.empty());
+        when(encounterRepository.findByCampaignIdAndStatus(any(), any())).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/campaigns/{id}", c.getId()))
                 .andExpect(status().isOk())
@@ -162,6 +174,8 @@ class CampaignControllerTest {
         when(service.update(eq(c.getId()), eq("Updated Name"), any())).thenReturn(c);
         when(scaleService.scaleOf(any())).thenReturn(new CampaignScaleService.CampaignScale(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
         when(readinessFacade.reportForCampaign(any())).thenReturn(new CampaignReadinessReport(List.of()));
+        when(adventureService.getCurrentScene(any())).thenReturn(Optional.empty());
+        when(encounterRepository.findByCampaignIdAndStatus(any(), any())).thenReturn(Optional.empty());
 
         mockMvc.perform(put("/campaigns/{id}", c.getId())
                         .param("name", "Updated Name")
