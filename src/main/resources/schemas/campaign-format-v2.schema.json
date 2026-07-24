@@ -110,6 +110,19 @@
           "type": "array",
           "uniqueItems": true,
           "items": { "enum": ["COMBAT_LOG", "DICE_HISTORY"] }
+        },
+        "conversionOmissions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["area", "reason"],
+            "properties": {
+              "area": { "type": "string", "minLength": 1 },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
         }
       }
     },

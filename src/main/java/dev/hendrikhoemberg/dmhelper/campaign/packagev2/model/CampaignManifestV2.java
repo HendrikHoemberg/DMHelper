@@ -65,7 +65,10 @@ public record CampaignManifestV2(
         if (hazards == null) hazards = List.of();
         if (audioCues == null) audioCues = List.of();
     }
-    public static final int CURRENT_FORMAT_VERSION = 2;
+    public static final int CURRENT_FORMAT_VERSION = 3;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record ConversionOmissionDto(String area, String reason) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Metadata(
@@ -74,8 +77,19 @@ public record CampaignManifestV2(
             String generator,
             String catalogVersion,
             String catalogSha256,
-            List<CampaignExportExclusion> exclusions
-    ) {}
+            List<CampaignExportExclusion> exclusions,
+            List<ConversionOmissionDto> conversionOmissions
+    ) {
+        public Metadata {
+            if (conversionOmissions == null) conversionOmissions = List.of();
+        }
+
+        public Metadata(String packageKey, Instant createdAt, String generator,
+                        String catalogVersion, String catalogSha256,
+                        List<CampaignExportExclusion> exclusions) {
+            this(packageKey, createdAt, generator, catalogVersion, catalogSha256, exclusions, List.of());
+        }
+    }
 
     public enum LevelingMode { XP, MILESTONE }
 
