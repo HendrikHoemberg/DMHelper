@@ -24,6 +24,23 @@
                         <dt>Package Size</dt><dd x-text="(preview.packageSizeBytes / 1024).toFixed(1) + ' KB'"></dd>
                     </dl>
 
+                    <template x-if="preview.readiness">
+                        <div>
+                            <h3>Operational readiness</h3>
+                            <p class="import-readiness__label"
+                               x-text="preview.readiness.items.filter(i => i.state === 'BLOCKER').length === 0
+                                   ? 'Session-ready'
+                                   : 'Valid but not session-ready'"></p>
+                            <template x-if="preview.readiness.items.filter(i => i.state === 'BLOCKER').length">
+                                <ul>
+                                    <template x-for="item in preview.readiness.items.filter(i => i.state === 'BLOCKER')">
+                                        <li x-text="item.title"></li>
+                                    </template>
+                                </ul>
+                            </template>
+                        </div>
+                    </template>
+
                     <template x-if="preview.problems && preview.problems.length">
                         <div>
                             <h3>Validation</h3>

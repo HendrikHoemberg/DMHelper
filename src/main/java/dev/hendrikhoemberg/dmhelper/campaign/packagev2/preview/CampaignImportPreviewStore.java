@@ -3,6 +3,9 @@ package dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignExportExclusion;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignPackageValidationResult;
+import dev.hendrikhoemberg.dmhelper.campaign.readiness.CampaignReadinessReport;
+import dev.hendrikhoemberg.dmhelper.campaign.readiness.CampaignReadinessService;
+import dev.hendrikhoemberg.dmhelper.campaign.readiness.PreviewReadinessAssembler;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
@@ -15,7 +18,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,16 +28,27 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CampaignImportPreviewStore {
 
     private final ConcurrentHashMap<UUID, PendingCampaignImport> previews = new ConcurrentHashMap<>();
+    private final PreviewReadinessAssembler assembler;
+    private final CampaignReadinessService readinessService;
     private final Path stagingRoot;
     private final Clock clock;
 
     public CampaignImportPreviewStore() {
-        this(Paths.get(System.getProperty("user.home"), ".dmhelper", "import-staging"), Clock.systemUTC());
+        this(null, null, Paths.get(System.getProperty("user.home"), ".dmhelper", "import-staging"), Clock.systemUTC());
     }
 
-    public CampaignImportPreviewStore(Path stagingRoot, Clock clock) {
+    public CampaignImportPreviewStore(PreviewReadinessAssembler assembler,
+                                       CampaignReadinessService readinessService,
+                                       Path stagingRoot, Clock clock) {
+        this.assembler = assembler;
+        this.readinessService = readinessService;
         this.stagingRoot = stagingRoot;
         this.clock = clock;
+    }
+
+    // test-only constructor
+    CampaignImportPreviewStore(Path stagingRoot, Clock clock) {
+        this(null, null, stagingRoot, clock);
     }
 
     @PostConstruct
@@ -76,8 +92,8 @@ public class CampaignImportPreviewStore {
         });
     }
 
-    private static CampaignImportPreview preview(UUID id, String status,
-                                                 CampaignPackageValidationResult result, Instant expiresAt) {
+    private CampaignImportPreview preview(UUID id, String status,
+                                           CampaignPackageValidationResult result, Instant expiresAt) {
         CampaignManifestV2 manifest = result.manifest();
         long installed = manifest == null || manifest.assets() == null ? 0
                 : manifest.assets().stream().mapToLong(a -> a.sizeBytes()).sum();
@@ -89,10 +105,13 @@ public class CampaignImportPreviewStore {
                 + size(manifest.customSpecies()) + size(manifest.customBackgrounds())
                 + size(manifest.customFeats()) + size(manifest.adventures())
                 + size(manifest.traps()) + size(manifest.hazards());
+        CampaignReadinessReport readiness = manifest != null && assembler != null && readinessService != null
+                ? readinessService.compute(assembler.fromManifest(manifest), Set.of())
+                : new CampaignReadinessReport(List.of());
         return new CampaignImportPreview(id, status, result.sourceFormatVersion(), 2, counts(manifest),
                 result.stagedPackage().uploadedBytes(), installed, provenance,
                 Math.max(0, provenanceEligible - provenance), exclusions(manifest), result.migrations(),
-                result.problems(), expiresAt);
+                result.problems(), expiresAt, readiness);
     }
 
     private static CampaignEntityCounts counts(CampaignManifestV2 m) {
