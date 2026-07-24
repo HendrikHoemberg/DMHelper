@@ -34,6 +34,22 @@
       </span>
     </li>
   </ul>
+  <th:block th:with="accepted=${readiness.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).ACCEPTED)}">
+    <details class="readiness-accepted" th:if="${!accepted.isEmpty()}" open>
+      <summary th:text="|Accepted as explicit choices (${accepted.size()})|">Accepted as explicit choices</summary>
+      <ul class="readiness-list">
+        <li th:each="item : ${accepted}" class="readiness-item readiness-item--accepted">
+          <span class="readiness-item__title" th:text="${item.title()}">Title</span>
+          <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
+          <span class="readiness-item__actions">
+            <button type="button" class="readiness-item__undo"
+                    th:hx-delete="@{/campaigns/{cid}/readiness/accept(cid=${campaignId},itemKey=${item.key()})}"
+                    hx-target="closest .readiness-panel" hx-swap="outerHTML">Undo</button>
+          </span>
+        </li>
+      </ul>
+    </details>
+  </th:block>
   <th:block th:with="advisories=${readiness.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).RESOLVED)}">
     <details class="readiness-advisories" th:if="${!advisories.isEmpty()}">
       <summary th:text="|Notes &amp; advisories (${advisories.size()})|">Notes &amp; advisories</summary>

@@ -134,4 +134,41 @@ class ReadinessControllerTest {
 
         assertThat(facade.reportForCampaign(cid).sessionReady()).isFalse();
     }
+
+    @Test
+    void acceptedItemsRenderWithAnUndoControl() throws Exception {
+        Campaign campaign = campaignService.create("Test Campaign", null);
+        UUID cid = campaign.getId();
+
+        Adventure adventure = adventureService.createAdventure(cid, "Test Adventure", null, null);
+        Chapter chapter = adventureService.createChapter(adventure.getId(), "Chapter 1", null);
+        Scene scene = adventureService.createScene(chapter.getId(), "Ambush Encounter", null, null);
+
+        SceneParticipant participant = new SceneParticipant();
+        participant.setScene(scene);
+        participant.setDisplayName("Ambush Brute");
+        participant.setQuantity(1);
+        participant.setDisposition(SceneParticipantDisposition.HOSTILE);
+        participant.setSortOrder(0);
+        scene.getParticipants().add(participant);
+        participantRepo.save(participant);
+
+        em.flush();
+
+        ReadinessItem blocker = facade.reportForCampaign(cid).byState(ReadinessState.BLOCKER)
+                .stream().findFirst().orElseThrow();
+
+        // The fragment returned after accepting must surface the accepted item and an Undo control,
+        // so an explicit choice never becomes invisible.
+        mvc.perform(post("/campaigns/{cid}/readiness/accept", cid)
+                        .param("itemKey", blocker.key()))
+                .andExpect(status().isOk())
+                .andExpect(result -> {
+                    String body = result.getResponse().getContentAsString();
+                    assertThat(body).contains("Accepted as explicit choices");
+                    assertThat(body).contains(blocker.title());
+                    assertThat(body).contains("Undo");
+                    assertThat(body).contains("/readiness/accept?itemKey=");
+                });
+    }
 }
