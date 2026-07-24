@@ -19,8 +19,8 @@ class CampaignReadinessServiceTest {
 
     @Test
     void hostileSceneWithoutEncounterOrStatblocksIsBlocker() {
-        var scene = new ReadinessInputs.SceneInput(UUID.randomUUID(), "Klarg", true,
-                false, false, List.of("Klarg"), null, false);
+        var scene = new ReadinessInputs.SceneInput(UUID.randomUUID(), "Ambush Brute", true,
+                false, false, List.of("Ambush Brute"), null, false);
         var report = service.compute(inputs(scene), Set.of());
         assertThat(report.sessionReady()).isFalse();
         assertThat(report.byState(ReadinessState.BLOCKER))
@@ -29,7 +29,7 @@ class CampaignReadinessServiceTest {
 
     @Test
     void seedableHostileSceneIsResolvedEncounterButFlagsMissingStatblocks() {
-        var scene = new ReadinessInputs.SceneInput(UUID.randomUUID(), "Klarg", true,
+        var scene = new ReadinessInputs.SceneInput(UUID.randomUUID(), "Ambush Brute", true,
                 false, true, List.of("Goblin 3"), null, false);
         var report = service.compute(inputs(scene), Set.of());
         assertThat(report.byState(ReadinessState.BLOCKER))
@@ -38,7 +38,7 @@ class CampaignReadinessServiceTest {
 
     @Test
     void hostileSceneInfersRequiredMapWhenNotDeclared() {
-        var scene = new ReadinessInputs.SceneInput(UUID.randomUUID(), "Klarg", true,
+        var scene = new ReadinessInputs.SceneInput(UUID.randomUUID(), "Ambush Brute", true,
                 true, true, List.of(), null, false);
         var report = service.compute(inputs(scene), Set.of());
         assertThat(report.byState(ReadinessState.BLOCKER))
@@ -57,7 +57,7 @@ class CampaignReadinessServiceTest {
 
     @Test
     void acceptedBlockerBecomesAccepted() {
-        var scene = new ReadinessInputs.SceneInput(UUID.randomUUID(), "Klarg", true,
+        var scene = new ReadinessInputs.SceneInput(UUID.randomUUID(), "Ambush Brute", true,
                 false, false, List.of(), null, false);
         var first = service.compute(inputs(scene), Set.of());
         var blockerKeys = first.items().stream()

@@ -35,11 +35,11 @@ class CampaignReadinessFacadeTest {
 
         Adventure adventure = adventureService.createAdventure(cid, "Test Adventure", null, null);
         Chapter chapter = adventureService.createChapter(adventure.getId(), "Chapter 1", null);
-        Scene scene = adventureService.createScene(chapter.getId(), "Klarg's Ambush", null, null);
+        Scene scene = adventureService.createScene(chapter.getId(), "Ambush Encounter", null, null);
 
         SceneParticipant participant = new SceneParticipant();
         participant.setScene(scene);
-        participant.setDisplayName("Klarg");
+        participant.setDisplayName("Ambush Brute");
         participant.setQuantity(1);
         participant.setDisposition(SceneParticipantDisposition.HOSTILE);
         participant.setSortOrder(0);

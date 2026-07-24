@@ -66,10 +66,10 @@ public class CampaignFixtures {
         Adventure adventure = adventures.createAdventure(cid, "Test Adventure", null, null);
         Chapter chapter = adventures.createChapter(adventure.getId(), "Chapter 1", null);
 
-        Scene hostileScene = adventures.createScene(chapter.getId(), "Klarg's Ambush", null, null);
+        Scene hostileScene = adventures.createScene(chapter.getId(), "Ambush Encounter", null, null);
         SceneParticipant hostile = new SceneParticipant();
         hostile.setScene(hostileScene);
-        hostile.setDisplayName("Klarg");
+        hostile.setDisplayName("Ambush Brute");
         hostile.setQuantity(1);
         hostile.setDisposition(SceneParticipantDisposition.HOSTILE);
         hostile.setSortOrder(0);
@@ -103,7 +103,7 @@ public class CampaignFixtures {
 
         StatBlock statblock = new StatBlock();
         statblock.setSource(ContentSource.CUSTOM);
-        statblock.setName("Klarg");
+        statblock.setName("Ambush Brute");
         statblock.setCr("1");
         statblock.setType("Humanoid");
         statblock.setAc(14);
@@ -119,11 +119,11 @@ public class CampaignFixtures {
         Adventure adventure = adventures.createAdventure(cid, "Test Adventure", null, null);
         Chapter chapter = adventures.createChapter(adventure.getId(), "Chapter 1", null);
 
-        Scene hostileScene = adventures.createScene(chapter.getId(), "Klarg's Ambush", null, null);
+        Scene hostileScene = adventures.createScene(chapter.getId(), "Ambush Encounter", null, null);
         hostileScene.setMapRequirement(SceneMapRequirement.NONE);
         SceneParticipant hostile = new SceneParticipant();
         hostile.setScene(hostileScene);
-        hostile.setDisplayName("Klarg");
+        hostile.setDisplayName("Ambush Brute");
         hostile.setQuantity(1);
         hostile.setDisposition(SceneParticipantDisposition.HOSTILE);
         hostile.setStatBlock(statblock);
