@@ -1,20 +1,36 @@
-<div th:fragment="readiness(report, campaignId)" class="readiness-panel"
-     th:classappend="${report.sessionReady()} ? 'is-ready' : 'is-blocked'">
+<div th:fragment="readiness" class="readiness-panel"
+     th:classappend="${readiness.sessionReady()} ? 'is-ready' : 'is-blocked'">
   <header class="readiness-panel__head">
     <h3>Session readiness</h3>
-    <span class="readiness-badge" th:text="${report.label()}">Session-ready</span>
+    <span class="readiness-badge" th:text="${readiness.label()}">Session-ready</span>
   </header>
-  <p th:if="${report.sessionReady()}" class="readiness-empty">
+  <p th:if="${readiness.sessionReady()}" class="readiness-empty">
     Every blocker is resolved or accepted. This is distinct from schema validity.
   </p>
-  <ul th:unless="${report.sessionReady()}" class="readiness-list">
-    <li th:each="item : ${report.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).BLOCKER)}"
+  <ul th:unless="${readiness.sessionReady()}" class="readiness-list">
+    <li th:each="item : ${readiness.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).BLOCKER)}"
         class="readiness-item readiness-item--blocker">
       <span class="readiness-item__title" th:text="${item.title()}">Title</span>
       <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
+      <span class="readiness-item__actions">
+        <a th:with="href=${repairService.hrefFor(campaignId, item.repairKind(), item.targetId())}"
+           th:if="${href != null}" th:href="${href}" class="readiness-item__repair">Fix in preparation</a>
+        <form th:action="@{|/campaigns/${campaignId}/readiness/accept|}" method="post" class="inline-form">
+          <input type="hidden" name="itemKey" th:value="${item.key()}"/>
+          <button type="submit">Accept</button>
+        </form>
+        <form th:if="${item.category().name() == 'ASSET'}"
+              th:action="@{|/campaigns/${campaignId}/readiness/assets/${item.targetId()}/kind|}" method="post" class="inline-form">
+          <select name="kind">
+            <option th:each="k : ${T(dev.hendrikhoemberg.dmhelper.handout.data.Handout.AssetKind).values()}"
+                    th:value="${k}" th:text="${k}"></option>
+          </select>
+          <button type="submit">Set kind</button>
+        </form>
+      </span>
     </li>
   </ul>
-  <th:block th:with="advisories=${report.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).RESOLVED)}">
+  <th:block th:with="advisories=${readiness.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).RESOLVED)}">
     <details class="readiness-advisories" th:if="${!advisories.isEmpty()}">
       <summary th:text="|Notes &amp; advisories (${advisories.size()})|">Notes &amp; advisories</summary>
       <ul>

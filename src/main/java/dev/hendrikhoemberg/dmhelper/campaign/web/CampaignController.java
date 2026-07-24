@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.campaign.web;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.readiness.CampaignReadinessFacade;
+import dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessRepairService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignScaleService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
@@ -39,18 +40,21 @@ public class CampaignController {
     private final AudioCueRepository audioCueRepository;
     private final CampaignScaleService scaleService;
     private final CampaignReadinessFacade readinessFacade;
+    private final ReadinessRepairService repairService;
 
     public CampaignController(CampaignService service, NoteService noteService,
                               PartyMemberService partyMemberService,
                               AudioCueRepository audioCueRepository,
                               CampaignScaleService scaleService,
-                              CampaignReadinessFacade readinessFacade) {
+                              CampaignReadinessFacade readinessFacade,
+                              ReadinessRepairService repairService) {
         this.service = service;
         this.noteService = noteService;
         this.partyMemberService = partyMemberService;
         this.audioCueRepository = audioCueRepository;
         this.scaleService = scaleService;
         this.readinessFacade = readinessFacade;
+        this.repairService = repairService;
     }
 
     @GetMapping("/new")
@@ -112,6 +116,7 @@ public class CampaignController {
         model.addAttribute("campaign", service.findById(id));
         model.addAttribute("campaignId", id);
         model.addAttribute("readiness", readinessFacade.reportForCampaign(id));
+        model.addAttribute("repairService", repairService);
         model.addAttribute("scale", scaleService.scaleOf(id));
         var plans = noteService.findByCampaignIdAndType(id, NoteType.SESSION_PLAN);
         if (!plans.isEmpty()) {
@@ -135,6 +140,7 @@ public class CampaignController {
         model.addAttribute("campaign", campaign);
         model.addAttribute("campaignId", id);
         model.addAttribute("readiness", readinessFacade.reportForCampaign(id));
+        model.addAttribute("repairService", repairService);
         model.addAttribute("scale", scaleService.scaleOf(id));
         model.addAttribute("partyMembers", partyMemberService.findActiveByCampaignId(id));
         model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(id));
