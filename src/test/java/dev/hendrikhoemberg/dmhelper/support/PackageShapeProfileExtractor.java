@@ -66,6 +66,27 @@ public final class PackageShapeProfileExtractor {
             counts.put(top, children(manifest, top).size());
         }
 
+        int nonSourcePage = 0;
+        for (JsonNode h : children(manifest, "handouts")) {
+            JsonNode ak = h.get("assetKind");
+            if (ak != null && !"SOURCE_PAGE".equals(ak.asText())) {
+                nonSourcePage++;
+            }
+        }
+        counts.put("handout.nonSourcePageAssetKind", nonSourcePage);
+
+        int mapReqPresent = 0;
+        for (JsonNode sc : scenes) {
+            if (sc.hasNonNull("mapRequirement")) {
+                mapReqPresent++;
+            }
+        }
+        counts.put("scene.mapRequirement", mapReqPresent);
+
+        JsonNode meta = manifest.get("metadata");
+        counts.put("metadata.conversionOmissions",
+                meta != null && meta.hasNonNull("conversionOmissions") ? 1 : 0);
+
         SortedMap<String, Integer> populated = new TreeMap<>();
         tally(populated, "scene", scenes);
         tally(populated, "sceneSection", sections);

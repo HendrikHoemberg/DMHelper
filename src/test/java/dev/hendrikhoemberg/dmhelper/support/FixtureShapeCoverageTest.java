@@ -204,6 +204,17 @@ class FixtureShapeCoverageTest {
     }
 
     @Test
+    void readinessShapeCountsArePresentInTheProfile() {
+        assertThat(profile.counts())
+                .as("""
+                    The shape profile must track handout.assetKind adoption, scene.mapRequirement \
+                    usage, and metadata.conversionOmissions presence. If the profile was regenerated \
+                    without these entries, re-extract after extending the extractor.""")
+                .containsKeys("handout.nonSourcePageAssetKind", "scene.mapRequirement",
+                        "metadata.conversionOmissions");
+    }
+
+    @Test
     void nestedLocationCoverageIsNotSacrificedToMatchTheProfile() {
         assertThat(seeded.childLocationId()).isNotNull();
         long nested = (Long) em.createQuery(
