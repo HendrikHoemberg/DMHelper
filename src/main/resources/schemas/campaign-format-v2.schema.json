@@ -892,6 +892,7 @@
         "sourceLocator": { "type": "string" },
         "tags": { "type": "array", "items": { "type": "string" } },
         "mapRegionKey": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,99}$" },
+        "mapRequirement": { "type": "string", "enum": ["REQUIRED", "OPTIONAL", "NONE"] },
         "sections": { "type": "array", "items": { "$ref": "#/$defs/sceneSection" } },
         "checks": { "type": "array", "items": { "$ref": "#/$defs/sceneCheck" } },
         "participants": { "type": "array", "items": { "$ref": "#/$defs/sceneParticipant" } },
