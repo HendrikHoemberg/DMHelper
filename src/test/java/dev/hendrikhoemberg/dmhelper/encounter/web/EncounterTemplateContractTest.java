@@ -41,7 +41,9 @@ class EncounterTemplateContractTest {
 
     @Test
     void trackerRendersActiveThreatCardOnly() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/encounter/_tracker.html"));
+        // Tracker behavior is split across the template (markup) and combat-tracker.js (logic).
+        String html = Files.readString(Path.of("src/main/resources/templates/encounter/_tracker.html"))
+                + Files.readString(Path.of("src/main/resources/static/js/combat-tracker.js"));
         assertThat(html).contains("activeThreatCard");
         assertThat(html).contains("data-active-threat-card");
         assertThat(html).contains("x-show=\"activeThreatCard && !tableSafe\"");
@@ -109,7 +111,8 @@ class EncounterTemplateContractTest {
 
     @Test
     void trackerEndEncounterDispatchesEncounterEndEvent() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/encounter/_tracker.html"));
+        // endEncounter's event dispatch lives in combat-tracker.js after the script extraction.
+        String html = Files.readString(Path.of("src/main/resources/static/js/combat-tracker.js"));
         assertThat(html).contains("dispatchEvent(new CustomEvent('cockpit-encounter-ended'")
                 .as("tracker endEncounter should dispatch a cockpit-encounter-ended event");
     }
@@ -137,8 +140,10 @@ class EncounterTemplateContractTest {
 
     @Test
     void trackerExposesAccessibleInitiativeSetupActions() throws IOException {
+        // Setup markup lives in the template; its endpoints/handlers in combat-tracker.js.
         String html = Files.readString(
-                Path.of("src/main/resources/templates/encounter/_tracker.html"));
+                Path.of("src/main/resources/templates/encounter/_tracker.html"))
+                + Files.readString(Path.of("src/main/resources/static/js/combat-tracker.js"));
 
         assertThat(html).contains(
                 "data-initiative-setup",

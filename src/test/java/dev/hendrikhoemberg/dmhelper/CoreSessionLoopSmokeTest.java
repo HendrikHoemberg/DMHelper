@@ -435,9 +435,9 @@ class CoreSessionLoopSmokeTest {
                 """);
         assertThat(previewTitle).as("embedded player page has accessible title").isNotBlank();
 
-        String fullPlayerHtml = (String) dmPage.evaluate(
-                "() => fetch('/player').then(r => r.text())");
-        assertThat(fullPlayerHtml).contains("pv-status");
+        dmPage.navigate("http://localhost:" + port + "/player");
+        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(dmPage.content()).contains("pv-status");
 
         playerContext.close();
     }
@@ -598,9 +598,12 @@ class CoreSessionLoopSmokeTest {
         Number domContentLoaded = (Number) dmPage.evaluate(
                 "performance.getEntriesByType('navigation')[0].domContentLoadedEventEnd");
         assertThat(domContentLoaded.doubleValue()).isLessThan(2_000);
+        // Task 8 relocated "Present current map"/Curtain out of the Map chrome into the
+        // Presentation module, so the Combat preset (no Presentation zone) must NOT expose it;
+        // its presence in the Presentation module is covered by the template contract test.
         assertThat(dmPage.locator("button", new Page.LocatorOptions().setHasText("Present current map")).count())
-                .isEqualTo(1);
-        // Topbar badge + map chrome + presentation module each mirror presentation mode.
+                .isZero();
+        // The compact global presentation status badge remains in the command bar in every preset.
         assertThat(dmPage.locator("[data-presentation-mode]").count()).isGreaterThanOrEqualTo(1);
 
         dmPage.keyboard().press("]");
@@ -1308,10 +1311,13 @@ class CoreSessionLoopSmokeTest {
 
         adventureService.setCurrentScene(campaignId, first.getId());
 
-        // 4. Open story card in cockpit (mechanics card shows trigger/damage, not definition name)
+        // 4. Open story card in cockpit (mechanics card shows trigger/damage, not definition name).
+        // Threat mechanics render inside the scene sections, which Compact mode hides (Task 4). The
+        // Exploration preset renders Story in the primary zone at Standard mode, so use it here rather
+        // than Combat (whose left-rail Story is Compact and intentionally omits section bodies).
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
-        selectCockpitPreset("builtin:combat");
+        selectCockpitPreset("builtin:exploration");
         assertThat(dmPage.textContent("body")).contains("Browser Spike Pit");
         Locator storyCard = dmPage.locator(".threat-mechanics-card")
                 .filter(new Locator.FilterOptions().setHasText("2d10"));
@@ -3524,7 +3530,19 @@ class CoreSessionLoopSmokeTest {
     @Test
     @Order(39)
     void sessionLogModuleRendersDuringSession() {
-        startSession();
+        // Self-sufficient about session state: an earlier @Order test may leave the session in
+        // REVIEW/PAUSED, and startSession() no-ops on any open session, so normalize to RUNNING.
+        CampaignSession.Status status = sessionRepository.findByCampaignId(campaignId)
+                .map(CampaignSession::getStatus).orElse(CampaignSession.Status.IDLE);
+        switch (status) {
+            case IDLE -> sessionLifecycleService.start(campaignId, mapId);
+            case REVIEW -> {
+                sessionLifecycleService.cancelReview(campaignId); // REVIEW -> PAUSED
+                sessionLifecycleService.resume(campaignId);       // PAUSED -> RUNNING
+            }
+            case PAUSED -> sessionLifecycleService.resume(campaignId);
+            case RUNNING -> { /* already running */ }
+        }
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
         selectCockpitPreset("builtin:combat");

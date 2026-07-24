@@ -29,7 +29,8 @@ class InteractionFailureContractTest {
 
     @Test
     void mutationSurfacesUseCheckedRequests() throws IOException {
-        assertThat(read("templates/encounter/_tracker.html"))
+        // The tracker's request logic moved from the inline template script to combat-tracker.js.
+        assertThat(read("static/js/combat-tracker.js"))
                 .contains("window.dmRequest", "window.reportActionFailure");
         assertThat(read("templates/fragments/navbar.html"))
                 .contains("window.dmRequest", "window.reportActionFailure");

@@ -441,7 +441,8 @@
                 <div class="detail-focused-statblock" x-show="trackerMode === 'FOCUSED'">
                     <h4>Statblock</h4>
                     <div x-show="focusedStatblockLoading" style="font-size: var(--text-sm); color: var(--color-text-muted);">Loading...</div>
-                    <div x-show="!focusedStatblockLoading && focusedStatblock" style="font-size: var(--text-sm);">
+                    <template x-if="!focusedStatblockLoading && focusedStatblock">
+                      <div style="font-size: var(--text-sm);">
                         <div x-show="focusedStatblock.size" class="u-text-xs">
                             <span>Size: </span><span x-text="focusedStatblock.size"></span>
                         </div>
@@ -522,7 +523,8 @@
                                 </div>
                             </template>
                         </div>
-                    </div>
+                      </div>
+                    </template>
                     <div x-show="!focusedStatblockLoading && !focusedStatblock && selected?.statBlockId" class="u-text-xs text-muted">
                         Statblock unavailable
                     </div>

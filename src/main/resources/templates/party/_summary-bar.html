@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="party-summary-bar" id="party-summary-bar" th:fragment="summary-bar(view, mode)"
-     th:attr="data-module-mode=${mode}">
+<div class="party-summary-bar" id="party-summary-bar" th:fragment="summary-bar(view, mode, oob)"
+     th:attr="data-module-mode=${mode}, hx-swap-oob=${oob}">
     <span class="bar-label">Party</span>
     <th:block th:if="${view == null or view.isEmpty()}">
         <span class="empty-text">No party members yet.</span>

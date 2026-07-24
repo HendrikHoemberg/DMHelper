@@ -7,6 +7,7 @@
     constructor(config) {
       this.config = config;
       this.requests = new Map();
+      this.inflightModes = new Map();
       this.revisions = new Map();
       this.stale = new Set();
       this.loaded = new Set();
@@ -21,7 +22,11 @@
       this.discoverShells();
       this.registerListeners();
 
-      if (this._layoutApplied) {
+      // The layout controller boots before this one and dispatches cockpit:layout-applied
+      // synchronously during its own mount, so that event has usually already fired by now.
+      // Fall back to the layout controller's own mounted flag rather than waiting forever.
+      if (this._layoutApplied || window.cockpitLayout?.mounted) {
+        this._layoutApplied = true;
         this._mounted = true;
         return;
       }
@@ -84,8 +89,18 @@
           const shell = this._shells.get(key);
           if (!shell) continue;
           const behavior = shell.getAttribute('data-table-safe-behavior');
-          if (behavior === 'FILTER') {
+          if (behavior !== 'FILTER') continue;
+          // Re-fetch a visible FILTER module so its player-safe filtering re-applies. A hidden
+          // one must not force-load (that would pull depot/collapsed modules over the wire).
+          // Mark it stale directly so it reloads with the current safety state when next shown;
+          // do not route through invalidate(), whose attention event re-renders the layout and
+          // re-dispatches screen-safety-changed, causing infinite recursion.
+          if (this.isModuleVisible(key)) {
             this.load(key, { force: true });
+          } else {
+            this.stale.add(key);
+            const contentEl = shell.querySelector('[data-module-content]');
+            if (contentEl) contentEl.setAttribute('data-module-stale', 'true');
           }
         }
       });
@@ -94,6 +109,12 @@
     isModuleVisible(key) {
       const shell = this._shells.get(key);
       if (!shell) return false;
+      // The layout controller is authoritative about zones, active tabs, collapsed state,
+      // focus, screen-safety, and the hidden depot. A depot/collapsed/inactive-tab shell can
+      // still report a non-null offsetParent, so delegate rather than approximate here.
+      if (window.cockpitLayout && typeof window.cockpitLayout.isModuleVisible === 'function') {
+        return window.cockpitLayout.isModuleVisible(key);
+      }
       if (shell.offsetParent === null) return false;
       if (document.body?.dataset?.screenSafety === 'TABLE_SAFE') {
         const behavior = shell.getAttribute('data-table-safe-behavior');
@@ -128,10 +149,21 @@
 
       if (!options.force && !visible) return;
 
+      const requestedMode = options.mode || this.modeFor(moduleKey);
+
       if (!options.force
         && this.loaded.has(moduleKey)
         && !this.stale.has(moduleKey)
-        && options.mode === this.modeFor(moduleKey)) {
+        && requestedMode === this.modeFor(moduleKey)) {
+        return;
+      }
+
+      // If an identical (same-mode) request is already in flight, let it finish rather than
+      // aborting and refetching. Rapid preset cycling fires module-mode repeatedly before the
+      // first fetch resolves; without this guard each re-trigger would abort+restart the load.
+      if (!options.force
+        && this.requests.has(moduleKey)
+        && this.inflightModes.get(moduleKey) === requestedMode) {
         return;
       }
 
@@ -154,7 +186,7 @@
       endpoint = endpoint.replace('{campaignId}', this.config.campaignId || '');
 
       const params = new URLSearchParams();
-      params.set('mode', options.mode || this.modeFor(moduleKey));
+      params.set('mode', requestedMode);
       const mapId = options.mapId || this.config.mapId || '';
       if (mapId) params.set('mapId', mapId);
       const sep = endpoint.includes('?') ? '&' : '?';
@@ -164,6 +196,7 @@
 
       const controller = new AbortController();
       this.requests.set(moduleKey, controller);
+      this.inflightModes.set(moduleKey, requestedMode);
 
       const fetchOptions = {
         signal: controller.signal,
@@ -244,6 +277,13 @@
               retry
             }
           }));
+        })
+        .finally(() => {
+          // Only clear in-flight tracking if a newer request has not superseded this one.
+          if (this.revisions.get(moduleKey) === revision) {
+            this.requests.delete(moduleKey);
+            this.inflightModes.delete(moduleKey);
+          }
         });
     }
 

@@ -286,7 +286,7 @@ class CockpitRuntimeModuleContractTest {
     void partyFragmentUsesSummaryBarWithViewAndMode() throws IOException {
         String fragment = Files.readString(Path.of(
                 "src/main/resources/templates/session/modules/_party.html"));
-        assertThat(fragment).contains("summary-bar(view=${view.members}, mode=${mode})");
+        assertThat(fragment).contains("summary-bar(view=${view.members}, mode=${mode}, oob=${null})");
         assertThat(fragment).doesNotContain("summary-bar(members=");
     }
 
@@ -301,7 +301,7 @@ class CockpitRuntimeModuleContractTest {
     void partySummaryBarAcceptsViewAndMode() throws IOException {
         String bar = Files.readString(Path.of(
                 "src/main/resources/templates/party/_summary-bar.html"));
-        assertThat(bar).contains("th:fragment=\"summary-bar(view, mode)");
+        assertThat(bar).contains("th:fragment=\"summary-bar(view, mode, oob)");
         assertThat(bar).doesNotContain("th:fragment=\"summary-bar(members");
     }
 

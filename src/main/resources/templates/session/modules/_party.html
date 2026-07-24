@@ -9,7 +9,7 @@
       <div class="empty-state">No party members yet — add them in Party Preparation.</div>
     </th:block>
     <th:block th:if="${view != null and !view.members.isEmpty()}">
-      <th:block th:replace="~{party/_summary-bar :: summary-bar(view=${view.members}, mode=${mode})}"></th:block>
+      <th:block th:replace="~{party/_summary-bar :: summary-bar(view=${view.members}, mode=${mode}, oob=${null})}"></th:block>
     </th:block>
   </div>
 </section>
