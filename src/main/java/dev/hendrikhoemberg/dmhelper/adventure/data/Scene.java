@@ -84,6 +84,10 @@ public class Scene {
     @Column(length = 100)
     private String mapRegionKey;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "map_requirement", length = 16)
+    private SceneMapRequirement mapRequirement;
+
     @OneToMany(mappedBy = "scene", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC")
     private List<SceneSection> sections = new ArrayList<>();
@@ -157,6 +161,11 @@ public class Scene {
 
     public String getMapRegionKey() { return mapRegionKey; }
     public void setMapRegionKey(String mapRegionKey) { this.mapRegionKey = mapRegionKey; }
+
+    public SceneMapRequirement getMapRequirement() { return mapRequirement; }
+    public void setMapRequirement(SceneMapRequirement mapRequirement) {
+        this.mapRequirement = mapRequirement;
+    }
 
     public List<SceneSection> getSections() { return sections; }
     public void setSections(List<SceneSection> sections) { this.sections = sections; }
