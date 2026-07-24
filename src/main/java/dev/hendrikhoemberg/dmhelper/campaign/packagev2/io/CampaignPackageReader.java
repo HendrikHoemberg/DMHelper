@@ -73,6 +73,7 @@ public final class CampaignPackageReader {
         var kind = switch (version) {
             case 1 -> StagedCampaignPackage.ContainerKind.V1_JSON;
             case 2 -> StagedCampaignPackage.ContainerKind.V2_JSON;
+            case 3 -> StagedCampaignPackage.ContainerKind.V3_JSON;
             default -> throw problem(ImportProblemCodes.UNSUPPORTED_FORMAT_VERSION, "Unsupported or missing formatVersion");
         };
         return new StagedCampaignPackage(stageDir, manifest, Map.of(), bytes, bytes, kind);

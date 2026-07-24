@@ -40,6 +40,7 @@ public final class CampaignSemanticComparator {
 
     private static JsonNode canonical(CampaignSemanticSnapshot snapshot) {
         ObjectNode root = (ObjectNode) MAPPER.valueToTree(snapshot.manifest());
+        root.remove("formatVersion");
         JsonNode metadata = root.get("metadata");
         if (metadata instanceof ObjectNode object) {
             object.remove("createdAt");

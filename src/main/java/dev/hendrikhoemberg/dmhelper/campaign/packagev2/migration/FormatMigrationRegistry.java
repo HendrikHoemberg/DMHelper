@@ -28,6 +28,7 @@ public class FormatMigrationRegistry {
     public CampaignPackageValidationResult toCurrent(StagedCampaignPackage source,
                                                        CampaignImportValidator v1Validator) {
         if (source.containerKind() == StagedCampaignPackage.ContainerKind.V2_JSON
+                || source.containerKind() == StagedCampaignPackage.ContainerKind.V3_JSON
                 || source.containerKind() == StagedCampaignPackage.ContainerKind.V2_ZIP) {
             return null;
         }
