@@ -1,5 +1,8 @@
 package dev.hendrikhoemberg.dmhelper.config;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -7,8 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,9 +21,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class DestructiveActionContractTest {
 
-    /** btn-primary and btn-danger touching, with nothing between them. */
-    private static final Pattern ADJACENT = Pattern.compile(
-            "(?s)btn-primary[^>]*>.{0,400}?btn-danger|btn-danger[^>]*>.{0,400}?btn-primary");
+    @Test
+    void unrelatedSeparatorDoesNotMaskAdjacentActions() {
+        String fixture = """
+                <div class=\"action-row\">
+                    <button class=\"btn btn-primary\">Save</button>
+                    <span class=\"action-row__destructive\">Unrelated marker</span>
+                    <button class=\"btn btn-danger\">Delete</button>
+                </div>
+                """;
+
+        assertThat(unsafeRows(fixture))
+                .as("an unrelated separator must not satisfy the adjacent-action contract")
+                .containsExactly("action row with primary and destructive controls");
+    }
 
     @Test
     void noPrimaryActionSitsBesideADestructiveOne() throws IOException {
@@ -30,12 +42,7 @@ class DestructiveActionContractTest {
 
         try (Stream<Path> templates = Files.walk(Path.of("src/main/resources/templates"))) {
             for (Path template : templates.filter(p -> p.toString().endsWith(".html")).toList()) {
-                String html = Files.readString(template);
-                Matcher m = ADJACENT.matcher(html);
-                while (m.find()) {
-                    String span = m.group();
-                    // A declared separator is exactly what makes this safe.
-                    if (span.contains("action-row__destructive")) continue;
+                for (String ignored : unsafeRows(Files.readString(template))) {
                     offenders.add(template.toString());
                     break;
                 }
@@ -45,6 +52,40 @@ class DestructiveActionContractTest {
         assertThat(offenders)
                 .as("primary and destructive actions adjacent without a declared separator")
                 .isEmpty();
+    }
+
+    /**
+     * Check each explicit action row as a DOM boundary. A separator only counts when it is
+     * declared on the destructive control or on an ancestor between that control and its row;
+     * sibling content elsewhere in the row cannot mask the pair.
+     */
+    private static List<String> unsafeRows(String html) {
+        Document document = Jsoup.parse(html);
+        List<String> offenders = new ArrayList<>();
+
+        for (Element row : document.select(".action-row")) {
+            if (row.select(".btn-primary").isEmpty()) continue;
+
+            for (Element destructive : row.select(".btn-danger")) {
+                if (!hasDeclaredSeparator(destructive, row)) {
+                    offenders.add("action row with primary and destructive controls");
+                    break;
+                }
+            }
+        }
+
+        return offenders;
+    }
+
+    private static boolean hasDeclaredSeparator(Element destructive, Element row) {
+        if (destructive.hasClass("action-row__destructive")) return true;
+
+        for (Element ancestor : destructive.parents()) {
+            if (ancestor.equals(row)) return false;
+            if (ancestor.hasClass("action-row__destructive")) return true;
+        }
+
+        return false;
     }
 
     @Test
