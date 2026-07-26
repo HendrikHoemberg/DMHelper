@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
@@ -167,5 +168,18 @@ class EncounterTemplateContractTest {
         assertThat(html).contains(
                 "data-running-turn-controls",
                 "x-show=\"encounter?.combatPhase === 'RUNNING'\"");
+    }
+
+    @Test
+    void trackerPrefillButtonHasOneMergedClassAttribute() throws IOException {
+        String html = Files.readString(
+                Path.of("src/main/resources/templates/encounter/_tracker.html"));
+        Pattern duplicateClassAttributes = Pattern.compile(
+                "(?s)<[^>]*(?<![:\\w-])class=\"[^\"]*\"[^>]*(?<![:\\w-])class=\"[^\"]*\"[^>]*>");
+
+        assertThat(duplicateClassAttributes.matcher(html).find())
+                .as("tracker markup must not contain duplicate class attributes")
+                .isFalse();
+        assertThat(html).contains("class=\"btn btn-sm btn-ghost tracker-statblock-badge\"");
     }
 }

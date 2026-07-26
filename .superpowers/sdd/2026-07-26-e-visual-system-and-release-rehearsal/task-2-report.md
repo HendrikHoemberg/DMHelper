@@ -98,3 +98,41 @@ Additional checks:
     rg -n 'font-size:\\s*(0\\.[0-9]+|[0-9]+\\.[0-9]+rem|[0-9]+px)' src/main/resources/templates/player/view.html src/main/resources/templates/maps/editor.html
 
 All exited 0; the two scans returned no matches.
+
+## Fix round 2 — duplicate tracker class attribute
+
+### RED evidence
+
+Added EncounterTemplateContractTest.trackerPrefillButtonHasOneMergedClassAttribute to reject duplicate literal class attributes and require the Prefill button’s merged class list.
+
+Command:
+
+    ./mvnw -q test -Dtest=EncounterTemplateContractTest#trackerPrefillButtonHasOneMergedClassAttribute
+
+Before the fix: exit code 1, Tests run: 1, Failures: 1, Errors: 0. The duplicate-class assertion detected the two class attributes on the Prefill button.
+
+### Fix
+
+Merged the Prefill button classes into one valid attribute:
+
+    class="btn btn-sm btn-ghost tracker-statblock-badge"
+
+The assertion distinguishes literal class attributes from Alpine :class bindings.
+
+### GREEN evidence
+
+    ./mvnw -q test -Dtest=TypeScaleContractTest
+
+Result: exit code 0.
+
+    ./mvnw -q test -Dtest=EncounterTemplateContractTest
+
+Result: exit code 0; Tests run: 15, Failures: 0, Errors: 0.
+
+Direct template validation:
+
+    if rg --pcre2 -n -U '<[^>]*(?<!:)class="[^"]*"[^>]*(?<!:)class="[^"]*"[^>]*>' src/main/resources/templates/encounter/_tracker.html; then exit 1; else echo 'no duplicate class attributes in tracker'; fi
+    rg -n 'class="btn btn-sm btn-ghost tracker-statblock-badge"' src/main/resources/templates/encounter/_tracker.html
+    git diff --check
+
+Result: exit code 0; no duplicate class attributes, the merged Prefill class is present at line 509, and the diff is clean.
