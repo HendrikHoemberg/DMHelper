@@ -1190,7 +1190,7 @@
     color: var(--color-bg);
     border-radius: 4px;
     font-size: var(--text-sm);
-    animation: pulse 2s infinite;
+    animation: pulse var(--duration-structural) infinite;
 }
 @keyframes pulse {
     0%, 100% { opacity: 1; }
@@ -2273,7 +2273,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
     rgba(201, 163, 92, 0.07) 50%,
     transparent 70%);
   background-size: 220% 100%;
-  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  animation: skeleton-shimmer var(--duration-structural) ease-in-out infinite;
 }
 @keyframes skeleton-shimmer {
   from { background-position: 220% 0; }

@@ -3,7 +3,9 @@ package dev.hendrikhoemberg.dmhelper.config;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,7 +32,11 @@ class MotionBudgetContractTest {
             ".handout-overlay.closing img",
             ".page-header .rule-taper--gold");
 
-    private static final Pattern MS = Pattern.compile("(\\d+)ms");
+    private static final Pattern DURATION = Pattern.compile("(\\d+(?:\\.\\d+)?)(ms|s)\\b");
+    private static final Pattern DURATION_TOKEN = Pattern.compile("(--duration-[a-z-]+)\\s*:\\s*([^;]+);");
+    private static final Pattern TOKEN_REFERENCE = Pattern.compile("var\\((--duration-[a-z-]+)\\)");
+
+    private static final Map<String, String> DURATION_TOKENS = durationTokens();
 
     @Test
     void interactionFeedbackStaysInsideTheTableBudget() {
@@ -52,16 +58,26 @@ class MotionBudgetContractTest {
                     offenders.add(rule.where() + " → theatrical duration on a control");
                     continue;
                 }
-                Matcher m = MS.matcher(declaration);
+                Matcher m = DURATION.matcher(resolveDurationTokens(declaration));
                 while (m.find()) {
-                    if (Integer.parseInt(m.group(1)) > TABLE_BUDGET_MS) {
-                        offenders.add(rule.where() + " → " + m.group() + " (raw)");
+                    double amountMs = Double.parseDouble(m.group(1)) * (m.group(2).equals("s") ? 1000 : 1);
+                    if (amountMs > TABLE_BUDGET_MS) {
+                        offenders.add(rule.where() + " → " + m.group() + " (" + amountMs + "ms)");
                     }
                 }
             }
         }
 
         assertThat(offenders).as("motion that delays a table-time action").isEmpty();
+    }
+
+    @Test
+    void secondsUnitsAreConvertedToMillisecondsForBudgetChecks() {
+        assertThat(durationMilliseconds("animation: pulse 2s infinite")).containsExactly(2000.0);
+        assertThat(durationMilliseconds("animation: skeleton-shimmer 1.4s ease-in-out infinite"))
+                .containsExactly(1400.0);
+        assertThat(durationMilliseconds("animation: pulse var(--duration-structural) infinite"))
+                .containsExactly(320.0);
     }
 
     @Test
@@ -76,5 +92,40 @@ class MotionBudgetContractTest {
                     transition-duration: 1ms !important;
                     scroll-behavior: auto !important;
                   }""");
+    }
+
+    private static Map<String, String> durationTokens() {
+        Map<String, String> tokens = new HashMap<>();
+        Matcher matcher = DURATION_TOKEN.matcher(CssRules.read("tokens.css"));
+        while (matcher.find()) tokens.put(matcher.group(1), matcher.group(2).trim());
+        return tokens;
+    }
+
+    private static String resolveDurationTokens(String declaration) {
+        String resolved = declaration;
+        for (int pass = 0; pass < DURATION_TOKENS.size(); pass++) {
+            Matcher matcher = TOKEN_REFERENCE.matcher(resolved);
+            StringBuffer next = new StringBuffer();
+            boolean replaced = false;
+            while (matcher.find()) {
+                String value = DURATION_TOKENS.get(matcher.group(1));
+                if (value == null) continue;
+                matcher.appendReplacement(next, Matcher.quoteReplacement(value));
+                replaced = true;
+            }
+            matcher.appendTail(next);
+            resolved = next.toString();
+            if (!replaced) break;
+        }
+        return resolved;
+    }
+
+    private static List<Double> durationMilliseconds(String declaration) {
+        List<Double> durations = new ArrayList<>();
+        Matcher matcher = DURATION.matcher(resolveDurationTokens(declaration));
+        while (matcher.find()) {
+            durations.add(Double.parseDouble(matcher.group(1)) * (matcher.group(2).equals("s") ? 1000 : 1));
+        }
+        return durations;
     }
 }
