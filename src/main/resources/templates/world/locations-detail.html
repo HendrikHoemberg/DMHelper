@@ -24,7 +24,7 @@
                             th:hx-get="@{/campaigns/{cid}/world/locations/{lid}/edit(cid=${campaignId},lid=${location.id})}"
                             hx-target="#locationForm"
                             hx-swap="innerHTML">Edit</button>
-                    <button class="btn btn-danger"
+                    <button class="btn btn-danger action-row__destructive"
                             th:hx-delete="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${location.id})}"
                             hx-confirm="Delete this location?"
                             hx-target="body" hx-swap="outerHTML">Delete</button>
@@ -66,7 +66,7 @@
                 <div th:each="link : ${tableLinks}" class="card card--compact u-mb-xs">
                     <span th:text="${link.table.name}">Table Name</span>
                     <span class="badge" th:text="${#enums.label(link.role)}">ROLE</span>
-                    <button class="btn btn-danger btn-sm"
+                    <button class="btn btn-danger btn-sm action-row__destructive"
                             th:hx-delete="@{/campaigns/{cid}/world/locations/{lid}/tables/{linkId}(cid=${campaignId},lid=${location.id},linkId=${link.id})}"
                             hx-confirm="Remove this table link?"
                             hx-target="body" hx-swap="outerHTML">&times;</button>

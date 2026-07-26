@@ -226,7 +226,7 @@
                             <div class="terrain-panel-row">
                                 <span class="terrain-swatch-sm" :style="t.fill ? ('background:' + t.fill) : ''"></span>
                                 <span style="flex: 1;" x-text="t.name"></span>
-                                <button class="btn btn-danger btn-xs" x-show="t.custom" @click="deleteTerrain(t.key)" title="Delete this terrain">🗑</button>
+                                <button class="btn btn-danger btn-xs action-row__destructive" x-show="t.custom" @click="deleteTerrain(t.key)" title="Delete this terrain">🗑</button>
                             </div>
                         </template>
                     </div>

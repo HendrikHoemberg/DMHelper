@@ -51,7 +51,7 @@
             <div class="u-mt-lg surface-danger-zone">
                 <h2>Danger zone</h2>
                 <p class="u-text-xs text-muted">This action cannot be undone.</p>
-                <button class="btn btn-danger"
+                <button class="btn btn-danger action-row__destructive"
                         th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
                         hx-confirm="Delete this scene?"
                         hx-target="body" hx-swap="outerHTML">Delete scene</button>

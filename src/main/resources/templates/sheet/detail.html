@@ -183,7 +183,7 @@
                                         <option value="manual" th:selected="${sheet.overridesMeta()?.get(entry.key)?.source == 'manual'}">Manual</option>
                                     </select>
                                 </td>
-                                <td><button type="button" class="btn btn-danger btn-xs" onclick="this.closest('tr').remove()">×</button></td>
+                                <td><button type="button" class="btn btn-danger btn-xs action-row__destructive" onclick="this.closest('tr').remove()">×</button></td>
                             </tr>
                         </tbody>
                     </table>
@@ -292,7 +292,7 @@ function addOverrideRow() {
                 <option value="manual">Manual</option>
             </select>
         </td>
-        <td><button type="button" class="btn btn-danger btn-xs" onclick="this.closest('tr').remove()">×</button></td>
+        <td><button type="button" class="btn btn-danger btn-xs action-row__destructive" onclick="this.closest('tr').remove()">×</button></td>
     `;
     tbody.appendChild(tr);
 }

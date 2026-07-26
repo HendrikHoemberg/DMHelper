@@ -24,7 +24,7 @@
                             th:hx-get="@{/campaigns/{cid}/world/npcs/{nid}/edit(cid=${campaignId},nid=${npc.id})}"
                             hx-target="#npcForm"
                             hx-swap="innerHTML">Edit</button>
-                    <button class="btn btn-danger"
+                    <button class="btn btn-danger action-row__destructive"
                             th:hx-delete="@{/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${npc.id})}"
                             hx-confirm="Delete this NPC?"
                             hx-target="body" hx-swap="outerHTML">Delete</button>

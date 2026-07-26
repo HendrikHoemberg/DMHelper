@@ -7,7 +7,7 @@
         <strong class="u-text-sm" th:text="|${obj.title} depends on:|">Depends on</strong>
         <div th:each="dep : ${obj.dependencies}" class="card card--compact u-mb-xs">
           <span th:text="${dep.prerequisiteObjective.title}">Prerequisite</span>
-          <button class="btn btn-danger btn-sm"
+          <button class="btn btn-danger btn-sm action-row__destructive"
                   th:hx-delete="@{/campaigns/{cid}/quests/{qid}/dependencies(cid=${campaignId},qid=${quest.id})}"
                   th:attr="hx-vals='{&quot;objectiveId&quot;: &quot;' + ${dep.objective.id} + '&quot;, &quot;prerequisiteObjectiveId&quot;: &quot;' + ${dep.prerequisiteObjective.id} + '&quot;}'"
                   hx-target="#dependencyList" hx-swap="innerHTML"

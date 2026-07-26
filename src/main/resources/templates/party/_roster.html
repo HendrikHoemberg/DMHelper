@@ -100,7 +100,7 @@
                             hx-target="closest .roster-row" hx-swap="outerHTML">Mark Active</button>
                 </th:block>
                 <span class="roster-row__destructive">
-                    <button class="btn btn-danger btn-xs"
+                    <button class="btn btn-danger btn-xs action-row__destructive"
                             th:hx-delete="@{/campaigns/{cid}/party/{pid}(cid=${pm.campaign.id}, pid=${pm.id})}"
                             hx-confirm="Remove this party member?"
                             hx-target="closest .roster-row" hx-swap="outerHTML">Remove</button>

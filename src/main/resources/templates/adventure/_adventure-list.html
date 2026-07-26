@@ -36,7 +36,7 @@
                 th:hx-get="@{/campaigns/{cid}/adventures/{id}/edit(cid=${campaignId},id=${a.adventure.id})}"
                 hx-target="closest .card"
                 hx-swap="outerHTML">Edit</button>
-        <button class="btn btn-danger btn-sm"
+        <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{id}(cid=${campaignId},id=${a.adventure.id})}"
                 hx-confirm="Delete this adventure and all its chapters and scenes?"
                 hx-target="body" hx-swap="outerHTML">Delete</button>

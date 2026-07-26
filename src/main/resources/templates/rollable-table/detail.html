@@ -26,7 +26,7 @@
                             type="button" class="btn btn-ghost" @click="promoteTable()"
                             :disabled="managementLoading">Promote</button>
                     <button th:if="${table.source.name() == 'CUSTOM'}"
-                            type="button" class="btn btn-danger" @click="deleteTable()"
+                            type="button" class="btn btn-danger action-row__destructive" @click="deleteTable()"
                             :disabled="managementLoading">Delete</button>
                     <span class="u-text-sm" x-show="managementMessage" x-text="managementMessage"></span>
                 </div>

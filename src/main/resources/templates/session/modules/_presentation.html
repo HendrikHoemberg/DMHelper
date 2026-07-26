@@ -43,13 +43,13 @@
       <div class="presentation-emergency-override" th:if="${mode.name() != 'COMPACT'}"
            x-show="previewRequiresOverride && !previewOverrideArmed" x-cloak>
         <p class="u-text-sm u-text-warning">This handout contains DM-only content. Presenting it will expose DM information to players.</p>
-        <button type="button" class="btn btn-danger" @click="armEmergencyOverride()">Present anyway...</button>
+        <button type="button" class="btn btn-danger action-row__destructive" @click="armEmergencyOverride()">Present anyway...</button>
       </div>
 
       <div class="presentation-emergency-override presentation-emergency-override--armed" th:if="${mode.name() != 'COMPACT'}"
            x-show="previewRequiresOverride && previewOverrideArmed" x-cloak>
         <p class="u-text-sm u-text-danger" role="alert">Final check: this bypasses the player-safety classification and will be recorded in the session audit.</p>
-        <button type="button" class="btn btn-danger" @click="confirmEmergencyPresent()">Confirm emergency presentation</button>
+        <button type="button" class="btn btn-danger action-row__destructive" @click="confirmEmergencyPresent()">Confirm emergency presentation</button>
       </div>
 
       <th:block th:if="${view != null and view.presentedMapId != null}">

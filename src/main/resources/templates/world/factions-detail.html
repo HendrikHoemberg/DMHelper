@@ -23,7 +23,7 @@
                             th:hx-get="@{/campaigns/{cid}/world/factions/{fid}/edit(cid=${campaignId},fid=${faction.id})}"
                             hx-target="#factionForm"
                             hx-swap="innerHTML">Edit</button>
-                    <button class="btn btn-danger"
+                    <button class="btn btn-danger action-row__destructive"
                             th:hx-delete="@{/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${faction.id})}"
                             hx-confirm="Delete this faction?"
                             hx-target="body" hx-swap="outerHTML">Delete</button>

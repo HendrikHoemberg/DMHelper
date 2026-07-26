@@ -19,7 +19,7 @@
            th:attr="hx-get=@{/campaigns/{cid}/encounters/{eid}/edit(cid=${campaignId}, eid=${encounter.id})}"
            hx-target="closest .card"
            hx-swap="outerHTML">Edit</a>
-        <button class="btn btn-danger"
+        <button class="btn btn-danger action-row__destructive"
                 th:attr="hx-delete=@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${encounter.id})}"
                 hx-confirm="Delete this encounter?"
                 hx-target="closest .card"

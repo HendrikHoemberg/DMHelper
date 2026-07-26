@@ -22,7 +22,7 @@
                     hx-target="#event-form-area" hx-swap="innerHTML">
                 Edit
             </button>
-            <button class="btn btn-danger btn-xs"
+            <button class="btn btn-danger btn-xs action-row__destructive"
                     th:hx-delete="@{/campaigns/{cid}/calendar/events/{eid}(cid=${event.campaignId()}, eid=${event.id()})}"
                     hx-target="closest .card" hx-swap="outerHTML"
                     hx-confirm="Delete this event?">

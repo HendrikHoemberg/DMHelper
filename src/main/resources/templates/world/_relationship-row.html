@@ -24,7 +24,7 @@
                     <form th:action="@{/campaigns/{cid}/world/factions/{fid}/relationships/{rid}(cid=${campaignId},fid=${factionId},rid=${rel.id})}"
                           method="post" style="display:inline">
                         <input type="hidden" name="_method" value="delete"/>
-                        <button type="submit" class="btn btn-danger btn-sm"
+                        <button type="submit" class="btn btn-danger btn-sm action-row__destructive"
                                 onclick="return confirm('Delete this relationship?')">Delete</button>
                     </form>
                 </td>

@@ -10,7 +10,7 @@
             <form th:action="@{/campaigns/{cid}/world/factions/{fid}/clocks/{clkid}(cid=${campaignId},fid=${factionId},clkid=${clock.id})}"
                   method="post" style="display:inline">
                 <input type="hidden" name="_method" value="delete"/>
-                <button type="submit" class="btn btn-danger btn-sm"
+                <button type="submit" class="btn btn-danger btn-sm action-row__destructive"
                         onclick="return confirm('Delete this clock?')">Delete</button>
             </form>
         </div>

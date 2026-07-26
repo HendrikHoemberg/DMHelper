@@ -25,7 +25,7 @@
             <button class="btn btn-ghost btn-sm"
                     th:hx-get="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}/edit(cid=${campaignId},aid=${adventure.id},chId=${ch.id})}"
                     hx-target="closest .organize-panel__row" hx-swap="outerHTML">Edit</button>
-            <button class="btn btn-danger btn-sm"
+            <button class="btn btn-danger btn-sm action-row__destructive"
                     th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}(cid=${campaignId},aid=${adventure.id},chId=${ch.id})}"
                     hx-confirm="Delete this chapter and all its scenes?"
                     hx-target="closest .detail-section" hx-swap="outerHTML">Delete</button>

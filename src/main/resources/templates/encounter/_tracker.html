@@ -22,7 +22,7 @@
                                     x-text="encounter?.round || 0"></strong></span>
                 <span class="badge badge-warning" x-show="pendingWaves.length > 0"
                       x-text="'(' + pendingWaves.length + ' wave' + (pendingWaves.length !== 1 ? 's' : '') + ' pending)'"></span>
-                <button class="btn btn-danger tracker-small-button" style="padding: 2px 8px;" @click="endEncounter()">End</button>
+                <button class="btn btn-danger action-row__destructive tracker-small-button" style="padding: 2px 8px;" @click="endEncounter()">End</button>
             </div>
 
             <!-- Initiative setup panel -->
@@ -535,13 +535,13 @@
 
                 <!-- Defeat / Revive / Remove -->
                 <div class="detail-actions" style="display: flex; gap: var(--space-xs); margin-top: var(--space-sm);">
-                    <button class="btn btn-danger tracker-standard-button" style="padding: 2px 8px;"
+                    <button class="btn btn-danger action-row__destructive tracker-standard-button" style="padding: 2px 8px;"
                             x-show="!selected?.defeated"
                             @click="markDefeated(selected.id, true)">Defeat</button>
                     <button class="btn tracker-standard-button" style="padding: 2px 8px;"
                             x-show="selected?.defeated"
                             @click="markDefeated(selected.id, false)">Revive</button>
-                    <button class="btn btn-danger tracker-standard-button" style="padding: 2px 8px;"
+                    <button class="btn btn-danger action-row__destructive tracker-standard-button" style="padding: 2px 8px;"
                             @click="removeCombatant(selected.id)">Remove</button>
                 </div>
             </div>

@@ -27,7 +27,7 @@
                             type="button" class="btn btn-ghost" @click="promoteThreat()"
                             :disabled="managementLoading">Promote</button>
                     <button th:if="${threat.source.name() == 'CUSTOM'}"
-                            type="button" class="btn btn-danger" @click="deleteThreat()"
+                            type="button" class="btn btn-danger action-row__destructive" @click="deleteThreat()"
                             :disabled="managementLoading">Delete</button>
                     <span class="u-text-sm" x-show="managementMessage" x-text="managementMessage"></span>
                 </div>

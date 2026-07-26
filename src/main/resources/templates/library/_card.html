@@ -32,7 +32,7 @@
                         hx-target="closest .statblock-card"
                         hx-swap="outerHTML">Promote</button>
             </th:block>
-            <button class="btn btn-danger btn-xs"
+            <button class="btn btn-danger btn-xs action-row__destructive"
                     th:hx-delete="@{/library/statblocks/{id}(id=${sb.id})}"
                     hx-confirm="Delete this statblock?"
                     hx-target="closest .statblock-card"

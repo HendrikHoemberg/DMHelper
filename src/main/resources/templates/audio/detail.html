@@ -22,7 +22,7 @@
                        th:href="@{${editHref}}">Edit</a>
                     <button type="button" class="btn btn-ghost" @click="cloneCue()"
                             :disabled="managementLoading">Clone</button>
-                    <button type="button" class="btn btn-danger" @click="deleteCue()"
+                    <button type="button" class="btn btn-danger action-row__destructive" @click="deleteCue()"
                             :disabled="managementLoading">Delete</button>
                     <span class="u-text-sm" x-show="managementMessage" x-text="managementMessage"></span>
                 </div>

@@ -87,7 +87,7 @@
                     <div class="surface-danger-zone u-mt-lg">
                         <h2>Danger Zone</h2>
                         <p class="text-muted u-mb-sm">Once you delete an encounter, there is no going back. Please be certain.</p>
-                        <button class="btn btn-danger"
+                        <button class="btn btn-danger action-row__destructive"
                                 th:attr="hx-delete=@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${encounter.id})}"
                                 hx-confirm="Delete this encounter?"
                                 hx-target="body"

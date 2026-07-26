@@ -24,7 +24,7 @@
                             th:hx-get="@{/campaigns/{cid}/quests/{qid}/edit(cid=${campaignId},qid=${quest.id})}"
                             hx-target="#questForm"
                             hx-swap="innerHTML">Edit</button>
-                    <button class="btn btn-danger"
+                    <button class="btn btn-danger action-row__destructive"
                             th:hx-delete="@{/campaigns/{cid}/quests/{qid}(cid=${campaignId},qid=${quest.id})}"
                             hx-confirm="Delete this quest?"
                             hx-target="body" hx-swap="outerHTML">Delete</button>

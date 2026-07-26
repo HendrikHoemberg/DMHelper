@@ -33,7 +33,16 @@ class DestructiveActionContractTest {
 
         assertThat(unsafeRows(fixture))
                 .as("an unrelated separator must not satisfy the adjacent-action contract")
-                .containsExactly("action row with primary and destructive controls");
+                .containsExactly("destructive control without an associated separator");
+    }
+
+    @Test
+    void missingSeparatorDeclarationFailsEvenWithoutAPrimaryInTheSameRow() {
+        String fixture = "<div class=\"separate-row\"><button class=\"btn btn-danger\">Delete</button></div>";
+
+        assertThat(unsafeRows(fixture))
+                .as("every destructive control must declare its own visual separator")
+                .containsExactly("destructive control without an associated separator");
     }
 
     @Test
@@ -55,34 +64,29 @@ class DestructiveActionContractTest {
     }
 
     /**
-     * Check each explicit action row as a DOM boundary. A separator only counts when it is
-     * declared on the destructive control or on an ancestor between that control and its row;
-     * sibling content elsewhere in the row cannot mask the pair.
+     * Check every destructive control. A separator only counts when it is declared on the
+     * control or on an ancestor between that control and its nearest action-row boundary;
+     * sibling content elsewhere cannot mask the missing declaration.
      */
     private static List<String> unsafeRows(String html) {
         Document document = Jsoup.parse(html);
         List<String> offenders = new ArrayList<>();
 
-        for (Element row : document.select(".action-row")) {
-            if (row.select(".btn-primary").isEmpty()) continue;
-
-            for (Element destructive : row.select(".btn-danger")) {
-                if (!hasDeclaredSeparator(destructive, row)) {
-                    offenders.add("action row with primary and destructive controls");
-                    break;
-                }
+        for (Element destructive : document.select(".btn-danger")) {
+            if (!hasDeclaredSeparator(destructive)) {
+                offenders.add("destructive control without an associated separator");
             }
         }
 
         return offenders;
     }
 
-    private static boolean hasDeclaredSeparator(Element destructive, Element row) {
+    private static boolean hasDeclaredSeparator(Element destructive) {
         if (destructive.hasClass("action-row__destructive")) return true;
 
         for (Element ancestor : destructive.parents()) {
-            if (ancestor.equals(row)) return false;
             if (ancestor.hasClass("action-row__destructive")) return true;
+            if (ancestor.hasClass("action-row")) return false;
         }
 
         return false;

@@ -34,7 +34,7 @@
             </label>
             <button class="btn btn-ghost btn-xs">Set</button>
         </form>
-        <button class="btn btn-danger btn-xs"
+        <button class="btn btn-danger btn-xs action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/treasury/{id}(cid=${assignment.campaignId()}, id=${assignment.id()})}"
                 hx-target="closest .card" hx-swap="outerHTML" hx-confirm="Remove this item?">
             &times;

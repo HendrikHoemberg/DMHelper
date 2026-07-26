@@ -101,3 +101,53 @@ regression fixture remains in the focused test.
 
 No production templates, routes, actions, HTMX attributes, security markers, or controller/entity
 behavior were changed in this fix round.
+
+## Fix round 2
+
+### RED evidence
+
+Baseline command before the new guard:
+
+```text
+./mvnw -q test -Dtest=DestructiveActionContractTest   # exit 0 before changes
+```
+
+After adding `missingSeparatorDeclarationFailsEvenWithoutAPrimaryInTheSameRow`, the focused
+command failed as required:
+
+```text
+./mvnw -q test -Dtest=DestructiveActionContractTest
+```
+
+The exact failing assertion was at `DestructiveActionContractTest.java:45`:
+
+```text
+[every destructive control must declare its own visual separator]
+Expecting actual: []
+to contain exactly: ["destructive control without an associated separator"]
+```
+
+This reproduced the scoped-review defect: a destructive control in a separate row was never
+visited by the `.action-row`-only scan.
+
+### GREEN evidence
+
+```text
+./mvnw -q test -Dtest=DestructiveActionContractTest   # exit 0
+./mvnw -q test -Dtest=SurfaceSeparationContractTest  # exit 0
+git diff --check                                     # exit 0
+```
+
+The contract now checks every `.btn-danger` in every template. A separator is valid only on the
+destructive control or on its ancestor path up to the nearest `.action-row`; sibling text or a
+separator elsewhere in the row cannot satisfy it. All 58 destructive controls are now associated,
+including the separate-row adventure and derivative-dialog controls.
+
+### Fix-round changed paths
+
+- `src/test/java/dev/hendrikhoemberg/dmhelper/config/DestructiveActionContractTest.java`
+- `.superpowers/sdd/2026-07-26-e-visual-system-and-release-rehearsal/task-9-report.md`
+- All template paths containing `.btn-danger` (32 template files); changes add only
+  `action-row__destructive` to the destructive control class list.
+
+Existing routes, actions, HTMX attributes, and security markers are unchanged.

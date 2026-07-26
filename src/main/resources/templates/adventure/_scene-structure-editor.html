@@ -38,7 +38,7 @@
       <span class="badge" th:text="${#enums.label(section.kind)}">KIND</span>
       <strong th:text="${section.label}">Label</strong>
       <div class="u-flex u-gap-xs u-mt-xs">
-        <button class="btn btn-danger btn-sm"
+        <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/sections/{sectionId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},sectionId=${section.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
                 hx-confirm="Delete this section?">&times;</button>
@@ -141,7 +141,7 @@
       <div th:if="${check.failure}" class="u-text-xs">Failure: <span th:text="${check.failure}">Failure</span></div>
       <div th:if="${check.partial}" class="u-text-xs">Partial: <span th:text="${check.partial}">Partial</span></div>
       <div class="u-flex u-gap-xs u-mt-xs">
-        <button class="btn btn-danger btn-sm"
+        <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/checks/{checkId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},checkId=${check.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
                 hx-confirm="Delete this check?">&times;</button>
@@ -219,7 +219,7 @@
       <span th:if="${p.placementHint}" class="u-text-xs" th:text="${p.placementHint}">Placement</span>
       <span th:if="${p.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${p.sourceLocator}|">Source</span>
       <div class="u-flex u-gap-xs u-mt-xs">
-        <button class="btn btn-danger btn-sm"
+        <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/participants/{pid}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},pid=${p.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
                 hx-confirm="Delete this participant?">&times;</button>
@@ -278,7 +278,7 @@
       <div th:if="${t.condition}" class="u-text-xs">Condition: <span th:text="${t.condition}">Condition</span></div>
       <div th:if="${t.dmNote}" class="u-text-xs text-muted">DM: <span th:text="${t.dmNote}">DM Note</span></div>
       <div class="u-flex u-gap-xs u-mt-xs">
-        <button class="btn btn-danger btn-sm"
+        <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/transitions/{tid}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},tid=${t.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
                 hx-confirm="Delete this transition?">&times;</button>
@@ -339,7 +339,7 @@
       <span th:text="${link.displayText ?: link.targetType}">Target</span>
       <span th:if="${link.condition}" class="u-text-xs">Condition: <span th:text="${link.condition}">Condition</span></span>
       <div class="u-flex u-gap-xs u-mt-xs">
-        <button class="btn btn-danger btn-sm"
+        <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/links/{linkId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},linkId=${link.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
                 hx-confirm="Delete this link?">&times;</button>

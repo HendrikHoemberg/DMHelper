@@ -62,7 +62,7 @@
                 Mark unreviewed
             </button>
         </th:block>
-        <button class="btn btn-danger"
+        <button class="btn btn-danger action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/handouts/{id}(cid=${handout.campaign.id},id=${handout.id})}"
                 hx-confirm="Delete this handout?"
                 hx-swap="none">
