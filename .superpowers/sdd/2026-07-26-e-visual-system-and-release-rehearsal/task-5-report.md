@@ -56,3 +56,41 @@ Result: 2,565 tests, 0 failures, 1 error, 6 skipped. The error is `GameMapContro
 
 - The full suite remains red because of the unrelated duplicate `class` attribute in `templates/maps/editor.html:362`.
 - The task brief’s supplied test treats the toast’s semantic `border-left` as a gold border; `.toast` is therefore recorded as a reviewed semantic exception so the behavior-preserving toast severity rail remains intact.
+
+## Review fix round 1
+
+### RED
+
+Strengthened `GoldAccentContractTest` before changing production CSS:
+
+- selector lists are split only at top-level commas, so `:where(...)` argument lists remain intact while each real selector is evaluated independently;
+- `border-top-color`, `border-right-color`, `border-bottom-color`, and `border-left-color` are now included.
+
+Command:
+
+```text
+./mvnw -q test -Dtest=GoldAccentContractTest
+```
+
+Result: expected failure. The strengthened contract identified five actual offenders:
+
+```text
+components.css { .statblock-card:hover }
+components.css { .sheet-toc a:hover }
+components.css { .structured-read-aloud }
+cockpit-layout.css { .cockpit-arrange-menu button:hover }
+cockpit-layout.css { .cockpit-dialog [data-add-module]:hover }
+```
+
+### GREEN
+
+Neutralized the five unearned borders, split mixed hover/focus rules so focus retains gold, and recorded structured read-aloud as a reviewed in-world identity surface.
+
+Commands:
+
+```text
+./mvnw -q test -Dtest=GoldAccentContractTest
+./mvnw -q test -Dtest=GoldAccentContractTest,DesignTokenContractTest,TypographyRoleContractTest,TypeScaleContractTest,CombatLegibilityContractTest,UiPolishContractTest,InteractionFailureContractTest
+```
+
+Result: both commands passed with exit code 0.

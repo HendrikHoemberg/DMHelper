@@ -534,10 +534,14 @@ body:has(.session-cockpit) {
   font-size: var(--text-sm);
 }
 
-.cockpit-arrange-menu button:hover,
+.cockpit-arrange-menu button:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
+}
+
 .cockpit-arrange-menu button:focus-visible {
   background: var(--color-surface-hover);
-  border-color: var(--color-gold-soft);
+  border-color: var(--color-accent);
 }
 
 .cockpit-dialog,
@@ -615,7 +619,11 @@ body:has(.session-cockpit) {
   cursor: pointer;
 }
 
-.cockpit-dialog [data-add-module]:hover,
+.cockpit-dialog [data-add-module]:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-hover);
+}
+
 .cockpit-dialog [data-add-module]:focus-visible {
   border-color: var(--color-accent);
   background: var(--color-surface-hover);

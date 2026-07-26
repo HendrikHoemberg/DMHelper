@@ -2249,9 +2249,13 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 }
 .statblock-card:hover,
 .statblock-card:focus-within {
-  border-color: var(--color-gold-soft);
+  border-color: var(--color-border-strong);
   box-shadow: var(--highlight-candle), var(--shadow-warm-sm);
   transform: translateY(-2px);
+}
+.statblock-card:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: var(--highlight-candle), var(--shadow-warm-sm), 0 0 0 1px var(--color-gold-soft);
 }
 .statblock-card:active { transform: scale(0.985) translateY(0); }
 
@@ -2795,7 +2799,7 @@ dialog.modal:not([open]) {
 }
 .sheet-toc a:hover {
     color: var(--color-accent);
-    border-left-color: var(--color-gold-soft);
+    border-left-color: var(--color-border-strong);
 }
 @media (max-width: 900px) {
     .sheet-layout { grid-template-columns: 1fr; }

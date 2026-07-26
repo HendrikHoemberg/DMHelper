@@ -26,6 +26,7 @@ class GoldAccentContractTest {
             ".handout-overlay img", // A displayed handout keeps its material edge.
             ".statblock-render",
             ".read-aloud",
+            ".structured-read-aloud", // Structured read-aloud content is an in-world text surface.
             ".rule-taper--gold",
             ".toast"); // The colored left rail communicates toast severity.
 
@@ -40,18 +41,42 @@ class GoldAccentContractTest {
             borderValues.addAll(rule.values("border-color"));
             borderValues.addAll(rule.values("border-left"));
             borderValues.addAll(rule.values("border-bottom"));
+            borderValues.addAll(rule.values("border-top-color"));
+            borderValues.addAll(rule.values("border-right-color"));
+            borderValues.addAll(rule.values("border-bottom-color"));
+            borderValues.addAll(rule.values("border-left-color"));
 
             boolean gold = borderValues.stream().anyMatch(v ->
                     v.contains("--color-accent") || v.contains("--color-gold-soft")
                             || v.contains("gold-sheen"));
             if (!gold) continue;
 
-            boolean earned = EARNED.stream().anyMatch(token -> rule.selector().contains(token))
-                    || IDENTITY_SURFACES.stream().anyMatch(s -> rule.selector().contains(s));
-            if (!earned) offenders.add(rule.where());
+            for (String selector : splitSelectors(rule.selector())) {
+                String trimmedSelector = selector.trim();
+                boolean earned = EARNED.stream().anyMatch(trimmedSelector::contains)
+                        || IDENTITY_SURFACES.stream().anyMatch(trimmedSelector::contains);
+                if (!earned) offenders.add(rule.file() + " { " + trimmedSelector + " }");
+            }
         }
 
         assertThat(offenders).as("gold borders that mean nothing").isEmpty();
+    }
+
+    private static List<String> splitSelectors(String selectorList) {
+        List<String> selectors = new ArrayList<>();
+        int start = 0;
+        int parentheses = 0;
+        for (int i = 0; i < selectorList.length(); i++) {
+            char c = selectorList.charAt(i);
+            if (c == '(') parentheses++;
+            else if (c == ')') parentheses--;
+            else if (c == ',' && parentheses == 0) {
+                selectors.add(selectorList.substring(start, i));
+                start = i + 1;
+            }
+        }
+        selectors.add(selectorList.substring(start));
+        return selectors;
     }
 
     @Test
