@@ -3,7 +3,7 @@
      @end-encounter.window="show(($event.detail && $event.detail.id) || encounterId)">
     <template x-if="showModal">
         <div class="modal-overlay" @click.self="showModal = false" style="position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1000;">
-            <div class="modal-content" style="background:var(--surface, #1e1e24);padding:1.5rem;border-radius:8px;max-width:28rem;width:90%;">
+            <div class="modal-content" style="background:var(--color-surface);padding:1.5rem;border-radius:8px;max-width:28rem;width:90%;">
                 <h2>Encounter Complete</h2>
                 <div class="summary-stats">
                     <p><strong th:text="${encounter.name}">Name</strong></p>

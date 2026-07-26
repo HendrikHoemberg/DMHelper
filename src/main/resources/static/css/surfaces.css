@@ -292,7 +292,7 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-md);
-    padding: var(--space-xxs) 0;
+    padding: var(--space-xs) 0;
     border-bottom: 1px solid var(--color-border);
 }
 .organize-panel__title { font-weight: 600; }

@@ -72,7 +72,7 @@
 }
 .story-module__header h3 {
   margin: 0;
-  font-size: var(--text-md);
+  font-size: var(--text-base);
 }
 .presentation-module-body,
 .session-log-module-body {
@@ -370,7 +370,7 @@
 }
 .runtime-story .scene-card h4 {
   margin: 0 0 var(--space-xs);
-  font-size: var(--text-md);
+  font-size: var(--text-base);
 }
 .runtime-story .scene-editorial {
   display: flex;

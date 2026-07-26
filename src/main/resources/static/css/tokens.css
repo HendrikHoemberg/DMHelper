@@ -38,6 +38,17 @@
   --color-warning: #d9993d;         /* amber */
   --color-border: #3a3125;          /* warm hairline */
 
+  /* compatibility aliases for legacy component references */
+  --color-attack-bonus: var(--color-accent);
+  --color-text-secondary: var(--color-text-muted);
+  --color-border-subtle: var(--color-border);
+  --color-bg-elevated: var(--elevation-raised-bg);
+  --color-surface-muted: var(--color-surface);
+  --elevation-sunken-bg: var(--elevation-base-bg);
+  --radius-md: var(--radius);
+  --shadow-lg: var(--shadow-warm-lg);
+  --stagger: 0;
+
   --color-concentration: #966a9e;  /* concentration purple — table-wide recognition */
 
   /* new tokens */
