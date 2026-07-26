@@ -4,7 +4,7 @@
 <div class="empty-table" style="padding: var(--space-lg); text-align: center;">
   <p style="color: var(--color-text-muted); margin-bottom: var(--space-md);">No map selected. Choose a map to display or create one.</p>
   <th:block th:if="${!workspace.maps.isEmpty()}">
-    <select id="empty-map-selector" style="padding: 4px 8px; font-size: var(--text-sm); background: var(--color-bg); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 4px;"
+    <select id="empty-map-selector" style="padding: 4px 8px; background: var(--color-bg); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 4px;"
             @change="switchMap($event.target.value)">
       <option value="">-- Select a map --</option>
       <option th:each="m : ${workspace.maps}" th:value="${m.id}" th:text="${m.name}">Map name</option>

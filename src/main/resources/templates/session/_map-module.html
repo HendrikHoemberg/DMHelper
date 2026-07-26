@@ -74,7 +74,7 @@
             <button type="button" class="btn btn-primary u-w-full" style="margin-top:4px"
                     @click="createThreatPin()" :disabled="!selectedThreatForPin">Create pin</button>
             <template x-for="pin in threatPins" :key="pin.id">
-              <div class="u-flex u-items-center u-gap-xs" style="font-size:var(--text-sm);margin-top:4px">
+              <div class="u-flex u-items-center u-gap-xs" style="margin-top:4px">
                 <span style="flex:1" x-text="pin.title || pin.key"></span>
                 <button type="button" class="btn btn-ghost" @click="deleteThreatPin(pin.id)">×</button>
               </div>

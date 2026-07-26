@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <div th:fragment="inventory(assignments, totalWeight, campaignId)" class="detail-section">
     <h2>Equipment &amp; Inventory</h2>
-    <div th:if="${totalWeight != null && totalWeight > 0}" class="u-mb-sm u-text-muted" style="font-size: var(--text-sm);">
+    <div th:if="${totalWeight != null && totalWeight > 0}" class="u-mb-sm u-text-muted">
         Weight (total lb): <strong th:text="${totalWeight}">0</strong>
     </div>
     <div th:if="${not #lists.isEmpty(assignments)}" style="display:flex; flex-direction:column; gap: var(--space-sm);">

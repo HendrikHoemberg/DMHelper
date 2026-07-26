@@ -54,7 +54,7 @@
                     <li th:each="bl : ${backlinks}" style="padding: var(--space-xs) 0;">
                         <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaignId}, nid=${bl.id})}"
                            th:text="${bl.title}">Backlink</a>
-                        <span class="badge" th:text="${#enums.label(bl.type)}" style="margin-left: var(--space-sm); font-size: 0.7rem;">Type</span>
+                        <span class="badge" th:text="${#enums.label(bl.type)}" style="margin-left: var(--space-sm);">Type</span>
                     </li>
                 </ul>
             </div>

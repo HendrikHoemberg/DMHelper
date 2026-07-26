@@ -45,7 +45,7 @@
       @keydown.window="handleKeyboard($event)">
   <header class="cockpit-topbar">
     <h1 class="cockpit-topbar__title"
-        style="font-family: var(--font-display); font-size: var(--text-lg); margin: 0;"
+        style="font-family: var(--font-display); margin: 0;"
         th:text="${workspace.campaign.name}">Campaign</h1>
     <span class="badge" x-text="sessionStatus" th:attr="data-session-status=${workspace.session.status}">IDLE</span>
     <span class="u-nowrap cockpit-topbar__date"

@@ -13,8 +13,8 @@
     </div>
     <div th:if="${currentScene.body != null and !currentScene.body.isEmpty()}" style="margin-bottom: var(--space-sm);">
       <details>
-        <summary style="cursor: pointer; font-size: var(--text-sm); color: var(--color-text-muted);">Scene notes</summary>
-        <div class="detail-section" style="margin-top: var(--space-xs); font-size: var(--text-sm); max-height: 200px; overflow-y: auto;"
+        <summary style="cursor: pointer; color: var(--color-text-muted);">Scene notes</summary>
+        <div class="detail-section" style="margin-top: var(--space-xs); max-height: 200px; overflow-y: auto;"
              th:utext="${#markdown.toHtml(currentScene.body)}">
           Body preview
         </div>

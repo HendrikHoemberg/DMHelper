@@ -9,7 +9,7 @@
     <template x-if="!encounter">
         <div class="empty-state" style="padding: var(--space-lg);">
             <p>No active encounter</p>
-            <span style="font-size: var(--text-sm); color: var(--color-text-muted);">Create an encounter to start tracking combat</span>
+            <span style="color: var(--color-text-muted);">Create an encounter to start tracking combat</span>
         </div>
     </template>
 
@@ -22,7 +22,7 @@
                                     x-text="encounter?.round || 0"></strong></span>
                 <span class="badge badge-warning" x-show="pendingWaves.length > 0"
                       x-text="'(' + pendingWaves.length + ' wave' + (pendingWaves.length !== 1 ? 's' : '') + ' pending)'"></span>
-                <button class="btn btn-danger" style="padding: 2px 8px; font-size: 0.75rem;" @click="endEncounter()">End</button>
+                <button class="btn btn-danger" style="padding: 2px 8px;" @click="endEncounter()">End</button>
             </div>
 
             <!-- Initiative setup panel -->
@@ -92,7 +92,7 @@
                  x-show="encounter?.combatPhase === 'RUNNING'">
                 <button class="btn btn-ghost" style="padding: 2px 8px;" @click="previousTurn()"
                         data-action="previous-turn">◀ Prev</button>
-                <span style="font-size: var(--text-sm);">
+                <span class="tracker-turns__active">
                     Active: <strong x-text="activeCombatant?.name || '—'"></strong>
                 </span>
                 <button class="btn btn-ghost" style="padding: 2px 8px;" @click="nextTurn()"
@@ -319,7 +319,7 @@
                             <template x-if="c.groupId && !c.groupLeader"><span class="group-branch">├ </span></template>
                             <span x-text="c.name"></span>
                             <template x-if="c.groupId && c.groupLeader">
-                                <span class="group-count" style="font-size: 0.7rem; color: var(--color-text-muted); margin-left: 2px;" x-text="'(' + groupCount(c.groupId) + ')'"></span>
+                                <span class="group-count" style="color: var(--color-text-muted); margin-left: 2px;" x-text="'(' + groupCount(c.groupId) + ')'"></span>
                             </template>
                         </span>
 
@@ -345,7 +345,7 @@
                                       :title="getConditionText(cond.sourceKey)"
                                       x-text="cond.durationRounds > 0 ? cond.durationRounds : '∞'"></span>
                             </template>
-                            <button class="btn btn-ghost" style="padding: 0 2px; font-size: 0.7rem; line-height: 1;"
+                            <button class="btn btn-ghost" style="padding: 0 2px; line-height: 1;"
                                     x-show="!tableSafe"
                                     @click.stop="openConditionMenu(c.id)">＋</button>
                         </div>
@@ -360,9 +360,9 @@
                 <div class="lair-action-row" x-show="lairActionRowVisible">
                     <span class="init-badge lair-init">20</span>
                     <span class="combatant-name" x-text="encounter?.lairActionName || 'Lair Action'"></span>
-                    <span style="font-size: 0.7rem; color: var(--color-text-muted); margin-left: auto;"
+                    <span style="color: var(--color-text-muted); margin-left: auto;"
                           x-show="!encounter?.lairActionAvailable">✓ this round</span>
-                    <button class="btn btn-ghost" style="padding: 1px 6px; font-size: 0.75rem;"
+                    <button class="btn btn-ghost" style="padding: 1px 6px;"
                             x-show="encounter?.lairActionAvailable"
                             @click="activateLairAction()">Activate</button>
                 </div>
@@ -378,7 +378,7 @@
                     <span>/</span>
                     <span x-text="selected?.maxHp || '?'"></span>
                     <template x-if="selected?.tempHp > 0">
-                        <span style="font-size: 0.7rem; color: var(--color-warning);">+<span x-text="selected.tempHp"></span> temp</span>
+                        <span style="color: var(--color-warning);">+<span x-text="selected.tempHp"></span> temp</span>
                     </template>
                     <span class="hp-flag bloodied" x-show="selected?.bloodied">Bloodied</span>
                     <span class="hp-flag dead" x-show="selected?.defeated">Defeated</span>
@@ -410,39 +410,39 @@
                 <!-- Concentration -->
                 <div class="detail-concentration" x-show="selected?.concentratingOn || selected?.concentrationCheckPending">
                     <template x-if="selected?.concentratingOn">
-                        <div style="margin-bottom: var(--space-xs); font-size: var(--text-sm);">
+                        <div style="margin-bottom: var(--space-xs);">
                             Concentrating: <strong x-text="selected.concentratingOn"></strong>
-                            <button class="btn btn-ghost" style="padding: 1px 6px; font-size: 0.7rem;" @click="setConcentration(selected.id, null)">Drop</button>
+                            <button class="btn btn-ghost" style="padding: 1px 6px;" @click="setConcentration(selected.id, null)">Drop</button>
                         </div>
                     </template>
                     <template x-if="selected?.concentrationCheckPending">
                         <div class="conc-check" style="background: rgba(155, 89, 182, 0.15); padding: var(--space-xs); border-radius: 4px; margin-bottom: var(--space-xs);">
-                            <span style="font-size: var(--text-sm);">Concentration check!</span>
-                            <button class="btn" style="padding: 1px 6px; font-size: 0.7rem;" @click="resolveConcentrationCheck(selected.id, true)">Passed</button>
-                            <button class="btn" style="padding: 1px 6px; font-size: 0.7rem;" @click="resolveConcentrationCheck(selected.id, false)">Failed</button>
+                            <span>Concentration check!</span>
+                            <button class="btn" style="padding: 1px 6px;" @click="resolveConcentrationCheck(selected.id, true)">Passed</button>
+                            <button class="btn" style="padding: 1px 6px;" @click="resolveConcentrationCheck(selected.id, false)">Failed</button>
                         </div>
                     </template>
                 </div>
 
                 <!-- Legendary section -->
                 <div class="detail-legendary" x-show="(selected?.legendaryActionsMax || 0) > 0">
-                    <h4 style="margin: var(--space-xs) 0; font-size: var(--text-sm); color: var(--color-text-muted);">Legendary</h4>
-                    <div style="font-size: var(--text-sm); margin-bottom: 2px;">
+                    <h4 style="margin: var(--space-xs) 0; color: var(--color-text-muted);">Legendary</h4>
+                    <div style="margin-bottom: 2px;">
                         Actions: <span x-text="selected?.legendaryActionsUsed || 0"></span> / <span x-text="selected?.legendaryActionsMax || 0"></span>
-                        <button class="btn btn-ghost" style="padding: 1px 6px; font-size: 0.7rem;" @click="useLegendaryAction(selected.id)">Use</button>
+                        <button class="btn btn-ghost" style="padding: 1px 6px;" @click="useLegendaryAction(selected.id)">Use</button>
                     </div>
-                    <div style="font-size: var(--text-sm);">
+                    <div>
                         Resistances: <span x-text="selected?.legendaryResistancesUsed || 0"></span> / <span x-text="selected?.legendaryResistancesMax || 0"></span>
-                        <button class="btn btn-ghost" style="padding: 1px 6px; font-size: 0.7rem;" @click="useLegendaryResistance(selected.id)">Use</button>
+                        <button class="btn btn-ghost" style="padding: 1px 6px;" @click="useLegendaryResistance(selected.id)">Use</button>
                     </div>
                 </div>
 
                 <!-- Focused mode: expanded statblock -->
                 <div class="detail-focused-statblock" x-show="trackerMode === 'FOCUSED'">
                     <h4>Statblock</h4>
-                    <div x-show="focusedStatblockLoading" style="font-size: var(--text-sm); color: var(--color-text-muted);">Loading...</div>
+                    <div x-show="focusedStatblockLoading" style="color: var(--color-text-muted);">Loading...</div>
                     <template x-if="!focusedStatblockLoading && focusedStatblock">
-                      <div style="font-size: var(--text-sm);">
+                      <div>
                         <div x-show="focusedStatblock.size" class="u-text-xs">
                             <span>Size: </span><span x-text="focusedStatblock.size"></span>
                         </div>
@@ -456,7 +456,7 @@
                             <strong class="u-text-xs">Abilities</strong>
                             <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px;">
                                 <template x-for="(score, key) in focusedStatblock.abilityScores" :key="key">
-                                    <span class="badge" style="font-size: 0.65rem;" x-text="key.toUpperCase() + ' ' + score"></span>
+                                    <span class="badge" x-text="key.toUpperCase() + ' ' + score"></span>
                                 </template>
                             </div>
                         </div>
@@ -464,7 +464,7 @@
                             <strong class="u-text-xs">Saving Throws</strong>
                             <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px;">
                                 <template x-for="st in focusedStatblock.savingThrows" :key="st.ability">
-                                    <span class="badge" style="font-size: 0.65rem;" x-text="st.ability.toUpperCase() + ' +' + st.modifier"></span>
+                                    <span class="badge" x-text="st.ability.toUpperCase() + ' +' + st.modifier"></span>
                                 </template>
                             </div>
                         </div>
@@ -472,7 +472,7 @@
                             <strong class="u-text-xs">Skills</strong>
                             <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px;">
                                 <template x-for="skill in focusedStatblock.skills" :key="skill.name">
-                                    <span class="badge" style="font-size: 0.65rem;" x-text="skill.name + ' +' + skill.modifier"></span>
+                                    <span class="badge" x-text="skill.name + ' +' + skill.modifier"></span>
                                 </template>
                             </div>
                         </div>
@@ -500,14 +500,14 @@
                                 <div style="margin-top: 2px;">
                                     <span class="u-text-xs" style="font-weight: 600;" x-text="action.name + '.'"></span>
                                     <span class="u-text-xs" x-text="action.description"></span>
-                                    <span class="badge" style="font-size: 0.65rem;"
+                                    <span class="badge"
                                           x-show="action.attackBonus != null"
                                           x-text="'Atk +' + action.attackBonus"></span>
-                                    <span class="badge" style="font-size: 0.65rem;"
+                                    <span class="badge"
                                           x-show="action.damageExpression"
                                           x-text="action.damageExpression"></span>
                                     <button type="button" class="btn btn-sm btn-ghost"
-                                            style="padding: 0 4px; font-size: 0.65rem;"
+                                            style="padding: 0 4px;"
                                             x-show="action.damageExpression"
                                             @click="prefillDice(action.damageExpression, action.name + ' damage')">
                                         Prefill
@@ -532,23 +532,23 @@
 
                 <!-- Defeat / Revive / Remove -->
                 <div class="detail-actions" style="display: flex; gap: var(--space-xs); margin-top: var(--space-sm);">
-                    <button class="btn btn-danger" style="padding: 2px 8px; font-size: var(--text-sm);"
+                    <button class="btn btn-danger" style="padding: 2px 8px;"
                             x-show="!selected?.defeated"
                             @click="markDefeated(selected.id, true)">Defeat</button>
-                    <button class="btn" style="padding: 2px 8px; font-size: var(--text-sm);"
+                    <button class="btn" style="padding: 2px 8px;"
                             x-show="selected?.defeated"
                             @click="markDefeated(selected.id, false)">Revive</button>
-                    <button class="btn btn-danger" style="padding: 2px 8px; font-size: var(--text-sm);"
+                    <button class="btn btn-danger" style="padding: 2px 8px;"
                             @click="removeCombatant(selected.id)">Remove</button>
                 </div>
             </div>
 
             <!-- Footer: Undo -->
             <div class="tracker-footer">
-                <button class="btn btn-ghost" style="padding: 2px 8px; font-size: var(--text-sm);"
+                <button class="btn btn-ghost" style="padding: 2px 8px;"
                         @click="undo()"
                         :disabled="!canUndo">↩ Undo</button>
-                <span style="font-size: 0.7rem; color: var(--color-text-muted); margin-left: auto;" x-text="combatants.length + ' combatants'"></span>
+                <span style="color: var(--color-text-muted); margin-left: auto;" x-text="combatants.length + ' combatants'"></span>
             </div>
         </div>
     </template>

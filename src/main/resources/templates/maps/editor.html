@@ -243,7 +243,7 @@
                     <div class="terrain-panel-form">
                         <input type="text" x-model="newTerrainName" placeholder="New terrain name" @keydown.enter="addTerrain()">
                         <input type="color" x-model="newTerrainColor">
-                        <label style="display: flex; align-items: center; gap: 4px; font-size: var(--text-sm);">
+                        <label style="display: flex; align-items: center; gap: 4px;">
                             <input type="checkbox" x-model="newTerrainWalkable"> Walkable
                         </label>
                         <button class="btn btn-primary" @click="addTerrain()">Add terrain</button>
@@ -279,7 +279,7 @@
                 <button class="tool-btn" @click="startCrop()" title="Crop the background image">✂ Crop</button>
                 <button class="tool-btn" @click="startCalibration()" title="Calibrate grid to image">📐 Calibrate Grid</button>
                 <button class="tool-btn" @click="applyCalibrationCellSize()" title="Persist the calibrated cell size to the map">📏 Apply Cell Size</button>
-                <label style="display: flex; align-items: center; gap: 4px; font-size: var(--text-sm); padding: 0 4px; cursor: pointer;" title="Lock background image position/size">
+                <label style="display: flex; align-items: center; gap: 4px; padding: 0 4px; cursor: pointer;" title="Lock background image position/size">
                     <input type="checkbox" x-model="imageLocked" @change="setImageLocked(imageLocked)"> 🔒 Lock
                 </label>
                 <button class="tool-btn" @click="exportPng()" title="Export the current map view as a PNG">⬇ Export PNG</button>
@@ -328,7 +328,7 @@
                             <button @click="toggleLocked(l.id)"
                                     :title="layers[l.id].locked ? 'Unlock layer' : 'Lock layer'"
                                     x-text="layers[l.id].locked ? '🔒' : '🔓'"></button>
-                            <label style="display: inline-flex; align-items: center; font-size: 10px; cursor: pointer;"
+                            <label style="display: inline-flex; align-items: center; cursor: pointer;"
                                    :title="(layers[l.id].playerVisible === false ? 'Hidden from players' : 'Visible to players')">
                                 <input type="checkbox"
                                        :checked="layers[l.id].playerVisible !== false"
@@ -369,7 +369,7 @@
                     <div class="threat-pin-results" x-show="threatPinResults.length" x-cloak style="max-height: 120px; overflow-y: auto; margin-bottom: var(--space-xs);">
                         <template x-for="item in threatPinResults" :key="item.id">
                             <button type="button" class="btn btn-ghost u-w-full"
-                                    style="justify-content: flex-start; font-size: var(--text-sm);"
+                                    style="justify-content: flex-start;"
                                     @click="selectThreat(item)"
                                     x-text="item.name"></button>
                         </template>
@@ -388,7 +388,7 @@
                             @click="createThreatPin()" :disabled="!selectedThreat">Create pin</button>
                     <div class="threat-pin-list" style="margin-top: var(--space-sm);">
                         <template x-for="pin in threatPins" :key="pin.id">
-                            <div class="u-flex u-items-center u-gap-xs" style="margin-bottom: 4px; font-size: var(--text-sm);">
+                            <div class="u-flex u-items-center u-gap-xs" style="margin-bottom: 4px;">
                                 <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;"
                                       x-text="(pin.title || pin.key) + ' (' + pin.x + ',' + pin.y + ')'"></span>
                                 <button type="button" class="btn btn-ghost" style="padding: 0 4px;"
@@ -402,7 +402,7 @@
 
         <div class="editor-statusbar">
             <span id="statusMessage">Ready</span>
-                <button class="btn btn-ghost" style="padding: 0 6px; font-size: var(--text-sm); display: none;" x-show="conflict" @click="downloadBackup()">⬇ Backup</button>
+                <button class="btn btn-ghost" style="padding: 0 6px; display: none;" x-show="conflict" @click="downloadBackup()">⬇ Backup</button>
                 <span id="cursorInfo" style="color: var(--color-text-muted);"></span>
                 <span id="saveIndicator" class="save-indicator save-saved">Saved</span>
         </div>

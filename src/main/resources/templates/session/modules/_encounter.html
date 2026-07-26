@@ -8,7 +8,7 @@
     <th:block th:if="${view == null or (view.activeEncounterId == null and view.planned.isEmpty())}">
       <div class="empty-state" style="padding: var(--space-lg);">
         <p>No active encounter</p>
-        <span style="font-size: var(--text-sm); color: var(--color-text-muted);">Link or create an encounter</span>
+        <span style="color: var(--color-text-muted);">Link or create an encounter</span>
       </div>
     </th:block>
     <th:block th:if="${view != null and (view.activeEncounterId != null or !view.planned.isEmpty())}">

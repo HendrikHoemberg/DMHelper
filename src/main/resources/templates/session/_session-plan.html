@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <th:block th:fragment="plan(workspace)">
 <div class="session-plan-inner" th:if="${workspace.sessionPlan != null}">
-  <h3 style="margin: 0 var(--space-md); font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-text-muted);"
+  <h3 style="margin: 0 var(--space-md); text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-text-muted);"
       th:text="${workspace.sessionPlan.title}">Session Plan</h3>
   <div class="plan-beats">
     <th:block th:each="beat : ${workspace.sessionPlan.beats()}">
@@ -11,17 +11,17 @@
         <span class="beat-type" th:text="${#enums.labelOf(beat.type())}">Scene</span>
         <span class="beat-label" th:text="${beat.label()}">Label</span>
         <th:block th:if="${beat.resolved()}">
-          <a class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;"
+          <a class="btn btn-ghost" style="padding: 2px 8px;"
              th:href="${beat.url()}" target="_blank">Open</a>
-          <button class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;"
+          <button class="btn btn-ghost" style="padding: 2px 8px;"
                   th:if="${beat.mapId() != null}"
                   th:attr="data-map-id=${beat.mapId()}"
                   @click="switchMap($el.dataset.mapId)">Switch map</button>
-          <button class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;"
+          <button class="btn btn-ghost" style="padding: 2px 8px;"
                   th:if="${beat.mapId() != null}"
                   th:attr="data-map-id=${beat.mapId()}"
                   @click="sendToTableWithMap($el.dataset.mapId)">Present</button>
-          <button class="btn btn-ghost" style="font-size: var(--text-sm); padding: 2px 8px;"
+          <button class="btn btn-ghost" style="padding: 2px 8px;"
                   th:if="${beat.type() == 'HANDOUT'}"
                   th:attr="data-handout-id=${beat.targetId()}"
                   @click="presentHandout($el.dataset.handoutId)">Present handout</button>
@@ -38,7 +38,7 @@
 </div>
 <!-- Quest progress is always available alongside an optional session plan -->
 <div class="session-plan-inner quest-progress-panel" data-quest-progress data-screen-sensitive>
-  <h3 style="margin: 0 var(--space-md); font-size: var(--text-sm); text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-text-muted);">Quest Progress</h3>
+  <h3 style="margin: 0 var(--space-md); text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-text-muted);">Quest Progress</h3>
   <div th:if="${workspace.questProgressViews != null and !workspace.questProgressViews.isEmpty()}" class="quest-progress-list">
     <div th:each="qpv : ${workspace.questProgressViews}" class="quest-progress-card u-mb-sm"
          th:attr="data-quest-id=${qpv.quest.id}">
