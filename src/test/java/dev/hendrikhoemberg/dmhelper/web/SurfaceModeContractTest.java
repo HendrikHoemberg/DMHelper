@@ -27,6 +27,7 @@ class SurfaceModeContractTest {
         map.put("adventure/scene-detail.html", "read");
         map.put("adventure/scene-structure.html", "edit");
         map.put("encounter/detail.html", "read");
+        map.put("encounter/setup.html", "edit");
         map.put("party/list.html", "read");
         map.put("session/cockpit.html", "run");
         map.put("campaigns/settings.html", "admin");

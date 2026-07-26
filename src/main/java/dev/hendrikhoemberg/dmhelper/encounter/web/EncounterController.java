@@ -142,14 +142,14 @@ public class EncounterController {
         return "redirect:/campaigns/" + campaignId + "/encounters/" + encounterId;
     }
 
-    @GetMapping("/{id}")
-    public String detail(@PathVariable UUID campaignId, @PathVariable UUID id, Model model) {
+    private void addEncounterModel(UUID campaignId, UUID id, Model model) {
         model.addAttribute("encounter", encounterService.getById(id));
         model.addAttribute("combatants", encounterService.getCombatants(id));
         model.addAttribute("difficulty", encounterService.calculateDifficulty(campaignId, id));
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
         encounterRepository.findById(id).ifPresent(e -> {
+            model.addAttribute("encounterEntity", e);
             model.addAttribute("encounterCombatCue", e.getCombatAudioCue());
             model.addAttribute("encounterVictoryCue", e.getVictoryAudioCue());
             model.addAttribute("encounterVictoryDuration", e.getVictoryCueDurationSeconds());
@@ -157,6 +157,18 @@ public class EncounterController {
         model.addAttribute("waves", encounterService.listWaves(id));
         model.addAttribute("prep", encounterService.getPrep(id));
         model.addAttribute("rewards", encounterService.getRewards(id));
+    }
+
+    @GetMapping("/{id}")
+    public String detail(@PathVariable UUID campaignId, @PathVariable UUID id, Model model) {
+        addEncounterModel(campaignId, id, model);
         return "encounter/detail";
+    }
+
+    @GetMapping("/{id}/setup")
+    public String setup(@PathVariable UUID campaignId, @PathVariable UUID id, Model model) {
+        addEncounterModel(campaignId, id, model);
+        model.addAttribute("maps", mapRepo.findByCampaignIdOrderBySortOrderAsc(campaignId));
+        return "encounter/setup";
     }
 }

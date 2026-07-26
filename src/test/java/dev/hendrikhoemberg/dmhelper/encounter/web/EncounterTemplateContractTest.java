@@ -16,8 +16,8 @@ class EncounterTemplateContractTest {
     private CampaignRepository campaignRepository;
 
     @Test
-    void detailIncludesLibraryAddWavePrepRewardsSummary() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/encounter/detail.html"));
+    void setupIncludesLibraryAddWavePrepRewardsSummary() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/encounter/setup.html"));
         assertThat(html).contains("encounter/_library-add :: library-add");
         assertThat(html).contains("encounter/_threat-add :: threat-add");
         assertThat(html).contains("encounter/_waves :: waves");

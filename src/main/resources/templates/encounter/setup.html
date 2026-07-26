@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="'DMHelper — Setup: ' + ${encounter.name}">DMHelper — Setup</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main" data-surface="edit">
+            <div class="page-header">
+                <div>
+                    <div class="page-header-eyebrow">
+                        <a th:href="@{/campaigns/{cid}/encounters(cid=${campaignId})}">Encounters</a>
+                        / <a th:href="@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${encounter.id})}" th:text="${encounter.name}">Encounter</a>
+                        / Setup
+                    </div>
+                    <h1 th:text="'Setup: ' + ${encounter.name}">Setup: Encounter Name</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+                <div class="page-header-actions">
+                    <a th:href="@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${encounter.id})}" class="btn btn-primary">Done &mdash; back to encounter</a>
+                </div>
+            </div>
+
+            <div class="edit-layout">
+                <div class="editor-block">
+                    <details class="setup-group" data-setup-group="combatants" open>
+                        <summary><h2>Combatants</h2></summary>
+                        <div class="setup-group__body">
+                            <form method="post"
+                                  th:action="@{/campaigns/{cid}/encounters/{eid}/combatants(cid=${campaignId}, eid=${encounter.id})}"
+                                  class="combatant-quickadd u-flex u-gap-sm u-mb-sm">
+                                <input type="text" name="name" placeholder="Name" required>
+                                <input type="number" name="maxHp" placeholder="HP" value="10">
+                                <select name="kind">
+                                    <option value="NPC">NPC</option>
+                                    <option value="PC">PC</option>
+                                    <option value="MONSTER">Monster</option>
+                                    <option value="OBJECT">Object</option>
+                                    <option value="HAZARD">Hazard</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-primary">Add</button>
+                            </form>
+
+                            <div class="u-flex u-gap-sm u-mb-sm u-flex-wrap">
+                                <th:block th:if="${encounter.mapId != null}">
+                                    <form method="post"
+                                          th:action="@{/campaigns/{cid}/encounters/{eid}/prefill/map(cid=${campaignId}, eid=${encounter.id})}"
+                                          class="u-inline">
+                                        <button type="submit" class="btn btn-sm">Prefill from Map</button>
+                                    </form>
+                                </th:block>
+                                <form method="post"
+                                      th:action="@{/campaigns/{cid}/encounters/{eid}/prefill/party(cid=${campaignId}, eid=${encounter.id})}"
+                                      class="u-inline">
+                                    <button type="submit" class="btn btn-sm">Prefill from Party</button>
+                                </form>
+                            </div>
+
+                            <div th:replace="~{encounter/_library-add :: library-add(${campaignId}, ${encounter.id})}"></div>
+                            <div th:replace="~{encounter/_threat-add :: threat-add(${campaignId}, ${encounter.id})}"></div>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="editor-block">
+                    <div th:replace="~{encounter/_form :: form(${campaignId}, ${encounter}, ${maps})}"></div>
+
+                    <details class="setup-group" data-setup-group="waves">
+                        <summary><h2>Waves</h2></summary>
+                        <div class="setup-group__body" th:replace="~{encounter/_waves :: waves(${campaignId}, ${encounter})}"></div>
+                    </details>
+
+                    <details class="setup-group" data-setup-group="notes">
+                        <summary><h2>Preparation Notes</h2></summary>
+                        <div class="setup-group__body" th:replace="~{encounter/_prep :: prep(${campaignId}, ${encounter}, ${prep})}"></div>
+                    </details>
+
+                    <details class="setup-group" data-setup-group="rewards">
+                        <summary><h2>Rewards</h2></summary>
+                        <div class="setup-group__body" th:replace="~{encounter/_rewards :: rewards(${campaignId}, ${encounter}, ${rewards})}"></div>
+                    </details>
+
+                    <div class="surface-danger-zone u-p-md u-mt-lg">
+                        <h2>Danger Zone</h2>
+                        <p class="text-muted u-mb-sm">Once you delete an encounter, there is no going back. Please be certain.</p>
+                        <button class="btn btn-danger"
+                                th:attr="hx-delete=@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${encounter.id})}"
+                                hx-confirm="Delete this encounter?"
+                                hx-target="body"
+                                hx-swap="outerHTML">Delete encounter</button>
+                    </div>
+                </div>
+            </div>
+
+            <div th:replace="~{encounter/_summary-modal :: summary-modal(${campaignId}, ${encounter})}"></div>
+        </main>
+    </div>
+</body>
+</html>
