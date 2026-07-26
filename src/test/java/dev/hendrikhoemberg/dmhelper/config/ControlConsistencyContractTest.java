@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -20,13 +21,16 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class ControlConsistencyContractTest {
 
+    private static final Set<String> APP_CONTROL_CLASSES = Set.of(
+            "btn", "btn-primary", "btn-ghost", "btn-danger", "btn-warning",
+            "audio-btn", "audio-btn-primary", "tool-btn", "terrain-swatch",
+            "appnav-collapse", "cockpit-splitter", "cockpit-zone__tab", "dice-toggle-btn",
+            "form-tab", "map-editor-control", "modal-close", "roll-btn", "sb-result-item");
+
     @Test
     void everyButtonInAGovernedTemplateDeclaresItsRole() throws IOException {
         Pattern button = Pattern.compile("<button\\b[^>]*>", Pattern.DOTALL);
         Pattern classAttribute = Pattern.compile("\\sclass=\\\"([^\\\"]*)\\\"");
-        Pattern appControlClass = Pattern.compile("(?:^|\\s)(?:btn(?:-[\\w-]+)?|audio-btn(?:-[\\w-]+)?|"
-                + "tool-btn|terrain-swatch|appnav-collapse|cockpit-splitter|cockpit-zone__tab|"
-                + "dice-toggle-btn|form-tab|map-editor-control|modal-close|roll-btn|sb-result-item)(?:\\s|$)");
         List<String> offenders = new ArrayList<>();
 
         try (Stream<Path> templates = Files.walk(Path.of("src/main/resources/templates"))) {
@@ -35,7 +39,7 @@ class ControlConsistencyContractTest {
                 while (m.find()) {
                     String markup = m.group();
                     Matcher classes = classAttribute.matcher(markup);
-                    if (!classes.find() || !appControlClass.matcher(classes.group(1)).find()) {
+                    if (!classes.find() || !matchesAppControlClass(classes.group(1))) {
                         offenders.add(template + " → " + markup);
                     }
                 }
@@ -43,6 +47,21 @@ class ControlConsistencyContractTest {
         }
 
         assertThat(offenders).as("buttons without an app control class").isEmpty();
+    }
+
+    @Test
+    void roleGuardRejectsMadeUpControlClasses() {
+        assertThat(matchesAppControlClass("btn-made-up")).isFalse();
+        assertThat(matchesAppControlClass("audio-btn-made-up")).isFalse();
+        assertThat(matchesAppControlClass("btn btn-xs")).isTrue();
+        assertThat(matchesAppControlClass("terrain-swatch active")).isTrue();
+    }
+
+    private static boolean matchesAppControlClass(String classes) {
+        for (String className : classes.split("\\s+")) {
+            if (APP_CONTROL_CLASSES.contains(className)) return true;
+        }
+        return false;
     }
 
     @Test
