@@ -20,7 +20,7 @@
                        th:href="@{${createHref}(campaignId=${campaignId})}"
                        th:text="'+ ' + ${createLabel}">+ New Trap</a>
                     <!-- Routes: /library/traps , /library/hazards -->
-                    <a th:if="${campaignId != null}" class="btn btn-primary"
+                    <a th:if="${campaignId != null}" class="btn"
                        th:href="@{/campaigns/{id}(id=${campaignId})}">&larr; Back to Campaign</a>
                 </div>
             </div>
@@ -49,7 +49,7 @@
                             <span th:text="${#enums.label(item.severity)}">Severity</span>
                             <span th:if="${item.source != null}" th:text="' · ' + ${#enums.label(item.source)}"> · Custom</span>
                         </p>
-                        <a class="btn btn-sm btn-primary"
+                        <a class="btn btn-sm"
                            th:href="@{${detailBase} + '/' + ${item.id}}">View</a>
                     </div>
                 </th:block>

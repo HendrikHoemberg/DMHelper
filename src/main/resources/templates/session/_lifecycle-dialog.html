@@ -34,9 +34,9 @@
         <button class="btn btn-ghost" type="button" @click="updateAttendance()">Save attendance</button>
       </fieldset>
       <div style="display: flex; gap: var(--space-sm); flex-wrap: wrap;">
-        <button class="btn btn-primary" x-show="sessionStatus === 'RUNNING'"
+        <button class="btn" x-show="sessionStatus === 'RUNNING'"
                 @click="pauseSession()">Pause</button>
-        <button class="btn btn-primary" x-show="sessionStatus === 'PAUSED'"
+        <button class="btn" x-show="sessionStatus === 'PAUSED'"
                 @click="resumeSession()">Resume</button>
         <button class="btn btn-ghost" @click="beginReview()"
                 >Review &amp; Complete</button>
@@ -56,7 +56,7 @@
                   placeholder="Session draft will appear here..."></textarea>
       </div>
       <div style="margin-top: var(--space-md); display: flex; gap: var(--space-sm);">
-        <button type="submit" class="btn btn-primary">Save &amp; Complete</button>
+        <button type="submit" class="btn">Save &amp; Complete</button>
         <button type="button" class="btn btn-ghost" @click="cancelReview()">Cancel Review</button>
         <button type="button" class="btn btn-ghost" @click="closeLifecycle()">Close</button>
       </div>

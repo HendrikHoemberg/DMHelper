@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!-- One error, directly under the control that caused it (spec 2026-07-22 §10.3).
+     Callers pass the bound field name: ~{common/_field-error :: field-error('name')} -->
+<p th:fragment="field-error(field)" class="field-error" role="alert"
+   th:if="${#fields.hasErrors(field)}" th:errors="${'*{' + field + '}'}">Error</p>
+</html>

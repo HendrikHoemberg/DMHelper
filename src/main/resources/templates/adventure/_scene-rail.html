@@ -5,7 +5,7 @@
 
     <div class="u-flex u-gap-xs u-mb-md">
       <button class="btn btn-sm"
-              th:classappend="${scene.status.name() == 'VISITED'} ? 'btn-primary' : 'btn-ghost'"
+              th:classappend="${scene.status.name() == 'VISITED'} ? 'btn' : 'btn-ghost'"
               th:hx-put="@{/scenes/{id}/status(id=${scene.id})}"
               hx-vals='{"status": "VISITED"}'
               hx-target="#sceneStatusBadge" hx-swap="outerHTML">Visited</button>
@@ -52,7 +52,7 @@
     </div>
 
     <div th:if="${scene.encounter == null and canSeedEncounter}" class="u-mb-md">
-      <button class="btn btn-sm btn-primary"
+      <button class="btn btn-sm"
               th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/seed-encounter(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
               hx-target="#sceneRail" hx-swap="innerHTML">
         Start encounter from this scene
@@ -146,7 +146,7 @@
 
     <div class="u-mt-md">
       <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/structure(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-         class="btn btn-sm btn-primary">Edit scene &amp; structure</a>
+         class="btn btn-sm">Edit scene &amp; structure</a>
     </div>
   </div>
 </div>

@@ -347,3 +347,91 @@
     border-bottom: 1px solid var(--color-border);
 }
 .organize-panel__title { font-weight: 600; }
+
+/* ── Operational readiness (spec 2026-07-22 §8.1) ──
+   The first thing a DM reads on the campaign home, and until now the only surface in the
+   app with no stylesheet. Blocked and ready are told apart by a semantic edge, not by gold. */
+.readiness-panel {
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-border-strong);
+    border-radius: var(--radius);
+    background: var(--elevation-raised-bg);
+    padding: var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+
+.readiness-panel.is-blocked { border-left-color: var(--color-warning); }
+.readiness-panel.is-ready { border-left-color: var(--color-success); }
+
+.readiness-panel__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-md);
+    margin-bottom: var(--space-sm);
+}
+
+.readiness-panel__head h3 { margin: 0; font-size: var(--text-base); font-weight: 600; }
+
+.readiness-badge {
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 2px 10px;
+    border-radius: var(--radius);
+    border: 1px solid currentColor;
+}
+
+.readiness-panel.is-blocked .readiness-badge { color: var(--color-warning); }
+.readiness-panel.is-ready .readiness-badge { color: var(--color-success); }
+
+.readiness-empty { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+
+.readiness-list { list-style: none; margin: 0; padding: 0; }
+
+.readiness-item {
+    display: grid;
+    grid-template-columns: minmax(12rem, 1fr) 2fr auto;
+    align-items: baseline;
+    gap: var(--space-sm) var(--space-md);
+    padding: var(--space-sm) 0;
+    border-top: 1px solid var(--color-border);
+}
+
+.readiness-item:first-child { border-top: none; }
+
+.readiness-item--blocker .readiness-item__title { color: var(--color-text); font-weight: 600; }
+.readiness-item--accepted .readiness-item__title { color: var(--color-text-muted); }
+
+.readiness-item__detail { color: var(--color-text-muted); font-size: var(--text-sm); }
+
+.readiness-item__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    justify-self: end;
+}
+
+.readiness-accepted > summary,
+.readiness-advisories > summary {
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    padding: var(--space-sm) 0 0;
+}
+
+@media (max-width: 900px) {
+    .readiness-item { grid-template-columns: 1fr; }
+    .readiness-item__actions { justify-self: start; }
+}
+
+/* The campaign read surface already groups this report within its dashboard. Preserve the
+   established flattened treatment so it does not become a second painted slab. */
+main[data-surface="read"] .readiness-panel {
+    background: transparent;
+    border: none;
+    border-top: 1px solid var(--color-border);
+    border-radius: 0;
+    padding-inline: 0;
+    padding-block: var(--space-sm);
+}

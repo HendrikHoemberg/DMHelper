@@ -283,8 +283,8 @@
                 <template x-for="prompt in rechargePrompts" :key="prompt.abilityName">
                     <div class="recharge-prompt">
                         <span>🔄 <strong x-text="prompt.abilityName"></strong></span>
-                        <button @click="resolveRecharge(activeCombatantId, prompt.abilityName, Math.floor(Math.random() * (prompt.maxRoll || 6)) + 1)">Roll d<span x-text="prompt.maxRoll || 6"></span></button>
-                        <button @click="resolveRecharge(activeCombatantId, prompt.abilityName, null)">Skip</button>
+                        <button class="btn" @click="resolveRecharge(activeCombatantId, prompt.abilityName, Math.floor(Math.random() * (prompt.maxRoll || 6)) + 1)">Roll d<span x-text="prompt.maxRoll || 6"></span></button>
+                        <button class="btn" @click="resolveRecharge(activeCombatantId, prompt.abilityName, null)">Skip</button>
                     </div>
                 </template>
             </div>

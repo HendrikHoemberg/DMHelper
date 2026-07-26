@@ -21,7 +21,7 @@
       </details>
     </div>
     <div style="display: flex; gap: var(--space-xs); flex-wrap: wrap;">
-      <button class="btn btn-primary btn-sm"
+      <button class="btn btn-sm"
               th:hx-put="@{/campaigns/{cid}/current-scene/step(cid=${campaignId})}"
               hx-vals='{"direction": -1}'
               hx-target="body" hx-swap="outerHTML"

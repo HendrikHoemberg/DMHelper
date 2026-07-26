@@ -182,12 +182,12 @@
 <!-- Arrange menu (shared; controller fills targets). Hidden until edit mode. -->
 <div id="cockpitModuleArrangeMenu" class="cockpit-arrange-menu" hidden data-layout-edit-only role="menu"
      aria-label="Arrange module">
-  <button type="button" role="menuitem" data-arrange-zone="PRIMARY">Move to Primary</button>
-  <button type="button" role="menuitem" data-arrange-zone="LEFT_SUPPORT">Move to Left support</button>
-  <button type="button" role="menuitem" data-arrange-zone="RIGHT_SUPPORT">Move to Right support</button>
-  <button type="button" role="menuitem" data-arrange-zone="BOTTOM_UTILITY">Move to Bottom utility</button>
-  <button type="button" role="menuitem" data-arrange-move="earlier">Move earlier</button>
-  <button type="button" role="menuitem" data-arrange-move="later">Move later</button>
+  <button type="button" class="btn btn-ghost btn-xs" role="menuitem" data-arrange-zone="PRIMARY">Move to Primary</button>
+  <button type="button" class="btn btn-ghost btn-xs" role="menuitem" data-arrange-zone="LEFT_SUPPORT">Move to Left support</button>
+  <button type="button" class="btn btn-ghost btn-xs" role="menuitem" data-arrange-zone="RIGHT_SUPPORT">Move to Right support</button>
+  <button type="button" class="btn btn-ghost btn-xs" role="menuitem" data-arrange-zone="BOTTOM_UTILITY">Move to Bottom utility</button>
+  <button type="button" class="btn btn-ghost btn-xs" role="menuitem" data-arrange-move="earlier">Move earlier</button>
+  <button type="button" class="btn btn-ghost btn-xs" role="menuitem" data-arrange-move="later">Move later</button>
 </div>
 
 <dialog id="cockpitAddModuleDialog" class="cockpit-dialog" aria-labelledby="cockpitAddModuleTitle">
@@ -215,7 +215,7 @@
     <input id="cockpitPresetNameInput" type="text" class="form-input" maxlength="80" autocomplete="off">
   </label>
   <div class="cockpit-dialog__actions">
-    <button type="button" class="btn btn-primary" data-preset-name="confirm">Save</button>
+    <button type="button" class="btn" data-preset-name="confirm">Save</button>
     <button type="button" class="btn btn-ghost" data-preset-name="cancel">Cancel</button>
   </div>
 </dialog>

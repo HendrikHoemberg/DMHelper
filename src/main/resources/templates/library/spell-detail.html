@@ -15,7 +15,7 @@
                     <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${spell})}"></th:block>
                     <th:block th:if="${spell.source.name() == 'SRD'}">
                         <form th:hx-post="@{/library/spells/{id}/clone(id=${spell.id})}" hx-target="body">
-                            <button type="submit" class="btn btn-primary">Clone &amp; Edit</button>
+                            <button type="submit" class="btn">Clone &amp; Edit</button>
                         </form>
                     </th:block>
                     <th:block th:if="${spell.source.name() == 'CUSTOM'}">

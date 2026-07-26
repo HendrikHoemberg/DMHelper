@@ -97,7 +97,7 @@
                 th:attr="data-map-id=${view.mapId}"
                 @click="switchMap($el.dataset.mapId)"
                 title="Switch to scene map">Map</button>
-        <button class="btn btn-primary"
+        <button class="btn"
                 th:if="${view.canSeedEncounter}"
                 th:attr="data-scene-id=${view.sceneId}"
                 :disabled="seedingSceneEncounter"

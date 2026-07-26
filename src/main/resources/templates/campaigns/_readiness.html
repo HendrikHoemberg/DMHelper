@@ -14,22 +14,23 @@
       <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
       <span class="readiness-item__actions">
         <a th:with="href=${repairService.hrefFor(campaignId, item.repairKind(), item.targetId())}"
-           th:if="${href != null}" th:href="${href}" class="readiness-item__repair">Fix in preparation</a>
+           th:if="${href != null}" th:href="${href}"
+           class="btn btn-ghost btn-xs readiness-item__repair">Fix in preparation</a>
         <form th:action="@{|/campaigns/${campaignId}/readiness/accept|}" method="post" class="inline-form"
               th:hx-post="@{|/campaigns/${campaignId}/readiness/accept|}"
               hx-target="closest .readiness-panel" hx-swap="outerHTML">
           <input type="hidden" name="itemKey" th:value="${item.key()}"/>
-          <button type="submit">Accept</button>
+          <button type="submit" class="btn btn-primary btn-xs">Accept</button>
         </form>
         <form th:if="${item.category().name() == 'ASSET'}"
               th:action="@{|/campaigns/${campaignId}/readiness/assets/${item.targetId()}/kind|}" method="post" class="inline-form"
               th:hx-post="@{|/campaigns/${campaignId}/readiness/assets/${item.targetId()}/kind|}"
               hx-target="closest .readiness-panel" hx-swap="outerHTML">
-          <select name="kind">
+          <select name="kind" class="form-input form-input--xs">
             <option th:each="k : ${T(dev.hendrikhoemberg.dmhelper.handout.data.Handout.AssetKind).values()}"
                     th:value="${k}" th:text="${k}"></option>
           </select>
-          <button type="submit">Set kind</button>
+          <button type="submit" class="btn btn-xs">Set kind</button>
         </form>
       </span>
     </li>
@@ -42,7 +43,7 @@
           <span class="readiness-item__title" th:text="${item.title()}">Title</span>
           <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
           <span class="readiness-item__actions">
-            <button type="button" class="readiness-item__undo"
+            <button type="button" class="btn btn-ghost btn-xs readiness-item__undo"
                     th:hx-delete="@{/campaigns/{cid}/readiness/accept(cid=${campaignId},itemKey=${item.key()})}"
                     hx-target="closest .readiness-panel" hx-swap="outerHTML">Undo</button>
           </span>

@@ -55,7 +55,7 @@
                             <label class="u-text-sm">Day</label>
                             <input type="number" name="day" th:value="${currentDate.day()}" min="1" required class="u-w-80" />
                         </div>
-                        <button type="submit" class="btn btn-primary">Set Date</button>
+                        <button type="submit" class="btn">Set Date</button>
                     </form>
                 </details>
             </div>
@@ -73,7 +73,7 @@
             <!-- Timeline -->
             <h2>Timeline</h2>
             <div class="detail-actions u-mb-sm">
-                <button class="btn btn-primary"
+                <button class="btn"
                         th:hx-get="@{/campaigns/{id}/calendar/events/new(id=${campaignId})}"
                         hx-target="#event-form-area"
                         hx-swap="innerHTML">

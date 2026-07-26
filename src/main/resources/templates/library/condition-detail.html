@@ -15,7 +15,7 @@
                     <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${condition})}"></th:block>
                     <th:block th:if="${condition.source.name() == 'SRD'}">
                         <form th:hx-post="@{/library/conditions/{id}/clone(id=${condition.id})}" hx-target="body">
-                            <button type="submit" class="btn btn-primary">Clone &amp; Edit</button>
+                            <button type="submit" class="btn">Clone &amp; Edit</button>
                         </form>
                     </th:block>
                     <th:block th:if="${condition.source.name() == 'CUSTOM'}">

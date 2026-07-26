@@ -17,12 +17,12 @@
     <h2 th:id="|cockpitModuleTitle-${module.key}|" th:text="${module.title}">Module</h2>
     <span class="cockpit-module__attention" hidden aria-label="0 updates"></span>
     <div class="cockpit-module__actions">
-      <button type="button" data-module-focus
+      <button type="button" class="btn btn-ghost btn-xs" data-module-focus
               th:if="${module.focusSupported}"
               th:attr="aria-label=|Focus ${module.title}|">Focus</button>
-      <button type="button" data-module-menu data-layout-edit-only hidden
+      <button type="button" class="btn btn-ghost btn-xs" data-module-menu data-layout-edit-only hidden
               th:attr="aria-label=|Arrange ${module.title}|">Arrange</button>
-      <button type="button" data-module-remove data-layout-edit-only hidden
+      <button type="button" class="btn btn-danger btn-xs" data-module-remove data-layout-edit-only hidden
               th:attr="aria-label=|Remove ${module.title}|">Remove</button>
     </div>
   </header>
@@ -40,7 +40,7 @@
   </div>
   <div class="cockpit-module__error" data-module-error role="alert" hidden>
     <span th:text="${module.states.errorMessage}">Refresh failed.</span>
-    <button type="button" data-module-retry>Retry</button>
+    <button type="button" class="btn btn-ghost btn-xs" data-module-retry>Retry</button>
   </div>
 </article>
 </html>

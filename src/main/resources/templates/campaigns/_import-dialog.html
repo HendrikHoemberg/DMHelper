@@ -80,7 +80,7 @@
                 <button class="btn" @click="close"
                         x-bind:disabled="confirming">Cancel</button>
                 <template x-if="preview && preview.previewId && preview.status !== 'BLOCKED'">
-                    <button class="btn btn-primary"
+                    <button class="btn"
                             @click="confirm"
                             x-bind:disabled="confirming || (preview.status === 'CONFIRM_WARNINGS' && !acceptWarnings)"
                             x-text="confirming ? 'Importing...' : 'Import Campaign'"></button>

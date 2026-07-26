@@ -15,7 +15,7 @@
                     <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${feat})}"></th:block>
                     <th:block th:if="${feat.source.name() == 'SRD'}">
                         <form th:hx-post="@{/library/feats/{id}/clone(id=${feat.id})}" hx-target="body">
-                            <button type="submit" class="btn btn-primary">Clone &amp; Edit</button>
+                            <button type="submit" class="btn">Clone &amp; Edit</button>
                         </form>
                     </th:block>
                     <th:block th:if="${feat.source.name() == 'CUSTOM'}">

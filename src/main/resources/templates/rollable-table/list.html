@@ -18,7 +18,7 @@
                 <div class="page-header-actions">
                     <a class="btn btn-primary"
                        th:href="@{/library/tables/new(campaignId=${campaignId})}">+ New Table</a>
-                    <a th:if="${campaignId != null}" class="btn btn-primary"
+                    <a th:if="${campaignId != null}" class="btn"
                        th:href="@{/campaigns/{id}(id=${campaignId})}">&larr; Back to Campaign</a>
                 </div>
             </div>
@@ -48,7 +48,7 @@
                     <div class="card">
                         <h3 th:text="${t.name}">Table Name</h3>
                         <p class="text-muted" th:text="${#enums.label(t.category)}">Category</p>
-                        <a class="btn btn-sm btn-primary"
+                        <a class="btn btn-sm"
                            th:href="@{/library/tables/{id}(id=${t.id})}">View</a>
                     </div>
                 </th:block>
