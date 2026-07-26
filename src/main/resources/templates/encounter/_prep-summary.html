@@ -1,0 +1,68 @@
+<div th:fragment="prepSummary" data-prep-summary>
+    <dl class="prep-summary__facts">
+        <div>
+            <dt>Roster</dt>
+            <dd th:text="${#lists.size(combatants)} + ' combatants'">0 combatants</dd>
+            <dd th:text="${#lists.size(combatants.?[kind == 'MONSTER'])} + ' monsters'">0 monsters</dd>
+            <dd th:text="${#lists.size(combatants.?[kind == 'PC'])} + ' PCs'">0 PCs</dd>
+        </div>
+        <div th:if="${difficulty.rating != 'N/A'}">
+            <dt>Difficulty</dt>
+            <dd>
+                <span class="badge badge-rating"
+                      th:classappend="'badge-' + ${#strings.toLowerCase(difficulty.rating)}"
+                      th:text="'Estimate: ' + ${difficulty.rating}">Estimate: MODERATE</span>
+            </dd>
+            <dd th:text="'Adjusted XP: ' + ${difficulty.adjustedXp} + ' vs threshold ' + ${difficulty.partyThreshold}">XP info</dd>
+        </div>
+        <div th:if="${prep.sceneKey != null and !prep.sceneKey.isBlank()}">
+            <dt>Scene</dt>
+            <dd th:text="${prep.sceneKey}">Scene key</dd>
+        </div>
+        <div th:if="${encounter.mapId != null}">
+            <dt>Map</dt>
+            <dd>Linked to encounter</dd>
+        </div>
+        <div>
+            <dt>Waves</dt>
+            <dd th:text="${#lists.size(waves)} + ' wave(s)'">0 waves</dd>
+        </div>
+        <div th:if="${rewards.xpTotal != null or rewards.xpPerPc != null}">
+            <dt>Rewards</dt>
+            <dd th:if="${rewards.xpTotal != null}" th:text="'Total XP: ' + ${rewards.xpTotal}">XP total</dd>
+            <dd th:if="${rewards.xpPerPc != null}" th:text="'Per PC: ' + ${rewards.xpPerPc}">XP per PC</dd>
+        </div>
+        <div th:if="${encounterCombatCue != null}">
+            <dt>Combat Audio</dt>
+            <dd th:text="${encounterCombatCue.name}">Combat cue</dd>
+        </div>
+        <div th:if="${#lists.size(combatants.?[initiative == null]) > 0}">
+            <dt>Initiative</dt>
+            <dd class="u-text-warning" th:text="${#lists.size(combatants.?[initiative == null])} + ' unset'">0 unset</dd>
+        </div>
+    </dl>
+
+    <div class="prep-summary__notes" th:if="${prep.tactics != null or prep.morale != null or prep.surrender != null or prep.environment != null or prep.scalingNotes != null or prep.sourceLocator != null}">
+        <h3>How to run it</h3>
+        <p th:if="${prep.tactics != null and !prep.tactics.isBlank()}" th:text="${prep.tactics}">Tactics</p>
+        <p th:if="${prep.morale != null and !prep.morale.isBlank()}" th:text="'Morale: ' + ${prep.morale}">Morale</p>
+        <p th:if="${prep.surrender != null and !prep.surrender.isBlank()}" th:text="'Surrender: ' + ${prep.surrender}">Surrender</p>
+        <p th:if="${prep.environment != null and !prep.environment.isBlank()}" th:text="'Environment: ' + ${prep.environment}">Environment</p>
+        <p th:if="${prep.scalingNotes != null and !prep.scalingNotes.isBlank()}" th:text="'Scaling: ' + ${prep.scalingNotes}">Scaling</p>
+        <p th:if="${prep.sourceLocator != null and !prep.sourceLocator.isBlank()}" th:text="'Source: ' + ${prep.sourceLocator}">Source</p>
+    </div>
+
+    <div th:if="${encounter.lairActionName != null and !encounter.lairActionName.isBlank()}">
+        <h3>Lair Actions</h3>
+        <p th:text="${encounter.lairActionName}">Lair action name</p>
+        <p th:text="${encounter.lairActionDescription}">Lair action description</p>
+    </div>
+
+    <details class="prep-summary__estimate" th:if="${difficulty.rating != 'N/A'}">
+        <summary>Estimate source and assumptions</summary>
+        <p th:text="${difficulty.source}">Source</p>
+        <ul>
+            <li th:each="assumption : ${difficulty.assumptions}" th:text="${assumption}">Assumption</li>
+        </ul>
+    </details>
+</div>

@@ -249,3 +249,20 @@
 
 .surface-danger-zone { border: 1px solid var(--color-danger, #b3453e); border-radius: var(--radius-md); }
 .surface-danger-zone h2 { color: var(--color-danger, #b3453e); }
+
+.prep-summary__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+.prep-summary__facts dt {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+}
+.prep-summary__facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+.prep-summary__notes { max-width: 62ch; margin-bottom: var(--space-lg); }
+.prep-summary__notes p { margin-bottom: var(--space-xs); }
+.prep-summary__estimate > summary { cursor: pointer; color: var(--color-text-muted); font-size: var(--text-sm); }

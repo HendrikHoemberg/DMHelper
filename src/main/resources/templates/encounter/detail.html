@@ -8,7 +8,7 @@
     <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
 
     <div class="app-shell">
-            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
         <main class="app-main" data-surface="read">
             <div class="page-header">
                 <div>
@@ -17,44 +17,27 @@
                     <div class="rule-taper rule-taper--gold"></div>
                 </div>
                 <div class="page-header-actions">
+                    <span class="detail-meta u-mr-lg">
+                        <span th:if="${encounter.status == 'ACTIVE'}" class="u-text-success u-fw-bold">ACTIVE</span>
+                        <span th:if="${encounter.status == 'PLANNED'}" class="u-text-info u-fw-bold">PLANNED</span>
+                        <span th:if="${encounter.status == 'DONE'}" class="text-muted u-fw-bold">DONE</span>
+                        <span th:if="${encounter.round > 0}" th:text="' · Round ' + ${encounter.round}"> · Round 1</span>
+                    </span>
+                    <form method="post"
+                          th:action="@{/campaigns/{cid}/encounters/{eid}/run(cid=${campaignId}, eid=${encounter.id})}"
+                          data-run-action class="u-inline">
+                        <button type="submit" class="btn btn-primary">Run</button>
+                    </form>
+                    <a th:href="@{/campaigns/{cid}/encounters/{eid}/setup(cid=${campaignId}, eid=${encounter.id})}"
+                       class="btn btn-ghost">Setup</a>
                     <a th:href="@{/campaigns/{cid}/encounters(cid=${campaignId})}" class="btn btn-ghost">&larr; Back to Encounters</a>
                 </div>
             </div>
 
             <div class="detail-section">
-                <div class="detail-meta">
-                    <span th:if="${encounter.status == 'ACTIVE'}" class="u-text-success u-fw-bold">ACTIVE</span>
-                    <span th:if="${encounter.status == 'PLANNED'}" class="u-text-info u-fw-bold">PLANNED</span>
-                    <span th:if="${encounter.status == 'DONE'}" class="text-muted u-fw-bold">DONE</span>
-                    <span th:if="${encounter.round > 0}" th:text="' · Round ' + ${encounter.round}"> · Round 1</span>
-                    <span th:if="${encounter.combatantCount > 0}" th:text="' · ' + ${encounter.combatantCount} + ' combatants'"> · 0 combatants</span>
-                </div>
-
-                <div class="detail-actions u-mt-lg u-mb-lg">
-                    <th:block th:if="${encounter.status == 'PLANNED'}">
-                        <form method="post" th:action="@{/campaigns/{cid}/encounters/{eid}/activate(cid=${campaignId}, eid=${encounter.id})}"
-                              class="u-inline">
-                            <button type="submit" class="btn btn-primary">Activate</button>
-                        </form>
-                    </th:block>
-                    <th:block th:if="${encounter.status == 'ACTIVE'}">
-                        <button type="button" class="btn btn-warning"
-                                th:attr="data-encounter-id=${encounter.id}"
-                                onclick="window.dispatchEvent(new CustomEvent('end-encounter', { detail: { id: this.dataset.encounterId } }))">
-                            End Encounter
-                        </button>
-                    </th:block>
-                    <a class="btn btn-ghost"
-                       th:href="@{/campaigns/{cid}/encounters/{eid}/edit(cid=${campaignId}, eid=${encounter.id})}">Edit</a>
-                    <button class="btn btn-danger"
-                            th:attr="hx-delete=@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${encounter.id})}"
-                            hx-confirm="Delete this encounter?"
-                            hx-target="body"
-                            hx-swap="outerHTML">Delete</button>
-                </div>
+                <div th:replace="~{encounter/_prep-summary :: prepSummary}"></div>
 
                 <h2>Combatants</h2>
-
                 <div class="u-mb-lg">
                     <table class="data-table" th:if="${not #lists.isEmpty(combatants)}">
                         <thead>
@@ -84,113 +67,10 @@
                     <th:block th:if="${#lists.isEmpty(combatants)}"><th:block th:replace="~{common/_empty-state :: empty-state('No combatants yet.', null, null, null)}"></th:block></th:block>
                 </div>
 
-                <div class="detail-actions u-mb-lg">
-                    <form method="post"
-                          th:action="@{/campaigns/{cid}/encounters/{eid}/combatants(cid=${campaignId}, eid=${encounter.id})}"
-                          class="combatant-quickadd u-flex">
-                        <input type="text" name="name" placeholder="Name" required>
-                        <input type="number" name="maxHp" placeholder="HP" value="10">
-                        <select name="kind">
-                            <option value="NPC">NPC</option>
-                            <option value="PC">PC</option>
-                            <option value="MONSTER">Monster</option>
-                            <option value="OBJECT">Object</option>
-                            <option value="HAZARD">Hazard</option>
-                        </select>
-                        <button type="submit" class="btn btn-sm btn-primary">Add</button>
-                    </form>
-
-                    <th:block th:if="${encounter.mapId != null}">
-                        <form method="post"
-                              th:action="@{/campaigns/{cid}/encounters/{eid}/prefill/map(cid=${campaignId}, eid=${encounter.id})}"
-                              class="u-inline">
-                            <button type="submit" class="btn btn-sm">Prefill from Map</button>
-                        </form>
-                    </th:block>
-
-                    <form method="post"
-                          th:action="@{/campaigns/{cid}/encounters/{eid}/prefill/party(cid=${campaignId}, eid=${encounter.id})}"
-                          class="u-inline">
-                        <button type="submit" class="btn btn-sm">Prefill from Party</button>
-                    </form>
-                </div>
-
-                <h2>Difficulty estimate</h2>
-                <div class="detail-actions u-mb-lg u-items-center">
-                    <th:block th:if="${difficulty.rating == 'N/A'}">
-                        <p class="text-muted">No party or monsters — add combatants to see an estimate.</p>
-                    </th:block>
-                    <th:block th:unless="${difficulty.rating == 'N/A'}">
-                        <span class="badge badge-rating"
-                              th:classappend="'badge-' + ${#strings.toLowerCase(difficulty.rating)}"
-                              th:text="'Estimate: ' + ${difficulty.rating}">Estimate: LOW</span>
-                        <span class="text-muted" th:text="'Monster XP: ' + ${difficulty.adjustedXp}">XP</span>
-                        <span class="text-muted" th:text="'Proxy threshold: ' + ${difficulty.partyThreshold}">Threshold</span>
-                        <span class="text-muted u-text-sm" th:text="${difficulty.details}">Details</span>
-                    </th:block>
-                </div>
-                <details class="detail-description u-mb-lg">
-                    <summary>Estimate source and assumptions</summary>
-                    <p th:text="${difficulty.source}">2014 DMG encounter XP thresholds</p>
-                    <ul>
-                        <li th:each="assumption : ${difficulty.assumptions}"
-                            th:text="${assumption}">Assumption</li>
-                    </ul>
-                </details>
-
-                <div class="u-mb-lg" th:if="${encounterCombatCue != null or encounterVictoryCue != null}">
-                    <h2>Audio</h2>
-                    <div th:if="${encounterCombatCue != null}">
-                        <strong>Combat:</strong>
-                        <span th:text="${encounterCombatCue.name}">Combat Cue</span>
-                        <span class="u-text-xs text-muted" th:text="'(' + ${encounterCombatCue.providerId} + ' / ' + ${encounterCombatCue.category} + ')'">(provider/category)</span>
-                    </div>
-                    <div th:if="${encounterVictoryCue != null}">
-                        <strong>Victory:</strong>
-                        <span th:text="${encounterVictoryCue.name}">Victory Cue</span>
-                        <span class="u-text-xs text-muted" th:text="'(' + ${encounterVictoryCue.providerId} + ' / ' + ${encounterVictoryCue.category} + ')'">(provider/category)</span>
-                        <span th:if="${encounterVictoryDuration != null}" class="u-text-xs text-muted" th:text="' · ' + ${encounterVictoryDuration} + 's'">30s</span>
-                    </div>
-                </div>
-
-                <th:block th:if="${encounter.lairActionName != null and !encounter.lairActionName.isBlank()}">
-                    <h2>Lair Actions</h2>
-                    <div class="detail-description">
-                        <h3 th:text="${encounter.lairActionName}">Lair Action Name</h3>
-                        <p th:text="${encounter.lairActionDescription}">Description</p>
-                    </div>
-                </th:block>
-
-                <hr class="u-my-lg">
-
-                <div class="u-mb-lg" th:replace="~{encounter/_library-add :: library-add(${campaignId}, ${encounter.id})}"></div>
-
-                <hr class="u-my-lg">
-
-                <div class="u-mb-lg" th:replace="~{encounter/_threat-add :: threat-add(${campaignId}, ${encounter.id})}"></div>
-
-                <hr class="u-my-lg">
-
-                <div class="u-mb-lg" th:replace="~{encounter/_waves :: waves(${campaignId}, ${encounter})}"></div>
-
-                <hr class="u-my-lg">
-
-                <div class="u-mb-lg" th:replace="~{encounter/_prep :: prep(${campaignId}, ${encounter}, ${prep})}"></div>
-
-                <hr class="u-my-lg">
-
-                <div class="u-mb-lg" th:replace="~{encounter/_rewards :: rewards(${campaignId}, ${encounter}, ${rewards})}"></div>
-
-                <hr class="u-my-lg">
-
-                <div class="u-mb-lg" th:replace="~{encounter/_summary-modal :: summary-modal(${campaignId}, ${encounter})}"></div>
-            </div>
-
-            <div class="u-mt-lg">
-                <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='ENCOUNTER', targetId=${encounter.id})}"></th:block>
+                <h2 th:if="${not #lists.isEmpty(combatants)}">Notes</h2>
+                <div class="u-mt-lg" th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='ENCOUNTER', targetId=${encounter.id})}"></div>
             </div>
         </main>
-
     </div>
 </body>
 </html>

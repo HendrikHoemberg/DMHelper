@@ -167,7 +167,7 @@ class EncounterControllerTest {
         mockMvc.perform(get("/campaigns/{campaignId}/encounters/{id}", campaignId, encId))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Detail View")))
-                .andExpect(content().string(containsString("Difficulty estimate")))
+                .andExpect(content().string(containsString("Estimate:")))
                 .andExpect(content().string(containsString("2014 DMG encounter XP thresholds")))
                 .andExpect(content().string(containsString("High begins at twice the proxy Moderate threshold.")));
     }

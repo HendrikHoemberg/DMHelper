@@ -94,6 +94,14 @@ public class EncounterController {
                 .build();
     }
 
+    @PostMapping("/{id}/run")
+    public String run(@PathVariable UUID campaignId, @PathVariable UUID id) {
+        if (!"ACTIVE".equals(encounterService.getById(id).status())) {
+            encounterService.activate(id);
+        }
+        return "redirect:/campaigns/" + campaignId + "/session";
+    }
+
     @PostMapping("/{id}/activate")
     public String activate(@PathVariable UUID campaignId, @PathVariable UUID id) {
         encounterService.activate(id);
