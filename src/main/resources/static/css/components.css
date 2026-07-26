@@ -727,8 +727,8 @@
 }
 
 .init-badge {
-    width: 28px;
-    height: 24px;
+    min-width: 34px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -736,7 +736,7 @@
     color: var(--color-accent);
     border-radius: 4px;
     font-size: var(--text-base);
-    font-weight: bold;
+    font-weight: 700;
     flex-shrink: 0;
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
@@ -750,6 +750,20 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* Read from a metre away, next to the bar rather than instead of it. */
+.combatant-hp {
+    font-family: var(--font-mono);
+    font-size: var(--text-base);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+    min-width: 4.5em;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.combatant-row.bloodied .combatant-hp { color: var(--color-warning); }
+.combatant-row.defeated .combatant-hp { color: var(--color-danger); }
 
 .group-count {
     font-size: var(--text-xs);
@@ -813,7 +827,11 @@
     text-align: center;
 }
 
-.hp-delta-input, .detail-hp input { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.hp-delta-input, .detail-hp input {
+    font-family: var(--font-mono);
+    font-size: var(--text-base);
+    font-variant-numeric: tabular-nums;
+}
 
 .condition-icons {
     display: flex;
@@ -875,6 +893,7 @@
 
 .hp-display {
   font-family: var(--font-mono);
+  font-size: var(--text-base);
   font-variant-numeric: tabular-nums;
   min-width: 2.5em;
   text-align: center;

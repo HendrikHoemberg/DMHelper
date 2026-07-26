@@ -323,6 +323,9 @@
                             </template>
                         </span>
 
+                        <!-- Numeric HP — DM only, and the number the log will agree with -->
+                        <span class="combatant-hp u-num" x-show="!tableSafe" x-text="hpLabel(c)"></span>
+
                         <!-- HP bar mini — DM only -->
                         <div class="hp-mini" x-show="!tableSafe">
                             <div class="hp-mini-fill"

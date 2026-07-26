@@ -629,6 +629,12 @@
                 return Math.max(0, Math.min(100, (c.currentHp / c.maxHp) * 100));
             },
 
+            hpLabel(c) {
+                if (!c || c.currentHp == null) return '—';
+                if (!c.maxHp) return String(c.currentHp);
+                return c.currentHp + '/' + c.maxHp;
+            },
+
             conditionColor(sourceKey) {
                 return CONDITION_COLORS[sourceKey] || '#c9a35c';
             },
