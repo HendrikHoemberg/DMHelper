@@ -28,7 +28,7 @@
                 </div>
             </div>
             <div class="detail-section">
-                <h1 th:text="${spell.name}">Spell Name</h1>
+                <h1 data-display-title th:text="${spell.name}">Spell Name</h1>
                 <div class="detail-meta">
                     <span th:if="${spell.level == 0}" class="library-chip library-chip--accent">Cantrip</span>
                     <span th:unless="${spell.level == 0}" class="library-chip library-chip--accent" th:text="'Level ' + ${spell.level}"></span>

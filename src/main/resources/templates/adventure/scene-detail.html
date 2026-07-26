@@ -17,7 +17,7 @@
                     <span> / </span>
                     <span th:text="${scene.title}">Scene</span>
                 </div>
-                <h1 th:text="${scene.title}">Scene Title</h1>
+                <h1 data-display-title th:text="${scene.title}">Scene Title</h1>
                 <div class="page-header-actions">
                     <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/structure(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
                        class="btn btn-ghost">Edit</a>

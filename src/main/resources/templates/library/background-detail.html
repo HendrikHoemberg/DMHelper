@@ -28,7 +28,7 @@
                 </div>
             </div>
             <div class="detail-section">
-                <h1 th:text="${background.name}">Background Name</h1>
+                <h1 data-display-title th:text="${background.name}">Background Name</h1>
                 <div class="detail-body" th:utext="${#markdown.toHtml(background.description)}"></div>
             </div>
             <th:block th:if="${background.source.name() == 'CUSTOM'}"><th:block th:replace="~{library/_provenance-fields :: provenance(entity=${background})}"></th:block></th:block>

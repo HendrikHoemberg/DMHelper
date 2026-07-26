@@ -328,7 +328,6 @@
 }
 .library-card__title {
   margin: 0;
-  font-family: var(--font-display);
   font-size: var(--text-lg);
   font-weight: 700;
   line-height: 1.25;
@@ -372,7 +371,6 @@
 .library-chip--shield { --library-chip-color: var(--color-shield); }
 .library-table__name {
   color: var(--color-text);
-  font-family: var(--font-display);
   font-weight: 700;
 }
 .library-table__meta { color: var(--color-text-muted); }
@@ -616,7 +614,6 @@
     background: var(--color-surface-hover);
     font-weight: 600;
     color: var(--color-accent);
-    font-family: var(--font-display);
     letter-spacing: 0.06em;
     font-size: var(--text-sm);
     text-transform: uppercase;
@@ -655,7 +652,6 @@
     justify-content: space-between;
     padding: var(--space-sm) var(--space-md);
     border-bottom: 1px solid var(--color-border);
-    font-family: var(--font-display);
     letter-spacing: 0.04em;
 }
 
@@ -1059,7 +1055,6 @@
   to { opacity: 0; transform: scale(0.92) rotateX(8deg); }
 }
 .handout-overlay .handout-caption {
-  font-family: var(--font-book);
   font-size: var(--text-lg);
   color: var(--color-text);
   max-width: 68ch;
@@ -1828,10 +1823,10 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 /* Campaign dashboard */
 .dash-header h1 { font-size: var(--text-2xl); margin-bottom: var(--space-xs); }
 .dash-header .rule-taper--gold { max-width: 320px; margin-bottom: var(--space-md); }
-.dash-desc { color: var(--color-text-muted); max-width: 68ch; margin-bottom: var(--space-md); font-family: var(--font-book); }
+.dash-desc { color: var(--color-text-muted); max-width: 68ch; margin-bottom: var(--space-md); }
 .dash-actions { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
 .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-md); margin-top: var(--space-lg); }
-.dash-grid .card h3 { font-family: var(--font-display); font-size: var(--text-base); margin-bottom: var(--space-sm); }
+.dash-grid .card h3 { font-size: var(--text-base); margin-bottom: var(--space-sm); }
 .dash-link { color: var(--color-accent); text-decoration: none; }
 .dash-link:hover { color: var(--color-accent-hover); }
 .dash-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-xs); }
@@ -1843,7 +1838,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
   content: ''; position: absolute; inset: 6px;
   border: 1px solid var(--color-gold-soft); border-radius: 4px; pointer-events: none;
 }
-.campaign-cover h3 { font-family: var(--font-display); font-size: var(--text-lg); }
+.campaign-cover h3 { font-size: var(--text-lg); }
 
 .card-meta {
   color: var(--color-text-muted);
@@ -1913,7 +1908,6 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 
 .empty-state__icon {
   color: var(--color-text-muted);
-  font-family: var(--font-display);
   font-size: var(--text-2xl);
   line-height: 1;
 }
@@ -1921,8 +1915,8 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 .empty-state .empty-state__title {
   margin: 0;
   color: var(--color-text);
-  font-family: var(--font-display);
   font-size: var(--text-lg);
+  font-weight: 600;
   line-height: 1.3;
 }
 
@@ -2314,7 +2308,6 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
   text-align: center;
 }
 .error-page-status {
-  font-family: var(--font-display);
   font-size: var(--text-3xl);
   line-height: 1;
   color: var(--color-accent);
@@ -2386,8 +2379,8 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 .modal-header h3 {
   font-size: var(--text-lg);
   margin: 0;
-  font-family: var(--font-display);
   letter-spacing: 0.02em;
+  font-weight: 600;
 }
 .modal-close {
   background: none;
@@ -2958,7 +2951,6 @@ dialog.modal:not([open]) {
 }
 
 .scale-tile__value {
-  font-family: var(--font-display);
   font-size: var(--text-2xl);
   line-height: 1.1;
   color: var(--color-accent);
@@ -3049,8 +3041,8 @@ dialog.modal:not([open]) {
 }
 
 .chapter-title {
-  font-family: var(--font-display);
   font-size: var(--text-lg);
+  font-weight: 700;
   /* Absorbs the free space so the progress counter stays hard right once the
      chevron makes this a three-item flex row. */
   flex: 1;

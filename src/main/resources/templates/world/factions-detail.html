@@ -17,7 +17,7 @@
                     <span> / </span>
                     <span th:text="${faction.name}">Faction</span>
                 </div>
-                <h1 th:text="${faction.name}">Faction Name</h1>
+                <h1 data-display-title th:text="${faction.name}">Faction Name</h1>
                 <div class="page-header-actions">
                     <button class="btn btn-ghost"
                             th:hx-get="@{/campaigns/{cid}/world/factions/{fid}/edit(cid=${campaignId},fid=${faction.id})}"

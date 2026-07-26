@@ -11,7 +11,7 @@
         <main class="app-main">
             <div class="page-header">
                 <a th:href="@{/library}" class="btn btn-text">← Library</a>
-                <h1 th:text="${classDetail.name}">Class Name</h1>
+                <h1 data-display-title th:text="${classDetail.name}">Class Name</h1>
             </div>
 
             <div th:if="${subclass != null}" class="card u-mb-md">

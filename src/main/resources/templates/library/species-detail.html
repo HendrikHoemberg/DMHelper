@@ -28,7 +28,7 @@
                 </div>
             </div>
             <div class="detail-section">
-                <h1 th:text="${species.name}">Species Name</h1>
+                <h1 data-display-title th:text="${species.name}">Species Name</h1>
                 <div class="detail-grid">
                     <div th:if="${species.size != null}"><strong>Size:</strong> <span th:text="${species.size}"></span></div>
                     <div th:if="${species.speed != null}"><strong>Speed:</strong> <span th:text="${species.speed}"></span></div>

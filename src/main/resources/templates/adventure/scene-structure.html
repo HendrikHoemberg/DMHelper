@@ -19,7 +19,7 @@
                     <span> / </span>
                     <span>Edit</span>
                 </div>
-                <h1 th:text="|Edit: ${scene.title}|">Edit Scene</h1>
+                <h1 data-display-title th:text="|Edit: ${scene.title}|">Edit Scene</h1>
                 <div class="page-header-actions">
                     <a class="btn btn-primary"
                        th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}">Done</a>

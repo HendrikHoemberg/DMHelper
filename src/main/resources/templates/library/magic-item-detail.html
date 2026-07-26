@@ -28,7 +28,7 @@
                 </div>
             </div>
             <div class="detail-section">
-                <h1 th:text="${magicItem.name}">Item Name</h1>
+                <h1 data-display-title th:text="${magicItem.name}">Item Name</h1>
                 <div class="detail-meta">
                     <span class="badge" th:classappend="'badge-' + ${magicItem.rarity?.toLowerCase()}" th:text="${magicItem.rarity}">Rarity</span>
                     <span class="badge" th:text="${magicItem.category}">Category</span>

@@ -17,7 +17,7 @@
                     <span> / </span>
                     <span th:text="${quest.title}">Quest</span>
                 </div>
-                <h1 th:text="${quest.title}">Quest Title</h1>
+                <h1 data-display-title th:text="${quest.title}">Quest Title</h1>
                 <div class="page-header-actions">
                     <span class="badge" th:text="${#enums.label(quest.status)}">STATUS</span>
                     <button class="btn btn-ghost"

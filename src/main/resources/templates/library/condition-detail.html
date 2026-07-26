@@ -28,7 +28,7 @@
                 </div>
             </div>
             <div class="detail-section">
-                <h1 th:text="${condition.name}">Condition Name</h1>
+                <h1 data-display-title th:text="${condition.name}">Condition Name</h1>
                 <div class="detail-body" th:utext="${condition.description}"></div>
             </div>
             <th:block th:if="${condition.source.name() == 'CUSTOM'}"><th:block th:replace="~{library/_provenance-fields :: provenance(entity=${condition})}"></th:block></th:block>

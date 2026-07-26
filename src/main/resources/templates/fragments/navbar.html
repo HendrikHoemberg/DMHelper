@@ -5,7 +5,7 @@
      alone would silently leave them out of every page. -->
 <th:block th:fragment="navbar">
 <nav class="navbar">
-    <a href="/campaigns" class="navbar-brand">DMHelper</a>
+    <a class="navbar-brand" data-display-title th:href="@{/}">DMHelper</a>
     <div class="navbar-right">
         <button class="btn btn-ghost u-text-sm palette-hint" onclick="window.dispatchEvent(new CustomEvent('command-palette-toggle'))" title="Search everything" aria-label="Search everything"><span class="palette-hint__icon" aria-hidden="true">⌕</span><span class="palette-hint__label">Search</span><kbd class="palette-hint__key" id="paletteHintKey">⌘K</kbd></button>
         <!-- Rolls are logged to a campaign's history, so the roller only exists inside one.

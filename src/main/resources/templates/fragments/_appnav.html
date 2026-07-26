@@ -5,8 +5,8 @@
             aria-label="Collapse sidebar" aria-expanded="true" title="Collapse sidebar">&#x00AB;</button>
 
     <th:block th:if="${campaignId != null}">
-        <a class="appnav-link appnav-home" data-icon="&#x1F3F0;" data-label="Campaign Home"
-           th:href="@{/campaigns/{id}(id=${campaignId})}"><span class="appnav-text">Campaign Home</span></a>
+        <a class="appnav-link appnav-home" data-display-title data-icon="&#x1F3F0;" data-label="Campaign Home"
+           th:href="@{/campaigns/{id}(id=${campaignId})}"><span class="appnav-text" data-display-title>Campaign Home</span></a>
 
         <div class="appnav-group">
             <div class="appnav-label">Prep</div>

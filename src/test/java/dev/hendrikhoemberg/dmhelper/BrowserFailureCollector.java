@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-final class BrowserFailureCollector {
+public final class BrowserFailureCollector {
     private final List<String> failures = new CopyOnWriteArrayList<>();
 
     private static final class ExpectedHttpFailure {
@@ -56,7 +56,7 @@ final class BrowserFailureCollector {
         expectedHttpFailures.add(new ExpectedHttpFailure(method, url, status));
     }
 
-    void attach(Page page) {
+    public void attach(Page page) {
         page.onConsoleMessage(this::recordConsoleError);
         page.onPageError(message -> failures.add("page error: " + message));
         page.onRequestFailed(request -> {
@@ -96,7 +96,7 @@ final class BrowserFailureCollector {
                 + response.request().method() + " " + response.url());
     }
 
-    void assertNoFailures() {
+    public void assertNoFailures() {
         assertThat(expectedHttpFailures)
                 .as("declared HTTP failures that never occurred")
                 .allMatch(ExpectedHttpFailure::responseWasSeen);

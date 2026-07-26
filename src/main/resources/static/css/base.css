@@ -29,8 +29,12 @@ body:has(.battle-container) { --vignette-intensity: 0.34; }
 body:has(.handout-overlay) { --vignette-intensity: 0.5; }
 
 h1, h2 {
-  font-family: var(--font-display);
   font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+[data-display-title] {
+  font-family: var(--font-display);
   letter-spacing: 0.02em;
 }
 
@@ -200,7 +204,6 @@ body[data-screen-safety="TABLE_SAFE"] .cockpit-topbar {
 /* Screen safety badge */
 .screen-safety-badge {
   display: none;
-  font-family: var(--font-display);
   font-size: var(--text-xs);
   letter-spacing: 0.15em;
   padding: 2px 10px;
@@ -253,7 +256,6 @@ body[data-screen-safety="TABLE_SAFE"] .screen-safety-badge { display: inline-blo
 }
 
 .appnav-label {
-  font-family: var(--font-display);
   font-size: var(--text-xs);
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -459,7 +461,7 @@ body.loading #loading-filament {
   transition: transform var(--duration-standard) var(--ease-out);
 }
 #shortcut-overlay.open .shortcut-panel { transform: translateY(0) scale(1); }
-.shortcut-panel h2 { font-family: var(--font-display); margin-bottom: var(--space-md); }
+.shortcut-panel h2 { margin-bottom: var(--space-md); }
 .shortcut-panel dl { display: grid; grid-template-columns: auto 1fr; gap: var(--space-sm) var(--space-md); }
 .shortcut-panel dt { font-family: var(--font-mono); color: var(--color-accent); }
 .shortcut-panel dd { color: var(--color-text-muted); }

@@ -44,7 +44,7 @@
       @cockpit-encounter-ended.window="refreshModules(['story', 'encounter'], 'encounter-ended')"
       @keydown.window="handleKeyboard($event)">
   <header class="cockpit-topbar">
-    <h1 class="cockpit-topbar__title"
+    <h1 class="cockpit-topbar__title" data-display-title
         th:text="${workspace.campaign.name}">Campaign</h1>
     <span class="badge" x-text="sessionStatus" th:attr="data-session-status=${workspace.session.status}">IDLE</span>
     <span class="u-nowrap cockpit-topbar__date"
