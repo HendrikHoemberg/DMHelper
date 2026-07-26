@@ -37,6 +37,7 @@
   --color-success: #7fa05f;         /* moss */
   --color-warning: #d9993d;         /* amber */
   --color-border: #3a3125;          /* warm hairline */
+  --color-border-strong: #564936;   /* the same hairline, awake — hover and grouping */
 
   /* compatibility aliases for legacy component references */
   --color-attack-bonus: var(--color-accent);

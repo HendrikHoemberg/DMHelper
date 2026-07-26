@@ -30,9 +30,17 @@
 }
 
 .card:hover {
-  border-color: var(--color-gold-soft);
+  border-color: var(--color-border-strong);
   box-shadow: var(--highlight-candle), var(--shadow-warm-sm);
   transform: translateY(-2px);
+}
+
+/* Gold is the answer to "which one is chosen" and "which one is the action"
+   (spec 2026-07-22 §10.2) — so it must be unmistakable where it does appear. */
+.card[aria-current="true"],
+.card.is-selected {
+  border-color: var(--color-accent);
+  box-shadow: var(--highlight-candle), 0 0 0 1px var(--color-gold-soft);
 }
 
 .card:active {
@@ -112,7 +120,7 @@
 
 .btn:hover {
   background: var(--color-surface-hover);
-  border-color: var(--color-accent);
+  border-color: var(--color-border-strong);
 }
 
 .btn-primary {
@@ -149,7 +157,7 @@
 .btn-ghost:hover {
   color: var(--color-text);
   background: var(--elevation-floating-bg);
-  border-color: var(--color-gold-soft);
+  border-color: var(--color-border-strong);
 }
 
 .btn-warning {
@@ -319,7 +327,7 @@
   transition: border-color var(--transition), box-shadow var(--transition);
   display: flex; flex-direction: column; gap: var(--space-xs);
 }
-.statblock-card:hover { border-color: var(--color-gold-soft); }
+.statblock-card:hover { border-color: var(--color-border-strong); }
 .library-card__header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -378,7 +386,7 @@
 .statblock-card > h3 a { color: var(--color-text); text-decoration: none; }
 .statblock-card > h3 a:hover { color: var(--color-accent); }
 .statblock-card > .statblock-meta { display: flex; gap: var(--space-sm); font-size: var(--text-sm); color: var(--color-text-muted); flex-wrap: wrap; }
-.badge-srd { background: transparent; color: var(--color-accent); border: 1px solid var(--color-gold-soft); font-size: var(--text-sm); padding: 1px 6px; border-radius: 4px; }
+.badge-srd { background: transparent; color: var(--color-accent); border: 1px solid var(--color-border-strong); font-size: var(--text-sm); padding: 1px 6px; border-radius: 4px; }
 .badge-custom { background: transparent; color: var(--color-success); border: 1px solid var(--color-success); font-size: var(--text-sm); padding: 1px 6px; border-radius: 4px; }
 
 
@@ -574,7 +582,7 @@
 .badge-very-rare { background: color-mix(in srgb, var(--color-ember) 70%, var(--color-accent)); color: var(--color-text); }
 .badge-legendary { background: var(--color-accent); color: var(--color-bg); }
 .badge-artifact  { background: var(--color-ember); color: var(--color-text); }
-.badge-attune    { background: transparent; color: var(--color-accent); border: 1px solid var(--color-gold-soft); }
+.badge-attune    { background: transparent; color: var(--color-accent); border: 1px solid var(--color-border-strong); }
 
 /* Encounter difficulty rating badge */
 .badge-rating { font-weight: bold; padding: 0.25em 0.75em; border-radius: 4px; }
@@ -1207,7 +1215,7 @@
 }
 
 .note-type-chip:hover {
-    border-color: var(--color-accent);
+    border-color: var(--color-border-strong);
     color: var(--color-text);
 }
 
@@ -1699,7 +1707,7 @@
 }
 .roll-btn:hover {
     background: var(--color-accent);
-    border-color: var(--color-accent);
+    border-color: var(--color-border-strong);
     color: var(--color-bg);
 }
 
@@ -1745,7 +1753,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 
 .command-palette-box {
   background: var(--elevation-floating-bg);
-  border: 1px solid var(--color-gold-soft);
+  border: 1px solid var(--color-border-strong);
   border-radius: 10px;
   width: 560px; max-height: 70vh;
   display: flex; flex-direction: column;
@@ -1818,7 +1826,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 
 .palette-result-type {
     color: var(--color-accent); font-size: var(--text-xs);
-    padding: 2px 8px; border: 1px solid var(--color-accent);
+    padding: 2px 8px; border: 1px solid var(--color-border-strong);
     border-radius: 4px; flex-shrink: 0; margin-left: var(--space-md);
 }
 
@@ -1970,7 +1978,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 
 .toast {
   background: var(--elevation-floating-bg);
-  border: 1px solid var(--color-gold-soft);
+  border: 1px solid var(--color-border-strong);
   border-left: 3px solid var(--color-accent);
   border-radius: var(--radius);
   padding: var(--space-sm) var(--space-md);
@@ -2288,7 +2296,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
   overflow-y: auto;
   padding: var(--space-lg);
   background: var(--elevation-floating-bg);
-  border-left: 1px solid var(--color-gold-soft);
+  border-left: 1px solid var(--color-border-strong);
   box-shadow: var(--shadow-warm-lg);
   transform: translateX(100%);
   transition: transform var(--duration-structural) var(--ease-out);
@@ -2812,7 +2820,7 @@ dialog.modal:not([open]) {
     user-select: none;
 }
 .condition-chip:has(input:checked) {
-    border-color: var(--color-accent);
+    border-color: var(--color-border-strong);
     color: var(--color-accent);
     background: var(--color-gold-soft);
 }
@@ -2965,7 +2973,7 @@ dialog.modal:not([open]) {
 }
 
 .scale-tile:hover {
-  border-color: var(--color-accent);
+  border-color: var(--color-border-strong);
   background: var(--color-surface-hover);
 }
 

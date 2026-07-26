@@ -49,7 +49,7 @@ body:has(.session-cockpit) {
   overflow: visible;
   container-type: inline-size;
   background: var(--color-surface);
-  border-bottom: 1px solid var(--color-gold-soft);
+  border-bottom: 1px solid var(--color-border-strong);
 }
 
 .cockpit-topbar__title {
@@ -328,7 +328,7 @@ body:has(.session-cockpit) {
 .cockpit-module__actions button:hover,
 .cockpit-module__header button:hover {
   background: var(--color-surface-hover);
-  border-color: var(--color-gold-soft);
+  border-color: var(--color-border-strong);
 }
 
 /* ── Splitters: locked = invisible + inert; edit = 6px line + 32px hit target ── */
