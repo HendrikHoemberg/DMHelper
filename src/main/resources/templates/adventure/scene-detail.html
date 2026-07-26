@@ -32,18 +32,7 @@
 
             <div class="scene-layout" style="display: flex; gap: var(--space-lg);">
                 <div id="sceneBody" class="scene-body" style="flex: 1; min-width: 0;">
-                    <div class="detail-section">
-                        <div th:if="${scene.sceneKey}" class="detail-meta">
-                            <span class="badge" th:text="${scene.sceneKey}">KEY</span>
-                        </div>
-                        <div class="note-body drop-cap" th:if="${renderedBody != null and !renderedBody.isEmpty()}" th:utext="${renderedBody}">
-                            Rendered body
-                        </div>
-                        <div th:unless="${renderedBody != null and !renderedBody.isEmpty()}" style="color: var(--color-text-muted); font-style: italic;">
-                            No body content yet.
-                        </div>
-                    </div>
-                    <th:block th:replace="~{adventure/_scene-sections :: sceneSections}"></th:block>
+                    <th:block th:replace="~{adventure/_scene-body :: sceneBody}"></th:block>
                 </div>
                 <div id="actionRail" style="width: 300px; flex-shrink: 0;">
                     <th:block th:replace="~{adventure/_action-rail :: actionRail}"></th:block>

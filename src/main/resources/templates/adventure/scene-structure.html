@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="|Edit: ${scene.title} — ${adventure.name} — ${campaign.name}|">Edit Scene</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main" data-surface="edit">
+            <div class="page-header">
+                <div class="breadcrumb">
+                    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
+                    <span> / </span>
+                    <a th:href="@{/campaigns/{cid}/adventures/{aid}(cid=${campaignId},aid=${adventure.id})}" th:text="${adventure.name}">Adventure</a>
+                    <span> / </span>
+                    <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}" th:text="${scene.title}">Scene</a>
+                    <span> / </span>
+                    <span>Edit</span>
+                </div>
+                <h1 th:text="|Edit: ${scene.title}|">Edit Scene</h1>
+                <div class="page-header-actions">
+                    <a class="btn btn-primary"
+                       th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}">Done</a>
+                </div>
+            </div>
+
+            <div class="edit-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+                <div class="edit-pane">
+                    <th:block th:replace="~{adventure/_scene-form :: form}"></th:block>
+                    <div class="u-mt-lg">
+                        <h3>Structured content</h3>
+                        <div id="sceneStructureEditor">
+                            <th:block th:replace="~{adventure/_scene-structure-editor :: structureEditor}"></th:block>
+                        </div>
+                    </div>
+                    <div class="u-mt-lg detail-section">
+                        <h3 class="u-text-danger">Danger zone</h3>
+                        <p class="u-text-xs text-muted">This action cannot be undone.</p>
+                        <button class="btn btn-danger"
+                                th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+                                hx-confirm="Delete this scene?"
+                                hx-target="body" hx-swap="outerHTML">Delete scene</button>
+                    </div>
+                </div>
+                <div class="edit-preview">
+                    <h3>Preview</h3>
+                    <div id="sceneBody">
+                        <th:block th:replace="~{adventure/_scene-body :: sceneBody}"></th:block>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

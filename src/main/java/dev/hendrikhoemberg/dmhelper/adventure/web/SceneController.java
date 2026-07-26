@@ -114,6 +114,32 @@ public class SceneController {
         return "adventure/_scene-form :: form";
     }
 
+    @GetMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/structure")
+    public String sceneStructure(@PathVariable UUID campaignId,
+                                 @PathVariable UUID adventureId,
+                                 @PathVariable UUID id,
+                                 Model model) {
+        AdventureService.SceneDetailView view = adventureService.findSceneDetailView(id);
+        Scene scene = view.scene();
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new NotFoundException("Campaign not found"));
+        model.addAttribute("campaign", campaign);
+        model.addAttribute("scene", scene);
+        model.addAttribute("adventure", adventureService.findAdventureById(adventureId));
+        model.addAttribute("chapters", adventureService.findChaptersByAdventure(adventureId));
+        model.addAttribute("campaignId", campaignId);
+        model.addAttribute("renderedBody", markdownUtil.toHtml(scene.getBody()));
+        model.addAttribute("maps", gameMapRepository.findByCampaignIdOrderBySortOrderAsc(campaignId));
+        model.addAttribute("encounters", encounterRepository.findByCampaignIdOrderByNameAsc(campaignId));
+        model.addAttribute("statBlocks", statBlockRepository.findByCampaignIdOrderByNameAsc(campaignId));
+        model.addAttribute("handouts", handoutRepository.findByCampaignIdOrderByTitleAsc(campaignId));
+        model.addAttribute("visibleTraps", trapRepository.findVisibleByCampaignId(campaignId));
+        model.addAttribute("visibleHazards", hazardRepository.findVisibleByCampaignId(campaignId));
+        model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
+        model.addAttribute("sectionThreatCards", view.sectionThreatCards());
+        return "adventure/scene-structure";
+    }
+
     @PutMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}")
     public String updateScene(@PathVariable UUID campaignId,
                               @PathVariable UUID adventureId,
@@ -139,7 +165,7 @@ public class SceneController {
         model.addAttribute("adventure", adventureService.findAdventureById(adventureId));
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("renderedBody", markdownUtil.toHtml(scene.getBody()));
-        return "adventure/scene-detail :: sceneBody";
+        return "adventure/_scene-body :: sceneBody";
     }
 
     @DeleteMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}")
@@ -183,7 +209,7 @@ public class SceneController {
                           @RequestParam(required = false) Integer pinY,
                           Model model) {
         adventureService.linkMap(id, mapId, pinX, pinY);
-        return loadActionRail(campaignId, adventureId, id, model);
+        return loadStructureEditor(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/unlink-map")
@@ -192,7 +218,7 @@ public class SceneController {
                             @PathVariable UUID id,
                             Model model) {
         adventureService.unlinkMap(id);
-        return loadActionRail(campaignId, adventureId, id, model);
+        return loadStructureEditor(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/link-encounter")
@@ -202,7 +228,7 @@ public class SceneController {
                                 @RequestParam UUID encounterId,
                                 Model model) {
         adventureService.linkEncounter(id, encounterId);
-        return loadActionRail(campaignId, adventureId, id, model);
+        return loadStructureEditor(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/unlink-encounter")
@@ -211,7 +237,7 @@ public class SceneController {
                                   @PathVariable UUID id,
                                   Model model) {
         adventureService.unlinkEncounter(id);
-        return loadActionRail(campaignId, adventureId, id, model);
+        return loadStructureEditor(campaignId, adventureId, id, model);
     }
 
     /**
@@ -225,7 +251,7 @@ public class SceneController {
                                 @PathVariable UUID id,
                                 Model model) {
         model.addAttribute("seedResult", encounterSeeder.seedFromScene(campaignId, id));
-        return loadActionRail(campaignId, adventureId, id, model);
+        return loadStructureEditor(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/add-statblock")
@@ -235,7 +261,7 @@ public class SceneController {
                                @RequestParam UUID statBlockId,
                                Model model) {
         adventureService.addStatBlock(id, statBlockId);
-        return loadActionRail(campaignId, adventureId, id, model);
+        return loadStructureEditor(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/remove-statblock")
@@ -245,7 +271,7 @@ public class SceneController {
                                   @RequestParam UUID statBlockId,
                                   Model model) {
         adventureService.removeStatBlock(id, statBlockId);
-        return loadActionRail(campaignId, adventureId, id, model);
+        return loadStructureEditor(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/add-handout")
@@ -255,7 +281,7 @@ public class SceneController {
                              @RequestParam UUID handoutId,
                              Model model) {
         adventureService.addHandout(id, handoutId);
-        return loadActionRail(campaignId, adventureId, id, model);
+        return loadStructureEditor(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/remove-handout")
@@ -265,7 +291,7 @@ public class SceneController {
                                 @RequestParam UUID handoutId,
                                 Model model) {
         adventureService.removeHandout(id, handoutId);
-        return loadActionRail(campaignId, adventureId, id, model);
+        return loadStructureEditor(campaignId, adventureId, id, model);
     }
 
     @PutMapping("/scenes/{id}/status")
@@ -324,7 +350,7 @@ public class SceneController {
         } catch (IllegalArgumentException | NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     // ---- Sections ----
@@ -349,7 +375,7 @@ public class SceneController {
         } catch (IllegalArgumentException | NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/sections/{sectionId}")
@@ -373,7 +399,7 @@ public class SceneController {
         } catch (IllegalArgumentException | NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     private static ThreatKind resolveSectionThreatKind(SceneSectionKind kind, UUID threatId) {
@@ -395,7 +421,7 @@ public class SceneController {
                                 @PathVariable UUID sectionId,
                                 Model model) {
         structuredService.deleteSection(campaignId, sceneId, sectionId);
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     // ---- Checks ----
@@ -425,7 +451,7 @@ public class SceneController {
         } catch (IllegalArgumentException | NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/checks/{checkId}")
@@ -454,7 +480,7 @@ public class SceneController {
         } catch (IllegalArgumentException | NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     @DeleteMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/checks/{checkId}")
@@ -465,7 +491,7 @@ public class SceneController {
                               @PathVariable UUID checkId,
                               Model model) {
         structuredService.deleteCheck(campaignId, sceneId, checkId);
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     // ---- Participants ----
@@ -490,7 +516,7 @@ public class SceneController {
         } catch (IllegalArgumentException | NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/participants/{participantId}")
@@ -514,7 +540,7 @@ public class SceneController {
         } catch (IllegalArgumentException | NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     @DeleteMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/participants/{participantId}")
@@ -525,7 +551,7 @@ public class SceneController {
                                     @PathVariable UUID participantId,
                                     Model model) {
         structuredService.deleteParticipant(campaignId, sceneId, participantId);
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     // ---- Links ----
@@ -553,7 +579,7 @@ public class SceneController {
         } catch (IllegalArgumentException | NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/links/{linkId}")
@@ -578,7 +604,7 @@ public class SceneController {
         } catch (IllegalArgumentException | NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     @DeleteMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/links/{linkId}")
@@ -589,7 +615,7 @@ public class SceneController {
                              @PathVariable UUID linkId,
                              Model model) {
         structuredService.deleteLink(campaignId, sceneId, linkId);
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     // ---- Transitions ----
@@ -616,7 +642,7 @@ public class SceneController {
         } catch (IllegalArgumentException | NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/transitions/{transitionId}")
@@ -642,7 +668,7 @@ public class SceneController {
         } catch (IllegalArgumentException | NotFoundException e) {
             model.addAttribute("error", e.getMessage());
         }
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     @DeleteMapping("/campaigns/{campaignId}/adventures/{adventureId}/chapters/{chapterId}/scenes/{sceneId}/transitions/{transitionId}")
@@ -653,7 +679,7 @@ public class SceneController {
                                    @PathVariable UUID transitionId,
                                    Model model) {
         structuredService.deleteTransition(campaignId, sceneId, transitionId);
-        return loadActionRail(campaignId, adventureId, sceneId, model);
+        return loadStructureEditor(campaignId, adventureId, sceneId, model);
     }
 
     // ---- Follow transition ----
@@ -670,7 +696,7 @@ public class SceneController {
                 + target.getChapter().getAdventure().getId() + "/scenes/" + target.getId();
     }
 
-    private String loadActionRail(UUID campaignId, UUID adventureId, UUID sceneId, Model model) {
+    private String loadStructureEditor(UUID campaignId, UUID adventureId, UUID sceneId, Model model) {
         AdventureService.SceneDetailView view = adventureService.findSceneDetailView(sceneId);
         Scene scene = view.scene();
         model.addAttribute("scene", scene);
@@ -685,6 +711,6 @@ public class SceneController {
         model.addAttribute("visibleHazards", hazardRepository.findVisibleByCampaignId(campaignId));
         model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
         model.addAttribute("sectionThreatCards", view.sectionThreatCards());
-        return "adventure/_action-rail :: actionRail";
+        return "adventure/_scene-structure-editor :: structureEditor";
     }
 }

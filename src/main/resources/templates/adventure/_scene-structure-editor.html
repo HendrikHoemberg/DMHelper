@@ -1,0 +1,421 @@
+<div th:fragment="structureEditor" class="structure-editor" xmlns:th="http://www.thymeleaf.org">
+  <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+
+  <!-- Structured metadata: prep-time admin, collapsed so content outranks it. -->
+  <details class="u-mb-md" data-structured-metadata>
+    <summary class="u-text-sm">Edit metadata</summary>
+    <form class="inline-form u-mt-xs"
+          th:hx-post="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/metadata(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id})}"
+          hx-target="#sceneStructureEditor" hx-swap="innerHTML">
+      <div class="form-group">
+        <label class="form-label">Summary</label>
+        <textarea name="summary" class="form-input" rows="2" th:text="${scene.summary}"
+                  data-field="summary"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Source Locator</label>
+        <input type="text" name="sourceLocator" class="form-input"
+               th:value="${scene.sourceLocator}" data-field="sourceLocator"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tags</label>
+        <input type="text" name="tags" class="form-input" th:value="${scene.tags}" data-field="tags"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Map Region Key</label>
+        <input type="text" name="mapRegionKey" class="form-input"
+               th:value="${scene.mapRegionKey}" data-field="mapRegionKey"/>
+      </div>
+      <button type="submit" class="btn btn-sm btn-primary">Save metadata</button>
+    </form>
+  </details>
+
+  <!-- Sections grouped by kind -->
+  <section class="editor-block" data-structured-sections>
+    <h4>Sections</h4>
+    <div th:each="section : ${scene.sections}" class="card card--compact u-mb-xs"
+         th:attr="data-section-id=${section.id}">
+      <span class="badge" th:text="${#enums.label(section.kind)}">KIND</span>
+      <strong th:text="${section.label}">Label</strong>
+      <div class="u-flex u-gap-xs u-mt-xs">
+        <button class="btn btn-danger btn-sm"
+                th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/sections/{sectionId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},sectionId=${section.id})}"
+                hx-target="#sceneStructureEditor" hx-swap="innerHTML"
+                hx-confirm="Delete this section?">&times;</button>
+      </div>
+    </div>
+    <section class="editor-block">
+      <h4>Add section</h4>
+      <form class="inline-form"
+            th:hx-post="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/sections(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id})}"
+            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="section">
+        <div class="form-group">
+          <label class="form-label">Kind</label>
+          <select name="kind" class="form-input" required
+                  onchange="window.dmHelperFilterSectionThreatOptions &amp;&amp; window.dmHelperFilterSectionThreatOptions(this)">
+            <option value="READ_ALOUD">Read Aloud</option>
+            <option value="DM_ADVICE">DM Advice</option>
+            <option value="SECRET">Secret</option>
+            <option value="FEATURE">Feature</option>
+            <option value="TRAP">Trap</option>
+            <option value="HAZARD">Hazard</option>
+            <option value="ENVIRONMENT">Environment</option>
+            <option value="PUZZLE">Puzzle</option>
+            <option value="TREASURE">Treasure</option>
+            <option value="DEVELOPMENT">Development</option>
+            <option value="CONSEQUENCE">Consequence</option>
+            <option value="SCALING">Scaling</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Label</label>
+          <input type="text" name="label" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Body</label>
+          <textarea name="body" class="form-input" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Source Locator</label>
+          <input type="text" name="sourceLocator" class="form-input">
+        </div>
+        <div class="form-group" data-threat-selector-group hidden>
+          <label class="form-label">Threat reference (TRAP/HAZARD only)</label>
+          <select name="threatId" class="form-input" data-threat-selector="section">
+            <option value="">— none —</option>
+            <optgroup label="Traps" data-threat-kind="TRAP"
+                      th:if="${visibleTraps != null and !visibleTraps.isEmpty()}">
+              <option th:each="t : ${visibleTraps}" th:value="${t.id}" th:text="${t.name}">Trap</option>
+            </optgroup>
+            <optgroup label="Hazards" data-threat-kind="HAZARD"
+                      th:if="${visibleHazards != null and !visibleHazards.isEmpty()}">
+              <option th:each="h : ${visibleHazards}" th:value="${h.id}" th:text="${h.name}">Hazard</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sort Order</label>
+          <input type="number" name="sortOrder" class="form-input" value="0">
+        </div>
+        <button type="submit" class="btn btn-sm btn-primary">Add section</button>
+      </form>
+    </section>
+  </section>
+
+  <script>
+    window.dmHelperFilterSectionThreatOptions = function (kindSelect) {
+      var form = kindSelect && kindSelect.form;
+      if (!form) return;
+      var kind = kindSelect.value;
+      var group = form.querySelector('[data-threat-selector-group]');
+      var select = form.querySelector('[data-threat-selector="section"]');
+      if (!group || !select) return;
+      var show = kind === 'TRAP' || kind === 'HAZARD';
+      group.hidden = !show;
+      if (!show) {
+        select.value = '';
+        return;
+      }
+      select.querySelectorAll('optgroup[data-threat-kind]').forEach(function (og) {
+        og.hidden = og.getAttribute('data-threat-kind') !== kind;
+      });
+      var selected = select.selectedOptions[0];
+      var selectedGroup = selected && selected.parentElement;
+      if (selectedGroup && selectedGroup.tagName === 'OPTGROUP' && selectedGroup.hidden) {
+        select.value = '';
+      }
+    };
+  </script>
+
+  <!-- Checks -->
+  <section class="editor-block" data-structured-checks>
+    <h4>Checks</h4>
+    <div th:each="check : ${scene.checks}" class="card card--compact u-mb-xs"
+         data-screen-sensitive th:attr="data-check-id=${check.id}">
+      <strong th:text="${check.label}">Check Label</strong>
+      <span class="badge" th:text="|DC ${check.dc}|" th:if="${check.dc != null}">DC</span>
+      <span class="badge" th:text="${#enums.label(check.visibility)}" th:if="${check.visibility != null}">VISIBILITY</span>
+      <span th:if="${check.ability}" class="u-text-xs" th:text="|${check.ability} ${check.skill}|">Ability/Skill</span>
+      <span th:if="${check.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${check.sourceLocator}|">Source</span>
+      <div th:if="${check.success}" class="u-text-xs">Success: <span th:text="${check.success}">Success</span></div>
+      <div th:if="${check.failure}" class="u-text-xs">Failure: <span th:text="${check.failure}">Failure</span></div>
+      <div th:if="${check.partial}" class="u-text-xs">Partial: <span th:text="${check.partial}">Partial</span></div>
+      <div class="u-flex u-gap-xs u-mt-xs">
+        <button class="btn btn-danger btn-sm"
+                th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/checks/{checkId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},checkId=${check.id})}"
+                hx-target="#sceneStructureEditor" hx-swap="innerHTML"
+                hx-confirm="Delete this check?">&times;</button>
+      </div>
+    </div>
+    <section class="editor-block">
+      <h4>Add check</h4>
+      <form class="inline-form"
+            th:hx-post="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/checks(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id})}"
+            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="check">
+        <div class="form-group">
+          <label class="form-label">Label</label>
+          <input type="text" name="label" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ability</label>
+          <input type="text" name="ability" class="form-input" placeholder="wis">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Skill</label>
+          <input type="text" name="skill" class="form-input" placeholder="perception">
+        </div>
+        <div class="form-group">
+          <label class="form-label">DC</label>
+          <input type="number" name="dc" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Visibility</label>
+          <select name="visibility" class="form-input">
+            <option value="PLAYER_FACING">Player facing</option>
+            <option value="DM_FACING">DM facing</option>
+            <option value="PASSIVE">Passive</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Success</label>
+          <input type="text" name="success" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Failure</label>
+          <input type="text" name="failure" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Partial</label>
+          <input type="text" name="partial" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Source Locator</label>
+          <input type="text" name="sourceLocator" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sort Order</label>
+          <input type="number" name="sortOrder" class="form-input" value="0">
+        </div>
+        <button type="submit" class="btn btn-sm btn-primary">Add check</button>
+      </form>
+    </section>
+  </section>
+
+  <!-- Participants -->
+  <section class="editor-block" data-structured-participants>
+    <h4>Participants</h4>
+    <div th:each="p : ${scene.participants}" class="card card--compact u-mb-xs"
+         data-screen-sensitive th:attr="data-participant-id=${p.id}">
+      <strong th:text="${p.displayName}">Name</strong>
+      <span class="badge" th:text="|x${p.quantity}|" th:if="${p.quantity > 1}">Qty</span>
+      <span class="badge" th:text="${#enums.label(p.disposition)}" th:if="${p.disposition != null}">Disp</span>
+      <a th:if="${p.statBlock != null}" class="participant-statblock" target="_blank"
+         th:href="@{/library/statblocks/{id}(id=${p.statBlock.id})}"
+         th:title="|Open ${p.statBlock.name}|">
+        <span class="participant-statblock__name" th:text="${p.statBlock.name}">Statblock</span>
+        <span class="participant-statblock__stat" th:text="|AC ${p.statBlock.ac}|">AC 14</span>
+        <span class="participant-statblock__stat" th:text="|HP ${p.statBlock.hp}|">HP 16</span>
+      </a>
+      <span th:if="${p.placementHint}" class="u-text-xs" th:text="${p.placementHint}">Placement</span>
+      <span th:if="${p.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${p.sourceLocator}|">Source</span>
+      <div class="u-flex u-gap-xs u-mt-xs">
+        <button class="btn btn-danger btn-sm"
+                th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/participants/{pid}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},pid=${p.id})}"
+                hx-target="#sceneStructureEditor" hx-swap="innerHTML"
+                hx-confirm="Delete this participant?">&times;</button>
+      </div>
+    </div>
+    <section class="editor-block">
+      <h4>Add participant</h4>
+      <form class="inline-form"
+            th:hx-post="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/participants(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id})}"
+            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="participant">
+        <div class="form-group">
+          <label class="form-label">Display Name</label>
+          <input type="text" name="displayName" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantity</label>
+          <input type="number" name="quantity" class="form-input" value="1" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Disposition</label>
+          <select name="disposition" class="form-input">
+            <option value="UNKNOWN">Unknown</option>
+            <option value="HOSTILE">Hostile</option>
+            <option value="UNFRIENDLY">Unfriendly</option>
+            <option value="NEUTRAL">Neutral</option>
+            <option value="FRIENDLY">Friendly</option>
+            <option value="ALLY">Ally</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Placement Hint</label>
+          <input type="text" name="placementHint" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Source Locator</label>
+          <input type="text" name="sourceLocator" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sort Order</label>
+          <input type="number" name="sortOrder" class="form-input" value="0">
+        </div>
+        <button type="submit" class="btn btn-sm btn-primary">Add participant</button>
+      </form>
+    </section>
+  </section>
+
+  <!-- Transitions -->
+  <section class="editor-block" data-structured-transitions>
+    <h4>Transitions</h4>
+    <div th:each="t : ${scene.transitions}" class="card card--compact u-mb-xs"
+         data-screen-sensitive th:attr="data-transition-id=${t.id}">
+      <span class="badge" th:text="${#enums.label(t.kind)}">KIND</span>
+      <strong th:text="${t.label}">Label</strong>
+      <span th:if="${t.targetScene != null}" th:text="${t.targetScene.title}">Target</span>
+      <span th:if="${t.externalDestination}" class="u-text-xs" th:text="|→ ${t.externalDestination}|">External</span>
+      <div th:if="${t.condition}" class="u-text-xs">Condition: <span th:text="${t.condition}">Condition</span></div>
+      <div th:if="${t.dmNote}" class="u-text-xs text-muted">DM: <span th:text="${t.dmNote}">DM Note</span></div>
+      <div class="u-flex u-gap-xs u-mt-xs">
+        <button class="btn btn-danger btn-sm"
+                th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/transitions/{tid}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},tid=${t.id})}"
+                hx-target="#sceneStructureEditor" hx-swap="innerHTML"
+                hx-confirm="Delete this transition?">&times;</button>
+      </div>
+    </div>
+    <section class="editor-block">
+      <h4>Add transition</h4>
+      <form class="inline-form"
+            th:hx-post="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/transitions(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id})}"
+            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="transition">
+        <div class="form-group">
+          <label class="form-label">Kind</label>
+          <select name="kind" class="form-input" required>
+            <option value="CHOICE">Choice</option>
+            <option value="ENTRANCE">Entrance</option>
+            <option value="EXIT">Exit</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Label</label>
+          <input type="text" name="label" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Scene ID</label>
+          <input type="text" name="targetSceneId" class="form-input" placeholder="UUID of in-campaign scene">
+        </div>
+        <div class="form-group">
+          <label class="form-label">External Destination</label>
+          <input type="text" name="externalDestination" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Condition</label>
+          <input type="text" name="condition" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">DM Note</label>
+          <input type="text" name="dmNote" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Source Locator</label>
+          <input type="text" name="sourceLocator" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sort Order</label>
+          <input type="number" name="sortOrder" class="form-input" value="0">
+        </div>
+        <button type="submit" class="btn btn-sm btn-primary">Add transition</button>
+      </form>
+    </section>
+  </section>
+
+  <!-- Links -->
+  <section class="editor-block" data-structured-links>
+    <h4>Links</h4>
+    <div th:each="link : ${scene.links}" class="card card--compact u-mb-xs"
+         th:attr="data-link-id=${link.id}">
+      <span class="badge" th:text="${#enums.label(link.role)}">ROLE</span>
+      <span th:text="${link.displayText ?: link.targetType}">Target</span>
+      <span th:if="${link.condition}" class="u-text-xs">Condition: <span th:text="${link.condition}">Condition</span></span>
+      <div class="u-flex u-gap-xs u-mt-xs">
+        <button class="btn btn-danger btn-sm"
+                th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/links/{linkId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},linkId=${link.id})}"
+                hx-target="#sceneStructureEditor" hx-swap="innerHTML"
+                hx-confirm="Delete this link?">&times;</button>
+      </div>
+    </div>
+    <section class="editor-block">
+      <h4>Add link</h4>
+      <form class="inline-form"
+            th:hx-post="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/links(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id})}"
+            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="link">
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select name="role" class="form-input" required>
+            <option value="REFERENCE">Reference</option>
+            <option value="HANDOUT">Handout</option>
+            <option value="RULE">Rule</option>
+            <option value="QUEST">Quest</option>
+            <option value="TIMELINE_EVENT">Timeline event</option>
+            <option value="RELATED_SCENE">Related scene</option>
+            <option value="NPC">NPC</option>
+            <option value="LOCATION">Location</option>
+            <option value="RANDOM_ENCOUNTERS">Random encounters / rollable table</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Scope</label>
+          <select name="targetScope" class="form-input">
+            <option value="PACKAGE">Package</option>
+            <option value="CATALOG">Catalog</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Type</label>
+          <input type="text" name="targetType" class="form-input" required placeholder="NOTE, SCENE, …">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target ID</label>
+          <input type="text" name="targetId" class="form-input" placeholder="UUID for package targets">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Catalog Ruleset</label>
+          <input type="text" name="catalogRuleset" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Catalog Source Key</label>
+          <input type="text" name="catalogSourceKey" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Display Text</label>
+          <input type="text" name="displayText" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Condition</label>
+          <input type="text" name="condition" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sort Order</label>
+          <input type="number" name="sortOrder" class="form-input" value="0">
+        </div>
+        <button type="submit" class="btn btn-sm btn-primary">Add link</button>
+      </form>
+    </section>
+  </section>
+
+  <!-- Reorder -->
+  <section class="editor-block">
+    <h4>Position in chapter</h4>
+    <div class="u-flex u-gap-xs">
+      <button class="btn btn-ghost btn-sm"
+              th:hx-put="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/move(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+              hx-vals='{"direction": -1}'
+              hx-target="body" hx-swap="outerHTML">Move earlier</button>
+      <button class="btn btn-ghost btn-sm"
+              th:hx-put="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/move(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+              hx-vals='{"direction": 1}'
+              hx-target="body" hx-swap="outerHTML">Move later</button>
+    </div>
+  </section>
+</div>

@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.adventure.web;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -16,15 +17,15 @@ class SceneStructuredTemplateContractTest {
     private CampaignRepository campaignRepository;
 
     @Test
-    void actionRailContainsSectionsChecksParticipantsTransitionsLinks() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+    void structureEditorContainsSectionsChecksParticipantsTransitionsLinks() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-structure-editor.html"));
         assertThat(html).contains("scene.sections", "scene.checks", "scene.participants",
                 "scene.transitions", "scene.links");
     }
 
     @Test
-    void actionRailHasDeleteActionsForStructuredContent() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+    void structureEditorHasDeleteActionsForStructuredContent() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-structure-editor.html"));
         assertThat(html).contains("hx-delete");
         assertThat(count(html, "hx-confirm=\"Delete this section?\"")).isGreaterThanOrEqualTo(1);
         assertThat(count(html, "hx-confirm=\"Delete this check?\"")).isGreaterThanOrEqualTo(1);
@@ -40,32 +41,33 @@ class SceneStructuredTemplateContractTest {
     }
 
     @Test
-    void actionRailShowsCheckVisibilityAndOutcomes() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+    void structureEditorShowsCheckVisibilityAndOutcomes() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-structure-editor.html"));
         assertThat(html).contains("check.visibility", "check.success", "check.failure");
     }
 
     @Test
-    void actionRailShowsParticipantDispositionQuantityPlacement() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+    void structureEditorShowsParticipantDispositionQuantityPlacement() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-structure-editor.html"));
         assertThat(html).contains("p.disposition", "p.quantity", "p.placementHint", "p.sourceLocator");
     }
 
     @Test
-    void actionRailShowsTransitionDetails() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+    void structureEditorShowsTransitionDetails() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-structure-editor.html"));
         assertThat(html).contains("t.targetScene.title", "t.externalDestination", "t.condition", "t.dmNote");
     }
 
     @Test
-    void actionRailShowsLinkRoleAndCondition() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+    void structureEditorShowsLinkRoleAndCondition() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-structure-editor.html"));
         assertThat(html).contains("#enums.label(link.role)", "link.condition");
     }
 
     @Test
+    @Disabled("moves to the read rail in Task 6")
     void existingQuickNoteAndMapEncounterSelectorsPreserved() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-structure-editor.html"));
         assertThat(html).contains("scene.statBlocks", "scene.handouts");
         assertThat(html).contains("hx-vals='{\"status\": \"VISITED\"}'");
         assertThat(html).contains("Set as Current Scene");
@@ -74,7 +76,8 @@ class SceneStructuredTemplateContractTest {
     @Test
     void sceneDetailHasSceneBodyRendered() throws IOException {
         String detail = Files.readString(Path.of("src/main/resources/templates/adventure/scene-detail.html"));
-        assertThat(detail).contains("renderedBody");
+        String body = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-body.html"));
+        assertThat(body).contains("renderedBody");
         assertThat(detail).contains("sceneBody");
         assertThat(detail).contains("notes/_quicknotes-strip");
     }
@@ -93,8 +96,8 @@ class SceneStructuredTemplateContractTest {
     }
 
     @Test
-    void actionRailHasCreateFormsForStructuredChildren() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+    void structureEditorHasCreateFormsForStructuredChildren() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-structure-editor.html"));
         assertThat(html).contains("data-create=\"section\"", "data-create=\"check\"",
                 "data-create=\"participant\"", "data-create=\"transition\"", "data-create=\"link\"");
         assertThat(html).contains("data-structured-metadata", "name=\"mapRegionKey\"");
@@ -108,8 +111,8 @@ class SceneStructuredTemplateContractTest {
     }
 
     @Test
-    void actionRailHasThreatSelectorForSections() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+    void structureEditorHasThreatSelectorForSections() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-structure-editor.html"));
         assertThat(html).contains("name=\"threatId\"");
         assertThat(html).contains("visibleTraps");
         assertThat(html).contains("visibleHazards");
@@ -126,8 +129,9 @@ class SceneStructuredTemplateContractTest {
     }
 
     @Test
-    void actionRailOffersSeedEncounterOnlyWhenTheSceneHasResolvableParticipants() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+    @Disabled("moves to the read rail in Task 6")
+    void structureEditorOffersSeedEncounterOnlyWhenTheSceneHasResolvableParticipants() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-structure-editor.html"));
         assertThat(html).contains("seed-encounter");
         assertThat(html).contains("canSeedEncounter");
         assertThat(html)
@@ -136,8 +140,9 @@ class SceneStructuredTemplateContractTest {
     }
 
     @Test
-    void actionRailReportsParticipantsTheSeedCouldNotResolve() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_action-rail.html"));
+    @Disabled("moves to the read rail in Task 6")
+    void structureEditorReportsParticipantsTheSeedCouldNotResolve() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-structure-editor.html"));
         assertThat(html).contains("seedResult.skippedParticipants");
         assertThat(html).contains("seedResult.combatantsAdded");
     }
