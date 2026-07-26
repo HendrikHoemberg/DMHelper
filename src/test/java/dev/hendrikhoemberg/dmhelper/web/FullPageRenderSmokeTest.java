@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.web;
 
 import dev.hendrikhoemberg.dmhelper.support.LazyInitLogCapture;
 import dev.hendrikhoemberg.dmhelper.support.PopulatedCampaignFixture;
+import dev.hendrikhoemberg.dmhelper.support.PreparationSurfaceFixture;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -26,26 +27,31 @@ class FullPageRenderSmokeTest {
 
     @LocalServerPort private int port;
     @Autowired private PopulatedCampaignFixture fixture;
+    @Autowired private PreparationSurfaceFixture prepFixture;
 
     private final HttpClient http = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
     private PopulatedCampaignFixture.Seeded seeded;
+    private PreparationSurfaceFixture.Seeded prepared;
 
     @BeforeAll
     void seed() {
         seeded = fixture.seed();
+        prepared = prepFixture.seed();
     }
 
     List<String> pages() {
         String c = "/campaigns/" + seeded.campaignId();
+        String p = "/campaigns/" + prepared.campaignId();
         return List.of(
                 "/campaigns",
                 c,
                 c + "/adventures",
                 c + "/adventures/" + seeded.adventureId(),
                 c + "/adventures/" + seeded.adventureId() + "/scenes/" + seeded.richSceneId(),
+                c + "/adventures/" + seeded.adventureId() + "/scenes/" + seeded.richSceneId() + "/structure",
                 c + "/encounters",
                 c + "/maps",
                 c + "/handouts",
@@ -66,13 +72,17 @@ class FullPageRenderSmokeTest {
                 c + "/quests/" + seeded.questId(),
                 c + "/calendar",
                 c + "/session",
+                c + "/settings",
                 "/library",
                 "/library/tables",
                 "/library/tables/" + seeded.tableId(),
                 "/library/traps",
                 "/library/traps/" + seeded.trapId(),
                 "/library/hazards",
-                "/library/hazards/" + seeded.hazardId()
+                "/library/hazards/" + seeded.hazardId(),
+                p + "/party",
+                p + "/encounters/" + prepared.encounterId(),
+                p + "/encounters/" + prepared.encounterId() + "/setup"
         );
     }
 
