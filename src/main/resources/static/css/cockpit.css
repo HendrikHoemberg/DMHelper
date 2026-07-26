@@ -442,7 +442,7 @@
 .presentation-preview {
   position: fixed;
   inset: 0;
-  z-index: 10020;
+  z-index: var(--z-presentation-preview);
   display: grid;
   place-items: center;
   padding: var(--space-md);

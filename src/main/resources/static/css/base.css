@@ -18,7 +18,7 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 400;
+  z-index: var(--z-ambient);
   background: radial-gradient(ellipse at center, transparent 55%, rgba(8, 5, 2, var(--vignette-intensity)) 100%);
   transition: background var(--duration-structural) var(--ease-out);
 }
@@ -98,7 +98,7 @@ fieldset {
   border-bottom: 1px solid var(--color-border);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: var(--z-nav);
 }
 
 .navbar-brand {
@@ -352,7 +352,7 @@ body[data-screen-safety="TABLE_SAFE"] .screen-safety-badge { display: inline-blo
   transform: translate(-4px, -50%);
   transition: opacity var(--duration-micro) var(--ease-out), transform var(--duration-micro) var(--ease-out);
   pointer-events: none;
-  z-index: 300;
+  z-index: var(--z-tooltip);
 }
 .app-shell--nav-collapsed .appnav-link:hover::after,
 .app-shell--nav-collapsed .appnav-link:focus-visible::after {
@@ -376,7 +376,7 @@ body[data-screen-safety="TABLE_SAFE"] .screen-safety-badge { display: inline-blo
   height: 2px;
   width: 0%;
   background: var(--gold-sheen);
-  z-index: 10001;
+  z-index: var(--z-filament);
   pointer-events: none;
   opacity: 0;
   transition: opacity 120ms ease, width 80ms linear;
@@ -441,7 +441,7 @@ body.loading #loading-filament {
 
 /* ── Keyboard Shortcut Overlay ── */
 #shortcut-overlay {
-  position: fixed; inset: 0; z-index: 1100;
+  position: fixed; inset: 0; z-index: var(--z-shortcut);
   display: flex; align-items: center; justify-content: center;
   opacity: 0; pointer-events: none;
   visibility: hidden;
@@ -514,7 +514,7 @@ body.loading #loading-filament {
 #screen-safety-sweep {
   position: fixed;
   inset: 0;
-  z-index: 9998;
+  z-index: var(--z-safety-sweep);
   pointer-events: none;
   transform: translateX(-100%);
   opacity: 0;

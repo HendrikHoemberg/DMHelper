@@ -402,7 +402,7 @@ body:has(.session-cockpit) {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 40;
+  z-index: var(--z-workspace-focus);
   display: flex;
   flex-direction: column;
   background: var(--color-bg);
@@ -473,7 +473,7 @@ body:has(.session-cockpit) {
 .cockpit-preset-overflow__panel {
   position: absolute;
   right: 0;
-  z-index: 30;
+  z-index: var(--z-workspace-chrome);
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
@@ -506,7 +506,7 @@ body:has(.session-cockpit) {
 /* ── Arrange menu + layout dialogs (elevation / focus model) ── */
 .cockpit-arrange-menu {
   position: fixed;
-  z-index: 50;
+  z-index: var(--z-workspace-menu);
   display: flex;
   flex-direction: column;
   gap: 2px;

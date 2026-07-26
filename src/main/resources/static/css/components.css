@@ -554,7 +554,7 @@
 .modal {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1076,7 +1076,7 @@
 .handout-overlay {
   position: fixed;
   inset: 0;
-  z-index: 900;
+  z-index: var(--z-overlay);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1142,7 +1142,7 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
     padding: var(--space-md);
-    z-index: 200;
+    z-index: var(--z-popover);
     box-shadow: var(--shadow);
     animation: slideIn 0.15s ease;
 }
@@ -1554,7 +1554,7 @@
     width: 320px;
     background: var(--color-surface);
     border-left: 1px solid var(--color-border);
-    z-index: 100;
+    z-index: var(--z-nav);
     display: flex;
     flex-direction: column;
     transform: translateX(0);
@@ -1742,7 +1742,7 @@
 /* ── Roll Result Tooltip ── */
 .roll-tooltip {
     position: absolute;
-    z-index: 50;
+    z-index: var(--z-workspace-menu);
     padding: var(--space-sm) var(--space-md);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -1765,7 +1765,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
   position: fixed; inset: 0;
   background: rgba(10, 7, 4, 0.72);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: var(--z-modal);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -1997,7 +1997,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
   position: fixed;
   bottom: var(--space-lg);
   right: var(--space-lg);
-  z-index: 10000;
+  z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
@@ -2308,7 +2308,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 .sheet-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 800;
+  z-index: var(--z-sheet-scrim);
   background: rgba(10, 7, 4, 0.55);
   backdrop-filter: blur(4px);
   opacity: 0;
@@ -2324,7 +2324,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
   right: 0;
   bottom: 0;
   width: min(560px, 100vw);
-  z-index: 801;
+  z-index: var(--z-sheet);
   overflow-y: auto;
   padding: var(--space-lg);
   background: var(--elevation-floating-bg);
@@ -2389,7 +2389,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
