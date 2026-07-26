@@ -134,10 +134,10 @@ public class ReleaseRehearsalFixture {
                 "When the party avoids the bell.", "The gallery is narrow.", "Synthetic, A1", 1));
 
         List<StatBlock> foeBlocks = List.of(
-                statBlock(campaign, "Bog Sentinel", "1/2", 15, "18 (4d8)", 2),
-                statBlock(campaign, "Bog Skirmisher", "1/4", 13, "11 (2d8)", 3),
-                statBlock(campaign, "Bog Skirmisher", "1/4", 13, "11 (2d8)", 3),
-                statBlock(campaign, "Marsh Warden", "2", 16, "30 (4d10+8)", 1));
+                statBlock(campaign, "Bog Sentinel", "1/2", 15, "18 (4d8)", 2, "bog-sentinel"),
+                statBlock(campaign, "Bog Skirmisher", "1/4", 13, "11 (2d8)", 3, "bog-skirmisher-steps"),
+                statBlock(campaign, "Bog Skirmisher", "1/4", 13, "11 (2d8)", 3, "bog-skirmisher-reeds"),
+                statBlock(campaign, "Marsh Warden", "2", 16, "30 (4d10+8)", 1, "marsh-warden"));
         String[] names = {"Sentinel at the sluice", "Skirmisher by the steps",
                 "Skirmisher in the reeds", "Warden of the bell"};
         for (int i = 0; i < foeBlocks.size(); i++) {
@@ -155,10 +155,17 @@ public class ReleaseRehearsalFixture {
         scenes.save(hostile);
         var encounter = encounters.create(campaignId, new EncounterService.CreateRequest(
                 "Undercroft Alarm", map.getId()));
+        var encounterEntity = encounterRepository.findById(encounter.id()).orElseThrow();
+        encounterEntity.setEncounterKey("undercroft-alarm-" + suffix);
+        encounterRepository.save(encounterEntity);
         adventures.linkEncounter(hostile.getId(), encounter.id());
-        for (StatBlock foe : foeBlocks) {
-            encounters.addCombatant(encounter.id(), new EncounterService.CombatantCreateRequest(
+        for (int i = 0; i < foeBlocks.size(); i++) {
+            StatBlock foe = foeBlocks.get(i);
+            var combatant = encounters.addCombatant(encounter.id(), new EncounterService.CombatantCreateRequest(
                     foe.getName(), 0, "MONSTER", null, foe.getId(), null));
+            var combatantEntity = combatantRepository.findById(combatant.id()).orElseThrow();
+            combatantEntity.setNotes("rehearsal-" + suffix + "-combatant-" + (i + 1));
+            combatantRepository.save(combatantEntity);
         }
 
         byte[] image = png("safe");
@@ -199,7 +206,16 @@ public class ReleaseRehearsalFixture {
                 playerSafe.getId(), dmSource.getId(), derivative.getId(), quest.getId(), partyIds);
     }
 
-    private StatBlock statBlock(Campaign campaign, String name, String cr, int ac, String hp, int initiativeBonus) {
+    @Transactional(readOnly = true)
+    public List<UUID> statBlockIdsOf(Seeded seeded) {
+        return List.of("bog-sentinel", "bog-skirmisher-steps", "bog-skirmisher-reeds", "marsh-warden")
+                .stream()
+                .map(key -> statBlocks.findByCampaignIdAndSourceKey(seeded.campaignId(), key).orElseThrow().getId())
+                .toList();
+    }
+
+    private StatBlock statBlock(Campaign campaign, String name, String cr, int ac, String hp, int initiativeBonus,
+                                String sourceKey) {
         StatBlock block = new StatBlock();
         block.setSource(ContentSource.CUSTOM);
         block.setCampaign(campaign);
@@ -210,6 +226,7 @@ public class ReleaseRehearsalFixture {
         block.setHp(hp);
         block.setSpeed("30 ft.");
         block.setDexScore(initiativeBonus + 10);
+        block.setSourceKey(sourceKey);
         return statBlocks.save(block);
     }
 

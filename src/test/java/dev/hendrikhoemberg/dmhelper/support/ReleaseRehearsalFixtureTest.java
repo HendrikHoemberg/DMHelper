@@ -63,12 +63,12 @@ class ReleaseRehearsalFixtureTest {
                 .isEmpty();
         assertThat(hostile.getParticipants())
                 .extracting(p -> p.getDisplayName(), p -> p.getQuantity(), p -> p.getDisposition(),
-                        p -> p.getStatBlock().getName())
+                        p -> p.getStatBlock().getName(), p -> p.getStatBlock().getId())
                 .containsExactly(
-                        tuple("Sentinel at the sluice", 1, SceneParticipantDisposition.HOSTILE, "Bog Sentinel"),
-                        tuple("Skirmisher by the steps", 1, SceneParticipantDisposition.HOSTILE, "Bog Skirmisher"),
-                        tuple("Skirmisher in the reeds", 1, SceneParticipantDisposition.HOSTILE, "Bog Skirmisher"),
-                        tuple("Warden of the bell", 1, SceneParticipantDisposition.HOSTILE, "Marsh Warden"));
+                        tuple("Sentinel at the sluice", 1, SceneParticipantDisposition.HOSTILE, "Bog Sentinel", fixture.statBlockIdsOf(seeded).get(0)),
+                        tuple("Skirmisher by the steps", 1, SceneParticipantDisposition.HOSTILE, "Bog Skirmisher", fixture.statBlockIdsOf(seeded).get(1)),
+                        tuple("Skirmisher in the reeds", 1, SceneParticipantDisposition.HOSTILE, "Bog Skirmisher", fixture.statBlockIdsOf(seeded).get(2)),
+                        tuple("Warden of the bell", 1, SceneParticipantDisposition.HOSTILE, "Marsh Warden", fixture.statBlockIdsOf(seeded).get(3)));
         assertThat(hostile.getMapRequirement()).isEqualTo(SceneMapRequirement.REQUIRED);
         assertThat(hostile.getMap()).isNotNull();
         assertThat(hostile.getMap().getId()).isEqualTo(seeded.playableMapId());
@@ -85,13 +85,13 @@ class ReleaseRehearsalFixtureTest {
         assertThat(encounter.getCombatPhase()).isEqualTo(Encounter.CombatPhase.SETUP);
         assertThat(encounter.getMap().getId()).isEqualTo(seeded.playableMapId());
         assertThat(combatantRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()))
-                .extracting(c -> c.getName(), c -> c.getKind(), c -> c.getStatBlock().getName(),
+                .extracting(c -> c.getName(), c -> c.getKind(), c -> c.getStatBlock().getName(), c -> c.getStatBlock().getId(),
                         c -> c.getMaxHp(), c -> c.getCurrentHp())
                 .containsExactly(
-                        tuple("Bog Sentinel", "MONSTER", "Bog Sentinel", 18, 18),
-                        tuple("Bog Skirmisher", "MONSTER", "Bog Skirmisher", 11, 11),
-                        tuple("Bog Skirmisher", "MONSTER", "Bog Skirmisher", 11, 11),
-                        tuple("Marsh Warden", "MONSTER", "Marsh Warden", 30, 30));
+                        tuple("Bog Sentinel", "MONSTER", "Bog Sentinel", fixture.statBlockIdsOf(seeded).get(0), 18, 18),
+                        tuple("Bog Skirmisher", "MONSTER", "Bog Skirmisher", fixture.statBlockIdsOf(seeded).get(1), 11, 11),
+                        tuple("Bog Skirmisher", "MONSTER", "Bog Skirmisher", fixture.statBlockIdsOf(seeded).get(2), 11, 11),
+                        tuple("Marsh Warden", "MONSTER", "Marsh Warden", fixture.statBlockIdsOf(seeded).get(3), 30, 30));
     }
 
     @Test
@@ -200,5 +200,30 @@ class ReleaseRehearsalFixtureTest {
                 "Ilsa Fenwright", "Ordo Brack", "Nesh Vell", "Tamsin Aroe", "Undercroft Alarm",
                 "MONSTER");
         assertThat(text).contains("sourceWidth", "cropWidth", "redactions");
+    }
+
+    @Test
+    void provenanceTextIsolatedAcrossSeededCampaigns() throws IOException {
+        var first = fixture.seed();
+        var second = fixture.seed();
+        var firstEncounter = encounterRepository.findByCampaignIdOrderByNameAsc(first.campaignId()).stream()
+                .findFirst().orElseThrow();
+        var secondEncounter = encounterRepository.findByCampaignIdOrderByNameAsc(second.campaignId()).stream()
+                .findFirst().orElseThrow();
+        var firstCombatants = combatantRepository.findByEncounterIdOrderBySortOrderAsc(firstEncounter.getId());
+        var secondCombatants = combatantRepository.findByEncounterIdOrderBySortOrderAsc(secondEncounter.getId());
+        String firstText = fixture.textualContentOf(first);
+        String secondText = fixture.textualContentOf(second);
+
+        assertThat(firstEncounter.getEncounterKey()).isNotBlank().isNotEqualTo(secondEncounter.getEncounterKey());
+        assertThat(firstCombatants).hasSize(4);
+        assertThat(secondCombatants).hasSize(4);
+        assertThat(firstCombatants.get(0).getNotes()).isNotBlank().isNotEqualTo(secondCombatants.get(0).getNotes());
+        assertThat(firstText).contains(firstEncounter.getEncounterKey(), firstCombatants.get(0).getNotes())
+                .doesNotContain(secondEncounter.getEncounterKey(), secondCombatants.get(0).getNotes());
+        assertThat(secondText).contains(secondEncounter.getEncounterKey(), secondCombatants.get(0).getNotes())
+                .doesNotContain(firstEncounter.getEncounterKey(), firstCombatants.get(0).getNotes());
+        assertThat(encounterRepository.findByCampaignIdOrderByNameAsc(first.campaignId())).containsExactly(firstEncounter);
+        assertThat(encounterRepository.findByCampaignIdOrderByNameAsc(second.campaignId())).containsExactly(secondEncounter);
     }
 }
