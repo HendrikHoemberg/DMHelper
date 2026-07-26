@@ -40,3 +40,18 @@ did not complete. It timed out waiting for `button[x-ref='sessionButton']` after
 
 - `a7661623 feat(visual): replace 27 ad-hoc z-indexes with one readable elevation ladder`
 - Documentation commit containing this report: `docs(visual): record task 7 elevation ladder evidence`.
+
+## Review fix round 1 evidence
+
+- Extended `ElevationModelContractTest` to walk every HTML template and reject raw numeric
+  `z-index` values above `2`; the new test first failed on the summary modal and three map-editor
+  elevations (`1000`, `20`, `30`, `30`).
+- Replaced the encounter summary modal inline `1000` with `var(--z-modal)`.
+- Replaced map-editor `20`/`30`/`30` with `var(--z-workspace-chrome)`/
+  `var(--z-workspace-focus)`/`var(--z-workspace-focus)`, preserving their local order.
+- Made `lifecycleDialogGeometryAndFocusAtMultipleViewports` self-sufficient by calling the existing
+  campaign fixture setup when run outside the ordered suite.
+- `./mvnw -q test -Dtest=ElevationModelContractTest` — PASS after the red phase.
+- `./mvnw -q test -Dtest=CoreSessionLoopSmokeTest#lifecycleDialogGeometryAndFocusAtMultipleViewports` — PASS; fresh standalone run completed with exit code 0.
+- `./mvnw -q test -Dtest=ElevationModelContractTest,DesignTokenContractTest,TypographyRoleContractTest,TypeScaleContractTest,SurfaceNestingGateTest` — PASS.
+- Playwright still prints host-library warnings, but the mandated smoke test completes successfully.

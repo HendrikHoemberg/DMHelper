@@ -2,8 +2,12 @@ package dev.hendrikhoemberg.dmhelper.config;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -53,5 +57,26 @@ class ElevationModelContractTest {
         }
 
         assertThat(offenders).as("raw elevations outside the ladder").isEmpty();
+    }
+
+    @Test
+    void noTemplateInventsItsOwnElevation() throws IOException {
+        List<String> offenders = new ArrayList<>();
+        var rawElevation = java.util.regex.Pattern.compile(
+                "z-index\\s*:\\s*(?!var\\(--z-)(-?\\d+)");
+
+        try (Stream<Path> templates = Files.walk(Path.of("src/main/resources/templates"))) {
+            for (Path template : templates.filter(path -> path.toString().endsWith(".html")).toList()) {
+                var matcher = rawElevation.matcher(Files.readString(template));
+                while (matcher.find()) {
+                    int value = Integer.parseInt(matcher.group(1));
+                    if (value > 2 || value < 0) {
+                        offenders.add(template + " → z-index: " + value);
+                    }
+                }
+            }
+        }
+
+        assertThat(offenders).as("raw elevations outside the ladder in templates").isEmpty();
     }
 }

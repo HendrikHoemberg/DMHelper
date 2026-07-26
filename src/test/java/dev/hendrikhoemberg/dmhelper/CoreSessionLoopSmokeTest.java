@@ -1897,6 +1897,11 @@ class CoreSessionLoopSmokeTest {
     @Test
     @Order(28)
     void lifecycleDialogGeometryAndFocusAtMultipleViewports() {
+        // This focused smoke test must be runnable alone; the ordered suite normally
+        // initializes campaignId in @Order(1).
+        if (campaignId == null) {
+            createCampaign();
+        }
         dmPage.setViewportSize(1366, 768);
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
