@@ -50,8 +50,8 @@
 /* Grouping inside a card is spacing and a hairline, not a second slab of the same colour
    (spec 2026-07-22 §10.2). The inner surface keeps its content and loses its walls. */
 .card .card,
-.card .readiness-panel,
-.card .prep-summary {
+.readiness-panel,
+[data-prep-summary] {
   background: transparent;
   border: none;
   box-shadow: none;
@@ -62,8 +62,8 @@
 }
 
 .card .card:first-child,
-.card .readiness-panel:first-child,
-.card .prep-summary:first-child {
+.readiness-panel:first-child,
+[data-prep-summary]:first-child {
   border-top: none;
   padding-top: 0;
 }

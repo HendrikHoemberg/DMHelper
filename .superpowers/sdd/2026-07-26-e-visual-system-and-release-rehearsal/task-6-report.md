@@ -80,3 +80,75 @@ Result: 2,571 tests, 0 failures, 1 error, 6 skipped. The sole error is the pre-e
   empirically proven against a live offender; the invariant remains direct and exception-free.
 - The full suite remains non-green only because of the unrelated duplicate-class template error
   noted above.
+
+## Review fix round 1 — validated guard and actual-DOM coverage
+
+### Findings addressed
+
+The gate now distinguishes rendered elements from hidden DOM nodes, recognizes a painted edge
+on any of the four computed border sides, and keeps the same-fill comparison. The detector is
+covered by an honest focused browser fixture containing an outer left-only border and an inner
+bottom-only border with the same fill; it must report `section.outer > … > div.inner`.
+
+The flattening selectors now match emitted markup: `.readiness-panel` and `[data-prep-summary]`.
+The former selector was ineffective because the readiness fragment is outside `.card`; the
+latter replaces the unused `.prep-summary` class because the fragment root emits
+`data-prep-summary`.
+
+The gate also checks the actual campaign readiness panel and preparation summary DOM. It verifies
+transparent fill, the expected hairline behavior, and retained block spacing. These checks
+validate the visual fix on the rendered fixture pages; the focused synthetic check is the new
+detector guard.
+
+### TDD RED
+
+After adding the side-border fixture, actual-DOM assertions, and all-side detector logic—but
+before correcting the detector's hidden-node handling and production selectors:
+
+```text
+./mvnw -q test -Dtest=SurfaceNestingGateTest
+```
+
+Result: 9 tests, 7 failures, 0 errors, 0 skipped. Failures included the two actual-DOM selector
+assertions and five hidden navbar nodes reported by the broadened border detector. The focused
+side-border fixture exercised the detector and exposed the prior top-border-only limitation.
+
+After excluding `display:none`, `visibility:hidden`, and `visibility:collapse` elements, with
+production CSS still unchanged:
+
+```text
+./mvnw -q test -Dtest=SurfaceNestingGateTest
+```
+
+Result: 9 tests, 2 failures, 0 errors, 0 skipped. Only the two actual-DOM selector assertions
+remained, proving the selector failures independently.
+
+### GREEN
+
+After changing the selectors to `.readiness-panel` and `[data-prep-summary]` and preserving the
+first-child hairline rule:
+
+```text
+./mvnw -q test -Dtest=SurfaceNestingGateTest
+```
+
+Result: pass; 9 tests, 0 failures, 0 errors, 0 skipped. This covers the six governed routes,
+the side-only detector fixture, and both emitted special surfaces.
+
+### Neighboring visual checks
+
+```text
+./mvnw -q test -Dtest=GoldAccentContractTest,DesignTokenContractTest,TypographyRoleContractTest,TypeScaleContractTest,CombatLegibilityContractTest,UiPolishContractTest,InteractionFailureContractTest
+```
+
+Result: pass; exit code 0.
+
+```text
+./mvnw -q test -Dtest=TypographyRenderGateTest
+```
+
+Result: pass; exit code 0.
+
+`git diff --check` passed. Playwright continues to emit the environment warning about missing
+host libraries (`libicudata.so.66`, `libicui18n.so.66`, `libicuuc.so.66`, `libxml2.so.2`,
+`libwebp.so.6`, and `libffi.so.7`); the browser tests execute successfully.

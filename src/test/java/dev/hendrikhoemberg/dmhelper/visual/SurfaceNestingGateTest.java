@@ -9,14 +9,17 @@ import dev.hendrikhoemberg.dmhelper.support.PopulatedCampaignFixture;
 import dev.hendrikhoemberg.dmhelper.support.PreparationSurfaceFixture;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,6 +31,39 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SurfaceNestingGateTest {
+
+    private static final String SURFACE_NESTING_DETECTOR = """
+            () => {
+              const painted = (el) => {
+                const s = getComputedStyle(el);
+                const isRendered = s.display !== 'none' && s.visibility !== 'hidden'
+                  && s.visibility !== 'collapse';
+                const hasFill = s.backgroundColor !== 'rgba(0, 0, 0, 0)'
+                  && s.backgroundColor !== 'transparent';
+                const hasEdge = [s.borderTopWidth, s.borderRightWidth,
+                  s.borderBottomWidth, s.borderLeftWidth]
+                  .some(width => parseFloat(width) > 0);
+                const hasPaintedEdge = [s.borderTopColor, s.borderRightColor,
+                  s.borderBottomColor, s.borderLeftColor]
+                  .some(color => color !== 'rgba(0, 0, 0, 0)' && color !== 'transparent');
+                return isRendered && hasFill && hasEdge && hasPaintedEdge ? s.backgroundColor : null;
+              };
+              const describe = (el) =>
+                el.tagName.toLowerCase() + (el.className ? '.' + String(el.className).trim().split(/\\s+/).join('.') : '');
+              const out = [];
+              for (const el of document.querySelectorAll('body *')) {
+                const fill = painted(el);
+                if (!fill) continue;
+                for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+                  const parentFill = painted(p);
+                  if (!parentFill) continue;
+                  if (parentFill === fill) out.push(describe(p) + ' > … > ' + describe(el));
+                  break;
+                }
+              }
+              return [...new Set(out)];
+            }
+            """;
 
     @LocalServerPort private int port;
     @Autowired private PopulatedCampaignFixture fixture;
@@ -59,6 +95,56 @@ class SurfaceNestingGateTest {
                 c + "/session", p + "/encounters/" + prepared.encounterId());
     }
 
+    static Stream<Arguments> specialSurfaces() {
+        return Stream.of(
+                Arguments.of("campaign", ".readiness-panel"),
+                Arguments.of("preparation", "[data-prep-summary]"));
+    }
+
+    @Test
+    void detectorReportsSameFillWhenOnlySideBordersArePainted() {
+        try (Page page = browser.newPage()) {
+            page.setContent("""
+                    <style>
+                      .outer { background: rgb(20, 15, 10); border-left: 2px solid rgb(80, 60, 40); }
+                      .inner { background: rgb(20, 15, 10); border-bottom: 2px solid rgb(80, 60, 40); }
+                    </style>
+                    <section class="outer"><div class="inner">fixture</div></section>
+                    """);
+
+            assertThat(findOffenders(page))
+                    .as("side-only bordered same-fill fixture must be detected")
+                    .containsExactly("section.outer > … > div.inner");
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("specialSurfaces")
+    void flatteningRuleTargetsTheEmittedSpecialSurface(String pageKind, String selector) {
+        String path = pageKind.equals("campaign")
+                ? "/campaigns/" + seeded.campaignId()
+                : "/campaigns/" + prepared.campaignId() + "/encounters/" + prepared.encounterId();
+        try (Page page = browser.newPage()) {
+            page.navigate("http://localhost:" + port + path);
+            page.waitForLoadState(LoadState.NETWORKIDLE);
+
+            @SuppressWarnings("unchecked")
+            List<String> styles = (List<String>) page.evaluate("""
+                    (selector) => Array.from(document.querySelectorAll(selector)).map(el => {
+                      const s = getComputedStyle(el);
+                      return [s.backgroundColor, s.borderTopWidth, s.borderRightWidth,
+                        s.borderBottomWidth, s.borderLeftWidth, s.paddingBottom].join('|');
+                    })
+                    """, selector);
+
+            assertThat(styles)
+                    .as("emitted %s surface %s must use the flattening rule", pageKind, selector)
+                    .containsExactly(pageKind.equals("campaign")
+                            ? "rgba(0, 0, 0, 0)|1px|0px|0px|0px|8px"
+                            : "rgba(0, 0, 0, 0)|0px|0px|0px|0px|8px");
+        }
+    }
+
     @ParameterizedTest
     @MethodSource("pages")
     void noBorderedSurfaceSitsOnAnIdenticalBorderedSurface(String path) {
@@ -67,37 +153,14 @@ class SurfaceNestingGateTest {
             page.navigate("http://localhost:" + port + path);
             page.waitForLoadState(LoadState.NETWORKIDLE);
 
-            @SuppressWarnings("unchecked")
-            List<String> offenders = (List<String>) page.evaluate("""
-                    () => {
-                      const painted = (el) => {
-                        const s = getComputedStyle(el);
-                        const hasFill = s.backgroundColor !== 'rgba(0, 0, 0, 0)'
-                          && s.backgroundColor !== 'transparent';
-                        const hasEdge = parseFloat(s.borderTopWidth) > 0
-                          && s.borderTopColor !== 'rgba(0, 0, 0, 0)';
-                        return hasFill && hasEdge ? s.backgroundColor : null;
-                      };
-                      const describe = (el) =>
-                        el.tagName.toLowerCase() + (el.className ? '.' + String(el.className).trim().split(/\\s+/).join('.') : '');
-                      const out = [];
-                      for (const el of document.querySelectorAll('body *')) {
-                        const fill = painted(el);
-                        if (!fill) continue;
-                        for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
-                          const parentFill = painted(p);
-                          if (!parentFill) continue;
-                          if (parentFill === fill) out.push(describe(p) + ' > … > ' + describe(el));
-                          break;
-                        }
-                      }
-                      return [...new Set(out)];
-                    }
-                    """);
-
-            assertThat(offenders)
+            assertThat(findOffenders(page))
                     .as("same-fill bordered surfaces nested on %s — flatten the inner one", path)
                     .isEmpty();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> findOffenders(Page page) {
+        return (List<String>) page.evaluate(SURFACE_NESTING_DETECTOR);
     }
 }
