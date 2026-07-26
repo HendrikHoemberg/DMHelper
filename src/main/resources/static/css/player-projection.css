@@ -1,3 +1,23 @@
+.pv-initiative .combatant-chip {
+    font-size: var(--text-sm);
+}
+
+.pv-curtain {
+    font-size: var(--text-xl);
+}
+
+.cond-dot {
+    font-size: var(--text-xs);
+}
+
+.pv-status {
+    font-size: var(--text-xs);
+}
+
+.pv-waiting-icon {
+    font-size: var(--text-3xl);
+}
+
 .pv-handout {
     display: flex;
     align-items: center;

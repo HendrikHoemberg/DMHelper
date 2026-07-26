@@ -12,10 +12,10 @@
       <th:block th:each="enc : ${view.planned}">
         <div class="planned-encounter-row">
           <span th:text="${enc.name}">Encounter name</span>
-          <button class="btn btn-ghost" style="padding: 2px 8px;"
+          <button class="btn btn-ghost encounter-rail__action" style="padding: 2px 8px;"
                   th:attr="data-encounter-id=${enc.id}"
                   @click="activateEncounter($el.dataset.encounterId)">Activate</button>
-          <button class="btn btn-ghost" style="padding: 2px 8px;"
+          <button class="btn btn-ghost encounter-rail__action" style="padding: 2px 8px;"
                   th:if="${enc.mapId != null}"
                   th:attr="data-map-id=${enc.mapId}"
                   @click="switchMap($el.dataset.mapId)"
@@ -24,7 +24,7 @@
       </th:block>
     </th:block>
     <th:block th:if="${view.planned.isEmpty()}">
-      <div class="empty-state" style="color: var(--color-text-muted);">No planned encounters</div>
+      <div class="empty-state encounter-rail__empty" style="color: var(--color-text-muted);">No planned encounters</div>
     </th:block>
   </div>
 </div>

@@ -3,7 +3,7 @@
 <div th:fragment="currentDateFragment" id="current-date-wrapper" class="detail-section">
     <h2>Current In-Game Date</h2>
     <div class="card" style="padding: var(--space-md); text-align:center;">
-        <div style="font-weight: 600;"
+        <div class="calendar-current-date-value" style="font-weight: 600;"
              th:with="monthName=${config.monthNames() != null and config.monthNames().length > currentDate.month() ? config.monthNames()[currentDate.month()] : 'Month ' + (currentDate.month() + 1)}">
             <span th:text="${currentDate.day()}">15</span>
             <span th:text="${monthName}">March</span>

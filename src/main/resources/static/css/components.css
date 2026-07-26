@@ -765,6 +765,28 @@
     font-size: var(--text-sm);
 }
 
+.tracker-empty-hint,
+.tracker-concentration,
+.tracker-concentration-check,
+.tracker-legendary,
+.tracker-statblock-loading,
+.tracker-statblock {
+    font-size: var(--text-sm);
+}
+
+.tracker-small-action,
+.tracker-lair-status,
+.tracker-temp-hp,
+.tracker-statblock-badge,
+.tracker-footer-count,
+.tracker-small-button {
+    font-size: var(--text-xs);
+}
+
+.tracker-standard-button {
+    font-size: var(--text-sm);
+}
+
 .hp-mini {
     width: 60px;
     height: 6px;

@@ -1,3 +1,54 @@
+.calendar-current-date-value {
+  font-size: var(--text-xl);
+}
+
+.adventure-continue-label {
+  font-size: var(--text-sm);
+}
+
+.scene-notes-summary,
+.scene-notes-body {
+  font-size: var(--text-sm);
+}
+
+.map-editor-control {
+  font-size: var(--text-sm);
+}
+
+.map-editor-layer-visibility,
+.map-editor-tooltip {
+  font-size: var(--text-xs);
+}
+
+.map-label-input {
+  font-size: var(--text-xs);
+}
+
+.backlink-type,
+.inventory-weight,
+.rest-rule-note,
+.attunement-warning {
+  font-size: var(--text-sm);
+}
+
+.empty-map-selector,
+.encounter-rail__action,
+.encounter-module__hint {
+  font-size: var(--text-sm);
+}
+
+.editor-toolbar .tool-btn,
+.sidebar-section h3,
+.sidebar-field,
+.editor-statusbar,
+.layer-item,
+.layer-item button,
+.terrain-panel-row,
+.shortcuts-panel h3,
+.shortcuts-panel dl {
+  font-size: var(--text-sm);
+}
+
 .roster {
   display: flex;
   flex-direction: column;

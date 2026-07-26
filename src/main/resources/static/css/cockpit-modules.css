@@ -1,3 +1,17 @@
+.map-module__pin {
+  font-size: var(--text-sm);
+}
+
+.session-plan__heading,
+.quest-progress__heading {
+  font-size: var(--text-sm);
+}
+
+.session-plan__action,
+.encounter-rail__empty {
+  font-size: var(--text-sm);
+}
+
 .runtime-party .party-member-chip {
   display: flex;
   flex-wrap: wrap;

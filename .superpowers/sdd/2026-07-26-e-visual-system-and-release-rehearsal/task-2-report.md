@@ -50,3 +50,51 @@ The template inline-font scan is empty, the stylesheet absolute-size contract is
 ## Concerns
 
 None identified within the task scope. The relative 0.85em note-code size and 3.1em drop cap remain intentionally relative as specified by the brief.
+
+## Fix round 1 — review findings
+
+### RED evidence
+
+Updated TypeScaleContractTest with:
+
+- an embedded <style> scan for raw px/rem/em font sizes;
+- replacement-class assertions for calendar, player projection, tracker, and map-module typography.
+
+Command:
+
+    ./mvnw -q test -Dtest=TypeScaleContractTest
+
+Before the fix, the command exited 1 with Tests run: 5, Failures: 2, Errors: 0:
+
+- embedded raw sizes were found in templates/maps/editor.html and templates/player/view.html;
+- the replacement-class assertion failed because the reviewed classes/rules did not yet exist.
+
+### Fix
+
+- Moved player embedded raw sizes to tokenized rules in player-projection.css, including the waiting icon’s --text-3xl.
+- Added tokenized owning stylesheet rules and named classes for calendar, map editor/module, session chrome, encounter tracker, adventure, notes, sheet, and treasury typography.
+- Removed the full inline style attribute from session/cockpit.html’s title.
+- Removed the full inline style attribute from encounter tracker .group-count.
+- Kept the prior relative note-code/drop-cap exceptions unchanged.
+
+### GREEN evidence
+
+Contract suite:
+
+    ./mvnw -q test -Dtest=TypeScaleContractTest
+
+Result: exit code 0.
+
+Neighboring suites:
+
+    ./mvnw -q test -Dtest=UiPolishContractTest,EncounterTemplateContractTest,CockpitRuntimeModuleContractTest
+
+Result: exit code 0.
+
+Additional checks:
+
+    git diff --check
+    rg -n 'style="[^"\\n]*font-size[^"\\n]*"' src/main/resources/templates
+    rg -n 'font-size:\\s*(0\\.[0-9]+|[0-9]+\\.[0-9]+rem|[0-9]+px)' src/main/resources/templates/player/view.html src/main/resources/templates/maps/editor.html
+
+All exited 0; the two scans returned no matches.

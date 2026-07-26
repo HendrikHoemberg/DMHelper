@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -86,5 +87,37 @@ class TypeScaleContractTest {
         }
 
         assertThat(offenders).as("inline font-size defeats the scale").isEmpty();
+    }
+
+    @Test
+    void noTemplateEmbeddedStyleCarriesARawFontSize() throws IOException {
+        Pattern rawFontSize = Pattern.compile(
+                "(?s)<style\\b[^>]*>.*?font-size\\s*:\\s*[^;}]*(?:px|rem|em)\\b.*?</style>");
+        List<String> offenders = new ArrayList<>();
+
+        try (Stream<Path> templates = Files.walk(Path.of("src/main/resources/templates"))) {
+            for (Path template : templates.filter(p -> p.toString().endsWith(".html")).toList()) {
+                if (rawFontSize.matcher(Files.readString(template)).find()) {
+                    offenders.add(template.toString());
+                }
+            }
+        }
+
+        assertThat(offenders).as("raw font sizes in embedded template styles").isEmpty();
+    }
+
+    @Test
+    void replacementClassesKeepReviewedTemplateTypography() {
+        assertThat(hasFontSize("surfaces.css", ".calendar-current-date-value", "var(--text-xl)")).isTrue();
+        assertThat(hasFontSize("player-projection.css", ".pv-waiting-icon", "var(--text-3xl)")).isTrue();
+        assertThat(hasFontSize("player-projection.css", ".pv-curtain", "var(--text-xl)")).isTrue();
+        assertThat(hasFontSize("components.css", ".tracker-turns__active", "var(--text-sm)")).isTrue();
+        assertThat(hasFontSize("cockpit-modules.css", ".map-module__pin", "var(--text-sm)")).isTrue();
+    }
+
+    private static boolean hasFontSize(String file, String selector, String token) {
+        return CssRules.of(file).stream()
+                .anyMatch(rule -> rule.selector().equals(selector)
+                        && token.equals(rule.value("font-size")));
     }
 }
