@@ -63,7 +63,7 @@
         <input type="number" name="pinY" placeholder="Pin Y" class="form-input" style="width: 80px;"
                th:value="${scene.pinY}">
       </div>
-      <button type="button" class="btn btn-danger btn-sm"
+      <button type="button" class="btn btn-danger btn-sm action-row__destructive"
               th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/unlink-map(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
               hx-target="#sceneEditPane" hx-swap="innerHTML"
               th:if="${scene.map != null}">Unlink Map</button>
@@ -77,7 +77,7 @@
         <option th:each="e : ${encounters}" th:value="${e.id}" th:selected="${scene.encounter != null and scene.encounter.id == e.id}"
                 th:text="${e.name}">Encounter Name</option>
       </select>
-      <button type="button" class="btn btn-danger btn-sm"
+      <button type="button" class="btn btn-danger btn-sm action-row__destructive"
               th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/unlink-encounter(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
               hx-target="#sceneEditPane" hx-swap="innerHTML"
               th:if="${scene.encounter != null}">Unlink Encounter</button>
@@ -93,7 +93,7 @@
       <div th:if="${scene.statBlocks != null and !scene.statBlocks.isEmpty()}" style="margin-top: var(--space-xs);">
         <div th:each="sb : ${scene.statBlocks}" style="display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) 0;">
           <span th:text="${sb.name}">StatBlock</span>
-          <button type="button" class="btn btn-danger btn-sm"
+          <button type="button" class="btn btn-danger btn-sm action-row__destructive"
                   th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/remove-statblock(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
                   th:attr="hx-vals='{&quot;statBlockId&quot;: &quot;' + ${sb.id} + '&quot;}'"
                   hx-target="#sceneEditPane" hx-swap="innerHTML">&times;</button>
@@ -123,7 +123,7 @@
       <div th:if="${scene.handouts != null and !scene.handouts.isEmpty()}" style="margin-top: var(--space-xs);">
         <div th:each="h : ${scene.handouts}" style="display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) 0;">
           <span th:text="${h.title}">Handout</span>
-          <button type="button" class="btn btn-danger btn-sm"
+          <button type="button" class="btn btn-danger btn-sm action-row__destructive"
                   th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/remove-handout(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
                   th:attr="hx-vals='{&quot;handoutId&quot;: &quot;' + ${h.id} + '&quot;}'"
                   hx-target="#sceneEditPane" hx-swap="innerHTML">&times;</button>

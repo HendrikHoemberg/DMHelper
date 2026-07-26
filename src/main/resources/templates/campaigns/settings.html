@@ -82,13 +82,17 @@
             <section class="card u-mt-lg surface-danger-zone">
                 <h2>Danger zone</h2>
                 <p class="text-muted u-text-sm">Once you delete a campaign, there is no going back. Please be certain.</p>
-                <button class="btn btn-danger"
-                        th:hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
-                        hx-confirm="Delete this campaign?"
-                        hx-target="body"
-                        hx-swap="outerHTML">
-                    Delete Campaign
-                </button>
+                <div class="action-row">
+                    <span class="action-row__destructive">
+                        <button class="btn btn-danger"
+                                th:hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
+                                hx-confirm="Delete this campaign?"
+                                hx-target="body"
+                                hx-swap="outerHTML">
+                            Delete Campaign
+                        </button>
+                    </span>
+                </div>
             </section>
         </main>
     </div>

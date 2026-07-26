@@ -50,12 +50,12 @@
             <div class="redactions-section">
                 <h3>Redactions</h3>
                 <template x-for="(r, index) in redactions" :key="index">
-                    <div class="redaction-row">
+                    <div class="redaction-row action-row">
                         <input type="number" x-model.number="r.x" class="form-control" placeholder="X" min="0">
                         <input type="number" x-model.number="r.y" class="form-control" placeholder="Y" min="0">
                         <input type="number" x-model.number="r.width" class="form-control" placeholder="W" min="1">
                         <input type="number" x-model.number="r.height" class="form-control" placeholder="H" min="1">
-                        <button class="btn btn-danger btn-sm" @click="removeRedaction(index)">&times;</button>
+                        <button class="btn btn-danger btn-sm action-row__destructive" @click="removeRedaction(index)">&times;</button>
                     </div>
                 </template>
                 <button class="btn btn-ghost" @click="addRedaction()">Add Redaction</button>

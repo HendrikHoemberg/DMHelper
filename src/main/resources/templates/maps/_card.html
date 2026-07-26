@@ -8,7 +8,7 @@
     <div class="card-meta">
         <span th:text="${map.gridWidth} + '×' + ${map.gridHeight} + ' · ' + ${map.cellSizePx} + 'px cells'">30×20 · 48px cells</span>
     </div>
-    <div class="card-actions">
+    <div class="card-actions action-row">
         <a class="btn btn-primary"
            th:href="@{/campaigns/{cid}/maps/{mid}/play(cid=${campaignId}, mid=${map.id})}">
             Play
@@ -17,13 +17,15 @@
            th:href="@{/campaigns/{cid}/maps/{mid}/edit(cid=${campaignId}, mid=${map.id})}">
             Edit
         </a>
-        <button class="btn btn-danger"
-                th:attr="hx-delete=@{/campaigns/{cid}/maps/{mid}(cid=${campaignId}, mid=${map.id})}"
-                hx-confirm="Delete this map?"
-                hx-target="closest .card"
-                hx-swap="outerHTML">
-            Delete
-        </button>
+        <span class="action-row__destructive">
+            <button class="btn btn-danger"
+                    th:attr="hx-delete=@{/campaigns/{cid}/maps/{mid}(cid=${campaignId}, mid=${map.id})}"
+                    hx-confirm="Delete this map?"
+                    hx-target="closest .card"
+                    hx-swap="outerHTML">
+                Delete
+            </button>
+        </span>
     </div>
 </div>
 </html>

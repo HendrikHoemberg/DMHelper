@@ -11,7 +11,7 @@
         <main class="app-main">
             <div class="page-header">
                 <a href="/library" class="btn btn-ghost">&larr; Back to Library</a>
-                <div class="u-flex">
+                <div class="u-flex action-row">
                     <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${species})}"></th:block>
                     <th:block th:if="${species.source.name() == 'SRD'}">
                         <form th:hx-post="@{/library/species/{id}/clone(id=${species.id})}" hx-target="body">
@@ -20,10 +20,12 @@
                     </th:block>
                     <th:block th:if="${species.source.name() == 'CUSTOM'}">
                         <a th:href="@{/library/species/{id}/edit(id=${species.id})}" class="btn btn-primary">Edit</a>
-                        <button class="btn btn-danger"
-                                th:hx-delete="@{/library/species/{id}(id=${species.id})}"
-                                hx-confirm="Delete this species?"
-                                hx-target="body" hx-swap="outerHTML">Delete</button>
+                        <span class="action-row__destructive">
+                            <button class="btn btn-danger"
+                                    th:hx-delete="@{/library/species/{id}(id=${species.id})}"
+                                    hx-confirm="Delete this species?"
+                                    hx-target="body" hx-swap="outerHTML">Delete</button>
+                        </span>
                     </th:block>
                 </div>
             </div>

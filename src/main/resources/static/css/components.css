@@ -199,6 +199,21 @@
   border-color: var(--color-warning);
 }
 
+/* A destructive action is reachable but never neighbourly (spec 2026-07-22 §10.3):
+   it sits after a gap and a rule, on the far side of the row from the primary action. */
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.action-row__destructive {
+  margin-left: auto;
+  padding-left: var(--space-lg);
+  border-left: 1px solid var(--color-border);
+}
+
 /* Extra-small button — compact icon/action buttons in list rows */
 .btn-xs {
   font-size: var(--text-sm);
@@ -2893,7 +2908,6 @@ dialog.modal:not([open]) {
     gap: var(--space-sm);
     padding-top: var(--space-md);
 }
-.dash-data-tools .btn-danger { margin-left: auto; }
 
 /* Structured scene sections — shared by the prep-time scene page and the session
    story rail. Deliberately NOT built on .card: the global `.card p` two-line clamp
