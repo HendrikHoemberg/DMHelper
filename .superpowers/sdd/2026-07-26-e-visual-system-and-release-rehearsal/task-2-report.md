@@ -136,3 +136,16 @@ Direct template validation:
     git diff --check
 
 Result: exit code 0; no duplicate class attributes, the merged Prefill class is present at line 509, and the diff is clean.
+
+### Post-commit verification
+
+An initial parallel post-commit invocation of the two Maven commands hit a target-directory race during test compilation:
+
+    java.nio.file.NoSuchFileException: .../target/classes/dev/hendrikhoemberg/dmhelper/library/service/SrdSeedService$1.class
+
+The focused suites were then rerun sequentially:
+
+    ./mvnw -q test -Dtest=TypeScaleContractTest
+    ./mvnw -q test -Dtest=EncounterTemplateContractTest
+
+Both completed with exit code 0.
