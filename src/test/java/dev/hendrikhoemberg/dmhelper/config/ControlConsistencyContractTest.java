@@ -22,17 +22,27 @@ class ControlConsistencyContractTest {
 
     @Test
     void everyButtonInAGovernedTemplateDeclaresItsRole() throws IOException {
-        Pattern button = Pattern.compile("<button(?![^>]*\\bclass=)[^>]*>");
+        Pattern button = Pattern.compile("<button\\b[^>]*>", Pattern.DOTALL);
+        Pattern classAttribute = Pattern.compile("\\sclass=\\\"([^\\\"]*)\\\"");
+        Pattern appControlClass = Pattern.compile("(?:^|\\s)(?:btn(?:-[\\w-]+)?|audio-btn(?:-[\\w-]+)?|"
+                + "tool-btn|terrain-swatch|appnav-collapse|cockpit-splitter|cockpit-zone__tab|"
+                + "dice-toggle-btn|form-tab|map-editor-control|modal-close|roll-btn|sb-result-item)(?:\\s|$)");
         List<String> offenders = new ArrayList<>();
 
         try (Stream<Path> templates = Files.walk(Path.of("src/main/resources/templates"))) {
             for (Path template : templates.filter(p -> p.toString().endsWith(".html")).toList()) {
                 Matcher m = button.matcher(Files.readString(template));
-                while (m.find()) offenders.add(template + " → " + m.group());
+                while (m.find()) {
+                    String markup = m.group();
+                    Matcher classes = classAttribute.matcher(markup);
+                    if (!classes.find() || !appControlClass.matcher(classes.group(1)).find()) {
+                        offenders.add(template + " → " + markup);
+                    }
+                }
             }
         }
 
-        assertThat(offenders).as("buttons with no btn class").isEmpty();
+        assertThat(offenders).as("buttons without an app control class").isEmpty();
     }
 
     @Test
@@ -57,7 +67,8 @@ class ControlConsistencyContractTest {
                 Path.of("src/main/resources/templates/campaigns/_readiness.html"));
 
         assertThat(readiness)
-                .contains("class=\"btn btn-primary btn-xs\">Accept<")
+                .contains("class=\"btn btn-xs\"")
+                .contains("th:classappend=\"${itemStat.first} ? 'btn-primary' : ''\"")
                 .contains("class=\"btn btn-xs\">Set kind<")
                 .contains("class=\"form-input form-input--xs\"")
                 .contains("class=\"btn btn-ghost btn-xs readiness-item__repair\"");

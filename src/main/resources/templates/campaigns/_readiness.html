@@ -8,7 +8,7 @@
     Every blocker is resolved or accepted. This is distinct from schema validity.
   </p>
   <ul th:unless="${readiness.sessionReady()}" class="readiness-list">
-    <li th:each="item : ${readiness.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).BLOCKER)}"
+    <li th:each="item, itemStat : ${readiness.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).BLOCKER)}"
         class="readiness-item readiness-item--blocker">
       <span class="readiness-item__title" th:text="${item.title()}">Title</span>
       <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
@@ -20,7 +20,8 @@
               th:hx-post="@{|/campaigns/${campaignId}/readiness/accept|}"
               hx-target="closest .readiness-panel" hx-swap="outerHTML">
           <input type="hidden" name="itemKey" th:value="${item.key()}"/>
-          <button type="submit" class="btn btn-primary btn-xs">Accept</button>
+          <button type="submit" class="btn btn-xs"
+                  th:classappend="${itemStat.first} ? 'btn-primary' : ''">Accept</button>
         </form>
         <form th:if="${item.category().name() == 'ASSET'}"
               th:action="@{|/campaigns/${campaignId}/readiness/assets/${item.targetId()}/kind|}" method="post" class="inline-form"

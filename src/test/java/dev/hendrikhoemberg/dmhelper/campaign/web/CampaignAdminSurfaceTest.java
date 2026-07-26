@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.campaign.web;
 
 import dev.hendrikhoemberg.dmhelper.support.PreparationSurfaceFixture;
+import dev.hendrikhoemberg.dmhelper.support.CampaignFixtures;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -20,6 +21,7 @@ class CampaignAdminSurfaceTest {
 
     @Autowired private WebApplicationContext context;
     @Autowired private PreparationSurfaceFixture fixture;
+    @Autowired private CampaignFixtures campaignFixtures;
 
     private MockMvc mvc;
     private PreparationSurfaceFixture.Seeded seeded;
@@ -71,5 +73,37 @@ class CampaignAdminSurfaceTest {
     void theHomeStillShowsReadinessAndScale() {
         assertThat(home).contains("readiness-panel");
         assertThat(home).contains("scale-panel");
+    }
+
+    @Test
+    void readinessReportRendersOnePrimaryAcceptanceAndEveryBlockerControl() throws Exception {
+        var campaignId = campaignFixtures.operationalFixtureNotReady();
+        String rendered = mvc.perform(get("/campaigns/{id}", campaignId))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        String acceptEndpoint = "/campaigns/" + campaignId + "/readiness/accept";
+        var acceptForms = java.util.regex.Pattern.compile(
+                        "<form[^>]*action=\\\"" + java.util.regex.Pattern.quote(acceptEndpoint)
+                                + "\\\"[^>]*>[\\s\\S]*?</form>")
+                .matcher(rendered)
+                .results()
+                .map(java.util.regex.MatchResult::group)
+                .toList();
+
+        assertThat(acceptForms).hasSize(5);
+        assertThat(acceptForms).allSatisfy(form -> assertThat(form)
+                .contains("class=\"btn", "btn-xs", "hx-post=\"" + acceptEndpoint + "\"")
+                .contains("hx-target=\"closest .readiness-panel\"", "hx-swap=\"outerHTML\""));
+        assertThat(acceptForms.stream().filter(form -> form.contains("btn-primary")).count()).isEqualTo(1);
+
+        assertThat(rendered)
+                .contains("Participants missing statblocks: Ambush Encounter")
+                .contains("Scene requires a map: The Dark Cave")
+                .contains("Unsafe asset linked for presentation: Unsafe Handout")
+                .contains("class=\"form-input form-input--xs\"")
+                .contains("class=\"btn btn-xs\">Set kind<")
+                .containsPattern("action=\"/campaigns/" + campaignId + "/readiness/assets/[^\"]+/kind\"")
+                .containsPattern("hx-post=\"/campaigns/" + campaignId + "/readiness/assets/[^\"]+/kind\"")
+                .contains("hx-target=\"closest .readiness-panel\"", "hx-swap=\"outerHTML\"");
     }
 }
