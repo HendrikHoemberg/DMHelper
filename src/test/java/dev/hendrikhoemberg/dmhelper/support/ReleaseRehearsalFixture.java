@@ -6,6 +6,10 @@ import dev.hendrikhoemberg.dmhelper.adventure.service.SceneStructuredContentServ
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneStructuredContentService.*;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.adventure.data.AdventureRepository;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipantRepository;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneSectionRepository;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransitionRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
@@ -53,6 +57,10 @@ public class ReleaseRehearsalFixture {
     private final PartyMemberRepository partyMembers;
     private final EncounterService encounters;
     private final SceneRepository scenes;
+    private final AdventureRepository adventureRepository;
+    private final SceneSectionRepository sections;
+    private final SceneParticipantRepository participants;
+    private final SceneTransitionRepository transitions;
 
     public ReleaseRehearsalFixture(CampaignRepository campaigns, AdventureService adventures,
                                    SceneStructuredContentService structured,
@@ -60,7 +68,9 @@ public class ReleaseRehearsalFixture {
                                    GameMapRepository mapRepository, HandoutService handouts,
                                    HandoutRepository handoutRepository, QuestService quests,
                                    PartyMemberRepository partyMembers, EncounterService encounters,
-                                   SceneRepository scenes) {
+                                   SceneRepository scenes, AdventureRepository adventureRepository,
+                                   SceneSectionRepository sections, SceneParticipantRepository participants,
+                                   SceneTransitionRepository transitions) {
         this.campaigns = campaigns;
         this.adventures = adventures;
         this.structured = structured;
@@ -73,6 +83,10 @@ public class ReleaseRehearsalFixture {
         this.partyMembers = partyMembers;
         this.encounters = encounters;
         this.scenes = scenes;
+        this.adventureRepository = adventureRepository;
+        this.sections = sections;
+        this.participants = participants;
+        this.transitions = transitions;
     }
 
     @Transactional
@@ -113,10 +127,10 @@ public class ReleaseRehearsalFixture {
                 "When the party avoids the bell.", "The gallery is narrow.", "Synthetic, A1", 1));
 
         List<StatBlock> foeBlocks = List.of(
-                statBlock("Bog Sentinel", "1/2", 15, "18 (4d8)", 2),
-                statBlock("Bog Skirmisher", "1/4", 13, "11 (2d8)", 3),
-                statBlock("Bog Skirmisher", "1/4", 13, "11 (2d8)", 3),
-                statBlock("Marsh Warden", "2", 16, "30 (4d10+8)", 1));
+                statBlock(campaign, "Bog Sentinel", "1/2", 15, "18 (4d8)", 2),
+                statBlock(campaign, "Bog Skirmisher", "1/4", 13, "11 (2d8)", 3),
+                statBlock(campaign, "Bog Skirmisher", "1/4", 13, "11 (2d8)", 3),
+                statBlock(campaign, "Marsh Warden", "2", 16, "30 (4d10+8)", 1));
         String[] names = {"Sentinel at the sluice", "Skirmisher by the steps",
                 "Skirmisher in the reeds", "Warden of the bell"};
         for (int i = 0; i < foeBlocks.size(); i++) {
@@ -176,9 +190,10 @@ public class ReleaseRehearsalFixture {
                 playerSafe.getId(), dmSource.getId(), derivative.getId(), quest.getId(), partyIds);
     }
 
-    private StatBlock statBlock(String name, String cr, int ac, String hp, int initiativeBonus) {
+    private StatBlock statBlock(Campaign campaign, String name, String cr, int ac, String hp, int initiativeBonus) {
         StatBlock block = new StatBlock();
         block.setSource(ContentSource.CUSTOM);
+        block.setCampaign(campaign);
         block.setName(name);
         block.setCr(cr);
         block.setType("Marsh construct");
@@ -220,19 +235,59 @@ public class ReleaseRehearsalFixture {
     @Transactional(readOnly = true)
     public String textualContentOf(Seeded seeded) {
         StringBuilder text = new StringBuilder();
-        campaigns.findById(seeded.campaignId()).ifPresent(c -> text.append(c.getName()).append(c.getDescription()));
-        adventures.findChaptersByAdventure(seeded.adventureId()).forEach(chapter -> {
-            text.append(chapter.getTitle()).append(chapter.getIntro());
-            chapter.getScenes().forEach(scene -> text.append(scene.getTitle()).append(scene.getBody()));
+        campaigns.findById(seeded.campaignId()).ifPresent(c -> append(text, c.getName(), c.getDescription()));
+        adventureRepository.findById(seeded.adventureId()).ifPresent(a ->
+                append(text, a.getName(), a.getDescription(), a.getSourceAttribution()));
+        adventures.findChaptersByAdventure(seeded.adventureId()).forEach(chapter ->
+                append(text, chapter.getTitle(), chapter.getIntro()));
+
+        scenes.findByCampaignIdOrderByChapterAndSort(seeded.campaignId()).forEach(scene -> {
+            append(text, scene.getTitle(), scene.getSceneKey(), scene.getBody(), scene.getSummary(),
+                    scene.getSourceLocator(), scene.getTags(), scene.getMapRegionKey(), scene.getMapRequirement());
+            sections.findBySceneIdOrderBySortOrderAsc(scene.getId()).forEach(section ->
+                    append(text, section.getKind(), section.getLabel(), section.getBody(), section.getSourceLocator(),
+                            section.getThreatKind(), section.getThreatId()));
+            transitions.findBySceneIdOrderBySortOrderAsc(scene.getId()).forEach(transition ->
+                    append(text, transition.getKind(), transition.getLabel(), transition.getExternalDestination(),
+                            transition.getCondition(), transition.getDmNote(), transition.getSourceLocator(),
+                            transition.getTargetScene() == null ? null : transition.getTargetScene().getTitle()));
+            participants.findBySceneIdOrderBySortOrderAsc(scene.getId()).forEach(participant -> {
+                append(text, participant.getDisplayName(), participant.getQuantity(), participant.getDisposition(),
+                        participant.getPlacementHint(), participant.getSourceLocator());
+                if (participant.getStatBlock() != null) {
+                    statBlocks.findById(participant.getStatBlock().getId()).ifPresent(block -> append(text,
+                            block.getName(), block.getSource(), block.getCr(), block.getType(), block.getSize(),
+                            block.getAlignment(), block.getAc(), block.getHp(), block.getSpeed(), block.getSkills(),
+                            block.getSenses(), block.getLanguages(), block.getTraits(), block.getActions(),
+                            block.getBonusActions(), block.getReactions(), block.getSourceKey()));
+                }
+            });
         });
-        scenes.findById(seeded.hostileSceneId()).ifPresent(scene -> scene.getParticipants().forEach(p -> {
-            text.append(p.getDisplayName());
-            if (p.getStatBlock() != null) text.append(p.getStatBlock().getName());
-        }));
-        mapRepository.findById(seeded.playableMapId()).ifPresent(m -> text.append(m.getName()));
-        handoutRepository.findById(seeded.playerSafeHandoutId()).ifPresent(h -> text.append(h.getTitle()));
-        handoutRepository.findById(seeded.dmSourceHandoutId()).ifPresent(h -> text.append(h.getTitle()));
-        handoutRepository.findById(seeded.derivativeHandoutId()).ifPresent(h -> text.append(h.getTitle()));
-        return text.append(seeded.questId()).toString();
+
+        statBlocks.findByCampaignIdOrderByNameAsc(seeded.campaignId()).forEach(block -> append(text,
+                block.getName(), block.getSource(), block.getCr(), block.getType(), block.getSize(), block.getAlignment(),
+                block.getAc(), block.getHp(), block.getSpeed(), block.getSkills(), block.getSenses(), block.getLanguages(),
+                block.getTraits(), block.getActions(), block.getBonusActions(), block.getReactions(), block.getSourceKey()));
+        mapRepository.findById(seeded.playableMapId()).ifPresent(map -> append(text, map.getName(), map.getGridWidth(),
+                map.getGridHeight(), map.getCellSizePx(), map.getGridType(), map.getMovementMode(), map.isShowGrid(), map.getDocument()));
+        handoutRepository.findByCampaignIdOrderByTitleAsc(seeded.campaignId()).forEach(handout -> append(text,
+                handout.getTitle(), handout.getTags(), handout.getFileName(), handout.getContentType(),
+                handout.getSafetyClassification(), handout.getAssetKind(), handout.isDmOnly(), handout.isPresented(),
+                handout.getDerivativeRecipe(), handout.getSourceHandout() == null ? null : handout.getSourceHandout().getId()));
+        quests.getQuest(seeded.campaignId(), seeded.questId()).getObjectives().forEach(objective -> append(text,
+                objective.getTitle(), objective.getDescription(), objective.getStatus(), objective.getCompletionMode(),
+                objective.getSourceLocator()));
+        partyMembers.findByCampaignIdOrderByCharacterNameAsc(seeded.campaignId()).forEach(member -> append(text,
+                member.getCharacterName(), member.getPlayerName(), member.getClassAndLevel(), member.getAc(), member.getMaxHp(),
+                member.getCurrentHp(), member.getInitiativeBonus(), member.getSpeed(), member.getPassivePerception(),
+                member.getPassiveInsight(), member.getPassiveInvestigation(), member.getNotes()));
+        var quest = quests.getQuest(seeded.campaignId(), seeded.questId());
+        append(text, quest.getTitle(), quest.getStatus(), quest.getSummary(), quest.getSourceLocator(), quest.getTags(),
+                quest.getRewards(), quest.getPrerequisites(), quest.getOutcomeNotes(), seeded.questId());
+        return text.toString();
+    }
+
+    private static void append(StringBuilder text, Object... values) {
+        for (Object value : values) if (value != null) text.append(value).append('\n');
     }
 }

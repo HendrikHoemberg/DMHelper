@@ -2,13 +2,20 @@ package dev.hendrikhoemberg.dmhelper.support;
 
 import dev.hendrikhoemberg.dmhelper.campaign.readiness.CampaignReadinessFacade;
 import dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneMapRequirement;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipantDisposition;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import dev.hendrikhoemberg.dmhelper.quest.data.QuestRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * session-ready, Phandelver-shaped and entirely synthetic.
  */
 @SpringBootTest
+@Transactional
 class ReleaseRehearsalFixtureTest {
 
     @Autowired private ReleaseRehearsalFixture fixture;
@@ -25,6 +33,10 @@ class ReleaseRehearsalFixtureTest {
     @Autowired private HandoutRepository handoutRepository;
     @Autowired private GameMapRepository mapRepository;
     @Autowired private PartyMemberRepository partyMemberRepository;
+    @Autowired private SceneRepository sceneRepository;
+    @Autowired private QuestRepository questRepository;
+    @Autowired private CampaignRepository campaignRepository;
+    @Autowired private StatBlockRepository statBlockRepository;
 
     @Test
     void theSeededCampaignIsSessionReady() throws IOException {
@@ -38,11 +50,36 @@ class ReleaseRehearsalFixtureTest {
     @Test
     void theHostileSceneCanSeedAnEncounterFromResolvedParticipants() throws IOException {
         var seeded = fixture.seed();
+        var hostile = sceneRepository.findByIdAndCampaignId(seeded.campaignId(), seeded.hostileSceneId()).orElseThrow();
+        var map = mapRepository.findById(seeded.playableMapId()).orElseThrow();
 
         assertThat(readiness.reportForCampaign(seeded.campaignId()).byState(ReadinessState.BLOCKER))
                 .isEmpty();
-        assertThat(mapRepository.findById(seeded.playableMapId()).orElseThrow().getGridWidth())
-                .isPositive();
+        assertThat(hostile.getParticipants()).hasSize(4).allSatisfy(p -> {
+            assertThat(p.getDisposition()).isEqualTo(SceneParticipantDisposition.HOSTILE);
+            assertThat(p.getStatBlock()).isNotNull();
+        });
+        assertThat(hostile.getMapRequirement()).isEqualTo(SceneMapRequirement.REQUIRED);
+        assertThat(hostile.getMap()).isNotNull();
+        assertThat(hostile.getMap().getId()).isEqualTo(seeded.playableMapId());
+        assertThat(map.getGridWidth()).isEqualTo(20);
+        assertThat(map.getGridHeight()).isEqualTo(15);
+        assertThat(map.getCellSizePx()).isEqualTo(64);
+        assertThat(map.isShowGrid()).isTrue();
+    }
+
+    @Test
+    void theSceneGraphAndQuestAreFullyLinked() throws IOException {
+        var seeded = fixture.seed();
+        var approach = sceneRepository.findByCampaignIdOrderByChapterAndSort(seeded.campaignId()).stream()
+                .filter(s -> s.getTitle().equals("Mossbound Approach")).findFirst().orElseThrow();
+        var quest = questRepository.findByIdAndCampaignId(seeded.questId(), seeded.campaignId()).orElseThrow();
+
+        assertThat(approach.getTransitions()).anySatisfy(t ->
+                assertThat(t.getTargetScene().getId()).isEqualTo(seeded.hostileSceneId()));
+        assertThat(approach.getTransitions()).anySatisfy(t ->
+                assertThat(t.getTargetScene().getId()).isEqualTo(seeded.branchSceneId()));
+        assertThat(quest.getObjectives()).hasSize(2);
     }
 
     @Test
@@ -58,6 +95,8 @@ class ReleaseRehearsalFixtureTest {
         assertThat(handoutRepository.findById(seeded.derivativeHandoutId()).orElseThrow()
                 .getSafetyClassification())
                 .isEqualTo(Handout.SafetyClassification.PLAYER_DERIVATIVE);
+        assertThat(handoutRepository.findById(seeded.derivativeHandoutId()).orElseThrow().getSourceHandout().getId())
+                .isEqualTo(seeded.dmSourceHandoutId());
     }
 
     @Test
@@ -77,5 +116,55 @@ class ReleaseRehearsalFixtureTest {
         assertThat(everything.toLowerCase())
                 .doesNotContain("phandelver", "klarg", "cragmaw", "wave echo", "sildar",
                         "gundren", "rockseeker", "neverwinter", "tresendar");
+    }
+
+    @Test
+    void seededIdsAreCampaignScopedAndRepeatable() throws IOException {
+        var first = fixture.seed();
+        var second = fixture.seed();
+
+        assertThat(first.campaignId()).isNotEqualTo(second.campaignId());
+        assertThat(first.adventureId()).isNotEqualTo(second.adventureId());
+        assertThat(first.hostileSceneId()).isNotEqualTo(second.hostileSceneId());
+        assertThat(sceneRepository.findByIdAndCampaignId(first.campaignId(), first.hostileSceneId())).isPresent();
+        assertThat(sceneRepository.findByIdAndCampaignId(second.campaignId(), second.hostileSceneId())).isPresent();
+        assertThat(questRepository.findByIdAndCampaignId(first.questId(), first.campaignId())).isPresent();
+        assertThat(questRepository.findByIdAndCampaignId(second.questId(), second.campaignId())).isPresent();
+        assertThat(handoutRepository.findByCampaignIdAndId(first.campaignId(), first.dmSourceHandoutId())).isPresent();
+        assertThat(handoutRepository.findByCampaignIdAndId(second.campaignId(), second.dmSourceHandoutId())).isPresent();
+        assertThat(campaignRepository.findById(first.campaignId())).isPresent();
+        assertThat(mapRepository.findById(first.playableMapId()).orElseThrow().getCampaign().getId())
+                .isEqualTo(first.campaignId());
+        assertThat(mapRepository.findById(second.playableMapId()).orElseThrow().getCampaign().getId())
+                .isEqualTo(second.campaignId());
+        assertThat(partyMemberRepository.findById(first.partyMemberIds().get(0)).orElseThrow().getCampaign().getId())
+                .isEqualTo(first.campaignId());
+        assertThat(partyMemberRepository.findById(second.partyMemberIds().get(0)).orElseThrow().getCampaign().getId())
+                .isEqualTo(second.campaignId());
+        assertThat(statBlockRepository.findByCampaignIdOrderByNameAsc(first.campaignId())).hasSize(4);
+        assertThat(statBlockRepository.findByCampaignIdOrderByNameAsc(second.campaignId())).hasSize(4);
+    }
+
+    @Test
+    void provenanceTextIncludesEveryPersistedFixtureSurface() throws IOException {
+        var seeded = fixture.seed();
+        String text = fixture.textualContentOf(seeded);
+
+        assertThat(text).contains(
+                "Synthetic session rehearsal campaign", "Lanterns Below", "Synthetic source",
+                "The Drowned Stair", "Mossbound Approach", "A lantern-marked path leads",
+                "Synthetic, scene A1", "The low bell", "A low bell trembles",
+                "Synthetic, A1", "Descend to the undercroft", "When the party follows the bell.",
+                "The descent is slick.", "Take the tideglass gallery", "When the party avoids the bell.",
+                "The gallery is narrow.", "Synthetic, scene A2", "Undercroft floor",
+                "Undercroft position 1", "Bog Sentinel", "Bog Skirmisher", "Marsh Warden",
+                "Beacon Undercroft", "20", "15", "64", "Beacon Approach (player map)", "map",
+                "Undercroft reference page", "source", "Undercroft player extract", "image/png",
+                "Light the hollow beacon", "Restore the beacon before the marsh tide rises.",
+                "A safe route through the marsh", "Find the bell chamber", "The marsh crossing remains open.",
+                "Recover the wickstone", "Find the wickstone beneath the bell.",
+                "Relight the beacon", "Place the wickstone in the hollow lantern.",
+                "Ilsa Fenwright", "Ordo Brack", "Nesh Vell", "Tamsin Aroe");
+        assertThat(text).contains("sourceWidth", "cropWidth", "redactions");
     }
 }

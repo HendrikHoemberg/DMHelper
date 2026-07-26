@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,14 +21,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FixtureShapeCoverageTest {
 
     @Autowired private PopulatedCampaignFixture fixture;
+    @Autowired private ReleaseRehearsalFixture releaseFixture;
     @Autowired private EntityManager em;
 
     private PopulatedCampaignFixture.Seeded seeded;
+    private ReleaseRehearsalFixture.Seeded releaseSeeded;
     private PackageShapeProfile profile;
 
     @BeforeAll
     void setUp() throws IOException {
         seeded = fixture.seed();
+        releaseSeeded = releaseFixture.seed();
         profile = PackageShapeProfileExtractor.load(PackageShapeProfileExtractor.COMMITTED_PROFILE);
     }
 
@@ -223,5 +227,40 @@ class FixtureShapeCoverageTest {
         assertThat(nested)
                 .as("nested locations exceed the profile on purpose -- keep them")
                 .isGreaterThan(0);
+    }
+
+    @Test
+    @Transactional
+    void releaseFixtureShapeIsScopedToItsSeededCampaign() {
+        UUID campaignId = releaseSeeded.campaignId();
+
+        assertThat(count("select count(s) from Scene s join s.chapter c join c.adventure a "
+                + "where a.campaign.id = :campaignId and s.title is not null")).isEqualTo(3);
+        assertThat(count("select count(x) from SceneSection x join x.scene s join s.chapter c join c.adventure a "
+                + "where a.campaign.id = :campaignId and x.kind is not null and x.label is not null "
+                + "and x.body is not null and x.sourceLocator is not null")).isEqualTo(2);
+        assertThat(count("select count(x) from SceneParticipant x join x.scene s join s.chapter c join c.adventure a "
+                + "where a.campaign.id = :campaignId and x.displayName is not null and x.statBlock is not null "
+                + "and x.placementHint is not null and x.sourceLocator is not null")).isEqualTo(4);
+        assertThat(count("select count(x) from SceneTransition x join x.scene s join s.chapter c join c.adventure a "
+                + "where a.campaign.id = :campaignId and x.kind is not null and x.label is not null "
+                + "and x.targetScene is not null and x.condition is not null and x.dmNote is not null")).isEqualTo(2);
+        assertThat(count("select count(x) from StatBlock x where x.campaign.id = :campaignId and x.source is not null "
+                + "and x.name is not null and x.cr is not null and x.type is not null and x.hp is not null")).isEqualTo(4);
+        assertThat(count("select count(x) from GameMap x where x.campaign.id = :campaignId and x.gridWidth = 20 "
+                + "and x.gridHeight = 15 and x.cellSizePx = 64 and x.showGrid = true")).isEqualTo(1);
+        assertThat(count("select count(x) from Handout x where x.campaign.id = :campaignId and x.title is not null "
+                + "and x.tags is not null")).isEqualTo(3);
+        assertThat(count("select count(x) from Quest x where x.campaign.id = :campaignId and x.title is not null "
+                + "and x.summary is not null and x.rewards is not null and x.prerequisites is not null "
+                + "and x.outcomeNotes is not null")).isEqualTo(1);
+        assertThat(count("select count(x) from QuestObjective x where x.quest.campaign.id = :campaignId "
+                + "and x.title is not null and x.description is not null and x.sourceLocator is not null")).isEqualTo(2);
+        assertThat(count("select count(x) from PartyMember x where x.campaign.id = :campaignId "
+                + "and x.characterName is not null and x.ac > 0 and x.maxHp > 0 and x.passivePerception > 0")).isEqualTo(4);
+    }
+
+    private long count(String jpql) {
+        return (Long) em.createQuery(jpql).setParameter("campaignId", releaseSeeded.campaignId()).getSingleResult();
     }
 }
