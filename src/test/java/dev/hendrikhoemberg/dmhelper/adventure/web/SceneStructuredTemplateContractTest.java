@@ -1,6 +1,5 @@
 package dev.hendrikhoemberg.dmhelper.adventure.web;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -65,9 +64,8 @@ class SceneStructuredTemplateContractTest {
     }
 
     @Test
-    @Disabled("moves to the read rail in Task 6")
-    void existingQuickNoteAndMapEncounterSelectorsPreserved() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-structure-editor.html"));
+    void sceneRailPreservesRuntimeActions() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-rail.html"));
         assertThat(html).contains("scene.statBlocks", "scene.handouts");
         assertThat(html).contains("hx-vals='{\"status\": \"VISITED\"}'");
         assertThat(html).contains("Set as Current Scene");
@@ -129,9 +127,8 @@ class SceneStructuredTemplateContractTest {
     }
 
     @Test
-    @Disabled("moves to the read rail in Task 6")
-    void structureEditorOffersSeedEncounterOnlyWhenTheSceneHasResolvableParticipants() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-structure-editor.html"));
+    void sceneRailOffersSeedEncounterOnlyWhenTheSceneHasResolvableParticipants() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-rail.html"));
         assertThat(html).contains("seed-encounter");
         assertThat(html).contains("canSeedEncounter");
         assertThat(html)
@@ -140,9 +137,8 @@ class SceneStructuredTemplateContractTest {
     }
 
     @Test
-    @Disabled("moves to the read rail in Task 6")
-    void structureEditorReportsParticipantsTheSeedCouldNotResolve() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-structure-editor.html"));
+    void sceneRailReportsParticipantsTheSeedCouldNotResolve() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/adventure/_scene-rail.html"));
         assertThat(html).contains("seedResult.skippedParticipants");
         assertThat(html).contains("seedResult.combatantsAdded");
     }

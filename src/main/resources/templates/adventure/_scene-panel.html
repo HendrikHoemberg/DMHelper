@@ -6,7 +6,7 @@
                      (cid=${campaignId},aid=${currentScene.chapter.adventure.id},sid=${currentScene.id})}"
            th:text="${currentScene.title}">Scene Title</a>
       </h4>
-      <th:block th:replace="~{adventure/_action-rail :: statusBadge(scene=${currentScene})}"></th:block>
+      <th:block th:replace="~{adventure/_scene-rail :: statusBadge(scene=${currentScene})}"></th:block>
     </div>
     <div th:if="${currentScene.sceneKey}" style="margin-bottom: var(--space-sm);">
       <span class="badge" th:text="${currentScene.sceneKey}">KEY</span>

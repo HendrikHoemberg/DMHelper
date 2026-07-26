@@ -209,7 +209,7 @@ public class SceneController {
                           @RequestParam(required = false) Integer pinY,
                           Model model) {
         adventureService.linkMap(id, mapId, pinX, pinY);
-        return loadStructureEditor(campaignId, adventureId, id, model);
+        return loadSceneRail(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/unlink-map")
@@ -218,7 +218,7 @@ public class SceneController {
                             @PathVariable UUID id,
                             Model model) {
         adventureService.unlinkMap(id);
-        return loadStructureEditor(campaignId, adventureId, id, model);
+        return loadSceneRail(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/link-encounter")
@@ -228,7 +228,7 @@ public class SceneController {
                                 @RequestParam UUID encounterId,
                                 Model model) {
         adventureService.linkEncounter(id, encounterId);
-        return loadStructureEditor(campaignId, adventureId, id, model);
+        return loadSceneRail(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/unlink-encounter")
@@ -237,7 +237,7 @@ public class SceneController {
                                   @PathVariable UUID id,
                                   Model model) {
         adventureService.unlinkEncounter(id);
-        return loadStructureEditor(campaignId, adventureId, id, model);
+        return loadSceneRail(campaignId, adventureId, id, model);
     }
 
     /**
@@ -251,7 +251,7 @@ public class SceneController {
                                 @PathVariable UUID id,
                                 Model model) {
         model.addAttribute("seedResult", encounterSeeder.seedFromScene(campaignId, id));
-        return loadStructureEditor(campaignId, adventureId, id, model);
+        return loadSceneRail(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/add-statblock")
@@ -300,7 +300,7 @@ public class SceneController {
                                     Model model) {
         Scene scene = adventureService.setStatus(id, status);
         model.addAttribute("scene", scene);
-        return "adventure/_action-rail :: statusBadge";
+        return "adventure/_scene-rail :: statusBadge";
     }
 
     @PostMapping("/campaigns/{campaignId}/current-scene")
@@ -694,6 +694,17 @@ public class SceneController {
         Scene target = adventureService.followTransition(campaignId, transitionId);
         return "redirect:/campaigns/" + campaignId + "/adventures/"
                 + target.getChapter().getAdventure().getId() + "/scenes/" + target.getId();
+    }
+
+    private String loadSceneRail(UUID campaignId, UUID adventureId, UUID sceneId, Model model) {
+        AdventureService.SceneDetailView view = adventureService.findSceneDetailView(sceneId);
+        Scene scene = view.scene();
+        model.addAttribute("scene", scene);
+        model.addAttribute("canSeedEncounter", encounterSeeder.canSeed(campaignId, sceneId));
+        model.addAttribute("adventure", adventureService.findAdventureById(adventureId));
+        model.addAttribute("campaignId", campaignId);
+        model.addAttribute("sectionThreatCards", view.sectionThreatCards());
+        return "adventure/_scene-rail :: sceneRail";
     }
 
     private String loadStructureEditor(UUID campaignId, UUID adventureId, UUID sceneId, Model model) {

@@ -19,14 +19,8 @@
                 </div>
                 <h1 th:text="${scene.title}">Scene Title</h1>
                 <div class="page-header-actions">
-                    <button class="btn btn-ghost"
-                            th:hx-get="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/edit(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-                            hx-target="#sceneBody"
-                            hx-swap="innerHTML">Edit</button>
-                    <button class="btn btn-danger"
-                            th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-                            hx-confirm="Delete this scene?"
-                            hx-target="body" hx-swap="outerHTML">Delete</button>
+                    <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/structure(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+                       class="btn btn-ghost">Edit</a>
                 </div>
             </div>
 
@@ -34,8 +28,8 @@
                 <div id="sceneBody" class="scene-body" style="flex: 1; min-width: 0;">
                     <th:block th:replace="~{adventure/_scene-body :: sceneBody}"></th:block>
                 </div>
-                <div id="actionRail" style="width: 300px; flex-shrink: 0;">
-                    <th:block th:replace="~{adventure/_action-rail :: actionRail}"></th:block>
+                <div id="sceneRail" style="width: 300px; flex-shrink: 0;">
+                    <th:block th:replace="~{adventure/_scene-rail :: sceneRail}"></th:block>
                     <div class="detail-section u-mt-md">
                         <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='SCENE', targetId=${scene.id})}"></th:block>
                     </div>

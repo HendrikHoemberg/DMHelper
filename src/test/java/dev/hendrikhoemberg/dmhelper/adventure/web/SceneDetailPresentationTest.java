@@ -51,11 +51,11 @@ class SceneDetailPresentationTest {
     @Test
     void sectionsRenderInTheMainColumnNotTheClampedRail() {
         int mainColumnStart = body.indexOf("id=\"sceneBody\"");
-        int railStart = body.indexOf("id=\"actionRail\"");
+        int railStart = body.indexOf("id=\"sceneRail\"");
         int readAloudAt = body.indexOf(PopulatedCampaignFixture.READ_ALOUD_BODY);
 
         assertThat(mainColumnStart).as("#sceneBody must exist").isGreaterThan(-1);
-        assertThat(railStart).as("#actionRail must exist").isGreaterThan(mainColumnStart);
+        assertThat(railStart).as("#sceneRail must exist").isGreaterThan(mainColumnStart);
         assertThat(readAloudAt)
                 .as("read-aloud body must sit inside #sceneBody, before the rail begins")
                 .isBetween(mainColumnStart, railStart);
@@ -69,12 +69,12 @@ class SceneDetailPresentationTest {
     }
 
     @Test
-    void metadataFormIsBehindADisclosure() {
-        int disclosureAt = body.indexOf("data-structured-metadata");
-        assertThat(disclosureAt).as("metadata block must exist").isGreaterThan(-1);
-        String preceding = body.substring(Math.max(0, disclosureAt - 200), disclosureAt);
-        assertThat(preceding)
-                .as("prep-time admin fields must not occupy prime real estate unprompted")
-                .contains("<details");
+    void metadataFormIsNotOnTheReadSurface() {
+        assertThat(body)
+                .as("metadata form must not appear on the read surface")
+                .doesNotContain("data-structured-metadata");
+        assertThat(body)
+                .as("a link to the structure page must be present for editing")
+                .contains("/structure");
     }
 }

@@ -288,7 +288,7 @@ class SceneControllerTest {
                         campaignId, adventureId, sceneId))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Goblin")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("HOSTILE")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Hostile")));
     }
 
     @Test
@@ -308,7 +308,7 @@ class SceneControllerTest {
         mockMvc.perform(get("/campaigns/{cid}/adventures/{aid}/scenes/{sid}",
                         campaignId, adventureId, sceneId))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("CHOICE")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Choice")));
     }
 
     @Test
@@ -325,7 +325,7 @@ class SceneControllerTest {
         mockMvc.perform(get("/campaigns/{cid}/adventures/{aid}/scenes/{sid}",
                         campaignId, adventureId, sceneId))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("REFERENCE")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Reference")));
     }
 
     @Test
