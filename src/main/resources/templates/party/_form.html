@@ -9,7 +9,7 @@
     <form class="pm-form"
           th:hx-post="${pm == null} ? @{/campaigns/{cid}/party(cid=${campaignId})} : null"
           th:hx-put="${pm != null} ? @{/campaigns/{cid}/party/{pid}(cid=${campaignId}, pid=${pm.id})} : null"
-          th:hx-target="${pm == null ? '#party-grid' : '#pm-card-' + pm.id}"
+          th:hx-target="${pm == null ? '#party-roster' : '#pm-card-' + pm.id}"
           th:hx-swap="${pm == null ? 'beforeend' : 'outerHTML'}"
           hx-on::after-request="if(event.detail.successful){ this.closest('dialog').close(); }">
         <div class="modal-body">

@@ -812,12 +812,11 @@ function sessionCockpit(config) {
             await this.refreshThreatPins();
         },
 
+        // The workbench rebuild dropped the #cockpitMapPicker control, so there is no element to
+        // restore into — only the state is kept. See
+        // docs/superpowers/verification/2026-07-26-cockpit-smoke-test-drift.md
         restoreMapPicker(mapId) {
             this.currentMapId = mapId || '';
-            this.$nextTick(() => {
-                const picker = document.getElementById('cockpitMapPicker');
-                if (picker) picker.value = this.currentMapId;
-            });
         },
 
         async searchStatblocks() {

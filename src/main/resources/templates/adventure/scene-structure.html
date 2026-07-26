@@ -26,22 +26,13 @@
                 </div>
             </div>
 
-            <div class="edit-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg);">
+            <div class="edit-layout">
                 <div class="edit-pane">
-                    <th:block th:replace="~{adventure/_scene-form :: form}"></th:block>
-                    <div class="u-mt-lg">
-                        <h3>Structured content</h3>
-                        <div id="sceneStructureEditor">
-                            <th:block th:replace="~{adventure/_scene-structure-editor :: structureEditor}"></th:block>
-                        </div>
-                    </div>
-                    <div class="u-mt-lg detail-section">
-                        <h3 class="u-text-danger">Danger zone</h3>
-                        <p class="u-text-xs text-muted">This action cannot be undone.</p>
-                        <button class="btn btn-danger"
-                                th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-                                hx-confirm="Delete this scene?"
-                                hx-target="body" hx-swap="outerHTML">Delete scene</button>
+                    <h3>Scene</h3>
+                    <!-- The map/encounter/statblock/handout selectors swap this pane back in
+                         (SceneController.loadSceneEditPane), so the id is load-bearing. -->
+                    <div id="sceneEditPane">
+                        <th:block th:replace="~{adventure/_scene-form :: form}"></th:block>
                     </div>
                 </div>
                 <div class="edit-preview">
@@ -50,6 +41,20 @@
                         <th:block th:replace="~{adventure/_scene-body :: sceneBody}"></th:block>
                     </div>
                 </div>
+            </div>
+
+            <h3 class="u-mt-lg">Structured content</h3>
+            <div id="sceneStructureEditor">
+                <th:block th:replace="~{adventure/_scene-structure-editor :: structureEditor}"></th:block>
+            </div>
+
+            <div class="u-mt-lg surface-danger-zone">
+                <h2>Danger zone</h2>
+                <p class="u-text-xs text-muted">This action cannot be undone.</p>
+                <button class="btn btn-danger"
+                        th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+                        hx-confirm="Delete this scene?"
+                        hx-target="body" hx-swap="outerHTML">Delete scene</button>
             </div>
         </main>
     </div>

@@ -209,7 +209,7 @@ public class SceneController {
                           @RequestParam(required = false) Integer pinY,
                           Model model) {
         adventureService.linkMap(id, mapId, pinX, pinY);
-        return loadSceneRail(campaignId, adventureId, id, model);
+        return loadSceneEditPane(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/unlink-map")
@@ -218,7 +218,7 @@ public class SceneController {
                             @PathVariable UUID id,
                             Model model) {
         adventureService.unlinkMap(id);
-        return loadSceneRail(campaignId, adventureId, id, model);
+        return loadSceneEditPane(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/link-encounter")
@@ -228,7 +228,7 @@ public class SceneController {
                                 @RequestParam UUID encounterId,
                                 Model model) {
         adventureService.linkEncounter(id, encounterId);
-        return loadSceneRail(campaignId, adventureId, id, model);
+        return loadSceneEditPane(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/unlink-encounter")
@@ -237,7 +237,7 @@ public class SceneController {
                                   @PathVariable UUID id,
                                   Model model) {
         adventureService.unlinkEncounter(id);
-        return loadSceneRail(campaignId, adventureId, id, model);
+        return loadSceneEditPane(campaignId, adventureId, id, model);
     }
 
     /**
@@ -261,7 +261,7 @@ public class SceneController {
                                @RequestParam UUID statBlockId,
                                Model model) {
         adventureService.addStatBlock(id, statBlockId);
-        return loadStructureEditor(campaignId, adventureId, id, model);
+        return loadSceneEditPane(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/remove-statblock")
@@ -271,7 +271,7 @@ public class SceneController {
                                   @RequestParam UUID statBlockId,
                                   Model model) {
         adventureService.removeStatBlock(id, statBlockId);
-        return loadStructureEditor(campaignId, adventureId, id, model);
+        return loadSceneEditPane(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/add-handout")
@@ -281,7 +281,7 @@ public class SceneController {
                              @RequestParam UUID handoutId,
                              Model model) {
         adventureService.addHandout(id, handoutId);
-        return loadStructureEditor(campaignId, adventureId, id, model);
+        return loadSceneEditPane(campaignId, adventureId, id, model);
     }
 
     @PostMapping("/campaigns/{campaignId}/adventures/{adventureId}/scenes/{id}/remove-handout")
@@ -291,7 +291,7 @@ public class SceneController {
                                 @RequestParam UUID handoutId,
                                 Model model) {
         adventureService.removeHandout(id, handoutId);
-        return loadStructureEditor(campaignId, adventureId, id, model);
+        return loadSceneEditPane(campaignId, adventureId, id, model);
     }
 
     @PutMapping("/scenes/{id}/status")
@@ -708,6 +708,21 @@ public class SceneController {
     }
 
     private String loadStructureEditor(UUID campaignId, UUID adventureId, UUID sceneId, Model model) {
+        addSceneEditModel(campaignId, adventureId, sceneId, model);
+        return "adventure/_scene-structure-editor :: structureEditor";
+    }
+
+    /**
+     * The map/encounter/statblock/handout selectors live in the scene form, not in the structure
+     * editor, so the controls that change them must swap the form back — anything else either
+     * leaves the DM without feedback or replaces the editor with unrelated markup.
+     */
+    private String loadSceneEditPane(UUID campaignId, UUID adventureId, UUID sceneId, Model model) {
+        addSceneEditModel(campaignId, adventureId, sceneId, model);
+        return "adventure/_scene-form :: form";
+    }
+
+    private void addSceneEditModel(UUID campaignId, UUID adventureId, UUID sceneId, Model model) {
         AdventureService.SceneDetailView view = adventureService.findSceneDetailView(sceneId);
         Scene scene = view.scene();
         model.addAttribute("scene", scene);
@@ -722,6 +737,5 @@ public class SceneController {
         model.addAttribute("visibleHazards", hazardRepository.findVisibleByCampaignId(campaignId));
         model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
         model.addAttribute("sectionThreatCards", view.sectionThreatCards());
-        return "adventure/_scene-structure-editor :: structureEditor";
     }
 }

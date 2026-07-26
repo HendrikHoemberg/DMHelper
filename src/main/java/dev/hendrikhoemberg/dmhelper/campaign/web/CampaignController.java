@@ -167,7 +167,8 @@ public class CampaignController {
                 .limit(5)
                 .toList());
         addRunEntryPoints(id, model);
-        return "campaigns/" + returnTo;
+        // returnTo comes off the wire, so it selects between known views rather than naming one.
+        return "settings".equals(returnTo) ? "campaigns/settings" : "campaigns/detail";
     }
 
     private void addRunEntryPoints(UUID campaignId, Model model) {

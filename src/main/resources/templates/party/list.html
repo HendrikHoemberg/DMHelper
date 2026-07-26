@@ -237,6 +237,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     updateBatchCount();
     toggleInactive();
+
+    // ContentDestinationRegistry and the command palette deep-link to /party#pm-card-<id>;
+    // a collapsed row would hide the member the DM was sent to.
+    if (location.hash.startsWith('#pm-card-')) {
+        const target = document.querySelector(CSS.escape ? '#' + CSS.escape(location.hash.slice(1)) : location.hash);
+        if (target && target.tagName === 'DETAILS') {
+            target.open = true;
+            target.scrollIntoView({ block: 'center' });
+        }
+    }
 });
 </script>
 </body>

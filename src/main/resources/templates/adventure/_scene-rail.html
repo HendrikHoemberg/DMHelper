@@ -47,7 +47,7 @@
       <div class="u-flex u-gap-xs">
         <span th:text="${scene.encounter.name}">Encounter Name</span>
         <a th:href="@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId},eid=${scene.encounter.id})}"
-           class="btn btn-sm">Activate</a>
+           class="btn btn-sm">Open encounter</a>
       </div>
     </div>
 
@@ -69,7 +69,8 @@
       </div>
     </div>
 
-    <div class="u-mb-md" data-rail-participants>
+    <div class="u-mb-md" th:if="${scene.participants != null and !scene.participants.isEmpty()}"
+         data-rail-participants>
       <h4 class="u-text-sm u-mb-xs">Participants</h4>
       <div th:each="p : ${scene.participants}" class="card card--compact u-mb-xs"
            data-screen-sensitive th:attr="data-participant-id=${p.id}">
@@ -88,7 +89,7 @@
       </div>
     </div>
 
-    <div class="u-mb-md" data-rail-checks>
+    <div class="u-mb-md" th:if="${scene.checks != null and !scene.checks.isEmpty()}" data-rail-checks>
       <h4 class="u-text-sm u-mb-xs">Checks</h4>
       <div th:each="check : ${scene.checks}" class="card card--compact u-mb-xs"
            data-screen-sensitive th:attr="data-check-id=${check.id}">
@@ -103,7 +104,8 @@
       </div>
     </div>
 
-    <div class="u-mb-md" data-rail-transitions>
+    <div class="u-mb-md" th:if="${scene.transitions != null and !scene.transitions.isEmpty()}"
+         data-rail-transitions>
       <h4 class="u-text-sm u-mb-xs">Transitions</h4>
       <div th:each="t : ${scene.transitions}" class="card card--compact u-mb-xs"
            data-screen-sensitive th:attr="data-transition-id=${t.id}">
@@ -119,7 +121,8 @@
     <div th:if="${scene.statBlocks != null and !scene.statBlocks.isEmpty()}" class="u-mb-md">
       <h4 class="u-text-sm u-mb-xs">Linked Statblocks</h4>
       <div th:each="sb : ${scene.statBlocks}" class="card card--compact">
-        <span th:text="${sb.name}">StatBlock</span>
+        <a th:href="@{/library/statblocks/{id}(id=${sb.id})}" target="_blank"
+           th:text="${sb.name}">StatBlock</a>
       </div>
     </div>
 
@@ -132,7 +135,7 @@
       </div>
     </div>
 
-    <div class="u-mb-md" data-rail-links>
+    <div class="u-mb-md" th:if="${scene.links != null and !scene.links.isEmpty()}" data-rail-links>
       <h4 class="u-text-sm u-mb-xs">Links</h4>
       <div th:each="link : ${scene.links}" class="card card--compact u-mb-xs">
         <span class="badge" th:text="${#enums.label(link.role)}">ROLE</span>

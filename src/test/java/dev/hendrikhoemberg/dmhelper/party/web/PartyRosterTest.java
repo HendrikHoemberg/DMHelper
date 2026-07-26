@@ -54,6 +54,26 @@ class PartyRosterTest {
     }
 
     @Test
+    void newMembersAreAppendedInsideTheRosterNotAfterIt() throws java.io.IOException {
+        assertThat(body).as("the roster is the insertion container").contains("id=\"party-roster\"");
+
+        String form = java.nio.file.Files.readString(
+                java.nio.file.Path.of("src/main/resources/templates/party/_form.html"));
+        assertThat(form)
+                .as("an appended row must land inside the roster, or it renders outside the grid")
+                .contains("'#party-roster'")
+                .contains("'beforeend'");
+    }
+
+    @Test
+    void aDeepLinkedRowOpensItself() {
+        assertThat(body)
+                .as("ContentDestinationRegistry links to /party#pm-card-<id>; a collapsed row hides it")
+                .contains("#pm-card-")
+                .contains("target.open = true");
+    }
+
+    @Test
     void temporaryHitPointsAreVisibleOnTheRow() {
         String row = rowForName(PreparationSurfaceFixture.HEALTHY_MEMBER);
         assertThat(row).contains("+5");

@@ -21,9 +21,10 @@
         </div>
         <div th:if="${encounter.mapId != null}">
             <dt>Map</dt>
-            <dd>Linked to encounter</dd>
+            <dd><a th:href="@{/campaigns/{cid}/maps/{mid}/play(cid=${campaignId},mid=${encounter.mapId})}"
+                   target="_blank">Open battle map</a></dd>
         </div>
-        <div>
+        <div th:if="${waves != null and !waves.isEmpty()}">
             <dt>Waves</dt>
             <dd th:text="${#lists.size(waves)} + ' wave(s)'">0 waves</dd>
         </div>

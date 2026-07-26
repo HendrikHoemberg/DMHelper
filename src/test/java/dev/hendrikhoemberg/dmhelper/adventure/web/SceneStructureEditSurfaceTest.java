@@ -43,6 +43,29 @@ class SceneStructureEditSurfaceTest {
         assertThat(body).contains("data-surface=\"edit\"");
     }
 
+    /**
+     * Every htmx control on this page must swap into a container the page actually has, and the
+     * handler behind it must return markup that belongs in that container. The map/encounter/
+     * statblock/handout selectors live in the scene form, so they swap the form pane back.
+     */
+    @Test
+    void formControlsSwapIntoAContainerThePageHas() throws Exception {
+        assertThat(body).contains("id=\"sceneEditPane\"");
+        assertThat(body).contains("id=\"sceneStructureEditor\"");
+        assertThat(body).contains("id=\"sceneBody\"");
+
+        String fragment = mvc.perform(post(
+                        "/campaigns/{c}/adventures/{a}/scenes/{s}/unlink-map",
+                        seeded.campaignId(), seeded.adventureId(), seeded.richSceneId()))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(fragment)
+                .as("unlinking a map returns the scene form, not the read rail")
+                .contains("name=\"sceneKey\"")
+                .doesNotContain("Set as Current Scene");
+    }
+
     @Test
     void createMarkersPresent() {
         assertThat(body).contains("data-create=\"section\"", "data-create=\"check\"",

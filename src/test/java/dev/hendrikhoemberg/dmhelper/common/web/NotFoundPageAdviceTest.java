@@ -52,6 +52,13 @@ class NotFoundPageAdviceTest {
     @MockitoBean
     private ReadinessRepairService repairService;
 
+    // The campaign home resolves its run entry points through these two (workstream D, task 4).
+    @MockitoBean
+    private dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService adventureService;
+
+    @MockitoBean
+    private dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository encounterRepository;
+
     @Test
     void browserNavigationGetsStyled404Page() throws Exception {
         mockMvc.perform(get("/definitely-not-a-page")

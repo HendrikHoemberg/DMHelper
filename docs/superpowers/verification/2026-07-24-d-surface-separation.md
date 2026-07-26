@@ -7,15 +7,29 @@
 
 | Route | Surface mode | Notes |
 |-------|-------------|-------|
-| `/campaigns/{id}` | read | Dashboard with session readiness |
-| `/adventures/{id}` | read | Adventure detail with chapter list |
-| `/scenes/{id}` | read | Scene detail with rail and body |
-| `/encounters/{id}` | read | Encounter detail with prep summary |
-| `/party` | read | Party roster with bulk actions |
-| `/session` | run | Cockpit with runtime modules |
-| `/scenes/{id}/structure` | edit | Scene structure editor |
-| `/encounters/{id}/setup` | edit | Encounter setup (combatants, prep, rewards) |
+| `/campaigns/{id}` | read | Dashboard with session readiness and run entry points |
+| `/campaigns/{id}/adventures/{aid}` | read | Adventure detail with chapter list |
+| `/campaigns/{id}/adventures/{aid}/scenes/{sid}` | read | Scene detail with rail and body |
+| `/campaigns/{id}/encounters/{eid}` | read | Encounter detail with prep summary |
+| `/campaigns/{id}/party` | read | Party roster with bulk actions |
+| `/campaigns/{id}/session` | run | Cockpit with runtime modules |
+| `/campaigns/{id}/adventures/{aid}/scenes/{sid}/structure` | edit | Scene structure editor |
+| `/campaigns/{id}/encounters/{eid}/setup` | edit | Encounter setup (combatants, prep, rewards) |
 | `/campaigns/{id}/settings` | admin | Campaign settings (edit, export, import, delete) |
+
+## htmx swap map for the split fragments
+
+Splitting one rail into a Read fragment and an Edit fragment means every control must swap
+into a container the page it lives on actually has:
+
+| Control (lives in) | Target | Handler returns |
+|---|---|---|
+| Seed encounter (`_scene-rail.html`) | `#sceneRail` | `_scene-rail :: sceneRail` |
+| Scene status (`_scene-rail.html`) | `#sceneStatusBadge` | `_scene-rail :: statusBadge` |
+| Title/body/metadata (`_scene-form.html`) | `#sceneBody` | `_scene-body :: sceneBody` |
+| Map, encounter, statblock, handout links (`_scene-form.html`) | `#sceneEditPane` | `_scene-form :: form` |
+| Structured CRUD (`_scene-structure-editor.html`) | `#sceneStructureEditor` | `_scene-structure-editor :: structureEditor` |
+| Add member (`party/_form.html`) | `#party-roster` | `party/_roster :: rowWithSummary` |
 
 ## Automated coverage
 
@@ -28,6 +42,10 @@
 | `SurfaceSeparationContractTest.everyEditAndAdminSurfaceIsReachableFromItsReadSurface` | campaign/detail → /settings, scene-rail → /structure, encounter/detail → /setup |
 | `FullPageRenderSmokeTest` | All governed routes (including new /structure, /setup, /settings, /party from prep fixture) render HTML that ends with `</html>` |
 | `PreparationSurfaceFixture` | Seeds a campaign with party members and a fully-prepped encounter for prep-surface tests |
+| `SceneStructureEditSurfaceTest.formControlsSwapIntoAContainerThePageHas` | The edit page owns every id its controls target, and unlinking a map returns the form rather than the read rail |
+| `PartyRosterTest.newMembersAreAppendedInsideTheRosterNotAfterIt` | A member added by htmx lands inside `#party-roster` |
+| `PartyRosterTest.aDeepLinkedRowOpensItself` | `/party#pm-card-<id>` opens the collapsed row it points at |
+| `EncounterPrepSummaryTest.anUnresolvedInitiativeSaysSoRatherThanRenderingBlank` | Unset initiative reads as "not set" (spec section 6.2) |
 
 ## Manual acceptance checklist
 

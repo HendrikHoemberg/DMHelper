@@ -151,8 +151,21 @@
 
 .roster-row__actions {
   display: flex;
+  align-items: center;
   gap: var(--space-xs);
   margin-bottom: var(--space-md);
+}
+
+/* A destructive action must never sit flush against the common one (spec section 10.3). */
+.roster-row__destructive {
+  margin-left: auto;
+  padding-left: var(--space-lg);
+}
+
+/* The roster keeps its header while empty; once a row exists (including one appended by
+   htmx after an add) the empty state must get out of the way. */
+.roster:has(.roster-row) .empty-state {
+  display: none;
 }
 
 .roster-row__notes .quicknotes-strip {
@@ -247,7 +260,11 @@
 @media (max-width: 1100px) { .edit-layout { grid-template-columns: minmax(0, 1fr); } }
 .editor-block { margin-bottom: var(--space-md); }
 
-.surface-danger-zone { border: 1px solid var(--color-danger, #b3453e); border-radius: var(--radius-md); }
+.surface-danger-zone {
+    border: 1px solid var(--color-danger, #b3453e);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+}
 .surface-danger-zone h2 { color: var(--color-danger, #b3453e); }
 
 .prep-summary__facts {

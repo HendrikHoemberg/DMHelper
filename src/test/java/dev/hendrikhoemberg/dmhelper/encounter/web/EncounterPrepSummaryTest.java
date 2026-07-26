@@ -49,6 +49,12 @@ class EncounterPrepSummaryTest {
         assertThat(body).contains(PreparationSurfaceFixture.PREP_SCENE_KEY);
     }
 
+    /** Spec section 6.2: unset must read as unset. A blank cell is not a value. */
+    @Test
+    void anUnresolvedInitiativeSaysSoRatherThanRenderingBlank() {
+        assertThat(body).contains("not set");
+    }
+
     @Test
     void theRunActionIsSingularAndObvious() {
         assertThat(body).contains("data-run-action");

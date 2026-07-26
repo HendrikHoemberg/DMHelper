@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <th:block th:fragment="roster(members, campaignId)">
-    <div class="roster">
+    <!-- New members are swapped in here with hx-swap="beforeend" (party/_form.html), so rows
+         must be appended inside the roster, not after it. -->
+    <div class="roster" id="party-roster">
         <div class="roster-header">
             <span class="roster-col roster-col--select"></span>
             <span class="roster-col roster-col--name">Name</span>
@@ -27,9 +29,12 @@
              th:classappend="${!pm.active} ? 'roster-row--inactive'">
         <summary class="roster-row__summary">
             <span class="roster-col roster-col--select">
+                <!-- Inside <summary>, a click that reaches the summary toggles the disclosure
+                     instead of selecting the member. -->
                 <input type="checkbox" class="member-select" th:value="${pm.id}"
                        th:attr="data-active=${pm.active}"
-                       th:id="'sel-' + ${pm.id}">
+                       th:id="'sel-' + ${pm.id}"
+                       onclick="event.stopPropagation()">
             </span>
             <span class="roster-col roster-col--name" th:text="${pm.characterName}">Name</span>
             <span class="roster-col roster-col--player">
@@ -94,10 +99,12 @@
                             th:hx-put="@{/campaigns/{cid}/party/{pid}/toggle-active(cid=${pm.campaign.id}, pid=${pm.id})}"
                             hx-target="closest .roster-row" hx-swap="outerHTML">Mark Active</button>
                 </th:block>
-                <button class="btn btn-danger btn-xs"
-                        th:hx-delete="@{/campaigns/{cid}/party/{pid}(cid=${pm.campaign.id}, pid=${pm.id})}"
-                        hx-confirm="Remove this party member?"
-                        hx-target="closest .roster-row" hx-swap="outerHTML">Remove</button>
+                <span class="roster-row__destructive">
+                    <button class="btn btn-danger btn-xs"
+                            th:hx-delete="@{/campaigns/{cid}/party/{pid}(cid=${pm.campaign.id}, pid=${pm.id})}"
+                            hx-confirm="Remove this party member?"
+                            hx-target="closest .roster-row" hx-swap="outerHTML">Remove</button>
+                </span>
             </div>
             <div class="roster-row__notes">
                 <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${pm.campaign.id}, targetType='PARTY_MEMBER', targetId=${pm.id})}"></th:block>

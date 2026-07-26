@@ -55,7 +55,8 @@
                                 <td th:text="${c.name}">Name</td>
                                 <td th:text="${c.kind}">Kind</td>
                                 <td th:text="${c.currentHp + ' / ' + c.maxHp}">HP</td>
-                                <td th:text="${c.initiative}">0</td>
+                                <!-- Zero is a legal initiative; only a null is unset (workstream A3). -->
+                                <td th:text="${c.initiative != null} ? ${c.initiative} : 'not set'">0</td>
                                 <td>
                                     <span th:if="${c.defeated}" class="u-text-danger">Defeated</span>
                                     <span th:if="${c.bloodied and !c.defeated}" class="u-text-warning">Bloodied</span>
@@ -64,7 +65,9 @@
                             </tr>
                         </tbody>
                     </table>
-                    <th:block th:if="${#lists.isEmpty(combatants)}"><th:block th:replace="~{common/_empty-state :: empty-state('No combatants yet.', null, null, null)}"></th:block></th:block>
+                    <th:block th:if="${#lists.isEmpty(combatants)}"><th:block th:replace="~{common/_empty-state :: empty-state(
+                        'No combatants yet.', 'Add combatants',
+                        @{/campaigns/{cid}/encounters/{eid}/setup(cid=${campaignId}, eid=${encounter.id})}, null)}"></th:block></th:block>
                 </div>
 
                 <h2 th:if="${not #lists.isEmpty(combatants)}">Notes</h2>

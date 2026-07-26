@@ -1,5 +1,9 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+<!-- UNMOUNTED: no template includes this fragment since the cockpit became the dock-zone
+     workbench, so rollable tables are currently unreachable at the table. Kept because it is the
+     markup a Story/Reference module would mount to restore the feature. Decide restore-or-drop:
+     docs/superpowers/verification/2026-07-26-cockpit-smoke-test-drift.md -->
 <th:block th:fragment="linked-tables(linkedTables)">
 <div class="linked-tables u-mt-sm" th:if="${linkedTables != null and !linkedTables.isEmpty()}">
   <h5 class="u-text-sm">Linked Tables</h5>

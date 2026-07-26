@@ -20,6 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * A campaign shaped like a prepared session: a roster with live state worth scanning and one
+ * PLANNED encounter with combatants, preparation notes and rewards. Everything is invented —
+ * no published-campaign content may enter this file.
+ */
 @Component
 public class PreparationSurfaceFixture {
 
