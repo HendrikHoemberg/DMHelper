@@ -6,6 +6,9 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.SceneMapRequirement;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipantDisposition;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
@@ -19,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 /**
  * Spec 2026-07-22 section 8.3 and section 11.3: the rehearsal needs a campaign that is
@@ -37,6 +41,8 @@ class ReleaseRehearsalFixtureTest {
     @Autowired private QuestRepository questRepository;
     @Autowired private CampaignRepository campaignRepository;
     @Autowired private StatBlockRepository statBlockRepository;
+    @Autowired private EncounterRepository encounterRepository;
+    @Autowired private CombatantRepository combatantRepository;
 
     @Test
     void theSeededCampaignIsSessionReady() throws IOException {
@@ -55,10 +61,14 @@ class ReleaseRehearsalFixtureTest {
 
         assertThat(readiness.reportForCampaign(seeded.campaignId()).byState(ReadinessState.BLOCKER))
                 .isEmpty();
-        assertThat(hostile.getParticipants()).hasSize(4).allSatisfy(p -> {
-            assertThat(p.getDisposition()).isEqualTo(SceneParticipantDisposition.HOSTILE);
-            assertThat(p.getStatBlock()).isNotNull();
-        });
+        assertThat(hostile.getParticipants())
+                .extracting(p -> p.getDisplayName(), p -> p.getQuantity(), p -> p.getDisposition(),
+                        p -> p.getStatBlock().getName())
+                .containsExactly(
+                        tuple("Sentinel at the sluice", 1, SceneParticipantDisposition.HOSTILE, "Bog Sentinel"),
+                        tuple("Skirmisher by the steps", 1, SceneParticipantDisposition.HOSTILE, "Bog Skirmisher"),
+                        tuple("Skirmisher in the reeds", 1, SceneParticipantDisposition.HOSTILE, "Bog Skirmisher"),
+                        tuple("Warden of the bell", 1, SceneParticipantDisposition.HOSTILE, "Marsh Warden"));
         assertThat(hostile.getMapRequirement()).isEqualTo(SceneMapRequirement.REQUIRED);
         assertThat(hostile.getMap()).isNotNull();
         assertThat(hostile.getMap().getId()).isEqualTo(seeded.playableMapId());
@@ -66,6 +76,22 @@ class ReleaseRehearsalFixtureTest {
         assertThat(map.getGridHeight()).isEqualTo(15);
         assertThat(map.getCellSizePx()).isEqualTo(64);
         assertThat(map.isShowGrid()).isTrue();
+        assertThat(hostile.getEncounter()).isNotNull();
+        var encounter = encounterRepository.findByCampaignIdOrderByNameAsc(seeded.campaignId()).stream()
+                .findFirst().orElseThrow();
+        assertThat(hostile.getEncounter().getId()).isEqualTo(encounter.getId());
+        assertThat(encounter.getName()).isEqualTo("Undercroft Alarm");
+        assertThat(encounter.getStatus()).isEqualTo(Encounter.Status.PLANNED);
+        assertThat(encounter.getCombatPhase()).isEqualTo(Encounter.CombatPhase.SETUP);
+        assertThat(encounter.getMap().getId()).isEqualTo(seeded.playableMapId());
+        assertThat(combatantRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()))
+                .extracting(c -> c.getName(), c -> c.getKind(), c -> c.getStatBlock().getName(),
+                        c -> c.getMaxHp(), c -> c.getCurrentHp())
+                .containsExactly(
+                        tuple("Bog Sentinel", "MONSTER", "Bog Sentinel", 18, 18),
+                        tuple("Bog Skirmisher", "MONSTER", "Bog Skirmisher", 11, 11),
+                        tuple("Bog Skirmisher", "MONSTER", "Bog Skirmisher", 11, 11),
+                        tuple("Marsh Warden", "MONSTER", "Marsh Warden", 30, 30));
     }
 
     @Test
@@ -75,11 +101,18 @@ class ReleaseRehearsalFixtureTest {
                 .filter(s -> s.getTitle().equals("Mossbound Approach")).findFirst().orElseThrow();
         var quest = questRepository.findByIdAndCampaignId(seeded.questId(), seeded.campaignId()).orElseThrow();
 
-        assertThat(approach.getTransitions()).anySatisfy(t ->
-                assertThat(t.getTargetScene().getId()).isEqualTo(seeded.hostileSceneId()));
-        assertThat(approach.getTransitions()).anySatisfy(t ->
-                assertThat(t.getTargetScene().getId()).isEqualTo(seeded.branchSceneId()));
-        assertThat(quest.getObjectives()).hasSize(2);
+        assertThat(approach.getTransitions())
+                .extracting(t -> t.getLabel(), t -> t.getTargetScene().getId())
+                .containsExactly(
+                        tuple("Descend to the undercroft", seeded.hostileSceneId()),
+                        tuple("Take the tideglass gallery", seeded.branchSceneId()));
+        assertThat(quest.getObjectives())
+                .extracting(o -> o.getTitle(), o -> o.getStatus(), o -> o.getDescription(), o -> o.getSourceLocator())
+                .containsExactly(
+                        tuple("Recover the wickstone", dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus.COMPLETED,
+                                "Find the wickstone beneath the bell.", "Synthetic, quest 1"),
+                        tuple("Relight the beacon", dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus.NOT_STARTED,
+                                "Place the wickstone in the hollow lantern.", "Synthetic, quest 1"));
     }
 
     @Test
@@ -164,7 +197,8 @@ class ReleaseRehearsalFixtureTest {
                 "A safe route through the marsh", "Find the bell chamber", "The marsh crossing remains open.",
                 "Recover the wickstone", "Find the wickstone beneath the bell.",
                 "Relight the beacon", "Place the wickstone in the hollow lantern.",
-                "Ilsa Fenwright", "Ordo Brack", "Nesh Vell", "Tamsin Aroe");
+                "Ilsa Fenwright", "Ordo Brack", "Nesh Vell", "Tamsin Aroe", "Undercroft Alarm",
+                "MONSTER");
         assertThat(text).contains("sourceWidth", "cropWidth", "redactions");
     }
 }
