@@ -1,0 +1,42 @@
+# Task 7 report: One elevation ladder
+
+## Status
+
+Implemented the prescribed elevation ladder and mapped all governed non-local raw `z-index`
+declarations without changing their relative stacking order.
+
+## Changes
+
+- Added the 16 strictly ascending `--z-*` tokens to `tokens.css`, from `30` through `1500`.
+- Replaced the governed elevations in `base.css`, `components.css`, `cockpit.css`, and
+  `cockpit-layout.css` with the corresponding ladder tokens.
+- Preserved the local component stacking values `1` and `2`.
+- Added `ElevationModelContractTest` with coverage for ladder definition/order and raw elevation
+  prevention.
+- Made no database, entity, dependency, or unrelated source changes.
+
+## TDD evidence
+
+The new contract was run before the CSS changes and failed as expected: the ladder was missing and
+the governed raw elevations were reported. After the minimal CSS/token changes, the contract passed.
+
+## Verification
+
+- `./mvnw -q test -Dtest=ElevationModelContractTest` — PASS.
+- `./mvnw -q test -Dtest=ElevationModelContractTest,DesignTokenContractTest,TypographyRoleContractTest,TypeScaleContractTest,SurfaceNestingGateTest` — PASS.
+- `git diff --check` — PASS.
+- Raw CSS inventory confirms only the permitted local `z-index: 1`/`z-index: 2` declarations remain.
+
+## Concern
+
+The required browser smoke test
+`./mvnw -q test -Dtest=CoreSessionLoopSmokeTest#lifecycleDialogGeometryAndFocusAtMultipleViewports`
+did not complete. It timed out waiting for `button[x-ref='sessionButton']` after
+`GET /campaigns/null/session` returned HTTP 400. Playwright also reported missing host libraries
+(`libicudata.so.66`, `libicui18n.so.66`, `libicuuc.so.66`, `libxml2.so.2`, `libwebp.so.6`, and
+`libffi.so.7`). The failure occurred before the elevation interaction/assertion.
+
+## Commits
+
+- `a7661623 feat(visual): replace 27 ad-hoc z-indexes with one readable elevation ladder`
+- Documentation commit containing this report: `docs(visual): record task 7 elevation ladder evidence`.
