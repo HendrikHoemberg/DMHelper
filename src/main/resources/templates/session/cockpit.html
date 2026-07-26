@@ -17,6 +17,7 @@
     <script th:src="@{/js/dm-request.js}"></script>
     <script th:src="@{/js/keyboard.js}"></script>
     <script th:src="@{/js/screen-safety.js}"></script>
+    <script th:src="@{/js/runtime-status.js}" defer></script>
     <script th:src="@{/js/command-palette.js}"></script>
     <script th:src="@{/js/quicknotes.js}"></script>
     <script th:src="@{/js/cockpit-reference.js}"></script>
@@ -53,6 +54,10 @@
           :data-presentation-mode="presentationMode"
           x-text="presentationMode === 'CURTAIN' ? 'Table: Curtain' : (presentationMode === 'MAP' ? 'Table: Map' : 'Table: Handout')">
       Table: Curtain
+    </span>
+    <span id="runtimeStatus" class="cockpit-status" role="status" aria-live="polite">
+      <span class="cockpit-status__atom" data-status-save data-state="idle">Up to date</span>
+      <span class="cockpit-status__atom" data-status-table data-state="disconnected">No table screen</span>
     </span>
     <label class="u-nowrap" for="cockpitPresetPicker">
       <span class="sr-only">Layout preset</span>

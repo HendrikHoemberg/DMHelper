@@ -651,3 +651,29 @@ body:has(.session-cockpit) {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Status you can find without hunting and ignore without effort (spec §10.3).
+   Quiet by default; only the failure state raises its voice. */
+#runtimeStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.cockpit-status__atom {
+  color: var(--color-text-muted);
+}
+
+[data-status-save][data-state="idle"] { opacity: 0.6; }
+[data-status-save][data-state="busy"] { color: var(--color-text); }
+[data-status-save][data-state="saved"] { color: var(--color-success); }
+[data-status-save][data-state="error"] {
+  color: var(--color-danger);
+  font-weight: 600;
+  opacity: 1;
+}
+
+[data-status-table][data-state="connected"] { color: var(--color-success); }
+[data-status-table][data-state="disconnected"] { color: var(--color-text-muted); }

@@ -49,6 +49,11 @@ public class TableStateWebSocketHandler extends TextWebSocketHandler {
         log.info("Player view disconnected: {} (total: {})", session.getId(), sessions.size());
     }
 
+    /** How many table displays are currently attached. Read by the cockpit status cluster. */
+    public int connectedCount() {
+        return sessions.size();
+    }
+
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         // client messages are ignored — player view is read-only
