@@ -40,8 +40,9 @@ class AdventureDetailDensityTest {
     @Test
     void largeChaptersDefaultToCollapsed() {
         // Chapter one has 2 scenes (open); chapter two has CHAPTER_TWO_SCENE_COUNT (collapsed).
-        int chapterOneAt = body.indexOf("Teil 1: Auf der Straße");
-        int chapterTwoAt = body.indexOf("Teil 2: Die Spinne");
+        int readingStart = body.indexOf("data-chapter-block");
+        int chapterOneAt = body.indexOf("Teil 1: Auf der Straße", readingStart);
+        int chapterTwoAt = body.indexOf("Teil 2: Die Spinne", chapterOneAt);
         assertThat(chapterOneAt).isGreaterThan(-1);
         assertThat(chapterTwoAt).isGreaterThan(chapterOneAt);
 
@@ -73,15 +74,22 @@ class AdventureDetailDensityTest {
     }
 
     @Test
-    void chapterControlsAreBoundToTheChapterHeaderNotTheLastScene() {
-        int chapterOneAt = body.indexOf("Teil 1: Auf der Straße");
-        int lastSceneOfChapterOneAt = body.indexOf("Der Gang", chapterOneAt);
-        int controlsAt = body.indexOf("data-chapter-controls", chapterOneAt);
+    void chapterManagementIsBehindAnOrganizeDisclosure() {
+        int organizeAt = body.indexOf("data-organize-mode");
+        assertThat(organizeAt).as("an organize panel must exist").isGreaterThan(-1);
+        assertThat(body.substring(Math.max(0, organizeAt - 200), organizeAt))
+                .as("reordering and deletion must not read as part of the chapter list")
+                .contains("<details");
+    }
 
-        assertThat(lastSceneOfChapterOneAt).isGreaterThan(-1);
-        assertThat(controlsAt)
-                .as("controls after the last scene row appear to belong to that scene")
-                .isLessThan(lastSceneOfChapterOneAt);
+    @Test
+    void theReadingFlowCarriesNoReorderOrDeleteControls() {
+        int organizeEnd = body.indexOf("</details>", body.indexOf("data-organize-mode"));
+        String readingFlow = body.substring(organizeEnd);
+
+        assertThat(readingFlow).as("chapter rows are for reading").doesNotContain("data-chapter-controls");
+        assertThat(readingFlow).doesNotContain("hx-confirm=\"Delete this chapter and all its scenes?\"");
+        assertThat(readingFlow).doesNotContain("hx-vals='{\"direction\"");
     }
 
     @Test

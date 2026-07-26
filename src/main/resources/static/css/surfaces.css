@@ -266,3 +266,16 @@
 .prep-summary__notes { max-width: 62ch; margin-bottom: var(--space-lg); }
 .prep-summary__notes p { margin-bottom: var(--space-xs); }
 .prep-summary__estimate > summary { cursor: pointer; color: var(--color-text-muted); font-size: var(--text-sm); }
+
+.organize-panel { margin-bottom: var(--space-md); }
+.organize-panel > summary { cursor: pointer; color: var(--color-text-muted); font-size: var(--text-sm); }
+.organize-panel__body { padding: var(--space-sm) 0; }
+.organize-panel__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-xxs) 0;
+    border-bottom: 1px solid var(--color-border);
+}
+.organize-panel__title { font-weight: 600; }
