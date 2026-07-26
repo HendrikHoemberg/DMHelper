@@ -65,7 +65,7 @@ class UiPolishContractTest {
                 .contains("No maps yet", "New map", "⌖");
         assertThat(read("templates/handout/list.html"))
                 .contains("No handouts yet", "Upload handout", "▧");
-        assertThat(read("templates/party/list.html"))
+        assertThat(read("templates/party/_roster.html"))
                 .contains("No heroes yet", "Add member", "♜");
     }
 
