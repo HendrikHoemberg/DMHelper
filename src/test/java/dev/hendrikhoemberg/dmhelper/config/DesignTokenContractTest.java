@@ -65,4 +65,13 @@ class DesignTokenContractTest {
                 .contains("--color-concentration: #966a9e")
                 .contains("--color-shield: #8a9aa5");
     }
+
+    @Test
+    void warningWaveTitleContrastsWithItsWarningSurface() throws IOException {
+        String tracker = Files.readString(Path.of("src/main/resources/templates/encounter/_tracker.html"));
+
+        assertThat(tracker)
+                .contains("style=\"background: var(--color-warning);")
+                .contains("style=\"color: var(--color-bg); font-weight: 600;\"");
+    }
 }
