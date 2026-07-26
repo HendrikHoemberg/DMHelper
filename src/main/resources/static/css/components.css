@@ -156,7 +156,9 @@
   background-size: 200% 100%;
   border-color: var(--color-accent);
   color: var(--color-bg);
-  transition: background-position 600ms ease, transform 120ms ease, box-shadow 120ms ease;
+  transition: background-position var(--duration-structural) var(--ease-out),
+              transform var(--duration-micro) var(--ease-out),
+              box-shadow var(--duration-micro) var(--ease-out);
 }
 
 .btn-primary:hover {
@@ -521,11 +523,11 @@
   background: var(--color-success);
   border-radius: 2px;
   width: 0%;
-  transition: width 400ms var(--ease-out), background-color 200ms var(--ease-out);
+  transition: width var(--duration-structural) var(--ease-out), background-color var(--duration-standard) var(--ease-out);
 }
 .chip-hp-fill.low {
   background: var(--color-danger);
-  animation: pulse-danger 600ms var(--ease-out);
+  animation: pulse-danger var(--duration-structural) var(--ease-out);
 }
 @keyframes pulse-danger {
   0%, 100% { filter: brightness(1); }
@@ -746,7 +748,7 @@
     pointer-events: none;
     z-index: 1;
     transform: translateY(0);
-    transition: transform 250ms var(--ease-spring),
+    transition: transform var(--duration-standard) var(--ease-spring),
                 opacity var(--duration-micro) var(--ease-out);
 }
 .turn-marker.visible { opacity: 1; }
@@ -770,8 +772,8 @@
 .combatant-row.hidden { opacity: 0.4; }
 
 /* Damage feels dealt, healing feels granted. */
-.combatant-row.hp-damage { animation: hp-tint-damage 700ms var(--ease-out); }
-.combatant-row.hp-heal { animation: hp-tint-heal 700ms var(--ease-out); }
+.combatant-row.hp-damage { animation: hp-tint-damage var(--duration-structural) var(--ease-out); }
+.combatant-row.hp-heal { animation: hp-tint-heal var(--duration-structural) var(--ease-out); }
 @keyframes hp-tint-damage {
     0% { background: color-mix(in srgb, var(--color-danger) 32%, transparent); }
     100% { background: transparent; }
@@ -782,7 +784,7 @@
 }
 
 .round-counter { display: inline-block; }
-.round-counter.pulse { animation: round-pulse 400ms var(--ease-spring); }
+.round-counter.pulse { animation: round-pulse var(--duration-structural) var(--ease-spring); }
 @keyframes round-pulse {
     0% { transform: scale(1); color: var(--color-text); }
     40% { transform: scale(1.35); color: var(--color-accent); }
@@ -2144,7 +2146,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
   background-clip: text;
   color: transparent;
   background-size: 220% 100%;
-  animation: gold-sweep 700ms ease forwards;
+  animation: gold-sweep var(--duration-structural) var(--ease-out) forwards;
 }
 @keyframes gold-sweep {
   from { background-position: 100% 0; }
@@ -2193,7 +2195,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 
 /* ── Dice roller theatrics ── */
 .die-icon { display: inline-block; transition: transform var(--duration-micro) var(--ease-out); }
-.die-icon.tumbling { animation: die-tumble 500ms linear infinite; }
+.die-icon.tumbling { animation: die-tumble var(--duration-structural) linear infinite; }
 @keyframes die-tumble {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -2203,7 +2205,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
               transform var(--duration-standard) var(--ease-spring),
               box-shadow var(--duration-standard) var(--ease-out);
 }
-.dice-result.bounce { animation: result-bounce 350ms var(--ease-spring); }
+.dice-result.bounce { animation: result-bounce var(--duration-structural) var(--ease-spring); }
 @keyframes result-bounce {
   0% { transform: scale(1); }
   50% { transform: scale(1.12); }
@@ -2224,8 +2226,8 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 .dice-history-item .value.crit-high { color: var(--color-accent); }
 .dice-result-total.crit-low,
 .dice-history-item .value.crit-low { color: var(--color-ember); }
-.dice-result-total.crit-high { animation: crit-flash-gold 400ms var(--ease-out); }
-.dice-result-total.crit-low { animation: crit-flash-ember 400ms var(--ease-out); }
+.dice-result-total.crit-high { animation: crit-flash-gold var(--duration-structural) var(--ease-out); }
+.dice-result-total.crit-low { animation: crit-flash-ember var(--duration-structural) var(--ease-out); }
 @keyframes crit-flash-gold {
   0% { text-shadow: 0 0 0 rgba(201, 163, 92, 0); }
   35% { text-shadow: 0 0 18px rgba(227, 198, 139, 0.9); }

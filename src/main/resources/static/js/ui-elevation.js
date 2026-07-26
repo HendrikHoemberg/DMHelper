@@ -398,7 +398,7 @@
   window.dismissHandout = function(overlay) {
     if (overlay.classList.contains('closing')) return;
     overlay.classList.add('closing');
-    setTimeout(() => overlay.remove(), 600);
+    setTimeout(() => overlay.remove(), 550);
   };
 
   window.tickNumber = function(element, to, duration = 300) {

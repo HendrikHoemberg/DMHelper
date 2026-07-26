@@ -521,11 +521,11 @@ body.loading #loading-filament {
 }
 body.safety-sweeping-off #screen-safety-sweep {
   background: linear-gradient(90deg, transparent 0%, rgba(138, 154, 165, 0.4) 50%, transparent 100%);
-  animation: shield-sweep 600ms var(--ease-out) forwards;
+  animation: shield-sweep var(--duration-structural) var(--ease-out) forwards;
 }
 body.safety-sweeping-on #screen-safety-sweep {
   background: linear-gradient(90deg, transparent 0%, rgba(201, 163, 92, 0.35) 50%, transparent 100%);
-  animation: shield-sweep-reverse 600ms var(--ease-out) forwards;
+  animation: shield-sweep-reverse var(--duration-structural) var(--ease-out) forwards;
 }
 @keyframes shield-sweep {
   0% { transform: translateX(-100%); opacity: 0; }
@@ -538,18 +538,15 @@ body.safety-sweeping-on #screen-safety-sweep {
   100% { transform: translateX(-100%); opacity: 0; }
 }
 
-/* Reduced motion: instant swap, tint still applies. */
+/* A DM who asked the OS for less motion gets less motion everywhere — including the
+   surfaces added after this rule was written (spec 2026-07-22 §11.2). */
 @media (prefers-reduced-motion: reduce) {
-  #screen-safety-sweep { display: none; }
+*, *::before, *::after {
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+  scroll-behavior: auto !important;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
 }
 
 /* Unclassed anchors inside content default to the accent, not browser blue. */
