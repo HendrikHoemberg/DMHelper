@@ -69,7 +69,7 @@
           <div th:each="t : ${view.transitions}">
             <div th:if="${t.kind == 'CHOICE' and t.targetSceneTitle != null}"
                  class="transition-choice u-mb-xs">
-              <button class="btn btn-sm btn-primary"
+              <button class="btn btn-sm btn-primary" data-scene-transition
                       th:attr="data-transition-id=${t.id}"
                       @click="followTransition($el.dataset.transitionId)"
                       th:text="${t.label ?: t.targetSceneTitle}">Follow</button>
@@ -97,7 +97,7 @@
                 th:attr="data-map-id=${view.mapId}"
                 @click="switchMap($el.dataset.mapId)"
                 title="Switch to scene map">Map</button>
-        <button class="btn"
+        <button class="btn" data-seed-scene-encounter
                 th:if="${view.canSeedEncounter}"
                 th:attr="data-scene-id=${view.sceneId}"
                 :disabled="seedingSceneEncounter"

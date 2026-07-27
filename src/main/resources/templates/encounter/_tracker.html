@@ -17,12 +17,12 @@
         <div style="display: flex; flex-direction: column; height: 100%;">
             <!-- Encounter header -->
             <div class="tracker-header">
-                <h3 x-text="encounter?.name || 'Combat'"></h3>
+                <h3 data-encounter-name x-text="encounter?.name || 'Combat'"></h3>
                 <span>Round <strong class="round-counter" x-ref="roundCounter"
                                     x-text="encounter?.round || 0"></strong></span>
                 <span class="badge badge-warning" x-show="pendingWaves.length > 0"
                       x-text="'(' + pendingWaves.length + ' wave' + (pendingWaves.length !== 1 ? 's' : '') + ' pending)'"></span>
-                <button class="btn btn-danger action-row__destructive tracker-small-button" style="padding: 2px 8px;" @click="endEncounter()">End</button>
+                <button class="btn btn-danger action-row__destructive tracker-small-button" data-end-encounter style="padding: 2px 8px;" @click="endEncounter()">End</button>
             </div>
 
             <!-- Initiative setup panel -->
@@ -37,6 +37,7 @@
                     </div>
                     <button type="button"
                             class="btn btn-ghost btn-xs"
+                            data-roll-unset-initiative
                             :disabled="setupBusy || setupSaveCount > 0 || unsetNpcCount === 0"
                             @click="rollUnsetNpcs()">
                         Roll unset NPCs
@@ -55,7 +56,7 @@
                                   x-text="waveLabel(c)"></span>
                             <span class="badge badge-warning"
                                   x-show="initiativeTies.has(c.initiative)">Tie</span>
-                            <input type="number"
+                            <input type="number" data-initiative-input
                                    inputmode="numeric"
                                    :value="c.initiative ?? ''"
                                    :aria-label="'Initiative for ' + c.name"
@@ -80,6 +81,7 @@
                 <button type="button"
                         class="btn btn-primary"
                         data-action="start-combat"
+                        data-start-combat
                         :disabled="setupBusy || setupSaveCount > 0 || !canStartCombat"
                         @click="startCombat()">
                     Start combat

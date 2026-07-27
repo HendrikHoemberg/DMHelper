@@ -18,7 +18,7 @@
             </div>
 
             <div class="dash-actions dash-run u-mb-lg">
-                <a class="btn btn-primary" data-run-entry="session"
+                <a class="btn btn-primary" data-run-entry="session" data-run-session
                    th:href="@{/campaigns/{id}/session(id=${campaign.id})}">Run Session</a>
                 <a class="btn" data-run-entry="scene" th:if="${currentScene != null}"
                    th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaign.id}, aid=${currentScene.chapter.adventure.id}, sid=${currentScene.id})}">Current scene</a>

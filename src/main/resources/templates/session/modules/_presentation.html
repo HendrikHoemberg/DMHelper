@@ -30,6 +30,7 @@
             <th:block th:if="${view != null}">
               <option th:each="handout : ${view.handouts}"
                       th:value="${handout.id}"
+                      th:attr="data-present-handout=${handout.id}"
                       th:disabled="${handout.safety == 'UNREVIEWED' or handout.safety == 'DM_SOURCE'}"
                       th:text="|${handout.title} — ${handout.safety}|">Handout</option>
             </th:block>

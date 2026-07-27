@@ -103,7 +103,7 @@ public final class BrowserFailureCollector {
         assertThat(failures).as("unexpected browser failures").isEmpty();
     }
 
-    void clear() {
+    public void clear() {
         expectedHttpFailures.clear();
         failures.clear();
     }

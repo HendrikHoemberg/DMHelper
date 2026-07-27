@@ -26,7 +26,7 @@
           <div class="reference-group u-mb-sm">
             <h4 class="u-text-xs text-muted u-mb-xs" x-text="group.label"></h4>
             <template x-for="item in group.items" :key="item.id">
-              <div class="reference-item u-text-sm u-px-xs u-py-xs"
+              <div class="reference-item u-text-sm u-px-xs u-py-xs" data-reference-result
                    @click="selectItem(item)">
                 <span x-text="item.name"></span>
                 <span class="u-text-xs text-muted" x-text="item.source"></span>
