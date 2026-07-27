@@ -211,14 +211,13 @@ public class ReleaseRehearsalFixture {
                 participants.save(participant);
             }
             var waveEncounter = encounters.create(campaignId, new EncounterService.CreateRequest(
-                    "Lantern Vault Ambush", null));
+                    "Lantern Vault Reserve", null));
             var reserveWave = encounters.createWave(waveEncounter.id(), new EncounterService.CreateWaveRequest(
                     "vault-reinforcements", "Vault reinforcements", WaveTriggerKind.MANUAL, null,
                     "Synthetic second wave for rehearsal coverage."));
             var reserve = encounterRepository.findById(waveEncounter.id()).orElseThrow();
             reserve.setEncounterKey("lantern-vault-ambush-" + suffix);
             encounterRepository.save(reserve);
-            adventures.linkEncounter(ambush.getId(), waveEncounter.id());
             for (int i = 0; i < foeBlocks.size(); i++) {
                 var combatant = encounters.addCombatant(waveEncounter.id(), new EncounterService.CombatantCreateRequest(
                         foeBlocks.get(i).getName(), 0, "MONSTER", null, foeBlocks.get(i).getId(),
@@ -284,7 +283,8 @@ public class ReleaseRehearsalFixture {
     @Transactional(readOnly = true)
     public long mapFreeHostileSceneCount(Seeded seeded) {
         return scenes.findByChapterAdventureCampaignId(seeded.campaignId()).stream()
-                .filter(s -> !s.getParticipants().isEmpty())
+                .filter(s -> s.getParticipants().stream()
+                        .anyMatch(p -> p.getDisposition() == SceneParticipantDisposition.HOSTILE))
                 .filter(s -> s.getMapRequirement() == null || s.getMapRequirement() == SceneMapRequirement.NONE)
                 .count();
     }

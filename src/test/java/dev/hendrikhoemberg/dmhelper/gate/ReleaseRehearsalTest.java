@@ -18,6 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Spec 2026-07-22 section 11.3 — the representative release rehearsal for both fixture shapes. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("playwright")
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestClassOrder(ClassOrderer.OrderAnnotation.class)
 class ReleaseRehearsalTest {
 
     static abstract class RehearsalSteps {
@@ -146,8 +148,29 @@ class ReleaseRehearsalTest {
                 seedButton.first().click();
                 actions++;
                 page.waitForSelector("[data-runtime-module='encounter'] [data-initiative-setup]");
+                if (shape() == ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS) {
+                    page.evaluate("""
+                            async ({campaignId}) => {
+                                const encounters = await (await fetch(`/api/v1/campaigns/${campaignId}/encounters`)).json();
+                                const encounter = encounters.find(e => e.name === 'Encounter: Lantern Vault Ambush');
+                                if (!encounter) throw new Error('The runtime scene encounter was not created.');
+                                const response = await fetch(`/api/v1/encounters/${encounter.id}/waves`, {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({waveKey: 'vault-reinforcements', name: 'Vault reinforcements',
+                                        triggerKind: 'MANUAL', triggerValue: null, notes: 'Synthetic second wave.'})
+                                });
+                                if (!response.ok) throw new Error(`Wave creation failed: ${response.status}`);
+                            }
+                            """, java.util.Map.of("campaignId", seeded.campaignId().toString()));
+                    actions++;
+                    page.reload();
+                    page.waitForLoadState(LoadState.NETWORKIDLE);
+                    page.waitForFunction("window.cockpitLayout?.mounted === true");
+                    page.waitForSelector("[data-runtime-module='encounter'] [data-initiative-setup]");
+                }
             } else {
-                page.locator("[data-runtime-module='encounter'] [data-encounter-name]").waitFor();
+                throw new AssertionError("The scene-to-encounter action must be available for every rehearsal shape.");
             }
             encounterName = page.textContent("[data-runtime-module='encounter'] [data-encounter-name]").trim();
             assertThat(actions).isLessThanOrEqualTo(2);
@@ -297,6 +320,7 @@ class ReleaseRehearsalTest {
     }
 
     @Nested
+    @Order(1)
     @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @DisplayName("Linear campaign, one map")
@@ -307,6 +331,7 @@ class ReleaseRehearsalTest {
     }
 
     @Nested
+    @Order(2)
     @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     @DisplayName("Branched campaign, two map scales, theatre of mind")

@@ -74,8 +74,8 @@ class ReleaseRehearsalFixtureTest {
         var seeded = fixture.seed(ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS);
 
         assertThat(fixture.mapFreeHostileSceneCount(seeded))
-                .as("a hostile scene that runs without a map")
-                .isGreaterThan(0);
+                .as("exactly one hostile scene that runs without a map")
+                .isEqualTo(1);
     }
 
     @Test
@@ -84,15 +84,28 @@ class ReleaseRehearsalFixtureTest {
         var scenes = sceneRepository.findByCampaignIdOrderByChapterAndSort(seeded.campaignId());
         var approach = scenes.stream().filter(s -> s.getTitle().equals("Mossbound Approach")).findFirst().orElseThrow();
         var ambush = scenes.stream().filter(s -> s.getTitle().equals("Lantern Vault Ambush")).findFirst().orElseThrow();
-        var encounter = encounterRepository.findByCampaignIdOrderByNameAsc(seeded.campaignId()).stream()
-                .filter(e -> e.getName().equals("Lantern Vault Ambush")).findFirst().orElseThrow();
+        var waveEncounter = encounterRepository.findByCampaignIdOrderByNameAsc(seeded.campaignId()).stream()
+                .filter(e -> e.getName().equals("Lantern Vault Reserve")).findFirst().orElseThrow();
 
         assertThat(scenes).as("two chapters with four scenes").hasSize(4);
+        assertThat(scenes).extracting(s -> s.getChapter().getTitle())
+                .containsExactly("The Drowned Stair", "The Drowned Stair", "The Drowned Stair", "The Lantern Vault");
+        assertThat(scenes.stream().filter(s -> s.getChapter().getTitle().equals("The Drowned Stair")))
+                .allMatch(s -> s.getChapter().getAdventure().getId().equals(seeded.adventureId()));
+        assertThat(scenes.stream().filter(s -> s.getChapter().getTitle().equals("The Lantern Vault")))
+                .allMatch(s -> s.getChapter().getAdventure().getId().equals(seeded.adventureId()));
         assertThat(approach.getTransitions()).as("three-way approach branch").hasSize(3);
+        assertThat(approach.getTransitions())
+                .extracting(t -> t.getLabel(), t -> t.getTargetScene().getId())
+                .containsExactly(
+                        tuple("Descend to the undercroft", seeded.hostileSceneId()),
+                        tuple("Take the tideglass gallery", seeded.branchSceneId()),
+                        tuple("Cross the sealed bridge", ambush.getId()));
         assertThat(ambush.getMapRequirement()).isEqualTo(SceneMapRequirement.NONE);
+        assertThat(ambush.getEncounter()).as("runtime scene-to-encounter action remains available").isNull();
         assertThat(questRepository.findByIdAndCampaignId(seeded.questId(), seeded.campaignId()).orElseThrow()
                 .getObjectives()).as("third quest objective").hasSize(3);
-        assertThat(waveRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()))
+        assertThat(waveRepository.findByEncounterIdOrderBySortOrderAsc(waveEncounter.getId()))
                 .extracting(w -> w.getWaveKey(), w -> w.getStatus())
                 .containsExactly(tuple("main", WaveStatus.ACTIVE), tuple("vault-reinforcements", WaveStatus.PENDING));
     }
