@@ -10,7 +10,8 @@
     const save = cluster.querySelector('[data-status-save]');
     const table = cluster.querySelector('[data-status-table]');
 
-    let inFlight = 0;
+    let htmxInFlight = 0;
+    let dmInFlight = 0;
     let settleTimer = null;
 
     function setSave(state, label) {
@@ -18,10 +19,25 @@
       save.textContent = label;
     }
 
+    function hasInFlightRequests() {
+      return htmxInFlight > 0 || dmInFlight > 0;
+    }
+
+    function markSaved() {
+      if (hasInFlightRequests()) return;
+      setSave('saved', 'Saved');
+      // The cluster is a status line, not a log: it returns to quiet on its own.
+      settleTimer = setTimeout(() => setSave('idle', 'Up to date'), 4000);
+    }
+
+    function isMutation(detail) {
+      return (detail?.options?.method || 'GET').toLowerCase() !== 'get';
+    }
+
     document.body.addEventListener('htmx:beforeRequest', (evt) => {
       const verb = (evt.detail.requestConfig?.verb || '').toLowerCase();
       if (verb === 'get') return;
-      inFlight++;
+      htmxInFlight++;
       clearTimeout(settleTimer);
       setSave('busy', 'Saving…');
     });
@@ -29,23 +45,39 @@
     document.body.addEventListener('htmx:afterRequest', (evt) => {
       const verb = (evt.detail.requestConfig?.verb || '').toLowerCase();
       if (verb === 'get') return;
-      inFlight = Math.max(0, inFlight - 1);
+      htmxInFlight = Math.max(0, htmxInFlight - 1);
       const xhr = evt.detail.xhr;
       if (!xhr || xhr.status < 200 || xhr.status >= 300) return;
-      if (inFlight > 0) return;
-      setSave('saved', 'Saved');
-      // The cluster is a status line, not a log: it returns to quiet on its own.
-      settleTimer = setTimeout(() => setSave('idle', 'Up to date'), 4000);
+      markSaved();
     });
 
-    function failed() {
-      inFlight = 0;
+    function failed(source) {
+      if (source === 'htmx') htmxInFlight = 0;
+      if (source === 'dm') dmInFlight = 0;
       clearTimeout(settleTimer);
       setSave('error', 'Not saved');
     }
 
-    document.body.addEventListener('htmx:responseError', failed);
-    document.body.addEventListener('htmx:sendError', failed);
+    document.body.addEventListener('htmx:responseError', () => failed('htmx'));
+    document.body.addEventListener('htmx:sendError', () => failed('htmx'));
+
+    document.addEventListener('dm:request-start', (evt) => {
+      if (!isMutation(evt.detail)) return;
+      dmInFlight++;
+      clearTimeout(settleTimer);
+      setSave('busy', 'Saving…');
+    });
+
+    document.addEventListener('dm:request-success', (evt) => {
+      if (!isMutation(evt.detail)) return;
+      dmInFlight = Math.max(0, dmInFlight - 1);
+      markSaved();
+    });
+
+    document.addEventListener('dm:request-failure', (evt) => {
+      if (!isMutation(evt.detail)) return;
+      failed('dm');
+    });
 
     async function pollTable() {
       try {

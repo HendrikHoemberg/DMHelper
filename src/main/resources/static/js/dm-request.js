@@ -32,14 +32,28 @@
     return error;
   }
 
+  function emitRequestEvent(type, detail) {
+    document.dispatchEvent(new CustomEvent(type, { detail }));
+  }
+
   window.dmRequest = async function dmRequest(url, options = {}) {
+    const detail = { url, options };
+    emitRequestEvent('dm:request-start', detail);
+
     let response;
     try {
       response = await fetch(url, options);
     } catch (_) {
-      throw new DmRequestError('No answer from the server. Check it is still running.');
+      const error = new DmRequestError('No answer from the server. Check it is still running.');
+      emitRequestEvent('dm:request-failure', { ...detail, error });
+      throw error;
     }
-    if (!response.ok) throw await responseError(response);
+    if (!response.ok) {
+      const error = await responseError(response);
+      emitRequestEvent('dm:request-failure', { ...detail, error, response });
+      throw error;
+    }
+    emitRequestEvent('dm:request-success', { ...detail, response });
     return response;
   };
 

@@ -304,6 +304,9 @@ class ReleaseRehearsalTest {
             page.locator("[data-runtime-module='quick-notes'] textarea, [data-runtime-module='quick-notes'] input[type='text']").first().fill("The warden fled through the sluice gate.");
             page.locator("[data-runtime-module='quick-notes'] button[type='submit']").first().click();
             page.waitForSelector("[data-runtime-module='quick-notes'] .quicknote-row");
+            page.waitForFunction("() => document.querySelector('#runtimeStatus [data-status-save]')?.dataset.state === 'saved'");
+            assertThat(page.locator("#runtimeStatus [data-status-save]").getAttribute("data-state"))
+                    .as("the quick-note action reports a real save").isEqualTo("saved");
             planTitle = "Release rehearsal plan";
             page.evaluate("""
                     async ({campaignId, title}) => {
@@ -322,7 +325,6 @@ class ReleaseRehearsalTest {
             page.waitForFunction("window.cockpitLayout?.mounted === true");
             assertThat(page.locator("[data-runtime-module='session-plan'] h3").textContent().trim()).as("the session plan reflects the promoted rehearsal update").isEqualTo(planTitle);
             assertVisibleWithoutScrolling("save status", "#runtimeStatus [data-status-save]");
-            page.waitForFunction("() => ['saved', 'idle'].includes(document.querySelector('#runtimeStatus [data-status-save]').dataset.state)");
         }
 
         @Test @Order(8)
