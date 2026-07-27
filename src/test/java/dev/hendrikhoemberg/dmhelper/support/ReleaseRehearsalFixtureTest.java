@@ -9,6 +9,8 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWaveRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.WaveStatus;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
@@ -42,6 +44,7 @@ class ReleaseRehearsalFixtureTest {
     @Autowired private CampaignRepository campaignRepository;
     @Autowired private StatBlockRepository statBlockRepository;
     @Autowired private EncounterRepository encounterRepository;
+    @Autowired private EncounterWaveRepository waveRepository;
     @Autowired private CombatantRepository combatantRepository;
 
     @Test
@@ -51,6 +54,47 @@ class ReleaseRehearsalFixtureTest {
         assertThat(readiness.reportForCampaign(seeded.campaignId()).sessionReady())
                 .as("a rehearsal that starts blocked proves nothing about the rehearsal")
                 .isTrue();
+    }
+
+    @Test
+    void theSecondShapeBranchesAndCarriesTwoMapScales() throws IOException {
+        var seeded = fixture.seed(ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS);
+
+        assertThat(readiness.reportForCampaign(seeded.campaignId()).sessionReady()).isTrue();
+
+        var maps = mapRepository.findByCampaignIdOrderBySortOrderAsc(seeded.campaignId());
+        assertThat(maps).as("two playable maps").hasSize(2);
+        assertThat(maps.stream().map(m -> m.getCellSizePx()).distinct().count())
+                .as("different grid scales, so calibration is genuinely exercised")
+                .isEqualTo(2);
+    }
+
+    @Test
+    void theSecondShapeHasATheatreOfMindEncounter() throws IOException {
+        var seeded = fixture.seed(ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS);
+
+        assertThat(fixture.mapFreeHostileSceneCount(seeded))
+                .as("a hostile scene that runs without a map")
+                .isGreaterThan(0);
+    }
+
+    @Test
+    void theSecondShapeAddsTheThirdBranchObjectiveAndWave() throws IOException {
+        var seeded = fixture.seed(ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS);
+        var scenes = sceneRepository.findByCampaignIdOrderByChapterAndSort(seeded.campaignId());
+        var approach = scenes.stream().filter(s -> s.getTitle().equals("Mossbound Approach")).findFirst().orElseThrow();
+        var ambush = scenes.stream().filter(s -> s.getTitle().equals("Lantern Vault Ambush")).findFirst().orElseThrow();
+        var encounter = encounterRepository.findByCampaignIdOrderByNameAsc(seeded.campaignId()).stream()
+                .filter(e -> e.getName().equals("Lantern Vault Ambush")).findFirst().orElseThrow();
+
+        assertThat(scenes).as("two chapters with four scenes").hasSize(4);
+        assertThat(approach.getTransitions()).as("three-way approach branch").hasSize(3);
+        assertThat(ambush.getMapRequirement()).isEqualTo(SceneMapRequirement.NONE);
+        assertThat(questRepository.findByIdAndCampaignId(seeded.questId(), seeded.campaignId()).orElseThrow()
+                .getObjectives()).as("third quest objective").hasSize(3);
+        assertThat(waveRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()))
+                .extracting(w -> w.getWaveKey(), w -> w.getStatus())
+                .containsExactly(tuple("main", WaveStatus.ACTIVE), tuple("vault-reinforcements", WaveStatus.PENDING));
     }
 
     @Test

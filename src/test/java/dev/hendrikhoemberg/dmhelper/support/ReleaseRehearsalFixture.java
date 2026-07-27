@@ -13,6 +13,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransitionRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.WaveTriggerKind;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
@@ -40,7 +41,12 @@ import java.util.UUID;
 @Component
 public class ReleaseRehearsalFixture {
 
-    public enum Shape { LINEAR_ONE_MAP }
+    public enum Shape {
+        /** One chapter, one map, one hostile scene. The baseline rehearsal. */
+        LINEAR_ONE_MAP,
+        /** Two chapters, three branch choices, two map scales, and a map-free wave encounter. */
+        BRANCHED_TWO_MAPS
+    }
 
     public record Seeded(UUID campaignId, UUID adventureId, UUID hostileSceneId,
                          UUID branchSceneId, UUID playableMapId, UUID playerSafeHandoutId,
@@ -133,6 +139,25 @@ public class ReleaseRehearsalFixture {
                 SceneTransitionKind.CHOICE, "Take the tideglass gallery", branch.getId(), null,
                 "When the party avoids the bell.", "The gallery is narrow.", "Synthetic, A1", 1));
 
+        Scene ambush = null;
+        if (shape == Shape.BRANCHED_TWO_MAPS) {
+            var secondChapter = adventures.createChapter(adventure.getId(), "The Lantern Vault",
+                    "The descent opens into a chamber beyond the marsh ruins.");
+            ambush = adventures.createScene(secondChapter.getId(), "Lantern Vault Ambush", "B1",
+                    "The vault is quiet until movement answers from the dark.");
+            structured.updateMetadata(campaignId, ambush.getId(), new SceneMetadataCommand(
+                    "The vault becomes hostile without a battle map.", "Synthetic, scene B1", "hostile,vault", null));
+            structured.addSection(campaignId, ambush.getId(), new SceneSectionCommand(
+                    SceneSectionKind.READ_ALOUD, "Vault silence", "The lantern flame bends toward unseen footsteps.",
+                    "Synthetic, B1", 0));
+            structured.addTransition(campaignId, approach.getId(), new SceneTransitionCommand(
+                    SceneTransitionKind.CHOICE, "Cross the sealed bridge", ambush.getId(), null,
+                    "When the party chooses the long bridge.", "The bridge groans below you.", "Synthetic, A1", 2));
+            structured.addTransition(campaignId, branch.getId(), new SceneTransitionCommand(
+                    SceneTransitionKind.CHOICE, "Enter the lantern vault", ambush.getId(), null,
+                    "When the gallery route reaches the vault.", "The vault answers with movement.", "Synthetic, A3", 0));
+        }
+
         List<StatBlock> foeBlocks = List.of(
                 statBlock(campaign, "Bog Sentinel", "1/2", 15, "18 (4d8)", 2, "bog-sentinel"),
                 statBlock(campaign, "Bog Skirmisher", "1/4", 13, "11 (2d8)", 3, "bog-skirmisher-steps"),
@@ -168,6 +193,42 @@ public class ReleaseRehearsalFixture {
             combatantRepository.save(combatantEntity);
         }
 
+        if (shape == Shape.BRANCHED_TWO_MAPS) {
+            var secondMap = maps.create(campaignId, "Tideglass Gallery", 12, 10, 48);
+            maps.updateMode(secondMap.getId(), "GRID", true);
+            branch.setMapRequirement(SceneMapRequirement.REQUIRED);
+            branch.setMap(secondMap);
+            scenes.save(branch);
+
+            ambush.setMapRequirement(SceneMapRequirement.NONE);
+            scenes.save(ambush);
+            for (int i = 0; i < foeBlocks.size(); i++) {
+                var participant = structured.addParticipant(campaignId, ambush.getId(), new SceneParticipantCommand(
+                        "Vault threat " + (i + 1), 1, SceneParticipantDisposition.HOSTILE,
+                        "Theatre-of-mind position " + (i + 1), foeBlocks.get(i).getId(), null,
+                        "Synthetic, B1", i));
+                participant.setStatBlock(foeBlocks.get(i));
+                participants.save(participant);
+            }
+            var waveEncounter = encounters.create(campaignId, new EncounterService.CreateRequest(
+                    "Lantern Vault Ambush", null));
+            var reserveWave = encounters.createWave(waveEncounter.id(), new EncounterService.CreateWaveRequest(
+                    "vault-reinforcements", "Vault reinforcements", WaveTriggerKind.MANUAL, null,
+                    "Synthetic second wave for rehearsal coverage."));
+            var reserve = encounterRepository.findById(waveEncounter.id()).orElseThrow();
+            reserve.setEncounterKey("lantern-vault-ambush-" + suffix);
+            encounterRepository.save(reserve);
+            adventures.linkEncounter(ambush.getId(), waveEncounter.id());
+            for (int i = 0; i < foeBlocks.size(); i++) {
+                var combatant = encounters.addCombatant(waveEncounter.id(), new EncounterService.CombatantCreateRequest(
+                        foeBlocks.get(i).getName(), 0, "MONSTER", null, foeBlocks.get(i).getId(),
+                        i == 0 ? null : reserveWave.id()));
+                var combatantEntity = combatantRepository.findById(combatant.id()).orElseThrow();
+                combatantEntity.setNotes("rehearsal-" + suffix + "-reserve-" + (i + 1));
+                combatantRepository.save(combatantEntity);
+            }
+        }
+
         byte[] image = png("safe");
         Handout playerSafe = handouts.createImported(campaignId, "Beacon Approach (player map)", "map",
                 "beacon-approach.png", "image/png", image);
@@ -196,6 +257,11 @@ public class ReleaseRehearsalFixture {
         quests.addObjective(campaignId, quest.getId(), new QuestService.QuestObjectiveCommand(
                 "Relight the beacon", "Place the wickstone in the hollow lantern.", QuestObjectiveStatus.NOT_STARTED,
                 QuestObjectiveCompletionMode.ALL, 1, "Synthetic, quest 1"));
+        if (shape == Shape.BRANCHED_TWO_MAPS) {
+            quests.addObjective(campaignId, quest.getId(), new QuestService.QuestObjectiveCommand(
+                    "Reach the lantern vault", "Choose a route into the second chapter.", QuestObjectiveStatus.NOT_STARTED,
+                    QuestObjectiveCompletionMode.ALL, 2, "Synthetic, quest 1"));
+        }
 
         List<UUID> partyIds = new ArrayList<>();
         partyIds.add(party(campaign, "Ilsa Fenwright", 18, 34, 14));
@@ -212,6 +278,15 @@ public class ReleaseRehearsalFixture {
                 .stream()
                 .map(key -> statBlocks.findByCampaignIdAndSourceKey(seeded.campaignId(), key).orElseThrow().getId())
                 .toList();
+    }
+
+    /** Hostile scenes that declare no map requirement — theatre of mind. */
+    @Transactional(readOnly = true)
+    public long mapFreeHostileSceneCount(Seeded seeded) {
+        return scenes.findByChapterAdventureCampaignId(seeded.campaignId()).stream()
+                .filter(s -> !s.getParticipants().isEmpty())
+                .filter(s -> s.getMapRequirement() == null || s.getMapRequirement() == SceneMapRequirement.NONE)
+                .count();
     }
 
     private StatBlock statBlock(Campaign campaign, String name, String cr, int ac, String hp, int initiativeBonus,
