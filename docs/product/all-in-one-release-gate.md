@@ -4,7 +4,8 @@ The executable gate defined in
 `docs/superpowers/specs/2026-07-22-phandelver-all-in-one-corrective-design.md` §11.
 Every requirement row names an executable proof. `ReleaseGateIndexContractTest` parses the
 §11.1 and §11.2 tables, requires each row to name at least one proof, and resolves every
-backticked `*Test` or `*Test#method` reference to `src/test/java` and its method declaration.
+backticked `*Test`, `*Test#method`, or nested `*Test$Nested#method` reference to
+`src/test/java` and the exact declaring class scope.
 The same reference check covers the representative §11.3 rehearsal claim, so the index cannot
 silently drift away from the suite.
 
@@ -43,22 +44,23 @@ Run the full release gate; this command must pass before the all-in-one premise 
 
 ## §11.3 Representative release rehearsal
 
-All ten steps, run against two synthetic campaign shapes, are executable methods in
-`ReleaseRehearsalTest`:
+All ten steps, run against two synthetic campaign shapes, are declared in the shared
+`ReleaseRehearsalTest$RehearsalSteps` class and executed by its `Linear` and `Branched`
+nested runners:
 
-`ReleaseRehearsalTest#step1_readinessReportIsInspectedAndClear`,
-`ReleaseRehearsalTest#step2_sessionStartsAtTheSelectedScene`,
-`ReleaseRehearsalTest#step3_explorationAndABranchAreNavigatedWithoutLeavingTheCockpit`,
-`ReleaseRehearsalTest#step4_theEncounterIsCreatedFromTheSceneInAtMostTwoActions`,
-`ReleaseRehearsalTest#step5_initiativeDamageConditionsDefeatAndTurnsResolve`,
-`ReleaseRehearsalTest#step6_statblocksAndRulesAreConsultedInsideDmhelper`,
-`ReleaseRehearsalTest#step7_notesAreCapturedAndThePlanIsUpdated`,
-`ReleaseRehearsalTest#step8_aReviewedPlayerSafeAssetIsPresentedAndTheDisplayAgrees`,
-`ReleaseRehearsalTest#step9_theEncounterAndSessionAreCompleted`, and
-`ReleaseRehearsalTest#step10_theGeneratedLogAgreesWithWhatHappened`.
+`ReleaseRehearsalTest$RehearsalSteps#step1_readinessReportIsInspectedAndClear`,
+`ReleaseRehearsalTest$RehearsalSteps#step2_sessionStartsAtTheSelectedScene`,
+`ReleaseRehearsalTest$RehearsalSteps#step3_explorationAndABranchAreNavigatedWithoutLeavingTheCockpit`,
+`ReleaseRehearsalTest$RehearsalSteps#step4_theEncounterIsCreatedFromTheSceneInAtMostTwoActions`,
+`ReleaseRehearsalTest$RehearsalSteps#step5_initiativeDamageConditionsDefeatAndTurnsResolve`,
+`ReleaseRehearsalTest$RehearsalSteps#step6_statblocksAndRulesAreConsultedInsideDmhelper`,
+`ReleaseRehearsalTest$RehearsalSteps#step7_notesAreCapturedAndThePlanIsUpdated`,
+`ReleaseRehearsalTest$RehearsalSteps#step8_aReviewedPlayerSafeAssetIsPresentedAndTheDisplayAgrees`,
+`ReleaseRehearsalTest$RehearsalSteps#step9_theEncounterAndSessionAreCompleted`, and
+`ReleaseRehearsalTest$RehearsalSteps#step10_theGeneratedLogAgreesWithWhatHappened`.
 
-They run through the `Linear` and `Branched` nested classes. The seven gate-fail conditions
-are asserted at the point each becomes observable; see the method comments.
+The seven gate-fail conditions are asserted at the point each becomes observable; see the
+method comments.
 
 The fixtures are `ReleaseRehearsalFixture.Shape.LINEAR_ONE_MAP` and `BRANCHED_TWO_MAPS`.
 Both are entirely synthetic — `ReleaseRehearsalFixtureTest` fails the build if any published
