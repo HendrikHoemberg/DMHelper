@@ -46,7 +46,7 @@ class ReleaseRehearsalTest {
         void launch() throws Exception {
             playwright = Playwright.create();
             browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
-            seeded = fixture.seed(shape());
+            seeded = fixture.seedForRehearsal(shape());
         }
 
         @AfterAll

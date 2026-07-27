@@ -10,6 +10,7 @@ import dev.hendrikhoemberg.dmhelper.session.runtime.CockpitRuntimeModuleViewServ
 import dev.hendrikhoemberg.dmhelper.session.runtime.CockpitRuntimeModuleViewService.ReferenceView;
 import dev.hendrikhoemberg.dmhelper.session.runtime.CockpitRuntimeModuleViewService.AudioView;
 import dev.hendrikhoemberg.dmhelper.session.runtime.CockpitRuntimeModuleViewService.SessionLogView;
+import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -39,6 +40,9 @@ class CockpitRuntimeModuleControllerTest {
     private CockpitModuleRegistry registry;
 
     @MockitoBean
+    private AdventureService adventures;
+
+    @MockitoBean
     private CampaignRepository campaignRepository;
 
     private final UUID campaignId = UUID.randomUUID();
@@ -51,12 +55,16 @@ class CockpitRuntimeModuleControllerTest {
                 List.of(), List.of(), List.of(), List.of(), List.of(), java.util.Map.of(), false,
                 false, false, UUID.randomUUID(), null, null);
         when(views.story(campaignId)).thenReturn(view);
+        when(adventures.scenePickerGroups(campaignId)).thenReturn(List.of(
+                new AdventureService.ScenePickerGroup("Adventure — Chapter", List.of(
+                        new AdventureService.ScenePickerOption(UUID.randomUUID(), "Next Room", "A2")))));
 
         mvc.perform(get("/campaigns/{cid}/session/modules/story", campaignId)
                         .param("mode", "STANDARD"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("data-cockpit-module-fragment")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("data-module-content-root")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("A2 · Next Room")))
                 .andExpect(view().name("session/modules/_story :: body"));
     }
 

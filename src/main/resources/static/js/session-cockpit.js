@@ -336,11 +336,17 @@ function sessionCockpit(config) {
         },
 
         closeLifecycle() {
+            const focusAtClose = document.activeElement;
             if (this.$refs.lifecycleDialog?.open) {
                 this.$refs.lifecycleDialog.close();
             }
             this.lifecycleOpen = false;
             this.$nextTick(() => {
+                if (document.activeElement !== focusAtClose
+                    && document.activeElement !== document.body) {
+                    this._lastActiveElement = null;
+                    return;
+                }
                 const target = this._lastActiveElement?.isConnected
                     ? this._lastActiveElement
                     : this.$refs.sessionButton;

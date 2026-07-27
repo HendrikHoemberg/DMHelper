@@ -102,10 +102,15 @@ public class ReleaseRehearsalFixture {
     }
 
     @Transactional
-    public Seeded seed() throws IOException { return seed(Shape.LINEAR_ONE_MAP); }
+    public Seeded seed() throws IOException { return seed(Shape.LINEAR_ONE_MAP, false); }
 
     @Transactional
-    public Seeded seed(Shape shape) throws IOException {
+    public Seeded seed(Shape shape) throws IOException { return seed(shape, false); }
+
+    @Transactional
+    public Seeded seedForRehearsal(Shape shape) throws IOException { return seed(shape, true); }
+
+    private Seeded seed(Shape shape, boolean leaveHostileEncounterUnlinked) throws IOException {
         Campaign campaign = new Campaign();
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         campaign.setName("The Hollow Beacon " + suffix);
@@ -182,7 +187,7 @@ public class ReleaseRehearsalFixture {
         var encounterEntity = encounterRepository.findById(encounter.id()).orElseThrow();
         encounterEntity.setEncounterKey("undercroft-alarm-" + suffix);
         encounterRepository.save(encounterEntity);
-        adventures.linkEncounter(hostile.getId(), encounter.id());
+        if (!leaveHostileEncounterUnlinked) adventures.linkEncounter(hostile.getId(), encounter.id());
         for (int i = 0; i < foeBlocks.size(); i++) {
             StatBlock foe = foeBlocks.get(i);
             var combatant = encounters.addCombatant(encounter.id(), new EncounterService.CombatantCreateRequest(

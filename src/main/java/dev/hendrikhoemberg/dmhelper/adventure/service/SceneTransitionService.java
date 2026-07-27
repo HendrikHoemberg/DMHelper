@@ -8,6 +8,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionActivityRecorder;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +50,11 @@ public class SceneTransitionService {
         campaignRepository.save(campaign);
 
         sessionActivity.sceneSelected(campaignId, target);
+        // The controller returns this entity as a DTO after this transaction ends.
+        // Materialize every association that SessionApiController.sceneData reads.
+        Hibernate.initialize(target);
+        Hibernate.initialize(target.getMap());
+        Hibernate.initialize(target.getEncounter());
         return target;
     }
 }

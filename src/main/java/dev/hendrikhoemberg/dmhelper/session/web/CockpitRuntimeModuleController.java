@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.session.web;
 
+import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleDefinition;
 import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleRegistry;
 import dev.hendrikhoemberg.dmhelper.session.runtime.CockpitModuleMode;
@@ -21,11 +22,14 @@ public class CockpitRuntimeModuleController {
 
     private final CockpitRuntimeModuleViewService views;
     private final CockpitModuleRegistry registry;
+    private final AdventureService adventures;
 
     public CockpitRuntimeModuleController(CockpitRuntimeModuleViewService views,
-                                          CockpitModuleRegistry registry) {
+                                           CockpitModuleRegistry registry,
+                                           AdventureService adventures) {
         this.views = views;
         this.registry = registry;
+        this.adventures = adventures;
     }
 
     @GetMapping("/story")
@@ -37,6 +41,7 @@ public class CockpitRuntimeModuleController {
         model.addAttribute("view", views.story(campaignId));
         model.addAttribute("mode", mode);
         model.addAttribute("campaignId", campaignId);
+        model.addAttribute("scenePickerGroups", adventures.scenePickerGroups(campaignId));
         return "session/modules/_story :: body";
     }
 
