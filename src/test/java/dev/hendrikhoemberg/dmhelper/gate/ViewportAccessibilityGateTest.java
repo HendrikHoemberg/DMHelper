@@ -28,6 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ViewportAccessibilityGateTest {
 
     private static final int[][] VIEWPORTS = {{1366, 768}, {1920, 1080}};
+    private static final String FOCUSABLE_QUERY = "button:not([disabled]), [href], input:not([disabled]), "
+            + "select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\"-1\"])";
 
     @LocalServerPort private int port;
     @Autowired private ReleaseRehearsalFixture fixture;
@@ -163,20 +165,47 @@ class ViewportAccessibilityGateTest {
             for (String selector : List.of("#cockpitLayoutModeButton", "#screenSafetyCheckbox",
                     "#runtimeStatus", "[data-display-title]", "button[x-ref='sessionButton']")) {
                 Locator control = page.locator(selector).first();
-                control.scrollIntoViewIfNeeded();
+                if (selector.equals("#screenSafetyCheckbox")) {
+                    control = page.locator("label.switch-control").first();
+                }
                 BoundingBox box = control.boundingBox();
-                assertThat(box).as("%s present at %dx%d", selector, viewport[0], viewport[1])
-                        .isNotNull();
-                assertThat(box.y + box.height)
-                        .as("%s inside the viewport at %dx%d", selector, viewport[0], viewport[1])
-                        .isLessThanOrEqualTo(viewport[1]);
+                assertThat(control.isVisible()).as("%s visible at %dx%d", selector, viewport[0], viewport[1])
+                        .isTrue();
+                assertThat(box).as("%s present at %dx%d", selector, viewport[0], viewport[1]).isNotNull();
+                assertThat(box.x).as("%s left edge at %dx%d", selector, viewport[0], viewport[1])
+                        .isGreaterThanOrEqualTo(-1);
+                assertThat(box.y).as("%s top edge at %dx%d", selector, viewport[0], viewport[1])
+                        .isGreaterThanOrEqualTo(-1);
+                assertThat(box.x + box.width).as("%s right edge at %dx%d", selector, viewport[0], viewport[1])
+                        .isLessThanOrEqualTo((double) viewport[0] + 1);
+                assertThat(box.y + box.height).as("%s bottom edge at %dx%d", selector, viewport[0], viewport[1])
+                        .isLessThanOrEqualTo((double) viewport[1] + 1);
+                if (!selector.equals("#runtimeStatus") && !selector.equals("[data-display-title]")) {
+                    assertThat(control.isEnabled()).as("%s enabled at %dx%d", selector, viewport[0], viewport[1])
+                            .isTrue();
+                }
             }
+            Locator screenSafety = page.locator("#screenSafetyCheckbox");
+            assertThat(screenSafety.isEnabled()).as("screen safety enabled at %dx%d", viewport[0], viewport[1])
+                    .isTrue();
+            assertThat(screenSafety.getAttribute("tabindex"))
+                    .as("screen safety keyboard reachable at %dx%d", viewport[0], viewport[1])
+                    .isNotEqualTo("-1");
+            @SuppressWarnings("unchecked")
+            List<String> statusStates = (List<String>) page.evaluate("""
+                    () => [...document.querySelectorAll('#runtimeStatus [data-status-save], #runtimeStatus [data-status-table]')]
+                      .map(el => el.getAttribute('data-state'))
+                    """);
+            assertThat(statusStates)
+                    .as("runtime status child states at %dx%d", viewport[0], viewport[1])
+                    .containsExactly("idle", "disconnected");
         }
     }
 
     @Test
     void keyboardUsersCanDriveTheWorkspace() {
-        openCockpit(1366, 768);
+        for (int[] viewport : VIEWPORTS) {
+            openCockpit(viewport[0], viewport[1]);
 
         page.locator("#cockpitLayoutModeButton").focus();
         page.keyboard().press("Enter");
@@ -212,10 +241,11 @@ class ViewportAccessibilityGateTest {
         Locator tab = page.locator("[role='tab']").first();
         tab.focus();
         page.keyboard().press("ArrowRight");
-        assertThat((boolean) page.evaluate(
+            assertThat((boolean) page.evaluate(
                 "() => document.activeElement?.getAttribute('role') === 'tab'"))
-                .as("tab strip keeps roving focus")
+                .as("tab strip keeps roving focus at %dx%d", viewport[0], viewport[1])
                 .isTrue();
+        }
     }
 
     @Test
@@ -246,66 +276,130 @@ class ViewportAccessibilityGateTest {
 
     @Test
     void everyFocusedLayerTrapsAndRestoresFocus() {
-        openCockpit(1366, 768);
-
         record Layer(String opener, String container) {
         }
 
-        for (Layer layer : List.of(
-                new Layer("button[x-ref='sessionButton']", "#sessionLifecycleDialog"),
-                new Layer("[data-module-key='story'] [data-module-focus]", ".cockpit-focus-layer"))) {
+        for (int[] viewport : VIEWPORTS) {
+            openCockpit(viewport[0], viewport[1]);
+            for (Layer layer : List.of(
+                    new Layer("button[x-ref='sessionButton']", "#sessionLifecycleDialog"),
+                    new Layer("[data-module-key='story'] [data-module-focus]", ".cockpit-focus-layer"))) {
 
-            Locator opener = page.locator(layer.opener()).first();
-            opener.focus();
-            opener.press("Enter");
-            page.locator(layer.container()).waitFor(new Locator.WaitForOptions().setState(
-                    com.microsoft.playwright.options.WaitForSelectorState.VISIBLE));
+                Locator opener = page.locator(layer.opener()).first();
+                opener.focus();
+                opener.press("Enter");
+                page.locator(layer.container()).waitFor(new Locator.WaitForOptions().setState(
+                        com.microsoft.playwright.options.WaitForSelectorState.VISIBLE));
 
-            assertThat((boolean) page.evaluate(
-                    "sel => document.activeElement?.closest(sel) !== null", layer.container()))
-                    .as("%s takes initial focus", layer.container())
-                    .isTrue();
+                assertThat((boolean) page.evaluate(
+                        "sel => document.activeElement?.closest(sel) !== null", layer.container()))
+                        .as("%s takes initial focus at %dx%d", layer.container(), viewport[0], viewport[1])
+                        .isTrue();
 
-            page.keyboard().press("Tab");
-            assertThat((boolean) page.evaluate(
-                    "sel => document.activeElement?.closest(sel) !== null", layer.container()))
-                    .as("%s traps Tab", layer.container())
-                    .isTrue();
+                Number focusableCount = (Number) page.evaluate("""
+                        sel => {
+                          const visible = (el) => {
+                            const s = getComputedStyle(el);
+                            return !el.hidden && s.display !== 'none' && s.visibility !== 'hidden'
+                              && el.getClientRects().length > 0;
+                          };
+                          return [...document.querySelector(sel).querySelectorAll('FOCUSABLE_QUERY')]
+                            .filter(visible).length;
+                        }
+                        """.replace("FOCUSABLE_QUERY", FOCUSABLE_QUERY), layer.container());
+                assertThat(focusableCount.intValue())
+                        .as("%s has focusable content at %dx%d", layer.container(), viewport[0], viewport[1])
+                        .isGreaterThan(1);
 
-            page.keyboard().press("Escape");
-            page.waitForFunction("""
-                    sel => {
-                      const el = document.querySelector(sel);
-                      return el?.matches('dialog') ? !el.open : el?.hidden === true;
-                    }
-                    """, layer.container());
-            assertThat((boolean) page.evaluate(
-                    "sel => document.activeElement === document.querySelector(sel)", layer.opener()))
-                    .as("%s restores focus to its opener", layer.container())
-                    .isTrue();
+                page.evaluate("""
+                        sel => {
+                          const visible = (el) => {
+                            const s = getComputedStyle(el);
+                            return !el.hidden && s.display !== 'none' && s.visibility !== 'hidden'
+                              && el.getClientRects().length > 0;
+                          };
+                          const nodes = [...document.querySelector(sel).querySelectorAll('FOCUSABLE_QUERY')].filter(visible);
+                          nodes.at(-1).focus();
+                        }
+                        """.replace("FOCUSABLE_QUERY", FOCUSABLE_QUERY), layer.container());
+                page.keyboard().press("Tab");
+                assertThat((boolean) page.evaluate("""
+                        sel => {
+                          const visible = (el) => {
+                            const s = getComputedStyle(el);
+                            return !el.hidden && s.display !== 'none' && s.visibility !== 'hidden'
+                              && el.getClientRects().length > 0;
+                          };
+                          const nodes = [...document.querySelector(sel).querySelectorAll('FOCUSABLE_QUERY')].filter(visible);
+                          return document.activeElement === nodes[0];
+                        }
+                        """.replace("FOCUSABLE_QUERY", FOCUSABLE_QUERY), layer.container()))
+                        .as("%s wraps forward from the last focusable at %dx%d", layer.container(), viewport[0], viewport[1])
+                        .isTrue();
+
+                page.evaluate("""
+                        sel => {
+                          const visible = (el) => {
+                            const s = getComputedStyle(el);
+                            return !el.hidden && s.display !== 'none' && s.visibility !== 'hidden'
+                              && el.getClientRects().length > 0;
+                          };
+                          const nodes = [...document.querySelector(sel).querySelectorAll('FOCUSABLE_QUERY')].filter(visible);
+                          nodes[0].focus();
+                        }
+                        """.replace("FOCUSABLE_QUERY", FOCUSABLE_QUERY), layer.container());
+                page.keyboard().press("Shift+Tab");
+                assertThat((boolean) page.evaluate("""
+                        sel => {
+                          const visible = (el) => {
+                            const s = getComputedStyle(el);
+                            return !el.hidden && s.display !== 'none' && s.visibility !== 'hidden'
+                              && el.getClientRects().length > 0;
+                          };
+                          const nodes = [...document.querySelector(sel).querySelectorAll('FOCUSABLE_QUERY')].filter(visible);
+                          return document.activeElement === nodes.at(-1);
+                        }
+                        """.replace("FOCUSABLE_QUERY", FOCUSABLE_QUERY.replace("\\\"", "\\\\\\\"")), layer.container()))
+                        .as("%s wraps backward from the first focusable at %dx%d", layer.container(), viewport[0], viewport[1])
+                        .isTrue();
+
+                page.keyboard().press("Escape");
+                page.waitForFunction("""
+                        sel => {
+                          const el = document.querySelector(sel);
+                          return el?.matches('dialog') ? !el.open : el?.hidden === true;
+                        }
+                        """, layer.container());
+                assertThat((boolean) page.evaluate(
+                        "sel => document.activeElement === document.querySelector(sel)", layer.opener()))
+                        .as("%s restores focus to its opener at %dx%d", layer.container(), viewport[0], viewport[1])
+                        .isTrue();
+            }
         }
     }
 
     @Test
     void focusIsVisibleAndRestoredAfterAFocusedLayer() {
-        openCockpit(1366, 768);
+        for (int[] viewport : VIEWPORTS) {
+            openCockpit(viewport[0], viewport[1]);
 
-        page.locator("button[x-ref='sessionButton']").focus();
-        assertThat((boolean) page.evaluate("""
-                () => {
-                  const s = getComputedStyle(document.activeElement);
-                  return s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0;
-                }
-                """)).as("focus ring is painted").isTrue();
+            page.locator("button[x-ref='sessionButton']").focus();
+            assertThat((boolean) page.evaluate("""
+                    () => {
+                      const s = getComputedStyle(document.activeElement);
+                      return s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0;
+                    }
+                    """)).as("focus ring is painted at %dx%d", viewport[0], viewport[1]).isTrue();
 
-        page.keyboard().press("Enter");
-        page.locator("#sessionLifecycleDialog").waitFor();
-        page.keyboard().press("Escape");
+            page.keyboard().press("Enter");
+            page.locator("#sessionLifecycleDialog").waitFor();
+            page.keyboard().press("Escape");
 
-        assertThat((boolean) page.evaluate(
-                "() => document.activeElement === document.querySelector(\"button[x-ref='sessionButton']\")"))
-                .as("focus returns to the control that opened the layer")
-                .isTrue();
+            assertThat((boolean) page.evaluate(
+                    "() => document.activeElement === document.querySelector(\"button[x-ref='sessionButton']\")"))
+                    .as("focus returns to the control that opened the layer at %dx%d", viewport[0], viewport[1])
+                    .isTrue();
+        }
     }
 
     @Test
@@ -314,23 +408,26 @@ class ViewportAccessibilityGateTest {
                 .setReducedMotion(com.microsoft.playwright.options.ReducedMotion.REDUCE))) {
             Page quietPage = reduced.newPage();
             failures.attach(quietPage);
-            quietPage.setViewportSize(1366, 768);
-            quietPage.navigate("http://localhost:" + port + "/campaigns/" + seeded.campaignId() + "/session");
-            quietPage.waitForLoadState(LoadState.NETWORKIDLE);
+            for (int[] viewport : VIEWPORTS) {
+                quietPage.setViewportSize(viewport[0], viewport[1]);
+                quietPage.navigate("http://localhost:" + port + "/campaigns/" + seeded.campaignId() + "/session");
+                quietPage.waitForLoadState(LoadState.NETWORKIDLE);
 
-            @SuppressWarnings("unchecked")
-            List<String> animated = (List<String>) quietPage.evaluate("""
-                    () => [...document.querySelectorAll('body *')]
-                      .filter(el => {
-                        const s = getComputedStyle(el);
-                        const d = (v) => Math.max(...v.split(',').map(x => parseFloat(x) * (x.includes('ms') ? 1 : 1000) || 0));
-                        return d(s.animationDuration) > 10 || d(s.transitionDuration) > 10;
-                      })
-                      .map(el => el.tagName.toLowerCase() + '.' + (el.className || ''))
-                      .slice(0, 20)
-                    """);
+                @SuppressWarnings("unchecked")
+                List<String> animated = (List<String>) quietPage.evaluate("""
+                        () => [...document.querySelectorAll('body *')]
+                          .filter(el => {
+                            const s = getComputedStyle(el);
+                            const d = (v) => Math.max(...v.split(',').map(x => parseFloat(x) * (x.includes('ms') ? 1 : 1000) || 0));
+                            return d(s.animationDuration) > 10 || d(s.transitionDuration) > 10;
+                          })
+                          .map(el => el.tagName.toLowerCase() + '.' + (el.className || ''))
+                          .slice(0, 20)
+                        """);
 
-            assertThat(animated).as("elements still animating under prefers-reduced-motion").isEmpty();
+                assertThat(animated).as("elements still animating under prefers-reduced-motion at %dx%d",
+                        viewport[0], viewport[1]).isEmpty();
+            }
         }
     }
 }

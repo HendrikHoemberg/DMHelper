@@ -269,7 +269,7 @@
           const shell = focusBtn.closest('[data-module-key]');
           if (shell) {
             event.preventDefault();
-            this.focusModule(shell.getAttribute('data-module-key'));
+            this.focusModule(shell.getAttribute('data-module-key'), focusBtn);
           }
           return;
         }
@@ -1437,14 +1437,14 @@
 
     /* ---- Focus ---- */
 
-    focusModule(key) {
+    focusModule(key, returnElement = document.activeElement) {
       const def = this.modules.get(key);
       if (!def || !def.focusSupported) return false;
       const shell = document.querySelector(`[data-module-key="${key}"]`);
       if (!shell || !this.focusLayer || !this.focusMount) return false;
       if (this.focusedModuleKey) this.restoreFocus({ silent: true });
 
-      this._focusReturnEl = document.activeElement;
+      this._focusReturnEl = returnElement || document.activeElement;
       this._focusHomePanel = shell.closest('[data-module-panel]')
         || shell.parentElement;
       this.focusedModuleKey = key;
