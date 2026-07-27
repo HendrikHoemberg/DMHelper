@@ -13,7 +13,6 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransitionRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
-import dev.hendrikhoemberg.dmhelper.encounter.data.WaveTriggerKind;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
@@ -209,22 +208,6 @@ public class ReleaseRehearsalFixture {
                         "Synthetic, B1", i));
                 participant.setStatBlock(foeBlocks.get(i));
                 participants.save(participant);
-            }
-            var waveEncounter = encounters.create(campaignId, new EncounterService.CreateRequest(
-                    "Lantern Vault Reserve", null));
-            var reserveWave = encounters.createWave(waveEncounter.id(), new EncounterService.CreateWaveRequest(
-                    "vault-reinforcements", "Vault reinforcements", WaveTriggerKind.MANUAL, null,
-                    "Synthetic second wave for rehearsal coverage."));
-            var reserve = encounterRepository.findById(waveEncounter.id()).orElseThrow();
-            reserve.setEncounterKey("lantern-vault-ambush-" + suffix);
-            encounterRepository.save(reserve);
-            for (int i = 0; i < foeBlocks.size(); i++) {
-                var combatant = encounters.addCombatant(waveEncounter.id(), new EncounterService.CombatantCreateRequest(
-                        foeBlocks.get(i).getName(), 0, "MONSTER", null, foeBlocks.get(i).getId(),
-                        i == 0 ? null : reserveWave.id()));
-                var combatantEntity = combatantRepository.findById(combatant.id()).orElseThrow();
-                combatantEntity.setNotes("rehearsal-" + suffix + "-reserve-" + (i + 1));
-                combatantRepository.save(combatantEntity);
             }
         }
 

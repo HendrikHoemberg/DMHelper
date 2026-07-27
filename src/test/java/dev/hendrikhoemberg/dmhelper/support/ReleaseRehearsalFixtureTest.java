@@ -9,8 +9,6 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
-import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWaveRepository;
-import dev.hendrikhoemberg.dmhelper.encounter.data.WaveStatus;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
@@ -44,7 +42,6 @@ class ReleaseRehearsalFixtureTest {
     @Autowired private CampaignRepository campaignRepository;
     @Autowired private StatBlockRepository statBlockRepository;
     @Autowired private EncounterRepository encounterRepository;
-    @Autowired private EncounterWaveRepository waveRepository;
     @Autowired private CombatantRepository combatantRepository;
 
     @Test
@@ -84,8 +81,6 @@ class ReleaseRehearsalFixtureTest {
         var scenes = sceneRepository.findByCampaignIdOrderByChapterAndSort(seeded.campaignId());
         var approach = scenes.stream().filter(s -> s.getTitle().equals("Mossbound Approach")).findFirst().orElseThrow();
         var ambush = scenes.stream().filter(s -> s.getTitle().equals("Lantern Vault Ambush")).findFirst().orElseThrow();
-        var waveEncounter = encounterRepository.findByCampaignIdOrderByNameAsc(seeded.campaignId()).stream()
-                .filter(e -> e.getName().equals("Lantern Vault Reserve")).findFirst().orElseThrow();
 
         assertThat(scenes).as("two chapters with four scenes").hasSize(4);
         assertThat(scenes).extracting(s -> s.getChapter().getTitle())
@@ -103,11 +98,11 @@ class ReleaseRehearsalFixtureTest {
                         tuple("Cross the sealed bridge", ambush.getId()));
         assertThat(ambush.getMapRequirement()).isEqualTo(SceneMapRequirement.NONE);
         assertThat(ambush.getEncounter()).as("runtime scene-to-encounter action remains available").isNull();
+        assertThat(encounterRepository.findByCampaignIdOrderByNameAsc(seeded.campaignId()))
+                .extracting(e -> e.getName())
+                .containsExactly("Undercroft Alarm");
         assertThat(questRepository.findByIdAndCampaignId(seeded.questId(), seeded.campaignId()).orElseThrow()
                 .getObjectives()).as("third quest objective").hasSize(3);
-        assertThat(waveRepository.findByEncounterIdOrderBySortOrderAsc(waveEncounter.getId()))
-                .extracting(w -> w.getWaveKey(), w -> w.getStatus())
-                .containsExactly(tuple("main", WaveStatus.ACTIVE), tuple("vault-reinforcements", WaveStatus.PENDING));
     }
 
     @Test

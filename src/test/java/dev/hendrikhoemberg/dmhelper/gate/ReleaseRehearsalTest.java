@@ -150,19 +150,28 @@ class ReleaseRehearsalTest {
                 page.waitForSelector("[data-runtime-module='encounter'] [data-initiative-setup]");
                 if (shape() == ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS) {
                     page.evaluate("""
-                            async ({campaignId}) => {
+                            async ({campaignId, statBlockId}) => {
                                 const encounters = await (await fetch(`/api/v1/campaigns/${campaignId}/encounters`)).json();
                                 const encounter = encounters.find(e => e.name === 'Encounter: Lantern Vault Ambush');
                                 if (!encounter) throw new Error('The runtime scene encounter was not created.');
-                                const response = await fetch(`/api/v1/encounters/${encounter.id}/waves`, {
+                                const waveResponse = await fetch(`/api/v1/encounters/${encounter.id}/waves`, {
                                     method: 'POST',
                                     headers: {'Content-Type': 'application/json'},
                                     body: JSON.stringify({waveKey: 'vault-reinforcements', name: 'Vault reinforcements',
                                         triggerKind: 'MANUAL', triggerValue: null, notes: 'Synthetic second wave.'})
                                 });
-                                if (!response.ok) throw new Error(`Wave creation failed: ${response.status}`);
+                                if (!waveResponse.ok) throw new Error(`Wave creation failed: ${waveResponse.status}`);
+                                const wave = await waveResponse.json();
+                                const combatantResponse = await fetch(`/api/v1/encounters/${encounter.id}/combatants/from-library`, {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({statBlockId, quantity: 1, groupName: 'Vault reinforcements',
+                                        waveId: wave.id, startX: null, startY: null, placementRegionKey: null})
+                                });
+                                if (!combatantResponse.ok) throw new Error(`Reserve combatant creation failed: ${combatantResponse.status}`);
                             }
-                            """, java.util.Map.of("campaignId", seeded.campaignId().toString()));
+                            """, java.util.Map.of("campaignId", seeded.campaignId().toString(),
+                                    "statBlockId", fixture.statBlockIdsOf(seeded).get(0).toString()));
                     actions++;
                     page.reload();
                     page.waitForLoadState(LoadState.NETWORKIDLE);
@@ -189,17 +198,60 @@ class ReleaseRehearsalTest {
             setup.locator("button[data-start-combat]").click();
             page.waitForSelector("[data-running-turn-controls]");
             assertVisibleWithoutScrolling("current turn", "[data-running-turn-controls]");
+            java.util.Map<?, ?> waveState = (java.util.Map<?, ?>) page.evaluate("""
+                    async ({campaignId, encounterName}) => {
+                        const encounters = await (await fetch(`/api/v1/campaigns/${campaignId}/encounters`)).json();
+                        const encounter = encounters.find(e => e.name === encounterName);
+                        const waves = await (await fetch(`/api/v1/encounters/${encounter.id}/waves`)).json();
+                        const combatants = await (await fetch(`/api/v1/encounters/${encounter.id}/combatants`)).json();
+                        const main = waves.find(w => w.waveKey === 'main');
+                        const pending = waves.find(w => w.waveKey === 'vault-reinforcements');
+                        return {mainIds: combatants.filter(c => c.waveId === main.id).map(c => c.id), pendingId: pending.id};
+                    }
+                    """, java.util.Map.of("campaignId", seeded.campaignId().toString(), "encounterName", encounterName));
+            @SuppressWarnings("unchecked")
+            List<String> mainCombatantIds = (List<String>) waveState.get("mainIds");
+            String pendingWaveId = String.valueOf(waveState.get("pendingId"));
             Locator firstRow = page.locator(".combatant-row").first();
             defeatedCombatantName = firstRow.locator(".combatant-name").textContent().trim();
-            String hpBefore = firstRow.locator(".combatant-hp").textContent();
-            firstRow.locator(".hp-delta-input").fill("-999");
-            firstRow.locator(".hp-delta-input").press("Enter");
-            page.waitForFunction("previous => document.querySelector('.combatant-row .combatant-hp')?.textContent !== previous", hpBefore);
-            assertThat(page.locator(".combatant-row.defeated").count()).isGreaterThan(0);
+            for (String combatantId : mainCombatantIds) {
+                Locator row = page.locator(".combatant-row[data-cid='" + combatantId + "']");
+                row.locator(".hp-delta-input").fill("-999");
+                row.locator(".hp-delta-input").press("Enter");
+                page.waitForFunction("id => document.querySelector(`.combatant-row[data-cid='${id}']`)?.classList.contains('defeated')", combatantId);
+            }
+            page.waitForFunction("ids => ids.every(id => document.querySelector(`.combatant-row[data-cid='${id}']`)?.classList.contains('defeated'))", mainCombatantIds);
             if (shape() == ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS) {
-                assertThat(page.locator("[data-runtime-module='encounter'] [data-next-wave]").count())
-                        .as("a wave-based encounter offers its next wave from the cockpit")
-                        .isGreaterThan(0);
+                page.waitForFunction("""
+                        async ({campaignId, encounterName}) => {
+                            const encounters = await (await fetch(`/api/v1/campaigns/${campaignId}/encounters`)).json();
+                            const encounter = encounters.find(e => e.name === encounterName);
+                            if (!encounter) return false;
+                            const waves = await (await fetch(`/api/v1/encounters/${encounter.id}/waves`)).json();
+                            return waves.find(w => w.waveKey === 'main')?.status === 'DEPLETED';
+                        }
+                        """, java.util.Map.of("campaignId", seeded.campaignId().toString(), "encounterName", encounterName));
+                Locator nextWave = page.locator("[data-runtime-module='encounter'] .wave-banner button").first();
+                nextWave.waitFor();
+                Response spawnResponse = page.waitForResponse(
+                        response -> response.url().endsWith("/waves/" + pendingWaveId + "/spawn")
+                                && response.request().method().equals("POST"), nextWave::click);
+                assertThat(spawnResponse.status()).as("the pending wave spawn is accepted").isBetween(200, 299);
+                page.waitForFunction("waveId => !document.querySelector('.wave-banner button')", pendingWaveId);
+                Boolean spawned = (Boolean) page.evaluate("""
+                        async ({campaignId, encounterName, waveId}) => {
+                            const encounters = await (await fetch(`/api/v1/campaigns/${campaignId}/encounters`)).json();
+                            const encounter = encounters.find(e => e.name === encounterName);
+                            const waves = await (await fetch(`/api/v1/encounters/${encounter.id}/waves`)).json();
+                            const combatants = await (await fetch(`/api/v1/encounters/${encounter.id}/combatants`)).json();
+                            const wave = waves.find(w => w.id === waveId);
+                            return wave?.status === 'ACTIVE'
+                                && wave.combatantCount === 1
+                                && combatants.some(c => c.waveId === waveId && c.name === 'Vault reinforcements' && !c.hidden);
+                        }
+                        """, java.util.Map.of("campaignId", seeded.campaignId().toString(),
+                                "encounterName", encounterName, "waveId", pendingWaveId));
+                assertThat(spawned).as("the real named reserve wave is active in the scene-created encounter").isTrue();
             }
             page.locator(".combatant-row").first().click();
             Locator condition = page.locator(".detail-conditions input[type='checkbox']").first();

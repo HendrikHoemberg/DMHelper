@@ -50,3 +50,24 @@ No production schema, entity, or controller files changed. Linear fixture behavi
 
 - Playwright reports missing `libicudata.so.66`, `libicui18n.so.66`, `libicuuc.so.66`, `libxml2.so.2`, `libwebp.so.6`, and `libffi.so.7`; browser assertions and a trustworthy 20-test rehearsal summary require those host dependencies.
 - No production schema, entity, controller, or linear fixture behavior changed.
+
+## Review round 2 evidence
+
+### RED
+
+- Strengthened `BRANCHED_TWO_MAPS` fixture assertions before removing the stale reserve fixture: the exact campaign encounter set had to be `Undercroft Alarm` only, while the old fixture still produced `Lantern Vault Reserve` as a second encounter.
+- `./mvnw -q test -Dtest=ReleaseRehearsalFixtureTest` failed at that assertion with the actual names `[Lantern Vault Reserve, Undercroft Alarm]` versus the expected `[Undercroft Alarm]`.
+
+### GREEN / focused verification
+
+- `./mvnw -q test-compile` passed.
+- `./mvnw -q test -Dtest=ReleaseRehearsalFixtureTest` passed after removing the separate branched reserve encounter. The fixture now proves exact chapter identities/associations, exact three-way target IDs/labels, exactly one hostile map-free scene, and no pre-linked ambush encounter or out-of-scope reserve encounter.
+- Branched rehearsal step 4 now uses the scene seed action, then the existing encounter wave and library-combatant APIs to create `vault-reinforcements` with the named `Vault reinforcements` combatant on `Encounter: Lantern Vault Ambush`; this is counted as the second action.
+- Branched step 5 fetches that same campaign encounter, defeats every main-wave combatant, waits for `main=DEPLETED`, activates the real wave-banner spawn control, and asserts `vault-reinforcements=ACTIVE` with exactly one visible named combatant.
+
+### Browser checks and environment limit
+
+- Exact outer command: `./mvnw -q test -Dtest=ReleaseRehearsalTest`. Spring/Tomcat started and the run entered the Linear nested class, but Playwright stopped at host validation; it did not produce a test summary or a green 20-test result.
+- Explicit branched command: `./mvnw -q test -Dtest='ReleaseRehearsalTest$Branched'`. Spring/Tomcat started and the run entered the Branched nested class, then hit the same Playwright host validation boundary; no branched browser result is claimed.
+- Chromium remains blocked by missing `libicudata.so.66`, `libicui18n.so.66`, `libicuuc.so.66`, `libxml2.so.2`, `libwebp.so.6`, and `libffi.so.7`.
+- No production schema, entity, or controller files changed; linear rehearsal behavior was preserved.
