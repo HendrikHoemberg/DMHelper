@@ -19,6 +19,8 @@ import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
@@ -253,14 +255,58 @@ class ReleaseRehearsalFixtureTest {
                 .hasSize(4);
     }
 
-    @Test
-    void nothingInTheFixtureCameFromAPublishedCampaign() throws IOException {
-        var seeded = fixture.seed();
+    @ParameterizedTest(name = "{0}")
+    @EnumSource(ReleaseRehearsalFixture.Shape.class)
+    void nothingInTheFixtureCameFromAPublishedCampaign(ReleaseRehearsalFixture.Shape shape) throws IOException {
+        var seeded = fixture.seed(shape);
         String everything = fixture.textualContentOf(seeded);
 
         assertThat(everything.toLowerCase())
                 .doesNotContain("phandelver", "klarg", "cragmaw", "wave echo", "sildar",
                         "gundren", "rockseeker", "neverwinter", "tresendar");
+
+        mapRepository.findByCampaignIdOrderBySortOrderAsc(seeded.campaignId()).forEach(map ->
+                assertThat(everything).as("all persisted fields of %s are in the provenance text", map.getName())
+                        .contains(map.getName(), String.valueOf(map.getGridWidth()), String.valueOf(map.getGridHeight()),
+                                String.valueOf(map.getCellSizePx()), String.valueOf(map.getSortOrder()), map.getGridType(),
+                                map.getMovementMode(), String.valueOf(map.isShowGrid())));
+        encounterRepository.findByCampaignIdOrderByNameAsc(seeded.campaignId()).forEach(encounter -> {
+            assertThat(everything).as("all persisted fields of %s are in the provenance text", encounter.getName())
+                    .contains(encounter.getName(), encounter.getStatus().name(), encounter.getCombatPhase().name(),
+                            encounter.getEncounterKey(), String.valueOf(encounter.getRound()),
+                            String.valueOf(encounter.getActiveTurnIndex()), String.valueOf(encounter.isLairActionTriggered()),
+                            encounter.getMap() == null ? "" : encounter.getMap().getName());
+            encounterWaveRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()).forEach(wave ->
+                    assertThat(everything).as("wave %s is in the provenance text", wave.getWaveKey())
+                            .contains(wave.getWaveKey(), wave.getName(), wave.getStatus().name(), wave.getTriggerKind().name(),
+                                    String.valueOf(wave.getSortOrder())));
+            encounterWaveRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()).stream()
+                    .filter(wave -> wave.getNotes() != null)
+                    .forEach(wave -> assertThat(everything).as("wave %s notes are in the provenance text", wave.getWaveKey())
+                            .contains(wave.getNotes()));
+            combatantRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()).forEach(combatant ->
+                    assertThat(everything).as("combatant %s is in the provenance text", combatant.getName())
+                            .contains(combatant.getName(), String.valueOf(combatant.getSortOrder()),
+                                    String.valueOf(combatant.getMaxHp()), String.valueOf(combatant.getCurrentHp()),
+                                    combatant.getKind(), String.valueOf(combatant.isDefeated()),
+                                    String.valueOf(combatant.isHidden()), combatant.getConditionsJson()));
+            combatantRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()).stream()
+                    .filter(combatant -> combatant.getNotes() != null)
+                    .forEach(combatant -> assertThat(everything)
+                            .as("combatant %s notes are in the provenance text", combatant.getName())
+                            .contains(combatant.getNotes()));
+        });
+
+        if (shape == ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS) {
+            var reserveNote = combatantRepository.findById(seeded.branchedReserveCombatantIds().get(0))
+                    .orElseThrow().getNotes();
+            assertThat(everything).contains(
+                    "Tideglass Gallery", "12", "10", "48", "Lantern Vault Ambush",
+                    "The vault becomes hostile without a battle map.", "Vault silence",
+                    "The lantern flame bends toward unseen footsteps.", "Encounter: Lantern Vault Ambush",
+                    "main", "ACTIVE", "vault-reinforcements", "Vault reinforcements",
+                    "Synthetic reserve wave.", reserveNote);
+        }
     }
 
     @Test
@@ -316,26 +362,34 @@ class ReleaseRehearsalFixtureTest {
 
     @Test
     void provenanceTextIsolatedAcrossSeededCampaigns() throws IOException {
-        var first = fixture.seed();
-        var second = fixture.seed();
-        var firstEncounter = encounterRepository.findByCampaignIdOrderByNameAsc(first.campaignId()).stream()
-                .findFirst().orElseThrow();
-        var secondEncounter = encounterRepository.findByCampaignIdOrderByNameAsc(second.campaignId()).stream()
-                .findFirst().orElseThrow();
+        var first = fixture.seed(ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS);
+        var second = fixture.seed(ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS);
+        var firstEncounter = encounterRepository.findById(first.branchedEncounterId()).orElseThrow();
+        var secondEncounter = encounterRepository.findById(second.branchedEncounterId()).orElseThrow();
         var firstCombatants = combatantRepository.findByEncounterIdOrderBySortOrderAsc(firstEncounter.getId());
         var secondCombatants = combatantRepository.findByEncounterIdOrderBySortOrderAsc(secondEncounter.getId());
+        var firstReserveCombatant = combatantRepository.findById(first.branchedReserveCombatantIds().get(0)).orElseThrow();
+        var secondReserveCombatant = combatantRepository.findById(second.branchedReserveCombatantIds().get(0)).orElseThrow();
         String firstText = fixture.textualContentOf(first);
         String secondText = fixture.textualContentOf(second);
 
         assertThat(firstEncounter.getEncounterKey()).isNotBlank().isNotEqualTo(secondEncounter.getEncounterKey());
-        assertThat(firstCombatants).hasSize(4);
-        assertThat(secondCombatants).hasSize(4);
-        assertThat(firstCombatants.get(0).getNotes()).isNotBlank().isNotEqualTo(secondCombatants.get(0).getNotes());
-        assertThat(firstText).contains(firstEncounter.getEncounterKey(), firstCombatants.get(0).getNotes())
-                .doesNotContain(secondEncounter.getEncounterKey(), secondCombatants.get(0).getNotes());
-        assertThat(secondText).contains(secondEncounter.getEncounterKey(), secondCombatants.get(0).getNotes())
-                .doesNotContain(firstEncounter.getEncounterKey(), firstCombatants.get(0).getNotes());
-        assertThat(encounterRepository.findByCampaignIdOrderByNameAsc(first.campaignId())).containsExactly(firstEncounter);
-        assertThat(encounterRepository.findByCampaignIdOrderByNameAsc(second.campaignId())).containsExactly(secondEncounter);
+        assertThat(firstCombatants).hasSize(5);
+        assertThat(secondCombatants).hasSize(5);
+        assertThat(firstReserveCombatant.getNotes()).isNotBlank().isNotEqualTo(secondReserveCombatant.getNotes());
+        assertThat(firstText).contains(firstEncounter.getEncounterKey(), firstReserveCombatant.getNotes())
+                .contains("Tideglass Gallery", "Lantern Vault Ambush", "Vault reinforcements")
+                .doesNotContain(secondEncounter.getEncounterKey(), secondReserveCombatant.getNotes());
+        assertThat(secondText).contains(secondEncounter.getEncounterKey(), secondReserveCombatant.getNotes())
+                .contains("Tideglass Gallery", "Lantern Vault Ambush", "Vault reinforcements")
+                .doesNotContain(firstEncounter.getEncounterKey(), firstReserveCombatant.getNotes());
+        assertThat(encounterRepository.findByCampaignIdOrderByNameAsc(first.campaignId()))
+                .extracting(Encounter::getCampaign).allMatch(campaign -> campaign.getId().equals(first.campaignId()));
+        assertThat(encounterRepository.findByCampaignIdOrderByNameAsc(second.campaignId()))
+                .extracting(Encounter::getCampaign).allMatch(campaign -> campaign.getId().equals(second.campaignId()));
+        assertThat(mapRepository.findByCampaignIdOrderBySortOrderAsc(first.campaignId()))
+                .allMatch(map -> map.getCampaign().getId().equals(first.campaignId()));
+        assertThat(mapRepository.findByCampaignIdOrderBySortOrderAsc(second.campaignId()))
+                .allMatch(map -> map.getCampaign().getId().equals(second.campaignId()));
     }
 }

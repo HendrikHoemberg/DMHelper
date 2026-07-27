@@ -63,8 +63,11 @@ The seven gate-fail conditions are asserted at the point each becomes observable
 method comments.
 
 The fixtures are `ReleaseRehearsalFixture.Shape.LINEAR_ONE_MAP` and `BRANCHED_TWO_MAPS`.
-Both are entirely synthetic — `ReleaseRehearsalFixtureTest` fails the build if any published
-campaign's vocabulary appears in one.
+Both are entirely synthetic. `ReleaseRehearsalFixtureTest` checks their provenance against the
+reviewed exclusion vocabulary currently named in that test (`phandelver`, `klarg`, `cragmaw`,
+`wave echo`, `sildar`, `gundren`, `rockseeker`, `neverwinter`, and `tresendar`). This is a
+bounded regression check for the known published vocabulary and fixture content under review,
+not an unbounded guarantee about every possible published campaign.
 
 ## §10 Visual system
 

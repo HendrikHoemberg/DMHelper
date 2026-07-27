@@ -13,6 +13,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransitionRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWaveRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.WaveTriggerKind;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
@@ -72,6 +73,7 @@ public class ReleaseRehearsalFixture {
     private final SceneParticipantRepository participants;
     private final SceneTransitionRepository transitions;
     private final EncounterRepository encounterRepository;
+    private final EncounterWaveRepository encounterWaveRepository;
     private final CombatantRepository combatantRepository;
 
     public ReleaseRehearsalFixture(CampaignRepository campaigns, AdventureService adventures,
@@ -83,6 +85,7 @@ public class ReleaseRehearsalFixture {
                                    SceneRepository scenes, AdventureRepository adventureRepository,
                                    SceneSectionRepository sections, SceneParticipantRepository participants,
                                    SceneTransitionRepository transitions, EncounterRepository encounterRepository,
+                                   EncounterWaveRepository encounterWaveRepository,
                                    CombatantRepository combatantRepository) {
         this.campaigns = campaigns;
         this.adventures = adventures;
@@ -101,6 +104,7 @@ public class ReleaseRehearsalFixture {
         this.participants = participants;
         this.transitions = transitions;
         this.encounterRepository = encounterRepository;
+        this.encounterWaveRepository = encounterWaveRepository;
         this.combatantRepository = combatantRepository;
     }
 
@@ -397,8 +401,9 @@ public class ReleaseRehearsalFixture {
                 block.getName(), block.getSource(), block.getCr(), block.getType(), block.getSize(), block.getAlignment(),
                 block.getAc(), block.getHp(), block.getSpeed(), block.getSkills(), block.getSenses(), block.getLanguages(),
                 block.getTraits(), block.getActions(), block.getBonusActions(), block.getReactions(), block.getSourceKey()));
-        mapRepository.findById(seeded.playableMapId()).ifPresent(map -> append(text, map.getName(), map.getGridWidth(),
-                map.getGridHeight(), map.getCellSizePx(), map.getGridType(), map.getMovementMode(), map.isShowGrid(), map.getDocument()));
+        mapRepository.findByCampaignIdOrderBySortOrderAsc(seeded.campaignId()).forEach(map -> append(text,
+                map.getName(), map.getGridWidth(), map.getGridHeight(), map.getCellSizePx(), map.getSortOrder(),
+                map.getGridType(), map.getMovementMode(), map.isShowGrid(), map.getDocument()));
         handoutRepository.findByCampaignIdOrderByTitleAsc(seeded.campaignId()).forEach(handout -> append(text,
                 handout.getTitle(), handout.getTags(), handout.getFileName(), handout.getContentType(),
                 handout.getSafetyClassification(), handout.getAssetKind(), handout.isDmOnly(), handout.isPresented(),
@@ -417,19 +422,28 @@ public class ReleaseRehearsalFixture {
             append(text, encounter.getName(), encounter.getStatus(), encounter.getCombatPhase(), encounter.getEncounterKey(),
                     encounter.getPrepJson(), encounter.getRewardsJson(), encounter.getLairActionName(),
                     encounter.getLairActionDescription(), encounter.getRound(), encounter.getActiveTurnIndex(),
-                    encounter.isLairActionTriggered(), encounter.getMap() == null ? null : encounter.getMap().getName());
-            encounters.listWaves(encounter.getId()).forEach(wave -> append(text, wave.waveKey(), wave.name(),
-                    wave.status(), wave.triggerKind(), wave.triggerValue(), wave.notes(), wave.combatantCount()));
+                    encounter.getLogSequence(), encounter.isLairActionTriggered(), encounter.getVictoryCueDurationSeconds(),
+                    encounter.getMap() == null ? null : encounter.getMap().getName(),
+                    encounter.getCombatAudioCue() == null ? null : encounter.getCombatAudioCue().getName(),
+                    encounter.getVictoryAudioCue() == null ? null : encounter.getVictoryAudioCue().getName());
+            encounterWaveRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()).forEach(wave -> append(text,
+                    wave.getWaveKey(), wave.getName(), wave.getSortOrder(), wave.getStatus(), wave.getTriggerKind(),
+                    wave.getTriggerValue(), wave.getNotes(),
+                    combatantRepository.countByWaveId(wave.getId())));
             combatantRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()).forEach(combatant -> {
                 append(text, combatant.getName(), combatant.getInitiative(), combatant.getSortOrder(), combatant.getMaxHp(),
-                        combatant.getCurrentHp(), combatant.getTempHp(), combatant.getKind(), combatant.getGroupId(),
-                        combatant.isGroupLeader(), combatant.isDefeated(), combatant.isHidden(), combatant.getConditionsJson(),
-                        combatant.getConcentratingOn(), combatant.getRechargedAbilities(), combatant.getNotes(),
+                        combatant.getTieBreaker(), combatant.getCurrentHp(), combatant.getTempHp(), combatant.getKind(),
+                        combatant.getGroupId(), combatant.isGroupLeader(), combatant.isDefeated(), combatant.isHidden(),
+                        combatant.getConditionsJson(), combatant.getConcentratingOn(), combatant.isConcentrationCheckPending(),
+                        combatant.getLegendaryActionsUsed(), combatant.getLegendaryActionsMax(),
+                        combatant.getLegendaryResistancesUsed(), combatant.getLegendaryResistancesMax(),
+                        combatant.getRechargedAbilities(), combatant.getNotes(),
                         combatant.getStartX(), combatant.getStartY(), combatant.getPlacementRegionKey(),
                         combatant.getThreatKind(), combatant.getThreatId());
                 if (combatant.getWave() != null) {
-                    append(text, combatant.getWave().getWaveKey(), combatant.getWave().getStatus(),
-                            combatant.getWave().getTriggerKind());
+                    append(text, combatant.getWave().getWaveKey(), combatant.getWave().getName(),
+                            combatant.getWave().getStatus(), combatant.getWave().getTriggerKind(),
+                            combatant.getWave().getTriggerValue(), combatant.getWave().getNotes());
                 }
                 if (combatant.getStatBlock() != null) {
                     statBlocks.findById(combatant.getStatBlock().getId()).ifPresent(block -> append(text,
