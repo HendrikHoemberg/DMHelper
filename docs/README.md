@@ -10,5 +10,7 @@ Welcome to the DMHelper documentation. This directory contains:
 
 ## Key Reference Files
 
+- [All-in-One Release Gate](product/all-in-one-release-gate.md) — Executable release gate for the all-in-one premise.
+
 - [Campaign Capabilities](campaign-capabilities.md) — Implemented capability matrix.
 - [Campaign Format V2](campaign-format-v2.md) — V2 campaign format specification.
