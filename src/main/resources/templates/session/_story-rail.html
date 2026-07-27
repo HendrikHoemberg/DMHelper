@@ -4,8 +4,8 @@
 <div class="story-rail-inner">
   <div class="sidebar-section">
     <h3>Story</h3>
-    <div class="scene-card" data-current-scene>
-      <h4 th:text="${view.title}">Scene Title</h4>
+    <div class="scene-card">
+      <h4 data-current-scene th:text="${view.title}">Scene Title</h4>
       <th:block th:if="${view.readAloud != null}">
         <div class="structured-block structured-read-aloud u-mb-xs">
           <span class="badge badge-info">Read Aloud</span>

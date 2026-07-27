@@ -4,6 +4,7 @@ import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.LoadState;
 import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionLifecycleService;
 import dev.hendrikhoemberg.dmhelper.support.ReleaseRehearsalFixture;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,7 @@ class ReleaseRehearsalTest {
 
     @LocalServerPort private int port;
     @Autowired private ReleaseRehearsalFixture fixture;
+    @Autowired private SessionLifecycleService lifecycleService;
 
     private static Playwright playwright;
     private static Browser browser;
@@ -40,6 +42,7 @@ class ReleaseRehearsalTest {
     private String sceneTitleVisitedDuringRehearsal;
     private String defeatedCombatantName;
     private String encounterName;
+    private String planTitle;
 
     @BeforeAll
     void launch() throws Exception {
@@ -107,6 +110,13 @@ class ReleaseRehearsalTest {
         page.locator("a[href$='/session'], button[data-run-session]").first().click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
         page.waitForFunction("window.cockpitLayout?.mounted === true");
+        assertThat(lifecycleService.start(seeded.campaignId(), seeded.playableMapId()).getStatus().name())
+                .as("the Run entry point starts the seeded session").isEqualTo("RUNNING");
+        page.reload();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        page.waitForFunction("window.cockpitLayout?.mounted === true");
+        assertThat(page.locator("[data-session-status]").getAttribute("data-session-status"))
+                .as("the cockpit reports an active session").isEqualTo("RUNNING");
         assertThat(page.url()).endsWith("/session");
         assertVisibleWithoutScrolling("current scene", "[data-runtime-module='story'] [data-current-scene]");
     }
@@ -153,6 +163,12 @@ class ReleaseRehearsalTest {
         firstRow.locator(".hp-delta-input").press("Enter");
         page.waitForFunction("previous => document.querySelector('.combatant-row .combatant-hp')?.textContent !== previous", hpBefore);
         assertThat(page.locator(".combatant-row.defeated").count()).isGreaterThan(0);
+        page.locator(".combatant-row").first().click();
+        Locator condition = page.locator(".detail-conditions input[type='checkbox']").first();
+        condition.waitFor();
+        condition.check();
+        page.waitForFunction("() => document.querySelector('.detail-conditions input[type=checkbox]')?.checked === true");
+        assertThat(condition.isChecked()).as("a condition action is reflected in the tracker").isTrue();
         page.locator("[data-action='next-turn']").click();
         page.locator("[data-action='next-turn']").click();
     }
@@ -174,6 +190,25 @@ class ReleaseRehearsalTest {
         page.locator("[data-runtime-module='quick-notes'] textarea, [data-runtime-module='quick-notes'] input[type='text']").first().fill("The warden fled through the sluice gate.");
         page.locator("[data-runtime-module='quick-notes'] button[type='submit']").first().click();
         page.waitForSelector("[data-runtime-module='quick-notes'] .quicknote-row");
+        planTitle = "Release rehearsal plan";
+        page.evaluate("""
+                async ({campaignId, title}) => {
+                    const list = await fetch(`/api/v1/campaigns/${campaignId}/quicknotes?targetType=CAMPAIGN&targetId=${campaignId}`);
+                    const notes = await list.json();
+                    const note = notes.at(-1);
+                    if (!note) throw new Error('The rehearsal quick note was not returned by the runtime.');
+                    const params = new URLSearchParams({title, type: 'SESSION_PLAN'});
+                    const promoted = await fetch(
+                        `/api/v1/campaigns/${campaignId}/quicknotes/${note.id}/promote?${params}`, {method: 'POST'});
+                    if (!promoted.ok) throw new Error(`Session plan promotion failed: ${promoted.status}`);
+                    return await promoted.json();
+                }
+                """, java.util.Map.of("campaignId", seeded.campaignId().toString(), "title", planTitle));
+        page.reload();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        page.waitForFunction("window.cockpitLayout?.mounted === true");
+        assertThat(page.locator("[data-runtime-module='session-plan'] h3").textContent().trim())
+                .as("the session plan reflects the promoted rehearsal update").isEqualTo(planTitle);
         assertVisibleWithoutScrolling("save status", "#runtimeStatus [data-status-save]");
         page.waitForFunction("() => ['saved', 'idle'].includes(document.querySelector('#runtimeStatus [data-status-save]').dataset.state)");
     }
@@ -182,13 +217,21 @@ class ReleaseRehearsalTest {
     void step8_aReviewedPlayerSafeAssetIsPresentedAndTheDisplayAgrees() {
         openCockpit();
         Locator presentation = page.locator("[data-runtime-module='presentation']");
-        presentation.locator("[data-present-handout='" + seeded.playerSafeHandoutId() + "']").click();
+        Locator picker = presentation.locator("#presentationHandoutPicker");
+        picker.selectOption(seeded.playerSafeHandoutId().toString());
+        page.locator("#presentationPreview").waitFor();
+        page.locator("#previewContainer img").waitFor();
+        page.locator("#presentationPreview button").filter(new Locator.FilterOptions().setHasText("Present to table")).click();
         page.waitForFunction("() => document.querySelector('[data-presentation-mode]')?.dataset.presentationMode === 'HANDOUT'");
+        assertThat(page.locator("#presentationPreview").getAttribute("style")).doesNotContain("display: block");
         assertVisibleWithoutScrolling("presentation state", "[data-presentation-mode]");
         Page playerPage = context.newPage();
         failures.attach(playerPage);
         playerPage.navigate(base + "/player");
         playerPage.waitForLoadState(LoadState.NETWORKIDLE);
+        playerPage.locator(".pv-handout img").waitFor();
+        assertThat(playerPage.locator(".pv-handout img").getAttribute("src"))
+                .isEqualTo("/player/files/" + seeded.playerSafeHandoutId());
         assertThat(playerPage.locator("[data-screen-sensitive]").count()).isZero();
         assertThat(playerPage.content()).doesNotContain(String.valueOf(seeded.dmSourceHandoutId()));
         playerPage.close();
@@ -202,6 +245,10 @@ class ReleaseRehearsalTest {
         page.locator("button[x-ref='sessionButton']").click();
         Locator lifecycle = page.locator("#sessionLifecycleDialog");
         lifecycle.waitFor();
+        page.locator("button").filter(new Locator.FilterOptions().setHasText("Review & Complete")).click();
+        page.locator("#sessionDraftTitle").fill("Release rehearsal session");
+        page.locator("#sessionDraftBody").waitFor();
+        assertThat(page.locator("#sessionDraftBody").inputValue()).isNotBlank();
         BoundingBox box = lifecycle.boundingBox();
         assertThat(box.y + box.height).isLessThanOrEqualTo(768.0);
         lifecycle.locator("button[data-complete-session]").click();
@@ -212,8 +259,13 @@ class ReleaseRehearsalTest {
     void step10_theGeneratedLogAgreesWithWhatHappened() {
         page.navigate(base + "/campaigns/" + seeded.campaignId() + "/notes");
         page.waitForLoadState(LoadState.NETWORKIDLE);
-        page.locator(".note-body, [data-session-log]").first().waitFor();
-        String log = page.textContent("body");
+        Locator sessionLogCard = page.locator("#notes-list .card")
+                .filter(new Locator.FilterOptions().setHasText("Session Log")).first();
+        sessionLogCard.waitFor();
+        sessionLogCard.locator("a").click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        page.locator(".note-body").waitFor();
+        String log = page.textContent(".note-body");
         assertThat(log).containsPattern("\\d{1,2}:\\d{2}").containsAnyOf("CET", "CEST", "Europe/Berlin");
         assertThat(log).contains(sceneTitleVisitedDuringRehearsal);
         assertThat(log).contains(defeatedCombatantName);

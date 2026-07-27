@@ -29,3 +29,28 @@ The template changes add only the prescribed `data-*` hooks to existing controls
 - Playwright host dependency validation warns that the six shared libraries above are unavailable.
 - `/usr/bin/chromium --headless --no-sandbox ...` terminates with a sandboxed-environment `Trace/breakpoint trap` (exit 133).
 - Maven also emits the existing Lombok `sun.misc.Unsafe` deprecation warning and Flyway’s H2-version compatibility warning.
+
+## Review round 1 evidence
+
+### RED
+
+- Revised `ReleaseRehearsalTest` was run before the round-1 source correction. It compiled, started Spring Boot, and then stopped at the reproducible Playwright host-dependency warning/hang.
+- A sequential ordinary-sandbox run also reproduced `java.net.SocketException: Operation not permitted` while Tomcat attempted to bind the random test port. The same command was retried with escalation; Tomcat then started, but Playwright still stopped at the missing-library boundary.
+
+### GREEN / focused verification
+
+- `./mvnw -q -DskipTests test-compile` passed after the round-1 test changes.
+- `./mvnw -q test -Dtest=SessionCockpitTemplateContractTest,RuntimeStatusSurfaceTest,CombatLegibilityContractTest,BrowserFailureCollectorTest` passed.
+- The full sequential rehearsal could not reach its browser assertions in this environment; no assertion was weakened to disguise that limitation.
+
+### Round-1 changes
+
+- Step 2 now preserves the Run navigation semantics, starts the seeded campaign through the existing `SessionLifecycleService.start` contract, reloads the cockpit, and asserts `RUNNING` state before later ordered steps.
+- Step 3 reads the actual scene title element; the existing `data-current-scene` hook moved from the card container to that title.
+- Step 7 promotes the captured quick note through the existing quick-note promotion API as a `SESSION_PLAN`, reloads the cockpit, and asserts the plan title is rendered by the session-plan module.
+- Step 5 checks an existing encounter condition checkbox and asserts the persisted checked state alongside damage, defeat, and turns.
+- Step 8 uses `selectOption` on the owning handout picker, completes the existing preview flow, asserts the preview asset and HANDOUT mode, and verifies `/player` renders the selected safe asset with no DM source ID or screen-sensitive markup.
+- Step 9 enters the existing generated review title/body before completion.
+- Step 10 locates the generated `SESSION_LOG` card in the real notes list, opens its note detail, and asserts the actual `.note-body` content for time zone, visited scene title, defeated combatant, quick-note text, and encounter name.
+
+Round 1 changed only the rehearsal test and the prescribed scene-title hook; no database/entity/schema changes were made.
