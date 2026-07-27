@@ -392,4 +392,23 @@ class ReleaseRehearsalFixtureTest {
         assertThat(mapRepository.findByCampaignIdOrderBySortOrderAsc(second.campaignId()))
                 .allMatch(map -> map.getCampaign().getId().equals(second.campaignId()));
     }
+
+    @Test
+    void branchedMapSurfacesAreCampaignSpecificInProvenanceText() throws IOException {
+        var first = fixture.seed(ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS);
+        var second = fixture.seed(ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS);
+        var firstMaps = mapRepository.findByCampaignIdOrderBySortOrderAsc(first.campaignId());
+        var secondMaps = mapRepository.findByCampaignIdOrderBySortOrderAsc(second.campaignId());
+        String firstText = fixture.textualContentOf(first);
+        String secondText = fixture.textualContentOf(second);
+
+        assertThat(firstMaps).hasSize(2);
+        assertThat(secondMaps).hasSize(2);
+        assertThat(firstMaps).extracting(m -> m.getName())
+                .doesNotContainAnyElementsOf(secondMaps.stream().map(m -> m.getName()).toList());
+        assertThat(firstText).contains(firstMaps.get(0).getName(), firstMaps.get(1).getName())
+                .doesNotContain(secondMaps.get(0).getName(), secondMaps.get(1).getName());
+        assertThat(secondText).contains(secondMaps.get(0).getName(), secondMaps.get(1).getName())
+                .doesNotContain(firstMaps.get(0).getName(), firstMaps.get(1).getName());
+    }
 }

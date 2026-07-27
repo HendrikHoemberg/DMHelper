@@ -184,7 +184,7 @@ public class ReleaseRehearsalFixture {
             participants.save(participant);
         }
 
-        var map = maps.create(campaignId, "Beacon Undercroft", 20, 15, 64);
+        var map = maps.create(campaignId, "Beacon Undercroft [" + suffix + "]", 20, 15, 64);
         maps.updateMode(map.getId(), "GRID", true);
         hostile.setMapRequirement(SceneMapRequirement.REQUIRED);
         hostile.setMap(map);
@@ -205,7 +205,7 @@ public class ReleaseRehearsalFixture {
         }
 
         if (shape == Shape.BRANCHED_TWO_MAPS) {
-            var secondMap = maps.create(campaignId, "Tideglass Gallery", 12, 10, 48);
+            var secondMap = maps.create(campaignId, "Tideglass Gallery [" + suffix + "]", 12, 10, 48);
             maps.updateMode(secondMap.getId(), "GRID", true);
             branch.setMapRequirement(SceneMapRequirement.REQUIRED);
             branch.setMap(secondMap);
