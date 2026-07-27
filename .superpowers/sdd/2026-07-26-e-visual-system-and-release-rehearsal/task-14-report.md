@@ -74,3 +74,20 @@ Round 1 changed only the rehearsal test and the prescribed scene-title hook; no 
 - Step 5 reloads the cockpit after the condition mutation, reopens the combatant detail, and asserts the condition remains checked after server-backed encounter state is reloaded.
 
 Round 2 made no player-safety, routing, database, schema, or entity changes.
+
+## Review round 3 evidence
+
+### RED
+
+- Strengthened step 5 so the actual condition checkbox action is wrapped in a Playwright response wait for the existing `PUT /api/v1/combatants/{id}/conditions` endpoint and requires a 2xx response before reloading. The focused `./mvnw -q test -Dtest=ReleaseRehearsalTest` run reached Spring Boot startup but was blocked before browser execution by the known missing Playwright host libraries.
+
+### GREEN / focused verification
+
+- `./mvnw -q -DskipTests test-compile` passed with the response predicate and status assertion.
+- `./mvnw -q test -Dtest=SessionCockpitTemplateContractTest,RuntimeStatusSurfaceTest,CombatLegibilityContractTest,BrowserFailureCollectorTest` passed sequentially.
+- The corrected `ReleaseRehearsalTest` was retried with socket permission; Tomcat started, but Playwright again stopped at the missing-library boundary (`libicudata.so.66`, `libicui18n.so.66`, `libicuuc.so.66`, `libxml2.so.2`, `libwebp.so.6`, `libffi.so.7`). The server-backed reload assertion and `BrowserFailureCollector` remain intact.
+
+### Round-3 changes
+
+- `ReleaseRehearsalTest` now waits for and validates the condition mutation response around `condition.check()` before performing the existing reload and persisted checked-state assertion.
+- No production, player-safety, routing, database, schema, or entity changes were made.

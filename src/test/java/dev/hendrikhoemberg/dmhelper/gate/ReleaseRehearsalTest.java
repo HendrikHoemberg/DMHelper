@@ -165,7 +165,14 @@ class ReleaseRehearsalTest {
         page.locator(".combatant-row").first().click();
         Locator condition = page.locator(".detail-conditions input[type='checkbox']").first();
         condition.waitFor();
-        condition.check();
+        Response conditionResponse = page.waitForResponse(
+                response -> response.url().contains("/api/v1/combatants/")
+                        && response.url().endsWith("/conditions")
+                        && response.request().method().equals("PUT"),
+                condition::check);
+        assertThat(conditionResponse.status())
+                .as("the condition update is accepted by the server")
+                .isBetween(200, 299);
         page.waitForFunction("() => document.querySelector('.detail-conditions input[type=checkbox]')?.checked === true");
         assertThat(condition.isChecked()).as("a condition action is reflected in the tracker").isTrue();
         page.reload();
