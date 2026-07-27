@@ -2,8 +2,11 @@
 
 The executable gate defined in
 `docs/superpowers/specs/2026-07-22-phandelver-all-in-one-corrective-design.md` §11.
-Every row names the test that proves it. `ReleaseGateIndexContractTest` fails if a named
-class disappears, so this table cannot drift away from the suite.
+Every requirement row names an executable proof. `ReleaseGateIndexContractTest` parses the
+§11.1 and §11.2 tables, requires each row to name at least one proof, and resolves every
+backticked `*Test` or `*Test#method` reference to `src/test/java` and its method declaration.
+The same reference check covers the representative §11.3 rehearsal claim, so the index cannot
+silently drift away from the suite.
 
 Run the core browser gate (the indexed §11.1 proofs and release-index contract are also run by the full gate):
 
@@ -40,9 +43,22 @@ Run the full release gate; this command must pass before the all-in-one premise 
 
 ## §11.3 Representative release rehearsal
 
-All ten steps, run against two synthetic campaign shapes, in `ReleaseRehearsalTest`
-(`Linear` and `Branched` nested classes). The seven gate-fail conditions are asserted at the
-point each becomes observable; see the method comments.
+All ten steps, run against two synthetic campaign shapes, are executable methods in
+`ReleaseRehearsalTest`:
+
+`ReleaseRehearsalTest#step1_readinessReportIsInspectedAndClear`,
+`ReleaseRehearsalTest#step2_sessionStartsAtTheSelectedScene`,
+`ReleaseRehearsalTest#step3_explorationAndABranchAreNavigatedWithoutLeavingTheCockpit`,
+`ReleaseRehearsalTest#step4_theEncounterIsCreatedFromTheSceneInAtMostTwoActions`,
+`ReleaseRehearsalTest#step5_initiativeDamageConditionsDefeatAndTurnsResolve`,
+`ReleaseRehearsalTest#step6_statblocksAndRulesAreConsultedInsideDmhelper`,
+`ReleaseRehearsalTest#step7_notesAreCapturedAndThePlanIsUpdated`,
+`ReleaseRehearsalTest#step8_aReviewedPlayerSafeAssetIsPresentedAndTheDisplayAgrees`,
+`ReleaseRehearsalTest#step9_theEncounterAndSessionAreCompleted`, and
+`ReleaseRehearsalTest#step10_theGeneratedLogAgreesWithWhatHappened`.
+
+They run through the `Linear` and `Branched` nested classes. The seven gate-fail conditions
+are asserted at the point each becomes observable; see the method comments.
 
 The fixtures are `ReleaseRehearsalFixture.Shape.LINEAR_ONE_MAP` and `BRANCHED_TWO_MAPS`.
 Both are entirely synthetic — `ReleaseRehearsalFixtureTest` fails the build if any published
