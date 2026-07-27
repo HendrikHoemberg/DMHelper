@@ -275,4 +275,93 @@ class RuntimeStatusJavascriptContractTest {
                     .containsEntry("tablePolls", 1);
         }
     }
+
+    @Test
+    void aFailedHtmxRequestSettlesOnceWhenResponseErrorPrecedesAfterRequest() {
+        try (BrowserContext context = browser.newContext()) {
+            Page page = context.newPage();
+            page.setContent("""
+                    <div id="runtimeStatus">
+                      <span data-status-save data-state="idle">Up to date</span>
+                      <span data-status-table data-state="disconnected">No table screen</span>
+                    </div>
+                    """);
+            page.evaluate("""
+                    () => {
+                      window.fetch = async url => {
+                        if (url === '/api/table/status') {
+                          window.tablePolls = (window.tablePolls || 0) + 1;
+                          return {ok: true, json: async () => ({connected: 0})};
+                        }
+                        return {ok: true, status: 204, headers: {get: () => ''}};
+                      };
+                    }
+                    """);
+            page.addScriptTag(new Page.AddScriptTagOptions()
+                    .setPath(Path.of("src/main/resources/static/js/runtime-status.js").toAbsolutePath()));
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> states = (Map<String, Object>) page.evaluate("""
+                    async () => {
+                      await new Promise(resolve => setTimeout(resolve, 0));
+                      const failedRequest = {verb: 'POST'};
+                      const failedXhr = {status: 500};
+                      const concurrentRequest = {verb: 'POST'};
+                      const concurrentXhr = {status: 204};
+                      document.body.dispatchEvent(new CustomEvent('htmx:beforeRequest', {
+                        detail: {requestConfig: failedRequest, xhr: failedXhr}
+                      }));
+                      document.body.dispatchEvent(new CustomEvent('htmx:beforeRequest', {
+                        detail: {requestConfig: concurrentRequest, xhr: concurrentXhr}
+                      }));
+                      const busy = document.querySelector('[data-status-save]').dataset.state;
+
+                      document.body.dispatchEvent(new CustomEvent('htmx:responseError', {
+                        detail: {requestConfig: failedRequest, xhr: failedXhr}
+                      }));
+                      document.body.dispatchEvent(new CustomEvent('htmx:afterRequest', {
+                        detail: {requestConfig: failedRequest, xhr: failedXhr}
+                      }));
+                      const afterFailedRequest = document.querySelector('[data-status-save]').dataset.state;
+
+                      const cleanRequest = {verb: 'POST'};
+                      const cleanXhr = {status: 204};
+                      document.body.dispatchEvent(new CustomEvent('htmx:beforeRequest', {
+                        detail: {requestConfig: cleanRequest, xhr: cleanXhr}
+                      }));
+                      const cleanBusy = document.querySelector('[data-status-save]').dataset.state;
+
+                      document.body.dispatchEvent(new CustomEvent('htmx:afterRequest', {
+                        detail: {requestConfig: concurrentRequest, xhr: concurrentXhr}
+                      }));
+                      const afterConcurrentSuccess = document.querySelector('[data-status-save]').dataset.state;
+
+                      document.body.dispatchEvent(new CustomEvent('htmx:afterRequest', {
+                        detail: {requestConfig: cleanRequest, xhr: cleanXhr}
+                      }));
+                      const afterOverlappingClean = document.querySelector('[data-status-save]').dataset.state;
+
+                      const laterRequest = {verb: 'POST'};
+                      const laterXhr = {status: 204};
+                      document.body.dispatchEvent(new CustomEvent('htmx:beforeRequest', {
+                        detail: {requestConfig: laterRequest, xhr: laterXhr}
+                      }));
+                      document.body.dispatchEvent(new CustomEvent('htmx:afterRequest', {
+                        detail: {requestConfig: laterRequest, xhr: laterXhr}
+                      }));
+                      const laterSaved = document.querySelector('[data-status-save]').dataset.state;
+                      return {busy, afterFailedRequest, afterConcurrentSuccess, cleanBusy, afterOverlappingClean, laterSaved, tablePolls: window.tablePolls};
+                    }
+                    """);
+
+            assertThat(states)
+                    .containsEntry("busy", "busy")
+                    .containsEntry("afterFailedRequest", "error")
+                    .containsEntry("afterConcurrentSuccess", "busy")
+                    .containsEntry("cleanBusy", "busy")
+                    .containsEntry("afterOverlappingClean", "busy")
+                    .containsEntry("laterSaved", "saved")
+                    .containsEntry("tablePolls", 1);
+        }
+    }
 }

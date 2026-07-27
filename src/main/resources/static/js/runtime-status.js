@@ -15,6 +15,7 @@
     let mutationEpoch = 0;
     let failedMutationEpoch = null;
     let settleTimer = null;
+    const htmxRequestStates = new WeakMap();
 
     function setSave(state, label) {
       save.dataset.state = state;
@@ -47,31 +48,55 @@
       return (detail?.options?.method || 'GET').toLowerCase() !== 'get';
     }
 
+    function htmxRequestState(detail) {
+      const request = detail?.xhr || detail?.requestConfig;
+      if (!request || (typeof request !== 'object' && typeof request !== 'function')) return null;
+      let state = htmxRequestStates.get(request);
+      if (!state) {
+        state = {settled: false};
+        htmxRequestStates.set(request, state);
+      }
+      return state;
+    }
+
+    function settleHtmx(detail) {
+      const state = htmxRequestState(detail);
+      if (state?.settled) return;
+      if (state) state.settled = true;
+      htmxInFlight = Math.max(0, htmxInFlight - 1);
+    }
+
     document.body.addEventListener('htmx:beforeRequest', (evt) => {
       const verb = (evt.detail.requestConfig?.verb || '').toLowerCase();
       if (verb === 'get') return;
+      htmxRequestState(evt.detail);
       startMutation('htmx');
     });
 
     document.body.addEventListener('htmx:afterRequest', (evt) => {
       const verb = (evt.detail.requestConfig?.verb || '').toLowerCase();
       if (verb === 'get') return;
-      htmxInFlight = Math.max(0, htmxInFlight - 1);
+      settleHtmx(evt.detail);
       const xhr = evt.detail.xhr;
       if (!xhr || xhr.status < 200 || xhr.status >= 300) return;
       markSaved();
     });
 
     function failed(source) {
-      if (source === 'htmx') htmxInFlight = Math.max(0, htmxInFlight - 1);
       if (source === 'dm') dmInFlight = Math.max(0, dmInFlight - 1);
       failedMutationEpoch = mutationEpoch;
       clearTimeout(settleTimer);
       setSave('error', 'Not saved');
     }
 
-    document.body.addEventListener('htmx:responseError', () => failed('htmx'));
-    document.body.addEventListener('htmx:sendError', () => failed('htmx'));
+    document.body.addEventListener('htmx:responseError', (evt) => {
+      settleHtmx(evt.detail);
+      failed('htmx');
+    });
+    document.body.addEventListener('htmx:sendError', (evt) => {
+      settleHtmx(evt.detail);
+      failed('htmx');
+    });
 
     document.addEventListener('dm:request-start', (evt) => {
       if (!isMutation(evt.detail)) return;
