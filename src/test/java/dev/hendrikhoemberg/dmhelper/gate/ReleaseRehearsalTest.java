@@ -4,7 +4,6 @@ import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.LoadState;
 import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
-import dev.hendrikhoemberg.dmhelper.session.service.SessionLifecycleService;
 import dev.hendrikhoemberg.dmhelper.support.ReleaseRehearsalFixture;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +28,6 @@ class ReleaseRehearsalTest {
 
     @LocalServerPort private int port;
     @Autowired private ReleaseRehearsalFixture fixture;
-    @Autowired private SessionLifecycleService lifecycleService;
 
     private static Playwright playwright;
     private static Browser browser;
@@ -110,9 +108,10 @@ class ReleaseRehearsalTest {
         page.locator("a[href$='/session'], button[data-run-session]").first().click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
         page.waitForFunction("window.cockpitLayout?.mounted === true");
-        assertThat(lifecycleService.start(seeded.campaignId(), seeded.playableMapId()).getStatus().name())
-                .as("the Run entry point starts the seeded session").isEqualTo("RUNNING");
-        page.reload();
+        page.locator("button[x-ref='sessionButton']").click();
+        Locator lifecycle = page.locator("#sessionLifecycleDialog");
+        lifecycle.waitFor();
+        lifecycle.locator("button").filter(new Locator.FilterOptions().setHasText("Start")).first().click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
         page.waitForFunction("window.cockpitLayout?.mounted === true");
         assertThat(page.locator("[data-session-status]").getAttribute("data-session-status"))
@@ -169,6 +168,16 @@ class ReleaseRehearsalTest {
         condition.check();
         page.waitForFunction("() => document.querySelector('.detail-conditions input[type=checkbox]')?.checked === true");
         assertThat(condition.isChecked()).as("a condition action is reflected in the tracker").isTrue();
+        page.reload();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        page.waitForFunction("window.cockpitLayout?.mounted === true");
+        page.locator(".combatant-row").first().click();
+        Locator persistedCondition = page.locator(".detail-conditions input[type='checkbox']").first();
+        persistedCondition.waitFor();
+        page.waitForFunction("() => document.querySelector('.detail-conditions input[type=checkbox]')?.checked === true");
+        assertThat(persistedCondition.isChecked())
+                .as("the condition remains checked after the encounter module reloads from server state")
+                .isTrue();
         page.locator("[data-action='next-turn']").click();
         page.locator("[data-action='next-turn']").click();
     }

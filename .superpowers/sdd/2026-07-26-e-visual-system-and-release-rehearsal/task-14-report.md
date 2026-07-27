@@ -54,3 +54,23 @@ The template changes add only the prescribed `data-*` hooks to existing controls
 - Step 10 locates the generated `SESSION_LOG` card in the real notes list, opens its note detail, and asserts the actual `.note-body` content for time zone, visited scene title, defeated combatant, quick-note text, and encounter name.
 
 Round 1 changed only the rehearsal test and the prescribed scene-title hook; no database/entity/schema changes were made.
+
+## Review round 2 evidence
+
+### RED
+
+- Removed the injected lifecycle start and ran `./mvnw -q test -Dtest=ReleaseRehearsalTest` before the round-2 implementation. The test compiled and Spring Boot started, but Playwright could not launch because the environment lacks `libicudata.so.66`, `libicui18n.so.66`, `libicuuc.so.66`, `libxml2.so.2`, `libwebp.so.6`, and `libffi.so.7`.
+- The RED test now asserts the UI-reported `RUNNING` state immediately after the existing lifecycle dialog Start action, so it will fail on a broken UI start route rather than injecting state.
+
+### GREEN / focused verification
+
+- `./mvnw -q -DskipTests test-compile` passed after the round-2 test changes.
+- `./mvnw -q test -Dtest=SessionCockpitTemplateContractTest,RuntimeStatusSurfaceTest,CombatLegibilityContractTest,BrowserFailureCollectorTest` passed sequentially after the round-2 changes.
+- The corrected `ReleaseRehearsalTest` was rerun with escalated socket permission; Tomcat started, then the run stopped at the same Playwright host-dependency/browser-launch boundary. No browser assertion was weakened.
+
+### Round-2 changes
+
+- Step 2 now uses only the existing Run link followed by the existing Session lifecycle dialog Start button, then asserts the rendered `data-session-status="RUNNING"`. No lifecycle service is injected or called by the rehearsal.
+- Step 5 reloads the cockpit after the condition mutation, reopens the combatant detail, and asserts the condition remains checked after server-backed encounter state is reloaded.
+
+Round 2 made no player-safety, routing, database, schema, or entity changes.
