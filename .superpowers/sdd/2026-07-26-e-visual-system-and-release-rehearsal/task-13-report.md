@@ -64,3 +64,34 @@ The source fix captures the exact clicked module Focus button and restores focus
 
 - Playwright reported missing host libraries: `libicudata.so.66`, `libicui18n.so.66`, `libicuuc.so.66`, `libxml2.so.2`, `libwebp.so.6`, and `libffi.so.7`; Chromium still launched and completed the focused gate.
 - The Maven run emitted the existing Lombok `sun.misc.Unsafe` deprecation warning and Flyway’s existing H2-version warning.
+
+## Fix round 2
+
+### RED
+
+```bash
+./mvnw -q test -Dtest=ViewportAccessibilityGateTest
+```
+
+Fresh re-review reproduction was red: 9 tests ran with 1 failure in `everyFocusedLayerTrapsAndRestoresFocus`; the focused-module layer failed its initial-focus assertion in the responsive duplicate-shell path. The gate was strengthened to choose the visible opener and mark that exact DOM element, confirming the source lookup—not the assertion’s global selector—was selecting the wrong module shell.
+
+### GREEN
+
+```bash
+./mvnw -q test -Dtest=ViewportAccessibilityGateTest
+```
+
+Result: exit 0; all 9 tests passed sequentially. `focusModule` now resolves the shell from the actual opener element, with a visible-shell fallback for programmatic callers, and restoration is asserted against the exact still-connected opener for both the session dialog and focused-module layer at 1366x768 and 1920x1080.
+
+## Fix round 2 changed paths
+
+- `src/test/java/dev/hendrikhoemberg/dmhelper/gate/ViewportAccessibilityGateTest.java`
+- `src/main/resources/static/js/cockpit-layout.js`
+- `.superpowers/sdd/2026-07-26-e-visual-system-and-release-rehearsal/task-13-report.md`
+
+No database, entity, controller, schema, or unrelated styling changes were made.
+
+## Fix round 2 environment warnings
+
+- Playwright reported missing host libraries: `libicudata.so.66`, `libicui18n.so.66`, `libicuuc.so.66`, `libxml2.so.2`, `libwebp.so.6`, and `libffi.so.7`; Chromium still launched and completed the focused gate.
+- The Maven run emitted the existing Lombok `sun.misc.Unsafe` deprecation warning and Flyway’s existing H2-version warning.

@@ -1440,7 +1440,14 @@
     focusModule(key, returnElement = document.activeElement) {
       const def = this.modules.get(key);
       if (!def || !def.focusSupported) return false;
-      const shell = document.querySelector(`[data-module-key="${key}"]`);
+      const shellSelector = `[data-module-key="${key}"]`;
+      const openerShell = returnElement?.closest?.(shellSelector);
+      const shell = openerShell || Array.from(document.querySelectorAll(shellSelector))
+        .find((candidate) => {
+          const style = window.getComputedStyle(candidate);
+          return !candidate.hidden && style.display !== 'none'
+            && style.visibility !== 'hidden' && candidate.getClientRects().length > 0;
+        });
       if (!shell || !this.focusLayer || !this.focusMount) return false;
       if (this.focusedModuleKey) this.restoreFocus({ silent: true });
 

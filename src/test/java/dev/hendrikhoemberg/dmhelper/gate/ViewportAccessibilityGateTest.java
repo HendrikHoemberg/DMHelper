@@ -81,6 +81,15 @@ class ViewportAccessibilityGateTest {
         page.waitForFunction("window.cockpitLayout?.mounted === true");
     }
 
+    private Locator visibleFirst(String selector) {
+        Locator candidates = page.locator(selector);
+        for (int index = 0; index < candidates.count(); index++) {
+            Locator candidate = candidates.nth(index);
+            if (candidate.isVisible()) return candidate;
+        }
+        throw new AssertionError("No visible element matched " + selector);
+    }
+
     @Test
     void theCockpitNeverScrollsTheDocument() {
         for (int[] viewport : VIEWPORTS) {
@@ -285,15 +294,20 @@ class ViewportAccessibilityGateTest {
                     new Layer("button[x-ref='sessionButton']", "#sessionLifecycleDialog"),
                     new Layer("[data-module-key='story'] [data-module-focus]", ".cockpit-focus-layer"))) {
 
-                Locator opener = page.locator(layer.opener()).first();
+                Locator opener = visibleFirst(layer.opener());
+                String openerToken = "task13-opener-" + viewport[0] + "-" + layer.container();
+                opener.evaluate("(element, token) => element.setAttribute('data-task13-opener', token)", openerToken);
                 opener.focus();
                 opener.press("Enter");
                 page.locator(layer.container()).waitFor(new Locator.WaitForOptions().setState(
                         com.microsoft.playwright.options.WaitForSelectorState.VISIBLE));
 
+                String activeElement = (String) page.evaluate(
+                        "() => document.activeElement?.outerHTML?.slice(0, 180) || '<none>'");
                 assertThat((boolean) page.evaluate(
                         "sel => document.activeElement?.closest(sel) !== null", layer.container()))
-                        .as("%s takes initial focus at %dx%d", layer.container(), viewport[0], viewport[1])
+                        .as("%s takes initial focus at %dx%d; active=%s", layer.container(), viewport[0], viewport[1],
+                                activeElement)
                         .isTrue();
 
                 Number focusableCount = (Number) page.evaluate("""
@@ -371,7 +385,7 @@ class ViewportAccessibilityGateTest {
                         }
                         """, layer.container());
                 assertThat((boolean) page.evaluate(
-                        "sel => document.activeElement === document.querySelector(sel)", layer.opener()))
+                        "token => document.activeElement?.getAttribute('data-task13-opener') === token", openerToken))
                         .as("%s restores focus to its opener at %dx%d", layer.container(), viewport[0], viewport[1])
                         .isTrue();
             }
