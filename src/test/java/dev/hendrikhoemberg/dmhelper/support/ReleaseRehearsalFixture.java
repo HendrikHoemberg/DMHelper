@@ -250,6 +250,7 @@ public class ReleaseRehearsalFixture {
         partyIds.add(party(campaign, "Ordo Brack", 14, 27, 11));
         partyIds.add(party(campaign, "Nesh Vell", 12, 21, 16));
         partyIds.add(party(campaign, "Tamsin Aroe", 15, 25, 13));
+        adventures.setCurrentScene(campaignId, approach.getId());
         return new Seeded(campaignId, adventure.getId(), hostile.getId(), branch.getId(), map.getId(),
                 playerSafe.getId(), dmSource.getId(), derivative.getId(), quest.getId(), partyIds);
     }

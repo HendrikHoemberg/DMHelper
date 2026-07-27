@@ -93,6 +93,21 @@ body:has(.session-cockpit) {
   white-space: nowrap;
 }
 
+.cockpit-topbar > label,
+.cockpit-topbar > details,
+#runtimeStatus {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cockpit-topbar > button,
+.cockpit-topbar > details,
+.cockpit-topbar > .switch-control {
+  min-width: 0;
+  flex-shrink: 1;
+}
+
 @container (max-width: 70rem) {
   .cockpit-topbar__date {
     display: none;

@@ -51,6 +51,9 @@ class ReleaseRehearsalFixtureTest {
         assertThat(readiness.reportForCampaign(seeded.campaignId()).sessionReady())
                 .as("a rehearsal that starts blocked proves nothing about the rehearsal")
                 .isTrue();
+        assertThat(campaignRepository.findById(seeded.campaignId()).orElseThrow().getCurrentSceneId())
+                .as("the synthetic rehearsal starts from its approach scene")
+                .isNotNull();
     }
 
     @Test

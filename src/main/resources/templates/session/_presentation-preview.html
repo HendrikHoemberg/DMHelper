@@ -21,8 +21,10 @@
             <div class="presentation-preview-warning">
                 This handout contains DM-only content. Presenting it will expose DM information to players.
             </div>
-            <div class="presentation-preview-actions">
-                <button class="btn btn-danger action-row__destructive" @click="armEmergencyOverride()">Present anyway…</button>
+            <div class="presentation-preview-actions action-row">
+                <span class="action-row__destructive">
+                    <button class="btn btn-danger" @click="armEmergencyOverride()">Present anyway…</button>
+                </span>
                 <button class="btn btn-ghost" @click="closePreview()">Cancel</button>
             </div>
         </div>
@@ -31,8 +33,10 @@
             <div class="presentation-preview-warning" role="alert">
                 Final check: this bypasses the player-safety classification and will be recorded in the session audit.
             </div>
-            <div class="presentation-preview-actions">
-                <button class="btn btn-danger action-row__destructive" @click="confirmEmergencyPresent()">Confirm emergency presentation</button>
+            <div class="presentation-preview-actions action-row">
+                <span class="action-row__destructive">
+                    <button class="btn btn-danger" @click="confirmEmergencyPresent()">Confirm emergency presentation</button>
+                </span>
                 <button class="btn btn-ghost" @click="closePreview()">Cancel</button>
             </div>
         </div>

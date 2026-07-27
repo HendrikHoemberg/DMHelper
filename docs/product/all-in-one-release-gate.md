@@ -5,9 +5,13 @@ The executable gate defined in
 Every row names the test that proves it. `ReleaseGateIndexContractTest` fails if a named
 class disappears, so this table cannot drift away from the suite.
 
-Run the whole gate:
+Run the core browser gate (the indexed §11.1 proofs and release-index contract are also run by the full gate):
 
     ./mvnw -q test -Dtest='ReleaseRehearsalTest,ViewportAccessibilityGateTest,TypographyRenderGateTest,SurfaceNestingGateTest,CoreSessionLoopSmokeTest'
+
+Run the full release gate; this command must pass before the all-in-one premise may be claimed:
+
+    ./mvnw -q verify
 
 ## §11.1 Automated coverage
 

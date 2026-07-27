@@ -111,9 +111,12 @@ class ReleaseRehearsalTest {
             page.locator("button[x-ref='sessionButton']").click();
             Locator lifecycle = page.locator("#sessionLifecycleDialog");
             lifecycle.waitFor();
-            lifecycle.locator("button").filter(new Locator.FilterOptions().setHasText("Start")).first().click();
+            page.waitForResponse(response -> response.url().endsWith("/session/start") && response.status() == 200,
+                    () -> lifecycle.locator("button").filter(new Locator.FilterOptions().setHasText("Start")).first().click());
+            page.waitForFunction("() => performance.getEntriesByType('navigation')[0]?.type === 'reload'");
             page.waitForLoadState(LoadState.NETWORKIDLE);
-            page.waitForFunction("window.cockpitLayout?.mounted === true");
+            page.waitForFunction("() => document.readyState === 'complete' && window.cockpitLayout?.mounted === true");
+            page.waitForFunction("() => document.querySelector('[data-session-status]')?.dataset.sessionStatus === 'RUNNING'");
             assertThat(page.locator("[data-session-status]").getAttribute("data-session-status"))
                     .as("the cockpit reports an active session").isEqualTo("RUNNING");
             assertThat(page.url()).endsWith("/session");

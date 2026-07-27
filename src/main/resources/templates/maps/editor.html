@@ -358,8 +358,8 @@
                     </label>
                     <div class="threat-pin-results" x-show="threatPinResults.length" x-cloak style="max-height: 120px; overflow-y: auto; margin-bottom: var(--space-xs);">
                         <template x-for="item in threatPinResults" :key="item.id">
-                            <button type="button" class="btn btn-ghost u-w-full"
-                                    class="map-editor-control" style="justify-content: flex-start;"
+                            <button type="button" class="btn btn-ghost u-w-full map-editor-control"
+                                    style="justify-content: flex-start;"
                                     @click="selectThreat(item)"
                                     x-text="item.name"></button>
                         </template>
