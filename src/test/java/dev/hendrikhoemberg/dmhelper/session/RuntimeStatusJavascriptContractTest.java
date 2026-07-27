@@ -134,4 +134,145 @@ class RuntimeStatusJavascriptContractTest {
                     .containsEntry("tablePolls", 1);
         }
     }
+
+    @Test
+    void aFailedDmRequestRemainsAuthoritativeUntilALaterCleanRequestCycle() {
+        try (BrowserContext context = browser.newContext()) {
+            Page page = context.newPage();
+            page.setContent("""
+                    <div id="runtimeStatus">
+                      <span data-status-save data-state="idle">Up to date</span>
+                      <span data-status-table data-state="disconnected">No table screen</span>
+                    </div>
+                    """);
+            page.evaluate("""
+                    () => {
+                      window.fetch = async url => {
+                        if (url === '/api/table/status') {
+                          window.tablePolls = (window.tablePolls || 0) + 1;
+                          return {ok: true, json: async () => ({connected: 0})};
+                        }
+                        if (url === '/dm-a') {
+                          return new Promise((resolve, reject) => window.dmA = {resolve, reject});
+                        }
+                        if (url === '/dm-b') {
+                          return new Promise((resolve, reject) => window.dmB = {resolve, reject});
+                        }
+                        if (url === '/clean') {
+                          return new Promise(resolve => window.clean = {resolve});
+                        }
+                        return {ok: true, status: 204, headers: {get: () => ''}};
+                      };
+                    }
+                    """);
+            page.addScriptTag(new Page.AddScriptTagOptions()
+                    .setPath(Path.of("src/main/resources/static/js/dm-request.js").toAbsolutePath()));
+            page.addScriptTag(new Page.AddScriptTagOptions()
+                    .setPath(Path.of("src/main/resources/static/js/runtime-status.js").toAbsolutePath()));
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> states = (Map<String, Object>) page.evaluate("""
+                    async () => {
+                      await new Promise(resolve => setTimeout(resolve, 0));
+                      const requestA = window.dmRequest('/dm-a', {method: 'POST'}).catch(() => {});
+                      const requestB = window.dmRequest('/dm-b', {method: 'POST'});
+                      await new Promise(resolve => setTimeout(resolve, 0));
+                      const busy = document.querySelector('[data-status-save]').dataset.state;
+
+                      window.dmA.reject(new Error('offline'));
+                      await requestA;
+                      const afterFailure = document.querySelector('[data-status-save]').dataset.state;
+
+                      window.dmB.resolve({ok: true, status: 204, headers: {get: () => ''}});
+                      await requestB;
+                      const afterConcurrentSuccess = document.querySelector('[data-status-save]').dataset.state;
+
+                      const cleanRequest = window.dmRequest('/clean', {method: 'POST'});
+                      await new Promise(resolve => setTimeout(resolve, 0));
+                      const cleanBusy = document.querySelector('[data-status-save]').dataset.state;
+                      window.clean.resolve({ok: true, status: 204, headers: {get: () => ''}});
+                      await cleanRequest;
+                      const cleanSaved = document.querySelector('[data-status-save]').dataset.state;
+                      return {busy, afterFailure, afterConcurrentSuccess, cleanBusy, cleanSaved, tablePolls: window.tablePolls};
+                    }
+                    """);
+
+            assertThat(states)
+                    .containsEntry("busy", "busy")
+                    .containsEntry("afterFailure", "error")
+                    .containsEntry("afterConcurrentSuccess", "error")
+                    .containsEntry("cleanBusy", "busy")
+                    .containsEntry("cleanSaved", "saved")
+                    .containsEntry("tablePolls", 1);
+        }
+    }
+
+    @Test
+    void aFailedHtmxRequestRemainsAuthoritativeOverConcurrentDmSuccess() {
+        try (BrowserContext context = browser.newContext()) {
+            Page page = context.newPage();
+            page.setContent("""
+                    <div id="runtimeStatus">
+                      <span data-status-save data-state="idle">Up to date</span>
+                      <span data-status-table data-state="disconnected">No table screen</span>
+                    </div>
+                    """);
+            page.evaluate("""
+                    () => {
+                      window.fetch = async url => {
+                        if (url === '/api/table/status') {
+                          window.tablePolls = (window.tablePolls || 0) + 1;
+                          return {ok: true, json: async () => ({connected: 0})};
+                        }
+                        if (url === '/dm-b') {
+                          return new Promise(resolve => window.dmB = {resolve});
+                        }
+                        return {ok: true, status: 204, headers: {get: () => ''}};
+                      };
+                    }
+                    """);
+            page.addScriptTag(new Page.AddScriptTagOptions()
+                    .setPath(Path.of("src/main/resources/static/js/dm-request.js").toAbsolutePath()));
+            page.addScriptTag(new Page.AddScriptTagOptions()
+                    .setPath(Path.of("src/main/resources/static/js/runtime-status.js").toAbsolutePath()));
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> states = (Map<String, Object>) page.evaluate("""
+                    async () => {
+                      await new Promise(resolve => setTimeout(resolve, 0));
+                      document.body.dispatchEvent(new CustomEvent('htmx:beforeRequest', {
+                        detail: {requestConfig: {verb: 'POST'}}
+                      }));
+                      const requestB = window.dmRequest('/dm-b', {method: 'POST'});
+                      await new Promise(resolve => setTimeout(resolve, 0));
+                      const busy = document.querySelector('[data-status-save]').dataset.state;
+
+                      document.body.dispatchEvent(new CustomEvent('htmx:responseError'));
+                      const afterFailure = document.querySelector('[data-status-save]').dataset.state;
+
+                      window.dmB.resolve({ok: true, status: 204, headers: {get: () => ''}});
+                      await requestB;
+                      const afterConcurrentSuccess = document.querySelector('[data-status-save]').dataset.state;
+
+                      document.body.dispatchEvent(new CustomEvent('htmx:beforeRequest', {
+                        detail: {requestConfig: {verb: 'POST'}}
+                      }));
+                      const cleanBusy = document.querySelector('[data-status-save]').dataset.state;
+                      document.body.dispatchEvent(new CustomEvent('htmx:afterRequest', {
+                        detail: {requestConfig: {verb: 'POST'}, xhr: {status: 204}}
+                      }));
+                      const cleanSaved = document.querySelector('[data-status-save]').dataset.state;
+                      return {busy, afterFailure, afterConcurrentSuccess, cleanBusy, cleanSaved, tablePolls: window.tablePolls};
+                    }
+                    """);
+
+            assertThat(states)
+                    .containsEntry("busy", "busy")
+                    .containsEntry("afterFailure", "error")
+                    .containsEntry("afterConcurrentSuccess", "error")
+                    .containsEntry("cleanBusy", "busy")
+                    .containsEntry("cleanSaved", "saved")
+                    .containsEntry("tablePolls", 1);
+        }
+    }
 }

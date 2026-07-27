@@ -12,6 +12,8 @@
 
     let htmxInFlight = 0;
     let dmInFlight = 0;
+    let mutationEpoch = 0;
+    let failedMutationEpoch = null;
     let settleTimer = null;
 
     function setSave(state, label) {
@@ -24,10 +26,21 @@
     }
 
     function markSaved() {
-      if (hasInFlightRequests()) return;
+      if (hasInFlightRequests() || failedMutationEpoch === mutationEpoch) return;
       setSave('saved', 'Saved');
       // The cluster is a status line, not a log: it returns to quiet on its own.
       settleTimer = setTimeout(() => setSave('idle', 'Up to date'), 4000);
+    }
+
+    function startMutation(source) {
+      if (!hasInFlightRequests()) {
+        mutationEpoch++;
+        failedMutationEpoch = null;
+      }
+      if (source === 'htmx') htmxInFlight++;
+      if (source === 'dm') dmInFlight++;
+      clearTimeout(settleTimer);
+      setSave('busy', 'Saving…');
     }
 
     function isMutation(detail) {
@@ -37,9 +50,7 @@
     document.body.addEventListener('htmx:beforeRequest', (evt) => {
       const verb = (evt.detail.requestConfig?.verb || '').toLowerCase();
       if (verb === 'get') return;
-      htmxInFlight++;
-      clearTimeout(settleTimer);
-      setSave('busy', 'Saving…');
+      startMutation('htmx');
     });
 
     document.body.addEventListener('htmx:afterRequest', (evt) => {
@@ -52,8 +63,9 @@
     });
 
     function failed(source) {
-      if (source === 'htmx') htmxInFlight = 0;
-      if (source === 'dm') dmInFlight = 0;
+      if (source === 'htmx') htmxInFlight = Math.max(0, htmxInFlight - 1);
+      if (source === 'dm') dmInFlight = Math.max(0, dmInFlight - 1);
+      failedMutationEpoch = mutationEpoch;
       clearTimeout(settleTimer);
       setSave('error', 'Not saved');
     }
@@ -63,9 +75,7 @@
 
     document.addEventListener('dm:request-start', (evt) => {
       if (!isMutation(evt.detail)) return;
-      dmInFlight++;
-      clearTimeout(settleTimer);
-      setSave('busy', 'Saving…');
+      startMutation('dm');
     });
 
     document.addEventListener('dm:request-success', (evt) => {
