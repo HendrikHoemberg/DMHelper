@@ -14,10 +14,33 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class GoldAccentContractTest {
 
-    /** Selection, focus and primary-action states may border in gold. Nothing else may. */
-    private static final List<String> EARNED = List.of(
-            ":focus", "[aria-current", "[aria-selected", ".is-selected", ".active",
-            ".btn-primary", ".audio-btn-primary", "::selection", "[data-display-title]");
+    private static final List<String> RENDERED_PROPERTIES = List.of(
+            "color", "background", "background-color", "background-image",
+            "border", "border-color", "border-top", "border-top-color",
+            "border-right", "border-right-color", "border-bottom", "border-bottom-color",
+            "border-left", "border-left-color", "border-inline", "border-inline-color",
+            "border-inline-start", "border-inline-start-color", "border-inline-end",
+            "border-inline-end-color", "border-block", "border-block-color",
+            "border-block-start", "border-block-start-color", "border-block-end",
+            "border-block-end-color", "outline", "outline-color", "box-shadow",
+            "text-shadow", "accent-color",
+            // This custom property is consumed by rendered declarations in the same
+            // stylesheet and must not provide a way around the visual-property contract.
+            "--library-chip-color");
+
+    private static final List<String> GOLD_REFERENCES = List.of(
+            "--color-accent", "--color-gold-soft", "--gold-sheen", "--gold-sweep",
+            "--color-attack-bonus", "--color-info", "--color-condition-active",
+            "--color-legendary", "--color-combatant-active");
+
+    /** Reviewed semantic states. Deliberately no generic ".active" exemption. */
+    private static final List<String> EARNED_STATES = List.of(
+            ":focus", ":focus-visible", ":checked", "::selection", "[aria-current",
+            "[aria-selected", ".is-selected", ".btn-primary", ".audio-btn-primary",
+            ".form-tab.active", ".combatant-row.active", ".combatant-chip.active",
+            ".note-type-chip.active", ".dice-toggle-btn.active", ".tool-btn.active",
+            ".wizard-step.active", "[data-dock-active=\"true\"]", ".turn-marker",
+            ".dice-input-row button", ".library-chip--accent");
 
     /** Reviewed exceptions: in-world surfaces whose gold edge is the identity itself. */
     private static final Set<String> IDENTITY_SURFACES = Set.of(
@@ -25,41 +48,54 @@ class GoldAccentContractTest {
             ".campaign-cover", // Campaign covers are in-world artifacts, not tool chrome.
             ".handout-overlay img", // A displayed handout keeps its material edge.
             ".statblock-render",
+            ".participant-statblock__name", // Inline participant statblock identity.
             ".read-aloud",
             ".structured-read-aloud", // Structured read-aloud content is an in-world text surface.
-            ".rule-taper--gold",
-            ".toast"); // The colored left rail communicates toast severity.
+            ".badge-info", // Read-aloud labels are an in-world identity surface.
+            ".campaign-sigil", // Campaign marks belong to the in-world cover identity.
+            ".dice-history-item .value.crit-high",
+            ".dice-result-total.crit-high"); // Critical results are explicitly gold in the dice spec.
 
     @Test
-    void goldBordersOnlyWhereItIsEarned() {
+    void goldOnlyPaintsReviewedSemanticOrIdentitySurfaces() {
         List<String> offenders = new ArrayList<>();
 
         for (CssRules.Rule rule : CssRules.of(CssRules.ALL_FILES)) {
             if (rule.file().equals("tokens.css")) continue;
-            List<String> borderValues = new ArrayList<>();
-            borderValues.addAll(rule.values("border"));
-            borderValues.addAll(rule.values("border-color"));
-            borderValues.addAll(rule.values("border-left"));
-            borderValues.addAll(rule.values("border-bottom"));
-            borderValues.addAll(rule.values("border-top-color"));
-            borderValues.addAll(rule.values("border-right-color"));
-            borderValues.addAll(rule.values("border-bottom-color"));
-            borderValues.addAll(rule.values("border-left-color"));
-
-            boolean gold = borderValues.stream().anyMatch(v ->
-                    v.contains("--color-accent") || v.contains("--color-gold-soft")
-                            || v.contains("gold-sheen"));
+            boolean gold = RENDERED_PROPERTIES.stream()
+                    .flatMap(property -> rule.values(property).stream())
+                    .anyMatch(GoldAccentContractTest::containsGoldReference);
             if (!gold) continue;
 
             for (String selector : splitSelectors(rule.selector())) {
                 String trimmedSelector = selector.trim();
-                boolean earned = EARNED.stream().anyMatch(trimmedSelector::contains)
+                boolean earned = EARNED_STATES.stream().anyMatch(trimmedSelector::contains)
                         || IDENTITY_SURFACES.stream().anyMatch(trimmedSelector::contains);
-                if (!earned) offenders.add(rule.file() + " { " + trimmedSelector + " }");
+                if (!earned) {
+                    List<String> properties = RENDERED_PROPERTIES.stream()
+                            .filter(property -> rule.values(property).stream()
+                                    .anyMatch(GoldAccentContractTest::containsGoldReference))
+                            .toList();
+                    offenders.add(rule.file() + " { " + trimmedSelector + " } " + properties);
+                }
             }
         }
 
-        assertThat(offenders).as("gold borders that mean nothing").isEmpty();
+        assertThat(offenders).as("gold declarations that mean nothing").isEmpty();
+    }
+
+    @Test
+    void partyMemberNamesUseNeutralTextInsteadOfAmbientGold() {
+        CssRules.Rule rule = findRule("components.css", ".party-member-chip .chip-name");
+
+        assertThat(rule.value("color")).isEqualTo("var(--color-text)");
+    }
+
+    @Test
+    void appNavigationCollapseHoverUsesNeutralChromeInsteadOfAmbientGold() {
+        CssRules.Rule rule = findRule("base.css", ".appnav-collapse:hover");
+
+        assertThat(rule.value("color")).isEqualTo("var(--color-text)");
     }
 
     private static List<String> splitSelectors(String selectorList) {
@@ -86,11 +122,19 @@ class GoldAccentContractTest {
 
     @Test
     void cardHoverUsesTheNeutralHairline() {
-        CssRules.Rule hover = CssRules.of("components.css").stream()
-                .filter(r -> r.selector().equals(".card:hover"))
-                .findFirst()
-                .orElseThrow();
+        CssRules.Rule hover = findRule("components.css", ".card:hover");
 
         assertThat(hover.value("border-color")).isEqualTo("var(--color-border-strong)");
+    }
+
+    private static boolean containsGoldReference(String value) {
+        return GOLD_REFERENCES.stream().anyMatch(value::contains);
+    }
+
+    private static CssRules.Rule findRule(String file, String selector) {
+        return CssRules.of(file).stream()
+                .filter(rule -> rule.selector().equals(selector))
+                .findFirst()
+                .orElseThrow();
     }
 }

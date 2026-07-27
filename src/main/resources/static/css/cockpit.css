@@ -281,7 +281,7 @@
 
 .beat-position {
   font-weight: bold;
-  color: var(--color-accent);
+  color: var(--color-text-muted);
   margin-right: 2px;
 }
 
@@ -380,7 +380,7 @@
 }
 .audio-volume {
   width: 80px;
-  accent-color: var(--color-accent);
+  accent-color: var(--color-border-strong);
 }
 .audio-override-controls {
   display: flex;

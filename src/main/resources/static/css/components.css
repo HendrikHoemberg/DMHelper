@@ -93,7 +93,7 @@
 }
 
 .card h3 a:hover {
-  color: var(--color-accent);
+  color: var(--color-text);
 }
 
 .card p {
@@ -339,8 +339,8 @@
   padding: 2px 8px;
   font-size: var(--text-sm);
   border-radius: 4px;
-  background: var(--color-accent);
-  color: var(--color-bg);
+  background: var(--color-border-strong);
+  color: var(--color-text);
 }
 
 .alert {
@@ -399,7 +399,7 @@
   overflow-wrap: anywhere;
 }
 .library-card__title a { color: var(--color-text); text-decoration: none; }
-.library-card__title a:hover { color: var(--color-accent); }
+.library-card__title a:hover { color: var(--color-text); }
 .library-card__cr {
   min-width: 4.5ch;
   padding: 1px 6px;
@@ -420,7 +420,7 @@
   font-size: var(--text-sm);
 }
 .library-chip {
-  --library-chip-color: var(--color-accent);
+  --library-chip-color: var(--color-border-strong);
   padding: 1px 6px;
   color: var(--color-text);
   background: color-mix(in srgb, var(--library-chip-color) 12%, transparent);
@@ -441,9 +441,9 @@
 .library-table__meta { color: var(--color-text-muted); }
 .statblock-card > h3:not(.library-card__title) { font-size: var(--text-lg); margin: 0; font-family: var(--font-ui); font-weight: 600; }
 .statblock-card > h3 a { color: var(--color-text); text-decoration: none; }
-.statblock-card > h3 a:hover { color: var(--color-accent); }
+.statblock-card > h3 a:hover { color: var(--color-text); }
 .statblock-card > .statblock-meta { display: flex; gap: var(--space-sm); font-size: var(--text-sm); color: var(--color-text-muted); flex-wrap: wrap; }
-.badge-srd { background: transparent; color: var(--color-accent); border: 1px solid var(--color-border-strong); font-size: var(--text-sm); padding: 1px 6px; border-radius: 4px; }
+.badge-srd { background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-border-strong); font-size: var(--text-sm); padding: 1px 6px; border-radius: 4px; }
 .badge-custom { background: transparent; color: var(--color-success); border: 1px solid var(--color-success); font-size: var(--text-sm); padding: 1px 6px; border-radius: 4px; }
 
 
@@ -490,7 +490,7 @@
 .party-summary-bar .bar-label { font-size: var(--text-sm); font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
 .party-member-chip { display: flex; flex-direction: column; align-items: center; padding: var(--space-xs) var(--space-sm); border-right: 1px solid var(--color-border); min-width: 80px; }
 .party-member-chip:last-child { border-right: none; }
-.party-member-chip .chip-name { font-size: var(--text-sm); font-weight: 600; color: var(--color-accent); margin-bottom: 2px; }
+.party-member-chip .chip-name { font-size: var(--text-sm); font-weight: 600; color: var(--color-text); margin-bottom: 2px; }
 .party-member-chip .chip-stats { font-size: var(--text-sm); color: var(--color-text-muted); display: flex; gap: 6px; }
 
 /* Inside the cockpit module shell, party chips fill the body without page margins. */
@@ -566,7 +566,7 @@
 .batch-count {
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--color-accent);
+  color: var(--color-text);
   white-space: nowrap;
 }
 .batch-bar-actions {
@@ -635,11 +635,11 @@
 /* Rarity badges */
 .badge-common    { background: var(--color-text-muted); color: var(--color-bg); }
 .badge-uncommon  { background: var(--color-success); color: var(--color-bg); }
-.badge-rare      { background: color-mix(in srgb, var(--color-accent) 60%, var(--color-text)); color: var(--color-bg); }
-.badge-very-rare { background: color-mix(in srgb, var(--color-ember) 70%, var(--color-accent)); color: var(--color-text); }
-.badge-legendary { background: var(--color-accent); color: var(--color-bg); }
+.badge-rare      { background: color-mix(in srgb, var(--color-warning) 60%, var(--color-text)); color: var(--color-bg); }
+.badge-very-rare { background: color-mix(in srgb, var(--color-ember) 70%, var(--color-warning)); color: var(--color-text); }
+.badge-legendary { background: var(--color-warning); color: var(--color-bg); }
 .badge-artifact  { background: var(--color-ember); color: var(--color-text); }
-.badge-attune    { background: transparent; color: var(--color-accent); border: 1px solid var(--color-border-strong); }
+.badge-attune    { background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-border-strong); }
 
 /* Encounter difficulty rating badge */
 .badge-rating { font-weight: bold; padding: 0.25em 0.75em; border-radius: 4px; }
@@ -658,7 +658,7 @@
     color: inherit;
 }
 .card-clickable:hover h3 {
-    color: var(--color-accent);
+    color: var(--color-text);
 }
 
 /* Equipment table */
@@ -678,7 +678,7 @@
 .equipment-table th {
     background: var(--color-surface-hover);
     font-weight: 600;
-    color: var(--color-accent);
+    color: var(--color-text-muted);
     letter-spacing: 0.06em;
     font-size: var(--text-sm);
     text-transform: uppercase;
@@ -695,8 +695,8 @@
     --color-hp-bar: var(--color-success);
     --color-hp-bloodied: var(--color-warning);
     --color-hp-dead: var(--color-danger);
-    --color-condition-active: var(--color-accent);
-    --color-legendary: var(--color-accent);
+    --color-condition-active: var(--color-warning);
+    --color-legendary: var(--color-warning);
     --color-tracker-bg: var(--color-surface);
     --color-combatant-active: color-mix(in srgb, var(--color-accent) 12%, transparent);
     --color-combatant-hover: rgba(255, 255, 255, 0.04);
@@ -787,7 +787,7 @@
 .round-counter.pulse { animation: round-pulse var(--duration-structural) var(--ease-spring); }
 @keyframes round-pulse {
     0% { transform: scale(1); color: var(--color-text); }
-    40% { transform: scale(1.35); color: var(--color-accent); }
+    40% { transform: scale(1.35); color: var(--color-text); }
     100% { transform: scale(1); color: var(--color-text); }
 }
 
@@ -798,7 +798,7 @@
     align-items: center;
     justify-content: center;
     background: var(--color-initiative-badge);
-    color: var(--color-accent);
+    color: var(--color-text-muted);
     border-radius: 4px;
     font-size: var(--text-base);
     font-weight: 700;
@@ -914,7 +914,7 @@
     font-size: var(--text-xs);
     color: var(--color-text);
     cursor: pointer;
-    background: var(--color-accent);
+    background: var(--color-warning);
     animation: pop-in var(--duration-micro) var(--ease-spring) forwards;
 }
 @keyframes pop-in {
@@ -1317,7 +1317,7 @@
     color: var(--color-bg);
 }
 .badge-state-carried {
-    background: var(--color-accent);
+    background: var(--color-text-muted);
     color: var(--color-bg);
 }
 .badge-state-stashed {
@@ -1369,7 +1369,7 @@
 }
 .sheet-ability-mod {
     font-size: var(--text-lg);
-    color: var(--color-accent);
+    color: var(--color-text-muted);
 }
 
 .sheet-skill-list {
@@ -1388,7 +1388,7 @@
     text-transform: capitalize;
 }
 .sheet-skill-bonus {
-    color: var(--color-accent);
+    color: var(--color-text-muted);
     font-weight: bold;
 }
 
@@ -1404,7 +1404,7 @@
     min-width: 150px;
 }
 .sheet-resource-uses {
-    color: var(--color-accent);
+    color: var(--color-text-muted);
 }
 
 .sheet-attack-table {
@@ -1429,7 +1429,7 @@
     font-weight: 600;
 }
 .sheet-attack-bonus {
-    color: var(--color-attack-bonus, var(--color-accent));
+    color: var(--color-text-muted);
 }
 .sheet-attack-damage {
     color: var(--color-text);
@@ -1652,7 +1652,8 @@
     white-space: nowrap;
 }
 .dice-input-row button:hover {
-    background: var(--color-accent-hover);
+    background: var(--color-surface-hover);
+    color: var(--color-text);
 }
 
 .dice-options {
@@ -1683,7 +1684,7 @@
     font-size: var(--text-2xl);
     font-weight: 700;
     font-family: var(--font-mono, monospace);
-    color: var(--color-accent);
+    color: var(--color-text);
 }
 .dice-result-details {
     font-size: var(--text-sm);
@@ -1763,7 +1764,7 @@
     vertical-align: middle;
 }
 .roll-btn:hover {
-    background: var(--color-accent);
+    background: var(--color-surface-hover);
     border-color: var(--color-border-strong);
     color: var(--color-bg);
 }
@@ -1779,7 +1780,7 @@
     font-size: var(--text-sm);
     font-weight: 600;
     font-family: var(--font-mono, monospace);
-    color: var(--color-accent);
+    color: var(--color-text);
     box-shadow: var(--shadow);
     white-space: nowrap;
     pointer-events: none;
@@ -1830,7 +1831,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 }
 
 .command-palette-icon {
-    color: var(--color-accent);
+    color: var(--color-text-muted);
     font-size: var(--text-lg);
     margin-right: var(--space-sm);
 }
@@ -1882,7 +1883,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 }
 
 .palette-result-type {
-    color: var(--color-accent); font-size: var(--text-xs);
+    color: var(--color-text-muted); font-size: var(--text-xs);
     padding: 2px 8px; border: 1px solid var(--color-border-strong);
     border-radius: 4px; flex-shrink: 0; margin-left: var(--space-md);
 }
@@ -1902,7 +1903,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
   clip-path: polygon(0 0, 100% 50%, 0 100%);
   margin: var(--space-sm) 0;
 }
-.rule-taper--gold { background: var(--color-accent); }
+.rule-taper--gold { background: var(--color-border-strong); }
 
 /* Campaign dashboard */
 .dash-header h1 { font-size: var(--text-2xl); margin-bottom: var(--space-xs); }
@@ -1911,8 +1912,8 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 .dash-actions { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
 .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--space-md); margin-top: var(--space-lg); }
 .dash-grid .card h3 { font-size: var(--text-base); margin-bottom: var(--space-sm); }
-.dash-link { color: var(--color-accent); text-decoration: none; }
-.dash-link:hover { color: var(--color-accent-hover); }
+.dash-link { color: var(--color-text); text-decoration: none; }
+.dash-link:hover { color: var(--color-text-muted); }
 .dash-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-xs); }
 .dash-plan-preview { font-size: var(--text-sm); max-height: 180px; overflow-y: auto; }
 
@@ -1963,7 +1964,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 .u-text-success { color: var(--color-success); }
 .u-text-danger { color: var(--color-danger); }
 .u-text-warning { color: var(--color-warning); }
-.u-text-info { color: var(--color-info); }
+.u-text-info { color: var(--color-text-muted); }
 .u-inline { display: inline; }
 .u-min-w-0 { min-width: 0; }
 .u-shrink-0 { flex-shrink: 0; }
@@ -2036,7 +2037,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 .toast {
   background: var(--elevation-floating-bg);
   border: 1px solid var(--color-border-strong);
-  border-left: 3px solid var(--color-accent);
+  border-left: 3px solid var(--color-border-strong);
   border-radius: var(--radius);
   padding: var(--space-sm) var(--space-md);
   min-width: 240px;
@@ -2398,7 +2399,7 @@ body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
 .error-page-status {
   font-size: var(--text-3xl);
   line-height: 1;
-  color: var(--color-accent);
+  color: var(--color-danger);
   letter-spacing: 0.05em;
 }
 .error-page-title {
@@ -2509,7 +2510,7 @@ dialog.modal:not([open]) {
   font-size: var(--text-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--color-accent);
+  color: var(--color-text-muted);
   margin-bottom: var(--space-xs);
   padding: 0;
 }
@@ -2658,7 +2659,7 @@ dialog.modal:not([open]) {
   letter-spacing: 0.5px;
 }
 .skill-check-row input[type="checkbox"] {
-  accent-color: var(--color-accent);
+  accent-color: var(--color-border-strong);
 }
 
 /* Checkbox group for armor/weapons */
@@ -2769,7 +2770,7 @@ dialog.modal:not([open]) {
 .roll-result-ref {
   display: inline-block;
   font-size: var(--text-sm);
-  color: var(--color-accent);
+  color: var(--color-text-muted);
   text-decoration: underline;
   margin-top: var(--space-xs);
 }
@@ -2784,7 +2785,7 @@ dialog.modal:not([open]) {
 
 .dice-history-item-table .expr {
   font-weight: 600;
-  color: var(--color-gold-soft);
+  color: var(--color-text-muted);
 }
 
 .dice-history-item-table .outcome-summary {
@@ -2855,7 +2856,7 @@ dialog.modal:not([open]) {
     border-left: 2px solid transparent;
 }
 .sheet-toc a:hover {
-    color: var(--color-accent);
+    color: var(--color-text);
     border-left-color: var(--color-border-strong);
 }
 @media (max-width: 900px) {
@@ -2971,7 +2972,7 @@ dialog.modal:not([open]) {
 }
 
 .participant-statblock:hover {
-  color: var(--color-accent);
+  color: var(--color-text);
 }
 
 .participant-statblock__name {
@@ -3040,7 +3041,7 @@ dialog.modal:not([open]) {
 .scale-tile__value {
   font-size: var(--text-2xl);
   line-height: 1.1;
-  color: var(--color-accent);
+  color: var(--color-text);
 }
 
 .scale-tile__label {
@@ -3116,7 +3117,7 @@ dialog.modal:not([open]) {
 
 .chapter-summary::before {
   content: '\25B8';
-  color: var(--color-accent);
+  color: var(--color-text-muted);
   font-size: var(--text-sm);
   line-height: 1;
   transition: transform var(--duration-micro) var(--ease-out);
