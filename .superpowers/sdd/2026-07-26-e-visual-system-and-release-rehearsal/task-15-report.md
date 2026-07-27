@@ -71,3 +71,24 @@ No production schema, entity, or controller files changed. Linear fixture behavi
 - Explicit branched command: `./mvnw -q test -Dtest='ReleaseRehearsalTest$Branched'`. Spring/Tomcat started and the run entered the Branched nested class, then hit the same Playwright host validation boundary; no branched browser result is claimed.
 - Chromium remains blocked by missing `libicudata.so.66`, `libicui18n.so.66`, `libicuuc.so.66`, `libxml2.so.2`, `libwebp.so.6`, and `libffi.so.7`.
 - No production schema, entity, or controller files changed; linear rehearsal behavior was preserved.
+
+## Review round 3 evidence
+
+### RED
+
+- The review identified a Linear-path regression in step 5: the shared browser evaluation resolved `vault-reinforcements` and dereferenced `pending.id` before the shape conditional. The Linear fixture contains only `main`, so this path fails before Linear’s existing damage/condition/turn assertions.
+- The focused outer selector, `./mvnw -q test -Dtest=ReleaseRehearsalTest`, reached the `Linear` nested run but could not execute the browser assertions because Chromium host validation stopped the run. The reported source path was therefore fixed directly rather than claiming a browser RED/green result that this environment cannot provide.
+
+### GREEN / focused verification
+
+- Common step 5 now fetches only `main` combatant IDs. The pending `vault-reinforcements` lookup, missing-wave guard, spawn, and spawned-wave assertions are all inside the `BRANCHED_TWO_MAPS` branch.
+- `./mvnw -q test -Dtest=ReleaseRehearsalFixtureTest` passed.
+- `./mvnw -q test-compile` passed.
+- Outer selector: `./mvnw -q test -Dtest=ReleaseRehearsalTest` reached the `Linear` nested shape, then stopped at Chromium host validation; no false green claim is made.
+- Explicit selector: `./mvnw -q test -Dtest='ReleaseRehearsalTest$Branched'` reached the `Branched` nested shape, then stopped at the same Chromium host validation boundary.
+- The outer class still statically contains both ordered nested shape runs, `Linear` and `Branched`, each inheriting all ten ordered rehearsal steps.
+
+### Environment warning
+
+- Playwright cannot launch Chromium because the host is missing `libicudata.so.66`, `libicui18n.so.66`, `libicuuc.so.66`, `libxml2.so.2`, `libwebp.so.6`, and `libffi.so.7`.
+- No production, schema, entity, controller, or linear fixture files were changed.

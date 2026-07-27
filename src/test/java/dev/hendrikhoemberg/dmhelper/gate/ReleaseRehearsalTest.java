@@ -205,13 +205,11 @@ class ReleaseRehearsalTest {
                         const waves = await (await fetch(`/api/v1/encounters/${encounter.id}/waves`)).json();
                         const combatants = await (await fetch(`/api/v1/encounters/${encounter.id}/combatants`)).json();
                         const main = waves.find(w => w.waveKey === 'main');
-                        const pending = waves.find(w => w.waveKey === 'vault-reinforcements');
-                        return {mainIds: combatants.filter(c => c.waveId === main.id).map(c => c.id), pendingId: pending.id};
+                        return {mainIds: combatants.filter(c => c.waveId === main.id).map(c => c.id)};
                     }
                     """, java.util.Map.of("campaignId", seeded.campaignId().toString(), "encounterName", encounterName));
             @SuppressWarnings("unchecked")
             List<String> mainCombatantIds = (List<String>) waveState.get("mainIds");
-            String pendingWaveId = String.valueOf(waveState.get("pendingId"));
             Locator firstRow = page.locator(".combatant-row").first();
             defeatedCombatantName = firstRow.locator(".combatant-name").textContent().trim();
             for (String combatantId : mainCombatantIds) {
@@ -222,6 +220,17 @@ class ReleaseRehearsalTest {
             }
             page.waitForFunction("ids => ids.every(id => document.querySelector(`.combatant-row[data-cid='${id}']`)?.classList.contains('defeated'))", mainCombatantIds);
             if (shape() == ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS) {
+                java.util.Map<?, ?> branchedWaveState = (java.util.Map<?, ?>) page.evaluate("""
+                        async ({campaignId, encounterName}) => {
+                            const encounters = await (await fetch(`/api/v1/campaigns/${campaignId}/encounters`)).json();
+                            const encounter = encounters.find(e => e.name === encounterName);
+                            const waves = await (await fetch(`/api/v1/encounters/${encounter.id}/waves`)).json();
+                            const pending = waves.find(w => w.waveKey === 'vault-reinforcements');
+                            if (!pending) throw new Error('The branched rehearsal must create a pending reserve wave.');
+                            return {pendingId: pending.id};
+                        }
+                        """, java.util.Map.of("campaignId", seeded.campaignId().toString(), "encounterName", encounterName));
+                String pendingWaveId = String.valueOf(branchedWaveState.get("pendingId"));
                 page.waitForFunction("""
                         async ({campaignId, encounterName}) => {
                             const encounters = await (await fetch(`/api/v1/campaigns/${campaignId}/encounters`)).json();
