@@ -229,9 +229,11 @@
           if (body) {
             const root = body.querySelector('[data-module-content]') || body;
             root.replaceChildren(...fragment.childNodes);
+            window.Alpine?.initTree(root);
           } else {
             console.warn('CockpitModuleController: no [data-module-body] for', moduleKey, '- falling back to contentEl');
             contentEl.replaceChildren(...fragment.childNodes);
+            window.Alpine?.initTree(contentEl);
           }
 
           if (focusedId) {

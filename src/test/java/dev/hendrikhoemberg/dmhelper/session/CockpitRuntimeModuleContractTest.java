@@ -557,12 +557,38 @@ class CockpitRuntimeModuleContractTest {
     void quickNotesFragmentOffersVisibleSessionPlanPromotion() throws IOException {
         String fragment = Files.readString(Path.of(
                 "src/main/resources/templates/session/modules/_quick-notes.html"));
+        String shell = Files.readString(Path.of(
+                "src/main/resources/templates/session/_cockpit-module-shell.html"));
         String javascript = Files.readString(Path.of(
                 "src/main/resources/static/js/quicknotes.js"));
-        assertThat(fragment).contains("x-data=\"quicknotes\"", "data-promote-session-plan",
+        assertThat(shell).contains("x-data=${module.key == 'quick-notes' ? 'quicknotes' : null}");
+        assertThat(fragment).contains("data-promote-session-plan",
                 "Promote to session plan", "promoteSessionPlan({id:", "promote({id:");
         assertThat(javascript).contains("promoteSessionPlan(quicknote)",
                 "Release rehearsal plan", "SESSION_PLAN", "moduleKey: 'session-plan'");
+    }
+
+    @Test
+    void quickNotesRefreshKeepsOneAlpineRootAtStableModuleContentBoundary() throws IOException {
+        String shell = Files.readString(Path.of(
+                "src/main/resources/templates/session/_cockpit-module-shell.html"));
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_quick-notes.html"));
+        String javascript = Files.readString(Path.of(
+                "src/main/resources/static/js/cockpit-modules.js"));
+
+        assertThat(shell).contains(
+                "x-data=${module.key == 'quick-notes' ? 'quicknotes' : null}",
+                "data-campaign-id=${module.key == 'quick-notes' ? campaignId : null}",
+                "data-target-type=${module.key == 'quick-notes' ? 'CAMPAIGN' : null}",
+                "data-target-id=${module.key == 'quick-notes' ? campaignId : null}");
+        assertThat(fragment).doesNotContain("x-data=\"quicknotes\"")
+                .doesNotContain("data-campaign-id=${campaignId}")
+                .doesNotContain("data-target-type='CAMPAIGN', data-target-id=${campaignId}");
+        assertThat(javascript).contains(
+                "const root = body.querySelector('[data-module-content]') || body;",
+                "root.replaceChildren(...fragment.childNodes);",
+                "window.Alpine?.initTree(root)");
     }
 
     @Test

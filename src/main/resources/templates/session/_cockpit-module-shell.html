@@ -32,7 +32,11 @@
     <div data-module-content
          th:attr="data-module-endpoint=${module.source.value},
                   data-module-loaded=${initialBody != null},
-                  data-module-stale='false'">
+                  data-module-stale='false',
+                  x-data=${module.key == 'quick-notes' ? 'quicknotes' : null},
+                  data-campaign-id=${module.key == 'quick-notes' ? campaignId : null},
+                  data-target-type=${module.key == 'quick-notes' ? 'CAMPAIGN' : null},
+                  data-target-id=${module.key == 'quick-notes' ? campaignId : null}">
       <th:block th:if="${initialBody != null}">
         <th:block th:insert="${initialBody}"></th:block>
       </th:block>

@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <section th:fragment="body(view, mode)"
-         x-data="quicknotes"
-         th:attr="data-cockpit-module-fragment='quick-notes', data-module-mode=${mode}, data-module-empty=${view == null or view.notes.isEmpty()}, data-campaign-id=${campaignId}, data-target-type='CAMPAIGN', data-target-id=${campaignId}">
+         th:attr="data-cockpit-module-fragment='quick-notes', data-module-mode=${mode}, data-module-empty=${view == null or view.notes.isEmpty()}">
   <div data-module-content-root>
     <div class="quicknotes-module-body">
       <!-- targetType=CAMPAIGN -->
