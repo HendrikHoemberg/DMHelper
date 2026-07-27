@@ -151,40 +151,22 @@ class ReleaseRehearsalTest {
                 seedButton.first().click();
                 actions++;
                 page.waitForSelector("[data-runtime-module='encounter'] [data-initiative-setup]");
-                if (shape() == ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS) {
-                    page.evaluate("""
-                            async ({campaignId, statBlockId}) => {
-                                const encounters = await (await fetch(`/api/v1/campaigns/${campaignId}/encounters`)).json();
-                                const encounter = encounters.find(e => e.name === 'Encounter: Lantern Vault Ambush');
-                                if (!encounter) throw new Error('The runtime scene encounter was not created.');
-                                const waveResponse = await fetch(`/api/v1/encounters/${encounter.id}/waves`, {
-                                    method: 'POST',
-                                    headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify({waveKey: 'vault-reinforcements', name: 'Vault reinforcements',
-                                        triggerKind: 'MANUAL', triggerValue: null, notes: 'Synthetic second wave.'})
-                                });
-                                if (!waveResponse.ok) throw new Error(`Wave creation failed: ${waveResponse.status}`);
-                                const wave = await waveResponse.json();
-                                const combatantResponse = await fetch(`/api/v1/encounters/${encounter.id}/combatants/from-library`, {
-                                    method: 'POST',
-                                    headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify({statBlockId, quantity: 1, groupName: 'Vault reinforcements',
-                                        waveId: wave.id, startX: null, startY: null, placementRegionKey: null})
-                                });
-                                if (!combatantResponse.ok) throw new Error(`Reserve combatant creation failed: ${combatantResponse.status}`);
-                            }
-                            """, java.util.Map.of("campaignId", seeded.campaignId().toString(),
-                                    "statBlockId", fixture.statBlockIdsOf(seeded).get(0).toString()));
-                    actions++;
-                    page.reload();
-                    page.waitForLoadState(LoadState.NETWORKIDLE);
-                    page.waitForFunction("window.cockpitLayout?.mounted === true");
-                    page.waitForSelector("[data-runtime-module='encounter'] [data-initiative-setup]");
-                }
+            } else if (shape() == ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS) {
+                Locator activatePrepared = page.locator("[data-runtime-module='encounter'] [data-encounter-id='"
+                        + seeded.branchedEncounterId() + "']").first();
+                activatePrepared.waitFor();
+                activatePrepared.click();
+                actions++;
+                page.waitForSelector("[data-runtime-module='encounter'] [data-initiative-setup]");
             } else {
                 throw new AssertionError("The scene-to-encounter action must be available for every rehearsal shape.");
             }
             encounterName = page.textContent("[data-runtime-module='encounter'] [data-encounter-name]").trim();
+            if (shape() == ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS) {
+                assertThat(page.locator("[data-runtime-module='encounter'] [data-module-content-root]").getAttribute("data-encounter-id"))
+                        .as("the branched rehearsal uses the fixture-prepared encounter")
+                        .isEqualTo(seeded.branchedEncounterId().toString());
+            }
             assertThat(actions).isLessThanOrEqualTo(2);
             assertVisibleWithoutScrolling("encounter identity", "[data-runtime-module='encounter'] [data-encounter-name]");
         }
@@ -223,17 +205,7 @@ class ReleaseRehearsalTest {
             }
             page.waitForFunction("ids => ids.every(id => document.querySelector(`.combatant-row[data-cid='${id}']`)?.classList.contains('defeated'))", mainCombatantIds);
             if (shape() == ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS) {
-                java.util.Map<?, ?> branchedWaveState = (java.util.Map<?, ?>) page.evaluate("""
-                        async ({campaignId, encounterName}) => {
-                            const encounters = await (await fetch(`/api/v1/campaigns/${campaignId}/encounters`)).json();
-                            const encounter = encounters.find(e => e.name === encounterName);
-                            const waves = await (await fetch(`/api/v1/encounters/${encounter.id}/waves`)).json();
-                            const pending = waves.find(w => w.waveKey === 'vault-reinforcements');
-                            if (!pending) throw new Error('The branched rehearsal must create a pending reserve wave.');
-                            return {pendingId: pending.id};
-                        }
-                        """, java.util.Map.of("campaignId", seeded.campaignId().toString(), "encounterName", encounterName));
-                String pendingWaveId = String.valueOf(branchedWaveState.get("pendingId"));
+                String pendingWaveId = seeded.branchedReserveWaveId().toString();
                 page.waitForFunction("""
                         async ({campaignId, encounterName}) => {
                             const encounters = await (await fetch(`/api/v1/campaigns/${campaignId}/encounters`)).json();
@@ -264,6 +236,9 @@ class ReleaseRehearsalTest {
                         """, java.util.Map.of("campaignId", seeded.campaignId().toString(),
                                 "encounterName", encounterName, "waveId", pendingWaveId));
                 assertThat(spawned).as("the real named reserve wave is active in the scene-created encounter").isTrue();
+                page.locator(".combatant-row").filter(new Locator.FilterOptions().setHasText("Vault reinforcements")).waitFor();
+                assertThat(page.locator(".combatant-row").filter(new Locator.FilterOptions().setHasText("Vault reinforcements")).count())
+                        .as("the prepared reserve combatant is visible after spawning").isEqualTo(1);
             }
             page.locator(".combatant-row").first().click();
             Locator condition = page.locator(".detail-conditions input[type='checkbox']").first();
@@ -308,21 +283,10 @@ class ReleaseRehearsalTest {
             assertThat(page.locator("#runtimeStatus [data-status-save]").getAttribute("data-state"))
                     .as("the quick-note action reports a real save").isEqualTo("saved");
             planTitle = "Release rehearsal plan";
-            page.evaluate("""
-                    async ({campaignId, title}) => {
-                        const list = await fetch(`/api/v1/campaigns/${campaignId}/quicknotes?targetType=CAMPAIGN&targetId=${campaignId}`);
-                        const notes = await list.json();
-                        const note = notes.at(-1);
-                        if (!note) throw new Error('The rehearsal quick note was not returned by the runtime.');
-                        const params = new URLSearchParams({title, type: 'SESSION_PLAN'});
-                        const promoted = await fetch(`/api/v1/campaigns/${campaignId}/quicknotes/${note.id}/promote?${params}`, {method: 'POST'});
-                        if (!promoted.ok) throw new Error(`Session plan promotion failed: ${promoted.status}`);
-                        return await promoted.json();
-                    }
-                    """, java.util.Map.of("campaignId", seeded.campaignId().toString(), "title", planTitle));
-            page.reload();
-            page.waitForLoadState(LoadState.NETWORKIDLE);
-            page.waitForFunction("window.cockpitLayout?.mounted === true");
+            Locator promotePlan = page.locator("[data-runtime-module='quick-notes'] [data-promote-session-plan]").last();
+            promotePlan.waitFor();
+            promotePlan.click();
+            page.waitForFunction("title => document.querySelector('[data-runtime-module=\\\"session-plan\\\"] h3')?.textContent.trim() === title", planTitle);
             assertThat(page.locator("[data-runtime-module='session-plan'] h3").textContent().trim()).as("the session plan reflects the promoted rehearsal update").isEqualTo(planTitle);
             assertVisibleWithoutScrolling("save status", "#runtimeStatus [data-status-save]");
         }

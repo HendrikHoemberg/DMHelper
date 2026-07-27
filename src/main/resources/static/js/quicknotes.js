@@ -92,6 +92,29 @@
         }
       },
 
+      async promoteSessionPlan(quicknote) {
+        try {
+          const params = new URLSearchParams({
+            title: 'Release rehearsal plan',
+            type: 'SESSION_PLAN'
+          });
+          const response = await this.request(
+            '/api/v1/campaigns/' + this.campaignId + '/quicknotes/' + quicknote.id
+              + '/promote?' + params.toString(),
+            { method: 'POST' }
+          );
+          await response.json();
+          this.items = this.items.filter(item => item.id !== quicknote.id);
+          this._notifyModuleRefresh();
+          window.dispatchEvent(new CustomEvent('cockpit:module-refresh', {
+            detail: { moduleKey: 'session-plan', reason: 'quicknote-promoted-to-session-plan' }
+          }));
+        } catch (error) {
+          this.reportFailure('Could not promote the quick note to the session plan. Nothing was changed.', error,
+            () => this.promoteSessionPlan(quicknote));
+        }
+      },
+
       formatTime(iso) {
         if (!iso) return '';
         return new Date(iso).toLocaleString();

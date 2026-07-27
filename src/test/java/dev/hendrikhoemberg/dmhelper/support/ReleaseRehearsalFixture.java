@@ -13,6 +13,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.SceneTransitionRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.WaveTriggerKind;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
@@ -48,6 +49,8 @@ public class ReleaseRehearsalFixture {
     }
 
     public record Seeded(UUID campaignId, UUID adventureId, UUID hostileSceneId,
+                         UUID ambushSceneId, UUID branchedEncounterId, UUID branchedMainWaveId,
+                         UUID branchedReserveWaveId, List<UUID> branchedReserveCombatantIds,
                          UUID branchSceneId, UUID playableMapId, UUID playerSafeHandoutId,
                          UUID dmSourceHandoutId, UUID derivativeHandoutId, UUID questId,
                          List<UUID> partyMemberIds) {}
@@ -216,6 +219,40 @@ public class ReleaseRehearsalFixture {
             }
         }
 
+        UUID branchedEncounterId = null;
+        UUID branchedMainWaveId = null;
+        UUID branchedReserveWaveId = null;
+        List<UUID> branchedReserveCombatantIds = List.of();
+        if (shape == Shape.BRANCHED_TWO_MAPS) {
+            var branchedEncounter = encounters.create(campaignId,
+                    new EncounterService.CreateRequest("Encounter: Lantern Vault Ambush", null));
+            var branchedEntity = encounterRepository.findById(branchedEncounter.id()).orElseThrow();
+            branchedEntity.setEncounterKey("lantern-vault-ambush-" + suffix);
+            encounterRepository.save(branchedEntity);
+            adventures.linkEncounter(ambush.getId(), branchedEncounter.id());
+
+            for (int i = 0; i < foeBlocks.size(); i++) {
+                encounters.addFromLibrary(branchedEncounter.id(), new EncounterService.AddFromLibraryRequest(
+                        foeBlocks.get(i).getId(), 1, names[i], null, null, null, null));
+            }
+            branchedMainWaveId = encounters.listWaves(branchedEncounter.id()).stream()
+                    .filter(wave -> wave.waveKey().equals("main"))
+                    .findFirst().orElseThrow().id();
+            var reserveWave = encounters.createWave(branchedEncounter.id(),
+                    new EncounterService.CreateWaveRequest("vault-reinforcements", "Vault reinforcements",
+                            WaveTriggerKind.MANUAL, null, "Synthetic reserve wave."));
+            branchedReserveWaveId = reserveWave.id();
+            var reserveCombatants = encounters.addFromLibrary(branchedEncounter.id(),
+                    new EncounterService.AddFromLibraryRequest(foeBlocks.get(0).getId(), 1,
+                            "Vault reinforcements", reserveWave.id(), null, null, null));
+            reserveCombatants.forEach(combatant -> combatantRepository.findById(combatant.id()).ifPresent(entity -> {
+                entity.setNotes("rehearsal-" + suffix + "-reserve-combatant");
+                combatantRepository.save(entity);
+            }));
+            branchedReserveCombatantIds = reserveCombatants.stream().map(EncounterService.CombatantDto::id).toList();
+            branchedEncounterId = branchedEncounter.id();
+        }
+
         byte[] image = png("safe");
         Handout playerSafe = handouts.createImported(campaignId, "Beacon Approach (player map)", "map",
                 "beacon-approach.png", "image/png", image);
@@ -256,7 +293,9 @@ public class ReleaseRehearsalFixture {
         partyIds.add(party(campaign, "Nesh Vell", 12, 21, 16));
         partyIds.add(party(campaign, "Tamsin Aroe", 15, 25, 13));
         adventures.setCurrentScene(campaignId, approach.getId());
-        return new Seeded(campaignId, adventure.getId(), hostile.getId(), branch.getId(), map.getId(),
+        return new Seeded(campaignId, adventure.getId(), hostile.getId(), ambush != null ? ambush.getId() : null,
+                branchedEncounterId, branchedMainWaveId, branchedReserveWaveId, branchedReserveCombatantIds,
+                branch.getId(), map.getId(),
                 playerSafe.getId(), dmSource.getId(), derivative.getId(), quest.getId(), partyIds);
     }
 
@@ -379,6 +418,8 @@ public class ReleaseRehearsalFixture {
                     encounter.getPrepJson(), encounter.getRewardsJson(), encounter.getLairActionName(),
                     encounter.getLairActionDescription(), encounter.getRound(), encounter.getActiveTurnIndex(),
                     encounter.isLairActionTriggered(), encounter.getMap() == null ? null : encounter.getMap().getName());
+            encounters.listWaves(encounter.getId()).forEach(wave -> append(text, wave.waveKey(), wave.name(),
+                    wave.status(), wave.triggerKind(), wave.triggerValue(), wave.notes(), wave.combatantCount()));
             combatantRepository.findByEncounterIdOrderBySortOrderAsc(encounter.getId()).forEach(combatant -> {
                 append(text, combatant.getName(), combatant.getInitiative(), combatant.getSortOrder(), combatant.getMaxHp(),
                         combatant.getCurrentHp(), combatant.getTempHp(), combatant.getKind(), combatant.getGroupId(),
@@ -386,6 +427,10 @@ public class ReleaseRehearsalFixture {
                         combatant.getConcentratingOn(), combatant.getRechargedAbilities(), combatant.getNotes(),
                         combatant.getStartX(), combatant.getStartY(), combatant.getPlacementRegionKey(),
                         combatant.getThreatKind(), combatant.getThreatId());
+                if (combatant.getWave() != null) {
+                    append(text, combatant.getWave().getWaveKey(), combatant.getWave().getStatus(),
+                            combatant.getWave().getTriggerKind());
+                }
                 if (combatant.getStatBlock() != null) {
                     statBlocks.findById(combatant.getStatBlock().getId()).ifPresent(block -> append(text,
                             block.getName(), block.getSource(), block.getCr(), block.getType(), block.getAc(), block.getHp()));

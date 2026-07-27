@@ -9,6 +9,9 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWaveRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.WaveStatus;
+import dev.hendrikhoemberg.dmhelper.encounter.data.WaveTriggerKind;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
@@ -42,6 +45,7 @@ class ReleaseRehearsalFixtureTest {
     @Autowired private CampaignRepository campaignRepository;
     @Autowired private StatBlockRepository statBlockRepository;
     @Autowired private EncounterRepository encounterRepository;
+    @Autowired private EncounterWaveRepository encounterWaveRepository;
     @Autowired private CombatantRepository combatantRepository;
 
     @Test
@@ -100,12 +104,65 @@ class ReleaseRehearsalFixtureTest {
                         tuple("Take the tideglass gallery", seeded.branchSceneId()),
                         tuple("Cross the sealed bridge", ambush.getId()));
         assertThat(ambush.getMapRequirement()).isEqualTo(SceneMapRequirement.NONE);
-        assertThat(ambush.getEncounter()).as("runtime scene-to-encounter action remains available").isNull();
+        assertThat(ambush.getEncounter()).as("the prepared ambush encounter is linked").isNotNull();
+        assertThat(ambush.getEncounter().getId()).isNotNull();
+        assertThat(ambush.getEncounter().getName()).isEqualTo("Encounter: Lantern Vault Ambush");
+        assertThat(ambush.getEncounter().getMap()).isNull();
         assertThat(encounterRepository.findByCampaignIdOrderByNameAsc(seeded.campaignId()))
                 .extracting(e -> e.getName())
-                .containsExactly("Undercroft Alarm");
+                .containsExactly("Encounter: Lantern Vault Ambush", "Undercroft Alarm");
+        var waves = encounterWaveRepository.findByEncounterIdOrderBySortOrderAsc(ambush.getEncounter().getId());
+        assertThat(waves).extracting(w -> w.getWaveKey(), w -> w.getStatus(), w -> w.getTriggerKind())
+                .containsExactly(
+                        tuple("main", WaveStatus.ACTIVE, WaveTriggerKind.MANUAL),
+                        tuple("vault-reinforcements", WaveStatus.PENDING, WaveTriggerKind.MANUAL));
+        assertThat(combatantRepository.findByEncounterIdOrderBySortOrderAsc(ambush.getEncounter().getId()))
+                .filteredOn(c -> c.getWave() != null && c.getWave().getWaveKey().equals("vault-reinforcements"))
+                .extracting(c -> c.getName(), c -> c.getStatBlock().getName())
+                .containsExactly(tuple("Vault reinforcements", "Bog Sentinel"));
         assertThat(questRepository.findByIdAndCampaignId(seeded.questId(), seeded.campaignId()).orElseThrow()
                 .getObjectives()).as("third quest objective").hasSize(3);
+    }
+
+    @Test
+    void branchedPreparedEncounterTopologyIsSyntheticAndCampaignIsolated() throws IOException {
+        var first = fixture.seed(ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS);
+        var second = fixture.seed(ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS);
+
+        var firstEncounter = encounterRepository.findByCampaignIdOrderByNameAsc(first.campaignId()).stream()
+                .filter(e -> e.getName().equals("Encounter: Lantern Vault Ambush")).findFirst().orElseThrow();
+        var secondEncounter = encounterRepository.findByCampaignIdOrderByNameAsc(second.campaignId()).stream()
+                .filter(e -> e.getName().equals("Encounter: Lantern Vault Ambush")).findFirst().orElseThrow();
+        var firstReserve = encounterWaveRepository.findByEncounterIdAndWaveKey(firstEncounter.getId(), "vault-reinforcements")
+                .orElseThrow();
+        var secondReserve = encounterWaveRepository.findByEncounterIdAndWaveKey(secondEncounter.getId(), "vault-reinforcements")
+                .orElseThrow();
+        var firstCombatant = combatantRepository.findByEncounterIdOrderBySortOrderAsc(firstEncounter.getId()).stream()
+                .filter(c -> c.getWave() != null && c.getWave().getId().equals(firstReserve.getId())).findFirst().orElseThrow();
+        var secondCombatant = combatantRepository.findByEncounterIdOrderBySortOrderAsc(secondEncounter.getId()).stream()
+                .filter(c -> c.getWave() != null && c.getWave().getId().equals(secondReserve.getId())).findFirst().orElseThrow();
+
+        assertThat(readiness.reportForCampaign(first.campaignId()).sessionReady()).isTrue();
+        assertThat(readiness.reportForCampaign(second.campaignId()).sessionReady()).isTrue();
+        assertThat(first.ambushSceneId()).isNotNull();
+        assertThat(first.branchedEncounterId()).isEqualTo(firstEncounter.getId());
+        assertThat(first.branchedMainWaveId()).isEqualTo(
+                encounterWaveRepository.findByEncounterIdAndWaveKey(firstEncounter.getId(), "main").orElseThrow().getId());
+        assertThat(first.branchedReserveWaveId()).isEqualTo(firstReserve.getId());
+        assertThat(first.branchedReserveCombatantIds()).containsExactly(firstCombatant.getId());
+        assertThat(firstEncounter.getMap()).isNull();
+        assertThat(firstReserve.getStatus()).isEqualTo(WaveStatus.PENDING);
+        assertThat(firstCombatant.getName()).isEqualTo("Vault reinforcements");
+        assertThat(firstEncounter.getEncounterKey()).isNotBlank().isNotEqualTo(secondEncounter.getEncounterKey());
+        assertThat(firstCombatant.getNotes()).isNotBlank().isNotEqualTo(secondCombatant.getNotes());
+        assertThat(fixture.textualContentOf(first)).contains(
+                "Encounter: Lantern Vault Ambush", "vault-reinforcements", "Synthetic reserve wave.",
+                "Vault reinforcements", firstEncounter.getEncounterKey(), firstCombatant.getNotes())
+                .doesNotContain(secondEncounter.getEncounterKey(), secondCombatant.getNotes());
+        assertThat(fixture.textualContentOf(second)).contains(
+                "Encounter: Lantern Vault Ambush", "vault-reinforcements", "Synthetic reserve wave.",
+                "Vault reinforcements", secondEncounter.getEncounterKey(), secondCombatant.getNotes())
+                .doesNotContain(firstEncounter.getEncounterKey(), firstCombatant.getNotes());
     }
 
     @Test

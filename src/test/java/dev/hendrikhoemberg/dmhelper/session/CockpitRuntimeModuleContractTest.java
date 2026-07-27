@@ -554,6 +554,18 @@ class CockpitRuntimeModuleContractTest {
     }
 
     @Test
+    void quickNotesFragmentOffersVisibleSessionPlanPromotion() throws IOException {
+        String fragment = Files.readString(Path.of(
+                "src/main/resources/templates/session/modules/_quick-notes.html"));
+        String javascript = Files.readString(Path.of(
+                "src/main/resources/static/js/quicknotes.js"));
+        assertThat(fragment).contains("x-data=\"quicknotes\"", "data-promote-session-plan",
+                "Promote to session plan", "promoteSessionPlan({id:", "promote({id:");
+        assertThat(javascript).contains("promoteSessionPlan(quicknote)",
+                "Release rehearsal plan", "SESSION_PLAN", "moduleKey: 'session-plan'");
+    }
+
+    @Test
     void quickNotesFragmentHasPromoteAndDeleteActions() throws IOException {
         String fragment = Files.readString(Path.of(
                 "src/main/resources/templates/session/modules/_quick-notes.html"));

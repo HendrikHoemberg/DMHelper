@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.notes.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
+import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
 import dev.hendrikhoemberg.dmhelper.notes.service.QuickNoteService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,5 +58,27 @@ class QuickNoteApiControllerTest {
                 .andExpect(jsonPath("$.noteId").value(promoted.getId().toString()));
 
         verify(quickNoteService).promoteToNote(campaignId, noteId);
+    }
+
+    @Test
+    void promoteAcceptsTypedSessionPlanTitleAndType() throws Exception {
+        UUID campaignId = UUID.randomUUID();
+        UUID noteId = UUID.randomUUID();
+        Campaign campaign = new Campaign();
+        campaign.setId(campaignId);
+        Note promoted = new Note();
+        promoted.setId(UUID.randomUUID());
+        promoted.setCampaign(campaign);
+        when(quickNoteService.promoteToNote(campaignId, noteId,
+                "Release rehearsal plan", NoteType.SESSION_PLAN)).thenReturn(promoted);
+
+        mockMvc.perform(post("/api/v1/campaigns/{campaignId}/quicknotes/{id}/promote", campaignId, noteId)
+                        .param("title", "Release rehearsal plan")
+                        .param("type", "SESSION_PLAN"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.noteId").value(promoted.getId().toString()));
+
+        verify(quickNoteService).promoteToNote(campaignId, noteId,
+                "Release rehearsal plan", NoteType.SESSION_PLAN);
     }
 }

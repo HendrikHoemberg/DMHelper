@@ -98,6 +98,7 @@ public class CockpitRuntimeModuleController {
         requireMode(def, mode);
         model.addAttribute("view", views.quickNotes(campaignId));
         model.addAttribute("mode", mode);
+        model.addAttribute("campaignId", campaignId);
         return "session/modules/_quick-notes :: body";
     }
 

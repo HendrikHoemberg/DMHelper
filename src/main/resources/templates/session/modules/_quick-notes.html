@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <section th:fragment="body(view, mode)"
-         th:attr="data-cockpit-module-fragment='quick-notes', data-module-mode=${mode}, data-module-empty=${view == null or view.notes.isEmpty()}">
+         x-data="quicknotes"
+         th:attr="data-cockpit-module-fragment='quick-notes', data-module-mode=${mode}, data-module-empty=${view == null or view.notes.isEmpty()}, data-campaign-id=${campaignId}, data-target-type='CAMPAIGN', data-target-id=${campaignId}">
   <div data-module-content-root>
     <div class="quicknotes-module-body">
       <!-- targetType=CAMPAIGN -->
@@ -24,9 +25,14 @@
               <span class="u-text-xs text-muted" th:text="${n.createdAt}">Date</span>
             </div>
             <div class="quicknote-actions u-flex u-gap-xs">
-              <button class="btn btn-ghost btn-xs" @click="promote(n)"
+              <button class="btn btn-ghost btn-xs" data-quicknote-action="generic"
+                      th:attr="data-quicknote-id=${n.id}" @click="promote({id: $el.dataset.quicknoteId})"
                       aria-label="Promote note to full note">Promote</button>
-              <button class="btn btn-ghost btn-xs" @click="remove(n.id)"
+              <button class="btn btn-ghost btn-xs" data-promote-session-plan
+                      th:attr="data-quicknote-id=${n.id}" @click="promoteSessionPlan({id: $el.dataset.quicknoteId})"
+                      aria-label="Promote to session plan">Plan</button>
+              <button class="btn btn-ghost btn-xs" th:attr="data-quicknote-id=${n.id}"
+                      @click="remove($el.dataset.quicknoteId)"
                       aria-label="Delete quick note">Delete</button>
             </div>
           </div>
