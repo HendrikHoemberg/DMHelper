@@ -428,6 +428,32 @@
         this.focusReturn.addEventListener('click', () => this.restoreFocus());
       }
       document.addEventListener('keydown', (event) => {
+        if (event.key === 'Tab' && this.focusedModuleKey && this.focusLayer
+            && !this.focusLayer.hidden) {
+          const focusable = Array.from(this.focusLayer.querySelectorAll(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), '
+            + 'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )).filter((element) => {
+            const style = window.getComputedStyle(element);
+            return !element.hidden && style.display !== 'none'
+              && style.visibility !== 'hidden' && element.getClientRects().length > 0;
+          });
+          if (focusable.length === 0) {
+            event.preventDefault();
+            this.focusReturn?.focus();
+            return;
+          }
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+          return;
+        }
         if (event.key !== 'Escape') return;
         if (this.focusedModuleKey == null) return;
         if (this.isModalOpen()) return;
@@ -1467,9 +1493,9 @@
         );
         // Prefer the module Focus control so Escape/Return always restore an actionable
         // trigger, even when focus was entered programmatically or from another control.
-        const target = (focusBtn && document.contains(focusBtn))
-          ? focusBtn
-          : (prefer && document.contains(prefer) ? prefer : null);
+        const target = (prefer && document.contains(prefer))
+          ? prefer
+          : ((focusBtn && document.contains(focusBtn)) ? focusBtn : null);
         target?.focus?.();
       } else {
         this._focusReturnEl = null;
