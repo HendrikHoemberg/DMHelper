@@ -38,7 +38,6 @@ class MapEditorBrowserTest {
     private BrowserFailureCollector failures;
 
     private Campaign campaign;
-    private java.util.UUID mapId;
 
     @BeforeAll
     void launch() {
@@ -64,7 +63,10 @@ class MapEditorBrowserTest {
         campaign = campaignRepository.save(campaign);
 
         var map = gameMapService.create(campaign.getId(), "Test Map", 30, 20, 48);
-        mapId = map.getId();
+
+        page.navigate("http://localhost:" + port + "/campaigns/" + campaign.getId() + "/maps/" + map.getId() + "/edit");
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        failures.clear();
     }
 
     @AfterEach
@@ -79,9 +81,6 @@ class MapEditorBrowserTest {
     @SuppressWarnings("unchecked")
     @Test
     void geometryHelpersUseTheAuthoritativeGrid() {
-        page.navigate("http://localhost:" + port + "/campaigns/" + campaign.getId() + "/maps");
-        page.waitForLoadState(LoadState.NETWORKIDLE);
-
         Map<String, Object> result = (Map<String, Object>) page.evaluate("""
                 async () => {
                     const g = await import('/js/map/geometry.js');
@@ -113,5 +112,56 @@ class MapEditorBrowserTest {
         assertThat(((Number) calibration.get("width")).doubleValue()).isCloseTo(30.0, within(0.001));
         assertThat(((Number) calibration.get("height")).doubleValue()).isCloseTo(20.0, within(0.001));
         assertThat(((Number) calibration.get("scale")).doubleValue()).isCloseTo(1.0, within(0.001));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void boundsImpactDetectsOutsideCellsAndAffectedShapes() {
+        Map<String, Object> result = (Map<String, Object>) page.evaluate("""
+                async () => {
+                    const g = await import('/js/map/geometry.js');
+
+                    const emptyDoc = { layers: [] };
+                    const emptyResult = g.boundsImpact(emptyDoc, 10, 10);
+
+                    const doc = {
+                        layers: [
+                            {
+                                id: 'terrain',
+                                cells: [
+                                    { col: 0, row: 0, terrain: 'floor' },
+                                    { col: 5, row: 5, terrain: 'wall' },
+                                    { col: 9, row: 9, terrain: 'floor' },
+                                    { col: -1, row: 3, terrain: 'floor' },
+                                    { col: 3, row: -2, terrain: 'wall' },
+                                    { col: 10, row: 4, terrain: 'floor' },
+                                    { col: 4, row: 10, terrain: 'floor' },
+                                ],
+                                shapes: [
+                                    { type: 'rect', points: [1, 1, 3, 3] },
+                                    { type: 'rect', points: [-1, 2, 4, 3] },
+                                    { type: 'circle', points: [12, 12, 2] },
+                                    { type: 'line', points: [] },
+                                    { type: 'rect', points: [1] },
+                                ],
+                            },
+                        ],
+                    };
+
+                    const impact = g.boundsImpact(doc, 10, 10);
+
+                    return {
+                        emptyOutside: emptyResult.outsideCells.length,
+                        emptyShapes: emptyResult.affectedShapes.length,
+                        outsideCount: impact.outsideCells.length,
+                        affectedCount: impact.affectedShapes.length,
+                    };
+                }
+                """);
+
+        assertThat(((Number) result.get("emptyOutside")).intValue()).isEqualTo(0);
+        assertThat(((Number) result.get("emptyShapes")).intValue()).isEqualTo(0);
+        assertThat(((Number) result.get("outsideCount")).intValue()).isEqualTo(4);
+        assertThat(((Number) result.get("affectedCount")).intValue()).isEqualTo(2);
     }
 }

@@ -1,3 +1,10 @@
+/**
+ * @param {number} gridWidth
+ * @param {number} gridHeight
+ * @param {number} imageWidth
+ * @param {number} imageHeight
+ * @returns {{x: number, y: number, width: number, height: number}}
+ */
 export function fitInsideGeometry(gridWidth, gridHeight, imageWidth, imageHeight) {
     const scale = Math.min(gridWidth / imageWidth, gridHeight / imageHeight);
     const width = imageWidth * scale;
@@ -10,6 +17,13 @@ export function fitInsideGeometry(gridWidth, gridHeight, imageWidth, imageHeight
     };
 }
 
+/**
+ * @param {number} gridWidth
+ * @param {number} gridHeight
+ * @param {number} imageWidth
+ * @param {number} imageHeight
+ * @returns {{x: number, y: number, width: number, height: number}}
+ */
 export function fillCoverGeometry(gridWidth, gridHeight, imageWidth, imageHeight) {
     const scale = Math.max(gridWidth / imageWidth, gridHeight / imageHeight);
     const width = imageWidth * scale;
@@ -22,6 +36,14 @@ export function fillCoverGeometry(gridWidth, gridHeight, imageWidth, imageHeight
     };
 }
 
+/**
+ * @param {{x: number, y: number, width: number, height: number}} image
+ * @param {{x: number, y: number}} pointA
+ * @param {{x: number, y: number}} pointB
+ * @param {number} cellsBetween
+ * @param {number} cellSizePx
+ * @returns {{x: number, y: number, width: number, height: number, scale: number}}
+ */
 export function calibratedImageGeometry(image, pointA, pointB, cellsBetween, cellSizePx) {
     const dx = pointB.x - pointA.x;
     const dy = pointB.y - pointA.y;
@@ -39,12 +61,15 @@ function shapeBounds(shape) {
     const pts = shape.points || [];
     switch (shape.type) {
         case 'rect':
+            if (pts.length < 4) return null;
             return { minX: pts[0], minY: pts[1], maxX: pts[0] + pts[2], maxY: pts[1] + pts[3] };
         case 'circle':
+            if (pts.length < 3) return null;
             return { minX: pts[0] - pts[2], minY: pts[1] - pts[2], maxX: pts[0] + pts[2], maxY: pts[1] + pts[2] };
         case 'line':
         case 'polygon':
         default: {
+            if (pts.length < 2) return null;
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
             for (let i = 0; i + 1 < pts.length; i += 2) {
                 if (pts[i] < minX) minX = pts[i];
@@ -57,6 +82,12 @@ function shapeBounds(shape) {
     }
 }
 
+/**
+ * @param {{layers: {cells?: {col:number, row:number, terrain:string}[], shapes?: {type:string, points:number[]}[]}[]}} document
+ * @param {number} gridWidth
+ * @param {number} gridHeight
+ * @returns {{outsideCells: {col:number, row:number, terrain:string}[], affectedShapes: {type:string, points:number[]}[]}}
+ */
 export function boundsImpact(document, gridWidth, gridHeight) {
     const outsideCells = [];
     const affectedShapes = [];
@@ -69,6 +100,7 @@ export function boundsImpact(document, gridWidth, gridHeight) {
         }
         for (const shape of (layer.shapes || [])) {
             const bounds = shapeBounds(shape);
+            if (!bounds) continue;
             if (bounds.minX < 0 || bounds.minY < 0 || bounds.maxX > gridWidth || bounds.maxY > gridHeight) {
                 affectedShapes.push(shape);
             }
