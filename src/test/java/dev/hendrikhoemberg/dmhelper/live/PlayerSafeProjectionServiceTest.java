@@ -3,12 +3,14 @@ package dev.hendrikhoemberg.dmhelper.live;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterTokenPlacement;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWave;
 import dev.hendrikhoemberg.dmhelper.encounter.data.WaveStatus;
 import dev.hendrikhoemberg.dmhelper.encounter.data.WaveTriggerKind;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.RuntimeTokenProjectionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,17 +23,18 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import(PlayerSafeProjectionService.class)
+@Import({PlayerSafeProjectionService.class, RuntimeTokenProjectionService.class})
 class PlayerSafeProjectionServiceTest {
 
     @Autowired private PlayerSafeProjectionService service;
     @Autowired private jakarta.persistence.EntityManager em;
 
+    private Campaign campaign;
     private GameMap gameMap;
 
     @BeforeEach
     void setUp() {
-        Campaign campaign = new Campaign();
+        campaign = new Campaign();
         campaign.setName("Test");
         em.persist(campaign);
 
@@ -60,23 +63,222 @@ class PlayerSafeProjectionServiceTest {
         em.persist(hidden);
         em.flush();
 
-        var result = service.projectTokens(gameMap);
+        var result = service.projectTokens(gameMap, null);
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().name()).isEqualTo("Goblin");
     }
 
     @Test
-    void shouldComputeBloodiedFlag() {
-        Token token = new Token();
-        token.setMap(gameMap);
-        token.setName("Orc");
-        token.setHidden(false);
-        em.persist(token);
+    void hiddenCombatantAndHiddenMarkerAreNotProjected() {
+        Encounter enc = new Encounter();
+        enc.setCampaign(campaign);
+        enc.setMap(gameMap);
+        enc.setName("Battle");
+        enc.setStatus(Encounter.Status.ACTIVE);
+        enc.setRound(1);
+        em.persist(enc);
+
+        Combatant visibleCbt = new Combatant();
+        visibleCbt.setEncounter(enc);
+        visibleCbt.setName("Visible Orc");
+        visibleCbt.setKind("MONSTER");
+        visibleCbt.setHidden(false);
+        visibleCbt.setMaxHp(20);
+        visibleCbt.setCurrentHp(20);
+        em.persist(visibleCbt);
+
+        Combatant hiddenCbt = new Combatant();
+        hiddenCbt.setEncounter(enc);
+        hiddenCbt.setName("Hidden Assassin");
+        hiddenCbt.setKind("MONSTER");
+        hiddenCbt.setHidden(true);
+        hiddenCbt.setMaxHp(20);
+        hiddenCbt.setCurrentHp(20);
+        em.persist(hiddenCbt);
+
+        EncounterTokenPlacement visiblePl = new EncounterTokenPlacement();
+        visiblePl.setEncounter(enc);
+        visiblePl.setCombatant(visibleCbt);
+        visiblePl.setMap(gameMap);
+        visiblePl.setPositionX(0);
+        visiblePl.setPositionY(0);
+        em.persist(visiblePl);
+
+        EncounterTokenPlacement hiddenPl = new EncounterTokenPlacement();
+        hiddenPl.setEncounter(enc);
+        hiddenPl.setCombatant(hiddenCbt);
+        hiddenPl.setMap(gameMap);
+        hiddenPl.setPositionX(5);
+        hiddenPl.setPositionY(5);
+        em.persist(hiddenPl);
+
+        Token visibleMarker = new Token();
+        visibleMarker.setMap(gameMap);
+        visibleMarker.setName("Chest");
+        visibleMarker.setHidden(false);
+        em.persist(visibleMarker);
+
+        Token hiddenMarker = new Token();
+        hiddenMarker.setMap(gameMap);
+        hiddenMarker.setName("Trap");
+        hiddenMarker.setHidden(true);
+        em.persist(hiddenMarker);
         em.flush();
 
-        var result = service.projectTokens(gameMap);
+        var result = service.projectTokens(gameMap, enc);
+        assertThat(result).hasSize(2);
+        assertThat(result).extracting(LiveTableState.TokenSnapshot::name)
+                .containsExactlyInAnyOrder("Visible Orc", "Chest");
+    }
+
+    @Test
+    void detachedMapContainsNoActiveEncounterOverlay() {
+        GameMap otherMap = new GameMap();
+        otherMap.setCampaign(campaign);
+        otherMap.setName("Other Map");
+        otherMap.setGridWidth(10);
+        otherMap.setGridHeight(10);
+        otherMap.setCellSizePx(48);
+        em.persist(otherMap);
+
+        Encounter enc = new Encounter();
+        enc.setCampaign(campaign);
+        enc.setMap(otherMap);
+        enc.setName("Battle on Other Map");
+        enc.setStatus(Encounter.Status.ACTIVE);
+        enc.setRound(1);
+        em.persist(enc);
+
+        Combatant cbt = new Combatant();
+        cbt.setEncounter(enc);
+        cbt.setName("Goblin");
+        cbt.setKind("MONSTER");
+        cbt.setHidden(false);
+        cbt.setMaxHp(10);
+        cbt.setCurrentHp(10);
+        em.persist(cbt);
+
+        EncounterTokenPlacement pl = new EncounterTokenPlacement();
+        pl.setEncounter(enc);
+        pl.setCombatant(cbt);
+        pl.setMap(otherMap);
+        pl.setPositionX(0);
+        pl.setPositionY(0);
+        em.persist(pl);
+
+        Token marker = new Token();
+        marker.setMap(gameMap);
+        marker.setName("Potion");
+        marker.setHidden(false);
+        em.persist(marker);
+        em.flush();
+
+        var result = service.projectTokens(gameMap, null);
         assertThat(result).hasSize(1);
-        assertThat(result.getFirst().bloodied()).isTrue();
+        assertThat(result.getFirst().name()).isEqualTo("Potion");
+    }
+
+    @Test
+    void visibleCombatantsDefeatedAndBloodiedAreDerivedFromCombatantState() {
+        Encounter enc = new Encounter();
+        enc.setCampaign(campaign);
+        enc.setMap(gameMap);
+        enc.setName("Battle");
+        enc.setStatus(Encounter.Status.ACTIVE);
+        enc.setRound(1);
+        em.persist(enc);
+
+        Combatant defeated = new Combatant();
+        defeated.setEncounter(enc);
+        defeated.setName("Dead Orc");
+        defeated.setKind("MONSTER");
+        defeated.setHidden(false);
+        defeated.setMaxHp(20);
+        defeated.setCurrentHp(0);
+        defeated.setDefeated(true);
+        em.persist(defeated);
+
+        Combatant bloodied = new Combatant();
+        bloodied.setEncounter(enc);
+        bloodied.setName("Wounded Goblin");
+        bloodied.setKind("MONSTER");
+        bloodied.setHidden(false);
+        bloodied.setMaxHp(20);
+        bloodied.setCurrentHp(5);
+        em.persist(bloodied);
+
+        Combatant healthy = new Combatant();
+        healthy.setEncounter(enc);
+        healthy.setName("Healthy Troll");
+        healthy.setKind("MONSTER");
+        healthy.setHidden(false);
+        healthy.setMaxHp(30);
+        healthy.setCurrentHp(30);
+        em.persist(healthy);
+
+        for (Combatant c : List.of(defeated, bloodied, healthy)) {
+            EncounterTokenPlacement pl = new EncounterTokenPlacement();
+            pl.setEncounter(enc);
+            pl.setCombatant(c);
+            pl.setMap(gameMap);
+            pl.setPositionX(0);
+            pl.setPositionY(0);
+            em.persist(pl);
+        }
+        em.flush();
+
+        var result = service.projectTokens(gameMap, enc);
+        assertThat(result).hasSize(3);
+
+        var deadToken = result.stream().filter(t -> t.name().equals("Dead Orc")).findFirst().orElseThrow();
+        assertThat(deadToken.dead()).isTrue();
+
+        var woundedToken = result.stream().filter(t -> t.name().equals("Wounded Goblin")).findFirst().orElseThrow();
+        assertThat(woundedToken.dead()).isFalse();
+        assertThat(woundedToken.bloodied()).isTrue();
+
+        var healthyToken = result.stream().filter(t -> t.name().equals("Healthy Troll")).findFirst().orElseThrow();
+        assertThat(healthyToken.dead()).isFalse();
+        assertThat(healthyToken.bloodied()).isFalse();
+    }
+
+    @Test
+    void suspendedEncounterPlacementsAreAbsentFromPlayer() {
+        Encounter enc = new Encounter();
+        enc.setCampaign(campaign);
+        enc.setMap(gameMap);
+        enc.setName("Paused Battle");
+        enc.setStatus(Encounter.Status.SUSPENDED);
+        enc.setRound(1);
+        em.persist(enc);
+
+        Combatant cbt = new Combatant();
+        cbt.setEncounter(enc);
+        cbt.setName("Paused Orc");
+        cbt.setKind("MONSTER");
+        cbt.setHidden(false);
+        cbt.setMaxHp(20);
+        cbt.setCurrentHp(20);
+        em.persist(cbt);
+
+        EncounterTokenPlacement pl = new EncounterTokenPlacement();
+        pl.setEncounter(enc);
+        pl.setCombatant(cbt);
+        pl.setMap(gameMap);
+        pl.setPositionX(0);
+        pl.setPositionY(0);
+        em.persist(pl);
+
+        Token marker = new Token();
+        marker.setMap(gameMap);
+        marker.setName("Barrel");
+        marker.setHidden(false);
+        em.persist(marker);
+        em.flush();
+
+        var result = service.projectTokens(gameMap, null);
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().name()).isEqualTo("Barrel");
     }
 
     @Test

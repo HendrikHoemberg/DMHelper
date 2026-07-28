@@ -1,11 +1,12 @@
 package dev.hendrikhoemberg.dmhelper.live;
 
 import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
-import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapLayerDto;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.RuntimeTokenProjectionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.type.TypeReference;
@@ -14,23 +15,34 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
 public class PlayerSafeProjectionService {
 
     private final TokenRepository tokenRepository;
+    private final RuntimeTokenProjectionService runtimeTokenService;
     private final ObjectMapper objectMapper;
 
-    public PlayerSafeProjectionService(TokenRepository tokenRepository) {
+    public PlayerSafeProjectionService(TokenRepository tokenRepository,
+                                        RuntimeTokenProjectionService runtimeTokenService) {
         this.tokenRepository = tokenRepository;
+        this.runtimeTokenService = runtimeTokenService;
         this.objectMapper = new ObjectMapper();
     }
 
-    public List<LiveTableState.TokenSnapshot> projectTokens(GameMap gameMap) {
-        return tokenRepository.findByMapIdOrderByNameAsc(gameMap.getId()).stream()
-                .filter(t -> !t.isHidden())
-                .map(this::toSnapshot)
+    public List<LiveTableState.TokenSnapshot> projectTokens(GameMap gameMap, Encounter activeEncounter) {
+        UUID encounterId = activeEncounter != null ? activeEncounter.getId() : null;
+        var runtime = runtimeTokenService.project(gameMap.getId(), encounterId);
+
+        return runtime.stream()
+                .filter(t -> !t.hidden())
+                .map(t -> new LiveTableState.TokenSnapshot(
+                        t.id().toString(), t.name(), t.kind(), t.color(),
+                        t.positionX(), t.positionY(), t.sizeCols(), t.sizeRows(),
+                        t.defeated(), t.bloodied(),
+                        t.source().name(), t.combatantId()))
                 .toList();
     }
 
@@ -84,21 +96,6 @@ public class PlayerSafeProjectionService {
                     );
                 })
                 .toList();
-    }
-
-    private LiveTableState.TokenSnapshot toSnapshot(Token token) {
-        return new LiveTableState.TokenSnapshot(
-                token.getId().toString(),
-                token.getName(),
-                token.getKind(),
-                token.getColor(),
-                token.getPositionX(),
-                token.getPositionY(),
-                token.getSizeCols(),
-                token.getSizeRows(),
-                false,
-                null
-        );
     }
 
     private List<String> parseConditions(String json) {

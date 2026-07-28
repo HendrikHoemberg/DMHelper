@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapLayerDto;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.RuntimeTokenProjectionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import(PlayerSafeProjectionService.class)
+@Import({PlayerSafeProjectionService.class, RuntimeTokenProjectionService.class})
 class PlayerSafeMapProjectionTest {
 
     @Autowired
@@ -164,7 +165,7 @@ class PlayerSafeMapProjectionTest {
         em.persist(map);
         em.flush();
 
-        var result = projection.projectTokens(map);
+        var result = projection.projectTokens(map, null);
         assertThat(result).isEmpty();
 
         map.setDocument(mapper.writeValueAsString(new MapDocumentDto(

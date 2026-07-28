@@ -29,6 +29,8 @@ import tools.jackson.databind.json.JsonMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -73,7 +75,7 @@ class TablePresentationServiceTest {
         when(encounters.findByCampaignIdAndStatus(campaignId,
                 dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.ACTIVE))
                 .thenReturn(Optional.empty());
-        when(projection.projectTokens(map)).thenReturn(List.of());
+        when(projection.projectTokens(eq(map), isNull())).thenReturn(List.of());
 
         service.restoreOnStartup();
 
@@ -89,7 +91,7 @@ class TablePresentationServiceTest {
         when(encounters.findByCampaignIdAndStatus(campaignId,
                 dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.ACTIVE))
                 .thenReturn(Optional.empty());
-        when(projection.projectTokens(map)).thenReturn(List.of());
+        when(projection.projectTokens(eq(map), isNull())).thenReturn(List.of());
         service.presentMap(campaignId, map.getId());
 
         LiveTableState unchanged = service.broadcastCurrentState(otherCampaignId);
@@ -105,7 +107,7 @@ class TablePresentationServiceTest {
         when(encounters.findByCampaignIdAndStatus(campaignId,
                 dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.ACTIVE))
                 .thenReturn(Optional.empty());
-        when(projection.projectTokens(map)).thenReturn(List.of());
+        when(projection.projectTokens(eq(map), isNull())).thenReturn(List.of());
         service.presentMap(campaignId, map.getId());
         AtomicInteger broadcasts = new AtomicInteger();
         service.setOnStateChange(broadcasts::incrementAndGet);
@@ -322,5 +324,52 @@ class TablePresentationServiceTest {
         assertThat(preview.requiresOverride()).isTrue();
         verify(sessions, never()).findByCampaignId(any());
         verify(auditEntryRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void broadcastIncludesCombatantSourcedTokensWhenEncounterIsActive() {
+        var enc = new dev.hendrikhoemberg.dmhelper.encounter.data.Encounter();
+        enc.setId(UUID.randomUUID());
+        enc.setStatus(dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.ACTIVE);
+        enc.setActiveTurnIndex(0);
+
+        when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(session));
+        when(maps.findById(map.getId())).thenReturn(Optional.of(map));
+        when(encounters.findByCampaignIdAndStatus(campaignId,
+                dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.ACTIVE))
+                .thenReturn(Optional.of(enc));
+        when(combatants.findByEncounterIdOrderBySortOrderAsc(enc.getId()))
+                .thenReturn(List.of());
+        when(projection.projectTokens(eq(map), eq(enc)))
+                .thenReturn(List.of(new LiveTableState.TokenSnapshot(
+                        "c1", "Goblin", "MONSTER", "#e74c3c",
+                        0, 0, 1, 1, false, false, "COMBATANT", UUID.randomUUID())));
+
+        service.presentMap(campaignId, map.getId());
+
+        assertThat(service.getCurrentState().map().tokens()).hasSize(1);
+        assertThat(service.getCurrentState().map().tokens().getFirst().source()).isEqualTo("COMBATANT");
+    }
+
+    @Test
+    void broadcastExcludesHiddenCombatants() {
+        var enc = new dev.hendrikhoemberg.dmhelper.encounter.data.Encounter();
+        enc.setId(UUID.randomUUID());
+        enc.setStatus(dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.ACTIVE);
+        enc.setActiveTurnIndex(0);
+
+        when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(session));
+        when(maps.findById(map.getId())).thenReturn(Optional.of(map));
+        when(encounters.findByCampaignIdAndStatus(campaignId,
+                dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.ACTIVE))
+                .thenReturn(Optional.of(enc));
+        when(combatants.findByEncounterIdOrderBySortOrderAsc(enc.getId()))
+                .thenReturn(List.of());
+        when(projection.projectTokens(eq(map), eq(enc)))
+                .thenReturn(List.of());
+
+        service.presentMap(campaignId, map.getId());
+
+        assertThat(service.getCurrentState().map().tokens()).isEmpty();
     }
 }

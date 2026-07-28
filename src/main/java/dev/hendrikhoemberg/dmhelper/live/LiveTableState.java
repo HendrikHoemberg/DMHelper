@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
+import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record LiveTableState(
@@ -54,7 +55,9 @@ public record LiveTableState(
             int sizeCols,
             int sizeRows,
             boolean dead,
-            Boolean bloodied
+            Boolean bloodied,
+            String source,
+            UUID combatantId
     ) {}
 
     public record HandoutRef(

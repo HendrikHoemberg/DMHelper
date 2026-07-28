@@ -13,6 +13,7 @@ import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntry;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntryRepository;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionEncounterActivated;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.PresentationInvalidated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,11 @@ public class TablePresentationService {
     private final HandoutRepository handoutRepository;
     private final CampaignSessionRepository sessionRepository;
     private final SessionAuditEntryRepository auditEntryRepository;
+
+    @EventListener
+    public void onSessionEncounterActivated(SessionEncounterActivated event) {
+        broadcastCurrentState(event.campaignId());
+    }
 
     private volatile LiveTableState currentState;
     private volatile UUID currentCampaignId;
@@ -264,8 +270,9 @@ public class TablePresentationService {
 
     private LiveTableState projectMap(GameMap gameMap) {
         var document = projectionService.projectMapDocument(gameMap);
-        var tokens = projectionService.projectTokens(gameMap);
         UUID campaignId = gameMap.getCampaign().getId();
+        var activeEncounter = encounterRepository.findByCampaignIdAndStatus(campaignId, Encounter.Status.ACTIVE).orElse(null);
+        var tokens = projectionService.projectTokens(gameMap, activeEncounter);
         var combatants = getActiveCombatants(campaignId);
         int activeTurnIndex = getActiveTurnIndex(campaignId);
         return LiveTableState.full("MAP",
