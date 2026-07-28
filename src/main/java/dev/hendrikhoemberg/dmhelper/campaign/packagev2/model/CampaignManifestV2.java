@@ -369,7 +369,7 @@ public record CampaignManifestV2(
                 ContentReference partyMemberRef,
                 Integer currentHp,
                 Integer maxHp,
-                boolean dead,
+                Boolean dead,
                 String notes,
                 String icon
         ) {}

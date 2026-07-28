@@ -245,24 +245,22 @@ class SessionEncounterServiceTest {
 
     @Test
     void activatingSameEncounterTwiceDoesNotReplace() {
-        Encounter active = new Encounter();
-        active.setId(encounterId);
-        active.setCampaign(campaign);
-        active.setName("Already Active");
-        active.setStatus(Encounter.Status.ACTIVE);
+        encounter.setStatus(Encounter.Status.ACTIVE);
 
         when(encounterRepo.findById(encounterId)).thenReturn(Optional.of(encounter));
         when(placements.readiness(encounterId)).thenReturn(ready());
         when(encounterRepo.findByCampaignIdAndStatus(campaignId, Encounter.Status.ACTIVE))
-                .thenReturn(Optional.of(active));
-        when(encounterService.activateFresh(encounterId)).thenReturn(encounter);
+                .thenReturn(Optional.of(encounter));
         when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(session));
 
         SessionEncounterService.EncounterActivationDto result = service.activate(campaignId, encounterId, null);
 
         assertThat(result.replacedEncounterId()).isNull();
+        assertThat(result.status()).isEqualTo("ACTIVE");
         verify(encounterService, never()).suspend(any());
         verify(encounterService, never()).endEncounter(any());
+        verify(encounterService, never()).activateFresh(any());
+        verify(encounterService, never()).resume(any());
     }
 
     @Test

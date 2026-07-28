@@ -135,7 +135,7 @@
     <h2 id="encounterEndDialogTitle">End active encounter?</h2>
     <p>This stops initiative tracking for the active encounter. The session itself remains open.</p>
     <div class="cockpit-dialog__actions">
-      <button type="button" class="btn btn-danger" @click="confirmEncounterEnd()">End encounter</button>
+      <button type="button" class="btn btn-danger action-row__destructive" @click="confirmEncounterEnd()">End encounter</button>
       <button type="button" class="btn btn-ghost" @click="closeEncounterEndDialog()">Cancel</button>
     </div>
   </dialog>
@@ -144,10 +144,10 @@
           aria-labelledby="encounterReplacementTitle"
           @cancel.prevent="closeReplacementDialog()">
     <h2 id="encounterReplacementTitle">Another encounter is running</h2>
-    <p x-text="'&#39;' + (_replacementActiveName || '') + '&#39; is currently active. Choose how to proceed:'"></p>
+    <p x-text="(_replacementActiveName || 'Another encounter') + ' is currently active. Choose how to proceed:'"></p>
     <div class="cockpit-dialog__actions">
       <button type="button" class="btn btn-primary" @click="confirmSuspendCurrent()">Suspend current and run</button>
-      <button type="button" class="btn btn-danger" @click="confirmEndCurrent()">End current and run</button>
+      <button type="button" class="btn btn-danger action-row__destructive" @click="confirmEndCurrent()">End current and run</button>
       <button type="button" class="btn btn-ghost" @click="closeReplacementDialog()">Cancel</button>
     </div>
   </dialog>
@@ -155,7 +155,7 @@
   <dialog class="cockpit-dialog" id="encounterReadinessDialog"
           aria-labelledby="encounterReadinessTitle"
           @cancel.prevent="closeReadinessDialog()">
-    <h2 id="encounterReadinessTitle">Encounter not ready</h2>
+    <h2 id="encounterReadinessTitle">Encounter readiness</h2>
     <template x-if="_readinessData">
       <div>
         <p x-show="_readinessData.canRun === false">The encounter has blocking issues:</p>
@@ -167,8 +167,9 @@
       </div>
     </template>
     <div class="cockpit-dialog__actions">
-      <button type="button" class="btn btn-primary" @click="openEncounterSetup()">Open setup</button>
-      <button type="button" class="btn btn-ghost" @click="confirmRunReady()">Run anyway</button>
+      <button type="button" class="btn btn-ghost" @click="openEncounterSetup()">Open setup</button>
+      <button type="button" class="btn btn-ghost" x-show="readinessCanRun"
+              @click="confirmRunReady()">Run anyway</button>
       <button type="button" class="btn btn-ghost" @click="closeReadinessDialog()">Cancel</button>
     </div>
   </dialog>

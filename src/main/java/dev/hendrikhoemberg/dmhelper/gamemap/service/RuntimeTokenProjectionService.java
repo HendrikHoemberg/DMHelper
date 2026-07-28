@@ -1,7 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.gamemap.service;
 
-import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
@@ -62,7 +62,7 @@ public class RuntimeTokenProjectionService {
             if (enc != null && enc.getMap() != null && enc.getMap().getId().equals(mapId)) {
                 return encounterId;
             }
-            return null;
+            throw new IllegalArgumentException("Encounter does not belong to map");
         }
         GameMap map = mapRepo.findById(mapId).orElse(null);
         if (map == null) return null;
@@ -97,7 +97,12 @@ public class RuntimeTokenProjectionService {
     private List<String> parseConditions(String json) {
         if (json == null || json.isBlank()) return List.of();
         try {
-            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
+            JsonNode root = objectMapper.readTree(json);
+            if (!root.isArray()) return List.of();
+            return java.util.stream.StreamSupport.stream(root.spliterator(), false)
+                    .map(node -> node.isTextual() ? node.asText() : node.path("sourceKey").asText())
+                    .filter(value -> value != null && !value.isBlank())
+                    .toList();
         } catch (Exception e) {
             return List.of();
         }

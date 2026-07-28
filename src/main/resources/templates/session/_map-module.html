@@ -5,7 +5,8 @@
       <div class="map-context-warning" role="status"
            th:if="${activeEncounter != null && activeEncounter.activeEncounterId != null && view.mapId != activeEncounter.activeEncounterMapId}">
         Viewing a different map while <span th:text="${activeEncounter.activeEncounterName}"></span> is active.
-        <button th:attr="onclick=|switchMap('${activeEncounter.activeEncounterMapId}')|" class="btn btn-ghost" style="padding: 2px 8px;">Return to encounter map</button>
+        <button type="button" @click="switchMap(activeEncounter.mapId)"
+                class="btn btn-ghost" style="padding: 2px 8px;">Return to encounter map</button>
       </div>
       <div class="battle-toolbar" data-screen-sensitive aria-label="Battle map controls">
         <div class="tool-group map-switcher">
@@ -23,8 +24,8 @@
                   @click="setTool('select')" :disabled="!currentMapId">Select</button>
           <button class="tool-btn" :class="{ active: tool === 'measure' }"
                   @click="setTool('measure')" :disabled="!currentMapId">Measure</button>
-          <button class="tool-btn" @click="openTokenDialog()" :disabled="!currentMapId">+ Token</button>
-          <button class="tool-btn" @click="addParty()" :disabled="!currentMapId">Place missing party members</button>
+          <button class="tool-btn" @click="openTokenDialog()" :disabled="!currentMapId">+ Marker</button>
+          <button class="tool-btn" @click="addParty()" :disabled="!currentMapId || !activeEncounter">Place missing party members</button>
         </div>
         <div class="tool-group">
           <button class="tool-btn" :class="{ active: movementMode === 'GRID' }"
@@ -107,7 +108,7 @@
                 <label class="u-text-sm">X <input type="number" x-model.number="threatPinX" class="u-w-full"></label>
                 <label class="u-text-sm">Y <input type="number" x-model.number="threatPinY" class="u-w-full"></label>
               </div>
-              <button type="button" class="btn btn-primary u-w-full" style="margin-top:4px"
+              <button type="button" class="btn btn-ghost u-w-full" style="margin-top:4px"
                       @click="createThreatPin()" :disabled="!selectedThreatForPin">Create pin</button>
               <template x-for="pin in threatPins" :key="pin.id">
                 <div class="map-module__pin u-flex u-items-center u-gap-xs" style="margin-top:4px">
@@ -119,7 +120,7 @@
           </details>
           <template x-if="selectedToken">
             <section class="sidebar-section">
-              <h3>Selected token</h3>
+              <h3>Selected map item</h3>
               <label>Name <input type="text" x-model="selectedToken.name" @change="updateToken()"></label>
               <template x-if="selectedToken.source === 'COMBATANT'">
                 <div>
@@ -163,7 +164,7 @@
               aria-labelledby="tokenDialogTitle"
               @cancel.prevent="closeTokenDialog()">
         <form @submit.prevent="submitTokenDialog()">
-          <h2 id="tokenDialogTitle">Add token</h2>
+          <h2 id="tokenDialogTitle">Add temporary marker</h2>
           <div class="token-dialog__grid">
             <label>Name
               <input type="text" x-model.trim="tokenDraft.name" maxlength="255"
@@ -191,12 +192,6 @@
             <label>Row
               <input type="number" x-model.number="tokenDraft.row" min="0" required>
             </label>
-            <label>Current HP
-              <input type="number" x-model="tokenDraft.currentHp" min="0" placeholder="Optional">
-            </label>
-            <label>Maximum HP
-              <input type="number" x-model="tokenDraft.maxHp" min="0" placeholder="Optional">
-            </label>
             <label>Color
               <input type="color" x-model="tokenDraft.color">
             </label>
@@ -208,7 +203,7 @@
              x-text="tokenDialogError"></p>
           <div class="cockpit-dialog__actions">
             <button type="submit" class="btn btn-primary" :disabled="tokenDialogBusy"
-                    x-text="tokenDialogBusy ? 'Adding…' : 'Add token'"></button>
+                    x-text="tokenDialogBusy ? 'Adding…' : 'Add marker'"></button>
             <button type="button" class="btn btn-ghost" @click="closeTokenDialog()"
                     :disabled="tokenDialogBusy">Cancel</button>
           </div>
@@ -221,7 +216,7 @@
         <h2 id="tokenDeleteDialogTitle">Delete token?</h2>
         <p><strong x-text="pendingTokenDelete?.name || 'This token'"></strong> will be removed from the map.</p>
         <div class="cockpit-dialog__actions">
-          <button type="button" class="btn btn-danger" @click="confirmTokenDelete()"
+          <button type="button" class="btn btn-danger action-row__destructive" @click="confirmTokenDelete()"
                   :disabled="tokenDeleteBusy">Delete</button>
           <button type="button" class="btn btn-ghost" @click="closeTokenDeleteDialog()"
                   :disabled="tokenDeleteBusy">Cancel</button>
@@ -238,7 +233,7 @@
                    autocomplete="off" required data-annotation-text>
           </label>
           <div class="cockpit-dialog__actions">
-            <button type="submit" class="btn btn-primary">Add</button>
+            <button type="submit" class="btn btn-ghost">Add</button>
             <button type="button" class="btn btn-ghost" @click="closeAnnotationDialog()">Cancel</button>
           </div>
         </form>

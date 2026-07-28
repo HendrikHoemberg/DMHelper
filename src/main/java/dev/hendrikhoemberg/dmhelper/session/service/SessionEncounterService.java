@@ -72,9 +72,11 @@ public class SessionEncounterService {
             encounterService.endEncounter(replaced.getId());
         }
 
-        Encounter activated = requested.getStatus() == Encounter.Status.SUSPENDED
-                ? encounterService.resume(encounterId)
-                : encounterService.activateFresh(encounterId);
+        Encounter activated = switch (requested.getStatus()) {
+            case ACTIVE -> requested;
+            case SUSPENDED -> encounterService.resume(encounterId);
+            default -> encounterService.activateFresh(encounterId);
+        };
 
         var session = sessions.findByCampaignId(campaignId)
                 .orElseThrow(() -> new IllegalStateException("No active campaign session"));

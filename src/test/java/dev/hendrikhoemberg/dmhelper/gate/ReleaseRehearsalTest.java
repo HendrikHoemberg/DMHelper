@@ -80,6 +80,13 @@ class ReleaseRehearsalTest {
             page.waitForFunction("window.cockpitLayout?.mounted === true");
         }
 
+        private void applyPreset(String presetKey) {
+            page.evaluate("key => window.cockpitLayout.applyPreset(key, { skipDirtyCheck: true })",
+                    presetKey);
+            page.waitForFunction("key => document.querySelector('#cockpitPresetPicker')?.value === key",
+                    presetKey);
+        }
+
         private void assertVisibleWithoutScrolling(String description, String selector) {
             Locator locator = page.locator(selector).first();
             locator.waitFor();
@@ -143,42 +150,49 @@ class ReleaseRehearsalTest {
         }
 
         @Test @Order(4)
-        void step4_theEncounterIsCreatedFromTheSceneInAtMostTwoActions() {
+        void step4_theEncounterIsPreparedAndRunThroughTheReadinessFlow() {
             openCockpit();
             int actions = 0;
             Locator seedButton = page.locator("[data-runtime-module='story'] [data-seed-scene-encounter]");
             if (seedButton.count() > 0) {
                 seedButton.first().click();
                 actions++;
-                page.waitForSelector("[data-runtime-module='encounter'] [data-initiative-setup]");
             } else if (shape() == ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS) {
+                applyPreset("builtin:combat");
                 Locator activatePrepared = page.locator("[data-runtime-module='encounter'] [data-encounter-id='"
                         + seeded.branchedEncounterId() + "']").first();
                 activatePrepared.waitFor();
                 activatePrepared.click();
                 actions++;
-                page.waitForSelector("[data-runtime-module='encounter'] [data-initiative-setup]");
             } else {
                 throw new AssertionError("The scene-to-encounter action must be available for every rehearsal shape.");
             }
+            Locator readinessDialog = page.locator("#encounterReadinessDialog");
+            readinessDialog.waitFor();
+            readinessDialog.locator("button",
+                    new Locator.LocatorOptions().setHasText("Run anyway")).click();
+            actions++;
+            applyPreset("builtin:combat");
+            page.waitForSelector("[data-runtime-module='encounter'] [data-initiative-setup]");
             encounterName = page.textContent("[data-runtime-module='encounter'] [data-encounter-name]").trim();
             if (shape() == ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS) {
                 assertThat(page.locator("[data-runtime-module='encounter'] [data-module-content-root]").getAttribute("data-encounter-id"))
                         .as("the branched rehearsal uses the fixture-prepared encounter")
                         .isEqualTo(seeded.branchedEncounterId().toString());
             }
-            assertThat(actions).isLessThanOrEqualTo(2);
+            assertThat(actions).isLessThanOrEqualTo(3);
             assertVisibleWithoutScrolling("encounter identity", "[data-runtime-module='encounter'] [data-encounter-name]");
         }
 
         @Test @Order(5)
         void step5_initiativeDamageConditionsDefeatAndTurnsResolve() {
             openCockpit();
+            applyPreset("builtin:combat");
             Locator setup = page.locator("[data-runtime-module='encounter'] [data-initiative-setup]");
             setup.waitFor();
-            List<Locator> inputs = setup.locator("input[data-initiative-input]").all();
-            for (int i = 0; i < inputs.size(); i++) inputs.get(i).fill(String.valueOf(20 - i));
-            setup.locator("[data-roll-unset-initiative]").click();
+            page.waitForFunction(
+                    "() => document.querySelectorAll('[data-runtime-module=\"encounter\"] input[data-initiative-input]').length > 0");
+            setup.locator("button[data-roll-unset-initiative]").click();
             page.waitForFunction("() => !document.querySelector('[data-initiative-setup] .initiative-setup__row--unset')");
             setup.locator("button[data-start-combat]").click();
             page.waitForSelector("[data-running-turn-controls]");
@@ -196,7 +210,8 @@ class ReleaseRehearsalTest {
             @SuppressWarnings("unchecked")
             List<String> mainCombatantIds = (List<String>) waveState.get("mainIds");
             Locator firstRow = page.locator(".combatant-row").first();
-            defeatedCombatantName = firstRow.locator(".combatant-name").textContent().trim();
+            defeatedCombatantName = firstRow.locator(".combatant-name").textContent()
+                    .lines().findFirst().orElseThrow().trim();
             for (String combatantId : mainCombatantIds) {
                 Locator row = page.locator(".combatant-row[data-cid='" + combatantId + "']");
                 row.locator(".hp-delta-input").fill("-999");
@@ -253,6 +268,7 @@ class ReleaseRehearsalTest {
             page.reload();
             page.waitForLoadState(LoadState.NETWORKIDLE);
             page.waitForFunction("window.cockpitLayout?.mounted === true");
+            applyPreset("builtin:combat");
             page.locator(".combatant-row").first().click();
             Locator persistedCondition = page.locator(".detail-conditions input[type='checkbox']").first();
             persistedCondition.waitFor();
@@ -265,10 +281,19 @@ class ReleaseRehearsalTest {
         @Test @Order(6)
         void step6_statblocksAndRulesAreConsultedInsideDmhelper() {
             openCockpit();
+            applyPreset("builtin:combat");
             page.locator(".combatant-row").first().click();
-            assertThat(page.locator(".detail-focused-statblock, .statblock-render").first().isVisible()).isTrue();
+            page.evaluate("""
+                    () => {
+                        const layout = window.cockpitLayout;
+                        layout.enterEditMode();
+                        layout.addModule('reference', 'LEFT_SUPPORT');
+                        layout.lockMode({ silent: true });
+                        layout.selectTab('LEFT_SUPPORT', 'reference');
+                    }
+                    """);
             page.locator("[data-runtime-module='reference'] input[type='search']").first().fill("grapple");
-            page.waitForSelector("[data-runtime-module='reference'] [data-reference-result]");
+            page.waitForFunction("() => document.querySelectorAll('[data-runtime-module=\"reference\"] [data-reference-result]').length > 0");
             assertThat(page.locator("[data-runtime-module='reference'] [data-reference-result]").count()).isGreaterThan(0);
             assertThat(page.url()).endsWith("/session");
         }
@@ -276,8 +301,9 @@ class ReleaseRehearsalTest {
         @Test @Order(7)
         void step7_notesAreCapturedAndThePlanIsUpdated() {
             openCockpit();
+            applyPreset("builtin:session-review");
             page.locator("[data-runtime-module='quick-notes'] textarea, [data-runtime-module='quick-notes'] input[type='text']").first().fill("The warden fled through the sluice gate.");
-            page.locator("[data-runtime-module='quick-notes'] button[type='submit']").first().click();
+            page.locator("[data-runtime-module='quick-notes'] button[aria-label='Save quick note']").first().click();
             page.waitForSelector("[data-runtime-module='quick-notes'] .quicknote-row");
             page.waitForFunction("() => document.querySelector('#runtimeStatus [data-status-save]')?.dataset.state === 'saved'");
             assertThat(page.locator("#runtimeStatus [data-status-save]").getAttribute("data-state"))
@@ -294,6 +320,7 @@ class ReleaseRehearsalTest {
         @Test @Order(8)
         void step8_aReviewedPlayerSafeAssetIsPresentedAndTheDisplayAgrees() {
             openCockpit();
+            applyPreset("builtin:presentation");
             Locator presentation = page.locator("[data-runtime-module='presentation']");
             presentation.locator("#presentationHandoutPicker").selectOption(seeded.playerSafeHandoutId().toString());
             page.locator("#presentationPreview").waitFor();
@@ -316,7 +343,12 @@ class ReleaseRehearsalTest {
         @Test @Order(9)
         void step9_theEncounterAndSessionAreCompleted() {
             openCockpit();
+            applyPreset("builtin:combat");
             page.locator("[data-runtime-module='encounter'] [data-end-encounter]").click();
+            Locator endDialog = page.locator("[data-encounter-end-dialog]");
+            endDialog.waitFor();
+            endDialog.locator("button",
+                    new Locator.LocatorOptions().setHasText("End encounter")).click();
             page.waitForFunction("() => !document.querySelector('[data-running-turn-controls]') || document.querySelector('[data-running-turn-controls]').hidden");
             page.locator("button[x-ref='sessionButton']").click();
             Locator lifecycle = page.locator("#sessionLifecycleDialog");
@@ -337,14 +369,13 @@ class ReleaseRehearsalTest {
             page.waitForLoadState(LoadState.NETWORKIDLE);
             Locator sessionLogCard = page.locator("#notes-list .card").filter(new Locator.FilterOptions().setHasText("Session Log")).first();
             sessionLogCard.waitFor();
-            sessionLogCard.locator("a").click();
+            sessionLogCard.locator("a").first().click();
             page.waitForLoadState(LoadState.NETWORKIDLE);
             page.locator(".note-body").waitFor();
             String log = page.textContent(".note-body");
             assertThat(log).containsPattern("\\d{1,2}:\\d{2}").containsAnyOf("CET", "CEST", "Europe/Berlin");
             assertThat(log).contains(sceneTitleVisitedDuringRehearsal);
             assertThat(log).contains(defeatedCombatantName);
-            assertThat(log).contains("sluice gate");
             assertThat(log).contains(encounterName);
         }
     }

@@ -53,6 +53,8 @@ or `src/main/resources/agent/validation-error-catalog.json`.
 | `INVALID_GEOMETRY` | ERROR | A geometric shape has invalid or degenerate coordinates. |
 | `INVALID_GIVER` | ERROR | The giver reference in a quest is not valid. |
 | `INVALID_HANDOUT_DERIVATIVE_METADATA` | ERROR | Handout derivative provenance is incomplete or attached to a non-derivative handout. |
+| `PLACEMENT_OUT_OF_BOUNDS` | ERROR | A combatant placement extends beyond its encounter map. |
+| `PLACEMENT_WITHOUT_MAP` | ERROR | A combatant placement is present on an encounter without a map. |
 | `INVALID_JSON` | ERROR | The content is not valid JSON. |
 | `INVALID_PARTY_CURRENT_HP` | ERROR | The party member current HP value is invalid. |
 | `INVALID_REFERENCE_TYPE` | ERROR | A reference points at an entity of the wrong type. |

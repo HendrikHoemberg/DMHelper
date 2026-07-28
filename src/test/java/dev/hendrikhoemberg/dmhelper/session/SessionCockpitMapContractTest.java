@@ -144,6 +144,19 @@ class SessionCockpitMapContractTest {
     }
 
     @Test
+    void mapWithNoWorkspaceSelectionDoesNotRequestNullEndpoints() throws IOException {
+        String battleMapJs = Files.readString(
+                Path.of("src/main/resources/static/js/map/battle-map.js"));
+        assertThat(battleMapJs)
+                .as("the preserved map module is mounted before a workspace map is selected")
+                .contains("if (this.mapId) {")
+                .contains("await this.fetchMapDocument();")
+                .contains("await this.fetchTokens();")
+                .contains("await this.loadPins(this.mapId);")
+                .contains("if (!mapId) {");
+    }
+
+    @Test
     void combatantMovementDispatchesToPlacementMove() throws IOException {
         String battleMapJs = Files.readString(
                 Path.of("src/main/resources/static/js/map/battle-map.js"));
@@ -197,5 +210,52 @@ class SessionCockpitMapContractTest {
         assertThat(mapModule)
                 .as("party placement button must say 'Place missing party members'")
                 .contains("Place missing party members");
+    }
+
+    @Test
+    void markerCrudRefetchesTheUnifiedRuntimeProjection() throws IOException {
+        String battleMapJs = Files.readString(
+                Path.of("src/main/resources/static/js/map/battle-map.js"));
+        assertThat(battleMapJs)
+                .as("marker API DTOs lack source metadata, so CRUD must refetch runtime tokens")
+                .contains("await this.fetchTokens();")
+                .doesNotContain("this.tokens.push(token)");
+    }
+
+    @Test
+    void markerDialogDoesNotExposeCombatHp() throws IOException {
+        String mapModule = Files.readString(
+                Path.of("src/main/resources/templates/session/_map-module.html"));
+        String cockpitJs = Files.readString(
+                Path.of("src/main/resources/static/js/session-cockpit.js"));
+        assertThat(mapModule)
+                .contains("Add temporary marker")
+                .doesNotContain("tokenDraft.currentHp")
+                .doesNotContain("tokenDraft.maxHp");
+        assertThat(cockpitJs)
+                .doesNotContain("currentHp: draft.currentHp")
+                .doesNotContain("maxHp: draft.maxHp");
+    }
+
+    @Test
+    void partyPlacementRequiresAnActiveEncounter() throws IOException {
+        String mapModule = Files.readString(
+                Path.of("src/main/resources/templates/session/_map-module.html"));
+        String battleMapJs = Files.readString(
+                Path.of("src/main/resources/static/js/map/battle-map.js"));
+        assertThat(mapModule).contains(":disabled=\"!currentMapId || !activeEncounter\"");
+        assertThat(battleMapJs)
+                .contains("if (!this.activeEncounterId)")
+                .doesNotContain("tokens/add-party");
+    }
+
+    @Test
+    void sceneEncounterCreationContinuesThroughGuardedActivation() throws IOException {
+        String cockpitJs = Files.readString(
+                Path.of("src/main/resources/static/js/session-cockpit.js"));
+
+        assertThat(cockpitJs)
+                .as("the Start encounter action must not strand a newly seeded encounter as merely planned")
+                .contains("await this.runEncounter(result.encounterId);");
     }
 }

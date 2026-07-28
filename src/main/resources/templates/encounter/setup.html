@@ -87,6 +87,7 @@
             <div th:replace="~{encounter/_summary-modal :: summary-modal(${campaignId}, ${encounter})}"></div>
         </main>
     </div>
-    <script th:src="@{/js/encounter-placement.js}"></script>
+    <script th:src="@{/vendor/konva.min.js}"></script>
+    <script type="module" th:src="@{/js/encounter-placement.js}"></script>
 </body>
 </html>

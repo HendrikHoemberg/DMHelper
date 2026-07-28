@@ -236,7 +236,7 @@
                             <label class="map-editor-control" style="display: flex; align-items: center; gap: 4px;">
                             <input type="checkbox" x-model="newTerrainWalkable"> Walkable
                         </label>
-                        <button class="btn btn-primary" @click="addTerrain()">Add terrain</button>
+                        <button class="btn btn-ghost" @click="addTerrain()">Add terrain</button>
                     </div>
                 </div>
             </div>
@@ -340,7 +340,7 @@
                     <label class="sidebar-field">Cell Size
                         <input type="number" data-map-control="cell-size" x-model.number="cellSizePx" min="16" max="128" step="8" class="u-w-full">
                     </label>
-                    <button class="btn btn-primary u-w-full" style="margin-top: var(--space-xs);" data-map-control="resize-canvas-btn" @click="previewResize()" :disabled="resizeSaving">Resize canvas</button>
+                    <button class="btn btn-ghost u-w-full" style="margin-top: var(--space-xs);" data-map-control="resize-canvas-btn" @click="previewResize()" :disabled="resizeSaving">Resize canvas</button>
                 </div>
 
                 <div class="sidebar-section" data-map-control="resize-dialog" x-show="resizeDialogOpen" style="display: none;" x-cloak>

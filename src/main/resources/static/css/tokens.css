@@ -36,6 +36,8 @@
   --color-danger-hover: #c2564a;
   --color-success: #7fa05f;         /* moss */
   --color-warning: #d9993d;         /* amber */
+  --color-warning-bg: #332b00;
+  --color-warning-text: #c9a24a;
   --color-border: #3a3125;          /* warm hairline */
   --color-border-strong: #564936;   /* the same hairline, awake — hover and grouping */
 

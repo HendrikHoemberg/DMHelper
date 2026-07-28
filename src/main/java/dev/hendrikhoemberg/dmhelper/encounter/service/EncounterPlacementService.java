@@ -9,32 +9,40 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterTokenPlacement;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterTokenPlacementRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.MapRuntimeChanged;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import tools.jackson.databind.json.JsonMapper;
 
 @Service
 @Transactional
 public class EncounterPlacementService {
+    private static final tools.jackson.databind.ObjectMapper JSON = JsonMapper.builder().build();
 
     private final EncounterTokenPlacementRepository placementRepo;
     private final EncounterRepository encounterRepo;
     private final CombatantRepository combatantRepo;
     private final PartyMemberRepository partyMemberRepo;
     private final GameMapRepository mapRepo;
+    private final ApplicationEventPublisher events;
 
     public EncounterPlacementService(EncounterTokenPlacementRepository placementRepo,
                                      EncounterRepository encounterRepo,
                                      CombatantRepository combatantRepo,
                                      PartyMemberRepository partyMemberRepo,
-                                     GameMapRepository mapRepo) {
+                                     GameMapRepository mapRepo,
+                                     ApplicationEventPublisher events) {
         this.placementRepo = placementRepo;
         this.encounterRepo = encounterRepo;
         this.combatantRepo = combatantRepo;
         this.partyMemberRepo = partyMemberRepo;
         this.mapRepo = mapRepo;
+        this.events = events;
     }
 
     public record PlacementDto(UUID id, UUID encounterId, UUID combatantId, UUID mapId,
@@ -99,6 +107,7 @@ public class EncounterPlacementService {
         placement.setMap(map);
 
         EncounterTokenPlacement saved = placementRepo.save(placement);
+        publish(map);
         return toDto(saved);
     }
 
@@ -107,6 +116,10 @@ public class EncounterPlacementService {
                 .orElseThrow(() -> new NotFoundException("Encounter not found: " + encounterId));
         EncounterTokenPlacement placement = placementRepo.findByCombatantId(combatantId)
                 .orElseThrow(() -> new NotFoundException("Placement not found for combatant: " + combatantId));
+        if (!placement.getEncounter().getId().equals(encounterId)
+                || !placement.getCombatant().getId().equals(combatantId)) {
+            throw new IllegalArgumentException("Placement does not belong to encounter");
+        }
 
         GameMap map = encounter.getMap();
         if (map == null) {
@@ -121,6 +134,7 @@ public class EncounterPlacementService {
         placement.setPositionX(x);
         placement.setPositionY(y);
         EncounterTokenPlacement saved = placementRepo.save(placement);
+        publish(map);
         return toDto(saved);
     }
 
@@ -132,6 +146,7 @@ public class EncounterPlacementService {
                 throw new IllegalArgumentException("Placement does not belong to encounter");
             }
             placementRepo.delete(placement);
+            publish(placement.getMap());
         }
 
         combatantRepo.findById(combatantId).ifPresent(combatant -> {
@@ -161,7 +176,8 @@ public class EncounterPlacementService {
             if (placementRepo.findByCombatantId(combatant.getId()).isPresent()) continue;
             if (combatant.getWave() != null && combatant.getWave().getStatus() != dev.hendrikhoemberg.dmhelper.encounter.data.WaveStatus.ACTIVE) continue;
 
-            int[] cell = findFreeCell(occupiedCells, map.getGridWidth(), map.getGridHeight(), 1, 1);
+            int[] cell = preferredOrFreeCell(
+                    combatant, map, occupiedCells);
             if (cell == null) continue;
 
             int px = cell[0] * map.getCellSizePx();
@@ -181,7 +197,7 @@ public class EncounterPlacementService {
             EncounterTokenPlacement saved = placementRepo.save(placement);
             created.add(toDto(saved));
         }
-
+        if (!created.isEmpty()) publish(map);
         return created;
     }
 
@@ -220,7 +236,7 @@ public class EncounterPlacementService {
             EncounterTokenPlacement saved = placementRepo.save(placement);
             created.add(toDto(saved));
         }
-
+        if (!created.isEmpty()) publish(map);
         return created;
     }
 
@@ -272,12 +288,16 @@ public class EncounterPlacementService {
                 .orElseThrow(() -> new NotFoundException("Map not found: " + mapId));
         Encounter encounter = encounterRepo.findById(encounterId)
                 .orElseThrow(() -> new NotFoundException("Encounter not found: " + encounterId));
+        if (!map.getCampaign().getId().equals(encounter.getCampaign().getId())) {
+            throw new IllegalArgumentException("Map does not belong to encounter campaign");
+        }
 
         placementRepo.findByEncounterIdOrderByCombatant_SortOrderAsc(encounterId)
                 .forEach(p -> placementRepo.delete(p));
 
         encounter.setMap(map);
         encounterRepo.save(encounter);
+        publish(map);
 
         return readiness(encounterId);
     }
@@ -286,6 +306,10 @@ public class EncounterPlacementService {
         return new PlacementDto(p.getId(), p.getEncounter().getId(), p.getCombatant().getId(),
                 p.getMap().getId(), p.getPositionX(), p.getPositionY(),
                 p.getSizeCols(), p.getSizeRows(), p.getColor(), p.getIcon());
+    }
+
+    private void publish(GameMap map) {
+        events.publishEvent(new MapRuntimeChanged(map.getCampaign().getId(), map.getId()));
     }
 
     static String defaultColor(String kind) {
@@ -325,6 +349,60 @@ public class EncounterPlacementService {
             }
         }
         return null;
+    }
+
+    private static int[] preferredOrFreeCell(Combatant combatant, GameMap map,
+                                              Set<String> occupiedCells) {
+        int cellSizePx = map.getCellSizePx();
+        int gridWidth = map.getGridWidth();
+        int gridHeight = map.getGridHeight();
+        if (combatant.getStartX() != null && combatant.getStartY() != null) {
+            int col = clamp(combatant.getStartX() / cellSizePx, Math.max(0, gridWidth - 1));
+            int row = clamp(combatant.getStartY() / cellSizePx, Math.max(0, gridHeight - 1));
+            if (isCellFree(occupiedCells, col, row, 1, 1, gridWidth, gridHeight)) {
+                return new int[]{col, row};
+            }
+        }
+        int[] regionCell = preferredRegionCell(combatant, map, occupiedCells);
+        if (regionCell != null) return regionCell;
+        return findFreeCell(occupiedCells, gridWidth, gridHeight, 1, 1);
+    }
+
+    private static int[] preferredRegionCell(Combatant combatant, GameMap map,
+                                              Set<String> occupiedCells) {
+        if (combatant.getPlacementRegionKey() == null || map.getDocument() == null) return null;
+        try {
+            MapDocumentDto document = JSON.readValue(map.getDocument(), MapDocumentDto.class);
+            return document.primitives().stream()
+                    .filter(p -> "REGION".equals(p.type()))
+                    .filter(p -> combatant.getPlacementRegionKey().equals(p.key()))
+                    .map(p -> {
+                        int minCol = Math.max(0, Math.min(p.startCol(), p.endCol()));
+                        int maxCol = Math.min(map.getGridWidth() - 1, Math.max(p.startCol(), p.endCol()));
+                        int minRow = Math.max(0, Math.min(p.startRow(), p.endRow()));
+                        int maxRow = Math.min(map.getGridHeight() - 1, Math.max(p.startRow(), p.endRow()));
+                        int centerCol = (minCol + maxCol) / 2;
+                        int centerRow = (minRow + maxRow) / 2;
+                        if (isCellFree(occupiedCells, centerCol, centerRow, 1, 1,
+                                map.getGridWidth(), map.getGridHeight())) {
+                            return new int[]{centerCol, centerRow};
+                        }
+                        for (int row = minRow; row <= maxRow; row++) {
+                            for (int col = minCol; col <= maxCol; col++) {
+                                if (isCellFree(occupiedCells, col, row, 1, 1,
+                                        map.getGridWidth(), map.getGridHeight())) {
+                                    return new int[]{col, row};
+                                }
+                            }
+                        }
+                        return null;
+                    })
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .orElse(null);
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private static boolean isCellFree(Set<String> occupiedCells, int col, int row,

@@ -219,7 +219,7 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
                 token.getPositionX(), token.getPositionY(),
                 token.getSizeCols(), token.getSizeRows(),
                 token.isHidden(), statBlockRef, partyMemberRef,
-                null, null, false,
+                null, null, null,
                 token.getNotes(), token.getIcon()
         );
     }

@@ -144,7 +144,7 @@ class MapSectionAdapterTest {
         assertThat(pcDto.currentHp()).isNull();
         assertThat(pcDto.maxHp()).isNull();
         assertThat(pcDto.hidden()).isFalse();
-        assertThat(pcDto.dead()).isFalse();
+        assertThat(pcDto.dead()).isNull();
         assertThat(pcDto.icon()).isEqualTo("helmet");
         assertThat(pcDto.positionX()).isEqualTo(100);
         assertThat(pcDto.positionY()).isEqualTo(50);
@@ -152,7 +152,7 @@ class MapSectionAdapterTest {
         var monsterDto = tokens.get(2);
         assertThat(monsterDto.kind()).isEqualTo("MONSTER");
         assertThat(monsterDto.hidden()).isTrue();
-        assertThat(monsterDto.dead()).isFalse();
+        assertThat(monsterDto.dead()).isNull();
         assertThat(monsterDto.icon()).isEqualTo("skull");
 
         var objectDto = tokens.get(3);

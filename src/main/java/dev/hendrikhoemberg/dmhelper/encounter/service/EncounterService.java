@@ -23,6 +23,7 @@ import dev.hendrikhoemberg.dmhelper.dice.DiceEngine;
 import dev.hendrikhoemberg.dmhelper.encounter.service.CombatDifficultyCalculator.DifficultyResult;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.MapRuntimeChanged;
 
 import dev.hendrikhoemberg.dmhelper.ledger.service.LedgerService;
 import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItem;
@@ -325,6 +326,7 @@ public class EncounterService {
         if (req.mapId() != null) {
             GameMap map = mapRepo.findById(req.mapId())
                     .orElseThrow(() -> new NotFoundException("Map not found: " + req.mapId()));
+            requireSameCampaign(campaign.getId(), map);
             e.setMap(map);
         }
         Encounter saved = encounterRepo.save(e);
@@ -338,6 +340,7 @@ public class EncounterService {
         if (req.mapId() != null) {
             GameMap map = mapRepo.findById(req.mapId())
                     .orElseThrow(() -> new NotFoundException("Map not found: " + req.mapId()));
+            requireSameCampaign(e.getCampaign().getId(), map);
             e.setMap(map);
         } else {
             e.setMap(null);
@@ -374,11 +377,15 @@ public class EncounterService {
 
     public EncounterDto activate(UUID id) {
         Encounter e = findEntityById(id);
-        encounterRepo.findByCampaignIdAndStatus(e.getCampaign().getId(), Encounter.Status.ACTIVE)
-                .ifPresent(active -> {
-                    active.setStatus(Encounter.Status.DONE);
-                    encounterRepo.save(active);
-                });
+        Optional<Encounter> active = encounterRepo.findByCampaignIdAndStatus(
+                e.getCampaign().getId(), Encounter.Status.ACTIVE);
+        if (active.isPresent() && !active.get().getId().equals(id)) {
+            throw new IllegalStateException(
+                    "Another encounter is already active; use the session activation workflow");
+        }
+        if (e.getStatus() == Encounter.Status.ACTIVE) {
+            return toDto(e);
+        }
         e.setStatus(Encounter.Status.ACTIVE);
         e.setCombatPhase(Encounter.CombatPhase.SETUP);
         e.setRound(0);
@@ -388,6 +395,20 @@ public class EncounterService {
         EncounterDto dto = toDto(saved);
         logEntry(id, CombatLogEntry.EntryType.ENCOUNTER_ACTIVATED, "", "");
         return dto;
+    }
+
+    private static void requireSameCampaign(UUID campaignId, GameMap map) {
+        if (!map.getCampaign().getId().equals(campaignId)) {
+            throw new IllegalArgumentException("Map does not belong to encounter campaign");
+        }
+    }
+
+    private void publishRuntimeChange(Combatant combatant) {
+        GameMap map = combatant.getEncounter().getMap();
+        if (map != null) {
+            events.publishEvent(new MapRuntimeChanged(
+                    combatant.getEncounter().getCampaign().getId(), map.getId()));
+        }
     }
 
     public Encounter activateFresh(UUID encounterId) {
@@ -904,6 +925,7 @@ public class EncounterService {
         if (req.placementRegionKey() != null) c.setPlacementRegionKey(req.placementRegionKey());
         Combatant saved = combatantRepo.save(c);
         syncCombatantToPartyMember(saved);
+        publishRuntimeChange(saved);
         return toDto(saved);
     }
 
@@ -1148,6 +1170,7 @@ public class EncounterService {
         }
         Combatant saved = combatantRepo.save(c);
         syncCombatantToPartyMember(saved);
+        publishRuntimeChange(saved);
         CombatLogEntry.EntryType type = amount < 0 ? CombatLogEntry.EntryType.DAMAGE : CombatLogEntry.EntryType.HEAL;
         try {
             String payload = JSON_MAPPER.writeValueAsString(Map.of("amount", amount));
@@ -1167,6 +1190,7 @@ public class EncounterService {
         }
         Combatant saved = combatantRepo.save(c);
         syncCombatantToPartyMember(saved);
+        publishRuntimeChange(saved);
         try {
             String payload = JSON_MAPPER.writeValueAsString(Map.of(
                 "currentHp", saved.getCurrentHp(),
@@ -1181,6 +1205,7 @@ public class EncounterService {
         Combatant c = findCombatantById(combatantId);
         c.setDefeated(defeated);
         Combatant saved = combatantRepo.save(c);
+        publishRuntimeChange(saved);
         CombatLogEntry.EntryType type = defeated ? CombatLogEntry.EntryType.DEFEATED : CombatLogEntry.EntryType.REVIVED;
         logEntry(c.getEncounter().getId(), type, combatantId.toString(), defeatedStatePayload(c));
         return toDto(saved);
@@ -1199,6 +1224,7 @@ public class EncounterService {
         } catch (Exception e) { /* ignore */ }
         Combatant saved = combatantRepo.save(c);
         syncCombatantToPartyMember(saved);
+        publishRuntimeChange(saved);
         CombatLogEntry.EntryType type = removed ? CombatLogEntry.EntryType.CONDITION_REMOVED : CombatLogEntry.EntryType.CONDITION_ADDED;
         try {
             String payload = JSON_MAPPER.writeValueAsString(Map.of("sourceKey", sourceKey, "durationRounds", durationRounds));
@@ -1228,6 +1254,7 @@ public class EncounterService {
                 } catch (Exception e) { /* ignore */ }
                 combatantRepo.save(c);
                 syncCombatantToPartyMember(c);
+                publishRuntimeChange(c);
                 try {
                     String payload = JSON_MAPPER.writeValueAsString(Map.of(
                         "expiredKeys", expiredKeys,
@@ -1248,6 +1275,7 @@ public class EncounterService {
         } catch (Exception e) { /* ignore */ }
         Combatant saved = combatantRepo.save(c);
         syncCombatantToPartyMember(saved);
+        publishRuntimeChange(saved);
         logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.CONDITION_REMOVED,
             combatantId.toString(), "{\"sourceKey\":\"" + sourceKey + "\"}");
         return toDto(saved);
@@ -1374,7 +1402,7 @@ public class EncounterService {
         }
 
         if (checked >= combatants.size()) {
-            throw new IllegalStateException("All combatants defeated");
+            return toDto(encounter);
         }
 
         if (oldIdx >= 0 && encounter.getLairActionName() != null) {
@@ -1494,6 +1522,7 @@ public class EncounterService {
         c.setConcentratingOn(spellName != null && !spellName.isEmpty() ? spellName : null);
         Combatant saved = combatantRepo.save(c);
         syncCombatantToPartyMember(saved);
+        publishRuntimeChange(saved);
         logEntry(c.getEncounter().getId(), CombatLogEntry.EntryType.CONCENTRATION_SET,
             combatantId.toString(), "{\"spellName\":\"" + (spellName != null ? spellName : "") + "\"}");
         return toDto(saved);
@@ -1512,6 +1541,7 @@ public class EncounterService {
         }
         Combatant saved = combatantRepo.save(c);
         syncCombatantToPartyMember(saved);
+        publishRuntimeChange(saved);
         return toDto(saved);
     }
 

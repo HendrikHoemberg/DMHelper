@@ -248,6 +248,22 @@ class EncounterServiceTest {
     }
 
     @Test
+    void nextTurnIsANoOpWhenEveryCombatantIsDefeated() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        CombatantDto combatant = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Goblin", 7, "MONSTER", null, null));
+        service.setInitiative(combatant.id(), 10);
+        service.activate(enc.id());
+        service.startCombat(enc.id(), false);
+        service.markDefeated(combatant.id(), true);
+
+        EncounterDto result = service.nextTurn(enc.id());
+
+        assertThat(result.activeTurnIndex()).isZero();
+        assertThat(result.round()).isEqualTo(1);
+    }
+
+    @Test
     void shouldApplyDamage() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),

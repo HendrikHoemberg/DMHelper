@@ -109,7 +109,8 @@ class ReleaseRehearsalFixtureTest {
         assertThat(ambush.getEncounter()).as("the prepared ambush encounter is linked").isNotNull();
         assertThat(ambush.getEncounter().getId()).isNotNull();
         assertThat(ambush.getEncounter().getName()).isEqualTo("Encounter: Lantern Vault Ambush");
-        assertThat(ambush.getEncounter().getMap()).isNull();
+        assertThat(ambush.getEncounter().getMap()).isNotNull();
+        assertThat(ambush.getEncounter().getMap().getCampaign().getId()).isEqualTo(seeded.campaignId());
         assertThat(encounterRepository.findByCampaignIdOrderByNameAsc(seeded.campaignId()))
                 .extracting(e -> e.getName())
                 .containsExactly("Encounter: Lantern Vault Ambush", "Undercroft Alarm");
@@ -152,7 +153,8 @@ class ReleaseRehearsalFixtureTest {
                 encounterWaveRepository.findByEncounterIdAndWaveKey(firstEncounter.getId(), "main").orElseThrow().getId());
         assertThat(first.branchedReserveWaveId()).isEqualTo(firstReserve.getId());
         assertThat(first.branchedReserveCombatantIds()).containsExactly(firstCombatant.getId());
-        assertThat(firstEncounter.getMap()).isNull();
+        assertThat(firstEncounter.getMap()).isNotNull();
+        assertThat(firstEncounter.getMap().getCampaign().getId()).isEqualTo(first.campaignId());
         assertThat(firstReserve.getStatus()).isEqualTo(WaveStatus.PENDING);
         assertThat(firstCombatant.getName()).isEqualTo("Vault reinforcements");
         assertThat(firstEncounter.getEncounterKey()).isNotBlank().isNotEqualTo(secondEncounter.getEncounterKey());

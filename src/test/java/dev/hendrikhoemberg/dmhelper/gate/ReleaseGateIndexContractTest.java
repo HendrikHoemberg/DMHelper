@@ -86,7 +86,7 @@ class ReleaseGateIndexContractTest {
                         "ReleaseRehearsalTest$RehearsalSteps#step1_readinessReportIsInspectedAndClear",
                         "ReleaseRehearsalTest$RehearsalSteps#step2_sessionStartsAtTheSelectedScene",
                         "ReleaseRehearsalTest$RehearsalSteps#step3_explorationAndABranchAreNavigatedWithoutLeavingTheCockpit",
-                        "ReleaseRehearsalTest$RehearsalSteps#step4_theEncounterIsCreatedFromTheSceneInAtMostTwoActions",
+                        "ReleaseRehearsalTest$RehearsalSteps#step4_theEncounterIsPreparedAndRunThroughTheReadinessFlow",
                         "ReleaseRehearsalTest$RehearsalSteps#step5_initiativeDamageConditionsDefeatAndTurnsResolve",
                         "ReleaseRehearsalTest$RehearsalSteps#step6_statblocksAndRulesAreConsultedInsideDmhelper",
                         "ReleaseRehearsalTest$RehearsalSteps#step7_notesAreCapturedAndThePlanIsUpdated",

@@ -110,7 +110,7 @@ class RuntimeTokenProjectionServiceTest {
     }
 
     @Test
-    void explicitEncounterOnWrongMapIsExcluded() {
+    void explicitEncounterOnWrongMapIsRejected() {
         GameMap map1 = fixture.map();
         GameMap map2 = fixture.map();
         Encounter encounter = fixture.activeEncounter(map1);
@@ -118,8 +118,9 @@ class RuntimeTokenProjectionServiceTest {
         placed(encounter, map1, combatant, 96, 144);
         em.flush();
 
-        assertThat(service.project(map2.getId(), encounter.getId()))
-                .noneMatch(token -> token.source() == RuntimeTokenSource.COMBATANT);
+        assertThatThrownBy(() -> service.project(map2.getId(), encounter.getId()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Encounter does not belong to map");
     }
 
     @Test
@@ -182,7 +183,12 @@ class RuntimeTokenProjectionServiceTest {
         GameMap map = fixture.map();
         Encounter encounter = fixture.activeEncounter(map);
         Combatant combatant = fixture.combatant(encounter, "Poisoned Goblin");
-        combatant.setConditionsJson("[\"Poisoned\",\"Prone\"]");
+        combatant.setConditionsJson("""
+                [
+                  {"sourceKey":"poisoned","name":"Poisoned","durationRounds":2},
+                  {"sourceKey":"prone","name":"Prone","durationRounds":0}
+                ]
+                """);
         combatants.save(combatant);
         placed(encounter, map, combatant, 0, 0);
         em.flush();
@@ -191,7 +197,7 @@ class RuntimeTokenProjectionServiceTest {
                 .filter(t -> combatant.getId().equals(t.combatantId()))
                 .findFirst().orElseThrow();
 
-        assertThat(token.conditions()).containsExactly("Poisoned", "Prone");
+        assertThat(token.conditions()).containsExactly("poisoned", "prone");
     }
 
     @Test

@@ -45,7 +45,7 @@ public class ReleaseRehearsalFixture {
     public enum Shape {
         /** One chapter, one map, one hostile scene. The baseline rehearsal. */
         LINEAR_ONE_MAP,
-        /** Two chapters, three branch choices, two map scales, and a map-free wave encounter. */
+        /** Two chapters, three branch choices, two map scales, and a multi-wave encounter. */
         BRANCHED_TWO_MAPS
     }
 
@@ -198,14 +198,16 @@ public class ReleaseRehearsalFixture {
         for (int i = 0; i < foeBlocks.size(); i++) {
             StatBlock foe = foeBlocks.get(i);
             var combatant = encounters.addCombatant(encounter.id(), new EncounterService.CombatantCreateRequest(
-                    foe.getName(), 0, "MONSTER", null, foe.getId()));
+                    foe.getName(), 0, "MONSTER", foe.getId(), null));
             var combatantEntity = combatantRepository.findById(combatant.id()).orElseThrow();
             combatantEntity.setNotes("rehearsal-" + suffix + "-combatant-" + (i + 1));
             combatantRepository.save(combatantEntity);
         }
 
+        UUID branchedMapId = null;
         if (shape == Shape.BRANCHED_TWO_MAPS) {
             var secondMap = maps.create(campaignId, "Tideglass Gallery [" + suffix + "]", 12, 10, 48);
+            branchedMapId = secondMap.getId();
             maps.updateMode(secondMap.getId(), "GRID", true);
             branch.setMapRequirement(SceneMapRequirement.REQUIRED);
             branch.setMap(secondMap);
@@ -229,7 +231,7 @@ public class ReleaseRehearsalFixture {
         List<UUID> branchedReserveCombatantIds = List.of();
         if (shape == Shape.BRANCHED_TWO_MAPS) {
             var branchedEncounter = encounters.create(campaignId,
-                    new EncounterService.CreateRequest("Encounter: Lantern Vault Ambush", null));
+                    new EncounterService.CreateRequest("Encounter: Lantern Vault Ambush", branchedMapId));
             var branchedEntity = encounterRepository.findById(branchedEncounter.id()).orElseThrow();
             branchedEntity.setEncounterKey("lantern-vault-ambush-" + suffix);
             encounterRepository.save(branchedEntity);

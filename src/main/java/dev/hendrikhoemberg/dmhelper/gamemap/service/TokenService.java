@@ -6,6 +6,7 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -17,10 +18,13 @@ public class TokenService {
 
     private final TokenRepository repository;
     private final GameMapRepository mapRepository;
+    private final ApplicationEventPublisher events;
 
-    public TokenService(TokenRepository repository, GameMapRepository mapRepository) {
+    public TokenService(TokenRepository repository, GameMapRepository mapRepository,
+                        ApplicationEventPublisher events) {
         this.repository = repository;
         this.mapRepository = mapRepository;
+        this.events = events;
     }
 
     public record MapMarkerDto(UUID id, String name, String kind, int positionX, int positionY,
@@ -68,14 +72,18 @@ public class TokenService {
         t.setSizeRows(req.sizeRows() > 0 ? req.sizeRows() : 1);
         t.setColor(req.color() != null ? req.color() : "#7b68ee");
         t.setHidden(req.hidden());
-        return toMarkerDto(repository.save(t));
+        MapMarkerDto result = toMarkerDto(repository.save(t));
+        publish(map);
+        return result;
     }
 
     public MapMarkerDto move(UUID id, TokenMoveRequest req) {
         Token t = findEntityById(id);
         t.setPositionX(req.positionX());
         t.setPositionY(req.positionY());
-        return toMarkerDto(repository.save(t));
+        MapMarkerDto result = toMarkerDto(repository.save(t));
+        publish(t.getMap());
+        return result;
     }
 
     public MapMarkerDto update(UUID id, MapMarkerRequest req) {
@@ -88,11 +96,15 @@ public class TokenService {
         if (req.sizeRows() > 0) t.setSizeRows(req.sizeRows());
         if (req.color() != null) t.setColor(req.color());
         t.setHidden(req.hidden());
-        return toMarkerDto(repository.save(t));
+        MapMarkerDto result = toMarkerDto(repository.save(t));
+        publish(t.getMap());
+        return result;
     }
 
     public void delete(UUID id) {
-        repository.delete(findEntityById(id));
+        Token token = findEntityById(id);
+        repository.delete(token);
+        publish(token.getMap());
     }
 
     public MapMarkerDto duplicate(UUID id, int offsetX, int offsetY) {
@@ -109,6 +121,12 @@ public class TokenService {
         copy.setHidden(original.isHidden());
         copy.setStatBlock(original.getStatBlock());
         copy.setPartyMember(original.getPartyMember());
-        return toMarkerDto(repository.save(copy));
+        MapMarkerDto result = toMarkerDto(repository.save(copy));
+        publish(copy.getMap());
+        return result;
+    }
+
+    private void publish(GameMap map) {
+        events.publishEvent(new MapRuntimeChanged(map.getCampaign().getId(), map.getId()));
     }
 }

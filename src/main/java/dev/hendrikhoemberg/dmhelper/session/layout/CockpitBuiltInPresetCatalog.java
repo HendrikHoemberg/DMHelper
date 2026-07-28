@@ -24,7 +24,7 @@ public final class CockpitBuiltInPresetCatalog {
                     Set.of("story", "party", "quick-notes", "audio", "session-log")),
             preset("builtin:presentation", "Presentation",
                     zone("map"), zone("story"), zone("presentation"), collapsedZone(),
-                    Set.of("story", "presentation")),
+                    Set.of("story")),
             preset("builtin:session-review", "Session Review",
                     zone("session-log"), zone("session-plan"), zone("quick-notes", "party"),
                     collapsedZone(),

@@ -10,6 +10,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.service.CombatDifficultyCalculator;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
@@ -66,6 +67,11 @@ class ThreatEncounterIntegrationTest {
         @Bean
         TablePresentationService tablePresentationService() {
             return Mockito.mock(TablePresentationService.class);
+        }
+
+        @Bean
+        EncounterPlacementService encounterPlacementService() {
+            return Mockito.mock(EncounterPlacementService.class);
         }
     }
 

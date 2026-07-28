@@ -344,6 +344,26 @@
       ]
     },
     {
+      "code": "PLACEMENT_WITHOUT_MAP",
+      "defaultSeverity": "ERROR",
+      "summary": "A combatant placement is present on an encounter without a map.",
+      "when": "Encounter placement validation during package import.",
+      "suggestionTemplate": "Assign the encounter a map or remove its placements.",
+      "repairHints": [
+        "Open encounter setup and assign a map before placing combatants."
+      ]
+    },
+    {
+      "code": "PLACEMENT_OUT_OF_BOUNDS",
+      "defaultSeverity": "ERROR",
+      "summary": "A combatant placement extends beyond its encounter map.",
+      "when": "Encounter placement validation during package import.",
+      "suggestionTemplate": "Move or resize the placement so it fits within the map grid.",
+      "repairHints": [
+        "Open encounter setup and reposition the combatant within the map."
+      ]
+    },
+    {
       "code": "DAMAGE_TYPE_REQUIRED",
       "defaultSeverity": "ERROR",
       "summary": "A damage expression is present without damage types.",

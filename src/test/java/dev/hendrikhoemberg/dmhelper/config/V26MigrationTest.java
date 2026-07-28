@@ -85,6 +85,7 @@ class V26MigrationTest {
         // Step 3: Run V26 migration
         Flyway.configure()
                 .dataSource(url, "sa", "")
+                .target(MigrationVersion.fromVersion("26"))
                 .load()
                 .migrate();
 

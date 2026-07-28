@@ -50,7 +50,7 @@ function sessionCockpit(config) {
         threatPins: [],
         tokenDraft: {
             name: '', kind: 'NPC', sizeCols: 1, sizeRows: 1,
-            col: 0, row: 0, currentHp: '', maxHp: '', color: '#2ecc71', hidden: false,
+            col: 0, row: 0, color: '#2ecc71', hidden: false,
         },
         tokenDialogBusy: false,
         tokenDialogError: '',
@@ -63,6 +63,7 @@ function sessionCockpit(config) {
         _replacementActiveName: null,
         _readinessEncounterId: null,
         _readinessData: null,
+        readinessCanRun: false,
 
         async mutateSession(path, options, summary, retry) {
             try {
@@ -654,23 +655,6 @@ function sessionCockpit(config) {
             });
         },
 
-        async newEncounter() {
-            try {
-                const cid = this.campaignId;
-                const resp = await this.request(`/api/v1/campaigns/${cid}/encounters`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: 'New Encounter', mapId: this.currentMapId }),
-                });
-                const enc = await resp.json();
-                await this.request(`/api/v1/encounters/${enc.id}/activate`, { method: 'POST' });
-                this.loadPlannedEncounters();
-            } catch (error) {
-                this.failure('Could not create the encounter.', error,
-                    () => this.newEncounter());
-            }
-        },
-
         async activateEncounter(encounterId, disposition) {
             const body = disposition ? { activeEncounterDisposition: disposition } : {};
             const resp = await this.request(
@@ -689,6 +673,12 @@ function sessionCockpit(config) {
 
         async runEncounter(encounterId) {
             try {
+                const readinessResponse = await this.request(`/api/v1/encounters/${encounterId}/readiness`);
+                const readiness = await readinessResponse.json();
+                if ((readiness.issues || []).length > 0) {
+                    this.showReadinessDialog(readiness, encounterId);
+                    return;
+                }
                 await this.activateEncounter(encounterId, null);
             } catch (e) {
                 const problem = e.problem || {};
@@ -735,6 +725,7 @@ function sessionCockpit(config) {
         showReadinessDialog(readiness, encounterId) {
             this._readinessEncounterId = encounterId;
             this._readinessData = readiness;
+            this.readinessCanRun = readiness?.canRun === true;
             const dialog = document.getElementById('encounterReadinessDialog');
             if (dialog && !dialog.open) dialog.showModal();
         },
@@ -744,20 +735,35 @@ function sessionCockpit(config) {
             if (dialog?.open) dialog.close();
             this._readinessEncounterId = null;
             this._readinessData = null;
+            this.readinessCanRun = false;
         },
 
         async confirmRunReady() {
             const encounterId = this._readinessEncounterId;
+            const canRun = this._readinessData?.canRun === true;
             this.closeReadinessDialog();
-            if (!encounterId) return;
-            await this.activateEncounter(encounterId, null);
+            if (!encounterId || !canRun) return;
+            await this.runEncounterWithoutReadinessCheck(encounterId);
+        },
+
+        async runEncounterWithoutReadinessCheck(encounterId) {
+            try {
+                await this.activateEncounter(encounterId, null);
+            } catch (e) {
+                const problem = e.problem || {};
+                if (problem.code === 'ACTIVE_ENCOUNTER_REPLACEMENT_REQUIRED') {
+                    this.showReplacementDialog(problem.activeEncounterId, problem.activeEncounterName, encounterId);
+                    return;
+                }
+                throw e;
+            }
         },
 
         openEncounterSetup() {
             const encounterId = this._readinessEncounterId;
             this.closeReadinessDialog();
             if (encounterId) {
-                window.open(`/encounters/${encounterId}/setup`, '_blank');
+                window.open(`/campaigns/${this.campaignId}/encounters/${encounterId}/setup`, '_blank');
             }
         },
 
@@ -812,7 +818,7 @@ function sessionCockpit(config) {
             this.tokenDraft = {
                 name: '', kind: 'NPC', sizeCols: 1, sizeRows: 1,
                 col: center.col, row: center.row,
-                currentHp: '', maxHp: '', color: '#2ecc71', hidden: false,
+                color: '#2ecc71', hidden: false,
             };
             this.tokenDialogError = '';
             const dialog = this.dialog('[data-token-dialog]');
@@ -856,8 +862,6 @@ function sessionCockpit(config) {
                 sizeRows,
                 color: draft.color,
                 hidden: !!draft.hidden,
-                currentHp: draft.currentHp === '' ? null : Number(draft.currentHp),
-                maxHp: draft.maxHp === '' ? null : Number(draft.maxHp),
             });
             this.tokenDialogBusy = false;
             if (created) {
@@ -1064,25 +1068,21 @@ function sessionCockpit(config) {
             let created = false;
             try {
                 if (bm.activeEncounterId) {
-                    const resp = await this.request(`/api/v1/encounters/${bm.activeEncounterId}/combatants/from-library`, {
+                    const center = this.visibleCenterCell();
+                    await this.request(`/api/v1/encounters/${bm.activeEncounterId}/combatants/from-library`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ statBlockId: statblockId, quantity: 1 }),
+                        body: JSON.stringify({
+                            statBlockId: statblockId,
+                            quantity: 1,
+                            startX: center.col * bm.cellSizePx,
+                            startY: center.row * bm.cellSizePx,
+                        }),
                     });
-                    const combatants = await resp.json();
-                    if (combatants && combatants.length > 0) {
-                        const cmbt = combatants[0];
-                        const center = this.visibleCenterCell();
-                        const px = center.col * bm.cellSizePx;
-                        const py = center.row * bm.cellSizePx;
-                        await this.request(`/api/v1/encounters/${bm.activeEncounterId}/combatants/${cmbt.id}/placement`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ positionX: px, positionY: py, sizeCols: 1, sizeRows: 1, color: '#e74c3c' }),
-                        });
-                        await bm.fetchTokens();
-                        created = true;
-                    }
+                    await bm.fetchTokens();
+                    bm.renderTokens();
+                    bm.emit('tokenupdate', { tokens: bm.tokens });
+                    created = true;
                 } else {
                     created = await bm.createTokenFromStatblock(statblockId);
                 }
@@ -1208,6 +1208,7 @@ function sessionCockpit(config) {
                 const status = document.getElementById('battleStatusMessage');
                 if (status) status.textContent = message;
                 window.showToast?.(message, skipped.length ? 'warning' : 'success');
+                await this.runEncounter(result.encounterId);
             } catch (error) {
                 if (result) {
                     window.reportActionFailure(

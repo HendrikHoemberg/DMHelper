@@ -7,6 +7,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.MapRuntimeChanged;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
@@ -44,8 +45,13 @@ public class TablePresentationService {
     private final CampaignSessionRepository sessionRepository;
     private final SessionAuditEntryRepository auditEntryRepository;
 
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onSessionEncounterActivated(SessionEncounterActivated event) {
+        broadcastCurrentState(event.campaignId());
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onMapRuntimeChanged(MapRuntimeChanged event) {
         broadcastCurrentState(event.campaignId());
     }
 

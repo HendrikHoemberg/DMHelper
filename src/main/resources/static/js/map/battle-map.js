@@ -100,8 +100,8 @@ export class BattleMap {
     async load() {
         this.stage = new Konva.Stage({
             container: this.container,
-            width: this.container.clientWidth,
-            height: this.container.clientHeight,
+            width: Math.max(1, this.container.clientWidth),
+            height: Math.max(1, this.container.clientHeight),
             draggable: false,
         });
 
@@ -126,11 +126,13 @@ export class BattleMap {
         setupPanAndZoom(this.stage, this.container);
         this.setupEvents();
         this.setupTrackerListeners();
-        await this.fetchMapDocument();
-        await this.fetchTokens();
+        if (this.mapId) {
+            await this.fetchMapDocument();
+            await this.fetchTokens();
+            await this.loadPins(this.mapId);
+        }
         this.renderGrid();
         this.renderTokens();
-        await this.loadPins(this.mapId);
         this.emitState();
     }
 
@@ -235,6 +237,7 @@ export class BattleMap {
 
     /* ---- Map Document & Grid ---- */
     async fetchMapDocument() {
+        if (!this.mapId) return false;
         try {
             const resp = await this._request(`/api/v1/maps/${this.mapId}/document`);
             const data = await resp.json();
@@ -268,9 +271,13 @@ export class BattleMap {
     }
 
     /* ---- Tokens: fetch, render, drag ---- */
-    setActiveEncounter(encounterId) {
+    async setActiveEncounter(encounterId) {
         this.activeEncounterId = encounterId;
-        this.fetchTokens();
+        if (await this.fetchTokens() !== false) {
+            this.renderTokens();
+            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emit('state-changed');
+        }
     }
 
     tokenKey(token) {
@@ -278,6 +285,10 @@ export class BattleMap {
     }
 
     async fetchTokens() {
+        if (!this.mapId) {
+            this.tokens = [];
+            return false;
+        }
         try {
             let url = `/api/v1/maps/${this.mapId}/runtime-tokens`;
             if (this.activeEncounterId) {
@@ -505,14 +516,12 @@ export class BattleMap {
     /* ---- Token CRUD ---- */
     async createToken(req) {
         try {
-            const resp = await this._request(`/api/v1/maps/${this.mapId}/tokens`, {
+            await this._request(`/api/v1/maps/${this.mapId}/tokens`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(req),
             });
-            const token = await resp.json();
-            this.tokens.push(token);
-            this.addTokenNode(token);
-            this.tokenLayer.batchDraw();
+            await this.fetchTokens();
+            this.renderTokens();
             this.emit('tokenupdate', { tokens: this.tokens });
             this.emit('state-changed');
             return true;
@@ -526,11 +535,9 @@ export class BattleMap {
     async deleteToken(id) {
         try {
             await this._request(`/api/v1/tokens/${id}`, { method: 'DELETE' });
-            const node = this.tokenNodes[id];
-            if (node) { node.group.destroy(); delete this.tokenNodes[id]; }
-            this.tokens = this.tokens.filter(t => t.id !== id);
-            this.tokenLayer.batchDraw();
             if (this.selectedTokenId === id) this.deselectToken();
+            await this.fetchTokens();
+            this.renderTokens();
             this.emit('tokenupdate', { tokens: this.tokens });
             this.emit('state-changed');
         } catch (error) {
@@ -543,11 +550,9 @@ export class BattleMap {
     async duplicateToken(id) {
         const s = this.cellSizePx;
         try {
-            const resp = await this._request(`/api/v1/tokens/${id}/duplicate?offsetX=${s}&offsetY=${s}`, { method: 'POST' });
-            const token = await resp.json();
-            this.tokens.push(token);
-            this.addTokenNode(token);
-            this.tokenLayer.batchDraw();
+            await this._request(`/api/v1/tokens/${id}/duplicate?offsetX=${s}&offsetY=${s}`, { method: 'POST' });
+            await this.fetchTokens();
+            this.renderTokens();
             this.emit('tokenupdate', { tokens: this.tokens });
             this.emit('state-changed');
         } catch (error) {
@@ -603,15 +608,11 @@ export class BattleMap {
                 py = snapPixel(py, s, true);
             }
 
-            const hpMatch = sb.hp ? sb.hp.match(/(\d+)/) : null;
-            const hp = hpMatch ? parseInt(hpMatch[1], 10) : null;
-
             return await this.createToken({
                 name: sb.name, kind: 'MONSTER',
                 positionX: px, positionY: py,
                 sizeCols: 1, sizeRows: 1,
                 color: '#e74c3c', hidden: false,
-                currentHp: hp, maxHp: hp,
             });
         } catch (error) {
             this._failure('Could not load that statblock. Nothing was changed.', error,
@@ -629,10 +630,10 @@ export class BattleMap {
 
     focusToken(id) {
         this.selectToken(id);
-        const node = this.tokenNodes[id];
-        if (!node || !this.stage) return;
         const token = this.tokens.find(t => t.id === id);
         if (!token) return;
+        const node = this.tokenNodes[this.tokenKey(token)];
+        if (!node || !this.stage) return;
 
         const stageW = this.container.clientWidth;
         const stageH = this.container.clientHeight;
@@ -677,18 +678,19 @@ export class BattleMap {
                 token.hidden = updated.hidden;
                 token.name = updated.name;
             } else {
-                const resp = await this._request(`/api/v1/tokens/${id}`, {
+                await this._request(`/api/v1/tokens/${id}`, {
                     method: 'PUT', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data),
                 });
-                const updated = await resp.json();
-                const idx = this.tokens.findIndex(t => t.id === id);
-                if (idx >= 0) this.tokens[idx] = updated;
+                await this.fetchTokens();
             }
             this.renderTokens();
             this.emit('tokenupdate', { tokens: this.tokens });
             this.emit('state-changed');
-            if (this.selectedTokenId === id) this.emit('tokenselect', { token: token });
+            if (this.selectedTokenId === id) {
+                const selected = this.tokens.find(candidate => candidate.id === id) || null;
+                this.emit('tokenselect', { token: selected });
+            }
         } catch (error) {
             this._failure('Could not save the token. Your edits are still visible for retry.', error,
                 () => this.updateToken(id, data));
@@ -697,12 +699,13 @@ export class BattleMap {
     }
 
     async addPartyToMap() {
+        if (!this.activeEncounterId) {
+            this._failure('Start or resume an encounter before placing party combatants.',
+                new Error('No active encounter'), null);
+            return false;
+        }
         try {
-            if (this.activeEncounterId) {
-                await this._request(`/api/v1/encounters/${this.activeEncounterId}/placements/party`, { method: 'POST' });
-            } else {
-                await this._request(`/api/v1/maps/${this.mapId}/tokens/add-party`, { method: 'POST' });
-            }
+            await this._request(`/api/v1/encounters/${this.activeEncounterId}/placements/party`, { method: 'POST' });
             await this.fetchTokens();
             this.renderTokens();
             this.emit('tokenupdate', { tokens: this.tokens });
@@ -877,7 +880,7 @@ export class BattleMap {
         });
         node.group.add(glow);
         this._activeHighlightNode = glow;
-        this.activeCombatantTokenId = tokenId;
+        this.activeCombatantTokenId = tokenKey;
         this.tokenLayer.batchDraw();
     }
 
@@ -1171,6 +1174,10 @@ export class BattleMap {
     /* ---- Pins (scene + DM-only threat markers) ---- */
     async loadPins(mapId) {
         this.pinLayer.destroyChildren();
+        if (!mapId) {
+            this.pinLayer.draw();
+            return false;
+        }
         if (this.tableSafe) return;
         try {
             const res = await this._request(`/api/v1/maps/${mapId}/pins`);

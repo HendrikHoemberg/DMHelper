@@ -122,6 +122,10 @@ public final class ImportProblemCodes {
     public static final String VICTORY_DURATION_WITHOUT_CUE = "VICTORY_DURATION_WITHOUT_CUE";
     public static final String VOLUME_OUT_OF_BOUNDS = "VOLUME_OUT_OF_BOUNDS";
 
+    // Encounter placement validation codes
+    public static final String PLACEMENT_WITHOUT_MAP = "PLACEMENT_WITHOUT_MAP";
+    public static final String PLACEMENT_OUT_OF_BOUNDS = "PLACEMENT_OUT_OF_BOUNDS";
+
     // Trap / hazard (threat) package validation codes
     public static final String DAMAGE_TYPE_REQUIRED = "DAMAGE_TYPE_REQUIRED";
     public static final String DUPLICATE_DISARM_KEY = "DUPLICATE_DISARM_KEY";

@@ -55,6 +55,9 @@ class EncounterSetupSurfaceTest {
         assertThat(body).contains("data-readiness-summary");
         assertThat(body).contains("data-place-party");
         assertThat(body).contains("data-auto-place");
+        assertThat(body).contains("id=\"placement-canvas\"");
+        assertThat(body).contains("role=\"application\"");
+        assertThat(body).contains("/js/encounter-placement.js");
     }
 
     @Test

@@ -83,6 +83,78 @@ class EncounterPlacementServiceTest {
     }
 
     @Test
+    void movingPlacementRejectsEncounterThatDoesNotOwnIt() {
+        Encounter owner = fixture.encounterWithMap("Owner");
+        Encounter other = fixture.encounterWithMap("Other");
+        Combatant goblin = fixture.combatant(owner, "Goblin");
+        service.upsert(owner.getId(), goblin.getId(),
+                new EncounterPlacementService.PlacementUpsertRequest(
+                        0, 0, 1, 1, "#55aa55", null));
+
+        assertThatThrownBy(() -> service.move(other.getId(), goblin.getId(), 96, 144))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Placement does not belong to encounter");
+
+        var unchanged = placements.findByCombatantId(goblin.getId()).orElseThrow();
+        assertThat(unchanged.getPositionX()).isZero();
+        assertThat(unchanged.getPositionY()).isZero();
+    }
+
+    @Test
+    void changingMapRejectsMapFromAnotherCampaign() {
+        Encounter encounter = fixture.encounterWithMap("Owner");
+        Encounter other = fixture.encounterWithMap("Other");
+
+        assertThatThrownBy(() -> service.changeMapAndResetPlacements(
+                encounter.getId(), other.getMap().getId()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Map does not belong to encounter campaign");
+
+        assertThat(encounter.getMap().getName()).isEqualTo("Map for Owner");
+    }
+
+    @Test
+    void autoPlaceUsesExplicitStartingCoordinates() {
+        Encounter encounter = fixture.encounterWithMap("Room", 10, 8, 48);
+        Combatant goblin = fixture.combatant(encounter, "Goblin");
+        goblin.setStartX(96);
+        goblin.setStartY(144);
+        combatants.save(goblin);
+
+        List<EncounterPlacementService.PlacementDto> result =
+                service.autoPlaceUnplaced(encounter.getId());
+
+        assertThat(result).singleElement().satisfies(placement -> {
+            assertThat(placement.positionX()).isEqualTo(96);
+            assertThat(placement.positionY()).isEqualTo(144);
+        });
+    }
+
+    @Test
+    void autoPlaceUsesNamedRegionWhenCoordinatesAreUnset() {
+        Encounter encounter = fixture.encounterWithMap("Room", 10, 8, 48);
+        encounter.getMap().setDocument("""
+                {"schemaVersion":2,
+                 "grid":{"width":10,"height":8,"cellSizePx":48,"gridType":"square"},
+                 "layers":[],
+                 "primitives":[{"type":"REGION","startCol":4,"startRow":2,
+                   "endCol":8,"endRow":6,"key":"reinforcements"}]}
+                """);
+        maps.save(encounter.getMap());
+        Combatant goblin = fixture.combatant(encounter, "Goblin");
+        goblin.setPlacementRegionKey("reinforcements");
+        combatants.save(goblin);
+
+        List<EncounterPlacementService.PlacementDto> result =
+                service.autoPlaceUnplaced(encounter.getId());
+
+        assertThat(result).singleElement().satisfies(placement -> {
+            assertThat(placement.positionX()).isEqualTo(6 * 48);
+            assertThat(placement.positionY()).isEqualTo(4 * 48);
+        });
+    }
+
+    @Test
     void combatantCannotBePlacedOnDifferentMap() {
         Encounter encounter = fixture.encounterWithMap("Room", 10, 8, 48);
         Combatant goblin = fixture.combatant(encounter, "Goblin");

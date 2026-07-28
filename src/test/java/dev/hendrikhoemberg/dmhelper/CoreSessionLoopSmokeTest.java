@@ -354,11 +354,14 @@ class CoreSessionLoopSmokeTest {
     void startEncounterAndAdvanceTurns() {
         encounterId = encounterService.create(campaignId,
                 new EncounterService.CreateRequest("Smoke Encounter", mapId)).id();
+        encounterService.addCombatant(encounterId,
+                new EncounterService.CombatantCreateRequest(
+                        "Smoke Goblin", 7, "MONSTER", null, null));
 
         encounterService.activate(encounterId);
 
         var combatants = encounterService.getCombatants(encounterId);
-        assertThat(combatants).isEmpty();
+        assertThat(combatants).hasSize(1);
 
         encounterService.setInitiative(combatants.get(0).id(), 10);
         encounterService.startCombat(encounterId, false);
@@ -2146,10 +2149,16 @@ class CoreSessionLoopSmokeTest {
         startSession();
         UUID defeatEncounterId = encounterService.create(campaignId,
                 new EncounterService.CreateRequest("Defeat Sequence", mapId)).id();
+        encounterRepository.findByCampaignIdAndStatus(
+                        campaignId, dev.hendrikhoemberg.dmhelper.encounter.data.Encounter.Status.ACTIVE)
+                .ifPresent(active -> encounterService.endEncounter(active.getId()));
+        encounterService.addCombatant(defeatEncounterId,
+                new EncounterService.CombatantCreateRequest(
+                        "Defeat Goblin", 7, "MONSTER", null, null));
         encounterService.activate(defeatEncounterId);
 
         var combatants = encounterService.getCombatants(defeatEncounterId);
-        assertThat(combatants).isEmpty();
+        assertThat(combatants).hasSize(1);
         UUID combatantId = combatants.getFirst().id();
         encounterService.setInitiative(combatantId, 10);
         encounterService.startCombat(defeatEncounterId, true);
@@ -2171,6 +2180,10 @@ class CoreSessionLoopSmokeTest {
 
         tracker.locator(".tracker-header button",
                 new Locator.LocatorOptions().setHasText("End")).click();
+        Locator endDialog = dmPage.locator("[data-encounter-end-dialog]");
+        endDialog.waitFor();
+        endDialog.locator("button",
+                new Locator.LocatorOptions().setHasText("End encounter")).click();
         tracker.locator(".empty-state").waitFor();
 
         ZoneId berlin = ZoneId.of("Europe/Berlin");

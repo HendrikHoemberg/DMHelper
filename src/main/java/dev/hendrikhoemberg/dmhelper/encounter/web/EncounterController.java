@@ -165,6 +165,9 @@ public class EncounterController {
     public String setup(@PathVariable UUID campaignId, @PathVariable UUID id, Model model) {
         addEncounterModel(campaignId, id, model);
         model.addAttribute("maps", mapRepo.findByCampaignIdOrderBySortOrderAsc(campaignId));
+        encounterRepository.findById(id)
+                .map(e -> e.getMap())
+                .ifPresent(map -> model.addAttribute("encounterMap", map));
         return "encounter/setup";
     }
 }
