@@ -25,8 +25,9 @@ export function fillCoverGeometry(gridWidth, gridHeight, imageWidth, imageHeight
 export function calibratedImageGeometry(image, pointA, pointB, cellsBetween, cellSizePx) {
     const dx = pointB.x - pointA.x;
     const dy = pointB.y - pointA.y;
-    const currentDistance = Math.hypot(dx, dy);
-    const scale = currentDistance > 0 ? cellsBetween / currentDistance : 1;
+    const currentDistancePx = Math.hypot(dx, dy) * cellSizePx;
+    const targetDistancePx = cellsBetween * cellSizePx;
+    const scale = currentDistancePx > 0 ? targetDistancePx / currentDistancePx : 1;
     const newWidth = image.width * scale;
     const newHeight = image.height * scale;
     const newX = pointA.x - (pointA.x - image.x) * scale;
