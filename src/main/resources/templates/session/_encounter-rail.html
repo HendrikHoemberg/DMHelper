@@ -13,8 +13,8 @@
         <div class="planned-encounter-row">
           <span th:text="${enc.name}">Encounter name</span>
           <button class="btn btn-ghost encounter-rail__action" style="padding: 2px 8px;"
-                  th:attr="data-encounter-id=${enc.id}"
-                  @click="activateEncounter($el.dataset.encounterId)">Activate</button>
+                  th:attr="data-encounter-id=${enc.id},data-map-id=${enc.mapId}"
+                  @click="activateEncounter($el.dataset.encounterId, $el.dataset.mapId)">Activate</button>
           <button class="btn btn-ghost encounter-rail__action" style="padding: 2px 8px;"
                   th:if="${enc.mapId != null}"
                   th:attr="data-map-id=${enc.mapId}"

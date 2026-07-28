@@ -11,6 +11,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SessionCockpitTemplateContractTest {
 
     @Test
+    void sessionActionsUseApplicationDialogsAndOfferSafeExit() throws IOException {
+        String cockpit = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
+        String mapModule = Files.readString(Path.of("src/main/resources/templates/session/_map-module.html"));
+        String tracker = Files.readString(Path.of("src/main/resources/templates/encounter/_tracker.html"));
+        String cockpitJs = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
+        String battleMap = Files.readString(Path.of("src/main/resources/static/js/map/battle-map.js"));
+
+        assertThat(cockpit).contains("Leave cockpit", "data-encounter-end-dialog");
+        assertThat(mapModule).contains("data-token-dialog", "data-token-delete-dialog");
+        assertThat(tracker).contains("request-encounter-end");
+        assertThat(cockpitJs).contains("openTokenDialog()", "submitTokenDialog()",
+                "requestTokenDelete(id)", "confirmTokenDelete()", "confirmEncounterEnd()");
+        assertThat(cockpitJs).doesNotContain("prompt(", "confirm(");
+        assertThat(battleMap).doesNotContain("prompt(");
+    }
+
+    @Test
     void cockpitShowsRuntimeChoicesAndEditorialNavigationSeparately() throws IOException {
         String story = Files.readString(Path.of("src/main/resources/templates/session/_story-rail.html"));
         assertThat(story).contains("scene-editorial");
@@ -67,7 +84,7 @@ class SessionCockpitTemplateContractTest {
         String presentationModule = Files.readString(Path.of(
                 "src/main/resources/templates/session/modules/_presentation.html"));
         assertThat(presentationModule).contains("Present current map", ">Curtain<");
-        assertThat(mapModule).contains("@click=\"addToken()\"", "@click=\"addParty()\"",
+        assertThat(mapModule).contains("@click=\"openTokenDialog()\"", "@click=\"addParty()\"",
                 "x-for=\"t in tokens\"");
         assertThat(html).contains("cockpitLayoutConfig",
                 "cockpitPresetPicker", "cockpitLayoutModeButton",
@@ -228,7 +245,15 @@ class SessionCockpitTemplateContractTest {
 
     @Test
     void activateEncounterDoesNotReloadPage() throws IOException {
+        String rail = Files.readString(Path.of(
+                "src/main/resources/templates/session/_encounter-rail.html"));
         String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
+
+        assertThat(rail)
+                .contains("data-map-id=${enc.mapId}")
+                .contains("activateEncounter($el.dataset.encounterId, $el.dataset.mapId)");
+        assertThat(extractFunction(js, "activateEncounter"))
+                .contains("await this.switchMap(mapId)");
         assertThat(extractFunction(js, "activateEncounter"))
                 .doesNotContain("window.location.reload()")
                 .as("activateEncounter should update rails in place, not reload");

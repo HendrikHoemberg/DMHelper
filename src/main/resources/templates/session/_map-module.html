@@ -18,7 +18,7 @@
                   @click="setTool('select')" :disabled="!currentMapId">Select</button>
           <button class="tool-btn" :class="{ active: tool === 'measure' }"
                   @click="setTool('measure')" :disabled="!currentMapId">Measure</button>
-          <button class="tool-btn" @click="addToken()" :disabled="!currentMapId">+ Token</button>
+          <button class="tool-btn" @click="openTokenDialog()" :disabled="!currentMapId">+ Token</button>
           <button class="tool-btn" @click="addParty()" :disabled="!currentMapId">Add Party</button>
         </div>
         <div class="tool-group">
@@ -91,7 +91,7 @@
                 <button type="button" class="btn btn-ghost" title="Duplicate token"
                         @click.stop="duplicateToken(t.id)">Copy</button>
                 <button type="button" class="btn btn-ghost" title="Delete token"
-                        @click.stop="deleteToken(t.id)">Delete</button>
+                        @click.stop="requestTokenDelete(t.id)">Delete</button>
               </div>
             </template>
           </section>
@@ -114,6 +114,91 @@
         <span id="battleCursorInfo"></span>
         <span id="battleSaveIndicator" class="save-indicator save-saved">Saved</span>
       </div>
+
+      <dialog class="cockpit-dialog token-dialog" data-token-dialog
+              aria-labelledby="tokenDialogTitle"
+              @cancel.prevent="closeTokenDialog()">
+        <form @submit.prevent="submitTokenDialog()">
+          <h2 id="tokenDialogTitle">Add token</h2>
+          <div class="token-dialog__grid">
+            <label>Name
+              <input type="text" x-model.trim="tokenDraft.name" maxlength="255"
+                     autocomplete="off" required data-token-name>
+            </label>
+            <label>Type
+              <select x-model="tokenDraft.kind">
+                <option value="PC">Player character</option>
+                <option value="NPC">NPC</option>
+                <option value="MONSTER">Monster</option>
+                <option value="OBJECT">Object</option>
+              </select>
+            </label>
+            <label>Width (cells)
+              <input type="number" x-model.number="tokenDraft.sizeCols" min="1"
+                     :max="window.battleMap?.gridWidth || 100" required>
+            </label>
+            <label>Height (cells)
+              <input type="number" x-model.number="tokenDraft.sizeRows" min="1"
+                     :max="window.battleMap?.gridHeight || 100" required>
+            </label>
+            <label>Column
+              <input type="number" x-model.number="tokenDraft.col" min="0" required>
+            </label>
+            <label>Row
+              <input type="number" x-model.number="tokenDraft.row" min="0" required>
+            </label>
+            <label>Current HP
+              <input type="number" x-model="tokenDraft.currentHp" min="0" placeholder="Optional">
+            </label>
+            <label>Maximum HP
+              <input type="number" x-model="tokenDraft.maxHp" min="0" placeholder="Optional">
+            </label>
+            <label>Color
+              <input type="color" x-model="tokenDraft.color">
+            </label>
+            <label class="token-dialog__check">
+              <input type="checkbox" x-model="tokenDraft.hidden"> Hidden from players
+            </label>
+          </div>
+          <p class="u-text-danger" role="alert" x-show="tokenDialogError"
+             x-text="tokenDialogError"></p>
+          <div class="cockpit-dialog__actions">
+            <button type="submit" class="btn btn-primary" :disabled="tokenDialogBusy"
+                    x-text="tokenDialogBusy ? 'Adding…' : 'Add token'"></button>
+            <button type="button" class="btn btn-ghost" @click="closeTokenDialog()"
+                    :disabled="tokenDialogBusy">Cancel</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog class="cockpit-dialog" data-token-delete-dialog
+              aria-labelledby="tokenDeleteDialogTitle"
+              @cancel.prevent="closeTokenDeleteDialog()">
+        <h2 id="tokenDeleteDialogTitle">Delete token?</h2>
+        <p><strong x-text="pendingTokenDelete?.name || 'This token'"></strong> will be removed from the map.</p>
+        <div class="cockpit-dialog__actions">
+          <button type="button" class="btn btn-danger" @click="confirmTokenDelete()"
+                  :disabled="tokenDeleteBusy">Delete</button>
+          <button type="button" class="btn btn-ghost" @click="closeTokenDeleteDialog()"
+                  :disabled="tokenDeleteBusy">Cancel</button>
+        </div>
+      </dialog>
+
+      <dialog class="cockpit-dialog" data-annotation-text-dialog
+              aria-labelledby="annotationTextDialogTitle"
+              @cancel.prevent="closeAnnotationDialog()">
+        <form @submit.prevent="confirmAnnotationText()">
+          <h2 id="annotationTextDialogTitle">Add annotation</h2>
+          <label>Text
+            <input type="text" x-model.trim="annotationText" maxlength="255"
+                   autocomplete="off" required data-annotation-text>
+          </label>
+          <div class="cockpit-dialog__actions">
+            <button type="submit" class="btn btn-primary">Add</button>
+            <button type="button" class="btn btn-ghost" @click="closeAnnotationDialog()">Cancel</button>
+          </div>
+        </form>
+      </dialog>
     </div>
 </th:block>
 

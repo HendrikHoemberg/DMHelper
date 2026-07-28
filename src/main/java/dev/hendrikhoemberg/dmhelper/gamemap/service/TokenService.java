@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.HashSet;
 import java.util.UUID;
 
 @Service
@@ -161,25 +162,34 @@ public class TokenService {
                 .orElseThrow(() -> new NotFoundException("Map not found: " + mapId));
         List<PartyMember> members = partyMemberRepository
                 .findByCampaignIdAndActiveTrueOrderByCharacterNameAsc(map.getCampaign().getId());
-        int x = 0;
-        int y = 0;
+        List<Token> existingTokens = repository.findByMapIdOrderByNameAsc(mapId);
+        var representedPartyMembers = new HashSet<UUID>();
+        int slot = 0;
+        for (Token existing : existingTokens) {
+            if (existing.getPartyMember() != null) {
+                representedPartyMembers.add(existing.getPartyMember().getId());
+                slot++;
+            }
+        }
         for (PartyMember pm : members) {
+            if (!representedPartyMembers.add(pm.getId())) continue;
             Token t = new Token();
             t.setMap(map);
             t.setName(pm.getCharacterName());
             t.setKind("PC");
-            t.setPositionX(x * map.getCellSizePx());
-            t.setPositionY(y * map.getCellSizePx());
+            int col = slot % map.getGridWidth();
+            int row = Math.min(map.getGridHeight() - 1, slot / map.getGridWidth());
+            t.setPositionX(col * map.getCellSizePx());
+            t.setPositionY(row * map.getCellSizePx());
             t.setSizeCols(1);
             t.setSizeRows(1);
             t.setColor("#4a9eff");
             t.setHidden(false);
-            t.setCurrentHp(pm.getMaxHp());
+            t.setCurrentHp(pm.getCurrentHp());
             t.setMaxHp(pm.getMaxHp());
             t.setPartyMember(pm);
             repository.save(t);
-            x++;
-            if (x >= map.getGridWidth()) { x = 0; y++; }
+            slot++;
         }
         return findByMapId(mapId);
     }

@@ -335,6 +335,73 @@ class MapEditorBrowserTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    void runtimeRendererIncludesBackgroundAndFiltersPrivatePlayerLayers() {
+        Map<String, Object> result = (Map<String, Object>) page.evaluate("""
+                async () => {
+                    const { renderRuntimeDocument } = await import('/js/map/runtime-renderer.js');
+                    const dataUrl = 'data:image/svg+xml;base64,' + btoa(
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">'
+                        + '<rect width="16" height="16" fill="red"/></svg>');
+                    const document = {
+                        customTerrain: [{ key: 'moss', name: 'Moss', fill: '#123456' }],
+                        primitives: [
+                            { type: 'DOOR', startCol: 2, startRow: 2, endCol: 2, endRow: 2,
+                              playerVisible: false },
+                            { type: 'DOOR', startCol: 3, startRow: 3, endCol: 3, endRow: 3,
+                              playerVisible: true }
+                        ],
+                        layers: [
+                            { id: 'image', type: 'IMAGE', visible: true, playerVisible: true,
+                              image: { dataUrl, x: 0, y: 0, width: 4, height: 4, rotationDeg: 0 } },
+                            { id: 'terrain', type: 'TERRAIN', visible: true, playerVisible: true,
+                              cells: [{ col: 0, row: 0, terrain: 'moss' }], shapes: [] },
+                            { id: 'objects', type: 'OBJECTS', visible: true, playerVisible: false,
+                              cells: [], shapes: [{ type: 'rect', points: [0, 0, 1, 1],
+                                                   fill: '#111111', stroke: '#ffffff' }] },
+                            { id: 'annotations', type: 'ANNOTATIONS', visible: true, playerVisible: true,
+                              cells: [], shapes: [{ type: 'line', points: [0, 0, 2, 2],
+                                                   stroke: '#abcdef' }] }
+                        ]
+                    };
+                    const dm = new Konva.Layer();
+                    const player = new Konva.Layer();
+                    window.mapEditor.stage.add(dm);
+                    window.mapEditor.stage.add(player);
+                    await renderRuntimeDocument({
+                        Konva, document, targetLayer: dm, gridWidth: 4, gridHeight: 4,
+                        cellSizePx: 32, playerView: false
+                    });
+                    await renderRuntimeDocument({
+                        Konva, document, targetLayer: player, gridWidth: 4, gridHeight: 4,
+                        cellSizePx: 32, playerView: true
+                    });
+                    const count = (layer, kind) => layer.find(
+                        node => node.getAttr('_runtimeKind') === kind).length;
+                    return {
+                        dmImages: count(dm, 'image'),
+                        dmShapes: count(dm, 'shape'),
+                        playerImages: count(player, 'image'),
+                        playerShapes: count(player, 'shape'),
+                        dmTerrain: count(dm, 'terrain'),
+                        playerTerrain: count(player, 'terrain'),
+                        customTerrainRendered: dm.find(
+                            node => node.getAttr('_runtimeKind') === 'terrain')
+                            .some(node => node.fill() === '#123456')
+                    };
+                }
+                """);
+
+        assertThat(((Number) result.get("dmImages")).intValue()).isEqualTo(1);
+        assertThat(((Number) result.get("dmShapes")).intValue()).isEqualTo(2);
+        assertThat(((Number) result.get("playerImages")).intValue()).isEqualTo(1);
+        assertThat(((Number) result.get("playerShapes")).intValue()).isEqualTo(1);
+        assertThat(((Number) result.get("dmTerrain")).intValue()).isEqualTo(3);
+        assertThat(((Number) result.get("playerTerrain")).intValue()).isEqualTo(2);
+        assertThat(result.get("customTerrainRendered")).isEqualTo(true);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void importedImageHasCorrectFitGeometry() throws Exception {
         byte[] pngBytes;
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {

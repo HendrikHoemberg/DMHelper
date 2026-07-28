@@ -4,6 +4,7 @@
      th:attr="x-data=|combatTracker({ campaignId: '${campaignId}', trackerMode: '${mode}' })|,
               data-tracker-mode=${mode}"
      x-init="init()"
+     @encounter-end-confirmed.window="endEncounter()"
      class="tracker-panel">
 
     <template x-if="!encounter">
@@ -22,7 +23,9 @@
                                     x-text="encounter?.round || 0"></strong></span>
                 <span class="badge badge-warning" x-show="pendingWaves.length > 0"
                       x-text="'(' + pendingWaves.length + ' wave' + (pendingWaves.length !== 1 ? 's' : '') + ' pending)'"></span>
-                <button class="btn btn-danger action-row__destructive tracker-small-button" data-end-encounter style="padding: 2px 8px;" @click="endEncounter()">End</button>
+                <button class="btn btn-danger action-row__destructive tracker-small-button"
+                        data-end-encounter style="padding: 2px 8px;"
+                        @click="$dispatch('request-encounter-end')">End</button>
             </div>
 
             <!-- Initiative setup panel -->

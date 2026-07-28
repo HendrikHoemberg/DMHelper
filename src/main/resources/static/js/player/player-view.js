@@ -1,15 +1,17 @@
-import { expandPrimitives } from '../map/shared.js';
+import { renderRuntimeDocument } from '../map/runtime-renderer.js';
 import { renderHandout } from './handout-renderer.js';
 
 const WS_URL = `ws://${window.location.host}/ws/table`;
 
 let stage = null;
+let documentLayer = null;
 let gridLayer = null;
 let tokenLayer = null;
 let tokenNodes = new Map();
 let currentState = null;
 let ws = null;
 let reconnectTimer = null;
+let renderGeneration = 0;
 const RECONNECT_DELAY = 2000;
 
 function setStatus(text, color) {
@@ -66,12 +68,13 @@ function connect() {
 }
 
 function render(state) {
+    const generation = ++renderGeneration;
     clearContent();
 
     if (state.mode === 'CURTAIN') {
         showCurtain();
     } else if (state.mode === 'MAP') {
-        showMap(state);
+        showMap(state, generation);
     } else if (state.mode === 'HANDOUT') {
         showHandout(state);
     }
@@ -100,7 +103,7 @@ function showCurtain() {
         </div>`;
 }
 
-function showMap(state) {
+async function showMap(state, generation) {
     if (!state.map) {
         showCurtain();
         return;
@@ -115,56 +118,38 @@ function showMap(state) {
     const width = map.gridWidth * cellPx;
     const height = map.gridHeight * cellPx;
 
-    stage = new Konva.Stage({ container: 'pvCanvas', width: wrap.clientWidth, height: wrap.clientHeight });
-    gridLayer = new Konva.Layer();
-    tokenLayer = new Konva.Layer();
+    const nextStage = new Konva.Stage({
+        container: 'pvCanvas', width: wrap.clientWidth, height: wrap.clientHeight,
+    });
+    const nextDocumentLayer = new Konva.Layer({ listening: false });
+    const nextGridLayer = new Konva.Layer({ listening: false });
+    const nextTokenLayer = new Konva.Layer();
+    stage = nextStage;
+    documentLayer = nextDocumentLayer;
+    gridLayer = nextGridLayer;
+    tokenLayer = nextTokenLayer;
 
+    nextStage.add(nextDocumentLayer);
+    nextStage.add(nextGridLayer);
+    nextStage.add(nextTokenLayer);
+    await renderRuntimeDocument({
+        Konva,
+        document: map.document,
+        targetLayer: nextDocumentLayer,
+        gridWidth: map.gridWidth,
+        gridHeight: map.gridHeight,
+        cellSizePx: cellPx,
+        playerView: true,
+    });
+    if (generation !== renderGeneration || stage !== nextStage) return;
     drawGrid(width, height, cellPx, map.showGrid);
-
-    if (map.document && map.document.layers) {
-        const explicitCells = [];
-        for (const layer of map.document.layers) {
-            if (layer.cells) {
-                for (const cell of layer.cells) {
-                    explicitCells.push(cell);
-                }
-            }
-        }
-        const explicitKeys = new Set(explicitCells.map(c => `${c.col},${c.row}`));
-        const primitiveCells = expandPrimitives(map.document).filter(c => !explicitKeys.has(`${c.col},${c.row}`));
-        for (const cell of [...primitiveCells, ...explicitCells]) {
-            const fill = getTerrainFill(cell.terrain, map.document.customTerrain);
-            const rect = new Konva.Rect({
-                x: cell.col * cellPx, y: cell.row * cellPx,
-                width: cellPx, height: cellPx,
-                fill: fill, stroke: 'rgba(255,255,255,0.05)', strokeWidth: 0.5,
-            });
-            gridLayer.add(rect);
-        }
-    }
 
     for (const token of map.tokens) {
         drawToken(token, cellPx);
     }
 
-    stage.add(gridLayer);
-    stage.add(tokenLayer);
-
     autoFit(width, height, wrap);
     enablePanZoom(stage, wrap);
-}
-
-function getTerrainFill(terrainKey, customTerrain) {
-    const defaults = {
-        floor: '#2b2b45', wall: '#4c4c60', water: '#1f4570',
-        'difficult': '#3e5228', lava: '#6e2525', pit: '#12121e'
-    };
-    if (defaults[terrainKey]) return defaults[terrainKey];
-    if (customTerrain) {
-        const ct = customTerrain.find(t => t.key === terrainKey);
-        if (ct) return ct.fill;
-    }
-    return defaults.floor;
 }
 
 function drawGrid(w, h, cellPx, showGrid) {

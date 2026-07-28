@@ -284,6 +284,35 @@ class ViewportAccessibilityGateTest {
     }
 
     @Test
+    void combatMapContentFillsItsModuleBody() {
+        openCockpit(1920, 1080);
+        page.locator("#cockpitPresetPicker").selectOption("builtin:combat");
+        page.locator("[data-module-key='map'] .cockpit-table").waitFor();
+
+        @SuppressWarnings("unchecked")
+        Map<String, Number> heights = (Map<String, Number>) page.evaluate("""
+                () => {
+                  const module = document.querySelector('[data-module-key="map"]');
+                  const body = module.querySelector('[data-module-body]');
+                  const content = module.querySelector('[data-module-content]');
+                  const table = module.querySelector('.cockpit-table');
+                  return {
+                    body: body.getBoundingClientRect().height,
+                    content: content.getBoundingClientRect().height,
+                    table: table.getBoundingClientRect().height
+                  };
+                }
+                """);
+
+        assertThat(heights.get("content").doubleValue())
+                .as("dynamic map content fills the module body")
+                .isGreaterThanOrEqualTo(heights.get("body").doubleValue() - 1);
+        assertThat(heights.get("table").doubleValue())
+                .as("map table fills the dynamic content wrapper")
+                .isGreaterThanOrEqualTo(heights.get("content").doubleValue() - 1);
+    }
+
+    @Test
     void everyFocusedLayerTrapsAndRestoresFocus() {
         record Layer(String opener, String container) {
         }

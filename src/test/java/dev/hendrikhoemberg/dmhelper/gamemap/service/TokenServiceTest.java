@@ -5,6 +5,7 @@ import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.TokenService.*;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -150,5 +151,24 @@ class TokenServiceTest {
         assertThat(copy.sizeRows()).isEqualTo(2);
         assertThat(copy.maxHp()).isEqualTo(7);
         assertThat(copy.hidden()).isTrue();
+    }
+
+    @Test
+    void addingPartyTwiceDoesNotDuplicatePartyMemberTokens() {
+        PartyMember member = new PartyMember();
+        member.setCampaign(campaign);
+        member.setCharacterName("Aria");
+        member.setActive(true);
+        member.setMaxHp(24);
+        member.setCurrentHp(17);
+        em.persist(member);
+        em.flush();
+
+        tokenService.addPartyToMap(map.getId());
+        List<TokenDto> secondResult = tokenService.addPartyToMap(map.getId());
+
+        assertThat(secondResult)
+                .filteredOn(token -> member.getId().equals(token.partyMemberId()))
+                .hasSize(1);
     }
 }

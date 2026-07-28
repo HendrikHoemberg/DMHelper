@@ -1,5 +1,5 @@
-import { drawGrid, setupPanAndZoom, cellPos, snapPixel, pixelToCell, expandPrimitives } from './shared.js';
-import { BUILTIN_TERRAIN } from './terrain-palette.js';
+import { drawGrid, setupPanAndZoom, cellPos, snapPixel, pixelToCell } from './shared.js';
+import { renderRuntimeDocument } from './runtime-renderer.js';
 
 /**
  * @typedef {{id: string, name: string, kind: string, positionX: number, positionY: number,
@@ -7,9 +7,6 @@ import { BUILTIN_TERRAIN } from './terrain-palette.js';
  *            currentHp: number|null, maxHp: number|null, bloodied: boolean, dead: boolean}} TokenData
  */
 
-/* Single source of truth for terrain colors is terrain-palette.js */
-const TERRAIN_COLORS = Object.fromEntries(
-    Object.entries(BUILTIN_TERRAIN).map(([key, t]) => [key, t.fill]));
 const KIND_RING_COLORS = { PC: '#4a9eff', NPC: '#2ecc71', MONSTER: '#e74c3c', OBJECT: '#f39c12' };
 const SELECTION_GOLD = '#c9a35c';   // --color-accent; the canvas can't read CSS tokens
 const HP_COLORS = { high: '#7fa05f', mid: '#d9993d', low: '#a83a32' };
@@ -236,28 +233,22 @@ export class BattleMap {
             const resp = await this._request(`/api/v1/maps/${this.mapId}/document`);
             const data = await resp.json();
             this.docVersion = data.version;
-            this.renderTerrain(data.document);
+            await this.renderTerrain(data.document);
         } catch (error) {
             this._failure('Could not load the map document.', error, null);
         }
     }
 
-    renderTerrain(doc) {
-        this.terrainLayer.destroyChildren();
-        if (!doc || !doc.layers) return;
-        const terrainLayer = doc.layers.find(l => l.id === 'terrain');
-        const explicitCells = terrainLayer?.cells || [];
-        const explicitKeys = new Set(explicitCells.map(c => `${c.col},${c.row}`));
-        const primitiveCells = expandPrimitives(doc).filter(c => !explicitKeys.has(`${c.col},${c.row}`));
-        const s = this.cellSizePx;
-        for (const cell of [...primitiveCells, ...explicitCells]) {
-            const color = TERRAIN_COLORS[cell.terrain] || TERRAIN_COLORS.floor;
-            this.terrainLayer.add(new Konva.Rect({
-                x: cell.col * s, y: cell.row * s, width: s, height: s,
-                fill: color, stroke: '#222', strokeWidth: 0.5,
-            }));
-        }
-        this.terrainLayer.batchDraw();
+    async renderTerrain(doc) {
+        await renderRuntimeDocument({
+            Konva,
+            document: doc,
+            targetLayer: this.terrainLayer,
+            gridWidth: this.gridWidth,
+            gridHeight: this.gridHeight,
+            cellSizePx: this.cellSizePx,
+            playerView: false,
+        });
     }
 
     renderGrid() {
@@ -1046,11 +1037,16 @@ export class BattleMap {
     }
 
     addAnnotationText(pos) {
-        const text = prompt('Annotation text:');
-        if (!text) return;
+        window.dispatchEvent(new CustomEvent('battle-annotation-text-request', {
+            detail: { x: pos.x, y: pos.y },
+        }));
+    }
+
+    commitAnnotationText(pos, text) {
+        if (!pos || !text?.trim()) return;
         const node = new Konva.Text({
             x: pos.x, y: pos.y,
-            text, fontSize: 16, fill: '#ff0',
+            text: text.trim(), fontSize: 16, fill: '#ff0',
             stroke: '#000', strokeWidth: 3, fillAfterStrokeEnabled: true,
             listening: false,
         });
@@ -1214,7 +1210,7 @@ export class BattleMap {
             this.tokens = tokens;
             this.tokenNodes = {};
 
-            this.renderTerrain(documentData.document);
+            await this.renderTerrain(documentData.document);
             this.renderGrid();
             this.renderTokens();
             await this.loadPins(mapData.id);

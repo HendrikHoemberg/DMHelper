@@ -42,6 +42,7 @@
       x-data="sessionCockpit(window.sessionCockpitConfig)"
       @session-next-turn.window="nextTurn()"
       @session-scene-step.window="stepScene($event.detail.direction)"
+      @request-encounter-end.window="openEncounterEndDialog()"
       @cockpit-encounter-ended.window="refreshModules(['story', 'encounter'], 'encounter-ended')"
       @keydown.window="handleKeyboard($event)">
   <header class="cockpit-topbar">
@@ -113,6 +114,7 @@
         <a class="btn btn-ghost" target="_blank" href="/library?tab=rules">Rules</a>
         <a class="btn btn-ghost" target="_blank"
            th:href="@{/campaigns/{id}/calendar(id=${campaignId})}">Calendar</a>
+        <a class="btn btn-ghost" th:href="@{/campaigns/{id}(id=${campaignId})}">Leave cockpit</a>
       </div>
     </details>
   </header>
@@ -127,6 +129,16 @@
 
   <th:block th:replace="~{session/_lifecycle-dialog :: lifecycle-dialog}"></th:block>
   <th:block th:replace="~{session/_presentation-preview}"></th:block>
+  <dialog class="cockpit-dialog" data-encounter-end-dialog
+          aria-labelledby="encounterEndDialogTitle"
+          @cancel.prevent="closeEncounterEndDialog()">
+    <h2 id="encounterEndDialogTitle">End active encounter?</h2>
+    <p>This stops initiative tracking for the active encounter. The session itself remains open.</p>
+    <div class="cockpit-dialog__actions">
+      <button type="button" class="btn btn-danger" @click="confirmEncounterEnd()">End encounter</button>
+      <button type="button" class="btn btn-ghost" @click="closeEncounterEndDialog()">Cancel</button>
+    </div>
+  </dialog>
 </main>
 <th:block th:replace="~{fragments/_command-palette :: command-palette}"></th:block>
     <th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>

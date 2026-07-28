@@ -47,6 +47,16 @@ function sessionCockpit(config) {
         threatPinX: 0,
         threatPinY: 0,
         threatPins: [],
+        tokenDraft: {
+            name: '', kind: 'NPC', sizeCols: 1, sizeRows: 1,
+            col: 0, row: 0, currentHp: '', maxHp: '', color: '#2ecc71', hidden: false,
+        },
+        tokenDialogBusy: false,
+        tokenDialogError: '',
+        pendingTokenDelete: null,
+        tokenDeleteBusy: false,
+        annotationText: '',
+        annotationPosition: null,
 
         async mutateSession(path, options, summary, retry) {
             try {
@@ -491,6 +501,9 @@ function sessionCockpit(config) {
                     this.refreshThreatPins();
                 }
             });
+            window.addEventListener('battle-annotation-text-request', (event) => {
+                this.openAnnotationDialog(event.detail);
+            });
             window.addEventListener('tracker-encounter-state', (e) => {
                 this.activeEncounter = e.detail.encounter;
                 // combatants may include threatKind/threatId/threatCard for trap/hazard turns;
@@ -636,13 +649,16 @@ function sessionCockpit(config) {
             }
         },
 
-        async activateEncounter(id) {
+        async activateEncounter(id, mapId) {
             try {
                 await this.request(`/api/v1/encounters/${id}/activate`, { method: 'POST' });
+                if (mapId) {
+                    await this.switchMap(mapId);
+                }
                 this.refreshModules(['story', 'encounter'], 'encounter-activated');
             } catch (error) {
                 this.failure('Could not activate the encounter.', error,
-                    () => this.activateEncounter(id));
+                    () => this.activateEncounter(id, mapId));
             }
         },
 
@@ -674,24 +690,132 @@ function sessionCockpit(config) {
 
         setTool(t) { window.battleMap?.setTool(t); },
 
-        async addToken() {
-            const name = prompt('Token name:') || 'Token';
-            const kind = prompt('Kind (PC/NPC/MONSTER/OBJECT):', 'NPC') || 'NPC';
+        dialog(selector) {
+            return document.querySelector(selector);
+        },
+
+        visibleCenterCell() {
+            const bm = window.battleMap;
+            if (!bm?.stage) return { col: 0, row: 0 };
+            const scale = bm.stage.scaleX();
+            const x = (-bm.stage.x() + bm.container.clientWidth / 2) / scale;
+            const y = (-bm.stage.y() + bm.container.clientHeight / 2) / scale;
+            return {
+                col: Math.max(0, Math.min(bm.gridWidth - 1, Math.floor(x / bm.cellSizePx))),
+                row: Math.max(0, Math.min(bm.gridHeight - 1, Math.floor(y / bm.cellSizePx))),
+            };
+        },
+
+        openTokenDialog() {
             if (!window.battleMap) return;
-            const s = window.battleMap.cellSizePx;
-            let px = (-window.battleMap.stage.x() + window.battleMap.container.clientWidth / 2) / window.battleMap.stage.scaleX();
-            let py = (-window.battleMap.stage.y() + window.battleMap.container.clientHeight / 2) / window.battleMap.stage.scaleY();
-            const colors = { PC: '#4a9eff', NPC: '#2ecc71', MONSTER: '#e74c3c', OBJECT: '#f39c12' };
-            await window.battleMap.createToken({
-                name, kind, positionX: Math.round(px), positionY: Math.round(py),
-                sizeCols: 1, sizeRows: 1,
-                color: colors[kind] || '#c9a35c', hidden: false,
-                currentHp: null, maxHp: null,
+            this._dialogReturnFocus = document.activeElement;
+            const center = this.visibleCenterCell();
+            this.tokenDraft = {
+                name: '', kind: 'NPC', sizeCols: 1, sizeRows: 1,
+                col: center.col, row: center.row,
+                currentHp: '', maxHp: '', color: '#2ecc71', hidden: false,
+            };
+            this.tokenDialogError = '';
+            const dialog = this.dialog('[data-token-dialog]');
+            if (dialog && !dialog.open) dialog.showModal();
+            this.$nextTick(() => dialog?.querySelector('[data-token-name]')?.focus());
+        },
+
+        closeDialog(selector) {
+            const dialog = this.dialog(selector);
+            if (dialog?.open) dialog.close();
+            const focus = this._dialogReturnFocus;
+            this._dialogReturnFocus = null;
+            this.$nextTick(() => focus?.isConnected && focus.focus());
+        },
+
+        closeTokenDialog() {
+            if (this.tokenDialogBusy) return;
+            this.closeDialog('[data-token-dialog]');
+        },
+
+        async submitTokenDialog() {
+            const bm = window.battleMap;
+            if (!bm || this.tokenDialogBusy) return;
+            const draft = this.tokenDraft;
+            if (!draft.name?.trim()) {
+                this.tokenDialogError = 'Enter a token name.';
+                return;
+            }
+            const sizeCols = Math.max(1, Math.min(bm.gridWidth, Number(draft.sizeCols) || 1));
+            const sizeRows = Math.max(1, Math.min(bm.gridHeight, Number(draft.sizeRows) || 1));
+            const col = Math.max(0, Math.min(bm.gridWidth - sizeCols, Number(draft.col) || 0));
+            const row = Math.max(0, Math.min(bm.gridHeight - sizeRows, Number(draft.row) || 0));
+            this.tokenDialogBusy = true;
+            this.tokenDialogError = '';
+            const created = await bm.createToken({
+                name: draft.name.trim(),
+                kind: draft.kind,
+                positionX: col * bm.cellSizePx,
+                positionY: row * bm.cellSizePx,
+                sizeCols,
+                sizeRows,
+                color: draft.color,
+                hidden: !!draft.hidden,
+                currentHp: draft.currentHp === '' ? null : Number(draft.currentHp),
+                maxHp: draft.maxHp === '' ? null : Number(draft.maxHp),
             });
+            this.tokenDialogBusy = false;
+            if (created) {
+                this.closeTokenDialog();
+            } else {
+                this.tokenDialogError = 'The token could not be added. Try again.';
+            }
         },
 
         async addParty() { await window.battleMap?.addPartyToMap(); },
-        async deleteToken(id) { if (confirm('Delete this token?')) await window.battleMap?.deleteToken(id); },
+        requestTokenDelete(id) {
+            this._dialogReturnFocus = document.activeElement;
+            this.pendingTokenDelete = this.tokens.find(token => token.id === id) || { id };
+            const dialog = this.dialog('[data-token-delete-dialog]');
+            if (dialog && !dialog.open) dialog.showModal();
+        },
+        closeTokenDeleteDialog() {
+            if (this.tokenDeleteBusy) return;
+            this.pendingTokenDelete = null;
+            this.closeDialog('[data-token-delete-dialog]');
+        },
+        async confirmTokenDelete() {
+            if (!this.pendingTokenDelete || this.tokenDeleteBusy) return;
+            this.tokenDeleteBusy = true;
+            const deleted = await window.battleMap?.deleteToken(this.pendingTokenDelete.id);
+            this.tokenDeleteBusy = false;
+            if (deleted !== false) this.closeTokenDeleteDialog();
+        },
+        openAnnotationDialog(position) {
+            this._dialogReturnFocus = document.activeElement;
+            this.annotationPosition = position;
+            this.annotationText = '';
+            const dialog = this.dialog('[data-annotation-text-dialog]');
+            if (dialog && !dialog.open) dialog.showModal();
+            this.$nextTick(() => dialog?.querySelector('[data-annotation-text]')?.focus());
+        },
+        closeAnnotationDialog() {
+            this.annotationPosition = null;
+            this.closeDialog('[data-annotation-text-dialog]');
+        },
+        confirmAnnotationText() {
+            if (!this.annotationText?.trim() || !this.annotationPosition) return;
+            window.battleMap?.commitAnnotationText(this.annotationPosition, this.annotationText);
+            this.closeAnnotationDialog();
+        },
+        openEncounterEndDialog() {
+            this._dialogReturnFocus = document.activeElement;
+            const dialog = this.dialog('[data-encounter-end-dialog]');
+            if (dialog && !dialog.open) dialog.showModal();
+        },
+        closeEncounterEndDialog() {
+            this.closeDialog('[data-encounter-end-dialog]');
+        },
+        confirmEncounterEnd() {
+            this.closeEncounterEndDialog();
+            window.dispatchEvent(new CustomEvent('encounter-end-confirmed'));
+        },
         async duplicateToken(id) { await window.battleMap?.duplicateToken(id); },
         async toggleDead() {
             if (this.selectedToken) {

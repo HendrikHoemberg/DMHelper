@@ -397,9 +397,13 @@
 
 /* Map module fills its shell body like the old table column. */
 .cockpit-module[data-module-key="map"] .cockpit-module__body,
+.cockpit-module[data-module-key="map"] [data-module-content],
+.cockpit-module[data-module-key="map"] [data-cockpit-module-fragment="map"],
+.cockpit-module[data-module-key="map"] [data-module-content-root],
 .cockpit-module[data-module-key="map"] .cockpit-table {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   min-height: 0;
   height: 100%;
 }
