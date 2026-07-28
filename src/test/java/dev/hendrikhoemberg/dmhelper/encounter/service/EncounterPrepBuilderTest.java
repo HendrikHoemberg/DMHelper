@@ -7,6 +7,7 @@ import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import org.junit.jupiter.api.Test;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 class EncounterPrepBuilderTest {
 
     @Autowired EncounterService service;
+    @Autowired GameMapService mapService;
     @Autowired EncounterWaveRepository waveRepo;
     @Autowired StatBlockRepository statBlockRepo;
     @Autowired CampaignRepository campaignRepo;
@@ -36,7 +38,8 @@ class EncounterPrepBuilderTest {
     void addFromLibraryCreatesGroupedCombatants() {
         Campaign c = seedCampaign();
         StatBlock goblin = seedGoblin();
-        var enc = service.create(c.getId(), new EncounterService.CreateRequest("Ambush", null));
+        var map = mapService.create(c.getId(), "Test Map", 30, 20, 48);
+        var enc = service.create(c.getId(), new EncounterService.CreateRequest("Ambush", map.getId()));
         var created = service.addFromLibrary(enc.id(),
                 new EncounterService.AddFromLibraryRequest(goblin.getId(), 3, "Goblin squad", null, 48, 96, "tree-line"));
         assertThat(created).hasSize(3);

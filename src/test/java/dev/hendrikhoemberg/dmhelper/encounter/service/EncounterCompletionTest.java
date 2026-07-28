@@ -23,7 +23,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import({EncounterService.class, CombatDifficultyCalculator.class, GameMapService.class, DiceEngine.class, SceneRefCleaner.class,
+@Import({EncounterService.class, EncounterPlacementService.class, CombatDifficultyCalculator.class, GameMapService.class, DiceEngine.class, SceneRefCleaner.class,
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
         dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver.class,
         dev.hendrikhoemberg.dmhelper.config.MarkdownUtil.class,

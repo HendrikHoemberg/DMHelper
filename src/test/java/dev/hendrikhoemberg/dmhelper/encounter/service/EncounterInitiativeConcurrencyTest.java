@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
 
 @DataJpaTest
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
-@Import({EncounterService.class, CombatDifficultyCalculator.class,
+@Import({EncounterService.class, EncounterPlacementService.class, CombatDifficultyCalculator.class,
         SceneRefCleaner.class,
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
         dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver.class,
