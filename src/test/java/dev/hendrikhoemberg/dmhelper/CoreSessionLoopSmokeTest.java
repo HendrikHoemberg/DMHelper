@@ -575,7 +575,7 @@ class CoreSessionLoopSmokeTest {
         encounterService.addCombatant(plannedEncounterId,
                 new EncounterService.CombatantCreateRequest("Manual Goblin", 10, "NPC", null, null));
         encounterService.addCombatant(plannedEncounterId,
-                new EncounterService.CombatantCreateRequest("Auto Goblin", 10, "NPC", null, null, null));
+                new EncounterService.CombatantCreateRequest("Auto Goblin", 10, "NPC", null, null));
         var handout = handoutService.createImported(campaignId,
                 "<img src=x onerror=window.playerXss=true>", "",
                 "seal.png", "image/png", Base64.getDecoder().decode(
@@ -1392,7 +1392,7 @@ class CoreSessionLoopSmokeTest {
                 new EncounterService.CreateRequest("Browser Threat Encounter", mapId)).id();
         encounterService.addCombatant(threatEncounterId,
                 new EncounterService.CombatantCreateRequest(
-                        "Browser Fighter", 30, "PC", null, null, null));
+                        "Browser Fighter", 30, "PC", null, null));
         var threatCombatant = encounterService.addThreatCombatant(threatEncounterId,
                 new EncounterService.ThreatCombatantRequest(
                         dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.TRAP,

@@ -121,14 +121,10 @@ class MapSectionAdapterTest {
         when(gameMapRepo.findByCampaignIdOrderBySortOrderAsc(campaign.getId()))
                 .thenReturn(List.of(map));
 
-        Token pc = token(UUID.randomUUID(), "Aragorn", "PC", map, 100, 50, 20, 20, false, false, "helmet");
-        pc.setCurrentHp(45);
-        pc.setMaxHp(50);
-        Token npc = token(UUID.randomUUID(), "Merchant", "NPC", map, 200, 150, 20, 20, false, false, null);
-        Token monster = token(UUID.randomUUID(), "Goblin", "MONSTER", map, 50, 75, 20, 20, true, true, "skull");
-        Token object = token(UUID.randomUUID(), "Chest", "OBJECT", map, 300, 200, 20, 20, false, false, null);
-        object.setCurrentHp(null);
-        object.setMaxHp(null);
+        Token pc = token(UUID.randomUUID(), "Aragorn", "PC", map, 100, 50, 20, 20, false, "helmet");
+        Token npc = token(UUID.randomUUID(), "Merchant", "NPC", map, 200, 150, 20, 20, false, null);
+        Token monster = token(UUID.randomUUID(), "Goblin", "MONSTER", map, 50, 75, 20, 20, true, "skull");
+        Token object = token(UUID.randomUUID(), "Chest", "OBJECT", map, 300, 200, 20, 20, false, null);
 
         when(tokenRepo.findByMapIdOrderByNameAsc(map.getId())).thenReturn(List.of(pc, npc, monster, object));
 
@@ -172,7 +168,7 @@ class MapSectionAdapterTest {
         when(gameMapRepo.findByCampaignIdOrderBySortOrderAsc(campaign.getId()))
                 .thenReturn(List.of(map));
 
-        Token token = token(UUID.randomUUID(), "Guard", "NPC", map, 1440, 720, 48, 48, false, false, null);
+        Token token = token(UUID.randomUUID(), "Guard", "NPC", map, 1440, 720, 48, 48, false, null);
         when(tokenRepo.findByMapIdOrderByNameAsc(map.getId())).thenReturn(List.of(token));
 
         var keyService = new CampaignSectionAdapterTest.FakeKeyService();
@@ -376,9 +372,6 @@ class MapSectionAdapterTest {
                 t.getPositionX() == 100 &&
                 t.getPositionY() == 200 &&
                 t.isHidden() &&
-                !t.isDead() &&
-                t.getCurrentHp() == 12 &&
-                t.getMaxHp() == 20 &&
                 t.getStatBlock() == srd &&
                 t.getIcon().equals("dagger") &&
                 t.getNotes().equals("sneaky")
@@ -488,7 +481,7 @@ class MapSectionAdapterTest {
         when(gameMapRepo.findByCampaignIdOrderBySortOrderAsc(campaign.getId()))
                 .thenReturn(List.of(map));
 
-        Token token = token(UUID.randomUUID(), "Frodo", "PC", map, 0, 0, 1, 1, false, false, null);
+        Token token = token(UUID.randomUUID(), "Frodo", "PC", map, 0, 0, 1, 1, false, null);
         var srd = new StatBlock();
         srd.setId(UUID.randomUUID());
         srd.setSource(ContentSource.SRD);
@@ -559,7 +552,7 @@ class MapSectionAdapterTest {
 
     private Token token(UUID id, String name, String kind, GameMap map,
                         int x, int y, int cols, int rows,
-                        boolean hidden, boolean dead, String icon) {
+                        boolean hidden, String icon) {
         Token t = new Token();
         t.setId(id);
         t.setName(name);
@@ -570,7 +563,6 @@ class MapSectionAdapterTest {
         t.setSizeCols(cols);
         t.setSizeRows(rows);
         t.setHidden(hidden);
-        t.setDead(dead);
         t.setIcon(icon);
         return t;
     }

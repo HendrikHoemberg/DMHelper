@@ -850,7 +850,7 @@ class CampaignImportExportRoundTripTest {
                                                 null, t.name(), t.kind(), t.color(),
                                                 t.positionX(), t.positionY(), t.sizeCols(), t.sizeRows(),
                                                 t.hidden(), t.statBlockKey(), t.partyMemberName(),
-                                                t.currentHp(), t.maxHp(), t.dead(), t.notes()))
+                                                t.notes(), t.currentHp(), t.maxHp(), t.dead()))
                                         .toList() : null))
                         .toList() : null,
                 dto.encounters() != null ? dto.encounters().stream()

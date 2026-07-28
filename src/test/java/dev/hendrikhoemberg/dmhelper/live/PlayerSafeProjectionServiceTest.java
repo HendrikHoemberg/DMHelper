@@ -70,8 +70,6 @@ class PlayerSafeProjectionServiceTest {
         Token token = new Token();
         token.setMap(gameMap);
         token.setName("Orc");
-        token.setMaxHp(30);
-        token.setCurrentHp(10);
         token.setHidden(false);
         em.persist(token);
         em.flush();

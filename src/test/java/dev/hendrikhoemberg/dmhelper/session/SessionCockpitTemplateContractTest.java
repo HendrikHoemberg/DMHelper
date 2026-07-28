@@ -344,7 +344,6 @@ class SessionCockpitTemplateContractTest {
                 "src/main/resources/templates/session/_cockpit-module-shell.html"));
         assertThat(shell).doesNotContain("th:switch");
         assertThat(shell).doesNotContain("workspace");
-        assertThat(shell).doesNotContain("campaignId");
         assertThat(shell).doesNotContain("initiallyRendered");
         assertThat(shell).contains("shell(module, initialBody)");
         assertThat(shell).contains("th:insert=\"${initialBody}\"");

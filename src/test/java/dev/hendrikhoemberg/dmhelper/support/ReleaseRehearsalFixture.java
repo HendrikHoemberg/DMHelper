@@ -198,7 +198,7 @@ public class ReleaseRehearsalFixture {
         for (int i = 0; i < foeBlocks.size(); i++) {
             StatBlock foe = foeBlocks.get(i);
             var combatant = encounters.addCombatant(encounter.id(), new EncounterService.CombatantCreateRequest(
-                    foe.getName(), 0, "MONSTER", null, foe.getId(), null));
+                    foe.getName(), 0, "MONSTER", null, foe.getId()));
             var combatantEntity = combatantRepository.findById(combatant.id()).orElseThrow();
             combatantEntity.setNotes("rehearsal-" + suffix + "-combatant-" + (i + 1));
             combatantRepository.save(combatantEntity);
