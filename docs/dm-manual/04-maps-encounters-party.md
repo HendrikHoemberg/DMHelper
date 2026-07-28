@@ -1,8 +1,51 @@
 # Maps, Encounters & Party
 
-## Published Map Calibrate
+## Map Editor — Import-First Workflow
 
-In the map editor, calibrate the grid by drawing a reference line over a known distance on the image and entering the real-world length. The cell size is persisted with the map. Use the toolbar to crop, rotate (90° increments), and lock the map against edits.
+The map grid (width, height, cell size) is the authoritative coordinate system. All background-image geometry and token positions derive from it.
+
+### Map Settings
+
+The editor sidebar exposes a **Map** section with width, height, and cell size inputs. Changing dimensions after creation is supported:
+
+- **Expanding** the grid preserves all existing content.
+- **Shrinking** the grid computes a preview of affected terrain cells, shapes, and tokens. The user may cancel or choose **Crop and continue**. Tokens outside the boundary are never silently deleted — they must be moved or detached explicitly. The completed resize is one undoable operation.
+- Cell-size changes redraw the same logical grid at the new visual scale; they do not change cell coordinates or rescale the logical arrangement of content.
+
+### Image Import
+
+Import Image is the entry point. After decoding, the image is automatically **fit inside** the current grid:
+- The whole image remains visible.
+- Aspect ratio is preserved.
+- The image is centered.
+- Empty margins are allowed.
+- The grid is not changed.
+
+The image inspector then offers:
+
+- **Fill and crop** — scales the image to cover the grid while preserving aspect ratio. Overflow is clipped at the map boundary; the operation does not destructively replace the source data URL.
+- **Reset** — returns to the fit-inside geometry.
+- **Rotate** — 90-degree clockwise or counter-clockwise increments.
+- **Lock / unlock** — prevents dragging and transform handles while locked; persists across reload.
+
+### Image Geometry
+
+Selecting the Background layer selects its image and opens a **Background** section with X/Y position (in cells), width/height (in cells), and an aspect-ratio lock. Geometry can be adjusted through:
+- **Drag handles** on the canvas
+- **Numeric fields** in the sidebar
+
+Both produce one undo boundary per committed edit.
+
+### Calibration
+
+Calibration aligns an image with a printed grid without changing the authoritative grid:
+
+1. Select two points on the image.
+2. Enter the number of grid cells the selected distance represents.
+3. The editor adjusts only the image scale and offset around the first point.
+4. Map cell size remains unchanged.
+
+Calibration metadata is persisted in `ImageDto.calibration`, describing image-to-grid alignment rather than a proposed replacement cell size.
 
 ## Encounter Waves
 

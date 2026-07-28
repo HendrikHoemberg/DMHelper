@@ -1144,7 +1144,7 @@ reference them are exported.
 - Token coordinates: **pixels** from the top-left origin of the map canvas.
 - Token sizes: **cell counts**.
 - Region/primitive grid fields: **column/row** indices when the schema says so (see `map-document-v2.schema.json`).
-- IMAGE layers may include `calibration` (two-point grid calibration), `rotationDeg`, `locked`, and `playerVisible`.
+- IMAGE layers may include `calibration` (two-point grid calibration), `rotationDeg`, `locked`, and `playerVisible`. The `calibration` field stores image-to-grid alignment metadata (scale/position relative to the grid) and does **not** propose a replacement `cellSizePx`. The authoritative map cell size is always `grid.cellSizePx`.
 - REGION primitives require stable `key` + `label` for scene/encounter placement references.
 - Layers/primitives with `playerVisible: false` are DM-only; player projection strips them. Tokens are not duplicated per presentation layer.
 
