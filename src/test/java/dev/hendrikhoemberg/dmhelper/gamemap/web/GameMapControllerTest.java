@@ -58,8 +58,16 @@ class GameMapControllerTest {
     }
 
     @Test
-    void shouldRenderNewMapForm() throws Exception {
+    void shouldRenderNewMapPageForNormalNavigation() throws Exception {
         mockMvc.perform(get("/campaigns/{campaignId}/maps/new", UUID.randomUUID()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("maps/new"));
+    }
+
+    @Test
+    void shouldRenderNewMapFormFragmentForHtmxNavigation() throws Exception {
+        mockMvc.perform(get("/campaigns/{campaignId}/maps/new", UUID.randomUUID())
+                        .header("HX-Request", "true"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("maps/_form :: form"));
     }

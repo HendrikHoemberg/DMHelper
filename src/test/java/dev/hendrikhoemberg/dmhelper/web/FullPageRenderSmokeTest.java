@@ -54,6 +54,7 @@ class FullPageRenderSmokeTest {
                 c + "/adventures/" + seeded.adventureId() + "/scenes/" + seeded.richSceneId() + "/structure",
                 c + "/encounters",
                 c + "/maps",
+                c + "/maps/new",
                 c + "/handouts",
                 c + "/audio/cues",
                 c + "/notes",

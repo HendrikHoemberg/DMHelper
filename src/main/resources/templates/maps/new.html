@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="|New Map — ${campaign.name}|">DMHelper — New Map</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <div>
+                    <div class="page-header-eyebrow" th:text="${campaign.name}">Maps</div>
+                    <h1 data-display-title>New Map</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+                <div class="page-header-actions">
+                    <a th:href="@{/campaigns/{id}/maps(id=${campaignId})}" class="btn btn-ghost">&larr; Back to Maps</a>
+                </div>
+            </div>
+
+            <th:block th:replace="~{maps/_form :: form(campaignId=${campaignId})}"></th:block>
+        </main>
+    </div>
+</body>
+</html>

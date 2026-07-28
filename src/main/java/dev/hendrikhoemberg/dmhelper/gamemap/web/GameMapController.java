@@ -26,9 +26,11 @@ public class GameMapController {
     }
 
     @GetMapping("/new")
-    public String newForm(@PathVariable UUID campaignId, Model model) {
+    public String newForm(@PathVariable UUID campaignId,
+                          @RequestHeader(value = "HX-Request", defaultValue = "false") boolean htmxRequest,
+                          Model model) {
         model.addAttribute("campaignId", campaignId);
-        return "maps/_form :: form";
+        return htmxRequest ? "maps/_form :: form" : "maps/new";
     }
 
     @PostMapping
