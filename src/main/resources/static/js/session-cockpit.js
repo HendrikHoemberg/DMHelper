@@ -513,6 +513,8 @@ function sessionCockpit(config) {
                     this.showTracker = true;
                     this.activeTab = 'tracker';
                 }
+                // Refresh runtime tokens to get updated HP, bloodied, defeated
+                window.battleMap?.fetchTokens();
             });
             window.addEventListener('cockpit:module-content-ready', (event) => {
                 if (event.detail?.moduleKey !== 'map') return;
@@ -531,6 +533,10 @@ function sessionCockpit(config) {
                 this.showTracker = false;
                 this.activeEncounter = null;
                 this.activeCombatants = [];
+                if (window.battleMap) {
+                    window.battleMap.activeEncounterId = null;
+                    window.battleMap.fetchTokens();
+                }
                 this.refreshModules(['encounter', 'story'], 'encounter-ended');
                 window.dispatchEvent(new CustomEvent('cockpit:module-invalidate', {
                     detail: { moduleKey: 'session-log', reason: 'encounter-ended' }
@@ -622,6 +628,9 @@ function sessionCockpit(config) {
                     cursorInfoEl: document.getElementById('battleCursorInfo'),
                 });
                 window.battleMap = bm;
+                if (this.activeEncounter) {
+                    bm.activeEncounterId = this.activeEncounter.id;
+                }
                 bm.load().then(() => {
                     const visible = window.cockpitLayout?.isModuleVisible('map') ?? true;
                     bm.setRenderingActive(visible);
@@ -652,6 +661,9 @@ function sessionCockpit(config) {
         async activateEncounter(id, mapId) {
             try {
                 await this.request(`/api/v1/encounters/${id}/activate`, { method: 'POST' });
+                if (window.battleMap) {
+                    window.battleMap.setActiveEncounter(id);
+                }
                 if (mapId) {
                     await this.switchMap(mapId);
                 }
@@ -819,9 +831,9 @@ function sessionCockpit(config) {
         async duplicateToken(id) { await window.battleMap?.duplicateToken(id); },
         async toggleDead() {
             if (this.selectedToken) {
-                const requestedDead = this.selectedToken.dead;
-                await window.battleMap?.markDead(
-                    this.selectedToken.id, requestedDead, !requestedDead);
+                const requestedDefeated = this.selectedToken.defeated;
+                await window.battleMap?.toggleDefeated(
+                    this.selectedToken.id, requestedDefeated);
             }
         },
         focusToken(id) { window.battleMap?.focusToken(id); },
@@ -959,8 +971,37 @@ function sessionCockpit(config) {
                     () => this.searchStatblocks());
             }
         },
-        async addStatblockToken(id) {
-            const created = await window.battleMap?.createTokenFromStatblock(id);
+        async addStatblockToken(statblockId) {
+            const bm = window.battleMap;
+            if (!bm) return;
+            let created = false;
+            try {
+                if (bm.activeEncounterId) {
+                    const resp = await this.request(`/api/v1/encounters/${bm.activeEncounterId}/combatants/from-library`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ statBlockId: statblockId, quantity: 1 }),
+                    });
+                    const combatants = await resp.json();
+                    if (combatants && combatants.length > 0) {
+                        const cmbt = combatants[0];
+                        const center = this.visibleCenterCell();
+                        const px = center.col * bm.cellSizePx;
+                        const py = center.row * bm.cellSizePx;
+                        await this.request(`/api/v1/encounters/${bm.activeEncounterId}/combatants/${cmbt.id}/placement`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ positionX: px, positionY: py, sizeCols: 1, sizeRows: 1, color: '#e74c3c' }),
+                        });
+                        await bm.fetchTokens();
+                        created = true;
+                    }
+                } else {
+                    created = await bm.createTokenFromStatblock(statblockId);
+                }
+            } catch (error) {
+                this.failure('Could not add the statblock.', error, () => this.addStatblockToken(statblockId));
+            }
             if (created) {
                 this.sbSearch = '';
                 this.sbResults = [];

@@ -2,9 +2,11 @@ import { drawGrid, setupPanAndZoom, cellPos, snapPixel, pixelToCell } from './sh
 import { renderRuntimeDocument } from './runtime-renderer.js';
 
 /**
- * @typedef {{id: string, name: string, kind: string, positionX: number, positionY: number,
- *            sizeCols: number, sizeRows: number, color: string, hidden: boolean,
- *            currentHp: number|null, maxHp: number|null, bloodied: boolean, dead: boolean}} TokenData
+ * @typedef {{id: string, source: string, combatantId: string|null, name: string, kind: string,
+ *            positionX: number, positionY: number, sizeCols: number, sizeRows: number,
+ *            color: string, icon: string|null, hidden: boolean,
+ *            currentHp: number|null, maxHp: number|null, bloodied: boolean, defeated: boolean,
+ *            conditions: string[]}} RuntimeTokenData
  */
 
 const KIND_RING_COLORS = { PC: '#4a9eff', NPC: '#2ecc71', MONSTER: '#e74c3c', OBJECT: '#f39c12' };
@@ -49,11 +51,12 @@ export class BattleMap {
         /** When false, stage/layers stop listening and drawing; world state is kept. */
         this.renderingActive = true;
 
-        /** @type {TokenData[]} */
+        /** @type {RuntimeTokenData[]} */
         this.tokens = [];
         this.docVersion = 0;
         this.activeTool = 'select';
         this.selectedTokenId = null;
+        this.activeEncounterId = null;
 
         /** @type {Object.<string, {group: import('konva').Group, body: import('konva').Rect, label: import('konva').Text, hpBar: import('konva').Rect, hpText: import('konva').Text, ring: import('konva').Rect, deadOverlay: import('konva').Group}>} */
         this.tokenNodes = {};
@@ -197,10 +200,11 @@ export class BattleMap {
     setupTrackerListeners() {
         window.addEventListener('tracker-conditions-changed', (e) => {
             if (!e.detail || !e.detail.combatants) return;
-            this.tokenConditions = {};
             for (const c of e.detail.combatants) {
-                if (c.tokenId && c.conditions && c.conditions.length > 0) {
-                    this.tokenConditions[c.tokenId] = c.conditions;
+                const pid = c.placementId;
+                if (pid && c.conditions && c.conditions.length > 0) {
+                    const key = `COMBATANT:${pid}`;
+                    this.tokenConditions[key] = c.conditions;
                 }
             }
             this.renderConditionIndicators();
@@ -216,10 +220,12 @@ export class BattleMap {
             this.tokenConditions = {};
             this._combatantTokenMap = {};
             for (const c of e.detail.combatants) {
-                if (c.tokenId) {
-                    this._combatantTokenMap[c.id] = c.tokenId;
+                const pid = c.placementId;
+                if (pid) {
+                    const key = `COMBATANT:${pid}`;
+                    this._combatantTokenMap[c.id] = key;
                     if (c.conditions && c.conditions.length > 0) {
-                        this.tokenConditions[c.tokenId] = c.conditions;
+                        this.tokenConditions[key] = c.conditions;
                     }
                 }
             }
@@ -262,10 +268,36 @@ export class BattleMap {
     }
 
     /* ---- Tokens: fetch, render, drag ---- */
+    setActiveEncounter(encounterId) {
+        this.activeEncounterId = encounterId;
+        this.fetchTokens();
+    }
+
+    tokenKey(token) {
+        return `${token.source}:${token.id}`;
+    }
+
     async fetchTokens() {
         try {
-            const resp = await this._request(`/api/v1/maps/${this.mapId}/tokens`);
+            let url = `/api/v1/maps/${this.mapId}/runtime-tokens`;
+            if (this.activeEncounterId) {
+                url += `?encounterId=${this.activeEncounterId}`;
+            }
+            const resp = await this._request(url);
             this.tokens = await resp.json();
+            // Build condition map and combatant map from runtime DTO
+            this.tokenConditions = {};
+            this._combatantTokenMap = {};
+            for (const t of this.tokens) {
+                if (t.source === 'COMBATANT' && t.combatantId) {
+                    this._combatantTokenMap[t.combatantId] = this.tokenKey(t);
+                }
+                if (t.conditions && t.conditions.length > 0) {
+                    this.tokenConditions[this.tokenKey(t)] = t.conditions.map(c => ({
+                        sourceKey: c, name: c, durationRounds: 0
+                    }));
+                }
+            }
         } catch (error) {
             this._failure('Could not load map tokens.', error, () => this.fetchTokens());
             return false;
@@ -277,8 +309,6 @@ export class BattleMap {
     }
 
     renderTokens() {
-        // Remember where every token was, so a token that has moved slides to its
-        // new square instead of teleporting there (§6.6).
         const previous = {};
         for (const [id, nodes] of Object.entries(this.tokenNodes)) {
             previous[id] = { x: nodes.group.x(), y: nodes.group.y() };
@@ -290,8 +320,9 @@ export class BattleMap {
 
         const animate = !this._reducedMotion();
         for (const token of this.tokens) {
+            const key = this.tokenKey(token);
             const group = this.addTokenNode(token);
-            const was = previous[token.id];
+            const was = previous[key];
             if (!animate || !was) continue;
             if (was.x === token.positionX && was.y === token.positionY) continue;
 
@@ -314,6 +345,7 @@ export class BattleMap {
     }
 
     addTokenNode(token) {
+        const key = this.tokenKey(token);
         const s = this.cellSizePx;
         const px = token.positionX;
         const py = token.positionY;
@@ -321,22 +353,25 @@ export class BattleMap {
         const h = token.sizeRows * s;
         const isPrivate = !this.tableSafe;
 
-        const group = new Konva.Group({ x: px, y: py, draggable: !token.dead, name: 'token' });
-        group._tokenId = token.id;
+        const defeated = token.defeated;
+        const bloodied = token.bloodied;
+        const hasHp = token.currentHp != null && token.maxHp != null && token.maxHp > 0;
+
+        const group = new Konva.Group({ x: px, y: py, draggable: !defeated, name: 'token' });
+        group._tokenId = key;
 
         const selected = this.selectedTokenId === token.id;
 
         const body = new Konva.Rect({
             width: w, height: h,
-            fill: token.dead ? '#555' : (token.color || '#c9a35c'),
+            fill: defeated ? '#555' : (token.color || '#c9a35c'),
             stroke: selected ? SELECTION_GOLD : (KIND_RING_COLORS[token.kind] || '#fff'),
             strokeWidth: selected ? 3 : 2,
             cornerRadius: 4,
-            opacity: (this.tableSafe && token.hidden) ? 0.3 : (token.dead ? 0.6 : 1),
+            opacity: (this.tableSafe && token.hidden) ? 0.3 : (defeated ? 0.6 : 1),
         });
         group.add(body);
 
-        // The selected token breathes, so it stays findable on a busy map (§6.6).
         if (selected) {
             const selectRing = new Konva.Rect({
                 x: -4, y: -4, width: w + 8, height: h + 8,
@@ -355,20 +390,20 @@ export class BattleMap {
 
         const ring = new Konva.Rect({
             width: w + 4, height: h + 4, x: -2, y: -2,
-            stroke: token.dead ? '#888' : '#e74c3c', strokeWidth: 2, cornerRadius: 4,
-            fillEnabled: false, visible: token.bloodied || token.dead, listening: false,
+            stroke: defeated ? '#888' : '#e74c3c', strokeWidth: 2, cornerRadius: 4,
+            fillEnabled: false, visible: bloodied || defeated, listening: false,
         });
         group.add(ring);
 
         const label = new Konva.Text({
             text: token.name.substring(0, 2),
             fontSize: Math.min(w, h) * 0.4,
-            fill: token.dead ? '#999' : '#fff', align: 'center', verticalAlign: 'middle',
+            fill: defeated ? '#999' : '#fff', align: 'center', verticalAlign: 'middle',
             width: w, height: h,
         });
         group.add(label);
 
-        const deadOverlay = new Konva.Group({ visible: token.dead });
+        const deadOverlay = new Konva.Group({ visible: defeated });
         const x1 = new Konva.Line({
             points: [2, 2, w - 2, h - 2],
             stroke: '#e74c3c', strokeWidth: 3, lineCap: 'round',
@@ -382,7 +417,6 @@ export class BattleMap {
         group.add(deadOverlay);
 
         const hpBarHeight = 4;
-        const hasHp = token.currentHp != null && token.maxHp != null && token.maxHp > 0;
         const hpBar = new Konva.Rect({
             y: h, width: w, height: hpBarHeight,
             fill: HP_COLORS.high, visible: isPrivate && hasHp,
@@ -413,7 +447,6 @@ export class BattleMap {
                     group.x(nx);
                     group.y(ny);
                 } else {
-                    // The token settles into its square rather than snapping to it.
                     group.to({ x: nx, y: ny, duration: 0.12, easing: Konva.Easings.EaseOut });
                 }
             }
@@ -424,7 +457,7 @@ export class BattleMap {
         group.on('click tap', () => { this.selectToken(token.id); });
 
         this.tokenLayer.add(group);
-        this.tokenNodes[token.id] = { group, body, label, hpBar, hpText, ring, deadOverlay };
+        this.tokenNodes[key] = { group, body, label, hpBar, hpText, ring, deadOverlay };
         return group;
     }
 
@@ -437,16 +470,12 @@ export class BattleMap {
         this.emit('tokenupdate', { tokens: this.tokens });
         this.emit('state-changed');
         try {
-            await this._request(`/api/v1/tokens/${tokenId}/move`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ positionX: x, positionY: y }),
-            });
+            await this.persistMove(token, x, y);
             this._setSaved();
         } catch (error) {
             token.positionX = previous.x;
             token.positionY = previous.y;
-            const node = this.tokenNodes[tokenId]?.group;
+            const node = this.tokenNodes[this.tokenKey(token)]?.group;
             if (node) node.position(previous);
             this.tokenLayer.batchDraw();
             this.emit('tokenupdate', { tokens: this.tokens });
@@ -454,6 +483,23 @@ export class BattleMap {
             this._failure('Could not move the token. Its previous position was restored.', error,
                 () => this.saveTokenMove(tokenId, x, y));
         }
+    }
+
+    async persistMove(token, positionX, positionY) {
+        if (token.source === 'COMBATANT') {
+            return this._request(
+                `/api/v1/encounters/${this.activeEncounterId}/combatants/${token.combatantId}/placement/move`,
+                {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ positionX, positionY })
+                });
+        }
+        return this._request(`/api/v1/tokens/${token.id}/move`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ positionX, positionY })
+        });
     }
 
     /* ---- Token CRUD ---- */
@@ -511,33 +557,34 @@ export class BattleMap {
         }
     }
 
-    async markDead(id, dead, previousDead = !dead) {
+    async toggleDefeated(id, defeated) {
         const token = this.tokens.find(t => t.id === id);
+        if (!token) return;
+        const previousDefeated = token.defeated;
+        token.defeated = defeated;
         try {
-            const resp = await this._request(`/api/v1/tokens/${id}/dead`, {
-                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dead }),
-            });
-            const updated = await resp.json();
-            const idx = this.tokens.findIndex(t => t.id === id);
-            if (idx >= 0) this.tokens[idx] = updated;
+            if (token.source === 'COMBATANT' && token.combatantId) {
+                const resp = await this._request(`/api/v1/combatants/${token.combatantId}/defeated`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ defeated }),
+                });
+                const updated = await resp.json();
+                token.currentHp = updated.currentHp;
+            }
             this.renderTokens();
             this.emit('tokenupdate', { tokens: this.tokens });
             this.emit('state-changed');
-            if (this.selectedTokenId === id) this.emit('tokenselect', { token: updated });
+            if (this.selectedTokenId === id) this.emit('tokenselect', { token: { ...token } });
         } catch (error) {
-            if (token) {
-                token.dead = previousDead;
-                this.renderTokens();
-                this.emit('tokenupdate', { tokens: this.tokens });
-                this.emit('state-changed');
-                if (this.selectedTokenId === id) {
-                    this.emit('tokenselect', { token: { ...token } });
-                }
+            token.defeated = previousDefeated;
+            this.renderTokens();
+            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emit('state-changed');
+            if (this.selectedTokenId === id) {
+                this.emit('tokenselect', { token: { ...token } });
             }
             this._failure('Could not change the defeated state. The previous state was restored.', error,
-                () => this.markDead(id, dead, previousDead));
-            return false;
+                () => this.toggleDefeated(id, defeated));
         }
     }
 
@@ -609,18 +656,39 @@ export class BattleMap {
     }
 
     async updateToken(id, data) {
+        const token = this.tokens.find(t => t.id === id);
+        if (!token) return;
         try {
-            const resp = await this._request(`/api/v1/tokens/${id}`, {
-                method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
-            });
-            const updated = await resp.json();
-            const idx = this.tokens.findIndex(t => t.id === id);
-            if (idx >= 0) this.tokens[idx] = updated;
+            if (token.source === 'COMBATANT' && token.combatantId) {
+                const resp = await this._request(`/api/v1/combatants/${token.combatantId}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: data.name,
+                        hidden: data.hidden,
+                        currentHp: data.currentHp,
+                        maxHp: data.maxHp,
+                        defeated: data.defeated,
+                    }),
+                });
+                const updated = await resp.json();
+                token.currentHp = updated.currentHp;
+                token.maxHp = updated.maxHp;
+                token.defeated = updated.defeated;
+                token.hidden = updated.hidden;
+                token.name = updated.name;
+            } else {
+                const resp = await this._request(`/api/v1/tokens/${id}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                const updated = await resp.json();
+                const idx = this.tokens.findIndex(t => t.id === id);
+                if (idx >= 0) this.tokens[idx] = updated;
+            }
             this.renderTokens();
             this.emit('tokenupdate', { tokens: this.tokens });
             this.emit('state-changed');
-            if (this.selectedTokenId === id) this.emit('tokenselect', { token: updated });
+            if (this.selectedTokenId === id) this.emit('tokenselect', { token: token });
         } catch (error) {
             this._failure('Could not save the token. Your edits are still visible for retry.', error,
                 () => this.updateToken(id, data));
@@ -630,8 +698,12 @@ export class BattleMap {
 
     async addPartyToMap() {
         try {
-            const resp = await this._request(`/api/v1/maps/${this.mapId}/tokens/add-party`, { method: 'POST' });
-            this.tokens = await resp.json();
+            if (this.activeEncounterId) {
+                await this._request(`/api/v1/encounters/${this.activeEncounterId}/placements/party`, { method: 'POST' });
+            } else {
+                await this._request(`/api/v1/maps/${this.mapId}/tokens/add-party`, { method: 'POST' });
+            }
+            await this.fetchTokens();
             this.renderTokens();
             this.emit('tokenupdate', { tokens: this.tokens });
             this.emit('state-changed');
@@ -742,11 +814,12 @@ export class BattleMap {
     renderConditionIndicators() {
         for (const [tokenId, node] of Object.entries(this.tokenNodes)) {
             node.group.find('.cond-icon').forEach(i => i.destroy());
-            const conditions = this.tokenConditions[tokenId];
+            const key = tokenId.includes(':') ? tokenId : null;
+            const conditions = this.tokenConditions[key || tokenId];
             if (!conditions || conditions.length === 0) continue;
 
             const s = this.cellSizePx;
-            const token = this.tokens.find(t => t.id === tokenId);
+            const token = this.tokens.find(t => this.tokenKey(t) === tokenId);
             if (!token) continue;
             const tw = token.sizeCols * s;
             const iconSize = Math.max(8, s * 0.2);
@@ -779,13 +852,13 @@ export class BattleMap {
         this.activeCombatantTokenId = null;
         if (!combatantId) return;
 
-        const tokenId = this._combatantTokenMap[combatantId];
-        if (!tokenId) return;
+        const tokenKey = this._combatantTokenMap[combatantId];
+        if (!tokenKey) return;
 
-        const node = this.tokenNodes[tokenId];
+        const node = this.tokenNodes[tokenKey];
         if (!node) return;
 
-        const token = this.tokens.find(t => t.id === tokenId);
+        const token = this.tokens.find(t => this.tokenKey(t) === tokenKey);
         if (!token) return;
 
         const s = this.cellSizePx;
@@ -1192,7 +1265,9 @@ export class BattleMap {
             const mapData = await resp.json();
             const documentResponse = await this._request(`/api/v1/maps/${mapId}/document`);
             const documentData = await documentResponse.json();
-            const tokenResponse = await this._request(`/api/v1/maps/${mapId}/tokens`);
+            const runtimeUrl = `/api/v1/maps/${mapId}/runtime-tokens`
+                + (this.activeEncounterId ? `?encounterId=${this.activeEncounterId}` : '');
+            const tokenResponse = await this._request(runtimeUrl);
             const tokens = await tokenResponse.json();
 
             this.mapId = mapId;

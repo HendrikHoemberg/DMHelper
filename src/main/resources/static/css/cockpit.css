@@ -192,6 +192,17 @@
 .token-dead { text-decoration: line-through; color: var(--color-text-muted); }
 .aoepresets-label { font-size: var(--text-sm); color: var(--color-text-muted); margin-right: 2px; }
 
+.map-authoring summary {
+  cursor: pointer;
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  padding: var(--space-xs) 0;
+}
+.map-authoring[open] summary {
+  margin-bottom: var(--space-xs);
+}
 .cockpit-title { font-size: var(--text-lg); color: var(--color-text); }
 .cockpit-spacer { flex: 1; }
 

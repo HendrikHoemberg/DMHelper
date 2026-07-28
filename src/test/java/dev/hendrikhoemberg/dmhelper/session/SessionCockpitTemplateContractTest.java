@@ -85,7 +85,8 @@ class SessionCockpitTemplateContractTest {
                 "src/main/resources/templates/session/modules/_presentation.html"));
         assertThat(presentationModule).contains("Present current map", ">Curtain<");
         assertThat(mapModule).contains("@click=\"openTokenDialog()\"", "@click=\"addParty()\"",
-                "x-for=\"t in tokens\"");
+                "tokens.filter(tk => tk.source === 'COMBATANT')",
+                "tokens.filter(tk => tk.source === 'MARKER')");
         assertThat(html).contains("cockpitLayoutConfig",
                 "cockpitPresetPicker", "cockpitLayoutModeButton",
                 "session/_cockpit-workbench");

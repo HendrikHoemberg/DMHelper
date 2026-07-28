@@ -132,4 +132,70 @@ class SessionCockpitMapContractTest {
                 .doesNotContain("Present current map")
                 .doesNotContain("Preview table");
     }
+
+    @Test
+    void mapLoadsRuntimeTokensInsteadOfPlainTokens() throws IOException {
+        String battleMapJs = Files.readString(
+                Path.of("src/main/resources/static/js/map/battle-map.js"));
+        assertThat(battleMapJs)
+                .as("fetchTokens must load from runtime-tokens endpoint")
+                .contains("runtime-tokens")
+                .doesNotContain("/maps/${this.mapId}/tokens\"");
+    }
+
+    @Test
+    void combatantMovementDispatchesToPlacementMove() throws IOException {
+        String battleMapJs = Files.readString(
+                Path.of("src/main/resources/static/js/map/battle-map.js"));
+        assertThat(battleMapJs)
+                .as("COMBATANT movement must hit placement/move endpoint")
+                .contains("combatants/${token.combatantId}/placement/move");
+    }
+
+    @Test
+    void markerMovementDispatchesToTokenMove() throws IOException {
+        String battleMapJs = Files.readString(
+                Path.of("src/main/resources/static/js/map/battle-map.js"));
+        assertThat(battleMapJs)
+                .as("MARKER movement must hit tokens/{id}/move endpoint")
+                .contains("/tokens/${token.id}/move");
+    }
+
+    @Test
+    void neverPatchesTokenHp() throws IOException {
+        String battleMapJs = Files.readString(
+                Path.of("src/main/resources/static/js/map/battle-map.js"));
+        assertThat(battleMapJs)
+                .as("HP changes must go through combatant endpoint, never tokens/{id}/hp")
+                .doesNotContain("/tokens/${id}/hp")
+                .doesNotContain("/tokens/${tokenId}/hp");
+    }
+
+    @Test
+    void sidebarHasEncounterParticipantsAndMapMarkersSections() throws IOException {
+        String mapModule = Files.readString(
+                Path.of("src/main/resources/templates/session/_map-module.html"));
+        assertThat(mapModule)
+                .as("sidebar must label participant sections")
+                .contains("Encounter participants")
+                .contains("Map markers");
+    }
+
+    @Test
+    void markerCreationLabel() throws IOException {
+        String mapModule = Files.readString(
+                Path.of("src/main/resources/templates/session/_map-module.html"));
+        assertThat(mapModule)
+                .as("marker creation button must say 'Add temporary marker'")
+                .contains("Add temporary marker");
+    }
+
+    @Test
+    void partyPlacementLabel() throws IOException {
+        String mapModule = Files.readString(
+                Path.of("src/main/resources/templates/session/_map-module.html"));
+        assertThat(mapModule)
+                .as("party placement button must say 'Place missing party members'")
+                .contains("Place missing party members");
+    }
 }
