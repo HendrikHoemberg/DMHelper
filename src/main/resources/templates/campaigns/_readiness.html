@@ -1,48 +1,67 @@
 <div th:fragment="readiness" class="readiness-panel"
      th:classappend="${readiness.sessionReady()} ? 'is-ready' : 'is-blocked'">
   <header class="readiness-panel__head">
-    <h3>Session readiness</h3>
-    <span class="readiness-badge" th:text="${readiness.label()}">Session-ready</span>
+    <h3>Campaign readiness</h3>
+    <span class="readiness-badge" th:text="${readiness.label()}">Ready</span>
   </header>
-  <p th:if="${readiness.sessionReady()}" class="readiness-empty">
-    Every blocker is resolved or accepted. This is distinct from schema validity.
+  <p th:unless="${readiness.sessionReady()}" class="readiness-panel__intro">
+    Resolve these blockers, or explicitly choose to continue without the missing preparation.
   </p>
-  <ul th:unless="${readiness.sessionReady()}" class="readiness-list">
-    <li th:each="item, itemStat : ${readiness.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).BLOCKER)}"
-        class="readiness-item readiness-item--blocker">
-      <span class="readiness-item__title" th:text="${item.title()}">Title</span>
-      <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
-      <span class="readiness-item__actions">
-        <a th:with="href=${repairService.hrefFor(campaignId, item.repairKind(), item.targetId())}"
-           th:if="${href != null}" th:href="${href}"
-           class="btn btn-ghost btn-xs readiness-item__repair">Fix in preparation</a>
-        <form th:action="@{|/campaigns/${campaignId}/readiness/accept|}" method="post" class="inline-form"
-              th:hx-post="@{|/campaigns/${campaignId}/readiness/accept|}"
-              hx-target="closest .readiness-panel" hx-swap="outerHTML">
-          <input type="hidden" name="itemKey" th:value="${item.key()}"/>
-          <button type="submit" class="btn btn-xs"
-                  th:classappend="${itemStat.first} ? 'btn-primary' : ''">Accept</button>
-        </form>
-        <form th:if="${item.category().name() == 'ASSET'}"
-              th:action="@{|/campaigns/${campaignId}/readiness/assets/${item.targetId()}/kind|}" method="post" class="inline-form"
-              th:hx-post="@{|/campaigns/${campaignId}/readiness/assets/${item.targetId()}/kind|}"
-              hx-target="closest .readiness-panel" hx-swap="outerHTML">
-          <select name="kind" class="form-input form-input--xs">
-            <option th:each="k : ${T(dev.hendrikhoemberg.dmhelper.handout.data.Handout.AssetKind).values()}"
-                    th:value="${k}" th:text="${k}"></option>
-          </select>
-          <button type="submit" class="btn btn-xs">Set kind</button>
-        </form>
-      </span>
-    </li>
-  </ul>
+  <p th:if="${readiness.sessionReady()}" class="readiness-empty">
+    Every blocker is resolved or accepted.
+  </p>
+  <div th:unless="${readiness.sessionReady()}" class="readiness-groups">
+    <details th:each="group : ${readiness.blockerGroups()}" class="readiness-group"
+             th:attr="data-readiness-category=${group.key.name()}" open>
+      <summary class="readiness-group__heading">
+        <span th:text="${group.key.label()}">Category</span>
+        <span class="readiness-group__count"
+              th:text="${readiness.blockerCountLabel(group.value.size())}">1 blocker</span>
+      </summary>
+      <p class="readiness-group__summary" th:text="${group.key.summary()}">Summary</p>
+      <ul class="readiness-list">
+        <li th:each="item : ${group.value}" class="readiness-item readiness-item--blocker">
+          <span class="readiness-item__content">
+            <span class="readiness-item__title" th:text="${item.title()}">Title</span>
+            <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
+          </span>
+          <span class="readiness-item__actions">
+            <th:block th:with="href=${repairService.hrefFor(campaignId, item.repairKind(), item.targetId())}">
+              <a th:if="${href != null}" th:href="${href}"
+                 class="btn btn-primary btn-xs readiness-item__repair"
+                 th:text="${item.category().repairActionLabel()}">Open preparation</a>
+            </th:block>
+            <form th:action="@{|/campaigns/${campaignId}/readiness/accept|}" method="post" class="inline-form"
+                  th:hx-post="@{|/campaigns/${campaignId}/readiness/accept|}"
+                  hx-target="closest .readiness-panel" hx-swap="outerHTML">
+              <input type="hidden" name="itemKey" th:value="${item.key()}"/>
+              <button type="submit" class="btn btn-ghost btn-xs"
+                      th:text="${item.category().acceptanceActionLabel()}">Accept blocker</button>
+            </form>
+            <form th:if="${item.category().name() == 'ASSET'}"
+                  th:action="@{|/campaigns/${campaignId}/readiness/assets/${item.targetId()}/kind|}" method="post" class="inline-form"
+                  th:hx-post="@{|/campaigns/${campaignId}/readiness/assets/${item.targetId()}/kind|}"
+                  hx-target="closest .readiness-panel" hx-swap="outerHTML">
+              <select name="kind" class="form-input form-input--xs" aria-label="Asset kind">
+                <option th:each="k : ${T(dev.hendrikhoemberg.dmhelper.handout.data.Handout.AssetKind).values()}"
+                        th:value="${k}" th:text="${k}"></option>
+              </select>
+              <button type="submit" class="btn btn-xs">Set kind</button>
+            </form>
+          </span>
+        </li>
+      </ul>
+    </details>
+  </div>
   <th:block th:with="accepted=${readiness.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).ACCEPTED)}">
-    <details class="readiness-accepted" th:if="${!accepted.isEmpty()}" open>
+    <details class="readiness-accepted" th:if="${!accepted.isEmpty()}">
       <summary th:text="|Accepted as explicit choices (${accepted.size()})|">Accepted as explicit choices</summary>
       <ul class="readiness-list">
         <li th:each="item : ${accepted}" class="readiness-item readiness-item--accepted">
-          <span class="readiness-item__title" th:text="${item.title()}">Title</span>
-          <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
+          <span class="readiness-item__content">
+            <span class="readiness-item__title" th:text="${item.title()}">Title</span>
+            <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
+          </span>
           <span class="readiness-item__actions">
             <button type="button" class="btn btn-ghost btn-xs readiness-item__undo"
                     th:hx-delete="@{/campaigns/{cid}/readiness/accept(cid=${campaignId},itemKey=${item.key()})}"

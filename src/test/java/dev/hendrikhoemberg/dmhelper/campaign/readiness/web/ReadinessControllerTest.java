@@ -9,6 +9,7 @@ import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
+import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -169,6 +170,8 @@ class ReadinessControllerTest {
                     assertThat(body).contains(blocker.title());
                     assertThat(body).contains("Undo");
                     assertThat(body).contains("/readiness/accept?itemKey=");
+                    assertThat(Jsoup.parse(body).selectFirst(".readiness-accepted").hasAttr("open"))
+                            .isFalse();
                 });
     }
 }

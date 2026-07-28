@@ -5,6 +5,7 @@ import dev.hendrikhoemberg.dmhelper.support.CampaignFixtures;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
@@ -76,34 +77,68 @@ class CampaignAdminSurfaceTest {
     }
 
     @Test
-    void readinessReportRendersOnePrimaryAcceptanceAndEveryBlockerControl() throws Exception {
+    void readinessReportGroupsBlockersAndMakesRepairTheClearerAction() throws Exception {
         var campaignId = campaignFixtures.operationalFixtureNotReady();
         String rendered = mvc.perform(get("/campaigns/{id}", campaignId))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
 
+        var document = Jsoup.parse(rendered);
+        var panel = document.selectFirst(".readiness-panel");
+        assertThat(panel).isNotNull();
+        assertThat(panel.selectFirst("h3").text()).isEqualTo("Campaign readiness");
+        assertThat(panel.selectFirst(".readiness-badge").text()).isEqualTo("Not ready — 5 blockers");
+        assertThat(panel.selectFirst(".readiness-panel__intro").text())
+                .contains("Resolve these blockers")
+                .contains("explicitly choose to continue");
+
+        assertThat(panel.select(".readiness-group"))
+                .extracting(group -> group.attr("data-readiness-category"))
+                .containsExactly("ENCOUNTER", "STATBLOCK", "MAP", "ASSET");
+        assertThat(panel.select(".readiness-group__heading"))
+                .extracting(org.jsoup.nodes.Element::text)
+                .containsExactly(
+                        "Encounters 1 blocker",
+                        "Participants 1 blocker",
+                        "Maps 2 blockers",
+                        "Player content 1 blocker");
+        assertThat(panel.select(".readiness-group__summary"))
+                .extracting(org.jsoup.nodes.Element::text)
+                .containsExactly(
+                        "Hostile scenes need a runnable encounter.",
+                        "Hostile participants need resolvable statblocks.",
+                        "Required scenes need a playable or reference map.",
+                        "Player-facing assets need a safe classification.");
+
         String acceptEndpoint = "/campaigns/" + campaignId + "/readiness/accept";
-        var acceptForms = java.util.regex.Pattern.compile(
-                        "<form[^>]*action=\\\"" + java.util.regex.Pattern.quote(acceptEndpoint)
-                                + "\\\"[^>]*>[\\s\\S]*?</form>")
-                .matcher(rendered)
-                .results()
-                .map(java.util.regex.MatchResult::group)
-                .toList();
+        var acceptForms = panel.select("form[action=\"" + acceptEndpoint + "\"]");
 
         assertThat(acceptForms).hasSize(5);
-        assertThat(acceptForms).allSatisfy(form -> assertThat(form)
-                .contains("class=\"btn", "btn-xs", "hx-post=\"" + acceptEndpoint + "\"")
-                .contains("hx-target=\"closest .readiness-panel\"", "hx-swap=\"outerHTML\""));
-        assertThat(acceptForms.stream().filter(form -> form.contains("btn-primary")).count()).isEqualTo(1);
+        assertThat(acceptForms).allSatisfy(form -> {
+            assertThat(form.attr("hx-post")).isEqualTo(acceptEndpoint);
+            assertThat(form.attr("hx-target")).isEqualTo("closest .readiness-panel");
+            assertThat(form.attr("hx-swap")).isEqualTo("outerHTML");
+            assertThat(form.selectFirst("button").hasClass("btn-primary")).isFalse();
+        });
 
-        assertThat(rendered)
-                .contains("Participants missing statblocks: Ambush Encounter")
-                .contains("Scene requires a map: The Dark Cave")
-                .contains("Unsafe asset linked for presentation: Unsafe Handout")
-                .contains("class=\"form-input form-input--xs\"")
-                .contains("class=\"btn btn-xs\">Set kind<")
-                .containsPattern("action=\"/campaigns/" + campaignId + "/readiness/assets/[^\"]+/kind\"")
-                .containsPattern("hx-post=\"/campaigns/" + campaignId + "/readiness/assets/[^\"]+/kind\"")
-                .contains("hx-target=\"closest .readiness-panel\"", "hx-swap=\"outerHTML\"");
+        assertThat(panel.select(".readiness-item__repair"))
+                .extracting(org.jsoup.nodes.Element::text)
+                .contains("Prepare encounter", "Review participants", "Add map", "Review handout");
+        assertThat(acceptForms.select("button"))
+                .extracting(org.jsoup.nodes.Element::text)
+                .contains(
+                        "Run without encounter",
+                        "Run without statblocks",
+                        "Run without map",
+                        "Accept safety risk");
+        assertThat(panel.select(".readiness-item__title"))
+                .extracting(org.jsoup.nodes.Element::text)
+                .contains(
+                        "Participants missing statblocks: Ambush Encounter",
+                        "Scene requires a map: The Dark Cave",
+                        "Unsafe asset linked for presentation: Unsafe Handout");
+        assertThat(panel.select("form[action*=\"/readiness/assets/\"]")).hasSize(1);
+        assertThat(panel.select("button"))
+                .extracting(org.jsoup.nodes.Element::text)
+                .contains("Set kind");
     }
 }

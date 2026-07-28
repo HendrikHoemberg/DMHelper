@@ -30,7 +30,7 @@ class CampaignHomeReadinessTest {
     @Autowired EntityManager em;
 
     @Test
-    void detailPageShowsReadinessLabelDistinctFromValidity() throws Exception {
+    void detailPageShowsActionableReadinessStatus() throws Exception {
         Campaign campaign = campaignService.create("Test Campaign", null);
         var adventure = adventureService.createAdventure(campaign.getId(), "Test Adventure", null, null);
         var chapter = adventureService.createChapter(adventure.getId(), "Chapter 1", null);
@@ -50,6 +50,6 @@ class CampaignHomeReadinessTest {
         mvc.perform(get("/campaigns/{id}", campaign.getId()))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeExists("readiness"))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("not session-ready")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Not ready — 3 blockers")));
     }
 }

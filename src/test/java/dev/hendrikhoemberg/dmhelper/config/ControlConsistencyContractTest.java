@@ -87,10 +87,11 @@ class ControlConsistencyContractTest {
 
         assertThat(readiness)
                 .contains("class=\"btn btn-xs\"")
-                .contains("th:classappend=\"${itemStat.first} ? 'btn-primary' : ''\"")
                 .contains("class=\"btn btn-xs\">Set kind<")
                 .contains("class=\"form-input form-input--xs\"")
-                .contains("class=\"btn btn-ghost btn-xs readiness-item__repair\"");
+                .contains("class=\"btn btn-primary btn-xs readiness-item__repair\"")
+                .contains("class=\"btn btn-ghost btn-xs\"")
+                .doesNotContain("itemStat.first");
     }
 
     @Test

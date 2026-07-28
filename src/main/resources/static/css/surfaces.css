@@ -375,8 +375,6 @@
 
 .readiness-badge {
     font-size: var(--text-sm);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
     padding: 2px 10px;
     border-radius: var(--radius);
     border: 1px solid currentColor;
@@ -385,25 +383,74 @@
 .readiness-panel.is-blocked .readiness-badge { color: var(--color-warning); }
 .readiness-panel.is-ready .readiness-badge { color: var(--color-success); }
 
+.readiness-panel__intro {
+    max-width: 62rem;
+    margin: 0 0 var(--space-md);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
+
 .readiness-empty { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+
+.readiness-groups {
+    display: grid;
+    gap: var(--space-sm);
+}
+
+.readiness-group {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--elevation-base-bg);
+}
+
+.readiness-group__heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    cursor: pointer;
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.readiness-group__count {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    font-weight: 400;
+}
+
+.readiness-group__summary {
+    margin: 0;
+    padding: 0 var(--space-md) var(--space-sm);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
 
 .readiness-list { list-style: none; margin: 0; padding: 0; }
 
 .readiness-item {
     display: grid;
-    grid-template-columns: minmax(12rem, 1fr) 2fr auto;
-    align-items: baseline;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
     gap: var(--space-sm) var(--space-md);
-    padding: var(--space-sm) 0;
+    padding: var(--space-sm) var(--space-md);
     border-top: 1px solid var(--color-border);
 }
-
-.readiness-item:first-child { border-top: none; }
 
 .readiness-item--blocker .readiness-item__title { color: var(--color-text); font-weight: 600; }
 .readiness-item--accepted .readiness-item__title { color: var(--color-text-muted); }
 
-.readiness-item__detail { color: var(--color-text-muted); font-size: var(--text-sm); }
+.readiness-item__content {
+    display: grid;
+    gap: 2px;
+}
+
+.readiness-item__detail {
+    display: block;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
 
 .readiness-item__actions {
     display: flex;
@@ -423,6 +470,7 @@
 @media (max-width: 900px) {
     .readiness-item { grid-template-columns: 1fr; }
     .readiness-item__actions { justify-self: start; }
+    .readiness-panel__head { align-items: flex-start; }
 }
 
 /* The campaign read surface already groups this report within its dashboard. Preserve the
