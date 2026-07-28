@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.gamemap.web;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.MapSettingsCommand;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,6 +38,8 @@ public class GameMapApiController {
     record MapDocumentResponse(long version, MapDocumentDto document) {}
 
     record SaveDocumentResponse(long version) {}
+
+    record SettingsResponse(long version, GameMapDto map, MapDocumentDto document) {}
 
     @GetMapping("/campaigns/{campaignId}/maps")
     public List<GameMapDto> listMaps(@PathVariable UUID campaignId) {
@@ -73,6 +76,13 @@ public class GameMapApiController {
                                              @RequestBody String documentJson) {
         long newVersion = service.updateDocument(id, documentJson, expectedVersion);
         return new SaveDocumentResponse(newVersion);
+    }
+
+    @PutMapping("/maps/{id}/settings")
+    public SettingsResponse updateSettings(@PathVariable UUID id,
+                                           @RequestBody MapSettingsCommand command) {
+        GameMapService.MapSettingsResult result = service.updateSettings(id, command);
+        return new SettingsResponse(result.version(), GameMapDto.from(result.map()), result.document());
     }
 
     @PutMapping("/maps/{id}")

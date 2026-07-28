@@ -28,8 +28,7 @@ class GameMapServiceTest {
 
     @Autowired private GameMapService service;
 
-    @Autowired
-    private jakarta.persistence.EntityManager em;
+    @Autowired private jakarta.persistence.EntityManager em;
 
     private Campaign campaign;
 
@@ -264,5 +263,35 @@ class GameMapServiceTest {
         String richCampaign = """
                 {"formatVersion":1,"campaign":{"name":"DTO test"},"maps":[{"key":"map-1","name":"Map","movementMode":"GRID","showGrid":true,"grid":{"w":10,"h":10,"cellPx":48,"gridType":"SQUARE"},"document":%s,"tokens":[]}]}""".formatted(richJson);
         assertThat(val.validate(richCampaign)).isEmpty();
+    }
+
+    @Test
+    void shouldUpdateSettingsPreservingContent() {
+        GameMap map = service.create(campaign.getId(), "Settings Map", 20, 15, 48);
+        long initialVersion = map.getVersion();
+
+        var command = new MapSettingsCommand(initialVersion, 40, 30, 64,
+                MapSettingsCommand.ResizeMode.PRESERVE, List.of());
+        GameMapService.MapSettingsResult result = service.updateSettings(map.getId(), command);
+
+        assertThat(result.version()).isEqualTo(initialVersion + 1);
+        assertThat(result.map().getGridWidth()).isEqualTo(40);
+        assertThat(result.map().getGridHeight()).isEqualTo(30);
+        assertThat(result.map().getCellSizePx()).isEqualTo(64);
+
+        MapDocumentDto doc = service.getDocument(map.getId());
+        assertThat(doc.grid().width()).isEqualTo(40);
+        assertThat(doc.grid().height()).isEqualTo(30);
+        assertThat(doc.grid().cellSizePx()).isEqualTo(64);
+    }
+
+    @Test
+    void shouldRejectStaleVersionOnSettingsUpdate() {
+        GameMap map = service.create(campaign.getId(), "Stale Map", 20, 15, 48);
+
+        var command = new MapSettingsCommand(map.getVersion() + 7, 40, 30, 64,
+                MapSettingsCommand.ResizeMode.PRESERVE, List.of());
+        assertThatThrownBy(() -> service.updateSettings(map.getId(), command))
+                .isInstanceOf(OptimisticLockingFailureException.class);
     }
 }

@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.MapSettingsCommand;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -136,6 +137,61 @@ class GameMapApiControllerTest {
     void shouldDeleteMap() throws Exception {
         mockMvc.perform(delete("/api/v1/maps/{id}", UUID.randomUUID()))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void shouldUpdateSettings() throws Exception {
+        UUID id = UUID.randomUUID();
+        GameMap m = map("SettingsMap", 2);
+        m.setGridWidth(40);
+        m.setGridHeight(30);
+        m.setCellSizePx(64);
+
+        MapDocumentDto doc = MapDocumentDto.createDefault(40, 30, 64);
+        var result = new GameMapService.MapSettingsResult(3, m, doc);
+        when(service.updateSettings(eq(id), any(MapSettingsCommand.class))).thenReturn(result);
+
+        String body = """
+                {"expectedVersion":2,"gridWidth":40,"gridHeight":30,"cellSizePx":64,"resizeMode":"PRESERVE","tokenResolutions":[]}""";
+
+        mockMvc.perform(put("/api/v1/maps/{id}/settings", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.version").value(3))
+                .andExpect(jsonPath("$.document.grid.width").value(40))
+                .andExpect(jsonPath("$.document.grid.height").value(30))
+                .andExpect(jsonPath("$.document.grid.cellSizePx").value(64));
+    }
+
+    @Test
+    void shouldReturn400ForInvalidSettingsDimensions() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(service.updateSettings(eq(id), any(MapSettingsCommand.class)))
+                .thenThrow(new IllegalArgumentException("cellSizePx must be positive"));
+
+        String body = """
+                {"expectedVersion":1,"gridWidth":0,"gridHeight":0,"cellSizePx":0,"resizeMode":"PRESERVE","tokenResolutions":[]}""";
+
+        mockMvc.perform(put("/api/v1/maps/{id}/settings", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturn409ForStaleSettingsVersion() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(service.updateSettings(eq(id), any(MapSettingsCommand.class)))
+                .thenThrow(new OptimisticLockingFailureException("stale"));
+
+        String body = """
+                {"expectedVersion":1,"gridWidth":40,"gridHeight":30,"cellSizePx":64,"resizeMode":"PRESERVE","tokenResolutions":[]}""";
+
+        mockMvc.perform(put("/api/v1/maps/{id}/settings", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isConflict());
     }
 
     @Test

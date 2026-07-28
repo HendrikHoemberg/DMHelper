@@ -7,6 +7,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -131,6 +132,73 @@ public class GameMapService {
         map.setGridHeight(gridHeight);
         map.setCellSizePx(cellSizePx);
         return repository.save(map);
+    }
+
+    public record MapSettingsResult(long version, GameMap map, MapDocumentDto document) {}
+
+    private final MapGridResizeService gridResizeService = new MapGridResizeService();
+
+    public MapSettingsResult updateSettings(UUID mapId, MapSettingsCommand command) {
+        GameMap map = findById(mapId);
+        if (map.getVersion() != command.expectedVersion()) {
+            throw new OptimisticLockingFailureException(
+                    "Map " + mapId + " changed concurrently: expected version " + command.expectedVersion()
+                    + " but is " + map.getVersion());
+        }
+
+        MapDocumentDto doc = getDocument(mapId);
+        if (doc == null) {
+            throw new IllegalArgumentException("Map document not found for " + mapId);
+        }
+
+        MapDocumentDto resized = gridResizeService.resize(
+                doc, command.gridWidth(), command.gridHeight(), command.resizeMode());
+
+        if (command.cellSizePx() <= 0) {
+            throw new IllegalArgumentException("cellSizePx must be positive");
+        }
+
+        MapDocumentDto.GridDto gridWithCellSize = new MapDocumentDto.GridDto(
+                resized.grid().width(), resized.grid().height(), command.cellSizePx(),
+                resized.grid().gridType(), resized.grid().movementMode(), resized.grid().showGrid());
+
+        MapDocumentDto docWithUpdatedGrid = new MapDocumentDto(
+                resized.schemaVersion(), gridWithCellSize,
+                resized.layers(), resized.primitives(), resized.customTerrain());
+
+        if (command.tokenResolutions() != null) {
+            for (var resolution : command.tokenResolutions()) {
+                Token token = tokenRepository.findById(resolution.tokenId())
+                        .orElseThrow(() -> new IllegalArgumentException(
+                                "Token not found: " + resolution.tokenId()));
+                if (!token.getMap().getId().equals(mapId)) {
+                    throw new IllegalArgumentException(
+                            "Token " + resolution.tokenId() + " does not belong to map " + mapId);
+                }
+                switch (resolution.action()) {
+                    case MOVE -> {
+                        token.setPositionX(resolution.positionX());
+                        token.setPositionY(resolution.positionY());
+                        tokenRepository.save(token);
+                    }
+                    case REMOVE -> {
+                        tokenRepository.delete(token);
+                    }
+                }
+            }
+        }
+
+        try {
+            map.setDocument(objectMapper.writeValueAsString(docWithUpdatedGrid));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize resized document", e);
+        }
+        map.setGridWidth(command.gridWidth());
+        map.setGridHeight(command.gridHeight());
+        map.setCellSizePx(command.cellSizePx());
+        repository.saveAndFlush(map);
+
+        return new MapSettingsResult(map.getVersion(), map, resized);
     }
 
     public GameMap updateMode(UUID mapId, String movementMode, Boolean showGrid) {
