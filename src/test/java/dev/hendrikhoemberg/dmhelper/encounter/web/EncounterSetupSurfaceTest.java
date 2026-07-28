@@ -45,8 +45,23 @@ class EncounterSetupSurfaceTest {
         assertThat(body).contains("name=\"tactics\"");
         assertThat(body).contains("encounterRewardsForm");
         assertThat(body).contains("waveKey");
-        assertThat(body).contains("prefill/party");
         assertThat(body).contains("combatant-quickadd");
+    }
+
+    @Test
+    void placementBoardIsPresent() {
+        assertThat(body).contains("data-encounter-placement-board");
+        assertThat(body).contains("data-unplaced-combatants");
+        assertThat(body).contains("data-readiness-summary");
+        assertThat(body).contains("data-place-party");
+        assertThat(body).contains("data-auto-place");
+    }
+
+    @Test
+    void prefillButtonsAreReplacedByPlacementBoard() {
+        assertThat(body).doesNotContain("Prefill from Map");
+        assertThat(body).doesNotContain("Prefill from Party");
+        assertThat(body).doesNotContain("Open battle map");
     }
 
     @Test

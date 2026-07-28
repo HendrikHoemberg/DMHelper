@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<section class="encounter-preparation" th:fragment="placement-board(campaignId, encounter, combatants)"
+         data-encounter-placement-board
+         th:data-encounter-id="${encounter.id}">
+  <header data-readiness-summary>
+    <span>Map: <span data-map-name th:text="${encounter.mapId != null} ? 'Map selected' : 'No map selected'"></span></span>
+    <span data-combatant-count th:text="${#lists.size(combatants)} + ' combatants'"></span>
+    <span th:text="' · ' + ${#lists.size(combatants.?[placementId == null])} + ' unplaced'"></span>
+    <button data-auto-place
+            th:disabled="${#lists.size(combatants.?[placementId == null]) == 0}"
+            onclick="autoPlaceCombatants()">Place unplaced</button>
+    <button data-place-party onclick="placeMissingParty()">Place missing party members</button>
+  </header>
+  <div class="encounter-preparation__workspace">
+    <aside data-unplaced-combatants>
+      <div th:each="c : ${combatants}" th:if="${c.placementId == null}"
+           class="unplaced-combatant"
+           draggable="true"
+           th:data-combatant-id="${c.id}"
+           th:data-name="${c.name}"
+           th:data-kind="${c.kind}"
+           th:data-hp="${c.currentHp + '/' + c.maxHp}">
+        <span th:text="${c.name}"></span>
+        <small th:text="${c.kind + ' · ' + c.currentHp + '/' + c.maxHp}"></small>
+        <span class="badge">Unplaced</span>
+      </div>
+    </aside>
+    <div class="placement-board-map">
+      <canvas id="placement-canvas"></canvas>
+    </div>
+  </div>
+</section>
+</html>

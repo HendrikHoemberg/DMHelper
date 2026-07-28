@@ -25,6 +25,26 @@ class EncounterTemplateContractTest {
         assertThat(html).contains("encounter/_prep :: prep");
         assertThat(html).contains("encounter/_rewards :: rewards");
         assertThat(html).contains("encounter/_summary-modal :: summary-modal");
+        assertThat(html).contains("encounter/_placement-board :: placement-board");
+    }
+
+    @Test
+    void placementBoardRendersCorrectAttributes() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/encounter/_placement-board.html"));
+        assertThat(html).contains("data-encounter-placement-board");
+        assertThat(html).contains("data-unplaced-combatants");
+        assertThat(html).contains("data-readiness-summary");
+        assertThat(html).contains("data-place-party");
+        assertThat(html).contains("data-auto-place");
+        assertThat(html).contains("placement-canvas");
+    }
+
+    @Test
+    void setupDoesNotContainPrefillButtons() throws IOException {
+        String html = Files.readString(Path.of("src/main/resources/templates/encounter/setup.html"));
+        assertThat(html).doesNotContain("Prefill from Map");
+        assertThat(html).doesNotContain("Prefill from Party");
+        assertThat(html).doesNotContain("Open battle map");
     }
 
     @Test

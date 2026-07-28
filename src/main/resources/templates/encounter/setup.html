@@ -2,6 +2,7 @@
 <html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head>
     <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <link rel="stylesheet" th:href="@{/css/encounter.css}">
     <title th:text="'DMHelper — Setup: ' + ${encounter.name}">DMHelper — Setup</title>
 </head>
 <body>
@@ -45,21 +46,6 @@
                                 <button type="submit" class="btn btn-sm">Add</button>
                             </form>
 
-                            <div class="u-flex u-gap-sm u-mb-sm u-flex-wrap">
-                                <th:block th:if="${encounter.mapId != null}">
-                                    <form method="post"
-                                          th:action="@{/campaigns/{cid}/encounters/{eid}/prefill/map(cid=${campaignId}, eid=${encounter.id})}"
-                                          class="u-inline">
-                                        <button type="submit" class="btn btn-sm">Prefill from Map</button>
-                                    </form>
-                                </th:block>
-                                <form method="post"
-                                      th:action="@{/campaigns/{cid}/encounters/{eid}/prefill/party(cid=${campaignId}, eid=${encounter.id})}"
-                                      class="u-inline">
-                                    <button type="submit" class="btn btn-sm">Prefill from Party</button>
-                                </form>
-                            </div>
-
                             <div th:replace="~{encounter/_library-add :: library-add(${campaignId}, ${encounter.id})}"></div>
                             <div th:replace="~{encounter/_threat-add :: threat-add(${campaignId}, ${encounter.id})}"></div>
                         </div>
@@ -68,6 +54,8 @@
 
                 <div class="editor-block">
                     <div th:replace="~{encounter/_form :: form(${campaignId}, ${encounter}, ${maps})}"></div>
+
+                    <div th:replace="~{encounter/_placement-board :: placement-board(${campaignId}, ${encounter}, ${combatants})}"></div>
 
                     <details class="setup-group" data-setup-group="waves">
                         <summary><h2>Waves</h2></summary>
@@ -99,5 +87,6 @@
             <div th:replace="~{encounter/_summary-modal :: summary-modal(${campaignId}, ${encounter})}"></div>
         </main>
     </div>
+    <script th:src="@{/js/encounter-placement.js}"></script>
 </body>
 </html>

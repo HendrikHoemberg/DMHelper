@@ -1,0 +1,96 @@
+.encounter-preparation {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    margin-bottom: var(--space-lg);
+    overflow: hidden;
+}
+
+.encounter-preparation header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--elevation-raised-bg);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+    flex-wrap: wrap;
+}
+
+.encounter-preparation header span {
+    color: var(--color-text-muted);
+}
+
+.encounter-preparation__workspace {
+    display: flex;
+    gap: 0;
+    min-height: 300px;
+}
+
+.encounter-preparation__workspace aside {
+    width: 240px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--color-border);
+    padding: var(--space-sm);
+    overflow-y: auto;
+    max-height: 500px;
+    background: var(--color-bg);
+}
+
+.unplaced-combatant {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    margin-bottom: var(--space-xs);
+    background: var(--elevation-raised-bg);
+    cursor: grab;
+    transition: border-color var(--duration-micro) var(--ease-out), box-shadow var(--duration-micro) var(--ease-out);
+    user-select: none;
+}
+
+.unplaced-combatant:hover {
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-warm-sm);
+}
+
+.unplaced-combatant:active {
+    cursor: grabbing;
+}
+
+.unplaced-combatant span {
+    font-weight: 600;
+    font-size: var(--text-sm);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.unplaced-combatant small {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    display: none;
+}
+
+.unplaced-combatant .badge {
+    font-size: var(--text-xs);
+    padding: 1px 6px;
+}
+
+.placement-board-map {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg);
+    min-height: 300px;
+}
+
+.placement-board-map canvas {
+    display: block;
+    max-width: 100%;
+}
