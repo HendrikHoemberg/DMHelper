@@ -5,6 +5,7 @@ import tools.jackson.databind.ObjectMapper;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.CombatantPlacementDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.CombatLogEntryDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.CombatantDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.EncounterDto;
@@ -21,8 +22,12 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterTokenPlacement;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterTokenPlacementRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWave;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWaveRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.library.packagev2.StatBlockReferenceResolver;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
@@ -42,17 +47,20 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
     private final CombatantRepository combatantRepository;
     private final CombatLogEntryRepository combatLogEntryRepository;
     private final EncounterWaveRepository waveRepository;
+    private final EncounterTokenPlacementRepository placementRepository;
     private final StatBlockReferenceResolver statBlockResolver;
 
     public EncounterSectionAdapter(EncounterRepository encounterRepository,
                                     CombatantRepository combatantRepository,
                                     CombatLogEntryRepository combatLogEntryRepository,
                                     EncounterWaveRepository waveRepository,
+                                    EncounterTokenPlacementRepository placementRepository,
                                     StatBlockReferenceResolver statBlockResolver) {
         this.encounterRepository = encounterRepository;
         this.combatantRepository = combatantRepository;
         this.combatLogEntryRepository = combatLogEntryRepository;
         this.waveRepository = waveRepository;
+        this.placementRepository = placementRepository;
         this.statBlockResolver = statBlockResolver;
     }
 
@@ -190,6 +198,15 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                     combatant.getName() != null ? combatant.getName() : threatType.name());
         }
 
+        CombatantPlacementDto placementDto = null;
+        if (combatant.getPlacement() != null) {
+            var p = combatant.getPlacement();
+            placementDto = new CombatantPlacementDto(
+                    p.getPositionX(), p.getPositionY(),
+                    p.getSizeCols(), p.getSizeRows(),
+                    p.getColor(), p.getIcon());
+        }
+
         return new CombatantDto(
                 key, combatant.getName(), combatant.getInitiative(),
                 combatant.getTieBreaker(), combatant.getSortOrder(),
@@ -204,7 +221,7 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                 combatant.getRechargedAbilities(), combatant.getNotes(),
                 waveKey, combatant.getStartX(), combatant.getStartY(),
                 combatant.getPlacementRegionKey(),
-                threatRef);
+                threatRef, placementDto);
     }
 
     private CombatLogEntryDto exportCombatLogEntry(CombatLogEntry entry, CampaignExportContext context,
@@ -382,6 +399,43 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                 combatantRepository.save(combatant);
                 context.register(CampaignContentType.COMBATANT, cDto.key(), combatant, combatant.getId());
                 entry.combatants.put(cDto.key(), combatant);
+
+                if (cDto.placement() != null) {
+                    var pd = cDto.placement();
+                    var placement = new EncounterTokenPlacement();
+                    placement.setEncounter(entry.encounter);
+                    placement.setCombatant(combatant);
+                    placement.setPositionX(pd.positionX());
+                    placement.setPositionY(pd.positionY());
+                    placement.setSizeCols(pd.sizeCols());
+                    placement.setSizeRows(pd.sizeRows());
+                    placement.setColor(pd.color());
+                    placement.setIcon(pd.icon());
+                    if (dto.mapRef() != null) {
+                        context.defer("placement map " + cDto.key(), () -> {
+                            GameMap map = context.require(dto.mapRef(), CampaignContentType.MAP, GameMap.class);
+                            placement.setMap(map);
+                            placementRepository.save(placement);
+                        });
+                    } else {
+                        placementRepository.save(placement);
+                    }
+                } else if (cDto.tokenRef() != null) {
+                    context.defer("placement from token " + cDto.key(), () -> {
+                        Token token = context.require(cDto.tokenRef(), CampaignContentType.TOKEN, Token.class);
+                        var placement = new EncounterTokenPlacement();
+                        placement.setEncounter(entry.encounter);
+                        placement.setCombatant(combatant);
+                        placement.setMap(token.getMap());
+                        placement.setPositionX(token.getPositionX());
+                        placement.setPositionY(token.getPositionY());
+                        placement.setSizeCols(token.getSizeCols());
+                        placement.setSizeRows(token.getSizeRows());
+                        placement.setColor(token.getColor());
+                        placement.setIcon(token.getIcon());
+                        placementRepository.save(placement);
+                    });
+                }
             }
         }
 

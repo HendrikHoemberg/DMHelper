@@ -194,6 +194,10 @@ public class CampaignSemanticSnapshotService {
                         && field.getName().equals("tags")) {
                     continue;
                 }
+                if (entity instanceof dev.hendrikhoemberg.dmhelper.encounter.data.Combatant
+                        && field.getName().equals("placement")) {
+                    continue;
+                }
                 JsonNode node = projectValue(value, field, stableIds);
                 if (node != null) projected.set(field.getName(), node);
             } catch (ReflectiveOperationException e) {

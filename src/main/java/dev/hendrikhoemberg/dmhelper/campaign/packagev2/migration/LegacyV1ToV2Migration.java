@@ -252,7 +252,7 @@ public class LegacyV1ToV2Migration implements CampaignFormatMigration {
                         c.conditionsJson(), c.concentratingOn(), c.concentrationCheckPending(), c.legendaryActionsUsed(),
                         c.legendaryResistancesUsed(), c.legendaryActionsMax(), c.legendaryResistancesMax(),
                         c.rechargedAbilities(), c.notes(),
-                        null, null, null, null, null));
+                        null, null, null, null, null, null));
             }
             if (e.map() != null) warning(warnings, ImportProblemCodes.LEGACY_REFERENCE_MIGRATED, "/encounters/" + i + "/map", e.map());
             if (!combatants.isEmpty()) {

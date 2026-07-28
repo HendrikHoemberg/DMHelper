@@ -442,6 +442,16 @@ public record CampaignManifestV2(
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record CombatantPlacementDto(
+            int positionX,
+            int positionY,
+            int sizeCols,
+            int sizeRows,
+            String color,
+            String icon
+    ) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record CombatantDto(
             String key,
             String name,
@@ -472,7 +482,8 @@ public record CampaignManifestV2(
             Integer startX,
             Integer startY,
             String placementRegionKey,
-            ContentReference threatRef
+            ContentReference threatRef,
+            CombatantPlacementDto placement
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

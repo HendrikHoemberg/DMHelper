@@ -188,7 +188,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 "c1", "Test", 0, 0, 0, 10, 10, 0,
                 "MONSTER", null, false, null, sb, null,
                 false, false, null, null, false, 0, 0, 0, 0, null, null,
-                null, null, null, null, null);
+                null, null, null, null, null, null);
         var encounter = new CampaignManifestV2.EncounterDto(
                 "enc1", "Test", List.of(combatant), "PLANNED",
                 0, -1, null, 0, null, null, null, false, List.of(),
@@ -720,7 +720,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 "TRAP", null, false, null, null, null,
                 false, false, null, null, false, 0, 0, 0, 0, null, null,
                 null, null, null, null,
-                ContentReference.packageRef(CampaignContentType.HAZARD, "hazard-lava"));
+                ContentReference.packageRef(CampaignContentType.HAZARD, "hazard-lava"), null);
         var encounter = new CampaignManifestV2.EncounterDto(
                 "enc1", "Trap Enc", List.of(combatant), "PLANNED",
                 0, -1, null, 0, null, null, null, false, List.of(),

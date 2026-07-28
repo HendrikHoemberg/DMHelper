@@ -119,7 +119,7 @@ class CampaignSemanticComparatorTest {
                 "MONSTER", null, false, null, null, null,
                 false, false, null, null, false,
                 0, 0, 0, 0, null, null,
-                null, null, null, null, null);
+                null, null, null, null, null, null);
         var encounter = new CampaignManifestV2.EncounterDto(
                 "enc1", "Test", List.of(combatant), "PLANNED",
                 0, -1, null, 0, null, null, null, false, List.of(),

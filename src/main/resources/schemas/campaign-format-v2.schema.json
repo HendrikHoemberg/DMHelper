@@ -623,7 +623,7 @@
     "token": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["key", "name", "positionX", "positionY", "sizeCols", "sizeRows", "hidden", "dead"],
+      "required": ["key", "name", "positionX", "positionY", "sizeCols", "sizeRows", "hidden"],
       "properties": {
         "key": { "$ref": "#/$defs/key" },
         "name": { "type": "string" },
@@ -643,6 +643,19 @@
         "icon": { "type": "string" }
       }
     },
+    "combatantPlacement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["positionX", "positionY", "sizeCols", "sizeRows", "color"],
+      "properties": {
+        "positionX": { "type": "integer", "minimum": 0 },
+        "positionY": { "type": "integer", "minimum": 0 },
+        "sizeCols": { "type": "integer", "minimum": 1 },
+        "sizeRows": { "type": "integer", "minimum": 1 },
+        "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+        "icon": { "type": "string" }
+      }
+    },
     "encounter": {
       "type": "object",
       "additionalProperties": false,
@@ -651,7 +664,7 @@
         "key": { "$ref": "#/$defs/key" },
         "name": { "type": "string" },
         "combatants": { "type": "array", "items": { "$ref": "#/$defs/combatant" } },
-        "status": { "type": "string", "enum": ["PLANNED", "ACTIVE", "DONE"] },
+        "status": { "type": "string", "enum": ["PLANNED", "ACTIVE", "SUSPENDED", "DONE"] },
         "round": { "type": "integer", "minimum": 0 },
         "activeTurnIndex": { "type": "integer" },
         "combatPhase": { "type": "string", "enum": ["SETUP", "RUNNING"] },
@@ -762,7 +775,8 @@
         "startX": { "type": "integer" },
         "startY": { "type": "integer" },
         "placementRegionKey": { "type": "string" },
-        "threatRef": { "$ref": "#/$defs/contentReference" }
+        "threatRef": { "$ref": "#/$defs/contentReference" },
+        "placement": { "$ref": "#/$defs/combatantPlacement" }
       }
     },
     "note": {

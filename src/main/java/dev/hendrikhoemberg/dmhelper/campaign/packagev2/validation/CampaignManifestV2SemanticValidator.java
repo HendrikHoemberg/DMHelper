@@ -32,6 +32,7 @@ import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignConten
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.TRAP;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.HAZARD;
 import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.AUDIO_CUE;
+import static dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType.TOKEN;
 
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableAddressMode;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableCategory;
@@ -935,8 +936,10 @@ public class CampaignManifestV2SemanticValidator {
 
     private static void validateSpatialAndState(CampaignManifestV2 m, List<CampaignImportProblem> problems) {
         int activeEncounters = 0;
+        var mapByKey = new java.util.HashMap<String, CampaignManifestV2.MapDto>();
         for (int i = 0; i < size(m.maps()); i++) {
             var map = m.maps().get(i);
+            mapByKey.put(map.key(), map);
             int widthPx = map.grid().w() * map.grid().cellPx();
             int heightPx = map.grid().h() * map.grid().cellPx();
             if (map.document() != null && (map.document().grid().width() != map.grid().w()
@@ -950,6 +953,33 @@ public class CampaignManifestV2SemanticValidator {
                         || token.positionX() + token.sizeCols() * map.grid().cellPx() > widthPx
                         || token.positionY() + token.sizeRows() * map.grid().cellPx() > heightPx) {
                     error(problems, "TOKEN_OUT_OF_BOUNDS", "/maps/" + i + "/tokens/" + j, "Token lies outside map pixel bounds");
+                }
+            }
+        }
+        for (int i = 0; i < size(m.encounters()); i++) {
+            var e = m.encounters().get(i);
+            for (int j = 0; j < size(e.combatants()); j++) {
+                var c = e.combatants().get(j);
+                if (c.placement() != null) {
+                    if (e.mapRef() == null) {
+                        error(problems, "PLACEMENT_WITHOUT_MAP",
+                                "/encounters/" + i + "/combatants/" + j + "/placement",
+                                "Combatant placement requires a map reference on the encounter");
+                    } else {
+                        var map = mapByKey.get(e.mapRef().key());
+                        if (map != null) {
+                            int widthPx = map.grid().w() * map.grid().cellPx();
+                            int heightPx = map.grid().h() * map.grid().cellPx();
+                            var p = c.placement();
+                            if (p.positionX() < 0 || p.positionY() < 0
+                                    || p.positionX() + p.sizeCols() * map.grid().cellPx() > widthPx
+                                    || p.positionY() + p.sizeRows() * map.grid().cellPx() > heightPx) {
+                                error(problems, "PLACEMENT_OUT_OF_BOUNDS",
+                                        "/encounters/" + i + "/combatants/" + j + "/placement",
+                                        "Placement geometry exceeds map pixel bounds");
+                            }
+                        }
+                    }
                 }
             }
         }

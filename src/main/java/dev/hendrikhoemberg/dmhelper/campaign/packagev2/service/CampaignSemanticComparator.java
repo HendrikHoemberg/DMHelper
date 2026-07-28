@@ -124,14 +124,41 @@ public final class CampaignSemanticComparator {
         JsonNode encounters = root.get("encounters");
         if (!(encounters instanceof ArrayNode array)) return;
         for (JsonNode encounter : array) {
-            if (encounter instanceof ObjectNode object
-                    && (!object.has("combatPhase") || object.path("combatPhase").isNull())) {
-                String status = object.path("status").asText();
-                int activeTurnIndex = object.path("activeTurnIndex").asInt(-1);
-                int round = object.path("round").asInt(0);
-                String phase = "DONE".equals(status) || activeTurnIndex >= 0 || round > 1
-                        ? "RUNNING" : "SETUP";
-                object.put("combatPhase", phase);
+            if (encounter instanceof ObjectNode object) {
+                if (!object.has("combatPhase") || object.path("combatPhase").isNull()) {
+                    String status = object.path("status").asText();
+                    int activeTurnIndex = object.path("activeTurnIndex").asInt(-1);
+                    int round = object.path("round").asInt(0);
+                    String phase = "DONE".equals(status) || activeTurnIndex >= 0 || round > 1
+                            ? "RUNNING" : "SETUP";
+                    object.put("combatPhase", phase);
+                }
+                JsonNode combatants = object.get("combatants");
+                if (combatants instanceof ArrayNode ca) {
+                    for (JsonNode combatant : ca) {
+                        if (combatant instanceof ObjectNode co) {
+                            co.remove("placement");
+                            co.remove("tokenRef");
+                        }
+                    }
+                }
+            }
+        }
+        JsonNode maps = root.get("maps");
+        if (maps instanceof ArrayNode ma) {
+            for (JsonNode map : ma) {
+                if (map instanceof ObjectNode mo) {
+                    JsonNode tokens = mo.get("tokens");
+                    if (tokens instanceof ArrayNode ta) {
+                        for (JsonNode token : ta) {
+                            if (token instanceof ObjectNode to) {
+                                to.remove("currentHp");
+                                to.remove("maxHp");
+                                to.remove("dead");
+                            }
+                        }
+                    }
+                }
             }
         }
     }

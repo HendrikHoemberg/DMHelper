@@ -19,6 +19,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterTokenPlacementRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWave;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWaveRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.WaveStatus;
@@ -53,6 +54,7 @@ class EncounterSectionAdapterTest {
     @Mock CombatantRepository combatantRepository;
     @Mock CombatLogEntryRepository combatLogEntryRepository;
     @Mock EncounterWaveRepository waveRepository;
+    @Mock EncounterTokenPlacementRepository placementRepository;
     @Mock StatBlockRepository statBlockRepository;
     StatBlockReferenceResolver statBlockResolver;
 
@@ -74,7 +76,7 @@ class EncounterSectionAdapterTest {
                         statBlockRepository));
         adapter = new EncounterSectionAdapter(
                 encounterRepository, combatantRepository, combatLogEntryRepository,
-                waveRepository, statBlockResolver);
+                waveRepository, placementRepository, statBlockResolver);
         campaign = new Campaign();
         campaignId = UUID.randomUUID();
         campaign.setId(campaignId);
@@ -351,7 +353,7 @@ class EncounterSectionAdapterTest {
                 "MONSTER", null, false, null, srdRef, null,
                 false, false, null, null, false,
                 0, 0, 0, 0, null, null,
-                null, null, null, null, null);
+                null, null, null, null, null, null);
         var encounterDto = new EncounterDto(
                 "ambush", "Ambush", List.of(combatantDto), "PLANNED",
                 0, -1, null, 0, null, null, null, false, List.of(),
@@ -392,17 +394,17 @@ class EncounterSectionAdapterTest {
                 "MONSTER", null, false, null, null, null,
                 false, false, null, null, false,
                 0, 0, 0, 0, null, null,
-                null, null, null, null, null);
+                null, null, null, null, null, null);
         var c2 = new CombatantDto("c2", "C2", 0, 0, 1, 10, 10, 0,
                 "MONSTER", null, false, null, null, null,
                 false, false, null, null, false,
                 0, 0, 0, 0, null, null,
-                null, null, null, null, null);
+                null, null, null, null, null, null);
         var c3 = new CombatantDto("c3", "C3", -2, 0, 2, 10, 10, 0,
                 "MONSTER", null, false, null, null, null,
                 false, false, null, null, false,
                 0, 0, 0, 0, null, null,
-                null, null, null, null, null);
+                null, null, null, null, null, null);
         var encounterDto = new EncounterDto(
                 "e1", "Test", List.of(c1, c2, c3), "ACTIVE",
                 0, -1, "SETUP", 0, null, null, null, false, List.of(),
