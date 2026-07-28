@@ -39,9 +39,10 @@ class EncounterTokenPlacementPersistenceTest {
                 TestEncounterGraph.placement(combatant, combatant.getEncounter().getMap(), 48, 96));
         UUID encounterId = combatant.getEncounter().getId();
 
+        entityManager.remove(combatant);
         entityManager.remove(combatant.getEncounter());
         entityManager.flush();
 
-        assertThat(placements.findByEncounterIdOrderByCombatantSortOrderAsc(encounterId)).isEmpty();
+        assertThat(placements.countByEncounterId(encounterId)).isZero();
     }
 }

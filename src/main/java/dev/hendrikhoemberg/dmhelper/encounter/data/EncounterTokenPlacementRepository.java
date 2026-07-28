@@ -13,9 +13,9 @@ public interface EncounterTokenPlacementRepository
 
     Optional<EncounterTokenPlacement> findByCombatantId(UUID combatantId);
 
-    List<EncounterTokenPlacement> findByEncounterIdOrderByCombatantSortOrderAsc(UUID encounterId);
+    List<EncounterTokenPlacement> findByEncounterIdOrderByCombatant_SortOrderAsc(UUID encounterId);
 
-    List<EncounterTokenPlacement> findByMapIdAndEncounterIdOrderByCombatantSortOrderAsc(
+    List<EncounterTokenPlacement> findByMapIdAndEncounterIdOrderByCombatant_SortOrderAsc(
             UUID mapId, UUID encounterId);
 
     long countByEncounterId(UUID encounterId);
