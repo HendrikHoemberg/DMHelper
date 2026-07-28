@@ -6,7 +6,7 @@
          th:data-map-id="${encounter.mapId}">
   <header data-readiness-summary>
     <span>Map: <span data-map-name
-          th:text="${encounterMap != null ? encounterMap.name : 'No map selected'}"></span></span>
+          th:text="${encounterMapName != null ? encounterMapName : 'No map selected'}"></span></span>
     <span data-combatant-count th:text="${#lists.size(combatants)} + ' combatants'"></span>
     <span th:text="' · ' + ${#lists.size(combatants.?[placementId == null])} + ' unplaced'"></span>
     <button type="button" class="btn btn-ghost" data-auto-place

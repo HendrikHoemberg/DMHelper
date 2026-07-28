@@ -1,10 +1,18 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="inline-form" th:fragment="form">
+<!--/*
+  Rendered two ways. Inline on the campaign list, htmx appends the new card to #campaign-grid.
+  Standalone on /campaigns/new there is no grid to append to, so the form posts normally and the
+  controller redirects into the campaign that was just created.
+*/-->
+<div class="inline-form" th:fragment="form(standalone)">
     <h3>New Campaign</h3>
-    <form hx-post="/campaigns"
-          hx-target="#campaign-grid"
-          hx-swap="beforeend"
+    <!--/* hx-on::after-request stays static: its colons break th:attr's assignation parser, and it
+           is inert standalone because htmx never issues a request from an unmanaged form. */-->
+    <form method="post" th:action="@{/campaigns}"
+          th:attr="hx-post=${standalone} ? null : '/campaigns',
+                   hx-target=${standalone} ? null : '#campaign-grid',
+                   hx-swap=${standalone} ? null : 'beforeend'"
           hx-on::after-request="if (event.detail.successful) this.reset()">
         <div class="form-group">
             <label for="campaignName">Name</label>
@@ -17,7 +25,8 @@
                       placeholder="Optional campaign description"></textarea>
         </div>
         <div class="form-actions">
-            <button type="button" class="btn btn-ghost"
+            <a th:if="${standalone}" th:href="@{/campaigns}" class="btn btn-ghost">Cancel</a>
+            <button th:unless="${standalone}" type="button" class="btn btn-ghost"
                     hx-get="/campaigns?fragment=new-button"
                     hx-target="closest .inline-form"
                     hx-swap="outerHTML">Cancel</button>

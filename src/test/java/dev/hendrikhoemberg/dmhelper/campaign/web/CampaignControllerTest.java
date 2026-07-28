@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -123,6 +124,43 @@ class CampaignControllerTest {
                 .andExpect(model().attributeExists("sigil"))
                 .andExpect(content().string(containsString("campaign-sigil")))
                 .andExpect(content().string(containsString("Test Campaign")));
+    }
+
+    @Test
+    void standaloneNewPageSubmitsWithoutAnHtmxTargetItCannotReach() throws Exception {
+        String html = mockMvc.perform(get("/campaigns/new"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        // #campaign-grid only exists on the campaign list; targeting it here swaps into nothing.
+        assertThat(html).doesNotContain("campaign-grid");
+        assertThat(html).contains("action=\"/campaigns\"");
+        assertThat(html).contains("method=\"post\"");
+    }
+
+    @Test
+    void theInlineFormOnTheListStillSwapsIntoTheCardGrid() throws Exception {
+        when(service.findAll()).thenReturn(List.of(sampleCampaign()));
+
+        String html = mockMvc.perform(get("/campaigns").param("fragment", "form"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(html).contains("hx-post=\"/campaigns\"");
+        assertThat(html).contains("hx-target=\"#campaign-grid\"");
+        assertThat(html).contains("hx-swap=\"beforeend\"");
+    }
+
+    @Test
+    void aPlainFormPostLandsInTheNewCampaign() throws Exception {
+        Campaign c = sampleCampaign();
+        when(service.create(eq("Test Campaign"), any())).thenReturn(c);
+
+        mockMvc.perform(post("/campaigns")
+                        .param("name", "Test Campaign")
+                        .param("description", "A test"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/campaigns/" + c.getId()));
     }
 
     @Test

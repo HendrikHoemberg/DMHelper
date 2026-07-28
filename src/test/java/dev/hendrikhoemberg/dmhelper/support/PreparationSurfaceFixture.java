@@ -11,6 +11,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterRewards;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService.PartyLiveStateDto;
@@ -33,6 +34,7 @@ public class PreparationSurfaceFixture {
             UUID adventureId,
             UUID chapterId,
             UUID sceneId,
+            UUID mapId,
             UUID encounterId,
             UUID woundedMemberId,
             UUID inactiveMemberId) {}
@@ -45,6 +47,7 @@ public class PreparationSurfaceFixture {
     public static final String CONDITION_NAME = "poisoned";
 
     public static final String ENCOUNTER_NAME = "Gate Watch Ambush";
+    public static final String MAP_NAME = "Gatehouse Approach";
     public static final String MONSTER_NAME = "Hooded Ambusher";
     public static final String PREP_TACTICS =
             "The ambushers loose one volley from the gatehouse roof, then drop to the courtyard.";
@@ -57,15 +60,18 @@ public class PreparationSurfaceFixture {
     private final AdventureService adventures;
     private final PartyMemberService party;
     private final EncounterService encounters;
+    private final GameMapService maps;
 
     public PreparationSurfaceFixture(CampaignRepository campaigns,
                                      AdventureService adventures,
                                      PartyMemberService party,
-                                     EncounterService encounters) {
+                                     EncounterService encounters,
+                                     GameMapService maps) {
         this.campaigns = campaigns;
         this.adventures = adventures;
         this.party = party;
         this.encounters = encounters;
+        this.maps = maps;
     }
 
     @Transactional
@@ -99,7 +105,11 @@ public class PreparationSurfaceFixture {
                 "Wizard 2", 12, 14, 2, 30, 11, 10, 16, null);
         party.setActive(inactive.getId(), false);
 
-        UUID encounterId = encounters.create(campaignId, new CreateRequest(ENCOUNTER_NAME, null)).id();
+        // The encounter carries a map on purpose: an unmapped fixture never renders the placement
+        // board's map association, which is where a detached lazy proxy would blow up.
+        UUID mapId = maps.create(campaignId, MAP_NAME, 24, 16, 48).getId();
+
+        UUID encounterId = encounters.create(campaignId, new CreateRequest(ENCOUNTER_NAME, mapId)).id();
         encounters.addCombatant(encounterId,
                 new CombatantCreateRequest(MONSTER_NAME + " A", 16, "MONSTER", null, null));
         encounters.addCombatant(encounterId,
@@ -116,6 +126,6 @@ public class PreparationSurfaceFixture {
                 "Split the purse between the watch and the party."));
 
         return new Seeded(campaignId, adventure.getId(), chapter.getId(), scene.getId(),
-                encounterId, wounded.getId(), inactive.getId());
+                mapId, encounterId, wounded.getId(), inactive.getId());
     }
 }

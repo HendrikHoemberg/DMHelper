@@ -1,11 +1,13 @@
 package dev.hendrikhoemberg.dmhelper.encounter.web;
 
+import dev.hendrikhoemberg.dmhelper.audio.data.AudioCue;
 import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.ThreatCombatantRequest;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
 import org.springframework.http.ResponseEntity;
@@ -140,21 +142,25 @@ public class EncounterController {
         return "redirect:/campaigns/" + campaignId + "/encounters/" + encounterId;
     }
 
-    private void addEncounterModel(UUID campaignId, UUID id, Model model) {
-        model.addAttribute("encounter", encounterService.getById(id));
+    private EncounterService.EncounterDto addEncounterModel(UUID campaignId, UUID id, Model model) {
+        EncounterService.EncounterDto encounter = encounterService.getById(id);
+        model.addAttribute("encounter", encounter);
         model.addAttribute("combatants", encounterService.getCombatants(id));
         model.addAttribute("difficulty", encounterService.calculateDifficulty(campaignId, id));
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
         encounterRepository.findById(id).ifPresent(e -> {
             model.addAttribute("encounterEntity", e);
-            model.addAttribute("encounterCombatCue", e.getCombatAudioCue());
-            model.addAttribute("encounterVictoryCue", e.getVictoryAudioCue());
+            // Names, not the cue entities: those associations are lazy and open-in-view=false has
+            // already closed the session by the time a template would read a field off them.
+            model.addAttribute("encounterCombatCueName", cueName(e.getCombatAudioCue()));
+            model.addAttribute("encounterVictoryCueName", cueName(e.getVictoryAudioCue()));
             model.addAttribute("encounterVictoryDuration", e.getVictoryCueDurationSeconds());
         });
         model.addAttribute("waves", encounterService.listWaves(id));
         model.addAttribute("prep", encounterService.getPrep(id));
         model.addAttribute("rewards", encounterService.getRewards(id));
+        return encounter;
     }
 
     @GetMapping("/{id}")
@@ -165,11 +171,24 @@ public class EncounterController {
 
     @GetMapping("/{id}/setup")
     public String setup(@PathVariable UUID campaignId, @PathVariable UUID id, Model model) {
-        addEncounterModel(campaignId, id, model);
+        var encounter = addEncounterModel(campaignId, id, model);
         model.addAttribute("maps", mapRepo.findByCampaignIdOrderBySortOrderAsc(campaignId));
-        encounterRepository.findById(id)
-                .map(e -> e.getMap())
-                .ifPresent(map -> model.addAttribute("encounterMap", map));
+        // Resolve the name here rather than handing the view Encounter.getMap(): that association is
+        // lazy, and with open-in-view=false the session is gone by the time the template reads it.
+        model.addAttribute("encounterMapName", mapName(encounter.mapId()));
         return "encounter/setup";
+    }
+
+    private String cueName(AudioCue cue) {
+        return cue == null ? null : audioCueRepository.findById(cue.getId())
+                .map(AudioCue::getName)
+                .orElse(null);
+    }
+
+    private String mapName(UUID mapId) {
+        if (mapId == null) {
+            return null;
+        }
+        return mapRepo.findById(mapId).map(GameMap::getName).orElse(null);
     }
 }

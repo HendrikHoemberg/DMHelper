@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Render failure probe</title>
+</head>
+<body>
+    <!--/* Test-only template. Emits a marker and then enough filler to push past the servlet
+           response buffer, so the render is already committed when it blows up on a variable that
+           is not in the model. That is the shape of a real template bug on a long page: the
+           failure lands far below the fold, after the browser has been told the request succeeded. */-->
+    <p id="render-failure-marker">render-failure-marker</p>
+    <p th:each="i : ${#numbers.sequence(1, 4000)}"
+       th:text="'filler line to overrun the response buffer ' + ${i}">filler</p>
+    <p th:text="${absentFromTheModel.name}">boom</p>
+</body>
+</html>

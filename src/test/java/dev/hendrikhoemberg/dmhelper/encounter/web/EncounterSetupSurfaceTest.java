@@ -61,6 +61,12 @@ class EncounterSetupSurfaceTest {
     }
 
     @Test
+    void theBoardNamesTheMapTheEncounterIsFoughtOn() {
+        assertThat(body).contains(PreparationSurfaceFixture.MAP_NAME);
+        assertThat(body).doesNotContain("No map selected");
+    }
+
+    @Test
     void prefillButtonsAreReplacedByPlacementBoard() {
         assertThat(body).doesNotContain("Prefill from Map");
         assertThat(body).doesNotContain("Prefill from Party");

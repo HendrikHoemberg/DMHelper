@@ -92,11 +92,17 @@ public class CampaignController {
     @PostMapping
     public String create(@RequestParam String name,
                          @RequestParam(required = false) String description,
+                         @RequestHeader(value = "HX-Request", defaultValue = "false") boolean htmxRequest,
                          Model model) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Campaign name is required");
         }
         Campaign campaign = service.create(name, description);
+        if (!htmxRequest) {
+            // The standalone /campaigns/new page posts normally: there is no card grid to append
+            // to, so open the campaign instead of returning a fragment into a blank page.
+            return "redirect:/campaigns/" + campaign.getId();
+        }
         addAuthorLine(campaign);
         model.addAttribute("campaign", campaign);
         model.addAttribute("sigil", CampaignSigil.from(campaign.getId()));
