@@ -251,13 +251,15 @@ class SessionCockpitTemplateContractTest {
         String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
 
         assertThat(rail)
-                .contains("data-map-id=${enc.mapId}")
-                .contains("activateEncounter($el.dataset.encounterId, $el.dataset.mapId)");
-        assertThat(extractFunction(js, "activateEncounter"))
-                .contains("await this.switchMap(mapId)");
+                .contains("runEncounter($el.dataset.encounterId)")
+                .doesNotContain("data-map-id=${enc.mapId}");
         assertThat(extractFunction(js, "activateEncounter"))
                 .doesNotContain("window.location.reload()")
                 .as("activateEncounter should update rails in place, not reload");
+        assertThat(extractFunction(js, "runEncounter"))
+                .contains("activateEncounter")
+                .doesNotContain("window.location.reload()")
+                .as("runEncounter should update rails in place, not reload");
     }
 
     @Test

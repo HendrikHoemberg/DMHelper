@@ -187,7 +187,10 @@ class CockpitRuntimeModuleContractTest {
         String rail = Files.readString(Path.of(
                 "src/main/resources/templates/session/_encounter-rail.html"));
         assertThat(rail).contains("view.planned");
-        assertThat(rail).contains("enc.mapId");
+        assertThat(rail).contains("view.suspended");
+        assertThat(rail).contains("enc.mapName");
+        assertThat(rail).contains("enc.ready");
+        assertThat(rail).contains("enc.combatantCount");
         assertThat(rail).contains("enc.id");
         assertThat(rail).contains("enc.name");
         assertThat(rail).doesNotContain("workspace.activeEncounter");
@@ -228,6 +231,7 @@ class CockpitRuntimeModuleContractTest {
                 "src/main/resources/templates/session/_encounter-rail.html"));
         assertThat(rail).contains("encounter/_tracker :: tracker");
         assertThat(rail).contains("Planned Encounters");
+        assertThat(rail).contains("Suspended Encounters");
         assertThat(rail).contains("planned-encounter-row");
     }
 

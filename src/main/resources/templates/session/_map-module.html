@@ -2,6 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <th:block th:fragment="map-module-runtime">
     <div class="cockpit-table" th:attr="data-selection-source=${view.selectionSource}">
+      <div class="map-context-warning" role="status"
+           th:if="${activeEncounter != null && activeEncounter.activeEncounterId != null && view.mapId != activeEncounter.activeEncounterMapId}">
+        Viewing a different map while <span th:text="${activeEncounter.activeEncounterName}"></span> is active.
+        <button th:attr="onclick=|switchMap('${activeEncounter.activeEncounterMapId}')|" class="btn btn-ghost" style="padding: 2px 8px;">Return to encounter map</button>
+      </div>
       <div class="battle-toolbar" data-screen-sensitive aria-label="Battle map controls">
         <div class="tool-group map-switcher">
           <label for="runtimeMapPicker" class="sr-only">Workspace map</label>

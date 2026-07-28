@@ -54,6 +54,7 @@ public class CockpitRuntimeModuleController {
         requireMode(def, mode);
         model.addAttribute("view", views.map(campaignId, mapId));
         model.addAttribute("mode", mode);
+        model.addAttribute("activeEncounter", views.encounter(campaignId));
         return "session/modules/_map :: body";
     }
 

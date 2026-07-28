@@ -25,6 +25,7 @@ function sessionCockpit(config) {
         activeEncounter: null,
         activeCombatants: [],
         plannedEncounters: [],
+        suspendedEncounters: [],
         presentingMap: config.presentationMode === 'MAP'
             && config.presentedMapId === config.mapId,
         playerViewUrl: window.location.origin + '/player',
@@ -57,6 +58,11 @@ function sessionCockpit(config) {
         tokenDeleteBusy: false,
         annotationText: '',
         annotationPosition: null,
+        _replacementPendingId: null,
+        _replacementActiveId: null,
+        _replacementActiveName: null,
+        _readinessEncounterId: null,
+        _readinessData: null,
 
         async mutateSession(path, options, summary, retry) {
             try {
@@ -571,6 +577,13 @@ function sessionCockpit(config) {
                 this.visitedMapIds.add(this.currentMapId);
                 this.initBattleMap();
             }
+            // Handle runEncounter query parameter
+            const params = new URLSearchParams(window.location.search);
+            const runEncounterId = params.get('runEncounter');
+            if (runEncounterId) {
+                history.replaceState(null, '', window.location.pathname);
+                this.runEncounter(runEncounterId);
+            }
         },
 
         _bindMapVisibility() {
@@ -658,19 +671,93 @@ function sessionCockpit(config) {
             }
         },
 
-        async activateEncounter(id, mapId) {
+        async activateEncounter(encounterId, disposition) {
+            const body = disposition ? { activeEncounterDisposition: disposition } : {};
+            const resp = await this.request(
+                `/api/v1/campaigns/${this.campaignId}/session/encounters/${encounterId}/activate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+            const result = await resp.json();
+            if (window.battleMap) {
+                window.battleMap.setActiveEncounter(encounterId);
+            }
+            this.refreshModules(['story', 'encounter'], 'encounter-activated');
+            return result;
+        },
+
+        async runEncounter(encounterId) {
             try {
-                await this.request(`/api/v1/encounters/${id}/activate`, { method: 'POST' });
-                if (window.battleMap) {
-                    window.battleMap.setActiveEncounter(id);
+                await this.activateEncounter(encounterId, null);
+            } catch (e) {
+                const problem = e.problem || {};
+                if (problem.code === 'ACTIVE_ENCOUNTER_REPLACEMENT_REQUIRED') {
+                    this.showReplacementDialog(problem.activeEncounterId, problem.activeEncounterName, encounterId);
+                } else if (problem.code === 'ENCOUNTER_NOT_READY') {
+                    this.showReadinessDialog(problem.readiness, encounterId);
+                } else {
+                    throw e;
                 }
-                if (mapId) {
-                    await this.switchMap(mapId);
-                }
-                this.refreshModules(['story', 'encounter'], 'encounter-activated');
-            } catch (error) {
-                this.failure('Could not activate the encounter.', error,
-                    () => this.activateEncounter(id, mapId));
+            }
+        },
+
+        showReplacementDialog(activeId, activeName, pendingId) {
+            this._replacementPendingId = pendingId;
+            this._replacementActiveId = activeId;
+            this._replacementActiveName = activeName;
+            const dialog = document.getElementById('encounterReplacementDialog');
+            if (dialog && !dialog.open) dialog.showModal();
+        },
+
+        closeReplacementDialog() {
+            const dialog = document.getElementById('encounterReplacementDialog');
+            if (dialog?.open) dialog.close();
+            this._replacementPendingId = null;
+            this._replacementActiveId = null;
+            this._replacementActiveName = null;
+        },
+
+        async confirmSuspendCurrent() {
+            const pendingId = this._replacementPendingId;
+            this.closeReplacementDialog();
+            if (!pendingId) return;
+            await this.activateEncounter(pendingId, 'SUSPEND');
+        },
+
+        async confirmEndCurrent() {
+            const pendingId = this._replacementPendingId;
+            this.closeReplacementDialog();
+            if (!pendingId) return;
+            await this.activateEncounter(pendingId, 'END');
+        },
+
+        showReadinessDialog(readiness, encounterId) {
+            this._readinessEncounterId = encounterId;
+            this._readinessData = readiness;
+            const dialog = document.getElementById('encounterReadinessDialog');
+            if (dialog && !dialog.open) dialog.showModal();
+        },
+
+        closeReadinessDialog() {
+            const dialog = document.getElementById('encounterReadinessDialog');
+            if (dialog?.open) dialog.close();
+            this._readinessEncounterId = null;
+            this._readinessData = null;
+        },
+
+        async confirmRunReady() {
+            const encounterId = this._readinessEncounterId;
+            this.closeReadinessDialog();
+            if (!encounterId) return;
+            await this.activateEncounter(encounterId, null);
+        },
+
+        openEncounterSetup() {
+            const encounterId = this._readinessEncounterId;
+            this.closeReadinessDialog();
+            if (encounterId) {
+                window.open(`/encounters/${encounterId}/setup`, '_blank');
             }
         },
 

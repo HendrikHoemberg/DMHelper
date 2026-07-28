@@ -17,6 +17,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,6 +74,16 @@ class SessionWorkspaceMapSelectionTest {
         assertThat(ws.workspaceMap().getId()).isEqualTo(sceneMap.getId());
         assertThat(ws.selectionSource())
                 .isEqualTo(SessionWorkspaceService.SelectionSource.CURRENT_SCENE);
+    }
+
+    @Test
+    void mapModuleShowsContextWarningWhenEncounterMapDiffers() throws IOException {
+        String mapModule = Files.readString(Path.of(
+                "src/main/resources/templates/session/_map-module.html"));
+        assertThat(mapModule).contains("map-context-warning");
+        assertThat(mapModule).contains("Return to encounter map");
+        assertThat(mapModule).contains("activeEncounter.activeEncounterName");
+        assertThat(mapModule).contains("activeEncounter.activeEncounterMapId");
     }
 
     @Test

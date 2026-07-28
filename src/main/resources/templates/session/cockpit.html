@@ -139,6 +139,39 @@
       <button type="button" class="btn btn-ghost" @click="closeEncounterEndDialog()">Cancel</button>
     </div>
   </dialog>
+
+  <dialog class="cockpit-dialog" id="encounterReplacementDialog"
+          aria-labelledby="encounterReplacementTitle"
+          @cancel.prevent="closeReplacementDialog()">
+    <h2 id="encounterReplacementTitle">Another encounter is running</h2>
+    <p x-text="'&#39;' + (_replacementActiveName || '') + '&#39; is currently active. Choose how to proceed:'"></p>
+    <div class="cockpit-dialog__actions">
+      <button type="button" class="btn btn-primary" @click="confirmSuspendCurrent()">Suspend current and run</button>
+      <button type="button" class="btn btn-danger" @click="confirmEndCurrent()">End current and run</button>
+      <button type="button" class="btn btn-ghost" @click="closeReplacementDialog()">Cancel</button>
+    </div>
+  </dialog>
+
+  <dialog class="cockpit-dialog" id="encounterReadinessDialog"
+          aria-labelledby="encounterReadinessTitle"
+          @cancel.prevent="closeReadinessDialog()">
+    <h2 id="encounterReadinessTitle">Encounter not ready</h2>
+    <template x-if="_readinessData">
+      <div>
+        <p x-show="_readinessData.canRun === false">The encounter has blocking issues:</p>
+        <ul>
+          <template x-for="issue in _readinessData.issues || []" :key="issue.code">
+            <li x-text="issue.severity + ': ' + issue.message"></li>
+          </template>
+        </ul>
+      </div>
+    </template>
+    <div class="cockpit-dialog__actions">
+      <button type="button" class="btn btn-primary" @click="openEncounterSetup()">Open setup</button>
+      <button type="button" class="btn btn-ghost" @click="confirmRunReady()">Run anyway</button>
+      <button type="button" class="btn btn-ghost" @click="closeReadinessDialog()">Cancel</button>
+    </div>
+  </dialog>
 </main>
 <th:block th:replace="~{fragments/_command-palette :: command-palette}"></th:block>
     <th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>
@@ -157,7 +190,8 @@ window.sessionCockpitConfig = {
     presentationMode: /*[[${workspace.session.presentationMode}]]*/ 'CURTAIN',
     presentedMapId: /*[[${workspace.session.presentedMap != null ? workspace.session.presentedMap.id : null}]]*/ null,
     attendeeIds: /*[[${attendeeIds}]]*/ [],
-    draftBody: /*[[${workspace.session.draftBody}]]*/ null
+    draftBody: /*[[${workspace.session.draftBody}]]*/ null,
+    encounterMapId: null
 };
 window.cockpitLayoutConfig = {
     campaignId: /*[[${campaignId}]]*/ '',
