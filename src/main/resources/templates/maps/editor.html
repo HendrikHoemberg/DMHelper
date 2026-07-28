@@ -329,41 +329,88 @@
                     </template>
                 </div>
 
-                <div class="sidebar-section map-settings" id="map-settings">
-                    <h3>Map Settings</h3>
+                <div class="sidebar-section" data-map-control="map-section">
+                    <h3>Map</h3>
                     <label class="sidebar-field">Width
-                        <input type="number" id="gridWidth" :value="gridWidth" disabled class="u-w-full">
+                        <input type="number" data-map-control="grid-width" x-model.number="gridWidth" min="5" max="100" class="u-w-full">
                     </label>
                     <label class="sidebar-field">Height
-                        <input type="number" id="gridHeight" :value="gridHeight" disabled class="u-w-full">
+                        <input type="number" data-map-control="grid-height" x-model.number="gridHeight" min="5" max="100" class="u-w-full">
                     </label>
                     <label class="sidebar-field">Cell Size
-                        <input type="number" id="cellSizePx" :value="cellSizePx" disabled class="u-w-full">
+                        <input type="number" data-map-control="cell-size" x-model.number="cellSizePx" min="16" max="128" step="8" class="u-w-full">
                     </label>
+                    <button class="btn btn-primary u-w-full" style="margin-top: var(--space-xs);" data-map-control="resize-canvas-btn" @click="previewResize()" :disabled="resizeSaving">Resize canvas</button>
                 </div>
 
-                <div class="sidebar-section background-inspector" id="background-inspector" x-show="imagePresent" style="display: none;">
+                <div class="sidebar-section" data-map-control="resize-dialog" x-show="resizeDialogOpen" style="display: none;" x-cloak>
+                    <h3>Resize Canvas</h3>
+                    <p class="u-text-xs text-muted">Proposed: <span x-text="gridWidth"></span> × <span x-text="gridHeight"></span></p>
+                    <p class="u-text-xs text-muted">Current: <span x-text="resizeOldWidth"></span> × <span x-text="resizeOldHeight"></span></p>
+                    <template x-if="resizePreview">
+                        <div>
+                            <p class="u-text-xs" data-map-control="resize-affected-cells">
+                                Affected terrain cells: <span x-text="resizePreview.outsideCells.length"></span>
+                            </p>
+                            <p class="u-text-xs" data-map-control="resize-affected-shapes">
+                                Affected shapes: <span x-text="resizePreview.affectedShapes.length"></span>
+                            </p>
+                            <template x-if="resizePreview.affectedTokens && resizePreview.affectedTokens.length">
+                                <div>
+                                    <p class="u-text-xs">Affected tokens: <span x-text="resizePreview.affectedTokens.length"></span></p>
+                                    <template x-for="(token, idx) in resizePreview.affectedTokens" :key="idx">
+                                        <div class="sidebar-field">
+                                            <span class="u-text-xs" x-text="token.name || 'Token ' + (idx + 1)"></span>
+                                            <select x-model="tokenResolutions[idx].action" class="u-w-full">
+                                                <option value="MOVE_TO_EDGE">Move to edge</option>
+                                                <option value="REMOVE">Remove</option>
+                                            </select>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                    <template x-if="resizeError">
+                        <p class="u-text-xs" style="color: var(--color-danger);" x-text="resizeError"></p>
+                    </template>
+                    <div style="display: flex; gap: 4px; margin-top: var(--space-xs);">
+                        <button class="tool-btn" data-map-control="resize-cancel-btn" @click="cancelResize()" :disabled="resizeSaving">Cancel</button>
+                        <button class="btn btn-primary" data-map-control="resize-confirm-btn" @click="confirmResize()" :disabled="resizeSaving" x-text="resizeSaving ? 'Saving…' : 'Crop and continue'"></button>
+                    </div>
+                </div>
+
+                <div class="sidebar-section" data-image-control="background-section" x-show="imagePresent" style="display: none;">
                     <h3>Background Image</h3>
                     <label class="sidebar-field">X
-                        <input type="number" x-model.number="imageX" @change="updateImageField('x', imageX)" step="0.1" class="u-w-full">
+                        <input type="number" data-image-control="image-x" x-model.number="imageX" @change="updateImageField('x', imageX)" step="0.1" class="u-w-full">
                     </label>
                     <label class="sidebar-field">Y
-                        <input type="number" x-model.number="imageY" @change="updateImageField('y', imageY)" step="0.1" class="u-w-full">
+                        <input type="number" data-image-control="image-y" x-model.number="imageY" @change="updateImageField('y', imageY)" step="0.1" class="u-w-full">
                     </label>
                     <label class="sidebar-field">Width
-                        <input type="number" x-model.number="imageWidth" @change="updateImageField('width', imageWidth)" step="0.1" min="0" class="u-w-full">
+                        <input type="number" data-image-control="image-width" x-model.number="imageWidth" @change="updateImageField('width', imageWidth)" step="0.1" min="0" class="u-w-full">
                     </label>
                     <label class="sidebar-field">Height
-                        <input type="number" x-model.number="imageHeight" @change="updateImageField('height', imageHeight)" step="0.1" min="0" class="u-w-full">
+                        <input type="number" data-image-control="image-height" x-model.number="imageHeight" @change="updateImageField('height', imageHeight)" step="0.1" min="0" class="u-w-full">
                     </label>
                     <label class="sidebar-field">Rotation
-                        <input type="number" x-model.number="imageRotationDeg" @change="updateImageField('rotationDeg', imageRotationDeg)" step="1" class="u-w-full">
+                        <input type="number" data-image-control="image-rotation" x-model.number="imageRotationDeg" @change="updateImageField('rotationDeg', imageRotationDeg)" step="1" class="u-w-full">
                     </label>
-                    <div style="display: flex; gap: 4px; margin-top: var(--space-xs);">
-                        <button class="tool-btn" @click="fitImage('fit-inside')" :disabled="!imagePresent" id="fit-inside">Fit Inside</button>
-                        <button class="tool-btn" @click="fitImage('fill-cover')" :disabled="!imagePresent" id="fill-cover">Fill Cover</button>
-                        <button class="tool-btn" @click="resetImage()" :disabled="!imagePresent">Remove</button>
+                    <label class="sidebar-field" style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                        <input type="checkbox" data-image-control="keep-aspect" x-model="imageKeepAspect"> Keep aspect ratio
+                    </label>
+                    <div style="display: flex; gap: 4px; margin-top: var(--space-xs); flex-wrap: wrap;">
+                        <button class="tool-btn" data-image-control="fit-inside" @click="fitImage('fit-inside')" :disabled="!imagePresent">Fit Inside</button>
+                        <button class="tool-btn" data-image-control="fill-cover" @click="fitImage('fill-cover')" :disabled="!imagePresent">Fill Cover</button>
+                        <button class="tool-btn" data-image-control="reset-image" @click="resetImage()" :disabled="!imagePresent">Reset</button>
+                        <button class="tool-btn" data-image-control="rotate-ccw" @click="rotateImage(-90)" :disabled="!imagePresent">↺</button>
+                        <button class="tool-btn" data-image-control="rotate-cw" @click="rotateImage(90)" :disabled="!imagePresent">↻</button>
+                        <button class="tool-btn" data-image-control="calibrate" @click="startCalibration()" :disabled="!imagePresent">Calibrate</button>
                     </div>
+                    <label class="sidebar-field" style="display: flex; align-items: center; gap: 4px; cursor: pointer; margin-top: var(--space-xs);">
+                        <input type="checkbox" data-image-control="lock-toggle" x-model="imageLocked" @change="setImageLocked(imageLocked)"> Lock
+                    </label>
                 </div>
 
                 <div class="sidebar-section" x-show="selectedShape" style="display: none;">
@@ -482,7 +529,17 @@
                 imageWidth: 0,
                 imageHeight: 0,
                 imageRotationDeg: 0,
-                imageAspectRatio: 1,
+                imageKeepAspect: false,
+                gridWidth: 30,
+                gridHeight: 20,
+                cellSizePx: 48,
+                resizePreview: null,
+                resizeDialogOpen: false,
+                resizeSaving: false,
+                resizeError: null,
+                resizeOldWidth: 0,
+                resizeOldHeight: 0,
+                tokenResolutions: [],
                 threatPinKind: 'TRAP',
                 threatPinQuery: '',
                 threatPinResults: [],
@@ -523,7 +580,12 @@
                         this.imageWidth = s.width;
                         this.imageHeight = s.height;
                         this.imageRotationDeg = s.rotationDeg;
-                        this.imageAspectRatio = s.aspectRatio;
+                    });
+                    window.addEventListener('map-gridstate', (e) => {
+                        const g = e.detail;
+                        this.gridWidth = g.gridWidth;
+                        this.gridHeight = g.gridHeight;
+                        this.cellSizePx = g.cellSizePx;
                     });
                     this.$nextTick(() => this.refreshThreatPins());
                 },
@@ -618,6 +680,52 @@
                 updateImageField(field, value) { window.mapEditor?.updateImageField(field, value); },
                 fitImage(mode) { window.mapEditor?.fitBackgroundImage(mode === 'fit-inside' ? 'FIT_INSIDE' : 'FILL_COVER'); },
                 resetImage() { window.mapEditor?.resetBackgroundImage(); },
+                updateMapSetting(field, value) {},
+                previewResize() {
+                    const w = parseInt(this.gridWidth) || 0;
+                    const h = parseInt(this.gridHeight) || 0;
+                    if (w < 5 || w > 100 || h < 5 || h > 100) return;
+                    const ed = window.mapEditor;
+                    if (!ed) return;
+                    this.resizeOldWidth = ed.gridWidth;
+                    this.resizeOldHeight = ed.gridHeight;
+                    this.resizeError = null;
+                    if (w < ed.gridWidth || h < ed.gridHeight) {
+                        this.resizePreview = ed.previewGridResize(w, h);
+                    } else {
+                        this.resizePreview = { outsideCells: [], affectedShapes: [], affectedTokens: [] };
+                    }
+                    this.tokenResolutions = (this.resizePreview.affectedTokens || []).map(() => ({ action: 'MOVE_TO_EDGE' }));
+                    this.resizeDialogOpen = true;
+                },
+                cancelResize() {
+                    this.gridWidth = this.resizeOldWidth;
+                    this.gridHeight = this.resizeOldHeight;
+                    this.resizeDialogOpen = false;
+                    this.resizePreview = null;
+                    this.resizeError = null;
+                },
+                async confirmResize() {
+                    this.resizeSaving = true;
+                    this.resizeError = null;
+                    try {
+                        await window.mapEditor.applyGridSettings({
+                            width: parseInt(this.gridWidth),
+                            height: parseInt(this.gridHeight),
+                            cellSizePx: parseInt(this.cellSizePx),
+                            resizeMode: (this.resizePreview?.outsideCells?.length > 0 || this.resizePreview?.affectedShapes?.length > 0) ? 'CROP' : 'PRESERVE',
+                            tokenResolutions: this.tokenResolutions || [],
+                        });
+                        this.resizeDialogOpen = false;
+                        this.resizePreview = null;
+                    } catch (e) {
+                        this.resizeError = e.message || 'Failed to apply settings';
+                        this.gridWidth = this.resizeOldWidth;
+                        this.gridHeight = this.resizeOldHeight;
+                    } finally {
+                        this.resizeSaving = false;
+                    }
+                },
             };
         }
     </script>

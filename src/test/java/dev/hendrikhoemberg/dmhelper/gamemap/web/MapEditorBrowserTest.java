@@ -226,4 +226,53 @@ class MapEditorBrowserTest {
         assertThat(((Number) redone.get("gh")).intValue()).isEqualTo(30);
         assertThat(((Number) redone.get("cs")).intValue()).isEqualTo(64);
     }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void settingsAndResizeConfirmationAreDiscoverable() {
+        assertThat(page.locator("[data-map-control=\"map-section\"]").isVisible()).isTrue();
+        assertThat(page.locator("[data-image-control=\"background-section\"]").isVisible()).isFalse();
+
+        page.evaluate("""
+                () => {
+                    const ed = window.mapEditor;
+                    if (!ed || !ed.document) return;
+                    const tl = ed.document.layers.find(l => l.id === 'terrain');
+                    if (tl) tl.cells = [{col: 15, row: 15, terrain: 'floor'}];
+                    const ol = ed.document.layers.find(l => l.id === 'objects');
+                    if (ol) ol.shapes = [{type: 'rect', points: [20, 5, 5, 5], fill: 'rgba(255,0,0,0.5)', stroke: '#000', strokeWidth: 2}];
+                    ed.renderDocument();
+                }
+                """);
+
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).gridWidth = 10");
+        page.locator("[data-map-control=\"resize-canvas-btn\"]").click();
+        page.waitForTimeout(100);
+
+        assertThat(page.locator("[data-map-control=\"resize-dialog\"]").isVisible()).isTrue();
+        assertThat(page.locator("[data-map-control=\"resize-affected-cells\"]").textContent()).contains("1");
+        assertThat(page.locator("[data-map-control=\"resize-affected-shapes\"]").textContent()).contains("1");
+
+        page.locator("[data-map-control=\"resize-cancel-btn\"]").click();
+        page.waitForTimeout(100);
+        assertThat(page.locator("[data-map-control=\"resize-dialog\"]").isVisible()).isFalse();
+        assertThat(page.locator("[data-map-control=\"grid-width\"]").inputValue()).isEqualTo("30");
+
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).gridWidth = 40");
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).gridHeight = 30");
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).cellSizePx = 64");
+        page.locator("[data-map-control=\"resize-canvas-btn\"]").click();
+
+        page.waitForResponse(
+                resp -> resp.url().contains("/api/v1/maps/" + map.getId() + "/settings") && "PUT".equals(resp.request().method()),
+                () -> page.locator("[data-map-control=\"resize-confirm-btn\"]").click()
+        );
+
+        Map<String, Object> state = (Map<String, Object>) page.evaluate("""
+                () => ({ w: window.mapEditor.gridWidth, h: window.mapEditor.gridHeight, cs: window.mapEditor.cellSizePx })
+                """);
+        assertThat(((Number) state.get("w")).intValue()).isEqualTo(40);
+        assertThat(((Number) state.get("h")).intValue()).isEqualTo(30);
+        assertThat(((Number) state.get("cs")).intValue()).isEqualTo(64);
+    }
 }

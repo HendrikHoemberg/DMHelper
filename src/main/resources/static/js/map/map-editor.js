@@ -233,6 +233,9 @@ export class MapEditor {
             this.markDirty();
             this.setStatus(`Background image imported (${w}×${h}px) — Select tool to move/resize it`);
         };
+        probe.onerror = () => {
+            this.setStatus('Failed to load image — file may be corrupt or unsupported.');
+        };
         probe.src = dataUrl;
     }
 
@@ -457,6 +460,9 @@ export class MapEditor {
             node.setAttr('_imageLayer', true);
             group.add(node);
             konvaLayer.batchDraw();
+        };
+        htmlImg.onerror = () => {
+            console.warn('Failed to decode background image — dataUrl may be corrupted');
         };
         htmlImg.src = imageDto.dataUrl;
     }
@@ -1794,8 +1800,15 @@ export class MapEditor {
         canvas.width = srcW;
         canvas.height = srcH;
         const ctx = canvas.getContext('2d');
+        const currentDataUrl = img.dataUrl;
+        const cropHasTransparency = currentDataUrl.startsWith('data:image/png') || currentDataUrl.startsWith('data:image/webp');
+        if (!cropHasTransparency) {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, srcW, srcH);
+        }
         ctx.drawImage(htmlImg, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
-        const newDataUrl = canvas.toDataURL('image/png');
+        const cropFormat = cropHasTransparency ? 'image/png' : 'image/jpeg';
+        const newDataUrl = canvas.toDataURL(cropFormat, 0.92);
 
         this.pushUndo();
         this.syncDocument();
@@ -1960,6 +1973,11 @@ export class MapEditor {
             this.renderDocument();
             this.emitLayerState();
             this.emitImageState();
+            this.emit('map-gridstate', {
+                gridWidth: this.gridWidth,
+                gridHeight: this.gridHeight,
+                cellSizePx: this.cellSizePx,
+            });
             this.setStatus('Ready');
         } catch (err) {
             console.error('Failed to load map document:', err);
