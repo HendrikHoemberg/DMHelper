@@ -126,6 +126,20 @@ class EncounterControllerTest {
     }
 
     @Test
+    void shouldUpdateEncounterFromBrowserMethodOverrideForm() throws Exception {
+        UUID encId = UUID.randomUUID();
+        when(encounterService.update(eq(encId), any(UpdateRequest.class)))
+                .thenReturn(enc(encId, "Updated", "PLANNED"));
+
+        mockMvc.perform(post("/campaigns/{campaignId}/encounters/{id}", campaignId, encId)
+                        .param("_method", "put")
+                        .param("name", "Updated")
+                        .param("mapId", ""))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/campaigns/" + campaignId + "/encounters"));
+    }
+
+    @Test
     void shouldDeleteEncounter() throws Exception {
         UUID encId = UUID.randomUUID();
 

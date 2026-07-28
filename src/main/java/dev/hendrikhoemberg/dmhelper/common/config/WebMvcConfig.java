@@ -2,7 +2,9 @@ package dev.hendrikhoemberg.dmhelper.common.config;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.filter.HiddenHttpMethodFilter;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -17,6 +19,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     public WebMvcConfig(ObjectProvider<PinManager> pinManagerProvider) {
         this.pinManager = pinManagerProvider.getIfAvailable();
+    }
+
+    @Bean
+    HiddenHttpMethodFilter hiddenHttpMethodFilter() {
+        return new HiddenHttpMethodFilter();
     }
 
     @Override
