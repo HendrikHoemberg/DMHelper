@@ -144,6 +144,17 @@ export function pixelToCell(px, py, cellSizePx) {
 }
 
 /**
+ * Return the authoritative map boundary rectangle in pixel units.
+ * @param {number} gridWidth
+ * @param {number} gridHeight
+ * @param {number} cellSizePx
+ * @returns {{x: number, y: number, width: number, height: number}}
+ */
+export function mapPixelBounds(gridWidth, gridHeight, cellSizePx) {
+    return { x: 0, y: 0, width: gridWidth * cellSizePx, height: gridHeight * cellSizePx };
+}
+
+/**
  * Expand semantic map primitives (ROOM, DOOR, REGION, CORRIDOR) into cell arrays.
  * @param {{primitives?: Array}} document
  * @returns {Array<{col: number, row: number, terrain: string}>}

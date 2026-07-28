@@ -5,6 +5,7 @@ import com.microsoft.playwright.options.LoadState;
 import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,6 +40,7 @@ class MapEditorBrowserTest {
     private BrowserFailureCollector failures;
 
     private Campaign campaign;
+    private GameMap map;
 
     @BeforeAll
     void launch() {
@@ -62,7 +65,7 @@ class MapEditorBrowserTest {
         campaign.setName("Geometry Test Campaign");
         campaign = campaignRepository.save(campaign);
 
-        var map = gameMapService.create(campaign.getId(), "Test Map", 30, 20, 48);
+        map = gameMapService.create(campaign.getId(), "Test Map", 30, 20, 48);
 
         page.navigate("http://localhost:" + port + "/campaigns/" + campaign.getId() + "/maps/" + map.getId() + "/edit");
         page.waitForLoadState(LoadState.NETWORKIDLE);
@@ -163,5 +166,48 @@ class MapEditorBrowserTest {
         assertThat(((Number) result.get("emptyShapes")).intValue()).isEqualTo(0);
         assertThat(((Number) result.get("outsideCount")).intValue()).isEqualTo(4);
         assertThat(((Number) result.get("affectedCount")).intValue()).isEqualTo(2);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void gridSettingsPreviewAndApplyAreAtomic() {
+        page.evaluate("""
+                () => {
+                    const ed = window.mapEditor;
+                    if (!ed || !ed.document) return;
+                    const tl = ed.document.layers.find(l => l.id === 'terrain');
+                    if (tl) tl.cells = [{col: 15, row: 15, terrain: 'floor'}];
+                    const ol = ed.document.layers.find(l => l.id === 'objects');
+                    if (ol) ol.shapes = [{type: 'rect', points: [20, 5, 5, 5], fill: 'rgba(255,0,0,0.5)', stroke: '#000', strokeWidth: 2}];
+                    ed.renderDocument();
+                }
+                """);
+
+        Map<String, Object> impact = (Map<String, Object>) page.evaluate("""
+                () => window.mapEditor.previewGridResize(10, 10)
+                """);
+
+        assertThat(((List<?>) impact.get("outsideCells"))).hasSize(1);
+        assertThat(((List<?>) impact.get("affectedShapes"))).hasSize(1);
+        assertThat(((List<?>) impact.get("affectedTokens"))).isEmpty();
+
+        page.waitForResponse(
+                resp -> resp.url().contains("/api/v1/maps/" + map.getId() + "/settings") && "PUT".equals(resp.request().method()),
+                () -> page.evaluate("""
+                        () => window.mapEditor.applyGridSettings({
+                            width: 40, height: 30, cellSizePx: 64,
+                            resizeMode: 'PRESERVE',
+                            tokenResolutions: []
+                        })
+                        """)
+        );
+
+        Map<String, Object> state = (Map<String, Object>) page.evaluate("""
+                () => ({ gw: window.mapEditor.gridWidth, gh: window.mapEditor.gridHeight, cs: window.mapEditor.cellSizePx })
+                """);
+
+        assertThat(((Number) state.get("gw")).intValue()).isEqualTo(40);
+        assertThat(((Number) state.get("gh")).intValue()).isEqualTo(30);
+        assertThat(((Number) state.get("cs")).intValue()).isEqualTo(64);
     }
 }

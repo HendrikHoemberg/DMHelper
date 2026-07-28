@@ -1,6 +1,7 @@
 import { BUILTIN_TERRAIN, DEFAULT_TERRAIN, ERASE_KEY, SHAPE_COLORS } from './terrain-palette.js';
 import { floodFillCells } from './flood-fill.js';
-import { drawGrid, cellPos, snapPt, expandPrimitives } from './shared.js';
+import { drawGrid, cellPos, snapPt, expandPrimitives, mapPixelBounds } from './shared.js';
+import { boundsImpact, shapeBounds, fitInsideGeometry, fillCoverGeometry, calibratedImageGeometry } from './geometry.js';
 
 /**
  * @typedef {{col: number, row: number, terrain: string}} Cell
@@ -408,6 +409,11 @@ export class MapEditor {
     addImageNode(konvaLayer, imageDto) {
         const htmlImg = new Image();
         htmlImg.onload = () => {
+            const bounds = mapPixelBounds(this.gridWidth, this.gridHeight, this.cellSizePx);
+            const group = new Konva.Group({
+                clip: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
+            });
+            konvaLayer.add(group);
             const node = new Konva.Image({
                 image: htmlImg,
                 x: imageDto.x * this.cellSizePx, y: imageDto.y * this.cellSizePx,
@@ -417,7 +423,7 @@ export class MapEditor {
                 listening: true,
             });
             node.setAttr('_imageLayer', true);
-            konvaLayer.add(node);
+            group.add(node);
             konvaLayer.batchDraw();
         };
         htmlImg.src = imageDto.dataUrl;
@@ -1549,9 +1555,9 @@ export class MapEditor {
     /* ---- Undo / redo ---- */
 
     pushUndo() {
-        const snapshot = this.buildDocumentFromCanvas();
-        if (!snapshot) return;
-        this.undoStack.push(snapshot);
+        const doc = this.buildDocumentFromCanvas();
+        if (!doc) return;
+        this.undoStack.push({ document: doc, gridWidth: this.gridWidth, gridHeight: this.gridHeight, cellSizePx: this.cellSizePx });
         if (this.undoStack.length > UNDO_MAX) this.undoStack.shift();
         this.redoStack = [];
         this.emitHistoryState();
@@ -1559,9 +1565,14 @@ export class MapEditor {
 
     undo() {
         if (!this.undoStack.length) return;
+        const snapshot = this.undoStack.pop();
         const current = this.buildDocumentFromCanvas();
-        if (current) this.redoStack.push(current);
-        this.document = this.undoStack.pop();
+        if (current) this.redoStack.push({ document: current, gridWidth: this.gridWidth, gridHeight: this.gridHeight, cellSizePx: this.cellSizePx });
+        this.document = snapshot.document;
+        this.gridWidth = snapshot.gridWidth;
+        this.gridHeight = snapshot.gridHeight;
+        this.cellSizePx = snapshot.cellSizePx;
+        this.drawGrid();
         this.renderDocument();
         this.emitLayerState();
         this.markDirty();
@@ -1570,9 +1581,14 @@ export class MapEditor {
 
     redo() {
         if (!this.redoStack.length) return;
+        const snapshot = this.redoStack.pop();
         const current = this.buildDocumentFromCanvas();
-        if (current) this.undoStack.push(current);
-        this.document = this.redoStack.pop();
+        if (current) this.undoStack.push({ document: current, gridWidth: this.gridWidth, gridHeight: this.gridHeight, cellSizePx: this.cellSizePx });
+        this.document = snapshot.document;
+        this.gridWidth = snapshot.gridWidth;
+        this.gridHeight = snapshot.gridHeight;
+        this.cellSizePx = snapshot.cellSizePx;
+        this.drawGrid();
         this.renderDocument();
         this.emitLayerState();
         this.markDirty();
@@ -1931,6 +1947,11 @@ export class MapEditor {
             const data = await res.json();
             this.docVersion = data.version;
             this.document = data.document;
+            if (data.document?.grid) {
+                this.gridWidth = data.document.grid.width;
+                this.gridHeight = data.document.grid.height;
+                this.cellSizePx = data.document.grid.cellSizePx;
+            }
             this.rebuildPalette();
             this.renderDocument();
             this.emitLayerState();
@@ -1939,6 +1960,150 @@ export class MapEditor {
             console.error('Failed to load map document:', err);
             this.setStatus('Failed to load map');
         }
+    }
+
+    /* ---- Grid settings (authoritative resize, apply, and preview) ---- */
+
+    previewGridResize(width, height) {
+        const impact = boundsImpact(this.document, width, height);
+        const affectedTokens = [];
+        if (width >= this.gridWidth && height >= this.gridHeight) {
+            return { outsideCells: [], affectedShapes: [], affectedTokens };
+        }
+        return { ...impact, affectedTokens };
+    }
+
+    async applyGridSettings({ width, height, cellSizePx, resizeMode, tokenResolutions }) {
+        const snapshot = {
+            document: structuredClone(this.document),
+            gridWidth: this.gridWidth,
+            gridHeight: this.gridHeight,
+            cellSizePx: this.cellSizePx,
+        };
+
+        if (resizeMode === 'PRESERVE') {
+            const impact = boundsImpact(this.document, width, height);
+            if (impact.outsideCells.length > 0 || impact.affectedShapes.length > 0) {
+                throw new Error('Content would be outside the new grid boundary');
+            }
+        }
+
+        if (resizeMode === 'CROP') {
+            for (const layer of (this.document?.layers || [])) {
+                layer.cells = (layer.cells || []).filter(c =>
+                    c.col >= 0 && c.col < width && c.row >= 0 && c.row < height);
+                layer.shapes = (layer.shapes || []).filter(s => {
+                    const b = shapeBounds(s);
+                    if (!b) return true;
+                    return !(b.minX < 0 || b.minY < 0 || b.maxX > width || b.maxY > height);
+                });
+            }
+        }
+
+        this.gridWidth = width;
+        this.gridHeight = height;
+        this.cellSizePx = cellSizePx;
+
+        if (this.document) {
+            this.document.grid = { ...this.document.grid, width, height, cellSizePx };
+        }
+
+        this.drawGrid();
+        this.renderDocument();
+
+        this.setSaveState('saving');
+        try {
+            const res = await fetch(`/api/v1/maps/${this.mapId}/settings`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    expectedVersion: this.docVersion,
+                    gridWidth: width,
+                    gridHeight: height,
+                    cellSizePx,
+                    resizeMode,
+                    tokenResolutions: tokenResolutions || [],
+                }),
+            });
+            if (!res.ok) throw new Error('Settings save failed: ' + res.status);
+            const data = await res.json();
+            this.docVersion = data.version;
+            if (data.document) {
+                this.document = data.document;
+                this.renderDocument();
+            }
+            this.undoStack.push(snapshot);
+            if (this.undoStack.length > UNDO_MAX) this.undoStack.shift();
+            this.redoStack = [];
+            this.emitHistoryState();
+            this.emit('map-gridstate', { gridWidth: width, gridHeight: height, cellSizePx });
+            this.setSaveState('saved');
+        } catch (err) {
+            console.error('Grid settings save failed:', err);
+            this.gridWidth = snapshot.gridWidth;
+            this.gridHeight = snapshot.gridHeight;
+            this.cellSizePx = snapshot.cellSizePx;
+            this.document = snapshot.document;
+            this.drawGrid();
+            this.renderDocument();
+            this.setSaveState('error');
+            this.setStatus('Failed to apply grid settings');
+            throw err;
+        }
+    }
+
+    updateImageGeometry(patch) {
+        const layerDto = this.layerDto('image');
+        if (!layerDto?.image) return;
+        Object.assign(layerDto.image, patch);
+        this.renderDocument();
+        this.markDirty();
+    }
+
+    fitBackgroundImage(mode) {
+        const layerDto = this.layerDto('image');
+        if (!layerDto?.image) return;
+        this.pushUndo();
+        this.syncDocument();
+        const img = layerDto.image;
+        const fn = mode === 'FIT_INSIDE' ? fitInsideGeometry : fillCoverGeometry;
+        const result = fn(this.gridWidth, this.gridHeight, img.width, img.height);
+        img.x = this.round2(result.x);
+        img.y = this.round2(result.y);
+        img.width = this.round2(result.width);
+        img.height = this.round2(result.height);
+        this.renderDocument();
+        this.markDirty();
+    }
+
+    resetBackgroundImage() {
+        const layerDto = this.layerDto('image');
+        if (!layerDto) return;
+        this.pushUndo();
+        this.syncDocument();
+        delete layerDto.image;
+        this.renderDocument();
+        this.markDirty();
+    }
+
+    calibrateBackgroundImage(ax, ay, bx, by, cellsBetween) {
+        const layerDto = this.layerDto('image');
+        if (!layerDto?.image) return;
+        this.pushUndo();
+        this.syncDocument();
+        const result = calibratedImageGeometry(
+            layerDto.image,
+            { x: ax, y: ay },
+            { x: bx, y: by },
+            cellsBetween,
+            this.cellSizePx,
+        );
+        layerDto.image.x = this.round2(result.x);
+        layerDto.image.y = this.round2(result.y);
+        layerDto.image.width = this.round2(result.width);
+        layerDto.image.height = this.round2(result.height);
+        this.renderDocument();
+        this.markDirty();
     }
 
     /* ---- Misc ---- */

@@ -57,7 +57,7 @@ export function calibratedImageGeometry(image, pointA, pointB, cellsBetween, cel
     return { x: newX, y: newY, width: newWidth, height: newHeight, scale };
 }
 
-function shapeBounds(shape) {
+export function shapeBounds(shape) {
     const pts = shape.points || [];
     switch (shape.type) {
         case 'rect':
