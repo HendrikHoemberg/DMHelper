@@ -103,6 +103,7 @@ public class EncounterService {
     private final HazardRepository hazardRepository;
     private final MarkdownUtil markdownUtil;
     private final ApplicationEventPublisher events;
+    private final EncounterPlacementService placementService;
 
     public EncounterService(EncounterRepository encounterRepo, CampaignRepository campaignRepo,
                             EntityManager em, GameMapRepository mapRepo,
@@ -121,7 +122,8 @@ public class EncounterService {
                             TrapRepository trapRepository,
                             HazardRepository hazardRepository,
                             MarkdownUtil markdownUtil,
-                            ApplicationEventPublisher events) {
+                            ApplicationEventPublisher events,
+                            EncounterPlacementService placementService) {
         this.encounterRepo = encounterRepo;
         this.campaignRepo = campaignRepo;
         this.em = em;
@@ -145,6 +147,7 @@ public class EncounterService {
         this.hazardRepository = hazardRepository;
         this.markdownUtil = markdownUtil;
         this.events = events;
+        this.placementService = placementService;
     }
 
     public record CreateRequest(String name, UUID mapId) {}
@@ -162,7 +165,7 @@ public class EncounterService {
     public record CombatantDto(UUID id, UUID encounterId, String name, Integer initiative,
                                int sortOrder, int currentHp, int maxHp, int tempHp,
                                String kind, String groupId, boolean groupLeader,
-                               UUID tokenId, UUID statBlockId, UUID partyMemberId,
+                               UUID tokenId, UUID placementId, UUID statBlockId, UUID partyMemberId,
                                boolean defeated, boolean hidden, boolean bloodied,
                                List<ConditionStateDto> conditions,
                                String concentratingOn, boolean concentrationCheckPending,
@@ -281,11 +284,13 @@ public class EncounterService {
         }
         boolean bloodied = c.getCurrentHp() <= c.getMaxHp() / 2
                 && c.getCurrentHp() > 0 && !c.isDefeated();
+        UUID placementId = c.getPlacement() != null ? c.getPlacement().getId() : null;
         return new CombatantDto(c.getId(), c.getEncounter().getId(),
                 c.getName(), c.getInitiative(), c.getSortOrder(),
                 c.getCurrentHp(), c.getMaxHp(), c.getTempHp(),
                 c.getKind(), c.getGroupId(), c.isGroupLeader(),
                 c.getToken() != null ? c.getToken().getId() : null,
+                placementId,
                 c.getStatBlock() != null ? c.getStatBlock().getId() : null,
                 c.getPartyMember() != null ? c.getPartyMember().getId() : null,
                 c.isDefeated(), c.isHidden(), bloodied,
@@ -386,11 +391,7 @@ public class EncounterService {
         e.setRound(0);
         e.setActiveTurnIndex(-1);
         Encounter saved = encounterRepo.save(e);
-        for (EncounterWave wave : waveRepo.findByEncounterIdOrderBySortOrderAsc(saved.getId())) {
-            if (wave.getStatus() == WaveStatus.ACTIVE) {
-                placeTokensForWave(saved, wave);
-            }
-        }
+        placementService.autoPlaceUnplaced(id);
         EncounterDto dto = toDto(saved);
         logEntry(id, CombatLogEntry.EntryType.ENCOUNTER_ACTIVATED, "", "");
         return dto;
@@ -815,6 +816,12 @@ public class EncounterService {
                     null, null, null, null, null, null,
                     null, groupId, i == 0, null, null, null, null, null, null, null, null, null,
                     wave.getId(), req.startX(), req.startY(), req.placementRegionKey()));
+            if (req.startX() != null && req.startY() != null) {
+                placementService.upsert(encounterId, dto.id(),
+                        new EncounterPlacementService.PlacementUpsertRequest(
+                                req.startX(), req.startY(), 1, 1,
+                                EncounterPlacementService.defaultColor(dto.kind()), null));
+            }
             out.add(dto);
         }
         return out;
@@ -943,6 +950,12 @@ public class EncounterService {
             combatantRepo.save(c);
         }
         return getCombatants(encounterId);
+    }
+
+    public List<EncounterPlacementService.PlacementDto> placeMissingParty(UUID encounterId) {
+        Encounter encounter = findEntityById(encounterId);
+        prefillFromParty(encounterId, encounter.getCampaign().getId());
+        return placementService.placeUnplacedPartyCombatants(encounterId);
     }
 
     public CombatantDto splitGroupMember(UUID combatantId) {
@@ -1105,7 +1118,7 @@ public class EncounterService {
         }
         wave.setStatus(WaveStatus.ACTIVE);
         waveRepo.save(wave);
-        placeTokensForWave(e, wave);
+        placementService.autoPlaceUnplaced(encounterId);
         try {
             String payload = JSON_MAPPER.writeValueAsString(Map.of("waveKey", wave.getWaveKey()));
             logEntry(encounterId, CombatLogEntry.EntryType.WAVE_SPAWNED, "", payload);

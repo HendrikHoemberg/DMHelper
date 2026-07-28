@@ -1,6 +1,12 @@
 package dev.hendrikhoemberg.dmhelper.encounter.web;
 
 import dev.hendrikhoemberg.dmhelper.encounter.service.CombatDifficultyCalculator.DifficultyResult;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.PlacementDto;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.PlacementMoveRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.PlacementUpsertRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.ChangeEncounterMapRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.EncounterReadinessDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPrep;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterRewards;
@@ -35,9 +41,11 @@ import java.util.UUID;
 public class EncounterApiController {
 
     private final EncounterService service;
+    private final EncounterPlacementService placements;
 
-    public EncounterApiController(EncounterService service) {
+    public EncounterApiController(EncounterService service, EncounterPlacementService placements) {
         this.service = service;
+        this.placements = placements;
     }
 
     @PostMapping("/campaigns/{campaignId}/encounters")
@@ -332,6 +340,56 @@ public class EncounterApiController {
     public ResponseEntity<Void> resolveRecharge(@PathVariable UUID id, @RequestBody RechargeCheckRequest req) {
         service.resolveRecharge(id, req.abilityName(), req.rollResult());
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/encounters/{id}/placements")
+    List<PlacementDto> listPlacements(@PathVariable UUID id) {
+        return placements.list(id);
+    }
+
+    @PutMapping("/encounters/{id}/combatants/{combatantId}/placement")
+    PlacementDto upsertPlacement(
+            @PathVariable UUID id,
+            @PathVariable UUID combatantId,
+            @RequestBody PlacementUpsertRequest request) {
+        return placements.upsert(id, combatantId, request);
+    }
+
+    @PatchMapping("/encounters/{id}/combatants/{combatantId}/placement/move")
+    PlacementDto movePlacement(
+            @PathVariable UUID id,
+            @PathVariable UUID combatantId,
+            @RequestBody PlacementMoveRequest request) {
+        return placements.move(id, combatantId, request.positionX(), request.positionY());
+    }
+
+    @DeleteMapping("/encounters/{id}/combatants/{combatantId}/placement")
+    ResponseEntity<Void> removePlacement(
+            @PathVariable UUID id, @PathVariable UUID combatantId) {
+        placements.remove(id, combatantId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/encounters/{id}/placements/auto")
+    List<PlacementDto> autoPlace(@PathVariable UUID id) {
+        return placements.autoPlaceUnplaced(id);
+    }
+
+    @PostMapping("/encounters/{id}/placements/party")
+    List<PlacementDto> placeMissingParty(@PathVariable UUID id) {
+        return service.placeMissingParty(id);
+    }
+
+    @GetMapping("/encounters/{id}/readiness")
+    EncounterReadinessDto readiness(@PathVariable UUID id) {
+        return placements.readiness(id);
+    }
+
+    @PutMapping("/encounters/{id}/map")
+    EncounterReadinessDto changeMap(
+            @PathVariable UUID id,
+            @RequestBody ChangeEncounterMapRequest request) {
+        return placements.changeMapAndResetPlacements(id, request.mapId());
     }
 
     @ExceptionHandler(InitiativeSetupIncompleteException.class)

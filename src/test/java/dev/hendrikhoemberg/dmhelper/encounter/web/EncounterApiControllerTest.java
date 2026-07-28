@@ -1,5 +1,12 @@
 package dev.hendrikhoemberg.dmhelper.encounter.web;
 
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.PlacementDto;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.PlacementUpsertRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.PlacementMoveRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.ChangeEncounterMapRequest;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.EncounterReadinessDto;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.ReadinessIssueDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantDto;
@@ -32,6 +39,9 @@ class EncounterApiControllerTest {
     @MockitoBean
     private CampaignRepository campaignRepository;
 
+    @MockitoBean
+    private EncounterPlacementService placements;
+
     private EncounterDto enc(UUID id, String name, String status) {
         return new EncounterDto(id, UUID.randomUUID(), UUID.randomUUID(), name, status,
                 1, 0, "RUNNING", 0, null, null, false, List.of(), List.of());
@@ -45,7 +55,7 @@ class EncounterApiControllerTest {
     private CombatantDto combatant(String name) {
         return new CombatantDto(UUID.randomUUID(), UUID.randomUUID(), name, 10, 0,
                 20, 20, 0, "MONSTER", null, false,
-                null, null, null,
+                null, null, null, null,
                 false, false, false, List.of(),
                 null, false, 0, 0, 0, 0, null,
                 null, null, null, null, null, null, null);
@@ -206,7 +216,7 @@ class EncounterApiControllerTest {
         UUID combatantId = UUID.randomUUID();
         var dto = new CombatantDto(combatantId, UUID.randomUUID(), "Test", 0, 0,
                 10, 10, 0, "MONSTER", null, false,
-                null, null, null,
+                null, null, null, null,
                 false, false, false, List.of(),
                 null, false, 0, 0, 0, 0, null,
                 null, null, null, null, null, null, null);
@@ -238,7 +248,7 @@ class EncounterApiControllerTest {
         CombatantDto trapCombatant = new CombatantDto(
                 UUID.randomUUID(), encId, "Spike Trap", 15, 0,
                 0, 0, 0, "TRAP", null, false,
-                null, null, null,
+                null, null, null, null,
                 false, false, false, List.of(),
                 null, false, 0, 0, 0, 0, null,
                 null, null, null, null,
@@ -254,5 +264,101 @@ class EncounterApiControllerTest {
                 .andExpect(jsonPath("$.threatKind").value("TRAP"))
                 .andExpect(jsonPath("$.name").value("Spike Trap"))
                 .andExpect(jsonPath("$.maxHp").value(0));
+    }
+
+    @Test
+    void shouldListPlacements() throws Exception {
+        UUID encId = UUID.randomUUID();
+        when(placements.list(encId)).thenReturn(List.of(
+                new PlacementDto(UUID.randomUUID(), encId, UUID.randomUUID(), UUID.randomUUID(),
+                        48, 48, 1, 1, "#55aa55", null)));
+
+        mockMvc.perform(get("/api/v1/encounters/{id}/placements", encId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    void shouldUpsertPlacement() throws Exception {
+        UUID encId = UUID.randomUUID();
+        UUID combatantId = UUID.randomUUID();
+        PlacementDto dto = new PlacementDto(UUID.randomUUID(), encId, combatantId, UUID.randomUUID(),
+                100, 200, 1, 1, "#55aa55", null);
+        when(placements.upsert(eq(encId), eq(combatantId), any())).thenReturn(dto);
+
+        mockMvc.perform(put("/api/v1/encounters/{id}/combatants/{combatantId}/placement", encId, combatantId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"positionX\":100,\"positionY\":200,\"sizeCols\":1,\"sizeRows\":1,\"color\":\"#55aa55\",\"icon\":null}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.positionX").value(100));
+    }
+
+    @Test
+    void shouldMovePlacement() throws Exception {
+        UUID encId = UUID.randomUUID();
+        UUID combatantId = UUID.randomUUID();
+        PlacementDto dto = new PlacementDto(UUID.randomUUID(), encId, combatantId, UUID.randomUUID(),
+                150, 250, 1, 1, "#55aa55", null);
+        when(placements.move(eq(encId), eq(combatantId), eq(150), eq(250))).thenReturn(dto);
+
+        mockMvc.perform(patch("/api/v1/encounters/{id}/combatants/{combatantId}/placement/move", encId, combatantId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"positionX\":150,\"positionY\":250}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.positionX").value(150));
+    }
+
+    @Test
+    void shouldRemovePlacement() throws Exception {
+        UUID encId = UUID.randomUUID();
+        UUID combatantId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/v1/encounters/{id}/combatants/{combatantId}/placement", encId, combatantId))
+                .andExpect(status().isNoContent());
+
+        verify(placements).remove(encId, combatantId);
+    }
+
+    @Test
+    void shouldAutoPlace() throws Exception {
+        UUID encId = UUID.randomUUID();
+        when(placements.autoPlaceUnplaced(encId)).thenReturn(List.of());
+
+        mockMvc.perform(post("/api/v1/encounters/{id}/placements/auto", encId))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldPlaceMissingParty() throws Exception {
+        UUID encId = UUID.randomUUID();
+        when(service.placeMissingParty(encId)).thenReturn(List.of());
+
+        mockMvc.perform(post("/api/v1/encounters/{id}/placements/party", encId))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldGetReadiness() throws Exception {
+        UUID encId = UUID.randomUUID();
+        when(placements.readiness(encId)).thenReturn(
+                new EncounterReadinessDto(encId, true, UUID.randomUUID(), 0, 0, 0, List.of()));
+
+        mockMvc.perform(get("/api/v1/encounters/{id}/readiness", encId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.canRun").value(true));
+    }
+
+    @Test
+    void shouldChangeMap() throws Exception {
+        UUID encId = UUID.randomUUID();
+        UUID mapId = UUID.randomUUID();
+        when(placements.changeMapAndResetPlacements(eq(encId), eq(mapId))).thenReturn(
+                new EncounterReadinessDto(encId, true, mapId, 0, 0, 0, List.of()));
+
+        mockMvc.perform(put("/api/v1/encounters/{id}/map", encId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"mapId\":\"" + mapId + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mapId").value(mapId.toString()));
     }
 }

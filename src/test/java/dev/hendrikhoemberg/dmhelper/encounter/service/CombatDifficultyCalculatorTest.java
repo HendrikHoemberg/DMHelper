@@ -53,17 +53,17 @@ class CombatDifficultyCalculatorTest {
         var monsters = List.of(
                 new CombatantDto(UUID.randomUUID(), UUID.randomUUID(), "Goblin", 0, 0,
                         0, 0, 0, "MONSTER", null, false,
-                        null, UUID.randomUUID(), null,
+                        null, null, UUID.randomUUID(), null,
                         false, false, false, List.of(),
                         null, false, 0, 0, 0, 0, null, null, null, null, null, null, null, null),
                 new CombatantDto(UUID.randomUUID(), UUID.randomUUID(), "Goblin", 0, 0,
                         0, 0, 0, "MONSTER", null, false,
-                        null, UUID.randomUUID(), null,
+                        null, null, UUID.randomUUID(), null,
                         false, false, false, List.of(),
                         null, false, 0, 0, 0, 0, null, null, null, null, null, null, null, null),
                 new CombatantDto(UUID.randomUUID(), UUID.randomUUID(), "Bugbear", 0, 0,
                         0, 0, 0, "MONSTER", null, false,
-                        null, UUID.randomUUID(), null,
+                        null, null, UUID.randomUUID(), null,
                         false, false, false, List.of(),
                         null, false, 0, 0, 0, 0, null, null, null, null, null, null, null, null)
         );
@@ -90,7 +90,7 @@ class CombatDifficultyCalculatorTest {
         var monsters = List.of(
                 new CombatantDto(UUID.randomUUID(), UUID.randomUUID(), "Rat", 0, 0,
                         0, 0, 0, "MONSTER", null, false,
-                        null, UUID.randomUUID(), null,
+                        null, null, UUID.randomUUID(), null,
                         false, false, false, List.of(),
                         null, false, 0, 0, 0, 0, null, null, null, null, null, null, null, null)
         );
@@ -107,7 +107,7 @@ class CombatDifficultyCalculatorTest {
         var monsters = List.of(
                 new CombatantDto(UUID.randomUUID(), UUID.randomUUID(), "Rat", 0, 0,
                         0, 0, 0, "MONSTER", null, false,
-                        null, UUID.randomUUID(), null,
+                        null, null, UUID.randomUUID(), null,
                         false, false, false, List.of(),
                         null, false, 0, 0, 0, 0, null, null, null, null, null, null, null, null)
         );
@@ -126,7 +126,7 @@ class CombatDifficultyCalculatorTest {
         CombatantDto monster = new CombatantDto(
                 UUID.randomUUID(), UUID.randomUUID(), "Ogre", 0, 0,
                 0, 0, 0, "MONSTER", null, false,
-                null, UUID.randomUUID(), null,
+                null, null, UUID.randomUUID(), null,
                 false, false, false, List.of(),
                 null, false, 0, 0, 0, 0, null, null, null, null, null, null, null, null);
         when(statBlockRepo.findById(monster.statBlockId()))
