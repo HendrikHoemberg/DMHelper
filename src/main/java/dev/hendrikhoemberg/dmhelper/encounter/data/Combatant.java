@@ -20,6 +20,8 @@ public class Combatant {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "encounter_id", nullable = false)
+    @org.hibernate.annotations.OnDelete(
+            action = org.hibernate.annotations.OnDeleteAction.CASCADE)
     private Encounter encounter;
 
     @Column(nullable = false, length = 255)
@@ -51,6 +53,9 @@ public class Combatant {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "token_id")
     private Token token;
+
+    @OneToOne(mappedBy = "combatant", fetch = FetchType.LAZY)
+    private EncounterTokenPlacement placement;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "statblock_id")
@@ -144,6 +149,9 @@ public class Combatant {
 
     public Token getToken() { return token; }
     public void setToken(Token token) { this.token = token; }
+
+    public EncounterTokenPlacement getPlacement() { return placement; }
+    public void setPlacement(EncounterTokenPlacement placement) { this.placement = placement; }
 
     public StatBlock getStatBlock() { return statBlock; }
     public void setStatBlock(StatBlock statBlock) { this.statBlock = statBlock; }

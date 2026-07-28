@@ -13,7 +13,7 @@ import java.util.UUID;
 })
 public class Encounter {
 
-    public enum Status { PLANNED, ACTIVE, DONE }
+    public enum Status { PLANNED, ACTIVE, SUSPENDED, DONE }
     public enum CombatPhase { SETUP, RUNNING }
 
     @Id
