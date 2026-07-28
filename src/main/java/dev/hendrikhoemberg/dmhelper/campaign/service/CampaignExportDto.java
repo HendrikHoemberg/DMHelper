@@ -237,7 +237,7 @@ public record CampaignExportDto(
         public record TokenExportDto(String id, String name, String kind, String color,
                                       int positionX, int positionY, int sizeCols, int sizeRows,
                                       boolean hidden, String statBlockKey, String partyMemberName,
-                                      String notes) {}
+                                      String notes, Integer currentHp, Integer maxHp, boolean dead) {}
 
         public static MapExportDto from(GameMap map, MapDocumentDto document, List<TokenExportDto> tokens) {
             return new MapExportDto(

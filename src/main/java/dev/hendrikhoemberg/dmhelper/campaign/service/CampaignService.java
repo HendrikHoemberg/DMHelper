@@ -375,7 +375,7 @@ public class CampaignService {
                         t.isHidden(),
                         t.getStatBlock() != null ? t.getStatBlock().getSourceKey() : null,
                         t.getPartyMember() != null ? t.getPartyMember().getCharacterName() : null,
-                        t.getNotes()));
+                        t.getNotes(), null, null, false));
                 tokenIdMap.put(t.getId(), t.getId().toString());
             }
             tokenIdMapsByMap.put(gameMap.getId(), tokenIdMap);

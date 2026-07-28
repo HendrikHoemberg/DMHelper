@@ -5,6 +5,9 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapSettingsCommand;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.RuntimeTokenProjectionService;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.RuntimeTokenProjectionService.RuntimeTokenDto;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.RuntimeTokenProjectionService.RuntimeTokenSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -27,6 +30,7 @@ class GameMapApiControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @MockitoBean private GameMapService service;
+    @MockitoBean private RuntimeTokenProjectionService runtimeTokens;
 
     @MockitoBean
     private CampaignRepository campaignRepository;
@@ -212,5 +216,34 @@ class GameMapApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.movementMode").value("FREEFORM"))
                 .andExpect(jsonPath("$.showGrid").value(false));
+    }
+
+    @Test
+    void shouldReturnRuntimeTokens() throws Exception {
+        UUID mapId = UUID.randomUUID();
+        UUID tokenId = UUID.randomUUID();
+        RuntimeTokenDto dto = new RuntimeTokenDto(
+                tokenId, RuntimeTokenSource.MARKER, null,
+                "Chest", "OBJECT", 10, 20, 1, 1, "#888", null,
+                false, null, null, false, false, List.of());
+        when(runtimeTokens.project(eq(mapId), isNull())).thenReturn(List.of(dto));
+
+        mockMvc.perform(get("/api/v1/maps/{mapId}/runtime-tokens", mapId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(tokenId.toString()))
+                .andExpect(jsonPath("$[0].source").value("MARKER"))
+                .andExpect(jsonPath("$[0].name").value("Chest"));
+    }
+
+    @Test
+    void shouldReturnRuntimeTokensWithEncounterId() throws Exception {
+        UUID mapId = UUID.randomUUID();
+        UUID encounterId = UUID.randomUUID();
+        when(runtimeTokens.project(eq(mapId), eq(encounterId))).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/v1/maps/{mapId}/runtime-tokens", mapId)
+                        .param("encounterId", encounterId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
     }
 }

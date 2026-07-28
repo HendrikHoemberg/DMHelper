@@ -4,6 +4,8 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapSettingsCommand;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.RuntimeTokenProjectionService;
+import dev.hendrikhoemberg.dmhelper.gamemap.service.RuntimeTokenProjectionService.RuntimeTokenDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +18,12 @@ import java.util.UUID;
 public class GameMapApiController {
 
     private final GameMapService service;
+    private final RuntimeTokenProjectionService runtimeTokens;
 
-    public GameMapApiController(GameMapService service) {
+    public GameMapApiController(GameMapService service,
+                                RuntimeTokenProjectionService runtimeTokens) {
         this.service = service;
+        this.runtimeTokens = runtimeTokens;
     }
 
     record MapRequest(String name, Integer gridWidth, Integer gridHeight, Integer cellSizePx) {}
@@ -106,5 +111,12 @@ public class GameMapApiController {
     public ResponseEntity<Void> deleteMap(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/maps/{mapId}/runtime-tokens")
+    List<RuntimeTokenDto> runtimeTokens(
+            @PathVariable UUID mapId,
+            @RequestParam(required = false) UUID encounterId) {
+        return runtimeTokens.project(mapId, encounterId);
     }
 }
