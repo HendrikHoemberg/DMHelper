@@ -74,8 +74,8 @@ public class EncounterPlacementService {
 
         int maxX = Math.max(0, (map.getGridWidth() - sizeCols) * map.getCellSizePx());
         int maxY = Math.max(0, (map.getGridHeight() - sizeRows) * map.getCellSizePx());
-        int x = Math.max(0, Math.min(request.positionX(), maxX));
-        int y = Math.max(0, Math.min(request.positionY(), maxY));
+        int x = clamp(request.positionX(), maxX);
+        int y = clamp(request.positionY(), maxY);
 
         EncounterTokenPlacement placement = placementRepo.findByCombatantId(combatantId)
                 .orElseGet(() -> {
@@ -115,8 +115,8 @@ public class EncounterPlacementService {
 
         int maxX = Math.max(0, (map.getGridWidth() - placement.getSizeCols()) * map.getCellSizePx());
         int maxY = Math.max(0, (map.getGridHeight() - placement.getSizeRows()) * map.getCellSizePx());
-        int x = Math.max(0, Math.min(positionX, maxX));
-        int y = Math.max(0, Math.min(positionY, maxY));
+        int x = clamp(positionX, maxX);
+        int y = clamp(positionY, maxY);
 
         placement.setPositionX(x);
         placement.setPositionY(y);
@@ -125,7 +125,19 @@ public class EncounterPlacementService {
     }
 
     public void remove(UUID encounterId, UUID combatantId) {
-        placementRepo.deleteByCombatantId(combatantId);
+        Optional<EncounterTokenPlacement> optPlacement = placementRepo.findByCombatantId(combatantId);
+        if (optPlacement.isPresent()) {
+            EncounterTokenPlacement placement = optPlacement.get();
+            if (!placement.getEncounter().getId().equals(encounterId)) {
+                throw new IllegalArgumentException("Placement does not belong to encounter");
+            }
+            placementRepo.delete(placement);
+        }
+
+        combatantRepo.findById(combatantId).ifPresent(combatant -> {
+            combatant.setPlacement(null);
+            combatantRepo.save(combatant);
+        });
     }
 
     public List<PlacementDto> list(UUID encounterId) {
@@ -143,16 +155,7 @@ public class EncounterPlacementService {
         List<Combatant> allCombatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
         List<PlacementDto> created = new ArrayList<>();
 
-        Set<String> occupiedCells = new HashSet<>();
-        for (EncounterTokenPlacement existing : placementRepo.findByEncounterIdOrderByCombatant_SortOrderAsc(encounterId)) {
-            for (int dc = 0; dc < existing.getSizeCols(); dc++) {
-                for (int dr = 0; dr < existing.getSizeRows(); dr++) {
-                    int cellCol = (existing.getPositionX() / map.getCellSizePx()) + dc;
-                    int cellRow = (existing.getPositionY() / map.getCellSizePx()) + dr;
-                    occupiedCells.add(cellCol + "," + cellRow);
-                }
-            }
-        }
+        Set<String> occupiedCells = buildOccupiedCells(encounterId, map.getCellSizePx());
 
         for (Combatant combatant : allCombatants) {
             if (placementRepo.findByCombatantId(combatant.getId()).isPresent()) continue;
@@ -190,16 +193,7 @@ public class EncounterPlacementService {
 
         List<Combatant> allCombatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
 
-        Set<String> occupiedCells = new HashSet<>();
-        for (EncounterTokenPlacement existing : placementRepo.findByEncounterIdOrderByCombatant_SortOrderAsc(encounterId)) {
-            for (int dc = 0; dc < existing.getSizeCols(); dc++) {
-                for (int dr = 0; dr < existing.getSizeRows(); dr++) {
-                    int cellCol = (existing.getPositionX() / map.getCellSizePx()) + dc;
-                    int cellRow = (existing.getPositionY() / map.getCellSizePx()) + dr;
-                    occupiedCells.add(cellCol + "," + cellRow);
-                }
-            }
-        }
+        Set<String> occupiedCells = buildOccupiedCells(encounterId, map.getCellSizePx());
 
         List<PlacementDto> created = new ArrayList<>();
         for (Combatant combatant : allCombatants) {
@@ -305,6 +299,20 @@ public class EncounterPlacementService {
 
     private static int clamp(int value, int max) {
         return Math.max(0, Math.min(value, max));
+    }
+
+    private Set<String> buildOccupiedCells(UUID encounterId, int cellSizePx) {
+        Set<String> occupiedCells = new HashSet<>();
+        for (EncounterTokenPlacement existing : placementRepo.findByEncounterIdOrderByCombatant_SortOrderAsc(encounterId)) {
+            for (int dc = 0; dc < existing.getSizeCols(); dc++) {
+                for (int dr = 0; dr < existing.getSizeRows(); dr++) {
+                    int cellCol = (existing.getPositionX() / cellSizePx) + dc;
+                    int cellRow = (existing.getPositionY() / cellSizePx) + dr;
+                    occupiedCells.add(cellCol + "," + cellRow);
+                }
+            }
+        }
+        return occupiedCells;
     }
 
     private static int[] findFreeCell(Set<String> occupiedCells, int gridWidth, int gridHeight,
