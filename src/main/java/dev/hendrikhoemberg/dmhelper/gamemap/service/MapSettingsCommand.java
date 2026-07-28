@@ -11,8 +11,26 @@ public record MapSettingsCommand(
         @JsonProperty(required = true) int gridHeight,
         @JsonProperty(required = true) int cellSizePx,
         @JsonProperty(required = true) ResizeMode resizeMode,
-        List<TokenResolution> tokenResolutions
+        List<TokenResolution> tokenResolutions,
+        List<ShapeRemoval> shapeRemovals,
+        List<UUID> tokenRestoreIds,
+        List<TokenSnapshot> tokenSnapshot,
+        List<TokenSnapshot> expectedTokenSnapshot,
+        MapDocumentDto document
 ) {
+    public MapSettingsCommand(long expectedVersion, int gridWidth, int gridHeight, int cellSizePx,
+                              ResizeMode resizeMode, List<TokenResolution> tokenResolutions) {
+        this(expectedVersion, gridWidth, gridHeight, cellSizePx, resizeMode,
+                tokenResolutions, List.of(), null, null, null, null);
+    }
+
+    public MapSettingsCommand(long expectedVersion, int gridWidth, int gridHeight, int cellSizePx,
+                              ResizeMode resizeMode, List<TokenResolution> tokenResolutions,
+                              MapDocumentDto document) {
+        this(expectedVersion, gridWidth, gridHeight, cellSizePx, resizeMode,
+                tokenResolutions, List.of(), null, null, null, document);
+    }
+
     public enum ResizeMode { PRESERVE, CROP }
 
     public record TokenResolution(
@@ -23,4 +41,29 @@ public record MapSettingsCommand(
     ) {}
 
     public enum TokenAction { MOVE, REMOVE }
+
+    public record ShapeRemoval(
+            @JsonProperty(required = true) String layerId,
+            @JsonProperty(required = true) int shapeIndex
+    ) {}
+
+    public record TokenSnapshot(
+            @JsonProperty(required = true) UUID id,
+            String name,
+            String kind,
+            int positionX,
+            int positionY,
+            int sizeCols,
+            int sizeRows,
+            String color,
+            boolean hidden,
+            Integer currentHp,
+            Integer maxHp,
+            boolean dead,
+            UUID statBlockId,
+            UUID partyMemberId,
+            String notes,
+            String icon,
+            List<UUID> combatantIds
+    ) {}
 }

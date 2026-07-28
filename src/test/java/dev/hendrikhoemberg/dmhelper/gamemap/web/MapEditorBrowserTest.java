@@ -7,6 +7,8 @@ import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -36,6 +39,9 @@ class MapEditorBrowserTest {
 
     @Autowired
     private GameMapService gameMapService;
+
+    @Autowired
+    private TokenRepository tokenRepository;
 
     private static Playwright playwright;
     private static Browser browser;
@@ -498,5 +504,382 @@ class MapEditorBrowserTest {
                     l => l.type === 'IMAGE' && l.image != null) === true
                 """);
         assertThat(hasImageLayer).isFalse();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void imageCommandsMutateRealDocumentAndCalibrationMetadata() throws Exception {
+        importSquarePng();
+
+        Map<String, Object> state = (Map<String, Object>) page.evaluate("""
+                async () => {
+                    const ed = window.mapEditor;
+                    ed.updateImageField('width', 10, true);
+                    let image = ed.document.layers.find(l => l.type === 'IMAGE').image;
+                    const numeric = {width: image.width, height: image.height};
+                    ed.fitBackgroundImage('FILL_COVER');
+                    image = ed.document.layers.find(l => l.type === 'IMAGE').image;
+                    const fill = {x: image.x, y: image.y, width: image.width, height: image.height};
+                    await ed.resetBackgroundImage();
+                    ed.rotateImage(90);
+                    ed.setImageLocked(true);
+                    ed.calibrateBackgroundImage(5, 5, 10, 5, 10);
+                    image = ed.document.layers.find(l => l.type === 'IMAGE').image;
+                    await ed.save();
+                    return {
+                        numeric,
+                        fill,
+                        final: {
+                            rotation: image.rotationDeg,
+                            locked: image.locked,
+                            width: image.width,
+                            calibration: image.calibration
+                        }
+                    };
+                }
+                """);
+
+        Map<String, Object> numeric = (Map<String, Object>) state.get("numeric");
+        assertThat(((Number) numeric.get("width")).doubleValue()).isEqualTo(10);
+        assertThat(((Number) numeric.get("height")).doubleValue()).isEqualTo(10);
+        Map<String, Object> fill = (Map<String, Object>) state.get("fill");
+        assertThat(((Number) fill.get("width")).doubleValue()).isEqualTo(30);
+        assertThat(((Number) fill.get("height")).doubleValue()).isEqualTo(30);
+        Map<String, Object> finalImage = (Map<String, Object>) state.get("final");
+        assertThat(((Number) finalImage.get("rotation")).doubleValue()).isEqualTo(90);
+        assertThat((Boolean) finalImage.get("locked")).isTrue();
+        assertThat(((Number) finalImage.get("width")).doubleValue()).isEqualTo(40);
+        Map<String, Object> calibration = (Map<String, Object>) finalImage.get("calibration");
+        assertThat(((Number) calibration.get("cellsBetween")).doubleValue()).isEqualTo(10);
+    }
+
+    @Test
+    void settingsSaveFlushesDirtyDocumentBeforeResizing() {
+        page.evaluate("""
+                async () => {
+                    const ed = window.mapEditor;
+                    const terrain = ed.document.layers.find(l => l.id === 'terrain');
+                    terrain.cells = [{col: 2, row: 3, terrain: 'wall'}];
+                    ed.renderDocument();
+                    ed.markDirty();
+                    await ed.applyGridSettings({
+                        width: 40, height: 30, cellSizePx: 64,
+                        resizeMode: 'PRESERVE', tokenResolutions: []
+                    });
+                }
+                """);
+
+        page.reload();
+        page.waitForFunction("() => window.mapEditor?.document?.grid?.width === 40");
+
+        Boolean preserved = (Boolean) page.evaluate("""
+                () => window.mapEditor.document.layers.find(l => l.id === 'terrain')
+                    .cells.some(c => c.col === 2 && c.row === 3 && c.terrain === 'wall')
+                """);
+        assertThat(preserved).isTrue();
+    }
+
+    @Test
+    void settingsWaitsForDocumentSaveAlreadyInFlight() {
+        page.route("**/api/v1/maps/" + map.getId() + "/document?expectedVersion=*", route -> {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(interrupted);
+            }
+            route.resume();
+        });
+
+        page.evaluate("""
+                async () => {
+                    const ed = window.mapEditor;
+                    const terrain = ed.document.layers.find(l => l.id === 'terrain');
+                    terrain.cells = [{col: 2, row: 3, terrain: 'wall'}];
+                    ed.renderDocument();
+                    ed.markDirty();
+                    const saving = ed.save();
+                    await ed.applyGridSettings({
+                        width: 40, height: 30, cellSizePx: 64,
+                        resizeMode: 'PRESERVE', tokenResolutions: []
+                    });
+                    await saving;
+                }
+                """);
+
+        page.reload();
+        page.waitForFunction("() => window.mapEditor?.document?.grid?.width === 40");
+        Boolean preserved = (Boolean) page.evaluate("""
+                () => window.mapEditor.document.layers.find(l => l.id === 'terrain')
+                    .cells.some(c => c.col === 2 && c.row === 3)
+                """);
+        assertThat(preserved).isTrue();
+    }
+
+    @Test
+    void settingsRequestLocksEditorAgainstConcurrentCanvasEdits() {
+        page.evaluate("""
+                () => {
+                    const originalFetch = window.fetch.bind(window);
+                    window.fetch = (...args) => String(args[0]).endsWith('/settings')
+                        ? new Promise(resolve => setTimeout(
+                            () => resolve(originalFetch(...args)), 300))
+                        : originalFetch(...args);
+                    window.pendingGridSettings = window.mapEditor.applyGridSettings({
+                        width: 40, height: 30, cellSizePx: 48,
+                        resizeMode: 'PRESERVE', tokenResolutions: []
+                    });
+                }
+                """);
+        page.waitForFunction("() => window.mapEditor.settingsInFlight");
+        assertThat((Boolean) page.evaluate(
+                "() => document.querySelector('.editor-container').inert")).isTrue();
+
+        var canvas = page.locator(".konvajs-content").boundingBox();
+        page.mouse().click(canvas.x + 100, canvas.y + 100);
+        page.evaluate("() => window.pendingGridSettings");
+
+        page.reload();
+        page.waitForFunction("() => window.mapEditor?.document?.grid?.width === 40");
+        Number cellCount = (Number) page.evaluate("""
+                () => window.mapEditor.document.layers
+                    .flatMap(layer => layer.cells || []).length
+                """);
+        assertThat(cellCount.intValue()).isZero();
+    }
+
+    @Test
+    void unloadDoesNotStartCompetingDocumentSaveWhileSettingsAreInFlight() {
+        Number documentSaves = (Number) page.evaluate("""
+                () => {
+                    const ed = window.mapEditor;
+                    let saves = 0;
+                    const originalFetch = window.fetch;
+                    window.fetch = (...args) => {
+                        if (String(args[0]).includes('/document?expectedVersion=')) saves++;
+                        return originalFetch(...args);
+                    };
+                    ed.settingsInFlight = true;
+                    ed.dirty = true;
+                    ed.flushSave();
+                    window.dispatchEvent(new Event('beforeunload', { cancelable: true }));
+                    ed.settingsInFlight = false;
+                    return saves;
+                }
+                """);
+        assertThat(documentSaves.intValue()).isZero();
+    }
+
+    @Test
+    void undoOfGridSettingsPersistsMetadataAndDocumentTogether() {
+        page.evaluate("""
+                async () => {
+                    const ed = window.mapEditor;
+                    await ed.applyGridSettings({
+                        width: 40, height: 30, cellSizePx: 64,
+                        resizeMode: 'PRESERVE', tokenResolutions: []
+                    });
+                    await ed.undo();
+                }
+                """);
+
+        page.reload();
+        page.waitForFunction("() => window.mapEditor?.document?.grid != null");
+
+        Map<String, Object> grids = (Map<String, Object>) page.evaluate("""
+                async () => {
+                    const map = await (await fetch(`/api/v1/maps/${window.mapEditor.mapId}`)).json();
+                    const document = window.mapEditor.document.grid;
+                    return {
+                        mapWidth: map.gridWidth, mapHeight: map.gridHeight, mapCell: map.cellSizePx,
+                        docWidth: document.width, docHeight: document.height, docCell: document.cellSizePx
+                    };
+                }
+                """);
+        assertThat(grids).containsEntry("mapWidth", 30)
+                .containsEntry("mapHeight", 20)
+                .containsEntry("mapCell", 48)
+                .containsEntry("docWidth", 30)
+                .containsEntry("docHeight", 20)
+                .containsEntry("docCell", 48);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void pngExportUsesAuthoritativeMapBounds() {
+        Map<String, Object> options = (Map<String, Object>) page.evaluate("""
+                () => {
+                    const ed = window.mapEditor;
+                    let captured;
+                    ed.stage.toDataURL = options => {
+                        captured = options;
+                        return 'data:image/png;base64,AAAA';
+                    };
+                    ed.triggerDownload = () => {};
+                    ed.exportPng();
+                    return captured;
+                }
+                """);
+
+        assertThat(options).containsEntry("x", 0)
+                .containsEntry("y", 0)
+                .containsEntry("width", 30 * 48)
+                .containsEntry("height", 20 * 48)
+                .containsEntry("pixelRatio", 2);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void shrinkingPreviewRequiresExplicitResolutionForAffectedToken() {
+        Token token = new Token();
+        token.setMap(map);
+        token.setName("Outside");
+        token.setPositionX(19 * 48);
+        token.setPositionY(3 * 48);
+        token.setSizeCols(1);
+        token.setSizeRows(1);
+        token = tokenRepository.saveAndFlush(token);
+
+        page.evaluate("() => window.mapEditor.fetchTokens()");
+        page.waitForFunction("() => window.mapEditor.tokenSnapshot.length === 1");
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).gridWidth = 10");
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).gridHeight = 10");
+        page.locator("[data-map-control=\"resize-canvas-btn\"]").click();
+
+        Map<String, Object> resolution = (Map<String, Object>) page.evaluate("""
+                () => Alpine.$data(document.querySelector('[x-data]')).tokenResolutions[0]
+                """);
+        assertThat(resolution.get("tokenId").toString()).isEqualTo(token.getId().toString());
+        assertThat(resolution).containsEntry("action", "")
+                .containsEntry("positionX", 9 * 48)
+                .containsEntry("positionY", 3 * 48);
+        assertThat(page.locator("[data-map-control=\"resize-confirm-btn\"]").isDisabled()).isTrue();
+
+        page.locator("[data-map-control=\"resize-dialog\"] select")
+                .last().selectOption("MOVE");
+        assertThat(page.locator("[data-map-control=\"resize-confirm-btn\"]").isEnabled()).isTrue();
+    }
+
+    @Test
+    void undoOfGridResizeRestoresRemovedToken() {
+        Token token = new Token();
+        token.setMap(map);
+        token.setName("Undo token");
+        token.setPositionX(19 * 48);
+        token.setPositionY(3 * 48);
+        token.setSizeCols(1);
+        token.setSizeRows(1);
+        token = tokenRepository.saveAndFlush(token);
+        UUID tokenId = token.getId();
+
+        page.evaluate("() => window.mapEditor.fetchTokens()");
+        page.waitForFunction("() => window.mapEditor.tokenSnapshot.length === 1");
+        page.evaluate("""
+                async tokenId => {
+                    const ed = window.mapEditor;
+                    await ed.applyGridSettings({
+                        width: 10, height: 10, cellSizePx: 48,
+                        resizeMode: 'CROP',
+                        tokenResolutions: [{
+                            tokenId, action: 'REMOVE', positionX: 0, positionY: 0
+                        }]
+                    });
+                    await ed.undo();
+                }
+                """, tokenId.toString());
+
+        page.reload();
+        page.waitForFunction("() => window.mapEditor?.tokenSnapshot?.length === 1");
+        String restoredId = (String) page.evaluate(
+                "() => window.mapEditor.tokenSnapshot[0].id");
+        assertThat(restoredId).isEqualTo(tokenId.toString());
+    }
+
+    @Test
+    void transparentSvgImportIsNormalizedToPngWithoutAWhiteBackground() {
+        page.evaluate("""
+                () => window.mapEditor.importBackgroundImage(
+                    'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8">'
+                        + '<rect x="2" y="2" width="4" height="4" fill="red"/></svg>'))
+                """);
+        page.waitForFunction("""
+                () => window.mapEditor.document.layers
+                    .find(layer => layer.id === 'image')?.image?.dataUrl
+                    ?.startsWith('data:image/png')
+                """);
+
+        Number alpha = (Number) page.evaluate("""
+                async () => {
+                    const dataUrl = window.mapEditor.document.layers
+                        .find(layer => layer.id === 'image').image.dataUrl;
+                    const image = new Image();
+                    await new Promise((resolve, reject) => {
+                        image.onload = resolve;
+                        image.onerror = reject;
+                        image.src = dataUrl;
+                    });
+                    const canvas = document.createElement('canvas');
+                    canvas.width = image.width;
+                    canvas.height = image.height;
+                    const context = canvas.getContext('2d');
+                    context.drawImage(image, 0, 0);
+                    return context.getImageData(0, 0, 1, 1).data[3];
+                }
+                """);
+        assertThat(alpha.intValue()).isZero();
+    }
+
+    @Test
+    void resizePreviewMarksNonIntersectingDiagonalLineForExplicitRemoval() {
+        Boolean requiresRemoval = (Boolean) page.evaluate("""
+                () => {
+                    const objects = window.mapEditor.document.layers.find(layer => layer.id === 'objects');
+                    objects.shapes = [{
+                        type: 'line', points: [-2, 1, 1, -2],
+                        stroke: '#fff', strokeWidth: 1
+                    }];
+                    return window.mapEditor.previewGridResize(10, 10)
+                        .affectedShapes[0].requiresRemoval;
+                }
+                """);
+        assertThat(requiresRemoval).isTrue();
+    }
+
+    @Test
+    void opaqueJpegImportRemainsCompactJpegData() throws Exception {
+        byte[] jpegBytes;
+        try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            BufferedImage image = new BufferedImage(64, 64, BufferedImage.TYPE_INT_RGB);
+            ImageIO.write(image, "JPEG", output);
+            jpegBytes = output.toByteArray();
+        }
+        page.setInputFiles("input[type=\"file\"]",
+                new FilePayload("map.jpg", "image/jpeg", jpegBytes));
+        page.waitForFunction("""
+                () => window.mapEditor?.document?.layers
+                    ?.find(layer => layer.id === 'image')?.image?.dataUrl
+                    ?.startsWith('data:image/jpeg')
+                """);
+        Number length = (Number) page.evaluate("""
+                () => window.mapEditor.document.layers
+                    .find(layer => layer.id === 'image').image.dataUrl.length
+                """);
+        assertThat(length.intValue()).isLessThan(10_000);
+    }
+
+    private void importSquarePng() throws Exception {
+        byte[] pngBytes;
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
+            ImageIO.write(img, "PNG", baos);
+            pngBytes = baos.toByteArray();
+        }
+        page.setInputFiles("input[type=\"file\"]",
+                new FilePayload("test.png", "image/png", pngBytes));
+        page.waitForFunction("""
+                () => window.mapEditor?.document?.layers?.some(
+                    l => l.type === 'IMAGE' && l.image != null)
+                """);
     }
 }

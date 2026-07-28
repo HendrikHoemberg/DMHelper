@@ -46,6 +46,74 @@ class MapGridResizeServiceTest {
     }
 
     @Test
+    void cropResizeClipsShapesAtAllFourBoundaries() {
+        MapDocumentDto document = new MapDocumentDto(
+                MapDocumentDto.CURRENT_SCHEMA_VERSION,
+                new MapDocumentDto.GridDto(20, 15, 48, "square", "GRID", true),
+                List.of(new MapLayerDto("objects", "Objects", MapLayerDto.LayerType.OBJECTS,
+                        true, false, List.of(), List.of(
+                        shape("rect", -5, 2, 7, 3),
+                        shape("line", -5, 5, 5, 5),
+                        shape("polygon", -2, 2, 5, 2, 5, 8, -2, 8)
+                ), null, null)),
+                List.of(), List.of());
+
+        MapDocumentDto cropped = service.resize(document, 10, 10, MapSettingsCommand.ResizeMode.CROP);
+
+        assertThat(cropped.layers().getFirst().shapes())
+                .extracting(MapLayerDto.ShapeDto::points)
+                .containsExactly(
+                        List.of(0.0, 2.0, 2.0, 3.0),
+                        List.of(0.0, 5.0, 5.0, 5.0),
+                        List.of(0.0, 2.0, 5.0, 2.0, 5.0, 8.0, 0.0, 8.0));
+    }
+
+    @Test
+    void cropResizeRejectsGeometryEntirelyOutsideInsteadOfInventingContent() {
+        MapDocumentDto document = documentWithShape("rect", List.of(12.0, 2.0, 3.0, 3.0));
+
+        assertThatThrownBy(() -> service.resize(document, 10, 10, MapSettingsCommand.ResizeMode.CROP))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("collapsed");
+    }
+
+    @Test
+    void cropResizeRemovesCollapsedOrUnclippableShapesOnlyWhenExplicitlyRequested() {
+        MapDocumentDto outsideRect = documentWithShape("rect", List.of(12.0, 2.0, 3.0, 3.0));
+        MapDocumentDto intersectingCircle = documentWithShape("circle", List.of(9.0, 5.0, 2.0));
+        var removal = List.of(new MapSettingsCommand.ShapeRemoval("objects", 0));
+
+        assertThat(service.resize(outsideRect, 10, 10, MapSettingsCommand.ResizeMode.CROP, removal)
+                .layers().getFirst().shapes()).isEmpty();
+        assertThat(service.resize(intersectingCircle, 10, 10, MapSettingsCommand.ResizeMode.CROP, removal)
+                .layers().getFirst().shapes()).isEmpty();
+    }
+
+    @Test
+    void primitiveBoundsAreValidatedAndCroppedWithTheGrid() {
+        MapDocumentDto document = new MapDocumentDto(
+                MapDocumentDto.CURRENT_SCHEMA_VERSION,
+                new MapDocumentDto.GridDto(20, 15, 48, "square", "GRID", true),
+                List.of(),
+                List.of(new MapDocumentDto.PrimitiveDto(
+                        "REGION", 8, 8, 12, 12, "water", "pond", "Pond", true)),
+                List.of());
+
+        assertThatThrownBy(() -> service.resize(
+                document, 10, 10, MapSettingsCommand.ResizeMode.PRESERVE))
+                .hasMessageContaining("primitive");
+
+        MapDocumentDto cropped = service.resize(
+                document, 10, 10, MapSettingsCommand.ResizeMode.CROP);
+        assertThat(cropped.primitives().getFirst())
+                .extracting(MapDocumentDto.PrimitiveDto::startCol,
+                        MapDocumentDto.PrimitiveDto::startRow,
+                        MapDocumentDto.PrimitiveDto::endCol,
+                        MapDocumentDto.PrimitiveDto::endRow)
+                .containsExactly(8, 8, 9, 9);
+    }
+
+    @Test
     void cropResizeRejectsUnknownOrCollapsedGeometryInsteadOfSilentlyDroppingIt() {
         MapDocumentDto document = documentWithShape(
                 "triangle", List.of(8.0, 8.0, 12.0, 8.0, 10.0, 12.0));
@@ -105,5 +173,10 @@ class MapGridResizeServiceTest {
                 ),
                 List.of(), List.of()
         );
+    }
+
+    private static MapLayerDto.ShapeDto shape(String type, double... points) {
+        return new MapLayerDto.ShapeDto(type,
+                java.util.Arrays.stream(points).boxed().toList(), null, null, 0, null);
     }
 }

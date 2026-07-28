@@ -4,7 +4,10 @@ import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSchemaValidator;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -189,14 +192,14 @@ class GameMapServiceTest {
     }
 
     @Test
-    void shouldUpdateNameAndDimensions() {
+    void shouldUpdateNameWithoutAllowingGridMetadataToDrift() {
         GameMap map = service.create(campaign.getId(), "Original", 20, 15, 48);
-        GameMap updated = service.update(map.getId(), "Renamed", 40, 30, 64);
+        GameMap updated = service.update(map.getId(), "Renamed", 20, 15, 48);
 
         assertThat(updated.getName()).isEqualTo("Renamed");
-        assertThat(updated.getGridWidth()).isEqualTo(40);
-        assertThat(updated.getGridHeight()).isEqualTo(30);
-        assertThat(updated.getCellSizePx()).isEqualTo(64);
+        assertThatThrownBy(() -> service.update(map.getId(), "Renamed", 40, 30, 64))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("versioned settings endpoint");
     }
 
     @Test
@@ -335,6 +338,191 @@ class GameMapServiceTest {
 
         assertThat(savedVersion).isEqualTo(result.version() + 1);
         assertThat(service.findById(map.getId()).getVersion()).isEqualTo(savedVersion);
+    }
+
+    @Test
+    void updateDocumentRejectsGridThatDisagreesWithMapMetadata() {
+        GameMap map = service.create(campaign.getId(), "Grid Guard", 20, 15, 48);
+        String mismatched = """
+                {"schemaVersion":2,"grid":{"width":19,"height":15,"cellSizePx":48,"gridType":"square"},"layers":[]}""";
+
+        assertThatThrownBy(() -> service.updateDocument(map.getId(), mismatched, map.getVersion()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must match map settings");
+    }
+
+    @Test
+    void updateSettingsEnforcesSupportedGridLimits() {
+        GameMap map = service.create(campaign.getId(), "Limits", 20, 15, 48);
+
+        assertThatThrownBy(() -> service.updateSettings(map.getId(),
+                new MapSettingsCommand(map.getVersion(), 101, 20, 48,
+                        MapSettingsCommand.ResizeMode.PRESERVE, List.of())))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("between 5 and 100");
+        assertThatThrownBy(() -> service.updateSettings(map.getId(),
+                new MapSettingsCommand(map.getVersion(), 20, 15, 49,
+                        MapSettingsCommand.ResizeMode.PRESERVE, List.of())))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("increments of 8");
+    }
+
+    @Test
+    void shrinkingRequiresResolutionForEveryAffectedToken() {
+        GameMap map = service.create(campaign.getId(), "Token Guard", 20, 15, 48);
+        Token token = token(map, "Outside", 19 * 48, 3 * 48);
+        em.persist(token);
+        em.flush();
+
+        var command = new MapSettingsCommand(map.getVersion(), 10, 10, 48,
+                MapSettingsCommand.ResizeMode.CROP, List.of());
+
+        assertThatThrownBy(() -> service.updateSettings(map.getId(), command))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(token.getId().toString())
+                .hasMessageContaining("requires an explicit resolution");
+    }
+
+    @Test
+    void shrinkingMovesAffectedTokenToValidatedPixelPosition() {
+        GameMap map = service.create(campaign.getId(), "Token Move", 20, 15, 48);
+        Token token = token(map, "Outside", 19 * 48, 3 * 48);
+        em.persist(token);
+        em.flush();
+
+        var resolution = new MapSettingsCommand.TokenResolution(
+                token.getId(), MapSettingsCommand.TokenAction.MOVE, 9 * 48, 3 * 48);
+        service.updateSettings(map.getId(), new MapSettingsCommand(
+                map.getVersion(), 10, 10, 48, MapSettingsCommand.ResizeMode.CROP, List.of(resolution)));
+        em.clear();
+
+        Token moved = em.find(Token.class, token.getId());
+        assertThat(moved.getPositionX()).isEqualTo(9 * 48);
+        assertThat(moved.getPositionY()).isEqualTo(3 * 48);
+    }
+
+    @Test
+    void updateSettingsAtomicallyUsesSubmittedDirtyDocument() {
+        GameMap map = service.create(campaign.getId(), "Dirty Settings", 20, 15, 48);
+        MapDocumentDto current = service.getDocument(map.getId());
+        MapLayerDto terrain = current.layers().getFirst();
+        MapLayerDto changedTerrain = new MapLayerDto(
+                terrain.id(), terrain.name(), terrain.type(), terrain.visible(), terrain.locked(),
+                List.of(new MapLayerDto.CellDto(2, 3, "wall")),
+                terrain.shapes(), terrain.image(), terrain.playerVisible());
+        MapDocumentDto dirty = new MapDocumentDto(
+                current.schemaVersion(), current.grid(),
+                List.of(changedTerrain, current.layers().get(1), current.layers().get(2)),
+                current.primitives(), current.customTerrain());
+
+        service.updateSettings(map.getId(), new MapSettingsCommand(
+                map.getVersion(), 40, 30, 64, MapSettingsCommand.ResizeMode.PRESERVE, List.of(), dirty));
+
+        assertThat(service.getDocument(map.getId()).layers().getFirst().cells())
+                .extracting(MapLayerDto.CellDto::col, MapLayerDto.CellDto::row)
+                .containsExactly(tuple(2, 3));
+    }
+
+    @Test
+    void updateSettingsCanAtomicallyRestoreEarlierGridSnapshot() {
+        GameMap map = service.create(campaign.getId(), "History Restore", 20, 15, 48);
+        MapDocumentDto original = service.getDocument(map.getId());
+        GameMapService.MapSettingsResult expanded = service.updateSettings(map.getId(),
+                new MapSettingsCommand(map.getVersion(), 40, 30, 64,
+                        MapSettingsCommand.ResizeMode.PRESERVE, List.of()));
+
+        GameMapService.MapSettingsResult restored = service.updateSettings(map.getId(),
+                new MapSettingsCommand(expanded.version(), 20, 15, 48,
+                        MapSettingsCommand.ResizeMode.PRESERVE, List.of(), original));
+
+        assertThat(restored.document().grid().width()).isEqualTo(20);
+        assertThat(restored.document().grid().height()).isEqualTo(15);
+        assertThat(restored.document().grid().cellSizePx()).isEqualTo(48);
+        assertThat(restored.map().getGridWidth()).isEqualTo(20);
+        assertThat(restored.map().getGridHeight()).isEqualTo(15);
+        assertThat(restored.map().getCellSizePx()).isEqualTo(48);
+    }
+
+    @Test
+    void cellSizeChangeKeepsTokenAnchoredToSameLogicalCell() {
+        GameMap map = service.create(campaign.getId(), "Token Scale", 20, 15, 48);
+        Token token = token(map, "Anchored", 2 * 48, 3 * 48);
+        em.persist(token);
+        em.flush();
+
+        service.updateSettings(map.getId(), new MapSettingsCommand(
+                map.getVersion(), 20, 15, 64,
+                MapSettingsCommand.ResizeMode.PRESERVE, List.of()));
+        em.clear();
+
+        Token scaled = em.find(Token.class, token.getId());
+        assertThat(scaled.getPositionX()).isEqualTo(2 * 64);
+        assertThat(scaled.getPositionY()).isEqualTo(3 * 64);
+    }
+
+    @Test
+    void settingsHistorySnapshotRestoresTokenRemovedByResize() {
+        GameMap map = service.create(campaign.getId(), "Token Undo", 20, 15, 48);
+        MapDocumentDto original = service.getDocument(map.getId());
+        Token token = token(map, "Restorable", 19 * 48, 3 * 48);
+        token.setNotes("keep me");
+        em.persist(token);
+        Encounter encounter = new Encounter();
+        encounter.setCampaign(campaign);
+        encounter.setMap(map);
+        encounter.setName("Linked encounter");
+        em.persist(encounter);
+        Combatant combatant = new Combatant();
+        combatant.setEncounter(encounter);
+        combatant.setName("Linked combatant");
+        combatant.setMaxHp(10);
+        combatant.setCurrentHp(10);
+        combatant.setToken(token);
+        em.persist(combatant);
+        em.flush();
+        UUID tokenId = token.getId();
+        UUID combatantId = combatant.getId();
+        var snapshot = new MapSettingsCommand.TokenSnapshot(
+                tokenId, token.getName(), token.getKind(), token.getPositionX(), token.getPositionY(),
+                token.getSizeCols(), token.getSizeRows(), token.getColor(), token.isHidden(),
+                token.getCurrentHp(), token.getMaxHp(), token.isDead(), null, null,
+                token.getNotes(), token.getIcon(), List.of(combatantId));
+
+        var removed = service.updateSettings(map.getId(), new MapSettingsCommand(
+                map.getVersion(), 10, 10, 48, MapSettingsCommand.ResizeMode.CROP,
+                List.of(new MapSettingsCommand.TokenResolution(
+                        tokenId, MapSettingsCommand.TokenAction.REMOVE, 0, 0))));
+        em.flush();
+        em.clear();
+        assertThat(em.find(Token.class, tokenId)).isNull();
+        Token laterToken = token(service.findById(map.getId()), "Created later", 2 * 48, 2 * 48);
+        em.persist(laterToken);
+        em.flush();
+        UUID laterTokenId = laterToken.getId();
+
+        service.updateSettings(map.getId(), new MapSettingsCommand(
+                removed.version(), 20, 15, 48, MapSettingsCommand.ResizeMode.PRESERVE,
+                List.of(), List.of(), List.of(tokenId), List.of(snapshot), List.of(), original));
+        em.flush();
+        em.clear();
+
+        Token restored = em.find(Token.class, tokenId);
+        assertThat(restored).isNotNull();
+        assertThat(restored.getPositionX()).isEqualTo(19 * 48);
+        assertThat(restored.getNotes()).isEqualTo("keep me");
+        assertThat(em.find(Token.class, laterTokenId)).isNotNull();
+        assertThat(em.find(Combatant.class, combatantId).getToken().getId()).isEqualTo(tokenId);
+    }
+
+    private static Token token(GameMap map, String name, int x, int y) {
+        Token token = new Token();
+        token.setMap(map);
+        token.setName(name);
+        token.setPositionX(x);
+        token.setPositionY(y);
+        token.setSizeCols(1);
+        token.setSizeRows(1);
+        return token;
     }
 
 }

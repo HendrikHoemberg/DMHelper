@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.gamemap.service;
 
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
@@ -20,18 +21,22 @@ public class TokenService {
     private final TokenRepository repository;
     private final GameMapRepository mapRepository;
     private final PartyMemberRepository partyMemberRepository;
+    private final CombatantRepository combatantRepository;
 
     public TokenService(TokenRepository repository, GameMapRepository mapRepository,
-                        PartyMemberRepository partyMemberRepository) {
+                        PartyMemberRepository partyMemberRepository,
+                        CombatantRepository combatantRepository) {
         this.repository = repository;
         this.mapRepository = mapRepository;
         this.partyMemberRepository = partyMemberRepository;
+        this.combatantRepository = combatantRepository;
     }
 
     public record TokenDto(UUID id, String name, String kind, int positionX, int positionY,
                            int sizeCols, int sizeRows, String color, boolean hidden,
                            Integer currentHp, Integer maxHp, boolean bloodied,
-                           boolean dead, UUID statBlockId, UUID partyMemberId) {}
+                           boolean dead, UUID statBlockId, UUID partyMemberId,
+                           String notes, String icon, List<UUID> combatantIds) {}
 
     public record TokenCreateRequest(String name, String kind, int positionX, int positionY,
                                      int sizeCols, int sizeRows, String color, boolean hidden,
@@ -50,13 +55,23 @@ public class TokenService {
                 t.getPositionX(), t.getPositionY(), t.getSizeCols(), t.getSizeRows(),
                 t.getColor(), t.isHidden(), t.getCurrentHp(), t.getMaxHp(), bloodied,
                 t.isDead(), t.getStatBlock() != null ? t.getStatBlock().getId() : null,
-                t.getPartyMember() != null ? t.getPartyMember().getId() : null);
+                t.getPartyMember() != null ? t.getPartyMember().getId() : null,
+                t.getNotes(), t.getIcon(), List.of());
     }
 
     @Transactional(readOnly = true)
     public List<TokenDto> findByMapId(UUID mapId) {
         return repository.findByMapIdOrderByNameAsc(mapId).stream()
-                .map(TokenService::toDto).toList();
+                .map(token -> {
+                    TokenDto dto = toDto(token);
+                    return new TokenDto(
+                            dto.id(), dto.name(), dto.kind(), dto.positionX(), dto.positionY(),
+                            dto.sizeCols(), dto.sizeRows(), dto.color(), dto.hidden(),
+                            dto.currentHp(), dto.maxHp(), dto.bloodied(), dto.dead(),
+                            dto.statBlockId(), dto.partyMemberId(), dto.notes(), dto.icon(),
+                            combatantRepository.findByTokenId(token.getId()).stream()
+                                    .map(combatant -> combatant.getId()).toList());
+                }).toList();
     }
 
     @Transactional(readOnly = true)

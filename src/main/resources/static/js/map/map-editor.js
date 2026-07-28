@@ -60,6 +60,7 @@ export class MapEditor {
         this.undoStack = [];
         this.redoStack = [];
         this.saveTimer = null;
+        this.saveInFlight = null;
         this.dirty = false;
 
         this.stage = null;
@@ -74,6 +75,9 @@ export class MapEditor {
         this.cropStart = null;
         this.calibrateMode = false;
         this.calibratePointA = null;
+        this.imageKeepAspect = true;
+        this.tokenSnapshot = [];
+        this.settingsInFlight = false;
     }
 
     load() {
@@ -189,7 +193,6 @@ export class MapEditor {
             let w = probe.naturalWidth;
             let h = probe.naturalHeight;
             const maxDim = 8192;
-            const hasTransparency = dataUrl.startsWith('data:image/png') || dataUrl.startsWith('data:image/webp');
 
             if (w > maxDim || h > maxDim) {
                 const scale = w > h ? maxDim / w : maxDim / h;
@@ -201,15 +204,16 @@ export class MapEditor {
             canvas.width = w;
             canvas.height = h;
             const ctx = canvas.getContext('2d');
-            if (hasTransparency) {
+            const alphaCapableSource = /^data:image\/(?:png|webp|gif|svg\+xml)/i.test(dataUrl);
+            if (alphaCapableSource) {
                 ctx.clearRect(0, 0, w, h);
             } else {
                 ctx.fillStyle = '#fff';
                 ctx.fillRect(0, 0, w, h);
             }
             ctx.drawImage(probe, 0, 0, w, h);
-            const format = hasTransparency ? 'image/png' : 'image/jpeg';
-            const normalizedDataUrl = canvas.toDataURL(format);
+            const normalizedDataUrl = canvas.toDataURL(
+                alphaCapableSource ? 'image/png' : 'image/jpeg', 0.9);
 
             const imageCellWidth = w / this.cellSizePx;
             const imageCellHeight = h / this.cellSizePx;
@@ -288,6 +292,11 @@ export class MapEditor {
         this.clearShapeSelection();
         this.clearImageSelection();
         this.activeLayerId = layerId;
+        if (layerId === 'image' && this.layerDto('image')?.image && !this.isImageLocked()) {
+            this.setTool('select');
+            const imageNode = this.layers.image?.findOne('Image');
+            if (imageNode) this.selectImageForTransform(imageNode);
+        }
     }
 
     setSnap(snap) {
@@ -710,6 +719,7 @@ export class MapEditor {
 
         // Keyboard shortcuts (§4.3)
         window.addEventListener('keydown', (e) => {
+            if (this.settingsInFlight) return;
             if (e.target.closest?.('input, select, textarea, [contenteditable]')) return;
 
             if (e.code === 'Space') {
@@ -772,6 +782,11 @@ export class MapEditor {
         });
 
         window.addEventListener('beforeunload', (e) => {
+            if (this.settingsInFlight) {
+                e.preventDefault();
+                e.returnValue = '';
+                return;
+            }
             if (!this.dirty) return;
             this.flushSave();
             e.preventDefault();
@@ -1467,7 +1482,7 @@ export class MapEditor {
         this.imageSelection = node;
         node.draggable(true);
         node.on('dragend.imageselect', () => this.commitImageTransform(node));
-        this.transformer.keepRatio(false);
+        this.transformer.keepRatio(this.imageKeepAspect);
         this.transformer.nodes([node]);
         this.transformer.getLayer().batchDraw();
         this.setStatus('Background image selected — drag to move, handles to resize');
@@ -1588,20 +1603,37 @@ export class MapEditor {
 
     /* ---- Undo / redo ---- */
 
-    pushUndo() {
+    pushUndo(tokenRestoreIds = null) {
         const doc = this.buildDocumentFromCanvas();
         if (!doc) return;
-        this.undoStack.push({ document: doc, gridWidth: this.gridWidth, gridHeight: this.gridHeight, cellSizePx: this.cellSizePx });
+        this.undoStack.push(this.historySnapshot(doc, tokenRestoreIds));
         if (this.undoStack.length > UNDO_MAX) this.undoStack.shift();
         this.redoStack = [];
         this.emitHistoryState();
     }
 
-    undo() {
+    async undo() {
         if (!this.undoStack.length) return;
         const snapshot = this.undoStack.pop();
         const current = this.buildDocumentFromCanvas();
-        if (current) this.redoStack.push({ document: current, gridWidth: this.gridWidth, gridHeight: this.gridHeight, cellSizePx: this.cellSizePx });
+        if (current) this.redoStack.push(this.historySnapshot(current, snapshot.tokenRestoreIds));
+        if (this.snapshotHasDifferentGrid(snapshot)) {
+            try {
+                await this.restoreSettingsSnapshot(snapshot);
+                const redoSnapshot = this.redoStack.at(-1);
+                if (redoSnapshot?.tokenRestoreIds) {
+                    redoSnapshot.expectedTokenSnapshot =
+                        this.tokenHistorySnapshot(redoSnapshot.tokenRestoreIds);
+                }
+                this.emitHistoryState();
+                return;
+            } catch (error) {
+                this.redoStack.pop();
+                this.undoStack.push(snapshot);
+                this.emitHistoryState();
+                throw error;
+            }
+        }
         this.document = snapshot.document;
         this.gridWidth = snapshot.gridWidth;
         this.gridHeight = snapshot.gridHeight;
@@ -1613,11 +1645,28 @@ export class MapEditor {
         this.emitHistoryState();
     }
 
-    redo() {
+    async redo() {
         if (!this.redoStack.length) return;
         const snapshot = this.redoStack.pop();
         const current = this.buildDocumentFromCanvas();
-        if (current) this.undoStack.push({ document: current, gridWidth: this.gridWidth, gridHeight: this.gridHeight, cellSizePx: this.cellSizePx });
+        if (current) this.undoStack.push(this.historySnapshot(current, snapshot.tokenRestoreIds));
+        if (this.snapshotHasDifferentGrid(snapshot)) {
+            try {
+                await this.restoreSettingsSnapshot(snapshot);
+                const undoSnapshot = this.undoStack.at(-1);
+                if (undoSnapshot?.tokenRestoreIds) {
+                    undoSnapshot.expectedTokenSnapshot =
+                        this.tokenHistorySnapshot(undoSnapshot.tokenRestoreIds);
+                }
+                this.emitHistoryState();
+                return;
+            } catch (error) {
+                this.undoStack.pop();
+                this.redoStack.push(snapshot);
+                this.emitHistoryState();
+                throw error;
+            }
+        }
         this.document = snapshot.document;
         this.gridWidth = snapshot.gridWidth;
         this.gridHeight = snapshot.gridHeight;
@@ -1631,6 +1680,47 @@ export class MapEditor {
 
     emitHistoryState() {
         this.emit('map-historystate', { canUndo: this.undoStack.length > 0, canRedo: this.redoStack.length > 0 });
+    }
+
+    snapshotHasDifferentGrid(snapshot) {
+        return snapshot.gridWidth !== this.gridWidth
+            || snapshot.gridHeight !== this.gridHeight
+            || snapshot.cellSizePx !== this.cellSizePx;
+    }
+
+    historySnapshot(document, tokenRestoreIds = null) {
+        return {
+            document,
+            gridWidth: this.gridWidth,
+            gridHeight: this.gridHeight,
+            cellSizePx: this.cellSizePx,
+            tokenRestoreIds: tokenRestoreIds ? [...tokenRestoreIds] : null,
+            tokenSnapshot: tokenRestoreIds ? this.tokenHistorySnapshot(tokenRestoreIds) : null,
+            expectedTokenSnapshot: null,
+        };
+    }
+
+    tokenHistorySnapshot(tokenRestoreIds = this.tokenSnapshot.map(token => token.id)) {
+        const restoreIds = new Set(tokenRestoreIds);
+        return this.tokenSnapshot.filter(token => restoreIds.has(token.id)).map(token => ({
+            id: token.id,
+            name: token.name,
+            kind: token.kind,
+            positionX: token.positionX,
+            positionY: token.positionY,
+            sizeCols: token.sizeCols,
+            sizeRows: token.sizeRows,
+            color: token.color,
+            hidden: token.hidden,
+            currentHp: token.currentHp,
+            maxHp: token.maxHp,
+            dead: token.dead,
+            statBlockId: token.statBlockId,
+            partyMemberId: token.partyMemberId,
+            notes: token.notes,
+            icon: token.icon,
+            combatantIds: token.combatantIds || [],
+        }));
     }
 
     emitImageState() {
@@ -1712,7 +1802,8 @@ export class MapEditor {
         this.clearShapeSelection();
         this.clearImageSelection();
         this.previewLayer.visible(false);   // hide selection/drag preview overlay from the export
-        const dataUrl = this.stage.toDataURL({ pixelRatio: 2 });
+        const bounds = mapPixelBounds(this.gridWidth, this.gridHeight, this.cellSizePx);
+        const dataUrl = this.stage.toDataURL({ ...bounds, pixelRatio: 2 });
         this.previewLayer.visible(true);
         this.stage.batchDraw();
         this.triggerDownload(dataUrl, `map-${this.mapId}.png`);
@@ -1728,11 +1819,7 @@ export class MapEditor {
     rotateImage(deg) {
         const layerDto = this.layerDto('image');
         if (!layerDto?.image) { this.setStatus('No background image'); return; }
-        this.pushUndo();
-        this.syncDocument();
-        layerDto.image.rotationDeg = (layerDto.image.rotationDeg || 0) + deg;
-        this.renderDocument();
-        this.markDirty();
+        this.updateImageGeometry({ rotationDeg: (layerDto.image.rotationDeg || 0) + deg });
         this.setStatus('Image rotated ' + deg + '°');
     }
 
@@ -1810,15 +1897,13 @@ export class MapEditor {
         const cropFormat = cropHasTransparency ? 'image/png' : 'image/jpeg';
         const newDataUrl = canvas.toDataURL(cropFormat, 0.92);
 
-        this.pushUndo();
-        this.syncDocument();
-        img.dataUrl = newDataUrl;
-        img.x = this.round2(minX);
-        img.y = this.round2(minY);
-        img.width = this.round2(relW);
-        img.height = this.round2(relH);
-        this.renderDocument();
-        this.markDirty();
+        this.updateImageGeometry({
+            dataUrl: newDataUrl,
+            x: this.round2(minX),
+            y: this.round2(minY),
+            width: this.round2(relW),
+            height: this.round2(relH),
+        });
         this.cropMode = false;
         this.cropStart = null;
         this.setStatus('Image cropped');
@@ -1868,12 +1953,7 @@ export class MapEditor {
     setImageLocked(locked) {
         const layerDto = this.layerDto('image');
         if (!layerDto?.image) { this.setStatus('No background image'); return; }
-        this.pushUndo();
-        this.syncDocument();
-        layerDto.image.locked = !!locked;
-        this.renderDocument();
-        this.markDirty();
-        this.emitImageState();
+        this.updateImageGeometry({ locked: !!locked });
         this.setStatus(locked ? 'Image locked' : 'Image unlocked');
     }
 
@@ -1901,11 +1981,23 @@ export class MapEditor {
     }
 
     async save() {
-        if (!this.dirty) return;
+        if (this.saveInFlight) return this.saveInFlight;
+        if (this.settingsInFlight) return false;
+        if (!this.dirty) return true;
+
+        this.saveInFlight = this.performDocumentSave();
+        try {
+            return await this.saveInFlight;
+        } finally {
+            this.saveInFlight = null;
+        }
+    }
+
+    async performDocumentSave() {
         this.dirty = false;
 
         const doc = this.buildDocumentFromCanvas();
-        if (!doc) return;
+        if (!doc) return false;
         this.document = doc;
 
         this.setSaveState('saving');
@@ -1921,12 +2013,13 @@ export class MapEditor {
                 this.setSaveState('conflict');
                 this.setStatus('Map was changed elsewhere — download a backup below, then reload to continue');
                 this.emit('map-conflict', {});
-                return;
+                return false;
             }
             if (!res.ok) throw new Error('Save failed: ' + res.status);
             const data = await res.json();
             this.docVersion = data.version;
             this.setSaveState('saved');
+            return true;
         } catch (err) {
             console.error('Autosave failed:', err);
             this.setSaveState('error');
@@ -1934,6 +2027,7 @@ export class MapEditor {
             this.dirty = true;
             clearTimeout(this.saveTimer);
             this.saveTimer = setTimeout(() => this.save(), SAVE_DEBOUNCE_MS);
+            return false;
         }
     }
 
@@ -1942,7 +2036,7 @@ export class MapEditor {
      *  Chrome, so this is a safety net for the gap since the last debounced autosave,
      *  not a replacement for it — very large maps may still exceed the cap. */
     flushSave() {
-        if (!this.dirty || !this.document) return;
+        if (this.settingsInFlight || !this.dirty || !this.document) return;
         clearTimeout(this.saveTimer);
         const doc = this.buildDocumentFromCanvas();
         if (!doc) return;
@@ -1978,6 +2072,7 @@ export class MapEditor {
                 gridHeight: this.gridHeight,
                 cellSizePx: this.cellSizePx,
             });
+            await this.fetchTokens();
             this.setStatus('Ready');
         } catch (err) {
             console.error('Failed to load map document:', err);
@@ -1985,77 +2080,81 @@ export class MapEditor {
         }
     }
 
+    async fetchTokens() {
+        const res = await fetch(`/api/v1/maps/${this.mapId}/tokens`);
+        if (!res.ok) throw new Error('Token fetch failed: ' + res.status);
+        this.tokenSnapshot = await res.json();
+        return this.tokenSnapshot;
+    }
+
     /* ---- Grid settings (authoritative resize, apply, and preview) ---- */
 
-    previewGridResize(width, height) {
+    previewGridResize(width, height, cellSizePx = this.cellSizePx) {
         const impact = boundsImpact(this.document, width, height);
-        const affectedTokens = [];
+        const maxX = width * cellSizePx;
+        const maxY = height * cellSizePx;
+        const scale = cellSizePx / this.cellSizePx;
+        const affectedTokens = this.tokenSnapshot
+            .map(token => ({
+                ...token,
+                projectedX: Math.round(token.positionX * scale),
+                projectedY: Math.round(token.positionY * scale),
+            }))
+            .filter(token => token.projectedX < 0 || token.projectedY < 0
+                || token.projectedX + token.sizeCols * cellSizePx > maxX
+                || token.projectedY + token.sizeRows * cellSizePx > maxY)
+            .map(token => ({
+                ...token,
+                edgeX: Math.max(0, Math.min(token.projectedX, maxX - token.sizeCols * cellSizePx)),
+                edgeY: Math.max(0, Math.min(token.projectedY, maxY - token.sizeRows * cellSizePx)),
+            }));
         return { ...impact, affectedTokens };
     }
 
-    async applyGridSettings({ width, height, cellSizePx, resizeMode, tokenResolutions }) {
+    async applyGridSettings({ width, height, cellSizePx, resizeMode, tokenResolutions, shapeRemovals }) {
+        if (this.settingsInFlight) throw new Error('A settings save is already in progress');
+        if (this.saveInFlight) {
+            const saved = await this.saveInFlight;
+            if (!saved) throw new Error('Cannot apply grid settings while the map has an unresolved save conflict');
+        }
+        this.syncDocument();
         const snapshot = {
             document: structuredClone(this.document),
             gridWidth: this.gridWidth,
             gridHeight: this.gridHeight,
             cellSizePx: this.cellSizePx,
+            tokenSnapshot: this.tokenHistorySnapshot(),
+            dirty: this.dirty,
         };
 
         if (resizeMode === 'PRESERVE') {
             const impact = boundsImpact(this.document, width, height);
-            if (impact.outsideCells.length > 0 || impact.affectedShapes.length > 0) {
+            if (impact.outsideCells.length > 0 || impact.affectedShapes.length > 0
+                    || impact.affectedPrimitives.length > 0) {
                 throw new Error('Content would be outside the new grid boundary');
             }
         }
 
-        this.pushUndo();
-
-        if (resizeMode === 'CROP') {
-            for (const layer of (this.document?.layers || [])) {
-                layer.cells = (layer.cells || []).filter(c =>
-                    c.col >= 0 && c.col < width && c.row >= 0 && c.row < height);
-                layer.shapes = (layer.shapes || []).filter(s => {
-                    const b = shapeBounds(s);
-                    if (!b) return true;
-                    return !(b.minX < 0 || b.minY < 0 || b.maxX > width || b.maxY > height);
-                });
-            }
-        }
-
-        this.gridWidth = width;
-        this.gridHeight = height;
-        this.cellSizePx = cellSizePx;
-
-        if (this.document) {
-            this.document.grid = { ...this.document.grid, width, height, cellSizePx };
-        }
-
-        this.drawGrid();
-        this.renderDocument();
-
+        clearTimeout(this.saveTimer);
+        const tokenRestoreIds = cellSizePx !== this.cellSizePx
+            ? this.tokenSnapshot.map(token => token.id)
+            : (tokenResolutions || []).map(resolution => resolution.tokenId);
+        this.pushUndo(tokenRestoreIds);
+        this.settingsInFlight = true;
+        this.setSettingsInteractionLocked(true);
         this.setSaveState('saving');
         try {
-            const res = await fetch(`/api/v1/maps/${this.mapId}/settings`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    expectedVersion: this.docVersion,
-                    gridWidth: width,
-                    gridHeight: height,
-                    cellSizePx,
-                    resizeMode,
-                    tokenResolutions: tokenResolutions || [],
-                }),
+            await this.sendSettingsRequest({
+                width, height, cellSizePx, resizeMode,
+                tokenResolutions: tokenResolutions || [],
+                shapeRemovals: shapeRemovals || [],
+                document: snapshot.document,
             });
-            if (!res.ok) throw new Error('Settings save failed: ' + res.status);
-            const data = await res.json();
-            this.docVersion = data.version;
-            if (data.document) {
-                this.document = data.document;
-                this.renderDocument();
+            const history = this.undoStack.at(-1);
+            if (history?.tokenRestoreIds) {
+                history.expectedTokenSnapshot = this.tokenHistorySnapshot(history.tokenRestoreIds);
             }
-            this.emit('map-gridstate', { gridWidth: width, gridHeight: height, cellSizePx });
-            this.setSaveState('saved');
+            this.dirty = false;
         } catch (err) {
             console.error('Grid settings save failed:', err);
             this.gridWidth = snapshot.gridWidth;
@@ -2066,23 +2165,104 @@ export class MapEditor {
             this.renderDocument();
             this.undoStack.pop();
             this.emitHistoryState();
-            this.setSaveState('error');
-            this.setStatus('Failed to apply grid settings');
+            this.dirty = snapshot.dirty;
+            if (!err.conflict) {
+                this.setSaveState('error');
+                this.setStatus('Failed to apply grid settings');
+            }
             throw err;
+        } finally {
+            this.settingsInFlight = false;
+            this.setSettingsInteractionLocked(false);
         }
     }
 
+    async restoreSettingsSnapshot(snapshot) {
+        clearTimeout(this.saveTimer);
+        this.settingsInFlight = true;
+        this.setSettingsInteractionLocked(true);
+        this.setSaveState('saving');
+        try {
+            await this.sendSettingsRequest({
+                width: snapshot.gridWidth,
+                height: snapshot.gridHeight,
+                cellSizePx: snapshot.cellSizePx,
+                resizeMode: 'PRESERVE',
+                tokenResolutions: [],
+                shapeRemovals: [],
+                tokenRestoreIds: snapshot.tokenRestoreIds || [],
+                tokenSnapshot: snapshot.tokenSnapshot || [],
+                expectedTokenSnapshot: snapshot.expectedTokenSnapshot || [],
+                document: snapshot.document,
+            });
+            this.dirty = false;
+        } finally {
+            this.settingsInFlight = false;
+            this.setSettingsInteractionLocked(false);
+        }
+    }
+
+    setSettingsInteractionLocked(locked) {
+        const root = this.container.closest('.editor-container');
+        if (root) root.inert = !!locked;
+        if (this.stage) this.stage.listening(!locked);
+    }
+
+    async sendSettingsRequest({
+        width, height, cellSizePx, resizeMode, tokenResolutions, shapeRemovals,
+        tokenRestoreIds, tokenSnapshot, expectedTokenSnapshot, document,
+    }) {
+        const res = await fetch(`/api/v1/maps/${this.mapId}/settings`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                expectedVersion: this.docVersion,
+                gridWidth: width,
+                gridHeight: height,
+                cellSizePx,
+                resizeMode,
+                tokenResolutions,
+                shapeRemovals,
+                tokenRestoreIds,
+                tokenSnapshot,
+                expectedTokenSnapshot,
+                document,
+            }),
+        });
+        if (res.status === 409) {
+            this.setSaveState('conflict');
+            this.setStatus('Map was changed elsewhere — download a backup below, then reload to continue');
+            this.emit('map-conflict', {});
+            const error = new Error('Settings save failed: 409');
+            error.conflict = true;
+            throw error;
+        }
+        if (!res.ok) throw new Error('Settings save failed: ' + res.status);
+        const data = await res.json();
+        this.docVersion = data.version;
+        this.gridWidth = width;
+        this.gridHeight = height;
+        this.cellSizePx = cellSizePx;
+        this.document = data.document;
+        this.drawGrid();
+        this.renderDocument();
+        this.emitLayerState();
+        await this.fetchTokens();
+        this.emit('map-gridstate', { gridWidth: width, gridHeight: height, cellSizePx });
+        this.setSaveState('saved');
+    }
+
     updateImageGeometry(patch) {
-        const layerDto = this.layerDto('image');
-        if (!layerDto?.image) return;
+        if (!this.layerDto('image')?.image) return;
         this.pushUndo();
         this.syncDocument();
+        const layerDto = this.layerDto('image');
         Object.assign(layerDto.image, patch);
         this.renderDocument();
         this.markDirty();
     }
 
-    updateImageField(field, value) {
+    updateImageField(field, value, keepAspect = this.imageKeepAspect) {
         const layerDto = this.layerDto('image');
         if (!layerDto?.image) return;
         const num = parseFloat(value);
@@ -2090,7 +2270,7 @@ export class MapEditor {
         const img = layerDto.image;
         if (field === 'width' || field === 'height') {
             if (num <= 0) return;
-            if (img.locked && img.width > 0 && img.height > 0) {
+            if (keepAspect && img.width > 0 && img.height > 0) {
                 const aspect = img.width / img.height;
                 if (field === 'width') {
                     this.updateImageGeometry({ width: this.round2(num), height: this.round2(num / aspect) });
@@ -2107,37 +2287,43 @@ export class MapEditor {
         }
     }
 
+    setImageAspectLocked(locked) {
+        this.imageKeepAspect = !!locked;
+        if (this.transformer) this.transformer.keepRatio(this.imageKeepAspect);
+    }
+
     fitBackgroundImage(mode) {
         const layerDto = this.layerDto('image');
         if (!layerDto?.image) return;
-        this.pushUndo();
-        this.syncDocument();
         const img = layerDto.image;
         const fn = mode === 'FIT_INSIDE' ? fitInsideGeometry : fillCoverGeometry;
         const result = fn(this.gridWidth, this.gridHeight, img.width, img.height);
-        img.x = this.round2(result.x);
-        img.y = this.round2(result.y);
-        img.width = this.round2(result.width);
-        img.height = this.round2(result.height);
-        this.renderDocument();
-        this.markDirty();
+        this.updateImageGeometry({
+            x: this.round2(result.x),
+            y: this.round2(result.y),
+            width: this.round2(result.width),
+            height: this.round2(result.height),
+        });
     }
 
-    resetBackgroundImage() {
-        const layerDto = this.layerDto('image');
-        if (!layerDto) return;
-        this.pushUndo();
-        this.syncDocument();
-        delete layerDto.image;
-        this.renderDocument();
-        this.markDirty();
+    async resetBackgroundImage() {
+        const imageDto = this.layerDto('image')?.image;
+        if (!imageDto) return;
+        const dimensions = await this.decodeImageDimensions(imageDto.dataUrl);
+        const result = fitInsideGeometry(
+            this.gridWidth, this.gridHeight, dimensions.width, dimensions.height);
+        this.updateImageGeometry({
+            x: this.round2(result.x),
+            y: this.round2(result.y),
+            width: this.round2(result.width),
+            height: this.round2(result.height),
+            rotationDeg: 0,
+        });
     }
 
     calibrateBackgroundImage(ax, ay, bx, by, cellsBetween) {
         const layerDto = this.layerDto('image');
         if (!layerDto?.image) return;
-        this.pushUndo();
-        this.syncDocument();
         const result = calibratedImageGeometry(
             layerDto.image,
             { x: ax, y: ay },
@@ -2145,12 +2331,29 @@ export class MapEditor {
             cellsBetween,
             this.cellSizePx,
         );
-        layerDto.image.x = this.round2(result.x);
-        layerDto.image.y = this.round2(result.y);
-        layerDto.image.width = this.round2(result.width);
-        layerDto.image.height = this.round2(result.height);
-        this.renderDocument();
-        this.markDirty();
+        this.updateImageGeometry({
+            x: this.round2(result.x),
+            y: this.round2(result.y),
+            width: this.round2(result.width),
+            height: this.round2(result.height),
+            calibration: {
+                ax, ay, bx, by, cellsBetween,
+                offsetXPx: this.round2(result.x * this.cellSizePx),
+                offsetYPx: this.round2(result.y * this.cellSizePx),
+            },
+        });
+    }
+
+    decodeImageDimensions(dataUrl) {
+        return new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve({
+                width: image.naturalWidth || image.width,
+                height: image.naturalHeight || image.height,
+            });
+            image.onerror = () => reject(new Error('Failed to decode background image'));
+            image.src = dataUrl;
+        });
     }
 
     /* ---- Misc ---- */

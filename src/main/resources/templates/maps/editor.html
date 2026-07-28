@@ -355,6 +355,19 @@
                             <p class="u-text-xs" data-map-control="resize-affected-shapes">
                                 Affected shapes: <span x-text="resizePreview.affectedShapes.length"></span>
                             </p>
+                            <p class="u-text-xs" data-map-control="resize-affected-primitives">
+                                Affected generated regions: <span x-text="resizePreview.affectedPrimitives.length"></span>
+                            </p>
+                            <template x-for="(shape, idx) in (resizePreview.affectedShapes || [])"
+                                      :key="shape.layerId + ':' + shape.shapeIndex">
+                                <label class="sidebar-field">
+                                    <span class="u-text-xs" x-text="(shape.label || shape.type) + (shape.requiresRemoval ? ' (must remove)' : '')"></span>
+                                    <select x-model="shapeResolutions[idx].action" class="u-w-full">
+                                        <option value="KEEP" :disabled="shape.requiresRemoval">Clip to edge</option>
+                                        <option value="REMOVE">Remove</option>
+                                    </select>
+                                </label>
+                            </template>
                             <template x-if="resizePreview.affectedTokens && resizePreview.affectedTokens.length">
                                 <div>
                                     <p class="u-text-xs">Affected tokens: <span x-text="resizePreview.affectedTokens.length"></span></p>
@@ -362,7 +375,8 @@
                                         <div class="sidebar-field">
                                             <span class="u-text-xs" x-text="token.name || 'Token ' + (idx + 1)"></span>
                                             <select x-model="tokenResolutions[idx].action" class="u-w-full">
-                                                <option value="MOVE_TO_EDGE">Move to edge</option>
+                                                <option value="" disabled>Choose resolution…</option>
+                                                <option value="MOVE">Move to edge</option>
                                                 <option value="REMOVE">Remove</option>
                                             </select>
                                         </div>
@@ -376,7 +390,9 @@
                     </template>
                     <div style="display: flex; gap: 4px; margin-top: var(--space-xs);">
                         <button class="tool-btn" data-map-control="resize-cancel-btn" @click="cancelResize()" :disabled="resizeSaving">Cancel</button>
-                        <button class="btn btn-primary" data-map-control="resize-confirm-btn" @click="confirmResize()" :disabled="resizeSaving" x-text="resizeSaving ? 'Saving…' : 'Crop and continue'"></button>
+                        <button class="btn btn-primary" data-map-control="resize-confirm-btn" @click="confirmResize()"
+                                :disabled="resizeSaving || tokenResolutions.some(resolution => !resolution.action)"
+                                x-text="resizeSaving ? 'Saving…' : 'Crop and continue'"></button>
                     </div>
                 </div>
 
@@ -398,7 +414,8 @@
                         <input type="number" data-image-control="image-rotation" x-model.number="imageRotationDeg" @change="updateImageField('rotationDeg', imageRotationDeg)" step="1" class="u-w-full">
                     </label>
                     <label class="sidebar-field" style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                        <input type="checkbox" data-image-control="keep-aspect" x-model="imageKeepAspect"> Keep aspect ratio
+                        <input type="checkbox" data-image-control="keep-aspect" x-model="imageKeepAspect"
+                               @change="setImageAspectLocked(imageKeepAspect)"> Keep aspect ratio
                     </label>
                     <div style="display: flex; gap: 4px; margin-top: var(--space-xs); flex-wrap: wrap;">
                         <button class="tool-btn" data-image-control="fit-inside" @click="fitImage('fit-inside')" :disabled="!imagePresent">Fit Inside</button>
@@ -416,13 +433,17 @@
                 <div class="sidebar-section" x-show="selectedShape" style="display: none;">
                     <h3>Shape</h3>
                     <label class="sidebar-field">Fill
-                        <input type="color" x-model="selectedShape.fill" @change="applyShapeFill()">
+                        <input type="color" :value="selectedShape?.fill || '#000000'"
+                               @change="if (selectedShape) { selectedShape.fill = $event.target.value; applyShapeFill(); }">
                     </label>
                     <label class="sidebar-field">Stroke
-                        <input type="color" x-model="selectedShape.stroke" @change="applyShapeStroke()">
+                        <input type="color" :value="selectedShape?.stroke || '#000000'"
+                               @change="if (selectedShape) { selectedShape.stroke = $event.target.value; applyShapeStroke(); }">
                     </label>
                     <label class="sidebar-field">Label
-                        <input type="text" x-model="selectedShape.label" @change="applyShapeLabel()" placeholder="Label…">
+                        <input type="text" :value="selectedShape?.label || ''"
+                               @change="if (selectedShape) { selectedShape.label = $event.target.value; applyShapeLabel(); }"
+                               placeholder="Label…">
                     </label>
                     <button class="btn btn-ghost" style="width: 100%; margin-top: var(--space-xs);" @click="deleteShape()">Delete shape</button>
                 </div>
@@ -529,7 +550,7 @@
                 imageWidth: 0,
                 imageHeight: 0,
                 imageRotationDeg: 0,
-                imageKeepAspect: false,
+                imageKeepAspect: true,
                 gridWidth: 30,
                 gridHeight: 20,
                 cellSizePx: 48,
@@ -540,6 +561,7 @@
                 resizeOldWidth: 0,
                 resizeOldHeight: 0,
                 tokenResolutions: [],
+                shapeResolutions: [],
                 threatPinKind: 'TRAP',
                 threatPinQuery: '',
                 threatPinResults: [],
@@ -677,25 +699,34 @@
                 startCrop() { window.mapEditor?.startCrop(); },
                 startCalibration() { window.mapEditor?.startCalibration(); },
                 setImageLocked(locked) { window.mapEditor?.setImageLocked(locked); },
-                updateImageField(field, value) { window.mapEditor?.updateImageField(field, value); },
+                updateImageField(field, value) { window.mapEditor?.updateImageField(field, value, this.imageKeepAspect); },
+                setImageAspectLocked(locked) { window.mapEditor?.setImageAspectLocked(locked); },
                 fitImage(mode) { window.mapEditor?.fitBackgroundImage(mode === 'fit-inside' ? 'FIT_INSIDE' : 'FILL_COVER'); },
                 resetImage() { window.mapEditor?.resetBackgroundImage(); },
                 previewResize() {
                     const w = parseInt(this.gridWidth) || 0;
                     const h = parseInt(this.gridHeight) || 0;
-                    if (w < 5 || w > 100 || h < 5 || h > 100) return;
+                    const cell = parseInt(this.cellSizePx) || 0;
+                    if (w < 5 || w > 100 || h < 5 || h > 100
+                        || cell < 16 || cell > 128 || (cell - 16) % 8 !== 0) return;
                     const ed = window.mapEditor;
                     if (!ed) return;
                     this.resizeOldWidth = ed.gridWidth;
                     this.resizeOldHeight = ed.gridHeight;
                     this.resizeOldCellSizePx = ed.cellSizePx;
                     this.resizeError = null;
-                    if (w < ed.gridWidth || h < ed.gridHeight) {
-                        this.resizePreview = ed.previewGridResize(w, h);
-                    } else {
-                        this.resizePreview = { outsideCells: [], affectedShapes: [], affectedTokens: [] };
-                    }
-                    this.tokenResolutions = (this.resizePreview.affectedTokens || []).map(() => ({ action: 'MOVE_TO_EDGE' }));
+                    this.resizePreview = ed.previewGridResize(w, h, cell);
+                    this.tokenResolutions = (this.resizePreview.affectedTokens || []).map(token => ({
+                        tokenId: token.id,
+                        action: '',
+                        positionX: token.edgeX,
+                        positionY: token.edgeY,
+                    }));
+                    this.shapeResolutions = (this.resizePreview.affectedShapes || []).map(shape => ({
+                        layerId: shape.layerId,
+                        shapeIndex: shape.shapeIndex,
+                        action: shape.requiresRemoval ? 'REMOVE' : 'KEEP',
+                    }));
                     this.resizeDialogOpen = true;
                 },
                 cancelResize() {
@@ -707,6 +738,10 @@
                     this.resizeError = null;
                 },
                 async confirmResize() {
+                    if (this.tokenResolutions.some(resolution => !resolution.action)) {
+                        this.resizeError = 'Choose Move to edge or Remove for every affected token';
+                        return;
+                    }
                     this.resizeSaving = true;
                     this.resizeError = null;
                     try {
@@ -714,8 +749,14 @@
                             width: parseInt(this.gridWidth),
                             height: parseInt(this.gridHeight),
                             cellSizePx: parseInt(this.cellSizePx),
-                            resizeMode: (this.resizePreview?.outsideCells?.length > 0 || this.resizePreview?.affectedShapes?.length > 0) ? 'CROP' : 'PRESERVE',
+                            resizeMode: (this.resizePreview?.outsideCells?.length > 0
+                                || this.resizePreview?.affectedShapes?.length > 0
+                                || this.resizePreview?.affectedPrimitives?.length > 0
+                                || this.resizePreview?.affectedTokens?.length > 0) ? 'CROP' : 'PRESERVE',
                             tokenResolutions: this.tokenResolutions || [],
+                            shapeRemovals: (this.shapeResolutions || [])
+                                .filter(resolution => resolution.action === 'REMOVE')
+                                .map(({ layerId, shapeIndex }) => ({ layerId, shapeIndex })),
                         });
                         this.resizeDialogOpen = false;
                         this.resizePreview = null;

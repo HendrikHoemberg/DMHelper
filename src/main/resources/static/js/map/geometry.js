@@ -82,6 +82,87 @@ export function shapeBounds(shape) {
     }
 }
 
+function clippedLine(points, width, height) {
+    if (points.length < 4) return null;
+    const [x1, y1, x2, y2] = points;
+    const dx = x2 - x1, dy = y2 - y1;
+    const p = [-dx, dx, -dy, dy];
+    const q = [x1, width - x1, y1, height - y1];
+    let enter = 0, leave = 1;
+    for (let i = 0; i < 4; i++) {
+        if (Math.abs(p[i]) < 1e-12) {
+            if (q[i] < 0) return null;
+            continue;
+        }
+        const ratio = q[i] / p[i];
+        if (p[i] < 0) enter = Math.max(enter, ratio);
+        else leave = Math.min(leave, ratio);
+        if (enter > leave) return null;
+    }
+    const clipped = [
+        x1 + enter * dx, y1 + enter * dy,
+        x1 + leave * dx, y1 + leave * dy,
+    ];
+    return clipped[0] === clipped[2] && clipped[1] === clipped[3] ? null : clipped;
+}
+
+function clipPolygonEdge(input, inside, intersection) {
+    if (!input.length) return input;
+    const output = [];
+    let previous = input[input.length - 1];
+    let previousInside = inside(previous);
+    for (const current of input) {
+        const currentInside = inside(current);
+        if (currentInside) {
+            if (!previousInside) output.push(intersection(previous, current));
+            output.push(current);
+        } else if (previousInside) {
+            output.push(intersection(previous, current));
+        }
+        previous = current;
+        previousInside = currentInside;
+    }
+    return output;
+}
+
+function clippedPolygon(points, width, height) {
+    if (points.length < 6 || points.length % 2) return [];
+    let polygon = [];
+    for (let i = 0; i < points.length; i += 2) polygon.push({ x: points[i], y: points[i + 1] });
+    const vertical = x => (a, b) => {
+        const t = (x - a.x) / (b.x - a.x);
+        return { x, y: a.y + t * (b.y - a.y) };
+    };
+    const horizontal = y => (a, b) => {
+        const t = (y - a.y) / (b.y - a.y);
+        return { x: a.x + t * (b.x - a.x), y };
+    };
+    polygon = clipPolygonEdge(polygon, point => point.x >= 0, vertical(0));
+    polygon = clipPolygonEdge(polygon, point => point.x <= width, vertical(width));
+    polygon = clipPolygonEdge(polygon, point => point.y >= 0, horizontal(0));
+    polygon = clipPolygonEdge(polygon, point => point.y <= height, horizontal(height));
+    return polygon;
+}
+
+function shapeRequiresRemoval(shape, width, height) {
+    const points = shape.points || [];
+    if (shape.type === 'circle') return true;
+    if (shape.type === 'line') return clippedLine(points, width, height) === null;
+    if (shape.type === 'polygon') {
+        const polygon = clippedPolygon(points, width, height);
+        if (polygon.length < 3) return true;
+        let twiceArea = 0;
+        for (let i = 0; i < polygon.length; i++) {
+            const next = polygon[(i + 1) % polygon.length];
+            twiceArea += polygon[i].x * next.y - next.x * polygon[i].y;
+        }
+        return Math.abs(twiceArea) <= 1e-9;
+    }
+    const bounds = shapeBounds(shape);
+    return !bounds || bounds.maxX <= 0 || bounds.maxY <= 0
+        || bounds.minX >= width || bounds.minY >= height;
+}
+
 /**
  * @param {{layers: {cells?: {col:number, row:number, terrain:string}[], shapes?: {type:string, points:number[]}[]}[]}} document
  * @param {number} gridWidth
@@ -91,6 +172,7 @@ export function shapeBounds(shape) {
 export function boundsImpact(document, gridWidth, gridHeight) {
     const outsideCells = [];
     const affectedShapes = [];
+    const affectedPrimitives = [];
 
     for (const layer of (document.layers || [])) {
         for (const cell of (layer.cells || [])) {
@@ -98,14 +180,29 @@ export function boundsImpact(document, gridWidth, gridHeight) {
                 outsideCells.push(cell);
             }
         }
-        for (const shape of (layer.shapes || [])) {
+        for (const [shapeIndex, shape] of (layer.shapes || []).entries()) {
             const bounds = shapeBounds(shape);
             if (!bounds) continue;
             if (bounds.minX < 0 || bounds.minY < 0 || bounds.maxX > gridWidth || bounds.maxY > gridHeight) {
-                affectedShapes.push(shape);
+                affectedShapes.push({
+                    ...shape,
+                    layerId: layer.id,
+                    shapeIndex,
+                    requiresRemoval: shapeRequiresRemoval(shape, gridWidth, gridHeight),
+                });
             }
         }
     }
 
-    return { outsideCells, affectedShapes };
+    for (const [primitiveIndex, primitive] of (document.primitives || []).entries()) {
+        const minCol = Math.min(primitive.startCol, primitive.endCol);
+        const maxCol = Math.max(primitive.startCol, primitive.endCol);
+        const minRow = Math.min(primitive.startRow, primitive.endRow);
+        const maxRow = Math.max(primitive.startRow, primitive.endRow);
+        if (minCol < 0 || minRow < 0 || maxCol >= gridWidth || maxRow >= gridHeight) {
+            affectedPrimitives.push({ ...primitive, primitiveIndex });
+        }
+    }
+
+    return { outsideCells, affectedShapes, affectedPrimitives };
 }
