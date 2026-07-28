@@ -120,5 +120,40 @@ class V26MigrationTest {
             assertThat(tokenCols.next()).isTrue();
             assertThat(tokenCols.getInt(1)).isEqualTo(1);
         }
+
+        // Step 5: Run V27 migration
+        Flyway.configure()
+                .dataSource(url, "sa", "")
+                .load()
+                .migrate();
+
+        // Step 6: Verify V27 removed legacy columns
+        try (var conn = DriverManager.getConnection(url, "sa", "");
+             var st = conn.createStatement()) {
+
+            var combatantTokenCol = st.executeQuery(
+                "select count(*) from information_schema.columns " +
+                "where table_name = 'COMBATANT' and column_name = 'TOKEN_ID'");
+            assertThat(combatantTokenCol.next()).isTrue();
+            assertThat(combatantTokenCol.getInt(1)).isZero();
+
+            var tokenHpCol = st.executeQuery(
+                "select count(*) from information_schema.columns " +
+                "where table_name = 'TOKEN' and column_name = 'CURRENT_HP'");
+            assertThat(tokenHpCol.next()).isTrue();
+            assertThat(tokenHpCol.getInt(1)).isZero();
+
+            var tokenMaxHpCol = st.executeQuery(
+                "select count(*) from information_schema.columns " +
+                "where table_name = 'TOKEN' and column_name = 'MAX_HP'");
+            assertThat(tokenMaxHpCol.next()).isTrue();
+            assertThat(tokenMaxHpCol.getInt(1)).isZero();
+
+            var tokenDeadCol = st.executeQuery(
+                "select count(*) from information_schema.columns " +
+                "where table_name = 'TOKEN' and column_name = 'DEAD'");
+            assertThat(tokenDeadCol.next()).isTrue();
+            assertThat(tokenDeadCol.getInt(1)).isZero();
+        }
     }
 }

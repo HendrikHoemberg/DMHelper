@@ -77,7 +77,7 @@ class EncounterInitiativeConcurrencyTest {
             for (int i = 0; i < 5; i++) {
                 ids.add(service.addCombatant(encounter.id(),
                         new EncounterService.CombatantCreateRequest(
-                                "Combatant " + i, 10, "PC", null, null, null)).id());
+                                "Combatant " + i, 10, "PC", null, null)).id());
             }
             return ids;
         });
@@ -127,7 +127,7 @@ class EncounterInitiativeConcurrencyTest {
             encounterId[0] = encounter.id();
             return service.addCombatant(encounter.id(),
                     new EncounterService.CombatantCreateRequest(
-                            "Manual NPC", 10, "NPC", null, null, null)).id();
+                            "Manual NPC", 10, "NPC", null, null)).id();
         });
         when(diceEngine.roll("d20"))
                 .thenReturn(new DiceResult("d20", List.of(), 0, 3, false, false));

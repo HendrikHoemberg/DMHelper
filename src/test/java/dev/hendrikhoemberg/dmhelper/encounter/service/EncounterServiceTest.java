@@ -9,7 +9,6 @@ import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.Combatant
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.EncounterDto;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
-import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
@@ -103,7 +102,7 @@ class EncounterServiceTest {
     void shouldAddCombatantAdHoc() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Goblin", 7, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Goblin", 7, "MONSTER", null, null));
         assertThat(c.id()).isNotNull();
         assertThat(c.name()).isEqualTo("Goblin");
         assertThat(c.maxHp()).isEqualTo(7);
@@ -112,24 +111,6 @@ class EncounterServiceTest {
         assertThat(c.threatKind()).isNull();
         assertThat(c.threatId()).isNull();
         assertThat(c.threatCard()).isNull();
-    }
-
-    @Test
-    void shouldAddCombatantFromToken() {
-        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
-        Token token = new Token();
-        token.setMap(map);
-        token.setName("Orc");
-        token.setKind("MONSTER");
-        token.setMaxHp(15);
-        token.setCurrentHp(15);
-        em.persist(token);
-        em.flush();
-
-        CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest(null, 0, null, token.getId(), null, null));
-        assertThat(c.name()).isEqualTo("Orc");
-        assertThat(c.maxHp()).isEqualTo(15);
     }
 
     @Test
@@ -151,7 +132,7 @@ class EncounterServiceTest {
         em.flush();
 
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest(null, 0, null, null, null, pm.getId()));
+                new CombatantCreateRequest(null, 0, null, null, pm.getId()));
         assertThat(c.name()).isEqualTo("Thia");
         assertThat(c.kind()).isEqualTo("PC");
         assertThat(c.maxHp()).isEqualTo(38);
@@ -197,11 +178,11 @@ class EncounterServiceTest {
     void shouldSetInitiativeAndSort() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto a = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Alice", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("Alice", 10, "NPC", null, null));
         CombatantDto b = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Bob", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("Bob", 10, "NPC", null, null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Charlie", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("Charlie", 10, "NPC", null, null));
 
         service.setInitiative(a.id(), 20);
         service.setInitiative(b.id(), 5);
@@ -218,9 +199,9 @@ class EncounterServiceTest {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         service.activate(enc.id());
         CombatantDto a = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("A", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("A", 10, "NPC", null, null));
         CombatantDto b = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("B", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("B", 10, "NPC", null, null));
         service.setInitiative(a.id(), 10);
         service.setInitiative(b.id(), 5);
 
@@ -248,11 +229,11 @@ class EncounterServiceTest {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         service.activate(enc.id());
         CombatantDto a = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("A", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("A", 10, "NPC", null, null));
         CombatantDto b = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("B", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("B", 10, "NPC", null, null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("C", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("C", 10, "NPC", null, null));
         service.setInitiative(a.id(), 15);
         service.setInitiative(b.id(), 10);
         service.setInitiative(c.id(), 5);
@@ -270,7 +251,7 @@ class EncounterServiceTest {
     void shouldApplyDamage() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Monster", 20, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Monster", 20, "MONSTER", null, null));
 
         CombatantDto damaged = service.applyDamage(c.id(), -5);
         assertThat(damaged.currentHp()).isEqualTo(15);
@@ -280,7 +261,7 @@ class EncounterServiceTest {
     void shouldApplyDamageTempHpFirst() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Monster", 20, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Monster", 20, "MONSTER", null, null));
         service.updateCombatant(c.id(),                 new EncounterService.CombatantUpdateRequest(null, null, null, null, null, 5,
                 null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null));
 
@@ -293,7 +274,7 @@ class EncounterServiceTest {
     void shouldAutoDefeatNonPcOnZeroHp() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Monster", 5, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Monster", 5, "MONSTER", null, null));
 
         CombatantDto defeated = service.applyDamage(c.id(), -10);
         assertThat(defeated.defeated()).isTrue();
@@ -303,7 +284,7 @@ class EncounterServiceTest {
     void shouldApplyHeal() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Healee", 20, "NPC", null, null, null));
+                new CombatantCreateRequest("Healee", 20, "NPC", null, null));
         service.applyDamage(c.id(), -10);
 
         CombatantDto healed = service.applyDamage(c.id(), 5);
@@ -314,7 +295,7 @@ class EncounterServiceTest {
     void shouldNotHealAboveMaxHp() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Healee", 20, "NPC", null, null, null));
+                new CombatantCreateRequest("Healee", 20, "NPC", null, null));
 
         CombatantDto healed = service.applyDamage(c.id(), 50);
         assertThat(healed.currentHp()).isEqualTo(20);
@@ -324,7 +305,7 @@ class EncounterServiceTest {
     void shouldToggleCondition() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Target", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("Target", 10, "NPC", null, null));
 
         CombatantDto withCond = service.toggleCondition(c.id(), "poisoned", 3);
         assertThat(withCond.conditions()).hasSize(1);
@@ -338,7 +319,7 @@ class EncounterServiceTest {
     void shouldSetAndResolveConcentration() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Wizard", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("Wizard", 10, "NPC", null, null));
 
         CombatantDto conc = service.setConcentration(c.id(), "Haste");
         assertThat(conc.concentratingOn()).isEqualTo("Haste");
@@ -351,7 +332,7 @@ class EncounterServiceTest {
     void shouldUseLegendaryAction() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Dragon", 100, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Dragon", 100, "MONSTER", null, null));
         service.updateCombatant(c.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, 2, null, null, null, null, null, null, null));
 
@@ -363,7 +344,7 @@ class EncounterServiceTest {
     void shouldUseLegendaryResistance() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Dragon", 100, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Dragon", 100, "MONSTER", null, null));
         service.updateCombatant(c.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null, 2, null, null, null, null, null));
 
@@ -375,7 +356,7 @@ class EncounterServiceTest {
     void shouldUndoLastAction() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Monster", 20, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Monster", 20, "MONSTER", null, null));
         int originalHp = c.currentHp();
 
         service.applyDamage(c.id(), -5);
@@ -390,9 +371,9 @@ class EncounterServiceTest {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         service.activate(enc.id());
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Dragon", 100, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Dragon", 100, "MONSTER", null, null));
         CombatantDto d = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Other", 50, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Other", 50, "MONSTER", null, null));
         service.setInitiative(c.id(), 20);
         service.setInitiative(d.id(), 10);
 
@@ -428,7 +409,7 @@ class EncounterServiceTest {
     void shouldPreserveConcentrationOnUndoAfterPassedCheck() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Wizard", 20, "NPC", null, null, null));
+                new CombatantCreateRequest("Wizard", 20, "NPC", null, null));
         service.setConcentration(c.id(), "Haste");
 
         assertThat(service.getCombatant(c.id()).concentratingOn()).isEqualTo("Haste");
@@ -456,7 +437,7 @@ class EncounterServiceTest {
     void shouldNotMarkDefeatedOnUndoWhenHpAboveZero() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Goblin", 20, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Goblin", 20, "MONSTER", null, null));
 
         service.markDefeated(c.id(), true);
         service.applyDamage(c.id(), -5);
@@ -472,7 +453,7 @@ class EncounterServiceTest {
     void shouldUndoSetHp() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Target", 30, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Target", 30, "MONSTER", null, null));
 
         service.setHp(c.id(), 15, 0);
         service.undo(enc.id());
@@ -486,9 +467,9 @@ class EncounterServiceTest {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         service.activate(enc.id());
         CombatantDto a = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("A", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("A", 10, "NPC", null, null));
         CombatantDto b = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("B", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("B", 10, "NPC", null, null));
         service.setInitiative(a.id(), 10);
         service.setInitiative(b.id(), 5);
 
@@ -514,7 +495,7 @@ class EncounterServiceTest {
     void shouldUndoAddCombatant() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Temporary", 10, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Temporary", 10, "MONSTER", null, null));
         int countBefore = service.getCombatants(enc.id()).size();
 
         service.undo(enc.id());
@@ -527,7 +508,7 @@ class EncounterServiceTest {
     void shouldUndoRemoveCombatant() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto c = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("ToBeRemoved", 10, "MONSTER", null, null, null));
+                new CombatantCreateRequest("ToBeRemoved", 10, "MONSTER", null, null));
         UUID removedId = c.id();
 
         service.removeCombatant(c.id());
@@ -547,9 +528,9 @@ class EncounterServiceTest {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         service.activate(enc.id());
         CombatantDto a = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Alice", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("Alice", 10, "NPC", null, null));
         CombatantDto b = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Bob", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("Bob", 10, "NPC", null, null));
 
         // Set tieBreaker BEFORE initiative (so resortCombatants captures the right order)
         em.createQuery("update Combatant c set c.tieBreaker = :tb where c.id = :id")
@@ -576,9 +557,9 @@ class EncounterServiceTest {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         service.activate(enc.id());
         CombatantDto a = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("A", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("A", 10, "NPC", null, null));
         CombatantDto b = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("B", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("B", 10, "NPC", null, null));
         service.setInitiative(a.id(), 20);
         service.setInitiative(b.id(), 10);
 
@@ -603,7 +584,7 @@ class EncounterServiceTest {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Gapped Log", null));
         service.activate(enc.id());
         CombatantDto combatant = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("A", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("A", 10, "NPC", null, null));
         service.applyDamage(combatant.id(), 1);
 
         var log = combatLogRepo.findByEncounterIdOrderBySequenceAsc(enc.id());
@@ -631,9 +612,9 @@ class EncounterServiceTest {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         service.activate(enc.id());
         CombatantDto a = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("A", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("A", 10, "NPC", null, null));
         CombatantDto b = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("B", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("B", 10, "NPC", null, null));
 
         // A initiative 5, B initiative 10 — A will be before B after resort
         service.setInitiative(a.id(), 5);
@@ -657,7 +638,7 @@ class EncounterServiceTest {
     void shouldLogCombatantAdded() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Goblin", 7, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Goblin", 7, "MONSTER", null, null));
 
         var logEntries = combatLogRepo.findByEncounterIdOrderBySequenceAsc(enc.id());
         assertThat(logEntries).anyMatch(e ->
@@ -670,9 +651,9 @@ class EncounterServiceTest {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         service.activate(enc.id());
         service.addCombatant(enc.id(),
-                new CombatantCreateRequest("A", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("A", 10, "NPC", null, null));
         service.addCombatant(enc.id(),
-                new CombatantCreateRequest("B", 10, "NPC", null, null, null));
+                new CombatantCreateRequest("B", 10, "NPC", null, null));
         service.setInitiative(service.getCombatants(enc.id()).get(0).id(), 10);
         service.setInitiative(service.getCombatants(enc.id()).get(1).id(), 5);
 
@@ -694,13 +675,13 @@ class EncounterServiceTest {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         service.activate(enc.id());
         CombatantDto leader = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Goblin Leader", 10, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Goblin Leader", 10, "MONSTER", null, null));
         CombatantDto goblin1 = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Goblin 1", 10, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Goblin 1", 10, "MONSTER", null, null));
         CombatantDto goblin2 = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Goblin 2", 10, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Goblin 2", 10, "MONSTER", null, null));
         CombatantDto fighter = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Fighter", 10, "PC", null, null, null));
+                new CombatantCreateRequest("Fighter", 10, "PC", null, null));
 
         String groupId = "goblin-group";
         service.updateCombatant(leader.id(), new EncounterService.CombatantUpdateRequest(null, null, null, null, null, null,
@@ -738,7 +719,7 @@ class EncounterServiceTest {
     void canUndoDamageAfterActivate() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         CombatantDto goblin = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Goblin", 10, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Goblin", 10, "MONSTER", null, null));
         service.activate(enc.id());
         service.applyDamage(goblin.id(), 2);
         service.undo(enc.id());

@@ -33,7 +33,6 @@ public class GameMapService {
     private final SceneRefCleaner sceneRefCleaner;
     private final SessionReferenceCleaner sessionRefCleaner;
     private final EncounterRepository encounterRepository;
-    private final CombatantRepository combatantRepository;
     private final TokenRepository tokenRepository;
     private final StatBlockRepository statBlockRepository;
     private final PartyMemberRepository partyMemberRepository;
@@ -42,15 +41,14 @@ public class GameMapService {
 
     public GameMapService(GameMapRepository repository, CampaignRepository campaignRepository,
                           SceneRefCleaner sceneRefCleaner, SessionReferenceCleaner sessionRefCleaner,
-                          EncounterRepository encounterRepository, CombatantRepository combatantRepository,
-                          TokenRepository tokenRepository, StatBlockRepository statBlockRepository,
+                           EncounterRepository encounterRepository,
+                           TokenRepository tokenRepository, StatBlockRepository statBlockRepository,
                           PartyMemberRepository partyMemberRepository, EntityManager entityManager) {
         this.repository = repository;
         this.campaignRepository = campaignRepository;
         this.sceneRefCleaner = sceneRefCleaner;
         this.sessionRefCleaner = sessionRefCleaner;
         this.encounterRepository = encounterRepository;
-        this.combatantRepository = combatantRepository;
         this.tokenRepository = tokenRepository;
         this.statBlockRepository = statBlockRepository;
         this.partyMemberRepository = partyMemberRepository;
@@ -406,9 +404,6 @@ public class GameMapService {
                 && token.getSizeRows() == Math.max(1, snapshot.sizeRows())
                 && java.util.Objects.equals(token.getColor(), snapshot.color())
                 && token.isHidden() == snapshot.hidden()
-                && java.util.Objects.equals(token.getCurrentHp(), snapshot.currentHp())
-                && java.util.Objects.equals(token.getMaxHp(), snapshot.maxHp())
-                && token.isDead() == snapshot.dead()
                 && java.util.Objects.equals(
                     token.getStatBlock() != null ? token.getStatBlock().getId() : null,
                     snapshot.statBlockId())
@@ -416,33 +411,10 @@ public class GameMapService {
                     token.getPartyMember() != null ? token.getPartyMember().getId() : null,
                     snapshot.partyMemberId())
                 && java.util.Objects.equals(token.getNotes(), snapshot.notes())
-                && java.util.Objects.equals(token.getIcon(), snapshot.icon())
-                && new java.util.HashSet<>(combatantRepository.findByTokenId(token.getId()).stream()
-                    .map(combatant -> combatant.getId()).toList())
-                    .equals(new java.util.HashSet<>(
-                        snapshot.combatantIds() != null ? snapshot.combatantIds() : List.<UUID>of()));
+                && java.util.Objects.equals(token.getIcon(), snapshot.icon());
     }
 
     private void restoreCombatantLinks(Token token, List<UUID> requestedCombatantIds) {
-        var desiredIds = new java.util.HashSet<>(
-                requestedCombatantIds != null ? requestedCombatantIds : List.<UUID>of());
-        for (var combatant : combatantRepository.findByTokenId(token.getId())) {
-            if (!desiredIds.remove(combatant.getId())) {
-                combatant.setToken(null);
-                combatantRepository.save(combatant);
-            }
-        }
-        for (UUID combatantId : desiredIds) {
-            var combatant = combatantRepository.findById(combatantId)
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Combatant not found: " + combatantId));
-            if (combatant.getToken() != null && !combatant.getToken().getId().equals(token.getId())) {
-                throw new IllegalArgumentException(
-                        "Combatant is linked to another token: " + combatantId);
-            }
-            combatant.setToken(token);
-            combatantRepository.save(combatant);
-        }
     }
 
     private void validateTokenSnapshotReferences(MapSettingsCommand.TokenSnapshot snapshot) {
@@ -470,11 +442,11 @@ public class GameMapService {
         entityManager.createNativeQuery("""
                 insert into token (
                     id, map_id, name, kind, positionx, positiony, size_cols, size_rows,
-                    color, hidden, current_hp, max_hp, dead, statblock_id, party_member_id,
+                    color, hidden, statblock_id, party_member_id,
                     notes, icon
                 ) values (
                     :id, :mapId, :name, :kind, :positionX, :positionY, :sizeCols, :sizeRows,
-                    :color, :hidden, :currentHp, :maxHp, :dead, :statBlockId, :partyMemberId,
+                    :color, :hidden, :statBlockId, :partyMemberId,
                     :notes, :icon
                 )
                 """)
@@ -488,9 +460,6 @@ public class GameMapService {
                 .setParameter("sizeRows", Math.max(1, snapshot.sizeRows()))
                 .setParameter("color", snapshot.color() != null ? snapshot.color() : "#7b68ee")
                 .setParameter("hidden", snapshot.hidden())
-                .setParameter("currentHp", snapshot.currentHp())
-                .setParameter("maxHp", snapshot.maxHp())
-                .setParameter("dead", snapshot.dead())
                 .setParameter("statBlockId", snapshot.statBlockId())
                 .setParameter("partyMemberId", snapshot.partyMemberId())
                 .setParameter("notes", snapshot.notes())
@@ -507,9 +476,6 @@ public class GameMapService {
         token.setSizeRows(Math.max(1, snapshot.sizeRows()));
         token.setColor(snapshot.color() != null ? snapshot.color() : "#7b68ee");
         token.setHidden(snapshot.hidden());
-        token.setCurrentHp(snapshot.currentHp());
-        token.setMaxHp(snapshot.maxHp());
-        token.setDead(snapshot.dead());
         token.setNotes(snapshot.notes());
         token.setIcon(snapshot.icon());
         token.setStatBlock(snapshot.statBlockId() != null
@@ -525,10 +491,6 @@ public class GameMapService {
     }
 
     private void deleteToken(Token token) {
-        for (var combatant : combatantRepository.findByTokenId(token.getId())) {
-            combatant.setToken(null);
-            combatantRepository.save(combatant);
-        }
         tokenRepository.delete(token);
     }
 
@@ -576,10 +538,6 @@ public class GameMapService {
             encounterRepository.save(encounter);
         }
         for (var token : tokenRepository.findByMapIdOrderByNameAsc(mapId)) {
-            for (var combatant : combatantRepository.findByTokenId(token.getId())) {
-                combatant.setToken(null);
-                combatantRepository.save(combatant);
-            }
             tokenRepository.delete(token);
         }
         repository.delete(map);

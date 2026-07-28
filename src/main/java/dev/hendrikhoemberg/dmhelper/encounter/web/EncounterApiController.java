@@ -21,7 +21,6 @@ import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.Concentra
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.ConcentrationRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.EncounterDto;
-import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.PrefillMapRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.RechargeCheckRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.RechargePrompt;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.UpdateRequest;
@@ -158,11 +157,6 @@ public class EncounterApiController {
     public ResponseEntity<Void> removeCombatant(@PathVariable UUID id) {
         service.removeCombatant(id);
         return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping("/encounters/{id}/prefill/map")
-    public List<CombatantDto> prefillFromMap(@PathVariable UUID id, @RequestBody PrefillMapRequest req) {
-        return service.prefillFromMap(id, req.mapId());
     }
 
     @PostMapping("/encounters/{id}/prefill/party")

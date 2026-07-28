@@ -61,7 +61,7 @@ class EncounterCompletionTest {
         var enc = service.create(campaign.getId(), new CreateRequest("Test", null));
         service.activate(enc.id());
         var goblin = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Goblin", 10, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Goblin", 10, "MONSTER", null, null));
         service.applyDamage(goblin.id(), -10);
         var result = service.endEncounterWithSummary(enc.id());
         assertThat(result.summary().defeatedCount()).isEqualTo(1);
@@ -129,7 +129,7 @@ class EncounterCompletionTest {
         var enc = service.create(campaign.getId(), new CreateRequest("Dmg", null));
         service.activate(enc.id());
         var goblin = service.addCombatant(enc.id(),
-                new CombatantCreateRequest("Goblin", 20, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Goblin", 20, "MONSTER", null, null));
         service.applyDamage(goblin.id(), -7);
         service.applyDamage(goblin.id(), -3);
         var summary = service.buildSummary(enc.id());

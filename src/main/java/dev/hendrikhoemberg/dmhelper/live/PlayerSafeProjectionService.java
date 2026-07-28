@@ -96,16 +96,9 @@ public class PlayerSafeProjectionService {
                 token.getPositionY(),
                 token.getSizeCols(),
                 token.getSizeRows(),
-                token.isDead(),
-                computeBloodied(token)
+                false,
+                null
         );
-    }
-
-    private Boolean computeBloodied(Token token) {
-        if (token.getCurrentHp() == null || token.getMaxHp() == null || token.getMaxHp() <= 0) {
-            return null;
-        }
-        return token.getCurrentHp() <= token.getMaxHp() / 2;
     }
 
     private List<String> parseConditions(String json) {

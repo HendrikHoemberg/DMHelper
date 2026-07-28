@@ -68,7 +68,7 @@ class EncounterInitiativeSetupServiceTest {
 
     private CombatantDto add(UUID encounterId, String name, String kind) {
         return service.addCombatant(encounterId,
-                new CombatantCreateRequest(name, 10, kind, null, null, null));
+                new CombatantCreateRequest(name, 10, kind, null, null));
     }
 
     private EncounterDto activeEncounter(String name) {

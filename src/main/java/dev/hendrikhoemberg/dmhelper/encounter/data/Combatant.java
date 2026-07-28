@@ -1,6 +1,5 @@
 package dev.hendrikhoemberg.dmhelper.encounter.data;
 
-import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind;
@@ -49,10 +48,6 @@ public class Combatant {
     private String groupId;
 
     private boolean groupLeader;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "token_id")
-    private Token token;
 
     @OneToOne(mappedBy = "combatant", fetch = FetchType.LAZY)
     private EncounterTokenPlacement placement;
@@ -146,9 +141,6 @@ public class Combatant {
 
     public boolean isGroupLeader() { return groupLeader; }
     public void setGroupLeader(boolean groupLeader) { this.groupLeader = groupLeader; }
-
-    public Token getToken() { return token; }
-    public void setToken(Token token) { this.token = token; }
 
     public EncounterTokenPlacement getPlacement() { return placement; }
     public void setPlacement(EncounterTokenPlacement placement) { this.placement = placement; }

@@ -203,13 +203,12 @@ public record CampaignExportDto(
             String rechargedAbilities, String notes
     ) {
         public static CombatantExportDto from(
-                dev.hendrikhoemberg.dmhelper.encounter.data.Combatant c,
-                java.util.Map<java.util.UUID, String> tokenIdMap) {
+                dev.hendrikhoemberg.dmhelper.encounter.data.Combatant c) {
             return new CombatantExportDto(
                     c.getName(), c.getInitiative(), c.getTieBreaker(), c.getSortOrder(),
                     c.getMaxHp(), c.getCurrentHp(), c.getTempHp(),
                     c.getKind(), c.getGroupId(), c.isGroupLeader(),
-                    c.getToken() != null ? tokenIdMap.getOrDefault(c.getToken().getId(), c.getToken().getId().toString()) : null,
+                    null,
                     c.getStatBlock() != null ? c.getStatBlock().getSourceKey() : null,
                     c.getPartyMember() != null ? c.getPartyMember().getCharacterName() : null,
                     c.isDefeated(), c.isHidden(),
@@ -238,7 +237,7 @@ public record CampaignExportDto(
         public record TokenExportDto(String id, String name, String kind, String color,
                                       int positionX, int positionY, int sizeCols, int sizeRows,
                                       boolean hidden, String statBlockKey, String partyMemberName,
-                                      Integer currentHp, Integer maxHp, boolean dead, String notes) {}
+                                      String notes) {}
 
         public static MapExportDto from(GameMap map, MapDocumentDto document, List<TokenExportDto> tokens) {
             return new MapExportDto(

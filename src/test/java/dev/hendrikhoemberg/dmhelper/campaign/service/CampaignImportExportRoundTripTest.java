@@ -393,7 +393,6 @@ class CampaignImportExportRoundTripTest {
         Combatant combatant = new Combatant();
         combatant.setEncounter(encounter);
         combatant.setName("Goblin");
-        combatant.setToken(token);
         combatant.setInitiative(10);
         combatant.setSortOrder(0);
         combatant.setMaxHp(10);
@@ -409,11 +408,7 @@ class CampaignImportExportRoundTripTest {
         List<Combatant> reCombatants = combatantRepo.findByEncounterIdOrderBySortOrderAsc(reEncounters.get(0).getId());
         assertThat(reCombatants).hasSize(1);
         Combatant reCombatant = reCombatants.get(0);
-        assertThat(reCombatant.getToken()).isNotNull();
-        assertThat(reCombatant.getToken().getName()).isEqualTo("Goblin Token");
-        assertThat(reCombatant.getToken().getPositionX()).isEqualTo(5);
-        assertThat(reCombatant.getToken().getPositionY()).isEqualTo(3);
-        assertThat(reCombatant.getToken().getColor()).isEqualTo("#ff0000");
+        assertThat(reCombatant.getName()).isEqualTo("Goblin");
     }
 
     @Test

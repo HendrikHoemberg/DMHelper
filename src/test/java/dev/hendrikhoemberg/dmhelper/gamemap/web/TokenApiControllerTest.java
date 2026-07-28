@@ -27,15 +27,15 @@ class TokenApiControllerTest {
     @MockitoBean
     private CampaignRepository campaignRepository;
 
-    private TokenDto token(String name) {
-        return new TokenDto(UUID.randomUUID(), name, "NPC", 0, 0, 1, 1,
-                "#fff", false, 10, 10, false, false, null, null, null, null, List.of());
+    private MapMarkerDto marker(String name) {
+        return new MapMarkerDto(UUID.randomUUID(), name, "NPC", 0, 0, 1, 1,
+                "#fff", false, null, null, null, null);
     }
 
     @Test
     void shouldListTokens() throws Exception {
         UUID mapId = UUID.randomUUID();
-        when(service.findByMapId(mapId)).thenReturn(List.of(token("Goblin")));
+        when(service.findByMapId(mapId)).thenReturn(List.of(marker("Goblin")));
 
         mockMvc.perform(get("/api/v1/maps/{mapId}/tokens", mapId))
                 .andExpect(status().isOk())
@@ -43,14 +43,24 @@ class TokenApiControllerTest {
     }
 
     @Test
+    void shouldListMarkers() throws Exception {
+        UUID mapId = UUID.randomUUID();
+        when(service.findByMapId(mapId)).thenReturn(List.of(marker("Orc")));
+
+        mockMvc.perform(get("/api/v1/maps/{mapId}/markers", mapId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Orc"));
+    }
+
+    @Test
     void shouldCreateToken() throws Exception {
         UUID mapId = UUID.randomUUID();
-        TokenDto dto = token("Goblin");
+        MapMarkerDto dto = marker("Goblin");
         when(service.create(eq(mapId), any())).thenReturn(dto);
 
         mockMvc.perform(post("/api/v1/maps/{mapId}/tokens", mapId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Goblin\",\"kind\":\"MONSTER\",\"positionX\":100,\"positionY\":200,\"sizeCols\":1,\"sizeRows\":1,\"color\":\"#e74c3c\",\"hidden\":false,\"currentHp\":7,\"maxHp\":7}"))
+                        .content("{\"name\":\"Goblin\",\"kind\":\"MONSTER\",\"positionX\":100,\"positionY\":200,\"sizeCols\":1,\"sizeRows\":1,\"color\":\"#e74c3c\",\"hidden\":false}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Goblin"));
     }
@@ -58,7 +68,7 @@ class TokenApiControllerTest {
     @Test
     void shouldMoveToken() throws Exception {
         UUID id = UUID.randomUUID();
-        when(service.move(eq(id), any())).thenReturn(token("Moved"));
+        when(service.move(eq(id), any())).thenReturn(marker("Moved"));
 
         mockMvc.perform(patch("/api/v1/tokens/{id}/move", id)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -74,10 +84,24 @@ class TokenApiControllerTest {
     }
 
     @Test
-    void shouldAddPartyToMap() throws Exception {
-        UUID mapId = UUID.randomUUID();
-        when(service.addPartyToMap(mapId)).thenReturn(List.of());
-        mockMvc.perform(post("/api/v1/maps/{mapId}/tokens/add-party", mapId))
-                .andExpect(status().isOk());
+    void hpEndpointReturns405() throws Exception {
+        mockMvc.perform(patch("/api/v1/tokens/{id}/hp", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currentHp\":5}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deadEndpointReturns405() throws Exception {
+        mockMvc.perform(patch("/api/v1/tokens/{id}/dead", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dead\":true}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void addPartyEndpointReturns405() throws Exception {
+        mockMvc.perform(post("/api/v1/maps/{mapId}/tokens/add-party", UUID.randomUUID()))
+                .andExpect(status().isNotFound());
     }
 }

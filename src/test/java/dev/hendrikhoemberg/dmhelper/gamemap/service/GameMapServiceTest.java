@@ -477,16 +477,14 @@ class GameMapServiceTest {
         combatant.setName("Linked combatant");
         combatant.setMaxHp(10);
         combatant.setCurrentHp(10);
-        combatant.setToken(token);
         em.persist(combatant);
         em.flush();
         UUID tokenId = token.getId();
-        UUID combatantId = combatant.getId();
         var snapshot = new MapSettingsCommand.TokenSnapshot(
                 tokenId, token.getName(), token.getKind(), token.getPositionX(), token.getPositionY(),
                 token.getSizeCols(), token.getSizeRows(), token.getColor(), token.isHidden(),
-                token.getCurrentHp(), token.getMaxHp(), token.isDead(), null, null,
-                token.getNotes(), token.getIcon(), List.of(combatantId));
+                null, null, false, null, null,
+                token.getNotes(), token.getIcon(), List.of());
 
         var removed = service.updateSettings(map.getId(), new MapSettingsCommand(
                 map.getVersion(), 10, 10, 48, MapSettingsCommand.ResizeMode.CROP,
@@ -511,7 +509,6 @@ class GameMapServiceTest {
         assertThat(restored.getPositionX()).isEqualTo(19 * 48);
         assertThat(restored.getNotes()).isEqualTo("keep me");
         assertThat(em.find(Token.class, laterTokenId)).isNotNull();
-        assertThat(em.find(Combatant.class, combatantId).getToken().getId()).isEqualTo(tokenId);
     }
 
     private static Token token(GameMap map, String name, int x, int y) {

@@ -23,9 +23,7 @@ import dev.hendrikhoemberg.dmhelper.dice.DiceEngine;
 import dev.hendrikhoemberg.dmhelper.encounter.service.CombatDifficultyCalculator.DifficultyResult;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
-import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
-import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
-import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
+
 import dev.hendrikhoemberg.dmhelper.ledger.service.LedgerService;
 import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItem;
 import dev.hendrikhoemberg.dmhelper.library.data.MagicItem;
@@ -86,7 +84,6 @@ public class EncounterService {
     private final GameMapRepository mapRepo;
     private final CombatantRepository combatantRepo;
     private final CombatLogEntryRepository combatLogRepo;
-    private final TokenRepository tokenRepo;
     private final PartyMemberRepository partyRepo;
     private final StatBlockRepository statBlockRepo;
     private final EncounterWaveRepository waveRepo;
@@ -108,7 +105,6 @@ public class EncounterService {
     public EncounterService(EncounterRepository encounterRepo, CampaignRepository campaignRepo,
                             EntityManager em, GameMapRepository mapRepo,
                             CombatantRepository combatantRepo, CombatLogEntryRepository combatLogRepo,
-                            TokenRepository tokenRepo,
                             PartyMemberRepository partyRepo, StatBlockRepository statBlockRepo,
                             EncounterWaveRepository waveRepo,
                             CombatDifficultyCalculator calculator, DiceEngine diceEngine,
@@ -130,7 +126,6 @@ public class EncounterService {
         this.mapRepo = mapRepo;
         this.combatantRepo = combatantRepo;
         this.combatLogRepo = combatLogRepo;
-        this.tokenRepo = tokenRepo;
         this.partyRepo = partyRepo;
         this.statBlockRepo = statBlockRepo;
         this.waveRepo = waveRepo;
@@ -176,7 +171,7 @@ public class EncounterService {
                                ThreatKind threatKind, UUID threatId, ThreatCardView threatCard) {}
 
     public record CombatantCreateRequest(String name, int maxHp, String kind,
-                                         UUID tokenId, UUID statBlockId, UUID partyMemberId) {}
+                                         UUID statBlockId, UUID partyMemberId) {}
 
     public record ThreatCombatantRequest(
             ThreatKind threatKind, UUID threatId, String name,
@@ -216,8 +211,6 @@ public class EncounterService {
     public record ConcentrationCheckRequest(boolean passed) {}
     public record RechargePrompt(String abilityName, int minRoll, int maxRoll) {}
     public record RechargeCheckRequest(String abilityName, Integer rollResult) {}
-
-    public record PrefillMapRequest(UUID mapId) {}
 
     public record EncounterDto(UUID id, UUID campaignId, UUID mapId, String name, String status,
                                int round, int activeTurnIndex, String combatPhase, int combatantCount,
@@ -289,7 +282,7 @@ public class EncounterService {
                 c.getName(), c.getInitiative(), c.getSortOrder(),
                 c.getCurrentHp(), c.getMaxHp(), c.getTempHp(),
                 c.getKind(), c.getGroupId(), c.isGroupLeader(),
-                c.getToken() != null ? c.getToken().getId() : null,
+                null,
                 placementId,
                 c.getStatBlock() != null ? c.getStatBlock().getId() : null,
                 c.getPartyMember() != null ? c.getPartyMember().getId() : null,
@@ -723,18 +716,7 @@ public class EncounterService {
         String kind = req.kind() != null ? req.kind() : "NPC";
         int currentHp = maxHp;
 
-        if (req.tokenId() != null) {
-            if (combatantRepo.findByEncounterIdAndTokenId(encounterId, req.tokenId()).isPresent()) {
-                throw new IllegalArgumentException("Token already has a combatant in this encounter");
-            }
-            Token token = tokenRepo.findById(req.tokenId())
-                    .orElseThrow(() -> new NotFoundException("Token not found: " + req.tokenId()));
-            name = token.getName();
-            kind = token.getKind();
-            maxHp = token.getMaxHp() != null ? token.getMaxHp() : 10;
-            currentHp = token.getCurrentHp() != null ? token.getCurrentHp() : maxHp;
-            c.setToken(token);
-        } else if (req.statBlockId() != null) {
+        if (req.statBlockId() != null) {
             StatBlock sb = statBlockRepo.findById(req.statBlockId())
                     .orElseThrow(() -> new NotFoundException("StatBlock not found: " + req.statBlockId()));
             // Prefer caller-supplied display names (library multi-add uses "Goblin 1", "Goblin 2", …).
@@ -808,7 +790,6 @@ public class EncounterService {
                     req.quantity() == 1 ? baseName : baseName + " " + (i + 1),
                     hp > 0 ? hp : 10,
                     "MONSTER",
-                    null,
                     sb.getId(),
                     null);
             CombatantDto dto = addCombatant(encounterId, one);
@@ -889,42 +870,6 @@ public class EncounterService {
         Combatant saved = combatantRepo.save(c);
         syncCombatantToPartyMember(saved);
         return toDto(saved);
-    }
-
-    public List<CombatantDto> prefillFromMap(UUID encounterId, UUID mapId) {
-        Encounter e = findEntityById(encounterId);
-        List<Token> tokens = tokenRepo.findByMapIdOrderByNameAsc(mapId);
-        for (Token token : tokens) {
-            if (combatantRepo.findByEncounterIdAndTokenId(encounterId, token.getId()).isPresent()) {
-                continue;
-            }
-            if (token.getPartyMember() != null
-                    && combatantRepo.findByEncounterIdAndPartyMemberId(encounterId, token.getPartyMember().getId()).isPresent()) {
-                continue;
-            }
-            Combatant c = new Combatant();
-            c.setEncounter(e);
-            c.setName(token.getName());
-            c.setKind(token.getKind());
-            if (token.getPartyMember() != null) {
-                PartyMember linked = token.getPartyMember();
-                c.setMaxHp(linked.getMaxHp());
-                c.setCurrentHp(linked.getCurrentHp());
-                c.setTempHp(linked.getTempHp());
-                if (linked.getConditionsJson() != null && !linked.getConditionsJson().isBlank()) {
-                    c.setConditionsJson(linked.getConditionsJson());
-                }
-                c.setConcentratingOn(linked.getConcentratingOn());
-                c.setPartyMember(linked);
-            } else {
-                c.setMaxHp(token.getMaxHp() != null ? token.getMaxHp() : 10);
-                c.setCurrentHp(token.getCurrentHp() != null ? token.getCurrentHp() : c.getMaxHp());
-            }
-            c.setToken(token);
-            c.setSortOrder((int) combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).size());
-            combatantRepo.save(c);
-        }
-        return getCombatants(encounterId);
     }
 
     public List<CombatantDto> prefillFromParty(UUID encounterId, UUID campaignId) {
@@ -1127,74 +1072,6 @@ public class EncounterService {
         }
         resortCombatants(encounterId, activeCombatantId);
         return toDto(e);
-    }
-
-    /**
-     * Place map tokens for combatants that declare start coordinates and/or a placement region.
-     * Existing token links are left alone. No-op when the encounter has no map.
-     */
-    private void placeTokensForWave(Encounter e, EncounterWave wave) {
-        if (e.getMap() == null) return;
-        GameMap map = e.getMap();
-        List<Combatant> combatants = combatantRepo.findByWaveId(wave.getId());
-        MapDocumentDto doc = parseMapDocument(map);
-        int cell = map.getCellSizePx() > 0 ? map.getCellSizePx() : 48;
-        int index = 0;
-        for (Combatant c : combatants) {
-            if (c.getToken() != null) continue;
-            Integer x = c.getStartX();
-            Integer y = c.getStartY();
-            if ((x == null || y == null) && c.getPlacementRegionKey() != null && doc != null) {
-                int[] center = regionCenterPixels(doc, c.getPlacementRegionKey(), cell);
-                if (center != null) {
-                    x = center[0] + (index * cell / 2);
-                    y = center[1] + (index * cell / 2);
-                }
-            }
-            if (x == null || y == null) {
-                index++;
-                continue;
-            }
-            Token token = new Token();
-            token.setMap(map);
-            token.setName(c.getName());
-            token.setKind(c.getKind() != null ? c.getKind() : "MONSTER");
-            token.setPositionX(x);
-            token.setPositionY(y);
-            token.setMaxHp(c.getMaxHp());
-            token.setCurrentHp(c.getCurrentHp());
-            if (c.getStatBlock() != null) token.setStatBlock(c.getStatBlock());
-            if (c.getPartyMember() != null) token.setPartyMember(c.getPartyMember());
-            Token saved = tokenRepo.save(token);
-            c.setToken(saved);
-            combatantRepo.save(c);
-            index++;
-        }
-    }
-
-    private MapDocumentDto parseMapDocument(GameMap map) {
-        if (map.getDocument() == null || map.getDocument().isBlank()) return null;
-        try {
-            return JSON_MAPPER.readValue(map.getDocument(), MapDocumentDto.class);
-        } catch (Exception ex) {
-            return null;
-        }
-    }
-
-    private static int[] regionCenterPixels(MapDocumentDto doc, String regionKey, int cellSizePx) {
-        if (doc.primitives() == null) return null;
-        for (MapDocumentDto.PrimitiveDto p : doc.primitives()) {
-            if (p == null || p.key() == null) continue;
-            if (!regionKey.equals(p.key())) continue;
-            if (!"REGION".equalsIgnoreCase(p.type()) && p.type() != null
-                    && !p.type().isBlank() && !"region".equalsIgnoreCase(p.type())) {
-                // still allow named non-REGION primitives as placement anchors
-            }
-            int midCol = (p.startCol() + p.endCol()) / 2;
-            int midRow = (p.startRow() + p.endRow()) / 2;
-            return new int[]{midCol * cellSizePx, midRow * cellSizePx};
-        }
-        return null;
     }
 
     private static int parseHpAsInt(StatBlock sb) {

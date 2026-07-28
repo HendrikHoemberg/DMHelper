@@ -169,7 +169,7 @@ class EncounterPartyHpSyncTest {
                 new CreateRequest("Encounter", null));
 
         CombatantDto c = encounterService.addCombatant(enc.id(),
-                new CombatantCreateRequest(null, 0, null, null, null, pm.getId()));
+                new CombatantCreateRequest(null, 0, null, null, pm.getId()));
 
         assertThat(c.maxHp()).isEqualTo(20);
         assertThat(c.currentHp()).isEqualTo(14);
@@ -216,7 +216,7 @@ class EncounterPartyHpSyncTest {
         EncounterDto enc = encounterService.create(campaign.getId(),
                 new CreateRequest("Encounter", null));
         encounterService.addCombatant(enc.id(),
-                new CombatantCreateRequest(null, 0, null, null, null, pm.getId()));
+                new CombatantCreateRequest(null, 0, null, null, pm.getId()));
 
         var combatants = encounterService.getCombatants(enc.id());
         CombatantDto combatant = combatants.getFirst();
@@ -234,7 +234,7 @@ class EncounterPartyHpSyncTest {
         EncounterDto enc = encounterService.create(campaign.getId(),
                 new CreateRequest("Encounter", null));
         encounterService.addCombatant(enc.id(),
-                new CombatantCreateRequest(null, 0, null, null, null, pm.getId()));
+                new CombatantCreateRequest(null, 0, null, null, pm.getId()));
 
         var combatants = encounterService.getCombatants(enc.id());
         CombatantDto combatant = combatants.getFirst();
@@ -252,7 +252,7 @@ class EncounterPartyHpSyncTest {
         EncounterDto enc = encounterService.create(campaign.getId(),
                 new CreateRequest("Encounter", null));
         encounterService.addCombatant(enc.id(),
-                new CombatantCreateRequest(null, 0, null, null, null, pm.getId()));
+                new CombatantCreateRequest(null, 0, null, null, pm.getId()));
 
         var combatants = encounterService.getCombatants(enc.id());
         CombatantDto combatant = combatants.getFirst();
@@ -269,7 +269,7 @@ class EncounterPartyHpSyncTest {
         EncounterDto enc = encounterService.create(campaign.getId(),
                 new CreateRequest("Encounter", null));
         encounterService.addCombatant(enc.id(),
-                new CombatantCreateRequest(null, 0, null, null, null, pm.getId()));
+                new CombatantCreateRequest(null, 0, null, null, pm.getId()));
 
         var combatants = encounterService.getCombatants(enc.id());
         CombatantDto combatant = combatants.getFirst();
@@ -287,7 +287,7 @@ class EncounterPartyHpSyncTest {
         EncounterDto enc = encounterService.create(campaign.getId(),
                 new CreateRequest("Encounter", null));
         encounterService.addCombatant(enc.id(),
-                new CombatantCreateRequest(null, 0, null, null, null, pm.getId()));
+                new CombatantCreateRequest(null, 0, null, null, pm.getId()));
 
         var combatants = encounterService.getCombatants(enc.id());
         CombatantDto combatant = combatants.getFirst();
@@ -304,7 +304,7 @@ class EncounterPartyHpSyncTest {
         EncounterDto enc = encounterService.create(campaign.getId(),
                 new CreateRequest("Encounter", null));
         encounterService.addCombatant(enc.id(),
-                new CombatantCreateRequest(null, 0, null, null, null, pm.getId()));
+                new CombatantCreateRequest(null, 0, null, null, pm.getId()));
 
         var combatants = encounterService.getCombatants(enc.id());
         CombatantDto combatant = combatants.getFirst();
@@ -324,7 +324,7 @@ class EncounterPartyHpSyncTest {
         EncounterDto enc = encounterService.create(campaign.getId(),
                 new CreateRequest("Encounter", null));
         CombatantDto c = encounterService.addCombatant(enc.id(),
-                new CombatantCreateRequest("Goblin", 10, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Goblin", 10, "MONSTER", null, null));
 
         encounterService.setHp(c.id(), 3, 0);
 

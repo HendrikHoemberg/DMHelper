@@ -119,7 +119,7 @@ public class EncounterController {
                                @RequestParam String name,
                                @RequestParam(defaultValue = "10") int maxHp,
                                @RequestParam(defaultValue = "NPC") String kind) {
-        encounterService.addCombatant(encounterId, new CombatantCreateRequest(name, maxHp, kind, null, null, null));
+        encounterService.addCombatant(encounterId, new CombatantCreateRequest(name, maxHp, kind, null, null));
         return "redirect:/campaigns/" + campaignId + "/encounters/" + encounterId;
     }
 
@@ -132,15 +132,6 @@ public class EncounterController {
                                      @RequestParam(required = false) UUID waveId) {
         encounterService.addThreatCombatant(encounterId,
                 new ThreatCombatantRequest(threatKind, threatId, name, initiative, waveId));
-        return "redirect:/campaigns/" + campaignId + "/encounters/" + encounterId;
-    }
-
-    @PostMapping("/{encounterId}/prefill/map")
-    public String prefillFromMap(@PathVariable UUID campaignId, @PathVariable UUID encounterId) {
-        var enc = encounterService.getById(encounterId);
-        if (enc.mapId() != null) {
-            encounterService.prefillFromMap(encounterId, enc.mapId());
-        }
         return "redirect:/campaigns/" + campaignId + "/encounters/" + encounterId;
     }
 

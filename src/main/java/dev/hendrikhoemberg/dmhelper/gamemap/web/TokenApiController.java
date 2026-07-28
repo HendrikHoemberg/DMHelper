@@ -19,34 +19,29 @@ public class TokenApiController {
         this.service = service;
     }
 
-    @GetMapping("/maps/{mapId}/tokens")
-    public List<TokenDto> listTokens(@PathVariable UUID mapId) {
+    @GetMapping({"/maps/{mapId}/tokens", "/maps/{mapId}/markers"})
+    public List<MapMarkerDto> listTokens(@PathVariable UUID mapId) {
         return service.findByMapId(mapId);
     }
 
     @PostMapping("/maps/{mapId}/tokens")
-    public ResponseEntity<TokenDto> createToken(@PathVariable UUID mapId,
-                                                @RequestBody TokenCreateRequest request) {
+    public ResponseEntity<MapMarkerDto> createToken(@PathVariable UUID mapId,
+                                                    @RequestBody MapMarkerRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(mapId, request));
     }
 
     @GetMapping("/tokens/{id}")
-    public TokenDto getToken(@PathVariable UUID id) {
-        return TokenService.toDto(service.findEntityById(id));
+    public MapMarkerDto getToken(@PathVariable UUID id) {
+        return TokenService.toMarkerDto(service.findEntityById(id));
     }
 
     @PatchMapping("/tokens/{id}/move")
-    public TokenDto moveToken(@PathVariable UUID id, @RequestBody TokenMoveRequest request) {
+    public MapMarkerDto moveToken(@PathVariable UUID id, @RequestBody TokenMoveRequest request) {
         return service.move(id, request);
     }
 
-    @PatchMapping("/tokens/{id}/hp")
-    public TokenDto updateHp(@PathVariable UUID id, @RequestBody TokenHpRequest request) {
-        return service.updateHp(id, request);
-    }
-
     @PutMapping("/tokens/{id}")
-    public TokenDto updateToken(@PathVariable UUID id, @RequestBody TokenCreateRequest request) {
+    public MapMarkerDto updateToken(@PathVariable UUID id, @RequestBody MapMarkerRequest request) {
         return service.update(id, request);
     }
 
@@ -57,19 +52,9 @@ public class TokenApiController {
     }
 
     @PostMapping("/tokens/{id}/duplicate")
-    public TokenDto duplicateToken(@PathVariable UUID id,
-                                   @RequestParam(defaultValue = "48") int offsetX,
-                                   @RequestParam(defaultValue = "48") int offsetY) {
+    public MapMarkerDto duplicateToken(@PathVariable UUID id,
+                                       @RequestParam(defaultValue = "48") int offsetX,
+                                       @RequestParam(defaultValue = "48") int offsetY) {
         return service.duplicate(id, offsetX, offsetY);
-    }
-
-    @PatchMapping("/tokens/{id}/dead")
-    public TokenDto markDead(@PathVariable UUID id, @RequestBody TokenDeadRequest request) {
-        return service.markDead(id, request.dead());
-    }
-
-    @PostMapping("/maps/{mapId}/tokens/add-party")
-    public List<TokenDto> addPartyToMap(@PathVariable UUID mapId) {
-        return service.addPartyToMap(mapId);
     }
 }

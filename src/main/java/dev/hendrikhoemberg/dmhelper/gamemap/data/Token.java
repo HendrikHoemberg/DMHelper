@@ -53,15 +53,6 @@ public class Token {
     @JoinColumn(name = "party_member_id")
     private PartyMember partyMember;
 
-    @Column
-    private Integer currentHp;
-
-    @Column
-    private Integer maxHp;
-
-    @Column(nullable = false)
-    private boolean dead = false;
-
     @Column(columnDefinition = "CLOB")
     private String notes;
 
@@ -103,15 +94,6 @@ public class Token {
 
     public PartyMember getPartyMember() { return partyMember; }
     public void setPartyMember(PartyMember partyMember) { this.partyMember = partyMember; }
-
-    public Integer getCurrentHp() { return currentHp; }
-    public void setCurrentHp(Integer currentHp) { this.currentHp = currentHp; }
-
-    public Integer getMaxHp() { return maxHp; }
-    public void setMaxHp(Integer maxHp) { this.maxHp = maxHp; }
-
-    public boolean isDead() { return dead; }
-    public void setDead(boolean dead) { this.dead = dead; }
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }

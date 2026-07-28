@@ -181,7 +181,6 @@ class CampaignCascadeDeleteTest {
         cb.setName("Bugbear");
         cb.setMaxHp(27);
         cb.setCurrentHp(27);
-        cb.setToken(token);
         combatantRepo.save(cb);
 
         CombatLogEntry log = new CombatLogEntry();

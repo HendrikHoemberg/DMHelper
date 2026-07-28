@@ -375,7 +375,7 @@ public class CampaignService {
                         t.isHidden(),
                         t.getStatBlock() != null ? t.getStatBlock().getSourceKey() : null,
                         t.getPartyMember() != null ? t.getPartyMember().getCharacterName() : null,
-                        t.getCurrentHp(), t.getMaxHp(), t.isDead(), t.getNotes()));
+                        t.getNotes()));
                 tokenIdMap.put(t.getId(), t.getId().toString());
             }
             tokenIdMapsByMap.put(gameMap.getId(), tokenIdMap);
@@ -390,7 +390,7 @@ public class CampaignService {
                     : java.util.Map.of();
             List<CampaignExportDto.CombatantExportDto> combatants = combatantRepo
                     .findByEncounterIdOrderBySortOrderAsc(enc.getId()).stream()
-                    .map(c -> CampaignExportDto.CombatantExportDto.from(c, tokenIdMap))
+                    .map(CampaignExportDto.CombatantExportDto::from)
                     .toList();
             encounters.add(CampaignExportDto.EncounterExportDto.from(enc, combatants));
         }
@@ -723,9 +723,6 @@ public class CampaignService {
                         token.setSizeCols(tDto.sizeCols());
                         token.setSizeRows(tDto.sizeRows());
                         token.setHidden(tDto.hidden());
-                        token.setCurrentHp(tDto.currentHp());
-                        token.setMaxHp(tDto.maxHp());
-                        token.setDead(tDto.dead());
                         token.setNotes(tDto.notes());
                         if (tDto.statBlockKey() != null) {
                             var resolved = statBlockRepository.findByCampaignIdAndSourceKey(saved.getId(), tDto.statBlockKey())
@@ -841,18 +838,6 @@ public class CampaignService {
                         combatant.setKind(cDto.kind());
                         combatant.setGroupId(cDto.groupId());
                         combatant.setGroupLeader(cDto.groupLeader());
-                        if (cDto.tokenId() != null) {
-                            UUID newTokenId = tokenOldToNewId.get(cDto.tokenId());
-                            if (newTokenId != null) {
-                                combatant.setToken(tokenRepo.findById(newTokenId)
-                                        .orElseThrow(() -> new IllegalStateException(
-                                                "Validated reference disappeared: token '" + cDto.tokenId() + "' in combatant '" + cDto.name() + "'")));
-                            } else {
-                                combatant.setToken(tokenRepo.findById(java.util.UUID.fromString(cDto.tokenId()))
-                                        .orElseThrow(() -> new IllegalStateException(
-                                                "Validated reference disappeared: token '" + cDto.tokenId() + "' in combatant '" + cDto.name() + "'")));
-                            }
-                        }
                         if (cDto.statBlockKey() != null) {
                             var resolved = statBlockRepository.findByCampaignIdAndSourceKey(saved.getId(), cDto.statBlockKey())
                                     .or(() -> statBlockRepository.findBySourceKey(cDto.statBlockKey()));

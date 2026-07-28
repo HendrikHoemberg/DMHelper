@@ -219,7 +219,7 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
                 token.getPositionX(), token.getPositionY(),
                 token.getSizeCols(), token.getSizeRows(),
                 token.isHidden(), statBlockRef, partyMemberRef,
-                token.getCurrentHp(), token.getMaxHp(), token.isDead(),
+                null, null, false,
                 token.getNotes(), token.getIcon()
         );
     }
@@ -270,9 +270,6 @@ public class MapSectionAdapter implements CampaignSectionExporter, CampaignSecti
                 token.setSizeCols(tokenDto.sizeCols());
                 token.setSizeRows(tokenDto.sizeRows());
                 token.setHidden(tokenDto.hidden());
-                token.setCurrentHp(tokenDto.currentHp());
-                token.setMaxHp(tokenDto.maxHp());
-                token.setDead(tokenDto.dead());
                 token.setNotes(tokenDto.notes());
                 token.setIcon(tokenDto.icon());
 

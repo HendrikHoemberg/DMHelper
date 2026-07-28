@@ -165,9 +165,7 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
     private CombatantDto exportCombatant(Combatant combatant, CampaignExportContext context) {
         String key = context.key(CampaignContentType.COMBATANT, combatant.getId(), combatant.getName());
 
-        ContentReference tokenRef = combatant.getToken() != null
-                ? context.packageRef(CampaignContentType.TOKEN, combatant.getToken().getId(), combatant.getToken().getName())
-                : null;
+        ContentReference tokenRef = null;
         ContentReference statBlockRef = combatant.getStatBlock() != null
                 ? statBlockResolver.referenceFor(combatant.getStatBlock(), context)
                 : null;
@@ -353,13 +351,6 @@ public class EncounterSectionAdapter implements CampaignSectionExporter, Campaig
                                 ContentReference.packageRef(CampaignContentType.ENCOUNTER_WAVE, cDto.waveKey()),
                                 CampaignContentType.ENCOUNTER_WAVE, EncounterWave.class);
                         combatant.setWave(wave);
-                    });
-                }
-                if (cDto.tokenRef() != null) {
-                    context.defer("combatant token " + cDto.key(), () -> {
-                        var token = context.require(cDto.tokenRef(), CampaignContentType.TOKEN,
-                                dev.hendrikhoemberg.dmhelper.gamemap.data.Token.class);
-                        combatant.setToken(token);
                     });
                 }
                 if (cDto.statBlockRef() != null) {
