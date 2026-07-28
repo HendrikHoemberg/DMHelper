@@ -308,6 +308,8 @@ class MapEditorBrowserTest {
         page.waitForTimeout(100);
 
         assertThat(page.locator("[data-image-control=\"background-section\"]").isVisible()).isTrue();
+        assertThat((Number) page.evaluate(
+                "() => window.mapEditor.transformer.nodes().length")).isEqualTo(1);
 
         page.waitForResponse(
                 resp -> resp.url().contains("/api/v1/maps/" + map.getId() + "/document")
