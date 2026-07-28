@@ -93,7 +93,17 @@ class GameMapControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("maps/editor"))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Threat pins")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("threat-pin")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("threat-pin")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("map-settings")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("background-inspector")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("gridWidth")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("gridHeight")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("cellSizePx")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("fit-inside")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("fill-cover")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("imageWidth")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("imageHeight")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("imageLocked")));
     }
 
     @Test

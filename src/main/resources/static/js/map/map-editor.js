@@ -186,21 +186,52 @@ export class MapEditor {
         if (!this.document) return;
         const probe = new Image();
         probe.onload = () => {
+            let w = probe.naturalWidth;
+            let h = probe.naturalHeight;
+            const maxDim = 8192;
+            const hasTransparency = dataUrl.startsWith('data:image/png') || dataUrl.startsWith('data:image/webp');
+
+            if (w > maxDim || h > maxDim) {
+                const scale = w > h ? maxDim / w : maxDim / h;
+                w = Math.round(w * scale);
+                h = Math.round(h * scale);
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            if (hasTransparency) {
+                ctx.clearRect(0, 0, w, h);
+            } else {
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, w, h);
+            }
+            ctx.drawImage(probe, 0, 0, w, h);
+            const format = hasTransparency ? 'image/png' : 'image/jpeg';
+            const normalizedDataUrl = canvas.toDataURL(format);
+
+            const imageCellWidth = w / this.cellSizePx;
+            const imageCellHeight = h / this.cellSizePx;
+            const fit = fitInsideGeometry(this.gridWidth, this.gridHeight, imageCellWidth, imageCellHeight);
+
             this.pushUndo();
             this.syncDocument();
-            const aspect = probe.naturalHeight / probe.naturalWidth;
-            const width = this.gridWidth;
-            const height = Math.max(1, Math.round(width * aspect));
             let layerDto = this.layerDto('image');
             if (!layerDto) {
                 layerDto = { id: 'image', name: 'Background', type: 'IMAGE', visible: true, locked: false, cells: [], shapes: [] };
                 this.document.layers.push(layerDto);
             }
-            layerDto.image = { dataUrl, x: 0, y: 0, width, height };
+            layerDto.image = {
+                dataUrl: normalizedDataUrl,
+                x: this.round2(fit.x), y: this.round2(fit.y),
+                width: this.round2(fit.width), height: this.round2(fit.height),
+                rotationDeg: 0, locked: false,
+            };
             this.renderDocument();
             this.emitLayerState();
             this.markDirty();
-            this.setStatus('Background image imported — Select tool to move/resize it');
+            this.setStatus(`Background image imported (${w}×${h}px) — Select tool to move/resize it`);
         };
         probe.src = dataUrl;
     }
@@ -329,6 +360,7 @@ export class MapEditor {
             kl.visible(layerDto.visible !== false);
         }
         this.stage.batchDraw();
+        this.emitImageState();
     }
 
     addCellRect(konvaLayer, cell, { primitive = false } = {}) {
@@ -1422,6 +1454,7 @@ export class MapEditor {
     }
 
     selectImageForTransform(node) {
+        if (this.isImageLocked()) { this.setStatus('Image is locked'); return; }
         this.clearShapeSelection();
         this.clearSelection();
         this.cancelPolygon();
@@ -1432,6 +1465,7 @@ export class MapEditor {
         this.transformer.nodes([node]);
         this.transformer.getLayer().batchDraw();
         this.setStatus('Background image selected — drag to move, handles to resize');
+        this.emitImageState();
     }
 
     clearImageSelection() {
@@ -1444,25 +1478,19 @@ export class MapEditor {
             this.transformer.nodes([]);
             this.transformer.getLayer()?.batchDraw();
         }
+        this.emitImageState();
     }
 
     commitImageTransform(node) {
-        this.pushUndo();
-        this.syncDocument();
-        const layerDto = this.layerDto('image');
-        if (layerDto && layerDto.image) {
-            const cs = this.cellSizePx;
-            layerDto.image = {
-                ...layerDto.image,
-                x: this.round2(node.x() / cs), y: this.round2(node.y() / cs),
-                width: this.round2((node.width() * node.scaleX()) / cs),
-                height: this.round2((node.height() * node.scaleY()) / cs),
-                rotationDeg: node.rotation(),
-            };
-        }
+        const cs = this.cellSizePx;
+        this.updateImageGeometry({
+            x: this.round2(node.x() / cs),
+            y: this.round2(node.y() / cs),
+            width: this.round2((node.width() * node.scaleX()) / cs),
+            height: this.round2((node.height() * node.scaleY()) / cs),
+            rotationDeg: node.rotation(),
+        });
         this.clearImageSelection();
-        this.renderDocument();
-        this.markDirty();
     }
 
     setShapeFill(color) {
@@ -1597,6 +1625,23 @@ export class MapEditor {
 
     emitHistoryState() {
         this.emit('map-historystate', { canUndo: this.undoStack.length > 0, canRedo: this.redoStack.length > 0 });
+    }
+
+    emitImageState() {
+        const img = this.layerDto('image')?.image;
+        if (!img) {
+            this.emit('map-image-state', { present: false, selected: false, locked: false, x: 0, y: 0, width: 0, height: 0, rotationDeg: 0, aspectRatio: 1 });
+            return;
+        }
+        const aspectRatio = img.width > 0 && img.height > 0 ? img.width / img.height : 1;
+        this.emit('map-image-state', {
+            present: true,
+            selected: !!this.imageSelection,
+            locked: !!img.locked,
+            x: img.x, y: img.y, width: img.width, height: img.height,
+            rotationDeg: img.rotationDeg || 0,
+            aspectRatio,
+        });
     }
 
     /* ---- Serialization: canvas → document ---- */
@@ -1800,54 +1845,12 @@ export class MapEditor {
             return;
         }
 
-        this.calibrateFromPoints(a.x, a.y, b.x, b.y, cellsBetween);
+        this.calibrateBackgroundImage(a.x, a.y, b.x, b.y, cellsBetween);
         this.calibrateMode = false;
         this.calibratePointA = null;
     }
 
-    calibrateFromPoints(ax, ay, bx, by, cellsBetween) {
-        const layerDto = this.layerDto('image');
-        if (!layerDto?.image) return;
-        const img = layerDto.image;
 
-        const distPx = Math.hypot((bx - ax) * this.cellSizePx, (by - ay) * this.cellSizePx);
-        const newCellSize = Math.max(8, Math.round(distPx / cellsBetween));
-        const scale = (cellsBetween * this.cellSizePx) / (distPx || 1);
-
-        this.pushUndo();
-        this.syncDocument();
-        img.width *= scale;
-        img.height *= scale;
-        img.calibration = {
-            ax, ay, bx, by, cellsBetween,
-            offsetXPx: img.x * this.cellSizePx,
-            offsetYPx: img.y * this.cellSizePx,
-        };
-
-        const oldCellSize = this.cellSizePx;
-        this.cellSizePx = newCellSize;
-        this.gridLayer.destroyChildren();
-        this.drawGrid();
-        this.renderDocument();
-        this.markDirty();
-        this.setStatus('Calibrated: cell size = ' + newCellSize + 'px (was ' + oldCellSize + 'px). Use "Apply cell size" to persist.');
-    }
-
-    async applyCalibrationCellSize() {
-        const newSize = this.cellSizePx;
-        try {
-            const res = await fetch(`/api/v1/maps/${this.mapId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cellSizePx: newSize }),
-            });
-            if (!res.ok) throw new Error('Failed: ' + res.status);
-            this.setStatus('Cell size applied (' + newSize + 'px)');
-        } catch (err) {
-            console.error('Apply cell size failed:', err);
-            this.setStatus('Failed to apply cell size');
-        }
-    }
 
     setImageLocked(locked) {
         const layerDto = this.layerDto('image');
@@ -1857,6 +1860,7 @@ export class MapEditor {
         layerDto.image.locked = !!locked;
         this.renderDocument();
         this.markDirty();
+        this.emitImageState();
         this.setStatus(locked ? 'Image locked' : 'Image unlocked');
     }
 
@@ -1955,6 +1959,7 @@ export class MapEditor {
             this.rebuildPalette();
             this.renderDocument();
             this.emitLayerState();
+            this.emitImageState();
             this.setStatus('Ready');
         } catch (err) {
             console.error('Failed to load map document:', err);
@@ -2057,6 +2062,31 @@ export class MapEditor {
         Object.assign(layerDto.image, patch);
         this.renderDocument();
         this.markDirty();
+    }
+
+    updateImageField(field, value) {
+        const layerDto = this.layerDto('image');
+        if (!layerDto?.image) return;
+        const num = parseFloat(value);
+        if (!isFinite(num)) return;
+        const img = layerDto.image;
+        if (field === 'width' || field === 'height') {
+            if (num <= 0) return;
+            if (img.locked && img.width > 0 && img.height > 0) {
+                const aspect = img.width / img.height;
+                if (field === 'width') {
+                    this.updateImageGeometry({ width: this.round2(num), height: this.round2(num / aspect) });
+                } else {
+                    this.updateImageGeometry({ width: this.round2(num * aspect), height: this.round2(num) });
+                }
+            } else {
+                this.updateImageGeometry({ [field]: this.round2(num) });
+            }
+        } else if (field === 'x' || field === 'y') {
+            this.updateImageGeometry({ [field]: this.round2(num) });
+        } else if (field === 'rotationDeg') {
+            this.updateImageGeometry({ [field]: num });
+        }
     }
 
     fitBackgroundImage(mode) {

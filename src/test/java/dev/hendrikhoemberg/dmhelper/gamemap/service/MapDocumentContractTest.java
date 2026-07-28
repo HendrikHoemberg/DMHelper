@@ -89,4 +89,35 @@ class MapDocumentContractTest {
         assertThat(img.calibration()).isNotNull();
         assertThat(img.calibration().cellsBetween()).isEqualTo(5);
     }
+
+    @Test
+    void imageDtoGeometryRotationLockAndCalibrationSurviveRoundTrip() throws Exception {
+        var map = mapService.create(campaign.getId(), "Image Test", 30, 20, 48);
+        var mapper = new JsonMapper();
+
+        var calibration = new MapDocumentDto.CalibrationDto(1.5, 2.0, 11.5, 12.0, 5, 0, 0);
+        var image = new MapLayerDto.ImageDto("data:image/png;base64,AAAA", 2.5, 3.0, 20.0, 15.0,
+                45.0, true, calibration);
+        var layer = new MapLayerDto("bg", "Background", MapLayerDto.LayerType.IMAGE,
+                true, true, List.of(), List.of(), image, true);
+
+        var doc = mapService.getDocument(map.getId());
+        var updated = new MapDocumentDto(2, doc.grid(), List.of(layer), List.of(), doc.customTerrain());
+
+        String json = mapper.writeValueAsString(updated);
+        mapService.updateDocument(map.getId(), json, map.getVersion());
+
+        var reloaded = mapService.getDocument(map.getId());
+        var img = reloaded.layers().get(0).image();
+        assertThat(img).isNotNull();
+        assertThat(img.x()).isEqualTo(2.5);
+        assertThat(img.y()).isEqualTo(3.0);
+        assertThat(img.width()).isEqualTo(20.0);
+        assertThat(img.height()).isEqualTo(15.0);
+        assertThat(img.rotationDeg()).isEqualTo(45.0);
+        assertThat(img.locked()).isTrue();
+        assertThat(img.calibration()).isNotNull();
+        assertThat(img.calibration().cellsBetween()).isEqualTo(5);
+        assertThat(reloaded.grid().cellSizePx()).isEqualTo(48);
+    }
 }

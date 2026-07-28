@@ -268,7 +268,7 @@
                 <button class="tool-btn" @click="rotateImage(90)" title="Rotate image 90° clockwise">↻ Rotate CW</button>
                 <button class="tool-btn" @click="startCrop()" title="Crop the background image">✂ Crop</button>
                 <button class="tool-btn" @click="startCalibration()" title="Calibrate grid to image">📐 Calibrate Grid</button>
-                <button class="tool-btn" @click="applyCalibrationCellSize()" title="Persist the calibrated cell size to the map">📏 Apply Cell Size</button>
+
                 <label class="map-editor-control" style="display: flex; align-items: center; gap: 4px; padding: 0 4px; cursor: pointer;" title="Lock background image position/size">
                     <input type="checkbox" x-model="imageLocked" @change="setImageLocked(imageLocked)"> 🔒 Lock
                 </label>
@@ -327,6 +327,43 @@
                             </label>
                         </div>
                     </template>
+                </div>
+
+                <div class="sidebar-section map-settings" id="map-settings">
+                    <h3>Map Settings</h3>
+                    <label class="sidebar-field">Width
+                        <input type="number" id="gridWidth" :value="gridWidth" disabled class="u-w-full">
+                    </label>
+                    <label class="sidebar-field">Height
+                        <input type="number" id="gridHeight" :value="gridHeight" disabled class="u-w-full">
+                    </label>
+                    <label class="sidebar-field">Cell Size
+                        <input type="number" id="cellSizePx" :value="cellSizePx" disabled class="u-w-full">
+                    </label>
+                </div>
+
+                <div class="sidebar-section background-inspector" id="background-inspector" x-show="imagePresent" style="display: none;">
+                    <h3>Background Image</h3>
+                    <label class="sidebar-field">X
+                        <input type="number" x-model.number="imageX" @change="updateImageField('x', imageX)" step="0.1" class="u-w-full">
+                    </label>
+                    <label class="sidebar-field">Y
+                        <input type="number" x-model.number="imageY" @change="updateImageField('y', imageY)" step="0.1" class="u-w-full">
+                    </label>
+                    <label class="sidebar-field">Width
+                        <input type="number" x-model.number="imageWidth" @change="updateImageField('width', imageWidth)" step="0.1" min="0" class="u-w-full">
+                    </label>
+                    <label class="sidebar-field">Height
+                        <input type="number" x-model.number="imageHeight" @change="updateImageField('height', imageHeight)" step="0.1" min="0" class="u-w-full">
+                    </label>
+                    <label class="sidebar-field">Rotation
+                        <input type="number" x-model.number="imageRotationDeg" @change="updateImageField('rotationDeg', imageRotationDeg)" step="1" class="u-w-full">
+                    </label>
+                    <div style="display: flex; gap: 4px; margin-top: var(--space-xs);">
+                        <button class="tool-btn" @click="fitImage('fit-inside')" :disabled="!imagePresent" id="fit-inside">Fit Inside</button>
+                        <button class="tool-btn" @click="fitImage('fill-cover')" :disabled="!imagePresent" id="fill-cover">Fill Cover</button>
+                        <button class="tool-btn" @click="resetImage()" :disabled="!imagePresent">Remove</button>
+                    </div>
                 </div>
 
                 <div class="sidebar-section" x-show="selectedShape" style="display: none;">
@@ -438,6 +475,14 @@
                 canRedo: false,
                 helpOpen: false,
                 imageLocked: false,
+                imagePresent: false,
+                imageSelected: false,
+                imageX: 0,
+                imageY: 0,
+                imageWidth: 0,
+                imageHeight: 0,
+                imageRotationDeg: 0,
+                imageAspectRatio: 1,
                 threatPinKind: 'TRAP',
                 threatPinQuery: '',
                 threatPinResults: [],
@@ -467,6 +512,18 @@
                     });
                     window.addEventListener('map-threat-pins', (e) => {
                         this.threatPins = (e.detail.pins || []).filter(p => p.pinKind === 'THREAT');
+                    });
+                    window.addEventListener('map-image-state', (e) => {
+                        const s = e.detail;
+                        this.imagePresent = s.present;
+                        this.imageSelected = s.selected;
+                        this.imageLocked = s.locked;
+                        this.imageX = s.x;
+                        this.imageY = s.y;
+                        this.imageWidth = s.width;
+                        this.imageHeight = s.height;
+                        this.imageRotationDeg = s.rotationDeg;
+                        this.imageAspectRatio = s.aspectRatio;
                     });
                     this.$nextTick(() => this.refreshThreatPins());
                 },
@@ -557,8 +614,10 @@
                 rotateImage(deg) { window.mapEditor?.rotateImage(deg); },
                 startCrop() { window.mapEditor?.startCrop(); },
                 startCalibration() { window.mapEditor?.startCalibration(); },
-                applyCalibrationCellSize() { window.mapEditor?.applyCalibrationCellSize(); },
                 setImageLocked(locked) { window.mapEditor?.setImageLocked(locked); },
+                updateImageField(field, value) { window.mapEditor?.updateImageField(field, value); },
+                fitImage(mode) { window.mapEditor?.fitBackgroundImage(mode === 'fit-inside' ? 'FIT_INSIDE' : 'FILL_COVER'); },
+                resetImage() { window.mapEditor?.resetBackgroundImage(); },
             };
         }
     </script>
