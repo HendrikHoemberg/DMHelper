@@ -27,7 +27,7 @@ select RANDOM_UUID(), c.encounter_id, c.id, t.map_id,
        t.positionx, t.positiony, t.size_cols, t.size_rows, t.color, t.icon
 from combatant c
 join token t on t.id = c.token_id
-where c.token_id is not null;
+;
 
 -- Add SUSPENDED to encounter status (portable varchar approach)
 alter table encounter alter column status varchar(16);

@@ -8,7 +8,7 @@ import java.sql.DriverManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class FlywayMigrationTest {
+class V26MigrationTest {
 
     @Test
     void v26BackfillsCombatantTokenPlacements() throws Exception {
@@ -66,6 +66,20 @@ class FlywayMigrationTest {
                         false, false, false, false,
                         0, 0, 0, 0, 0, 0)
                 """);
+
+            // Combatant without token_id - should NOT get a placement
+            st.execute("""
+                insert into combatant (id, encounter_id, name, max_hp, current_hp, kind,
+                                        sort_order, token_id,
+                                        concentration_check_pending, defeated, group_leader, hidden,
+                                        legendary_actions_max, legendary_actions_used,
+                                        legendary_resistances_max, legendary_resistances_used,
+                                        temp_hp, tie_breaker)
+                values ('30000000-0000-0000-0000-000000000002', '40000000-0000-0000-0000-000000000001',
+                        'No Token Goblin', 5, 5, 'MONSTER', 2, null,
+                        false, false, false, false,
+                        0, 0, 0, 0, 0, 0)
+                """);
         }
 
         // Step 3: Run V26 migration
@@ -86,6 +100,12 @@ class FlywayMigrationTest {
                 """);
             assertThat(rs.next()).isTrue();
             assertThat(rs.getInt(1)).isEqualTo(1);
+
+            // Combatant without token_id should NOT have a placement
+            var noTokenCount = st.executeQuery(
+                "select count(*) from encounter_token_placement where combatant_id = '30000000-0000-0000-0000-000000000002'");
+            assertThat(noTokenCount.next()).isTrue();
+            assertThat(noTokenCount.getInt(1)).isZero();
 
             // Legacy columns still exist (removed in V27)
             var combatantCols = st.executeQuery(
