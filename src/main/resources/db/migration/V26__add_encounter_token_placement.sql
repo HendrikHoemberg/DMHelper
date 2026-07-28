@@ -18,5 +18,18 @@ create table encounter_token_placement (
         references game_map(id) on delete cascade
 );
 
--- Add SUSPENDED to encounter status enum
-alter table encounter alter column status set data type enum('PLANNED', 'ACTIVE', 'SUSPENDED', 'DONE');
+-- Backfill placements from existing combatant→token links
+insert into encounter_token_placement (
+    id, encounter_id, combatant_id, map_id,
+    position_x, position_y, size_cols, size_rows, color, icon
+)
+select RANDOM_UUID(), c.encounter_id, c.id, t.map_id,
+       t.positionx, t.positiony, t.size_cols, t.size_rows, t.color, t.icon
+from combatant c
+join token t on t.id = c.token_id
+where c.token_id is not null;
+
+-- Add SUSPENDED to encounter status (portable varchar approach)
+alter table encounter alter column status varchar(16);
+alter table encounter add constraint ck_encounter_status
+    check (regexp_like(status, '^(PLANNED|ACTIVE|SUSPENDED|DONE)$'));
