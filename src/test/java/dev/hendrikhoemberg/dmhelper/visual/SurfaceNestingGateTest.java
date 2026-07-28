@@ -5,6 +5,7 @@ import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.LoadState;
+import dev.hendrikhoemberg.dmhelper.support.CampaignFixtures;
 import dev.hendrikhoemberg.dmhelper.support.PopulatedCampaignFixture;
 import dev.hendrikhoemberg.dmhelper.support.PreparationSurfaceFixture;
 import org.junit.jupiter.api.AfterAll;
@@ -19,6 +20,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,16 +71,19 @@ class SurfaceNestingGateTest {
     @LocalServerPort private int port;
     @Autowired private PopulatedCampaignFixture fixture;
     @Autowired private PreparationSurfaceFixture prepFixture;
+    @Autowired private CampaignFixtures campaignFixtures;
 
     private static Playwright playwright;
     private static Browser browser;
     private PopulatedCampaignFixture.Seeded seeded;
     private PreparationSurfaceFixture.Seeded prepared;
+    private UUID blockedCampaignId;
 
     @BeforeAll
     void seedAndLaunch() {
         seeded = fixture.seed();
         prepared = prepFixture.seed();
+        blockedCampaignId = campaignFixtures.operationalFixtureNotReady();
         playwright = Playwright.create();
         browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
     }
@@ -156,6 +162,43 @@ class SurfaceNestingGateTest {
             assertThat(findOffenders(page))
                     .as("same-fill bordered surfaces nested on %s — flatten the inner one", path)
                     .isEmpty();
+        }
+    }
+
+    @Test
+    void readinessActionsWrapWithoutInheritingCardFormStyling() {
+        try (Page page = browser.newPage()) {
+            page.setViewportSize(760, 900);
+            page.navigate("http://localhost:" + port + "/campaigns/" + blockedCampaignId);
+            page.waitForLoadState(LoadState.NETWORKIDLE);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> styles = (Map<String, Object>) page.evaluate("""
+                    () => {
+                      const actions = document.querySelector(
+                        '[data-readiness-category="ASSET"] .readiness-item__actions');
+                      const form = actions.querySelector('.inline-form');
+                      const formStyle = getComputedStyle(form);
+                      return {
+                        flexWrap: getComputedStyle(actions).flexWrap,
+                        formBackground: formStyle.backgroundColor,
+                        formBorder: formStyle.borderTopWidth,
+                        formPadding: formStyle.paddingTop,
+                        formMargin: formStyle.marginBottom,
+                        overflows: actions.scrollWidth > actions.clientWidth,
+                        summaryDisplay: getComputedStyle(
+                          document.querySelector('.readiness-group__heading')).display
+                      };
+                    }
+                    """);
+
+            assertThat(styles).containsEntry("flexWrap", "wrap");
+            assertThat(styles).containsEntry("formBackground", "rgba(0, 0, 0, 0)");
+            assertThat(styles).containsEntry("formBorder", "0px");
+            assertThat(styles).containsEntry("formPadding", "0px");
+            assertThat(styles).containsEntry("formMargin", "0px");
+            assertThat(styles).containsEntry("overflows", false);
+            assertThat(styles).containsEntry("summaryDisplay", "list-item");
         }
     }
 

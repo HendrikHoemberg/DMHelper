@@ -404,14 +404,18 @@
 }
 
 .readiness-group__heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-md);
+    display: list-item;
     padding: var(--space-sm) var(--space-md);
     cursor: pointer;
     color: var(--color-text);
     font-weight: 600;
+}
+
+.readiness-group__heading-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
 }
 
 .readiness-group__count {
@@ -454,9 +458,23 @@
 
 .readiness-item__actions {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: var(--space-sm);
     justify-self: end;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.readiness-item__actions .inline-form {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
 }
 
 .readiness-accepted > summary,

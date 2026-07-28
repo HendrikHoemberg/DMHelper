@@ -14,18 +14,20 @@
     <details th:each="group : ${readiness.blockerGroups()}" class="readiness-group"
              th:attr="data-readiness-category=${group.key.name()}" open>
       <summary class="readiness-group__heading">
-        <span th:text="${group.key.label()}">Category</span>
-        <span class="readiness-group__count"
-              th:text="${readiness.blockerCountLabel(group.value.size())}">1 blocker</span>
+        <span class="readiness-group__heading-content">
+          <span th:text="${group.key.label()}">Category</span>
+          <span class="readiness-group__count"
+                th:text="${readiness.blockerCountLabel(group.value.size())}">1 blocker</span>
+        </span>
       </summary>
       <p class="readiness-group__summary" th:text="${group.key.summary()}">Summary</p>
       <ul class="readiness-list">
         <li th:each="item : ${group.value}" class="readiness-item readiness-item--blocker">
-          <span class="readiness-item__content">
+          <div class="readiness-item__content">
             <span class="readiness-item__title" th:text="${item.title()}">Title</span>
             <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
-          </span>
-          <span class="readiness-item__actions">
+          </div>
+          <div class="readiness-item__actions">
             <th:block th:with="href=${repairService.hrefFor(campaignId, item.repairKind(), item.targetId())}">
               <a th:if="${href != null}" th:href="${href}"
                  class="btn btn-primary btn-xs readiness-item__repair"
@@ -48,7 +50,7 @@
               </select>
               <button type="submit" class="btn btn-xs">Set kind</button>
             </form>
-          </span>
+          </div>
         </li>
       </ul>
     </details>
@@ -58,15 +60,15 @@
       <summary th:text="|Accepted as explicit choices (${accepted.size()})|">Accepted as explicit choices</summary>
       <ul class="readiness-list">
         <li th:each="item : ${accepted}" class="readiness-item readiness-item--accepted">
-          <span class="readiness-item__content">
+          <div class="readiness-item__content">
             <span class="readiness-item__title" th:text="${item.title()}">Title</span>
             <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
-          </span>
-          <span class="readiness-item__actions">
+          </div>
+          <div class="readiness-item__actions">
             <button type="button" class="btn btn-ghost btn-xs readiness-item__undo"
                     th:hx-delete="@{/campaigns/{cid}/readiness/accept(cid=${campaignId},itemKey=${item.key()})}"
                     hx-target="closest .readiness-panel" hx-swap="outerHTML">Undo</button>
-          </span>
+          </div>
         </li>
       </ul>
     </details>

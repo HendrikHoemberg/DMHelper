@@ -120,9 +120,19 @@ class CampaignAdminSurfaceTest {
             assertThat(form.selectFirst("button").hasClass("btn-primary")).isFalse();
         });
 
-        assertThat(panel.select(".readiness-item__repair"))
+        var repairLinks = panel.select(".readiness-item__repair");
+        assertThat(repairLinks).hasSize(5);
+        assertThat(repairLinks)
                 .extracting(org.jsoup.nodes.Element::text)
                 .contains("Prepare encounter", "Review participants", "Add map", "Review handout");
+        assertThat(repairLinks).allSatisfy(link ->
+                assertThat(link.attr("href")).startsWith("/campaigns/" + campaignId + "/"));
+        assertThat(panel.select("[data-readiness-category=MAP] .readiness-item__repair"))
+                .hasSize(2)
+                .allSatisfy(link -> assertThat(link.attr("href")).contains("/adventures/").contains("/scenes/"));
+        assertThat(panel.select("[data-readiness-category=ASSET] .readiness-item__repair"))
+                .singleElement()
+                .satisfies(link -> assertThat(link.attr("href")).contains("/handouts/"));
         assertThat(acceptForms.select("button"))
                 .extracting(org.jsoup.nodes.Element::text)
                 .contains(
@@ -140,5 +150,7 @@ class CampaignAdminSurfaceTest {
         assertThat(panel.select("button"))
                 .extracting(org.jsoup.nodes.Element::text)
                 .contains("Set kind");
+        assertThat(panel.select(".readiness-item__content, .readiness-item__actions"))
+                .allSatisfy(container -> assertThat(container.tagName()).isEqualTo("div"));
     }
 }
