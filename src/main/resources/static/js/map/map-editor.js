@@ -1967,9 +1967,6 @@ export class MapEditor {
     previewGridResize(width, height) {
         const impact = boundsImpact(this.document, width, height);
         const affectedTokens = [];
-        if (width >= this.gridWidth && height >= this.gridHeight) {
-            return { outsideCells: [], affectedShapes: [], affectedTokens };
-        }
         return { ...impact, affectedTokens };
     }
 
@@ -1987,6 +1984,8 @@ export class MapEditor {
                 throw new Error('Content would be outside the new grid boundary');
             }
         }
+
+        this.pushUndo();
 
         if (resizeMode === 'CROP') {
             for (const layer of (this.document?.layers || [])) {
@@ -2032,10 +2031,6 @@ export class MapEditor {
                 this.document = data.document;
                 this.renderDocument();
             }
-            this.undoStack.push(snapshot);
-            if (this.undoStack.length > UNDO_MAX) this.undoStack.shift();
-            this.redoStack = [];
-            this.emitHistoryState();
             this.emit('map-gridstate', { gridWidth: width, gridHeight: height, cellSizePx });
             this.setSaveState('saved');
         } catch (err) {
@@ -2046,6 +2041,8 @@ export class MapEditor {
             this.document = snapshot.document;
             this.drawGrid();
             this.renderDocument();
+            this.undoStack.pop();
+            this.emitHistoryState();
             this.setSaveState('error');
             this.setStatus('Failed to apply grid settings');
             throw err;
@@ -2055,6 +2052,8 @@ export class MapEditor {
     updateImageGeometry(patch) {
         const layerDto = this.layerDto('image');
         if (!layerDto?.image) return;
+        this.pushUndo();
+        this.syncDocument();
         Object.assign(layerDto.image, patch);
         this.renderDocument();
         this.markDirty();

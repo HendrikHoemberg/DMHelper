@@ -209,5 +209,21 @@ class MapEditorBrowserTest {
         assertThat(((Number) state.get("gw")).intValue()).isEqualTo(40);
         assertThat(((Number) state.get("gh")).intValue()).isEqualTo(30);
         assertThat(((Number) state.get("cs")).intValue()).isEqualTo(64);
+
+        page.evaluate("() => window.mapEditor.undo()");
+        Map<String, Object> undone = (Map<String, Object>) page.evaluate("""
+                () => ({ gw: window.mapEditor.gridWidth, gh: window.mapEditor.gridHeight, cs: window.mapEditor.cellSizePx })
+                """);
+        assertThat(((Number) undone.get("gw")).intValue()).isEqualTo(30);
+        assertThat(((Number) undone.get("gh")).intValue()).isEqualTo(20);
+        assertThat(((Number) undone.get("cs")).intValue()).isEqualTo(48);
+
+        page.evaluate("() => window.mapEditor.redo()");
+        Map<String, Object> redone = (Map<String, Object>) page.evaluate("""
+                () => ({ gw: window.mapEditor.gridWidth, gh: window.mapEditor.gridHeight, cs: window.mapEditor.cellSizePx })
+                """);
+        assertThat(((Number) redone.get("gw")).intValue()).isEqualTo(40);
+        assertThat(((Number) redone.get("gh")).intValue()).isEqualTo(30);
+        assertThat(((Number) redone.get("cs")).intValue()).isEqualTo(64);
     }
 }
