@@ -46,12 +46,14 @@ public class EncounterController {
     }
 
     @GetMapping("/new")
-    public String newForm(@PathVariable UUID campaignId, Model model) {
+    public String newForm(@PathVariable UUID campaignId,
+                          @RequestHeader(value = "HX-Request", defaultValue = "false") boolean htmxRequest,
+                          Model model) {
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("encounter", null);
         model.addAttribute("maps", mapRepo.findByCampaignIdOrderBySortOrderAsc(campaignId));
         model.addAttribute("audioCues", audioCueRepository.findByCampaignIdOrderByNameAsc(campaignId));
-        return "encounter/_form :: form";
+        return htmxRequest ? "encounter/_form :: form" : "encounter/new";
     }
 
     @PostMapping

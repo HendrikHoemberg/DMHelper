@@ -81,11 +81,22 @@ class EncounterControllerTest {
     }
 
     @Test
-    void shouldRenderNewForm() throws Exception {
+    void shouldRenderNewEncounterPageForNormalNavigation() throws Exception {
         when(mapRepo.findByCampaignIdOrderBySortOrderAsc(campaignId)).thenReturn(List.of());
 
         mockMvc.perform(get("/campaigns/{campaignId}/encounters/new", campaignId))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(view().name("encounter/new"));
+    }
+
+    @Test
+    void shouldRenderNewEncounterFormFragmentForHtmxNavigation() throws Exception {
+        when(mapRepo.findByCampaignIdOrderBySortOrderAsc(campaignId)).thenReturn(List.of());
+
+        mockMvc.perform(get("/campaigns/{campaignId}/encounters/new", campaignId)
+                        .header("HX-Request", "true"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("encounter/_form :: form"));
     }
 
     @Test
