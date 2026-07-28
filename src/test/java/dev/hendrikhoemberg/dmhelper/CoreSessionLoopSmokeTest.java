@@ -339,8 +339,6 @@ class CoreSessionLoopSmokeTest {
         token.setMap(mapRepo.findById(mapId).orElseThrow());
         token.setName("Smoke Goblin");
         token.setKind("NPC");
-        token.setMaxHp(20);
-        token.setCurrentHp(20);
         token.setPositionX(200);
         token.setPositionY(150);
         token.setColor("#ff4444");
@@ -357,11 +355,10 @@ class CoreSessionLoopSmokeTest {
         encounterId = encounterService.create(campaignId,
                 new EncounterService.CreateRequest("Smoke Encounter", mapId)).id();
 
-        encounterService.prefillFromMap(encounterId, mapId);
         encounterService.activate(encounterId);
 
         var combatants = encounterService.getCombatants(encounterId);
-        assertThat(combatants).isNotEmpty();
+        assertThat(combatants).isEmpty();
 
         encounterService.setInitiative(combatants.get(0).id(), 10);
         encounterService.startCombat(encounterId, false);
@@ -569,15 +566,14 @@ class CoreSessionLoopSmokeTest {
         encounterService.endEncounter(encounterId);
         UUID plannedEncounterId = encounterService.create(campaignId,
                 new EncounterService.CreateRequest("Crypt Guardians", mapId)).id();
-        encounterService.prefillFromMap(plannedEncounterId, mapId);
         encounterService.addCombatant(plannedEncounterId,
-                new EncounterService.CombatantCreateRequest("Unset Hero", 20, "PC", null, null, null));
+                new EncounterService.CombatantCreateRequest("Unset Hero", 20, "PC", null, null));
         encounterService.addCombatant(plannedEncounterId,
-                new EncounterService.CombatantCreateRequest("Zero Hero", 20, "PC", null, null, null));
+                new EncounterService.CombatantCreateRequest("Zero Hero", 20, "PC", null, null));
         encounterService.addCombatant(plannedEncounterId,
-                new EncounterService.CombatantCreateRequest("Slow Hero", 20, "PC", null, null, null));
+                new EncounterService.CombatantCreateRequest("Slow Hero", 20, "PC", null, null));
         encounterService.addCombatant(plannedEncounterId,
-                new EncounterService.CombatantCreateRequest("Manual Goblin", 10, "NPC", null, null, null));
+                new EncounterService.CombatantCreateRequest("Manual Goblin", 10, "NPC", null, null));
         encounterService.addCombatant(plannedEncounterId,
                 new EncounterService.CombatantCreateRequest("Auto Goblin", 10, "NPC", null, null, null));
         var handout = handoutService.createImported(campaignId,
@@ -1024,31 +1020,6 @@ class CoreSessionLoopSmokeTest {
         dmPage.locator(".toast-error .toast-action").click();
         dmPage.locator(".dice-result-total").waitFor();
         assertThat(expression.inputValue()).isEmpty();
-    }
-
-    @Test
-    @Order(19)
-    void failedDefeatedToggleRestoresThePersistedAndVisibleState() {
-        Token before = tokenRepo.findByMapIdOrderByNameAsc(mapId).getFirst();
-        boolean originalDead = before.isDead();
-        String corr = "dead-failure-1234";
-        failOnce(dmPage, "**/api/v1/tokens/*/dead", "PATCH",
-                Pattern.compile(".*/api/v1/tokens/.+/dead"), corr);
-
-        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
-                + "/session?mapId=" + mapId);
-        selectCockpitPreset("builtin:combat");
-        dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");
-        dmPage.evaluate("([id]) => window.battleMap.selectToken(id)",
-                List.of(before.getId().toString()));
-
-        dmPage.evaluate("([id, dead]) => window.battleMap.markDead(id, dead)",
-                Arrays.asList(before.getId().toString(), !originalDead));
-        dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(corr)).waitFor();
-
-        assertThat(tokenRepo.findById(before.getId()).orElseThrow().isDead()).isEqualTo(originalDead);
-        assertThat(dmPage.evaluate("([id]) => window.battleMap.tokens.find(t => t.id === id).dead",
-                List.of(before.getId().toString()))).isEqualTo(originalDead);
     }
 
     @Test
@@ -2175,11 +2146,10 @@ class CoreSessionLoopSmokeTest {
         startSession();
         UUID defeatEncounterId = encounterService.create(campaignId,
                 new EncounterService.CreateRequest("Defeat Sequence", mapId)).id();
-        encounterService.prefillFromMap(defeatEncounterId, mapId);
         encounterService.activate(defeatEncounterId);
 
         var combatants = encounterService.getCombatants(defeatEncounterId);
-        assertThat(combatants).isNotEmpty();
+        assertThat(combatants).isEmpty();
         UUID combatantId = combatants.getFirst().id();
         encounterService.setInitiative(combatantId, 10);
         encounterService.startCombat(defeatEncounterId, true);

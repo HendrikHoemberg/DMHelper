@@ -483,8 +483,7 @@ class GameMapServiceTest {
         var snapshot = new MapSettingsCommand.TokenSnapshot(
                 tokenId, token.getName(), token.getKind(), token.getPositionX(), token.getPositionY(),
                 token.getSizeCols(), token.getSizeRows(), token.getColor(), token.isHidden(),
-                null, null, false, null, null,
-                token.getNotes(), token.getIcon(), List.of());
+                null, null, token.getNotes(), token.getIcon());
 
         var removed = service.updateSettings(map.getId(), new MapSettingsCommand(
                 map.getVersion(), 10, 10, 48, MapSettingsCommand.ResizeMode.CROP,

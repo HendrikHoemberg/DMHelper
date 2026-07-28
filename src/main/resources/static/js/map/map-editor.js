@@ -1712,14 +1712,10 @@ export class MapEditor {
             sizeRows: token.sizeRows,
             color: token.color,
             hidden: token.hidden,
-            currentHp: token.currentHp,
-            maxHp: token.maxHp,
-            dead: token.dead,
             statBlockId: token.statBlockId,
             partyMemberId: token.partyMemberId,
             notes: token.notes,
             icon: token.icon,
-            combatantIds: token.combatantIds || [],
         }));
     }
 

@@ -366,7 +366,7 @@ public class GameMapService {
                         width, height, cellSizePx);
                 tokenRepository.save(token);
             }
-            restoreCombatantLinks(token, snapshot.combatantIds());
+
         }
     }
 
@@ -414,8 +414,6 @@ public class GameMapService {
                 && java.util.Objects.equals(token.getIcon(), snapshot.icon());
     }
 
-    private void restoreCombatantLinks(Token token, List<UUID> requestedCombatantIds) {
-    }
 
     private void validateTokenSnapshotReferences(MapSettingsCommand.TokenSnapshot snapshot) {
         if (snapshot.statBlockId() != null && !statBlockRepository.existsById(snapshot.statBlockId())) {

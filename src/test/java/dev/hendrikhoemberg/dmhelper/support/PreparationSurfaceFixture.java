@@ -101,11 +101,11 @@ public class PreparationSurfaceFixture {
 
         UUID encounterId = encounters.create(campaignId, new CreateRequest(ENCOUNTER_NAME, null)).id();
         encounters.addCombatant(encounterId,
-                new CombatantCreateRequest(MONSTER_NAME + " A", 16, "MONSTER", null, null, null));
+                new CombatantCreateRequest(MONSTER_NAME + " A", 16, "MONSTER", null, null));
         encounters.addCombatant(encounterId,
-                new CombatantCreateRequest(MONSTER_NAME + " B", 16, "MONSTER", null, null, null));
+                new CombatantCreateRequest(MONSTER_NAME + " B", 16, "MONSTER", null, null));
         encounters.addCombatant(encounterId,
-                new CombatantCreateRequest(WOUNDED_MEMBER, 24, "PC", null, null, wounded.getId()));
+                new CombatantCreateRequest(WOUNDED_MEMBER, 24, "PC", null, wounded.getId()));
 
         encounters.updatePrep(encounterId, new EncounterPrep(
                 PREP_TACTICS, PREP_MORALE, "They surrender if surrounded.",

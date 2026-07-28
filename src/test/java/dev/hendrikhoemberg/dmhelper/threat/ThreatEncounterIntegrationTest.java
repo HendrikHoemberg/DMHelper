@@ -157,7 +157,7 @@ class ThreatEncounterIntegrationTest {
         CombatantDto trap = encounterService.addThreatCombatant(encounterId,
                 new ThreatCombatantRequest(ThreatKind.TRAP, campaignTrap.getId(), null, 20, null));
         CombatantDto goblin = encounterService.addCombatant(encounterId,
-                new CombatantCreateRequest("Goblin", 7, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Goblin", 7, "MONSTER", null, null));
         encounterService.setInitiative(goblin.id(), 10);
 
         encounterService.reorderCombatants(encounterId, List.of(goblin.id(), trap.id()));
@@ -196,7 +196,7 @@ class ThreatEncounterIntegrationTest {
         CombatantDto trap = encounterService.addThreatCombatant(encounterId,
                 new ThreatCombatantRequest(ThreatKind.TRAP, campaignTrap.getId(), null, 18, null));
         CombatantDto fighter = encounterService.addCombatant(encounterId,
-                new CombatantCreateRequest("Fighter", 30, "PC", null, null, null));
+                new CombatantCreateRequest("Fighter", 30, "PC", null, null));
         encounterService.setInitiative(fighter.id(), 12);
 
         encounterService.activate(encounterId);
@@ -230,7 +230,7 @@ class ThreatEncounterIntegrationTest {
         CombatantDto trap = encounterService.addThreatCombatant(encounterId,
                 new ThreatCombatantRequest(ThreatKind.TRAP, campaignTrap.getId(), null, 20, null));
         CombatantDto goblin = encounterService.addCombatant(encounterId,
-                new CombatantCreateRequest("Goblin", 15, "MONSTER", null, null, null));
+                new CombatantCreateRequest("Goblin", 15, "MONSTER", null, null));
         encounterService.setInitiative(goblin.id(), 8);
 
         encounterService.activate(encounterId);

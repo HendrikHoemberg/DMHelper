@@ -57,13 +57,9 @@ public record MapSettingsCommand(
             int sizeRows,
             String color,
             boolean hidden,
-            Integer currentHp,
-            Integer maxHp,
-            boolean dead,
             UUID statBlockId,
             UUID partyMemberId,
             String notes,
-            String icon,
-            List<UUID> combatantIds
+            String icon
     ) {}
 }
