@@ -680,7 +680,6 @@
                 updateImageField(field, value) { window.mapEditor?.updateImageField(field, value); },
                 fitImage(mode) { window.mapEditor?.fitBackgroundImage(mode === 'fit-inside' ? 'FIT_INSIDE' : 'FILL_COVER'); },
                 resetImage() { window.mapEditor?.resetBackgroundImage(); },
-                updateMapSetting(field, value) {},
                 previewResize() {
                     const w = parseInt(this.gridWidth) || 0;
                     const h = parseInt(this.gridHeight) || 0;
@@ -689,6 +688,7 @@
                     if (!ed) return;
                     this.resizeOldWidth = ed.gridWidth;
                     this.resizeOldHeight = ed.gridHeight;
+                    this.resizeOldCellSizePx = ed.cellSizePx;
                     this.resizeError = null;
                     if (w < ed.gridWidth || h < ed.gridHeight) {
                         this.resizePreview = ed.previewGridResize(w, h);
@@ -701,6 +701,7 @@
                 cancelResize() {
                     this.gridWidth = this.resizeOldWidth;
                     this.gridHeight = this.resizeOldHeight;
+                    this.cellSizePx = this.resizeOldCellSizePx || this.cellSizePx;
                     this.resizeDialogOpen = false;
                     this.resizePreview = null;
                     this.resizeError = null;
@@ -722,6 +723,7 @@
                         this.resizeError = e.message || 'Failed to apply settings';
                         this.gridWidth = this.resizeOldWidth;
                         this.gridHeight = this.resizeOldHeight;
+                        this.cellSizePx = this.resizeOldCellSizePx || this.cellSizePx;
                     } finally {
                         this.resizeSaving = false;
                     }

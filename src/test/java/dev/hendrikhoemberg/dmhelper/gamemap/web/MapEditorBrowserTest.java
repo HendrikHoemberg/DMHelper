@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.gamemap.web;
 
 import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.FilePayload;
 import com.microsoft.playwright.options.LoadState;
 import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
@@ -13,6 +14,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -274,5 +278,225 @@ class MapEditorBrowserTest {
         assertThat(((Number) state.get("w")).intValue()).isEqualTo(40);
         assertThat(((Number) state.get("h")).intValue()).isEqualTo(30);
         assertThat(((Number) state.get("cs")).intValue()).isEqualTo(64);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void imageImportSelectAndResize() throws Exception {
+        byte[] pngBytes;
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
+            ImageIO.write(img, "PNG", baos);
+            pngBytes = baos.toByteArray();
+        }
+
+        page.setInputFiles("input[type=\"file\"]",
+                new FilePayload("test.png", "image/png", pngBytes));
+
+        page.waitForFunction("""
+                () => window.mapEditor?.document?.layers?.some(
+                    l => l.type === 'IMAGE' && l.image != null)
+                """);
+
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).setLayer('image')");
+        page.waitForTimeout(100);
+
+        assertThat(page.locator("[data-image-control=\"background-section\"]").isVisible()).isTrue();
+
+        page.waitForResponse(
+                resp -> resp.url().contains("/api/v1/maps/" + map.getId() + "/document")
+                        && "PUT".equals(resp.request().method()),
+                () -> page.evaluate("""
+                        () => {
+                            const img = window.mapEditor.document.layers
+                                .find(l => l.type === 'IMAGE').image;
+                            img.width = 15.0;
+                            img.height = 15.0;
+                            window.mapEditor.markDirty();
+                            window.mapEditor.save();
+                        }
+                        """)
+        );
+
+        Number docWidth = (Number) page.evaluate("""
+                () => window.mapEditor.document.layers
+                    .find(l => l.type === 'IMAGE').image.width
+                """);
+        assertThat(docWidth.doubleValue()).isCloseTo(15.0, within(0.01));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void importedImageHasCorrectFitGeometry() throws Exception {
+        byte[] pngBytes;
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
+            ImageIO.write(img, "PNG", baos);
+            pngBytes = baos.toByteArray();
+        }
+
+        page.setInputFiles("input[type=\"file\"]",
+                new FilePayload("test.png", "image/png", pngBytes));
+
+        page.waitForFunction("""
+                () => window.mapEditor?.document?.layers?.some(
+                    l => l.type === 'IMAGE' && l.image != null)
+                """);
+
+        Map<String, Object> imageState = (Map<String, Object>) page.evaluate("""
+                () => {
+                    const i = window.mapEditor.document.layers.find(l => l.type === 'IMAGE').image;
+                    return {x: i.x, y: i.y, w: i.width, h: i.height,
+                            gw: window.mapEditor.gridWidth, gh: window.mapEditor.gridHeight};
+                }
+                """);
+
+        assertThat(((Number) imageState.get("x")).doubleValue()).isGreaterThanOrEqualTo(0);
+        assertThat(((Number) imageState.get("y")).doubleValue()).isGreaterThanOrEqualTo(0);
+        double right = ((Number) imageState.get("x")).doubleValue() + ((Number) imageState.get("w")).doubleValue();
+        double bottom = ((Number) imageState.get("y")).doubleValue() + ((Number) imageState.get("h")).doubleValue();
+        assertThat(right).isLessThanOrEqualTo(((Number) imageState.get("gw")).doubleValue() + 0.001);
+        assertThat(bottom).isLessThanOrEqualTo(((Number) imageState.get("gh")).doubleValue() + 0.001);
+
+        assertThat(page.locator("[data-image-control=\"background-section\"]").isVisible()).isTrue();
+
+        page.evaluate("""
+                () => {
+                    const img = window.mapEditor.document.layers
+                        .find(l => l.type === 'IMAGE').image;
+                    img.rotationDeg = 45;
+                    img.locked = true;
+                }
+                """);
+
+        Map<String, Object> docState = (Map<String, Object>) page.evaluate("""
+                () => {
+                    const i = window.mapEditor.document.layers
+                        .find(l => l.type === 'IMAGE').image;
+                    return {r: i.rotationDeg, l: i.locked};
+                }
+                """);
+        assertThat(((Number) docState.get("r")).doubleValue()).isCloseTo(45.0, within(0.01));
+        assertThat((Boolean) docState.get("l")).isTrue();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void persistenceAfterReload() throws Exception {
+        byte[] pngBytes;
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
+            ImageIO.write(img, "PNG", baos);
+            pngBytes = baos.toByteArray();
+        }
+
+        page.setInputFiles("input[type=\"file\"]",
+                new FilePayload("test.png", "image/png", pngBytes));
+
+        page.waitForFunction("""
+                () => window.mapEditor?.document?.layers?.some(
+                    l => l.type === 'IMAGE' && l.image != null)
+                """);
+
+        page.evaluate("""
+                () => {
+                    const i = window.mapEditor.document.layers.find(l => l.type === 'IMAGE').image;
+                    i.rotationDeg = 45;
+                    i.locked = true;
+                    i.width = 18;
+                }
+                """);
+        page.evaluate("() => window.mapEditor.markDirty()");
+
+        page.waitForFunction("""
+                () => document.getElementById('saveIndicator')
+                    ?.textContent === 'Saved'
+                """);
+
+        page.navigate("http://localhost:" + port + "/campaigns/" + campaign.getId() + "/maps");
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+
+        String cardText = page.locator(".card-meta span").first().textContent();
+        assertThat(cardText).contains("30×20");
+
+        page.navigate("http://localhost:" + port + "/campaigns/" + campaign.getId() + "/maps/" + map.getId() + "/edit");
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        failures.clear();
+
+        page.waitForFunction("() => window.mapEditor?.document?.grid != null");
+
+        Map<String, Object> gridState = (Map<String, Object>) page.evaluate("""
+                () => ({w: window.mapEditor.gridWidth, h: window.mapEditor.gridHeight,
+                        cs: window.mapEditor.cellSizePx})
+                """);
+        assertThat(((Number) gridState.get("w")).intValue()).isEqualTo(30);
+        assertThat(((Number) gridState.get("h")).intValue()).isEqualTo(20);
+        assertThat(((Number) gridState.get("cs")).intValue()).isEqualTo(48);
+
+        Map<String, Object> imageState = (Map<String, Object>) page.evaluate("""
+                () => {
+                    const i = window.mapEditor.document.layers.find(l => l.type === 'IMAGE')?.image;
+                    return i ? {w: i.width, r: i.rotationDeg, l: i.locked} : null;
+                }
+                """);
+        assertThat(imageState).isNotNull();
+        assertThat(((Number) imageState.get("w")).doubleValue()).isCloseTo(18.0, within(0.01));
+        assertThat(((Number) imageState.get("r")).doubleValue()).isCloseTo(45.0, within(0.01));
+        assertThat((Boolean) imageState.get("l")).isTrue();
+    }
+
+    @Test
+    void safeFailureOnSettingsConflict() {
+        failures.expectHttpFailure("PUT",
+                java.util.regex.Pattern.compile(".*/api/v1/maps/" + map.getId() + "/settings"), 409);
+        failures.expectConsoleError(
+                java.util.regex.Pattern.compile(".*Settings save failed.*"));
+
+        page.route("**/api/v1/maps/" + map.getId() + "/settings", route -> {
+            route.fulfill(new Route.FulfillOptions()
+                    .setStatus(409)
+                    .setContentType("application/json")
+                    .setBody("{\"error\":\"Conflict\"}"));
+        });
+
+        page.evaluate("""
+                () => {
+                    const ed = window.mapEditor;
+                    if (!ed || !ed.document) return;
+                    const tl = ed.document.layers.find(l => l.id === 'terrain');
+                    if (tl) tl.cells = [{col: 15, row: 15, terrain: 'floor'}];
+                    ed.renderDocument();
+                }
+                """);
+
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).gridWidth = 10");
+        page.locator("[data-map-control=\"resize-canvas-btn\"]").click();
+        page.waitForTimeout(200);
+
+        assertThat(page.locator("[data-map-control=\"resize-dialog\"]").isVisible()).isTrue();
+
+        page.waitForResponse(
+                resp -> resp.url().contains("/api/v1/maps/" + map.getId() + "/settings")
+                        && "PUT".equals(resp.request().method()),
+                () -> page.locator("[data-map-control=\"resize-confirm-btn\"]").click()
+        );
+
+        assertThat(page.locator("[data-map-control=\"resize-dialog\"]").isVisible()).isTrue();
+        String dialogText = page.locator("[data-map-control=\"resize-dialog\"]").textContent();
+        assertThat(dialogText).contains("409");
+    }
+
+    @Test
+    void invalidImageFileDoesNotCreateImageLayer() {
+        page.setInputFiles("input[type=\"file\"]",
+                new FilePayload("test.txt", "text/plain", "not an image".getBytes()));
+
+        page.waitForTimeout(500);
+
+        Boolean hasImageLayer = (Boolean) page.evaluate("""
+                () => window.mapEditor?.document?.layers?.some(
+                    l => l.type === 'IMAGE' && l.image != null) === true
+                """);
+        assertThat(hasImageLayer).isFalse();
     }
 }

@@ -36,6 +36,16 @@ class MapGridResizeServiceTest {
     }
 
     @Test
+    void cropResizeRemovesCellsOutsideNewBounds() {
+        MapDocumentDto document = documentWithMultipleCells();
+        MapDocumentDto cropped = service.resize(document, 10, 10, MapSettingsCommand.ResizeMode.CROP);
+
+        assertThat(cropped.layers().get(0).cells())
+                .extracting(MapLayerDto.CellDto::col, MapLayerDto.CellDto::row)
+                .containsExactly(tuple(2, 3));
+    }
+
+    @Test
     void cropResizeRejectsUnknownOrCollapsedGeometryInsteadOfSilentlyDroppingIt() {
         MapDocumentDto document = documentWithShape(
                 "triangle", List.of(8.0, 8.0, 12.0, 8.0, 10.0, 12.0));
@@ -60,6 +70,23 @@ class MapGridResizeServiceTest {
                                 List.of(new MapLayerDto.ShapeDto("rect",
                                         List.of(8.0, 8.0, 5.0, 5.0), null, null, 0, null)),
                                 null, null)
+                ),
+                List.of(), List.of()
+        );
+    }
+
+    private static MapDocumentDto documentWithMultipleCells() {
+        return new MapDocumentDto(
+                MapDocumentDto.CURRENT_SCHEMA_VERSION,
+                new MapDocumentDto.GridDto(20, 15, 48, "square", "GRID", true),
+                List.of(
+                        new MapLayerDto("terrain", "Terrain", MapLayerDto.LayerType.TERRAIN,
+                                true, false,
+                                List.of(
+                                        new MapLayerDto.CellDto(2, 3, "wall"),
+                                        new MapLayerDto.CellDto(15, 10, "wall"),
+                                        new MapLayerDto.CellDto(18, 2, "floor")),
+                                List.of(), null, null)
                 ),
                 List.of(), List.of()
         );

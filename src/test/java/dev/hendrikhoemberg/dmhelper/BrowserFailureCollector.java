@@ -52,8 +52,14 @@ public final class BrowserFailureCollector {
 
     private final List<ExpectedHttpFailure> expectedHttpFailures = new CopyOnWriteArrayList<>();
 
-    void expectHttpFailure(String method, Pattern url, int status) {
+    public     void expectHttpFailure(String method, Pattern url, int status) {
         expectedHttpFailures.add(new ExpectedHttpFailure(method, url, status));
+    }
+
+    private final List<Pattern> expectedConsoleErrors = new CopyOnWriteArrayList<>();
+
+    public void expectConsoleError(Pattern messagePattern) {
+        expectedConsoleErrors.add(messagePattern);
     }
 
     public void attach(Page page) {
@@ -77,12 +83,15 @@ public final class BrowserFailureCollector {
 
     void recordConsoleError(String type, String message, String location) {
         if (!"error".equals(type)) return;
+        boolean expected = expectedConsoleErrors.stream()
+                .anyMatch(p -> p.matcher(message).find());
+        if (expected) return;
         var resourceFailure = RESOURCE_LOAD_FAILURE.matcher(message);
         if (resourceFailure.find()) {
             int status = Integer.parseInt(resourceFailure.group(1));
-            boolean expected = expectedHttpFailures.stream()
+            boolean expectedHttp = expectedHttpFailures.stream()
                     .anyMatch(candidate -> candidate.consumeConsoleError(status, location));
-            if (expected) return;
+            if (expectedHttp) return;
         }
         failures.add("console error: " + message + " at " + location);
     }
@@ -105,6 +114,7 @@ public final class BrowserFailureCollector {
 
     public void clear() {
         expectedHttpFailures.clear();
+        expectedConsoleErrors.clear();
         failures.clear();
     }
 }

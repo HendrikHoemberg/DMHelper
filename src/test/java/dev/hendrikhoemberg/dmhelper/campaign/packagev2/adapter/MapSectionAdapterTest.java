@@ -192,7 +192,21 @@ class MapSectionAdapterTest {
     void exportsImageAssetRefs() {
         GameMap map = map(UUID.randomUUID(), "World", 0);
         String mockImageDataUrl = imageDataUrl();
-        map.setDocument(documentJson(mockImageDataUrl));
+        var calibration = new MapDocumentDto.CalibrationDto(1.5, 2.0, 11.5, 12.0, 5, 24, 16);
+        var image = new MapLayerDto.ImageDto(mockImageDataUrl, 2.5, 3.0, 25.0, 18.0,
+                45.0, true, calibration);
+        var imgLayer = new MapLayerDto("bg", "Background", MapLayerDto.LayerType.IMAGE,
+                true, false, List.of(), List.of(), image, null);
+        var doc = new MapDocumentDto(1,
+                new MapDocumentDto.GridDto(30, 20, 48, "square", "GRID", true),
+                List.of(imgLayer, MapLayerDto.createTerrainLayer(),
+                        MapLayerDto.createObjectsLayer(), MapLayerDto.createAnnotationsLayer()),
+                List.of(), List.of());
+        try {
+            map.setDocument(new tools.jackson.databind.json.JsonMapper().writeValueAsString(doc));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         when(gameMapRepo.findByCampaignIdOrderBySortOrderAsc(campaign.getId()))
                 .thenReturn(List.of(map));
@@ -216,10 +230,20 @@ class MapSectionAdapterTest {
                 .orElseThrow(() -> new AssertionError("Expected an image layer"));
 
         assertThat(imageLayer.image().assetRef()).isNotNull();
-        assertThat(imageLayer.image().x()).isEqualTo(0);
-        assertThat(imageLayer.image().y()).isEqualTo(0);
-        assertThat(imageLayer.image().width()).isEqualTo(30);
-        assertThat(imageLayer.image().height()).isEqualTo(20);
+        assertThat(imageLayer.image().x()).isEqualTo(2.5);
+        assertThat(imageLayer.image().y()).isEqualTo(3.0);
+        assertThat(imageLayer.image().width()).isEqualTo(25.0);
+        assertThat(imageLayer.image().height()).isEqualTo(18.0);
+        assertThat(imageLayer.image().rotationDeg()).isEqualTo(45.0);
+        assertThat(imageLayer.image().locked()).isTrue();
+        assertThat(imageLayer.image().calibration()).isNotNull();
+        assertThat(imageLayer.image().calibration().ax()).isEqualTo(1.5);
+        assertThat(imageLayer.image().calibration().ay()).isEqualTo(2.0);
+        assertThat(imageLayer.image().calibration().bx()).isEqualTo(11.5);
+        assertThat(imageLayer.image().calibration().by()).isEqualTo(12.0);
+        assertThat(imageLayer.image().calibration().cellsBetween()).isEqualTo(5);
+        assertThat(imageLayer.image().calibration().offsetXPx()).isEqualTo(24);
+        assertThat(imageLayer.image().calibration().offsetYPx()).isEqualTo(16);
 
         var descriptors = collector.assetDescriptors();
         assertThat(descriptors).hasSize(1);
@@ -368,6 +392,9 @@ class MapSectionAdapterTest {
 
         UUID mapId = UUID.randomUUID();
 
+        var manifestCalibration = new CampaignManifestV2.MapDto.CalibrationDto(
+                0.5, 0.5, 9.5, 0.5, 10, 12, 8);
+
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
@@ -383,7 +410,8 @@ class MapSectionAdapterTest {
                                         "bg", "Background", MapLayerDto.LayerType.IMAGE,
                                         true, false, List.of(), List.of(),
                                         new CampaignManifestV2.MapDto.ImageDto(
-                                                assetKey, 10, 20, 300, 200
+                                                assetKey, 10, 20, 300, 200,
+                                                90.0, true, manifestCalibration
                                         ), null
                                 )),
                                 List.of(), List.of()
@@ -430,11 +458,22 @@ class MapSectionAdapterTest {
                         .orElse(null);
                 if (layer == null || layer.image().dataUrl() == null) return false;
                 String expectedDataUrl = "data:image/png;base64," + Base64.getEncoder().encodeToString(imageBytes);
-                return layer.image().dataUrl().equals(expectedDataUrl)
+                boolean geometryOk = layer.image().dataUrl().equals(expectedDataUrl)
                         && layer.image().x() == 10
                         && layer.image().y() == 20
                         && layer.image().width() == 300
-                        && layer.image().height() == 200;
+                        && layer.image().height() == 200
+                        && layer.image().rotationDeg() == 90.0
+                        && layer.image().locked() == true;
+                if (!geometryOk) return false;
+                if (layer.image().calibration() == null) return false;
+                return layer.image().calibration().ax() == 0.5
+                        && layer.image().calibration().ay() == 0.5
+                        && layer.image().calibration().bx() == 9.5
+                        && layer.image().calibration().by() == 0.5
+                        && layer.image().calibration().cellsBetween() == 10
+                        && layer.image().calibration().offsetXPx() == 12
+                        && layer.image().calibration().offsetYPx() == 8;
             } catch (Exception e) {
                 return false;
             }

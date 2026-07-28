@@ -133,6 +133,20 @@ public class MapGridResizeService {
                 }
                 newPts = List.of(x1, y1, x2, y2);
             }
+            case "circle" -> {
+                if (pts.size() < 3) {
+                    throw new IllegalArgumentException(
+                            "Invalid circle shape at layer " + layerIndex + " index " + shapeIndex);
+                }
+                double cx = clamp(pts.get(0), 0, width - 1);
+                double cy = clamp(pts.get(1), 0, height - 1);
+                double r = pts.get(2);
+                if (r <= 0) {
+                    throw new IllegalArgumentException(
+                            "Shape collapsed at layer " + layerIndex + " index " + shapeIndex);
+                }
+                newPts = List.of(cx, cy, r);
+            }
             case "polygon" -> {
                 newPts = new ArrayList<>();
                 for (int i = 0; i < pts.size(); i += 2) {

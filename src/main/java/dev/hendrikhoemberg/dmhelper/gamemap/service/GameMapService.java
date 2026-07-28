@@ -146,6 +146,10 @@ public class GameMapService {
                     + " but is " + map.getVersion());
         }
 
+        if (command.cellSizePx() <= 0) {
+            throw new IllegalArgumentException("cellSizePx must be positive");
+        }
+
         MapDocumentDto doc = getDocument(mapId);
         if (doc == null) {
             throw new IllegalArgumentException("Map document not found for " + mapId);
@@ -153,10 +157,6 @@ public class GameMapService {
 
         MapDocumentDto resized = gridResizeService.resize(
                 doc, command.gridWidth(), command.gridHeight(), command.resizeMode());
-
-        if (command.cellSizePx() <= 0) {
-            throw new IllegalArgumentException("cellSizePx must be positive");
-        }
 
         MapDocumentDto.GridDto gridWithCellSize = new MapDocumentDto.GridDto(
                 resized.grid().width(), resized.grid().height(), command.cellSizePx(),
@@ -182,6 +182,10 @@ public class GameMapService {
                         tokenRepository.save(token);
                     }
                     case REMOVE -> {
+                        for (var combatant : combatantRepository.findByTokenId(token.getId())) {
+                            combatant.setToken(null);
+                            combatantRepository.save(combatant);
+                        }
                         tokenRepository.delete(token);
                     }
                 }
@@ -198,7 +202,7 @@ public class GameMapService {
         map.setCellSizePx(command.cellSizePx());
         repository.saveAndFlush(map);
 
-        return new MapSettingsResult(map.getVersion(), map, resized);
+        return new MapSettingsResult(map.getVersion(), map, docWithUpdatedGrid);
     }
 
     public GameMap updateMode(UUID mapId, String movementMode, Boolean showGrid) {

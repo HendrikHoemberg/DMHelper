@@ -117,7 +117,50 @@ class MapDocumentContractTest {
         assertThat(img.rotationDeg()).isEqualTo(45.0);
         assertThat(img.locked()).isTrue();
         assertThat(img.calibration()).isNotNull();
+        assertThat(img.calibration().ax()).isEqualTo(1.5);
+        assertThat(img.calibration().ay()).isEqualTo(2.0);
+        assertThat(img.calibration().bx()).isEqualTo(11.5);
+        assertThat(img.calibration().by()).isEqualTo(12.0);
         assertThat(img.calibration().cellsBetween()).isEqualTo(5);
+        assertThat(img.calibration().offsetXPx()).isEqualTo(0.0);
+        assertThat(img.calibration().offsetYPx()).isEqualTo(0.0);
         assertThat(reloaded.grid().cellSizePx()).isEqualTo(48);
+    }
+
+    @Test
+    void packageCompatibleImageCalibrationFields() throws Exception {
+        var map = mapService.create(campaign.getId(), "Package Cal", 30, 20, 48);
+        var mapper = new JsonMapper();
+
+        // Calibration values that a package export would produce
+        var calibration = new MapDocumentDto.CalibrationDto(0.5, 0.5, 9.5, 0.5, 10, 12, 8);
+        var image = new MapLayerDto.ImageDto("data:image/png;base64,AAAA", 3.0, 2.0, 25.0, 18.0,
+                90.0, true, calibration);
+        var layer = new MapLayerDto("bg", "Background", MapLayerDto.LayerType.IMAGE,
+                true, true, List.of(), List.of(), image, null);
+
+        var doc = mapService.getDocument(map.getId());
+        var updated = new MapDocumentDto(2, doc.grid(), List.of(layer), List.of(), doc.customTerrain());
+
+        String json = mapper.writeValueAsString(updated);
+        mapService.updateDocument(map.getId(), json, map.getVersion());
+
+        var reloaded = mapService.getDocument(map.getId());
+        var img = reloaded.layers().get(0).image();
+        assertThat(img).isNotNull();
+        assertThat(img.x()).isEqualTo(3.0);
+        assertThat(img.y()).isEqualTo(2.0);
+        assertThat(img.width()).isEqualTo(25.0);
+        assertThat(img.height()).isEqualTo(18.0);
+        assertThat(img.rotationDeg()).isEqualTo(90.0);
+        assertThat(img.locked()).isTrue();
+        assertThat(img.calibration()).isNotNull();
+        assertThat(img.calibration().ax()).isEqualTo(0.5);
+        assertThat(img.calibration().ay()).isEqualTo(0.5);
+        assertThat(img.calibration().bx()).isEqualTo(9.5);
+        assertThat(img.calibration().by()).isEqualTo(0.5);
+        assertThat(img.calibration().cellsBetween()).isEqualTo(10);
+        assertThat(img.calibration().offsetXPx()).isEqualTo(12);
+        assertThat(img.calibration().offsetYPx()).isEqualTo(8);
     }
 }

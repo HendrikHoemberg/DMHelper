@@ -161,7 +161,11 @@ class GameMapApiControllerTest {
                 .andExpect(jsonPath("$.version").value(3))
                 .andExpect(jsonPath("$.document.grid.width").value(40))
                 .andExpect(jsonPath("$.document.grid.height").value(30))
-                .andExpect(jsonPath("$.document.grid.cellSizePx").value(64));
+                .andExpect(jsonPath("$.document.grid.cellSizePx").value(64))
+                .andExpect(jsonPath("$.document.grid.movementMode").value("GRID"))
+                .andExpect(jsonPath("$.document.grid.showGrid").value(true))
+                .andExpect(jsonPath("$.map.movementMode").value("GRID"))
+                .andExpect(jsonPath("$.map.showGrid").value(true));
     }
 
     @Test

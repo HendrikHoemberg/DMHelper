@@ -294,4 +294,47 @@ class GameMapServiceTest {
         assertThatThrownBy(() -> service.updateSettings(map.getId(), command))
                 .isInstanceOf(OptimisticLockingFailureException.class);
     }
+
+    @Test
+    void shouldPreserveMovementModeAndShowGridOnSettingsUpdate() throws Exception {
+        GameMap map = service.create(campaign.getId(), "Preserve Test", 20, 15, 48);
+
+        // Update the document's grid to have FREEFORM + showGrid=false
+        var mapper = new tools.jackson.databind.json.JsonMapper();
+        MapDocumentDto original = service.getDocument(map.getId());
+        var customGrid = new MapDocumentDto.GridDto(
+                original.grid().width(), original.grid().height(), original.grid().cellSizePx(),
+                original.grid().gridType(), "FREEFORM", false);
+        var docWithFreeform = new MapDocumentDto(
+                original.schemaVersion(), customGrid,
+                original.layers(), original.primitives(), original.customTerrain());
+        String json = mapper.writeValueAsString(docWithFreeform);
+        long v = service.updateDocument(map.getId(), json, map.getVersion());
+        map = service.findById(map.getId());
+
+        var command = new MapSettingsCommand(v, 30, 20, 64,
+                MapSettingsCommand.ResizeMode.PRESERVE, List.of());
+        service.updateSettings(map.getId(), command);
+
+        MapDocumentDto doc = service.getDocument(map.getId());
+        assertThat(doc.grid().movementMode()).isEqualTo("FREEFORM");
+        assertThat(doc.grid().showGrid()).isFalse();
+    }
+
+    @Test
+    void updateSettingsVersionIsAcceptedByNextDocumentSave() {
+        GameMap map = service.create(campaign.getId(), "Version Chain", 20, 15, 48);
+
+        var command = new MapSettingsCommand(map.getVersion(), 30, 20, 64,
+                MapSettingsCommand.ResizeMode.PRESERVE, List.of());
+        GameMapService.MapSettingsResult result = service.updateSettings(map.getId(), command);
+
+        String docJson = """
+                {"schemaVersion":2,"grid":{"width":30,"height":20,"cellSizePx":64,"gridType":"square","movementMode":"GRID","showGrid":true},"layers":[],"primitives":[],"customTerrain":[]}""";
+        long savedVersion = service.updateDocument(map.getId(), docJson, result.version());
+
+        assertThat(savedVersion).isEqualTo(result.version() + 1);
+        assertThat(service.findById(map.getId()).getVersion()).isEqualTo(savedVersion);
+    }
+
 }
