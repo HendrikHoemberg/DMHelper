@@ -77,17 +77,11 @@ class EncounterPrepSummaryTest {
     }
 
     @Test
-    void runActivatesTheEncounterAndLandsInTheCockpit() throws Exception {
+    void runRedirectsToSessionWithEncounterParam() throws Exception {
         MockMvc mvc = MockMvcBuilders.webAppContextSetup(context).build();
         mvc.perform(post("/campaigns/{c}/encounters/{e}/run", seeded.campaignId(), seeded.encounterId()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/campaigns/" + seeded.campaignId() + "/session"));
-
-        String afterBody = mvc.perform(
-                get("/campaigns/{c}/encounters/{e}", seeded.campaignId(), seeded.encounterId()))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-        assertThat(afterBody).contains("ACTIVE");
+                .andExpect(redirectedUrl("/campaigns/" + seeded.campaignId() + "/session?runEncounter=" + seeded.encounterId()));
     }
 
 }

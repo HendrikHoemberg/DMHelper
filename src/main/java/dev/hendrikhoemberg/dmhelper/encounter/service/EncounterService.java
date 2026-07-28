@@ -390,8 +390,43 @@ public class EncounterService {
         return dto;
     }
 
+    public Encounter activateFresh(UUID encounterId) {
+        Encounter e = findEntityById(encounterId);
+        if (e.getStatus() != Encounter.Status.PLANNED) {
+            throw new IllegalStateException("Only planned encounters can be activated fresh");
+        }
+        e.setStatus(Encounter.Status.ACTIVE);
+        e.setRound(1);
+        encounterRepo.save(e);
+        placementService.autoPlaceUnplaced(encounterId);
+        return e;
+    }
+
+    public Encounter resume(UUID encounterId) {
+        Encounter e = findEntityById(encounterId);
+        if (e.getStatus() != Encounter.Status.SUSPENDED) {
+            throw new IllegalStateException("Only suspended encounters can be resumed");
+        }
+        e.setStatus(Encounter.Status.ACTIVE);
+        encounterRepo.save(e);
+        return e;
+    }
+
+    public Encounter suspend(UUID encounterId) {
+        Encounter e = findEntityById(encounterId);
+        if (e.getStatus() != Encounter.Status.ACTIVE) {
+            throw new IllegalStateException("Only active encounters can be suspended");
+        }
+        e.setStatus(Encounter.Status.SUSPENDED);
+        encounterRepo.save(e);
+        return e;
+    }
+
     public EncounterDto endEncounter(UUID id) {
         Encounter e = findEntityById(id);
+        if (e.getStatus() != Encounter.Status.ACTIVE && e.getStatus() != Encounter.Status.SUSPENDED) {
+            throw new IllegalStateException("Only active or suspended encounters can be ended");
+        }
         e.setStatus(Encounter.Status.DONE);
         EncounterDto dto = toDto(encounterRepo.save(e));
         logEntry(id, CombatLogEntry.EntryType.ENCOUNTER_ENDED, "", "");

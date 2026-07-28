@@ -1,6 +1,8 @@
 package dev.hendrikhoemberg.dmhelper.common.web;
 
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
+import dev.hendrikhoemberg.dmhelper.session.service.ActiveEncounterReplacementRequiredException;
+import dev.hendrikhoemberg.dmhelper.session.service.EncounterNotReadyException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +55,47 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         mav.addObject(CorrelationIdFilter.ATTRIBUTE, CorrelationIdFilter.current(request));
         mav.setStatus(status);
         return mav;
+    }
+
+    @ExceptionHandler(ActiveEncounterReplacementRequiredException.class)
+    public Object handleActiveEncounterReplacement(ActiveEncounterReplacementRequiredException ex,
+                                                    HttpServletRequest request) {
+        if ("true".equals(request.getHeader("HX-Request"))) {
+            return htmxError(HttpStatus.CONFLICT, ex.getMessage(), request);
+        }
+        if (prefersHtml(request)) {
+            return htmlErrorPage(HttpStatus.CONFLICT, request);
+        }
+        ProblemDetail problem = problem(
+                HttpStatus.CONFLICT,
+                "urn:dmhelper:active-encounter-replacement",
+                "Active Encounter Requires Disposition",
+                ex.getMessage(),
+                request);
+        problem.setProperty("code", "ACTIVE_ENCOUNTER_REPLACEMENT_REQUIRED");
+        problem.setProperty("activeEncounterId", ex.getActiveEncounterId().toString());
+        problem.setProperty("activeEncounterName", ex.getActiveEncounterName());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
+    }
+
+    @ExceptionHandler(EncounterNotReadyException.class)
+    public Object handleEncounterNotReady(EncounterNotReadyException ex,
+                                           HttpServletRequest request) {
+        if ("true".equals(request.getHeader("HX-Request"))) {
+            return htmxError(HttpStatus.CONFLICT, ex.getMessage(), request);
+        }
+        if (prefersHtml(request)) {
+            return htmlErrorPage(HttpStatus.CONFLICT, request);
+        }
+        ProblemDetail problem = problem(
+                HttpStatus.CONFLICT,
+                "urn:dmhelper:encounter-not-ready",
+                "Encounter Not Ready",
+                ex.getMessage(),
+                request);
+        problem.setProperty("code", "ENCOUNTER_NOT_READY");
+        problem.setProperty("readiness", ex.getReadiness());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

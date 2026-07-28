@@ -11,6 +11,9 @@ import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus;
 import dev.hendrikhoemberg.dmhelper.quest.service.QuestService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionEncounterService;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionEncounterService.ActiveEncounterDisposition;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionEncounterService.EncounterActivationDto;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionLifecycleService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +37,7 @@ public class SessionApiController {
     public record StepSceneRequest(int direction) {}
     public record FollowTransitionRequest(UUID transitionId) {}
     public record CompleteRequest(String title, String body) {}
+    public record ActivateEncounterRequest(ActiveEncounterDisposition activeEncounterDisposition) {}
     public record SessionStateDto(String status, UUID workspaceMapId, String presentationMode,
                                   List<UUID> attendeeIds, String draftBody) {}
     public record SessionSceneDto(UUID id, String title, String status, UUID mapId,
@@ -45,6 +49,7 @@ public class SessionApiController {
     private final SessionLifecycleService lifecycle;
     private final AdventureService adventures;
     private final SessionWorkspaceService workspaces;
+    private final SessionEncounterService sessionEncounterService;
     private final SceneTransitionService sceneTransitionService;
     private final QuestService questService;
     private final SceneEncounterSeedService encounterSeeder;
@@ -52,12 +57,14 @@ public class SessionApiController {
     public SessionApiController(SessionLifecycleService lifecycle,
                                 AdventureService adventures,
                                 SessionWorkspaceService workspaces,
+                                SessionEncounterService sessionEncounterService,
                                 SceneTransitionService sceneTransitionService,
                                 QuestService questService,
                                 SceneEncounterSeedService encounterSeeder) {
         this.lifecycle = lifecycle;
         this.adventures = adventures;
         this.workspaces = workspaces;
+        this.sessionEncounterService = sessionEncounterService;
         this.sceneTransitionService = sceneTransitionService;
         this.questService = questService;
         this.encounterSeeder = encounterSeeder;
@@ -122,6 +129,15 @@ public class SessionApiController {
     SceneEncounterSeedService.SeedResult seedEncounter(@PathVariable UUID campaignId,
                                                         @PathVariable UUID sceneId) {
         return encounterSeeder.seedFromScene(campaignId, sceneId);
+    }
+
+    @PostMapping("/encounters/{encounterId}/activate")
+    EncounterActivationDto activateEncounter(
+            @PathVariable UUID campaignId,
+            @PathVariable UUID encounterId,
+            @RequestBody ActivateEncounterRequest request) {
+        return sessionEncounterService.activate(
+                campaignId, encounterId, request.activeEncounterDisposition());
     }
 
     @PostMapping("/complete")

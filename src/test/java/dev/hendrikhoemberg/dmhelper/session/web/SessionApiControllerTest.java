@@ -6,6 +6,7 @@ import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjective;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveStatus;
 import dev.hendrikhoemberg.dmhelper.quest.service.QuestService;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionEncounterService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionLifecycleService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,9 @@ class SessionApiControllerTest {
 
     @MockitoBean
     private QuestService questService;
+
+    @MockitoBean
+    private SessionEncounterService sessionEncounterService;
 
     @MockitoBean
     private SceneEncounterSeedService encounterSeeder;
