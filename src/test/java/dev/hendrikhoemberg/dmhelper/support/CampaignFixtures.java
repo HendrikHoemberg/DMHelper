@@ -85,7 +85,6 @@ public class CampaignFixtures {
         handout.setTitle("Unsafe Handout");
         handout.setFileName(UUID.randomUUID() + ".png");
         handout.setContentType("image/png");
-        handout.setSafetyClassification(Handout.SafetyClassification.UNREVIEWED);
         handout.setAssetKind(Handout.AssetKind.SOURCE_PAGE);
         handout.setPresented(true);
         handouts.save(handout);
@@ -140,7 +139,6 @@ public class CampaignFixtures {
         handout.setTitle("Safe Handout");
         handout.setFileName(UUID.randomUUID() + ".png");
         handout.setContentType("image/png");
-        handout.setSafetyClassification(Handout.SafetyClassification.PLAYER_SAFE);
         handout.setAssetKind(Handout.AssetKind.SOURCE_PAGE);
         handout.setPresented(true);
         handouts.save(handout);

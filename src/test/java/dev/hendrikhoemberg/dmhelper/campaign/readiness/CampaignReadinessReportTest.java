@@ -30,7 +30,7 @@ class CampaignReadinessReportTest {
         var report = new CampaignReadinessReport(
                 List.of(item(ReadinessState.RESOLVED),
                         item(ReadinessCategory.MAP, ReadinessState.BLOCKER),
-                        item(ReadinessCategory.ASSET, ReadinessState.BLOCKER)));
+                        item(ReadinessCategory.STATBLOCK, ReadinessState.BLOCKER)));
         assertThat(report.sessionReady()).isFalse();
         assertThat(report.blockerCount()).isEqualTo(2);
         assertThat(report.label()).isEqualTo("Not ready — 2 blockers");
@@ -51,8 +51,7 @@ class CampaignReadinessReportTest {
         var report = new CampaignReadinessReport(List.of(
                 mapBlocker,
                 item(ReadinessCategory.STATBLOCK, ReadinessState.ACCEPTED),
-                encounterBlocker,
-                item(ReadinessCategory.ASSET, ReadinessState.RESOLVED)));
+                encounterBlocker));
 
         assertThat(report.blockerGroups())
                 .containsExactly(

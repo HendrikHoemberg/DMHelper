@@ -40,7 +40,6 @@ class FileServeControllerSecurityTest {
         unpublished.setContentType("image/png");
         unpublished.setPresented(false);
         unpublished.setDmOnly(true);
-        unpublished.setSafetyClassification(Handout.SafetyClassification.DM_SOURCE);
     }
 
     @Test

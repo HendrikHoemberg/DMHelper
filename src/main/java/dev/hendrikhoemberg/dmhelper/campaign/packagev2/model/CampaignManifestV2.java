@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationConfidence;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.dice.DiceResult;
@@ -278,9 +279,9 @@ public record CampaignManifestV2(
             String contentType,
             boolean dmOnly,
             boolean presented,
-            String safetyClassification,
-            ContentReference sourceRef,
-            String derivativeRecipe,
+            @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) String safetyClassification,
+            @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) ContentReference sourceRef,
+            @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) String derivativeRecipe,
             String assetKind
     ) {
         public HandoutDto(String key, String title, List<String> tags, String assetRef, String contentType,

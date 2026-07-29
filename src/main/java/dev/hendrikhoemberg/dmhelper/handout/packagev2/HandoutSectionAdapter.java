@@ -4,14 +4,12 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.AssetDescriptor;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.HandoutDto;
-import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.ContentReference;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignExportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignImportContext;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignManifestAssembler;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionExporter;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.section.CampaignSectionImporter;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
-import dev.hendrikhoemberg.dmhelper.handout.data.Handout.SafetyClassification;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import org.springframework.stereotype.Component;
@@ -77,25 +75,11 @@ public class HandoutSectionAdapter implements CampaignSectionExporter, CampaignS
 
         List<String> tagsList = parseTags(handout.getTags());
 
-        String safetyClassification = handout.getSafetyClassification().name();
-        ContentReference sourceRef = null;
-        String derivativeRecipe = null;
-        if (handout.isDerivative()) {
-            Handout source = handout.getSourceHandout();
-            if (source == null || handout.getDerivativeRecipe() == null
-                    || handout.getDerivativeRecipe().isBlank()) {
-                throw new IllegalStateException("Derivative handout is missing its source or recipe: "
-                        + handout.getId());
-            }
-            sourceRef = context.packageRef(CampaignContentType.HANDOUT, source.getId(), source.getTitle());
-            derivativeRecipe = handout.getDerivativeRecipe();
-        }
-
         return new HandoutDto(
                 key, handout.getTitle(), tagsList,
                 assetKey, handout.getContentType(),
                 handout.isDmOnly(), handout.isPresented(),
-                safetyClassification, sourceRef, derivativeRecipe,
+                null, null, null,
                 handout.getAssetKind().name()
         );
     }
@@ -106,10 +90,6 @@ public class HandoutSectionAdapter implements CampaignSectionExporter, CampaignS
         if (dtos == null) return;
 
         var campaign = context.campaign();
-
-        for (HandoutDto dto : dtos) {
-            validateSafetyMetadata(dto);
-        }
 
         for (HandoutDto dto : dtos) {
             byte[] bytes;
@@ -136,34 +116,13 @@ public class HandoutSectionAdapter implements CampaignSectionExporter, CampaignS
                 throw new RuntimeException("Failed to create imported handout: " + dto.title(), e);
             }
 
-            SafetyClassification classification = classificationOf(dto);
-            handout.setSafetyClassification(classification);
-            handout.setDmOnly(!classification.isPresentable());
-            handout.setPresented(classification.isPresentable() && dto.presented());
+            handout.setDmOnly(dto.dmOnly());
+            handout.setPresented(dto.presented());
             handout.setAssetKind(kindOf(dto));
             handoutRepository.save(handout);
 
             context.register(CampaignContentType.HANDOUT, dto.key(), handout, handout.getId());
         }
-
-        for (HandoutDto dto : dtos) {
-            if (dto.sourceRef() != null) {
-                Handout derivative = context.require(
-                        ContentReference.packageRef(CampaignContentType.HANDOUT, dto.key()),
-                        CampaignContentType.HANDOUT, Handout.class);
-                Handout sourceHandout = context.require(dto.sourceRef(), CampaignContentType.HANDOUT, Handout.class);
-                derivative.setSourceHandout(sourceHandout);
-                derivative.setDerivativeRecipe(dto.derivativeRecipe());
-                handoutRepository.save(derivative);
-            }
-        }
-    }
-
-    private static SafetyClassification classificationOf(HandoutDto dto) {
-        if (dto.safetyClassification() != null) {
-            return SafetyClassification.valueOf(dto.safetyClassification());
-        }
-        return dto.dmOnly() ? SafetyClassification.DM_SOURCE : SafetyClassification.UNREVIEWED;
     }
 
     private static Handout.AssetKind kindOf(HandoutDto dto) {
@@ -171,21 +130,6 @@ public class HandoutSectionAdapter implements CampaignSectionExporter, CampaignS
             return Handout.AssetKind.valueOf(dto.assetKind());
         }
         return Handout.AssetKind.SOURCE_PAGE;
-    }
-
-    private static void validateSafetyMetadata(HandoutDto dto) {
-        SafetyClassification classification = classificationOf(dto);
-        boolean hasSource = dto.sourceRef() != null;
-        boolean hasRecipe = dto.derivativeRecipe() != null && !dto.derivativeRecipe().isBlank();
-        if (classification == SafetyClassification.PLAYER_DERIVATIVE) {
-            if (!hasSource || !hasRecipe) {
-                throw new IllegalArgumentException("PLAYER_DERIVATIVE handout must have a source and recipe: "
-                        + dto.key());
-            }
-        } else if (hasSource || dto.derivativeRecipe() != null) {
-            throw new IllegalArgumentException("Only PLAYER_DERIVATIVE handouts may have derivative metadata: "
-                    + dto.key());
-        }
     }
 
     private static List<String> parseTags(String tags) {

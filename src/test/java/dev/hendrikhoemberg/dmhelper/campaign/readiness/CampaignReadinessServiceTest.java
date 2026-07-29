@@ -1,7 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.readiness;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneMapRequirement;
-import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Set;
@@ -14,7 +13,7 @@ class CampaignReadinessServiceTest {
     private final CampaignReadinessService service = new CampaignReadinessService();
 
     private ReadinessInputs inputs(ReadinessInputs.SceneInput... scenes) {
-        return new ReadinessInputs(List.of(scenes), List.of(), List.of(), List.of());
+        return new ReadinessInputs(List.of(scenes), List.of(), List.of());
     }
 
     @Test
@@ -43,16 +42,6 @@ class CampaignReadinessServiceTest {
         var report = service.compute(inputs(scene), Set.of());
         assertThat(report.byState(ReadinessState.BLOCKER))
                 .anyMatch(i -> i.category() == ReadinessCategory.MAP);
-    }
-
-    @Test
-    void unsafePresentedAssetIsBlocker() {
-        var asset = new ReadinessInputs.AssetInput(UUID.randomUUID(), "Page 12",
-                Handout.AssetKind.SOURCE_PAGE, Handout.SafetyClassification.UNREVIEWED, true);
-        var report = service.compute(
-                new ReadinessInputs(List.of(), List.of(asset), List.of(), List.of()), Set.of());
-        assertThat(report.byState(ReadinessState.BLOCKER))
-                .anyMatch(i -> i.category() == ReadinessCategory.ASSET);
     }
 
     @Test

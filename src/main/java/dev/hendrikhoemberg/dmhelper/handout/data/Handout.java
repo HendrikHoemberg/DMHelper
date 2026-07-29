@@ -2,23 +2,13 @@ package dev.hendrikhoemberg.dmhelper.handout.data;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import jakarta.persistence.*;
-import java.util.Objects;
 import java.util.UUID;
 
 @Entity
 @Table(name = "handout", indexes = {
-    @Index(name = "idx_handout_campaign", columnList = "campaign_id"),
-    @Index(name = "idx_handout_source", columnList = "source_handout_id")
+    @Index(name = "idx_handout_campaign", columnList = "campaign_id")
 })
 public class Handout {
-
-    public enum SafetyClassification {
-        DM_SOURCE, PLAYER_SAFE, PLAYER_DERIVATIVE, UNREVIEWED;
-
-        public boolean isPresentable() {
-            return this == PLAYER_SAFE || this == PLAYER_DERIVATIVE;
-        }
-    }
 
     public enum AssetKind {
         PLAYER_HANDOUT, DM_REFERENCE, REGIONAL_MAP, TACTICAL_MAP, ILLUSTRATION, SOURCE_PAGE;
@@ -55,35 +45,13 @@ public class Handout {
     private boolean presented = false;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "safety_classification", nullable = false, length = 24)
-    private SafetyClassification safetyClassification = SafetyClassification.UNREVIEWED;
-
-    @Enumerated(EnumType.STRING)
     @Column(name = "asset_kind", nullable = false, length = 24)
     private AssetKind assetKind = AssetKind.SOURCE_PAGE;
-
-    public SafetyClassification getSafetyClassification() {
-        return safetyClassification;
-    }
-
-    public void setSafetyClassification(SafetyClassification sc) {
-        this.safetyClassification = Objects.requireNonNull(sc, "safety classification");
-    }
-
-    public boolean isPresentable() { return getSafetyClassification().isPresentable(); }
-    public boolean isDerivative() { return getSafetyClassification() == SafetyClassification.PLAYER_DERIVATIVE; }
 
     public AssetKind getAssetKind() { return assetKind; }
     public void setAssetKind(AssetKind assetKind) {
         this.assetKind = java.util.Objects.requireNonNull(assetKind, "asset kind");
     }
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "source_handout_id")
-    private Handout sourceHandout;
-
-    @Column(name = "derivative_recipe", columnDefinition = "CLOB")
-    private String derivativeRecipe;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -109,9 +77,4 @@ public class Handout {
     public boolean isPresented() { return presented; }
     public void setPresented(boolean presented) { this.presented = presented; }
 
-    public Handout getSourceHandout() { return sourceHandout; }
-    public void setSourceHandout(Handout sourceHandout) { this.sourceHandout = sourceHandout; }
-
-    public String getDerivativeRecipe() { return derivativeRecipe; }
-    public void setDerivativeRecipe(String derivativeRecipe) { this.derivativeRecipe = derivativeRecipe; }
 }

@@ -520,7 +520,7 @@ class CoreSessionLoopSmokeTest {
                 "seal.png", "image/png", Base64.getDecoder().decode(
                         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="));
         handoutId = handout.getId();
-        handoutService.classify(campaignId, handoutId, Handout.SafetyClassification.PLAYER_SAFE);
+        handoutService.setPresented(handoutId, true);
 
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/maps");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
@@ -1908,7 +1908,7 @@ class CoreSessionLoopSmokeTest {
         """, Arrays.asList(campaignId.toString(), unreviewedId.toString()));
         assertThat(result).startsWith("FAIL:");
 
-        handoutService.classify(campaignId, unreviewedId, Handout.SafetyClassification.PLAYER_SAFE);
+        handoutService.setPresented(unreviewedId, true);
         dmPage.reload();
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
         dmPage.evaluate("([hid]) => window.Alpine.$data(document.querySelector('[x-data]')).presentHandout(hid)", List.of(unreviewedId.toString()));
@@ -1919,72 +1919,6 @@ class CoreSessionLoopSmokeTest {
         dmPage.waitForFunction("([hid]) => fetch('/api/v1/table/state').then(r => r.json())"
                         + ".then(state => state.handout?.id === hid)",
                 List.of(unreviewedId.toString()));
-    }
-
-    @Test
-    @Order(31)
-    void derivativeWorkflowPlayerByteParity() throws Exception {
-        startSession();
-        byte[] sourceBytes = createSinglePixelPng("source");
-        Handout source = handoutService.createImported(campaignId,
-                "Source Map", "", "source.png", "image/png", sourceBytes);
-        handoutService.classify(campaignId, source.getId(), Handout.SafetyClassification.DM_SOURCE);
-
-        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/handouts");
-        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
-        Locator sourceCard = dmPage.locator("#handout-" + source.getId());
-        sourceCard.locator("button",
-                new Locator.LocatorOptions().setHasText("Create player derivative")).click();
-        Locator dialog = dmPage.locator("#derivativeDialog");
-        dialog.waitFor();
-        dmPage.waitForFunction("document.getElementById('derivativeCanvas')?.width === 1");
-        dialog.locator("#derivativeTitle").fill("Derived Map");
-        dialog.locator("button", new Locator.LocatorOptions().setHasText("Save Derivative")).click();
-        dmPage.getByText("Derived Map", new Page.GetByTextOptions().setExact(true)).waitFor();
-
-        Handout derivative = handoutService.findByCampaignId(campaignId).stream()
-                .filter(value -> "Derived Map".equals(value.getTitle()))
-                .findFirst().orElseThrow();
-        assertThat(derivative.getSafetyClassification())
-                .isEqualTo(Handout.SafetyClassification.PLAYER_DERIVATIVE);
-        assertThat(derivative.getSourceHandout().getId()).isEqualTo(source.getId());
-
-        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
-        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
-        dmPage.evaluate("([hid]) => window.Alpine.$data(document.querySelector('[x-data]')).presentHandout(hid)", List.of(derivative.getId().toString()));
-        Locator preview = dmPage.locator("#presentationPreview");
-        preview.waitFor();
-        assertThat(preview.locator(".presentation-preview-classification").textContent())
-                .contains("PLAYER_DERIVATIVE");
-        String previewB64 = (String) dmPage.evaluate("""
-            async ([cid, hid]) => {
-                const r = await fetch('/api/v1/campaigns/' + cid + '/table/handouts/' + hid + '/preview-file');
-                if (!r.ok) return 'ERROR:' + r.status;
-                const bytes = new Uint8Array(await r.arrayBuffer());
-                let binary = '';
-                for (const value of bytes) binary += String.fromCharCode(value);
-                return btoa(binary);
-            }
-        """, Arrays.asList(campaignId.toString(), derivative.getId().toString()));
-        preview.locator("button",
-                new Locator.LocatorOptions().setHasText("Present to table")).click();
-        dmPage.waitForFunction("([hid]) => fetch('/api/v1/table/state').then(r => r.json())"
-                        + ".then(state => state.handout?.id === hid)",
-                List.of(derivative.getId().toString()));
-
-        String playerB64 = (String) dmPage.evaluate("""
-            async ([hid]) => {
-                const r = await fetch('/player/files/' + hid);
-                if (!r.ok) return 'ERROR:' + r.status;
-                const buf = await r.arrayBuffer();
-                const bytes = new Uint8Array(buf);
-                let binary = '';
-                for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-                return btoa(binary);
-            }
-        """, List.of(derivative.getId().toString()));
-        assertThat(playerB64).as("player file fetch status").doesNotStartWith("ERROR:");
-        assertThat(playerB64).isEqualTo(previewB64);
     }
 
     @Test

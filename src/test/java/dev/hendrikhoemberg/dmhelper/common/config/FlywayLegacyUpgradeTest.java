@@ -252,10 +252,29 @@ class FlywayLegacyUpgradeTest {
     }
 
     @Test
-    void v18DefaultsLegacyHandoutsWithoutTrustingTheOldPlayerVisibleToggle() {
-        assertThat(jdbc.queryForList(
-                "SELECT safety_classification FROM handout ORDER BY title", String.class))
-                .containsExactly("DM_SOURCE", "UNREVIEWED");
+    void v28DropsSafetyClassificationColumns() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns "
+                        + "WHERE table_name='HANDOUT' AND column_name='SAFETY_CLASSIFICATION'",
+                Integer.class)).isZero();
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns "
+                        + "WHERE table_name='HANDOUT' AND column_name='SOURCE_HANDOUT_ID'",
+                Integer.class)).isZero();
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns "
+                        + "WHERE table_name='HANDOUT' AND column_name='DERIVATIVE_RECIPE'",
+                Integer.class)).isZero();
+    }
+
+    @Test
+    void v28PreservesLegacyDmOnlyFlags() {
+        var results = jdbc.queryForList(
+                "SELECT dm_only FROM handout ORDER BY title", Boolean.class);
+        assertThat(results).hasSize(2);
+        // V19 enforces: UNREVIEWED → dm_only = true, DM_SOURCE → dm_only = true
+        // So both legacy handouts end up dm_only = true
+        assertThat(results).allMatch(v -> v);
     }
 
     @Test

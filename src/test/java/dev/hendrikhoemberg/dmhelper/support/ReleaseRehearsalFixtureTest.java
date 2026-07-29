@@ -12,7 +12,6 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterWaveRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.WaveStatus;
 import dev.hendrikhoemberg.dmhelper.encounter.data.WaveTriggerKind;
-import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
@@ -232,20 +231,13 @@ class ReleaseRehearsalFixtureTest {
     }
 
     @Test
-    void theAssetSetCoversAllThreeClassifications() throws IOException {
+    void theAssetSetHasPlayerSafeAndDmOnlyHandouts() throws IOException {
         var seeded = fixture.seed();
 
-        assertThat(handoutRepository.findById(seeded.playerSafeHandoutId()).orElseThrow()
-                .getSafetyClassification())
-                .isEqualTo(Handout.SafetyClassification.PLAYER_SAFE);
-        assertThat(handoutRepository.findById(seeded.dmSourceHandoutId()).orElseThrow()
-                .getSafetyClassification())
-                .isEqualTo(Handout.SafetyClassification.DM_SOURCE);
-        assertThat(handoutRepository.findById(seeded.derivativeHandoutId()).orElseThrow()
-                .getSafetyClassification())
-                .isEqualTo(Handout.SafetyClassification.PLAYER_DERIVATIVE);
-        assertThat(handoutRepository.findById(seeded.derivativeHandoutId()).orElseThrow().getSourceHandout().getId())
-                .isEqualTo(seeded.dmSourceHandoutId());
+        assertThat(handoutRepository.findById(seeded.playerSafeHandoutId()).orElseThrow().isDmOnly())
+                .isFalse();
+        assertThat(handoutRepository.findById(seeded.dmSourceHandoutId()).orElseThrow().isDmOnly())
+                .isTrue();
     }
 
     @Test
@@ -352,14 +344,14 @@ class ReleaseRehearsalFixtureTest {
                 "The gallery is narrow.", "Synthetic, scene A2", "Undercroft floor",
                 "Undercroft position 1", "Bog Sentinel", "Bog Skirmisher", "Marsh Warden",
                 "Beacon Undercroft", "20", "15", "64", "Beacon Approach (player map)", "map",
-                "Undercroft reference page", "source", "Undercroft player extract", "image/png",
+                "Undercroft reference page", "source", "image/png",
                 "Light the hollow beacon", "Restore the beacon before the marsh tide rises.",
                 "A safe route through the marsh", "Find the bell chamber", "The marsh crossing remains open.",
                 "Recover the wickstone", "Find the wickstone beneath the bell.",
                 "Relight the beacon", "Place the wickstone in the hollow lantern.",
                 "Ilsa Fenwright", "Ordo Brack", "Nesh Vell", "Tamsin Aroe", "Undercroft Alarm",
-                "MONSTER");
-        assertThat(text).contains("sourceWidth", "cropWidth", "redactions");
+                "MONSTER",
+                "Beacon Approach", "Undercroft reference");
     }
 
     @Test

@@ -16,11 +16,6 @@ public enum ReadinessCategory {
             "Required scenes need a playable or reference map.",
             "Add map",
             "Run without map"),
-    ASSET(
-            "Player content",
-            "Player-facing assets need a safe classification.",
-            "Review handout",
-            "Accept safety risk"),
     RUNTIME_LINK(
             "Runtime links",
             "Linked content should resolve at the table.",

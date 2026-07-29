@@ -1,7 +1,5 @@
 package dev.hendrikhoemberg.dmhelper.handout.web;
 
-import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
-import dev.hendrikhoemberg.dmhelper.handout.data.Handout.SafetyClassification;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import org.springframework.web.bind.annotation.*;
 

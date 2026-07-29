@@ -49,15 +49,6 @@ class HandoutDmOnlyToggleTest {
     }
 
     @Test
-    void explicitReviewCanClassifyAnAssetPlayerSafe() throws Exception {
-        mvc.perform(put("/campaigns/{c}/handouts/{h}/classification", seeded.campaignId(), seeded.dmOnlyHandoutId())
-                        .param("classification", "PLAYER_SAFE"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Reviewed player-safe")));
-        assertThat(handouts.findById(seeded.dmOnlyHandoutId()).orElseThrow().isPresentable()).isTrue();
-    }
-
-    @Test
     void togglingAPresentedHandoutToDmOnlyStillDetachesIt() {
         handoutService.setPresented(seeded.playerHandoutId(), true);
         assertThat(handouts.findById(seeded.playerHandoutId()).orElseThrow().isPresented()).isTrue();
@@ -83,14 +74,12 @@ class HandoutDmOnlyToggleTest {
         var dbHandouts = handoutService.findByCampaignId(seeded.campaignId());
         assertThat(dbHandouts).isNotEmpty();
         assertThat(dbHandouts)
-                .extracting(Handout::getSafetyClassification)
-                .contains(Handout.SafetyClassification.PLAYER_SAFE,
-                          Handout.SafetyClassification.DM_SOURCE);
+                .extracting(Handout::isDmOnly)
+                .contains(true, false);
 
         assertThat(html)
                 .contains(PopulatedCampaignFixture.PLAYER_HANDOUT_TITLE,
-                        PopulatedCampaignFixture.DM_ONLY_HANDOUT_TITLE,
-                        "PLAYER_SAFE", "DM_SOURCE")
+                        PopulatedCampaignFixture.DM_ONLY_HANDOUT_TITLE)
                 .contains("presentationHandoutPicker");
     }
 

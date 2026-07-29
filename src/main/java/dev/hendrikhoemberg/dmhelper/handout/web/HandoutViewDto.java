@@ -7,15 +7,10 @@ public record HandoutViewDto(
         UUID id,
         String title,
         String contentType,
-        String safetyClassification,
-        boolean presentable,
-        boolean presented,
-        UUID sourceHandoutId
+        boolean presented
 ) {
     public static HandoutViewDto from(Handout handout) {
         return new HandoutViewDto(handout.getId(), handout.getTitle(), handout.getContentType(),
-                handout.getSafetyClassification().name(), handout.isPresentable(),
-                handout.isPresented(), handout.getSourceHandout() == null
-                        ? null : handout.getSourceHandout().getId());
+                handout.isPresented());
     }
 }

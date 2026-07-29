@@ -53,7 +53,7 @@ public class ReleaseRehearsalFixture {
                          UUID ambushSceneId, UUID branchedEncounterId, UUID branchedMainWaveId,
                          UUID branchedReserveWaveId, List<UUID> branchedReserveCombatantIds,
                          UUID branchSceneId, UUID playableMapId, UUID playerSafeHandoutId,
-                         UUID dmSourceHandoutId, UUID derivativeHandoutId, UUID questId,
+                         UUID dmSourceHandoutId, UUID questId,
                          List<UUID> partyMemberIds) {}
 
     private final CampaignRepository campaigns;
@@ -262,20 +262,15 @@ public class ReleaseRehearsalFixture {
         byte[] image = png("safe");
         Handout playerSafe = handouts.createImported(campaignId, "Beacon Approach (player map)", "map",
                 "beacon-approach.png", "image/png", image);
-        handouts.classify(campaignId, playerSafe.getId(), Handout.SafetyClassification.PLAYER_SAFE);
         playerSafe.setAssetKind(Handout.AssetKind.REGIONAL_MAP);
         playerSafe.setPresented(true);
+        playerSafe.setDmOnly(false);
         handoutRepository.save(playerSafe);
         Handout dmSource = handouts.createImported(campaignId, "Undercroft reference page", "source",
                 "undercroft-reference.png", "image/png", image);
-        handouts.classify(campaignId, dmSource.getId(), Handout.SafetyClassification.DM_SOURCE);
         dmSource.setAssetKind(Handout.AssetKind.SOURCE_PAGE);
+        dmSource.setDmOnly(true);
         handoutRepository.save(dmSource);
-        Handout derivative = handouts.createDerivative(campaignId, dmSource.getId(),
-                "Undercroft player extract", "{\"sourceWidth\":1,\"sourceHeight\":1,\"cropX\":0,\"cropY\":0,\"cropWidth\":1,\"cropHeight\":1,\"redactions\":[]}",
-                new MockMultipartFile("file", "extract.png", "image/png", image));
-        derivative.setAssetKind(Handout.AssetKind.PLAYER_HANDOUT);
-        handoutRepository.save(derivative);
 
         Quest quest = quests.createQuest(campaignId, new QuestService.QuestCommand(
                 "Light the hollow beacon", QuestStatus.ACTIVE,
@@ -302,7 +297,7 @@ public class ReleaseRehearsalFixture {
         return new Seeded(campaignId, adventure.getId(), hostile.getId(), ambush != null ? ambush.getId() : null,
                 branchedEncounterId, branchedMainWaveId, branchedReserveWaveId, branchedReserveCombatantIds,
                 branch.getId(), map.getId(),
-                playerSafe.getId(), dmSource.getId(), derivative.getId(), quest.getId(), partyIds);
+                playerSafe.getId(), dmSource.getId(), quest.getId(), partyIds);
     }
 
     @Transactional(readOnly = true)
@@ -408,8 +403,7 @@ public class ReleaseRehearsalFixture {
                 map.getGridType(), map.getMovementMode(), map.isShowGrid(), map.getDocument()));
         handoutRepository.findByCampaignIdOrderByTitleAsc(seeded.campaignId()).forEach(handout -> append(text,
                 handout.getTitle(), handout.getTags(), handout.getFileName(), handout.getContentType(),
-                handout.getSafetyClassification(), handout.getAssetKind(), handout.isDmOnly(), handout.isPresented(),
-                handout.getDerivativeRecipe(), handout.getSourceHandout() == null ? null : handout.getSourceHandout().getId()));
+                handout.getAssetKind(), handout.isDmOnly(), handout.isPresented()));
         quests.getQuest(seeded.campaignId(), seeded.questId()).getObjectives().forEach(objective -> append(text,
                 objective.getTitle(), objective.getDescription(), objective.getStatus(), objective.getCompletionMode(),
                 objective.getSourceLocator()));

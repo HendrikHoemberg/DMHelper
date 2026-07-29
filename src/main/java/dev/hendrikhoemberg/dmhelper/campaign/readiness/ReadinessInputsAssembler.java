@@ -4,8 +4,6 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipant;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipantDisposition;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
-import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
-import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,11 +13,9 @@ import java.util.UUID;
 public class ReadinessInputsAssembler {
 
     private final SceneRepository scenes;
-    private final HandoutRepository handouts;
 
-    public ReadinessInputsAssembler(SceneRepository scenes, HandoutRepository handouts) {
+    public ReadinessInputsAssembler(SceneRepository scenes) {
         this.scenes = scenes;
-        this.handouts = handouts;
     }
 
     public ReadinessInputs fromCampaign(UUID campaignId) {
@@ -43,14 +39,7 @@ public class ReadinessInputsAssembler {
                     scene.getMapRequirement(), scene.getMap() != null));
         }
 
-        List<ReadinessInputs.AssetInput> assetInputs = new ArrayList<>();
-        for (Handout h : handouts.findByCampaignIdOrderByTitleAsc(campaignId)) {
-            assetInputs.add(new ReadinessInputs.AssetInput(
-                    h.getId(), h.getTitle(), h.getAssetKind(), h.getSafetyClassification(),
-                    h.isPresented()));
-        }
-
-        return new ReadinessInputs(sceneInputs, assetInputs, List.of(), List.of());
+        return new ReadinessInputs(sceneInputs, List.of(), List.of());
     }
 
     private static String participantLabel(SceneParticipant p) {

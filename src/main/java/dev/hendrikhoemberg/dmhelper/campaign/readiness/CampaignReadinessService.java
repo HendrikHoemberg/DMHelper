@@ -43,17 +43,6 @@ public class CampaignReadinessService {
             }
         }
 
-        for (ReadinessInputs.AssetInput asset : inputs.presentedAssets()) {
-            if (asset.linkedForPresentation() && !asset.safety().isPresentable()) {
-                items.add(blockerOrAccepted(
-                        "asset:" + asset.id(), ReadinessCategory.ASSET,
-                        "Unsafe asset linked for presentation: " + asset.title(),
-                        "Classified " + asset.safety() + " / " + asset.kind()
-                                + "; not player-safe. Review or reclassify before presenting.",
-                        ReadinessRepairKind.REVIEW_HANDOUT_SAFETY, asset.id(), acceptedKeys));
-            }
-        }
-
         for (ReadinessInputs.LinkInput link : inputs.runtimeLinks()) {
             if (!link.resolved()) {
                 items.add(new ReadinessItem(

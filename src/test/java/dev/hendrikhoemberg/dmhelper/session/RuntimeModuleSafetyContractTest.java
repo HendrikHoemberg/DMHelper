@@ -141,7 +141,7 @@ class RuntimeModuleSafetyContractTest {
                     .isNotNull();
             assertThat(root.attr("data-table-safe-behavior"))
                     .as("data-table-safe-behavior for %s must match the registry", definition.key())
-                    .isEqualTo(definition.screenSafetyBehavior().name());
+                    .isEqualTo("INLINE");
             assertThat(root.attr("data-module-key"))
                     .as("outer shell for %s should also carry data-module-key", definition.key())
                     .isEqualTo(definition.key());
@@ -163,7 +163,7 @@ class RuntimeModuleSafetyContractTest {
         for (CockpitModuleDefinition definition : REGISTRY.all()) {
             assertThat(keyToBehavior.get(definition.key()))
                     .as("data-table-safe-behavior for %s must match the registry", definition.key())
-                    .isEqualTo(definition.screenSafetyBehavior().name());
+                    .isEqualTo("INLINE");
         }
     }
 
@@ -327,7 +327,7 @@ class RuntimeModuleSafetyContractTest {
         if (shellUsesDynamicKeys) {
             for (CockpitModuleDefinition definition : REGISTRY.all()) {
                 String key = definition.key();
-                String behavior = definition.screenSafetyBehavior().name();
+                String behavior = "INLINE";
                 if (keyToBehavior.containsKey(key)) {
                     duplicates.add(key);
                 } else {

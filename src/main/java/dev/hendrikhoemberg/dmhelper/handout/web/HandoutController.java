@@ -2,7 +2,6 @@ package dev.hendrikhoemberg.dmhelper.handout.web;
 
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
-import dev.hendrikhoemberg.dmhelper.handout.data.Handout.SafetyClassification;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -63,16 +62,6 @@ public class HandoutController {
         return "handout/_card :: card";
     }
 
-    @PutMapping("/{id}/classification")
-    public String classify(@PathVariable UUID campaignId,
-                           @PathVariable UUID id,
-                           @RequestParam("classification") SafetyClassification classification,
-                           Model model) {
-        Handout handout = handoutService.classify(campaignId, id, classification);
-        model.addAttribute("handout", handout);
-        return "handout/_card :: card";
-    }
-
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID campaignId, @PathVariable UUID id) {
         handoutService.delete(id);
@@ -88,15 +77,4 @@ public class HandoutController {
         return "handout/_present-overlay :: overlay";
     }
 
-    @PostMapping("/{sourceId}/derivatives")
-    public ResponseEntity<Void> createDerivative(@PathVariable UUID campaignId,
-                                                  @PathVariable UUID sourceId,
-                                                  @RequestParam String title,
-                                                  @RequestParam("recipe") String recipeJson,
-                                                  @RequestParam("file") MultipartFile file) throws IOException {
-        Handout derivative = handoutService.createDerivative(campaignId, sourceId, title, recipeJson, file);
-        return ResponseEntity.ok()
-                .header("HX-Redirect", "/campaigns/" + campaignId + "/handouts#handout-" + derivative.getId())
-                .build();
-    }
 }

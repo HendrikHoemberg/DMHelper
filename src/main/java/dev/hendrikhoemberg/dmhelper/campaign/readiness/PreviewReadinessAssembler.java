@@ -2,10 +2,8 @@ package dev.hendrikhoemberg.dmhelper.campaign.readiness;
 
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneMapRequirement;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
-import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.HandoutDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SceneDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SceneParticipantDto;
-import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,21 +39,13 @@ public class PreviewReadinessAssembler {
             });
         }
 
-        List<ReadinessInputs.AssetInput> assets = new ArrayList<>();
-        if (manifest.handouts() != null) {
-            for (HandoutDto h : manifest.handouts()) {
-                assets.add(new ReadinessInputs.AssetInput(
-                        null, h.title(), kindOf(h), safetyOf(h), h.presented()));
-            }
-        }
-
         List<ReadinessInputs.OmissionInput> omissions = new ArrayList<>();
         if (manifest.metadata() != null && manifest.metadata().conversionOmissions() != null) {
             manifest.metadata().conversionOmissions().forEach(o ->
                     omissions.add(new ReadinessInputs.OmissionInput(o.area(), o.reason())));
         }
 
-        return new ReadinessInputs(scenes, assets, links, omissions);
+        return new ReadinessInputs(scenes, links, omissions);
     }
 
     private static ReadinessInputs.SceneInput sceneInput(SceneDto scene) {
@@ -81,16 +71,4 @@ public class PreviewReadinessAssembler {
                 req, scene.mapRef() != null);
     }
 
-    private static Handout.AssetKind kindOf(HandoutDto h) {
-        return h.assetKind() == null || h.assetKind().isBlank()
-                ? Handout.AssetKind.SOURCE_PAGE : Handout.AssetKind.valueOf(h.assetKind());
-    }
-
-    private static Handout.SafetyClassification safetyOf(HandoutDto h) {
-        if (h.safetyClassification() != null) {
-            return Handout.SafetyClassification.valueOf(h.safetyClassification());
-        }
-        return h.dmOnly() ? Handout.SafetyClassification.DM_SOURCE
-                : Handout.SafetyClassification.UNREVIEWED;
-    }
 }

@@ -352,8 +352,7 @@ class FlywayMigrationTest {
     @Test
     void v18AddsSafetyClassificationAndSessionAudit() {
         assertThat(jdbc.queryForObject(
-                "SELECT COUNT(*) FROM information_schema.columns "
-                        + "WHERE table_name='HANDOUT' AND column_name='SAFETY_CLASSIFICATION'",
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '18' AND \"success\" = TRUE",
                 Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.tables "
@@ -369,10 +368,27 @@ class FlywayMigrationTest {
         assertThat(jdbc.queryForObject("""
                 SELECT COUNT(*) FROM information_schema.table_constraints
                 WHERE constraint_name IN (
-                    'CK_HANDOUT_SAFETY_CLASSIFICATION',
-                    'CK_HANDOUT_DERIVATIVE_SOURCE',
                     'CK_SESSION_AUDIT_TYPE')
-                """, Integer.class)).isEqualTo(3);
+                """, Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v28DropsHandoutSafetyClassification() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '28' AND \"success\" = TRUE",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns "
+                        + "WHERE table_name='HANDOUT' AND column_name='SAFETY_CLASSIFICATION'",
+                Integer.class)).isZero();
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns "
+                        + "WHERE table_name='HANDOUT' AND column_name='SOURCE_HANDOUT_ID'",
+                Integer.class)).isZero();
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns "
+                        + "WHERE table_name='HANDOUT' AND column_name='DERIVATIVE_RECIPE'",
+                Integer.class)).isZero();
     }
 
     @Test
