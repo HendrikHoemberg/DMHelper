@@ -48,6 +48,7 @@
 
                             <div th:replace="~{encounter/_library-add :: library-add(${campaignId}, ${encounter.id})}"></div>
                             <div th:replace="~{encounter/_threat-add :: threat-add(${campaignId}, ${encounter.id})}"></div>
+                            <div th:replace="~{encounter/_combatant-list :: combatant-list(${campaignId}, ${encounter.id}, ${combatants})}"></div>
                         </div>
                     </details>
                 </div>

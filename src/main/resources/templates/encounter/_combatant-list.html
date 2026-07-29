@@ -1,0 +1,27 @@
+<div th:fragment="combatant-list(campaignId, encounterId, combatants)" class="combatant-list">
+    <table class="data-table" th:if="${!combatants.isEmpty()}">
+        <thead>
+            <tr><th>Name</th><th>Kind</th><th>HP</th><th>Init</th><th></th></tr>
+        </thead>
+        <tbody>
+            <tr th:each="c : ${combatants}" data-combatant-row th:attr="data-combatant-id=${c.id}">
+                <td th:text="${c.name}">Name</td>
+                <td><span class="badge" th:text="${#strings.capitalizeWords(#strings.toLowerCase(c.kind))}">Monster</span></td>
+                <td th:text="|${c.currentHp} / ${c.maxHp}|">7 / 7</td>
+                <td th:text="${c.initiative} ?: '—'">—</td>
+                <td>
+                    <button class="btn btn-ghost btn-xs action-row__destructive"
+                            th:hx-delete="@{/api/v1/combatants/{id}(id=${c.id})}"
+                            th:hx-confirm="|Remove ${c.name} from this encounter?|"
+                            hx-target="closest [data-combatant-row]"
+                            hx-swap="delete">
+                        Remove
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <p th:if="${combatants.isEmpty()}" class="text-muted u-text-sm">
+        No combatants yet. Add one above, or search the library.
+    </p>
+</div>
