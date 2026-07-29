@@ -4,7 +4,7 @@
 
 **Goal:** Fix the twelve defects found while running "Die Verlorene Mine von Phandelver" end-to-end as a DM, so that opening the cockpit at the table produces a working map, tracker, and readable scene text.
 
-**Architecture:** Three P0 defects are independent single-file root causes (a client mount-ordering bug in `cockpit-modules.js`, a non-exhaustive `switch` in `SessionEncounterService`, and a `max-height` clamp in `cockpit.css`). The remaining nine are localised template/CSS/service changes. Every task is independently shippable and ends with a passing test; no task depends on another task's code.
+**Architecture:** Three P0 defects are rooted in client mount ordering, incomplete encounter-status handling, and a scene-text height clamp. The remaining fixes stay local to their existing template/CSS/service boundaries. Every task ends with an independently testable deliverable; the only shared implementation artifact is the explicitly documented browser-test fixture used by Tasks 1, 2, 5, 10 and 11.
 
 **Tech Stack:** Spring Boot 4.1 (Java 25), Thymeleaf, Alpine.js, Konva, H2 + Flyway, JUnit 5 + AssertJ, Playwright 1.54 (Java) for browser tests.
 
@@ -14,12 +14,12 @@
 - Run tests with plain `./mvnw test` — the surefire `argLine` already wires the Mockito agent.
 - Schema is owned by Flyway (`src/main/resources/db/migration/`); `spring.jpa.hibernate.ddl-auto=validate`. **No task in this plan changes the schema.** If you think you need a migration, you have misread the task.
 - Browser tests run under `@ActiveProfiles("playwright")` with `@SpringBootTest(webEnvironment = RANDOM_PORT)`. Follow the existing setup in `src/test/java/dev/hendrikhoemberg/dmhelper/CoreSessionLoopSmokeTest.java`.
-- New browser tests MUST attach `BrowserFailureCollector` via the existing `guardedPage(context)` helper pattern so console errors and HTTP 4xx/5xx fail the test.
+- New browser tests MUST attach `BrowserFailureCollector` through a local `guardedPage(context)` helper and call `assertNoFailures()` before closing the context, so console errors and HTTP 4xx/5xx fail the test.
 - Server binds to `127.0.0.1` only; `server.port=8081` in dev. Do not change either.
 - User-facing copy is **English**; campaign *content* is whatever language the package uses (German here). Never translate campaign content.
 - The gold accent (`btn-primary`) marks exactly one primary action per surface. Do not add a second gold button to a surface that already has one.
 - Commit after every task with a Conventional Commits prefix (`fix:`, `feat:`, `docs:`, `test:`).
-- **Shared test fixture:** Tasks 1, 2, 5, 7, 10 and 11 all use `src/test/java/dev/hendrikhoemberg/dmhelper/session/CockpitInitialLoadFixtures.java`. **Task 1 creates it**; each later task appends one method. If you execute tasks out of order, create the class from the code in Task 1 Step 1 first. This is the only cross-task file dependency in the plan.
+- **Shared test fixture:** Tasks 1, 2, 5, 10 and 11 use `src/test/java/dev/hendrikhoemberg/dmhelper/session/CockpitInitialLoadFixtures.java`. **Task 1 creates it**; Tasks 2 and 5 append methods. If you execute those tasks out of order, create the class from the code in Task 1 Step 1 first. Task 7 owns a separate `BulkSeedFixtures` component so readiness work is independently executable.
 
 ---
 
@@ -30,17 +30,18 @@
 | `src/main/resources/static/js/cockpit-modules.js` | Lazy module fetch lifecycle | 1 |
 | `src/main/java/.../session/service/SessionEncounterService.java` | Encounter activation dispositions | 2 |
 | `src/main/java/.../encounter/service/EncounterService.java` | Encounter status transitions | 2 |
-| `src/main/resources/static/js/session-cockpit.js` | Cockpit Alpine store, error surfacing | 2, 9 |
+| `src/main/resources/static/js/session-cockpit.js` | Cockpit Alpine store, error surfacing, lifecycle controls | 2, 9, 11 |
 | `src/main/resources/static/css/cockpit.css` | Scene card typography and clamps | 3 |
-| `src/main/resources/templates/session/_story-rail.html` | Story module markup | 3 |
 | `src/main/resources/templates/session/_map-module.html` | Workspace map picker | 4 |
-| `src/main/resources/static/css/components.css` | Party summary bar | 5, 8 |
+| `src/main/resources/static/css/components.css` | Party summary bar layout | 5 |
 | `src/main/resources/templates/party/_summary-bar.html` | Party chip markup | 8 |
 | `src/main/resources/templates/encounter/_tracker.html` | Initiative setup | 6 |
 | `src/main/java/.../campaign/readiness/` | Readiness advisories + bulk repair | 7 |
 | `src/main/resources/templates/campaigns/_readiness.html` | Readiness panel markup | 7 |
+| `src/test/java/.../session/CockpitInitialLoadFixtures.java` | Shared cockpit browser/service fixture | 1, 2, 5, 10, 11 |
+| `src/test/java/.../campaign/readiness/BulkSeedFixtures.java` | Exact three-scene readiness fixture | 7 |
 | `src/main/resources/templates/fragments/_dice-roller.html` | Dice drawer | 9 |
-| `src/main/resources/static/css/cockpit-layout.css` | Zone sizing | 10 |
+| `src/main/java/.../session/layout/CockpitBuiltInPresetCatalog.java` | Built-in zone ratios | 10 |
 | `src/main/java/.../session/service/SessionLifecycleService.java` | Session lifecycle | 11 |
 | `docs/dm-manual/03-session-cockpit.md` | DM manual | 12 |
 
@@ -61,7 +62,7 @@
 
 **Interfaces:**
 - Consumes: existing `this._shells` (Map of moduleKey → shell element, populated by `discoverShells()`), `this.stale` (Set), `this.loaded` (Set), `this.isModuleVisible(key)`, `this.load(key, {force})`.
-- Produces: `CockpitModuleController.prototype.seedInitialLoads()` — no arguments, returns `undefined`. Marks every shell whose `[data-module-content]` carries `data-module-loaded="false"` as stale, and records the already-server-rendered ones in `this.loaded`.
+- Produces: `CockpitModuleController.prototype.seedInitialLoads()` — no arguments, returns `undefined`. Marks unloaded shells and server-rendered bodies whose `data-module-mode` differs from the restored preset as stale; records only mode-correct server bodies in `this.loaded`. Visible stale modules fetch on first paint, while inactive stale tabs fetch through the existing visibility listener before they are shown.
 
 - [ ] **Step 1: Write the failing browser test**
 
@@ -123,15 +124,24 @@ class CockpitModuleInitialLoadBrowserTest {
 
     @BeforeEach
     void openPage() {
+        failures.clear();
         context = browser.newContext();
-        page = context.newPage();
-        failures.attach(page);
+        page = guardedPage(context);
     }
 
     @AfterEach
     void closePage() {
-        failures.assertNoFailures();
-        if (context != null) context.close();
+        try {
+            failures.assertNoFailures();
+        } finally {
+            if (context != null) context.close();
+        }
+    }
+
+    private Page guardedPage(BrowserContext browserContext) {
+        Page guarded = browserContext.newPage();
+        failures.attach(guarded);
+        return guarded;
     }
 
     @Test
@@ -162,9 +172,10 @@ class CockpitModuleInitialLoadBrowserTest {
                         + "[data-module-content]')?.getAttribute('data-module-loaded') === 'true'");
 
         assertThat(moduleRequests)
-                .as("map and encounter must fetch their bodies on first paint, not after a preset toggle")
+                .as("visible Combat modules must fetch on first paint, not after a preset toggle")
                 .anyMatch(u -> u.contains("/session/modules/map"))
-                .anyMatch(u -> u.contains("/session/modules/encounter"));
+                .anyMatch(u -> u.contains("/session/modules/encounter"))
+                .anyMatch(u -> u.contains("/session/modules/story") && u.contains("mode=COMPACT"));
 
         int mapBodyLength = (int) page.evaluate(
                 "() => document.querySelector('[data-runtime-module=\"map\"] "
@@ -174,6 +185,20 @@ class CockpitModuleInitialLoadBrowserTest {
                         + ".cockpit-module__body').innerText.trim().length");
         assertThat(mapBodyLength).as("map module body").isGreaterThan(0);
         assertThat(encounterBodyLength).as("encounter module body").isGreaterThan(0);
+        assertThat(page.locator("[data-runtime-module='story'] .runtime-story--compact").count())
+                .as("restored Combat Story body must match the preset's COMPACT mode")
+                .isEqualTo(1);
+
+        // Party is an inactive left-rail tab in Combat. It may stay queued until selected,
+        // but the stale STANDARD body must never be shown as if it were mode-correct.
+        page.locator("[data-module-tab='party']").click();
+        page.waitForSelector("[data-runtime-module='party'] .runtime-party--compact");
+        assertThat(moduleRequests)
+                .as("an inactive server-rendered body must refetch before first use")
+                .anyMatch(u -> u.contains("/session/modules/party") && u.contains("mode=COMPACT"));
+        assertThat(page.locator("[data-runtime-module='party'] .runtime-party--compact").count())
+                .as("restored Combat Party body must match the preset's COMPACT mode")
+                .isEqualTo(1);
     }
 }
 ```
@@ -229,7 +254,7 @@ public class CockpitInitialLoadFixtures {
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run: `./mvnw test -Dtest=CockpitModuleInitialLoadBrowserTest`
-Expected: FAIL. The `page.waitForFunction` on `data-module-loaded === 'true'` for `map` times out, because zero `/session/modules/` requests are issued on load.
+Expected: FAIL. The `page.waitForFunction` on `data-module-loaded === 'true'` for `map` times out, because zero `/session/modules/` requests are issued on load. The new COMPACT assertions also document the missed initial `cockpit:module-mode` events.
 
 - [ ] **Step 3: Add `seedInitialLoads()` and call it from `mount()`**
 
@@ -261,12 +286,18 @@ In `src/main/resources/static/js/cockpit-modules.js`, replace `mount()` (current
     // The layout controller has already emitted every visibility event by the time this
     // controller registers its listeners, so nothing else will ever mark a module stale on
     // first paint. Server-rendered bodies (initialBody != null in _cockpit-workbench.html)
-    // count as loaded; everything else must be queued or its panel stays blank until the
-    // DM toggles presets.
+    // count as loaded only when their rendered mode matches the restored preset; everything
+    // else must be queued or it stays blank/wrongly expanded until the DM toggles presets.
     seedInitialLoads() {
       for (const [key, shell] of this._shells) {
         const content = shell.querySelector('[data-module-content]');
-        if (content && content.getAttribute('data-module-loaded') === 'true') {
+        const renderedMode = content
+          ?.querySelector('[data-cockpit-module-fragment][data-module-mode]')
+          ?.getAttribute('data-module-mode');
+        const requiredMode = this.modeFor(key);
+        if (content
+            && content.getAttribute('data-module-loaded') === 'true'
+            && renderedMode === requiredMode) {
           this.loaded.add(key);
           continue;
         }
@@ -278,7 +309,7 @@ In `src/main/resources/static/js/cockpit-modules.js`, replace `mount()` (current
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `./mvnw test -Dtest=CockpitModuleInitialLoadBrowserTest`
-Expected: PASS.
+Expected: PASS. Map, Encounter, and visible Story load on the restored Combat preset; inactive Party stays queued until its tab is selected, then refetches in COMPACT before use.
 
 - [ ] **Step 5: Extend the source contract test**
 
@@ -287,7 +318,7 @@ In `src/test/java/dev/hendrikhoemberg/dmhelper/session/CockpitModuleClientContra
 - [ ] **Step 6: Run the full cockpit suite to check for regressions**
 
 Run: `./mvnw test -Dtest='Cockpit*Test,CoreSessionLoopSmokeTest'`
-Expected: PASS. Pay attention to `CockpitHydrationTest` — it asserts hydration counts and may need its expected request count raised now that first paint issues real fetches.
+Expected: PASS. `CockpitHydrationTest` is a server-rendering contract and does not count browser requests; do not change it unless its existing assertions actually fail.
 
 - [ ] **Step 7: Commit**
 
@@ -325,7 +356,7 @@ Client-side, `confirmSuspendCurrent()` (`session-cockpit.js:579`) awaits `activa
 
 **Interfaces:**
 - Consumes: `Encounter.Status` enum `{ PLANNED, ACTIVE, SUSPENDED, DONE }`; `EncounterService.resume(UUID)`, `EncounterService.suspend(UUID)`, `EncounterService.activateFresh(UUID)`, all returning `Encounter`.
-- Produces: `EncounterService.reopen(UUID encounterId)` returning `Encounter` — moves a `DONE` encounter back to `ACTIVE`, resets `round` to 1, and throws `IllegalStateException` for any other status.
+- Produces: `EncounterService.reopen(UUID encounterId)` returning `Encounter` — moves a `DONE` encounter back to `ACTIVE`, resets it to initiative `SETUP` (`round=0`, `activeTurnIndex=-1`), records a fresh `ENCOUNTER_ACTIVATED` boundary, auto-places anything still unplaced, and throws `IllegalStateException` for any other status. Existing combatant HP and initiative values remain available for the DM to review/edit in setup, matching `EncounterService.activate(UUID)`.
 - Produces: `SessionEncounterService.activate` becomes exhaustive over `Encounter.Status` with no `default` branch, so a future status value breaks the build instead of 500ing at runtime.
 
 - [ ] **Step 1: Write the failing service test**
@@ -363,6 +394,11 @@ class SessionEncounterReactivationTest {
         UUID encounterId = fixtures.plannedEncounterWithOneCombatant(campaignId);
 
         sessionEncounters.activate(campaignId, encounterId, null);
+        Encounter running = encounterRepo.findById(encounterId).orElseThrow();
+        running.setCombatPhase(Encounter.CombatPhase.RUNNING);
+        running.setRound(4);
+        running.setActiveTurnIndex(0);
+        encounterRepo.saveAndFlush(running);
         encounters.endEncounter(encounterId);
         assertThat(encounterRepo.findById(encounterId).orElseThrow().getStatus())
                 .isEqualTo(Encounter.Status.DONE);
@@ -372,7 +408,9 @@ class SessionEncounterReactivationTest {
         assertThat(result.status()).isEqualTo("ACTIVE");
         Encounter reopened = encounterRepo.findById(encounterId).orElseThrow();
         assertThat(reopened.getStatus()).isEqualTo(Encounter.Status.ACTIVE);
-        assertThat(reopened.getRound()).isEqualTo(1);
+        assertThat(reopened.getCombatPhase()).isEqualTo(Encounter.CombatPhase.SETUP);
+        assertThat(reopened.getRound()).isZero();
+        assertThat(reopened.getActiveTurnIndex()).isEqualTo(-1);
     }
 }
 ```
@@ -414,9 +452,10 @@ In `src/main/java/dev/hendrikhoemberg/dmhelper/encounter/service/EncounterServic
 
 ```java
     /**
-     * Puts a finished encounter back into play. A DM re-runs a fight when the party retreats
-     * and returns, so DONE is a resumable state rather than a terminal one. The combat log is
-     * kept: the end-review draft replays it and reports the latest state per combatant.
+     * Puts a finished encounter back into initiative setup. This deliberately mirrors the
+     * reset performed by activate(UUID): old HP/initiative values remain editable, but stale
+     * RUNNING/turn state cannot leak into the new run. The combat log is retained and a new
+     * activation boundary separates the runs.
      */
     public Encounter reopen(UUID encounterId) {
         Encounter e = findEntityById(encounterId);
@@ -424,9 +463,12 @@ In `src/main/java/dev/hendrikhoemberg/dmhelper/encounter/service/EncounterServic
             throw new IllegalStateException("Only finished encounters can be reopened");
         }
         e.setStatus(Encounter.Status.ACTIVE);
-        e.setRound(1);
+        e.setCombatPhase(Encounter.CombatPhase.SETUP);
+        e.setRound(0);
+        e.setActiveTurnIndex(-1);
         encounterRepo.save(e);
         placementService.autoPlaceUnplaced(encounterId);
+        logEntry(encounterId, CombatLogEntry.EntryType.ENCOUNTER_ACTIVATED, "", "");
         return e;
     }
 ```
@@ -449,7 +491,7 @@ In `src/main/java/dev/hendrikhoemberg/dmhelper/session/service/SessionEncounterS
 - [ ] **Step 5: Run the test to verify it passes**
 
 Run: `./mvnw test -Dtest=SessionEncounterReactivationTest`
-Expected: PASS.
+Expected: PASS. The reopened encounter is active in initiative setup at round 0 with no active turn.
 
 - [ ] **Step 6: Surface activation failures in the cockpit**
 
@@ -749,8 +791,11 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.LoadState;
+import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -772,6 +817,9 @@ class PartyRailAlignmentBrowserTest {
 
     private static Playwright playwright;
     private static Browser browser;
+    private BrowserContext context;
+    private Page page;
+    private final BrowserFailureCollector failures = new BrowserFailureCollector();
 
     @BeforeAll
     void launch() {
@@ -785,13 +833,33 @@ class PartyRailAlignmentBrowserTest {
         if (playwright != null) playwright.close();
     }
 
+    @BeforeEach
+    void openPage() {
+        failures.clear();
+        context = browser.newContext();
+        page = guardedPage(context);
+        page.setViewportSize(1600, 1000);
+    }
+
+    @AfterEach
+    void closePage() {
+        try {
+            failures.assertNoFailures();
+        } finally {
+            if (context != null) context.close();
+        }
+    }
+
+    private Page guardedPage(BrowserContext browserContext) {
+        Page guarded = browserContext.newPage();
+        failures.attach(guarded);
+        return guarded;
+    }
+
     @Test
     void everyPartyChipSharesTheSameLeftEdgeInTheNarrowRail() {
         UUID campaignId = fixtures.campaignWithRunningSessionAndFourPartyMembers();
 
-        BrowserContext context = browser.newContext();
-        Page page = context.newPage();
-        page.setViewportSize(1600, 1000);
         page.navigate("http://127.0.0.1:" + port + "/campaigns/" + campaignId + "/session");
         page.waitForLoadState(LoadState.NETWORKIDLE);
         page.waitForSelector(".runtime-party .party-member-chip");
@@ -806,7 +874,6 @@ class PartyRailAlignmentBrowserTest {
                     .as("party chip %d must align with the first chip", i)
                     .isCloseTo(firstLeft, org.assertj.core.data.Offset.offset(1.0));
         }
-        context.close();
     }
 }
 ```
@@ -821,7 +888,7 @@ Add to `CockpitInitialLoadFixtures`:
         for (String name : new String[] {"Nym", "Lyra", "Grimm", "Thorin"}) {
             PartyMember member = new PartyMember();
             member.setCampaign(campaign);
-            member.setName(name);
+            member.setCharacterName(name);
             member.setAc(14);
             member.setMaxHp(10);
             member.setCurrentHp(10);
@@ -902,8 +969,8 @@ git commit -m "fix: stop the PARTY label indenting the first chip in the cockpit
 - Test: `src/test/java/dev/hendrikhoemberg/dmhelper/session/InitiativeSetupPartyContractTest.java` (create)
 
 **Interfaces:**
-- Consumes: `POST /api/v1/encounters/{encounterId}/placements/party` (existing, used by `battle-map.js:725`); Alpine tracker state `encounter` (object with `id`, `combatPhase`), `combatants` (array), `setupBusy` (boolean); existing tracker method `refresh()`.
-- Produces: Alpine tracker method `addPartyToEncounter()` — no arguments, returns `Promise<void>`; POSTs the placements endpoint, then calls `refresh()`. Sets `setupBusy` while in flight.
+- Consumes: `POST /api/v1/encounters/{encounterId}/placements/party` (existing, used by `battle-map.js:725`). The endpoint is idempotent: `EncounterService.placeMissingParty` creates only absent party combatants, and placement is a no-op when the encounter has no map. Also consumes Alpine tracker state `_encounterId`, `setupBusy`, `setupSaveCount`, and the existing methods `mutate(...)`, `reloadCombatants()` and `dispatchState()`.
+- Produces: Alpine tracker method `addPartyToEncounter()` — no arguments, returns `Promise<void>`; POSTs the idempotent placements endpoint, reloads combatants, and sets `setupBusy` while in flight. It does not fetch a separate party list or invent a client-side missing-party count.
 
 - [ ] **Step 1: Write the failing contract test**
 
@@ -933,7 +1000,8 @@ class InitiativeSetupPartyContractTest {
                 Path.of("src/main/resources/templates/encounter/_tracker.html"));
         assertThat(html)
                 .contains("data-add-party-to-encounter")
-                .contains("addPartyToEncounter()");
+                .contains("addPartyToEncounter()")
+                .doesNotContain("missingPartyCount");
     }
 
     @Test
@@ -942,7 +1010,10 @@ class InitiativeSetupPartyContractTest {
                 Path.of("src/main/resources/static/js/combat-tracker.js"));
         assertThat(js)
                 .contains("addPartyToEncounter")
-                .contains("/placements/party");
+                .contains("/placements/party")
+                .contains("await this.reloadCombatants()")
+                .contains("this.dispatchState()")
+                .doesNotContain("this.refresh()", "partyMembers");
     }
 }
 ```
@@ -965,7 +1036,6 @@ In `src/main/resources/templates/encounter/_tracker.html`, replace lines 36-48 w
                     <button type="button"
                             class="btn btn-ghost btn-xs"
                             data-add-party-to-encounter
-                            x-show="missingPartyCount > 0"
                             :disabled="setupBusy || setupSaveCount > 0"
                             @click="addPartyToEncounter()">
                         Add party
@@ -980,44 +1050,35 @@ In `src/main/resources/templates/encounter/_tracker.html`, replace lines 36-48 w
                 </div>
 ```
 
-- [ ] **Step 4: Implement the tracker method and the `missingPartyCount` getter**
+- [ ] **Step 4: Implement the tracker method**
 
 In `src/main/resources/static/js/combat-tracker.js`, add to the Alpine component object (next to the existing `rollUnsetNpcs` method):
 
 ```js
-        // The map toolbar's "Place missing party members" is the only other route to this
-        // endpoint, and Theatre of Mind has no Map module — so the tracker needs its own.
-        get missingPartyCount() {
-            const placed = new Set(
-                (this.combatants || [])
-                    .filter(c => c.partyMemberId)
-                    .map(c => c.partyMemberId));
-            return (this.partyMembers || []).filter(m => !placed.has(m.id)).length;
-        },
-
         async addPartyToEncounter() {
-            if (!this.encounter?.id || this.setupBusy) return;
+            if (!this._encounterId || this.setupBusy || this.setupSaveCount > 0) return;
             this.setupBusy = true;
             try {
-                await window.dmRequest(
-                    `/api/v1/encounters/${this.encounter.id}/placements/party`,
-                    { method: 'POST' });
-                await this.refresh();
-            } catch (error) {
-                window.cockpitLayout?.showNotice(
-                    'Could not add the party. Nothing was changed.');
+                await this.mutate(
+                    'Could not add the party. Initiative setup was kept.',
+                    `/api/v1/encounters/${this._encounterId}/placements/party`,
+                    { method: 'POST' },
+                    async () => {
+                        await this.reloadCombatants();
+                        this.dispatchState();
+                    });
             } finally {
                 this.setupBusy = false;
             }
         },
 ```
 
-If the component does not already carry a `partyMembers` array, populate it in the component's existing init/refresh path from `GET /api/v1/campaigns/{campaignId}/party` alongside the combatant fetch, storing the response array as `this.partyMembers`.
+Keep the action visible throughout initiative setup. The endpoint itself determines what is missing and is safe to repeat; hiding the button would require a party-list API that does not exist and would recreate the original Theatre-of-Mind dead end.
 
 - [ ] **Step 5: Run the test to verify it passes**
 
 Run: `./mvnw test -Dtest=InitiativeSetupPartyContractTest`
-Expected: PASS.
+Expected: PASS. The contract rejects the nonexistent `refresh()`/party-list design and requires the real tracker reload path.
 
 - [ ] **Step 6: Run the encounter suite**
 
@@ -1043,7 +1104,9 @@ git commit -m "feat: add the party to an encounter straight from initiative setu
 - Create: `src/main/java/dev/hendrikhoemberg/dmhelper/campaign/readiness/BulkSeedService.java`
 - Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/campaign/readiness/web/ReadinessController.java`
 - Modify: `src/main/resources/templates/campaigns/_readiness.html:67-69`
+- Create: `src/test/java/dev/hendrikhoemberg/dmhelper/campaign/readiness/BulkSeedFixtures.java`
 - Test: `src/test/java/dev/hendrikhoemberg/dmhelper/campaign/readiness/BulkSeedServiceTest.java` (create)
+- Test: `src/test/java/dev/hendrikhoemberg/dmhelper/campaign/readiness/web/ReadinessControllerTest.java` (modify)
 
 **Interfaces:**
 - Consumes: `CampaignReadinessFacade.reportForCampaign(UUID campaignId)` returning `CampaignReadinessReport`, whose `items()` yields `List<ReadinessItem>`. `ReadinessItem` is a record with accessors `key()`, `category()`, `state()`, `title()`, `detail()`, `repairKind()`, `targetId()`. Also `ReadinessRepairKind.SEED_ENCOUNTER` and `SceneEncounterSeedService.seedFromScene(UUID campaignId, UUID sceneId)` returning `SceneEncounterSeedService.SeedResult(UUID encounterId, String encounterName, int combatantsAdded, List<String> skippedParticipants, boolean alreadyExisted)`.
@@ -1058,7 +1121,6 @@ Create `src/test/java/dev/hendrikhoemberg/dmhelper/campaign/readiness/BulkSeedSe
 ```java
 package dev.hendrikhoemberg.dmhelper.campaign.readiness;
 
-import dev.hendrikhoemberg.dmhelper.session.CockpitInitialLoadFixtures;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -1074,7 +1136,7 @@ class BulkSeedServiceTest {
 
     @Autowired private BulkSeedService bulkSeed;
     @Autowired private CampaignReadinessFacade readiness;
-    @Autowired private CockpitInitialLoadFixtures fixtures;
+    @Autowired private BulkSeedFixtures fixtures;
 
     @Test
     void seedAllClearsEverySeedEncounterAdvisoryInOneCall() {
@@ -1111,7 +1173,105 @@ class BulkSeedServiceTest {
 }
 ```
 
-Add `campaignWithThreeSeedableScenes()` to `CockpitInitialLoadFixtures`, building an adventure with one chapter and three scenes. Each scene must satisfy the exact predicate that raises the advisory (`CampaignReadinessService.java:31-36`): `hostile() && !hasLinkedEncounter() && anyParticipantHasStatblock()`. So mark each scene hostile, link **no** encounter, and give each one participant that resolves to a stat block — mirror the participant construction in `src/test/java/dev/hendrikhoemberg/dmhelper/encounter/EncounterTestFixtures.java`.
+Create `src/test/java/dev/hendrikhoemberg/dmhelper/campaign/readiness/BulkSeedFixtures.java`:
+
+```java
+package dev.hendrikhoemberg.dmhelper.campaign.readiness;
+
+import dev.hendrikhoemberg.dmhelper.adventure.data.Adventure;
+import dev.hendrikhoemberg.dmhelper.adventure.data.Chapter;
+import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneMapRequirement;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipant;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipantDisposition;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipantRepository;
+import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+
+@Component
+public class BulkSeedFixtures {
+
+    private final CampaignRepository campaigns;
+    private final AdventureService adventures;
+    private final StatBlockRepository statBlocks;
+    private final SceneParticipantRepository participants;
+    private final PartyMemberRepository partyMembers;
+
+    public BulkSeedFixtures(CampaignRepository campaigns,
+                            AdventureService adventures,
+                            StatBlockRepository statBlocks,
+                            SceneParticipantRepository participants,
+                            PartyMemberRepository partyMembers) {
+        this.campaigns = campaigns;
+        this.adventures = adventures;
+        this.statBlocks = statBlocks;
+        this.participants = participants;
+        this.partyMembers = partyMembers;
+    }
+
+    @Transactional
+    public UUID campaignWithThreeSeedableScenes() {
+        Campaign campaign = new Campaign();
+        campaign.setName("Bulk Seed Fixture");
+        campaigns.save(campaign);
+
+        PartyMember hero = new PartyMember();
+        hero.setCampaign(campaign);
+        hero.setCharacterName("Fixture Hero");
+        hero.setActive(true);
+        hero.setAc(14);
+        hero.setMaxHp(12);
+        hero.setCurrentHp(12);
+        partyMembers.save(hero);
+
+        StatBlock goblin = new StatBlock();
+        goblin.setSource(ContentSource.CUSTOM);
+        goblin.setCampaign(campaign);
+        goblin.setSourceKey("bulk-seed-goblin");
+        goblin.setName("Bulk Seed Goblin");
+        goblin.setCr("1/4");
+        goblin.setType("Humanoid");
+        goblin.setAc(15);
+        goblin.setHp("7 (2d6)");
+        goblin.setSpeed("30 ft.");
+        goblin.setDexScore(14);
+        statBlocks.save(goblin);
+
+        Adventure adventure = adventures.createAdventure(
+                campaign.getId(), "Bulk Seed Adventure", null, null);
+        Chapter chapter = adventures.createChapter(adventure.getId(), "Chapter 1", null);
+
+        for (int i = 1; i <= 3; i++) {
+            Scene scene = adventures.createScene(
+                    chapter.getId(), "Seedable Scene " + i, "seedable-" + i, null);
+            scene.setMapRequirement(SceneMapRequirement.NONE);
+
+            SceneParticipant participant = new SceneParticipant();
+            participant.setScene(scene);
+            participant.setDisplayName("Goblin group " + i);
+            participant.setQuantity(i);
+            participant.setDisposition(SceneParticipantDisposition.HOSTILE);
+            participant.setStatBlock(goblin);
+            participant.setSortOrder(0);
+            participants.save(participant);
+            scene.getParticipants().add(participant);
+        }
+        return campaign.getId();
+    }
+}
+```
+
+This fixture exactly satisfies `hostile() && !hasLinkedEncounter() && anyParticipantHasStatblock()` for three scenes and adds a party member so unrelated party blockers do not obscure the readiness response.
 
 - [ ] **Step 2: Run the test to verify it fails**
 
@@ -1191,7 +1351,6 @@ Expected: PASS.
 
 ```java
     @PostMapping("/seed-all")
-    @Transactional
     public String seedAll(@PathVariable UUID campaignId, Model model) {
         model.addAttribute("bulkSeedResult", bulkSeed.seedAll(campaignId));
         return renderFragment(campaignId, model);
@@ -1203,13 +1362,17 @@ Expected: PASS.
 In `src/main/resources/templates/campaigns/_readiness.html`, replace lines 67-69 with:
 
 ```html
+    <p class="readiness-advisories__result" th:if="${bulkSeedResult != null}"
+       th:text="|Seeded ${bulkSeedResult.encountersSeeded()} encounters and added ${bulkSeedResult.combatantsAdded()} combatants.|">
+      Encounters seeded.
+    </p>
     <details class="readiness-advisories" th:if="${!advisories.isEmpty()}">
       <summary th:text="|Notes &amp; advisories (${advisories.size()})|">Notes &amp; advisories</summary>
       <form th:action="@{|/campaigns/${campaignId}/readiness/seed-all|}" method="post"
             class="inline-form readiness-advisories__bulk"
             th:hx-post="@{|/campaigns/${campaignId}/readiness/seed-all|}"
             hx-target="closest .readiness-panel" hx-swap="outerHTML"
-            th:if="${advisories.?[repairKind().name() == 'SEED_ENCOUNTER'].size() > 1}">
+            th:if="${advisories.?[repairKind() == T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessRepairKind).SEED_ENCOUNTER].size() > 1}">
         <button type="submit" class="btn btn-ghost btn-xs">Seed all encounters</button>
       </form>
       <ul>
@@ -1217,19 +1380,53 @@ In `src/main/resources/templates/campaigns/_readiness.html`, replace lines 67-69
 
 Leave the rest of the `<ul>` body and the closing tags exactly as they are.
 
-- [ ] **Step 7: Run the readiness suite**
+- [ ] **Step 7: Test the real controller and returned fragment**
+
+In `src/test/java/dev/hendrikhoemberg/dmhelper/campaign/readiness/web/ReadinessControllerTest.java`, inject:
+
+```java
+    @Autowired BulkSeedFixtures bulkSeedFixtures;
+```
+
+and add:
+
+```java
+    @Test
+    void seedAllEndpointSeedsEveryAdvisoryAndReturnsUpdatedFeedback() throws Exception {
+        UUID campaignId = bulkSeedFixtures.campaignWithThreeSeedableScenes();
+
+        mvc.perform(post("/campaigns/{cid}/readiness/seed-all", campaignId))
+                .andExpect(status().isOk())
+                .andExpect(result -> {
+                    String body = result.getResponse().getContentAsString();
+                    assertThat(body)
+                            .contains("Seeded 3 encounters and added")
+                            .doesNotContain("Seed all encounters");
+                });
+
+        long remaining = facade.reportForCampaign(campaignId).items().stream()
+                .filter(i -> i.repairKind() == ReadinessRepairKind.SEED_ENCOUNTER)
+                .count();
+        assertThat(remaining).isZero();
+    }
+```
+
+Add imports for `BulkSeedFixtures` and `ReadinessRepairKind`.
+
+- [ ] **Step 8: Run the readiness suite**
 
 Run: `./mvnw test -Dtest='*Readiness*Test,BulkSeedServiceTest'`
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add src/main/java/dev/hendrikhoemberg/dmhelper/campaign/readiness/BulkSeedService.java \
-        src/main/java/dev/hendrikhoemberg/dmhelper/campaign/web/ \
+        src/main/java/dev/hendrikhoemberg/dmhelper/campaign/readiness/web/ReadinessController.java \
         src/main/resources/templates/campaigns/_readiness.html \
+        src/test/java/dev/hendrikhoemberg/dmhelper/campaign/readiness/BulkSeedFixtures.java \
         src/test/java/dev/hendrikhoemberg/dmhelper/campaign/readiness/BulkSeedServiceTest.java \
-        src/test/java/dev/hendrikhoemberg/dmhelper/session/CockpitInitialLoadFixtures.java
+        src/test/java/dev/hendrikhoemberg/dmhelper/campaign/readiness/web/ReadinessControllerTest.java
 git commit -m "feat: seed every flagged encounter from the readiness panel in one action"
 ```
 
@@ -1445,7 +1642,7 @@ The ratio is server-side, in `CockpitBuiltInPresetCatalog.java:9-10`:
 
 **Interfaces:**
 - Consumes: `CockpitLayoutDocument.SplitRatios(double left, double primary, double right, double bottom)`.
-- Produces: no new symbols. Only the `bottom` component of `DEFAULT_RATIOS` changes, from `0.24` to `0.13`.
+- Produces: no new symbols. Only the `bottom` component of `DEFAULT_RATIOS` changes, from `0.24` to `0.16`, the minimum accepted by `CockpitLayoutValidator`.
 
 - [ ] **Step 1: Write the failing browser test**
 
@@ -1460,8 +1657,11 @@ import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.LoadState;
+import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1483,6 +1683,9 @@ class CockpitBottomZoneSizeBrowserTest {
 
     private static Playwright playwright;
     private static Browser browser;
+    private BrowserContext context;
+    private Page page;
+    private final BrowserFailureCollector failures = new BrowserFailureCollector();
 
     @BeforeAll
     void launch() {
@@ -1496,13 +1699,33 @@ class CockpitBottomZoneSizeBrowserTest {
         if (playwright != null) playwright.close();
     }
 
+    @BeforeEach
+    void openPage() {
+        failures.clear();
+        context = browser.newContext();
+        page = guardedPage(context);
+        page.setViewportSize(1600, 1000);
+    }
+
+    @AfterEach
+    void closePage() {
+        try {
+            failures.assertNoFailures();
+        } finally {
+            if (context != null) context.close();
+        }
+    }
+
+    private Page guardedPage(BrowserContext browserContext) {
+        Page guarded = browserContext.newPage();
+        failures.attach(guarded);
+        return guarded;
+    }
+
     @Test
     void combatPresetBottomStripStaysCompact() {
         UUID campaignId = fixtures.campaignWithRunningSession();
 
-        BrowserContext context = browser.newContext();
-        Page page = context.newPage();
-        page.setViewportSize(1600, 1000);
         page.navigate("http://127.0.0.1:" + port + "/campaigns/" + campaignId + "/session");
         page.waitForLoadState(LoadState.NETWORKIDLE);
         page.waitForFunction("() => window.cockpitLayout?.mounted === true");
@@ -1513,8 +1736,6 @@ class CockpitBottomZoneSizeBrowserTest {
         assertThat(height)
                 .as("the bottom utility strip must stay compact at a 1000px viewport")
                 .isLessThanOrEqualTo(160.0);
-
-        context.close();
     }
 }
 ```
@@ -1532,9 +1753,10 @@ In `src/main/java/dev/hendrikhoemberg/dmhelper/session/layout/CockpitBuiltInPres
     // The bottom strip is a utility rail for quick notes and audio, not a panel. At a
     // bottom ratio of 0.24 it took 227px of a 1000px viewport to hold one input line.
     // Combat is the only preset with an uncollapsed bottom zone, so this is the only
-    // place it shows. The splitter still lets a DM grow it for the session log.
+    // place it shows. 0.16 is the validator's supported minimum; the splitter still
+    // lets a DM grow it for the session log.
     private static final CockpitLayoutDocument.SplitRatios DEFAULT_RATIOS =
-            new CockpitLayoutDocument.SplitRatios(0.20, 0.56, 0.24, 0.13);
+            new CockpitLayoutDocument.SplitRatios(0.20, 0.56, 0.24, 0.16);
 ```
 
 - [ ] **Step 4: Run the test to verify it passes**
@@ -1545,7 +1767,7 @@ Expected: PASS.
 - [ ] **Step 5: Check the layout suite**
 
 Run: `./mvnw test -Dtest='Cockpit*Test,ViewportAccessibilityGateTest'`
-Expected: PASS. `CockpitLayoutValidator` and any preset-catalog test that asserts exact ratios will need its expected `bottom` value updated to `0.13`.
+Expected: PASS. `0.16` already satisfies `CockpitLayoutValidator`; update only a preset-catalog assertion that explicitly expects the old built-in `bottom` value.
 
 - [ ] **Step 6: Commit**
 
@@ -1567,10 +1789,12 @@ git commit -m "fix: keep the combat bottom utility strip compact"
 - Modify: `src/main/resources/templates/session/_lifecycle-dialog.html`
 - Modify: `src/main/resources/static/js/session-cockpit.js`
 - Test: `src/test/java/dev/hendrikhoemberg/dmhelper/session/SessionAbandonTest.java` (create)
+- Test: `src/test/java/dev/hendrikhoemberg/dmhelper/session/SessionCockpitTemplateContractTest.java` (modify)
 
 **Interfaces:**
 - Consumes: `CampaignSession.Status` enum `{ IDLE, RUNNING, PAUSED, REVIEW }` (`CampaignSession.java:24`); `CampaignSessionRepository.findByCampaignId(UUID)`. The session's review text field is **`draftBody`** (`CampaignSession.java:75`) — setter `setDraftBody(String)`. The workspace map field is `workspaceMap` (line 60).
-- Produces: `SessionLifecycleService.abandon(UUID campaignId)` returning `CampaignSession` — resets status to `IDLE`, clears `workspaceMap`, `draftBody`, `startedAt`, `pausedAt` and `reviewStartedAt`, writes **no** note, and throws `IllegalStateException` if the session is already `IDLE`.
+- Produces: `SessionLifecycleService.abandon(UUID campaignId)` returning `CampaignSession` — writes **no** note, preserves campaign mutations made during play, but removes session-only visits, objective-change audit rows/package keys, audio runtime state, draft, presentation references, dates, plan/workspace references and attendees before returning `IDLE`. It throws `IllegalStateException` if the session is already `IDLE`.
+- Produces: private `clearSessionRuntime(CampaignSession session)`, shared by `complete` and `abandon`, so both exits use the same session-bookkeeping cleanup.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1581,7 +1805,9 @@ package dev.hendrikhoemberg.dmhelper.session;
 
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
+import dev.hendrikhoemberg.dmhelper.audio.data.SessionAudioStateRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
+import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionLifecycleService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1598,6 +1824,8 @@ class SessionAbandonTest {
 
     @Autowired private SessionLifecycleService lifecycle;
     @Autowired private NoteRepository notes;
+    @Autowired private CampaignSessionRepository sessions;
+    @Autowired private SessionAudioStateRepository audioStates;
     @Autowired private CockpitInitialLoadFixtures fixtures;
 
     @Test
@@ -1606,10 +1834,33 @@ class SessionAbandonTest {
         int logsBefore = notes
                 .findByCampaignIdAndTypeOrderByCreatedAtDesc(campaignId, NoteType.SESSION_LOG)
                 .size();
+        CampaignSession before = sessions.findByCampaignId(campaignId).orElseThrow();
+        UUID sessionId = before.getId();
+        before.setDraftBody("Throw-away draft");
+        before.setPresentationMode(CampaignSession.PresentationMode.MAP);
+        before.setPresentedMap(before.getWorkspaceMap());
+        sessions.saveAndFlush(before);
+        assertThat(audioStates.findBySessionId(sessionId)).isPresent();
 
         CampaignSession session = lifecycle.abandon(campaignId);
 
         assertThat(session.getStatus()).isEqualTo(CampaignSession.Status.IDLE);
+        assertThat(session.getStartedAt()).isNull();
+        assertThat(session.getPausedAt()).isNull();
+        assertThat(session.getReviewStartedAt()).isNull();
+        assertThat(session.getStartInGameYear()).isNull();
+        assertThat(session.getStartInGameMonth()).isNull();
+        assertThat(session.getStartInGameDay()).isNull();
+        assertThat(session.getPlanNote()).isNull();
+        assertThat(session.getWorkspaceMap()).isNull();
+        assertThat(session.getPresentationMode()).isEqualTo(CampaignSession.PresentationMode.CURTAIN);
+        assertThat(session.getPresentedMap()).isNull();
+        assertThat(session.getPresentedHandout()).isNull();
+        assertThat(session.getDraftBody()).isNull();
+        assertThat(session.getAttendees()).isEmpty();
+        assertThat(audioStates.findBySessionId(sessionId))
+                .as("session-only audio runtime state must be removed")
+                .isEmpty();
         assertThat(notes.findByCampaignIdAndTypeOrderByCreatedAtDesc(campaignId, NoteType.SESSION_LOG))
                 .as("abandoning must not create a session log note")
                 .hasSize(logsBefore);
@@ -1634,9 +1885,44 @@ class SessionAbandonTest {
 Run: `./mvnw test -Dtest=SessionAbandonTest`
 Expected: FAIL — `abandon` does not exist (compilation error).
 
-- [ ] **Step 3: Implement `abandon`**
+- [ ] **Step 3: Extract the complete-session cleanup**
 
-Add to `src/main/java/dev/hendrikhoemberg/dmhelper/session/service/SessionLifecycleService.java`, next to `cancelReview` (line 134):
+In `SessionLifecycleService.complete`, replace the cleanup from the `PresentationInvalidated` event through `sessions.save(session)` with:
+
+```java
+        clearSessionRuntime(session);
+        sessions.save(session);
+```
+
+Then add this helper immediately above `resetToIdle`:
+
+```java
+    /**
+     * Removes data that belongs to one run of the reusable CampaignSession row.
+     * Campaign/world mutations remain; only session bookkeeping and presentation/runtime
+     * state are discarded.
+     */
+    private void clearSessionRuntime(CampaignSession session) {
+        UUID campaignId = session.getCampaign().getId();
+        events.publishEvent(new SessionReferenceCleaner.PresentationInvalidated(
+                campaignId, null, true));
+        List<UUID> visitIds = visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId()).stream()
+                .map(SessionSceneVisit::getId)
+                .toList();
+        sessionRefCleaner.detachSessionObjectiveChanges(session.getId(), campaignId);
+        audioStateService.deleteBySessionId(session.getId());
+        resetToIdle(session);
+        visits.deleteBySessionId(session.getId());
+        packageKeys.deleteBindings(
+                campaignId, CampaignContentType.SESSION_SCENE_VISIT, visitIds);
+    }
+```
+
+This is the same cleanup `complete` already performs, moved behind one named boundary. Do not change when the `SESSION_LOG` note is created.
+
+- [ ] **Step 4: Implement `abandon` using the shared cleanup**
+
+Add next to `cancelReview`:
 
 ```java
     /**
@@ -1646,32 +1932,25 @@ Add to `src/main/java/dev/hendrikhoemberg/dmhelper/session/service/SessionLifecy
      */
     @Transactional
     public CampaignSession abandon(UUID campaignId) {
-        CampaignSession session = sessions.findByCampaignId(campaignId)
-                .orElseThrow(() -> new IllegalStateException("No session for campaign"));
+        CampaignSession session = requireSession(campaignId);
         if (session.getStatus() == CampaignSession.Status.IDLE) {
             throw new IllegalStateException("Session is already idle");
         }
-        session.setStatus(CampaignSession.Status.IDLE);
-        session.setWorkspaceMap(null);
-        session.setDraftBody(null);
-        session.setStartedAt(null);
-        session.setPausedAt(null);
-        session.setReviewStartedAt(null);
-        session.getAttendees().clear();
-        return sessions.save(session);
+        clearSessionRuntime(session);
+        return saveForState(session);
     }
 ```
 
-Use the repository field name that `SessionLifecycleService` already holds for `CampaignSessionRepository` (read the constructor — the other methods in this class already look it up the same way).
-
-- [ ] **Step 4: Run the test to verify it passes**
+- [ ] **Step 5: Run the test to verify it passes**
 
 Run: `./mvnw test -Dtest=SessionAbandonTest`
 Expected: PASS.
 
-- [ ] **Step 5: Add the control and its confirmation**
+- [ ] **Step 6: Add the control in every open state and its confirmation**
 
-In `src/main/resources/templates/session/_lifecycle-dialog.html`, add alongside the existing `Pause` button in the running-session state:
+In `src/main/resources/templates/session/_lifecycle-dialog.html`, add this button to the
+RUNNING/PAUSED action row (after **Review & Complete**) and to the REVIEW action row (after
+**Cancel Review**):
 
 ```html
         <button type="button" class="btn btn-ghost btn-xs"
@@ -1679,15 +1958,18 @@ In `src/main/resources/templates/session/_lifecycle-dialog.html`, add alongside 
                 @click="confirmAbandonSession()">Discard session</button>
 ```
 
-and in `src/main/resources/static/js/session-cockpit.js` add to the cockpit component:
+Do not render it in the IDLE start form. Putting it in both open-state branches keeps Discard
+reachable after a pause and after an accidental transition into End Review, not only while RUNNING.
+
+In `src/main/resources/static/js/session-cockpit.js`, add to the cockpit component:
 
 ```js
-        // Completing is the only other exit and it always writes a SESSION_LOG note.
-        // Discarding is destructive in the sense that the running session is gone, so it
-        // asks first.
+        // Campaign mutations remain, but all bookkeeping for this run is removed without
+        // producing a SESSION_LOG note. Confirm because that session-only history is gone.
         async confirmAbandonSession() {
             if (!window.confirm(
-                'Discard this session? Nothing is logged and the session returns to idle.')) {
+                'Discard this session? No session log is created. Campaign changes remain, '
+                + 'but this session’s visits, draft, and audio state are removed.')) {
                 return;
             }
             try {
@@ -1705,25 +1987,40 @@ Add the matching handler to `SessionApiController` (which is already mapped unde
 
 ```java
     @PostMapping("/abandon")
-    void abandonSession(@PathVariable UUID campaignId) {
-        sessionLifecycleService.abandon(campaignId);
+    SessionStateDto abandonSession(@PathVariable UUID campaignId) {
+        return state(lifecycle.abandon(campaignId));
     }
 ```
 
-using whatever field name the controller already holds for `SessionLifecycleService`.
+Use the controller's existing `lifecycle` field. Returning the normal state DTO also proves that `abandon` eagerly initializes the now-empty attendee collection.
 
-- [ ] **Step 6: Run the session suite**
+- [ ] **Step 7: Extend the cockpit source contract**
+
+In the existing `cockpitOwnsOneRuntimeIslandAndAccessibleRailControls()` method in
+`SessionCockpitTemplateContractTest`, add:
+
+```java
+        assertThat(count(lifecycle, "data-abandon-session"))
+                .as("Discard must be reachable from RUNNING/PAUSED and REVIEW")
+                .isEqualTo(2);
+        assertThat(lifecycle).contains("confirmAbandonSession()");
+        assertThat(js).contains(
+                "confirmAbandonSession()", "/session/abandon", "Campaign changes remain");
+```
+
+- [ ] **Step 8: Run the session suite**
 
 Run: `./mvnw test -Dtest='Session*Test,CoreSessionLoopSmokeTest'`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add src/main/java/dev/hendrikhoemberg/dmhelper/session/ \
         src/main/resources/templates/session/ \
         src/main/resources/static/js/session-cockpit.js \
-        src/test/java/dev/hendrikhoemberg/dmhelper/session/SessionAbandonTest.java
+        src/test/java/dev/hendrikhoemberg/dmhelper/session/SessionAbandonTest.java \
+        src/test/java/dev/hendrikhoemberg/dmhelper/session/SessionCockpitTemplateContractTest.java
 git commit -m "feat: let a DM discard a session without writing a session log"
 ```
 
@@ -1736,9 +2033,12 @@ git commit -m "feat: let a DM discard a session without writing a session log"
 - Line ~37-45 lists **five** built-ins including **Presentation**, and maps `Alt+Shift+4` to Presentation and `Alt+Shift+5` to Session Review. Verified live: `Alt+Shift+4` selects Session Review; `Alt+Shift+5` does nothing.
 - Line ~16 says "Ten modules ship in the registry" including Presentation.
 - Line ~83 lists a **Presentation** module row with a `presentation` endpoint.
+- Lines ~13 and ~18 still put Presentation and Screen Safety in the right-support rail and command chrome.
+- Lines ~73-85 say every module body is lazy-loaded. Four bodies (Session plan, Story, Party, and Quick notes) are server-rendered for first paint; the remaining five load on first visibility, and a restored preset refetches a server-rendered body when its mode is wrong.
 - Lines ~99-101 claim COMPACT is derived from the zone ("Modules serving in the Bottom utility zone render in COMPACT; all other zones render in STANDARD"). It is not. Compact-ness is an **explicit per-preset set** in `CockpitBuiltInPresetCatalog.java`: Exploration declares `Set.of("session-plan", "party", "quick-notes", "audio", "session-log")` (line 16) and Combat declares `Set.of("story", "party", "encounter", "quick-notes", "audio", "reference")` (line 20). Observed fetches match: `party?mode=COMPACT` and `session-plan?mode=COMPACT` in a *left support* zone, `encounter?mode=COMPACT` in a *right support* zone. This matters because `_story-rail.html:16-38` gates the summary, body, sections and participants behind `mode.name() != 'COMPACT'` — so a DM in the Combat preset gets read-aloud text only in the Story rail, by design.
 - Lines ~109, ~111, ~142, ~275 reference the Handout picker, Presentation module and the `p` "Present current map" shortcut.
-- Lines ~116-122 ("Player preview guarantees") and ~279 ("All cockpit routes are covered by the PIN interceptor") describe surfaces removed by the DM-only cut; `application.properties:37` records "PIN gate removed; server binds to loopback as compensating control."
+- Lines ~116-122 ("Player preview guarantees"), the entire "Screen Safety" section, the completion sentence about curtaining the player view, the player-table trap sentence, and line ~279 ("All cockpit routes are covered by the PIN interceptor") describe surfaces removed by the DM-only cut; `application.properties:37` records "PIN gate removed; server binds to loopback as compensating control."
+- The lifecycle section does not document Task 11's destructive boundary: Discard writes no `SESSION_LOG`, preserves campaign edits, and clears session-only visits, draft, audio runtime state, and presentation/session bookkeeping.
 
 **Files:**
 - Modify: `docs/dm-manual/03-session-cockpit.md`
@@ -1764,9 +2064,9 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * The DM-only cut removed the Presentation preset, the Presentation module and the PIN
- * gate. The manual is what a DM reads before a session, so it must not promise a preset
- * the picker does not offer.
+ * The DM-only cut removed the player-facing Presentation and Screen Safety surfaces and
+ * the PIN gate. The manual is what a DM reads before a session, so it must describe only
+ * the controls, module delivery, and lifecycle behaviour the cockpit still ships.
  */
 class DmManualCockpitAccuracyTest {
 
@@ -1775,7 +2075,7 @@ class DmManualCockpitAccuracyTest {
             Path.of("src/main/resources/static/js/cockpit-layout.js");
 
     @Test
-    void manualDocumentsOnlyThePresetsTheCockpitShips() throws IOException {
+    void manualMatchesTheDmOnlyCockpitContract() throws IOException {
         String manual = Files.readString(MANUAL);
         String js = Files.readString(LAYOUT_JS);
 
@@ -1793,16 +2093,34 @@ class DmManualCockpitAccuracyTest {
                 .doesNotContain("| Presentation |")
                 .doesNotContain("Five immutable built-ins")
                 .doesNotContain("Ten modules ship")
-                .doesNotContain("Ten runtime modules");
+                .doesNotContain("Ten runtime modules")
+                .doesNotContain("transitional content shells")
+                .doesNotContain("in B1")
+                .doesNotContain("in **B2**")
+                .doesNotContain("Presentation, Party")
+                .doesNotContain("Screen Safety")
+                .doesNotContain("Player preview")
+                .doesNotContain("player view")
+                .doesNotContain("player table")
+                .doesNotContain("Focus handout picker")
+                .doesNotContain("Present current map");
         assertThat(manual)
-                .as("Alt+Shift+5 selects nothing")
-                .doesNotContain("Alt+Shift+5");
+                .as("only four built-in preset shortcuts exist")
+                .doesNotContain("Alt+Shift+5")
+                .doesNotContain("`Alt+Shift+1`…`5`");
         assertThat(manual)
                 .as("the PIN gate was removed; loopback binding is the compensating control")
                 .doesNotContain("PIN interceptor");
         assertThat(manual)
                 .as("COMPACT is a per-preset set, not a zone rule")
                 .doesNotContain("Modules serving in the **Bottom utility** zone render in `COMPACT`");
+        assertThat(manual)
+                .as("the manual must explain mixed initial delivery and discard semantics")
+                .contains("Four modules are server-rendered for first paint")
+                .contains("The other five — Map, Encounter, Reference, Audio, and Session log — "
+                        + "load from their module endpoints on first visibility")
+                .contains("Campaign changes remain")
+                .contains("No `SESSION_LOG` note is created");
     }
 }
 ```
@@ -1810,15 +2128,30 @@ class DmManualCockpitAccuracyTest {
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run: `./mvnw test -Dtest=DmManualCockpitAccuracyTest`
-Expected: FAIL — the manual still says "Five immutable built-ins", "Alt+Shift+5" and "PIN interceptor".
+Expected: FAIL — the manual still describes removed player-facing controls, five presets, all-lazy delivery, zone-derived compact mode, and the PIN interceptor.
 
-Note the assertions are deliberately narrow rather than banning the word "Presentation" outright: `SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE` still exists and the End Review section legitimately names it. **Leave the End Review section untouched.**
+The assertions deliberately do not ban the word "Presentation" outright: historical
+`SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE` entries still exist and the End Review evidence
+list legitimately names them.
 
 - [ ] **Step 3: Correct the manual**
 
-In `docs/dm-manual/03-session-cockpit.md`:
+In `docs/dm-manual/03-session-cockpit.md`, make all of the following changes:
 
-1. Replace the built-in preset table with:
+1. In the zone table, change Right support to `Secondary rail (Encounter, Reference, Party, …)`.
+   Replace the registry sentence with:
+
+```markdown
+Nine modules ship in the registry: Story, Map, Encounter, Party, Session plan, Quick notes, Reference, Audio, and Session log. Every module appears at most once.
+```
+
+   Replace the command-chrome sentence with:
+
+```markdown
+Command chrome (identity, preset picker, Edit layout, Search, Dice, Session) stays reachable above the workbench.
+```
+
+2. Replace the built-in preset table with:
 
 ```markdown
 | Shortcut | Preset | Typical primary |
@@ -1831,11 +2164,27 @@ In `docs/dm-manual/03-session-cockpit.md`:
 
 and change "Five immutable built-ins ship with the app" to "Four immutable built-ins ship with the app".
 
-2. Change "Ten modules ship in the registry: Story, Map, Encounter, Party, Presentation, Session plan, Quick notes, Audio, Session log, …" to "Nine modules ship in the registry: Story, Map, Encounter, Party, Session plan, Quick notes, Reference, Audio, and Session log."
+3. Replace the module-delivery introduction and table. Use this introduction:
 
-3. Delete the **Presentation** row from the module responsibilities table and change "Ten runtime modules ship in the cockpit registry" to "Nine runtime modules ship in the cockpit registry".
+```markdown
+Nine runtime modules ship in the cockpit registry. Four modules are server-rendered for first paint: Session plan, Story, Party, and Quick notes. The other five — Map, Encounter, Reference, Audio, and Session log — load from their module endpoints on first visibility. When a restored preset requires a different mode, a server-rendered body is refetched before use.
+```
 
-4. Replace the "Compact vs Focus behaviour" bullets with:
+   Delete the Presentation row. Rename the table's `Lazy` column to `Initial delivery`; mark Session
+   plan, Story, Party, and Quick notes as `server-rendered`, and mark Map, Encounter, Reference, Audio,
+   and Session log as `first visibility`. Keep the endpoint keys unchanged.
+
+4. In "Lazy loading and retry behaviour", change the first two bullets so they agree with the mixed
+   delivery model:
+
+```markdown
+- Map, Encounter, Reference, Audio, and Session log load their bodies via a `GET` to `/campaigns/{cid}/session/modules/{key}?mode=STANDARD|COMPACT` on first visibility.
+- Server-rendered bodies are reused only when their `data-module-mode` matches the restored preset. A mismatch is refetched before the body is shown.
+```
+
+   Keep the live-region, failure, Retry, and duplicate-request guarantees.
+
+5. Replace the "Compact vs Focus behaviour" bullets with:
 
 ```markdown
 - `COMPACT` is **not** derived from the zone. Each preset names the modules it wants condensed in its own `compactModuleKeys` set (`CockpitBuiltInPresetCatalog.java`); everything else renders `STANDARD`. Exploration condenses Session plan, Party, Quick notes, Audio and Session log. Combat additionally condenses Story, Encounter and Reference.
@@ -1843,13 +2192,36 @@ and change "Five immutable built-ins ship with the app" to "Four immutable built
 - Modules that support **Focus** open a full-workbench overlay. **Return** (or `Escape`) restores the previous layout and returns keyboard focus to the Focus trigger.
 ```
 
-5. In the "Where actions live" table, delete the **Handout** picker and **Presentation** rows.
+6. In the "Where actions live" table, delete the **Handout** picker and **Presentation** rows.
 
-6. Delete the entire "Player preview guarantees" section.
+7. Delete the entire "Player preview guarantees" section and the entire "Screen Safety" section.
 
-7. Delete the `p` / "Present current map" row from **both** keyboard tables (the one under "Keyboard workflow" and the one under "Keyboard Actions"), and change both `Alt+Shift+1`…`5` entries to `Alt+Shift+1`…`4` with the Presentation name removed.
+8. In **both** keyboard tables (under "Keyboard workflow" and "Keyboard Actions"), delete the `h`
+   handout and `p` presentation rows. Change `Alt+Shift+1`…`5` to `Alt+Shift+1`…`4`; in the second
+   table list only Exploration / Combat / Theatre of Mind / Session Review.
 
-8. Replace the closing line "All cockpit routes are covered by the PIN interceptor." with:
+9. In "End Review", keep the legitimate `PRESENTATION_OVERRIDE` evidence bullet but replace the
+   completion sentence with:
+
+```markdown
+Edit the draft freely, then provide a title and click **Complete**. A `SESSION_LOG` note is created, session-only runtime state is cleared, and the session resets to `IDLE`.
+```
+
+10. Immediately after "Pause / Resume", add:
+
+```markdown
+### Discard without a log
+
+Use **Session** → **Discard session** to abandon the current run. No `SESSION_LOG` note is created. Campaign changes remain; session visits, the end-review draft, audio runtime state, and presentation/session bookkeeping are removed before the session returns to `IDLE`.
+```
+
+11. In "Traps and Hazards", replace the player-table sentence with:
+
+```markdown
+DM-only threat map pins are managed from the cockpit map sidebar and remain visible only to the DM.
+```
+
+12. Replace the closing PIN sentence with:
 
 ```markdown
 The server binds to `127.0.0.1` only; loopback binding is the access control for all cockpit routes.
@@ -1890,7 +2262,7 @@ Expected: PASS, no skips introduced by this plan.
 
 Then, against the Phandelver campaign, confirm each fix in the browser:
 
-1. Cockpit → Combat preset → reload. Map and Encounter render immediately, with no preset toggle. **(Task 1)**
+1. Cockpit → Combat preset → reload. Map and Encounter render immediately, Story is compact, and selecting the inactive Party tab renders it compact without a preset toggle. **(Task 1)**
 2. Story → a scene whose encounter is `DONE` → "Run this encounter" → "Suspend current and run". The encounter activates; if anything fails, a readable notice appears. **(Task 2)**
 3. Story rail on Goblin-Hinterhalt: the whole tactics paragraph is readable by scrolling the module. **(Task 3)**
 4. Map module picker names the loaded map, not "No map". **(Task 4)**
@@ -1899,8 +2271,8 @@ Then, against the Phandelver campaign, confirm each fix in the browser:
 7. Campaign home → advisories → "Seed all encounters" clears all sixteen in one action. **(Task 7)**
 8. Hovering `PInv` shows "Passive Investigation". **(Task 8)**
 9. Dice drawer: clicking `d20` rolls without typing. **(Task 9)**
-10. Combat preset bottom strip is ~130px, not ~230px. **(Task 10)**
-11. Session → "Discard session" returns to IDLE and writes no note. **(Task 11)**
+10. Combat preset bottom strip is at the validator minimum (16%, about 150px on the target viewport), not ~230px. **(Task 10)**
+11. Session → "Discard session" returns to IDLE, writes no note, preserves campaign edits, and clears session-only visits, draft, and audio state. **(Task 11)**
 12. `Alt+Shift+4` selects Session Review, matching the manual. **(Task 12)**
 
 - [ ] **Restore the working campaign if needed**
