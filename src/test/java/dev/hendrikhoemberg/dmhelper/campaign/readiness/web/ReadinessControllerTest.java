@@ -36,6 +36,7 @@ class ReadinessControllerTest {
     @Autowired PartyMemberRepository partyMembers;
     @Autowired ReadinessAcknowledgementRepository acks;
     @Autowired CampaignReadinessFacade facade;
+    @Autowired BulkSeedFixtures bulkSeedFixtures;
     @Autowired EntityManager em;
 
     private void addPartyMember(UUID campaignId) {
@@ -187,5 +188,24 @@ class ReadinessControllerTest {
                     assertThat(Jsoup.parse(body).selectFirst(".readiness-accepted").hasAttr("open"))
                             .isFalse();
                 });
+    }
+
+    @Test
+    void seedAllEndpointSeedsEveryAdvisoryAndReturnsUpdatedFeedback() throws Exception {
+        UUID campaignId = bulkSeedFixtures.campaignWithThreeSeedableScenes();
+
+        mvc.perform(post("/campaigns/{cid}/readiness/seed-all", campaignId))
+                .andExpect(status().isOk())
+                .andExpect(result -> {
+                    String body = result.getResponse().getContentAsString();
+                    assertThat(body)
+                            .contains("Seeded 3 encounters and added")
+                            .doesNotContain("Seed all encounters");
+                });
+
+        long remaining = facade.reportForCampaign(campaignId).items().stream()
+                .filter(i -> i.repairKind() == ReadinessRepairKind.SEED_ENCOUNTER)
+                .count();
+        assertThat(remaining).isZero();
     }
 }

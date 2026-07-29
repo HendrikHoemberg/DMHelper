@@ -18,14 +18,17 @@ public class ReadinessController {
     private final HandoutRepository handouts;
     private final ReadinessAcknowledgementRepository acknowledgements;
     private final ReadinessRepairService repairService;
+    private final BulkSeedService bulkSeed;
 
     public ReadinessController(CampaignReadinessFacade facade, HandoutRepository handouts,
                                ReadinessAcknowledgementRepository acknowledgements,
-                               ReadinessRepairService repairService) {
+                               ReadinessRepairService repairService,
+                               BulkSeedService bulkSeed) {
         this.facade = facade;
         this.handouts = handouts;
         this.acknowledgements = acknowledgements;
         this.repairService = repairService;
+        this.bulkSeed = bulkSeed;
     }
 
     @PostMapping("/assets/{handoutId}/kind")
@@ -58,6 +61,13 @@ public class ReadinessController {
     @Transactional
     public String unaccept(@PathVariable UUID campaignId, @RequestParam String itemKey, Model model) {
         acknowledgements.deleteByCampaignIdAndItemKey(campaignId, itemKey);
+        return renderFragment(campaignId, model);
+    }
+
+    @PostMapping("/seed-all")
+    @Transactional
+    public String seedAll(@PathVariable UUID campaignId, Model model) {
+        model.addAttribute("bulkSeedResult", bulkSeed.seedAll(campaignId));
         return renderFragment(campaignId, model);
     }
 

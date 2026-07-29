@@ -63,9 +63,20 @@
       </ul>
     </details>
   </th:block>
+  <p class="readiness-advisories__result" th:if="${bulkSeedResult != null}"
+     th:text="|Seeded ${bulkSeedResult.encountersSeeded()} encounters and added ${bulkSeedResult.combatantsAdded()} combatants.|">
+    Encounters seeded.
+  </p>
   <th:block th:with="advisories=${readiness.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).RESOLVED)}">
     <details class="readiness-advisories" th:if="${!advisories.isEmpty()}">
       <summary th:text="|Notes &amp; advisories (${advisories.size()})|">Notes &amp; advisories</summary>
+      <form th:action="@{|/campaigns/${campaignId}/readiness/seed-all|}" method="post"
+            class="inline-form readiness-advisories__bulk"
+            th:hx-post="@{|/campaigns/${campaignId}/readiness/seed-all|}"
+            hx-target="closest .readiness-panel" hx-swap="outerHTML"
+            th:if="${advisories.?[repairKind() == T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessRepairKind).SEED_ENCOUNTER].size() > 1}">
+        <button type="submit" class="btn btn-ghost btn-xs">Seed all encounters</button>
+      </form>
       <ul>
         <li th:each="item : ${advisories}" class="readiness-item">
           <div class="readiness-item__content">
