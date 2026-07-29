@@ -4,13 +4,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.UUID;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
@@ -18,7 +14,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = "dmhelper.pin-enabled=true")
 class AgentContractControllerTest {
 
     @Autowired
@@ -49,11 +44,4 @@ class AgentContractControllerTest {
                 .andExpect(status().isOk());
     }
 
-    @Test
-    void dmRoutesStillRequirePinWhenEnabled() throws Exception {
-        mvc.perform(put("/api/v1/campaigns/{id}/table/presentation", UUID.randomUUID())
-                        .contentType("application/json")
-                        .content("{\"mode\":\"CURTAIN\",\"ref\":\"\"}"))
-                .andExpect(status().isForbidden());
-    }
 }

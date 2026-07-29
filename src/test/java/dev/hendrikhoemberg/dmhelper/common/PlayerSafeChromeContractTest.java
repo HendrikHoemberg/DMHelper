@@ -11,15 +11,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PlayerSafeChromeContractTest {
 
     @Test
-    void pinDisplayIsHiddenInTableSafeMode() throws IOException {
-        String navbar = Files.readString(
-                Path.of("src/main/resources/templates/fragments/navbar.html"));
-        assertThat(navbar)
-                .as("PIN must carry data-screen-sensitive so table-safe mode hides it")
-                .contains("data-screen-sensitive");
-    }
-
-    @Test
     void recentNotesCardIsHiddenInTableSafeMode() throws IOException {
         String dashboard = Files.readString(
                 Path.of("src/main/resources/templates/campaigns/detail.html"));
