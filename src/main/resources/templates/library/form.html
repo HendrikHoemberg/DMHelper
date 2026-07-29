@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="|${formTitle} — DMHelper|">DMHelper — Library</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <div>
+                    <div class="page-header-eyebrow">Library</div>
+                    <h1 data-display-title th:text="${formTitle}">New Entry</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+                <div class="page-header-actions">
+                    <a th:href="@{/library}" class="btn btn-ghost">&larr; Back to Library</a>
+                </div>
+            </div>
+
+            <!-- Every library form shares this shell; the controller names the fragment. -->
+            <th:block th:replace="~{__${formFragment}__}"></th:block>
+        </main>
+    </div>
+</body>
+</html>

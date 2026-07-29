@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
@@ -56,6 +57,30 @@ class PartyControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Party")))
                 .andExpect(content().string(containsString("id=\"party-form-modal\"")));
+    }
+
+    @Test
+    void emptyRosterCtaOpensTheModalInsteadOfNavigating() throws Exception {
+        Campaign c = new Campaign();
+        c.setId(campaignId);
+        c.setName("Test");
+        when(campaignService.findById(campaignId)).thenReturn(c);
+        when(partyService.findByCampaignId(campaignId)).thenReturn(List.of());
+        when(partyService.findActiveByCampaignId(campaignId)).thenReturn(List.of());
+
+        String body = mockMvc.perform(get("/campaigns/{cid}/party", campaignId))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        int ctaAt = body.indexOf("empty-state__cta");
+        assertThat(ctaAt).as("an empty roster offers a way to add the first member").isGreaterThan(-1);
+        String cta = body.substring(body.lastIndexOf("<", ctaAt), body.indexOf(">", ctaAt) + 1);
+
+        assertThat(cta)
+                .as("/party/new only serves the modal fragment, so navigating to it renders an unstyled page")
+                .doesNotContain("href=")
+                .contains("hx-get=\"/campaigns/" + campaignId + "/party/new\"")
+                .contains("hx-target=\"#party-form-modal\"");
     }
 
     @Test

@@ -6,10 +6,7 @@
           : @{/campaigns/{cid}/notes(cid=${campaignId})}"
       th:method="${note != null} ? 'put' : 'post'"
       hx-target="body" hx-swap="outerHTML"
-      style="padding: var(--space-lg); max-width: 800px; margin: 0 auto;">
-
-    <h1 th:text="${note != null} ? 'Edit Note' : 'New Note'"
-        style="margin-bottom: var(--space-lg);">New Note</h1>
+      style="max-width: 800px;">
 
     <div class="form-group">
         <label for="noteTitle">Title</label>

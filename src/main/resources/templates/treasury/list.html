@@ -69,10 +69,13 @@
                         </th:block>
                     </div>
                     <th:block th:if="${#lists.isEmpty(stashItems)}">
-                        <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
-                            'The party stash is empty', 'Add item',
-                            @{/campaigns/{id}/treasury/new(id=${campaignId})},
-                            'Track coin, gems, and magic items the party is carrying.', '◇')}"></th:block>
+                        <th:block th:replace="~{common/_empty-state :: empty-state-with-cta(
+                            message='The party stash is empty',
+                            description='Track coin, gems, and magic items the party is carrying.',
+                            icon='◇', cta=~{common/_form-cta :: swap-cta(
+                                actionText='Add item',
+                                actionUrl=@{/campaigns/{id}/treasury/new(id=${campaignId})},
+                                target='#treasury-form-area')})}"></th:block>
                     </th:block>
                 </th:block>
             </div>

@@ -436,23 +436,27 @@ public class CampaignManifestV2SemanticValidator {
             var link = scene.links().get(li);
             String path = scenePath + "/links/" + li;
             if (link.targetRef() == null) continue;
-            CampaignContentType expected = expectedSceneLinkType(link.role());
-            if (expected != null) {
-                requireRefType(link.targetRef(), expected, path + "/targetRef", problems);
+            List<CampaignContentType> expected = expectedSceneLinkTypes(link.role());
+            if (expected == null) continue;
+            if (expected.size() == 1) {
+                requireRefType(link.targetRef(), expected.get(0), path + "/targetRef", problems);
+            } else {
+                requireRefTypeOneOf(link.targetRef(), expected, path + "/targetRef", problems);
             }
         }
     }
 
-    private static CampaignContentType expectedSceneLinkType(String role) {
+    private static List<CampaignContentType> expectedSceneLinkTypes(String role) {
         if (role == null) return null;
         return switch (role) {
-            case "HANDOUT" -> HANDOUT;
-            case "RULE" -> CampaignContentType.RULE;
-            case "QUEST" -> QUEST;
-            case "TIMELINE_EVENT" -> CampaignContentType.TIMELINE_EVENT;
-            case "RELATED_SCENE" -> SCENE;
-            case "NPC", "LOCATION" -> NOTE;
-            case "RANDOM_ENCOUNTERS" -> CampaignContentType.ROLLABLE_TABLE;
+            case "HANDOUT" -> List.of(HANDOUT);
+            case "RULE" -> List.of(CampaignContentType.RULE);
+            case "QUEST" -> List.of(QUEST);
+            case "TIMELINE_EVENT" -> List.of(CampaignContentType.TIMELINE_EVENT);
+            case "RELATED_SCENE" -> List.of(SCENE);
+            case "NPC" -> List.of(NOTE, WORLD_NPC);
+            case "LOCATION" -> List.of(NOTE, WORLD_LOCATION);
+            case "RANDOM_ENCOUNTERS" -> List.of(CampaignContentType.ROLLABLE_TABLE);
             default -> null; // REFERENCE: any type
         };
     }

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -71,6 +72,30 @@ class TreasuryControllerTest {
                 .andExpect(view().name("treasury/list"))
                 .andExpect(model().attributeExists("assignments"))
                 .andExpect(model().attributeExists("balances"));
+    }
+
+    @Test
+    void emptyStashCtaOpensTheItemFormInPlace() throws Exception {
+        when(campaignRepository.findById(campaignId)).thenReturn(Optional.of(sampleCampaign()));
+        when(partyMemberRepository.findByCampaignIdOrderByCharacterNameAsc(campaignId)).thenReturn(List.of());
+        when(treasuryService.findByCampaignId(campaignId)).thenReturn(List.of());
+        when(ledgerService.computeAllGoldBalances(campaignId)).thenReturn(List.of());
+        when(magicItemRepository.findAllByOrderByNameAsc()).thenReturn(List.of());
+        when(equipmentItemRepository.findAllByOrderByNameAsc()).thenReturn(List.of());
+
+        String body = mockMvc.perform(get("/campaigns/{campaignId}/treasury", campaignId))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        int ctaAt = body.indexOf("empty-state__cta");
+        assertThat(ctaAt).as("an empty stash offers a way to add the first item").isGreaterThan(-1);
+        String cta = body.substring(body.lastIndexOf("<", ctaAt), body.indexOf(">", ctaAt) + 1);
+
+        assertThat(cta)
+                .as("/treasury/new serves only the form fragment, so navigating to it renders an unstyled page")
+                .doesNotContain("href=")
+                .contains("hx-get=\"/campaigns/" + campaignId + "/treasury/new\"")
+                .contains("hx-target=\"#treasury-form-area\"");
     }
 
     @Test

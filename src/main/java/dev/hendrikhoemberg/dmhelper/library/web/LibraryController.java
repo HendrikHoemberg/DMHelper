@@ -108,11 +108,21 @@ public class LibraryController {
         return "library/_sheet :: sheet";
     }
 
+    /**
+     * The library's form routes are reached by ordinary links, so each answers with a whole
+     * page: a bare fragment arrives without a {@code <head>} and renders unstyled.
+     */
+    private String formPage(Model model, String fragment, String title) {
+        model.addAttribute("formFragment", fragment);
+        model.addAttribute("formTitle", title);
+        return "library/form";
+    }
+
     @GetMapping("/statblocks/new")
     public String newForm(Model model) {
         model.addAttribute("sb", null);
         model.addAttribute("campaignId", null);
-        return "library/_form :: form";
+        return formPage(model, "library/_form :: form", "New Statblock");
     }
 
     @GetMapping("/statblocks/{id}/edit")
@@ -120,7 +130,7 @@ public class LibraryController {
         StatBlock sb = service.findById(id);
         model.addAttribute("sb", sb);
         model.addAttribute("campaignId", sb.getCampaign() != null ? sb.getCampaign().getId() : null);
-        return "library/_form :: form";
+        return formPage(model, "library/_form :: form", "Edit " + sb.getName());
     }
 
     @PostMapping("/statblocks")
@@ -152,8 +162,7 @@ public class LibraryController {
                          @RequestParam(required = false) String reactions,
                          @RequestParam(required = false) String legendaryActions,
                          @RequestParam(required = false) String legendaryDescription,
-                         @RequestParam(required = false) String lairActions,
-                         Model model) {
+                         @RequestParam(required = false) String lairActions) {
         if (name == null || name.isBlank()) throw new IllegalArgumentException("Name is required");
         StatBlock sb = service.createCustom(campaignId, name, cr, type, ac, hp, speed,
                 strScore, dexScore, conScore, intScore, wisScore, chaScore,
@@ -170,9 +179,7 @@ public class LibraryController {
         if (legendaryActions != null) sb.setLegendaryActions(legendaryActions);
         if (legendaryDescription != null) sb.setLegendaryDescription(legendaryDescription);
         if (lairActions != null) sb.setLairActions(lairActions);
-        model.addAttribute("sb", sb);
-        model.addAttribute("statblocks", List.of(sb));
-        return "library/_card :: card";
+        return "redirect:/library/statblocks/" + sb.getId();
     }
 
     @PutMapping("/statblocks/{id}")
@@ -288,7 +295,7 @@ public class LibraryController {
     public String newSpellForm(Model model) {
         model.addAttribute("spell", null);
         model.addAttribute("campaignId", null);
-        return "library/_spell-form :: spell-form";
+        return formPage(model, "library/_spell-form :: spell-form", "New Spell");
     }
 
     @GetMapping("/spells/{id}")
@@ -303,7 +310,7 @@ public class LibraryController {
         customContentSupport.assertCustom(spell.getSource());
         model.addAttribute("spell", spell);
         model.addAttribute("campaignId", spell.getCampaign() != null ? spell.getCampaign().getId() : null);
-        return "library/_spell-form :: spell-form";
+        return formPage(model, "library/_spell-form :: spell-form", "Edit " + spell.getName());
     }
 
     @PostMapping("/spells")
@@ -318,15 +325,12 @@ public class LibraryController {
                                @RequestParam(required = false) String description,
                                @RequestParam(required = false) String higherLevel,
                                @RequestParam(defaultValue = "false") boolean ritual,
-                               @RequestParam(defaultValue = "false") boolean concentration,
-                               Model model) {
+                               @RequestParam(defaultValue = "false") boolean concentration) {
         SpellService.SpellWrite request = new SpellService.SpellWrite(
                 name, level, school, castingTime, range, components, duration,
                 description, higherLevel, ritual, concentration, null);
         Spell spell = spellService.createCustom(campaignId, request, null);
-        model.addAttribute("spell", spell);
-        model.addAttribute("spells", List.of(spell));
-        return "library/_spell-card :: spell-card";
+        return "redirect:/library/spells/" + spell.getId();
     }
 
     @PutMapping("/spells/{id}")
@@ -375,7 +379,7 @@ public class LibraryController {
     public String newConditionForm(Model model) {
         model.addAttribute("condition", null);
         model.addAttribute("campaignId", null);
-        return "library/_condition-form :: condition-form";
+        return formPage(model, "library/_condition-form :: condition-form", "New Condition");
     }
 
     @GetMapping("/conditions/{id}")
@@ -390,19 +394,16 @@ public class LibraryController {
         customContentSupport.assertCustom(condition.getSource());
         model.addAttribute("condition", condition);
         model.addAttribute("campaignId", condition.getCampaign() != null ? condition.getCampaign().getId() : null);
-        return "library/_condition-form :: condition-form";
+        return formPage(model, "library/_condition-form :: condition-form", "Edit " + condition.getName());
     }
 
     @PostMapping("/conditions")
     public String createCondition(@RequestParam(required = false) UUID campaignId,
                                    @RequestParam String name,
-                                   @RequestParam(required = false) String description,
-                                   Model model) {
+                                   @RequestParam(required = false) String description) {
         ConditionService.ConditionWrite request = new ConditionService.ConditionWrite(name, description, null);
         Condition condition = conditionService.createCustom(campaignId, request, null);
-        model.addAttribute("condition", condition);
-        model.addAttribute("conditions", List.of(condition));
-        return "library/_condition-card :: condition-card";
+        return "redirect:/library/conditions/" + condition.getId();
     }
 
     @PutMapping("/conditions/{id}")
@@ -440,7 +441,7 @@ public class LibraryController {
     public String newRuleForm(Model model) {
         model.addAttribute("rule", null);
         model.addAttribute("campaignId", null);
-        return "library/_rule-form :: rule-form";
+        return formPage(model, "library/_rule-form :: rule-form", "New Rule");
     }
 
     @GetMapping("/rules/{id}")
@@ -455,21 +456,18 @@ public class LibraryController {
         customContentSupport.assertCustom(rule.getSource());
         model.addAttribute("rule", rule);
         model.addAttribute("campaignId", rule.getCampaign() != null ? rule.getCampaign().getId() : null);
-        return "library/_rule-form :: rule-form";
+        return formPage(model, "library/_rule-form :: rule-form", "Edit " + rule.getName());
     }
 
     @PostMapping("/rules")
     public String createRule(@RequestParam(required = false) UUID campaignId,
                               @RequestParam String name,
                               @RequestParam(required = false) String body,
-                              @RequestParam(required = false) String ruleset,
-                              Model model) {
+                              @RequestParam(required = false) String ruleset) {
         RuleSectionService.RuleSectionWrite request = new RuleSectionService.RuleSectionWrite(
                 name, body, null, null, ruleset, null, null);
         RuleSection rule = ruleSectionService.createCustom(campaignId, request, null);
-        model.addAttribute("rule", rule);
-        model.addAttribute("rules", List.of(rule));
-        return "library/_rule-card :: rule-card";
+        return "redirect:/library/rules/" + rule.getId();
     }
 
     @PutMapping("/rules/{id}")
@@ -509,7 +507,7 @@ public class LibraryController {
     public String newEquipmentForm(Model model) {
         model.addAttribute("equipmentItem", null);
         model.addAttribute("campaignId", null);
-        return "library/_equipment-form :: equipment-form";
+        return formPage(model, "library/_equipment-form :: equipment-form", "New Equipment");
     }
 
     @GetMapping("/equipment/{id}")
@@ -524,7 +522,7 @@ public class LibraryController {
         customContentSupport.assertCustom(item.getSource());
         model.addAttribute("equipmentItem", item);
         model.addAttribute("campaignId", item.getCampaign() != null ? item.getCampaign().getId() : null);
-        return "library/_equipment-form :: equipment-form";
+        return formPage(model, "library/_equipment-form :: equipment-form", "Edit " + item.getName());
     }
 
     @PostMapping("/equipment")
@@ -533,16 +531,13 @@ public class LibraryController {
                                    @RequestParam(required = false) String category,
                                    @RequestParam(required = false) String cost,
                                    @RequestParam(required = false) String weight,
-                                   @RequestParam(required = false) String description,
-                                   Model model) {
+                                   @RequestParam(required = false) String description) {
         EquipmentItem.Category cat = category != null && !category.isBlank()
                 ? EquipmentItem.Category.valueOf(category) : EquipmentItem.Category.GEAR;
         EquipmentItemService.EquipmentItemWrite request = new EquipmentItemService.EquipmentItemWrite(
                 name, cat, cost, weight, null, description, null);
         EquipmentItem item = equipmentItemService.createCustom(campaignId, request, null);
-        model.addAttribute("equipmentItem", item);
-        model.addAttribute("equipment", List.of(item));
-        return "library/_equipment-card :: equipment-card";
+        return "redirect:/library/equipment/" + item.getId();
     }
 
     @PutMapping("/equipment/{id}")
@@ -586,7 +581,7 @@ public class LibraryController {
     public String newMagicItemForm(Model model) {
         model.addAttribute("magicItem", null);
         model.addAttribute("campaignId", null);
-        return "library/_magic-item-form :: magic-item-form";
+        return formPage(model, "library/_magic-item-form :: magic-item-form", "New Magic Item");
     }
 
     @GetMapping("/magic-items/{id}")
@@ -601,7 +596,7 @@ public class LibraryController {
         customContentSupport.assertCustom(item.getSource());
         model.addAttribute("magicItem", item);
         model.addAttribute("campaignId", item.getCampaign() != null ? item.getCampaign().getId() : null);
-        return "library/_magic-item-form :: magic-item-form";
+        return formPage(model, "library/_magic-item-form :: magic-item-form", "Edit " + item.getName());
     }
 
     @PostMapping("/magic-items")
@@ -614,15 +609,12 @@ public class LibraryController {
                                    @RequestParam(required = false) String cost,
                                    @RequestParam(required = false) String weight,
                                    @RequestParam(defaultValue = "false") boolean requiresAttunement,
-                                   @RequestParam(required = false) String attunementDetail,
-                                   Model model) {
+                                   @RequestParam(required = false) String attunementDetail) {
         MagicItemService.MagicItemWrite request = new MagicItemService.MagicItemWrite(
                 name, rarity, category, type, description, weight, cost,
                 requiresAttunement, attunementDetail, null);
         MagicItem item = magicItemService.createCustom(campaignId, request, null);
-        model.addAttribute("magicItem", item);
-        model.addAttribute("magicItems", List.of(item));
-        return "library/_magic-item-card :: magic-item-card";
+        return "redirect:/library/magic-items/" + item.getId();
     }
 
     @PutMapping("/magic-items/{id}")
@@ -669,7 +661,7 @@ public class LibraryController {
     public String newClassForm(Model model) {
         model.addAttribute("classDetail", null);
         model.addAttribute("campaignId", null);
-        return "library/_class-form :: class-form";
+        return formPage(model, "library/_class-form :: class-form", "New Class");
     }
 
     @GetMapping("/classes/id/{id}")
@@ -715,21 +707,18 @@ public class LibraryController {
         customContentSupport.assertCustom(cls.getSource());
         model.addAttribute("classDetail", cls);
         model.addAttribute("campaignId", cls.getCampaign() != null ? cls.getCampaign().getId() : null);
-        return "library/_class-form :: class-form";
+        return formPage(model, "library/_class-form :: class-form", "Edit " + cls.getName());
     }
 
     @PostMapping("/classes")
     public String createClass(@RequestParam(required = false) UUID campaignId,
                                @RequestParam String name,
                                @RequestParam(required = false) String hitDie,
-                               @RequestParam(required = false) String description,
-                               Model model) {
+                               @RequestParam(required = false) String description) {
         CharacterClassService.CharacterClassWrite request = new CharacterClassService.CharacterClassWrite(
                 name, hitDie, null, null, null, null, description, null, null);
         CharacterClass cls = characterClassService.createCustom(campaignId, request, null);
-        model.addAttribute("classDetail", cls);
-        model.addAttribute("classes", List.of(cls));
-        return "library/_class-card :: class-card";
+        return "redirect:/library/classes/id/" + cls.getId();
     }
 
     @PutMapping("/classes/{id}")
@@ -768,7 +757,7 @@ public class LibraryController {
     public String newSpeciesForm(Model model) {
         model.addAttribute("species", null);
         model.addAttribute("campaignId", null);
-        return "library/_species-form :: species-form";
+        return formPage(model, "library/_species-form :: species-form", "New Species");
     }
 
     @GetMapping("/species/{id}")
@@ -783,7 +772,7 @@ public class LibraryController {
         customContentSupport.assertCustom(species.getSource());
         model.addAttribute("species", species);
         model.addAttribute("campaignId", species.getCampaign() != null ? species.getCampaign().getId() : null);
-        return "library/_species-form :: species-form";
+        return formPage(model, "library/_species-form :: species-form", "Edit " + species.getName());
     }
 
     @PostMapping("/species")
@@ -791,14 +780,11 @@ public class LibraryController {
                                  @RequestParam String name,
                                  @RequestParam(required = false) String size,
                                  @RequestParam(required = false) String speed,
-                                 @RequestParam(required = false) String description,
-                                 Model model) {
+                                 @RequestParam(required = false) String description) {
         SpeciesService.SpeciesWrite request = new SpeciesService.SpeciesWrite(
                 name, size, speed, null, description, null);
         Species species = speciesService.createCustom(campaignId, request, null);
-        model.addAttribute("species", species);
-        model.addAttribute("speciesList", List.of(species));
-        return "library/_species-card :: species-card";
+        return "redirect:/library/species/" + species.getId();
     }
 
     @PutMapping("/species/{id}")
@@ -839,7 +825,7 @@ public class LibraryController {
     public String newBackgroundForm(Model model) {
         model.addAttribute("background", null);
         model.addAttribute("campaignId", null);
-        return "library/_background-form :: background-form";
+        return formPage(model, "library/_background-form :: background-form", "New Background");
     }
 
     @GetMapping("/backgrounds/{id}")
@@ -854,20 +840,17 @@ public class LibraryController {
         customContentSupport.assertCustom(bg.getSource());
         model.addAttribute("background", bg);
         model.addAttribute("campaignId", bg.getCampaign() != null ? bg.getCampaign().getId() : null);
-        return "library/_background-form :: background-form";
+        return formPage(model, "library/_background-form :: background-form", "Edit " + bg.getName());
     }
 
     @PostMapping("/backgrounds")
     public String createBackground(@RequestParam(required = false) UUID campaignId,
                                     @RequestParam String name,
-                                    @RequestParam(required = false) String description,
-                                    Model model) {
+                                    @RequestParam(required = false) String description) {
         BackgroundService.BackgroundWrite request = new BackgroundService.BackgroundWrite(
                 name, null, null, null, null, description, null, null);
         Background bg = backgroundService.createCustom(campaignId, request, null);
-        model.addAttribute("background", bg);
-        model.addAttribute("backgrounds", List.of(bg));
-        return "library/_background-card :: background-card";
+        return "redirect:/library/backgrounds/" + bg.getId();
     }
 
     @PutMapping("/backgrounds/{id}")
@@ -906,7 +889,7 @@ public class LibraryController {
     public String newFeatForm(Model model) {
         model.addAttribute("feat", null);
         model.addAttribute("campaignId", null);
-        return "library/_feat-form :: feat-form";
+        return formPage(model, "library/_feat-form :: feat-form", "New Feat");
     }
 
     @GetMapping("/feats/{id}")
@@ -921,7 +904,7 @@ public class LibraryController {
         customContentSupport.assertCustom(feat.getSource());
         model.addAttribute("feat", feat);
         model.addAttribute("campaignId", feat.getCampaign() != null ? feat.getCampaign().getId() : null);
-        return "library/_feat-form :: feat-form";
+        return formPage(model, "library/_feat-form :: feat-form", "Edit " + feat.getName());
     }
 
     @PostMapping("/feats")
@@ -929,13 +912,10 @@ public class LibraryController {
                               @RequestParam String name,
                               @RequestParam(required = false) String category,
                               @RequestParam(required = false) String prerequisite,
-                              @RequestParam(required = false) String benefit,
-                              Model model) {
+                              @RequestParam(required = false) String benefit) {
         FeatService.FeatWrite request = new FeatService.FeatWrite(name, category, prerequisite, benefit, null);
         Feat feat = featService.createCustom(campaignId, request, null);
-        model.addAttribute("feat", feat);
-        model.addAttribute("feats", List.of(feat));
-        return "library/_feat-card :: feat-card";
+        return "redirect:/library/feats/" + feat.getId();
     }
 
     @PutMapping("/feats/{id}")

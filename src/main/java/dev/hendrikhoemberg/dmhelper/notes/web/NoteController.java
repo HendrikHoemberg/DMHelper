@@ -80,7 +80,9 @@ public class NoteController {
     @GetMapping("/new")
     public String newForm(@PathVariable UUID campaignId, Model model) {
         model.addAttribute("noteTypes", NoteType.values());
-        return "notes/_form";
+        // Reached by an ordinary link, so it has to be a whole page: the bare form fragment
+        // carries no <head>, and the browser renders it without any stylesheet.
+        return "notes/form";
     }
 
     @PostMapping
@@ -100,7 +102,7 @@ public class NoteController {
         Note note = noteService.findById(noteId);
         model.addAttribute("note", note);
         model.addAttribute("noteTypes", NoteType.values());
-        return "notes/_form";
+        return "notes/form";
     }
 
     @PutMapping("/{noteId}")

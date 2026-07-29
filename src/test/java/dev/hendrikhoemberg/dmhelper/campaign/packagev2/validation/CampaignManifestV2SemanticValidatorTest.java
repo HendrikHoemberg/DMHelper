@@ -383,6 +383,40 @@ class CampaignManifestV2SemanticValidatorTest {
     }
 
     @Test
+    void sceneLinksMayTargetWorldEntities() {
+        var npcLink = new CampaignManifestV2.SceneLinkDto("NPC",
+                ContentReference.packageRef(CampaignContentType.WORLD_NPC, "wn-1"), "Sildar", null, 1);
+        var locationLink = new CampaignManifestV2.SceneLinkDto("LOCATION",
+                ContentReference.packageRef(CampaignContentType.WORLD_LOCATION, "wl-1"), "Phandalin", null, 2);
+        var npc = new CampaignManifestV2.WorldNpcDto(
+                "wn-1", "Sildar", null, null, null, null, null, null,
+                null, null, null, null, null, null, List.of(), null,
+                Instant.parse("2025-01-01T00:00:00Z"));
+        var location = new CampaignManifestV2.WorldLocationDto(
+                "wl-1", "Phandalin", null, null, null, null, null, null, null, null,
+                List.of(), List.of(), List.of(), List.of(), null,
+                Instant.parse("2025-01-01T00:00:00Z"), List.of(), null);
+        var scene = new CampaignManifestV2.SceneDto(
+                "sc-1", "S", null, "UNVISITED", 1,
+                null, null, null, null, null,
+                null, null, null, null, null, null, null, null, List.of(npcLink, locationLink), null);
+        var chapter = new CampaignManifestV2.ChapterDto("ch-1", "C", null, 1, List.of(scene));
+        var adv = new CampaignManifestV2.AdventureDto("adv-1", "A", null, null, 1, List.of(chapter), null);
+        var base = minimal();
+        var manifest = new CampaignManifestV2(
+                2, base.metadata(), base.campaign(), base.assets(), base.party(),
+                base.customStatBlocks(), base.customSpells(), base.customConditions(), base.customRules(),
+                base.customEquipment(), base.customMagicItems(), base.customClasses(), base.customSpecies(),
+                base.customBackgrounds(), base.customFeats(),
+                base.handouts(), base.maps(), base.encounters(),
+                base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(),
+                base.timelineEvents(), List.of(adv), base.session(), base.diceRolls(),
+                base.quests(), base.annotations(), List.of(npc), List.of(location),
+                List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+        assertThat(validator.validate(manifest)).isEmpty();
+    }
+
+    @Test
     void prerequisitesRequireCompletionMode() {
         var objA = new CampaignManifestV2.QuestObjectiveDto("obj-a", "A", null, "NOT_STARTED", "ALL", 1, null, null);
         var objB = new CampaignManifestV2.QuestObjectiveDto("obj-b", "B", null, "NOT_STARTED", null, 2,

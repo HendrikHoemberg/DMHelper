@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <div class="detail-section" th:fragment="spell-form" id="spell-form">
-    <h2 th:text="${spell == null ? 'Create Custom Spell' : 'Edit ' + spell.name}">Create Spell</h2>
     <form th:action="${spell == null} ? '/library/spells' : '/library/spells/' + ${spell.id}"
-          th:method="${spell == null ? 'post' : 'put'}"
-          th:hx-target="${spell == null ? '#spell-results' : '#spell-form'}"
-          th:hx-swap="${spell == null ? 'beforeend' : 'outerHTML'}">
+          method="post">
+        <!-- Browsers submit only GET and POST; HiddenHttpMethodFilter turns this into the PUT. -->
+        <input type="hidden" name="_method" value="put" th:if="${spell != null}">
         <input type="hidden" name="campaignId" th:value="${campaignId}">
         <div class="form-group">
             <label>Name *</label>
@@ -54,11 +53,10 @@
             <textarea name="higherLevel" rows="3" th:text="${spell?.higherLevel}"></textarea>
         </div>
         <div class="form-actions">
-            <button type="button" class="btn btn-ghost"
-                    th:if="${spell != null}"
-                    th:hx-get="@{/library/spells/{id}(id=${spell.id})}"
-                    hx-target="#spell-form"
-                    hx-swap="outerHTML">Cancel</button>
+            <a th:if="${spell != null}" class="btn btn-ghost"
+               th:href="@{/library/spells/{id}(id=${spell.id})}">Cancel</a>
+            <a th:if="${spell == null}" class="btn btn-ghost"
+               th:href="@{/library}">Cancel</a>
             <button type="submit" class="btn btn-primary" th:text="${spell == null ? 'Create' : 'Save'}">Create</button>
         </div>
     </form>

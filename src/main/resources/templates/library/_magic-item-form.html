@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <div class="detail-section" th:fragment="magic-item-form" id="magic-item-form">
-    <h2 th:text="${magicItem == null ? 'Create Custom Magic Item' : 'Edit ' + magicItem.name}">Create Magic Item</h2>
     <form th:action="${magicItem == null} ? '/library/magic-items' : '/library/magic-items/' + ${magicItem.id}"
-          th:method="${magicItem == null ? 'post' : 'put'}"
-          th:hx-target="${magicItem == null ? '#magic-item-results' : '#magic-item-form'}"
-          th:hx-swap="${magicItem == null ? 'beforeend' : 'outerHTML'}">
+          method="post">
+        <!-- Browsers submit only GET and POST; HiddenHttpMethodFilter turns this into the PUT. -->
+        <input type="hidden" name="_method" value="put" th:if="${magicItem != null}">
         <input type="hidden" name="campaignId" th:value="${campaignId}">
         <div class="form-group">
             <label>Name *</label>
@@ -49,11 +48,10 @@
             <textarea name="description" rows="6" th:text="${magicItem?.description}"></textarea>
         </div>
         <div class="form-actions">
-            <button type="button" class="btn btn-ghost"
-                    th:if="${magicItem != null}"
-                    th:hx-get="@{/library/magic-items/{id}(id=${magicItem.id})}"
-                    hx-target="#magic-item-form"
-                    hx-swap="outerHTML">Cancel</button>
+            <a th:if="${magicItem != null}" class="btn btn-ghost"
+               th:href="@{/library/magic-items/{id}(id=${magicItem.id})}">Cancel</a>
+            <a th:if="${magicItem == null}" class="btn btn-ghost"
+               th:href="@{/library}">Cancel</a>
             <button type="submit" class="btn btn-primary" th:text="${magicItem == null ? 'Create' : 'Save'}">Create</button>
         </div>
     </form>

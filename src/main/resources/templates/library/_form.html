@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="detail-section" th:fragment="form(sb, campaignId)" id="statblock-form">
-    <h2 th:text="${sb == null ? 'Create Custom Statblock' : 'Edit ' + sb.name}">Create Statblock</h2>
+<!-- Takes sb and campaignId from the model, like every other library form fragment. -->
+<div class="detail-section" th:fragment="form" id="statblock-form">
 
     <form th:action="${sb == null} ? '/library/statblocks' : '/library/statblocks/' + ${sb.id}"
-          th:method="${sb == null ? 'post' : 'put'}"
-          th:hx-target="${sb == null ? '#library-results' : '#statblock-form'}"
-          th:hx-swap="${sb == null ? 'beforeend' : 'outerHTML'}">
+          method="post">
+        <!-- Browsers submit only GET and POST; HiddenHttpMethodFilter turns this into the PUT. -->
+        <input type="hidden" name="_method" value="put" th:if="${sb != null}">
 
         <input type="hidden" name="campaignId" th:value="${campaignId}">
 
@@ -63,11 +63,10 @@
         </div>
 
         <div class="form-actions">
-            <button type="button" class="btn btn-ghost"
-                    th:if="${sb != null}"
-                    th:hx-get="@{/library/statblocks/{id}(id=${sb.id})}"
-                    hx-target="#statblock-form"
-                    hx-swap="outerHTML">Cancel</button>
+            <a th:if="${sb != null}" class="btn btn-ghost"
+               th:href="@{/library/statblocks/{id}(id=${sb.id})}">Cancel</a>
+            <a th:if="${sb == null}" class="btn btn-ghost"
+               th:href="@{/library}">Cancel</a>
             <button type="submit" class="btn btn-primary" th:text="${sb == null ? 'Create' : 'Save'}">Create</button>
         </div>
     </form>

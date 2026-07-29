@@ -123,8 +123,8 @@ class LibraryControllerTest {
                         .param("conScore", "10").param("intScore", "10")
                         .param("wisScore", "8").param("chaScore", "8")
                         .header("HX-Request", "true"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Custom Goblin")));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/library/statblocks/" + sb.getId()));
     }
 
     @Test
@@ -139,7 +139,7 @@ class LibraryControllerTest {
     void shouldRenderNewForm() throws Exception {
         mockMvc.perform(get("/library/statblocks/new"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Create Custom Statblock")));
+                .andExpect(content().string(containsString("New Statblock")));
     }
 
     @Test

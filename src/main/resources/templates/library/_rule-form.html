@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <div class="detail-section" th:fragment="rule-form" id="rule-form">
-    <h2 th:text="${rule == null ? 'Create Custom Rule' : 'Edit ' + rule.name}">Create Rule</h2>
     <form th:action="${rule == null} ? '/library/rules' : '/library/rules/' + ${rule.id}"
-          th:method="${rule == null ? 'post' : 'put'}"
-          th:hx-target="${rule == null ? '#rule-results' : '#rule-form'}"
-          th:hx-swap="${rule == null ? 'beforeend' : 'outerHTML'}">
+          method="post">
+        <!-- Browsers submit only GET and POST; HiddenHttpMethodFilter turns this into the PUT. -->
+        <input type="hidden" name="_method" value="put" th:if="${rule != null}">
         <input type="hidden" name="campaignId" th:value="${campaignId}">
         <div class="form-group">
             <label>Name *</label>
@@ -20,11 +19,10 @@
             <textarea name="body" rows="10" th:text="${rule?.body}"></textarea>
         </div>
         <div class="form-actions">
-            <button type="button" class="btn btn-ghost"
-                    th:if="${rule != null}"
-                    th:hx-get="@{/library/rules/{id}(id=${rule.id})}"
-                    hx-target="#rule-form"
-                    hx-swap="outerHTML">Cancel</button>
+            <a th:if="${rule != null}" class="btn btn-ghost"
+               th:href="@{/library/rules/{id}(id=${rule.id})}">Cancel</a>
+            <a th:if="${rule == null}" class="btn btn-ghost"
+               th:href="@{/library}">Cancel</a>
             <button type="submit" class="btn btn-primary" th:text="${rule == null ? 'Create' : 'Save'}">Create</button>
         </div>
     </form>

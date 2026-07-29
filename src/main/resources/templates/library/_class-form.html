@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <div class="detail-section" th:fragment="class-form" id="class-form">
-    <h2 th:text="${classDetail == null ? 'Create Custom Class' : 'Edit ' + classDetail.name}">Create Class</h2>
     <form th:action="${classDetail == null} ? '/library/classes' : '/library/classes/' + ${classDetail.id}"
-          th:method="${classDetail == null ? 'post' : 'put'}"
-          th:hx-target="${classDetail == null ? '#class-results' : '#class-form'}"
-          th:hx-swap="${classDetail == null ? 'beforeend' : 'outerHTML'}">
+          method="post">
+        <!-- Browsers submit only GET and POST; HiddenHttpMethodFilter turns this into the PUT. -->
+        <input type="hidden" name="_method" value="put" th:if="${classDetail != null}">
         <input type="hidden" name="campaignId" th:value="${campaignId}">
         <div class="form-group">
             <label>Name *</label>
@@ -20,11 +19,10 @@
             <textarea name="description" rows="6" th:text="${classDetail?.description}"></textarea>
         </div>
         <div class="form-actions">
-            <button type="button" class="btn btn-ghost"
-                    th:if="${classDetail != null}"
-                    th:hx-get="@{/library/classes/id/{id}(id=${classDetail.id})}"
-                    hx-target="#class-form"
-                    hx-swap="outerHTML">Cancel</button>
+            <a th:if="${classDetail != null}" class="btn btn-ghost"
+               th:href="@{/library/classes/id/{id}(id=${classDetail.id})}">Cancel</a>
+            <a th:if="${classDetail == null}" class="btn btn-ghost"
+               th:href="@{/library}">Cancel</a>
             <button type="submit" class="btn btn-primary" th:text="${classDetail == null ? 'Create' : 'Save'}">Create</button>
         </div>
     </form>

@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <div class="detail-section" th:fragment="background-form" id="background-form">
-    <h2 th:text="${background == null ? 'Create Custom Background' : 'Edit ' + background.name}">Create Background</h2>
     <form th:action="${background == null} ? '/library/backgrounds' : '/library/backgrounds/' + ${background.id}"
-          th:method="${background == null ? 'post' : 'put'}"
-          th:hx-target="${background == null ? '#background-results' : '#background-form'}"
-          th:hx-swap="${background == null ? 'beforeend' : 'outerHTML'}">
+          method="post">
+        <!-- Browsers submit only GET and POST; HiddenHttpMethodFilter turns this into the PUT. -->
+        <input type="hidden" name="_method" value="put" th:if="${background != null}">
         <input type="hidden" name="campaignId" th:value="${campaignId}">
         <div class="form-group">
             <label>Name *</label>
@@ -16,11 +15,10 @@
             <textarea name="description" rows="6" th:text="${background?.description}"></textarea>
         </div>
         <div class="form-actions">
-            <button type="button" class="btn btn-ghost"
-                    th:if="${background != null}"
-                    th:hx-get="@{/library/backgrounds/{id}(id=${background.id})}"
-                    hx-target="#background-form"
-                    hx-swap="outerHTML">Cancel</button>
+            <a th:if="${background != null}" class="btn btn-ghost"
+               th:href="@{/library/backgrounds/{id}(id=${background.id})}">Cancel</a>
+            <a th:if="${background == null}" class="btn btn-ghost"
+               th:href="@{/library}">Cancel</a>
             <button type="submit" class="btn btn-primary" th:text="${background == null ? 'Create' : 'Save'}">Create</button>
         </div>
     </form>

@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <div class="detail-section" th:fragment="species-form" id="species-form">
-    <h2 th:text="${species == null ? 'Create Custom Species' : 'Edit ' + species.name}">Create Species</h2>
     <form th:action="${species == null} ? '/library/species' : '/library/species/' + ${species.id}"
-          th:method="${species == null ? 'post' : 'put'}"
-          th:hx-target="${species == null ? '#species-results' : '#species-form'}"
-          th:hx-swap="${species == null ? 'beforeend' : 'outerHTML'}">
+          method="post">
+        <!-- Browsers submit only GET and POST; HiddenHttpMethodFilter turns this into the PUT. -->
+        <input type="hidden" name="_method" value="put" th:if="${species != null}">
         <input type="hidden" name="campaignId" th:value="${campaignId}">
         <div class="form-group">
             <label>Name *</label>
@@ -20,11 +19,10 @@
             <textarea name="description" rows="6" th:text="${species?.description}"></textarea>
         </div>
         <div class="form-actions">
-            <button type="button" class="btn btn-ghost"
-                    th:if="${species != null}"
-                    th:hx-get="@{/library/species/{id}(id=${species.id})}"
-                    hx-target="#species-form"
-                    hx-swap="outerHTML">Cancel</button>
+            <a th:if="${species != null}" class="btn btn-ghost"
+               th:href="@{/library/species/{id}(id=${species.id})}">Cancel</a>
+            <a th:if="${species == null}" class="btn btn-ghost"
+               th:href="@{/library}">Cancel</a>
             <button type="submit" class="btn btn-primary" th:text="${species == null ? 'Create' : 'Save'}">Create</button>
         </div>
     </form>

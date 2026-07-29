@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/head :: head}"></th:block>
+    <title th:text="|${note != null ? 'Edit Note' : 'New Note'} — ${campaign.name}|">DMHelper — Note</title>
+</head>
+<body>
+    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
+        <main class="app-main">
+            <div class="page-header">
+                <div>
+                    <div class="page-header-eyebrow" th:text="${campaign.name}">Notes</div>
+                    <h1 data-display-title
+                        th:text="${note != null} ? 'Edit Note' : 'New Note'">New Note</h1>
+                    <div class="rule-taper rule-taper--gold"></div>
+                </div>
+                <div class="page-header-actions">
+                    <a th:href="@{/campaigns/{id}/notes(id=${campaignId})}"
+                       class="btn btn-ghost">&larr; Back to Notes</a>
+                </div>
+            </div>
+
+            <th:block th:replace="~{notes/_form :: form(
+                note=${note}, noteTypes=${noteTypes}, campaignId=${campaignId})}"></th:block>
+        </main>
+    </div>
+</body>
+</html>

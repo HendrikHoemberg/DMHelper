@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!-- Call to action for "add" routes that only serve an htmx fragment: fetches the form into
+     the same target the page's own header button uses, instead of navigating away. Linking
+     to such a route lands the browser on a document with no <head>, which renders unstyled. -->
+<button th:fragment="swap-cta(actionText, actionUrl, target)" type="button"
+        class="btn btn-primary empty-state__cta"
+        th:hx-get="${actionUrl}" th:hx-target="${target}" hx-swap="innerHTML"
+        th:text="${actionText}">Create</button>
+</html>

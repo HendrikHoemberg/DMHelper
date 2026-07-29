@@ -72,7 +72,7 @@ class LibraryControllerCustomContentTest {
     }
 
     @Test
-    void createCustomSpellReturnsCard() throws Exception {
+    void createCustomSpellRedirectsToTheNewSpell() throws Exception {
         Spell custom = sampleCustomSpell();
         custom.setName("Custom Fireball");
         when(spellService.createCustom(any(), any(), any())).thenReturn(custom);
@@ -87,8 +87,8 @@ class LibraryControllerCustomContentTest {
                         .param("duration", "Instantaneous")
                         .param("description", "A bright streak flashes...")
                         .header("HX-Request", "true"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Custom Fireball")));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/library/spells/" + custom.getId()));
     }
 
     @Test
@@ -162,7 +162,7 @@ class LibraryControllerCustomContentTest {
     }
 
     @Test
-    void createCustomConditionReturnsResult() throws Exception {
+    void createCustomConditionRedirectsToTheNewCondition() throws Exception {
         Condition c = new Condition();
         c.setId(UUID.randomUUID());
         c.setSource(ContentSource.CUSTOM);
@@ -172,8 +172,8 @@ class LibraryControllerCustomContentTest {
         mockMvc.perform(post("/library/conditions")
                         .param("name", "Test Condition")
                         .header("HX-Request", "true"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Test Condition")));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/library/conditions/" + c.getId()));
     }
 
     @Test
