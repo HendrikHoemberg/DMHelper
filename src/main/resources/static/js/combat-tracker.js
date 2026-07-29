@@ -757,6 +757,45 @@
                 }));
             },
 
+            addForm: {
+                name: '',
+                maxHp: '',
+                kind: 'NPC',
+            },
+
+            async quickAdd() {
+                if (!this._encounterId || !this.addForm.name) return;
+                await this.mutate(
+                    'Could not add combatant.',
+                    `/api/v1/encounters/${this._encounterId}/combatants`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: this.addForm.name,
+                            maxHp: parseInt(this.addForm.maxHp, 10) || 10,
+                            kind: this.addForm.kind,
+                        }),
+                    },
+                    async () => {
+                        this.addForm = { name: '', maxHp: '', kind: 'NPC' };
+                        await this.reloadCombatants();
+                        this.dispatchState();
+                    });
+            },
+
+            async addMissingParty() {
+                if (!this._encounterId) return;
+                await this.mutate(
+                    'Could not add missing party members.',
+                    `/api/v1/encounters/${this._encounterId}/prefill/party`,
+                    { method: 'POST' },
+                    async () => {
+                        await this.reloadCombatants();
+                        this.dispatchState();
+                    });
+            },
+
             dispatchTurnEvent() {
                 if (this.activeCombatantId) {
                     window.dispatchEvent(new CustomEvent('tracker-active-turn', {

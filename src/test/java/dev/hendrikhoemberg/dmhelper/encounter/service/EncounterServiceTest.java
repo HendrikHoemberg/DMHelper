@@ -642,6 +642,31 @@ class EncounterServiceTest {
     }
 
     @Test
+    void combatantsCanBeAddedWhileCombatIsRunning() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        service.activate(enc.id());
+        CombatantDto a = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("A", 10, "NPC", null, null));
+        CombatantDto b = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("B", 10, "NPC", null, null));
+        service.setInitiative(a.id(), 10);
+        service.setInitiative(b.id(), 5);
+        service.startCombat(enc.id(), false);
+        // advance to round 3
+        service.nextTurn(enc.id()); // idx 1, round 1
+        service.nextTurn(enc.id()); // idx 0, round 2
+        service.nextTurn(enc.id()); // idx 1, round 2
+        service.nextTurn(enc.id()); // idx 0, round 3
+
+        service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Sildar Hallwinter", 27, "NPC", null, null));
+        var combatants = service.getCombatants(enc.id());
+        assertThat(combatants).extracting("name").contains("Sildar Hallwinter");
+        EncounterDto reloaded = service.getById(enc.id());
+        assertThat(reloaded.round()).isEqualTo(3);
+    }
+
+    @Test
     void shouldLogCombatantAdded() {
         EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
         service.addCombatant(enc.id(),

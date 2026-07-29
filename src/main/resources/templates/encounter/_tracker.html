@@ -307,6 +307,22 @@
                 <div x-show="spawnError" class="u-text-danger" x-text="spawnError"></div>
             </div>
 
+            <!-- Add combatant -->
+            <details class="tracker-add" x-show="encounter?.combatPhase === 'RUNNING'">
+                <summary>Add combatant</summary>
+                <form @submit.prevent="quickAdd()" class="tracker-add-form">
+                    <input type="text" x-model="addForm.name" placeholder="Name" required>
+                    <input type="number" x-model="addForm.maxHp" placeholder="HP" min="1">
+                    <select x-model="addForm.kind">
+                        <option value="NPC">NPC</option>
+                        <option value="MONSTER">Monster</option>
+                        <option value="PC">PC</option>
+                    </select>
+                    <button class="btn btn-sm btn-primary" type="submit">Add</button>
+                </form>
+                <button class="btn btn-ghost btn-sm" @click="addMissingParty()">Add missing party members</button>
+            </details>
+
             <!-- Initiative list -->
             <div class="tracker-list">
                 <div class="turn-marker" x-ref="turnMarker" aria-hidden="true"></div>
