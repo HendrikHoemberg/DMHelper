@@ -1,6 +1,6 @@
 <div th:fragment="library-add(campaignId, encounterId)"
      x-data="libraryAdd"
-     data-encounter-id="${encounterId}">
+     th:attr="data-encounter-id=${encounterId}">
     <h3>Add from Library</h3>
     <div class="library-add-search u-flex u-gap-sm">
         <input type="text" x-model="query" @input.debounce.300ms="search"
@@ -16,29 +16,29 @@
     <div class="library-add-results u-mt-sm">
         <template x-if="results.length">
             <div class="library-results">
-                <div x-show="results.length" class="card-grid u-mt-sm">
-                    <div x-data="{adding: false}"
-                         x-on:add-statblock.window="if ($event.detail.id !== statblock.id) return; adding = true"
-                         @added="adding = false"
-                         th:each="sb : ${results}"
-                         class="card">
-                        <div class="card-body">
-                            <h4 x-text="sb.name" class="card-title">Name</h4>
-                            <p class="text-muted u-text-sm"><span x-text="sb.cr"></span> CR · <span x-text="sb.type"></span> · HP <span x-text="sb.hp"></span> · AC <span x-text="sb.ac"></span> · <span x-text="sb.xp"></span> XP</p>
+                 <div x-show="results.length" class="card-grid u-mt-sm">
+                    <template x-for="sb in results" :key="sb.id">
+                        <div x-data="{adding: false}"
+                             x-on:add-statblock.window="if ($event.detail.id !== statblock.id) return; adding = true"
+                             @added="adding = false"
+                             class="card">
+                            <div class="card-body">
+                                <h4 x-text="sb.name" class="card-title">Name</h4>
+                                <p class="text-muted u-text-sm"><span x-text="sb.cr"></span> CR · <span x-text="sb.type"></span> · HP <span x-text="sb.hp"></span> · AC <span x-text="sb.ac"></span> · <span x-text="sb.xp"></span> XP</p>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn btn-sm btn-primary" @click="addFromLibrary(sb.id)"
+                                        x-text="adding ? 'Adding...' : 'Add'"
+                                        :disabled="adding">
+                                </button>
+                            </div>
                         </div>
-                        <div class="card-actions">
-                            <button class="btn btn-sm btn-primary" @click="addFromLibrary(sb.id)"
-                                    x-text="adding ? 'Adding...' : 'Add'"
-                                    :disabled="adding">
-                            </button>
-                        </div>
-                    </div>
+                    </template>
                 </div>
             </div>
         </template>
         <p x-show="query.length >= 2 && !results.length" class="text-muted u-text-sm">No results found.</p>
     </div>
-</div>
 <script th:inline="javascript">
 document.addEventListener('alpine:init', () => {
     Alpine.data('libraryAdd', () => ({

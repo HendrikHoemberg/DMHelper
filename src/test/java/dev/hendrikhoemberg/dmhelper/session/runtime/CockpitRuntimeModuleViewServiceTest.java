@@ -110,6 +110,30 @@ class CockpitRuntimeModuleViewServiceTest {
     }
 
     @Test
+    void storyViewExposesTheScenesLinkedEncounter() {
+        var seeded = fixture.seed();
+        Campaign campaign = campaignRepository.findById(seeded.campaignId()).orElseThrow();
+
+        Encounter linked = new Encounter();
+        linked.setCampaign(campaign);
+        linked.setName("Linked Fight");
+        linked.setStatus(Encounter.Status.PLANNED);
+        linked = encounterRepository.save(linked);
+
+        Scene scene = sceneRepository.findById(seeded.richSceneId()).orElseThrow();
+        scene.setEncounter(linked);
+        sceneRepository.save(scene);
+
+        adventureService.setCurrentScene(seeded.campaignId(), seeded.richSceneId());
+        entityManager.flush();
+
+        var view = service.story(seeded.campaignId());
+        entityManager.clear();
+        assertThat(view.linkedEncounterId()).isEqualTo(linked.getId());
+        assertThat(view.canSeedEncounter()).isFalse();
+    }
+
+    @Test
     void mapViewIsDetachedSafe() {
         var seeded = fixture.seed();
         Campaign campaign = campaignRepository.findById(seeded.campaignId()).orElseThrow();

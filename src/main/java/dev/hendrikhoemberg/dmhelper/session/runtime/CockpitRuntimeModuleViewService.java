@@ -48,7 +48,8 @@ public class CockpitRuntimeModuleViewService {
                             List<ParticipantView> participants, List<TransitionView> transitions,
                             List<LinkView> links, Map<UUID, ThreatCardView> sectionThreatCards,
                             boolean canSeedEncounter, boolean hasPrevious, boolean hasNext,
-                            UUID adventureId, UUID mapId, String mapName) {}
+                            UUID adventureId, UUID mapId, String mapName,
+                            UUID linkedEncounterId) {}
 
     public record SectionView(UUID id, String label, String body, String kind) {}
 
@@ -181,6 +182,8 @@ public class CockpitRuntimeModuleViewService {
         UUID mapId = current.getMap() != null ? current.getMap().getId() : null;
         String mapName = current.getMap() != null ? current.getMap().getName() : null;
 
+        UUID linkedEncounterId = current.getEncounter() != null ? current.getEncounter().getId() : null;
+
         return new StoryView(
                 current.getId(), current.getTitle(), current.getSummary(), current.getBody(), readAloud,
                 List.copyOf(current.getSections().stream()
@@ -212,7 +215,8 @@ public class CockpitRuntimeModuleViewService {
                                 l.getRole() != null ? l.getRole().name() : null))
                         .toList()),
                 Map.copyOf(threatCards),
-                canSeed, hasPrev, hasNext, adventureId, mapId, mapName);
+                canSeed, hasPrev, hasNext, adventureId, mapId, mapName,
+                linkedEncounterId);
     }
 
     private static final Logger log = LoggerFactory.getLogger(CockpitRuntimeModuleViewService.class);

@@ -107,6 +107,12 @@
             Start encounter from this scene
           </span>
         </button>
+        <button class="btn btn-primary"
+                th:if="${view.linkedEncounterId != null}"
+                th:attr="data-encounter-id=${view.linkedEncounterId}"
+                @click="runEncounter($el.dataset.encounterId)">
+          Run this encounter
+        </button>
       </div>
       <div th:if="${view.links != null and !view.links.isEmpty()}" class="scene-links">
         <div th:each="link : ${view.links}">

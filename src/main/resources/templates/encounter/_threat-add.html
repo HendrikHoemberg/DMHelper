@@ -40,7 +40,6 @@
         </template>
         <p x-show="query.length >= 1 && !results.length && !searching" class="text-muted u-text-sm">No results found.</p>
     </div>
-</div>
 <script th:inline="javascript">
 document.addEventListener('alpine:init', () => {
     Alpine.data('threatAdd', () => ({
