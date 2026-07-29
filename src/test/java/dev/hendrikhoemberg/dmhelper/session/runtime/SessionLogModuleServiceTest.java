@@ -273,29 +273,6 @@ class SessionLogModuleServiceTest {
     }
 
     @Test
-    void presentationOverrideAppearsAsWarningEvent() {
-        var seeded = fixture.seed();
-        var session = startSession(seeded.campaignId());
-
-        SessionAuditEntry entry = new SessionAuditEntry();
-        entry.setSession(session);
-        entry.setEntryType(SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE);
-        entry.setContentType("HANDOUT");
-        entry.setContentId(UUID.randomUUID());
-        entry.setDetails("{\"title\":\"Secret Map\",\"classification\":\"DM_SOURCE\"}");
-        auditRepository.save(entry);
-        entityManager.flush();
-
-        var view = service.sessionLog(seeded.campaignId(), CockpitModuleMode.STANDARD);
-        entityManager.clear();
-        assertThat(view.currentEvents()).anySatisfy(e -> {
-            assertThat(e.kind()).isEqualTo("Presentation override");
-            assertThat(e.title()).isEqualTo("Secret Map");
-            assertThat(e.warning()).isTrue();
-        });
-    }
-
-    @Test
     void recentSavedLogsAppearInStandardMode() {
         var seeded = fixture.seed();
         var campaign = campaignRepository.findById(seeded.campaignId()).orElseThrow();

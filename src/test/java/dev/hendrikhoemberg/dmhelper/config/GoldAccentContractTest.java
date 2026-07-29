@@ -40,7 +40,10 @@ class GoldAccentContractTest {
             ".form-tab.active", ".combatant-row.active", ".combatant-chip.active",
             ".note-type-chip.active", ".dice-toggle-btn.active", ".tool-btn.active",
             ".wizard-step.active", "[data-dock-active=\"true\"]", ".turn-marker",
-            ".dice-input-row button", ".library-chip--accent");
+            ".dice-input-row button", ".library-chip--accent",
+            // Reviewed: a pressed toggle (condition chips) must read as on without
+            // claiming its surface's single primary action.
+            ".btn.is-active");
 
     /** Reviewed exceptions: in-world surfaces whose gold edge is the identity itself. */
     private static final Set<String> IDENTITY_SURFACES = Set.of(

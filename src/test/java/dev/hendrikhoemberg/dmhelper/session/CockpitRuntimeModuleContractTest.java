@@ -45,7 +45,6 @@ class CockpitRuntimeModuleContractTest {
                     .as("module %s must declare data-cockpit-module-fragment", key)
                     .contains("data-cockpit-module-fragment");
 
-            // Private / Table-safe handled via screen-safety.css, not template-level
             // loading / error / attention handled by shell chrome, not body fragment
             // refresh-without-shell-replacement: body fragments use th:replace/th:insert into stable shell
         }

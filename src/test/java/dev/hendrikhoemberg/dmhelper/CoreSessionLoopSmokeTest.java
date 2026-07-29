@@ -379,70 +379,6 @@ class CoreSessionLoopSmokeTest {
     }
 
     @Test
-    @Order(9)
-    void screenSafetyToggleHidesAndDisablesSensitiveContent() {
-        startSession();
-        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
-        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
-        selectCockpitPreset("builtin:combat");
-
-        // Toggle screen safety off (TABLE_SAFE mode)
-        dmPage.evaluate("document.getElementById('screenSafetyCheckbox')?.click()");
-        dmPage.waitForTimeout(300);
-
-        // No visible sensitive content
-        assertThat(dmPage.locator("[data-screen-sensitive]:visible").count()).isZero();
-
-        // No visible focusable elements inside sensitive subtrees
-        int focusableInSensitive = ((Number) dmPage.evaluate("""
-                () => {
-                    const sensitive = document.querySelectorAll('[data-screen-sensitive]');
-                    let count = 0;
-                    sensitive.forEach(el => {
-                        if (el.offsetParent === null) return;
-                        const focusable = el.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\"-1\"])');
-                        focusable.forEach(f => { if (f.offsetParent !== null) count++; });
-                    });
-                    return count;
-                }
-                """)).intValue();
-        assertThat(focusableInSensitive).isZero();
-
-        // The story rail module root itself remains as a visible container
-        assertThat(dmPage.locator("[data-runtime-module='story']:visible").count())
-                .isGreaterThan(0);
-
-        // Tab repeatedly — none may land inside a visible sensitive subtree
-        boolean tabIntoSensitive = (boolean) dmPage.evaluate("""
-                () => {
-                    const focusable = Array.from(document.querySelectorAll(
-                        'button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
-                        'textarea:not([disabled]), [href], [tabindex]:not([tabindex=\"-1\"])'))
-                        .filter(el => el.offsetParent !== null);
-                    for (let i = 0; i < Math.min(focusable.length, 30); i++) {
-                        focusable[i].focus();
-                        if (document.activeElement && document.activeElement.closest('[data-screen-sensitive]')) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-                """);
-        assertThat(tabIntoSensitive).as("Tab focus must not land inside screen-sensitive subtrees").isFalse();
-
-        // Command bar visibly says Table-safe
-        String badge = (String) dmPage.evaluate("document.querySelector('.screen-safety-badge')?.textContent");
-        assertThat(badge).contains("Table-safe");
-
-        // No DM Mode or PLAYER-SAFE copy
-        assertThat(dmPage.content()).doesNotContain("DM Mode", "PLAYER-SAFE", "dmMode");
-
-        // Toggle back to PRIVATE mode
-        dmPage.evaluate("document.getElementById('screenSafetyCheckbox')?.click()");
-        dmPage.waitForTimeout(200);
-    }
-
-    @Test
     @Order(10)
     void createQuickNoteWithoutTemplateOrRequestErrors() {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/adventures");
@@ -620,29 +556,6 @@ class CoreSessionLoopSmokeTest {
         mapPicker.selectOption(mapId.toString());
         dmPage.waitForFunction("([id]) => window.battleMap.mapId === id", List.of(mapId.toString()));
 
-        BrowserContext playerContext = browser.newContext();
-        Page playerPage = guardedPage(playerContext);
-        playerPage.navigate("http://localhost:" + port + "/player");
-        playerPage.locator("#pvStatus", new Page.LocatorOptions().setHasText("Connected")).waitFor();
-        dmPage.locator("button", new Page.LocatorOptions().setHasText("Present current map")).click();
-        playerPage.locator("#pvCanvas").waitFor(
-                new Locator.WaitForOptions().setState(WaitForSelectorState.ATTACHED));
-        dmPage.evaluate("([hid]) => window.Alpine.$data(document.querySelector('[x-data]')).presentHandout(hid)", List.of(handoutId.toString()));
-        Locator handoutPreview = dmPage.locator("#presentationPreview");
-        handoutPreview.waitFor();
-        assertThat(handoutPreview.locator(".pv-handout img").getAttribute("alt"))
-                .isEqualTo("<img src=x onerror=window.playerXss=true>");
-        handoutPreview.locator("button",
-                new Locator.LocatorOptions().setHasText("Present to table")).click();
-        Locator playerHandout = playerPage.locator(".pv-handout img");
-        playerHandout.waitFor();
-        assertThat(playerHandout.getAttribute("alt"))
-                .isEqualTo("<img src=x onerror=window.playerXss=true>");
-        assertThat(playerPage.evaluate("window.playerXss")).isNull();
-        dmPage.locator("button", new Page.LocatorOptions().setHasText("Curtain")).click();
-        playerPage.locator(".pv-curtain").waitFor();
-        playerContext.close();
-
         dmPage.locator(".cockpit-topbar > button", new Page.LocatorOptions().setHasText("Search")).click();
         dmPage.locator(".command-palette-overlay").waitFor();
         dmPage.keyboard().press("Escape");
@@ -717,13 +630,17 @@ class CoreSessionLoopSmokeTest {
         dmPage.keyboard().press("?");
         Locator shortcutHelp = dmPage.locator("[aria-label='Keyboard shortcuts']");
         shortcutHelp.waitFor();
-        assertThat(shortcutHelp.textContent()).contains("Focus quick note", "Present the current map");
+        assertThat(shortcutHelp.textContent()).contains("Focus quick note", "Advance combat turn");
         dmPage.keyboard().press("Escape");
     }
 
     @Test
     @Order(14)
     void exportAndReimportRoundTrip() throws Exception {
+        // Self-sufficient: the session this round-trips used to be a side effect of the
+        // screen-safety test that ran earlier in the order, and @Order(13) is @Disabled.
+        // startSession() is idempotent, so this holds however the ordering changes.
+        startSession();
         var directArtifact = exportCoordinator.export(campaignId);
         new CampaignPackageWriter().write(directArtifact.writeRequest(), new ByteArrayOutputStream());
         // Package tooling is Admin, not Read: it lives on the settings surface (workstream D).
@@ -1378,28 +1295,6 @@ class CoreSessionLoopSmokeTest {
         assertThat(mapThreatPinRepository.findByMapIdOrderBySortOrderAsc(mapId))
                 .anySatisfy(p -> assertThat(p.getPinKey()).isEqualTo("browser-spike-pin"));
 
-        BrowserContext playerContext = browser.newContext();
-        Page playerPage = guardedPage(playerContext);
-        playerPage.navigate("http://localhost:" + port + "/player");
-        playerPage.waitForLoadState(LoadState.NETWORKIDLE);
-        String playerHtml = playerPage.content();
-        // DM pin markers/labels must never reach the player page or table state.
-        assertThat(playerHtml)
-                .doesNotContain("browser-spike-pin")
-                .doesNotContain("Browser Spike Pin");
-        String tableState = (String) dmPage.evaluate("""
-            async () => {
-              const r = await fetch('/api/v1/table/state');
-              return await r.text();
-            }
-        """);
-        assertThat(tableState)
-                .doesNotContain("browser-spike-pin")
-                .doesNotContain("Browser Spike Pin")
-                .doesNotContain(String.valueOf(pinId))
-                .doesNotContain("\"TRAP\"");
-        playerContext.close();
-
         // 9. Export/import and reopen refs/cards
         // Exclude combat log (planned-encounter log rows can carry round 0). Prior smoke steps
         // may leave table treasure refs that re-embed SRD equipment under a conflicting
@@ -1703,20 +1598,6 @@ class CoreSessionLoopSmokeTest {
         dmPage.waitForFunction("document.querySelector('.audio-title')?.textContent === 'Browser Lower Track'"
                 + " && !document.querySelector('.audio-error').offsetParent");
 
-        List<String> playerAudioRequests = new CopyOnWriteArrayList<>();
-        BrowserContext playerContext = browser.newContext();
-        Page playerPage = guardedPage(playerContext);
-        playerPage.onRequest(request -> {
-            String url = request.url().toLowerCase();
-            if (url.contains("audio") || url.contains("youtube")) playerAudioRequests.add(url);
-        });
-        playerPage.navigate("http://localhost:" + port + "/player");
-        playerPage.waitForLoadState(LoadState.NETWORKIDLE);
-        assertThat(playerPage.content()).doesNotContain("audioCockpitWidget", "providerReference",
-                "Browser Upper Track", "Browser Lower Track");
-        assertThat(playerAudioRequests).isEmpty();
-        playerContext.close();
-
         var audioArtifact = exportCoordinator.export(campaignId, new CampaignExportOptions(false, false));
         CampaignManifestV2 audioManifest = stripTableAndConflictingEquipment(audioArtifact.manifest());
         ByteArrayOutputStream audioPackage = new ByteArrayOutputStream();
@@ -1832,149 +1713,6 @@ class CoreSessionLoopSmokeTest {
         assertThat(box.y).isGreaterThan(0);
         assertThat(box.x + box.width).isLessThanOrEqualTo(1920.0);
         assertThat(box.y + box.height).isLessThanOrEqualTo(1080.0);
-    }
-
-    @Test
-    @Order(29)
-    void previewAndStorySurviveScreenSafety() {
-        startSession();
-        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
-        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
-
-        // Story rail remains visible when table-safe
-        assertThat(dmPage.locator("[data-runtime-module='story']:visible").count())
-                .as("story rail must be visible before toggle")
-                .isGreaterThan(0);
-
-        // Enter table-safe mode
-        dmPage.evaluate("document.getElementById('screenSafetyCheckbox')?.click()");
-        assertThat(dmPage.evaluate("document.body.dataset.screenSafety")).isEqualTo("TABLE_SAFE");
-        assertThat(dmPage.locator("[data-screen-sensitive][inert]").count())
-                .as("sensitive content must lose focusability synchronously")
-                .isGreaterThan(0);
-
-        // The screen safety badge is shown
-        assertThat(dmPage.locator(".screen-safety-badge:visible").count())
-                .as("screen safety badge must be visible")
-                .isGreaterThan(0);
-
-        // Story rail module root remains as a visible container
-        assertThat(dmPage.locator("[data-runtime-module='story']:visible").count())
-                .as("story rail must remain visible in table-safe mode")
-                .isGreaterThan(0);
-
-        // Toggle back to PRIVATE
-        dmPage.evaluate("document.getElementById('screenSafetyCheckbox')?.click()");
-        dmPage.waitForTimeout(200);
-    }
-
-    @Test
-    @Order(30)
-    void unreviewedHandoutRejectedAndRecovers() throws Exception {
-        startSession();
-        var handout = handoutService.createImported(campaignId,
-                "<p>Secret map</p>", "", "secret.png", "image/png",
-                Base64.getDecoder().decode(
-                        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="));
-        UUID unreviewedId = handout.getId();
-        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
-        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
-
-        dmPage.evaluate("([hid]) => window.Alpine.$data(document.querySelector('[x-data]')).presentHandout(hid)", List.of(unreviewedId.toString()));
-        Locator preview = dmPage.locator("#presentationPreview");
-        preview.waitFor();
-        assertThat(preview.locator(".presentation-preview-classification").textContent())
-                .contains("UNREVIEWED");
-        assertThat(preview.locator("button",
-                new Locator.LocatorOptions().setHasText("Present anyway…")).isVisible()).isTrue();
-        assertThat(preview.locator("button",
-                new Locator.LocatorOptions().setHasText("Confirm emergency presentation")).isVisible()).isFalse();
-        preview.locator("button:visible",
-                new Locator.LocatorOptions().setHasText("Cancel")).click();
-
-        browserFailures.expectHttpFailure("PUT", Pattern.compile(".*/table/presentation"), 404);
-
-        // Attempt ordinary presentation — must fail with non-2xx
-        String result = (String) dmPage.evaluate("""
-            async ([cid, hid]) => {
-                const r = await fetch('/api/v1/campaigns/' + cid + '/table/presentation', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ mode: 'HANDOUT', ref: hid })
-                });
-                if (r.ok) return 'OK:' + r.status;
-                return 'FAIL:' + r.status;
-            }
-        """, Arrays.asList(campaignId.toString(), unreviewedId.toString()));
-        assertThat(result).startsWith("FAIL:");
-
-        handoutService.setPresented(unreviewedId, true);
-        dmPage.reload();
-        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
-        dmPage.evaluate("([hid]) => window.Alpine.$data(document.querySelector('[x-data]')).presentHandout(hid)", List.of(unreviewedId.toString()));
-        Locator safePreview = dmPage.locator("#presentationPreview");
-        safePreview.waitFor();
-        safePreview.locator("button",
-                new Locator.LocatorOptions().setHasText("Present to table")).click();
-        dmPage.waitForFunction("([hid]) => fetch('/api/v1/table/state').then(r => r.json())"
-                        + ".then(state => state.handout?.id === hid)",
-                List.of(unreviewedId.toString()));
-    }
-
-    @Test
-    @Order(32)
-    void emergencyOverrideCreatesAuditRow() throws Exception {
-        startSession();
-        var handout = handoutService.createImported(campaignId,
-                "Emergency content", "", "emergency.png", "image/png",
-                Base64.getDecoder().decode(
-                        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="));
-        UUID unreviewedId = handout.getId();
-        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
-        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
-
-        browserFailures.expectHttpFailure("PUT", Pattern.compile(".*/table/presentation"), 404);
-
-        // Emergency override with wrong acknowledgement must be rejected
-        String wrongResult = (String) dmPage.evaluate("""
-            async ([cid, hid]) => {
-                const r = await fetch('/api/v1/campaigns/' + cid + '/table/presentation', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        mode: 'HANDOUT', ref: hid,
-                        emergencyOverride: true,
-                        acknowledgement: 'wrong text'
-                    })
-                });
-                return r.ok ? 'OK:' + r.status : 'FAIL:' + r.status;
-            }
-        """, Arrays.asList(campaignId.toString(), unreviewedId.toString()));
-        assertThat(wrongResult).startsWith("FAIL:");
-
-        dmPage.evaluate("([hid]) => window.Alpine.$data(document.querySelector('[x-data]')).presentHandout(hid)", List.of(unreviewedId.toString()));
-        Locator preview = dmPage.locator("#presentationPreview");
-        preview.waitFor();
-        preview.locator("button",
-                new Locator.LocatorOptions().setHasText("Present anyway…")).click();
-        Locator finalConfirmation = preview.locator("button",
-                new Locator.LocatorOptions().setHasText("Confirm emergency presentation"));
-        finalConfirmation.waitFor();
-        finalConfirmation.click();
-        dmPage.waitForFunction("([hid]) => fetch('/api/v1/table/state').then(r => r.json())"
-                        + ".then(state => state.handout?.id === hid)",
-                List.of(unreviewedId.toString()));
-        // Verify audit row exists
-        var session = sessionRepository.findByCampaignId(campaignId).orElseThrow();
-        var audits = auditEntryRepository.findBySession_IdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(
-                session.getId(), java.time.Instant.EPOCH, java.time.Instant.now());
-        assertThat(audits)
-                .anySatisfy(a -> {
-                    assertThat(a.getEntryType()).isEqualTo(SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE);
-                    assertThat(a.getContentType()).isEqualTo("HANDOUT");
-                    assertThat(a.getContentId()).isEqualTo(unreviewedId);
-                    assertThat(a.getDetails()).contains("Emergency content");
-                });
     }
 
     @Test
@@ -2722,43 +2460,6 @@ class CoreSessionLoopSmokeTest {
         assertThat(attention.get("activeUnchanged")).isEqualTo(true);
         assertThat(attention.get("presetUnchanged")).isEqualTo(true);
 
-        // Table-safe in every built-in: HIDE shells inert/hidden; FILTER keeps safe content only.
-        for (String preset : List.of(
-                "builtin:exploration", "builtin:combat",
-                "builtin:theatre-of-mind", "builtin:presentation", "builtin:session-review")) {
-            selectCockpitPreset(preset);
-            dmPage.evaluate("window.setScreenSafety('TABLE_SAFE', { animate: false })");
-            @SuppressWarnings("unchecked")
-            var safety = (java.util.Map<String, Object>) dmPage.evaluate("""
-                    () => {
-                      const hide = [...document.querySelectorAll(
-                        '[data-table-safe-behavior="HIDE"]')];
-                      const filter = [...document.querySelectorAll(
-                        '[data-table-safe-behavior="FILTER"]')];
-                      const hideOk = hide.every(el =>
-                        el.hasAttribute('inert')
-                        || el.getAttribute('aria-hidden') === 'true'
-                        || getComputedStyle(el).display === 'none');
-                      const filterSensitiveVisible = filter.some(shell =>
-                        [...shell.querySelectorAll('[data-screen-sensitive]')].some(s => {
-                          if (s.offsetParent === null) return false;
-                          if (s.hasAttribute('inert')) return false;
-                          if (s.getAttribute('aria-hidden') === 'true') return false;
-                          const cs = getComputedStyle(s);
-                          return cs.display !== 'none' && cs.visibility !== 'hidden';
-                        }));
-                      return { hideOk, filterSensitiveVisible, hideCount: hide.length };
-                    }
-                    """);
-            assertThat(safety.get("hideOk"))
-                    .as("HIDE shells inert/hidden under %s", preset)
-                    .isEqualTo(true);
-            assertThat(safety.get("filterSensitiveVisible"))
-                    .as("FILTER shells hide sensitive content under %s", preset)
-                    .isEqualTo(false);
-            dmPage.evaluate("window.setScreenSafety('PRIVATE', { animate: false })");
-        }
-
         // Hide map → rendering inactive; show → transform unchanged.
         selectCockpitPreset("builtin:combat");
         dmPage.waitForFunction("() => window.battleMap && window.cockpitLayout.isModuleVisible('map')");
@@ -2968,10 +2669,10 @@ class CoreSessionLoopSmokeTest {
         String selectedControls = selectedTab.getAttribute("aria-controls");
         assertThat(dmPage.locator("#" + selectedControls).getAttribute("hidden")).isNull();
 
-        // Alt+Shift+1…5 selects built-ins only; input focus blocks the shortcut.
+        // Alt+Shift+1…4 selects built-ins only; input focus blocks the shortcut.
         String[] builtinOrder = {
                 "builtin:exploration", "builtin:combat", "builtin:theatre-of-mind",
-                "builtin:presentation", "builtin:session-review"
+                "builtin:session-review"
         };
         for (int i = 0; i < builtinOrder.length; i++) {
             dmPage.evaluate("() => document.activeElement && document.activeElement.blur()");

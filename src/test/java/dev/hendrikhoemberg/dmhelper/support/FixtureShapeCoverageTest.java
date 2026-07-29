@@ -250,7 +250,7 @@ class FixtureShapeCoverageTest {
         assertThat(count("select count(x) from GameMap x where x.campaign.id = :campaignId and x.gridWidth = 20 "
                 + "and x.gridHeight = 15 and x.cellSizePx = 64 and x.showGrid = true")).isEqualTo(1);
         assertThat(count("select count(x) from Handout x where x.campaign.id = :campaignId and x.title is not null "
-                + "and x.tags is not null")).isEqualTo(3);
+                + "and x.tags is not null")).isEqualTo(2);
         assertThat(count("select count(x) from Quest x where x.campaign.id = :campaignId and x.title is not null "
                 + "and x.summary is not null and x.rewards is not null and x.prerequisites is not null "
                 + "and x.outcomeNotes is not null")).isEqualTo(1);

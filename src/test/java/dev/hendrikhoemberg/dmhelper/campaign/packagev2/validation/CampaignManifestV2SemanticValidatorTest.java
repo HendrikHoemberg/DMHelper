@@ -51,29 +51,6 @@ class CampaignManifestV2SemanticValidatorTest {
     }
 
     @Test
-    void playerDerivativeRequiresBothSourceAndRecipe() {
-        var derivative = new CampaignManifestV2.HandoutDto(
-                "derived", "Player Map", List.of(), null, "image/png", false, false,
-                "PLAYER_DERIVATIVE", null, null);
-
-        assertThat(validator.validate(withHandouts(List.of(derivative))))
-                .extracting(CampaignImportProblem::code)
-                .contains("INVALID_HANDOUT_DERIVATIVE_METADATA");
-    }
-
-    @Test
-    void nonDerivativeRejectsDerivativeMetadata() {
-        var sourceRef = ContentReference.packageRef(CampaignContentType.HANDOUT, "source");
-        var safe = new CampaignManifestV2.HandoutDto(
-                "safe", "Safe Map", List.of(), null, "image/png", false, false,
-                "PLAYER_SAFE", sourceRef, "{\"crop\":true}");
-
-        assertThat(validator.validate(withHandouts(List.of(safe))))
-                .extracting(CampaignImportProblem::code)
-                .contains("INVALID_HANDOUT_DERIVATIVE_METADATA");
-    }
-
-    @Test
     void duplicateKeysAreDetected() {
         var manifest = minimal();
         var adv = new CampaignManifestV2.AdventureDto("dup", "Dup", null, null, 1, List.of(), null);

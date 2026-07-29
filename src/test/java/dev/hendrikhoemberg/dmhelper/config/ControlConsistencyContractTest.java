@@ -86,10 +86,8 @@ class ControlConsistencyContractTest {
                 Path.of("src/main/resources/templates/campaigns/_readiness.html"));
 
         assertThat(readiness)
-                .contains("class=\"btn btn-xs\"")
-                .contains("class=\"btn btn-xs\">Set kind<")
-                .contains("class=\"form-input form-input--xs\"")
                 .contains("class=\"btn btn-primary btn-xs readiness-item__repair\"")
+                .contains("class=\"btn btn-ghost btn-xs readiness-item__repair\"")
                 .contains("class=\"btn btn-ghost btn-xs\"")
                 .doesNotContain("itemStat.first");
     }

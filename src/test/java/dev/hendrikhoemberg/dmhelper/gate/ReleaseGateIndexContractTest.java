@@ -49,7 +49,7 @@ class ReleaseGateIndexContractTest {
         String index = Files.readString(INDEX);
 
         assertThat(requirementRows(index, "11.1").stream().map(RequirementRow::label).toList())
-                .containsExactly("11.1.1", "11.1.2", "11.1.3", "11.1.4", "11.1.5", "11.1.6", "11.1.7", "11.1.8");
+                .containsExactly("11.1.1", "11.1.2", "11.1.3", "11.1.4", "11.1.7", "11.1.8", "11.1.9");
         assertThat(requirementRows(index, "11.2").stream().map(RequirementRow::label).toList())
                 .containsExactly(
                         "No document-level scrolling",
@@ -90,8 +90,7 @@ class ReleaseGateIndexContractTest {
                         "ReleaseRehearsalTest$RehearsalSteps#step5_initiativeDamageConditionsDefeatAndTurnsResolve",
                         "ReleaseRehearsalTest$RehearsalSteps#step6_statblocksAndRulesAreConsultedInsideDmhelper",
                         "ReleaseRehearsalTest$RehearsalSteps#step7_notesAreCapturedAndThePlanIsUpdated",
-                        "ReleaseRehearsalTest$RehearsalSteps#step8_aReviewedPlayerSafeAssetIsPresentedAndTheDisplayAgrees",
-                        "ReleaseRehearsalTest$RehearsalSteps#step9_theEncounterAndSessionAreCompleted",
+                                                "ReleaseRehearsalTest$RehearsalSteps#step9_theEncounterAndSessionAreCompleted",
                         "ReleaseRehearsalTest$RehearsalSteps#step10_theGeneratedLogAgreesWithWhatHappened");
     }
 

@@ -42,8 +42,7 @@ class CombatLegibilityContractTest {
 
         assertThat(tracker)
                 .contains("class=\"combatant-hp u-num\"")
-                .contains("x-text=\"hpLabel(c)\"")
-                .contains("x-show=\"!tableSafe\"");
+                .contains("x-text=\"hpLabel(c)\"");
     }
 
     @Test

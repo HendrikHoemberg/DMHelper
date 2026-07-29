@@ -175,8 +175,10 @@ class SurfaceNestingGateTest {
             @SuppressWarnings("unchecked")
             Map<String, Object> styles = (Map<String, Object>) page.evaluate("""
                     () => {
-                      const actions = document.querySelector(
-                        '[data-readiness-category="ASSET"] .readiness-item__actions');
+                      // Any blocker row will do; the ASSET category this used to name was
+                      // retired with handout safety classification.
+                      const actions = [...document.querySelectorAll('.readiness-item__actions')]
+                        .find(el => el.querySelector('.inline-form'));
                       const form = actions.querySelector('.inline-form');
                       const formStyle = getComputedStyle(form);
                       return {

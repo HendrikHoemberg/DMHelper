@@ -33,7 +33,6 @@ class RuntimeStatusSurfaceTest {
         assertThat(cockpit)
                 .contains("id=\"runtimeStatus\"")
                 .contains("data-status-save")
-                .contains("data-status-table")
                 .contains("role=\"status\"")
                 .contains("aria-live=\"polite\"");
     }
@@ -50,8 +49,7 @@ class RuntimeStatusSurfaceTest {
                 .contains("htmx:sendError")
                 .contains("'busy'")
                 .contains("'saved'")
-                .contains("'error'")
-                .contains("/api/table/status");
+                .contains("'error'");
     }
 
     @Test

@@ -77,13 +77,8 @@ class SessionCockpitTemplateContractTest {
         assertThat(Files.readString(Path.of(
                 "src/main/resources/templates/session/modules/_story.html")))
                 .contains("scenePicker");
-        assertThat(plan).contains("Present");
         assertThat(html).contains(">Rules<", ">Calendar<");
         assertThat(mapModule).contains("aria-label=\"Battle map controls\"", "aria-label=\"Workspace map\"");
-        // Curtain / Present current map / presentation status moved to the Presentation module (Task 8).
-        String presentationModule = Files.readString(Path.of(
-                "src/main/resources/templates/session/modules/_presentation.html"));
-        assertThat(presentationModule).contains("Present current map", ">Curtain<");
         assertThat(mapModule).contains("@click=\"openTokenDialog()\"", "@click=\"addParty()\"",
                 "tokens.filter(tk => tk.source === 'COMBATANT')",
                 "tokens.filter(tk => tk.source === 'MARKER')");
@@ -93,10 +88,10 @@ class SessionCockpitTemplateContractTest {
         assertThat(Files.readString(Path.of(
                 "src/main/resources/templates/session/_cockpit-workbench.html")))
                 .contains("data-cockpit-workbench");
-        assertThat(js).contains("sessionStatus", "presentationMode", "handleKeyboard");
+        assertThat(js).contains("sessionStatus", "handleKeyboard");
         assertThat(js).contains("startSession", "pauseSession", "resumeSession",
                 "cancelReview", "beginReview", "completeSession");
-        assertThat(js).contains("async presentHandout(", "async switchMap(");
+        assertThat(js).contains("async switchMap(");
         assertThat(js).contains("this.switchWorkspaceMap(mapId");
         assertThat(js).contains("startMapId: config.mapId || ''");
         assertThat(count(js, "async stepScene(direction)")).isEqualTo(1);
@@ -184,27 +179,6 @@ class SessionCockpitTemplateContractTest {
     void cockpitLoadsSharedDiceRollerScript() throws IOException {
         String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
         assertThat(html).contains("/js/dice-roller.js");
-    }
-
-    @Test
-    void handoutPreviewIncludesUnsafeChoicesAndRequiresTwoExplicitOverrideSteps() throws IOException {
-        String html = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
-        String preview = Files.readString(
-                Path.of("src/main/resources/templates/session/_presentation-preview.html"));
-        String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
-        String css = Files.readString(Path.of("src/main/resources/static/css/cockpit.css"));
-
-        assertThat(html).doesNotContain("workspace.handouts.?[!dmOnly]", "th:unless=\"${handout.dmOnly}\"");
-        // Handout safety gating moved into the Presentation module (Task 8), keyed on handout.safety.
-        String presentationModule = Files.readString(
-                Path.of("src/main/resources/templates/session/modules/_presentation.html"));
-        assertThat(presentationModule).contains("handout.safety", "UNREVIEWED", "DM_SOURCE");
-        assertThat(preview).contains("Present anyway…", "previewOverrideArmed",
-                "Confirm emergency presentation", "role=\"dialog\"", "aria-modal=\"true\"");
-        assertThat(js).contains("previewOverrideArmed: false", "armEmergencyOverride()")
-                .contains("this.previewOverrideArmed = false");
-        assertThat(css).contains(".presentation-preview {", ".presentation-preview-backdrop",
-                ".presentation-preview-panel", ".presentation-preview-content");
     }
 
     @Test
@@ -313,18 +287,6 @@ class SessionCockpitTemplateContractTest {
                 .contains("session/_story-rail");
         assertThat(mapModule).contains("th:fragment=\"map-module-runtime\"", "battleCanvasWrap");
         assertThat(layoutCss).contains(".cockpit-workbench {", "overflow: hidden;");
-    }
-
-    @Test
-    void encounterModuleHidesDuringTableSafe() throws IOException {
-        String shell = Files.readString(
-                Path.of("src/main/resources/templates/session/_cockpit-module-shell.html"));
-        String workbench = Files.readString(
-                Path.of("src/main/resources/templates/session/_cockpit-workbench.html"));
-        assertThat(shell).contains(
-                "data-runtime-module=${module.key}",
-                "data-table-safe-behavior=${module.screenSafetyBehavior}");
-        assertThat(workbench).contains("cockpitModuleByKey['encounter']");
     }
 
     @Test

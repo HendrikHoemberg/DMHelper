@@ -64,41 +64,4 @@ class HandoutDmOnlyToggleTest {
         handoutService.setDmOnly(seeded.playerHandoutId(), false);
     }
 
-    @Test
-    void cockpitPickerListsEveryHandoutForExactPreviewWithClassification() throws Exception {
-        adventures.setCurrentScene(seeded.campaignId(), seeded.richSceneId());
-        String html = mvc.perform(get("/campaigns/{c}/session/modules/presentation", seeded.campaignId())
-                        .param("mode", "STANDARD"))
-                .andReturn().getResponse().getContentAsString();
-
-        var dbHandouts = handoutService.findByCampaignId(seeded.campaignId());
-        assertThat(dbHandouts).isNotEmpty();
-        assertThat(dbHandouts)
-                .extracting(Handout::isDmOnly)
-                .contains(true, false);
-
-        assertThat(html)
-                .contains(PopulatedCampaignFixture.PLAYER_HANDOUT_TITLE,
-                        PopulatedCampaignFixture.DM_ONLY_HANDOUT_TITLE)
-                .contains("presentationHandoutPicker");
-    }
-
-    @Test
-    void cockpitPickerStillOffersExactPreviewWhenEveryHandoutIsUnsafe() throws Exception {
-        handoutService.setDmOnly(seeded.playerHandoutId(), true);
-        try {
-            adventures.setCurrentScene(seeded.campaignId(), seeded.richSceneId());
-            String html = mvc.perform(get("/campaigns/{c}/session/modules/presentation", seeded.campaignId())
-                            .param("mode", "STANDARD"))
-                    .andReturn().getResponse().getContentAsString();
-
-            assertThat(html)
-                    .as("unsafe handouts remain previewable but require the override workflow")
-                    .contains(PopulatedCampaignFixture.PLAYER_HANDOUT_TITLE,
-                            PopulatedCampaignFixture.DM_ONLY_HANDOUT_TITLE)
-                    .doesNotContain("All handouts are DM-only");
-        } finally {
-            handoutService.setDmOnly(seeded.playerHandoutId(), false);
-        }
-    }
 }

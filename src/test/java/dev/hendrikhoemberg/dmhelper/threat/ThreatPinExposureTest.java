@@ -33,12 +33,16 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Threat definitions, mechanics, provenance, and map pins must never leak into
- * player-visible surfaces. DM pin API remains the only channel for pin data.
+ * Threat pins live outside {@code MapDocumentDto}, so the map document endpoint must never
+ * embed them; the DM pin API remains the only channel for pin data.
+ *
+ * <p>This class previously also asserted that {@code /player} and {@code /api/v1/table/state}
+ * carried no threat markers. Both surfaces were removed in the DM-only cut, so those
+ * assertions were dropped rather than left to pass vacuously against a 404 body.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-class ThreatPlayerSafetyTest {
+class ThreatPinExposureTest {
 
     private static final String DEF_MARKER = "THREAT_DEF_MARKER_a7f3c91e";
     private static final String MECH_MARKER = "THREAT_MECH_MARKER_b8e4d02f";
@@ -62,7 +66,7 @@ class ThreatPlayerSafetyTest {
     private UUID pinId;
 
     @Test
-    void playerSurfacesNeverLeakThreatDefinitionMechanicsProvenanceOrPins() throws Exception {
+    void theMapDocumentNeverEmbedsThreatPinsWhileTheDmApiExposesThem() throws Exception {
         campaign = new Campaign();
         campaign.setName("Threat Safety Campaign");
         campaign.setDescription("Player safety for traps");
@@ -118,37 +122,15 @@ class ThreatPlayerSafetyTest {
         var client = HttpClient.newHttpClient();
         String base = "http://localhost:" + port;
 
-        String playerBody = client.send(
-                HttpRequest.newBuilder().uri(URI.create(base + "/player")).build(),
-                HttpResponse.BodyHandlers.ofString()).body();
-        assertNoLeak(playerBody, "player page");
-
-        String tableState = client.send(
-                HttpRequest.newBuilder().uri(URI.create(base + "/api/v1/table/state")).build(),
-                HttpResponse.BodyHandlers.ofString()).body();
-        assertNoLeak(tableState, "table state");
-        assertThat(tableState)
-                .as("table state must not include threat pin identity")
-                .doesNotContain(pinId.toString())
-                .doesNotContain(trap.getId().toString())
-                .doesNotContain("\"TRAP\"")
-                .doesNotContain(PIN_KEY);
-
-        // Player bootstrap is the initial WebSocket/table payload — same projection as table state.
-        assertThat(tableState).contains("\"mode\"");
-
         String mapDocument = client.send(
                 HttpRequest.newBuilder().uri(URI.create(base + "/api/v1/maps/" + gameMap.getId() + "/document")).build(),
                 HttpResponse.BodyHandlers.ofString()).body();
-        // Document endpoint is DM-gated when pin is enabled; with test pin disabled it is reachable
-        // but must still not embed threat pins (they live outside MapDocumentDto).
-        if (!mapDocument.isBlank() && !mapDocument.contains("\"status\":403") && !mapDocument.contains("Forbidden")) {
-            assertNoLeak(mapDocument, "map document");
-            assertThat(mapDocument)
-                    .doesNotContain(PIN_KEY)
-                    .doesNotContain(PIN_LABEL)
-                    .doesNotContain(pinId.toString());
-        }
+        assertNoLeak(mapDocument, "map document");
+        assertThat(mapDocument)
+                .as("threat pins live outside MapDocumentDto and must not be serialised with it")
+                .doesNotContain(PIN_KEY)
+                .doesNotContain(PIN_LABEL)
+                .doesNotContain(pinId.toString());
 
         // DM pins API must include the markers.
         var dmPins = pinService.listCombinedPins(gameMap.getId());

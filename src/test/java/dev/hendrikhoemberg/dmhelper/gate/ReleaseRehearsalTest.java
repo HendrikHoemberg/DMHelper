@@ -283,15 +283,11 @@ class ReleaseRehearsalTest {
             openCockpit();
             applyPreset("builtin:combat");
             page.locator(".combatant-row").first().click();
-            page.evaluate("""
-                    () => {
-                        const layout = window.cockpitLayout;
-                        layout.enterEditMode();
-                        layout.addModule('reference', 'LEFT_SUPPORT');
-                        layout.lockMode({ silent: true });
-                        layout.selectTab('LEFT_SUPPORT', 'reference');
-                    }
-                    """);
+            // The Combat preset now ships the Reference module, so the rehearsal drives the
+            // real affordance -- revealModule -- instead of hand-docking it into a zone.
+            page.evaluate("() => window.cockpitLayout.revealModule('reference')");
+            page.waitForFunction(
+                    "() => document.querySelector(\"[data-runtime-module='reference'] input[type=search]\") !== null");
             page.locator("[data-runtime-module='reference'] input[type='search']").first().fill("grapple");
             page.waitForFunction("() => document.querySelectorAll('[data-runtime-module=\"reference\"] [data-reference-result]').length > 0");
             assertThat(page.locator("[data-runtime-module='reference'] [data-reference-result]").count()).isGreaterThan(0);
@@ -315,29 +311,6 @@ class ReleaseRehearsalTest {
             page.waitForFunction("title => document.querySelector('[data-runtime-module=\\\"session-plan\\\"] h3')?.textContent.trim() === title", planTitle);
             assertThat(page.locator("[data-runtime-module='session-plan'] h3").textContent().trim()).as("the session plan reflects the promoted rehearsal update").isEqualTo(planTitle);
             assertVisibleWithoutScrolling("save status", "#runtimeStatus [data-status-save]");
-        }
-
-        @Test @Order(8)
-        void step8_aReviewedPlayerSafeAssetIsPresentedAndTheDisplayAgrees() {
-            openCockpit();
-            applyPreset("builtin:presentation");
-            Locator presentation = page.locator("[data-runtime-module='presentation']");
-            presentation.locator("#presentationHandoutPicker").selectOption(seeded.playerSafeHandoutId().toString());
-            page.locator("#presentationPreview").waitFor();
-            page.locator("#previewContainer img").waitFor();
-            page.locator("#presentationPreview button").filter(new Locator.FilterOptions().setHasText("Present to table")).click();
-            page.waitForFunction("() => document.querySelector('[data-presentation-mode]')?.dataset.presentationMode === 'HANDOUT'");
-            assertThat(page.locator("#presentationPreview").getAttribute("style")).doesNotContain("display: block");
-            assertVisibleWithoutScrolling("presentation state", "[data-presentation-mode]");
-            Page playerPage = context.newPage();
-            failures.attach(playerPage);
-            playerPage.navigate(base + "/player");
-            playerPage.waitForLoadState(LoadState.NETWORKIDLE);
-            playerPage.locator(".pv-handout img").waitFor();
-            assertThat(playerPage.locator(".pv-handout img").getAttribute("src")).isEqualTo("/player/files/" + seeded.playerSafeHandoutId());
-            assertThat(playerPage.locator("[data-screen-sensitive]").count()).isZero();
-            assertThat(playerPage.content()).doesNotContain(String.valueOf(seeded.dmSourceHandoutId()));
-            playerPage.close();
         }
 
         @Test @Order(9)

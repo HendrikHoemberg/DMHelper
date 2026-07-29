@@ -86,33 +86,31 @@ class CampaignAdminSurfaceTest {
         var panel = document.selectFirst(".readiness-panel");
         assertThat(panel).isNotNull();
         assertThat(panel.selectFirst("h3").text()).isEqualTo("Campaign readiness");
-        assertThat(panel.selectFirst(".readiness-badge").text()).isEqualTo("Not ready — 5 blockers");
+        assertThat(panel.selectFirst(".readiness-badge").text()).isEqualTo("Not ready — 4 blockers");
         assertThat(panel.selectFirst(".readiness-panel__intro").text())
                 .contains("Resolve these blockers")
                 .contains("explicitly choose to continue");
 
         assertThat(panel.select(".readiness-group"))
                 .extracting(group -> group.attr("data-readiness-category"))
-                .containsExactly("ENCOUNTER", "STATBLOCK", "MAP", "ASSET");
+                .containsExactly("ENCOUNTER", "STATBLOCK", "MAP");
         assertThat(panel.select(".readiness-group__heading"))
                 .extracting(org.jsoup.nodes.Element::text)
                 .containsExactly(
                         "Encounters 1 blocker",
                         "Participants 1 blocker",
-                        "Maps 2 blockers",
-                        "Player content 1 blocker");
+                        "Maps 2 blockers");
         assertThat(panel.select(".readiness-group__summary"))
                 .extracting(org.jsoup.nodes.Element::text)
                 .containsExactly(
                         "Hostile scenes need a runnable encounter.",
                         "Hostile participants need resolvable statblocks.",
-                        "Required scenes need a playable or reference map.",
-                        "Player-facing assets need a safe classification.");
+                        "Required scenes need a playable or reference map.");
 
         String acceptEndpoint = "/campaigns/" + campaignId + "/readiness/accept";
         var acceptForms = panel.select("form[action=\"" + acceptEndpoint + "\"]");
 
-        assertThat(acceptForms).hasSize(5);
+        assertThat(acceptForms).hasSize(4);
         assertThat(acceptForms).allSatisfy(form -> {
             assertThat(form.attr("hx-post")).isEqualTo(acceptEndpoint);
             assertThat(form.attr("hx-target")).isEqualTo("closest .readiness-panel");
@@ -121,35 +119,26 @@ class CampaignAdminSurfaceTest {
         });
 
         var repairLinks = panel.select(".readiness-item__repair");
-        assertThat(repairLinks).hasSize(5);
+        assertThat(repairLinks).hasSize(4);
         assertThat(repairLinks)
                 .extracting(org.jsoup.nodes.Element::text)
-                .contains("Prepare encounter", "Review participants", "Add map", "Review handout");
+                .contains("Prepare encounter", "Review participants", "Add map");
         assertThat(repairLinks).allSatisfy(link ->
                 assertThat(link.attr("href")).startsWith("/campaigns/" + campaignId + "/"));
         assertThat(panel.select("[data-readiness-category=MAP] .readiness-item__repair"))
                 .hasSize(2)
                 .allSatisfy(link -> assertThat(link.attr("href")).contains("/adventures/").contains("/scenes/"));
-        assertThat(panel.select("[data-readiness-category=ASSET] .readiness-item__repair"))
-                .singleElement()
-                .satisfies(link -> assertThat(link.attr("href")).contains("/handouts/"));
         assertThat(acceptForms.select("button"))
                 .extracting(org.jsoup.nodes.Element::text)
                 .contains(
                         "Run without encounter",
                         "Run without statblocks",
-                        "Run without map",
-                        "Accept safety risk");
+                        "Run without map");
         assertThat(panel.select(".readiness-item__title"))
                 .extracting(org.jsoup.nodes.Element::text)
                 .contains(
                         "Participants missing statblocks: Ambush Encounter",
-                        "Scene requires a map: The Dark Cave",
-                        "Unsafe asset linked for presentation: Unsafe Handout");
-        assertThat(panel.select("form[action*=\"/readiness/assets/\"]")).hasSize(1);
-        assertThat(panel.select("button"))
-                .extracting(org.jsoup.nodes.Element::text)
-                .contains("Set kind");
+                        "Scene requires a map: The Dark Cave");
         assertThat(panel.select(".readiness-item__content, .readiness-item__actions"))
                 .allSatisfy(container -> assertThat(container.tagName()).isEqualTo("div"));
     }

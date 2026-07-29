@@ -171,12 +171,9 @@ class ViewportAccessibilityGateTest {
         for (int[] viewport : VIEWPORTS) {
             openCockpit(viewport[0], viewport[1]);
 
-            for (String selector : List.of("#cockpitLayoutModeButton", "#screenSafetyCheckbox",
+            for (String selector : List.of("#cockpitLayoutModeButton",
                     "#runtimeStatus", "[data-display-title]", "button[x-ref='sessionButton']")) {
                 Locator control = page.locator(selector).first();
-                if (selector.equals("#screenSafetyCheckbox")) {
-                    control = page.locator("label.switch-control").first();
-                }
                 BoundingBox box = control.boundingBox();
                 assertThat(control.isVisible()).as("%s visible at %dx%d", selector, viewport[0], viewport[1])
                         .isTrue();
@@ -194,20 +191,14 @@ class ViewportAccessibilityGateTest {
                             .isTrue();
                 }
             }
-            Locator screenSafety = page.locator("#screenSafetyCheckbox");
-            assertThat(screenSafety.isEnabled()).as("screen safety enabled at %dx%d", viewport[0], viewport[1])
-                    .isTrue();
-            assertThat(screenSafety.getAttribute("tabindex"))
-                    .as("screen safety keyboard reachable at %dx%d", viewport[0], viewport[1])
-                    .isNotEqualTo("-1");
             @SuppressWarnings("unchecked")
             List<String> statusStates = (List<String>) page.evaluate("""
-                    () => [...document.querySelectorAll('#runtimeStatus [data-status-save], #runtimeStatus [data-status-table]')]
+                    () => [...document.querySelectorAll('#runtimeStatus [data-status-save]')]
                       .map(el => el.getAttribute('data-state'))
                     """);
             assertThat(statusStates)
                     .as("runtime status child states at %dx%d", viewport[0], viewport[1])
-                    .containsExactly("idle", "disconnected");
+                    .containsExactly("idle");
         }
     }
 

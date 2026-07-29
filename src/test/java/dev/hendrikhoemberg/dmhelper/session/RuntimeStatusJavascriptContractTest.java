@@ -78,22 +78,17 @@ class RuntimeStatusJavascriptContractTest {
     }
 
     @Test
-    void runtimeStatusRespondsToDmRequestSuccessAndFailureWithoutUsingTablePolling() {
+    void runtimeStatusRespondsToDmRequestSuccessAndFailure() {
         try (BrowserContext context = browser.newContext()) {
             Page page = context.newPage();
             page.setContent("""
                     <div id="runtimeStatus">
                       <span data-status-save data-state="idle">Up to date</span>
-                      <span data-status-table data-state="disconnected">No table screen</span>
                     </div>
                     """);
             page.evaluate("""
                     () => {
-                      window.fetch = async url => {
-                        if (url === '/api/table/status') {
-                          window.tablePolls = (window.tablePolls || 0) + 1;
-                          return {ok: true, json: async () => ({connected: 1})};
-                        }
+                      window.fetch = async () => {
                         if (window.dmFailure) return {ok: false, status: 500, headers: {get: () => ''}};
                         return new Promise(resolve => window.resolveDm = resolve);
                       };
@@ -119,9 +114,7 @@ class RuntimeStatusJavascriptContractTest {
                       return {
                         busy,
                         saved,
-                        failed: document.querySelector('[data-status-save]').dataset.state,
-                        table: document.querySelector('[data-status-table]').dataset.state,
-                        tablePolls: window.tablePolls
+                        failed: document.querySelector('[data-status-save]').dataset.state
                       };
                     }
                     """);
@@ -129,9 +122,7 @@ class RuntimeStatusJavascriptContractTest {
             assertThat(states)
                     .containsEntry("busy", "busy")
                     .containsEntry("saved", "saved")
-                    .containsEntry("failed", "error")
-                    .containsEntry("table", "connected")
-                    .containsEntry("tablePolls", 1);
+                    .containsEntry("failed", "error");
         }
     }
 
@@ -142,16 +133,11 @@ class RuntimeStatusJavascriptContractTest {
             page.setContent("""
                     <div id="runtimeStatus">
                       <span data-status-save data-state="idle">Up to date</span>
-                      <span data-status-table data-state="disconnected">No table screen</span>
                     </div>
                     """);
             page.evaluate("""
                     () => {
                       window.fetch = async url => {
-                        if (url === '/api/table/status') {
-                          window.tablePolls = (window.tablePolls || 0) + 1;
-                          return {ok: true, json: async () => ({connected: 0})};
-                        }
                         if (url === '/dm-a') {
                           return new Promise((resolve, reject) => window.dmA = {resolve, reject});
                         }
@@ -193,7 +179,7 @@ class RuntimeStatusJavascriptContractTest {
                       window.clean.resolve({ok: true, status: 204, headers: {get: () => ''}});
                       await cleanRequest;
                       const cleanSaved = document.querySelector('[data-status-save]').dataset.state;
-                      return {busy, afterFailure, afterConcurrentSuccess, cleanBusy, cleanSaved, tablePolls: window.tablePolls};
+                      return {busy, afterFailure, afterConcurrentSuccess, cleanBusy, cleanSaved};
                     }
                     """);
 
@@ -202,8 +188,7 @@ class RuntimeStatusJavascriptContractTest {
                     .containsEntry("afterFailure", "error")
                     .containsEntry("afterConcurrentSuccess", "error")
                     .containsEntry("cleanBusy", "busy")
-                    .containsEntry("cleanSaved", "saved")
-                    .containsEntry("tablePolls", 1);
+                    .containsEntry("cleanSaved", "saved");
         }
     }
 
@@ -214,16 +199,11 @@ class RuntimeStatusJavascriptContractTest {
             page.setContent("""
                     <div id="runtimeStatus">
                       <span data-status-save data-state="idle">Up to date</span>
-                      <span data-status-table data-state="disconnected">No table screen</span>
                     </div>
                     """);
             page.evaluate("""
                     () => {
                       window.fetch = async url => {
-                        if (url === '/api/table/status') {
-                          window.tablePolls = (window.tablePolls || 0) + 1;
-                          return {ok: true, json: async () => ({connected: 0})};
-                        }
                         if (url === '/dm-b') {
                           return new Promise(resolve => window.dmB = {resolve});
                         }
@@ -262,7 +242,7 @@ class RuntimeStatusJavascriptContractTest {
                         detail: {requestConfig: {verb: 'POST'}, xhr: {status: 204}}
                       }));
                       const cleanSaved = document.querySelector('[data-status-save]').dataset.state;
-                      return {busy, afterFailure, afterConcurrentSuccess, cleanBusy, cleanSaved, tablePolls: window.tablePolls};
+                      return {busy, afterFailure, afterConcurrentSuccess, cleanBusy, cleanSaved};
                     }
                     """);
 
@@ -271,8 +251,7 @@ class RuntimeStatusJavascriptContractTest {
                     .containsEntry("afterFailure", "error")
                     .containsEntry("afterConcurrentSuccess", "error")
                     .containsEntry("cleanBusy", "busy")
-                    .containsEntry("cleanSaved", "saved")
-                    .containsEntry("tablePolls", 1);
+                    .containsEntry("cleanSaved", "saved");
         }
     }
 
@@ -283,16 +262,11 @@ class RuntimeStatusJavascriptContractTest {
             page.setContent("""
                     <div id="runtimeStatus">
                       <span data-status-save data-state="idle">Up to date</span>
-                      <span data-status-table data-state="disconnected">No table screen</span>
                     </div>
                     """);
             page.evaluate("""
                     () => {
                       window.fetch = async url => {
-                        if (url === '/api/table/status') {
-                          window.tablePolls = (window.tablePolls || 0) + 1;
-                          return {ok: true, json: async () => ({connected: 0})};
-                        }
                         return {ok: true, status: 204, headers: {get: () => ''}};
                       };
                     }
@@ -350,7 +324,7 @@ class RuntimeStatusJavascriptContractTest {
                         detail: {requestConfig: laterRequest, xhr: laterXhr}
                       }));
                       const laterSaved = document.querySelector('[data-status-save]').dataset.state;
-                      return {busy, afterFailedRequest, afterConcurrentSuccess, cleanBusy, afterOverlappingClean, laterSaved, tablePolls: window.tablePolls};
+                      return {busy, afterFailedRequest, afterConcurrentSuccess, cleanBusy, afterOverlappingClean, laterSaved};
                     }
                     """);
 
@@ -360,8 +334,7 @@ class RuntimeStatusJavascriptContractTest {
                     .containsEntry("afterConcurrentSuccess", "busy")
                     .containsEntry("cleanBusy", "busy")
                     .containsEntry("afterOverlappingClean", "busy")
-                    .containsEntry("laterSaved", "saved")
-                    .containsEntry("tablePolls", 1);
+                    .containsEntry("laterSaved", "saved");
         }
     }
 }

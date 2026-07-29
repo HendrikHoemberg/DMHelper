@@ -21,8 +21,7 @@ class ElevationModelContractTest {
             "--z-workspace-chrome", "--z-workspace-focus", "--z-workspace-menu",
             "--z-nav", "--z-popover", "--z-tooltip", "--z-ambient",
             "--z-sheet-scrim", "--z-sheet", "--z-overlay", "--z-modal",
-            "--z-shortcut", "--z-safety-sweep", "--z-toast", "--z-filament",
-            "--z-presentation-preview");
+            "--z-shortcut", "--z-toast", "--z-filament");
 
     @Test
     void theLadderIsDefinedInAscendingOrder() {

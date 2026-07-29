@@ -67,7 +67,7 @@ class EncounterTemplateContractTest {
                 + Files.readString(Path.of("src/main/resources/static/js/combat-tracker.js"));
         assertThat(html).contains("activeThreatCard");
         assertThat(html).contains("data-active-threat-card");
-        assertThat(html).contains("x-show=\"activeThreatCard && !tableSafe\"");
+        assertThat(html).contains("x-show=\"activeThreatCard\"");
         assertThat(html).contains("dice-roller-prefill");
         assertThat(html).contains("Prefills only");
         assertThat(html).doesNotContain("/api/v1/combatants/${activeCombatantId}/damage");
