@@ -93,6 +93,13 @@
         this.open = false;
         this.query = '';
         this.results = [];
+        const inCockpit = typeof window.cockpitLayout?.revealModule === 'function';
+        if (inCockpit && item.type === 'statblock' && item.id) {
+          window.dispatchEvent(new CustomEvent('cockpit:show-reference', {
+            detail: { type: 'statblock', id: item.id, name: item.name }
+          }));
+          return;
+        }
         if (item.url) {
           window.location.href = item.url;
         }

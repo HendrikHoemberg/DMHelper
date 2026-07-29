@@ -151,4 +151,13 @@ class CockpitLayoutPresetServiceTest {
         verify(repository).deleteById(CUSTOM_ID);
         verifyNoMoreInteractions(repository);
     }
+
+    @Test
+    void combatPresetIncludesTheReferenceModule() {
+        var preset = builtIns.require("builtin:combat");
+        var moduleKeys = preset.layout().zones().values().stream()
+                .flatMap(z -> z.moduleKeys().stream())
+                .toList();
+        assertThat(moduleKeys).contains("reference");
+    }
 }

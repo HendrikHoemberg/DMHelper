@@ -1593,6 +1593,24 @@
       }
     }
 
+    revealModule(key) {
+      const shell = document.querySelector(`[data-module-key="${key}"]`);
+      const zoneEl = shell?.closest('[data-cockpit-zone]');
+      if (!zoneEl) return false;
+      const zone = zoneEl.getAttribute('data-cockpit-zone');
+      const zoneLayout = this.current?.zones?.[zone];
+      if (zoneLayout?.collapsed) {
+        if (zone === 'BOTTOM_UTILITY') {
+          this.toggleBottomUtility();
+        } else {
+          zoneLayout.collapsed = false;
+          this.renderLayout();
+        }
+      }
+      this.selectTab(zone, key);
+      return this.isModuleVisible(key);
+    }
+
     /**
      * A module is visible when its panel is active, its zone is not collapsed,
      * Screen Safety is not hiding it (HIDE), and either the workbench or focus layer exposes it.

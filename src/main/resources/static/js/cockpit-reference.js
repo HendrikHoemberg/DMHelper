@@ -10,6 +10,8 @@
       campaignId: '',
       abortController: null,
       debounceTimer: null,
+      statblock: null,
+      statblockError: '',
 
       init() {
         const shell = this.$el.closest('[data-module-key]');
@@ -19,6 +21,11 @@
             this.campaignId = campaignEl.getAttribute('data-campaign-id');
           }
         }
+        window.addEventListener('cockpit:show-reference', (e) => {
+          if (e.detail?.type !== 'statblock' || !e.detail.id) return;
+          window.cockpitLayout?.revealModule?.('reference');
+          this.showStatblock(e.detail.id);
+        });
       },
 
       async search() {
@@ -107,11 +114,13 @@
 
       selectItem(item) {
         if (!item || !item.id) return;
+        if (item.type === 'statblock') {
+          this.clearStatblock();
+          this.showStatblock(item.id);
+          return;
+        }
         let url = '';
         switch (item.type) {
-          case 'statblock':
-            url = '/library/statblocks/' + item.id;
-            break;
           case 'rules':
             url = '/library/rules/' + item.id;
             break;
@@ -124,6 +133,22 @@
         if (url) {
           window.open(url, '_blank', 'noopener');
         }
+      },
+
+      async showStatblock(id) {
+        this.statblockError = '';
+        try {
+          const resp = await window.dmRequest('/api/v1/library/statblocks/' + encodeURIComponent(id));
+          this.statblock = await resp.json();
+        } catch (error) {
+          this.statblock = null;
+          this.statblockError = 'Could not load that statblock.';
+        }
+      },
+
+      clearStatblock() {
+        this.statblock = null;
+        this.statblockError = '';
       },
     }));
   });
