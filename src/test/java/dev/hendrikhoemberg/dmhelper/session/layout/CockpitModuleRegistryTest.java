@@ -15,7 +15,7 @@ class CockpitModuleRegistryTest {
     void registersTheStableCatalogExactlyOnce() {
         assertThat(registry.all()).extracting(CockpitModuleDefinition::key)
                 .containsExactly("story", "map", "encounter", "session-plan", "party",
-                        "quick-notes", "presentation", "reference", "audio", "session-log");
+                        "quick-notes", "reference", "audio", "session-log");
         assertThat(registry.all()).extracting(CockpitModuleDefinition::key)
                 .doesNotHaveDuplicates();
     }

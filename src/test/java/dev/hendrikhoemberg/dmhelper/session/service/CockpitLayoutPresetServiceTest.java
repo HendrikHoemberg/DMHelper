@@ -8,6 +8,7 @@ import dev.hendrikhoemberg.dmhelper.session.layout.CockpitLayoutDocument;
 import dev.hendrikhoemberg.dmhelper.session.layout.CockpitLayoutResolver;
 import dev.hendrikhoemberg.dmhelper.session.layout.CockpitLayoutValidator;
 import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleRegistry;
+import dev.hendrikhoemberg.dmhelper.session.layout.CockpitZone;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,14 +40,16 @@ class CockpitLayoutPresetServiceTest {
     @Mock CockpitLayoutCodec codec;
     CockpitBuiltInPresetCatalog builtIns;
     CockpitLayoutPresetService service;
+    CockpitLayoutResolver resolver;
 
     @BeforeEach
     void setUp() {
         CockpitModuleRegistry registry = CockpitModuleRegistry.standard();
         builtIns = new CockpitBuiltInPresetCatalog();
+        resolver = new CockpitLayoutResolver(registry, builtIns);
         service = new CockpitLayoutPresetService(repository, codec, builtIns,
                 new CockpitLayoutValidator(registry),
-                new CockpitLayoutResolver(registry, builtIns));
+                resolver);
         lenient().when(codec.write(any())).thenReturn("{\"schemaVersion\":1}");
         lenient().when(codec.read(any())).thenReturn(explorationNamed("My Table"));
         lenient().when(repository.saveAndFlush(any())).thenAnswer(invocation -> {
@@ -78,7 +81,7 @@ class CockpitLayoutPresetServiceTest {
         when(repository.findAllByOrderByNormalizedNameAsc()).thenReturn(List.of(customEntity()));
         assertThat(service.list()).extracting(CockpitLayoutPresetService.PresetDto::key)
                 .containsExactly("builtin:exploration", "builtin:combat",
-                        "builtin:theatre-of-mind", "builtin:presentation",
+                        "builtin:theatre-of-mind",
                         "builtin:session-review", "custom:" + CUSTOM_ID);
     }
 
@@ -130,6 +133,14 @@ class CockpitLayoutPresetServiceTest {
                 .isInstanceOf(OptimisticLockingFailureException.class);
 
         verify(repository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void unknownPresetFallsBackToExplorationInsteadOfFailing() {
+        var resolved = resolver.resolve("builtin:presentation", CockpitZone.values());
+
+        assertThat(resolved).isNotNull();
+        assertThat(resolved.fallbackKey()).isEqualTo("builtin:exploration");
     }
 
     @Test

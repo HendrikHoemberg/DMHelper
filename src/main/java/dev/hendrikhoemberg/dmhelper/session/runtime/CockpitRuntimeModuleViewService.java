@@ -14,7 +14,6 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
-import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNote;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
@@ -67,7 +66,7 @@ public class CockpitRuntimeModuleViewService {
 
     public record MapView(UUID mapId, String name, int gridWidth, int gridHeight, int cellSizePx,
                           String movementMode, boolean showGrid, List<MapItemView> maps,
-                          String selectionSource, String sessionStatus, String presentationMode) {}
+                          String selectionSource, String sessionStatus) {}
 
     public record MapItemView(UUID id, String name) {}
 
@@ -109,11 +108,6 @@ public class CockpitRuntimeModuleViewService {
 
     public record QuickNoteView(UUID id, String body, String createdAt) {}
 
-    public record PresentationView(String mode, UUID presentedMapId, String presentedHandoutTitle,
-                                    List<HandoutItemView> handouts) {}
-
-    public record HandoutItemView(UUID id, String title, String safety) {}
-
     public record ReferenceView() {}
 
     public record AudioView() {}
@@ -128,7 +122,6 @@ public class CockpitRuntimeModuleViewService {
     private final CampaignSessionRepository sessions;
     private final QuickNoteRepository quickNotes;
     private final SessionPlanService plans;
-    private final HandoutService handoutService;
     private final ThreatCardAssembler threatCardAssembler;
     private final SessionLogModuleService sessionLogService;
     private final QuestRepository questRepository;
@@ -141,7 +134,6 @@ public class CockpitRuntimeModuleViewService {
                                            CampaignSessionRepository sessions,
                                            QuickNoteRepository quickNotes,
                                            SessionPlanService plans,
-                                           HandoutService handoutService,
                                            ThreatCardAssembler threatCardAssembler,
                                            SessionLogModuleService sessionLogService,
                                            QuestRepository questRepository) {
@@ -153,7 +145,6 @@ public class CockpitRuntimeModuleViewService {
         this.sessions = sessions;
         this.quickNotes = quickNotes;
         this.plans = plans;
-        this.handoutService = handoutService;
         this.threatCardAssembler = threatCardAssembler;
         this.sessionLogService = sessionLogService;
         this.questRepository = questRepository;
@@ -272,8 +263,7 @@ public class CockpitRuntimeModuleViewService {
                         .map(m -> new MapItemView(m.getId(), m.getName()))
                         .toList()),
                 selection.source().name(),
-                session != null ? session.getStatus().name() : "IDLE",
-                session != null ? session.getPresentationMode().name() : "CURTAIN");
+                session != null ? session.getStatus().name() : "IDLE");
     }
 
     public EncounterView encounter(UUID campaignId) {
@@ -374,23 +364,6 @@ public class CockpitRuntimeModuleViewService {
                 .map(n -> new QuickNoteView(n.getId(), n.getBody(),
                         n.getCreatedAt() != null ? n.getCreatedAt().toString() : null))
                 .toList()));
-    }
-
-    public PresentationView presentation(UUID campaignId) {
-        CampaignSession session = sessions.findByCampaignId(campaignId).orElse(null);
-        var handouts = handoutService.findByCampaignId(campaignId);
-        var handoutViews = List.copyOf(handouts.stream()
-                .map(h -> new HandoutItemView(h.getId(), h.getTitle(),
-                        h.getSafetyClassification() != null ? h.getSafetyClassification().name() : "UNREVIEWED"))
-                .toList());
-        if (session == null) return new PresentationView("CURTAIN", null, null, handoutViews);
-        Hibernate.initialize(session.getPresentedMap());
-        Hibernate.initialize(session.getPresentedHandout());
-        return new PresentationView(
-                session.getPresentationMode().name(),
-                session.getPresentedMap() != null ? session.getPresentedMap().getId() : null,
-                session.getPresentedHandout() != null ? session.getPresentedHandout().getTitle() : null,
-                handoutViews);
     }
 
     public ReferenceView reference(UUID campaignId) {

@@ -1,5 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.session.layout;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -9,6 +11,7 @@ import java.util.Set;
 
 @org.springframework.stereotype.Component
 public final class CockpitLayoutResolver {
+    private static final Logger log = LoggerFactory.getLogger(CockpitLayoutResolver.class);
     private static final String EXPLORATION_KEY = "builtin:exploration";
     private static final String UNSUPPORTED_SCHEMA_WARNING =
             "This layout uses an unsupported schema. Exploration was restored.";
@@ -188,6 +191,17 @@ public final class CockpitLayoutResolver {
         }
 
         return new CockpitLayoutDocument.SplitRatios(left, primary, right, bottom);
+    }
+
+    public Resolution resolve(String presetId, CockpitZone... zones) {
+        try {
+            var preset = builtIns.require(presetId);
+            return resolve(preset.layout());
+        } catch (IllegalArgumentException e) {
+            log.debug("Built-in preset '{}' not found, falling back to '{}'", presetId, EXPLORATION_KEY);
+            var exploration = builtIns.require(EXPLORATION_KEY);
+            return new Resolution(exploration.layout(), List.of(), EXPLORATION_KEY);
+        }
     }
 
     public record Resolution(
