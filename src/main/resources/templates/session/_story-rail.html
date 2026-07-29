@@ -19,7 +19,7 @@
            th:if="${view.body != null and mode.name() != 'COMPACT'}"
            th:text="${view.body}">Scene notes</div>
       <th:block th:if="${view.sections != null and !view.sections.isEmpty() and mode.name() != 'COMPACT'}">
-        <div th:each="section : ${view.sections}" th:if="${section.kind.name() != 'READ_ALOUD'}" class="structured-block u-mb-xs">
+        <div th:each="section : ${view.sections}" th:if="${section.kind != 'READ_ALOUD'}" class="structured-block u-mb-xs">
           <span class="badge" th:text="${T(dev.hendrikhoemberg.dmhelper.common.web.DisplayLabels).humanize(section.kind)}">SECTION</span>
           <strong th:text="${section.label}">Label</strong>
           <p class="u-text-sm" th:text="${section.body}">Body</p>
@@ -69,7 +69,7 @@
           <div th:each="t : ${view.transitions}">
             <div th:if="${t.kind == 'CHOICE' and t.targetSceneTitle != null}"
                  class="transition-choice u-mb-xs">
-              <button class="btn btn-sm btn-primary" data-scene-transition
+              <button class="btn btn-sm" data-scene-transition
                       th:attr="data-transition-id=${t.id}"
                       @click="followTransition($el.dataset.transitionId)"
                       th:text="${t.label ?: t.targetSceneTitle}">Follow</button>

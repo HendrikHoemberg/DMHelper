@@ -36,19 +36,23 @@
         </template>
       </div>
 
-      <div class="reference-detail" x-show="statblock" x-transition:enter>
-        <button class="btn btn-ghost u-text-xs u-mb-sm" @click="clearStatblock()" type="button">&larr; Back to results</button>
-        <div class="statblock-render">
-          <h2 x-text="statblock.name"></h2>
-          <div class="sb-subtitle" x-text="statblock.type ? (statblock.cr ? statblock.type + ', CR ' + statblock.cr : statblock.type) : ''"></div>
-          <hr class="sb-rule">
-          <div class="sb-stat-row">
-            <div><span>Armor Class</span> <span x-text="statblock.ac"></span></div>
-            <div><span>Hit Points</span> <span x-text="statblock.hp"></span></div>
-            <div><span>XP</span> <span x-text="statblock.xp"></span></div>
+      <!-- x-if, not x-show: x-show keeps the bindings live, so every x-text below would
+           evaluate against a null statblock on first paint and throw. -->
+      <template x-if="statblock">
+        <div class="reference-detail" x-transition:enter>
+          <button class="btn btn-ghost u-text-xs u-mb-sm" @click="clearStatblock()" type="button">&larr; Back to results</button>
+          <div class="statblock-render">
+            <h2 x-text="statblock.name"></h2>
+            <div class="sb-subtitle" x-text="statblock.type ? (statblock.cr ? statblock.type + ', CR ' + statblock.cr : statblock.type) : ''"></div>
+            <hr class="sb-rule">
+            <div class="sb-stat-row">
+              <div><span>Armor Class</span> <span x-text="statblock.ac"></span></div>
+              <div><span>Hit Points</span> <span x-text="statblock.hp"></span></div>
+              <div><span>XP</span> <span x-text="statblock.xp"></span></div>
+            </div>
           </div>
         </div>
-      </div>
+      </template>
       <div class="reference-error text-danger u-text-sm" x-show="statblockError"
            x-text="statblockError" role="alert"></div>
     </div>

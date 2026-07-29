@@ -447,7 +447,7 @@ export class BattleMap {
         const hpBarHeight = 4;
         const hpBar = new Konva.Rect({
             y: h, width: w, height: hpBarHeight,
-            fill: HP_COLORS.high, visible: isPrivate && hasHp,
+            fill: HP_COLORS.high, visible: hasHp,
         });
         group.add(hpBar);
 
@@ -455,7 +455,7 @@ export class BattleMap {
             y: h + hpBarHeight + 2,
             text: hasHp ? `${token.currentHp}/${token.maxHp}` : '',
             fontSize: 10, fill: '#ccc', align: 'center', width: w,
-            visible: isPrivate && hasHp,
+            visible: hasHp,
         });
         group.add(hpText);
 

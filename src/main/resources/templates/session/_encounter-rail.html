@@ -7,7 +7,16 @@
     <th:block th:replace="~{encounter/_tracker :: tracker(mode=${mode})}"></th:block>
   </div>
   <div class="sidebar-section">
-    <details class="planned-encounters" :open="!encounter">
+    <!-- The tracker owns the rail mid-fight, so this list collapses while an encounter is
+         active. `encounter` lives inside the tracker's own Alpine scope, not this one, so the
+         state is seeded from the server view and kept current from tracker-encounter-state. -->
+    <details class="planned-encounters"
+             x-data="{ hasActive: false }"
+             th:attr="data-has-active=${view.activeEncounterId != null}"
+             x-init="hasActive = $el.dataset.hasActive === 'true';
+                     window.addEventListener('tracker-encounter-state',
+                       e => hasActive = !!e.detail?.encounter)"
+             :open="!hasActive">
       <summary>Planned encounters</summary>
       <div x-data="{ plannedFilter: '' }">
         <input type="search" class="form-input" x-model="plannedFilter"
