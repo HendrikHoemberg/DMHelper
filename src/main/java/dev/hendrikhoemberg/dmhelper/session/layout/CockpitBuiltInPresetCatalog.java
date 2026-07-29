@@ -6,8 +6,13 @@ import java.util.Set;
 
 @org.springframework.stereotype.Component
 public final class CockpitBuiltInPresetCatalog {
+    // The bottom strip is a utility rail for quick notes and audio, not a panel. At a
+    // bottom ratio of 0.24 it took 227px of a 1000px viewport to hold one input line.
+    // Combat is the only preset with an uncollapsed bottom zone, so this is the only
+    // place it shows. 0.16 is the validator's supported minimum; the splitter still
+    // lets a DM grow it for the session log.
     private static final CockpitLayoutDocument.SplitRatios DEFAULT_RATIOS =
-            new CockpitLayoutDocument.SplitRatios(0.20, 0.56, 0.24, 0.24);
+            new CockpitLayoutDocument.SplitRatios(0.20, 0.56, 0.24, 0.16);
 
     private static final List<BuiltInPreset> PRESETS = List.of(
             preset("builtin:exploration", "Exploration",
