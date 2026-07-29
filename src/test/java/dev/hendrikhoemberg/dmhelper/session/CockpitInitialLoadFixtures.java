@@ -9,6 +9,8 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
@@ -34,6 +36,7 @@ public class CockpitInitialLoadFixtures {
     private final AdventureService adventureService;
     private final EncounterRepository encounters;
     private final CombatantRepository combatants;
+    private final PartyMemberRepository partyMembers;
 
     public CockpitInitialLoadFixtures(CampaignRepository campaigns,
                                       GameMapRepository maps,
@@ -43,7 +46,8 @@ public class CockpitInitialLoadFixtures {
                                       SceneRepository scenes,
                                       AdventureService adventureService,
                                       EncounterRepository encounters,
-                                      CombatantRepository combatants) {
+                                      CombatantRepository combatants,
+                                      PartyMemberRepository partyMembers) {
         this.campaigns = campaigns;
         this.maps = maps;
         this.lifecycle = lifecycle;
@@ -53,6 +57,7 @@ public class CockpitInitialLoadFixtures {
         this.adventureService = adventureService;
         this.encounters = encounters;
         this.combatants = combatants;
+        this.partyMembers = partyMembers;
     }
 
     @Transactional
@@ -108,5 +113,22 @@ public class CockpitInitialLoadFixtures {
         goblin.setCurrentHp(7);
         combatants.save(goblin);
         return encounter.getId();
+    }
+
+    @Transactional
+    public UUID campaignWithRunningSessionAndFourPartyMembers() {
+        UUID campaignId = campaignWithRunningSession();
+        Campaign campaign = campaigns.findById(campaignId).orElseThrow();
+        for (String name : new String[] {"Nym", "Lyra", "Grimm", "Thorin"}) {
+            PartyMember member = new PartyMember();
+            member.setCampaign(campaign);
+            member.setCharacterName(name);
+            member.setAc(14);
+            member.setMaxHp(10);
+            member.setCurrentHp(10);
+            member.setPassivePerception(12);
+            partyMembers.save(member);
+        }
+        return campaignId;
     }
 }
