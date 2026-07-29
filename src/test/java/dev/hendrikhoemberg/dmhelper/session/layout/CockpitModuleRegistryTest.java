@@ -64,4 +64,14 @@ class CockpitModuleRegistryTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Duplicate cockpit module: story");
     }
+
+    @Test
+    void registryExposesOnlyDmFacingModules() {
+        var keys = registry.all().stream().map(CockpitModuleDefinition::key).toList();
+
+        assertThat(keys).containsExactlyInAnyOrder(
+                "story", "map", "encounter", "party",
+                "quick-notes", "session-plan", "session-log", "audio", "reference");
+        assertThat(keys).doesNotContain("presentation");
+    }
 }
