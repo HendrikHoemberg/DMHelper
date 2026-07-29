@@ -114,6 +114,7 @@
 
 .card-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-xs);
   margin-top: var(--space-md);
   justify-content: flex-end;
@@ -3163,6 +3164,17 @@ dialog.modal:not([open]) {
 .scene-row__title {
   flex: 1;
   min-width: 0;
+  color: var(--color-text);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scene-row__title:hover,
+.scene-row__title:focus-visible {
+  color: var(--color-accent);
+  text-decoration: underline;
 }
 
 .scene-row__affordances {
