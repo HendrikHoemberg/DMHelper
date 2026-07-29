@@ -3242,3 +3242,10 @@ dialog.modal:not([open]) {
 .data-table th:last-child {
   text-align: right;
 }
+
+.dice-quick-rolls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin: var(--space-xs) 0;
+}

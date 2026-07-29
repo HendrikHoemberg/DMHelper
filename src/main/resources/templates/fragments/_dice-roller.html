@@ -45,6 +45,23 @@
             </label>
         </div>
 
+        <div class="dice-quick-rolls" role="group" aria-label="Quick rolls">
+          <button type="button" class="btn btn-ghost btn-xs" data-quick-roll="1d4"
+                  @click="expression = '1d4'; roll()">d4</button>
+          <button type="button" class="btn btn-ghost btn-xs" data-quick-roll="1d6"
+                  @click="expression = '1d6'; roll()">d6</button>
+          <button type="button" class="btn btn-ghost btn-xs" data-quick-roll="1d8"
+                  @click="expression = '1d8'; roll()">d8</button>
+          <button type="button" class="btn btn-ghost btn-xs" data-quick-roll="1d10"
+                  @click="expression = '1d10'; roll()">d10</button>
+          <button type="button" class="btn btn-ghost btn-xs" data-quick-roll="1d12"
+                  @click="expression = '1d12'; roll()">d12</button>
+          <button type="button" class="btn btn-ghost btn-xs" data-quick-roll="1d20"
+                  @click="expression = '1d20'; roll()">d20</button>
+          <button type="button" class="btn btn-ghost btn-xs" data-quick-roll="1d100"
+                  @click="expression = '1d100'; roll()">d100</button>
+        </div>
+
         <div class="dice-result" x-show="result" x-transition x-ref="resultBox">
             <div class="dice-result-total"
                  :class="result ? critClass(result.rolls, result.advantage, result.disadvantage) : ''"
