@@ -435,6 +435,32 @@ class SessionDraftServiceTest {
     }
 
     @Test
+    void anEncounterStillRunningAtSessionEndIsRecordedAsUnfinished() {
+        Encounter enc = new Encounter();
+        enc.setId(UUID.randomUUID());
+        enc.setName("Bereich 2: Goblinwachposten");
+        enc.setRound(3);
+
+        CombatLogEntry damage = log(enc, CombatLogEntry.EntryType.DAMAGE, 2,
+                UUID.randomUUID().toString(), "{\"amount\":-15}");
+
+        when(calendar.getCurrentDate(campaignId)).thenReturn(new CalendarService.InGameDate(1492, 6, 12));
+        when(visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId())).thenReturn(List.of());
+        when(combatLogs.findSessionEvidence(campaignId, startedAt, endedAt)).thenReturn(List.of(damage));
+        when(ledgers.findByCampaignIdAndTimestampBetweenOrderByTimestampAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(quickNotes.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+        when(tableRollLogs.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
+                .thenReturn(List.of());
+
+        String draft = service.generate(session, endedAt);
+
+        assertThat(draft).contains("Bereich 2: Goblinwachposten");
+        assertThat(draft).contains("still in progress");
+    }
+
+    @Test
     void draftOmitsPresentationSafetySection() {
         when(calendar.getCurrentDate(campaignId)).thenReturn(new CalendarService.InGameDate(1492, 6, 12));
         when(visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId())).thenReturn(List.of());

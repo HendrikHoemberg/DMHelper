@@ -186,9 +186,14 @@ public class SessionDraftService {
         }
         List<String> lines = new ArrayList<>();
         for (List<CombatLogEntry> evidence : byEncounter.values()) {
-            if (evidence.stream().noneMatch(entry -> entry.getType() == CombatLogEntry.EntryType.ENCOUNTER_ENDED))
-                continue;
             Encounter encounter = evidence.getFirst().getEncounter();
+            boolean ended = evidence.stream()
+                    .anyMatch(entry -> entry.getType() == CombatLogEntry.EntryType.ENCOUNTER_ENDED);
+            if (!ended) {
+                lines.add(encounter.getName() + " \u2014 still in progress at session end (round "
+                        + encounter.getRound() + ")");
+                continue;
+            }
             int rounds = evidence.stream().mapToInt(CombatLogEntry::getRound).max().orElse(0);
             rounds = Math.max(rounds, encounter.getRound());
             LinkedHashMap<UUID, DefeatState> finalStates = finalDefeatedState(evidence);
