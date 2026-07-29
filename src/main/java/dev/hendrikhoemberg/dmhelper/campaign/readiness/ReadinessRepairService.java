@@ -23,8 +23,6 @@ public class ReadinessRepairService {
                 var adventureId = scene.getChapter().getAdventure().getId();
                 yield "/campaigns/" + campaignId + "/adventures/" + adventureId + "/scenes/" + targetId;
             }
-            case CLASSIFY_ASSET_KIND ->
-                    "/campaigns/" + campaignId + "/handouts/" + targetId;
             case OPEN_PARTY_ROSTER ->
                     "/campaigns/" + campaignId + "/party";
             case ACCEPT_ITEM, NONE -> null;

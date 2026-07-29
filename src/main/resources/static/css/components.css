@@ -162,6 +162,14 @@
               box-shadow var(--duration-micro) var(--ease-out);
 }
 
+/* Toggle state, not action rank: a control whose pressed/on state must read clearly
+   without claiming the surface's single primary action. */
+.btn.is-active {
+  background: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface));
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
 .btn-primary:hover {
   background-image: var(--gold-sheen);
   background-size: 200% 100%;
@@ -3171,7 +3179,11 @@ dialog.modal:not([open]) {
   white-space: nowrap;
 }
 
-.scene-row__title:hover,
+.scene-row__title:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
 .scene-row__title:focus-visible {
   color: var(--color-accent);
   text-decoration: underline;

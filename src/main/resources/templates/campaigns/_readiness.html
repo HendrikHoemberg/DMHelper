@@ -40,16 +40,6 @@
               <button type="submit" class="btn btn-ghost btn-xs"
                       th:text="${item.category().acceptanceActionLabel()}">Accept blocker</button>
             </form>
-            <form th:if="${item.category().name() == 'ASSET'}"
-                  th:action="@{|/campaigns/${campaignId}/readiness/assets/${item.targetId()}/kind|}" method="post" class="inline-form"
-                  th:hx-post="@{|/campaigns/${campaignId}/readiness/assets/${item.targetId()}/kind|}"
-                  hx-target="closest .readiness-panel" hx-swap="outerHTML">
-              <select name="kind" class="form-input form-input--xs" aria-label="Asset kind">
-                <option th:each="k : ${T(dev.hendrikhoemberg.dmhelper.handout.data.Handout.AssetKind).values()}"
-                        th:value="${k}" th:text="${k}"></option>
-              </select>
-              <button type="submit" class="btn btn-xs">Set kind</button>
-            </form>
           </div>
         </li>
       </ul>
@@ -85,7 +75,7 @@
           <div class="readiness-item__actions" th:if="${item.repairKind() != T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessRepairKind).NONE}">
             <th:block th:with="href=${repairService.hrefFor(campaignId, item.repairKind(), item.targetId())}">
               <a th:if="${href != null}" th:href="${href}"
-                 class="btn btn-primary btn-xs readiness-item__repair"
+                 class="btn btn-ghost btn-xs readiness-item__repair"
                  th:text="${item.category().repairActionLabel()}">Open preparation</a>
             </th:block>
           </div>
