@@ -659,6 +659,16 @@
                 }
             },
 
+            async showStatblock(combatantId) {
+                const resp = await window.dmRequest(
+                    `/api/v1/encounters/${this._encounterId}/combatants/${combatantId}/statblock`);
+                if (resp.status === 204) return;
+                const sb = await resp.json();
+                window.dispatchEvent(new CustomEvent('cockpit:show-reference', {
+                    detail: { type: 'statblock', id: sb.statblockId, name: sb.name }
+                }));
+            },
+
             openConditionMenu(id) {
                 this.showConditionMenu = this.showConditionMenu === id ? null : id;
                 this.conditionDuration = '';

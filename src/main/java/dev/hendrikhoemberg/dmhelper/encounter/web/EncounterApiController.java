@@ -130,6 +130,14 @@ public class EncounterApiController {
         return service.getCombatants(id);
     }
 
+    @GetMapping("/encounters/{eid}/combatants/{cid}/statblock")
+    public ResponseEntity<EncounterService.StatblockRef> getCombatantStatblock(
+            @PathVariable UUID eid, @PathVariable UUID cid) {
+        var ref = service.getCombatantStatblock(cid);
+        if (ref == null) return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ref);
+    }
+
     @PostMapping("/encounters/{id}/combatants")
     public ResponseEntity<CombatantDto> addCombatant(@PathVariable UUID id,
                                                      @RequestBody CombatantCreateRequest req) {

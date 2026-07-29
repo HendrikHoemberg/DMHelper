@@ -168,6 +168,8 @@ public class EncounterService {
                                UUID waveId, Integer startX, Integer startY, String placementRegionKey,
                                ThreatKind threatKind, UUID threatId, ThreatCardView threatCard) {}
 
+    public record StatblockRef(UUID statblockId, String name) {}
+
     public record CombatantCreateRequest(String name, int maxHp, String kind,
                                          UUID statBlockId, UUID partyMemberId) {}
 
@@ -966,6 +968,14 @@ public class EncounterService {
         return combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).stream()
                 .filter(this::isOnActiveWave)
                 .map(this::toDto).toList();
+    }
+
+    public StatblockRef getCombatantStatblock(UUID combatantId) {
+        Combatant c = combatantRepo.findById(combatantId)
+                .orElseThrow(() -> new NotFoundException("Combatant not found: " + combatantId));
+        StatBlock sb = c.getStatBlock();
+        if (sb == null) return null;
+        return new StatblockRef(sb.getId(), sb.getName());
     }
 
     private boolean isOnActiveWave(Combatant c) {

@@ -415,10 +415,29 @@
                     <button class="btn" style="padding: 2px 8px;" @click="quickHp(selected.id, (selected.maxHp - selected.currentHp))">Max</button>
                 </div>
 
+                <!-- Statblock link -->
+                <div class="detail-statblock-link" style="margin: var(--space-sm) 0;">
+                    <button class="btn btn-ghost btn-sm"
+                            x-show="selected?.statblockId"
+                            @click="showStatblock(selected.id)">
+                        Statblock
+                    </button>
+                </div>
+
                 <!-- Conditions panel -->
-                <div class="detail-conditions">
+                <div class="detail-conditions" x-data="{ condFilter: '', commonKeys: ['prone','grappled','restrained','frightened','poisoned','unconscious'] }">
                     <h4>Conditions</h4>
-                    <template x-for="cond in conditionsCatalog" :key="cond.sourceKey">
+                    <div class="condition-quick" style="display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px;">
+                        <template x-for="key in commonKeys" :key="key">
+                            <button class="btn btn-xs"
+                                    :class="hasCondition(selected, key) ? 'btn-primary' : 'btn-ghost'"
+                                    @click="toggleCondition(selected.id, key, 1)"
+                                    x-text="key.charAt(0).toUpperCase() + key.slice(1)"></button>
+                        </template>
+                    </div>
+                    <input type="search" class="form-input" x-model="condFilter"
+                           placeholder="Filter conditions..." style="margin-bottom: 4px;">
+                    <template x-for="cond in conditionsCatalog.filter(c => !condFilter || c.name.toLowerCase().includes(condFilter.toLowerCase()))" :key="cond.sourceKey">
                         <label class="condition-toggle">
                             <input type="checkbox"
                                    :checked="hasCondition(selected, cond.sourceKey)"
