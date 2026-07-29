@@ -173,6 +173,24 @@ function sessionCockpit(config) {
             }
         },
 
+        // Campaign mutations remain, but all bookkeeping for this run is removed without
+        // producing a SESSION_LOG note. Confirm because that session-only history is gone.
+        async confirmAbandonSession() {
+            if (!window.confirm(
+                'Discard this session? No session log is created. Campaign changes remain, '
+                + 'but this session\u2019s visits, draft, and audio state are removed.')) {
+                return;
+            }
+            try {
+                await this.request(
+                    `/api/v1/campaigns/${this.campaignId}/session/abandon`, { method: 'POST' });
+                window.location.reload();
+            } catch (error) {
+                window.cockpitLayout?.showNotice(
+                    'The session could not be discarded. Nothing was changed.');
+            }
+        },
+
         async setCurrentScene(sceneId) {
             if (!sceneId) return;
             try {

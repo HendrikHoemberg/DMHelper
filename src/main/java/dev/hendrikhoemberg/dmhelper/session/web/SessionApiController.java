@@ -140,6 +140,11 @@ public class SessionApiController {
                 campaignId, encounterId, request.activeEncounterDisposition());
     }
 
+    @PostMapping("/abandon")
+    SessionStateDto abandonSession(@PathVariable UUID campaignId) {
+        return state(lifecycle.abandon(campaignId));
+    }
+
     @PostMapping("/complete")
     CompleteResultDto complete(@PathVariable UUID campaignId, @RequestBody CompleteRequest request) {
         Note note = lifecycle.complete(campaignId, request.title(), request.body());

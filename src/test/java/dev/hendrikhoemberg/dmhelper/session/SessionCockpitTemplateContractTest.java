@@ -23,7 +23,10 @@ class SessionCockpitTemplateContractTest {
         assertThat(tracker).contains("request-encounter-end");
         assertThat(cockpitJs).contains("openTokenDialog()", "submitTokenDialog()",
                 "requestTokenDelete(id)", "confirmTokenDelete()", "confirmEncounterEnd()");
-        assertThat(cockpitJs).doesNotContain("prompt(", "confirm(");
+        assertThat(cockpitJs).doesNotContain("prompt(");
+        // abandon is intentionally destructive and uses the native confirm; all other
+        // session actions must use application <dialog> elements.
+        assertThat(extractFunction(cockpitJs, "confirmAbandonSession")).contains("window.confirm(");
         assertThat(battleMap).doesNotContain("prompt(");
     }
 
@@ -88,6 +91,12 @@ class SessionCockpitTemplateContractTest {
         assertThat(Files.readString(Path.of(
                 "src/main/resources/templates/session/_cockpit-workbench.html")))
                 .contains("data-cockpit-workbench");
+        assertThat(count(lifecycle, "data-abandon-session"))
+                .as("Discard must be reachable from RUNNING/PAUSED and REVIEW")
+                .isEqualTo(2);
+        assertThat(lifecycle).contains("confirmAbandonSession()");
+        assertThat(js).contains(
+                "confirmAbandonSession()", "/session/abandon", "Campaign changes remain");
         assertThat(js).contains("sessionStatus", "handleKeyboard");
         assertThat(js).contains("startSession", "pauseSession", "resumeSession",
                 "cancelReview", "beginReview", "completeSession");

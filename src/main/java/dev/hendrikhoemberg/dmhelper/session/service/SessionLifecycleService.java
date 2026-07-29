@@ -178,17 +178,24 @@ public class SessionLifecycleService {
         if (title == null || title.isBlank()) throw new IllegalArgumentException("Session log title is required.");
         if (body == null || body.isBlank()) throw new IllegalArgumentException("Session log body is required.");
         Note note = noteService.create(campaignId, NoteType.SESSION_LOG, title.strip(), body, "session-log", true);
-        events.publishEvent(new SessionReferenceCleaner.PresentationInvalidated(
-                campaignId, null, true));
-        List<UUID> visitIds = visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId()).stream()
-                .map(SessionSceneVisit::getId).toList();
-        sessionRefCleaner.detachSessionObjectiveChanges(session.getId(), campaignId);
-        audioStateService.deleteBySessionId(session.getId());
-        resetToIdle(session);
-        visits.deleteBySessionId(session.getId());
-        packageKeys.deleteBindings(campaignId, CampaignContentType.SESSION_SCENE_VISIT, visitIds);
+        clearSessionRuntime(session);
         sessions.save(session);
         return note;
+    }
+
+    /**
+     * Drops a session without producing a log. Completing is the only other route back to
+     * IDLE and it always writes a SESSION_LOG note, so a mistaken start or a short test run
+     * had no exit that did not leave junk in the campaign.
+     */
+    @Transactional
+    public CampaignSession abandon(UUID campaignId) {
+        CampaignSession session = requireSession(campaignId);
+        if (session.getStatus() == CampaignSession.Status.IDLE) {
+            throw new IllegalStateException("Session is already idle");
+        }
+        clearSessionRuntime(session);
+        return saveForState(session);
     }
 
     /**
@@ -201,6 +208,26 @@ public class SessionLifecycleService {
         CampaignSession saved = sessions.save(session);
         Hibernate.initialize(saved.getAttendees());
         return saved;
+    }
+
+    /**
+     * Removes data that belongs to one run of the reusable CampaignSession row.
+     * Campaign/world mutations remain; only session bookkeeping and presentation/runtime
+     * state are discarded.
+     */
+    private void clearSessionRuntime(CampaignSession session) {
+        UUID campaignId = session.getCampaign().getId();
+        events.publishEvent(new SessionReferenceCleaner.PresentationInvalidated(
+                campaignId, null, true));
+        List<UUID> visitIds = visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId()).stream()
+                .map(SessionSceneVisit::getId)
+                .toList();
+        sessionRefCleaner.detachSessionObjectiveChanges(session.getId(), campaignId);
+        audioStateService.deleteBySessionId(session.getId());
+        resetToIdle(session);
+        visits.deleteBySessionId(session.getId());
+        packageKeys.deleteBindings(
+                campaignId, CampaignContentType.SESSION_SCENE_VISIT, visitIds);
     }
 
     private void resetToIdle(CampaignSession session) {

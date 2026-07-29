@@ -40,6 +40,9 @@
                 @click="resumeSession()">Resume</button>
         <button class="btn btn-ghost" @click="beginReview()"
                 >Review &amp; Complete</button>
+        <button type="button" class="btn btn-ghost btn-xs"
+                data-abandon-session
+                @click="confirmAbandonSession()">Discard session</button>
         <button class="btn btn-ghost" @click="closeLifecycle()">Close</button>
       </div>
     </div>
@@ -58,6 +61,9 @@
       <div style="margin-top: var(--space-md); display: flex; gap: var(--space-sm);">
         <button type="submit" class="btn" data-complete-session>Save &amp; Complete</button>
         <button type="button" class="btn btn-ghost" @click="cancelReview()">Cancel Review</button>
+        <button type="button" class="btn btn-ghost btn-xs"
+                data-abandon-session
+                @click="confirmAbandonSession()">Discard session</button>
         <button type="button" class="btn btn-ghost" @click="closeLifecycle()">Close</button>
       </div>
     </form>
