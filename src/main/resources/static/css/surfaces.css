@@ -158,6 +158,7 @@
 }
 
 .roster-hp-fill {
+  display: block;
   height: 100%;
   background: var(--color-success);
   border-radius: 3px;

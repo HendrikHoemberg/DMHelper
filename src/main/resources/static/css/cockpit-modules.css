@@ -421,3 +421,26 @@
   overflow: auto;
   overscroll-behavior: contain;
 }
+
+.initiative-setup__order,
+.initiative-setup__row {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.initiative-setup__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.initiative-setup__row input[data-initiative-input] {
+  flex: 0 0 4.5rem;
+  width: 4.5rem;
+}
+
+.combatant-name {
+  min-width: 0;
+}
