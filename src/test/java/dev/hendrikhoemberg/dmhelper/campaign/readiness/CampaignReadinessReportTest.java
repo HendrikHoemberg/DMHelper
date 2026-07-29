@@ -22,7 +22,22 @@ class CampaignReadinessReportTest {
         var report = new CampaignReadinessReport(
                 List.of(item(ReadinessState.RESOLVED), item(ReadinessState.ACCEPTED)));
         assertThat(report.sessionReady()).isTrue();
-        assertThat(report.label()).isEqualTo("Ready");
+        assertThat(report.label()).isEqualTo("Ready to run · 1 advisories");
+    }
+
+    @Test
+    void nothingOutstandingWhenItemsEmpty() {
+        var report = new CampaignReadinessReport(List.of());
+        assertThat(report.sessionReady()).isTrue();
+        assertThat(report.label()).isEqualTo("Nothing outstanding");
+    }
+
+    @Test
+    void readyToRunWithoutAdvisoriesWhenOnlyAccepted() {
+        var report = new CampaignReadinessReport(
+                List.of(item(ReadinessState.ACCEPTED)));
+        assertThat(report.sessionReady()).isTrue();
+        assertThat(report.label()).isEqualTo("Ready to run");
     }
 
     @Test

@@ -11,6 +11,14 @@ public class CampaignReadinessService {
     public CampaignReadinessReport compute(ReadinessInputs inputs, Set<String> acceptedKeys) {
         List<ReadinessItem> items = new ArrayList<>();
 
+        if (inputs.campaignId() != null && inputs.partyMemberCount() == 0) {
+            items.add(blockerOrAccepted(
+                    "party:" + inputs.campaignId(), ReadinessCategory.PARTY,
+                    "No party members",
+                    "Add characters to the party roster before running a session.",
+                    ReadinessRepairKind.OPEN_PARTY_ROSTER, inputs.campaignId(), acceptedKeys));
+        }
+
         for (ReadinessInputs.SceneInput scene : inputs.scenes()) {
             if (scene.hostile() && !scene.encounterOperational()) {
                 items.add(blockerOrAccepted(

@@ -25,6 +25,8 @@ public class ReadinessRepairService {
             }
             case CLASSIFY_ASSET_KIND ->
                     "/campaigns/" + campaignId + "/handouts/" + targetId;
+            case OPEN_PARTY_ROSTER ->
+                    "/campaigns/" + campaignId + "/party";
             case ACCEPT_ITEM, NONE -> null;
         };
     }

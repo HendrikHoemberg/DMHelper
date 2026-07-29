@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 public record ReadinessInputs(
+        UUID campaignId,
+        int partyMemberCount,
         List<SceneInput> scenes,
         List<LinkInput> runtimeLinks,
         List<OmissionInput> omissions) {

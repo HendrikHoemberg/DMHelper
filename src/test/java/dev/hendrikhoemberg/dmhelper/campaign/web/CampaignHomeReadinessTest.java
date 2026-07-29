@@ -50,6 +50,6 @@ class CampaignHomeReadinessTest {
         mvc.perform(get("/campaigns/{id}", campaign.getId()))
                 .andExpect(status().isOk())
                 .andExpect(model().attributeExists("readiness"))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Not ready — 3 blockers")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Not ready — 4 blockers")));
     }
 }

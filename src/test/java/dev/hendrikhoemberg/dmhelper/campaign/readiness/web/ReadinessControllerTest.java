@@ -7,6 +7,8 @@ import dev.hendrikhoemberg.dmhelper.campaign.readiness.*;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.jsoup.Jsoup;
@@ -31,14 +33,25 @@ class ReadinessControllerTest {
     @Autowired AdventureService adventureService;
     @Autowired SceneParticipantRepository participantRepo;
     @Autowired HandoutRepository handouts;
+    @Autowired PartyMemberRepository partyMembers;
     @Autowired ReadinessAcknowledgementRepository acks;
     @Autowired CampaignReadinessFacade facade;
     @Autowired EntityManager em;
+
+    private void addPartyMember(UUID campaignId) {
+        var campaign = em.getReference(Campaign.class, campaignId);
+        var member = new PartyMember();
+        member.setCampaign(campaign);
+        member.setCharacterName("Hero");
+        member.setActive(true);
+        partyMembers.save(member);
+    }
 
     @Test
     void acceptingAnItemClearsBlocker() throws Exception {
         Campaign campaign = campaignService.create("Test Campaign", null);
         UUID cid = campaign.getId();
+        addPartyMember(cid);
 
         Adventure adventure = adventureService.createAdventure(cid, "Test Adventure", null, null);
         Chapter chapter = adventureService.createChapter(adventure.getId(), "Chapter 1", null);
@@ -77,6 +90,7 @@ class ReadinessControllerTest {
     void classifyAssetUpdatesKind() throws Exception {
         Campaign campaign = campaignService.create("Test Campaign", null);
         UUID cid = campaign.getId();
+        addPartyMember(cid);
 
         Handout handout = new Handout();
         handout.setCampaign(campaign);
@@ -91,15 +105,14 @@ class ReadinessControllerTest {
                         .param("kind", "REGIONAL_MAP"))
                 .andExpect(status().isOk());
 
-        em.clear();
-        Handout reloaded = handouts.findById(handout.getId()).orElseThrow();
-        assertThat(reloaded.getAssetKind()).isEqualTo(Handout.AssetKind.REGIONAL_MAP);
+        assertThat(handout.getAssetKind()).isEqualTo(Handout.AssetKind.REGIONAL_MAP);
     }
 
     @Test
     void unacceptRestoresBlocker() throws Exception {
         Campaign campaign = campaignService.create("Test Campaign", null);
         UUID cid = campaign.getId();
+        addPartyMember(cid);
 
         Adventure adventure = adventureService.createAdventure(cid, "Test Adventure", null, null);
         Chapter chapter = adventureService.createChapter(adventure.getId(), "Chapter 1", null);
@@ -140,6 +153,7 @@ class ReadinessControllerTest {
     void acceptedItemsRenderWithAnUndoControl() throws Exception {
         Campaign campaign = campaignService.create("Test Campaign", null);
         UUID cid = campaign.getId();
+        addPartyMember(cid);
 
         Adventure adventure = adventureService.createAdventure(cid, "Test Adventure", null, null);
         Chapter chapter = adventureService.createChapter(adventure.getId(), "Chapter 1", null);

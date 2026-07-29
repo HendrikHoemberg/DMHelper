@@ -4,6 +4,7 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipant;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneParticipantDisposition;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,12 +14,15 @@ import java.util.UUID;
 public class ReadinessInputsAssembler {
 
     private final SceneRepository scenes;
+    private final PartyMemberRepository partyMembers;
 
-    public ReadinessInputsAssembler(SceneRepository scenes) {
+    public ReadinessInputsAssembler(SceneRepository scenes, PartyMemberRepository partyMembers) {
         this.scenes = scenes;
+        this.partyMembers = partyMembers;
     }
 
     public ReadinessInputs fromCampaign(UUID campaignId) {
+        int partyMemberCount = partyMembers.findByCampaignIdOrderByCharacterNameAsc(campaignId).size();
         List<ReadinessInputs.SceneInput> sceneInputs = new ArrayList<>();
         for (Scene scene : scenes.findByCampaignIdOrderByChapterAndSort(campaignId)) {
             boolean hostile = false;
@@ -39,7 +43,7 @@ public class ReadinessInputsAssembler {
                     scene.getMapRequirement(), scene.getMap() != null));
         }
 
-        return new ReadinessInputs(sceneInputs, List.of(), List.of());
+        return new ReadinessInputs(campaignId, partyMemberCount, sceneInputs, List.of(), List.of());
     }
 
     private static String participantLabel(SceneParticipant p) {

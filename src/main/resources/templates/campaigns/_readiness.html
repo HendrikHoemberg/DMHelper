@@ -77,9 +77,18 @@
     <details class="readiness-advisories" th:if="${!advisories.isEmpty()}">
       <summary th:text="|Notes &amp; advisories (${advisories.size()})|">Notes &amp; advisories</summary>
       <ul>
-        <li th:each="item : ${advisories}">
-          <span th:text="${item.title()}">Advisory</span>
-          <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
+        <li th:each="item : ${advisories}" class="readiness-item">
+          <div class="readiness-item__content">
+            <span th:text="${item.title()}">Advisory</span>
+            <span class="readiness-item__detail" th:text="${item.detail()}">Detail</span>
+          </div>
+          <div class="readiness-item__actions" th:if="${item.repairKind() != T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessRepairKind).NONE}">
+            <th:block th:with="href=${repairService.hrefFor(campaignId, item.repairKind(), item.targetId())}">
+              <a th:if="${href != null}" th:href="${href}"
+                 class="btn btn-primary btn-xs readiness-item__repair"
+                 th:text="${item.category().repairActionLabel()}">Open preparation</a>
+            </th:block>
+          </div>
         </li>
       </ul>
     </details>

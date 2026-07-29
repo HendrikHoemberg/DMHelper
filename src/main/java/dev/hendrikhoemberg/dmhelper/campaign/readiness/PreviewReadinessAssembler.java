@@ -45,7 +45,7 @@ public class PreviewReadinessAssembler {
                     omissions.add(new ReadinessInputs.OmissionInput(o.area(), o.reason())));
         }
 
-        return new ReadinessInputs(scenes, links, omissions);
+        return new ReadinessInputs(null, 0, scenes, links, omissions);
     }
 
     private static ReadinessInputs.SceneInput sceneInput(SceneDto scene) {

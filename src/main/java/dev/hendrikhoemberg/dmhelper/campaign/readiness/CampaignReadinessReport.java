@@ -19,7 +19,11 @@ public record CampaignReadinessReport(List<ReadinessItem> items) {
     }
 
     public String label() {
-        return sessionReady() ? "Ready" : "Not ready — " + blockerCountLabel(blockerCount());
+        if (items().isEmpty()) return "Nothing outstanding";
+        if (blockerCount() > 0) return "Not ready — " + blockerCountLabel(blockerCount());
+        long advisoryCount = items().stream().filter(i -> i.state() == ReadinessState.RESOLVED).count();
+        if (advisoryCount > 0) return "Ready to run · " + advisoryCount + " advisories";
+        return "Ready to run";
     }
 
     public List<ReadinessItem> byState(ReadinessState state) {

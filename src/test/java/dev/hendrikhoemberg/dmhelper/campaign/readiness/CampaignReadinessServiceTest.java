@@ -10,10 +10,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CampaignReadinessServiceTest {
 
+    private static final UUID CAMPAIGN_ID = UUID.randomUUID();
+
     private final CampaignReadinessService service = new CampaignReadinessService();
 
     private ReadinessInputs inputs(ReadinessInputs.SceneInput... scenes) {
-        return new ReadinessInputs(List.of(scenes), List.of(), List.of());
+        return new ReadinessInputs(CAMPAIGN_ID, 4, List.of(scenes), List.of(), List.of());
+    }
+
+    private static ReadinessInputs.SceneInput sceneNeedingSeed(String title) {
+        return new ReadinessInputs.SceneInput(UUID.randomUUID(), title, true,
+                false, true, List.of(), null, false);
     }
 
     @Test
@@ -66,5 +73,32 @@ class CampaignReadinessServiceTest {
                 false, false, List.of(), SceneMapRequirement.OPTIONAL, false);
         var report = service.compute(inputs(scene), Set.of());
         assertThat(report.sessionReady()).isTrue();
+    }
+
+    @Test
+    void anEmptyPartyBlocksReadiness() {
+        var inputs = new ReadinessInputs(CAMPAIGN_ID, 0, List.of(), List.of(), List.of());
+        var report = service.compute(inputs, Set.of());
+        assertThat(report.sessionReady()).isFalse();
+        assertThat(report.byState(ReadinessState.BLOCKER))
+                .extracting(ReadinessItem::title)
+                .contains("No party members");
+    }
+
+    @Test
+    void aPopulatedPartyDoesNotBlockReadiness() {
+        var inputs = new ReadinessInputs(CAMPAIGN_ID, 4, List.of(), List.of(), List.of());
+        var report = service.compute(inputs, Set.of());
+        assertThat(report.byState(ReadinessState.BLOCKER)).isEmpty();
+    }
+
+    @Test
+    void seedAdvisoriesCarryARepairTarget() {
+        var inputs = new ReadinessInputs(CAMPAIGN_ID, 4, List.of(sceneNeedingSeed("Bereich 4")), List.of(), List.of());
+        var report = service.compute(inputs, Set.of());
+        assertThat(report.items())
+                .filteredOn(i -> i.repairKind() == ReadinessRepairKind.SEED_ENCOUNTER)
+                .isNotEmpty()
+                .allSatisfy(i -> assertThat(i.targetId()).isNotNull());
     }
 }

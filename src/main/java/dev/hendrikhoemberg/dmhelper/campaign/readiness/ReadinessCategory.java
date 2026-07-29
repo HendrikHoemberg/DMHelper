@@ -26,6 +26,11 @@ public enum ReadinessCategory {
             "Declared omissions should be intentional.",
             "Open preparation",
             "Accept blocker"),
+    PARTY(
+            "Party",
+            "Add party members to track initiative and conditions.",
+            "Party roster",
+            "Run without members"),
     NEXT_ACTION(
             "Next actions",
             "Preparation steps remain before play.",

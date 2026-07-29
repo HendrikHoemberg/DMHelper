@@ -19,6 +19,8 @@ import dev.hendrikhoemberg.dmhelper.handout.data.HandoutRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +38,7 @@ public class CampaignFixtures {
     private final GameMapRepository maps;
     private final ReadinessAcknowledgementRepository acknowledgements;
     private final SceneParticipantRepository participants;
+    private final PartyMemberRepository partyMembers;
     private final EntityManager em;
 
     public CampaignFixtures(CampaignRepository campaigns,
@@ -45,6 +48,7 @@ public class CampaignFixtures {
                             GameMapRepository maps,
                             ReadinessAcknowledgementRepository acknowledgements,
                             SceneParticipantRepository participants,
+                            PartyMemberRepository partyMembers,
                             EntityManager em) {
         this.campaigns = campaigns;
         this.adventures = adventures;
@@ -53,6 +57,7 @@ public class CampaignFixtures {
         this.maps = maps;
         this.acknowledgements = acknowledgements;
         this.participants = participants;
+        this.partyMembers = partyMembers;
         this.em = em;
     }
 
@@ -88,6 +93,12 @@ public class CampaignFixtures {
         handout.setAssetKind(Handout.AssetKind.SOURCE_PAGE);
         handout.setPresented(true);
         handouts.save(handout);
+
+        PartyMember member = new PartyMember();
+        member.setCampaign(campaignRef);
+        member.setCharacterName("Hero");
+        member.setActive(true);
+        partyMembers.save(member);
 
         em.flush();
         return cid;
@@ -142,6 +153,12 @@ public class CampaignFixtures {
         handout.setAssetKind(Handout.AssetKind.SOURCE_PAGE);
         handout.setPresented(true);
         handouts.save(handout);
+
+        PartyMember member = new PartyMember();
+        member.setCampaign(campaignRef);
+        member.setCharacterName("Hero");
+        member.setActive(true);
+        partyMembers.save(member);
 
         ReadinessAcknowledgement ack = new ReadinessAcknowledgement();
         ack.setCampaignId(cid);
