@@ -451,6 +451,23 @@
                 }
             },
 
+            async addPartyToEncounter() {
+                if (!this._encounterId || this.setupBusy || this.setupSaveCount > 0) return;
+                this.setupBusy = true;
+                try {
+                    await this.mutate(
+                        'Could not add the party. Initiative setup was kept.',
+                        `/api/v1/encounters/${this._encounterId}/placements/party`,
+                        { method: 'POST' },
+                        async () => {
+                            await this.reloadCombatants();
+                            this.dispatchState();
+                        });
+                } finally {
+                    this.setupBusy = false;
+                }
+            },
+
             async startCombat() {
                 if (!this._encounterId || !this.canStartCombat
                     || this.setupSaveCount > 0) return;

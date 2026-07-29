@@ -40,6 +40,13 @@
                     </div>
                     <button type="button"
                             class="btn btn-ghost btn-xs"
+                            data-add-party-to-encounter
+                            :disabled="setupBusy || setupSaveCount > 0"
+                            @click="addPartyToEncounter()">
+                        Add party
+                    </button>
+                    <button type="button"
+                            class="btn btn-ghost btn-xs"
                             data-roll-unset-initiative
                             :disabled="setupBusy || setupSaveCount > 0 || unsetNpcCount === 0"
                             @click="rollUnsetNpcs()">
