@@ -12,14 +12,14 @@
           <p th:text="${view.readAloud}">Read aloud text</p>
         </div>
       </th:block>
-      <div class="structured-block scene-summary u-mb-xs" data-screen-sensitive
+      <div class="structured-block scene-summary u-mb-xs"
            th:if="${view.summary != null and mode.name() != 'COMPACT'}"
            th:text="${view.summary}">Scene summary</div>
-      <div class="structured-block scene-body u-mb-xs" data-screen-sensitive
+      <div class="structured-block scene-body u-mb-xs"
            th:if="${view.body != null and mode.name() != 'COMPACT'}"
            th:text="${view.body}">Scene notes</div>
       <th:block th:if="${view.sections != null and !view.sections.isEmpty() and mode.name() != 'COMPACT'}">
-        <div th:each="section : ${view.sections}" class="structured-block u-mb-xs" data-screen-sensitive>
+        <div th:each="section : ${view.sections}" class="structured-block u-mb-xs">
           <span class="badge" th:text="${section.kind}">SECTION</span>
           <strong th:text="${section.label}">Label</strong>
           <p class="u-text-sm" th:text="${section.body}">Body</p>
@@ -36,7 +36,7 @@
         </div>
       </th:block>
       <th:block th:if="${view.participants != null and !view.participants.isEmpty() and mode.name() != 'COMPACT'}">
-        <div class="scene-participants u-mt-sm" data-screen-sensitive>
+        <div class="scene-participants u-mt-sm">
           <h5 class="u-text-sm">Participants</h5>
           <div th:each="p : ${view.participants}" class="participant-row u-mb-xs">
             <strong th:text="${p.displayName}">Name</strong>
@@ -52,7 +52,7 @@
         </div>
       </th:block>
       <th:block th:if="${view.checks != null and !view.checks.isEmpty() and mode.name() != 'COMPACT'}">
-        <div class="scene-checks u-mt-sm" data-screen-sensitive>
+        <div class="scene-checks u-mt-sm">
           <h5 class="u-text-sm">Checks</h5>
           <div th:each="check : ${view.checks}" class="check-row u-mb-xs">
             <strong th:text="${check.label}">Check</strong>
@@ -64,7 +64,7 @@
         </div>
       </th:block>
       <th:block th:if="${view.transitions != null and !view.transitions.isEmpty() and mode.name() != 'COMPACT'}">
-        <div class="scene-transitions u-mt-sm" data-screen-sensitive>
+        <div class="scene-transitions u-mt-sm">
           <h5 class="u-text-sm">Transitions</h5>
           <div th:each="t : ${view.transitions}">
             <div th:if="${t.kind == 'CHOICE' and t.targetSceneTitle != null}"

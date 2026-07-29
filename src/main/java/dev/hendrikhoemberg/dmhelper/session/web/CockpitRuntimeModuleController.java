@@ -103,17 +103,6 @@ public class CockpitRuntimeModuleController {
         return "session/modules/_quick-notes :: body";
     }
 
-    @GetMapping("/presentation")
-    public String presentation(@PathVariable UUID campaignId,
-                               @RequestParam(defaultValue = "STANDARD") CockpitModuleMode mode,
-                               Model model) {
-        CockpitModuleDefinition def = requireModule("presentation");
-        requireMode(def, mode);
-        model.addAttribute("view", views.presentation(campaignId));
-        model.addAttribute("mode", mode);
-        return "session/modules/_presentation :: body";
-    }
-
     @GetMapping("/reference")
     public String reference(@PathVariable UUID campaignId,
                             @RequestParam(defaultValue = "STANDARD") CockpitModuleMode mode,

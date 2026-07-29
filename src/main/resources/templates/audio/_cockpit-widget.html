@@ -17,8 +17,8 @@ window.audioWidgetConfig = {
 
   <div class="audio-now-playing" aria-label="Now playing">
     <span class="audio-title" x-text="cueName">Track Title</span>
-    <span class="audio-owner" data-screen-sensitive x-show="cueOwner" x-text="cueOwner">Artist or owner</span>
-    <span class="audio-source" data-screen-sensitive x-show="sourceLabel" x-text="sourceLabel">Source</span>
+    <span class="audio-owner" x-show="cueOwner" x-text="cueOwner">Artist or owner</span>
+    <span class="audio-source" x-show="sourceLabel" x-text="sourceLabel">Source</span>
   </div>
 
   <div class="audio-player-mount-wrap" x-ref="playerViewport" data-player-viewport>

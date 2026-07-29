@@ -37,7 +37,7 @@
   <p style="margin: 0 var(--space-md); color: var(--color-text-muted);">No session plan yet. Create one from a note.</p>
 </div>
 <!-- Quest progress is always available alongside an optional session plan -->
-<div class="session-plan-inner quest-progress-panel" data-quest-progress data-screen-sensitive>
+<div class="session-plan-inner quest-progress-panel" data-quest-progress>
   <h3 class="quest-progress__heading" style="margin: 0 var(--space-md); text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-text-muted);">Quest Progress</h3>
   <div th:if="${workspace.questProgressViews != null and !workspace.questProgressViews.isEmpty()}" class="quest-progress-list">
     <div th:each="qpv : ${workspace.questProgressViews}" class="quest-progress-card u-mb-sm"

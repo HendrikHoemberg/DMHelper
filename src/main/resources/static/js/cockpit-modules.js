@@ -82,44 +82,19 @@
         this.load(key, { mode: detail.mode });
       });
 
-      window.addEventListener('screen-safety-changed', () => {
-        if (!this.config.runtimeModulesEnabled) return;
-        if (!this._mounted) return;
-        for (const key of this._shells.keys()) {
-          const shell = this._shells.get(key);
-          if (!shell) continue;
-          const behavior = shell.getAttribute('data-table-safe-behavior');
-          if (behavior !== 'FILTER') continue;
-          // Re-fetch a visible FILTER module so its player-safe filtering re-applies. A hidden
-          // one must not force-load (that would pull depot/collapsed modules over the wire).
-          // Mark it stale directly so it reloads with the current safety state when next shown;
-          // do not route through invalidate(), whose attention event re-renders the layout and
-          // re-dispatches screen-safety-changed, causing infinite recursion.
-          if (this.isModuleVisible(key)) {
-            this.load(key, { force: true });
-          } else {
-            this.stale.add(key);
-            const contentEl = shell.querySelector('[data-module-content]');
-            if (contentEl) contentEl.setAttribute('data-module-stale', 'true');
-          }
-        }
-      });
+
     }
 
     isModuleVisible(key) {
       const shell = this._shells.get(key);
       if (!shell) return false;
       // The layout controller is authoritative about zones, active tabs, collapsed state,
-      // focus, screen-safety, and the hidden depot. A depot/collapsed/inactive-tab shell can
+      // focus, and the hidden depot. A depot/collapsed/inactive-tab shell can
       // still report a non-null offsetParent, so delegate rather than approximate here.
       if (window.cockpitLayout && typeof window.cockpitLayout.isModuleVisible === 'function') {
         return window.cockpitLayout.isModuleVisible(key);
       }
       if (shell.offsetParent === null) return false;
-      if (document.body?.dataset?.screenSafety === 'TABLE_SAFE') {
-        const behavior = shell.getAttribute('data-table-safe-behavior');
-        if (behavior === 'HIDE') return false;
-      }
       if (!document.contains(shell)) return false;
       return true;
     }

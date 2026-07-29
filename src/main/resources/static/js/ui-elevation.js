@@ -269,10 +269,7 @@
     });
   }
 
-  /* Screen Safety — the safety feature. Shared, because the battle
-     map has its own toggle and no top bar, and both must behave identically.
-     Table-safe is a safety feature before it is theatre: whatever happens to
-     the animation, `data-screen-safety="TABLE_SAFE"` must end up applied. */
+
 
   function initViewTransitions() {
     window.addEventListener('pageswap', (e) => {

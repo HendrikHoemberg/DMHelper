@@ -118,7 +118,7 @@ class CockpitWorkbenchTemplateContractTest {
                 .hasSize(1);
         assertThat(document.select(".cockpit-module-depot .cockpit-module[data-module-key]"))
                 .extracting(e -> e.attr("data-module-key"))
-                .containsExactlyInAnyOrder("map", "encounter", "presentation", "reference");
+                .containsExactlyInAnyOrder("map", "encounter", "reference");
         assertThat(document.select("[data-cockpit-zone=BOTTOM_UTILITY]").attr("data-collapsed"))
                 .isEqualTo("true");
         assertThat(document.select("[data-cockpit-workbench]").attr("data-bottom-collapsed"))

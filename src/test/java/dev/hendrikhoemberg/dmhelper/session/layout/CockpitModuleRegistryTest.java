@@ -21,11 +21,9 @@ class CockpitModuleRegistryTest {
     }
 
     @Test
-    void mapIsPrimaryOnlyAndEncounterIsDmSensitive() {
+    void mapIsPrimaryOnly() {
         assertThat(registry.require("map").allowedZones())
                 .isEqualTo(Set.of(CockpitZone.PRIMARY));
-        assertThat(registry.require("encounter").screenSafetyBehavior())
-                .isEqualTo(CockpitScreenSafetyBehavior.HIDE);
     }
 
     @Test

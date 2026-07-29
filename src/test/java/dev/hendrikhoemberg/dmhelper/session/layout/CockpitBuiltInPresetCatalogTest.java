@@ -14,7 +14,7 @@ class CockpitBuiltInPresetCatalogTest {
     void exposesTheFiveApprovedPresetsInOrder() {
         assertThat(catalog.all()).extracting(CockpitBuiltInPresetCatalog.BuiltInPreset::key)
                 .containsExactly("builtin:exploration", "builtin:combat",
-                        "builtin:theatre-of-mind", "builtin:presentation",
+                        "builtin:theatre-of-mind",
                         "builtin:session-review");
     }
 

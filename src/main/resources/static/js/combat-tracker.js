@@ -35,7 +35,6 @@
             editHp: '',
             editTempHp: 0,
             hpDelta: '',
-            tableSafe: false,
             rechargePrompts: [],
             conditionsCatalog: [],
             showConditionMenu: null,
@@ -167,10 +166,6 @@
             },
 
             async init() {
-                window.addEventListener('screen-safety-changed', (e) => {
-                    this.tableSafe = e.detail.mode === 'TABLE_SAFE';
-                    this._positionTurnMarker();
-                });
                 window.addEventListener('battle-tokenselect', (e) => {
                     const token = e.detail.token;
                     if (token) {

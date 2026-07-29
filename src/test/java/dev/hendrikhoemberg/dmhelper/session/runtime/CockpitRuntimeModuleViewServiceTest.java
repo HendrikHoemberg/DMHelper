@@ -255,34 +255,6 @@ class CockpitRuntimeModuleViewServiceTest {
     }
 
     @Test
-    void presentationViewIsDetachedSafe() {
-        var seeded = fixture.seed();
-        Campaign campaign = campaignRepository.findById(seeded.campaignId()).orElseThrow();
-        GameMap presMap = new GameMap();
-        presMap.setCampaign(campaign);
-        presMap.setName("Presented Map");
-        presMap.setGridWidth(20);
-        presMap.setGridHeight(15);
-        presMap.setCellSizePx(48);
-        presMap = gameMapRepository.save(presMap);
-        CampaignSession session = new CampaignSession();
-        session.setCampaign(campaign);
-        session.setStatus(CampaignSession.Status.RUNNING);
-        session.setPresentationMode(CampaignSession.PresentationMode.MAP);
-        session.setPresentedMap(presMap);
-        session.setUpdatedAt(Instant.now());
-        entityManager.persist(session);
-        entityManager.flush();
-
-        var view = service.presentation(seeded.campaignId());
-        entityManager.clear();
-        assertThat(view.mode()).isEqualTo("MAP");
-        assertThat(view.presentedMapId()).isEqualTo(presMap.getId());
-        assertThat(allRecordComponentTypes(view.getClass()))
-                .noneMatch(type -> type.isAnnotationPresent(Entity.class));
-    }
-
-    @Test
     void referenceViewIsDetachedSafe() {
         var seeded = fixture.seed();
         var view = service.reference(seeded.campaignId());

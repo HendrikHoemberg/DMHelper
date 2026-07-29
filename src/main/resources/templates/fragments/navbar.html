@@ -30,7 +30,7 @@
             }
         })();
         </script>
-        <span class="pin-display" id="pinDisplay" data-screen-sensitive
+        <span class="pin-display" id="pinDisplay"
               th:text="${pinDisplay}">PIN: -----</span>
     </div>
     <th:block th:replace="~{fragments/_command-palette :: command-palette}"></th:block>
@@ -43,7 +43,6 @@
     <th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>
 </th:block>
 
-<script th:src="@{/js/screen-safety.js}"></script>
 <script th:src="@{/js/dice-roller.js}"></script>
 <script>
 document.addEventListener('click', async (e) => {

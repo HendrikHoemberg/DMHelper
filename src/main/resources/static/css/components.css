@@ -1786,10 +1786,6 @@
     pointer-events: none;
 }
 
-/* ── Screen Safety ── */
-body[data-screen-safety="TABLE_SAFE"] .dice-panel,
-body[data-screen-safety="TABLE_SAFE"] .dice-toggle-btn { display: none; }
-
 /* ── Command Palette ── */
 .command-palette-overlay {
   position: fixed; inset: 0;

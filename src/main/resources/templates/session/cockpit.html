@@ -15,7 +15,6 @@
     <script th:src="@{/vendor/htmx.min.js}"></script>
     <script th:src="@{/js/dm-request.js}"></script>
     <script th:src="@{/js/keyboard.js}"></script>
-    <script th:src="@{/js/screen-safety.js}"></script>
     <script th:src="@{/js/runtime-status.js}" defer></script>
     <script th:src="@{/js/command-palette.js}"></script>
     <script th:src="@{/js/quicknotes.js}"></script>
@@ -92,14 +91,6 @@
     <span style="flex: 1"></span>
     <button class="btn btn-ghost" @click="openSearch()">Search</button>
     <button class="btn btn-ghost" @click="openDice()">Dice</button>
-    <!-- The cockpit renders its own topbar rather than fragments/navbar, so it needs its own
-         Screen Safety control: this is the screen facing the table when the laptop gets turned. -->
-    <label class="switch-control" title="Screen Safety toggles table-safe projection">
-      <span class="screen-safety-badge">Table-safe</span>
-      <input type="checkbox" id="screenSafetyCheckbox">
-      <span class="switch-track"></span>
-      <span class="switch-label">Private</span>
-    </label>
     <button class="btn btn-ghost" x-ref="sessionButton" @click="openLifecycle()">Session</button>
         <details class="cockpit-topbar__overflow">
       <summary class="btn btn-ghost">More</summary>
@@ -126,7 +117,6 @@
       cockpitModuleByKey=${cockpitModuleByKey})}"></th:block>
 
   <th:block th:replace="~{session/_lifecycle-dialog :: lifecycle-dialog}"></th:block>
-  <th:block th:replace="~{session/_presentation-preview}"></th:block>
   <dialog class="cockpit-dialog" data-encounter-end-dialog
           aria-labelledby="encounterEndDialogTitle"
           @cancel.prevent="closeEncounterEndDialog()">
@@ -200,25 +190,6 @@ window.cockpitLayoutConfig = {
     runtimeModulesEnabled: true,
     mapId: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.id : null}]]*/ null
 };
-// Screen Safety: mirrors fragments/navbar.html, which the cockpit does not include.
-(function () {
-    const checkbox = document.getElementById('screenSafetyCheckbox');
-    if (!checkbox) return;
-    const apply = (animate) => window.setScreenSafety(checkbox.checked ? 'TABLE_SAFE' : 'PRIVATE', animate ? undefined : { animate: false });
-    checkbox.addEventListener('change', () => {
-        window.setScreenSafety(checkbox.checked ? 'TABLE_SAFE' : 'PRIVATE');
-    });
-    window.addEventListener('screen-safety-toggle', () => {
-        checkbox.checked = !checkbox.checked;
-        checkbox.dispatchEvent(new Event('change'));
-    });
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => apply(false));
-    } else {
-        apply(false);
-    }
-})();
-
 // DM-only threat map pins: open library detail when a pin is clicked on the battle map.
 window.addEventListener('threat-card-open', (event) => {
     const detail = event.detail || {};

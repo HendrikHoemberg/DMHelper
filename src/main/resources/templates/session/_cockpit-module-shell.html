@@ -4,11 +4,10 @@
          class="cockpit-module"
          th:id="|cockpitModule-${module.key}|"
          th:attr="data-module-key=${module.key},
-                   data-runtime-module=${module.key},
-                   data-min-width=${module.minWidthPx},
-                   data-min-height=${module.minHeightPx},
-                   data-table-safe-behavior=${module.screenSafetyBehavior},
-                   data-loading-message=${module.states.loadingMessage},
+                    data-runtime-module=${module.key},
+                    data-min-width=${module.minWidthPx},
+                    data-min-height=${module.minHeightPx},
+                    data-loading-message=${module.states.loadingMessage},
                    data-empty-message=${module.states.emptyMessage},
                    data-error-message=${module.states.errorMessage},
                    aria-label=${module.title}"

@@ -169,50 +169,6 @@ fieldset {
   to { transform: scaleX(1); opacity: 1; }
 }
 
-/* ==============================
-   Screen Safety — table-safe indicator
-   ============================== */
-
-/* Table-safe. The gold goes cold: every accent in the app becomes shielded
-   steel, so the state is legible from across the room long after the sweep. */
-body[data-screen-safety="TABLE_SAFE"] {
-    --color-accent: var(--color-shield);
-    --color-accent-hover: var(--color-shield-hover);
-    --color-gold-soft: var(--color-shield-soft);
-    --gold-sheen: linear-gradient(110deg, #8a9aa5 0%, #b6c3cb 35%, #8a9aa5 50%, #75858f 100%);
-    border: 3px solid var(--color-shield);
-    border-top: none;
-}
-
-body[data-screen-safety="TABLE_SAFE"] [data-table-safe-behavior="HIDE"],
-body[data-screen-safety="TABLE_SAFE"] [data-screen-sensitive] {
-    display: none !important;
-}
-
-body[data-screen-safety="TABLE_SAFE"] .party-summary-bar { display: none; }
-body[data-screen-safety="TABLE_SAFE"] .map-switcher-name { display: none; }
-body[data-screen-safety="TABLE_SAFE"] .statblock-full { display: none; }
-body[data-screen-safety="TABLE_SAFE"] .encounter-prep { display: none; }
-body[data-screen-safety="TABLE_SAFE"] .note-dm-only { display: none; }
-
-/* Toolbar visual indicator when screen safety is TABLE_SAFE */
-body[data-screen-safety="TABLE_SAFE"] .navbar,
-body[data-screen-safety="TABLE_SAFE"] .cockpit-topbar {
-  border-bottom: 3px solid var(--color-shield);
-  background: color-mix(in srgb, var(--color-shield) 7%, var(--color-surface));
-}
-/* Screen safety badge */
-.screen-safety-badge {
-  display: none;
-  font-size: var(--text-xs);
-  letter-spacing: 0.15em;
-  padding: 2px 10px;
-  border: 1px solid var(--color-shield);
-  border-radius: var(--radius);
-  color: var(--color-shield);
-}
-body[data-screen-safety="TABLE_SAFE"] .screen-safety-badge { display: inline-block; }
-
 .u-nowrap { white-space: nowrap; }
 /* Visually hidden but readable by assistive tech. */
 .sr-only {
@@ -405,40 +361,6 @@ body.loading #loading-filament {
   font-size: var(--text-xs);
 }
 
-/* ── Switch control (Screen Safety, settings toggles) ── */
-.switch-control {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-sm);
-  cursor: pointer;
-  user-select: none;
-}
-.switch-control input { position: absolute; opacity: 0; width: 0; height: 0; }
-.switch-track {
-  width: 40px;
-  height: 22px;
-  background: var(--elevation-floating-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  position: relative;
-  transition: background var(--duration-standard) var(--ease-out), border-color var(--duration-standard) var(--ease-out);
-}
-.switch-track::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  background: var(--color-text-muted);
-  border-radius: 50%;
-  transition: transform var(--duration-standard) var(--ease-spring), background var(--duration-standard) var(--ease-out);
-}
-.switch-control input:checked + .switch-track { background: rgba(201, 163, 92, 0.15); border-color: var(--color-border-strong); }
-.switch-control input:checked + .switch-track::before { transform: translateX(18px); background: var(--color-accent); }
-.switch-control input:focus-visible + .switch-track { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-.switch-label { font-size: var(--text-sm); color: var(--color-text-muted); }
-
 /* ── Keyboard Shortcut Overlay ── */
 #shortcut-overlay {
   position: fixed; inset: 0; z-index: var(--z-shortcut);
@@ -507,36 +429,6 @@ body.loading #loading-filament {
 }
 
 .dash-header { view-transition-name: campaign-cover; }
-
-/* ── Screen Safety shield sweep ──
-   Driven by classes the toggle adds and then removes, so the wash plays on the
-   state *change* only — never on page load. */
-#screen-safety-sweep {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-safety-sweep);
-  pointer-events: none;
-  transform: translateX(-100%);
-  opacity: 0;
-}
-body.safety-sweeping-off #screen-safety-sweep {
-  background: linear-gradient(90deg, transparent 0%, rgba(138, 154, 165, 0.4) 50%, transparent 100%);
-  animation: shield-sweep var(--duration-structural) var(--ease-out) forwards;
-}
-body.safety-sweeping-on #screen-safety-sweep {
-  background: linear-gradient(90deg, transparent 0%, rgba(201, 163, 92, 0.35) 50%, transparent 100%);
-  animation: shield-sweep-reverse var(--duration-structural) var(--ease-out) forwards;
-}
-@keyframes shield-sweep {
-  0% { transform: translateX(-100%); opacity: 0; }
-  20% { opacity: 1; }
-  100% { transform: translateX(100%); opacity: 0; }
-}
-@keyframes shield-sweep-reverse {
-  0% { transform: translateX(100%); opacity: 0; }
-  20% { opacity: 1; }
-  100% { transform: translateX(-100%); opacity: 0; }
-}
 
 /* A DM who asked the OS for less motion gets less motion everywhere — including the
    surfaces added after this rule was written (spec 2026-07-22 §11.2). */

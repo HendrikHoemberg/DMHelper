@@ -11,7 +11,6 @@ public record CockpitModuleDefinition(
         Set<CockpitZone> allowedZones,
         boolean compactSupported,
         boolean focusSupported,
-        CockpitScreenSafetyBehavior screenSafetyBehavior,
         CockpitModuleStateContract states) {
 
     public CockpitModuleDefinition {
@@ -20,7 +19,7 @@ public record CockpitModuleDefinition(
             throw new IllegalArgumentException("Invalid cockpit module key.");
         }
         if (title == null || title.isBlank() || source == null || allowedZones.isEmpty()
-                || screenSafetyBehavior == null || states == null
+                || states == null
                 || minWidthPx < 1 || minHeightPx < 1) {
             throw new IllegalArgumentException("Cockpit module metadata is incomplete.");
         }

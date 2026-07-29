@@ -495,10 +495,7 @@
         this.retryModule(shell.getAttribute('data-module-key'));
       });
 
-      // Safety mode changes affect module visibility (HIDE shells leave the workbench).
-      window.addEventListener('screen-safety-changed', () => {
-        this.emitAllVisibility();
-      });
+
     }
 
     isModalOpen() {
@@ -735,8 +732,6 @@
       this.workbench.style.setProperty('--bottom-size', `${(ratios.bottom || 0) * 100}fr`);
       this.syncSplitterAria(ratios);
       this.syncEditChrome();
-      // Re-apply authoritative Screen Safety after DOM moves; never reimplement policy here.
-      this.reapplyScreenSafety();
       for (const key of this.modules.keys()) {
         window.dispatchEvent(new CustomEvent('cockpit:module-mode', {
           detail: { moduleKey: key, mode: this.moduleMode(key) }
@@ -1460,7 +1455,6 @@
       this.focusLayer.hidden = false;
       this.clearAttention(key);
       this.syncEditChrome();
-      this.reapplyScreenSafety();
       this.emitAllVisibility();
       window.dispatchEvent(new CustomEvent('cockpit:module-mode', {
         detail: { moduleKey: key, mode: this.moduleMode(key) }
@@ -1485,7 +1479,6 @@
       this.workbench.removeAttribute('inert');
       if (this.focusLayer) this.focusLayer.hidden = true;
       this.syncEditChrome();
-      this.reapplyScreenSafety();
       this.emitAllVisibility();
       for (const mk of this.modules.keys()) {
         window.dispatchEvent(new CustomEvent('cockpit:module-mode', {
@@ -1608,11 +1601,6 @@
       const shell = document.querySelector(`[data-module-key="${key}"]`);
       if (!shell) return false;
 
-      if (document.body?.dataset?.screenSafety === 'TABLE_SAFE') {
-        const behavior = shell.getAttribute('data-table-safe-behavior');
-        if (behavior === 'HIDE') return false;
-      }
-
       if (this.focusedModuleKey === key) {
         return !!(this.focusMount && this.focusMount.contains(shell));
       }
@@ -1640,14 +1628,6 @@
           detail: { moduleKey: key, visible: this.isModuleVisible(key) }
         }));
       }
-    }
-
-    reapplyScreenSafety() {
-      if (typeof window.setScreenSafety !== 'function') return;
-      window.setScreenSafety(
-        document.body?.dataset?.screenSafety || 'PRIVATE',
-        { animate: false }
-      );
     }
 
     enterEditMode(options = {}) {

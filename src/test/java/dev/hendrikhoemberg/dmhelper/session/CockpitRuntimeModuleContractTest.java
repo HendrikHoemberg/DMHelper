@@ -15,7 +15,7 @@ class CockpitRuntimeModuleContractTest {
 
     private static final Set<String> ALL_MODULE_KEYS = Set.of(
             "story", "map", "encounter", "session-plan", "party",
-            "quick-notes", "presentation", "reference", "audio", "session-log");
+            "quick-notes", "reference", "audio", "session-log");
 
     @Test
     void allTenModulesRenderAllRuntimeStates() throws IOException {
@@ -119,28 +119,9 @@ class CockpitRuntimeModuleContractTest {
         assertThat(rail).doesNotContain("workspace.structuredSceneView");
     }
 
-    @Test
-    void storyRailReadAloudIsNeverScreenSensitive() throws IOException {
-        String rail = Files.readString(Path.of(
-                "src/main/resources/templates/session/_story-rail.html"));
-        assertThat(rail).contains("structured-read-aloud");
-        int readAloudIdx = rail.indexOf("structured-read-aloud");
-        int readAloudEnd = rail.indexOf("structured-block", readAloudIdx + 1);
-        if (readAloudEnd < 0) readAloudEnd = rail.length();
-        String readAloudBlock = rail.substring(readAloudIdx, readAloudEnd);
-        assertThat(readAloudBlock)
-                .as("read-aloud block must not contain data-screen-sensitive")
-                .doesNotContain("data-screen-sensitive");
-    }
 
-    @Test
-    void storyRailDmContentHasScreenSensitiveMarker() throws IOException {
-        String rail = Files.readString(Path.of(
-                "src/main/resources/templates/session/_story-rail.html"));
-        assertThat(rail).contains("data-screen-sensitive");
-        assertThat(rail).contains("scene-checks");
-        assertThat(rail).contains("scene-participants");
-    }
+
+
 
     @Test
     void storyFragmentEmptyStateShowsMessage() throws IOException {
@@ -367,96 +348,6 @@ class CockpitRuntimeModuleContractTest {
         assertThat(bar).contains("deathSaveFailures");
         assertThat(bar).contains("chip-status");
     }
-    @Test
-    void presentationFragmentDeclaresModuleAttributes() throws IOException {
-        String fragment = Files.readString(Path.of(
-                "src/main/resources/templates/session/modules/_presentation.html"));
-        assertThat(fragment).contains("data-cockpit-module-fragment");
-        assertThat(fragment).contains("data-module-mode");
-        assertThat(fragment).contains("data-module-empty");
-        assertThat(fragment).contains("data-module-content-root");
-    }
-
-    @Test
-    void presentationFragmentShowsModeAndIdentifiers() throws IOException {
-        String fragment = Files.readString(Path.of(
-                "src/main/resources/templates/session/modules/_presentation.html"));
-        assertThat(fragment).contains("view.mode");
-        assertThat(fragment).contains("view.presentedMapId");
-        assertThat(fragment).contains("view.presentedHandoutTitle");
-    }
-
-    @Test
-    void presentationFragmentHasCurtainControl() throws IOException {
-        String fragment = Files.readString(Path.of(
-                "src/main/resources/templates/session/modules/_presentation.html"));
-        assertThat(fragment).contains("curtain");
-    }
-
-    @Test
-    void presentationFragmentHasPresentMapControl() throws IOException {
-        String fragment = Files.readString(Path.of(
-                "src/main/resources/templates/session/modules/_presentation.html"));
-        assertThat(fragment).contains("presentMap");
-    }
-
-    @Test
-    void presentationFragmentHasHandoutPreviewAndPresent() throws IOException {
-        String fragment = Files.readString(Path.of(
-                "src/main/resources/templates/session/modules/_presentation.html"));
-        assertThat(fragment).contains("previewFromModule");
-    }
-
-    @Test
-    void presentationFragmentHasEmergencyOverrideTwoStep() throws IOException {
-        String fragment = Files.readString(Path.of(
-                "src/main/resources/templates/session/modules/_presentation.html"));
-        assertThat(fragment).contains("armEmergencyOverride");
-        assertThat(fragment).contains("previewRequiresOverride");
-        assertThat(fragment).contains("previewOverrideArmed");
-    }
-
-    @Test
-    void presentationFragmentHasEmbeddedPreviewIframe() throws IOException {
-        String fragment = Files.readString(Path.of(
-                "src/main/resources/templates/session/modules/_presentation.html"));
-        assertThat(fragment).contains("iframe");
-        assertThat(fragment).contains("embedded=true");
-    }
-
-    @Test
-    void presentationFragmentHasOpenExternalPlayerButton() throws IOException {
-        String fragment = Files.readString(Path.of(
-                "src/main/resources/templates/session/modules/_presentation.html"));
-        assertThat(fragment).contains("window.open");
-        assertThat(fragment).contains("/player");
-    }
-
-    @Test
-    void presentationFragmentBlocksUnreviewedAndDmSourceByDefault() throws IOException {
-        String fragment = Files.readString(Path.of(
-                "src/main/resources/templates/session/modules/_presentation.html"));
-        assertThat(fragment).contains("UNREVIEWED");
-        assertThat(fragment).contains("DM_SOURCE");
-    }
-
-    @Test
-    void presentationFragmentNeverChangesSourceClassificationInOverride() throws IOException {
-        String fragment = Files.readString(Path.of(
-                "src/main/resources/templates/session/modules/_presentation.html"));
-        // Override never re-classifies
-        assertThat(fragment).doesNotContain("reclassify");
-        assertThat(fragment).doesNotContain("changeClassification");
-        assertThat(fragment).doesNotContain("setClassification");
-    }
-
-    @Test
-    void presentationCompactModeShowsStatusBadgeOnly() throws IOException {
-        String fragment = Files.readString(Path.of(
-                "src/main/resources/templates/session/modules/_presentation.html"));
-        assertThat(fragment).contains("data-presentation-summary");
-    }
-
     @Test
     void partyModuleUsesRuntimePartyClass() throws IOException {
         String fragment = Files.readString(Path.of(

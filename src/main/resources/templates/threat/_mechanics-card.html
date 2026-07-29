@@ -3,7 +3,7 @@
 <th:block th:fragment="mechanics-card(threat, kind)">
     <!-- Trap and hazard mechanics -- detection DCs, saves, damage -- are DM-facing wherever
          this fragment lands. data-screen-sensitive hides it when the laptop faces the table. -->
-    <div class="threat-mechanics-card" data-screen-sensitive th:attr="data-threat-kind=${kind}">
+    <div class="threat-mechanics-card" th:attr="data-threat-kind=${kind}">
         <div class="detail-meta">
             <span class="badge" th:text="${#enums.label(threat.severity)}">SEVERITY</span>
             <span class="badge" th:if="${threat.minLevel != null}">

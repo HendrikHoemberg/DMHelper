@@ -134,19 +134,6 @@ class CockpitRuntimeModuleControllerTest {
     }
 
     @Test
-    void presentationRouteReturnsModuleFragment() throws Exception {
-        when(registry.require("presentation")).thenReturn(CockpitModuleRegistry.standard().require("presentation"));
-        when(views.presentation(campaignId)).thenReturn(null);
-
-        mvc.perform(get("/campaigns/{cid}/session/modules/presentation", campaignId)
-                        .param("mode", "STANDARD"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-cockpit-module-fragment")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-module-content-root")))
-                .andExpect(view().name("session/modules/_presentation :: body"));
-    }
-
-    @Test
     void referenceRouteReturnsModuleFragment() throws Exception {
         when(registry.require("reference")).thenReturn(CockpitModuleRegistry.standard().require("reference"));
         when(views.reference(campaignId)).thenReturn(new ReferenceView());

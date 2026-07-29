@@ -8,7 +8,7 @@
         <button type="button" @click="switchMap(activeEncounter.mapId)"
                 class="btn btn-ghost" style="padding: 2px 8px;">Return to encounter map</button>
       </div>
-      <div class="battle-toolbar" data-screen-sensitive aria-label="Battle map controls">
+      <div class="battle-toolbar" aria-label="Battle map controls">
         <div class="tool-group map-switcher">
           <label for="runtimeMapPicker" class="sr-only">Workspace map</label>
           <select id="runtimeMapPicker" aria-label="Workspace map" :value="currentMapId"
@@ -37,7 +37,7 @@
       </div>
       <div class="battle-body">
         <div id="battleCanvasWrap"></div>
-        <aside class="battle-sidebar" data-screen-sensitive aria-label="Map tokens">
+        <aside class="battle-sidebar" aria-label="Map tokens">
           <section class="sidebar-section">
             <h3>Encounter participants</h3>
             <template x-for="t in tokens.filter(tk => tk.source === 'COMBATANT')" :key="t.id">
@@ -84,7 +84,7 @@
             </div>
             <button type="button" class="btn btn-ghost u-w-full" style="margin-top:4px"
                     @click="openTokenDialog()">Add temporary marker</button>
-            <section class="threat-pin-section" data-screen-sensitive data-threat-pins style="margin-top: var(--space-sm)">
+            <section class="threat-pin-section" data-threat-pins style="margin-top: var(--space-sm)">
               <h3 class="u-text-sm" style="text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-text-muted); margin: 0 0 var(--space-xs);">Threat pins</h3>
               <p class="text-muted u-text-xs">DM-only. Click a diamond marker on the map to open the card.</p>
               <label class="u-block u-text-sm">Type

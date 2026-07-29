@@ -44,7 +44,6 @@ export class BattleMap {
         this.cellSizePx = cellSizePx;
         this.movementMode = movementMode;
         this.showGrid = showGrid;
-        this.tableSafe = false;
         this.statusEl = statusEl;
         this.saveIndicatorEl = saveIndicatorEl;
         this.cursorInfoEl = cursorInfoEl;
@@ -362,8 +361,6 @@ export class BattleMap {
         const py = token.positionY;
         const w = token.sizeCols * s;
         const h = token.sizeRows * s;
-        const isPrivate = !this.tableSafe;
-
         const defeated = token.defeated;
         const bloodied = token.bloodied;
         const hasHp = token.currentHp != null && token.maxHp != null && token.maxHp > 0;
@@ -379,7 +376,7 @@ export class BattleMap {
             stroke: selected ? SELECTION_GOLD : (KIND_RING_COLORS[token.kind] || '#fff'),
             strokeWidth: selected ? 3 : 2,
             cornerRadius: 4,
-            opacity: (this.tableSafe && token.hidden) ? 0.3 : (defeated ? 0.6 : 1),
+            opacity: defeated ? 0.6 : 1,
         });
         group.add(body);
 
@@ -770,14 +767,6 @@ export class BattleMap {
         });
     }
 
-    setScreenSafety(tableSafe) {
-        this.tableSafe = tableSafe;
-        this.renderTokens();
-        this.renderConditionIndicators();
-        if (!tableSafe) this.showPins();
-        else this.hidePins();
-    }
-
     /**
      * Pause or resume Konva interaction/drawing without discarding transform, tokens,
      * fog, annotations, or selection. Stage position and scale are left untouched.
@@ -793,10 +782,6 @@ export class BattleMap {
             layer.visible(next);
         }
         if (next) {
-            // Force-visible layers can re-show pin/safety-gated content; restore policy.
-            if (typeof this.tableSafe === 'boolean') {
-                this.setScreenSafety(this.tableSafe);
-            }
             this.stage.batchDraw();
         }
     }
@@ -1178,7 +1163,6 @@ export class BattleMap {
             this.pinLayer.draw();
             return false;
         }
-        if (this.tableSafe) return;
         try {
             const res = await this._request(`/api/v1/maps/${mapId}/pins`);
             const pins = await res.json();
