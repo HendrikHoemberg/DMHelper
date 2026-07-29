@@ -17,24 +17,6 @@
                 th:if="${campaignId != null}"
                 onclick="window.dispatchEvent(new CustomEvent('dice-roller-toggle'))"
                 title="Toggle Dice Roller (Ctrl+R)">&#x1F3B2;</button>
-        <a href="/player" target="_blank" class="btn btn-ghost u-text-sm"
-           title="Open player view in a new tab">Player View</a>
-        <button class="btn btn-ghost u-text-sm" id="qrToggle"
-                onclick="document.getElementById('qrPopover').classList.toggle('hidden')"
-                title="Show QR code for player view">QR</button>
-        <div id="qrPopover" class="hidden">
-            <img th:src="@{/qr/player-view}" alt="Player View QR" width="180" height="180"
-                 class="u-block">
-            <div class="text-muted u-text-sm u-text-center u-mt-xs">
-                Scan to join
-            </div>
-        </div>
-        <span class="screen-safety-badge">Table-safe</span>
-        <label class="switch-control" title="Screen Safety toggles table-safe projection">
-            <input type="checkbox" id="screenSafetyCheckbox">
-            <span class="switch-track"></span>
-            <span class="switch-label">Private</span>
-        </label>
         <script th:inline="javascript">
         /*<![CDATA[*/
         document.body.dataset.campaignId = /*[[${campaignId}]]*/ '';
@@ -42,26 +24,6 @@
         </script>
         <script>
         (function() {
-            const checkbox = document.getElementById('screenSafetyCheckbox');
-
-            checkbox.addEventListener('change', () => {
-                const mode = checkbox.checked ? 'TABLE_SAFE' : 'PRIVATE';
-                window.setScreenSafety(mode);
-            });
-
-            checkbox.checked = false;
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded',
-                    () => window.setScreenSafety('PRIVATE', { animate: false }));
-            } else {
-                window.setScreenSafety('PRIVATE', { animate: false });
-            }
-
-            window.addEventListener('screen-safety-toggle', () => {
-                checkbox.checked = !checkbox.checked;
-                checkbox.dispatchEvent(new Event('change'));
-            });
-
             if (!/Mac|iP(hone|ad|od)/.test(navigator.platform)) {
                 const kbd = document.getElementById('paletteHintKey');
                 if (kbd) kbd.textContent = 'Ctrl K';

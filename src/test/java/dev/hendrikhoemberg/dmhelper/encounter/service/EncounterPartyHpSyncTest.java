@@ -13,7 +13,6 @@ import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClass;
 import dev.hendrikhoemberg.dmhelper.library.data.CharacterClassRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
-import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.sheet.data.CharacterSheetRepository;
@@ -45,7 +44,7 @@ import static org.mockito.Mockito.when;
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
         dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver.class,
         dev.hendrikhoemberg.dmhelper.config.MarkdownUtil.class,
-        EncounterPartyHpSyncTest.MockConfig.class})
+        })
 class EncounterPartyHpSyncTest {
 
     @MockitoBean
@@ -53,14 +52,6 @@ class EncounterPartyHpSyncTest {
 
     @MockitoBean
     private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
-
-    @TestConfiguration
-    static class MockConfig {
-        @Bean
-        TablePresentationService tablePresentationService() {
-            return Mockito.mock(TablePresentationService.class);
-        }
-    }
 
     @Autowired
     private SheetService sheetService;

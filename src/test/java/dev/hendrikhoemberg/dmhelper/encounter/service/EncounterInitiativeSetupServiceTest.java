@@ -11,7 +11,6 @@ import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.Combatant
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.EncounterDto;
-import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -34,8 +33,7 @@ import static org.mockito.Mockito.when;
         SceneRefCleaner.class,
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
         dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver.class,
-        dev.hendrikhoemberg.dmhelper.config.MarkdownUtil.class,
-        EncounterInitiativeSetupServiceTest.MockConfig.class})
+        dev.hendrikhoemberg.dmhelper.config.MarkdownUtil.class})
 class EncounterInitiativeSetupServiceTest {
 
     @MockitoBean
@@ -43,14 +41,6 @@ class EncounterInitiativeSetupServiceTest {
 
     @MockitoBean
     private DiceEngine diceEngine;
-
-    @TestConfiguration
-    static class MockConfig {
-        @Bean
-        TablePresentationService tablePresentationService() {
-            return Mockito.mock(TablePresentationService.class);
-        }
-    }
 
     @Autowired private EncounterService service;
     @Autowired private EncounterWaveRepository waveRepo;

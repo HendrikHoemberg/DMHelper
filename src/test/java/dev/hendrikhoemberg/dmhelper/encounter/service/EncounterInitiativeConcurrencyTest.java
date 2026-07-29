@@ -6,7 +6,6 @@ import dev.hendrikhoemberg.dmhelper.dice.DiceEngine;
 import dev.hendrikhoemberg.dmhelper.dice.DiceResult;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntryRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
-import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,8 +36,7 @@ import static org.mockito.Mockito.when;
         SceneRefCleaner.class,
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
         dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver.class,
-        dev.hendrikhoemberg.dmhelper.config.MarkdownUtil.class,
-        EncounterInitiativeConcurrencyTest.MockConfig.class})
+        dev.hendrikhoemberg.dmhelper.config.MarkdownUtil.class})
 class EncounterInitiativeConcurrencyTest {
 
     @MockitoBean
@@ -46,14 +44,6 @@ class EncounterInitiativeConcurrencyTest {
 
     @MockitoBean
     private DiceEngine diceEngine;
-
-    @TestConfiguration
-    static class MockConfig {
-        @Bean
-        TablePresentationService tablePresentationService() {
-            return Mockito.mock(TablePresentationService.class);
-        }
-    }
 
     @Autowired private EncounterService service;
     @Autowired private CombatLogEntryRepository combatLogRepo;

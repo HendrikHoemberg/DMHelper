@@ -9,7 +9,6 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.WaveTriggerKind;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
-import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -31,19 +30,11 @@ import static org.assertj.core.api.Assertions.*;
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
         dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver.class,
         dev.hendrikhoemberg.dmhelper.config.MarkdownUtil.class,
-        EncounterWaveServiceTest.MockConfig.class})
+        })
 class EncounterWaveServiceTest {
 
     @MockitoBean
     private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
-
-    @TestConfiguration
-    static class MockConfig {
-        @Bean
-        TablePresentationService tablePresentationService() {
-            return Mockito.mock(TablePresentationService.class);
-        }
-    }
 
     @Autowired EncounterService service;
     @Autowired EncounterWaveRepository waveRepo;

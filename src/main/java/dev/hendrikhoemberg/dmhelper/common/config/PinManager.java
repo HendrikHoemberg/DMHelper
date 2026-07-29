@@ -35,7 +35,6 @@ public class PinManager {
         log.info("");
         log.info("╔══════════════════════════════════════════════╗");
         log.info("║  DMHelper session PIN generated ({} chars) ║", pin.length());
-        log.info("║  Player view:  http://<your-ip>:8081/player  ║");
         log.info("╚══════════════════════════════════════════════╝");
         log.info("");
         System.out.println("DM PIN: " + pin);

@@ -15,7 +15,6 @@ import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntry;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntryRepository;
-import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -36,18 +35,10 @@ import static org.assertj.core.api.Assertions.*;
         dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner.class,
         dev.hendrikhoemberg.dmhelper.threat.service.ThreatReferenceResolver.class,
         dev.hendrikhoemberg.dmhelper.config.MarkdownUtil.class,
-        EncounterServiceTest.MockConfig.class})
+        })
 class EncounterServiceTest {
 
     @MockitoBean private dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignPackageKeyService packageKeyService;
-
-    @TestConfiguration
-    static class MockConfig {
-        @Bean
-        TablePresentationService tablePresentationService() {
-            return Mockito.mock(TablePresentationService.class);
-        }
-    }
 
     @Autowired private EncounterService service;
     @Autowired private GameMapService mapService;

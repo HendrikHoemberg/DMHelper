@@ -39,12 +39,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
             registry.addInterceptor(new PinInterceptor(pinManager))
                     .addPathPatterns("/**")
                     .excludePathPatterns(
-                            "/player", "/player/**",
-                            "/ws/table", "/ws/table/**",
                             "/dm/authenticate",
                             "/css/**", "/js/**", "/vendor/**", "/fonts/**",
                             "/api/v1/schemas/**",
-                            "/api/v1/table/state",
                             "/api/v1/catalog/**",
                             "/api/v1/capabilities",
                             "/api/v1/validation-errors",

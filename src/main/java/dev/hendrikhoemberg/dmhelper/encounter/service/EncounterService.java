@@ -30,7 +30,7 @@ import dev.hendrikhoemberg.dmhelper.library.data.EquipmentItem;
 import dev.hendrikhoemberg.dmhelper.library.data.MagicItem;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
 import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
-import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
+
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.quest.data.QuestObjectiveRepository;
@@ -90,7 +90,6 @@ public class EncounterService {
     private final EncounterWaveRepository waveRepo;
     private final CombatDifficultyCalculator calculator;
     private final DiceEngine diceEngine;
-    private final TablePresentationService tablePresentationService;
     private final SceneRefCleaner sceneRefCleaner;
     private final ObjectProvider<LedgerService> ledgerService;
     private final ObjectProvider<TreasuryService> treasuryService;
@@ -109,7 +108,6 @@ public class EncounterService {
                             PartyMemberRepository partyRepo, StatBlockRepository statBlockRepo,
                             EncounterWaveRepository waveRepo,
                             CombatDifficultyCalculator calculator, DiceEngine diceEngine,
-                            TablePresentationService tablePresentationService,
                             SceneRefCleaner sceneRefCleaner,
                             ObjectProvider<LedgerService> ledgerService,
                             ObjectProvider<TreasuryService> treasuryService,
@@ -132,7 +130,6 @@ public class EncounterService {
         this.waveRepo = waveRepo;
         this.calculator = calculator;
         this.diceEngine = diceEngine;
-        this.tablePresentationService = tablePresentationService;
         this.sceneRefCleaner = sceneRefCleaner;
         this.ledgerService = ledgerService;
         this.treasuryService = treasuryService;
@@ -453,8 +450,6 @@ public class EncounterService {
         logEntry(id, CombatLogEntry.EntryType.ENCOUNTER_ENDED, "", "");
         logEntry(id, CombatLogEntry.EntryType.SESSION_END, "",
                 "{\"endedAt\":\"" + Instant.now().toString() + "\"}");
-        tablePresentationService.updateAoEs(e.getCampaign().getId(), List.of());
-        tablePresentationService.broadcastCurrentState(e.getCampaign().getId());
         if (e.getVictoryAudioCue() != null && e.getVictoryCueDurationSeconds() != null
                 && e.getVictoryCueDurationSeconds() > 0) {
             events.publishEvent(new EncounterVictoryAudioRequested(
@@ -1430,7 +1425,6 @@ public class EncounterService {
                 "{\"activeTurnIndex\":" + idx + "}");
 
         List<RechargePrompt> prompts = checkRechargeAbilities(combatants.get(idx).getId());
-        tablePresentationService.broadcastCurrentState(encounter.getCampaign().getId());
         return new EncounterDto(encounter.getId(), encounter.getCampaign().getId(),
                 encounter.getMap() != null ? encounter.getMap().getId() : null,
                 encounter.getName(), encounter.getStatus().name(), encounter.getRound(),
@@ -1485,7 +1479,6 @@ public class EncounterService {
 
         encounter.setActiveTurnIndex(idx);
         encounterRepo.save(encounter);
-        tablePresentationService.broadcastCurrentState(encounter.getCampaign().getId());
         return toDto(encounter);
     }
 
@@ -2239,7 +2232,6 @@ public class EncounterService {
         resetLegendaryActions(combatants.get(first));
         logEntry(encounterId, CombatLogEntry.EntryType.TURN_START, combatants.get(first).getId().toString(),
                 "{\"activeTurnIndex\":" + first + "}");
-        tablePresentationService.broadcastCurrentState(encounter.getCampaign().getId());
         return toDto(encounter);
     }
 

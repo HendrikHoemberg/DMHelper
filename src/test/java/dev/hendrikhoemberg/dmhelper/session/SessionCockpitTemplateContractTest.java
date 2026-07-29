@@ -195,7 +195,6 @@ class SessionCockpitTemplateContractTest {
         String css = Files.readString(Path.of("src/main/resources/static/css/cockpit.css"));
 
         assertThat(html).doesNotContain("workspace.handouts.?[!dmOnly]", "th:unless=\"${handout.dmOnly}\"");
-        assertThat(html).contains("/css/player-projection.css");
         // Handout safety gating moved into the Presentation module (Task 8), keyed on handout.safety.
         String presentationModule = Files.readString(
                 Path.of("src/main/resources/templates/session/modules/_presentation.html"));
@@ -206,18 +205,6 @@ class SessionCockpitTemplateContractTest {
                 .contains("this.previewOverrideArmed = false");
         assertThat(css).contains(".presentation-preview {", ".presentation-preview-backdrop",
                 ".presentation-preview-panel", ".presentation-preview-content");
-    }
-
-    @Test
-    void cockpitAndPlayerUseTheSameHandoutProjectionStyles() throws IOException {
-        String cockpit = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
-        String player = Files.readString(Path.of("src/main/resources/templates/player/view.html"));
-        String projection = Files.readString(
-                Path.of("src/main/resources/static/css/player-projection.css"));
-
-        assertThat(cockpit).contains("/css/player-projection.css");
-        assertThat(player).contains("/css/player-projection.css");
-        assertThat(projection).contains(".pv-handout", ".pv-handout img");
     }
 
     @Test

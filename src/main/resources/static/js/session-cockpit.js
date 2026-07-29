@@ -28,7 +28,6 @@ function sessionCockpit(config) {
         suspendedEncounters: [],
         presentingMap: config.presentationMode === 'MAP'
             && config.presentedMapId === config.mapId,
-        playerViewUrl: window.location.origin + '/player',
         lifecycleOpen: false,
         campaignId: config.campaignId || '',
         seedingSceneEncounter: false,

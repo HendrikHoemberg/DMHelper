@@ -23,7 +23,7 @@ final class CssRules {
     static final List<String> ALL_FILES = List.of(
             "tokens.css", "base.css", "components.css", "book.css",
             "cockpit.css", "cockpit-layout.css", "cockpit-modules.css",
-            "surfaces.css", "player-projection.css");
+            "surfaces.css");
 
     /** Stylesheets that paint the live table surfaces (spec section 10.1 "runtime"). */
     static final List<String> RUNTIME_FILES = List.of(

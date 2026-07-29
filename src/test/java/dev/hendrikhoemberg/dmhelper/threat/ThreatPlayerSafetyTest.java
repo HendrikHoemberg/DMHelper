@@ -6,7 +6,6 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentProvenance;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
-import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import dev.hendrikhoemberg.dmhelper.threat.data.DamageType;
@@ -55,21 +54,12 @@ class ThreatPlayerSafetyTest {
     @Autowired private TrapRepository trapRepo;
     @Autowired private MapThreatPinRepository pinRepo;
     @Autowired private CampaignSessionRepository sessionRepo;
-    @Autowired private TablePresentationService presentationService;
     @Autowired private MapThreatPinService pinService;
 
     private Campaign campaign;
     private GameMap gameMap;
     private Trap trap;
     private UUID pinId;
-
-    @AfterEach
-    void tearDown() {
-        // Drop presentation state only; DirtiesContext AFTER_CLASS rebuilds the context.
-        if (campaign != null && campaign.getId() != null) {
-            presentationService.curtainIfCurrentCampaign(campaign.getId());
-        }
-    }
 
     @Test
     void playerSurfacesNeverLeakThreatDefinitionMechanicsProvenanceOrPins() throws Exception {
@@ -124,7 +114,6 @@ class ThreatPlayerSafetyTest {
         session.setStatus(CampaignSession.Status.RUNNING);
         session.setWorkspaceMap(gameMap);
         sessionRepo.save(session);
-        presentationService.presentMap(campaign.getId(), gameMap.getId());
 
         var client = HttpClient.newHttpClient();
         String base = "http://localhost:" + port;

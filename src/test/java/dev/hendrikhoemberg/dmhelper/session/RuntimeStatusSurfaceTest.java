@@ -1,6 +1,5 @@
 package dev.hendrikhoemberg.dmhelper.session;
 
-import dev.hendrikhoemberg.dmhelper.live.TableStateWebSocketHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -25,14 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RuntimeStatusSurfaceTest {
 
     @Autowired private MockMvc mvc;
-    @Autowired private TableStateWebSocketHandler handler;
-
-    @Test
-    void tableStatusEndpointReportsTheConnectedCount() throws Exception {
-        mvc.perform(get("/api/table/status"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.connected").value(handler.connectedCount()));
-    }
 
     @Test
     void theCockpitDeclaresTheStatusCluster() throws IOException {

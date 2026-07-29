@@ -143,30 +143,6 @@ class AudioWidgetTemplateContractTest {
     }
 
     @Test
-    void playerViewNeverContainsAudioFiles() throws IOException {
-        String playerHtml = Files.readString(Path.of("src/main/resources/templates/player/view.html"));
-        assertThat(playerHtml).doesNotContain("audio-provider-registry");
-        assertThat(playerHtml).doesNotContain("audio-provider-youtube");
-        assertThat(playerHtml).doesNotContain("audio-widget");
-        assertThat(playerHtml).doesNotContain("_cockpit-widget");
-    }
-
-    @Test
-    void playerJsNeverContainsAudioReferences() throws IOException {
-        String playerJs = Files.readString(Path.of("src/main/resources/static/js/player/player-view.js"));
-        assertThat(playerJs).doesNotContain("audioCockpitWidget");
-        assertThat(playerJs).doesNotContain("audioProvider");
-        assertThat(playerJs).doesNotContain("registerAudioProvider");
-    }
-
-    @Test
-    void websocketHandlerNeverContainsAudioReferences() throws IOException {
-        String wsHandler = Files.readString(Path.of(
-                "src/main/java/dev/hendrikhoemberg/dmhelper/live/TableStateWebSocketHandler.java"));
-        assertThat(wsHandler).doesNotContain("audio");
-    }
-
-    @Test
     void audioWidgetJsContainsVisibilityAndIntersectionChecks() throws IOException {
         String js = Files.readString(Path.of("src/main/resources/static/js/audio-widget.js"));
         assertThat(js).contains("document.visibilityState");

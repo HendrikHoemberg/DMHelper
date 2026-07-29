@@ -18,7 +18,6 @@ import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.Encounter
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.ThreatCombatantRequest;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.library.data.ContentSource;
-import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionReferenceCleaner;
 import dev.hendrikhoemberg.dmhelper.threat.data.DamageType;
 import dev.hendrikhoemberg.dmhelper.threat.data.Hazard;
@@ -64,11 +63,6 @@ class ThreatEncounterIntegrationTest {
 
     @TestConfiguration
     static class MockConfig {
-        @Bean
-        TablePresentationService tablePresentationService() {
-            return Mockito.mock(TablePresentationService.class);
-        }
-
         @Bean
         EncounterPlacementService encounterPlacementService() {
             return Mockito.mock(EncounterPlacementService.class);

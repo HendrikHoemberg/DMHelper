@@ -49,12 +49,6 @@ class PinInterceptorTest {
     }
 
     @Test
-    void shouldAllowPlayerRouteWithoutPin() throws Exception {
-        mvc.perform(get("/player"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
     void worldRoutesRequirePin() throws Exception {
         mvc.perform(get("/campaigns/" + UUID.randomUUID() + "/world/npcs"))
                 .andExpect(status().isForbidden());
@@ -77,13 +71,6 @@ class PinInterceptorTest {
                     .as("PIN must block %s", path)
                     .isIn(403, 429);
         }
-    }
-
-    @Test
-    void playerRouteDoesNotExposeWorldData() throws Exception {
-        mvc.perform(get("/player"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("player/view"));
     }
 
 }

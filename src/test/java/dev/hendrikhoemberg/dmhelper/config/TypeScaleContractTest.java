@@ -109,8 +109,6 @@ class TypeScaleContractTest {
     @Test
     void replacementClassesKeepReviewedTemplateTypography() {
         assertThat(hasFontSize("surfaces.css", ".calendar-current-date-value", "var(--text-xl)")).isTrue();
-        assertThat(hasFontSize("player-projection.css", ".pv-waiting-icon", "var(--text-3xl)")).isTrue();
-        assertThat(hasFontSize("player-projection.css", ".pv-curtain", "var(--text-xl)")).isTrue();
         assertThat(hasFontSize("components.css", ".tracker-turns__active", "var(--text-sm)")).isTrue();
         assertThat(hasFontSize("cockpit-modules.css", ".map-module__pin", "var(--text-sm)")).isTrue();
     }

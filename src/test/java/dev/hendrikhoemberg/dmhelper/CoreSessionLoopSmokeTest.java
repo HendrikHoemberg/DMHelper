@@ -26,7 +26,6 @@ import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.Token;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
-import dev.hendrikhoemberg.dmhelper.live.TablePresentationService;
 import dev.hendrikhoemberg.dmhelper.handout.data.Handout;
 import dev.hendrikhoemberg.dmhelper.handout.service.HandoutService;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntry;
@@ -91,7 +90,6 @@ class CoreSessionLoopSmokeTest {
     @Autowired private GameMapService gameMapService;
     @Autowired private TokenRepository tokenRepo;
     @Autowired private EncounterService encounterService;
-    @Autowired private TablePresentationService presentationService;
     @Autowired private CampaignSessionRepository sessionRepository;
     @Autowired private SessionLifecycleService sessionLifecycleService;
     @Autowired private HandoutService handoutService;
@@ -371,20 +369,6 @@ class CoreSessionLoopSmokeTest {
         assertThat(encounter.activeTurnIndex()).isEqualTo(0);
     }
 
-    @Test
-    @Order(6)
-    void verifyPlayerViewPageLoads() {
-        BrowserContext playerContext = browser.newContext();
-        Page playerPage = guardedPage(playerContext);
-        playerPage.navigate("http://localhost:" + port + "/player");
-        playerPage.waitForLoadState(LoadState.NETWORKIDLE);
-
-        String title = playerPage.title();
-        assertThat(title).isNotEmpty();
-
-        playerContext.close();
-    }
-
     private void startSession() {
         boolean sessionAlreadyOpen = sessionRepository.findByCampaignId(campaignId)
                 .map(CampaignSession::isOpen)
@@ -392,54 +376,6 @@ class CoreSessionLoopSmokeTest {
         if (!sessionAlreadyOpen) {
             sessionLifecycleService.start(campaignId, mapId);
         }
-    }
-
-    @Test
-    @Order(7)
-    void verifyPlayerSafeProjectionStripsSensitiveContent() {
-        startSession();
-        presentationService.presentMap(campaignId, mapId);
-
-        BrowserContext playerContext = browser.newContext();
-        Page playerPage = guardedPage(playerContext);
-        playerPage.navigate("http://localhost:" + port + "/player");
-        playerPage.waitForLoadState(LoadState.NETWORKIDLE);
-
-        String pageContent = playerPage.content();
-        assertThat(pageContent).doesNotContain("data-screen-sensitive");
-
-        playerContext.close();
-    }
-
-    @Test
-    @Order(8)
-    void embeddedPlayerViewLoadsWithoutOuterChrome() {
-        startSession();
-        presentationService.curtain(campaignId);
-
-        BrowserContext playerContext = browser.newContext();
-        Page playerPage = guardedPage(playerContext);
-        playerPage.navigate("http://localhost:" + port + "/player?embedded=true");
-        playerPage.waitForLoadState(LoadState.NETWORKIDLE);
-
-        String pageHtml = playerPage.content();
-        assertThat(pageHtml).doesNotContain("pv-status");
-        assertThat(pageHtml).contains("pv-curtain");
-
-        // Embedded player preview has accessible title
-        String previewTitle = (String) playerPage.evaluate("""
-                () => {
-                  const titleEl = document.querySelector('title');
-                  return titleEl ? titleEl.textContent : '';
-                }
-                """);
-        assertThat(previewTitle).as("embedded player page has accessible title").isNotBlank();
-
-        dmPage.navigate("http://localhost:" + port + "/player");
-        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
-        assertThat(dmPage.content()).contains("pv-status");
-
-        playerContext.close();
     }
 
     @Test
@@ -691,7 +627,6 @@ class CoreSessionLoopSmokeTest {
         dmPage.locator("button", new Page.LocatorOptions().setHasText("Present current map")).click();
         playerPage.locator("#pvCanvas").waitFor(
                 new Locator.WaitForOptions().setState(WaitForSelectorState.ATTACHED));
-        assertThat(presentationService.getCurrentState().mode()).isEqualTo("MAP");
         dmPage.evaluate("([hid]) => window.Alpine.$data(document.querySelector('[x-data]')).presentHandout(hid)", List.of(handoutId.toString()));
         Locator handoutPreview = dmPage.locator("#presentationPreview");
         handoutPreview.waitFor();
@@ -743,6 +678,7 @@ class CoreSessionLoopSmokeTest {
         assertThat(dmPage.locator(".dice-panel").isVisible()).isFalse();
         assertThat(dmPage.locator("#shortcut-overlay").isVisible()).isFalse();
         dmPage.keyboard().press("q");
+
         assertThat(dmPage.evaluate("document.activeElement?.matches('.quicknotes-form input')"))
                 .isEqualTo(false);
         lifecycle.locator("button", new Locator.LocatorOptions().setHasText("Pause")).click();
@@ -973,36 +909,6 @@ class CoreSessionLoopSmokeTest {
         var advanced = encounterService.getById(encounterId);
         assertThat(advanced.round() != before.round()
                 || advanced.activeTurnIndex() != before.activeTurnIndex()).isTrue();
-    }
-
-    @Test
-    @Order(17)
-    void failedPresentationKeepsCurtainAndRetryShowsMap() {
-        startSession();
-        presentationService.curtain(campaignId);
-        String corr = "present-failure-1234";
-        failOnce(dmPage, "**/api/v1/campaigns/*/table/presentation", "PUT",
-                Pattern.compile(".*/api/v1/campaigns/.+/table/presentation"), corr);
-        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId
-                + "/session?mapId=" + mapId);
-        selectCockpitPreset("builtin:combat");
-        dmPage.waitForFunction("window.battleMap && window.battleMap.tokens.length > 0");
-
-        dmPage.evaluate("([cid, mid, corr]) => { window.dmRequest(`/api/v1/campaigns/${cid}/table/presentation`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'MAP', ref: mid }) }).catch(e => window.reportActionFailure('Could not show this map to the table.', e, () => window.dmRequest(`/api/v1/campaigns/${cid}/table/presentation`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'MAP', ref: mid }) }))); }", Arrays.asList(campaignId.toString(), mapId.toString(), corr));
-        dmPage.locator(".toast-error", new Page.LocatorOptions().setHasText(corr)).waitFor();
-        assertThat(presentationService.getCurrentState().mode()).isEqualTo("CURTAIN");
-
-        dmPage.locator(".toast-error .toast-action").click();
-        // Wait for the async retry request to complete
-        try {
-            for (int i = 0; i < 50; i++) {
-                if ("MAP".equals(presentationService.getCurrentState().mode())) break;
-                Thread.sleep(100);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        assertThat(presentationService.getCurrentState().mode()).isEqualTo("MAP");
     }
 
     @Test
@@ -2013,8 +1919,6 @@ class CoreSessionLoopSmokeTest {
         dmPage.waitForFunction("([hid]) => fetch('/api/v1/table/state').then(r => r.json())"
                         + ".then(state => state.handout?.id === hid)",
                 List.of(unreviewedId.toString()));
-        assertThat(presentationService.getCurrentState().handout().id())
-                .isEqualTo(unreviewedId.toString());
     }
 
     @Test
@@ -2126,9 +2030,6 @@ class CoreSessionLoopSmokeTest {
         dmPage.waitForFunction("([hid]) => fetch('/api/v1/table/state').then(r => r.json())"
                         + ".then(state => state.handout?.id === hid)",
                 List.of(unreviewedId.toString()));
-        assertThat(presentationService.getCurrentState().handout().id())
-                .isEqualTo(unreviewedId.toString());
-
         // Verify audit row exists
         var session = sessionRepository.findByCampaignId(campaignId).orElseThrow();
         var audits = auditEntryRepository.findBySession_IdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(
@@ -2140,7 +2041,6 @@ class CoreSessionLoopSmokeTest {
                     assertThat(a.getContentId()).isEqualTo(unreviewedId);
                     assertThat(a.getDetails()).contains("Emergency content");
                 });
-        presentationService.curtain(campaignId);
     }
 
     @Test
