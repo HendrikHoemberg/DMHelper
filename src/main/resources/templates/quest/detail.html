@@ -36,18 +36,16 @@
                 <div th:if="${quest.summary}" class="u-mb-md" th:text="${quest.summary}">Summary</div>
                 <div th:if="${quest.sourceLocator}" class="u-text-xs text-muted u-mb-md"
                      th:text="|Source: ${quest.sourceLocator}|">Source</div>
-                <!-- Prerequisites, rewards and outcome notes are prep material: they tell the
-                     table what gates the plot and what it pays. data-screen-sensitive hides them
-                     when the laptop faces the players. -->
-                <div th:if="${quest.prerequisites}" class="u-mb-md" data-screen-sensitive>
+                <!-- Prerequisites, rewards and outcome notes are prep material. -->
+                <div th:if="${quest.prerequisites}" class="u-mb-md">
                     <h4>Prerequisites</h4>
                     <p th:text="${quest.prerequisites}">Prerequisites</p>
                 </div>
-                <div th:if="${quest.rewards}" class="u-mb-md" data-screen-sensitive>
+                <div th:if="${quest.rewards}" class="u-mb-md">
                     <h4>Rewards</h4>
                     <p th:text="${quest.rewards}">Rewards</p>
                 </div>
-                <div th:if="${quest.outcomeNotes}" class="u-mb-md" data-screen-sensitive>
+                <div th:if="${quest.outcomeNotes}" class="u-mb-md">
                     <h4>Outcome Notes</h4>
                     <p th:text="${quest.outcomeNotes}">Outcome Notes</p>
                 </div>

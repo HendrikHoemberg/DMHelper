@@ -25,14 +25,10 @@ function sessionCockpit(config) {
         activeCombatants: [],
         plannedEncounters: [],
         suspendedEncounters: [],
-        presentingMap: config.presentationMode === 'MAP'
-            && config.presentedMapId === config.mapId,
         lifecycleOpen: false,
         campaignId: config.campaignId || '',
         seedingSceneEncounter: false,
         sessionStatus: config.sessionStatus || 'IDLE',
-        presentationMode: config.presentationMode || 'CURTAIN',
-        presentedMapId: config.presentedMapId || '',
         startMapId: config.mapId || '',
         attendeeIds: config.attendeeIds || [],
         draftTitle: '',
@@ -69,9 +65,6 @@ function sessionCockpit(config) {
                     `/api/v1/campaigns/${this.campaignId}/session${path}`, options);
                 const state = await response.json();
                 this.sessionStatus = state.status;
-                this.presentationMode = state.presentationMode;
-                this.presentedMapId = '';
-                this.presentingMap = false;
                 return state;
             } catch (error) {
                 window.reportActionFailure(summary, error, retry);
@@ -89,9 +82,6 @@ function sessionCockpit(config) {
                     });
                 const state = await resp.json();
                 this.sessionStatus = state.status;
-                this.presentationMode = state.presentationMode;
-                this.presentedMapId = '';
-                this.presentingMap = false;
                 this.attendeeIds = state.attendeeIds || [];
                 this.lifecycleOpen = false;
                 window.location.reload();
@@ -173,9 +163,6 @@ function sessionCockpit(config) {
                     });
                 const result = await resp.json();
                 this.sessionStatus = 'IDLE';
-                this.presentationMode = 'CURTAIN';
-                this.presentedMapId = '';
-                this.presentingMap = false;
                 this.draftBody = '';
                 this.draftTitle = '';
                 this.lifecycleOpen = false;
@@ -247,106 +234,6 @@ function sessionCockpit(config) {
             } catch (error) {
                 window.reportActionFailure('Could not update session attendance.', error,
                     () => this.updateAttendance());
-            }
-        },
-
-        async sendToTableWithMap(mapId) {
-            try {
-                await window.dmRequest(`/api/v1/campaigns/${this.campaignId}/table/presentation`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ mode: 'MAP', ref: mapId }),
-                });
-                this.presentedMapId = mapId;
-                this.presentingMap = mapId === this.currentMapId;
-                this.presentationMode = 'MAP';
-            } catch (error) {
-                this.presentingMap = false;
-                window.reportActionFailure('Could not show this map to the table.', error,
-                    () => this.sendToTableWithMap(mapId));
-            }
-        },
-
-        previewHandoutId: null,
-        showPreview: false,
-        previewClassification: '',
-        previewRequiresOverride: false,
-        previewOverrideArmed: false,
-
-        async previewFromModule(handoutId) {
-            await this.presentHandout(handoutId);
-        },
-
-        async presentHandout(handoutId) {
-            if (!handoutId) return;
-            try {
-                const resp = await window.dmRequest(
-                    `/api/v1/campaigns/${this.campaignId}/table/handouts/${handoutId}/preview`);
-                const preview = await resp.json();
-                this.previewHandoutId = handoutId;
-                this.previewClassification = preview.classification;
-                this.previewRequiresOverride = preview.requiresOverride;
-                this.previewOverrideArmed = false;
-                this.showPreview = true;
-                this.$nextTick(() => {
-                    const container = document.getElementById('previewContainer');
-                    if (container && window.dmhelperRenderHandout) {
-                        window.dmhelperRenderHandout(container, preview.state);
-                    }
-                });
-            } catch (error) {
-                window.reportActionFailure('Could not preview this handout.', error,
-                    () => this.presentHandout(handoutId));
-            }
-        },
-
-        closePreview() {
-            this.showPreview = false;
-            this.previewHandoutId = null;
-            this.previewOverrideArmed = false;
-        },
-
-        armEmergencyOverride() {
-            this.previewOverrideArmed = true;
-        },
-
-        async confirmPresent() {
-            if (!this.previewHandoutId) return;
-            const id = this.previewHandoutId;
-            this.closePreview();
-            try {
-                await window.dmRequest(`/api/v1/campaigns/${this.campaignId}/table/presentation`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ mode: 'HANDOUT', ref: id }),
-                });
-                this.presentingMap = false;
-                this.presentedMapId = '';
-                this.presentationMode = 'HANDOUT';
-            } catch (error) {
-                window.reportActionFailure('Could not show this handout to the table.', error);
-            }
-        },
-
-        async confirmEmergencyPresent() {
-            if (!this.previewHandoutId) return;
-            const id = this.previewHandoutId;
-            this.closePreview();
-            try {
-                await window.dmRequest(`/api/v1/campaigns/${this.campaignId}/table/presentation`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        mode: 'HANDOUT', ref: id,
-                        emergencyOverride: true,
-                        acknowledgement: 'I understand this may expose DM content',
-                    }),
-                });
-                this.presentingMap = false;
-                this.presentedMapId = '';
-                this.presentationMode = 'HANDOUT';
-            } catch (error) {
-                window.reportActionFailure('Could not show this handout to the table.', error);
             }
         },
 
@@ -441,15 +328,6 @@ function sessionCockpit(config) {
                         document.querySelector('.quicknotes-form input')?.focus();
                     }
                     break;
-                case 'h':
-                    event.preventDefault();
-                    document.getElementById('presentationHandoutPicker')?.focus();
-                    break;
-                case 'p':
-                    if (!this.currentMapId) break;
-                    event.preventDefault();
-                    this.sendToTable();
-                    break;
             }
         },
 
@@ -462,20 +340,7 @@ function sessionCockpit(config) {
 
         init() {
             this.sessionStatus = config.sessionStatus || 'IDLE';
-            this.presentationMode = config.presentationMode || 'CURTAIN';
-            this.presentingMap = config.presentationMode === 'MAP'
-                && config.presentedMapId === config.mapId;
-            this.presentedMapId = config.presentedMapId || '';
             this.draftBody = config.draftBody || '';
-            window.addEventListener('battle-state-changed', () => {
-                if (this.presentingMap) {
-                    const cid = this.campaignId;
-                    this.request(`/api/v1/campaigns/${cid}/table/refresh`, { method: 'POST' })
-                        .catch(error => window.reportActionFailure(
-                            'The player display could not refresh.', error,
-                            () => this.request(`/api/v1/campaigns/${cid}/table/refresh`, { method: 'POST' })));
-                }
-            });
             window.addEventListener('battle-toolchange', (e) => {
                 this.tool = e.detail.tool;
                 this.currentAoEPresets = AOE_PRESETS[this.tool] || [];
@@ -945,44 +810,6 @@ function sessionCockpit(config) {
         async toggleShowGrid() {
             await window.battleMap?.setShowGrid(!this.showGrid);
         },
-        async presentMap() {
-            await this.sendToTable();
-        },
-
-        async sendToTable() {
-            try {
-                const cid = this.campaignId;
-                await this.request(`/api/v1/campaigns/${cid}/table/presentation`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ mode: 'MAP', ref: this.currentMapId }),
-                });
-                this.presentingMap = true;
-                this.presentedMapId = this.currentMapId;
-                this.presentationMode = 'MAP';
-            } catch (error) {
-                this.presentingMap = false;
-                this.failure('Could not show this map to the table.', error,
-                    () => this.sendToTable());
-            }
-        },
-        async curtain() {
-            const wasPresenting = this.presentingMap;
-            try {
-                const cid = this.campaignId;
-                await this.request(`/api/v1/campaigns/${cid}/table/presentation`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ mode: 'CURTAIN', ref: '' }),
-                });
-                this.presentingMap = false;
-                this.presentedMapId = '';
-                this.presentationMode = 'CURTAIN';
-            } catch (error) {
-                this.presentingMap = wasPresenting;
-                this.failure('Could not lower the curtain.', error, () => this.curtain());
-            }
-        },
         clearAoe() { window.battleMap?.clearAoeNodes(); },
         clearAnnotations() { window.battleMap?.clearAnnotations(); },
         applyAoePreset(cells) {
@@ -1036,8 +863,6 @@ function sessionCockpit(config) {
             this.currentMapId = mapId;
             if (this.sessionStatus === 'IDLE') this.startMapId = mapId;
             this.visitedMapIds.add(mapId);
-            this.presentingMap = this.presentationMode === 'MAP'
-                && this.presentedMapId === mapId;
             history.replaceState(null, '', `/campaigns/${this.campaignId}/session?mapId=${mapId}`);
             await this.refreshThreatPins();
         },

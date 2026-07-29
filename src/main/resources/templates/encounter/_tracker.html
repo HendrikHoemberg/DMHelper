@@ -318,7 +318,7 @@
                         <option value="MONSTER">Monster</option>
                         <option value="PC">PC</option>
                     </select>
-                    <button class="btn btn-sm btn-primary" type="submit">Add</button>
+                    <button class="btn btn-sm" type="submit">Add</button>
                 </form>
                 <button class="btn btn-ghost btn-sm" @click="addMissingParty()">Add missing party members</button>
             </details>
@@ -430,7 +430,7 @@
                     <div class="condition-quick" style="display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px;">
                         <template x-for="key in commonKeys" :key="key">
                             <button class="btn btn-xs"
-                                    :class="hasCondition(selected, key) ? 'btn-primary' : 'btn-ghost'"
+                                    :class="hasCondition(selected, key) ? 'is-active' : 'btn-ghost'"
                                     @click="toggleCondition(selected.id, key, 1)"
                                     x-text="key.charAt(0).toUpperCase() + key.slice(1)"></button>
                         </template>

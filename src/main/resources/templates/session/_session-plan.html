@@ -17,14 +17,6 @@
                   th:if="${beat.mapId() != null}"
                   th:attr="data-map-id=${beat.mapId()}"
                   @click="switchMap($el.dataset.mapId)">Switch map</button>
-          <button class="btn btn-ghost session-plan__action" style="padding: 2px 8px;"
-                  th:if="${beat.mapId() != null}"
-                  th:attr="data-map-id=${beat.mapId()}"
-                  @click="sendToTableWithMap($el.dataset.mapId)">Present</button>
-          <button class="btn btn-ghost session-plan__action" style="padding: 2px 8px;"
-                  th:if="${beat.type() == 'HANDOUT'}"
-                  th:attr="data-handout-id=${beat.targetId()}"
-                  @click="presentHandout($el.dataset.handoutId)">Present handout</button>
         </th:block>
         <th:block th:unless="${beat.resolved()}">
           <span class="beat-broken-label">Broken link</span>

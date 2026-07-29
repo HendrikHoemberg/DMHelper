@@ -48,14 +48,8 @@
     <span class="badge" x-text="sessionStatus" th:attr="data-session-status=${workspace.session.status}">IDLE</span>
     <span class="u-nowrap cockpit-topbar__date"
           th:text="${@calendarService.formatDate(campaignId, workspace.currentDate)}">12 July 1492</span>
-    <span class="badge" th:attr="data-presentation-mode=${workspace.session.presentationMode}"
-          :data-presentation-mode="presentationMode"
-          x-text="presentationMode === 'CURTAIN' ? 'Table: Curtain' : (presentationMode === 'MAP' ? 'Table: Map' : 'Table: Handout')">
-      Table: Curtain
-    </span>
     <span id="runtimeStatus" class="cockpit-status" role="status" aria-live="polite">
       <span class="cockpit-status__atom" data-status-save data-state="idle">Up to date</span>
-      <span class="cockpit-status__atom" data-status-table data-state="disconnected">No table screen</span>
     </span>
     <label class="u-nowrap" for="cockpitPresetPicker">
       <span class="sr-only">Layout preset</span>
@@ -176,8 +170,6 @@ window.sessionCockpitConfig = {
     movementMode: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.movementMode : null}]]*/ null,
     showGrid: /*[[${workspace.workspaceMap != null ? workspace.workspaceMap.showGrid : true}]]*/ true,
     sessionStatus: /*[[${workspace.session.status}]]*/ 'IDLE',
-    presentationMode: /*[[${workspace.session.presentationMode}]]*/ 'CURTAIN',
-    presentedMapId: /*[[${workspace.session.presentedMap != null ? workspace.session.presentedMap.id : null}]]*/ null,
     attendeeIds: /*[[${attendeeIds}]]*/ [],
     draftBody: /*[[${workspace.session.draftBody}]]*/ null,
     encounterMapId: null

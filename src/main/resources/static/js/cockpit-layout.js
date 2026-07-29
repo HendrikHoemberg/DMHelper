@@ -197,7 +197,7 @@
     }
 
     /**
-     * Alt+Shift+1…5 selects the five immutable built-ins when no modal or text field
+     * Alt+Shift+1…4 selects the four immutable built-ins when no modal or text field
      * owns the keystroke. Custom presets are never on this shortcut strip.
      */
     bindPresetShortcuts() {
@@ -205,8 +205,7 @@
         Digit1: 'builtin:exploration',
         Digit2: 'builtin:combat',
         Digit3: 'builtin:theatre-of-mind',
-        Digit4: 'builtin:presentation',
-        Digit5: 'builtin:session-review'
+        Digit4: 'builtin:session-review'
       };
       document.addEventListener('keydown', (event) => {
         if (!event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey) return;

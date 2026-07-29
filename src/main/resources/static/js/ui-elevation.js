@@ -172,8 +172,6 @@
           <dt>[ / ]</dt><dd>Previous / next scene</dd>
           <dt>N</dt><dd>Advance combat turn</dd>
           <dt>Q</dt><dd>Focus quick note</dd>
-          <dt>H</dt><dd>Focus handouts</dd>
-          <dt>P</dt><dd>Present the current map</dd>
     ` : '';
     const overlay = document.createElement('div');
     overlay.id = 'shortcut-overlay';

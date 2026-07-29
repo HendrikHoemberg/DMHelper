@@ -29,7 +29,7 @@
                         <a th:href="@{/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${faction.id})}"
                            th:text="${faction.name}">Faction Name</a>
                     </div>
-                    <div th:if="${faction.goals}" class="card-body" data-screen-sensitive th:text="${faction.goals}">Goals</div>
+                    <div th:if="${faction.goals}" class="card-body" th:text="${faction.goals}">Goals</div>
                     <div class="card-footer">
                         <span class="u-text-xs text-muted" th:text="|Resources: ${faction.resources}|">Resources</span>
                     </div>

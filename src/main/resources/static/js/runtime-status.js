@@ -1,14 +1,11 @@
 (function () {
   'use strict';
 
-  const POLL_MS = 5000;
-
   function init() {
     const cluster = document.getElementById('runtimeStatus');
     if (!cluster) return;
 
     const save = cluster.querySelector('[data-status-save]');
-    const table = cluster.querySelector('[data-status-table]');
 
     let htmxInFlight = 0;
     let dmInFlight = 0;
@@ -114,23 +111,6 @@
       failed('dm');
     });
 
-    async function pollTable() {
-      try {
-        const response = await fetch('/api/table/status', { headers: { Accept: 'application/json' } });
-        if (!response.ok) throw new Error(response.status);
-        const { connected } = await response.json();
-        table.dataset.state = connected > 0 ? 'connected' : 'disconnected';
-        table.textContent = connected > 0
-          ? (connected === 1 ? 'Table connected' : connected + ' tables connected')
-          : 'No table screen';
-      } catch (e) {
-        table.dataset.state = 'disconnected';
-        table.textContent = 'Table unreachable';
-      }
-    }
-
-    pollTable();
-    setInterval(pollTable, POLL_MS);
   }
 
   if (document.readyState === 'loading') {

@@ -14,10 +14,10 @@
   </div>
 
   <!-- Everything that is not READ_ALOUD is prep material: secrets, treasure, DM advice,
-       trap mechanics. data-screen-sensitive hides it when the laptop faces the table. -->
+       trap mechanics. -->
   <div th:each="section : ${scene.sections}"
        th:if="${section.kind.name() != 'READ_ALOUD'}"
-       class="structured-block structured-dm" data-screen-sensitive
+       class="structured-block structured-dm"
        th:attr="data-section-id=${section.id}">
     <span class="badge" th:text="${#enums.label(section.kind)}">KIND</span>
     <strong th:text="${section.label}">Label</strong>

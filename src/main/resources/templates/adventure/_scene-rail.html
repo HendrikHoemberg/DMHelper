@@ -73,7 +73,7 @@
          data-rail-participants>
       <h4 class="u-text-sm u-mb-xs">Participants</h4>
       <div th:each="p : ${scene.participants}" class="card card--compact u-mb-xs"
-           data-screen-sensitive th:attr="data-participant-id=${p.id}">
+           th:attr="data-participant-id=${p.id}">
         <strong th:text="${p.displayName}">Name</strong>
         <span class="badge" th:text="|x${p.quantity}|" th:if="${p.quantity > 1}">Qty</span>
         <span class="badge" th:text="${#enums.label(p.disposition)}" th:if="${p.disposition != null}">Disp</span>
@@ -92,7 +92,7 @@
     <div class="u-mb-md" th:if="${scene.checks != null and !scene.checks.isEmpty()}" data-rail-checks>
       <h4 class="u-text-sm u-mb-xs">Checks</h4>
       <div th:each="check : ${scene.checks}" class="card card--compact u-mb-xs"
-           data-screen-sensitive th:attr="data-check-id=${check.id}">
+           th:attr="data-check-id=${check.id}">
         <strong th:text="${check.label}">Check Label</strong>
         <span class="badge" th:text="|DC ${check.dc}|" th:if="${check.dc != null}">DC</span>
         <span class="badge" th:text="${#enums.label(check.visibility)}" th:if="${check.visibility != null}">VISIBILITY</span>
@@ -108,7 +108,7 @@
          data-rail-transitions>
       <h4 class="u-text-sm u-mb-xs">Transitions</h4>
       <div th:each="t : ${scene.transitions}" class="card card--compact u-mb-xs"
-           data-screen-sensitive th:attr="data-transition-id=${t.id}">
+           th:attr="data-transition-id=${t.id}">
         <span class="badge" th:text="${#enums.label(t.kind)}">KIND</span>
         <strong th:text="${t.label}">Label</strong>
         <span th:if="${t.targetScene != null}" th:text="${t.targetScene.title}">Target</span>

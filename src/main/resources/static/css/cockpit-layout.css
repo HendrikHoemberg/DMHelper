@@ -689,6 +689,3 @@ body:has(.session-cockpit) {
   font-weight: 600;
   opacity: 1;
 }
-
-[data-status-table][data-state="connected"] { color: var(--color-success); }
-[data-status-table][data-state="disconnected"] { color: var(--color-text-muted); }

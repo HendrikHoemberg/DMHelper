@@ -14,19 +14,19 @@
                      th:style="'width:' + (${m.maxHp} > 0 ? (${m.currentHp} * 100 / ${m.maxHp}) : 0) + '%'"
                      th:classappend="${m.maxHp > 0 && m.currentHp * 2 < m.maxHp} ? 'low' : ''"></div>
             </div>
-            <div class="chip-stats" data-screen-sensitive>
+            <div class="chip-stats">
                 <span th:text="'AC ' + ${m.ac}">AC 16</span>
                 <span th:text="'HP ' + ${m.currentHp} + '/' + ${m.maxHp}">HP 32/32</span>
                 <span th:text="'PP ' + ${m.passivePerception}">PP 14</span>
                 <span th:if="${m.tempHp > 0}" th:text="'THP ' + ${m.tempHp}">THP 0</span>
             </div>
             <th:block th:if="${mode == null or mode.name() != 'COMPACT'}">
-                <div class="chip-detail" data-screen-sensitive>
+                <div class="chip-detail">
                     <span th:if="${m.passiveInsight > 0}" th:text="'PI ' + ${m.passiveInsight}">PI 12</span>
                     <span th:if="${m.passiveInvestigation > 0}" th:text="'PInv ' + ${m.passiveInvestigation}">PInv 14</span>
                     <span th:if="${m.speed > 0}" th:text="'Spd ' + ${m.speed}">Spd 30</span>
                 </div>
-                <div class="chip-status" data-screen-sensitive>
+                <div class="chip-status">
                     <span th:if="${m.deathSaveSuccesses > 0 or m.deathSaveFailures > 0}"
                           th:text="'DS ' + ${m.deathSaveSuccesses} + '/' + ${m.deathSaveFailures}">DS 0/0</span>
                     <th:block th:if="${m.conditions != null and !m.conditions.isEmpty()}">
