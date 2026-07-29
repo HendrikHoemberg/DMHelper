@@ -10,12 +10,12 @@ The play surface is a four-zone workbench owned by the viewport. The **document 
 |------|------|
 | **Primary** (centre) | Dominant stage for the active table surface (Map, Encounter, Session log, …) |
 | **Left support** | Secondary rail (Story, Session plan, Party, …) |
-| **Right support** | Secondary rail (Encounter, Presentation, Party, …) |
+| **Right support** | Secondary rail (Encounter, Reference, Party, …) |
 | **Bottom utility** | Compact strip (Quick notes, Audio, Session log, …) that may collapse |
 
-Ten modules ship in the registry: Story, Map, Encounter, Party, Presentation, Session plan, Quick notes, Audio, Session log, and the transitional content shells they host. Every module appears at most once. Module bodies still use transitional in-page content in B1; lazy endpoint shells land in **B2**.
+Nine modules ship in the registry: Story, Map, Encounter, Party, Session plan, Quick notes, Reference, Audio, and Session log. Every module appears at most once.
 
-Command chrome (identity, preset picker, Edit layout, Screen Safety, presentation, Search, Dice, Session) stays reachable above the workbench.
+Command chrome (identity, preset picker, Edit layout, Search, Dice, Session) stays reachable above the workbench.
 
 ### Locked default and Edit layout
 
@@ -34,15 +34,14 @@ Click **Edit layout** once to unlock layout chrome. Click **Done** (the same con
 
 ### Built-in presets and shortcuts
 
-Five immutable built-ins ship with the app:
+Four immutable built-ins ship with the app:
 
 | Shortcut | Preset | Typical primary |
 |----------|--------|-----------------|
 | `Alt+Shift+1` | Exploration | Story |
 | `Alt+Shift+2` | Combat | Map |
 | `Alt+Shift+3` | Theatre of Mind | Encounter |
-| `Alt+Shift+4` | Presentation | Map |
-| `Alt+Shift+5` | Session Review | Session log |
+| `Alt+Shift+4` | Session Review | Session log |
 
 Shortcuts apply only when no modal or text field owns the keystroke. Preset changes are always manual; layout chrome settles within 100 ms.
 
@@ -70,25 +69,24 @@ Last preset, active tabs, and unfinished edit drafts live in browser `localStora
 
 ## Module responsibilities
 
-Ten runtime modules ship in the cockpit registry. Each module body is **lazy-loaded** via its own endpoint on first visibility; no module fetches data until the zone tab is active.
+Nine runtime modules ship in the cockpit registry. Four modules are server-rendered for first paint: Session plan, Story, Party, and Quick notes. The other five — Map, Encounter, Reference, Audio, and Session log — load from their module endpoints on first visibility. When a restored preset requires a different mode, a server-rendered body is refetched before use.
 
-| Module | Responsibility | Endpoint | Lazy |
-|--------|---------------|----------|------|
-| **Story** | Current scene, editorial neighbours, scene links, linked rollable tables, scene quick notes | story | yes |
-| **Map** | Workspace battle map with token, measurement, and AoE tools | map | yes |
-| **Encounter** | Active encounter tracker, planned encounters list | encounter | yes |
-| **Session plan** | Ordered prepared beats parsed from the latest `SESSION_PLAN` note | session-plan | yes |
-| **Party** | Party member summary with HP bars, AC, passive perception | party | yes |
-| **Quick notes** | Create, view, and resolve quick notes during play | quick-notes | yes |
-| **Presentation** | Preview and present content to the player table | presentation | yes |
-| **Reference** | Rules reference, spells, conditions lookup | reference | yes |
-| **Audio** | Ambient music, soundscapes, and encounter-linked cues | audio | yes |
-| **Session log** | Running timeline of events during the session | session-log | yes |
+| Module | Responsibility | Endpoint | Initial delivery |
+|--------|---------------|----------|------------------|
+| **Story** | Current scene, editorial neighbours, scene links, linked rollable tables, scene quick notes | story | server-rendered |
+| **Map** | Workspace battle map with token, measurement, and AoE tools | map | first visibility |
+| **Encounter** | Active encounter tracker, planned encounters list | encounter | first visibility |
+| **Session plan** | Ordered prepared beats parsed from the latest `SESSION_PLAN` note | session-plan | server-rendered |
+| **Party** | Party member summary with HP bars, AC, passive perception | party | server-rendered |
+| **Quick notes** | Create, view, and resolve quick notes during play | quick-notes | server-rendered |
+| **Reference** | Rules reference, spells, conditions lookup | reference | first visibility |
+| **Audio** | Ambient music, soundscapes, and encounter-linked cues | audio | first visibility |
+| **Session log** | Running timeline of events during the session | session-log | first visibility |
 
 ### Lazy loading and retry behaviour
 
-- Each module loads its body via a `GET` to `/campaigns/{cid}/session/modules/{key}?mode=STANDARD|COMPACT`.
-- Visible modules load on `cockpit:layout-applied`; invisible modules load when their tab is first selected.
+- Map, Encounter, Reference, Audio, and Session log load their bodies via a `GET` to `/campaigns/{cid}/session/modules/{key}?mode=STANDARD|COMPACT` on first visibility.
+- Server-rendered bodies are reused only when their `data-module-mode` matches the restored preset. A mismatch is refetched before the body is shown.
 - The shell shows a **live region** (`aria-live="polite"`) during loading without moving focus.
 - On fetch failure the shell persists the loaded body, shows an **error banner** (`role="alert"`), and makes a **Retry** button keyboard-reachable.
 - A rejected Retry shows a new error — the module does not unload or fall back to an empty shell.
@@ -96,8 +94,8 @@ Ten runtime modules ship in the cockpit registry. Each module body is **lazy-loa
 
 ### Compact vs Focus behaviour
 
-- Modules serving in the **Bottom utility** zone render in `COMPACT` mode (condensed header, fewer details).
-- All other zones render in `STANDARD` mode.
+- `COMPACT` is **not** derived from the zone. Each preset names the modules it wants condensed in its own `compactModuleKeys` set (`CockpitBuiltInPresetCatalog.java`); everything else renders `STANDARD`. Exploration condenses Session plan, Party, Quick notes, Audio and Session log. Combat additionally condenses Story, Encounter and Reference.
+- A `COMPACT` Story module shows the scene title and read-aloud text only — its summary, DM notes, sections and participants are `STANDARD`-only. That is deliberate: in Combat the Story rail is a prompter, not a reference.
 - Modules that support **Focus** open a full-workbench overlay. **Return** (or `Escape`) restores the previous layout and returns keyboard focus to the Focus trigger.
 
 ### Where actions live
@@ -106,19 +104,11 @@ Ten runtime modules ship in the cockpit registry. Each module body is **lazy-loa
 |--------|----------|
 | **Map** controls | Map module (Primary in combat preset) |
 | **Encounter** tracker + planned encounters | Encounter module (Right support in combat preset) |
-| **Handout** picker + preview | Presentation module or top-bar Handout picker |
-| **Presentation** to table | Presentation module + button in Map module |
+
 | **Reference** lookup | Reference module (via top-bar Search or `?` shortcut) |
 | **Audio** widget | Audio module (Bottom utility tab in combat preset) |
 | **Quick notes** | Quick notes module (Bottom utility default tab) |
 | **Session log** timeline | Session log module (Primary in session-review preset) |
-
-### Player preview guarantees
-
-- Handout preview in the Presentation module always shows the **correct classification** (PLAYER_SAFE / DM_SOURCE / UNREVIEWED / PLAYER_DERIVATIVE).
-- Unreviewed handouts cannot be presented without **emergency override** (two-click acknowledgement).
-- Presented content reaches the player view **byte-identical** to the DM preview.
-- The player page never receives DM-only content, audio provider references, or threat pin markers.
 
 ### No automatic preset switching
 
@@ -134,41 +124,13 @@ Combat and scene changes never switch the active preset. Hidden or inactive modu
 
 | Key | Action |
 |-----|--------|
-| `Alt+Shift+1`…`5` | Select built-in preset |
+| `Alt+Shift+1`…`4` | Select built-in preset |
 | `[` / `]` | Step previous / next scene |
 | `n` | Advance encounter turn |
 | `q` | Focus quick notes input |
-| `h` | Focus handout picker |
-| `p` | Present current map |
 | `?` | Open keyboard shortcut help |
 | `Escape` | Close topmost layer and restore focus trigger |
 | Arrow keys / `Tab` | Navigate zone tabs and module chrome |
-
-## Screen Safety
-
-The cockpit provides two display modes controlled via the checkbox toggle (`Ctrl+Shift+D`):
-
-| Mode | Badge | Behaviour |
-|------|-------|-----------|
-| **Private** | *none* | Full DM interface shown. All content visible. |
-| **Table-safe** | `Table-safe` | Content marked `data-screen-sensitive` is hidden and not focusable via Tab. |
-
-### What disappears
-
-When table-safe is active:
-
-- Scene summaries, body text, and transitions
-- Quest progress panels and rewards
-- NPC secrets and faction goals
-- Scene checks, participants, and treasure sections
-- Encounter mechanics and threat cards
-- Any element tagged `data-screen-sensitive`
-
-### What stays visible
-
-- **Read-aloud text** — this is the one section kind a DM is meant to show or read to the table; tagging it as sensitive would defeat the feature.
-- **Player preview content** — any element rendered specifically for player consumption.
-- **The story rail module root** — remains as a visible container.
 
 ## Timezone
 
@@ -183,6 +145,10 @@ Click **Session** → **Start Session**. The status changes to `RUNNING`. The wo
 ### Pause / Resume
 
 Click **Session** → **Pause** (status becomes `PAUSED`). Click **Resume** to continue. Session state survives refresh, restart, and browser close.
+
+### Discard without a log
+
+Use **Session** → **Discard session** to abandon the current run. No `SESSION_LOG` note is created. Campaign changes remain; session visits, the end-review draft, audio runtime state, and presentation/session bookkeeping are removed before the session returns to `IDLE`.
 
 ### End Review
 
@@ -208,7 +174,7 @@ The draft reconstructs per-combatant final state by replaying the combat log for
 
 This means a token that was defeated, revived, and then defeated again appears in the draft as defeated with the correct final state.
 
-Edit the draft freely, then provide a title and click **Complete**. A `SESSION_LOG` note is created, the player view is curtained, and the session resets to `IDLE`.
+Edit the draft freely, then provide a title and click **Complete**. A `SESSION_LOG` note is created, session-only runtime state is cleared, and the session resets to `IDLE`.
 
 ## Current Scene & Active Encounter
 
@@ -254,8 +220,7 @@ dice roller with the expression filled — they do not submit a roll.
 
 When the active encounter turn is a trap or hazard combatant, the encounter rail shows the same
 mechanics card. Resolution remains manual: use existing tracker damage and condition controls on
-creatures. DM-only threat map pins are managed from the cockpit map sidebar; pins never appear on
-the player table. See [08-traps-and-hazards.md](08-traps-and-hazards.md).
+creatures. DM-only threat map pins are managed from the cockpit map sidebar and remain visible only to the DM. See [08-traps-and-hazards.md](08-traps-and-hazards.md).
 
 ## Session Log Draft
 
@@ -267,13 +232,11 @@ When no modal or input is focused:
 
 | Key | Action |
 |-----|--------|
-| `Alt+Shift+1`…`5` | Select built-in Exploration / Combat / Theatre of Mind / Presentation / Session Review |
+| `Alt+Shift+1`…`4` | Select built-in Exploration / Combat / Theatre of Mind / Session Review |
 | `[` / `]` | Step to previous / next scene |
 | `n` | Advance encounter turn |
 | `q` | Focus quick notes input |
-| `h` | Focus handout picker |
-| `p` | Present current map to player table |
 | Arrow keys on zone tabs | Move selection among tabs in that zone |
 | Escape | Close the topmost layer (focus, dialog) and restore its trigger when possible |
 
-All cockpit routes are covered by the PIN interceptor.
+The server binds to `127.0.0.1` only; loopback binding is the access control for all cockpit routes.
