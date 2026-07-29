@@ -516,6 +516,16 @@ function sessionCockpit(config) {
                 // Refresh runtime tokens to get updated HP, bloodied, defeated
                 window.battleMap?.fetchTokens();
             });
+            window.addEventListener('tracker-encounter-state', (e) => {
+                if (!e.detail?.combatants) return;
+                for (const c of e.detail.combatants) {
+                    const token = this.tokens.find(t => t.combatantId === c.id);
+                    if (!token) continue;
+                    token.currentHp = c.currentHp;
+                    token.maxHp = c.maxHp;
+                    token.defeated = c.defeated;
+                }
+            });
             window.addEventListener('cockpit:module-content-ready', (event) => {
                 if (event.detail?.moduleKey !== 'map') return;
                 if (!window.battleMap) {

@@ -230,7 +230,15 @@ export class BattleMap {
                     }
                 }
             }
+            for (const c of e.detail.combatants) {
+                const token = this.tokens?.find(t => t.source === 'COMBATANT' && t.combatantId === c.id);
+                if (!token) continue;
+                token.currentHp = c.currentHp;
+                token.maxHp = c.maxHp;
+                token.defeated = c.defeated;
+            }
             this.renderConditionIndicators();
+            this.renderTokenLabels();
         });
     }
 
@@ -329,9 +337,21 @@ export class BattleMap {
         this.tokenLayer.destroyChildren();
 
         const animate = !this._reducedMotion();
+
+        const nameCounts = {};
+        for (const token of this.tokens) {
+            nameCounts[token.name] = (nameCounts[token.name] || 0) + 1;
+        }
+        const nameIndex = {};
+
         for (const token of this.tokens) {
             const key = this.tokenKey(token);
             const group = this.addTokenNode(token);
+            const node = this.tokenNodes[key];
+            if (nameCounts[token.name] > 1) {
+                nameIndex[token.name] = (nameIndex[token.name] || 0) + 1;
+                node.label.text(token.name.substring(0, 2) + ' ' + nameIndex[token.name]);
+            }
             const was = previous[key];
             if (!animate || !was) continue;
             if (was.x === token.positionX && was.y === token.positionY) continue;
@@ -797,6 +817,32 @@ export class BattleMap {
         if (width < 1 || height < 1) return;
         this.stage.size({ width, height });
         this.stage.batchDraw();
+    }
+
+    renderTokenLabels() {
+        for (const token of this.tokens) {
+            const key = this.tokenKey(token);
+            const node = this.tokenNodes[key];
+            if (!node) continue;
+            const hasHp = token.currentHp != null && token.maxHp != null && token.maxHp > 0;
+            const w = token.sizeCols * this.cellSizePx;
+
+            node.hpText.text(hasHp ? `${token.currentHp}/${token.maxHp}` : '');
+            node.hpText.visible(hasHp);
+
+            node.hpBar.visible(hasHp);
+            if (hasHp) {
+                const ratio = token.currentHp / token.maxHp;
+                node.hpBar.fill(ratio > 0.5 ? HP_COLORS.high : ratio > 0.25 ? HP_COLORS.mid : HP_COLORS.low);
+                node.hpBar.width(w * Math.max(0, ratio));
+            }
+
+            node.deadOverlay.visible(token.defeated || false);
+            node.body.fill(token.defeated ? '#555' : (token.color || '#c9a35c'));
+            node.body.opacity(token.defeated ? 0.6 : 1);
+            node.group.draggable(!token.defeated);
+        }
+        this.tokenLayer.batchDraw();
     }
 
     renderConditionIndicators() {
