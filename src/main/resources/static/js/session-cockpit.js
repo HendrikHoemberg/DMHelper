@@ -379,6 +379,7 @@ function sessionCockpit(config) {
                 const previousMapId = this.currentMapId;
                 this.maps = e.detail.maps;
                 this.currentMapId = e.detail.currentMapId;
+                this.syncMapPicker();
                 this.visitedMapIds.add(this.currentMapId);
                 if (this.currentMapId !== previousMapId) {
                     this.refreshThreatPins();
@@ -411,6 +412,7 @@ function sessionCockpit(config) {
             });
             window.addEventListener('cockpit:module-content-ready', (event) => {
                 if (event.detail?.moduleKey !== 'map') return;
+                this.syncMapPicker();
                 if (!window.battleMap) {
                     // First-time construction: the map fragment (with #battleCanvasWrap) has now
                     // been injected, so the container exists and BattleMap can mount.
@@ -852,6 +854,7 @@ function sessionCockpit(config) {
                 const cid = this.campaignId;
                 const resp = await this.request(`/api/v1/campaigns/${cid}/maps`);
                 this.maps = await resp.json();
+                this.syncMapPicker();
             } catch (error) {
                 this.failure('Could not load the map switcher.', error,
                     () => this.loadMaps());
@@ -898,11 +901,23 @@ function sessionCockpit(config) {
             await this.refreshThreatPins();
         },
 
-        // The workbench rebuild dropped the #cockpitMapPicker control, so there is no element to
-        // restore into — only the state is kept. See
-        // docs/superpowers/verification/2026-07-26-cockpit-smoke-test-drift.md
+        // The picker and its x-for options may be initialized in either order because the Map
+        // module is injected lazily. Alpine's select binding does not revisit a value that had
+        // no matching option, so synchronize at both the map-list and module-ready boundaries.
+        syncMapPicker() {
+            this.$nextTick(() => {
+                const picker = document.getElementById('runtimeMapPicker');
+                if (!picker) return;
+                const expected = String(this.currentMapId || '');
+                if (Array.from(picker.options).some(option => option.value === expected)) {
+                    picker.value = expected;
+                }
+            });
+        },
+
         restoreMapPicker(mapId) {
             this.currentMapId = mapId || '';
+            this.syncMapPicker();
         },
 
         async searchStatblocks() {

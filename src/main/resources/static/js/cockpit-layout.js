@@ -1559,9 +1559,14 @@
         }
       }
 
-      // Ready/empty/error never wipe existing body content; only empty may leave it hidden
-      // when the body has no meaningful children (B2 modules may clear themselves).
-      if (body && (state === 'ready' || state === 'loading' || state === 'error')) {
+      // A body rendered for another mode must not become visible while its matching request
+      // is loading or has failed. Loading/error chrome lives outside the body and remains
+      // available; a successful load clears the marker before dispatching ready.
+      const modeMismatch = body?.querySelector(
+        '[data-module-content][data-module-mode-mismatch]') != null;
+      if (body && modeMismatch && (state === 'loading' || state === 'error')) {
+        body.hidden = true;
+      } else if (body && (state === 'ready' || state === 'loading' || state === 'error')) {
         body.hidden = false;
       }
     }

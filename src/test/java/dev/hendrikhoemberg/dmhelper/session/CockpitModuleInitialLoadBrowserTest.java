@@ -5,6 +5,7 @@ import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.Route;
 import com.microsoft.playwright.options.LoadState;
 import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
 import org.junit.jupiter.api.AfterAll;
@@ -21,6 +22,9 @@ import org.springframework.test.context.ActiveProfiles;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -120,7 +124,51 @@ class CockpitModuleInitialLoadBrowserTest {
 
         // Party is an inactive left-rail tab in Combat. It may stay queued until selected,
         // but the stale STANDARD body must never be shown as if it were mode-correct.
+        List<Route> heldPartyRequests = new CopyOnWriteArrayList<>();
+        AtomicBoolean failureInjected = new AtomicBoolean();
+        failures.expectHttpFailure(
+                "GET", Pattern.compile(".*/session/modules/party\\?.*"), 503);
+        page.route("**/session/modules/party**", route -> {
+            if (failureInjected.get()) {
+                route.resume();
+            } else {
+                heldPartyRequests.add(route);
+            }
+        });
         page.locator("[data-module-tab='party']").click();
+        page.waitForFunction(
+                "() => !document.querySelector("
+                        + "'[data-runtime-module=\"party\"] [data-module-status]').hidden");
+
+        assertThat(page.locator(
+                "[data-runtime-module='party'] .cockpit-module__body").isHidden())
+                .as("a stale STANDARD body must stay hidden while COMPACT is loading")
+                .isTrue();
+        assertThat(page.locator(
+                "[data-runtime-module='party'] [data-module-status]").isVisible())
+                .as("loading chrome must remain visible outside the hidden stale body")
+                .isTrue();
+
+        page.waitForCondition(() -> heldPartyRequests.size() >= 2);
+        List<Route> requestSnapshot = List.copyOf(heldPartyRequests);
+        failureInjected.set(true);
+        requestSnapshot.subList(0, requestSnapshot.size() - 1)
+                .forEach(route -> route.abort("aborted"));
+        requestSnapshot.getLast().fulfill(new Route.FulfillOptions()
+                .setStatus(503)
+                .setContentType("text/plain")
+                .setBody("Fixture party load failure"));
+        page.waitForSelector("[data-runtime-module='party'] [data-module-error]:not([hidden])");
+        assertThat(page.locator(
+                "[data-runtime-module='party'] .cockpit-module__body").isHidden())
+                .as("a stale STANDARD body must remain hidden after COMPACT fails")
+                .isTrue();
+        assertThat(page.locator(
+                "[data-runtime-module='party'] [data-module-error]").isVisible())
+                .as("error chrome must remain available outside the hidden stale body")
+                .isTrue();
+
+        page.locator("[data-runtime-module='party'] [data-module-retry]").click();
         page.waitForSelector("[data-runtime-module='party'] .runtime-party--compact");
         assertThat(moduleRequests)
                 .as("an inactive server-rendered body must refetch before first use")

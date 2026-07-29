@@ -52,14 +52,40 @@
           ?.querySelector('[data-cockpit-module-fragment][data-module-mode]')
           ?.getAttribute('data-module-mode');
         const requiredMode = this.modeFor(key);
+        if (renderedMode) content?.setAttribute('data-module-mode', renderedMode);
         if (content
             && content.getAttribute('data-module-loaded') === 'true'
             && renderedMode === requiredMode) {
+          content.removeAttribute('data-module-mode-mismatch');
           this.loaded.add(key);
           continue;
         }
+        this.prepareModeLoad(key, requiredMode);
         this.stale.add(key);
       }
+    }
+
+    prepareModeLoad(moduleKey, requiredMode) {
+      const shell = this._shells.get(moduleKey);
+      const content = shell?.querySelector('[data-module-content]');
+      if (!content) return;
+      const currentMode = content.getAttribute('data-module-mode')
+        || content.querySelector('[data-cockpit-module-fragment][data-module-mode]')
+          ?.getAttribute('data-module-mode');
+      if (currentMode) content.setAttribute('data-module-mode', currentMode);
+      const mismatched = content.getAttribute('data-module-loaded') === 'true'
+        && !!currentMode
+        && currentMode !== requiredMode;
+      content.toggleAttribute('data-module-mode-mismatch', mismatched);
+      if (mismatched) {
+        const body = shell.querySelector('[data-module-body]');
+        if (body) body.hidden = true;
+      }
+    }
+
+    acceptLoadedMode(content, mode) {
+      content.setAttribute('data-module-mode', mode);
+      content.removeAttribute('data-module-mode-mismatch');
     }
 
     flushStale() {
@@ -195,6 +221,8 @@
         this.requests.get(moduleKey).abort();
       }
 
+      this.prepareModeLoad(moduleKey, requestedMode);
+
       const revision = (this.revisions.get(moduleKey) || 0) + 1;
       this.revisions.set(moduleKey, revision);
 
@@ -254,6 +282,7 @@
             this.stale.delete(moduleKey);
             contentEl.setAttribute('data-module-loaded', 'true');
             contentEl.setAttribute('data-module-stale', 'false');
+            this.acceptLoadedMode(contentEl, requestedMode);
             const durationMs = performance.now() - loadStarted;
             this.dispatchState(moduleKey, 'empty', { durationMs, revision: this.revisions.get(moduleKey) });
             return;
@@ -281,6 +310,7 @@
           this.stale.delete(moduleKey);
           contentEl.setAttribute('data-module-loaded', 'true');
           contentEl.setAttribute('data-module-stale', 'false');
+          this.acceptLoadedMode(contentEl, requestedMode);
 
           if (PRESERVED_KEYS.has(moduleKey)) {
             this.preserveContent.add(moduleKey);

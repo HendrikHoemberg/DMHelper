@@ -39,6 +39,8 @@ document.addEventListener('alpine:init', () => {
         },
 
         async roll() {
+            if (this.loading) return;
+
             let expr = this.expression.trim();
             if (!expr) return;
 
