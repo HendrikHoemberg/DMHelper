@@ -61,7 +61,7 @@
                 </div>
                 <h3>Ability Scores</h3>
                 <div class="ability-grid">
-                    <div class="form-group" th:each="ability : ${{'STR','DEX','CON','INT','WIS','CHA'}}">
+                    <div class="form-group" th:each="ability : ${ {'STR','DEX','CON','INT','WIS','CHA'} }">
                         <label th:text="${ability}">STR</label>
                         <input type="number" th:name="${ability.toLowerCase()}" value="10" min="1" max="30" class="small-input">
                     </div>

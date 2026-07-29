@@ -143,17 +143,6 @@ public class SessionLogModuleService {
                 })
                 .toList());
 
-        events.addAll(auditRepo
-                .findBySession_IdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(sessionId, from, to)
-                .stream()
-                .filter(e -> e.getEntryType() == SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE)
-                .map(e -> {
-                    String title = extractTitleFromDetails(e.getDetails());
-                    return new LogEventView(e.getCreatedAt(), "Presentation override",
-                            title != null ? title : "Unknown", null, true);
-                })
-                .toList());
-
         events.sort(Comparator.comparing(LogEventView::occurredAt).reversed());
         return events;
     }
