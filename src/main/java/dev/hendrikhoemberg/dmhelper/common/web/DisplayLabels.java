@@ -5,7 +5,7 @@ import java.util.Locale;
 public final class DisplayLabels {
     private DisplayLabels() {}
 
-    public static String humanize(Enum<?> value) {
+    public static String humanizeEnum(Enum<?> value) {
         if (value == null) return "\u2014";
         return humanize(value.name());
     }

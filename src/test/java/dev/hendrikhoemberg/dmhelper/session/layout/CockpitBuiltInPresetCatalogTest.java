@@ -31,7 +31,7 @@ class CockpitBuiltInPresetCatalogTest {
         assertThat(layout.zones().get(CockpitZone.LEFT_SUPPORT).moduleKeys())
                 .containsExactly("story", "party");
         assertThat(layout.zones().get(CockpitZone.RIGHT_SUPPORT).moduleKeys())
-                .containsExactly("encounter");
+                .containsExactly("encounter", "reference");
         assertThat(layout.zones().get(CockpitZone.BOTTOM_UTILITY).moduleKeys())
                 .containsExactly("quick-notes", "audio");
     }
