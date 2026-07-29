@@ -13,6 +13,7 @@ import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -71,12 +72,18 @@ public class PartyMemberService {
 
     @Transactional(readOnly = true)
     public List<PartyMember> findByCampaignId(UUID campaignId) {
-        return repository.findByCampaignIdOrderByCharacterNameAsc(campaignId);
+        var members = repository.findByCampaignIdOrderByCharacterNameAsc(campaignId);
+        members.sort(Comparator.comparingInt(PartyMember::getInitiativeBonus).reversed()
+                .thenComparing(PartyMember::getCharacterName));
+        return members;
     }
 
     @Transactional(readOnly = true)
     public List<PartyMember> findActiveByCampaignId(UUID campaignId) {
-        return repository.findByCampaignIdAndActiveTrueOrderByCharacterNameAsc(campaignId);
+        var members = repository.findByCampaignIdAndActiveTrueOrderByCharacterNameAsc(campaignId);
+        members.sort(Comparator.comparingInt(PartyMember::getInitiativeBonus).reversed()
+                .thenComparing(PartyMember::getCharacterName));
+        return members;
     }
 
     @Transactional(readOnly = true)

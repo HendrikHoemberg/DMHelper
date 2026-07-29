@@ -53,7 +53,7 @@
                             <tr th:each="c : ${combatants}"
                                 th:classappend="${c.defeated} ? 'row-defeated' : (${c.bloodied} ? 'row-bloodied' : '')">
                                 <td th:text="${c.name}">Name</td>
-                                <td th:text="${c.kind}">Kind</td>
+                                <td th:text="${T(dev.hendrikhoemberg.dmhelper.common.web.DisplayLabels).humanize(c.kind)}">Kind</td>
                                 <td th:text="${c.currentHp + ' / ' + c.maxHp}">HP</td>
                                 <!-- Zero is a legal initiative; only a null is unset (workstream A3). -->
                                 <td th:text="${c.initiative != null} ? ${c.initiative} : 'not set'">0</td>

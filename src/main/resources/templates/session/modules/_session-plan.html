@@ -42,7 +42,7 @@
         <div class="quest-progress-summary quest-progress-panel" data-quest-progress>
           <h4 class="u-text-xs text-muted">Quest Progress</h4>
           <div th:each="qp : ${view.questProgress}" class="quest-progress-item u-text-sm">
-            <span class="badge" th:text="${qp.status}">STATUS</span>
+            <span class="badge" th:text="${T(dev.hendrikhoemberg.dmhelper.common.web.DisplayLabels).humanize(qp.status)}">STATUS</span>
             <span th:text="${qp.title}">Quest</span>
           </div>
         </div>

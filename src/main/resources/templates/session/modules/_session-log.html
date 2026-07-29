@@ -37,7 +37,7 @@
         <div th:each="evt : ${view.currentEvents}" class="log-event-row"
              th:classappend="${evt.warning} ? 'log-event-row--warning' : ''">
           <span class="log-event-time" th:text="${#temporals.format(evt.occurredAt, 'HH:mm')}">time</span>
-          <span class="log-event-kind" th:text="${evt.kind}">kind</span>
+          <span class="log-event-kind" th:text="${T(dev.hendrikhoemberg.dmhelper.common.web.DisplayLabels).humanize(evt.kind)}">kind</span>
           <span class="log-event-title" th:text="${evt.title}">title</span>
           <span class="log-event-detail" th:if="${evt.detail != null}" th:text="${evt.detail}">detail</span>
         </div>

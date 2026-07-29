@@ -50,7 +50,7 @@ class PartyMemberServiceTest {
         service.create(campaign.getId(), "Bruenor", "Bob", "Fighter 5", 18, 45, 2, 25, 13, 10, 9, null);
         var members = service.findByCampaignId(campaign.getId());
         assertThat(members).hasSize(2);
-        assertThat(members.get(0).getCharacterName()).isEqualTo("Bruenor");
+        assertThat(members.get(0).getCharacterName()).isEqualTo("Thia");
     }
 
     @Test
