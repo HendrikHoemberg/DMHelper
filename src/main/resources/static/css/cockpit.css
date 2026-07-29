@@ -256,12 +256,14 @@
   color: var(--color-text-muted);
 }
 
+/* No height clamp: the module body owns scrolling (.cockpit-module__body has
+   overflow:auto), and a clamp here hides DM tactics text behind no affordance at all —
+   overflow:hidden gives no scrollbar, no wheel scrolling, and the rail renders no
+   expand control. */
 .scene-body {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin: var(--space-xs) 0;
-  max-height: 6rem;
-  overflow: hidden;
 }
 
 .scene-editorial {
