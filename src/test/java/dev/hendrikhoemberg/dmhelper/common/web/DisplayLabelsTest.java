@@ -15,7 +15,7 @@ class DisplayLabelsTest {
 
     @Test
     void humanizesEnum() {
-        assertThat(DisplayLabels.humanize(DummyEnum.VALUE_NAME)).isEqualTo("Value name");
+        assertThat(DisplayLabels.humanizeEnum(DummyEnum.VALUE_NAME)).isEqualTo("Value name");
     }
 
     @Test
