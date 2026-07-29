@@ -25,10 +25,11 @@ Run the full release gate; this command must pass before the all-in-one premise 
 | 11.1.2 | Every cockpit module renders empty, populated, loading, error, compact, focused, Private and Table-safe | `CockpitRuntimeModuleContractTest`, `RuntimeModuleSafetyContractTest` |
 | 11.1.3 | Layout schema migration, constraints, docking, serialization, invalid recovery, preset reset | `CockpitLayoutPresetServiceTest`, `CockpitWorkbenchTemplateContractTest` |
 | 11.1.4 | Browser interaction: edit lock, dividers, docking, tabs, focus, keyboard, persistence, retry, resize | `CoreSessionLoopSmokeTest`, `ViewportAccessibilityGateTest` |
-| 11.1.5 | Every built-in preset in Table-safe: sensitive content neither visible nor focusable; player endpoint carries only its projection | `SessionCockpitSecurityTest`, `PlayerViewSecurityContractTest`, `ReleaseRehearsalTest` |
-| 11.1.6 | Unsafe assets blocked; a reviewed derivative matches the player preview | `HandoutDerivativeTemplateContractTest`, `ReleaseRehearsalTest` |
+| ~~11.1.5~~ | ~~Every built-in preset in Table-safe: sensitive content neither visible nor focusable; player endpoint carries only its projection — removed in the DM-only build.~~ | ~~`SessionCockpitSecurityTest`, `PlayerViewSecurityContractTest`, `ReleaseRehearsalTest`~~ |
+| ~~11.1.6~~ | ~~Unsafe assets blocked; a reviewed derivative matches the player preview — removed in the DM-only build.~~ | ~~`HandoutDerivativeTemplateContractTest`, `ReleaseRehearsalTest`~~ |
 | 11.1.7 | Tracker-driven defeat/revive and a cross-midnight session produce a faithful log | `SessionEncounterEvidenceIntegrationTest`, `ReleaseRehearsalTest` |
 | 11.1.8 | No console errors, unhandled rejections, malformed requests or silent non-2xx actions | `BrowserFailureCollector` attached in `ReleaseRehearsalTest`, `ViewportAccessibilityGateTest`, `CoreSessionLoopSmokeTest` |
+| 11.1.9 | App ships with no authentication layer; must bind to loopback (`server.address=127.0.0.1`). Any change to `server.address` is a security decision requiring explicit sign-off. | `ReleaseRehearsalTest` |
 
 ## §11.2 Viewport and accessibility gate — 1366×768 and 1920×1080
 
@@ -55,7 +56,8 @@ nested runners:
 `ReleaseRehearsalTest$RehearsalSteps#step5_initiativeDamageConditionsDefeatAndTurnsResolve`,
 `ReleaseRehearsalTest$RehearsalSteps#step6_statblocksAndRulesAreConsultedInsideDmhelper`,
 `ReleaseRehearsalTest$RehearsalSteps#step7_notesAreCapturedAndThePlanIsUpdated`,
-`ReleaseRehearsalTest$RehearsalSteps#step8_aReviewedPlayerSafeAssetIsPresentedAndTheDisplayAgrees`,
+~~`ReleaseRehearsalTest$RehearsalSteps#step8_aReviewedPlayerSafeAssetIsPresentedAndTheDisplayAgrees` — removed in the DM-only build~~,
+
 `ReleaseRehearsalTest$RehearsalSteps#step9_theEncounterAndSessionAreCompleted`, and
 `ReleaseRehearsalTest$RehearsalSteps#step10_theGeneratedLogAgreesWithWhatHappened`.
 
@@ -81,3 +83,13 @@ The visual rules are enforced continuously rather than at gate time:
 
 Passing this gate supports the all-in-one premise **for the two rehearsed campaign shapes**.
 It is not a claim about every published campaign (spec §11.3, closing paragraph).
+
+## DM-only scope
+
+The player view, table presentation, and handout safety classification have been removed.
+The app is DM-only: player-safety criteria (~~§11.1.5~~, ~~§11.1.6~~, and the former step 8 of the
+rehearsal) no longer apply. No player-facing endpoint exists.
+
+The app ships with no authentication layer. It binds to loopback by default. Any change to
+`server.address` or the introduction of an authentication layer is a security decision
+requiring explicit sign-off.
