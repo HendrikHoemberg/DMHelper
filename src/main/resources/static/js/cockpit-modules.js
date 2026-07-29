@@ -28,13 +28,25 @@
       if (this._layoutApplied || window.cockpitLayout?.mounted) {
         this._layoutApplied = true;
         this._mounted = true;
+        this.flushStale();
         return;
       }
 
       window.addEventListener('cockpit:layout-applied', () => {
         this._layoutApplied = true;
         this._mounted = true;
+        this.flushStale();
       }, { once: true });
+    }
+
+    flushStale() {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          for (const key of [...this.stale]) {
+            if (this.isModuleVisible(key)) this.load(key, { force: true });
+          }
+        });
+      });
     }
 
     discoverShells() {
@@ -74,10 +86,13 @@
 
       window.addEventListener('cockpit:module-mode', (event) => {
         if (!this.config.runtimeModulesEnabled) return;
-        if (!this._mounted) return;
         const detail = event.detail || {};
         const key = detail.moduleKey;
         if (!key || !this._shells.has(key)) return;
+        if (!this._mounted) {
+          this.stale.add(key);
+          return;
+        }
         if (this.preserveContent.has(key)) return;
         this.load(key, { mode: detail.mode });
       });
@@ -200,6 +215,16 @@
 
           const focusedId = document.activeElement?.id || null;
 
+          if (!fragment.childNodes.length) {
+            this.loaded.add(moduleKey);
+            this.stale.delete(moduleKey);
+            contentEl.setAttribute('data-module-loaded', 'true');
+            contentEl.setAttribute('data-module-stale', 'false');
+            const durationMs = performance.now() - loadStarted;
+            this.dispatchState(moduleKey, 'empty', { durationMs, revision: this.revisions.get(moduleKey) });
+            return;
+          }
+
           const body = shell.querySelector('[data-module-body]');
           if (body) {
             const root = body.querySelector('[data-module-content]') || body;
@@ -238,6 +263,12 @@
           if (error.name === 'AbortError') return;
           if (this.revisions.get(moduleKey) !== revision) return;
           const retry = () => this.load(moduleKey, { ...options, force: true });
+          const existingContent = contentEl.innerHTML.trim();
+          if (!existingContent) {
+            const errorMsg = shell.getAttribute('data-error-message') || 'Refresh failed.';
+            contentEl.innerHTML = '<p>' + errorMsg.replace(/</g, '&lt;') + '</p>'
+              + '<button type="button" class="btn btn-ghost btn-xs" data-module-retry>Retry</button>';
+          }
           window.dispatchEvent(new CustomEvent('cockpit:module-load-failed', {
             detail: {
               moduleKey,
