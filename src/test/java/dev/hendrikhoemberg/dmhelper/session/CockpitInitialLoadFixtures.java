@@ -9,6 +9,10 @@ import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
+import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionLifecycleService;
@@ -28,6 +32,8 @@ public class CockpitInitialLoadFixtures {
     private final ChapterRepository chapters;
     private final SceneRepository scenes;
     private final AdventureService adventureService;
+    private final EncounterRepository encounters;
+    private final CombatantRepository combatants;
 
     public CockpitInitialLoadFixtures(CampaignRepository campaigns,
                                       GameMapRepository maps,
@@ -35,7 +41,9 @@ public class CockpitInitialLoadFixtures {
                                       AdventureRepository adventures,
                                       ChapterRepository chapters,
                                       SceneRepository scenes,
-                                      AdventureService adventureService) {
+                                      AdventureService adventureService,
+                                      EncounterRepository encounters,
+                                      CombatantRepository combatants) {
         this.campaigns = campaigns;
         this.maps = maps;
         this.lifecycle = lifecycle;
@@ -43,6 +51,8 @@ public class CockpitInitialLoadFixtures {
         this.chapters = chapters;
         this.scenes = scenes;
         this.adventureService = adventureService;
+        this.encounters = encounters;
+        this.combatants = combatants;
     }
 
     @Transactional
@@ -78,5 +88,25 @@ public class CockpitInitialLoadFixtures {
 
         lifecycle.start(campaign.getId(), map.getId());
         return campaign.getId();
+    }
+
+    @Transactional
+    public UUID plannedEncounterWithOneCombatant(UUID campaignId) {
+        Campaign campaign = campaigns.findById(campaignId).orElseThrow();
+        GameMap map = maps.findByCampaignIdOrderBySortOrderAsc(campaignId).getFirst();
+        Encounter encounter = new Encounter();
+        encounter.setCampaign(campaign);
+        encounter.setMap(map);
+        encounter.setName("Reactivation Fixture");
+        encounter.setStatus(Encounter.Status.PLANNED);
+        encounters.save(encounter);
+
+        Combatant goblin = new Combatant();
+        goblin.setEncounter(encounter);
+        goblin.setName("Goblin");
+        goblin.setMaxHp(7);
+        goblin.setCurrentHp(7);
+        combatants.save(goblin);
+        return encounter.getId();
     }
 }

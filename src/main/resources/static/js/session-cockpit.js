@@ -580,14 +580,27 @@ function sessionCockpit(config) {
             const pendingId = this._replacementPendingId;
             this.closeReplacementDialog();
             if (!pendingId) return;
-            await this.activateEncounter(pendingId, 'SUSPEND');
+            await this._activateOrNotify(pendingId, 'SUSPEND');
         },
 
         async confirmEndCurrent() {
             const pendingId = this._replacementPendingId;
             this.closeReplacementDialog();
             if (!pendingId) return;
-            await this.activateEncounter(pendingId, 'END');
+            await this._activateOrNotify(pendingId, 'END');
+        },
+
+        // A rejected activation used to escape as an unhandled Alpine expression error: the
+        // dialog closed, nothing loaded, and the only clue was the status chip reading
+        // "Not saved". Failures must reach the DM as words.
+        async _activateOrNotify(encounterId, disposition) {
+            try {
+                await this.activateEncounter(encounterId, disposition);
+            } catch (error) {
+                const detail = error?.problem?.detail
+                    || 'The encounter could not be started. Nothing was changed.';
+                window.cockpitLayout?.showNotice(detail);
+            }
         },
 
         showReadinessDialog(readiness, encounterId) {

@@ -410,6 +410,27 @@ public class EncounterService {
         }
     }
 
+    /**
+     * Puts a finished encounter back into initiative setup. This deliberately mirrors the
+     * reset performed by activate(UUID): old HP/initiative values remain editable, but stale
+     * RUNNING/turn state cannot leak into the new run. The combat log is retained and a new
+     * activation boundary separates the runs.
+     */
+    public Encounter reopen(UUID encounterId) {
+        Encounter e = findEntityById(encounterId);
+        if (e.getStatus() != Encounter.Status.DONE) {
+            throw new IllegalStateException("Only finished encounters can be reopened");
+        }
+        e.setStatus(Encounter.Status.ACTIVE);
+        e.setCombatPhase(Encounter.CombatPhase.SETUP);
+        e.setRound(0);
+        e.setActiveTurnIndex(-1);
+        encounterRepo.save(e);
+        placementService.autoPlaceUnplaced(encounterId);
+        logEntry(encounterId, CombatLogEntry.EntryType.ENCOUNTER_ACTIVATED, "", "");
+        return e;
+    }
+
     public Encounter activateFresh(UUID encounterId) {
         Encounter e = findEntityById(encounterId);
         if (e.getStatus() != Encounter.Status.PLANNED) {

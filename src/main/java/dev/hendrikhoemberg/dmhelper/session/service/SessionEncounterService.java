@@ -72,10 +72,13 @@ public class SessionEncounterService {
             encounterService.endEncounter(replaced.getId());
         }
 
+        // Exhaustive on purpose: no default branch, so adding a status to Encounter.Status
+        // becomes a compile error here instead of a 500 at the table.
         Encounter activated = switch (requested.getStatus()) {
             case ACTIVE -> requested;
             case SUSPENDED -> encounterService.resume(encounterId);
-            default -> encounterService.activateFresh(encounterId);
+            case PLANNED -> encounterService.activateFresh(encounterId);
+            case DONE -> encounterService.reopen(encounterId);
         };
 
         var session = sessions.findByCampaignId(campaignId)
