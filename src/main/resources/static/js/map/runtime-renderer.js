@@ -137,7 +137,17 @@ export async function renderRuntimeDocument({
     targetLayer.add(root);
     const layers = includedLayers(document, playerView);
 
-    for (const layer of layers.filter(item => item.type === 'IMAGE')) {
+    const imageLayers = layers.filter(item => item.type === 'IMAGE');
+    if (imageLayers.length === 0) {
+        root.add(new Konva.Rect({
+            x: 0, y: 0,
+            width: gridWidth * cellSizePx,
+            height: gridHeight * cellSizePx,
+            fill: '#d9d0bd',
+            listening: false,
+        }));
+    }
+    for (const layer of imageLayers) {
         await addBackground(Konva, root, layer.id, layer.image, cellSizePx);
     }
 

@@ -455,7 +455,8 @@
 }
 
 .lifecycle-dialog {
-  max-inline-size: min(42rem, calc(100vw - 2rem));
+  width: min(900px, 92vw);
+  max-inline-size: min(900px, 92vw);
   max-block-size: calc(100dvh - 2rem);
   overflow: auto;
   margin: auto;
@@ -464,6 +465,20 @@
   background: var(--color-surface);
   color: var(--color-text);
   padding: 0;
+}
+.lifecycle-dialog label {
+  display: block;
+  margin-bottom: var(--space-xs);
+}
+.lifecycle-dialog input[type="text"],
+.lifecycle-dialog textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+.lifecycle-dialog textarea {
+  min-height: 22rem;
+  font-family: var(--font-mono);
+  line-height: 1.5;
 }
 .lifecycle-dialog::backdrop {
   background: rgba(10, 7, 4, 0.72);

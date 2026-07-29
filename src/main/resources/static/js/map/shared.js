@@ -16,13 +16,13 @@ export function drawGrid(layer, gridWidth, gridHeight, cellSizePx) {
     for (let col = 0; col <= gridWidth; col++) {
         layer.add(new Konva.Line({
             points: [col * s, 0, col * s, gridHeight * s],
-            stroke: '#333', strokeWidth: 0.5, listening: false,
+            stroke: 'rgba(0,0,0,0.18)', strokeWidth: 0.5, listening: false,
         }));
     }
     for (let row = 0; row <= gridHeight; row++) {
         layer.add(new Konva.Line({
             points: [0, row * s, gridWidth * s, row * s],
-            stroke: '#333', strokeWidth: 0.5, listening: false,
+            stroke: 'rgba(0,0,0,0.18)', strokeWidth: 0.5, listening: false,
         }));
     }
     layer.batchDraw();
