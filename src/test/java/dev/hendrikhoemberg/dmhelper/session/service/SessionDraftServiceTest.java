@@ -26,8 +26,6 @@ import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollOutcome;
 import dev.hendrikhoemberg.dmhelper.dice.DiceResult;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
-import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntry;
-import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntryRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChangeRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisit;
@@ -66,8 +64,6 @@ class SessionDraftServiceTest {
     @Mock private QuestObjectiveRepository questObjectiveRepository;
     @Mock private TableRollLogRepository tableRollLogs;
     @Mock private TableRollGroupCodec codec;
-    @Mock private SessionAuditEntryRepository auditRepo;
-
     private SessionDraftService service;
     private final ZoneId zone = ZoneId.of("Europe/Berlin");
 
@@ -91,11 +87,9 @@ class SessionDraftServiceTest {
         startedAt = Instant.parse("2026-07-16T18:00:00Z");
         endedAt = Instant.parse("2026-07-16T22:30:00Z");
         lenient().when(calendar.getCalendarConfig(campaignId)).thenReturn(CalendarService.DEFAULT_CALENDAR);
-        lenient().when(auditRepo.findBySession_IdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(
-                any(), any(), any())).thenReturn(List.of());
         service = new SessionDraftService(visits, combatLogs, combatants, ledgers, quickNotes,
                 quickNoteService, calendar, objectiveChanges, questRepository,
-                questObjectiveRepository, tableRollLogs, codec, auditRepo, zone);
+                questObjectiveRepository, tableRollLogs, codec, zone);
     }
 
     @Test
@@ -441,24 +435,7 @@ class SessionDraftServiceTest {
     }
 
     @Test
-    void includesSafetyOverrides() {
-        SessionAuditEntry audit = new SessionAuditEntry();
-        audit.setId(UUID.randomUUID());
-        audit.setSession(session);
-        audit.setEntryType(SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE);
-        audit.setContentType("HANDOUT");
-        audit.setContentId(UUID.randomUUID());
-        audit.setDetails("{\"title\":\"Scanned page 12\",\"classification\":\"DM_SOURCE\"}");
-        audit.setCreatedAt(Instant.parse("2026-07-16T19:00:00Z"));
-        SessionAuditEntry malformed = new SessionAuditEntry();
-        malformed.setId(UUID.randomUUID());
-        malformed.setSession(session);
-        malformed.setEntryType(SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE);
-        malformed.setContentType("HANDOUT");
-        malformed.setContentId(UUID.randomUUID());
-        malformed.setDetails("not json");
-        malformed.setCreatedAt(Instant.parse("2026-07-16T19:01:00Z"));
-
+    void draftOmitsPresentationSafetySection() {
         when(calendar.getCurrentDate(campaignId)).thenReturn(new CalendarService.InGameDate(1492, 6, 12));
         when(visits.findBySessionIdOrderByVisitedAtAscIdAsc(session.getId())).thenReturn(List.of());
         when(combatLogs.findSessionEvidence(campaignId, startedAt, endedAt)).thenReturn(List.of());
@@ -468,17 +445,11 @@ class SessionDraftServiceTest {
                 .thenReturn(List.of());
         when(tableRollLogs.findByCampaignIdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(campaignId, startedAt, endedAt))
                 .thenReturn(List.of());
-        when(auditRepo.findBySession_IdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(
-                session.getId(), startedAt, endedAt))
-                .thenReturn(List.of(audit, malformed));
 
         String draft = service.generate(session, endedAt);
 
-        assertThat(draft).contains("## Presentation Safety Overrides");
-        assertThat(draft).contains("Scanned page 12");
-        assertThat(draft).contains("DM_SOURCE");
-        assertThat(draft).contains("21:00");
-        assertThat(draft).contains("Europe/Berlin");
-        assertThat(draft).doesNotContain("- null");
+        assertThat(draft).doesNotContain("Presentation Safety Overrides");
+        assertThat(draft).contains("## Scenes", "## Encounters", "## Recap");
     }
+
 }

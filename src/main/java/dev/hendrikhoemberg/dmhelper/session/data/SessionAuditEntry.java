@@ -11,7 +11,6 @@ import java.util.UUID;
 public class SessionAuditEntry {
 
     public enum EntryType {
-        PRESENTATION_OVERRIDE
     }
 
     @Id

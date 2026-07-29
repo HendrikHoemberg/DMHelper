@@ -19,8 +19,6 @@ import dev.hendrikhoemberg.dmhelper.rollabletable.data.TableRollLogRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollGroupCodec;
 import dev.hendrikhoemberg.dmhelper.rollabletable.service.TableRollOutcome;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
-import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntry;
-import dev.hendrikhoemberg.dmhelper.session.data.SessionAuditEntryRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChange;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionObjectiveChangeRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.SessionSceneVisitRepository;
@@ -66,7 +64,6 @@ public class SessionDraftService {
     private final QuestObjectiveRepository questObjectiveRepository;
     private final TableRollLogRepository tableRollLogs;
     private final TableRollGroupCodec codec;
-    private final SessionAuditEntryRepository auditRepo;
     private final ZoneId zone;
 
     public SessionDraftService(SessionSceneVisitRepository visits,
@@ -79,10 +76,9 @@ public class SessionDraftService {
                                SessionObjectiveChangeRepository objectiveChanges,
                                QuestRepository questRepository,
                                QuestObjectiveRepository questObjectiveRepository,
-                               TableRollLogRepository tableRollLogs,
-                               TableRollGroupCodec codec,
-                               SessionAuditEntryRepository auditRepo,
-                               ZoneId zone) {
+                                TableRollLogRepository tableRollLogs,
+                                TableRollGroupCodec codec,
+                                ZoneId zone) {
         this.visits = visits;
         this.combatLogs = combatLogs;
         this.combatants = combatants;
@@ -95,7 +91,6 @@ public class SessionDraftService {
         this.questObjectiveRepository = questObjectiveRepository;
         this.tableRollLogs = tableRollLogs;
         this.codec = codec;
-        this.auditRepo = auditRepo;
         this.zone = zone;
     }
 
@@ -110,7 +105,7 @@ public class SessionDraftService {
         listSection(out, "Quest Progress", questProgressLines(session));
         listSection(out, "Encounters", encounterLines(campaignId, startedAt, endedAt));
         listSection(out, "Table Rolls", tableRollLines(campaignId, startedAt, endedAt));
-        listSection(out, "Presentation Safety Overrides", auditOverrideLines(session, startedAt, endedAt));
+
         listSection(out, "Loot & Ledger Changes", ledgerLines(campaignId, startedAt, endedAt));
         listSection(out, "Unresolved Quick Notes", quickNoteLines(campaignId, startedAt, endedAt));
         out.append("## Recap\n\n\n## Next-Session Hooks\n\n");
@@ -124,28 +119,6 @@ public class SessionDraftService {
             return DATE_FMT.format(start) + "\u2013" + TIME_FMT.format(end) + " " + zone.getId();
         }
         return DATE_FMT.format(start) + " " + zone.getId() + "\u2013" + DATE_FMT.format(end) + " " + zone.getId();
-    }
-
-    private List<String> auditOverrideLines(CampaignSession session, Instant from, Instant to) {
-        return auditRepo.findBySession_IdAndCreatedAtBetweenOrderByCreatedAtAscIdAsc(session.getId(), from, to)
-                .stream()
-                .filter(e -> e.getEntryType() == SessionAuditEntry.EntryType.PRESENTATION_OVERRIDE)
-                .map(this::auditOverrideLine)
-                .filter(Objects::nonNull)
-                .toList();
-    }
-
-    private String auditOverrideLine(SessionAuditEntry entry) {
-        try {
-            var json = JSON.readTree(entry.getDetails());
-            String title = json.get("title").asText();
-            String classification = json.get("classification").asText();
-            String timestamp = DATE_FMT.format(entry.getCreatedAt().atZone(zone)) + " " + zone.getId();
-            return "Asset: " + title + " \u2014 Classification: " + classification + " \u2014 " + timestamp;
-        } catch (Exception e) {
-            log.warn("Ignoring malformed audit entry {}", entry.getId());
-            return null;
-        }
     }
 
     private void section(StringBuilder out, String title, String body) {
