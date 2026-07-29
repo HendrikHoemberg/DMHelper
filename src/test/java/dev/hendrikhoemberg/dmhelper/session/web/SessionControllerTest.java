@@ -115,7 +115,7 @@ class SessionControllerTest {
         var view = new CockpitRuntimeModuleViewService.StoryView(
                 sceneId, "Throne Room", null, null, null,
                 List.of(), List.of(), List.of(), List.of(), List.of(), java.util.Map.of(),
-                true, false, false, UUID.randomUUID(), null, null);
+                true, false, false, UUID.randomUUID(), null, null, null);
         when(moduleViews.story(campaignId)).thenReturn(view);
 
         mvc.perform(get("/campaigns/{id}/session/rails/story", campaignId))

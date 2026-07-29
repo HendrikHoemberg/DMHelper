@@ -53,7 +53,7 @@ class CockpitRuntimeModuleControllerTest {
         var view = new CockpitRuntimeModuleViewService.StoryView(
                 UUID.randomUUID(), "Test Scene", null, null, "Read aloud text",
                 List.of(), List.of(), List.of(), List.of(), List.of(), java.util.Map.of(), false,
-                false, false, UUID.randomUUID(), null, null);
+                false, false, UUID.randomUUID(), null, null, null);
         when(views.story(campaignId)).thenReturn(view);
         when(adventures.scenePickerGroups(campaignId)).thenReturn(List.of(
                 new AdventureService.ScenePickerGroup("Adventure — Chapter", List.of(
