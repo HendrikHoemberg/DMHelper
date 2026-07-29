@@ -11,7 +11,7 @@
       <div class="battle-toolbar" aria-label="Battle map controls">
         <div class="tool-group map-switcher">
           <label for="runtimeMapPicker" class="sr-only">Workspace map</label>
-          <select id="runtimeMapPicker" aria-label="Workspace map" :value="currentMapId"
+          <select id="runtimeMapPicker" aria-label="Workspace map" x-model="currentMapId"
                   @change="switchMap($event.target.value)">
             <option value="" :disabled="sessionStatus === 'IDLE' && !!currentMapId">No map</option>
             <template x-for="m in maps" :key="m.id">

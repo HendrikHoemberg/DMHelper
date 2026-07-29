@@ -258,4 +258,17 @@ class SessionCockpitMapContractTest {
                 .as("the Start encounter action must not strand a newly seeded encounter as merely planned")
                 .contains("await this.runEncounter(result.encounterId);");
     }
+
+    @Test
+    void workspaceMapPickerUsesXModelSoItReflectsTheLoadedMap() throws IOException {
+        String html = Files.readString(
+                Path.of("src/main/resources/templates/session/_map-module.html"));
+
+        assertThat(html)
+                .as("the workspace map picker must bind with x-model")
+                .contains("x-model=\"currentMapId\"");
+        assertThat(html)
+                .as(":value on a select silently loses the selection when options come from x-for")
+                .doesNotContain(":value=\"currentMapId\"");
+    }
 }
