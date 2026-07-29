@@ -1634,6 +1634,7 @@
 
     moduleMode(key) {
       if (this.focusedModuleKey === key) return 'FOCUSED';
+      if (Array.isArray(this.current?.compactModuleKeys) && this.current.compactModuleKeys.includes(key)) return 'COMPACT';
       const shell = document.querySelector(`[data-module-key="${key}"]`);
       if (shell && shell.getAttribute('data-compact') === 'true') return 'COMPACT';
       return 'STANDARD';

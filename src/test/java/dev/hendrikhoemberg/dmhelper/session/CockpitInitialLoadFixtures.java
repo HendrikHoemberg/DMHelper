@@ -1,0 +1,82 @@
+package dev.hendrikhoemberg.dmhelper.session;
+
+import dev.hendrikhoemberg.dmhelper.adventure.data.Adventure;
+import dev.hendrikhoemberg.dmhelper.adventure.data.AdventureRepository;
+import dev.hendrikhoemberg.dmhelper.adventure.data.Chapter;
+import dev.hendrikhoemberg.dmhelper.adventure.data.ChapterRepository;
+import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
+import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
+import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionLifecycleService;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+
+/** Builds the smallest campaign that renders a full cockpit with a workspace map. */
+@Component
+public class CockpitInitialLoadFixtures {
+
+    private final CampaignRepository campaigns;
+    private final GameMapRepository maps;
+    private final SessionLifecycleService lifecycle;
+    private final AdventureRepository adventures;
+    private final ChapterRepository chapters;
+    private final SceneRepository scenes;
+    private final AdventureService adventureService;
+
+    public CockpitInitialLoadFixtures(CampaignRepository campaigns,
+                                      GameMapRepository maps,
+                                      SessionLifecycleService lifecycle,
+                                      AdventureRepository adventures,
+                                      ChapterRepository chapters,
+                                      SceneRepository scenes,
+                                      AdventureService adventureService) {
+        this.campaigns = campaigns;
+        this.maps = maps;
+        this.lifecycle = lifecycle;
+        this.adventures = adventures;
+        this.chapters = chapters;
+        this.scenes = scenes;
+        this.adventureService = adventureService;
+    }
+
+    @Transactional
+    public UUID campaignWithRunningSession() {
+        Campaign campaign = new Campaign();
+        campaign.setName("Initial Load Fixture");
+        campaigns.save(campaign);
+
+        GameMap map = new GameMap();
+        map.setCampaign(campaign);
+        map.setName("Fixture Map");
+        maps.save(map);
+
+        Adventure adv = new Adventure();
+        adv.setCampaign(campaign);
+        adv.setName("Fixture Adventure");
+        adventures.save(adv);
+
+        Chapter ch = new Chapter();
+        ch.setAdventure(adv);
+        ch.setTitle("Chapter 1");
+        ch = chapters.save(ch);
+
+        Scene scene = new Scene();
+        scene.setChapter(ch);
+        scene.setTitle("Crypt Door");
+        scene.setBody("The stone door looms before you.");
+        scene.setSortOrder(1);
+        scene.setMap(map);
+        scenes.save(scene);
+
+        adventureService.setCurrentScene(campaign.getId(), scene.getId());
+
+        lifecycle.start(campaign.getId(), map.getId());
+        return campaign.getId();
+    }
+}

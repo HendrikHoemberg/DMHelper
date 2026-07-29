@@ -21,6 +21,7 @@
     mount() {
       this.discoverShells();
       this.registerListeners();
+      this.seedInitialLoads();
 
       // The layout controller boots before this one and dispatches cockpit:layout-applied
       // synchronously during its own mount, so that event has usually already fired by now.
@@ -37,6 +38,28 @@
         this._mounted = true;
         this.flushStale();
       }, { once: true });
+    }
+
+    // The layout controller has already emitted every visibility event by the time this
+    // controller registers its listeners, so nothing else will ever mark a module stale on
+    // first paint. Server-rendered bodies (initialBody != null in _cockpit-workbench.html)
+    // count as loaded only when their rendered mode matches the restored preset; everything
+    // else must be queued or it stays blank/wrongly expanded until the DM toggles presets.
+    seedInitialLoads() {
+      for (const [key, shell] of this._shells) {
+        const content = shell.querySelector('[data-module-content]');
+        const renderedMode = content
+          ?.querySelector('[data-cockpit-module-fragment][data-module-mode]')
+          ?.getAttribute('data-module-mode');
+        const requiredMode = this.modeFor(key);
+        if (content
+            && content.getAttribute('data-module-loaded') === 'true'
+            && renderedMode === requiredMode) {
+          this.loaded.add(key);
+          continue;
+        }
+        this.stale.add(key);
+      }
     }
 
     flushStale() {
