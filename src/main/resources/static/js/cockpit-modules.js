@@ -66,6 +66,11 @@
         if (detail.visible && this.attention.has(key)) {
           this.clearAttention(key);
         }
+        // Queueing in load() is only useful if something drains the queue. A module
+        // becoming visible (tab activated, zone expanded) is that moment.
+        if (detail.visible && this._mounted && this.stale.has(key)) {
+          this.load(key, { force: true });
+        }
       });
 
       window.addEventListener('cockpit:module-refresh', (event) => {
@@ -137,7 +142,13 @@
 
       const visible = this.isModuleVisible(moduleKey);
 
-      if (!options.force && !visible) return;
+      // A module that is not visible yet (inactive tab, collapsed zone, still-painting
+      // layout) must be queued, never dropped: nothing else marks it stale, so a dropped
+      // load is a panel that stays blank until the preset is toggled.
+      if (!options.force && !visible) {
+        this.stale.add(moduleKey);
+        return;
+      }
 
       const requestedMode = options.mode || this.modeFor(moduleKey);
 
