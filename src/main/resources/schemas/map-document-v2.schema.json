@@ -69,13 +69,14 @@
     "image": {
       "type": "object",
       "additionalProperties": false,
+      "description": "Background image placement. NOTE: x/y/width/height are in GRID CELLS, not pixels — the renderer multiplies each by grid.cellSizePx. To place an image 1:1 (one source pixel per grid pixel), set width/height to grid.width/grid.height, which requires the image to be exactly grid.width*cellSizePx by grid.height*cellSizePx pixels. This differs from map.tokens[] and map.threatPins[] in the campaign manifest, whose coordinates are in pixels.",
       "required": ["assetRef", "x", "y", "width", "height"],
       "properties": {
         "assetRef": { "$ref": "https://dmhelper/campaign-format-v2.schema.json#/$defs/key" },
-        "x": { "type": "number" },
-        "y": { "type": "number" },
-        "width": { "type": "number", "exclusiveMinimum": 0 },
-        "height": { "type": "number", "exclusiveMinimum": 0 },
+        "x": { "type": "number", "description": "Left edge in grid cells, relative to the canvas origin (top-left)." },
+        "y": { "type": "number", "description": "Top edge in grid cells, relative to the canvas origin (top-left)." },
+        "width": { "type": "number", "exclusiveMinimum": 0, "description": "Drawn width in grid cells." },
+        "height": { "type": "number", "exclusiveMinimum": 0, "description": "Drawn height in grid cells." },
         "rotationDeg": { "type": "number" },
         "locked": { "type": "boolean" },
         "calibration": { "$ref": "#/$defs/calibration" }
@@ -100,15 +101,16 @@
     "calibration": {
       "type": "object",
       "additionalProperties": false,
+      "description": "Record of the two-point grid calibration the DM performed. Descriptive only — the renderer draws from image.x/y/width/height and never re-applies this. Points a and b are in grid cells (same units as image.x/y); the offsets are the resulting image origin in pixels.",
       "required": ["ax", "ay", "bx", "by", "cellsBetween", "offsetXPx", "offsetYPx"],
       "properties": {
-        "ax": { "type": "number" },
-        "ay": { "type": "number" },
-        "bx": { "type": "number" },
-        "by": { "type": "number" },
-        "cellsBetween": { "type": "number", "minimum": 0 },
-        "offsetXPx": { "type": "number" },
-        "offsetYPx": { "type": "number" }
+        "ax": { "type": "number", "description": "First calibration point, x in grid cells." },
+        "ay": { "type": "number", "description": "First calibration point, y in grid cells." },
+        "bx": { "type": "number", "description": "Second calibration point, x in grid cells." },
+        "by": { "type": "number", "description": "Second calibration point, y in grid cells." },
+        "cellsBetween": { "type": "number", "minimum": 0, "description": "Number of cells the DM declared between points a and b." },
+        "offsetXPx": { "type": "number", "description": "Resulting image.x in pixels (image.x * grid.cellSizePx)." },
+        "offsetYPx": { "type": "number", "description": "Resulting image.y in pixels (image.y * grid.cellSizePx)." }
       }
     },
     "terrain": {

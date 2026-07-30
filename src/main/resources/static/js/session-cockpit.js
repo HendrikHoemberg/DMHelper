@@ -563,7 +563,11 @@ function sessionCockpit(config) {
             try {
                 const readinessResponse = await this.request(`/api/v1/encounters/${encounterId}/readiness`);
                 const readiness = await readinessResponse.json();
-                if ((readiness.issues || []).length > 0) {
+                // Only ERROR-severity issues block a run, and the server already folds those
+                // into canRun. Stopping for warnings stranded the DM in a dialog for things
+                // that are not problems: UNPLACED_COMBATANTS is warned about here and then
+                // fixed by the auto-placement that activation itself performs.
+                if (readiness.canRun === false) {
                     this.showReadinessDialog(readiness, encounterId);
                     return;
                 }

@@ -6,6 +6,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.dice.DiceEngine;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantDto;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantUpdateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.EncounterDto;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
@@ -236,6 +237,38 @@ class EncounterServiceTest {
         // nextTurn skips B (defeated), goes to C (index 2)
         EncounterDto turn1 = service.nextTurn(enc.id());
         assertThat(turn1.activeTurnIndex()).isEqualTo(2);
+    }
+
+    @Test
+    void groupKeepsActingAfterItsLeaderIsDefeated() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        service.activate(enc.id());
+        CombatantDto leader = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Goblin 1", 7, "MONSTER", null, null));
+        CombatantDto mook = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Goblin 2", 7, "MONSTER", null, null));
+        CombatantDto pc = service.addCombatant(enc.id(),
+                new CombatantCreateRequest("Hero", 20, "PC", null, null));
+        service.updateCombatant(leader.id(), groupAssignment("goblins", true));
+        service.updateCombatant(mook.id(), groupAssignment("goblins", false));
+        service.setInitiative(leader.id(), 20);
+        service.setInitiative(mook.id(), 18);
+        service.setInitiative(pc.id(), 10);
+
+        service.startCombat(enc.id(), false);
+        service.markDefeated(leader.id(), true);
+
+        // The leader is gone but Goblin 2 is untouched, so the group must still get a turn.
+        EncounterDto turn = service.nextTurn(enc.id());
+
+        var combatants = service.getCombatants(enc.id());
+        assertThat(combatants.get(turn.activeTurnIndex()).name()).isEqualTo("Goblin 2");
+    }
+
+    private static CombatantUpdateRequest groupAssignment(String groupId, boolean leader) {
+        return new CombatantUpdateRequest(null, null, null, null, null, null, null,
+                groupId, leader, null, null, null, null, null, null, null, null, null,
+                null, null, null, null);
     }
 
     @Test

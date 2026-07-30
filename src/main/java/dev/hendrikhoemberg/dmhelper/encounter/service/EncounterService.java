@@ -1419,9 +1419,7 @@ public class EncounterService {
         while (checked < combatants.size()) {
             idx = (idx + 1) % combatants.size();
             Combatant candidate = combatants.get(idx);
-            boolean stoppable = !candidate.isDefeated()
-                    && (candidate.getGroupId() == null || candidate.isGroupLeader());
-            if (stoppable) {
+            if (takesTurn(candidate, combatants)) {
                 break;
             }
             checked++;
@@ -1493,8 +1491,7 @@ public class EncounterService {
                 idx--;
             }
             checked++;
-            if (!combatants.get(idx).isDefeated()
-                    && (combatants.get(idx).getGroupId() == null || combatants.get(idx).isGroupLeader())) {
+            if (takesTurn(combatants.get(idx), combatants)) {
                 break;
             }
         }
@@ -2203,12 +2200,29 @@ public class EncounterService {
 
     private int firstEligibleTurnIndex(List<Combatant> combatants) {
         for (int i = 0; i < combatants.size(); i++) {
-            Combatant c = combatants.get(i);
-            if (!c.isDefeated() && (c.getGroupId() == null || c.isGroupLeader())) {
+            if (takesTurn(combatants.get(i), combatants)) {
                 return i;
             }
         }
         return -1;
+    }
+
+    /**
+     * Whether the initiative order stops on this combatant. A group acts once, on its flagged
+     * leader, but that flag is fixed when the group is built: a leader killed mid-fight used to
+     * take the whole group out of the order while its surviving members were still standing on
+     * the map, and an encounter whose only survivors were led that way could not be started at
+     * all. When no living leader is left, the group's first surviving member represents it.
+     */
+    private static boolean takesTurn(Combatant candidate, List<Combatant> order) {
+        if (candidate.isDefeated()) return false;
+        if (candidate.getGroupId() == null || candidate.isGroupLeader()) return true;
+        List<Combatant> survivors = order.stream()
+                .filter(c -> candidate.getGroupId().equals(c.getGroupId()))
+                .filter(c -> !c.isDefeated())
+                .toList();
+        return survivors.stream().noneMatch(Combatant::isGroupLeader)
+                && survivors.get(0).getId().equals(candidate.getId());
     }
 
     @Transactional(readOnly = true)

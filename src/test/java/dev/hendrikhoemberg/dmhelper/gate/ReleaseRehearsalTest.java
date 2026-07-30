@@ -167,13 +167,13 @@ class ReleaseRehearsalTest {
             } else {
                 throw new AssertionError("The scene-to-encounter action must be available for every rehearsal shape.");
             }
-            Locator readinessDialog = page.locator("#encounterReadinessDialog");
-            readinessDialog.waitFor();
-            readinessDialog.locator("button",
-                    new Locator.LocatorOptions().setHasText("Run anyway")).click();
-            actions++;
             applyPreset("builtin:combat");
             page.waitForSelector("[data-runtime-module='encounter'] [data-initiative-setup]");
+            // The seeded roster is unplaced, which readiness reports as a WARNING. That must not
+            // interrupt the run — activation places the tokens itself — so the encounter goes
+            // straight to initiative setup and the dialog stays shut for anything non-blocking.
+            assertThat(page.locator("#encounterReadinessDialog[open]").count())
+                    .as("a warning-only readiness does not stop the DM with a dialog").isZero();
             encounterName = page.textContent("[data-runtime-module='encounter'] [data-encounter-name]").trim();
             if (shape() == ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS) {
                 assertThat(page.locator("[data-runtime-module='encounter'] [data-module-content-root]").getAttribute("data-encounter-id"))
