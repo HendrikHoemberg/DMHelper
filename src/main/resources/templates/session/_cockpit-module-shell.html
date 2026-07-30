@@ -13,7 +13,8 @@
                    aria-label=${module.title}"
          tabindex="-1">
   <header class="cockpit-module__header">
-    <h2 th:id="|cockpitModuleTitle-${module.key}|" th:text="${module.title}">Module</h2>
+    <h2 class="cockpit-module__header-title"
+        th:id="|cockpitModuleTitle-${module.key}|" th:text="${module.title}">Module</h2>
     <span class="cockpit-module__attention" hidden aria-label="0 updates"></span>
     <div class="cockpit-module__actions">
       <button type="button" class="btn btn-ghost btn-xs" data-module-focus
