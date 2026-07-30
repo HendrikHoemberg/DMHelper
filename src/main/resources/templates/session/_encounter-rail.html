@@ -7,9 +7,6 @@
     <th:block th:replace="~{encounter/_tracker :: tracker(mode=${mode})}"></th:block>
   </div>
   <div class="sidebar-section">
-    <!-- The tracker owns the rail mid-fight, so this list collapses while an encounter is
-         active. `encounter` lives inside the tracker's own Alpine scope, not this one, so the
-         state is seeded from the server view and kept current from tracker-encounter-state. -->
     <details class="planned-encounters"
              x-data="{ hasActive: false }"
              th:attr="data-has-active=${view.activeEncounterId != null}"
@@ -21,7 +18,33 @@
       <div x-data="{ plannedFilter: '' }">
         <input type="search" class="form-input" x-model="plannedFilter"
                placeholder="Filter encounters..." style="margin-bottom: var(--space-sm);">
+        <th:block th:if="${!view.currentScenePlanned.isEmpty()}">
+          <div class="planned-encounter-section-label">This scene</div>
+          <th:block th:each="enc : ${view.currentScenePlanned}">
+            <div class="planned-encounter-row"
+                 th:attr="data-name=${enc.name}"
+                 x-show="!plannedFilter || $el.dataset.name.toLowerCase().includes(plannedFilter.toLowerCase())">
+              <span class="planned-encounter-row__title" th:text="${enc.name}">Goblin Ambush</span>
+              <span class="planned-encounter-row__meta">
+                <span th:text="${enc.mapName != null ? enc.mapName : 'No map'}">Map</span>
+                <span aria-hidden="true">·</span>
+                <span th:text="${enc.combatantCount + (enc.combatantCount == 1 ? ' combatant' : ' combatants')}">6 combatants</span>
+              </span>
+              <span class="encounter-chip"
+                    th:classappend="${enc.verdict.name() == 'RUNNABLE'} ? 'encounter-chip--ready'
+                                  : (${enc.verdict.name() == 'BLOCKED'} ? 'encounter-chip--blocked' : 'encounter-chip--notes')"
+                    th:text="${enc.verdict.name() == 'RUNNABLE'} ? 'Ready'
+                           : (${enc.verdict.name() == 'BLOCKED'} ? 'Blocked' : 'Needs setup')"
+                    th:title="${enc.verdict.name() == 'BLOCKED'} ? 'Assign a map before running this encounter'
+                            : 'Runnable now; placement happens on activation'">Ready</span>
+              <button class="btn btn-ghost encounter-rail__action"
+                      th:attr="data-encounter-id=${enc.id}"
+                      @click="runEncounter($el.dataset.encounterId)">Run</button>
+            </div>
+          </th:block>
+        </th:block>
         <th:block th:if="${!view.planned.isEmpty()}">
+          <div class="planned-encounter-section-label" th:if="${!view.currentScenePlanned.isEmpty()}">All planned encounters</div>
           <th:block th:each="enc : ${view.planned}">
             <div class="planned-encounter-row"
                  th:attr="data-name=${enc.name}"
@@ -46,7 +69,7 @@
             </div>
           </th:block>
         </th:block>
-        <th:block th:if="${view.planned.isEmpty()}">
+        <th:block th:if="${view.planned.isEmpty() && view.currentScenePlanned.isEmpty()}">
           <div class="empty-state encounter-rail__empty" style="color: var(--color-text-muted);">No planned encounters</div>
         </th:block>
       </div>

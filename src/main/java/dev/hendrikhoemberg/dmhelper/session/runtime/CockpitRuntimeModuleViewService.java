@@ -36,7 +36,9 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -44,6 +46,40 @@ import java.util.UUID;
 @Service
 @Transactional(readOnly = true)
 public class CockpitRuntimeModuleViewService {
+
+    public static final class NaturalOrder implements Comparator<String> {
+        @Override
+        public int compare(String left, String right) {
+            if (left == null && right == null) return 0;
+            if (left == null) return -1;
+            if (right == null) return 1;
+            int i = 0, j = 0;
+            while (i < left.length() && j < right.length()) {
+                char cl = left.charAt(i);
+                char cr = right.charAt(j);
+                if (Character.isDigit(cl) && Character.isDigit(cr)) {
+                    int ni = i, nj = j;
+                    while (ni < left.length() && Character.isDigit(left.charAt(ni))) ni++;
+                    while (nj < right.length() && Character.isDigit(right.charAt(nj))) nj++;
+                    long numLeft = Long.parseLong(left.substring(i, ni));
+                    long numRight = Long.parseLong(right.substring(j, nj));
+                    if (numLeft != numRight) return Long.compare(numLeft, numRight);
+                    i = ni;
+                    j = nj;
+                } else {
+                    int cmp = Character.compare(Character.toLowerCase(cl), Character.toLowerCase(cr));
+                    if (cmp != 0) return cmp;
+                    i++;
+                    j++;
+                }
+            }
+            return Integer.compare(left.length(), right.length());
+        }
+    }
+
+    public static Comparator<String> naturalOrder() {
+        return new NaturalOrder();
+    }
 
     public record StoryView(UUID sceneId, String title, String summary, String body, String readAloud,
                             List<SectionView> sections, List<CheckView> checks,
@@ -77,6 +113,7 @@ public class CockpitRuntimeModuleViewService {
                                 UUID activeEncounterMapId, String combatPhase,
                                 List<CombatantView> combatants,
                                 List<PlannedEncounterView> planned,
+                                List<PlannedEncounterView> currentScenePlanned,
                                 List<PlannedEncounterView> suspended,
                                 List<PlannedEncounterView> finished) {}
 
@@ -84,7 +121,8 @@ public class CockpitRuntimeModuleViewService {
                                 String statBlockName) {}
 
     public record PlannedEncounterView(UUID id, String name, UUID mapId, String mapName,
-                                       ReadinessVerdict verdict, int combatantCount, int unplacedCount) {}
+                                       ReadinessVerdict verdict, int combatantCount, int unplacedCount,
+                                       boolean forCurrentScene) {}
 
     public record SessionPlanView(String title, List<BeatView> beats,
                                   List<QuestProgressView> questProgress,
@@ -304,17 +342,33 @@ public class CockpitRuntimeModuleViewService {
                 .toList();
         done.forEach(e -> Hibernate.initialize(e.getMap()));
 
+        UUID currentSceneEncounterId = adventures.getCurrentScene(campaignId)
+                .map(scene -> scene.getEncounter() != null ? scene.getEncounter().getId() : null)
+                .orElse(null);
+
         java.util.function.Function<Encounter, PlannedEncounterView> toView = e -> {
             var combatantList = combatants.findByEncounterIdOrderBySortOrderAsc(e.getId());
             int combatantCount = combatantList.size();
             long unplacedCount = combatantList.stream().filter(c -> c.getPlacement() == null).count();
             ReadinessVerdict verdict = EncounterPlacementService.verdictFor(
                     e.getMap() != null, false, combatantCount, (int) unplacedCount);
+            boolean forScene = currentSceneEncounterId != null && currentSceneEncounterId.equals(e.getId());
             return new PlannedEncounterView(e.getId(), e.getName(),
                     e.getMap() != null ? e.getMap().getId() : null,
                     e.getMap() != null ? e.getMap().getName() : null,
-                    verdict, combatantCount, (int) unplacedCount);
+                    verdict, combatantCount, (int) unplacedCount,
+                    forScene);
         };
+
+        List<PlannedEncounterView> allPlannedViews = planned.stream().map(toView).toList();
+        List<PlannedEncounterView> currentScenePlanned = allPlannedViews.stream()
+                .filter(v -> v.forCurrentScene())
+                .sorted(java.util.Comparator.comparing(v -> v.name(), new NaturalOrder()))
+                .toList();
+        List<PlannedEncounterView> restPlanned = allPlannedViews.stream()
+                .filter(v -> !v.forCurrentScene())
+                .sorted(java.util.Comparator.comparing(v -> v.name(), new NaturalOrder()))
+                .toList();
 
         return new EncounterView(
                 active != null ? active.getId() : null,
@@ -322,7 +376,8 @@ public class CockpitRuntimeModuleViewService {
                 active != null && active.getMap() != null ? active.getMap().getId() : null,
                 active != null ? active.getCombatPhase().name() : null,
                 combatantViews,
-                List.copyOf(planned.stream().map(toView).toList()),
+                restPlanned,
+                currentScenePlanned,
                 List.copyOf(suspended.stream().map(toView).toList()),
                 List.copyOf(done.stream().map(toView).toList()));
     }
