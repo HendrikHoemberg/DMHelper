@@ -50,6 +50,21 @@ class TrackerContractTest {
         return keys;
     }
 
+    @Test
+    void noPerRowFieldBindsASharedModel() throws IOException {
+        String template = Files.readString(TEMPLATE);
+        int start = template.indexOf("x-for=\"(c, idx) in combatants\"");
+        int end = template.indexOf("</template>", start);
+        String loopBody = template.substring(start, end);
+        Pattern pattern = Pattern.compile("x-model=\"([^\"]+)\"");
+        Matcher matcher = pattern.matcher(loopBody);
+        List<String> models = new ArrayList<>();
+        while (matcher.find()) {
+            models.add(matcher.group(1));
+        }
+        assertThat(models).allMatch(m -> m.contains("c.id"));
+    }
+
     private static boolean isReadInJs(String js, String key) {
         Matcher matcher = Pattern.compile("this\\." + Pattern.quote(key) + "\\b\\s*(?!=[^=])")
                 .matcher(js);

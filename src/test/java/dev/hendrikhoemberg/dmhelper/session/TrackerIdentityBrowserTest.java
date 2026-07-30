@@ -250,4 +250,31 @@ class TrackerIdentityBrowserTest {
         assertThat(page.locator(".combatant-detail").first().isVisible()).isFalse();
     }
 
+    @Test
+    void typingADeltaInOneRowLeavesEveryOtherRowEmpty() {
+        openCombat();
+        var inputs = page.locator(".hp-delta-input");
+        assertThat(inputs.count()).isGreaterThan(1);
+
+        inputs.nth(1).fill("-6");
+        assertThat(inputs.nth(1).inputValue()).isEqualTo("-6");
+
+        for (int i = 0; i < inputs.count(); i++) {
+            if (i == 1) continue;
+            assertThat(inputs.nth(i).inputValue()).isEmpty();
+        }
+    }
+
+    @Test
+    void applyingADeltaChangesOnlyTheFocusedRow() {
+        var seeded = openCombat();
+        var rows = page.locator(".combatant-row");
+        String hpBefore = rows.nth(0).locator(".combatant-hp").innerText();
+
+        rows.nth(1).locator(".hp-delta-input").fill("-3");
+        rows.nth(1).locator(".hp-delta-input").press("Enter");
+
+        page.waitForFunction("() => document.querySelectorAll('.hp-delta-input')[1].value === ''");
+        assertThat(rows.nth(0).locator(".combatant-hp").innerText()).isEqualTo(hpBefore);
+    }
 }

@@ -34,7 +34,7 @@
             selectedCombatantId: null,
             editHp: '',
             editTempHp: 0,
-            hpDelta: '',
+            hpDeltas: {},
             rechargePrompts: [],
             conditionsCatalog: [],
             waves: [],
@@ -497,10 +497,10 @@
             },
 
             async applyHpDelta(combatantId) {
-                const amount = parseInt(this.hpDelta, 10);
-                if (isNaN(amount) || amount === 0) return;
+                const amount = parseInt(this.hpDeltas[combatantId], 10);
+                if (Number.isNaN(amount) || amount === 0) return;
                 const succeeded = await this.quickHp(combatantId, amount);
-                if (succeeded) this.hpDelta = '';
+                if (succeeded) this.hpDeltas[combatantId] = '';
             },
 
             async quickHp(combatantId, amount) {
