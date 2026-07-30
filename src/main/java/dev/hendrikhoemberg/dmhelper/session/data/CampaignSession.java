@@ -36,6 +36,10 @@ public class CampaignSession {
     @Column(nullable = false, length = 16)
     private Status status = Status.IDLE;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "pre_review_status", length = 16)
+    private Status preReviewStatus;
+
     private Instant startedAt;
 
     private Instant pausedAt;

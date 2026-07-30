@@ -96,6 +96,7 @@ public class SessionLifecycleService {
         session.setStartedAt(now);
         session.setPausedAt(null);
         session.setReviewStartedAt(null);
+        session.setPreReviewStatus(null);
         session.setStartInGameYear(date.year());
         session.setStartInGameMonth(date.month());
         session.setStartInGameDay(date.day());
@@ -134,9 +135,9 @@ public class SessionLifecycleService {
     public CampaignSession cancelReview(UUID campaignId) {
         CampaignSession session = requireSession(campaignId);
         requireStatus(session, CampaignSession.Status.REVIEW, "Only a session under review can return to play.");
-        session.setStatus(CampaignSession.Status.PAUSED);
+        session.setStatus(session.getPreReviewStatus() != null ? session.getPreReviewStatus() : CampaignSession.Status.PAUSED);
+        session.setPreReviewStatus(null);
         session.setReviewStartedAt(null);
-        session.setDraftBody(null);
         return saveForState(session);
     }
 
@@ -165,10 +166,12 @@ public class SessionLifecycleService {
         CampaignSession session = requireSession(campaignId);
         if (session.getStatus() != CampaignSession.Status.RUNNING && session.getStatus() != CampaignSession.Status.PAUSED)
             throw new IllegalStateException("Only a running or paused session can be reviewed.");
-        Instant now = clock.instant();
+        session.setPreReviewStatus(session.getStatus());
         session.setStatus(CampaignSession.Status.REVIEW);
-        session.setReviewStartedAt(now);
-        session.setDraftBody(drafts.generate(session, now));
+        session.setReviewStartedAt(clock.instant());
+        if (session.getDraftBody() == null || session.getDraftBody().isBlank()) {
+            session.setDraftBody(drafts.generate(session, clock.instant()));
+        }
         return saveForState(session);
     }
 
@@ -235,6 +238,7 @@ public class SessionLifecycleService {
         session.setStartedAt(null);
         session.setPausedAt(null);
         session.setReviewStartedAt(null);
+        session.setPreReviewStatus(null);
         session.setStartInGameYear(null);
         session.setStartInGameMonth(null);
         session.setStartInGameDay(null);
