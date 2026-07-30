@@ -18,8 +18,8 @@
         <div style="display: flex; flex-direction: column; height: 100%;">
             <!-- Encounter header -->
             <div class="tracker-header">
-                <h3 data-encounter-name x-text="encounter?.name || 'Combat'"></h3>
-                <span>Round <strong class="round-counter" x-ref="roundCounter"
+                <span class="tracker-heading__name"><h3 data-encounter-name x-text="encounter?.name || 'Combat'"></h3></span>
+                <span class="tracker-heading__round">Round <strong class="round-counter" x-ref="roundCounter"
                                     x-text="encounter?.round || 0"></strong></span>
                 <span class="badge badge-warning" x-show="pendingWaves.length > 0"
                       x-text="'(' + pendingWaves.length + ' wave' + (pendingWaves.length !== 1 ? 's' : '') + ' pending)'"></span>

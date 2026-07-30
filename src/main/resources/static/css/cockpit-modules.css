@@ -502,3 +502,21 @@
   white-space: nowrap;
   padding: 2px 10px;
 }
+
+.tracker-heading__name { margin-right: var(--space-sm); }
+.tracker-heading__round { white-space: nowrap; }
+
+/* Status badges are labels, not text that may reflow mid-word. */
+.session-plan-module-inner .quest-progress-item .badge {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Ending a fight is deliberate but must still be findable. */
+.cockpit-module [data-end-encounter] {
+  color: var(--color-danger);
+  opacity: 1;
+}
+
+/* The zone tab already names the module; the header bar repeats it and costs a row of turns. */
+.cockpit-zone__tabs + .cockpit-module .cockpit-module__header-title { display: none; }
