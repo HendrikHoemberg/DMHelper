@@ -91,4 +91,41 @@ class CockpitMapTransitionBrowserTest {
                 """);
         assertThat(reattached).as("Konva stage container must be a child of #battleCanvasWrap after re-render").isTrue();
     }
+
+    @Test
+    void activatingAnEncounterOnAnotherMapMovesTheWholeMapSurface() {
+        var seeded = fixtures.campaignWithTwoEncountersOnTwoMaps();
+        page.navigate("http://127.0.0.1:" + port + "/campaigns/" + seeded.campaignId() + "/session");
+        page.waitForFunction("() => window.cockpitLayout?.mounted === true");
+        page.selectOption("#cockpitPresetPicker", "builtin:combat");
+        page.waitForFunction("() => !!window.battleMap");
+
+        page.evaluate("(id) => window.Alpine.$data(document.querySelector('.session-cockpit'))"
+                + ".runEncounter(id)", seeded.encounterA().toString());
+        page.waitForFunction("(mapId) => window.battleMap.mapId === mapId", seeded.mapA().toString());
+
+        page.evaluate("(id) => window.Alpine.$data(document.querySelector('.session-cockpit'))"
+                + ".activateEncounter(id, 'SUSPEND')", seeded.encounterB().toString());
+        page.waitForFunction("(mapId) => window.battleMap.mapId === mapId", seeded.mapB().toString());
+        page.waitForSelector("#battleCanvasWrap canvas");
+
+        assertThat(page.evaluate("() => window.battleMap.activeEncounterId"))
+                .as("the map must know which encounter it is showing")
+                .isEqualTo(seeded.encounterB().toString());
+        assertThat(page.locator("#runtimeMapPicker").inputValue())
+                .as("the picker must follow the transition")
+                .isEqualTo(seeded.mapB().toString());
+
+        var participants = page.locator(".battle-sidebar .token-list-item").allInnerTexts();
+        assertThat(participants)
+                .as("the participants list must describe encounter B, not the encounter before it")
+                .isNotEmpty()
+                .allSatisfy(text -> assertThat(text).contains("Hobgoblin"));
+        assertThat(participants)
+                .noneSatisfy(text -> assertThat(text).contains("Goblin 1"));
+
+        assertThat(page.locator(".toast-error").count())
+                .as("a coherent transition produces no error toast")
+                .isZero();
+    }
 }

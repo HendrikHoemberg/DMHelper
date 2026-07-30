@@ -13,6 +13,7 @@ function sessionCockpit(config) {
         showTracker: false,
         activeTab: 'tokens',
         currentMapId: config.mapId || '',
+        tokensMapId: '',
         maps: [],
         visitedMapIds: new Set(),
         tokens: [],
@@ -365,6 +366,7 @@ function sessionCockpit(config) {
             });
             window.addEventListener('battle-tokenupdate', (e) => {
                 this.tokens = e.detail.tokens;
+                this.tokensMapId = e.detail.mapId || '';
                 if (this.selectedToken) {
                     const updated = this.tokens.find(t => t.id === this.selectedToken.id);
                     if (updated) this.selectedToken = updated;
@@ -397,8 +399,11 @@ function sessionCockpit(config) {
                     this.showTracker = true;
                     this.activeTab = 'tracker';
                 }
-                // Refresh runtime tokens to get updated HP, bloodied, defeated
-                window.battleMap?.fetchTokens();
+                // The activation transition already fetches tokens; skip when a
+                // transition is in progress to avoid racing with the map switch.
+                if (!window.battleMap?._transitioning) {
+                    window.battleMap?.fetchTokens();
+                }
             });
             window.addEventListener('tracker-encounter-state', (e) => {
                 if (!e.detail?.combatants) return;
@@ -552,22 +557,29 @@ function sessionCockpit(config) {
                     body: JSON.stringify(body),
                 });
             const result = await resp.json();
-            if (result.workspaceMapId && result.workspaceMapId !== this.currentMapId) {
-                this.currentMapId = result.workspaceMapId;
-            }
-            if (window.battleMap) {
-                window.battleMap.setActiveEncounter(encounterId);
-            }
-            this.refreshModules(['story', 'encounter'], 'encounter-activated');
-            // The Map module is in PRESERVED_KEYS so refresh() deliberately skips it, and its
-            // body is server-rendered from the mapId query parameter. Load it explicitly with
-            // the id activation just moved the workspace to, otherwise the module keeps
-            // rendering whatever the page was opened with -- usually "No map selected".
-            // load() reports its own failures through cockpit:module-load-failed.
-            if (this.currentMapId) {
-                window.cockpitModules?.load('map', { force: true, mapId: this.currentMapId });
-            }
+            await this.applyActivation(encounterId, result);
             return result;
+        },
+
+        async applyActivation(encounterId, result) {
+            const mapId = result.workspaceMapId || this.currentMapId || null;
+            if (window.battleMap) {
+                const moved = await window.battleMap.setEncounterAndMap(encounterId, mapId);
+                if (!moved) {
+                    this.currentMapId = window.battleMap.mapId || '';
+                    this.syncMapPicker();
+                    return false;
+                }
+            }
+            this.currentMapId = mapId || '';
+            this.visitedMapIds.add(this.currentMapId);
+            this.syncMapPicker();
+            this.refreshModules(['story', 'encounter'], 'encounter-activated');
+            if (this.currentMapId) {
+                await window.cockpitModules?.load('map', { force: true, mapId: this.currentMapId });
+                await this.refreshThreatPins();
+            }
+            return true;
         },
 
         async runEncounter(encounterId) {
@@ -928,6 +940,10 @@ function sessionCockpit(config) {
                     picker.value = expected;
                 }
             });
+        },
+
+        get mapProjectionStale() {
+            return !!this.currentMapId && this.tokensMapId !== this.currentMapId;
         },
 
         restoreMapPicker(mapId) {

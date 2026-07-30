@@ -40,7 +40,8 @@
         <aside class="battle-sidebar" aria-label="Map tokens">
           <section class="sidebar-section">
             <h3>Encounter participants</h3>
-            <template x-for="t in tokens.filter(tk => tk.source === 'COMBATANT')" :key="t.id">
+            <p x-show="mapProjectionStale" class="text-muted u-text-xs">Refreshing participants and markers for this map…</p>
+            <template x-show="!mapProjectionStale" x-for="t in tokens.filter(tk => tk.source === 'COMBATANT')" :key="t.id">
               <div class="token-list-item" @click="focusToken(t.id)">
                 <span class="token-swatch" :style="{ background: t.color }"></span>
                 <span :class="{ 'token-dead': t.defeated }" x-text="t.name" style="flex: 1;"></span>
@@ -48,13 +49,14 @@
                       x-text="t.currentHp + '/' + t.maxHp"></span>
               </div>
             </template>
-            <template x-if="tokens.filter(tk => tk.source === 'COMBATANT').length === 0">
+            <template x-show="!mapProjectionStale" x-if="tokens.filter(tk => tk.source === 'COMBATANT').length === 0">
               <p class="text-muted u-text-xs">No combatants placed on this map.</p>
             </template>
           </section>
           <section class="sidebar-section">
             <h3>Map markers</h3>
-            <template x-for="t in tokens.filter(tk => tk.source === 'MARKER')" :key="t.id">
+            <p x-show="mapProjectionStale" class="text-muted u-text-xs">Refreshing participants and markers for this map…</p>
+            <template x-show="!mapProjectionStale" x-for="t in tokens.filter(tk => tk.source === 'MARKER')" :key="t.id">
               <div class="token-list-item" @click="focusToken(t.id)">
                 <span class="token-swatch" :style="{ background: t.color }"></span>
                 <span x-text="t.name" style="flex: 1;"></span>
@@ -64,7 +66,7 @@
                         @click.stop="requestTokenDelete(t.id)">Delete</button>
               </div>
             </template>
-            <template x-if="tokens.filter(tk => tk.source === 'MARKER').length === 0">
+            <template x-show="!mapProjectionStale" x-if="tokens.filter(tk => tk.source === 'MARKER').length === 0">
               <p class="text-muted u-text-xs">No markers on this map.</p>
             </template>
           </section>

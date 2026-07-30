@@ -142,7 +142,7 @@ export class BattleMap {
 
     emitState() {
         this.emit('modestate', { movementMode: this.movementMode, showGrid: this.showGrid });
-        this.emit('tokenupdate', { tokens: this.tokens });
+        this.emitTokens();
         this.emit('state-changed');
     }
 
@@ -278,13 +278,38 @@ export class BattleMap {
     }
 
     /* ---- Tokens: fetch, render, drag ---- */
-    async setActiveEncounter(encounterId) {
+    async setEncounterAndMap(encounterId, mapId) {
+        const previousEncounterId = this.activeEncounterId;
+        this._transitioning = true;
         this.activeEncounterId = encounterId;
-        if (await this.fetchTokens() !== false) {
+        try {
+            if (mapId && mapId !== this.mapId) {
+                const switched = await this.switchToMap(mapId);
+                if (!switched) {
+                    this.activeEncounterId = previousEncounterId;
+                    return false;
+                }
+                return true;
+            }
+            if (await this.fetchTokens() === false) {
+                this.activeEncounterId = previousEncounterId;
+                return false;
+            }
             this.renderTokens();
-            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emitTokens();
             this.emit('state-changed');
+            return true;
+        } finally {
+            this._transitioning = false;
         }
+    }
+
+    emitTokens() {
+        this.emit('tokenupdate', { tokens: this.tokens, mapId: this.mapId });
+    }
+
+    async setActiveEncounter(encounterId) {
+        return this.setEncounterAndMap(encounterId, this.mapId);
     }
 
     tokenKey(token) {
@@ -495,7 +520,7 @@ export class BattleMap {
         const previous = { x: token.positionX, y: token.positionY };
         token.positionX = x;
         token.positionY = y;
-        this.emit('tokenupdate', { tokens: this.tokens });
+        this.emitTokens();
         this.emit('state-changed');
         try {
             await this.persistMove(token, x, y);
@@ -506,7 +531,7 @@ export class BattleMap {
             const node = this.tokenNodes[this.tokenKey(token)]?.group;
             if (node) node.position(previous);
             this.tokenLayer.batchDraw();
-            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emitTokens();
             this.emit('state-changed');
             this._failure('Could not move the token. Its previous position was restored.', error,
                 () => this.saveTokenMove(tokenId, x, y));
@@ -539,7 +564,7 @@ export class BattleMap {
             });
             await this.fetchTokens();
             this.renderTokens();
-            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emitTokens();
             this.emit('state-changed');
             return true;
         } catch (error) {
@@ -555,7 +580,7 @@ export class BattleMap {
             if (this.selectedTokenId === id) this.deselectToken();
             await this.fetchTokens();
             this.renderTokens();
-            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emitTokens();
             this.emit('state-changed');
         } catch (error) {
             this._failure('Could not delete the token. Nothing was changed.', error,
@@ -570,7 +595,7 @@ export class BattleMap {
             await this._request(`/api/v1/tokens/${id}/duplicate?offsetX=${s}&offsetY=${s}`, { method: 'POST' });
             await this.fetchTokens();
             this.renderTokens();
-            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emitTokens();
             this.emit('state-changed');
         } catch (error) {
             this._failure('Could not duplicate the token. Nothing was changed.', error,
@@ -594,13 +619,13 @@ export class BattleMap {
                 token.currentHp = updated.currentHp;
             }
             this.renderTokens();
-            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emitTokens();
             this.emit('state-changed');
             if (this.selectedTokenId === id) this.emit('tokenselect', { token: { ...token } });
         } catch (error) {
             token.defeated = previousDefeated;
             this.renderTokens();
-            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emitTokens();
             this.emit('state-changed');
             if (this.selectedTokenId === id) {
                 this.emit('tokenselect', { token: { ...token } });
@@ -702,7 +727,7 @@ export class BattleMap {
                 await this.fetchTokens();
             }
             this.renderTokens();
-            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emitTokens();
             this.emit('state-changed');
             if (this.selectedTokenId === id) {
                 const selected = this.tokens.find(candidate => candidate.id === id) || null;
@@ -725,7 +750,7 @@ export class BattleMap {
             await this._request(`/api/v1/encounters/${this.activeEncounterId}/placements/party`, { method: 'POST' });
             await this.fetchTokens();
             this.renderTokens();
-            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emitTokens();
             this.emit('state-changed');
         } catch (error) {
             this._failure('Could not add the party. Nothing was changed.', error,
@@ -1030,11 +1055,11 @@ export class BattleMap {
 
     finishAoeTemplate() { this.aoeStartPos = null; this.syncAoEs(); }
 
-    clearAoeNodes() {
+    clearAoeNodes(skipSync) {
         for (const node of this.aoeNodes) node.destroy();
         this.aoeNodes = [];
         this.previewLayer.batchDraw();
-        this.syncAoEs();
+        if (!skipSync) this.syncAoEs();
     }
 
     buildAoeTemplates() {
@@ -1059,8 +1084,10 @@ export class BattleMap {
                 body: JSON.stringify(templates),
             });
         } catch (error) {
-            this._failure('Could not update the player AoE overlay. The DM map was kept.', error,
-                () => this.syncAoEs());
+            if (error.status !== 404) {
+                this._failure('Could not update the player AoE overlay. The DM map was kept.', error,
+                    () => this.syncAoEs());
+            }
         }
     }
 
@@ -1329,7 +1356,7 @@ export class BattleMap {
             this.showGrid = mapData.showGrid;
             this.docVersion = documentData.version;
 
-            this.clearAoeNodes();
+            this.clearAoeNodes(true);
             this.clearMeasure();
             this.clearAnnotations();
             this.deselectToken();
@@ -1341,7 +1368,7 @@ export class BattleMap {
             this.renderTokens();
             await this.loadPins(mapData.id);
             this.emit('modestate', { movementMode: this.movementMode, showGrid: this.showGrid });
-            this.emit('tokenupdate', { tokens: this.tokens });
+            this.emitTokens();
             this.emit('state-changed');
             this.emit('maploaded', { mapId, mapName: mapData.name });
             return true;
