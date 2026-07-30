@@ -45,6 +45,7 @@
             setupBusy: false,
             setupSaveCount: 0,
             trackerMode: options.trackerMode || 'STANDARD',
+            expandedGroups: {},
             focusedStatblock: null,
             focusedStatblockLoading: false,
 
@@ -702,6 +703,51 @@
 
             groupCount(groupId) {
                 return this.combatants.filter(c => c.groupId === groupId).length;
+            },
+
+            groupAliveCount(groupId) {
+                return this.combatants.filter(c => c.groupId === groupId && !c.defeated).length;
+            },
+
+            // A group takes one turn, so it gets one row. Expanding reveals the members for
+            // individual HP tracking without putting eleven never-acting rows in the order.
+            isGroupExpanded(groupId) {
+                return !!this.expandedGroups[groupId];
+            },
+
+            toggleGroup(groupId) {
+                this.expandedGroups = {
+                    ...this.expandedGroups,
+                    [groupId]: !this.expandedGroups[groupId],
+                };
+            },
+
+            // Which member stands for the group in the collapsed list. Normally the one the
+            // server says acts, but a wiped-out group has no acting member -- actsForGroup is
+            // false for every corpse -- and the group must still hold its row instead of
+            // disappearing from the tracker. Fall back to its first member.
+            groupRowId(groupId) {
+                const actor = this.combatants.find(c => c.groupId === groupId && c.actsForGroup);
+                if (actor) return actor.id;
+                const first = this.combatants.find(c => c.groupId === groupId);
+                return first ? first.id : null;
+            },
+
+            isGroupRow(c) {
+                return !!c.groupId && this.groupRowId(c.groupId) === c.id;
+            },
+
+            // How many members the disclosure hides. Living members while any survive, so the
+            // label tracks the fight; all of them once the group is wiped, so it never reads +0.
+            groupMoreCount(groupId) {
+                const alive = this.groupAliveCount(groupId);
+                const total = alive > 0 ? alive : this.groupCount(groupId);
+                return Math.max(0, total - 1);
+            },
+
+            showsInOrder(c) {
+                if (!c.groupId) return true;
+                return this.isGroupRow(c) || this.isGroupExpanded(c.groupId);
             },
 
             async setConcentration(combatantId, spellName) {

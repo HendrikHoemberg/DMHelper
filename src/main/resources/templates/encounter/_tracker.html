@@ -336,7 +336,7 @@
                 <template x-for="(c, idx) in combatants" :key="c.id">
                     <div class="combatant-row"
                           :data-cid="c.id"
-                          :class="{ active: c.id === activeCombatantId, defeated: c.defeated, hidden: c.hidden, bloodied: c.bloodied, 'group-hidden': c.defeated }"
+                          :class="{ active: c.id === activeCombatantId, defeated: c.defeated, hidden: c.hidden, bloodied: c.bloodied }"
                           x-show="!c.hidden && showsInOrder(c)"
                          @click="selectCombatant(c.id)">
                         <!-- Initiative badge -->
@@ -344,15 +344,15 @@
 
                         <!-- Name + group indicator -->
                         <span class="combatant-name">
-                            <template x-if="c.groupId && !c.actsForGroup">
+                            <template x-if="c.groupId && !isGroupRow(c)">
                                 <span class="group-branch">├ </span>
                             </template>
                             <span x-text="c.name"></span>
-                            <template x-if="c.groupId && c.actsForGroup">
+                            <template x-if="isGroupRow(c)">
                                 <button type="button" class="group-count"
                                         :aria-expanded="isGroupExpanded(c.groupId)"
                                         @click.stop="toggleGroup(c.groupId)"
-                                        x-text="'+' + (groupAliveCount(c.groupId) - 1) + ' more'"></button>
+                                        x-text="'+' + groupMoreCount(c.groupId) + ' more'"></button>
                             </template>
                         </span>
 

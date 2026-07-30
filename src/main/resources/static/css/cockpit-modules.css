@@ -520,3 +520,15 @@
 
 /* The zone tab already names the module; the header bar repeats it and costs a row of turns. */
 .cockpit-zone__tabs + .cockpit-module .cockpit-module__header-title { display: none; }
+
+.group-count {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  padding: 0 6px;
+  margin-left: 4px;
+  cursor: pointer;
+}
+.group-count[aria-expanded="true"] { color: var(--color-text); }
