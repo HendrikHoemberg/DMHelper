@@ -120,6 +120,21 @@ class CockpitReferenceBrowserTest {
     }
 
     @Test
+    void thePausedSessionDialogSaysPaused() {
+        openCombat();
+        page.evaluate("() => window.Alpine.$data(document.querySelector('.session-cockpit'))"
+                + ".pauseSession()");
+        page.waitForFunction("() => window.Alpine.$data(document.querySelector('.session-cockpit'))"
+                + ".sessionStatus === 'PAUSED'");
+        page.evaluate("() => window.Alpine.$data(document.querySelector('.session-cockpit'))"
+                + ".openLifecycle()");
+        page.waitForSelector("#sessionLifecycleDialog");
+        String heading = page.locator("[data-lifecycle-heading]").all().stream()
+                .filter(l -> l.isVisible()).findFirst().orElseThrow().innerText().trim();
+        assertThat(heading).isEqualTo("Session Paused");
+    }
+
+    @Test
     void theInRunStatblockShowsTheCreaturesActions() {
         openCombat();
         page.click("[data-module-tab='reference']");

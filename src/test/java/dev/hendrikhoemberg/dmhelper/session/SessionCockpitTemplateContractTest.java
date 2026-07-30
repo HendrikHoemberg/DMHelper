@@ -17,6 +17,8 @@ class SessionCockpitTemplateContractTest {
         String tracker = Files.readString(Path.of("src/main/resources/templates/encounter/_tracker.html"));
         String cockpitJs = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
         String battleMap = Files.readString(Path.of("src/main/resources/static/js/map/battle-map.js"));
+        String lifecycle = Files.readString(Path.of(
+                "src/main/resources/templates/session/_lifecycle-dialog.html"));
 
         assertThat(cockpit).contains("Leave cockpit", "data-encounter-end-dialog");
         assertThat(mapModule).contains("data-token-dialog", "data-token-delete-dialog");
@@ -24,10 +26,12 @@ class SessionCockpitTemplateContractTest {
         assertThat(cockpitJs).contains("openTokenDialog()", "submitTokenDialog()",
                 "requestTokenDelete(id)", "confirmTokenDelete()", "confirmEncounterEnd()");
         assertThat(cockpitJs).doesNotContain("prompt(");
-        // abandon is intentionally destructive and uses the native confirm; all other
-        // session actions must use application <dialog> elements.
-        assertThat(extractFunction(cockpitJs, "confirmAbandonSession")).contains("window.confirm(");
+        assertThat(cockpitJs).doesNotContain("window.confirm(");
         assertThat(battleMap).doesNotContain("prompt(");
+        assertThat(lifecycle).contains("data-confirm-abandon-session");
+        assertThat(lifecycle).contains("data-lifecycle-heading");
+        assertThat(lifecycle).doesNotContain("<h3>Session Running</h3>");
+        assertThat(cockpitJs).contains("requestAbandonSession()");
     }
 
     @Test
@@ -96,7 +100,8 @@ class SessionCockpitTemplateContractTest {
                 .isEqualTo(2);
         assertThat(lifecycle).contains("confirmAbandonSession()");
         assertThat(js).contains(
-                "confirmAbandonSession()", "/session/abandon", "Campaign changes remain");
+                "confirmAbandonSession()", "/session/abandon");
+        assertThat(lifecycle).contains("Campaign content is not affected");
         assertThat(js).contains("sessionStatus", "handleKeyboard");
         assertThat(js).contains("startSession", "pauseSession", "resumeSession",
                 "cancelReview", "beginReview", "completeSession");

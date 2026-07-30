@@ -122,8 +122,6 @@ function sessionCockpit(config) {
                     `/api/v1/campaigns/${this.campaignId}/session/cancel-review`, { method: 'POST' });
                 const state = await resp.json();
                 this.sessionStatus = state.status;
-                this.draftBody = '';
-                this.draftTitle = '';
                 this.closeLifecycle();
             } catch (error) {
                 window.reportActionFailure('Could not cancel the review.', error,
@@ -174,21 +172,24 @@ function sessionCockpit(config) {
             }
         },
 
-        // Campaign mutations remain, but all bookkeeping for this run is removed without
-        // producing a SESSION_LOG note. Confirm because that session-only history is gone.
+        requestAbandonSession() {
+            const dialog = document.getElementById('sessionDiscardDialog');
+            if (dialog && !dialog.open) dialog.showModal();
+        },
+        closeAbandonDialog() {
+            const dialog = document.getElementById('sessionDiscardDialog');
+            if (dialog?.open) dialog.close();
+        },
         async confirmAbandonSession() {
-            if (!window.confirm(
-                'Discard this session? No session log is created. Campaign changes remain, '
-                + 'but this session\u2019s visits, draft, and audio state are removed.')) {
-                return;
-            }
+            this.closeAbandonDialog();
+            await this.abandonSession();
+        },
+        async abandonSession() {
             try {
-                await this.request(
-                    `/api/v1/campaigns/${this.campaignId}/session/abandon`, { method: 'POST' });
+                await this.request(`/api/v1/campaigns/${this.campaignId}/session/abandon`, { method: 'POST' });
                 window.location.reload();
             } catch (error) {
-                window.cockpitLayout?.showNotice(
-                    'The session could not be discarded. Nothing was changed.');
+                window.cockpitLayout?.showNotice('The session could not be discarded. Nothing was changed.');
             }
         },
 
