@@ -745,6 +745,31 @@
                 return Math.max(0, total - 1);
             },
 
+            groupLabel(groupId) {
+                const members = this.combatants
+                    .filter(c => c.groupId === groupId)
+                    .sort((a, b) => a.sortOrder - b.sortOrder);
+                if (members.length === 0) return '';
+                return this._stripOrdinal(members[0].name).base || members[0].name;
+            },
+
+            _stripOrdinal(name) {
+                const match = /^(.*?)(\s+\d+)$/.exec(name || '');
+                return match
+                    ? { base: match[1], ordinal: match[2] }
+                    : { base: name || '', ordinal: '' };
+            },
+
+            nameBase(c) {
+                if (this.isGroupRow(c)) return this.groupLabel(c.groupId);
+                return this._stripOrdinal(c.name).base;
+            },
+
+            nameOrdinal(c) {
+                if (this.isGroupRow(c)) return '';
+                return this._stripOrdinal(c.name).ordinal;
+            },
+
             showsInOrder(c) {
                 if (!c.groupId) return true;
                 return this.isGroupRow(c) || this.isGroupExpanded(c.groupId);

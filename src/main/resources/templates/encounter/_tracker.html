@@ -336,7 +336,7 @@
                 <template x-for="(c, idx) in combatants" :key="c.id">
                     <div class="combatant-row"
                           :data-cid="c.id"
-                          :class="{ active: c.id === activeCombatantId, defeated: c.defeated, hidden: c.hidden, bloodied: c.bloodied }"
+                          :class="{ active: c.id === activeCombatantId, selected: c.id === selectedCombatantId, defeated: c.defeated, hidden: c.hidden, bloodied: c.bloodied }"
                           x-show="!c.hidden && showsInOrder(c)"
                          @click="selectCombatant(c.id)">
                         <!-- Initiative badge -->
@@ -345,48 +345,55 @@
                         <!-- Name + group indicator -->
                         <span class="combatant-name">
                             <template x-if="c.groupId && !isGroupRow(c)">
-                                <span class="group-branch">├ </span>
+                                <span class="group-branch">├</span>
                             </template>
-                            <span x-text="c.name"></span>
-                            <template x-if="isGroupRow(c)">
-                                <button type="button" class="group-count"
-                                        :aria-expanded="isGroupExpanded(c.groupId)"
-                                        @click.stop="toggleGroup(c.groupId)"
-                                        x-text="'+' + groupMoreCount(c.groupId) + ' more'"></button>
-                            </template>
+                            <span class="combatant-name__base" x-text="nameBase(c)"></span>
+                            <span class="combatant-name__ordinal" x-show="nameOrdinal(c)" x-text="nameOrdinal(c)"></span>
                         </span>
 
                         <!-- Numeric HP — DM only, and the number the log will agree with -->
                         <span class="combatant-hp u-num" x-text="hpLabel(c)"></span>
 
-                        <!-- HP bar mini -- DM only -->
-                        <div class="hp-mini">
-                            <div class="hp-mini-fill"
-                                 :style="{ width: hpPercent(c) + '%' }"
-                                 :class="{ bloodied: c.bloodied, dead: c.defeated }"></div>
+                        <!-- Group toggle -->
+                        <template x-if="isGroupRow(c)">
+                            <button type="button" class="group-count btn btn-ghost btn-xs"
+                                    :aria-expanded="isGroupExpanded(c.groupId)"
+                                    :aria-label="'Group ' + groupLabel(c.groupId) + ': ' + groupCount(c.groupId) + ' members, ' + groupAliveCount(c.groupId) + ' alive'"
+                                    @click.stop="toggleGroup(c.groupId)"
+                                    x-text="(isGroupExpanded(c.groupId) ? '−' : '+') + groupMoreCount(c.groupId)"></button>
+                        </template>
+
+                        <!-- Meta row: HP bar, HP delta, conditions, concentration -->
+                        <div class="combatant-row__meta">
+                            <!-- HP bar mini -- DM only -->
+                            <div class="hp-mini">
+                                <div class="hp-mini-fill"
+                                     :style="{ width: hpPercent(c) + '%' }"
+                                     :class="{ bloodied: c.bloodied, dead: c.defeated }"></div>
+                            </div>
+
+                            <!-- HP delta quick-entry -- DM only -->
+                            <input type="text" class="hp-delta-input"
+                                   placeholder="±HP"
+                                   @keydown.enter="applyHpDelta(c.id)"
+                                   x-model="hpDelta">
+
+                            <!-- Condition icons (always visible) -->
+                            <div class="condition-icons">
+                                <template x-for="cond in c.conditions" :key="cond.sourceKey">
+                                    <span class="cond-icon"
+                                          :style="{ background: conditionColor(cond.sourceKey) }"
+                                          :title="getConditionText(cond.sourceKey)"
+                                          x-text="cond.durationRounds > 0 ? cond.durationRounds : '∞'"></span>
+                                </template>
+                                <button class="btn btn-ghost tracker-small-button" style="padding: 0 2px; line-height: 1;"
+                                        @click.stop="openConditionMenu(c.id)">＋</button>
+                            </div>
+
+                            <!-- Concentration badge -->
+                            <span x-show="c.concentratingOn" class="conc-badge"
+                                  :title="c.concentratingOn">⏀</span>
                         </div>
-
-                        <!-- HP delta quick-entry -- DM only -->
-                        <input type="text" class="hp-delta-input"
-                               placeholder="±HP"
-                               @keydown.enter="applyHpDelta(c.id)"
-                               x-model="hpDelta">
-
-                        <!-- Condition icons (always visible) -->
-                        <div class="condition-icons">
-                            <template x-for="cond in c.conditions" :key="cond.sourceKey">
-                                <span class="cond-icon"
-                                      :style="{ background: conditionColor(cond.sourceKey) }"
-                                      :title="getConditionText(cond.sourceKey)"
-                                      x-text="cond.durationRounds > 0 ? cond.durationRounds : '∞'"></span>
-                            </template>
-                            <button class="btn btn-ghost tracker-small-button" style="padding: 0 2px; line-height: 1;"
-                                    @click.stop="openConditionMenu(c.id)">＋</button>
-                        </div>
-
-                        <!-- Concentration badge -->
-                        <span x-show="c.concentratingOn" class="conc-badge"
-                              :title="c.concentratingOn">⏀</span>
                     </div>
                 </template>
 
