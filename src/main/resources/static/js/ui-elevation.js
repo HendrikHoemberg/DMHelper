@@ -67,7 +67,20 @@
 
     toastContainer();
 
-    window.showToast = function(message, type = 'info', duration = 3000, action = null) {
+    const liveToasts = new Map();
+
+    window.showToast = function(message, type = 'info', duration = 3000, options = null) {
+      const dedupeKey = options?.dedupeKey;
+      if (dedupeKey && liveToasts.has(dedupeKey)) {
+        const existing = liveToasts.get(dedupeKey);
+        const countEl = existing.querySelector('[data-toast-count]');
+        if (countEl) {
+          const current = parseInt(countEl.textContent, 10) || 1;
+          countEl.textContent = String(current + 1);
+        }
+        return;
+      }
+
       const toast = document.createElement('div');
       toast.className = 'toast toast-' + type;
       if (type === 'error') {
@@ -77,6 +90,17 @@
       const text = document.createElement('span');
       text.textContent = message;
       toast.appendChild(text);
+
+      if (options?.reference) {
+        const ref = document.createElement('span');
+        ref.className = 'toast__reference';
+        ref.textContent = options.reference.length > 8
+          ? options.reference.slice(0, 8) + '…'
+          : options.reference;
+        toast.appendChild(ref);
+      }
+
+      const action = options?.action;
       if (action) {
         const button = document.createElement('button');
         button.type = 'button';
@@ -84,6 +108,7 @@
         button.textContent = action.label;
         button.addEventListener('click', () => {
           toast.remove();
+          if (dedupeKey) liveToasts.delete(dedupeKey);
           Promise.resolve()
             .then(() => action.handler())
             .catch(error => {
@@ -97,12 +122,26 @@
         });
         toast.appendChild(button);
       }
+
+      if (dedupeKey) {
+        const countEl = document.createElement('span');
+        countEl.className = 'toast__count';
+        countEl.setAttribute('data-toast-count', '1');
+        countEl.textContent = '1';
+        toast.appendChild(countEl);
+        liveToasts.set(dedupeKey, toast);
+        toast._dedupeCleanup = () => liveToasts.delete(dedupeKey);
+      }
+
       toastContainer().appendChild(toast);
       requestAnimationFrame(() => toast.classList.add('show'));
       setTimeout(() => {
         if (!toast.isConnected) return;
         toast.classList.remove('show');
-        toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+        toast.addEventListener('transitionend', () => {
+          if (dedupeKey) liveToasts.delete(dedupeKey);
+          toast.remove();
+        }, { once: true });
       }, duration);
     };
 
