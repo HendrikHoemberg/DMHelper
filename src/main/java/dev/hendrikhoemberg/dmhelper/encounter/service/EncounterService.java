@@ -443,7 +443,9 @@ public class EncounterService {
             throw new IllegalStateException("Only planned encounters can be activated fresh");
         }
         e.setStatus(Encounter.Status.ACTIVE);
-        e.setRound(1);
+        e.setCombatPhase(Encounter.CombatPhase.SETUP);
+        e.setRound(0);
+        e.setActiveTurnIndex(-1);
         encounterRepo.save(e);
         placementService.autoPlaceUnplaced(encounterId);
         return e;

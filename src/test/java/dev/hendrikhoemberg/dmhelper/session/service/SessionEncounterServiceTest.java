@@ -294,6 +294,30 @@ class SessionEncounterServiceTest {
         assertThat(result.workspaceMapId()).isNull();
     }
 
+    @Test
+    void freshActivationSetsRoundToZeroAndCombatPhaseToSetup() {
+        when(encounterRepo.findById(encounterId)).thenReturn(Optional.of(encounter));
+        when(placements.readiness(encounterId)).thenReturn(ready());
+        when(encounterRepo.findByCampaignIdAndStatus(campaignId, Encounter.Status.ACTIVE))
+                .thenReturn(Optional.empty());
+        doAnswer(invocation -> {
+            encounter.setStatus(Encounter.Status.ACTIVE);
+            encounter.setCombatPhase(Encounter.CombatPhase.SETUP);
+            encounter.setRound(0);
+            encounter.setActiveTurnIndex(-1);
+            return encounter;
+        }).when(encounterService).activateFresh(encounterId);
+        when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(session));
+
+        SessionEncounterService.EncounterActivationDto result = service.activate(campaignId, encounterId, null);
+
+        assertThat(encounter.getStatus()).isEqualTo(Encounter.Status.ACTIVE);
+        assertThat(encounter.getCombatPhase()).isEqualTo(Encounter.CombatPhase.SETUP);
+        assertThat(encounter.getRound()).isZero();
+        assertThat(encounter.getActiveTurnIndex()).isEqualTo(-1);
+        assertThat(result.status()).isEqualTo("ACTIVE");
+    }
+
     private static EncounterReadinessDto ready() {
         return new EncounterReadinessDto(UUID.randomUUID(), true, ReadinessVerdict.RUNNABLE, UUID.randomUUID(),
                 1, 1, 0, List.of());
