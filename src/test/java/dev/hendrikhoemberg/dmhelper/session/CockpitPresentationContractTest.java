@@ -55,4 +55,21 @@ class CockpitPresentationContractTest {
         String content = readBattleMapJs();
         assertThat(content).contains("function kindCornerRadius(");
     }
+
+    @Test
+    void trackerPrimaryControlsAndCopyHaveStablePresentationHooks() throws IOException {
+        String tracker = read("src/main/resources/templates/encounter/_tracker.html");
+        assertThat(tracker)
+                .contains("data-initiative-primary")
+                .contains("<details class=\"initiative-setup__tie-help\"")
+                .contains("data-unset-summary")
+                .contains("tracker-header__end-zone")
+                .contains("End encounter")
+                .contains("Negative HP shows damage beyond 0");
+        assertThat(tracker).doesNotContain(">End</button>");
+    }
+
+    private String read(String path) throws IOException {
+        return Files.readString(Path.of(System.getProperty("user.dir"), path));
+    }
 }

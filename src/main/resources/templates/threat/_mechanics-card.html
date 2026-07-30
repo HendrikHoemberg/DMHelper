@@ -34,7 +34,8 @@
                     <span th:if="${threat.detectionCheck.ability != null}" th:text="${threat.detectionCheck.ability}"></span>
                     <span th:if="${threat.detectionCheck.skill != null}" th:text="'(' + ${threat.detectionCheck.skill} + ')'"></span>
                     <span th:if="${threat.detectionCheck.dc != null}">DC <span th:text="${threat.detectionCheck.dc}"></span></span>
-                    <button type="button" class="btn btn-sm btn-ghost"
+                    <button type="button" class="btn btn-sm"
+                            data-dice-prefill
                             th:attr="data-prefill-label=${'Detection' + (threat.detectionCheck.dc != null ? ' DC ' + threat.detectionCheck.dc : '')}"
                             onclick="window.dispatchEvent(new CustomEvent('dice-roller-prefill', { detail: { expression: '1d20', label: this.dataset.prefillLabel } }))">
                         Prefill 1d20
@@ -49,7 +50,8 @@
                         <span th:if="${m.dc != null}"> (DC <span th:text="${m.dc}">15</span>)</span>
                         <span th:if="${m.failureConsequence != null}"
                               th:text="' — ' + ${m.failureConsequence}"> — consequence</span>
-                        <button type="button" class="btn btn-sm btn-ghost"
+                        <button type="button" class="btn btn-sm"
+                                data-dice-prefill
                                 th:attr="data-prefill-label=${m.label + (m.dc != null ? ' DC ' + m.dc : '')}"
                                 onclick="window.dispatchEvent(new CustomEvent('dice-roller-prefill', { detail: { expression: '1d20', label: this.dataset.prefillLabel } }))">
                             Prefill 1d20
@@ -61,7 +63,8 @@
                 <strong>Attack</strong>
                 <p>
                     <span th:text="${threat.attackBonus >= 0 ? '+' + threat.attackBonus : threat.attackBonus}">+5</span>
-                    <button type="button" class="btn btn-sm btn-ghost"
+                    <button type="button" class="btn btn-sm"
+                            data-dice-prefill
                             th:attr="data-prefill-expr=${'1d20' + (threat.attackBonus >= 0 ? '+' + threat.attackBonus : threat.attackBonus)},
                                      data-prefill-label=${'Attack ' + (threat.attackBonus >= 0 ? '+' + threat.attackBonus : threat.attackBonus)}"
                             onclick="window.dispatchEvent(new CustomEvent('dice-roller-prefill', { detail: { expression: this.dataset.prefillExpr, label: this.dataset.prefillLabel } }))">
@@ -75,7 +78,8 @@
                     <span th:text="${#enums.label(threat.save.mode)}">SAVE</span>
                     <span th:if="${threat.save.ability != null}" th:text="${threat.save.ability}"></span>
                     <span th:if="${threat.save.dc != null}">DC <span th:text="${threat.save.dc}"></span></span>
-                    <button type="button" class="btn btn-sm btn-ghost"
+                    <button type="button" class="btn btn-sm"
+                            data-dice-prefill
                             th:attr="data-prefill-label=${'Save' + (threat.save.dc != null ? ' DC ' + threat.save.dc : '')}"
                             onclick="window.dispatchEvent(new CustomEvent('dice-roller-prefill', { detail: { expression: '1d20', label: this.dataset.prefillLabel } }))">
                         Prefill 1d20
@@ -88,8 +92,9 @@
                     <span th:text="${threat.damageExpression}">2d10</span>
                     <span th:if="${threat.damageTypes != null and !threat.damageTypes.isEmpty()}"
                           th:each="dt, iter : ${threat.damageTypes}"
-                          th:text="${iter.first ? ' ' : ', '} + ${dt}"></span>
-                    <button type="button" class="btn btn-sm btn-ghost"
+                          th:text="${iter.first ? ' ' : ', '} + #strings.capitalize(#strings.toLowerCase(dt))"></span>
+                    <button type="button" class="btn btn-sm"
+                            data-dice-prefill
                             th:attr="data-prefill-expr=${threat.damageExpression},
                                      data-prefill-label=${'Damage ' + threat.damageExpression}"
                             onclick="window.dispatchEvent(new CustomEvent('dice-roller-prefill', { detail: { expression: this.dataset.prefillExpr, label: this.dataset.prefillLabel } }))">
@@ -135,7 +140,8 @@
                     <span th:if="${threat.check.ability != null}" th:text="${threat.check.ability}"></span>
                     <span th:if="${threat.check.skill != null}" th:text="'(' + ${threat.check.skill} + ')'"></span>
                     <span th:if="${threat.check.dc != null}">DC <span th:text="${threat.check.dc}"></span></span>
-                    <button type="button" class="btn btn-sm btn-ghost"
+                    <button type="button" class="btn btn-sm"
+                            data-dice-prefill
                             th:attr="data-prefill-label=${'Check/Save' + (threat.check.dc != null ? ' DC ' + threat.check.dc : '')}"
                             onclick="window.dispatchEvent(new CustomEvent('dice-roller-prefill', { detail: { expression: '1d20', label: this.dataset.prefillLabel } }))">
                         Prefill 1d20
@@ -148,8 +154,9 @@
                     <span th:text="${threat.damageExpression}">1d6</span>
                     <span th:if="${threat.damageTypes != null and !threat.damageTypes.isEmpty()}"
                           th:each="dt, iter : ${threat.damageTypes}"
-                          th:text="${iter.first ? ' ' : ', '} + ${dt}"></span>
-                    <button type="button" class="btn btn-sm btn-ghost"
+                          th:text="${iter.first ? ' ' : ', '} + #strings.capitalize(#strings.toLowerCase(dt))"></span>
+                    <button type="button" class="btn btn-sm"
+                            data-dice-prefill
                             th:attr="data-prefill-expr=${threat.damageExpression},
                                      data-prefill-label=${'Damage ' + threat.damageExpression}"
                             onclick="window.dispatchEvent(new CustomEvent('dice-roller-prefill', { detail: { expression: this.dataset.prefillExpr, label: this.dataset.prefillLabel } }))">

@@ -18,14 +18,18 @@
         <div style="display: flex; flex-direction: column; height: 100%;">
             <!-- Encounter header -->
             <div class="tracker-header">
-                <span class="tracker-heading__name"><h3 data-encounter-name x-text="encounter?.name || 'Combat'"></h3></span>
-                <span class="tracker-heading__round">Round <strong class="round-counter" x-ref="roundCounter"
-                                    x-text="encounter?.round || 0"></strong></span>
+                <div class="tracker-header__identity">
+                    <h3 data-encounter-name x-text="encounter?.name || 'Combat'"></h3>
+                    <span class="tracker-heading__round">Round <strong class="round-counter" x-ref="roundCounter"
+                                        x-text="encounter?.round || 0"></strong></span>
+                </div>
                 <span class="badge badge-warning" x-show="pendingWaves.length > 0"
                       x-text="'(' + pendingWaves.length + ' wave' + (pendingWaves.length !== 1 ? 's' : '') + ' pending)'"></span>
-                <button class="btn btn-danger action-row__destructive tracker-small-button"
-                        data-end-encounter style="padding: 2px 8px;"
-                        @click="$dispatch('request-encounter-end')">End</button>
+                <div class="tracker-header__end-zone">
+                    <button class="btn btn-danger action-row__destructive tracker-small-button"
+                            data-end-encounter style="padding: 2px 8px;"
+                            @click="$dispatch('request-encounter-end')">End encounter</button>
+                </div>
             </div>
 
             <!-- Initiative setup panel -->
@@ -41,6 +45,7 @@
                     <button type="button"
                             class="btn btn-ghost btn-xs"
                             data-add-party-to-encounter
+                            data-initiative-primary
                             :disabled="setupBusy || setupSaveCount > 0"
                             @click="addPartyToEncounter()">
                         Add party
@@ -48,6 +53,7 @@
                     <button type="button"
                             class="btn btn-ghost btn-xs"
                             data-roll-unset-initiative
+                            data-initiative-primary
                             :disabled="setupBusy || setupSaveCount > 0 || unsetNpcCount === 0"
                             @click="rollUnsetNpcs()">
                         Roll unset NPCs
@@ -77,15 +83,15 @@
                     </template>
                 </ol>
 
-                <p class="initiative-setup__tie-help">
+                <details class="initiative-setup__tie-help" data-tie-help>
+                    <summary>Tie rules</summary>
                     Ties keep the displayed order: higher tie-breaker first, then prior order, then name.
                     Accepted unset combatants act after resolved initiatives.
-                </p>
+                </details>
 
-                <label class="initiative-setup__accept" x-show="unsetCombatants.length > 0">
+                <label class="initiative-setup__accept" x-show="unsetCombatants.length > 0" data-unset-summary>
                     <input type="checkbox" x-model="acceptUnset">
-                    Start with <span x-text="unsetCombatants.length"></span> unset
-                    <span>— they remain last in the displayed order</span>
+                    Start combat with <span x-text="unsetCombatants.length"></span> unset combatant<span x-show="unsetCombatants.length !== 1">s</span> — they remain last in the displayed order
                 </label>
 
                 <button type="button"
@@ -105,7 +111,7 @@
                 <button class="btn btn-ghost" style="padding: 2px 8px;" @click="previousTurn()"
                         data-action="previous-turn">◀ Prev</button>
                 <span class="tracker-turns__active">
-                    Active: <strong x-text="activeCombatant?.name || '—'"></strong>
+                    Active: <strong class="tracker-turns__active-name" x-text="activeCombatant?.name || '—'"></strong>
                 </span>
                 <button class="btn btn-ghost" style="padding: 2px 8px;" @click="nextTurn()"
                         data-action="next-turn">Next ▶</button>
@@ -431,6 +437,7 @@
                     </template>
                     <span class="hp-flag bloodied" x-show="selected?.bloodied">Bloodied</span>
                     <span class="hp-flag dead" x-show="selected?.defeated">Defeated</span>
+                    <span class="hp-flag negative-hp-hint" x-show="selected?.currentHp &lt; 0" title="Negative HP shows damage beyond 0">Negative HP shows damage beyond 0</span>
                 </div>
 
                 <!-- Quick math buttons -->
