@@ -136,6 +136,29 @@ class SceneStructuredContentServiceTest {
     }
 
     @Test
+    void freeTextMapRegionKeyIsRejectedAtTheFormRatherThanAtExport() {
+        assertThatThrownBy(() ->
+                structuredService.updateMetadata(campaign.getId(), scene.getId(),
+                        new SceneStructuredContentService.SceneMetadataCommand(
+                                "Summary", null, null, "Cave, area 3")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("map region key");
+    }
+
+    @Test
+    void slugMapRegionKeyIsAccepted() {
+        structuredService.updateMetadata(campaign.getId(), scene.getId(),
+                new SceneStructuredContentService.SceneMetadataCommand(
+                        "Summary", null, null, "map-cragmaw-a3"));
+
+        em.flush();
+        em.clear();
+
+        var reloaded = sceneRepository.findById(scene.getId()).orElseThrow();
+        assertThat(reloaded.getMapRegionKey()).isEqualTo("map-cragmaw-a3");
+    }
+
+    @Test
     void updateMetadataRejectsSceneFromOtherCampaign() {
         assertThatThrownBy(() ->
                 structuredService.updateMetadata(otherCampaign.getId(), scene.getId(),

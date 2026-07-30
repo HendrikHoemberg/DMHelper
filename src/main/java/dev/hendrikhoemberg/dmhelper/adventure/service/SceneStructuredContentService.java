@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 @Transactional
@@ -27,6 +28,8 @@ public class SceneStructuredContentService {
     private final RollableTableRepository rollableTableRepository;
     private final TableReferenceResolver referenceResolver;
     private final ThreatReferenceResolver threatReferenceResolver;
+    private static final Pattern MAP_REGION_KEY = Pattern.compile("^[a-z0-9][a-z0-9._-]{0,99}$");
+
     private final EntityManager em;
 
     public SceneStructuredContentService(SceneRepository sceneRepository,
@@ -96,8 +99,20 @@ public class SceneStructuredContentService {
         scene.setSummary(cmd.summary());
         scene.setSourceLocator(cmd.sourceLocator());
         scene.setTags(normalizeTags(cmd.tags()));
-        scene.setMapRegionKey(cmd.mapRegionKey());
+        scene.setMapRegionKey(requireValidMapRegionKey(cmd.mapRegionKey()));
         sceneRepository.save(scene);
+    }
+
+    private String requireValidMapRegionKey(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String trimmed = value.strip();
+        if (!MAP_REGION_KEY.matcher(trimmed).matches()) {
+            throw new IllegalArgumentException(
+                    "Invalid map region key: must match pattern " + MAP_REGION_KEY.pattern());
+        }
+        return trimmed;
     }
 
     private String normalizeTags(String tags) {
