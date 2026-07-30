@@ -58,7 +58,7 @@ class EncounterApiControllerTest {
                 null, null, null, null,
                 false, false, false, List.of(),
                 null, false, 0, 0, 0, 0, null,
-                null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, false);
     }
 
     @Test
@@ -219,7 +219,7 @@ class EncounterApiControllerTest {
                 null, null, null, null,
                 false, false, false, List.of(),
                 null, false, 0, 0, 0, 0, null,
-                null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, false);
 
         when(service.setInitiative(eq(combatantId), eq(0))).thenReturn(dto);
         when(service.setInitiative(eq(combatantId), eq(-3))).thenReturn(dto);
@@ -252,7 +252,7 @@ class EncounterApiControllerTest {
                 false, false, false, List.of(),
                 null, false, 0, 0, 0, 0, null,
                 null, null, null, null,
-                dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.TRAP, threatId, null);
+                dev.hendrikhoemberg.dmhelper.threat.data.ThreatKind.TRAP, threatId, null, false);
         when(service.addThreatCombatant(eq(encId), any())).thenReturn(trapCombatant);
 
         mockMvc.perform(post("/api/v1/encounters/{id}/combatants/from-threat", encId)

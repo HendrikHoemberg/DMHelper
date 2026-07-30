@@ -166,7 +166,8 @@ public class EncounterService {
                                int legendaryResistancesUsed, int legendaryResistancesMax,
                                String notes,
                                UUID waveId, Integer startX, Integer startY, String placementRegionKey,
-                               ThreatKind threatKind, UUID threatId, ThreatCardView threatCard) {}
+                               ThreatKind threatKind, UUID threatId, ThreatCardView threatCard,
+                               boolean actsForGroup) {}
 
     public record StatblockRef(UUID statblockId, String name) {}
 
@@ -268,6 +269,10 @@ public class EncounterService {
     }
 
     CombatantDto toDto(Combatant c) {
+        return toDto(c, c.isGroupLeader());
+    }
+
+    CombatantDto toDto(Combatant c, boolean actsForGroup) {
         List<ConditionStateDto> conditions;
         try {
             conditions = JSON_MAPPER.readValue(c.getConditionsJson(),
@@ -294,7 +299,8 @@ public class EncounterService {
                 c.getNotes(),
                 c.getWave() != null ? c.getWave().getId() : null,
                 c.getStartX(), c.getStartY(), c.getPlacementRegionKey(),
-                c.getThreatKind(), c.getThreatId(), resolveThreatCard(c));
+                c.getThreatKind(), c.getThreatId(), resolveThreatCard(c),
+                actsForGroup);
     }
 
     private ThreatCardView resolveThreatCard(Combatant c) {
@@ -986,9 +992,14 @@ public class EncounterService {
 
     @Transactional(readOnly = true)
     public List<CombatantDto> getCombatants(UUID encounterId) {
-        return combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).stream()
+        List<Combatant> all = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).stream()
                 .filter(this::isOnActiveWave)
-                .map(this::toDto).toList();
+                .toList();
+        Map<UUID, Boolean> actsForGroup = all.stream()
+                .collect(Collectors.toMap(Combatant::getId, c -> takesTurn(c, all)));
+        return all.stream()
+                .map(c -> toDto(c, actsForGroup.get(c.getId())))
+                .toList();
     }
 
     public StatblockRef getCombatantStatblock(UUID combatantId) {
@@ -2227,8 +2238,12 @@ public class EncounterService {
 
     @Transactional(readOnly = true)
     public List<CombatantDto> getInitiativeSetupCombatants(UUID encounterId) {
-        return combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId).stream()
-                .map(this::toDto).toList();
+        List<Combatant> all = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+        Map<UUID, Boolean> actsForGroup = all.stream()
+                .collect(Collectors.toMap(Combatant::getId, c -> takesTurn(c, all)));
+        return all.stream()
+                .map(c -> toDto(c, actsForGroup.get(c.getId())))
+                .toList();
     }
 
     public List<CombatantDto> rollUnsetNpcInitiatives(UUID encounterId) {
