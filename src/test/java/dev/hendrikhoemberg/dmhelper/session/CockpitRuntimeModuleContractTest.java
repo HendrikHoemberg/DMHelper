@@ -234,7 +234,7 @@ class CockpitRuntimeModuleContractTest {
                 "src/main/resources/templates/session/_story-rail.html"));
         assertThat(rail).contains("stepScene");
         assertThat(rail).contains("scene-actions");
-        assertThat(rail).contains("Start encounter from this scene");
+        assertThat(rail).contains("Create an encounter here");
     }
 
     @Test

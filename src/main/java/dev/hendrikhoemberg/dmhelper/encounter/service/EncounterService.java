@@ -424,6 +424,25 @@ public class EncounterService {
         }
     }
 
+    @Transactional
+    public EncounterDto resetEncounter(UUID encounterId) {
+        Encounter e = findEntityById(encounterId);
+        for (Combatant c : combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId)) {
+            c.setCurrentHp(c.getMaxHp());
+            c.setTempHp(0);
+            c.setDefeated(false);
+            c.setInitiative(null);
+            c.setConditionsJson("[]");
+            c.setConcentratingOn(null);
+            combatantRepo.save(c);
+        }
+        e.setStatus(Encounter.Status.PLANNED);
+        e.setCombatPhase(Encounter.CombatPhase.SETUP);
+        e.setRound(0);
+        e.setActiveTurnIndex(-1);
+        return toDto(encounterRepo.save(e));
+    }
+
     /**
      * Puts a finished encounter back into initiative setup. This deliberately mirrors the
      * reset performed by activate(UUID): old HP/initiative values remain editable, but stale

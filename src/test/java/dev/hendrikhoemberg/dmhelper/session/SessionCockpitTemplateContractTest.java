@@ -245,7 +245,7 @@ class SessionCockpitTemplateContractTest {
                 Path.of("src/main/resources/static/js/session-cockpit.js"));
 
         assertThat(story)
-                .contains("Start encounter from this scene")
+                .contains("Create an encounter here")
                 .contains("seedCurrentScene")
                 .contains(":disabled=\"seedingSceneEncounter\"");
         assertThat(script)
@@ -364,6 +364,36 @@ class SessionCockpitTemplateContractTest {
             end++;
         }
         return js.substring(brace, end);
+    }
+
+    @Test
+    void sceneActionsUseDescriptiveLabelsAndControlStyle() throws IOException {
+        String story = Files.readString(Path.of("src/main/resources/templates/session/_story-rail.html"));
+        assertThat(story).contains("Create an encounter here");
+        assertThat(story).contains("Run the prepared encounter");
+        assertThat(story).contains("class=\"btn scene-actions__control\"");
+    }
+
+    @Test
+    void finishedEncounterDialogExists() throws IOException {
+        String cockpit = Files.readString(Path.of("src/main/resources/templates/session/cockpit.html"));
+        String js = Files.readString(Path.of("src/main/resources/static/js/session-cockpit.js"));
+        assertThat(cockpit).contains("encounterFinishedDialog");
+        assertThat(js).contains("showFinishedEncounterDialog(");
+        assertThat(js).contains("confirmResumeFinished()");
+        assertThat(js).contains("confirmResetFinished()");
+        assertThat(js).contains("/encounters/${encounterId}/reset");
+    }
+
+    @Test
+    void resetEndpointExists() throws IOException {
+        String controller = Files.readString(Path.of(
+                "src/main/java/dev/hendrikhoemberg/dmhelper/encounter/web/EncounterApiController.java"));
+        assertThat(controller).contains("resetEncounter");
+        String service = Files.readString(Path.of(
+                "src/main/java/dev/hendrikhoemberg/dmhelper/encounter/service/EncounterService.java"));
+        assertThat(service).contains("public EncounterDto resetEncounter");
+        assertThat(service).contains("setInitiative(null)");
     }
 
     private static int count(String s, String substring) {

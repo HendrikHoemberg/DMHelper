@@ -316,6 +316,10 @@
   flex-wrap: wrap;
 }
 
+.scene-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.scene-actions__control { border: 1px solid var(--color-border); color: var(--color-text); }
+.scene-actions__control:hover { border-color: var(--color-border-strong); }
+
 /* Encounter detail — quick-add combatant row */
 .combatant-quickadd input,
 .combatant-quickadd select {

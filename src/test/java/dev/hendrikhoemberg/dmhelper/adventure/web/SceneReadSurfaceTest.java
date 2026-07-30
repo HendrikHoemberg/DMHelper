@@ -77,7 +77,7 @@ class SceneReadSurfaceTest {
                 .contains("Set as Current Scene");
         assertThat(body)
                 .as("Start encounter button must be present")
-                .contains("Start encounter from this scene");
+                .contains("Create an encounter here");
         assertThat(body)
                 .as("status badge must render")
                 .contains("status-badge-container");

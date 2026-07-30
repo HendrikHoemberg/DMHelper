@@ -41,7 +41,7 @@ class SceneSeedEncounterControllerTest {
                         seeded.campaignId(), seeded.adventureId(), seeded.richSceneId()))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        assertThat(before).contains("Start encounter from this scene");
+        assertThat(before).contains("Create an encounter here");
 
         long encountersBefore = encounterRepository.count();
 
@@ -68,7 +68,7 @@ class SceneSeedEncounterControllerTest {
         assertThat(after)
                 .as("once linked, the scene shows its encounter instead of offering to build one")
                 .contains("Linked Encounter")
-                .doesNotContain("Start encounter from this scene");
+                .doesNotContain("Create an encounter here");
     }
 
     @Test
@@ -76,6 +76,6 @@ class SceneSeedEncounterControllerTest {
         String html = mvc.perform(get("/campaigns/{c}/adventures/{a}/scenes/{s}",
                         seeded.campaignId(), seeded.adventureId(), seeded.secondSceneId()))
                 .andReturn().getResponse().getContentAsString();
-        assertThat(html).doesNotContain("Start encounter from this scene");
+        assertThat(html).doesNotContain("Create an encounter here");
     }
 }

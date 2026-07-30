@@ -69,6 +69,11 @@ public class EncounterApiController {
         return service.activate(id);
     }
 
+    @PostMapping("/encounters/{id}/reset")
+    public EncounterDto reset(@PathVariable UUID id) {
+        return service.resetEncounter(id);
+    }
+
     @PostMapping("/encounters/{id}/end")
     public EncounterDto end(@PathVariable UUID id) {
         return service.endEncounter(id);

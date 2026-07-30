@@ -121,7 +121,7 @@ class SessionControllerTest {
         mvc.perform(get("/campaigns/{id}/session/rails/story", campaignId))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(
-                        "Start encounter from this scene")))
+                        "Create an encounter here")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(
                         "data-scene-id=\"" + sceneId + "\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(

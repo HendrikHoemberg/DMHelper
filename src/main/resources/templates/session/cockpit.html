@@ -123,6 +123,20 @@
     </div>
   </dialog>
 
+  <dialog id="encounterFinishedDialog" class="cockpit-dialog"
+          aria-labelledby="encounterFinishedTitle"
+          @cancel.prevent="closeFinishedEncounterDialog()">
+    <h2 id="encounterFinishedTitle">This encounter has already been fought</h2>
+    <p><strong x-text="finishedEncounterName || 'It'"></strong> ended earlier. Resuming reopens as it was. Resetting restores all combatants.</p>
+    <div class="cockpit-dialog__actions">
+      <button type="button" class="btn btn-primary" data-resume-finished
+              @click="confirmResumeFinished()">Resume as it was</button>
+      <button type="button" class="btn btn-danger action-row__destructive" data-reset-finished
+              @click="confirmResetFinished()">Reset and run again</button>
+      <button type="button" class="btn btn-ghost" @click="closeFinishedEncounterDialog()">Cancel</button>
+    </div>
+  </dialog>
+
   <dialog class="cockpit-dialog" id="encounterReplacementDialog"
           aria-labelledby="encounterReplacementTitle"
           @cancel.prevent="closeReplacementDialog()">
