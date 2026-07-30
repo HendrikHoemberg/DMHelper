@@ -56,13 +56,15 @@
     <h3>Suspended Encounters</h3>
     <th:block th:each="enc : ${view.suspended}">
       <div class="planned-encounter-row">
-        <span>
-          <strong th:text="${enc.name}">Goblin Ambush</strong>
-          <small th:text="${enc.mapName + ' · ' + enc.combatantCount + (enc.combatantCount == 1 ? ' combatant' : ' combatants')}">Map · 6 combatants</small>
+        <span class="planned-encounter-row__title" th:text="${enc.name}">Goblin Ambush</span>
+        <span class="planned-encounter-row__meta">
+          <span th:text="${enc.mapName != null ? enc.mapName : 'No map'}">Map</span>
+          <span aria-hidden="true">·</span>
+          <span th:text="${enc.combatantCount + (enc.combatantCount == 1 ? ' combatant' : ' combatants')}">6 combatants</span>
         </span>
-        <button class="btn btn-ghost encounter-rail__action" style="padding: 2px 8px;"
+        <button class="btn btn-ghost encounter-rail__action"
                 th:attr="data-encounter-id=${enc.id}"
-                @click="runEncounter($el.dataset.encounterId)">Resume encounter</button>
+                @click="runEncounter($el.dataset.encounterId)">Resume</button>
       </div>
     </th:block>
   </div>
@@ -70,11 +72,13 @@
     <h3>Finished this session</h3>
     <th:block th:each="enc : ${view.finished}">
       <div class="planned-encounter-row">
-        <span>
-          <strong th:text="${enc.name}">Goblin Ambush</strong>
-          <small th:text="${enc.mapName + ' · ' + enc.combatantCount + (enc.combatantCount == 1 ? ' combatant' : ' combatants')}">Map · 6 combatants</small>
+        <span class="planned-encounter-row__title" th:text="${enc.name}">Goblin Ambush</span>
+        <span class="planned-encounter-row__meta">
+          <span th:text="${enc.mapName != null ? enc.mapName : 'No map'}">Map</span>
+          <span aria-hidden="true">·</span>
+          <span th:text="${enc.combatantCount + (enc.combatantCount == 1 ? ' combatant' : ' combatants')}">6 combatants</span>
         </span>
-        <button class="btn btn-ghost encounter-rail__action" style="padding: 2px 8px;"
+        <button class="btn btn-ghost encounter-rail__action"
                 th:attr="data-encounter-id=${enc.id}"
                 @click="runEncounter($el.dataset.encounterId)">Reopen</button>
       </div>
