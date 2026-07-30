@@ -383,8 +383,10 @@
                                 <template x-for="cond in c.conditions" :key="cond.sourceKey">
                                     <span class="cond-icon"
                                           :style="{ background: conditionColor(cond.sourceKey) }"
-                                          :title="getConditionText(cond.sourceKey)"
-                                          x-text="cond.durationRounds > 0 ? cond.durationRounds : '∞'"></span>
+                                          :title="getConditionText(cond.sourceKey)">
+                                        <span class="cond-icon__abbr" x-text="conditionAbbr(cond.sourceKey)"></span>
+                                        <span class="cond-icon__duration" x-text="cond.durationRounds > 0 ? cond.durationRounds : '∞'"></span>
+                                    </span>
                                 </template>
 <button class="btn btn-ghost tracker-small-button condition-add" style="padding: 0 2px; line-height: 1;"
         @click.stop="editConditionsFor(c.id)">＋</button>
@@ -450,13 +452,30 @@
                 </div>
 
                 <!-- Conditions panel -->
-                <div class="detail-conditions" x-data="{ condFilter: '', commonKeys: ['prone','grappled','restrained','frightened','poisoned','unconscious'] }">
+                <div class="detail-conditions" x-data="{ condFilter: '', commonKeys: ['prone','grappled','restrained','frightened','poisoned','unconscious'], applyDuration: '' }">
                     <h4>Conditions</h4>
+                    <label class="detail-conditions__duration">
+                        Duration
+                        <input type="number" min="1" max="99" data-condition-duration
+                               placeholder="∞" x-model="applyDuration">
+                    </label>
+                    <div class="condition-active" x-show="selected?.conditions?.length">
+                        <template x-for="cond in selected?.conditions || []" :key="cond.sourceKey">
+                            <span class="condition-active__chip"
+                                  :style="{ borderColor: conditionColor(cond.sourceKey) }">
+                                <span x-text="conditionName(cond.sourceKey)"></span>
+                                <span x-text="cond.durationRounds > 0 ? cond.durationRounds : '∞'"></span>
+                                <button type="button" class="btn-2xs"
+                                        style="border: none; background: none; cursor: pointer; line-height: 1; padding: 0;"
+                                        @click="removeCondition(selected.id, cond.sourceKey)">×</button>
+                            </span>
+                        </template>
+                    </div>
                     <div class="condition-quick" style="display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px;">
                         <template x-for="key in commonKeys" :key="key">
                             <button class="btn btn-xs"
                                     :class="hasCondition(selected, key) ? 'is-active' : 'btn-ghost'"
-                                    @click="toggleCondition(selected.id, key, 1)"
+                                    @click="toggleCondition(selected.id, key, applyDuration || 0)"
                                     x-text="key.charAt(0).toUpperCase() + key.slice(1)"></button>
                         </template>
                     </div>
@@ -466,7 +485,7 @@
                         <label class="condition-toggle">
                             <input type="checkbox"
                                    :checked="hasCondition(selected, cond.sourceKey)"
-                                   @change="toggleCondition(selected.id, cond.sourceKey, cond.defaultDuration || 1)">
+                                   @change="toggleCondition(selected.id, cond.sourceKey, applyDuration || cond.defaultDuration || 0)">
                             <span x-text="cond.name"></span>
                             <span class="cond-help" :title="cond.description" style="cursor: help; color: var(--color-text-muted);">ⓘ</span>
                         </label>

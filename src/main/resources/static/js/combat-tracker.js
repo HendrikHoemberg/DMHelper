@@ -8,22 +8,52 @@
         concentration: '#966a9e',
     };
 
+    const CONDITION_DEFAULT_DURATIONS = {
+        blinded: 0,
+        charmed: 0,
+        deafened: 0,
+        exhaustion: 0,
+        frightened: 0,
+        grappled: 0,
+        incapacitated: 0,
+        invisible: 0,
+        paralyzed: 0,
+        petrified: 0,
+        poisoned: 0,
+        prone: 0,
+        restrained: 0,
+        stunned: 0,
+        unconscious: 0,
+    };
+
+    function defaultDurationFor(sourceKey) {
+        return CONDITION_DEFAULT_DURATIONS[sourceKey] ?? 0;
+    }
+
+    const CONDITION_ABBREVIATIONS = {
+        blinded: 'BLI', charmed: 'CHA', deafened: 'DEA', exhaustion: 'EXH',
+        frightened: 'FRI', grappled: 'GRA', incapacitated: 'INC', invisible: 'INV',
+        paralyzed: 'PAR', petrified: 'PET', poisoned: 'POI', prone: 'PRO',
+        restrained: 'RES', stunned: 'STU', unconscious: 'UNC', concentration: 'CON',
+    };
+    window.CONDITION_ABBREVIATIONS = CONDITION_ABBREVIATIONS;
+
     /* Hardcoded common conditions (fallback if API unavailable) */
     const COMMON_CONDITIONS = [
-        { sourceKey: 'blinded', name: 'Blinded', description: 'A blinded creature can\'t see and automatically fails ability checks that require sight.', defaultDuration: 1 },
-        { sourceKey: 'charmed', name: 'Charmed', description: 'A charmed creature can\'t attack the charmer and has advantage on social interactions.', defaultDuration: 1 },
-        { sourceKey: 'deafened', name: 'Deafened', description: 'A deafened creature can\'t hear and automatically fails ability checks that require hearing.', defaultDuration: 1 },
-        { sourceKey: 'frightened', name: 'Frightened', description: 'A frightened creature has disadvantage on ability checks and attacks while the source is visible.', defaultDuration: 1 },
-        { sourceKey: 'grappled', name: 'Grappled', description: 'A grappled creature\'s speed becomes 0. The condition ends if the grappler is incapacitated. The condition also ends if an effect removes the grappled creature from the reach of the grappler.', defaultDuration: 1 },
-        { sourceKey: 'incapacitated', name: 'Incapacitated', description: 'An incapacitated creature can\'t take actions or reactions.', defaultDuration: 1 },
-        { sourceKey: 'invisible', name: 'Invisible', description: 'An invisible creature is impossible to see without magical aid.', defaultDuration: 1 },
-        { sourceKey: 'paralyzed', name: 'Paralyzed', description: 'A paralyzed creature is incapacitated and can\'t move or speak.', defaultDuration: 1 },
-        { sourceKey: 'petrified', name: 'Petrified', description: 'A petrified creature is turned to stone and is incapacitated.', defaultDuration: 1 },
-        { sourceKey: 'poisoned', name: 'Poisoned', description: 'A poisoned creature has disadvantage on attack rolls and ability checks.', defaultDuration: 1 },
-        { sourceKey: 'prone', name: 'Prone', description: 'A prone creature\'s only movement option is crawling. Attack rolls against the creature have advantage if the attacker is within 5 feet. The creature\'s attack rolls have disadvantage.', defaultDuration: 1 },
-        { sourceKey: 'restrained', name: 'Restrained', description: 'A restrained creature\'s speed becomes 0 and attacks against it have advantage.', defaultDuration: 1 },
-        { sourceKey: 'stunned', name: 'Stunned', description: 'A stunned creature is incapacitated, can\'t move, and speaks falteringly.', defaultDuration: 1 },
-        { sourceKey: 'unconscious', name: 'Unconscious', description: 'An unconscious creature is incapacitated, can\'t move or speak, and is unaware.', defaultDuration: 1 },
+        { sourceKey: 'blinded', name: 'Blinded', description: 'A blinded creature can\'t see and automatically fails ability checks that require sight.', defaultDuration: 0 },
+        { sourceKey: 'charmed', name: 'Charmed', description: 'A charmed creature can\'t attack the charmer and has advantage on social interactions.', defaultDuration: 0 },
+        { sourceKey: 'deafened', name: 'Deafened', description: 'A deafened creature can\'t hear and automatically fails ability checks that require hearing.', defaultDuration: 0 },
+        { sourceKey: 'frightened', name: 'Frightened', description: 'A frightened creature has disadvantage on ability checks and attacks while the source is visible.', defaultDuration: 0 },
+        { sourceKey: 'grappled', name: 'Grappled', description: 'A grappled creature\'s speed becomes 0. The condition ends if the grappler is incapacitated. The condition also ends if an effect removes the grappled creature from the reach of the grappler.', defaultDuration: 0 },
+        { sourceKey: 'incapacitated', name: 'Incapacitated', description: 'An incapacitated creature can\'t take actions or reactions.', defaultDuration: 0 },
+        { sourceKey: 'invisible', name: 'Invisible', description: 'An invisible creature is impossible to see without magical aid.', defaultDuration: 0 },
+        { sourceKey: 'paralyzed', name: 'Paralyzed', description: 'A paralyzed creature is incapacitated and can\'t move or speak.', defaultDuration: 0 },
+        { sourceKey: 'petrified', name: 'Petrified', description: 'A petrified creature is turned to stone and is incapacitated.', defaultDuration: 0 },
+        { sourceKey: 'poisoned', name: 'Poisoned', description: 'A poisoned creature has disadvantage on attack rolls and ability checks.', defaultDuration: 0 },
+        { sourceKey: 'prone', name: 'Prone', description: 'A prone creature\'s only movement option is crawling. Attack rolls against the creature have advantage if the attacker is within 5 feet. The creature\'s attack rolls have disadvantage.', defaultDuration: 0 },
+        { sourceKey: 'restrained', name: 'Restrained', description: 'A restrained creature\'s speed becomes 0 and attacks against it have advantage.', defaultDuration: 0 },
+        { sourceKey: 'stunned', name: 'Stunned', description: 'A stunned creature is incapacitated, can\'t move, and speaks falteringly.', defaultDuration: 0 },
+        { sourceKey: 'unconscious', name: 'Unconscious', description: 'An unconscious creature is incapacitated, can\'t move or speak, and is unaware.', defaultDuration: 0 },
     ];
 
     function combatTracker(options = {}) {
@@ -186,7 +216,7 @@
                             sourceKey: c.sourceKey,
                             name: c.name,
                             description: c.description || '',
-                            defaultDuration: 1,
+                            defaultDuration: defaultDurationFor(c.sourceKey),
                         }));
                     })
                     .catch(() => { this.conditionsCatalog = COMMON_CONDITIONS; });
@@ -544,7 +574,10 @@
                     {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sourceKey, durationRounds: duration || 1 }),
+                        body: JSON.stringify({
+                            sourceKey,
+                            durationRounds: Number.isFinite(Number(duration)) ? Number(duration) : 0,
+                        }),
                     },
                     async () => {
                         await this.reloadCombatants();
@@ -652,6 +685,16 @@
 
             conditionColor(sourceKey) {
                 return CONDITION_COLORS[sourceKey] || '#c9a35c';
+            },
+
+            conditionName(sourceKey) {
+                const cond = this.conditionsCatalog.find(c => c.sourceKey === sourceKey);
+                return cond ? cond.name : sourceKey;
+            },
+
+            conditionAbbr(sourceKey) {
+                return CONDITION_ABBREVIATIONS[sourceKey]
+                    || String(sourceKey || '?').slice(0, 3).toUpperCase();
             },
 
             selectCombatant(id) {
