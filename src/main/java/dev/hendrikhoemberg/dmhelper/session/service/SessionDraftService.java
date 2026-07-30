@@ -6,6 +6,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.CombatLogEntryRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterXpCalculator;
 import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntry;
 import dev.hendrikhoemberg.dmhelper.ledger.data.LedgerEntryRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNoteRepository;
@@ -231,6 +232,9 @@ public class SessionDraftService {
             else line.append("completed");
             if (!names.isEmpty()) line.append("; defeated: ").append(String.join(", ", names));
             if (damage > 0) line.append("; damage recorded: ").append(damage);
+            int xp = EncounterXpCalculator.xpFromDefeated(
+                    combatants.findByEncounterIdOrderBySortOrderAsc(encounter.getId()));
+            if (xp > 0) line.append("; XP: ").append(xp);
             lines.add(line.toString());
         }
         return lines;

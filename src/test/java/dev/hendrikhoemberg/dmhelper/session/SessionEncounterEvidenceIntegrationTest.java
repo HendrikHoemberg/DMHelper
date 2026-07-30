@@ -2,6 +2,9 @@ package dev.hendrikhoemberg.dmhelper.session;
 
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterXpCalculator;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlock;
+import dev.hendrikhoemberg.dmhelper.library.data.StatBlockRepository;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
@@ -13,7 +16,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.Commit;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.UUID;
@@ -38,6 +43,8 @@ class SessionEncounterEvidenceIntegrationTest {
     private CampaignSessionRepository sessionRepo;
     @Autowired
     private SessionLifecycleService lifecycle;
+    @Autowired
+    private StatBlockRepository statBlockRepo;
 
     private UUID campaignId;
 
@@ -58,6 +65,40 @@ class SessionEncounterEvidenceIntegrationTest {
         partyRepo.save(pm);
 
         lifecycle.start(campaignId, null);
+    }
+
+    @Test
+    void draftContainsXpAfterDefeatingGoblin() throws Exception {
+        StatBlock sb = new StatBlock();
+        sb.setSource(dev.hendrikhoemberg.dmhelper.library.data.ContentSource.SRD);
+        sb.setName("Goblin");
+        sb.setXp(50);
+        sb.setHp("7");
+        sb.setAc(15);
+        sb.setCr("1/4");
+        sb.setType("humanoid");
+        sb.setStrScore(8);
+        sb.setDexScore(14);
+        sb.setConScore(10);
+        sb.setIntScore(8);
+        sb.setWisScore(8);
+        sb.setChaScore(8);
+        statBlockRepo.save(sb);
+
+        UUID encounterId = createEncounter("Goblin XP Test");
+        String json = mvc.perform(post("/api/v1/encounters/{id}/combatants", encounterId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Goblin\",\"maxHp\":7,\"kind\":\"MONSTER\",\"statBlockId\":\"" + sb.getId() + "\"}"))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        UUID combatantId = UUID.fromString(objectMapper.readTree(json).get("id").asText());
+        activateEncounter(encounterId);
+        markDefeated(combatantId, true);
+        endEncounter(encounterId);
+
+        CampaignSession session = lifecycle.beginReview(campaignId);
+        String draft = session.getDraftBody();
+        assertThat(draft).contains("XP: 50");
     }
 
     @Test
