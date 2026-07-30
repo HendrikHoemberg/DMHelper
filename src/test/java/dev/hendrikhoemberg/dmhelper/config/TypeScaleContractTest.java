@@ -37,7 +37,10 @@ class TypeScaleContractTest {
             "[data-module-remove], [data-module-retry]",
             ".scene-status-badge",
             ".beat-type",
-            ".audio-source, .audio-owner");
+            ".audio-source, .audio-owner",
+            ".planned-encounter-row__meta",
+            ".encounter-chip",
+            ".group-count");
 
     @Test
     void onlyTokensCssCarriesAnAbsoluteFontSize() {

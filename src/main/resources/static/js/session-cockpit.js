@@ -559,7 +559,6 @@ function sessionCockpit(config) {
                 window.battleMap.setActiveEncounter(encounterId);
             }
             this.refreshModules(['story', 'encounter', 'map'], 'encounter-activated');
-            window.cockpitModules?.load('map', { force: true, mapId: this.currentMapId }).catch(() => {});
             return result;
         },
 
