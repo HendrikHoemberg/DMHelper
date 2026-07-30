@@ -558,7 +558,15 @@ function sessionCockpit(config) {
             if (window.battleMap) {
                 window.battleMap.setActiveEncounter(encounterId);
             }
-            this.refreshModules(['story', 'encounter', 'map'], 'encounter-activated');
+            this.refreshModules(['story', 'encounter'], 'encounter-activated');
+            // The Map module is in PRESERVED_KEYS so refresh() deliberately skips it, and its
+            // body is server-rendered from the mapId query parameter. Load it explicitly with
+            // the id activation just moved the workspace to, otherwise the module keeps
+            // rendering whatever the page was opened with -- usually "No map selected".
+            // load() reports its own failures through cockpit:module-load-failed.
+            if (this.currentMapId) {
+                window.cockpitModules?.load('map', { force: true, mapId: this.currentMapId });
+            }
             return result;
         },
 
