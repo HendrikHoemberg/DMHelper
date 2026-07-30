@@ -28,6 +28,6 @@ class CalendarFormatDateTest {
         String formatted = calendarService.formatDate(id,
                 new CalendarService.InGameDate(1492, 3, 15));
 
-        assertThat(formatted).isEqualTo("15 April 1492");
+        assertThat(formatted).isEqualTo("15. April 1492");
     }
 }
