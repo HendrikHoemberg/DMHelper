@@ -9,6 +9,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.Combatant
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantUpdateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.EncounterDto;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.UpdateRequest;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.TokenRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
@@ -789,5 +790,18 @@ class EncounterServiceTest {
         service.applyDamage(goblin.id(), 2);
         service.undo(enc.id());
         assertThat(service.getCombatant(goblin.id()).currentHp()).isEqualTo(10);
+    }
+
+    @Test
+    void shouldRejectUpdateToActiveWhenAnotherEncounterIsAlreadyActive() {
+        EncounterDto first = service.create(campaign.getId(), new CreateRequest("First", null));
+        service.activate(first.id());
+
+        EncounterDto second = service.create(campaign.getId(), new CreateRequest("Second", null));
+
+        assertThatThrownBy(() ->
+                service.update(second.id(), new UpdateRequest("Second", null, "ACTIVE", null, null))
+        ).isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("already active");
     }
 }

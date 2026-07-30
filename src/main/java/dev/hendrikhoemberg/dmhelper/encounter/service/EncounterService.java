@@ -351,7 +351,15 @@ public class EncounterService {
             e.setMap(null);
         }
         if (req.status() != null) {
-            e.setStatus(Encounter.Status.valueOf(req.status()));
+            Encounter.Status newStatus = Encounter.Status.valueOf(req.status());
+            if (newStatus == Encounter.Status.ACTIVE && e.getStatus() != Encounter.Status.ACTIVE) {
+                Optional<Encounter> active = encounterRepo.findByCampaignIdAndStatus(
+                        e.getCampaign().getId(), Encounter.Status.ACTIVE);
+                if (active.isPresent() && !active.get().getId().equals(id)) {
+                    throw new IllegalStateException("Another encounter is already active");
+                }
+            }
+            e.setStatus(newStatus);
         }
         e.setLairActionName(req.lairActionName());
         e.setLairActionDescription(req.lairActionDescription());
