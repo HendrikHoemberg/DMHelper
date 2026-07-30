@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.library.web;
 
 import dev.hendrikhoemberg.dmhelper.library.data.*;
 import dev.hendrikhoemberg.dmhelper.library.service.*;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,6 +30,7 @@ public class LibraryApiController {
     private final SpeciesService speciesService;
     private final BackgroundService backgroundService;
     private final FeatService featService;
+    private final ObjectMapper objectMapper;
 
     public LibraryApiController(StatBlockService statBlockService,
                                 SpellService spellService,
@@ -39,7 +41,8 @@ public class LibraryApiController {
                                 CharacterClassService characterClassService,
                                 SpeciesService speciesService,
                                 BackgroundService backgroundService,
-                                FeatService featService) {
+                                FeatService featService,
+                                ObjectMapper objectMapper) {
         this.statBlockService = statBlockService;
         this.spellService = spellService;
         this.conditionService = conditionService;
@@ -50,6 +53,7 @@ public class LibraryApiController {
         this.speciesService = speciesService;
         this.backgroundService = backgroundService;
         this.featService = featService;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping("/statblocks/search")
@@ -62,10 +66,9 @@ public class LibraryApiController {
     }
 
     @GetMapping("/statblocks/{id}")
-    public StatBlockSummary getStatblock(@PathVariable UUID id) {
+    public StatBlockRuntimeProjection getStatblock(@PathVariable UUID id) {
         var sb = statBlockService.findById(id);
-        return new StatBlockSummary(sb.getId(), sb.getName(), sb.getCr(),
-                sb.getType(), sb.getHp(), sb.getAc(), sb.getXp());
+        return StatBlockRuntimeProjection.from(sb, objectMapper);
     }
 
     @GetMapping("/srd-keys")

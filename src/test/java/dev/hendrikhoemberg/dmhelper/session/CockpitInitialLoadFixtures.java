@@ -213,6 +213,11 @@ public class CockpitInitialLoadFixtures {
         goblinSb.setAc(15);
         goblinSb.setHp("7 (2d6)");
         goblinSb.setXp(50);
+        goblinSb.setSpeed("30 ft.");
+        goblinSb.setSenses("darkvision 60 ft., passive Perception 10");
+        goblinSb.setLanguages("Common, Goblin");
+        goblinSb.setActions("[{\"name\":\"Scimitar +4 to hit (1d6+2)\",\"description\":\"Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 5 (1d6 + 2) slashing damage.\"}]");
+        goblinSb.setBonusActions("[{\"name\":\"Nimble Escape\",\"description\":\"The goblin can take the Disengage or Hide action as a bonus action on each of its turns.\"}]");
         statBlocks.save(goblinSb);
 
         GameMap map = maps.findByCampaignIdOrderBySortOrderAsc(campaignId).getFirst();

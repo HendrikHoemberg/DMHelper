@@ -150,6 +150,25 @@
         this.statblock = null;
         this.statblockError = '';
       },
+
+      statblockSections() {
+        const sb = this.statblock;
+        if (!sb) return [];
+        return [
+          { key: 'traits', label: 'Traits', entries: sb.traits },
+          { key: 'actions', label: 'Actions', entries: sb.actions },
+          { key: 'bonusActions', label: 'Bonus Actions', entries: sb.bonusActions },
+          { key: 'reactions', label: 'Reactions', entries: sb.reactions },
+          { key: 'legendaryActions', label: 'Legendary Actions', entries: sb.legendaryActions },
+        ];
+      },
+
+      prefill(entry) {
+        if (!entry || !entry.damageExpression) return;
+        window.dispatchEvent(new CustomEvent('dice-roller-prefill', {
+          detail: { expression: entry.damageExpression, label: entry.name + ' damage' }
+        }));
+      },
     }));
   });
 })();

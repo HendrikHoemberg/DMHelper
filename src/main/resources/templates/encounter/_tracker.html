@@ -445,7 +445,7 @@
                 <!-- Statblock link -->
                 <div class="detail-statblock-link" style="margin: var(--space-sm) 0;">
                     <button class="btn btn-ghost btn-sm"
-                            x-show="selected?.statblockId"
+                            x-show="selected?.statBlockId"
                             @click="showStatblock(selected.id)">
                         Statblock
                     </button>
@@ -534,8 +534,8 @@
                         <div x-show="focusedStatblock.type" class="u-text-xs">
                             <span>Type: </span><span x-text="focusedStatblock.type"></span>
                         </div>
-                        <div x-show="focusedStatblock.armorClass" class="u-text-xs">
-                            <span>AC: </span><span x-text="focusedStatblock.armorClass"></span>
+                        <div x-show="focusedStatblock.ac" class="u-text-xs">
+                            <span>AC: </span><span x-text="focusedStatblock.ac"></span>
                         </div>
                         <div class="u-mt-xs" x-show="focusedStatblock.abilityScores">
                             <strong class="u-text-xs">Abilities</strong>
@@ -553,13 +553,9 @@
                                 </template>
                             </div>
                         </div>
-                        <div class="u-mt-xs" x-show="focusedStatblock.skills && focusedStatblock.skills.length">
+                        <div class="u-mt-xs" x-show="focusedStatblock.skills">
                             <strong class="u-text-xs">Skills</strong>
-                            <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px;">
-                                <template x-for="skill in focusedStatblock.skills" :key="skill.name">
-                                    <span class="badge tracker-statblock-badge" x-text="skill.name + ' +' + skill.modifier"></span>
-                                </template>
-                            </div>
+                            <span class="u-text-xs" x-text="focusedStatblock.skills"></span>
                         </div>
                         <div class="u-mt-xs" x-show="focusedStatblock.speed">
                             <span class="u-text-xs">Speed: </span><span class="u-text-xs" x-text="focusedStatblock.speed"></span>
@@ -610,7 +606,7 @@
                         </div>
                       </div>
                     </template>
-                    <div x-show="!focusedStatblockLoading && !focusedStatblock && selected?.statBlockId" class="u-text-xs text-muted">
+                    <div x-show="!focusedStatblockLoading && !focusedStatblock && selected?.statblockId" class="u-text-xs text-muted">
                         Statblock unavailable
                     </div>
                 </div>
