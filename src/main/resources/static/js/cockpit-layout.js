@@ -2134,6 +2134,22 @@
       if (this.notice.querySelector('button')) return;
       this.clearNotice();
     }
+
+    offerPresetSwitch(message, presetKey, actionLabel) {
+      if (!this.notice) return;
+      this.notice.replaceChildren();
+      const text = document.createElement('span');
+      text.textContent = message + ' ';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-primary';
+      btn.textContent = actionLabel;
+      btn.addEventListener('click', () => {
+        this.clearNotice();
+        this.applyPreset(presetKey);
+      });
+      this.notice.append(text, btn);
+    }
   }
 
   window.CockpitLayoutController = CockpitLayoutController;

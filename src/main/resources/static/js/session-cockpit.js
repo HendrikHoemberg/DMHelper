@@ -56,6 +56,8 @@ function sessionCockpit(config) {
         _replacementPendingId: null,
         _replacementActiveId: null,
         _replacementActiveName: null,
+        _finishedEncounterId: null,
+        finishedEncounterName: '',
         _readinessEncounterId: null,
         _readinessData: null,
         readinessCanRun: false,
@@ -619,11 +621,28 @@ function sessionCockpit(config) {
                 await window.cockpitModules?.load('map', { force: true, mapId: this.currentMapId });
                 await this.refreshThreatPins();
             }
+            this.surfaceEncounter();
             return true;
+        },
+
+        surfaceEncounter() {
+            const layout = window.cockpitLayout;
+            if (!layout) return;
+            if (layout.revealModule('encounter')) return;
+            layout.offerPresetSwitch(
+                'The encounter is running. The initiative order lives in the Combat layout.',
+                'builtin:combat',
+                'Switch to Combat');
         },
 
         async runEncounter(encounterId) {
             try {
+                const encResponse = await this.request(`/api/v1/encounters/${encounterId}`);
+                const encounter = await encResponse.json();
+                if (encounter.status === 'DONE') {
+                    this.showFinishedEncounterDialog(encounterId, encounter.name);
+                    return;
+                }
                 const readinessResponse = await this.request(`/api/v1/encounters/${encounterId}/readiness`);
                 const readiness = await readinessResponse.json();
                 // Only ERROR-severity issues block a run, and the server already folds those
@@ -675,6 +694,41 @@ function sessionCockpit(config) {
             this.closeReplacementDialog();
             if (!pendingId) return;
             await this._activateOrNotify(pendingId, 'END');
+        },
+
+        showFinishedEncounterDialog(encounterId, name) {
+            this._finishedEncounterId = encounterId;
+            this.finishedEncounterName = name;
+            const dialog = document.getElementById('encounterFinishedDialog');
+            if (dialog && !dialog.open) dialog.showModal();
+        },
+
+        closeFinishedEncounterDialog() {
+            const dialog = document.getElementById('encounterFinishedDialog');
+            if (dialog?.open) dialog.close();
+            this._finishedEncounterId = null;
+            this.finishedEncounterName = '';
+        },
+
+        async confirmResumeFinished() {
+            const encounterId = this._finishedEncounterId;
+            this.closeFinishedEncounterDialog();
+            if (!encounterId) return;
+            await this._activateOrNotify(encounterId, null);
+        },
+
+        async confirmResetFinished() {
+            const encounterId = this._finishedEncounterId;
+            this.closeFinishedEncounterDialog();
+            if (!encounterId) return;
+            try {
+                await this.request(`/api/v1/encounters/${encounterId}/reset`, { method: 'POST' });
+                await this._activateOrNotify(encounterId, null);
+            } catch (error) {
+                const detail = error?.problem?.detail
+                    || 'The encounter could not be reset. Nothing was changed.';
+                window.cockpitLayout?.showNotice(detail);
+            }
         },
 
         // A rejected activation used to escape as an unhandled Alpine expression error: the
