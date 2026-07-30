@@ -69,7 +69,16 @@
 
     const liveToasts = new Map();
 
+    /**
+     * The fourth argument used to be the action itself, and callers across the app still
+     * pass one. An {label, handler} object is therefore accepted in place of the options
+     * bag rather than silently swallowed — a Retry that renders no button is worse than
+     * no Retry at all.
+     */
     window.showToast = function(message, type = 'info', duration = 3000, options = null) {
+      if (options && options.handler && !('action' in options)) {
+        options = { action: { label: options.label, handler: options.handler } };
+      }
       const dedupeKey = options?.dedupeKey;
       if (dedupeKey && liveToasts.has(dedupeKey)) {
         const existing = liveToasts.get(dedupeKey);
@@ -77,6 +86,8 @@
         if (countEl) {
           const current = parseInt(countEl.textContent, 10) || 1;
           countEl.textContent = String(current + 1);
+          // One occurrence needs no tally; the second is what the DM should notice.
+          countEl.hidden = false;
         }
         return;
       }
@@ -92,11 +103,12 @@
       toast.appendChild(text);
 
       if (options?.reference) {
+        // Support needs the whole id, so it stays on the toast in full — but as a demoted
+        // trailing element, never inside the sentence the DM is trying to read.
         const ref = document.createElement('span');
         ref.className = 'toast__reference';
-        ref.textContent = options.reference.length > 8
-          ? options.reference.slice(0, 8) + '…'
-          : options.reference;
+        ref.title = 'Reference for support';
+        ref.textContent = 'ref ' + options.reference;
         toast.appendChild(ref);
       }
 
@@ -127,7 +139,9 @@
         const countEl = document.createElement('span');
         countEl.className = 'toast__count';
         countEl.setAttribute('data-toast-count', '1');
+        countEl.setAttribute('aria-label', 'occurrences');
         countEl.textContent = '1';
+        countEl.hidden = true;
         toast.appendChild(countEl);
         liveToasts.set(dedupeKey, toast);
         toast._dedupeCleanup = () => liveToasts.delete(dedupeKey);

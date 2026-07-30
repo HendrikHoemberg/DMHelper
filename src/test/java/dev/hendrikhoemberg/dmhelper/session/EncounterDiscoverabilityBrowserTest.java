@@ -110,4 +110,50 @@ class EncounterDiscoverabilityBrowserTest {
         assertThat(page.locator("[data-resume-finished]").isVisible()).isTrue();
         assertThat(page.locator("[data-reset-finished]").isVisible()).isTrue();
     }
+
+    @Test
+    void theCurrentScenesEncounterAppearsBeforeTheUnrelatedList() {
+        var seeded = fixtures.campaignWithTwoEncountersOnTwoMaps();
+        page.navigate("http://127.0.0.1:" + port + "/campaigns/" + seeded.campaignId() + "/session");
+        page.waitForFunction("() => window.cockpitLayout?.mounted === true");
+        page.selectOption("#cockpitPresetPicker", "builtin:combat");
+        page.waitForSelector(".planned-encounter-row");
+
+        // "Second Encounter" sorts last alphabetically; it comes first only because it is the
+        // encounter belonging to the scene the DM is in.
+        var titles = page.locator(".planned-encounter-row__title").allInnerTexts()
+                .stream().map(String::trim).toList();
+        assertThat(titles).containsExactly("Second Encounter", "First Encounter");
+        assertThat(page.locator(".planned-encounter-section-label").first().innerText().trim())
+                .as("the rail must say why that encounter is at the top")
+                .isEqualToIgnoringCase("This scene");
+    }
+
+    @Test
+    void endingAnEncounterReportsTheXpItWasWorth() {
+        var seeded = fixtures.campaignWithGroupedEncounter();
+        page.navigate("http://127.0.0.1:" + port + "/campaigns/" + seeded.campaignId() + "/session");
+        page.waitForFunction("() => window.cockpitLayout?.mounted === true");
+        page.selectOption("#cockpitPresetPicker", "builtin:combat");
+        page.waitForSelector(".combatant-row");
+
+        page.evaluate("""
+                async (ids) => {
+                  for (const id of ids) {
+                    await window.dmRequest('/api/v1/combatants/' + id + '/defeated', {
+                      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ defeated: true }),
+                    });
+                  }
+                }
+                """, seeded.memberIds().stream().map(java.util.UUID::toString).toList());
+
+        page.click("[data-end-encounter]");
+        page.click("[data-encounter-end-dialog] .btn-danger");
+        page.waitForSelector(".summary-stats");
+
+        assertThat(page.locator(".summary-stats").innerText())
+                .as("four 50 XP goblins are 200 XP; concluding must say so")
+                .contains("200");
+    }
 }

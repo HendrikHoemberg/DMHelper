@@ -22,9 +22,9 @@
                     <h3 data-encounter-name x-text="encounter?.name || 'Combat'"></h3>
                     <span class="tracker-heading__round">Round <strong class="round-counter" x-ref="roundCounter"
                                         x-text="encounter?.round || 0"></strong></span>
+                    <span class="badge badge-warning" x-show="pendingWaves.length > 0"
+                          x-text="pendingWaves.length + ' wave' + (pendingWaves.length !== 1 ? 's' : '') + ' pending'"></span>
                 </div>
-                <span class="badge badge-warning" x-show="pendingWaves.length > 0"
-                      x-text="'(' + pendingWaves.length + ' wave' + (pendingWaves.length !== 1 ? 's' : '') + ' pending)'"></span>
                 <div class="tracker-header__end-zone">
                     <button class="btn btn-danger action-row__destructive tracker-small-button"
                             data-end-encounter style="padding: 2px 8px;"
@@ -42,22 +42,24 @@
                         <strong>Set initiative</strong>
                         <p>Enter party rolls, then roll any remaining NPCs.</p>
                     </div>
-                    <button type="button"
-                            class="btn btn-ghost btn-xs"
-                            data-add-party-to-encounter
-                            data-initiative-primary
-                            :disabled="setupBusy || setupSaveCount > 0"
-                            @click="addPartyToEncounter()">
-                        Add party
-                    </button>
-                    <button type="button"
-                            class="btn btn-ghost btn-xs"
-                            data-roll-unset-initiative
-                            data-initiative-primary
-                            :disabled="setupBusy || setupSaveCount > 0 || unsetNpcCount === 0"
-                            @click="rollUnsetNpcs()">
-                        Roll unset NPCs
-                    </button>
+                    <div class="initiative-setup__actions">
+                        <button type="button"
+                                class="btn btn-sm initiative-setup__primary"
+                                data-add-party-to-encounter
+                                data-initiative-primary
+                                :disabled="setupBusy || setupSaveCount > 0"
+                                @click="addPartyToEncounter()">
+                            Add party
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm initiative-setup__primary"
+                                data-roll-unset-initiative
+                                data-initiative-primary
+                                :disabled="setupBusy || setupSaveCount > 0 || unsetNpcCount === 0"
+                                @click="rollUnsetNpcs()">
+                            Roll unset NPCs
+                        </button>
+                    </div>
                 </div>
 
                 <ol class="initiative-setup__order" aria-label="Resulting initiative order">
@@ -89,9 +91,12 @@
                     Accepted unset combatants act after resolved initiatives.
                 </details>
 
-                <label class="initiative-setup__accept" x-show="unsetCombatants.length > 0" data-unset-summary>
+                <label class="initiative-setup__accept" x-show="unsetCombatants.length > 0">
                     <input type="checkbox" x-model="acceptUnset">
-                    Start combat with <span x-text="unsetCombatants.length"></span> unset combatant<span x-show="unsetCombatants.length !== 1">s</span> — they remain last in the displayed order
+                    <span data-unset-summary
+                          x-text="'Start combat with ' + unsetCombatants.length
+                            + ' unset combatant' + (unsetCombatants.length === 1 ? '' : 's')
+                            + ' (they act last).'"></span>
                 </label>
 
                 <button type="button"
@@ -111,7 +116,10 @@
                 <button class="btn btn-ghost" style="padding: 2px 8px;" @click="previousTurn()"
                         data-action="previous-turn">◀ Prev</button>
                 <span class="tracker-turns__active">
-                    Active: <strong class="tracker-turns__active-name" x-text="activeCombatant?.name || '—'"></strong>
+                    <span class="tracker-turns__active-prefix">Active:</span>
+                    <strong class="tracker-turns__active-name"
+                            :title="activeCombatant?.name || ''"
+                            x-text="activeCombatant?.name || '—'"></strong>
                 </span>
                 <button class="btn btn-ghost" style="padding: 2px 8px;" @click="nextTurn()"
                         data-action="next-turn">Next ▶</button>
@@ -143,7 +151,7 @@
                                 <span x-text="activeThreatMechanics.detectionCheck?.ability"></span>
                                 <span x-show="activeThreatMechanics.detectionCheck?.dc"
                                       x-text="'DC ' + activeThreatMechanics.detectionCheck?.dc"></span>
-                                <button type="button" class="btn btn-sm btn-ghost"
+                                <button type="button" class="btn btn-sm threat-prefill-action" data-dice-prefill
                                         @click="prefillDice('1d20', 'Detection' + (activeThreatMechanics.detectionCheck?.dc != null ? ' DC ' + activeThreatMechanics.detectionCheck.dc : ''))">
                                     Prefill 1d20
                                 </button>
@@ -153,7 +161,7 @@
                             <strong>Attack</strong>
                             <p>
                                 <span x-text="signedBonus(activeThreatMechanics.attackBonus)"></span>
-                                <button type="button" class="btn btn-sm btn-ghost"
+                                <button type="button" class="btn btn-sm threat-prefill-action" data-dice-prefill
                                         @click="prefillDice('1d20' + signedBonus(activeThreatMechanics.attackBonus), 'Attack ' + signedBonus(activeThreatMechanics.attackBonus))">
                                     Prefill attack
                                 </button>
@@ -166,7 +174,7 @@
                                 <span x-text="activeThreatMechanics.save?.ability"></span>
                                 <span x-show="activeThreatMechanics.save?.dc"
                                       x-text="'DC ' + activeThreatMechanics.save?.dc"></span>
-                                <button type="button" class="btn btn-sm btn-ghost"
+                                <button type="button" class="btn btn-sm threat-prefill-action" data-dice-prefill
                                         @click="prefillDice('1d20', 'Save' + (activeThreatMechanics.save?.dc != null ? ' DC ' + activeThreatMechanics.save.dc : ''))">
                                     Prefill 1d20
                                 </button>
@@ -176,7 +184,10 @@
                             <strong>Damage</strong>
                             <p>
                                 <span x-text="activeThreatMechanics.damageExpression"></span>
-                                <button type="button" class="btn btn-sm btn-ghost"
+                                <span x-show="activeThreatMechanics.damageTypes?.length"
+                                      x-text="' ' + (activeThreatMechanics.damageTypes || [])
+                                        .map(dt => humanizeConstant(dt)).join(', ')"></span>
+                                <button type="button" class="btn btn-sm threat-prefill-action" data-dice-prefill
                                         @click="prefillDice(activeThreatMechanics.damageExpression, 'Damage ' + activeThreatMechanics.damageExpression)">
                                     Prefill damage
                                 </button>
@@ -194,7 +205,7 @@
                                         <li>
                                             <span x-text="m.label"></span>
                                             <span x-show="m.dc != null" x-text="' (DC ' + m.dc + ')'"></span>
-                                            <button type="button" class="btn btn-sm btn-ghost"
+                                            <button type="button" class="btn btn-sm threat-prefill-action" data-dice-prefill
                                                     @click="prefillDice('1d20', (m.label || 'Disarm') + (m.dc != null ? ' DC ' + m.dc : ''))">
                                                 Prefill 1d20
                                             </button>
@@ -224,7 +235,7 @@
                                 <span x-text="activeThreatMechanics.check?.ability"></span>
                                 <span x-show="activeThreatMechanics.check?.dc"
                                       x-text="'DC ' + activeThreatMechanics.check?.dc"></span>
-                                <button type="button" class="btn btn-sm btn-ghost"
+                                <button type="button" class="btn btn-sm threat-prefill-action" data-dice-prefill
                                         @click="prefillDice('1d20', 'Check/Save' + (activeThreatMechanics.check?.dc != null ? ' DC ' + activeThreatMechanics.check.dc : ''))">
                                     Prefill 1d20
                                 </button>
@@ -234,7 +245,10 @@
                             <strong>Damage</strong>
                             <p>
                                 <span x-text="activeThreatMechanics.damageExpression"></span>
-                                <button type="button" class="btn btn-sm btn-ghost"
+                                <span x-show="activeThreatMechanics.damageTypes?.length"
+                                      x-text="' ' + (activeThreatMechanics.damageTypes || [])
+                                        .map(dt => humanizeConstant(dt)).join(', ')"></span>
+                                <button type="button" class="btn btn-sm threat-prefill-action" data-dice-prefill
                                         @click="prefillDice(activeThreatMechanics.damageExpression, 'Damage ' + activeThreatMechanics.damageExpression)">
                                     Prefill damage
                                 </button>
@@ -358,7 +372,10 @@
                         </span>
 
                         <!-- Numeric HP — DM only, and the number the log will agree with -->
-                        <span class="combatant-hp u-num" x-text="hpLabel(c)"></span>
+                        <span class="combatant-hp u-num" x-text="hpLabel(c)"
+                              :title="c.currentHp &lt; 0
+                                ? 'Negative HP shows damage beyond 0; this is retained for the DM.'
+                                : null"></span>
 
                         <!-- Group toggle -->
                         <template x-if="isGroupRow(c)">
@@ -472,8 +489,8 @@
                                   :style="{ borderColor: conditionColor(cond.sourceKey) }">
                                 <span x-text="conditionName(cond.sourceKey)"></span>
                                 <span x-text="cond.durationRounds > 0 ? cond.durationRounds : '∞'"></span>
-                                <button type="button" class="btn-2xs"
-                                        style="border: none; background: none; cursor: pointer; line-height: 1; padding: 0;"
+                                <button type="button" class="btn btn-ghost btn-xs"
+                                        :aria-label="'End ' + conditionName(cond.sourceKey) + ' on ' + (selected?.name || 'this combatant')"
                                         @click="removeCondition(selected.id, cond.sourceKey)">×</button>
                             </span>
                         </template>
@@ -603,17 +620,12 @@
                                 </div>
                             </template>
                         </div>
-                        <div class="u-mt-xs" x-show="focusedStatblock.spellcasting && focusedStatblock.spellcasting.length">
-                            <strong class="u-text-xs">Spellcasting</strong>
-                            <template x-for="spellEntry in focusedStatblock.spellcasting" :key="spellEntry.description || spellEntry.ability">
-                                <div style="margin-top: 2px;">
-                                    <span class="u-text-xs" x-text="spellEntry.description"></span>
-                                </div>
-                            </template>
-                        </div>
+                        <!-- No Spellcasting section: the entity has no such column. SRD
+                             spellcasting is an entry in `actions`, so it renders above from
+                             the same projection rather than a permanently empty property. -->
                       </div>
                     </template>
-                    <div x-show="!focusedStatblockLoading && !focusedStatblock && selected?.statblockId" class="u-text-xs text-muted">
+                    <div x-show="!focusedStatblockLoading && !focusedStatblock && selected?.statBlockId" class="u-text-xs text-muted">
                         Statblock unavailable
                     </div>
                 </div>

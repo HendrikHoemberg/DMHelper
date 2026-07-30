@@ -132,10 +132,22 @@ class EncounterTemplateContractTest {
 
     @Test
     void trackerEndEncounterDispatchesEncounterEndEvent() throws IOException {
-        // endEncounter's event dispatch lives in combat-tracker.js after the script extraction.
-        String html = Files.readString(Path.of("src/main/resources/static/js/combat-tracker.js"));
-        assertThat(html).contains("dispatchEvent(new CustomEvent('cockpit-encounter-ended'")
-                .as("tracker endEncounter should dispatch a cockpit-encounter-ended event");
+        // Ending an encounter is two hops: the tracker asks for the end, the summary modal
+        // reports the XP and only then tells the cockpit the encounter is over. Both halves
+        // are asserted so neither can be dropped and leave the tracker holding a dead fight.
+        String tracker = Files.readString(Path.of("src/main/resources/static/js/combat-tracker.js"));
+        assertThat(tracker)
+                .as("tracker endEncounter should ask the summary modal to take over")
+                .contains("dispatchEvent(new CustomEvent('end-encounter'");
+        assertThat(tracker)
+                .as("the tracker must clear itself when the encounter is reported ended")
+                .contains("addEventListener('cockpit-encounter-ended'");
+
+        String modal = Files.readString(
+                Path.of("src/main/resources/templates/encounter/_summary-modal.html"));
+        assertThat(modal)
+                .as("the summary modal owns the cockpit-encounter-ended announcement")
+                .contains("dispatchEvent(new CustomEvent('cockpit-encounter-ended'");
     }
 
     @Test

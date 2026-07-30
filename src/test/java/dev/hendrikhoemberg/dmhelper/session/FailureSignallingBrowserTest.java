@@ -171,11 +171,17 @@ class FailureSignallingBrowserTest {
                       await new Promise(resolve => setTimeout(resolve, 50));
                       const toast = document.querySelector('.toast');
                       if (!toast) return {noToast: true};
+                      // The id must stay off the sentence the DM reads; it may still ride
+                      // along in the demoted .toast__reference element for support.
+                      const body = toast.querySelector('span');
                       return {
                         text: toast.textContent,
                         hasAction: !!toast.querySelector('.toast-action'),
                         hasReference: !!toast.querySelector('.toast__reference'),
-                        uuidInBody: toast.textContent.includes('abc-123-def-456')
+                        referenceCarriesFullId:
+                          toast.querySelector('.toast__reference').textContent
+                            .includes('abc-123-def-456'),
+                        uuidInBody: body.textContent.includes('abc-123-def-456')
                       };
                     }
                     """);
@@ -183,6 +189,7 @@ class FailureSignallingBrowserTest {
             assertThat(result)
                     .containsEntry("hasAction", false)
                     .containsEntry("hasReference", true)
+                    .containsEntry("referenceCarriesFullId", true)
                     .containsEntry("uuidInBody", false);
         }
     }

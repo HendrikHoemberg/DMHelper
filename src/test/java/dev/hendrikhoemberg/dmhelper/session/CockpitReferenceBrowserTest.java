@@ -79,17 +79,21 @@ class CockpitReferenceBrowserTest {
         openCombat();
         page.click("[data-module-tab='reference']");
         page.waitForSelector(".reference-search-form input");
-        page.fill(".reference-search-form input", "Gob");
+        page.fill(".reference-search-form input", "Goblin Sentry");
         page.waitForSelector("[data-reference-result]");
 
         var rows = page.locator("[data-reference-result]");
         assertThat(rows.count()).isGreaterThan(0);
 
         for (int i = 0; i < rows.count(); i++) {
-            assertThat(rows.nth(i).innerText()).isNotEmpty();
+            assertThat(rows.nth(i).innerText())
+                    .as("result row %d must not render as an invisible strip", i)
+                    .isNotEmpty();
         }
 
-        assertThat(rows.first().locator(".reference-item__title").innerText()).isEqualTo("Goblin");
+        assertThat(rows.first().locator(".reference-item__title").innerText())
+                .as("the row's title is the payload's `title`, which is what the endpoint returns")
+                .isEqualTo("Goblin Sentry");
     }
 
     @Test
@@ -98,7 +102,7 @@ class CockpitReferenceBrowserTest {
         assertThat(page.locator(".tracker-list").boundingBox()).isNotNull();
         page.click("[data-module-tab='reference']");
         page.waitForSelector(".reference-search-form input");
-        page.fill(".reference-search-form input", "Gob");
+        page.fill(".reference-search-form input", "Goblin Sentry");
         page.waitForSelector("[data-reference-result]");
         page.locator("[data-reference-result]").first().click();
         page.waitForSelector(".statblock-render");
@@ -139,11 +143,22 @@ class CockpitReferenceBrowserTest {
         openCombat();
         page.click("[data-module-tab='reference']");
         page.waitForSelector(".reference-search-form input");
-        page.fill(".reference-search-form input", "Gob");
+        page.fill(".reference-search-form input", "Goblin Sentry");
         page.waitForSelector("[data-reference-result]");
         page.locator("[data-reference-result]").first().click();
         page.waitForSelector(".statblock-render");
-        assertThat(page.locator(".statblock-render").innerText())
-                .contains("Speed").contains("Actions");
+        String block = page.locator(".statblock-render").innerText();
+        assertThat(block)
+                .as("AC/HP/XP alone is not runnable")
+                .contains("Speed").contains("30 ft.")
+                .contains("Actions").contains("Scimitar")
+                .contains("Bonus Actions").contains("Nimble Escape");
+        // The numbers a DM rolls have to survive the trip out of SRD prose, or the card is
+        // reference material rather than something you can run a turn from.
+        assertThat(block).contains("Atk +4").contains("1d6+2");
+        assertThat(page.locator(".statblock-render button", new Page.LocatorOptions()
+                .setHasText("Prefill damage")).count())
+                .as("a readable attack offers its damage roll")
+                .isGreaterThan(0);
     }
 }

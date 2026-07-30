@@ -148,4 +148,9 @@
 
   /* faint uneven light across an in-world document — the key light, upper left */
   --tone-parchment: radial-gradient(ellipse at 28% 12%, rgba(255, 240, 205, 0.05) 0%, transparent 62%);
+
+  /* Width of the cockpit's right rail, republished by cockpit-layout.js on every render so
+     right-edge overlays (the dice drawer) can dock beside the tracker instead of over it.
+     Declared here so the fallback is a real value rather than a silent inherit. */
+  --cockpit-right-zone-width: 0px;
 }

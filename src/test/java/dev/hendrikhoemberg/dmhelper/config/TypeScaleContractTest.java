@@ -40,7 +40,11 @@ class TypeScaleContractTest {
             ".audio-source, .audio-owner",
             ".planned-encounter-row__meta",
             ".encounter-chip",
-            ".group-count");
+            ".group-count",
+            // A count badge on a module tab and a rail section label are orientation, not
+            // content: both sit beside the title they qualify and are reviewed as secondary.
+            ".cockpit-module__attention",
+            ".planned-encounter-section-label");
 
     @Test
     void onlyTokensCssCarriesAnAbsoluteFontSize() {

@@ -216,7 +216,10 @@ public class EncounterPlacementService {
             if (combatant.getPartyMember() == null) continue;
             if (placementRepo.findByCombatantId(combatant.getId()).isPresent()) continue;
 
-            int[] cell = findFreeCell(occupiedCells, map.getGridWidth(), map.getGridHeight(), 1, 1);
+            // Same rule as activation: a party dropped at grid 0,0 lands clipped by the top
+            // edge of the default view, in an unrelated corner of the world.
+            int[] cell = findCenteredFreeCell(
+                    occupiedCells, map.getGridWidth(), map.getGridHeight(), 1, 1);
             if (cell == null) continue;
 
             int px = cell[0] * map.getCellSizePx();
@@ -369,18 +372,6 @@ public class EncounterPlacementService {
             return dc * dc + dr * dr;
         }));
         return freeCells.getFirst();
-    }
-
-    private static int[] findFreeCell(Set<String> occupiedCells, int gridWidth, int gridHeight,
-                                       int sizeCols, int sizeRows) {
-        for (int row = 0; row < gridHeight; row++) {
-            for (int col = 0; col < gridWidth; col++) {
-                if (isCellFree(occupiedCells, col, row, sizeCols, sizeRows, gridWidth, gridHeight)) {
-                    return new int[]{col, row};
-                }
-            }
-        }
-        return null;
     }
 
     private static int[] preferredOrFreeCell(Combatant combatant, GameMap map,

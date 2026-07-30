@@ -325,6 +325,12 @@ class ReleaseRehearsalTest {
             endDialog.waitFor();
             endDialog.locator("button",
                     new Locator.LocatorOptions().setHasText("End encounter")).click();
+            // Concluding an encounter now reports what it was worth before the tracker lets
+            // go of it: the summary owns the XP and the DM dismisses it deliberately.
+            Locator summary = page.locator(".summary-stats");
+            summary.waitFor();
+            assertThat(summary.textContent()).as("the close-out states the XP").contains("Reward XP");
+            page.locator("button", new Page.LocatorOptions().setHasText("Skip")).click();
             page.waitForFunction("() => !document.querySelector('[data-running-turn-controls]') || document.querySelector('[data-running-turn-controls]').hidden");
             page.locator("button[x-ref='sessionButton']").click();
             Locator lifecycle = page.locator("#sessionLifecycleDialog");

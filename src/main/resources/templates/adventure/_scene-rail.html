@@ -55,7 +55,7 @@
       <button class="btn btn-sm"
               th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/seed-encounter(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
               hx-target="#sceneRail" hx-swap="innerHTML">
-        Start encounter from this scene
+        Create an encounter here
       </button>
     </div>
 

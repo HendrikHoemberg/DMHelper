@@ -7,6 +7,9 @@
       this.name = 'DmRequestError';
       this.status = status;
       this.correlationId = correlationId;
+      // A 4xx caused by what the DM typed and a 5xx that lost their work are different
+      // events. Only the second is a persistence failure, and only the second can be
+      // usefully retried.
       this.problem = problem;
       if (status === 0) {
         this.kind = 'network';
@@ -38,7 +41,8 @@
         // A malformed error body must not hide the status/header fallback.
       }
     }
-    const error = new DmRequestError(detail, response.status, correlationId, problem);
+    const error = new DmRequestError(detail, response.status, correlationId);
+    error.problem = problem;
     return error;
   }
 
@@ -55,12 +59,12 @@
       response = await fetch(url, options);
     } catch (_) {
       const error = new DmRequestError('No answer from the server. Check it is still running.');
-      emitRequestEvent('dm:request-failure', { ...detail, error });
+      emitRequestEvent('dm:request-failure', { ...detail, error, kind: error.kind });
       throw error;
     }
     if (!response.ok) {
       const error = await responseError(response);
-      emitRequestEvent('dm:request-failure', { ...detail, error, response });
+      emitRequestEvent('dm:request-failure', { ...detail, error, response, kind: error.kind });
       throw error;
     }
     emitRequestEvent('dm:request-success', { ...detail, response });
@@ -69,11 +73,12 @@
 
   window.reportActionFailure = function reportActionFailure(summary, error, retry) {
     const detail = error?.message ? ` ${error.message}` : '';
-    const message = summary + detail;
-    window.showToast(message, 'error', retry ? 15000 : 7000, {
+    // A validation failure is fixed by correcting the input, never by sending it again.
+    const offerRetry = Boolean(retry) && error?.retryable !== false;
+    window.showToast(summary + detail, 'error', offerRetry ? 15000 : 7000, {
       dedupeKey: summary + '|' + (error?.status ?? 0),
       reference: error?.correlationId || null,
-      action: (error?.retryable !== false && retry) ? { label: 'Retry', handler: retry } : null
+      action: offerRetry ? { label: 'Retry', handler: retry } : null
     });
   };
 

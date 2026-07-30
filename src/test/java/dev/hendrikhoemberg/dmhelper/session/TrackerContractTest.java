@@ -52,17 +52,39 @@ class TrackerContractTest {
 
     @Test
     void noPerRowFieldBindsASharedModel() throws IOException {
-        String template = Files.readString(TEMPLATE);
-        int start = template.indexOf("x-for=\"(c, idx) in combatants\"");
-        int end = template.indexOf("</template>", start);
-        String loopBody = template.substring(start, end);
-        Pattern pattern = Pattern.compile("x-model=\"([^\"]+)\"");
-        Matcher matcher = pattern.matcher(loopBody);
-        List<String> models = new ArrayList<>();
-        while (matcher.find()) {
-            models.add(matcher.group(1));
+        String row = combatantRowLoop(Files.readString(TEMPLATE));
+
+        Matcher models = Pattern.compile("x-model=\"([^\"]+)\"").matcher(row);
+        List<String> shared = new ArrayList<>();
+        while (models.find()) {
+            if (!models.group(1).contains("c.id")) shared.add(models.group(1));
         }
-        assertThat(models).allMatch(m -> m.contains("c.id"));
+        assertThat(models.reset().find())
+                .as("the row must still contain the per-row entry field this guards")
+                .isTrue();
+        assertThat(shared)
+                .as("a per-row entry field must bind per-row state, keyed by the row's combatant")
+                .isEmpty();
+    }
+
+    /**
+     * The row loop contains nested templates, so the first {@code </template>} closes a child,
+     * not the loop. Counting depth is the difference between guarding the whole row and
+     * guarding its first fourteen lines — the latter passes no matter what the row does.
+     */
+    private static String combatantRowLoop(String template) {
+        int start = template.indexOf("<template x-for=\"(c, idx) in combatants\"");
+        assertThat(start).as("the initiative row loop must exist").isGreaterThan(-1);
+
+        Matcher tags = Pattern.compile("<template\\b|</template>").matcher(template);
+        int depth = 0;
+        int cursor = start;
+        while (tags.find(cursor)) {
+            depth += tags.group().startsWith("</") ? -1 : 1;
+            if (depth == 0) return template.substring(start, tags.start());
+            cursor = tags.end();
+        }
+        throw new AssertionError("the initiative row loop is not closed");
     }
 
     private static boolean isReadInJs(String js, String key) {

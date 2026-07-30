@@ -2,6 +2,7 @@ package dev.hendrikhoemberg.dmhelper.session;
 
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
+import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
 import dev.hendrikhoemberg.dmhelper.support.ReleaseRehearsalFixture;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,17 +39,26 @@ class CockpitModuleFitTest {
         if (playwright != null) playwright.close();
     }
 
+    final BrowserFailureCollector failures = new BrowserFailureCollector();
+
     @BeforeEach
     void openPage() throws Exception {
         seeded = fixture.seedForRehearsal(ReleaseRehearsalFixture.Shape.LINEAR_ONE_MAP);
-        context = browser.newContext();
+        failures.clear();
+        // The minimum supported viewport, not a comfortable one: this test exists to prove
+        // the rail holds at the size a DM's laptop actually has.
+        context = browser.newContext(new Browser.NewContextOptions().setViewportSize(1366, 768));
         page = context.newPage();
-        page.setViewportSize(1600, 1000);
+        failures.attach(page);
     }
 
     @AfterEach
     void closePage() {
-        if (context != null) context.close();
+        try {
+            failures.assertNoFailures();
+        } finally {
+            if (context != null) context.close();
+        }
     }
 
     @Test
@@ -98,12 +108,20 @@ class CockpitModuleFitTest {
                     const p = panel.getBoundingClientRect();
                     return r.left >= p.left - 1 && r.right <= p.right + 1;
                   };
-                  return {overflow, inputInside: inside(input), rollInside: inside(roll)};
+                  const primary = Array.from(panel.querySelectorAll('[data-initiative-primary]'));
+                  return {
+                    overflow,
+                    inputInside: inside(input),
+                    rollInside: inside(roll),
+                    primaryCount: primary.length,
+                    primaryInside: primary.every(inside)
+                  };
                 }
                 """);
         assertThat(fit.toString())
                 .as("the initiative panel and its controls stay inside the rail")
-                .isEqualTo("{overflow=0, inputInside=true, rollInside=true}");
+                .isEqualTo("{overflow=0, inputInside=true, rollInside=true, "
+                        + "primaryCount=2, primaryInside=true}");
     }
 
     @Test

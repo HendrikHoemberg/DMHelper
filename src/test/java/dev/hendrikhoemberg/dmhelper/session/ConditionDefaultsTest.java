@@ -28,6 +28,15 @@ class ConditionDefaultsTest {
         assertThat(actual).containsExactlyInAnyOrderEntriesOf(EXPECTED);
     }
 
+    @Test
+    void theCatalogueLoaderDoesNotOverrideTheDefaults() throws IOException {
+        String js = Files.readString(Path.of("src/main/resources/static/js/combat-tracker.js"));
+        assertThat(js)
+                .as("a server-supplied condition must not be coerced back to one round")
+                .doesNotContain("defaultDuration: 1")
+                .doesNotContain("durationRounds: duration || 1");
+    }
+
     private static String defaultsBlock(String js) {
         int start = js.indexOf("const CONDITION_DEFAULT_DURATIONS");
         assertThat(start).as("CONDITION_DEFAULT_DURATIONS must exist").isGreaterThan(-1);

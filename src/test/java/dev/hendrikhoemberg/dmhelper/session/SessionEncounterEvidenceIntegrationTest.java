@@ -71,6 +71,9 @@ class SessionEncounterEvidenceIntegrationTest {
     void draftContainsXpAfterDefeatingGoblin() throws Exception {
         StatBlock sb = new StatBlock();
         sb.setSource(dev.hendrikhoemberg.dmhelper.library.data.ContentSource.SRD);
+        // SRD content is catalogued by sourceKey; this class is not transactional, so a
+        // key-less SRD row would outlive the test and break the catalog snapshot.
+        sb.setSourceKey("goblin-xp-evidence");
         sb.setName("Goblin");
         sb.setXp(50);
         sb.setHp("7");

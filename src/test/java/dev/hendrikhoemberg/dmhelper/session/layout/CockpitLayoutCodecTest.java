@@ -14,7 +14,8 @@ class CockpitLayoutCodecTest {
         CockpitLayoutDocument source =
                 new CockpitBuiltInPresetCatalog().require("builtin:combat").layout();
         assertThat(codec.read(codec.write(source))).isEqualTo(source);
-        assertThat(codec.write(source)).contains("\"schemaVersion\":1", "\"moduleKeys\":[\"story\",\"party\"]");
+        assertThat(codec.write(source))
+                .contains("\"schemaVersion\":1", "\"moduleKeys\":[\"story\",\"party\",\"reference\"]");
     }
 
     @Test

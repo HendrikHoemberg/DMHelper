@@ -24,8 +24,16 @@ public record StatBlockRuntimeProjection(
 
     public record Entry(String name, String description, Integer attackBonus, String damageExpression) {}
 
-    private static final Pattern ATTACK = Pattern.compile("\\+(\\d+) to hit");
-    private static final Pattern DAMAGE = Pattern.compile("\\((\\d+d\\d+[-+]?\\d*)\\)");
+    /**
+     * SRD prose carries the numbers a DM rolls in two dialects: the 2014 "…+4 to hit…" and
+     * the 2024 "Melee Attack Roll: +4, …". Both are matched, and both are searched in the
+     * description as well as the name — 2024 entries are named only "Scimitar".
+     */
+    private static final Pattern ATTACK =
+            Pattern.compile("\\+(\\d+)\\s+to hit|Attack Roll:\\s*\\+(\\d+)");
+    /** "(1d6+2)" and "(1d6 + 2)" are the same roll; the spaces are typography. */
+    private static final Pattern DAMAGE =
+            Pattern.compile("\\((\\d+d\\d+(?:\\s*[-+]\\s*\\d+)?)\\)");
 
     public static StatBlockRuntimeProjection from(StatBlock sb, ObjectMapper objectMapper) {
         Map<String, Integer> abilityScores = new LinkedHashMap<>();
@@ -68,32 +76,28 @@ public record StatBlockRuntimeProjection(
             for (Map<String, Object> map : rawList) {
                 String name = stringVal(map.get("name"));
                 String description = stringVal(map.get("description"));
-                Integer attackBonus = extractAttackBonus(name);
-                String damageExpression = extractDamageExpression(name);
-                entries.add(new Entry(name, description, attackBonus, damageExpression));
+                String prose = (name == null ? "" : name) + " " + (description == null ? "" : description);
+                entries.add(new Entry(name, description,
+                        extractAttackBonus(prose), extractDamageExpression(prose)));
             }
             return entries;
         } catch (Exception e) {
-            return List.of();
+            // An unreadable entry is still evidence: showing nothing would tell the DM the
+            // creature has no actions, which is a different and worse claim.
+            return List.of(new Entry("(unreadable entry)", json, null, null));
         }
     }
 
-    private static Integer extractAttackBonus(String name) {
-        if (name == null) return null;
-        Matcher m = ATTACK.matcher(name);
-        if (m.find()) {
-            return Integer.parseInt(m.group(1));
-        }
-        return null;
+    private static Integer extractAttackBonus(String prose) {
+        Matcher m = ATTACK.matcher(prose);
+        if (!m.find()) return null;
+        String bonus = m.group(1) != null ? m.group(1) : m.group(2);
+        return Integer.valueOf(bonus);
     }
 
-    private static String extractDamageExpression(String name) {
-        if (name == null) return null;
-        Matcher m = DAMAGE.matcher(name);
-        if (m.find()) {
-            return m.group(1);
-        }
-        return null;
+    private static String extractDamageExpression(String prose) {
+        Matcher m = DAMAGE.matcher(prose);
+        return m.find() ? m.group(1).replaceAll("\\s+", "") : null;
     }
 
     private static String stringVal(Object value) {

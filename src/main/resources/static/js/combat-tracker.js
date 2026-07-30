@@ -194,6 +194,13 @@
                 return bonus >= 0 ? '+' + bonus : String(bonus);
             },
 
+            // Runtime payloads carry enum constants; a DM reads "Bludgeoning", not
+            // "BLUDGEONING", and least of all inside an otherwise German campaign.
+            humanizeConstant(value) {
+                const words = String(value || '').replaceAll('_', ' ').toLowerCase();
+                return words ? words.charAt(0).toUpperCase() + words.slice(1) : '—';
+            },
+
             async init() {
                 window.addEventListener('battle-tokenselect', (e) => {
                     const token = e.detail.token;

@@ -618,7 +618,14 @@ function sessionCockpit(config) {
             this.syncMapPicker();
             this.refreshModules(['story', 'encounter'], 'encounter-activated');
             if (this.currentMapId) {
-                await window.cockpitModules?.load('map', { force: true, mapId: this.currentMapId });
+                // The module body is server-rendered as an empty state when the session has
+                // no map, so the first activation has to fetch it. Once a canvas exists the
+                // interactive map has already moved itself and a reload buys nothing but a
+                // detach-and-reattach cycle on every single activation.
+                if (!document.getElementById('battleCanvasWrap')) {
+                    await window.cockpitModules?.load(
+                        'map', { force: true, mapId: this.currentMapId });
+                }
                 await this.refreshThreatPins();
             }
             this.surfaceEncounter();

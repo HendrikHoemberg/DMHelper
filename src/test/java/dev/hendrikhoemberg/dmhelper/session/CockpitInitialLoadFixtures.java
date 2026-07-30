@@ -197,6 +197,13 @@ public class CockpitInitialLoadFixtures {
         hobgoblin2.setCurrentHp(11);
         combatants.save(hobgoblin2);
 
+        // The scene the DM is standing in owns the link to its encounter. Pointing it at the
+        // *second* encounter is deliberate: alphabetical order would put it last, so the rail
+        // can only surface it first by honouring the current scene.
+        Scene currentScene = scenes.findById(campaign.getCurrentSceneId()).orElseThrow();
+        currentScene.setEncounter(encounterB);
+        scenes.save(currentScene);
+
         return new TwoEncounters(campaignId, mapA.getId(), mapB.getId(), encounterA.getId(), encounterB.getId());
     }
 
@@ -207,7 +214,12 @@ public class CockpitInitialLoadFixtures {
 
         StatBlock goblinSb = new StatBlock();
         goblinSb.setSource(ContentSource.CUSTOM);
-        goblinSb.setName("Goblin");
+        // Scoped to the campaign: a campaign-less statblock outlives the test and turns the
+        // reference search into a lottery for whoever runs next.
+        goblinSb.setCampaign(campaign);
+        // The library search is deliberately global, so this name has to be one only this
+        // fixture produces — otherwise "the first Goblin" is whichever test ran before.
+        goblinSb.setName("Goblin Sentry");
         goblinSb.setCr("1/4");
         goblinSb.setType("humanoid");
         goblinSb.setAc(15);
@@ -216,7 +228,9 @@ public class CockpitInitialLoadFixtures {
         goblinSb.setSpeed("30 ft.");
         goblinSb.setSenses("darkvision 60 ft., passive Perception 10");
         goblinSb.setLanguages("Common, Goblin");
-        goblinSb.setActions("[{\"name\":\"Scimitar +4 to hit (1d6+2)\",\"description\":\"Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 5 (1d6 + 2) slashing damage.\"}]");
+        // Shaped exactly like src/main/resources/srd/srd-5.2-monsters.json: the bare action
+        // name, with the to-hit bonus and the damage expression living in the description.
+        goblinSb.setActions("[{\"name\":\"Scimitar\",\"description\":\"Melee Attack Roll: +4, reach 5 ft. 5 (1d6 + 2) Slashing damage, plus 2 (1d4) Slashing damage if the attack roll had Advantage.\"}]");
         goblinSb.setBonusActions("[{\"name\":\"Nimble Escape\",\"description\":\"The goblin can take the Disengage or Hide action as a bonus action on each of its turns.\"}]");
         statBlocks.save(goblinSb);
 

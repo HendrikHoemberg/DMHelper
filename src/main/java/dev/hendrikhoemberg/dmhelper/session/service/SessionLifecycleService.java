@@ -135,7 +135,11 @@ public class SessionLifecycleService {
     public CampaignSession cancelReview(UUID campaignId) {
         CampaignSession session = requireSession(campaignId);
         requireStatus(session, CampaignSession.Status.REVIEW, "Only a session under review can return to play.");
-        session.setStatus(session.getPreReviewStatus() != null ? session.getPreReviewStatus() : CampaignSession.Status.PAUSED);
+        // Cancel means "put me back where I was". Sessions that entered review before this
+        // column existed have nothing recorded; RUNNING is what they were doing.
+        session.setStatus(session.getPreReviewStatus() != null
+                ? session.getPreReviewStatus()
+                : CampaignSession.Status.RUNNING);
         session.setPreReviewStatus(null);
         session.setReviewStartedAt(null);
         return saveForState(session);

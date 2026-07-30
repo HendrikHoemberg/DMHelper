@@ -1756,6 +1756,9 @@ class CoreSessionLoopSmokeTest {
         endDialog.waitFor();
         endDialog.locator("button",
                 new Locator.LocatorOptions().setHasText("End encounter")).click();
+        // The close-out summary reports the XP before the tracker lets the encounter go.
+        dmPage.locator(".summary-stats").waitFor();
+        dmPage.locator("button", new Page.LocatorOptions().setHasText("Skip")).click();
         tracker.locator(".empty-state").waitFor();
 
         ZoneId berlin = ZoneId.of("Europe/Berlin");
@@ -3068,8 +3071,13 @@ class CoreSessionLoopSmokeTest {
         switch (status) {
             case IDLE -> sessionLifecycleService.start(campaignId, mapId);
             case REVIEW -> {
-                sessionLifecycleService.cancelReview(campaignId); // REVIEW -> PAUSED
-                sessionLifecycleService.resume(campaignId);       // PAUSED -> RUNNING
+                // Cancel returns the session to whatever it was doing before the review, so
+                // it may already be RUNNING; resume only if it landed on PAUSED.
+                sessionLifecycleService.cancelReview(campaignId);
+                if (sessionRepository.findByCampaignId(campaignId).orElseThrow().getStatus()
+                        == CampaignSession.Status.PAUSED) {
+                    sessionLifecycleService.resume(campaignId);
+                }
             }
             case PAUSED -> sessionLifecycleService.resume(campaignId);
             case RUNNING -> { /* already running */ }

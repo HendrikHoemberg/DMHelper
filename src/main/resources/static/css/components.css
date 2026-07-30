@@ -717,7 +717,9 @@
     border: 1px solid var(--color-border); border-radius: 4px; padding: 4px 8px;
 }
 .form-check { display: flex; align-items: center; gap: var(--space-xs); }
-.form-check__input { accent-color: var(--color-gold-soft); }
+/* Gold marks the selection, not the empty box: the accent only earns its place once the
+   checkbox is checked. */
+.form-check__input:checked { accent-color: var(--color-gold-soft); }
 .lifecycle-dialog__danger {
     margin-top: var(--space-md); padding-top: var(--space-sm);
     border-top: 1px solid var(--color-border);
@@ -747,19 +749,46 @@
     font-size: var(--text-sm);
 }
 
+/* Identity on the left, the one destructive control on the right, and a rule between them:
+   a long encounter name must never push "End" into the round readout. */
 .tracker-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: var(--space-sm);
     padding: var(--space-sm) var(--space-md);
     border-bottom: 1px solid var(--color-border);
     letter-spacing: 0.04em;
 }
 
-.tracker-turns {
+.tracker-header__identity {
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-sm);
+}
+
+.tracker-header__identity h3 {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tracker-header__end-zone {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    padding-left: var(--space-sm);
+    border-left: 1px solid var(--color-border);
+}
+
+/* Prev and Next hold their columns; only the name in the middle gives way. */
+.tracker-turns {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
     padding: var(--space-xs) var(--space-md);
     border-bottom: 1px solid var(--color-border);
     gap: var(--space-sm);
@@ -920,7 +949,18 @@
 .group-count:hover { border-color: var(--color-border-strong); }
 
 .tracker-turns__active {
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    gap: 0.35em;
     font-size: var(--text-sm);
+}
+
+.tracker-turns__active-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .tracker-empty-hint,
@@ -1156,11 +1196,46 @@
     font-size: var(--text-sm);
 }
 
+.initiative-setup__accept [data-unset-summary] { min-width: 0; }
+
+/* The two actions that start a fight, and the prefill actions on a trap card, are the key
+   interactions of their surfaces. They look like controls at rest, not only under a
+   pointer — a transparent ghost button reads as a label. */
+.initiative-setup__primary,
+.threat-prefill-action {
+    color: var(--color-text);
+    background: var(--elevation-raised-bg);
+    border: 1px solid var(--color-border-strong);
+}
+
+.initiative-setup__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-xs);
+}
+
+.initiative-setup__tie-help summary {
+    cursor: pointer;
+    color: var(--color-text-muted);
+}
+
+.initiative-setup__tie-help p { margin: var(--space-xs) 0 0; }
+
 /* Fires on the module's own width: the encounter rail is ~370px even on a 1600px screen. */
 @container cockpit-module (max-width: 34rem) {
+    /* A grid, not a stack: the copy takes the width it needs and the two actions keep a
+       column of their own instead of stretching across the rail. */
     .initiative-setup__header {
-        align-items: flex-start;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+    }
+
+    .initiative-setup__actions {
+        grid-column: 2;
+        display: grid;
+        justify-items: stretch;
     }
 
     .initiative-setup__row {
