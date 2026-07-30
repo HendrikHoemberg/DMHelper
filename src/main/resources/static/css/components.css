@@ -1676,7 +1676,7 @@
 /* ── Dice Roller Panel ── */
 .dice-panel {
     position: fixed;
-    right: 0;
+    right: var(--cockpit-right-zone-width, 0px);
     top: 0;
     bottom: 0;
     width: 320px;
@@ -1690,7 +1690,7 @@
     box-shadow: -4px 0 16px rgba(0, 0, 0, 0.4);
 }
 .dice-panel.closed {
-    transform: translateX(100%);
+    transform: translateX(calc(100% + var(--cockpit-right-zone-width, 0px)));
 }
 
 .dice-panel-header {

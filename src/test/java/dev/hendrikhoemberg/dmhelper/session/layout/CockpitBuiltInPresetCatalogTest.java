@@ -29,9 +29,9 @@ class CockpitBuiltInPresetCatalogTest {
         CockpitLayoutDocument layout = catalog.require("builtin:combat").layout();
         assertThat(layout.zones().get(CockpitZone.PRIMARY).moduleKeys()).containsExactly("map");
         assertThat(layout.zones().get(CockpitZone.LEFT_SUPPORT).moduleKeys())
-                .containsExactly("story", "party");
+                .containsExactly("story", "party", "reference");
         assertThat(layout.zones().get(CockpitZone.RIGHT_SUPPORT).moduleKeys())
-                .containsExactly("encounter", "reference");
+                .containsExactly("encounter");
         assertThat(layout.zones().get(CockpitZone.BOTTOM_UTILITY).moduleKeys())
                 .containsExactly("quick-notes", "audio");
     }

@@ -736,6 +736,12 @@
           detail: { moduleKey: key, mode: this.moduleMode(key) }
         }));
       }
+
+      const rightZone = this.workbench.querySelector('[data-cockpit-zone="RIGHT_SUPPORT"]');
+      if (rightZone) {
+        const width = rightZone.getBoundingClientRect().width;
+        document.documentElement.style.setProperty('--cockpit-right-zone-width', width + 'px');
+      }
     }
 
     /**
