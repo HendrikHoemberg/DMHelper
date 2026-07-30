@@ -1074,6 +1074,19 @@
     font-size: var(--text-sm);
 }
 
+/* Fires on the module's own width: the encounter rail is ~370px even on a 1600px screen. */
+@container cockpit-module (max-width: 34rem) {
+    .initiative-setup__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .initiative-setup__row {
+        flex-wrap: wrap;
+    }
+}
+
+/* Standalone encounter pages have no module container; keep them responsive too. */
 @media (max-width: 760px) {
     .initiative-setup__header {
         align-items: flex-start;

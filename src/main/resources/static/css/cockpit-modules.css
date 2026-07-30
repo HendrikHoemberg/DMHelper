@@ -413,6 +413,13 @@
   min-height: 0;
 }
 
+/* Modules are user-resizable panes. Their width has nothing to do with the viewport,
+   so every breakpoint inside a module queries the module, never the screen. */
+.cockpit-module {
+  container-type: inline-size;
+  container-name: cockpit-module;
+}
+
 /* Story / encounter rails scroll inside the module body only. */
 .cockpit-module .cockpit-story,
 .cockpit-module .cockpit-encounter {
@@ -427,6 +434,9 @@
   max-width: 100%;
   box-sizing: border-box;
 }
+
+/* If a future control still cannot fit, scroll it rather than clipping it silently. */
+.cockpit-module .initiative-setup { overflow-x: auto; }
 
 .initiative-setup__name {
   flex: 1 1 auto;
