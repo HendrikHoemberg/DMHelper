@@ -71,4 +71,23 @@ class EncounterGroupTurnTest {
                 .extracting(CombatantDto::name)
                 .containsExactly("Goblin 2");
     }
+
+    @Test
+    void everyMemberOfAGroupSharesOneInitiativeRoll() {
+        EncounterDto enc = service.create(campaign.getId(), new CreateRequest("Enc", null));
+        service.activate(enc.id());
+        String groupId = "zombies";
+        for (int i = 1; i <= 5; i++) {
+            CombatantDto c = service.addCombatant(enc.id(),
+                    new CombatantCreateRequest("Zombie " + i, 22, "MONSTER", null, null));
+            service.updateCombatant(c.id(), group(groupId, i == 1));
+        }
+
+        service.rollUnsetNpcInitiatives(enc.id());
+
+        assertThat(service.getCombatants(enc.id()))
+                .extracting(CombatantDto::initiative)
+                .as("one group, one initiative")
+                .containsOnly(service.getCombatants(enc.id()).get(0).initiative());
+    }
 }

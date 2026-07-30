@@ -2248,10 +2248,18 @@ public class EncounterService {
 
     public List<CombatantDto> rollUnsetNpcInitiatives(UUID encounterId) {
         Encounter encounter = requireSetup(encounterId);
-        for (Combatant combatant : combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId)) {
+        List<Combatant> all = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+        Map<String, Integer> rolledByGroup = new java.util.HashMap<>();
+        for (Combatant combatant : all) {
             if (combatant.getInitiative() != null || "PC".equals(combatant.getKind())) continue;
             int modifier = combatant.getStatBlock() == null ? 0 : dexModifier(combatant.getStatBlock());
-            int roll = diceEngine.roll("d20").total();
+            String groupId = combatant.getGroupId();
+            int roll;
+            if (groupId == null) {
+                roll = diceEngine.roll("d20").total();
+            } else {
+                roll = rolledByGroup.computeIfAbsent(groupId, unused -> diceEngine.roll("d20").total());
+            }
             combatant.setInitiative(roll + modifier);
             combatantRepo.save(combatant);
             logInitiativeRoll(encounter.getId(), combatant, roll, modifier);
