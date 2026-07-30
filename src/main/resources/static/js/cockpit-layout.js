@@ -628,7 +628,10 @@
           tab.setAttribute('aria-selected', selected ? 'true' : 'false');
           tab.setAttribute('data-module-tab', key);
           if (!selected) tab.tabIndex = -1;
-          tab.textContent = title;
+          const tabLabel = document.createElement('span');
+          tabLabel.className = 'cockpit-zone__tab-label';
+          tabLabel.textContent = title;
+          tab.appendChild(tabLabel);
           const attention = this.attention.get(key) || 0;
           if (attention > 0 && !selected) {
             const badge = document.createElement('span');

@@ -27,6 +27,7 @@ class CockpitModuleClientContractTest {
                 "cockpit:module-content-ready",
                 "cockpit:layout-applied",
                 "seedInitialLoads",
+                "recordHiddenFailure",
                 "data-cockpit-module-fragment",
                 "replaceChildren");
         assertThat(js).doesNotContain("outerHTML =", "window.location.reload()");

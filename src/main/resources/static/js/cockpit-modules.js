@@ -349,6 +349,7 @@
               retry
             }
           }));
+          this.recordHiddenFailure(moduleKey);
         })
         .finally(() => {
           // Only clear in-flight tracking if a newer request has not superseded this one.
@@ -392,6 +393,18 @@
 
       window.dispatchEvent(new CustomEvent('cockpit:module-state', {
         detail: { moduleKey, state: 'attention', count: this.attention.get(moduleKey) || 1 }
+      }));
+    }
+
+    recordHiddenFailure(moduleKey) {
+      const shell = this._shells.get(moduleKey);
+      if (!shell || this.isModuleVisible(moduleKey)) return;
+      this.stale.add(moduleKey);
+      const count = (this.attention.get(moduleKey) || 0) + 1;
+      this.attention.set(moduleKey, count);
+      shell.setAttribute('data-module-attention', String(count));
+      window.dispatchEvent(new CustomEvent('cockpit:module-state', {
+        detail: { moduleKey, state: 'attention', count }
       }));
     }
 
