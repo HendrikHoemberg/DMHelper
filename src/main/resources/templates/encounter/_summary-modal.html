@@ -1,12 +1,12 @@
-<div th:fragment="summary-modal(campaignId, encounter)"
-     x-data="endEncounterModal(/*[[${encounter.id}]]*/ '')"
-     @end-encounter.window="show(($event.detail && $event.detail.id) || encounterId)">
+<div th:fragment="summary-modal(campaignId)"
+     x-data="endEncounterModal('')"
+     @end-encounter.window="show(($event.detail && $event.detail.id) || '')">
     <template x-if="showModal">
         <div class="modal-overlay" @click.self="showModal = false" style="position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:var(--z-modal);">
             <div class="modal-content" style="background:var(--color-surface);padding:1.5rem;border-radius:8px;max-width:28rem;width:90%;">
                 <h2>Encounter Complete</h2>
                 <div class="summary-stats">
-                    <p><strong th:text="${encounter.name}">Name</strong></p>
+                    <p><strong x-text="summary.name || 'Encounter'"></strong></p>
                     <p>Rounds: <span x-text="summary.rounds"></span></p>
                     <p>Defeated: <span x-text="summary.defeatedCount"></span></p>
                     <p>Damage dealt: <span x-text="summary.totalDamageDealt"></span></p>
@@ -41,6 +41,7 @@
 
             async show(id) {
                 const eid = id || this.encounterId;
+                if (!eid) return;
                 try {
                     const resp = await window.dmRequest(
                         `/api/v1/encounters/${eid}/end-with-summary`, {
@@ -48,6 +49,7 @@
                         });
                     const result = await resp.json();
                     this.summary = result.summary || result;
+                    this.encounterId = eid;
                     this.showModal = true;
                 } catch (e) {
                     window.reportActionFailure('Failed to end encounter', e,

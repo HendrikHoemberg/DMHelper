@@ -202,6 +202,7 @@
                         if (combatant) this.selectCombatant(combatant.id);
                     }
                 });
+                window.addEventListener('cockpit-encounter-ended', () => this._clearAfterEncounterEnd());
                 this.loadConditionsCatalog();
                 if (this.campaignId) {
                     await this.loadActiveEncounter();
@@ -657,19 +658,15 @@
 
             async endEncounter() {
                 if (!this._encounterId) return;
-                await this.mutate(
-                    'Could not end the encounter. It remains active.',
-                    `/api/v1/encounters/${this._encounterId}/end`,
-                    { method: 'POST' },
-                    async () => {
-                        this.encounter = null;
-                        this.combatants = [];
-                        this.activeCombatantId = null;
-                        this.selectedCombatantId = null;
-                        this._encounterId = null;
-                        this.dispatchState();
-                        window.dispatchEvent(new CustomEvent('cockpit-encounter-ended'));
-                    });
+                window.dispatchEvent(new CustomEvent('end-encounter', {
+                    detail: { id: this._encounterId }
+                }));
+            },
+
+            _clearAfterEncounterEnd() {
+                this.encounter = null; this.combatants = [];
+                this.activeCombatantId = null; this.selectedCombatantId = null;
+                this._encounterId = null; this.dispatchState();
             },
 
             hpPercent(c) {

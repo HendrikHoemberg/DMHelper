@@ -112,6 +112,8 @@
       cockpitModuleByKey=${cockpitModuleByKey})}"></th:block>
 
   <th:block th:replace="~{session/_lifecycle-dialog :: lifecycle-dialog}"></th:block>
+  <th:block th:replace="~{encounter/_summary-modal :: summary-modal(${campaignId})}"></th:block>
+
   <dialog class="cockpit-dialog" data-encounter-end-dialog
           aria-labelledby="encounterEndDialogTitle"
           @cancel.prevent="closeEncounterEndDialog()">

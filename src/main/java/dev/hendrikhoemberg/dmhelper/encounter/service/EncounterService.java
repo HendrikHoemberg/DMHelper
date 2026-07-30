@@ -568,6 +568,18 @@ public class EncounterService {
         return new EncounterEndResult(enc, summary);
     }
 
+    EncounterRewards resolvedRewards(Encounter encounter, List<Combatant> all) {
+        EncounterRewards authored = getRewards(encounter.getId());
+        int derivedXp = EncounterXpCalculator.xpFromDefeated(all);
+        int pcCount = (int) all.stream().filter(c -> "PC".equals(c.getKind())).count();
+        Integer total = authored.xpTotal() != null && authored.xpTotal() > 0
+                ? authored.xpTotal() : (derivedXp > 0 ? derivedXp : null);
+        Integer perPc = authored.xpPerPc() != null && authored.xpPerPc() > 0
+                ? authored.xpPerPc() : (total != null ? EncounterXpCalculator.xpPerPc(total, pcCount) : null);
+        return new EncounterRewards(total, perPc, authored.currency(), authored.items(),
+                authored.questObjectiveRefs(), authored.notes());
+    }
+
     public EncounterSummaryDto buildSummary(UUID encounterId) {
         Encounter e = findEntityById(encounterId);
         List<Combatant> all = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
@@ -595,7 +607,7 @@ public class EncounterService {
                 damage,
                 waves,
                 casualtyNames,
-                getRewards(encounterId),
+                resolvedRewards(e, all),
                 Instant.now()
         );
     }
@@ -634,7 +646,8 @@ public class EncounterService {
             throw new IllegalStateException("Rewards already applied");
         }
 
-        EncounterRewards rewards = getRewards(encounterId);
+        List<Combatant> roster = combatantRepo.findByEncounterIdOrderBySortOrderAsc(encounterId);
+        EncounterRewards rewards = resolvedRewards(e, roster);
         if (rewards == null) {
             rewards = EncounterRewards.empty();
         }
