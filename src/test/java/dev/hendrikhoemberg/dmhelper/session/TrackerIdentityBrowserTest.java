@@ -176,4 +176,78 @@ class TrackerIdentityBrowserTest {
                 .as("the shared editor must have been retargeted to the row that was clicked")
                 .isEqualTo(targetId);
     }
+
+    @Test
+    void theDetailPanelNamesTheCombatantItEdits() {
+        var seeded = openCombat();
+        var rows = page.locator(".combatant-row");
+        String firstName = rows.nth(0).locator(".combatant-name").innerText();
+        String secondName = rows.nth(1).locator(".combatant-name").innerText();
+
+        rows.nth(0).click();
+        page.waitForSelector("[data-selected-combatant-name]");
+        assertThat(page.locator("[data-selected-combatant-name]").innerText()).isEqualTo(firstName);
+
+        rows.nth(1).click();
+        page.waitForFunction("() => document.querySelector('[data-selected-combatant-name]')?.textContent === '" + secondName + "'");
+        assertThat(page.locator("[data-selected-combatant-name]").innerText()).isEqualTo(secondName);
+    }
+
+    @Test
+    void selectionAndActiveTurnAreDifferentTreatments() {
+        var seeded = openCombat();
+
+        String activeId = (String) page.evaluate(
+            "() => window.Alpine.$data(document.querySelector('.tracker-panel')).activeCombatantId");
+        if (activeId == null) {
+            page.evaluate("() => window.Alpine.$data(document.querySelector('.tracker-panel')).nextTurn()");
+            page.waitForFunction(
+                "() => window.Alpine.$data(document.querySelector('.tracker-panel')).activeCombatantId !== null");
+            activeId = (String) page.evaluate(
+                "() => window.Alpine.$data(document.querySelector('.tracker-panel')).activeCombatantId");
+        }
+
+        var rows = page.locator(".combatant-row");
+        for (int i = 0; i < rows.count(); i++) {
+            if (!rows.nth(i).getAttribute("data-cid").equals(activeId)) {
+                rows.nth(i).click();
+                break;
+            }
+        }
+        page.waitForSelector(".combatant-row.selected");
+
+        assertThat(page.locator(".combatant-row.active").count()).isEqualTo(1);
+        assertThat(page.locator(".combatant-row.selected").count()).isEqualTo(1);
+        assertThat(page.locator(".combatant-row.active.selected").count()).isZero();
+
+        String activeShadow = (String) page.evaluate(
+            "() => getComputedStyle(document.querySelector('.combatant-row.active')).boxShadow");
+        String selectedShadow = (String) page.evaluate(
+            "() => getComputedStyle(document.querySelector('.combatant-row.selected')).boxShadow");
+
+        assertThat(selectedShadow).isNotEqualTo(activeShadow);
+        assertThat(selectedShadow).isNotEqualTo("none");
+    }
+
+    @Test
+    void selectionSurvivesTheTurnAdvancingAndClearsWhenTheCombatantLeaves() {
+        var seeded = openCombat();
+        var rows = page.locator(".combatant-row");
+        String cid = rows.first().getAttribute("data-cid");
+
+        rows.first().click();
+        page.waitForSelector(".combatant-row.selected");
+
+        page.evaluate("() => window.Alpine.$data(document.querySelector('.tracker-panel')).nextTurn()");
+        page.waitForFunction("() => window.Alpine.$data(document.querySelector('.tracker-panel')).selectedCombatantId !== null");
+        assertThat(page.evaluate(
+            "() => window.Alpine.$data(document.querySelector('.tracker-panel')).selectedCombatantId"))
+            .isEqualTo(cid);
+
+        page.evaluate("(id) => window.Alpine.$data(document.querySelector('.tracker-panel')).removeCombatant(id)", cid);
+        page.waitForFunction("() => window.Alpine.$data(document.querySelector('.tracker-panel')).selectedCombatantId === null");
+        page.waitForFunction("() => document.querySelector('.combatant-detail')?.offsetParent === null");
+        assertThat(page.locator(".combatant-detail").first().isVisible()).isFalse();
+    }
+
 }

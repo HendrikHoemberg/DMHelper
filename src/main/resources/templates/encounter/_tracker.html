@@ -411,6 +411,12 @@
 
             <!-- Selected combatant detail — DM only -->
             <div class="combatant-detail" x-show="selectedCombatantId && selected" x-effect="tickNumber($refs.hpDisplay, selected?.currentHp || 0, 300)">
+                <div class="combatant-detail__header">
+                    <h4 class="combatant-detail__title" data-selected-combatant-name
+                        x-text="selected?.name || ''"></h4>
+                    <span class="badge combatant-detail__turn-hint"
+                          x-show="selected && selected.id === activeCombatantId">Active turn</span>
+                </div>
                 <!-- HP section -->
                 <div class="detail-hp">
                     <label>HP</label>

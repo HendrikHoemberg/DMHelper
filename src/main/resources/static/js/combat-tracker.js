@@ -237,6 +237,10 @@
                     const resp = await this.request(combatantUrl);
                     const before = this._capturePositions();
                     this.combatants = await resp.json();
+                    if (this.selectedCombatantId
+                        && !this.combatants.some(c => c.id === this.selectedCombatantId)) {
+                        this.selectedCombatantId = null;
+                    }
                     this.deriveActiveCombatant();
                     if (this.selected) {
                         this.editHp = this.selected.currentHp;
