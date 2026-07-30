@@ -810,6 +810,20 @@ export class BattleMap {
         return this.renderingActive !== false;
     }
 
+    reattach(container) {
+        if (!container) return false;
+        if (this.container === container && container.contains(this.stage.container())) {
+            return true;
+        }
+        this.container = container;
+        this.stage.container(container);
+        this.resizeToContainer();
+        this.renderGrid();
+        this.renderTokens();
+        this.pinLayer.batchDraw();
+        return container.contains(this.stage.container());
+    }
+
     resizeToContainer() {
         if (!this.isRenderingActive() || !this.container?.isConnected || !this.stage) return;
         const width = this.container.clientWidth;

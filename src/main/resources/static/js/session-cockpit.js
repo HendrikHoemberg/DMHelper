@@ -414,11 +414,11 @@ function sessionCockpit(config) {
                 if (event.detail?.moduleKey !== 'map') return;
                 this.syncMapPicker();
                 if (!window.battleMap) {
-                    // First-time construction: the map fragment (with #battleCanvasWrap) has now
-                    // been injected, so the container exists and BattleMap can mount.
                     this.initBattleMap();
                     return;
                 }
+                const container = document.getElementById('battleCanvasWrap');
+                window.battleMap.reattach(container);
                 requestAnimationFrame(() => {
                     window.battleMap.resizeToContainer();
                     window.battleMap.setRenderingActive(true);
