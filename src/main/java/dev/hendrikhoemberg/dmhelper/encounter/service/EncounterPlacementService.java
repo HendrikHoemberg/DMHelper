@@ -350,6 +350,27 @@ public class EncounterPlacementService {
         return occupiedCells;
     }
 
+    static int[] findCenteredFreeCell(Set<String> occupiedCells, int gridWidth, int gridHeight,
+                                       int sizeCols, int sizeRows) {
+        int centerCol = (gridWidth - sizeCols) / 2;
+        int centerRow = (gridHeight - sizeRows) / 2;
+        List<int[]> freeCells = new ArrayList<>();
+        for (int row = 0; row <= gridHeight - sizeRows; row++) {
+            for (int col = 0; col <= gridWidth - sizeCols; col++) {
+                if (isCellFree(occupiedCells, col, row, sizeCols, sizeRows, gridWidth, gridHeight)) {
+                    freeCells.add(new int[]{col, row});
+                }
+            }
+        }
+        if (freeCells.isEmpty()) return null;
+        freeCells.sort(java.util.Comparator.comparingInt(c -> {
+            int dc = c[0] + sizeCols / 2 - centerCol;
+            int dr = c[1] + sizeRows / 2 - centerRow;
+            return dc * dc + dr * dr;
+        }));
+        return freeCells.getFirst();
+    }
+
     private static int[] findFreeCell(Set<String> occupiedCells, int gridWidth, int gridHeight,
                                        int sizeCols, int sizeRows) {
         for (int row = 0; row < gridHeight; row++) {
@@ -376,7 +397,7 @@ public class EncounterPlacementService {
         }
         int[] regionCell = preferredRegionCell(combatant, map, occupiedCells);
         if (regionCell != null) return regionCell;
-        return findFreeCell(occupiedCells, gridWidth, gridHeight, 1, 1);
+        return findCenteredFreeCell(occupiedCells, gridWidth, gridHeight, 1, 1);
     }
 
     private static int[] preferredRegionCell(Combatant combatant, GameMap map,

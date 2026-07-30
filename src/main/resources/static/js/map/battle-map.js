@@ -22,6 +22,24 @@ const CONDITION_COLORS = {
     restrained: '#c9b03d', stunned: '#b06038', unconscious: '#a83a32',
 };
 
+const TOKEN_GUTTER_PX = 2;
+
+function tokenLabel(name, duplicateOrdinal = null) {
+    const value = String(name || '?').trim();
+    const suffix = value.match(/(?:^|\s)(\d+)$/)?.[1] || null;
+    const initial = value.match(/[\p{L}\p{N}]/u)?.[0]?.toUpperCase() || '?';
+    if (suffix) return `${initial}${suffix}`;
+    if (duplicateOrdinal != null) return `${initial}${duplicateOrdinal}`;
+    return value.slice(0, 3);
+}
+
+function kindCornerRadius(kind, width, height) {
+    if (kind === 'PC') return Math.min(width, height) / 2;
+    if (kind === 'NPC') return Math.min(8, Math.min(width, height) / 4);
+    if (kind === 'OBJECT') return 0;
+    return 2;
+}
+
 const AOE_PRESETS = {
     cone: [{ label: '15 ft', radiusCells: 3 }, { label: '30 ft', radiusCells: 6 },
            { label: '60 ft', radiusCells: 12 }],
@@ -79,11 +97,11 @@ export class BattleMap {
         this.annotationStartPos = null;
 
         this.stage = null;
-        this.gridLayer = null;
         this.terrainLayer = null;
+        this.gridGroup = null;
         this.tokenLayer = null;
+        this.pinGroup = null;
         this.annotationLayer = null;
-        this.pinLayer = null;
         this.previewLayer = null;
     }
 
@@ -106,18 +124,16 @@ export class BattleMap {
 
         this.terrainLayer = new Konva.Layer({ listening: false });
         this.stage.add(this.terrainLayer);
-
-        this.gridLayer = new Konva.Layer({ listening: false });
-        this.stage.add(this.gridLayer);
+        this.gridGroup = new Konva.Group({ listening: false });
+        this.terrainLayer.add(this.gridGroup);
 
         this.tokenLayer = new Konva.Layer();
         this.stage.add(this.tokenLayer);
+        this.pinGroup = new Konva.Group({ listening: true });
+        this.tokenLayer.add(this.pinGroup);
 
         this.annotationLayer = new Konva.Layer({ listening: false });
         this.stage.add(this.annotationLayer);
-
-        this.pinLayer = new Konva.Layer({ listening: true });
-        this.stage.add(this.pinLayer);
 
         this.previewLayer = new Konva.Layer();
         this.stage.add(this.previewLayer);
@@ -268,13 +284,26 @@ export class BattleMap {
     }
 
     renderGrid() {
+        this.gridGroup.destroyChildren();
         if (this.showGrid) {
-            drawGrid(this.gridLayer, this.gridWidth, this.gridHeight, this.cellSizePx);
-            this.gridLayer.show();
+            const s = this.cellSizePx;
+            for (let col = 0; col <= this.gridWidth; col++) {
+                this.gridGroup.add(new Konva.Line({
+                    points: [col * s, 0, col * s, this.gridHeight * s],
+                    stroke: 'rgba(0,0,0,0.18)', strokeWidth: 0.5, listening: false,
+                }));
+            }
+            for (let row = 0; row <= this.gridHeight; row++) {
+                this.gridGroup.add(new Konva.Line({
+                    points: [0, row * s, this.gridWidth * s, row * s],
+                    stroke: 'rgba(0,0,0,0.18)', strokeWidth: 0.5, listening: false,
+                }));
+            }
+            this.gridGroup.visible(true);
         } else {
-            this.gridLayer.hide();
+            this.gridGroup.visible(false);
         }
-        this.gridLayer.batchDraw();
+        this.terrainLayer.batchDraw();
     }
 
     /* ---- Tokens: fetch, render, drag ---- */
@@ -289,6 +318,7 @@ export class BattleMap {
                     this.activeEncounterId = previousEncounterId;
                     return false;
                 }
+                this.frameEncounterTokens();
                 return true;
             }
             if (await this.fetchTokens() === false) {
@@ -296,12 +326,44 @@ export class BattleMap {
                 return false;
             }
             this.renderTokens();
+            this.frameEncounterTokens();
             this.emitTokens();
             this.emit('state-changed');
             return true;
         } finally {
             this._transitioning = false;
         }
+    }
+
+    frameEncounterTokens() {
+        const combatantTokens = this.tokens.filter(t => t.source === 'COMBATANT');
+        if (combatantTokens.length === 0) return;
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const token of combatantTokens) {
+            const x2 = token.positionX + token.sizeCols * this.cellSizePx;
+            const y2 = token.positionY + token.sizeRows * this.cellSizePx;
+            if (token.positionX < minX) minX = token.positionX;
+            if (token.positionY < minY) minY = token.positionY;
+            if (x2 > maxX) maxX = x2;
+            if (y2 > maxY) maxY = y2;
+        }
+        const padding = this.cellSizePx * 2;
+        minX -= padding; minY -= padding;
+        maxX += padding; maxY += padding;
+        const tokenW = maxX - minX;
+        const tokenH = maxY - minY;
+        if (tokenW <= 0 || tokenH <= 0) return;
+        const stageW = this.container.clientWidth;
+        const stageH = this.container.clientHeight;
+        const scaleX = stageW / tokenW;
+        const scaleY = stageH / tokenH;
+        const scale = Math.min(scaleX, scaleY, 3);
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const targetX = stageW / 2 - centerX * scale;
+        const targetY = stageH / 2 - centerY * scale;
+        this.stage.to({ x: targetX, y: targetY, scaleX: scale, scaleY: scale, duration: 0.3 });
+        this.stage.batchDraw();
     }
 
     emitTokens() {
@@ -365,20 +427,9 @@ export class BattleMap {
 
         const animate = !this._reducedMotion();
 
-        const nameCounts = {};
-        for (const token of this.tokens) {
-            nameCounts[token.name] = (nameCounts[token.name] || 0) + 1;
-        }
-        const nameIndex = {};
-
         for (const token of this.tokens) {
             const key = this.tokenKey(token);
             const group = this.addTokenNode(token);
-            const node = this.tokenNodes[key];
-            if (nameCounts[token.name] > 1) {
-                nameIndex[token.name] = (nameIndex[token.name] || 0) + 1;
-                node.label.text(token.name.substring(0, 2) + ' ' + nameIndex[token.name]);
-            }
             const was = previous[key];
             if (!animate || !was) continue;
             if (was.x === token.positionX && was.y === token.positionY) continue;
@@ -408,6 +459,7 @@ export class BattleMap {
         const py = token.positionY;
         const w = token.sizeCols * s;
         const h = token.sizeRows * s;
+        const g = TOKEN_GUTTER_PX;
         const defeated = token.defeated;
         const bloodied = token.bloodied;
         const hasHp = token.currentHp != null && token.maxHp != null && token.maxHp > 0;
@@ -418,19 +470,20 @@ export class BattleMap {
         const selected = this.selectedTokenId === token.id;
 
         const body = new Konva.Rect({
-            width: w, height: h,
+            x: g, y: g, width: w - g * 2, height: h - g * 2,
             fill: defeated ? '#555' : (token.color || '#c9a35c'),
             stroke: selected ? SELECTION_GOLD : (KIND_RING_COLORS[token.kind] || '#fff'),
             strokeWidth: selected ? 3 : 2,
-            cornerRadius: 4,
+            cornerRadius: kindCornerRadius(token.kind, w, h),
             opacity: defeated ? 0.6 : 1,
         });
         group.add(body);
 
         if (selected) {
             const selectRing = new Konva.Rect({
-                x: -4, y: -4, width: w + 8, height: h + 8,
-                stroke: SELECTION_GOLD, strokeWidth: 2, cornerRadius: 6,
+                x: g - 4, y: g - 4, width: w - g * 2 + 8, height: h - g * 2 + 8,
+                stroke: SELECTION_GOLD, strokeWidth: 2,
+                cornerRadius: kindCornerRadius(token.kind, w, h) + 2,
                 fillEnabled: false, listening: false, opacity: 0.8,
             });
             group.add(selectRing);
@@ -444,14 +497,23 @@ export class BattleMap {
         }
 
         const ring = new Konva.Rect({
-            width: w + 4, height: h + 4, x: -2, y: -2,
-            stroke: defeated ? '#888' : '#e74c3c', strokeWidth: 2, cornerRadius: 4,
+            x: g - 2, y: g - 2, width: w - g * 2 + 4, height: h - g * 2 + 4,
+            stroke: defeated ? '#888' : '#e74c3c', strokeWidth: 2,
+            cornerRadius: kindCornerRadius(token.kind, w, h),
             fillEnabled: false, visible: bloodied || defeated, listening: false,
         });
         group.add(ring);
 
+        const nameCounts = {};
+        for (const t of this.tokens) {
+            nameCounts[t.name] = (nameCounts[t.name] || 0) + 1;
+        }
+        let ordinal = null;
+        if (nameCounts[token.name] > 1) {
+            ordinal = this.tokens.filter(t => t.name === token.name).indexOf(token) + 1;
+        }
         const label = new Konva.Text({
-            text: token.name.substring(0, 2),
+            text: tokenLabel(token.name, ordinal),
             fontSize: Math.min(w, h) * 0.4,
             fill: defeated ? '#999' : '#fff', align: 'center', verticalAlign: 'middle',
             width: w, height: h,
@@ -460,11 +522,11 @@ export class BattleMap {
 
         const deadOverlay = new Konva.Group({ visible: defeated });
         const x1 = new Konva.Line({
-            points: [2, 2, w - 2, h - 2],
+            points: [2 + g, 2 + g, w - 2 - g, h - 2 - g],
             stroke: '#e74c3c', strokeWidth: 3, lineCap: 'round',
         });
         const x2 = new Konva.Line({
-            points: [w - 2, 2, 2, h - 2],
+            points: [w - 2 - g, 2 + g, 2 + g, h - 2 - g],
             stroke: '#e74c3c', strokeWidth: 3, lineCap: 'round',
         });
         deadOverlay.add(x1);
@@ -473,15 +535,15 @@ export class BattleMap {
 
         const hpBarHeight = 4;
         const hpBar = new Konva.Rect({
-            y: h, width: w, height: hpBarHeight,
+            x: g, y: h - g, width: w - g * 2, height: hpBarHeight,
             fill: HP_COLORS.high, visible: hasHp,
         });
         group.add(hpBar);
 
         const hpText = new Konva.Text({
-            y: h + hpBarHeight + 2,
+            x: g, y: h - g + hpBarHeight + 2,
             text: hasHp ? `${token.currentHp}/${token.maxHp}` : '',
-            fontSize: 10, fill: '#ccc', align: 'center', width: w,
+            fontSize: 10, fill: '#ccc', align: 'center', width: w - g * 2,
             visible: hasHp,
         });
         group.add(hpText);
@@ -489,7 +551,7 @@ export class BattleMap {
         if (hasHp) {
             const ratio = token.currentHp / token.maxHp;
             hpBar.fill(ratio > 0.5 ? HP_COLORS.high : ratio > 0.25 ? HP_COLORS.mid : HP_COLORS.low);
-            hpBar.width(w * Math.max(0, ratio));
+            hpBar.width((w - g * 2) * Math.max(0, ratio));
         }
 
         group.on('dragend', () => {
@@ -847,7 +909,7 @@ export class BattleMap {
         this.resizeToContainer();
         this.renderGrid();
         this.renderTokens();
-        this.pinLayer.batchDraw();
+        this.tokenLayer.batchDraw();
         return container.contains(this.stage.container());
     }
 
@@ -861,6 +923,7 @@ export class BattleMap {
     }
 
     renderTokenLabels() {
+        const g = TOKEN_GUTTER_PX;
         for (const token of this.tokens) {
             const key = this.tokenKey(token);
             const node = this.tokenNodes[key];
@@ -875,7 +938,7 @@ export class BattleMap {
             if (hasHp) {
                 const ratio = token.currentHp / token.maxHp;
                 node.hpBar.fill(ratio > 0.5 ? HP_COLORS.high : ratio > 0.25 ? HP_COLORS.mid : HP_COLORS.low);
-                node.hpBar.width(w * Math.max(0, ratio));
+                node.hpBar.width((w - g * 2) * Math.max(0, ratio));
             }
 
             node.deadOverlay.visible(token.defeated || false);
@@ -936,19 +999,23 @@ export class BattleMap {
         const token = this.tokens.find(t => this.tokenKey(t) === tokenKey);
         if (!token) return;
 
+        const g = TOKEN_GUTTER_PX;
         const s = this.cellSizePx;
         const tw = token.sizeCols * s;
         const th = token.sizeRows * s;
 
         const glow = new Konva.Rect({
             width: tw + 8, height: th + 8,
-            x: -4, y: -4,
+            x: -4 + g, y: -4 + g,
             stroke: '#ffd700',
             strokeWidth: 3,
-            cornerRadius: 6,
+            cornerRadius: kindCornerRadius(token.kind, tw, th) + 2,
             fillEnabled: false,
             listening: false,
             name: 'turn-highlight',
+            shadowColor: '#ffd700',
+            shadowBlur: 12,
+            shadowOpacity: 0.6,
         });
         node.group.add(glow);
         this._activeHighlightNode = glow;
@@ -1247,9 +1314,9 @@ export class BattleMap {
 
     /* ---- Pins (scene + DM-only threat markers) ---- */
     async loadPins(mapId) {
-        this.pinLayer.destroyChildren();
+        this.pinGroup.destroyChildren();
         if (!mapId) {
-            this.pinLayer.draw();
+            this.tokenLayer.batchDraw();
             return false;
         }
         try {
@@ -1263,7 +1330,7 @@ export class BattleMap {
                     this._drawScenePin(pin);
                 }
             }
-            this.pinLayer.draw();
+            this.tokenLayer.batchDraw();
         } catch (error) {
             this._failure('Could not load pins.', error, null);
         }
@@ -1290,7 +1357,8 @@ export class BattleMap {
                 window.openSceneInPanel(pin.sceneId);
             }
         });
-        this.pinLayer.add(group);
+        this.pinGroup.add(group);
+        this.tokenLayer.batchDraw();
     }
 
     /** Distinct DM marker for traps/hazards — never rendered for players. */
@@ -1325,17 +1393,17 @@ export class BattleMap {
                 },
             }));
         });
-        this.pinLayer.add(group);
+        this.pinGroup.add(group);
     }
 
     showPins() {
-        this.pinLayer.visible(true);
-        this.pinLayer.draw();
+        this.pinGroup.visible(true);
+        this.tokenLayer.batchDraw();
     }
 
     hidePins() {
-        this.pinLayer.visible(false);
-        this.pinLayer.draw();
+        this.pinGroup.visible(false);
+        this.tokenLayer.batchDraw();
     }
 
     /* ---- Map Switching ---- */
