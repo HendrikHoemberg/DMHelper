@@ -138,7 +138,7 @@ class SessionControllerTest {
     @Test
     void encounterRailFragmentReturnsPartialHtml() throws Exception {
         var view = new CockpitRuntimeModuleViewService.EncounterView(
-                null, null, null, null, List.of(), List.of(), List.of());
+                null, null, null, null, List.of(), List.of(), List.of(), List.of());
         when(moduleViews.encounter(campaignId)).thenReturn(view);
         mvc.perform(get("/campaigns/{id}/session/rails/encounter", campaignId))
                 .andExpect(status().isOk())

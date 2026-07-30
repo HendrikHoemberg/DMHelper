@@ -66,6 +66,20 @@
       </div>
     </th:block>
   </div>
+  <div class="sidebar-section" th:if="${!view.finished.isEmpty()}">
+    <h3>Finished this session</h3>
+    <th:block th:each="enc : ${view.finished}">
+      <div class="planned-encounter-row">
+        <span>
+          <strong th:text="${enc.name}">Goblin Ambush</strong>
+          <small th:text="${enc.mapName + ' · ' + enc.combatantCount + (enc.combatantCount == 1 ? ' combatant' : ' combatants')}">Map · 6 combatants</small>
+        </span>
+        <button class="btn btn-ghost encounter-rail__action" style="padding: 2px 8px;"
+                th:attr="data-encounter-id=${enc.id}"
+                @click="runEncounter($el.dataset.encounterId)">Reopen</button>
+      </div>
+    </th:block>
+  </div>
 </div>
 </th:block>
 </html>

@@ -77,7 +77,8 @@ public class CockpitRuntimeModuleViewService {
                                 UUID activeEncounterMapId, String combatPhase,
                                 List<CombatantView> combatants,
                                 List<PlannedEncounterView> planned,
-                                List<PlannedEncounterView> suspended) {}
+                                List<PlannedEncounterView> suspended,
+                                List<PlannedEncounterView> finished) {}
 
     public record CombatantView(UUID id, String name, int initiative, int maxHp, int currentHp,
                                 String statBlockName) {}
@@ -296,6 +297,13 @@ public class CockpitRuntimeModuleViewService {
                     .toList());
         }
 
+        List<Encounter> done = encounters.findByCampaignIdOrderByNameAsc(campaignId).stream()
+                .filter(e -> e.getStatus() == Encounter.Status.DONE)
+                .sorted(java.util.Comparator.comparingLong(Encounter::getLogSequence).reversed())
+                .limit(5)
+                .toList();
+        done.forEach(e -> Hibernate.initialize(e.getMap()));
+
         java.util.function.Function<Encounter, PlannedEncounterView> toView = e -> {
             var combatantList = combatants.findByEncounterIdOrderBySortOrderAsc(e.getId());
             int combatantCount = combatantList.size();
@@ -315,7 +323,8 @@ public class CockpitRuntimeModuleViewService {
                 active != null ? active.getCombatPhase().name() : null,
                 combatantViews,
                 List.copyOf(planned.stream().map(toView).toList()),
-                List.copyOf(suspended.stream().map(toView).toList()));
+                List.copyOf(suspended.stream().map(toView).toList()),
+                List.copyOf(done.stream().map(toView).toList()));
     }
 
     public SessionPlanView sessionPlan(UUID campaignId) {

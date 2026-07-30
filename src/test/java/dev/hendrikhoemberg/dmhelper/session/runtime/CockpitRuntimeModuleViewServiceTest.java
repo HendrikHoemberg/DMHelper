@@ -212,6 +212,26 @@ class CockpitRuntimeModuleViewServiceTest {
     }
 
     @Test
+    void encounterViewIncludesFinishedEncounters() {
+        var seeded = fixture.seed();
+        Campaign campaign = campaignRepository.findById(seeded.campaignId()).orElseThrow();
+
+        Encounter finished = new Encounter();
+        finished.setCampaign(campaign);
+        finished.setName("Finished Fight");
+        finished.setStatus(Encounter.Status.DONE);
+        encounterRepository.save(finished);
+        entityManager.flush();
+
+        var view = service.encounter(seeded.campaignId());
+        entityManager.clear();
+        assertThat(view.finished()).isNotEmpty();
+        assertThat(view.finished().get(0).name()).isEqualTo("Finished Fight");
+        assertThat(allRecordComponentTypes(view.getClass()))
+                .noneMatch(type -> type.isAnnotationPresent(Entity.class));
+    }
+
+    @Test
     void sessionPlanViewIsDetachedSafe() {
         var seeded = fixture.seed();
         Campaign campaign = campaignRepository.findById(seeded.campaignId()).orElseThrow();
