@@ -92,7 +92,7 @@
                     <span th:text="${threat.damageExpression}">2d10</span>
                     <span th:if="${threat.damageTypes != null and !threat.damageTypes.isEmpty()}"
                           th:each="dt, iter : ${threat.damageTypes}"
-                          th:text="${iter.first ? ' ' : ', '} + #strings.capitalize(#strings.toLowerCase(dt))"></span>
+                          th:text="${iter.first ? ' ' : ', '} + ${T(dev.hendrikhoemberg.dmhelper.common.web.DisplayLabels).humanize(dt)}"></span>
                     <button type="button" class="btn btn-sm"
                             data-dice-prefill
                             th:attr="data-prefill-expr=${threat.damageExpression},
@@ -154,7 +154,7 @@
                     <span th:text="${threat.damageExpression}">1d6</span>
                     <span th:if="${threat.damageTypes != null and !threat.damageTypes.isEmpty()}"
                           th:each="dt, iter : ${threat.damageTypes}"
-                          th:text="${iter.first ? ' ' : ', '} + #strings.capitalize(#strings.toLowerCase(dt))"></span>
+                          th:text="${iter.first ? ' ' : ', '} + ${T(dev.hendrikhoemberg.dmhelper.common.web.DisplayLabels).humanize(dt)}"></span>
                     <button type="button" class="btn btn-sm"
                             data-dice-prefill
                             th:attr="data-prefill-expr=${threat.damageExpression},
