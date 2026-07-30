@@ -18,6 +18,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.List;
+import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -276,5 +278,92 @@ class TrackerIdentityBrowserTest {
 
         page.waitForFunction("() => document.querySelectorAll('.hp-delta-input')[1].value === ''");
         assertThat(rows.nth(0).locator(".combatant-hp").innerText()).isEqualTo(hpBefore);
+    }
+
+    // ── Task 8 ──────────────────────────────────────────────────────────────────
+
+    @Test
+    void namesAreNotTruncatedAtTheDefaultRailWidth() {
+        openCombat();
+        page.waitForSelector(".combatant-row .combatant-name__base");
+        Object railWidth = page.evaluate(
+                "() => document.querySelector('[data-cockpit-zone=\"RIGHT_SUPPORT\"]')"
+                        + ".getBoundingClientRect().width");
+        assertThat(((Number) railWidth).doubleValue()).isLessThanOrEqualTo(420.0);
+        Object truncated = page.evaluate("""
+                () => Array.from(document.querySelectorAll('.combatant-row .combatant-name__base'))
+                    .filter(el => el.scrollWidth > el.clientWidth + 1)
+                    .map(el => el.textContent)
+                """);
+        assertThat((List<?>) truncated).as("names must survive default rail width").isEmpty();
+    }
+
+    @Test
+    void anInertSplitterExplainsItself() {
+        openCombat();
+        var splitter = page.locator("[data-cockpit-splitter='PRIMARY_RIGHT']");
+        assertThat(splitter.getAttribute("aria-disabled")).isEqualTo("true");
+        assertThat(splitter.getAttribute("title")).contains("Edit layout");
+        splitter.dispatchEvent("pointerdown");
+        page.waitForFunction(
+                "() => document.getElementById('cockpitLayoutNotice')?.textContent.trim().length > 0");
+        assertThat(page.locator("#cockpitLayoutNotice").innerText()).containsIgnoringCase("edit layout");
+    }
+
+    // ── Task 9 ──────────────────────────────────────────────────────────────────
+
+    @Test
+    void proneSurvivesTwoFullRounds() {
+        var seeded = openCombat();
+        var rows = page.locator(".combatant-row");
+        rows.first().click();
+        page.locator(".detail-conditions .condition-quick button")
+                .filter(new Locator.FilterOptions().setHasText("Prone"))
+                .first().click();
+        page.waitForSelector(".combatant-row .cond-icon");
+        long combatants = page.locator(".combatant-row").count();
+        for (int i = 0; i < combatants * 2; i++) {
+            page.evaluate("() => window.Alpine.$data(document.querySelector('.tracker-panel')).nextTurn()");
+        }
+        page.waitForTimeout(200);
+        assertThat(page.locator(".combatant-row .cond-icon").count()).isEqualTo(1);
+        assertThat(page.locator(".combatant-row .cond-icon__duration").innerText()).isEqualTo("∞");
+    }
+
+    @Test
+    void anExplicitOneRoundDurationStillExpires() {
+        var seeded = openCombat();
+        var rows = page.locator(".combatant-row");
+        rows.first().click();
+        var durationInput = page.locator("[data-condition-duration]");
+        durationInput.fill("1");
+        page.locator(".detail-conditions .condition-quick button")
+                .filter(new Locator.FilterOptions().setHasText("Prone"))
+                .first().click();
+        page.waitForSelector(".combatant-row .cond-icon");
+        assertThat(page.locator(".combatant-row .cond-icon__duration").innerText()).isEqualTo("1");
+        long combatants = page.locator(".combatant-row").count();
+        for (int i = 0; i < combatants; i++) {
+            page.evaluate("() => window.Alpine.$data(document.querySelector('.tracker-panel')).nextTurn()");
+        }
+        page.waitForFunction("() => document.querySelectorAll('.combatant-row .cond-icon').length === 0");
+        assertThat(page.locator(".combatant-row .cond-icon").count()).isZero();
+    }
+
+    // ── Task 10 ─────────────────────────────────────────────────────────────────
+
+    @Test
+    void conditionBadgesCarryTextNotOnlyColour() {
+        openCombat();
+        var rows = page.locator(".combatant-row");
+        rows.first().click();
+        page.locator(".detail-conditions .condition-quick button")
+                .filter(new Locator.FilterOptions().setHasText("Grappled"))
+                .first().click();
+        page.waitForSelector(".combatant-row .cond-icon");
+        assertThat(page.locator(".cond-icon__abbr").innerText()).isEqualTo("GRA");
+        assertThat(page.locator(".cond-icon__duration").innerText()).isEqualTo("∞");
+        Object abbrs = page.evaluate("() => { const m = window.CONDITION_ABBREVIATIONS; return m ? Object.values(m).filter(v => v && v.length >= 2) : []; }");
+        assertThat(((List<?>) abbrs)).doesNotHaveDuplicates();
     }
 }

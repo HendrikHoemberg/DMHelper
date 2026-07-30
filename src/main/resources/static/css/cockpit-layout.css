@@ -392,6 +392,9 @@ body:has(.session-cockpit) {
   transform: translateY(-50%);
 }
 
+[data-cockpit-splitter][aria-disabled="true"] { cursor: default; }
+[data-cockpit-splitter][aria-disabled="false"] { cursor: col-resize; }
+
 .cockpit-splitter:focus-visible {
   outline: 3px solid var(--color-accent);
   outline-offset: -1px;

@@ -779,6 +779,8 @@
       });
       document.querySelectorAll('[data-cockpit-splitter]').forEach((splitter) => {
         splitter.tabIndex = editing ? 0 : -1;
+        splitter.setAttribute('aria-disabled', editing ? 'false' : 'true');
+        splitter.title = editing ? 'Drag or use arrow keys to resize' : 'Choose "Edit layout" to resize panels';
       });
     }
 
@@ -1307,7 +1309,13 @@
     }
 
     onSplitterKey(splitter, event) {
-      if (this.workbench.dataset.layoutMode !== 'edit') return;
+      if (this.workbench.dataset.layoutMode !== 'edit') {
+        if (['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+          event.preventDefault();
+          this.showNotice('Panel sizes are part of the layout. Choose "Edit layout" to resize.');
+        }
+        return;
+      }
       const which = splitter.getAttribute('data-cockpit-splitter');
       const orientation = splitter.getAttribute('aria-orientation') || 'vertical';
       const step = event.shiftKey ? 0.10 : 0.02;
@@ -1364,7 +1372,10 @@
     }
 
     onSplitterPointerDown(splitter, event) {
-      if (this.workbench.dataset.layoutMode !== 'edit') return;
+      if (this.workbench.dataset.layoutMode !== 'edit') {
+        this.showNotice('Panel sizes are part of the layout. Choose "Edit layout" to resize.');
+        return;
+      }
       if (event.button != null && event.button !== 0) return;
       event.preventDefault();
       const which = splitter.getAttribute('data-cockpit-splitter');
