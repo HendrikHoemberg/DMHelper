@@ -386,8 +386,8 @@
                                           :title="getConditionText(cond.sourceKey)"
                                           x-text="cond.durationRounds > 0 ? cond.durationRounds : '∞'"></span>
                                 </template>
-                                <button class="btn btn-ghost tracker-small-button" style="padding: 0 2px; line-height: 1;"
-                                        @click.stop="openConditionMenu(c.id)">＋</button>
+<button class="btn btn-ghost tracker-small-button condition-add" style="padding: 0 2px; line-height: 1;"
+        @click.stop="editConditionsFor(c.id)">＋</button>
                             </div>
 
                             <!-- Concentration badge -->

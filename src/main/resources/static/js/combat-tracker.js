@@ -37,8 +37,6 @@
             hpDelta: '',
             rechargePrompts: [],
             conditionsCatalog: [],
-            showConditionMenu: null,
-            conditionDuration: '',
             waves: [],
             spawnError: '',
             acceptUnset: false,
@@ -654,7 +652,6 @@
 
             selectCombatant(id) {
                 this.selectedCombatantId = id;
-                this.showConditionMenu = null;
                 if (this.selected) {
                     this.editHp = this.selected.currentHp;
                     this.editTempHp = this.selected.tempHp || 0;
@@ -687,9 +684,14 @@
                 }));
             },
 
-            openConditionMenu(id) {
-                this.showConditionMenu = this.showConditionMenu === id ? null : id;
-                this.conditionDuration = '';
+            editConditionsFor(id) {
+                this.selectCombatant(id);
+                this.$nextTick(() => {
+                    const panel = this.$root.querySelector('.detail-conditions');
+                    if (!panel) return;
+                    panel.scrollIntoView({ block: 'nearest' });
+                    panel.querySelector('.condition-quick button')?.focus();
+                });
             },
 
             hasCondition(combatant, sourceKey) {

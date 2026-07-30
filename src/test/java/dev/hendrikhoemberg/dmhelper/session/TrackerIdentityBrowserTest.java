@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.session;
 
 import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
@@ -148,5 +149,31 @@ class TrackerIdentityBrowserTest {
 
         String labelAfter = page.locator(".combatant-row:has(.group-count) .combatant-name__base").first().innerText();
         assertThat(labelAfter).isEqualTo(labelBefore);
+    }
+
+    @Test
+    void theRowConditionControlAppliesToItsOwnRow() {
+        openCombat();
+        var rows = page.locator(".combatant-row");
+        String targetId = rows.nth(1).getAttribute("data-cid");
+        String otherId = rows.nth(0).getAttribute("data-cid");
+
+        rows.nth(0).click();                       // bind the editor somewhere else first
+        rows.nth(1).locator(".condition-add").click();
+        page.locator(".detail-conditions .condition-quick button")
+                .filter(new Locator.FilterOptions().setHasText("Prone"))
+                .first().click();
+
+        page.waitForFunction(
+                "(id) => document.querySelector(`[data-cid='${id}'] .cond-icon`) !== null",
+                targetId);
+        assertThat(page.locator("[data-cid='" + targetId + "'] .cond-icon").count()).isEqualTo(1);
+        assertThat(page.locator("[data-cid='" + otherId + "'] .cond-icon").count())
+                .as("no other combatant may gain the condition")
+                .isZero();
+        assertThat(page.evaluate(
+                "() => window.Alpine.$data(document.querySelector('.tracker-panel')).selectedCombatantId"))
+                .as("the shared editor must have been retargeted to the row that was clicked")
+                .isEqualTo(targetId);
     }
 }
