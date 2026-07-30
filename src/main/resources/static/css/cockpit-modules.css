@@ -454,3 +454,51 @@
 .combatant-name {
   min-width: 0;
 }
+
+.planned-encounter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title  action"
+    "meta   action"
+    "chip   action";
+  align-items: center;
+  gap: 2px var(--space-sm);
+  padding: var(--space-xs) 0;
+}
+
+.planned-encounter-row__title {
+  grid-area: title;
+  font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.planned-encounter-row__meta {
+  grid-area: meta;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+
+.encounter-chip {
+  grid-area: chip;
+  justify-self: start;
+  padding: 1px 6px;
+  border-radius: var(--radius);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.encounter-chip--ready { background: var(--elevation-raised-bg); }
+.encounter-chip--notes { background: var(--elevation-raised-bg); color: var(--color-warning); }
+.encounter-chip--blocked { background: var(--color-danger); color: var(--color-bg); }
+
+.encounter-rail__action {
+  grid-area: action;
+  align-self: center;
+  white-space: nowrap;
+  padding: 2px 10px;
+}

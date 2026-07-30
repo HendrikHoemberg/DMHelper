@@ -26,17 +26,21 @@
             <div class="planned-encounter-row"
                  th:attr="data-name=${enc.name}"
                  x-show="!plannedFilter || $el.dataset.name.toLowerCase().includes(plannedFilter.toLowerCase())">
-              <span>
-                <strong th:text="${enc.name}">Goblin Ambush</strong>
-                <small>
-                  <span th:text="${enc.mapName + ' · ' + enc.combatantCount + (enc.combatantCount == 1 ? ' combatant' : ' combatants') + ' · '}">Map · 6 combatants · </span>
-                  <span th:text="${enc.ready ? 'Ready' : 'Not ready'}"
-                        th:title="${enc.ready ? 'Every combatant has a statblock and a map placement' : 'Assign a map and place all combatants'}">Ready</span>
-                </small>
+              <span class="planned-encounter-row__title" th:text="${enc.name}">Goblin Ambush</span>
+              <span class="planned-encounter-row__meta">
+                <span th:text="${enc.mapName != null ? enc.mapName : 'No map'}">Map</span>
+                <span aria-hidden="true">·</span>
+                <span th:text="${enc.combatantCount + (enc.combatantCount == 1 ? ' combatant' : ' combatants')}">6 combatants</span>
               </span>
-              <button class="btn btn-ghost encounter-rail__action" style="padding: 2px 8px;"
+              <span class="encounter-chip"
+                    th:classappend="${enc.ready ? 'encounter-chip--ready' : 'encounter-chip--notes'}"
+                    th:text="${enc.ready ? 'Ready' : 'Needs setup'}"
+                    th:title="${enc.ready ? 'Every combatant has a statblock and a map placement' : 'Runnable now; placement happens on activation'}">Ready</span>
+              <!-- Task 7 replaces this two-state chip with the three-state verdict. -->
+
+              <button class="btn btn-ghost encounter-rail__action"
                       th:attr="data-encounter-id=${enc.id}"
-                      @click="runEncounter($el.dataset.encounterId)">Run encounter</button>
+                      @click="runEncounter($el.dataset.encounterId)">Run</button>
             </div>
           </th:block>
         </th:block>
