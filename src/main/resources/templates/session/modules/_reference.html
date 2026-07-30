@@ -28,8 +28,9 @@
             <template x-for="item in group.items" :key="item.id">
               <div class="reference-item u-text-sm u-px-xs u-py-xs" data-reference-result
                    @click="selectItem(item)">
-                <span x-text="item.name"></span>
-                <span class="u-text-xs text-muted" x-text="item.source"></span>
+                <span class="reference-item__title" x-text="item.title"></span>
+                <span class="reference-item__qualifier u-text-xs text-muted"
+                      x-text="item.subtype || item.type"></span>
               </div>
             </template>
           </div>
@@ -43,13 +44,80 @@
           <button class="btn btn-ghost u-text-xs u-mb-sm" @click="clearStatblock()" type="button">&larr; Back to results</button>
           <div class="statblock-render">
             <h2 x-text="statblock.name"></h2>
-            <div class="sb-subtitle" x-text="statblock.type ? (statblock.cr ? statblock.type + ', CR ' + statblock.cr : statblock.type) : ''"></div>
+            <div class="sb-subtitle u-text-sm text-muted">
+              <span x-text="statblock.size"></span
+              ><span x-show="statblock.size && statblock.type"> </span
+              ><span x-text="statblock.type"></span
+              ><span x-show="statblock.type && statblock.alignment">, </span
+              ><span x-text="statblock.alignment"></span>
+              <span x-show="statblock.cr"> &mdash; CR <span x-text="statblock.cr"></span></span>
+            </div>
             <hr class="sb-rule">
             <div class="sb-stat-row">
               <div><span>Armor Class</span> <span x-text="statblock.ac"></span></div>
               <div><span>Hit Points</span> <span x-text="statblock.hp"></span></div>
+              <div><span>Speed</span> <span x-text="statblock.speed"></span></div>
               <div><span>XP</span> <span x-text="statblock.xp"></span></div>
             </div>
+
+            <div class="u-mt-xs" x-show="statblock.abilityScores">
+              <strong class="u-text-xs">Abilities</strong>
+              <div class="u-flex u-flex-wrap u-gap-xs" style="margin-top: 2px;">
+                <template x-for="(score, key) in statblock.abilityScores" :key="key">
+                  <span class="badge" x-text="key.toUpperCase() + ' ' + score"></span>
+                </template>
+              </div>
+            </div>
+
+            <div class="u-mt-xs" x-show="statblock.savingThrows && statblock.savingThrows.length">
+              <strong class="u-text-xs">Saving Throws</strong>
+              <div class="u-flex u-flex-wrap u-gap-xs" style="margin-top: 2px;">
+                <template x-for="st in statblock.savingThrows" :key="st.ability">
+                  <span class="badge" x-text="st.ability.toUpperCase() + ' +' + st.modifier"></span>
+                </template>
+              </div>
+            </div>
+
+            <div class="u-mt-xs" x-show="statblock.skills">
+              <span class="u-text-xs"><strong>Skills</strong> <span x-text="statblock.skills"></span></span>
+            </div>
+
+            <div class="u-mt-xs" x-show="statblock.damageResistances">
+              <span class="u-text-xs"><strong>Damage Resistances</strong> <span x-text="statblock.damageResistances"></span></span>
+            </div>
+            <div class="u-mt-xs" x-show="statblock.damageImmunities">
+              <span class="u-text-xs"><strong>Damage Immunities</strong> <span x-text="statblock.damageImmunities"></span></span>
+            </div>
+            <div class="u-mt-xs" x-show="statblock.conditionImmunities">
+              <span class="u-text-xs"><strong>Condition Immunities</strong> <span x-text="statblock.conditionImmunities"></span></span>
+            </div>
+
+            <div class="u-mt-xs" x-show="statblock.senses">
+              <span class="u-text-xs"><strong>Senses</strong> <span x-text="statblock.senses"></span></span>
+            </div>
+            <div class="u-mt-xs" x-show="statblock.languages">
+              <span class="u-text-xs"><strong>Languages</strong> <span x-text="statblock.languages"></span></span>
+            </div>
+
+            <template x-for="section in statblockSections()" :key="section.key">
+              <div class="u-mt-sm" x-show="section.entries && section.entries.length">
+                <strong class="u-text-xs" x-text="section.label"></strong>
+                <template x-for="entry in section.entries" :key="entry.name">
+                  <div style="margin-top: 2px;">
+                    <span class="u-text-sm" style="font-weight: 600;" x-text="entry.name + '.'"></span>
+                    <span class="u-text-xs" x-text="entry.description"></span>
+                    <span class="badge" x-show="entry.attackBonus != null" x-text="'Atk +' + entry.attackBonus"></span>
+                    <span class="badge" x-show="entry.damageExpression" x-text="entry.damageExpression"></span>
+                    <button type="button" class="btn btn-sm btn-ghost"
+                            style="padding: 0 4px;"
+                            x-show="entry.damageExpression"
+                            @click="prefill(entry)">
+                      Prefill damage
+                    </button>
+                  </div>
+                </template>
+              </div>
+            </template>
           </div>
         </div>
       </template>
