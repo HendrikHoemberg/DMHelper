@@ -14,9 +14,22 @@
     let settleTimer = null;
     const htmxRequestStates = new WeakMap();
 
+    const input = cluster.querySelector('[data-status-input]');
+
     function setSave(state, label) {
       save.dataset.state = state;
       save.textContent = label;
+    }
+
+    function setInputRejection(message) {
+      if (!input) return;
+      input.hidden = false;
+      input.dataset.state = 'rejected';
+      input.textContent = message;
+      clearTimeout(input._rejectionTimer);
+      input._rejectionTimer = setTimeout(() => {
+        input.hidden = true;
+      }, 8000);
     }
 
     function hasInFlightRequests() {
@@ -79,6 +92,12 @@
       markSaved();
     });
 
+    function rejected(source) {
+      if (source === 'dm') dmInFlight = Math.max(0, dmInFlight - 1);
+      setInputRejection('Input not accepted');
+      markSaved();
+    }
+
     function failed(source) {
       if (source === 'dm') dmInFlight = Math.max(0, dmInFlight - 1);
       failedMutationEpoch = mutationEpoch;
@@ -88,7 +107,12 @@
 
     document.body.addEventListener('htmx:responseError', (evt) => {
       settleHtmx(evt.detail);
-      failed('htmx');
+      const status = evt.detail?.xhr?.status;
+      if (status >= 400 && status < 500 && status !== 409) {
+        rejected('htmx');
+      } else {
+        failed('htmx');
+      }
     });
     document.body.addEventListener('htmx:sendError', (evt) => {
       settleHtmx(evt.detail);
@@ -108,7 +132,11 @@
 
     document.addEventListener('dm:request-failure', (evt) => {
       if (!isMutation(evt.detail)) return;
-      failed('dm');
+      if (evt.detail.error?.kind === 'validation') {
+        rejected('dm');
+      } else {
+        failed('dm');
+      }
     });
 
   }

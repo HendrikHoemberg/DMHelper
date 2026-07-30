@@ -9,6 +9,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -253,6 +255,14 @@ class RuntimeStatusJavascriptContractTest {
                     .containsEntry("cleanBusy", "busy")
                     .containsEntry("cleanSaved", "saved");
         }
+    }
+
+    @Test
+    void validationFailuresNeverTouchTheSaveIndicator() throws IOException {
+        String js = Files.readString(Path.of("src/main/resources/static/js/runtime-status.js"));
+        assertThat(js)
+                .contains("kind === 'validation'")
+                .contains("data-status-input");
     }
 
     @Test

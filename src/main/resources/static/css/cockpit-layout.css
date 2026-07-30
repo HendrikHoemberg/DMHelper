@@ -263,6 +263,9 @@ body:has(.session-cockpit) {
   color: var(--color-text-muted);
   cursor: pointer;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .cockpit-tab[aria-selected="true"],
@@ -273,6 +276,18 @@ body:has(.session-cockpit) {
   border-bottom-color: var(--color-accent);
   background: var(--color-bg);
   box-shadow: inset 0 -2px 0 var(--color-accent);
+}
+
+.cockpit-module__attention {
+  min-width: 1.25rem;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--color-warning);
+  color: var(--color-bg);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .cockpit-zone__panels {
@@ -692,3 +707,5 @@ body:has(.session-cockpit) {
   font-weight: 600;
   opacity: 1;
 }
+
+.cockpit-status__atom--input { color: var(--color-warning); }

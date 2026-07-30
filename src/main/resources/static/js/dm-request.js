@@ -2,11 +2,22 @@
   'use strict';
 
   class DmRequestError extends Error {
-    constructor(message, status = 0, correlationId = null) {
+    constructor(message, status = 0, correlationId = null, problem = null) {
       super(message);
       this.name = 'DmRequestError';
       this.status = status;
       this.correlationId = correlationId;
+      this.problem = problem;
+      if (status === 0) {
+        this.kind = 'network';
+      } else if (status === 409) {
+        this.kind = 'conflict';
+      } else if (status >= 400 && status < 500) {
+        this.kind = 'validation';
+      } else {
+        this.kind = 'server';
+      }
+      this.retryable = this.kind !== 'validation';
     }
   }
 
@@ -27,8 +38,7 @@
         // A malformed error body must not hide the status/header fallback.
       }
     }
-    const error = new DmRequestError(detail, response.status, correlationId);
-    error.problem = problem;
+    const error = new DmRequestError(detail, response.status, correlationId, problem);
     return error;
   }
 
@@ -58,14 +68,13 @@
   };
 
   window.reportActionFailure = function reportActionFailure(summary, error, retry) {
-    const reference = error?.correlationId ? ` Reference: ${error.correlationId}.` : '';
     const detail = error?.message ? ` ${error.message}` : '';
-    window.showToast(
-      summary + detail + reference,
-      'error',
-      retry ? 15000 : 7000,
-      retry ? { label: 'Retry', handler: retry } : null
-    );
+    const message = summary + detail;
+    window.showToast(message, 'error', retry ? 15000 : 7000, {
+      dedupeKey: summary + '|' + (error?.status ?? 0),
+      reference: error?.correlationId || null,
+      action: (error?.retryable !== false && retry) ? { label: 'Retry', handler: retry } : null
+    });
   };
 
   window.DmRequestError = DmRequestError;

@@ -50,6 +50,7 @@
           th:text="${@calendarService.formatDate(campaignId, workspace.currentDate)}">12 July 1492</span>
     <span id="runtimeStatus" class="cockpit-status" role="status" aria-live="polite">
       <span class="cockpit-status__atom" data-status-save data-state="idle">Up to date</span>
+      <span class="cockpit-status__atom cockpit-status__atom--input" data-status-input data-state="rejected" hidden></span>
     </span>
     <label class="u-nowrap" for="cockpitPresetPicker">
       <span class="sr-only">Layout preset</span>
