@@ -7,6 +7,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.ChangeEncounterMapRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.EncounterReadinessDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.ReadinessIssueDto;
+import dev.hendrikhoemberg.dmhelper.encounter.service.ReadinessVerdict;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantCreateRequest;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService.CombatantDto;
@@ -341,7 +342,7 @@ class EncounterApiControllerTest {
     void shouldGetReadiness() throws Exception {
         UUID encId = UUID.randomUUID();
         when(placements.readiness(encId)).thenReturn(
-                new EncounterReadinessDto(encId, true, UUID.randomUUID(), 0, 0, 0, List.of()));
+                new EncounterReadinessDto(encId, true, ReadinessVerdict.RUNNABLE, UUID.randomUUID(), 0, 0, 0, List.of()));
 
         mockMvc.perform(get("/api/v1/encounters/{id}/readiness", encId))
                 .andExpect(status().isOk())
@@ -353,7 +354,7 @@ class EncounterApiControllerTest {
         UUID encId = UUID.randomUUID();
         UUID mapId = UUID.randomUUID();
         when(placements.changeMapAndResetPlacements(eq(encId), eq(mapId))).thenReturn(
-                new EncounterReadinessDto(encId, true, mapId, 0, 0, 0, List.of()));
+                new EncounterReadinessDto(encId, true, ReadinessVerdict.RUNNABLE, mapId, 0, 0, 0, List.of()));
 
         mockMvc.perform(put("/api/v1/encounters/{id}/map", encId)
                         .contentType(MediaType.APPLICATION_JSON)

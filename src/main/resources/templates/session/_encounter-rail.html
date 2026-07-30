@@ -33,10 +33,12 @@
                 <span th:text="${enc.combatantCount + (enc.combatantCount == 1 ? ' combatant' : ' combatants')}">6 combatants</span>
               </span>
               <span class="encounter-chip"
-                    th:classappend="${enc.ready ? 'encounter-chip--ready' : 'encounter-chip--notes'}"
-                    th:text="${enc.ready ? 'Ready' : 'Needs setup'}"
-                    th:title="${enc.ready ? 'Every combatant has a statblock and a map placement' : 'Runnable now; placement happens on activation'}">Ready</span>
-              <!-- Task 7 replaces this two-state chip with the three-state verdict. -->
+                    th:classappend="${enc.verdict.name() == 'RUNNABLE'} ? 'encounter-chip--ready'
+                                  : (${enc.verdict.name() == 'BLOCKED'} ? 'encounter-chip--blocked' : 'encounter-chip--notes')"
+                    th:text="${enc.verdict.name() == 'RUNNABLE'} ? 'Ready'
+                           : (${enc.verdict.name() == 'BLOCKED'} ? 'Blocked' : 'Needs setup')"
+                    th:title="${enc.verdict.name() == 'BLOCKED'} ? 'Assign a map before running this encounter'
+                            : 'Runnable now; placement happens on activation'">Ready</span>
 
               <button class="btn btn-ghost encounter-rail__action"
                       th:attr="data-encounter-id=${enc.id}"

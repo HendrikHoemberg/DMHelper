@@ -7,6 +7,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.EncounterReadinessDto;
+import dev.hendrikhoemberg.dmhelper.encounter.service.ReadinessVerdict;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
@@ -195,7 +196,7 @@ class SessionEncounterServiceTest {
     void notReadyEncounterThrowsEncounterNotReady() {
         when(encounterRepo.findById(encounterId)).thenReturn(Optional.of(encounter));
         EncounterReadinessDto notReady = new EncounterReadinessDto(
-                encounterId, false, null, 0, 0, 0, List.of());
+                encounterId, false, ReadinessVerdict.BLOCKED, null, 0, 0, 0, List.of());
         when(placements.readiness(encounterId)).thenReturn(notReady);
 
         assertThatThrownBy(() -> service.activate(campaignId, encounterId, null))
@@ -294,7 +295,7 @@ class SessionEncounterServiceTest {
     }
 
     private static EncounterReadinessDto ready() {
-        return new EncounterReadinessDto(UUID.randomUUID(), true, UUID.randomUUID(),
+        return new EncounterReadinessDto(UUID.randomUUID(), true, ReadinessVerdict.RUNNABLE, UUID.randomUUID(),
                 1, 1, 0, List.of());
     }
 }

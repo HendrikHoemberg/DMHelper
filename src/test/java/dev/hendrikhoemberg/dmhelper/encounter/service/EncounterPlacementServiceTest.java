@@ -237,6 +237,18 @@ class EncounterPlacementServiceTest {
         assertThat(readiness.placedCombatantCount()).isEqualTo(0);
     }
 
+    @Test
+    void unplacedCombatantsAreNotesRatherThanBlockers() {
+        assertThat(EncounterPlacementService.verdictFor(true, false, 4, 4))
+                .isEqualTo(ReadinessVerdict.RUNNABLE_WITH_NOTES);
+        assertThat(EncounterPlacementService.verdictFor(true, false, 4, 0))
+                .isEqualTo(ReadinessVerdict.RUNNABLE);
+        assertThat(EncounterPlacementService.verdictFor(false, false, 4, 0))
+                .isEqualTo(ReadinessVerdict.BLOCKED);
+        assertThat(EncounterPlacementService.verdictFor(true, true, 4, 0))
+                .isEqualTo(ReadinessVerdict.BLOCKED);
+    }
+
     static class PlacementsFixture {
         private final EntityManager em;
         private final CombatantRepository combatants;

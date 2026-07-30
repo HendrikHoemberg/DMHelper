@@ -169,7 +169,7 @@ class CockpitRuntimeModuleContractTest {
         assertThat(rail).contains("view.planned");
         assertThat(rail).contains("view.suspended");
         assertThat(rail).contains("enc.mapName");
-        assertThat(rail).contains("enc.ready");
+        assertThat(rail).contains("enc.verdict");
         assertThat(rail).contains("enc.combatantCount");
         assertThat(rail).contains("enc.id");
         assertThat(rail).contains("enc.name");

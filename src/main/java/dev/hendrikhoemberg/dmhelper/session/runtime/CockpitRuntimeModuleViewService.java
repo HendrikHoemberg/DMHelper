@@ -12,6 +12,8 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.CombatantRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService;
+import dev.hendrikhoemberg.dmhelper.encounter.service.ReadinessVerdict;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMapRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.QuickNote;
@@ -81,7 +83,7 @@ public class CockpitRuntimeModuleViewService {
                                 String statBlockName) {}
 
     public record PlannedEncounterView(UUID id, String name, UUID mapId, String mapName,
-                                       boolean ready, int combatantCount, int unplacedCount) {}
+                                       ReadinessVerdict verdict, int combatantCount, int unplacedCount) {}
 
     public record SessionPlanView(String title, List<BeatView> beats,
                                   List<QuestProgressView> questProgress,
@@ -298,11 +300,12 @@ public class CockpitRuntimeModuleViewService {
             var combatantList = combatants.findByEncounterIdOrderBySortOrderAsc(e.getId());
             int combatantCount = combatantList.size();
             long unplacedCount = combatantList.stream().filter(c -> c.getPlacement() == null).count();
-            boolean ready = combatantCount > 0 && unplacedCount == 0;
+            ReadinessVerdict verdict = EncounterPlacementService.verdictFor(
+                    e.getMap() != null, false, combatantCount, (int) unplacedCount);
             return new PlannedEncounterView(e.getId(), e.getName(),
                     e.getMap() != null ? e.getMap().getId() : null,
                     e.getMap() != null ? e.getMap().getName() : null,
-                    ready, combatantCount, (int) unplacedCount);
+                    verdict, combatantCount, (int) unplacedCount);
         };
 
         return new EncounterView(

@@ -56,7 +56,7 @@ public class EncounterPlacementService {
 
     public record ChangeEncounterMapRequest(UUID mapId) {}
 
-    public record EncounterReadinessDto(UUID encounterId, boolean canRun, UUID mapId,
+    public record EncounterReadinessDto(UUID encounterId, boolean canRun, ReadinessVerdict verdict, UUID mapId,
                                         int combatantCount, int placedCombatantCount, int unplacedCombatantCount,
                                         List<ReadinessIssueDto> issues) {}
 
@@ -240,11 +240,19 @@ public class EncounterPlacementService {
         return created;
     }
 
+    public static ReadinessVerdict verdictFor(boolean hasMap, boolean placementMapMismatch,
+                                              int combatantCount, int unplacedCount) {
+        if (!hasMap || placementMapMismatch) return ReadinessVerdict.BLOCKED;
+        if (combatantCount == 0 || unplacedCount > 0) return ReadinessVerdict.RUNNABLE_WITH_NOTES;
+        return ReadinessVerdict.RUNNABLE;
+    }
+
     public EncounterReadinessDto readiness(UUID encounterId) {
         Encounter encounter = encounterRepo.findById(encounterId)
                 .orElseThrow(() -> new NotFoundException("Encounter not found: " + encounterId));
         List<ReadinessIssueDto> issues = new ArrayList<>();
         boolean hasError = false;
+        boolean mismatch = false;
 
         if (encounter.getMap() == null) {
             issues.add(new ReadinessIssueDto("MISSING_MAP", "Encounter has no map assigned", "ERROR"));
@@ -273,12 +281,15 @@ public class EncounterPlacementService {
                     issues.add(new ReadinessIssueDto("PLACEMENT_MAP_MISMATCH",
                             "Placement " + p.getId() + " references a different map", "ERROR"));
                     hasError = true;
+                    mismatch = true;
                     break;
                 }
             }
         }
 
-        return new EncounterReadinessDto(encounterId, !hasError,
+        ReadinessVerdict verdict = verdictFor(encounter.getMap() != null, mismatch,
+                combatants.size(), unplacedCount);
+        return new EncounterReadinessDto(encounterId, verdict != ReadinessVerdict.BLOCKED, verdict,
                 encounter.getMap() != null ? encounter.getMap().getId() : null,
                 combatants.size(), placedCount, unplacedCount, issues);
     }
