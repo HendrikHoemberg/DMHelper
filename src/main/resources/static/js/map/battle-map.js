@@ -342,7 +342,9 @@ export class BattleMap {
                 }
             }
         } catch (error) {
-            this._failure('Could not load map tokens.', error, () => this.fetchTokens());
+            this._failure('Could not load map tokens.', error,
+                () => window.cockpitSession?.retryMapSurface?.() ?? this.fetchTokens());
+            this.emit('load-failed', { mapId: this.mapId, encounterId: this.activeEncounterId });
             return false;
         }
     }

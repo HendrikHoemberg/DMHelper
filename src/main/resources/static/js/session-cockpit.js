@@ -224,6 +224,33 @@ function sessionCockpit(config) {
             }
         },
 
+        async retryMapSurface() {
+            const encounterId = this.activeEncounter?.id
+                || window.battleMap?.activeEncounterId
+                || null;
+            const container = document.getElementById('battleCanvasWrap');
+            if (window.battleMap && container) window.battleMap.reattach(container);
+            if (!window.battleMap) {
+                this.initBattleMap();
+                return true;
+            }
+            const ok = await window.battleMap.setEncounterAndMap(
+                encounterId, this.currentMapId || null);
+            if (ok) {
+                window.cockpitLayout?.setModuleState?.('map', 'ready');
+                this.syncMapPicker();
+            }
+            return ok;
+        },
+
+        _registerMapRecovery() {
+            if (this._mapRecoveryBound) return;
+            this._mapRecoveryBound = true;
+            window.dispatchEvent(new CustomEvent('cockpit:module-state', {
+                detail: { moduleKey: 'map', state: 'ready', retry: () => this.retryMapSurface() }
+            }));
+        },
+
         async switchWorkspaceMap(mapId, retry = () => this.switchMap(mapId)) {
             try {
                 await window.dmRequest(
@@ -467,6 +494,17 @@ function sessionCockpit(config) {
             this.refreshThreatPins();
             this.loadActiveEncounter();
             this._bindMapVisibility();
+            this._registerMapRecovery();
+            window.addEventListener('battle-load-failed', () => {
+                window.dispatchEvent(new CustomEvent('cockpit:module-state', {
+                    detail: {
+                        moduleKey: 'map',
+                        state: 'error',
+                        message: 'The map could not be brought up to date.',
+                        retry: () => this.retryMapSurface(),
+                    }
+                }));
+            });
             if (config.mapId) {
                 this.visitedMapIds.add(this.currentMapId);
                 this.initBattleMap();
@@ -478,6 +516,7 @@ function sessionCockpit(config) {
                 history.replaceState(null, '', window.location.pathname);
                 this.runEncounter(runEncounterId);
             }
+            window.cockpitSession = this;
         },
 
         _bindMapVisibility() {

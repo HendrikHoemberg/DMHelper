@@ -128,4 +128,47 @@ class CockpitMapTransitionBrowserTest {
                 .as("a coherent transition produces no error toast")
                 .isZero();
     }
+
+    @Test
+    void aFailedMapLoadRecoversFromTheModulesOwnRetry() {
+        var seeded = fixtures.campaignWithTwoEncountersOnTwoMaps();
+        page.navigate("http://127.0.0.1:" + port + "/campaigns/" + seeded.campaignId() + "/session");
+        page.waitForFunction("() => window.cockpitLayout?.mounted === true");
+        page.selectOption("#cockpitPresetPicker", "builtin:combat");
+        page.waitForFunction("() => !!window.battleMap");
+        page.waitForSelector("#battleCanvasWrap canvas");
+
+        failures.expectConsoleError(java.util.regex.Pattern.compile("runtime-tokens"));
+        page.evaluate("""
+                () => {
+                  window.__navigations = 0;
+                  const push = history.pushState.bind(history);
+                  history.pushState = (...args) => { window.__navigations++; return push(...args); };
+                  const original = window.dmRequest;
+                  let failed = false;
+                  window.dmRequest = (url, options) => {
+                    if (!failed && String(url).includes('/runtime-tokens')) {
+                      failed = true;
+                      return Promise.reject(new window.DmRequestError('boom', 503, null));
+                    }
+                    return original(url, options);
+                  };
+                }
+                """);
+
+        String beforeMapId = seeded.mapA().toString();
+        page.evaluate("(id) => window.Alpine.$data(document.querySelector('.session-cockpit'))"
+                + ".runEncounter(id).catch(() => {})", seeded.encounterA().toString());
+        page.waitForSelector("[data-runtime-module='map'] [data-module-retry]");
+
+        page.click("[data-runtime-module='map'] [data-module-retry]");
+        page.waitForFunction("(mapId) => window.battleMap.mapId === mapId", beforeMapId);
+        page.waitForSelector("#battleCanvasWrap canvas");
+
+        assertThat(page.evaluate("() => window.__navigations")).isEqualTo(0);
+        assertThat((Boolean) page.evaluate(
+                "() => document.getElementById('battleCanvasWrap')"
+                        + ".contains(window.battleMap.stage.container())"))
+                .isTrue();
+    }
 }
