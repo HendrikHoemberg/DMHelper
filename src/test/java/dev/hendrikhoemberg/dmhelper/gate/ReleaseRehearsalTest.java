@@ -209,6 +209,9 @@ class ReleaseRehearsalTest {
                     """, java.util.Map.of("campaignId", seeded.campaignId().toString(), "encounterName", encounterName));
             @SuppressWarnings("unchecked")
             List<String> mainCombatantIds = (List<String>) waveState.get("mainIds");
+            page.locator(".group-count").all().forEach(button -> {
+                try { button.click(); } catch (Exception ignored) { /* no groups to expand */ }
+            });
             Locator firstRow = page.locator(".combatant-row").first();
             defeatedCombatantName = firstRow.locator(".combatant-name").textContent()
                     .lines().findFirst().orElseThrow().trim();

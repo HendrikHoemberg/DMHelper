@@ -335,19 +335,24 @@
                 <div class="turn-marker" x-ref="turnMarker" aria-hidden="true"></div>
                 <template x-for="(c, idx) in combatants" :key="c.id">
                     <div class="combatant-row"
-                         :data-cid="c.id"
-                         :class="{ active: c.id === activeCombatantId, defeated: c.defeated, hidden: c.hidden, bloodied: c.bloodied }"
-                         x-show="!c.hidden"
+                          :data-cid="c.id"
+                          :class="{ active: c.id === activeCombatantId, defeated: c.defeated, hidden: c.hidden, bloodied: c.bloodied, 'group-hidden': c.defeated }"
+                          x-show="!c.hidden && showsInOrder(c)"
                          @click="selectCombatant(c.id)">
                         <!-- Initiative badge -->
                         <span class="init-badge" x-text="c.initiative ?? '—'"></span>
 
                         <!-- Name + group indicator -->
                         <span class="combatant-name">
-                            <template x-if="c.groupId && !c.groupLeader"><span class="group-branch">├ </span></template>
+                            <template x-if="c.groupId && !c.actsForGroup">
+                                <span class="group-branch">├ </span>
+                            </template>
                             <span x-text="c.name"></span>
-                            <template x-if="c.groupId && c.groupLeader">
-                                <span class="group-count" x-text="'(' + groupCount(c.groupId) + ')'"></span>
+                            <template x-if="c.groupId && c.actsForGroup">
+                                <button type="button" class="group-count"
+                                        :aria-expanded="isGroupExpanded(c.groupId)"
+                                        @click.stop="toggleGroup(c.groupId)"
+                                        x-text="'+' + (groupAliveCount(c.groupId) - 1) + ' more'"></button>
                             </template>
                         </span>
 
