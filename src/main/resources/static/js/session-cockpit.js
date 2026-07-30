@@ -552,10 +552,14 @@ function sessionCockpit(config) {
                     body: JSON.stringify(body),
                 });
             const result = await resp.json();
+            if (result.workspaceMapId && result.workspaceMapId !== this.currentMapId) {
+                this.currentMapId = result.workspaceMapId;
+            }
             if (window.battleMap) {
                 window.battleMap.setActiveEncounter(encounterId);
             }
-            this.refreshModules(['story', 'encounter'], 'encounter-activated');
+            this.refreshModules(['story', 'encounter', 'map'], 'encounter-activated');
+            window.cockpitModules?.load('map', { force: true, mapId: this.currentMapId }).catch(() => {});
             return result;
         },
 

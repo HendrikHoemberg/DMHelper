@@ -105,4 +105,34 @@ class CockpitModuleFitTest {
                 .as("the initiative panel and its controls stay inside the rail")
                 .isEqualTo("{overflow=0, inputInside=true, rollInside=true}");
     }
+
+    @Test
+    void activatingAnEncounterShowsItsMap() {
+        page.navigate("http://localhost:" + port + "/campaigns/" + seeded.campaignId());
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        page.locator("a[href$='/session'], button[data-run-session]").first().click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        page.waitForFunction("window.cockpitLayout?.mounted === true");
+        page.locator("button[x-ref='sessionButton']").click();
+        Locator lifecycle = page.locator("#sessionLifecycleDialog");
+        lifecycle.waitFor();
+        page.waitForResponse(response -> response.url().endsWith("/session/start") && response.status() == 200,
+                () -> lifecycle.locator("button").filter(new Locator.FilterOptions().setHasText("Start")).first().click());
+        page.waitForFunction("() => performance.getEntriesByType('navigation')[0]?.type === 'reload'");
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        page.waitForFunction("() => document.readyState === 'complete' && window.cockpitLayout?.mounted === true");
+        page.waitForFunction("() => document.querySelector('[data-session-status]')?.dataset.sessionStatus === 'RUNNING'");
+
+        page.evaluate("() => window.cockpitLayout.applyPreset('builtin:combat', { skipDirtyCheck: true })");
+        page.waitForFunction("() => document.querySelector('#cockpitPresetPicker')?.value === 'builtin:combat'");
+
+        page.locator(".planned-encounter-row button").first().click();
+        page.waitForSelector("[data-runtime-module='encounter'] [data-initiative-setup]");
+
+        page.waitForFunction(
+                "() => !document.querySelector(\"[data-runtime-module='map']\")?.innerText.includes('No map selected')");
+        assertThat(page.locator("[data-runtime-module='map']").innerText())
+                .as("the activated encounter's map is displayed")
+                .doesNotContain("No map selected");
+    }
 }
