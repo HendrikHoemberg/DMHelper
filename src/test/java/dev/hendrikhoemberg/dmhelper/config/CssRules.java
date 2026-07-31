@@ -23,6 +23,17 @@ final class CssRules {
 
     static final List<String> ALL_FILES = discoverCssFiles();
 
+    private static final Pattern RAW_COLOR = Pattern.compile(
+            "#[0-9a-fA-F]{3,8}\\b|\\brgba?\\([^)]*\\)|\\bhsla?\\([^)]*\\)");
+
+    /** Raw color literals in a CSS or markup source, in document order. */
+    static List<String> rawColorLiterals(String source) {
+        Matcher m = RAW_COLOR.matcher(source);
+        List<String> found = new ArrayList<>();
+        while (m.find()) found.add(m.group());
+        return found;
+    }
+
     static List<String> discoverCssFiles() {
         try (Stream<Path> files = Files.list(CSS_DIR)) {
             return files.map(path -> path.getFileName().toString())

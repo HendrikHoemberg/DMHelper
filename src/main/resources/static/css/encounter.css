@@ -108,3 +108,8 @@
 .unplaced-combatant.is-placed {
     opacity: 0.65;
 }
+
+.combatant-row--concentrating {
+    background: var(--state-concentration-surface);
+    border: 1px solid var(--state-concentration-border);
+}

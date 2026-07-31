@@ -221,7 +221,7 @@
   border-bottom: none;
 }
 .session-plan-module-inner .beat-current {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--neutral-hover-surface);
 }
 .session-plan-module-inner .beat-upcoming {
   opacity: 0.7;
@@ -371,12 +371,12 @@
   padding: var(--space-sm);
   border: 1px solid var(--color-danger);
   border-radius: 4px;
-  background: rgba(220, 53, 69, 0.05);
+  background: var(--state-danger-surface);
 }
 
 .presentation-emergency-override--armed {
   border-color: var(--color-danger);
-  background: rgba(220, 53, 69, 0.1);
+  background: var(--state-danger-surface);
 }
 
 .runtime-story .story-rail-inner {

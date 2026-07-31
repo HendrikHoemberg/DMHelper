@@ -313,11 +313,11 @@
 .editor-block { margin-bottom: var(--space-md); }
 
 .surface-danger-zone {
-    border: 1px solid var(--color-danger, #b3453e);
+    border: 1px solid var(--color-danger);
     border-radius: var(--radius-md);
     padding: var(--space-md);
 }
-.surface-danger-zone h2 { color: var(--color-danger, #b3453e); }
+.surface-danger-zone h2 { color: var(--color-danger); }
 
 .prep-summary__facts {
     display: grid;

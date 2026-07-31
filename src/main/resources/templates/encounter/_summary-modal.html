@@ -2,8 +2,8 @@
      x-data="endEncounterModal('')"
      @end-encounter.window="show(($event.detail && $event.detail.id) || '')">
     <template x-if="showModal">
-        <div class="modal-overlay" @click.self="showModal = false" style="position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:var(--z-modal);">
-            <div class="modal-content" style="background:var(--color-surface);padding:1.5rem;border-radius:8px;max-width:28rem;width:90%;">
+        <div class="modal-overlay" @click.self="showModal = false">
+            <div class="modal-content">
                 <h2>Encounter Complete</h2>
                 <div class="summary-stats">
                     <p><strong x-text="summary.name || 'Encounter'"></strong></p>

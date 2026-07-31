@@ -19,7 +19,7 @@ body::before {
   inset: 0;
   pointer-events: none;
   z-index: var(--z-ambient);
-  background: radial-gradient(ellipse at center, transparent 55%, rgba(8, 5, 2, var(--vignette-intensity)) 100%);
+  background: radial-gradient(ellipse at center, transparent 55%, color-mix(in srgb, var(--surface-canvas) calc(var(--vignette-intensity) * 100%), transparent) 100%);
   transition: background var(--duration-structural) var(--ease-out);
 }
 
@@ -64,8 +64,8 @@ h1, h2 {
 }
 
 ::selection {
-  background: rgba(201, 163, 92, 0.35);
-  color: #fff;
+  background: var(--selection-surface);
+  color: var(--text-primary);
 }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -370,7 +370,7 @@ body.loading #loading-filament {
   transition: opacity var(--duration-standard) var(--ease-out), visibility var(--duration-standard);
 }
 #shortcut-overlay.open { opacity: 1; pointer-events: auto; visibility: visible; }
-.shortcut-overlay-backdrop { position: absolute; inset: 0; background: rgba(10, 7, 4, 0.72); backdrop-filter: blur(4px); }
+.shortcut-overlay-backdrop { position: absolute; inset: 0; background: var(--scrim-standard); backdrop-filter: blur(4px); }
 .shortcut-panel {
   position: relative;
   background: var(--elevation-floating-bg);

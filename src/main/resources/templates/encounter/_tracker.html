@@ -525,7 +525,7 @@
                         </div>
                     </template>
                     <template x-if="selected?.concentrationCheckPending">
-                        <div class="conc-check" style="background: rgba(155, 89, 182, 0.15); padding: var(--space-xs); border-radius: 4px; margin-bottom: var(--space-xs);">
+                        <div class="conc-check combatant-row--concentrating" style="padding: var(--space-xs); border-radius: 4px; margin-bottom: var(--space-xs);">
                             <span class="tracker-concentration-check">Concentration check!</span>
                             <button class="btn tracker-small-button" style="padding: 1px 6px;" @click="resolveConcentrationCheck(selected.id, true)">Passed</button>
                             <button class="btn tracker-small-button" style="padding: 1px 6px;" @click="resolveConcentrationCheck(selected.id, false)">Failed</button>
