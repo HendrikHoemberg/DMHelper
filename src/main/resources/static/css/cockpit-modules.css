@@ -506,6 +506,13 @@
 .tracker-heading__name { margin-right: var(--space-sm); }
 .tracker-heading__round { white-space: nowrap; }
 
+/* The live tracker renders only inside the cockpit (encounter module), so the
+   concentration paint lives in this sheet, not in the setup-only encounter.css. */
+.combatant-row--concentrating {
+    background: var(--state-concentration-surface);
+    border: 1px solid var(--state-concentration-border);
+}
+
 /* Status badges are labels, not text that may reflow mid-word. */
 .session-plan-module-inner .quest-progress-item .badge {
   flex: 0 0 auto;
