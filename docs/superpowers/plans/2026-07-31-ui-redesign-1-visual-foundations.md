@@ -45,6 +45,16 @@ Every task's requirements implicitly include this section.
 - No database migration. View-only DTO or controller-model additions are permitted where a summary, state cluster, or relationship rail cannot be rendered safely from the existing view model; they must not change persisted semantics.
 - A stage is complete only when every page in its scope is fully migrated. A visibly hybrid page fails review.
 - Keep every existing controller, template, htmx, package, player-safety, encounter, map, cockpit, and accessibility test green. `./mvnw test` must pass at the end of this part.
+- **How tests may assert.** A test may assert on rendered output, parsed CSS rules, a Java
+  model, or measured browser geometry. A test may not assert that a template or stylesheet
+  *source file* contains a particular string, unless that string is a structural marker with
+  no visual or editorial meaning — a `th:fragment` signature, a `data-*` hook, a CSS selector
+  resolved through `CssRules`. Never slice source at a character offset (`indexOf` +
+  `substring`) and assert on the slice; parse it with Jsoup instead. A scan that can match
+  nothing must assert it matched something before asserting what it found.
+  `docs/test-suite-triage.md` records why: 27 test classes were deleted in July 2026 for
+  failing this rule, and one offset-slice guard was passing while a destructive control sat
+  in a page header.
 
 ## Shared task protocol
 
@@ -396,11 +406,13 @@ git commit -m "test: measure WCAG contrast instead of asserting it by eye"
 - Compatibility: every `--color-*` token currently defined stays defined, resolving through
   a semantic role.
 
-- [ ] **Step 1: Replace the palette assertions in `DesignTokenContractTest`**
+- [ ] **Step 1: Add the palette assertions to `DesignTokenContractTest`**
 
-Delete `semanticColorsKeepTheirValues()` (it asserts superseded brown values) and
-`warningWaveTitleContrastsWithItsWarningSurface()` (it couples a global token test to
-inline encounter markup). Add:
+Nothing needs deleting first. `semanticColorsKeepTheirValues()` and
+`warningWaveTitleContrastsWithItsWarningSurface()` were already removed by the test-suite
+triage (`docs/test-suite-triage.md`); the file now holds only
+`everyTokenReferencedByAStylesheetIsDefined()` and
+`everyTokenReferencedByATemplateIsDefined()`. Add:
 
 ```java
     private static String tokenValue(String name) {

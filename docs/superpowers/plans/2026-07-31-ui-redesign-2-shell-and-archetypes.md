@@ -55,6 +55,16 @@ Every task's requirements implicitly include this section.
 - No database migration. View-only DTO or controller-model additions are permitted where a summary, state cluster, or relationship rail cannot be rendered safely from the existing view model; they must not change persisted semantics.
 - A stage is complete only when every page in its scope is fully migrated. A visibly hybrid page fails review.
 - Keep every existing controller, template, htmx, package, player-safety, encounter, map, cockpit, and accessibility test green. `./mvnw test` must pass at the end of this part.
+- **How tests may assert.** A test may assert on rendered output, parsed CSS rules, a Java
+  model, or measured browser geometry. A test may not assert that a template or stylesheet
+  *source file* contains a particular string, unless that string is a structural marker with
+  no visual or editorial meaning — a `th:fragment` signature, a `data-*` hook, a CSS selector
+  resolved through `CssRules`. Never slice source at a character offset (`indexOf` +
+  `substring`) and assert on the slice; parse it with Jsoup instead. A scan that can match
+  nothing must assert it matched something before asserting what it found.
+  `docs/test-suite-triage.md` records why: 27 test classes were deleted in July 2026 for
+  failing this rule, and one offset-slice guard was passing while a destructive control sat
+  in a page header.
 
 ## Shared task protocol
 
@@ -139,7 +149,7 @@ Archetype classes `.page--index`, `.page--detail`, `.page--form`, `.page--operat
 
 ```html
 ~{fragments/head :: document-head(pageTitle='Encounters')}
-~{fragments/_shell :: page(pageTitle=…, archetype=…, header=~{::…}, content=~{::…}, rail=~{::…})}
+~{fragments/_shell :: page(pageTitle=…, archetype=…, surface=…, header=~{::…}, content=~{::…}, rail=~{::…})}
 ~{fragments/_topbar :: topbar}
 ~{fragments/_rail :: rail}
 ~{fragments/_page-header :: page-header(title=…, summary=…, breadcrumb=~{}, primary=~{}, secondary=~{})}
@@ -751,6 +761,7 @@ Two deliberate deviations from today's rail, both required by spec section 8.2:
 ```java
 package dev.hendrikhoemberg.dmhelper.config;
 
+import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
 import java.util.List;
@@ -762,44 +773,48 @@ class NavigationRailContractTest {
     private static final Path RAIL =
             Path.of("src/main/resources/templates/fragments/_rail.html");
 
-    @Test
-    void theCampaignRailUsesTheApprovedGroupsInOrder() {
-        String markup = TemplateRules.read(RAIL);
-        int campaign = markup.indexOf(">Campaign<");
-        int prepare = markup.indexOf(">Prepare<");
-        int partyWorld = markup.indexOf(">Party &amp; World<");
-        int records = markup.indexOf(">Records<");
-        int reference = markup.indexOf(">Reference<");
-        assertThat(List.of(campaign, prepare, partyWorld, records, reference))
-                .as("all five groups present").doesNotContain(-1);
-        assertThat(campaign).isLessThan(prepare);
-        assertThat(prepare).isLessThan(partyWorld);
-        assertThat(partyWorld).isLessThan(records);
-        assertThat(records).isLessThan(reference);
+    /**
+     * One rail branch, resolved through the tree rather than by slicing source at an offset.
+     * `data-rail-branch` exists purely so this test can name a branch; it carries no styling.
+     */
+    private static Element branch(String name) {
+        Element branch = TemplateRules.parse(RAIL).selectFirst("[data-rail-branch=" + name + "]");
+        assertThat(branch).as("the %s rail branch exists", name).isNotNull();
+        return branch;
     }
 
-    /** The campaign branch, i.e. everything before the global th:unless block. */
-    private static String campaignBranch() {
-        String markup = TemplateRules.read(RAIL);
-        int global = markup.indexOf("th:unless=\"${campaignId != null}\"");
-        assertThat(global).as("global branch exists").isNotNegative();
-        return markup.substring(0, global);
+    private static List<String> destinationsOf(String branchName) {
+        return branch(branchName).select("a.rail__link").stream()
+                .map(link -> link.attr("data-label"))
+                .toList();
+    }
+
+    @Test
+    void theCampaignRailUsesTheApprovedGroupsInOrder() {
+        List<String> groups = branch("campaign").select(".rail__group > .rail__label").stream()
+                .map(Element::text)
+                .toList();
+
+        assertThat(groups)
+                .as("spec 8.2: the five campaign groups, in order")
+                .containsExactly("Campaign", "Prepare", "Party & World", "Records", "Reference");
     }
 
     /**
      * Scoped to the campaign branch on purpose: Library, Tables, Traps, and Hazards are
      * deliberately reachable from both branches, so a whole-file count would always be 2.
+     *
+     * <p>`containsExactlyInAnyOrder` is deliberate — it fails both on a missing destination
+     * and on an unapproved extra one, which a per-label occurrence count cannot do.
      */
     @Test
     void everyApprovedDestinationIsPresentExactlyOnceInTheCampaignRail() {
-        String markup = campaignBranch();
-        for (String label : List.of("Campaign Home", "Run Session", "Adventures", "Encounters",
-                "Maps", "Handouts", "Audio", "Party", "Quests", "NPCs", "Locations", "Factions",
-                "Calendar", "Notes", "Treasury", "Ledger", "Library", "Tables", "Traps",
-                "Hazards")) {
-            assertThat(markup.split(">" + label + "<", -1).length - 1)
-                    .as("occurrences of %s in the campaign rail", label).isEqualTo(1);
-        }
+        assertThat(destinationsOf("campaign"))
+                .as("spec 8.2: the campaign rail's destinations, each exactly once")
+                .containsExactlyInAnyOrder("Campaign Home", "Run Session", "Adventures",
+                        "Encounters", "Maps", "Handouts", "Audio", "Party", "Quests", "NPCs",
+                        "Locations", "Factions", "Calendar", "Notes", "Treasury", "Ledger",
+                        "Library", "Tables", "Traps", "Hazards");
     }
 
     @Test
@@ -812,14 +827,10 @@ class NavigationRailContractTest {
 
     @Test
     void theGlobalRailDoesNotPretendToBeInsideACampaign() {
-        String markup = TemplateRules.read(RAIL);
-        int unlessIndex = markup.indexOf("th:unless=\"${campaignId != null}\"");
-        assertThat(unlessIndex).as("global branch exists").isNotNegative();
-        String global = markup.substring(unlessIndex);
-        for (String label : List.of("Campaigns", "Library", "Tables", "Traps", "Hazards", "About")) {
-            assertThat(global).as("global destination %s", label).contains(">" + label + "<");
-        }
-        assertThat(global).doesNotContain("Run Session").doesNotContain("Encounters");
+        assertThat(destinationsOf("global"))
+                .as("spec 8.3: the global rail offers only campaign-independent destinations")
+                .containsExactlyInAnyOrder("Campaigns", "Library", "Tables", "Traps", "Hazards",
+                        "About");
     }
 
     @Test
@@ -873,7 +884,7 @@ Expected: FAIL — the file does not exist.
         <th:block th:replace="~{common/_icon :: icon-sized(name='chevron-right', size='16')}"></th:block>
     </button>
 
-    <th:block th:if="${campaignId != null}">
+    <th:block th:if="${campaignId != null}" data-rail-branch="campaign">
         <div class="rail__group">
             <div class="rail__label">Campaign</div>
             <a class="rail__link" data-label="Campaign Home"
@@ -977,7 +988,7 @@ Expected: FAIL — the file does not exist.
         </div>
     </th:block>
 
-    <th:block th:unless="${campaignId != null}">
+    <th:block th:unless="${campaignId != null}" data-rail-branch="global">
         <div class="rail__group">
             <a class="rail__link" data-label="Campaigns" href="/campaigns">
                 <th:block th:replace="~{common/_icon :: icon(name='castle')}"></th:block>
@@ -1138,6 +1149,13 @@ git commit -m "feat: rebuild the navigation rail on the approved task groups"
 
 **Interfaces:**
 - Produces: `~{fragments/_page-header :: page-header(title, summary, breadcrumb, primary, secondary)}`.
+
+**This retires `page-header-actions`,** the ad-hoc class in 35 templates, in favour of
+`.page-header__actions` inside this fragment. One test depends on the old name:
+`SurfaceSeparationContractTest` scans `.page-header-actions` for `.btn-danger` to keep
+destructive controls out of read/run headers. It is a *selector* dependency, so it does not
+break loudly — it simply matches nothing and passes. Task 19 Step 4 re-points it at the
+`#page-header` slot and adds a non-vacuity guard; do not delete the old class before then.
 
 - [ ] **Step 1: Write the failing contract**
 
@@ -2120,7 +2138,7 @@ git commit -m "feat: add the overlay elevation model with focus trap and restore
 - Modify: `src/main/resources/static/css/base.css`
 
 **Interfaces:**
-- Produces: `~{fragments/_shell :: page(pageTitle, archetype, header, content, rail)}` and
+- Produces: `~{fragments/_shell :: page(pageTitle, archetype, surface, header, content, rail)}` and
   `~{fragments/head :: document-head(pageTitle)}`.
 - Consumes: `~{fragments/_topbar :: topbar}`, `~{fragments/_rail :: rail}`,
   `~{fragments/_page-header :: page-header}`, `~{fragments/_overlay :: toast-region}`.
@@ -2174,14 +2192,14 @@ existing `head` fragment alongside `document-head` until Task 19 Step 4 deletes 
 ```html
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
-      th:fragment="page(pageTitle, archetype, header, content, rail)">
+      th:fragment="page(pageTitle, archetype, surface, header, content, rail)">
 <head th:replace="~{fragments/head :: document-head(pageTitle=${pageTitle})}"></head>
 <body th:attr="data-archetype=${archetype}">
     <a class="skip-link" href="#main-content">Skip to content</a>
     <th:block th:replace="~{fragments/_topbar :: topbar}"></th:block>
     <div class="app-shell">
         <th:block th:replace="~{fragments/_rail :: rail}"></th:block>
-        <main class="app-main" id="main-content">
+        <main class="app-main" id="main-content" th:attr="data-surface=${surface}">
             <div th:class="'page page--' + ${archetype}">
                 <th:block th:replace="${header}"></th:block>
                 <th:block th:replace="${content}"></th:block>
@@ -2193,6 +2211,19 @@ existing `head` fragment alongside `document-head` until Task 19 Step 4 deletes 
 </body>
 </html>
 ```
+
+**Two classifications, deliberately kept apart.** `archetype` is a *layout* decision — it
+selects `.page--index|detail|form|editor|operational` and nothing else. `surface` is a
+*safety* decision from spec 2026-07-24 §D: `read`, `run`, `edit`, or `admin`. They do not
+map onto each other — `campaigns/settings.html` is `surface='admin'` but `archetype='form'`,
+and `session/cockpit.html` is `surface='run'` but `archetype='editor'`. `SurfaceModeContractTest`
+and `SurfaceSeparationContractTest` key off `data-surface`; dropping it during this migration
+would silently retire the guard that keeps destructive tooling out of pages a DM uses
+mid-session.
+
+Pages outside the governed set pass no surface at all. `th:attr` omits an attribute whose
+expression is null, so `surface=null` renders `<main class="app-main" id="main-content">`
+with no `data-surface` — which is what `about.html` and the other ungoverned pages want.
 
 - [ ] **Step 3: Add the skip link to `base.css`**
 
@@ -2220,6 +2251,7 @@ which is the pattern every later migration copies:
       th:replace="~{fragments/_shell :: page(
           pageTitle='About',
           archetype='detail',
+          surface=null,
           header=~{::#page-header},
           content=~{::#page-content},
           rail=~{})}">
@@ -2327,6 +2359,7 @@ Take `encounter/list.html` as the worked exemplar:
       th:replace="~{fragments/_shell :: page(
           pageTitle='Encounters',
           archetype='index',
+          surface=null,
           header=~{::#page-header},
           content=~{::#page-content},
           rail=~{})}">
@@ -2360,7 +2393,13 @@ Rules for every migration:
    secondary slot, an overflow popover, or a labelled danger region.
 5. Replace `common/_empty-state` icon arguments with icon names from the sprite.
 6. Leave htmx targets, ids, form names, and route references untouched.
-7. The three slot wrappers carry the classes the archetype grid keys off:
+7. If the template's old `<main>` carried `data-surface`, pass that exact value as the
+   shell's `surface` argument. The nine governed pages and their modes are
+   `campaigns/detail`=read, `campaigns/settings`=admin, `adventure/detail`=read,
+   `adventure/scene-detail`=read, `adventure/scene-structure`=edit, `encounter/detail`=read,
+   `encounter/setup`=edit, `party/list`=read, `session/cockpit`=run. Every other page passes
+   `surface=null`.
+8. The three slot wrappers carry the classes the archetype grid keys off:
    `<div id="page-header" class="page-header-slot">`,
    `<div id="page-content" class="page-content">`, and — Detail pages only —
    `<div id="page-rail" class="page-rail-slot">` passed as `rail=~{::#page-rail}`.
@@ -2386,8 +2425,136 @@ after each family and commit that family.
 
 For `maps/editor.html` and `session/cockpit.html`, use `archetype='editor'` and pass
 `header=~{}` and `rail=~{}` — those two own their own command bars, restructured in Part 4.
+The cockpit still passes `surface='run'`; the map editor passes `surface=null`.
 
-- [ ] **Step 4: Delete `navbar.html`**
+- [ ] **Step 4: Re-point the surface guards at the rendered page**
+
+`SurfaceModeContractTest` parses page templates off disk. After this migration the `<main>`
+element comes from `_shell.html`, so parsing `campaigns/detail.html` finds no `<main>` and no
+`data-surface`, and both of its tests fail. Replace the file wholesale:
+
+```java
+package dev.hendrikhoemberg.dmhelper.web;
+
+import dev.hendrikhoemberg.dmhelper.support.ReleaseRehearsalFixture;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+
+/**
+ * Spec 2026-07-22 section 9.1: every governed page states which of the four surface modes it
+ * serves. Asserted against the rendered response, because since Task 19 the {@code <main>}
+ * element comes from {@code fragments/_shell} and never appears in the page's own source.
+ */
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class SurfaceModeContractTest {
+
+    @Autowired MockMvc mvc;
+    @Autowired ReleaseRehearsalFixture fixture;
+
+    private ReleaseRehearsalFixture.Seeded seeded;
+
+    @BeforeAll
+    void seedOnce() throws Exception {
+        seeded = fixture.seed(ReleaseRehearsalFixture.Shape.BRANCHED_TWO_MAPS);
+    }
+
+    /** Governed route -> declared surface mode. */
+    private Map<String, String> governedSurfaces() {
+        String campaign = "/campaigns/" + seeded.campaignId();
+        String adventure = campaign + "/adventures/" + seeded.adventureId();
+        String scene = adventure + "/scenes/" + seeded.hostileSceneId();
+        String encounter = campaign + "/encounters/" + seeded.branchedEncounterId();
+
+        Map<String, String> map = new LinkedHashMap<>();
+        map.put(campaign, "read");
+        map.put(campaign + "/settings", "admin");
+        map.put(adventure, "read");
+        map.put(scene, "read");
+        map.put(scene + "/structure", "edit");
+        map.put(encounter, "read");
+        map.put(encounter + "/setup", "edit");
+        map.put(campaign + "/party", "read");
+        map.put(campaign + "/session", "run");
+        return map;
+    }
+
+    @Test
+    void everyGovernedPageDeclaresItsSurfaceOnTheMainElement() throws Exception {
+        for (Map.Entry<String, String> entry : governedSurfaces().entrySet()) {
+            String route = entry.getKey();
+            Document page = Jsoup.parse(mvc.perform(get(route)).andReturn()
+                    .getResponse().getContentAsString());
+
+            Elements declarations = page.select("[data-surface]");
+            assertThat(declarations)
+                    .as("%s must declare exactly one data-surface", route).hasSize(1);
+            assertThat(declarations.first().tagName())
+                    .as("%s must declare the surface on <main>", route).isEqualTo("main");
+            assertThat(declarations.first().attr("data-surface"))
+                    .as("%s declares the wrong surface mode", route).isEqualTo(entry.getValue());
+        }
+    }
+}
+```
+
+Then fix `SurfaceSeparationContractTest`, whose header scan selects `.page-header-actions` —
+a class this migration retires. Left alone it would select nothing and pass vacuously, which
+is worse than failing: that test is the one that caught a real `btn-danger` in a page header.
+Replace `readAndRunSurfacesCarryNoDestructiveActionInTheirHeader` with a version that scans
+the header slot and refuses to pass on an empty scan:
+
+```java
+    @Test
+    void readAndRunSurfacesCarryNoDestructiveActionInTheirHeader() throws IOException {
+        List<String> offenders = new ArrayList<>();
+        int scanned = 0;
+
+        for (String page : readRunSurfaces().keySet()) {
+            for (Element header : parse(page).select("#page-header, .page-header-slot")) {
+                scanned++;
+                for (Element danger : header.select(".btn-danger")) {
+                    offenders.add(page + " -> " + danger.cssSelector());
+                }
+            }
+        }
+
+        assertThat(scanned)
+                .as("no header slot was found on any read/run surface — this test has gone blind")
+                .isGreaterThanOrEqualTo(4);
+        assertThat(offenders)
+                .as("a destructive control in a read/run page header is one misclick from data loss")
+                .isEmpty();
+    }
+```
+
+- [ ] **Step 5: Run both guards against the migrated pages**
+
+```bash
+./mvnw -Dtest='SurfaceModeContractTest,SurfaceSeparationContractTest' test
+```
+
+Expected: PASS. A failure naming a route that declares no `data-surface` means that page was
+migrated without carrying its surface across — fix the call site, not the test.
+
+- [ ] **Step 6: Delete `navbar.html`**
 
 ```bash
 git rm src/main/resources/templates/fragments/navbar.html
@@ -2396,7 +2563,7 @@ git rm src/main/resources/templates/fragments/navbar.html
 Then remove the now-unused `head` fragment from `fragments/head.html`, leaving only
 `document-head(pageTitle)`.
 
-- [ ] **Step 5: Write the Stage 2 render gate**
+- [ ] **Step 7: Write the Stage 2 render gate**
 
 ```java
 package dev.hendrikhoemberg.dmhelper.gate;
@@ -2531,7 +2698,7 @@ class ShellRenderGateTest {
 }
 ```
 
-- [ ] **Step 6: Run the Stage 2 gate**
+- [ ] **Step 8: Run the Stage 2 gate**
 
 ```bash
 ./mvnw -Dtest='AppShellContractTest,PageArchetypeContractTest,PageHeaderContractTest,NavigationRailContractTest,TopBarContractTest,SharedComponentContractTest,AsyncStateContractTest,OverlayContractTest,OverlayBehaviorGateTest,ShellRenderGateTest' test
@@ -2540,13 +2707,13 @@ class ShellRenderGateTest {
 
 Expected: PASS.
 
-- [ ] **Step 7: Review the stage screenshots**
+- [ ] **Step 9: Review the stage screenshots**
 
 Re-run `VisualFoundationRenderGateTest` and compare `target/ui-redesign/visual-foundations/`
 against the Stage 1 set. Every page must now show one top bar, one grouped rail, one header,
 and one primary action. Content is still unrestructured — that is Stages 3–5.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add -A

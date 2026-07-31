@@ -66,6 +66,16 @@ Every task's requirements implicitly include this section.
 - No database migration. View-only DTO or controller-model additions are permitted where a summary, state cluster, or relationship rail cannot be rendered safely from the existing view model; they must not change persisted semantics.
 - A stage is complete only when every page in its scope is fully migrated. A visibly hybrid page fails review.
 - Keep every existing controller, template, htmx, package, player-safety, encounter, map, cockpit, and accessibility test green. `./mvnw test` must pass at the end of every stage.
+- **How tests may assert.** A test may assert on rendered output, parsed CSS rules, a Java
+  model, or measured browser geometry. A test may not assert that a template or stylesheet
+  *source file* contains a particular string, unless that string is a structural marker with
+  no visual or editorial meaning — a `th:fragment` signature, a `data-*` hook, a CSS selector
+  resolved through `CssRules`. Never slice source at a character offset (`indexOf` +
+  `substring`) and assert on the slice; parse it with Jsoup instead. A scan that can match
+  nothing must assert it matched something before asserting what it found.
+  `docs/test-suite-triage.md` records why: 27 test classes were deleted in July 2026 for
+  failing this rule, and one offset-slice guard was passing while a destructive control sat
+  in a page header.
 
 ## Shared task protocol
 
@@ -1156,6 +1166,8 @@ import org.jsoup.parser.Parser;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -1186,12 +1198,24 @@ class PresentationSurfaceTest {
                 .doesNotContain("_page-header ::").doesNotContain("_toolbar ::");
     }
 
+    /**
+     * The declaration block of one selector, bounded by its own braces. Slicing from
+     * `indexOf(selector)` to end-of-file would happily satisfy these assertions from some
+     * unrelated rule declared further down the stylesheet.
+     */
+    private static String ruleBody(String file, String selector) throws Exception {
+        String css = Files.readString(Path.of("src/main/resources/static/css").resolve(file));
+        Matcher matcher = Pattern.compile(Pattern.quote(selector) + "\\s*\\{([^}]*)\\}")
+                .matcher(css);
+        assertThat(matcher.find()).as("%s defines %s", file, selector).isTrue();
+        return matcher.group(1);
+    }
+
     @Test
     void thePresentedAssetReceivesTheViewportRatherThanACard() throws Exception {
-        String css = Files.readString(Path.of("src/main/resources/static/css/components.css"));
-        var rule = css.substring(css.indexOf(".handout-overlay"));
-        assertThat(rule).contains("position: fixed").contains("inset: 0");
-        assertThat(rule).doesNotContain("var(--surface-raised)");
+        String overlay = ruleBody("components.css", ".handout-overlay");
+        assertThat(overlay).contains("position: fixed").contains("inset: 0");
+        assertThat(overlay).doesNotContain("var(--surface-raised)");
     }
 
     @Test
@@ -1246,6 +1270,8 @@ git commit -m "feat: give the presentation surface a clean canvas and explicit s
 ```java
 package dev.hendrikhoemberg.dmhelper.campaign.web;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1263,17 +1289,20 @@ class AdministrationContractTest {
         return Files.readString(Path.of("src/main/resources/templates").resolve(template));
     }
 
+    private static Document parse(String template) throws Exception {
+        return Jsoup.parse(read(template));
+    }
+
     @Test
     void importPreviewRanksErrorsWarningsContentsAndReadiness() throws Exception {
-        String dialog = read("campaigns/_import-dialog.html");
-        int errors = dialog.indexOf("data-import-section=\"errors\"");
-        int warnings = dialog.indexOf("data-import-section=\"warnings\"");
-        int contents = dialog.indexOf("data-import-section=\"contents\"");
-        int readiness = dialog.indexOf("data-import-section=\"readiness\"");
-        assertThat(List.of(errors, warnings, contents, readiness)).doesNotContain(-1);
-        assertThat(errors).isLessThan(warnings);
-        assertThat(warnings).isLessThan(contents);
-        assertThat(contents).isLessThan(readiness);
+        List<String> sections = parse("campaigns/_import-dialog.html")
+                .select("[data-import-section]").stream()
+                .map(section -> section.attr("data-import-section"))
+                .toList();
+
+        assertThat(sections)
+                .as("an import preview must lead with what blocks the import")
+                .containsExactly("errors", "warnings", "contents", "readiness");
     }
 
     @Test

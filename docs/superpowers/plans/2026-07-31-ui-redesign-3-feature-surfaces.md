@@ -53,6 +53,16 @@ Every task's requirements implicitly include this section.
 - No database migration. View-only DTO or controller-model additions are permitted where a summary, state cluster, or relationship rail cannot be rendered safely from the existing view model; they must not change persisted semantics.
 - A stage is complete only when every page in its scope is fully migrated. A visibly hybrid page fails review.
 - Keep every existing controller, template, htmx, package, player-safety, encounter, map, cockpit, and accessibility test green. `./mvnw test` must pass at the end of every stage.
+- **How tests may assert.** A test may assert on rendered output, parsed CSS rules, a Java
+  model, or measured browser geometry. A test may not assert that a template or stylesheet
+  *source file* contains a particular string, unless that string is a structural marker with
+  no visual or editorial meaning — a `th:fragment` signature, a `data-*` hook, a CSS selector
+  resolved through `CssRules`. Never slice source at a character offset (`indexOf` +
+  `substring`) and assert on the slice; parse it with Jsoup instead. A scan that can match
+  nothing must assert it matched something before asserting what it found.
+  `docs/test-suite-triage.md` records why: 27 test classes were deleted in July 2026 for
+  failing this rule, and one offset-slice guard was passing while a destructive control sat
+  in a page header.
 
 ## Shared task protocol
 
@@ -113,7 +123,7 @@ parsed CSS rules, not template source, which is why it survives.
 Everything Parts 1 and 2 published. In particular:
 
 ```html
-~{fragments/_shell :: page(pageTitle=…, archetype=…, header=~{::#page-header},
+~{fragments/_shell :: page(pageTitle=…, archetype=…, surface=…, header=~{::#page-header},
                            content=~{::#page-content}, rail=~{::#page-rail})}
 ~{fragments/_page-header :: page-header(title, summary, breadcrumb, primary, secondary)}
 ~{fragments/_toolbar :: toolbar(action, searchValue, searchPlaceholder, filters, actions)}
@@ -217,6 +227,8 @@ human review of `target/ui-redesign/narrative/`.
 ```java
 package dev.hendrikhoemberg.dmhelper.campaign.web;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -230,27 +242,30 @@ class NarrativeSurfaceContractTest {
         return Files.readString(Path.of("src/main/resources/templates").resolve(template));
     }
 
+    private static Document parse(String template) throws Exception {
+        return Jsoup.parse(read(template));
+    }
+
     /** Spec 11.2 fixes this order; reading order is not something a screenshot proves. */
     @Test
     void campaignHomeSectionsAppearInTheApprovedOrder() throws Exception {
-        String markup = read("campaigns/detail.html");
-        List<String> ordered = List.of("current", "start", "readiness", "party",
-                "preparation", "plan", "admin");
-        int previous = -1;
-        for (String section : ordered) {
-            int index = markup.indexOf("data-home-section=\"" + section + "\"");
-            assertThat(index).as("section %s present", section).isNotNegative();
-            assertThat(index).as("section %s follows the previous one", section)
-                    .isGreaterThan(previous);
-            previous = index;
-        }
+        List<String> sections = parse("campaigns/detail.html").select("[data-home-section]")
+                .stream()
+                .map(section -> section.attr("data-home-section"))
+                .toList();
+
+        assertThat(sections)
+                .as("spec 11.2 fixes the reading order of the campaign home")
+                .containsExactly("current", "start", "readiness", "party",
+                        "preparation", "plan", "admin");
     }
 
     /** Spec 11.2: the repeated Run Session controls are the specific defect being fixed. */
     @Test
     void campaignHomeOffersExactlyOneStartOrResumeAction() throws Exception {
-        assertThat(read("campaigns/detail.html")
-                .split("data-action=\"start-session\"", -1).length - 1).isEqualTo(1);
+        assertThat(parse("campaigns/detail.html").select("[data-action=start-session]"))
+                .as("the duplicated Run Session control is the defect spec 11.2 fixes")
+                .hasSize(1);
     }
 
     /** Spec 11.7: graph mechanics are an implementation detail, never DM-facing copy. */
