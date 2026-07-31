@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * A deliberately small flat reader for the app stylesheets. The design-system contract
@@ -20,10 +21,45 @@ final class CssRules {
 
     static final Path CSS_DIR = Path.of("src/main/resources/static/css");
 
-    static final List<String> ALL_FILES = List.of(
-            "tokens.css", "base.css", "components.css", "book.css",
-            "cockpit.css", "cockpit-layout.css", "cockpit-modules.css",
-            "surfaces.css");
+    static final List<String> ALL_FILES = discoverCssFiles();
+
+    static List<String> discoverCssFiles() {
+        try (Stream<Path> files = Files.list(CSS_DIR)) {
+            return files.map(path -> path.getFileName().toString())
+                    .filter(name -> name.endsWith(".css"))
+                    .sorted()
+                    .toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /** Every application stylesheet except the token layer, concatenated. */
+    static String allApplicationCss() {
+        return ALL_FILES.stream()
+                .filter(file -> !file.equals("tokens.css"))
+                .map(CssRules::read)
+                .collect(java.util.stream.Collectors.joining("\n"));
+    }
+
+    /** Every Thymeleaf template, concatenated, for inline-style and markup rules. */
+    static String allTemplateMarkup() {
+        Path root = Path.of("src/main/resources/templates");
+        try (Stream<Path> files = Files.walk(root)) {
+            return files.filter(path -> path.toString().endsWith(".html"))
+                    .sorted()
+                    .map(path -> {
+                        try {
+                            return Files.readString(path);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    })
+                    .collect(java.util.stream.Collectors.joining("\n"));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 
     /** Stylesheets that paint the live table surfaces (spec section 10.1 "runtime"). */
     static final List<String> RUNTIME_FILES = List.of(
