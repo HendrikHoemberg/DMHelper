@@ -211,22 +211,22 @@
             <a th:href="@{/campaigns/{cid}/maps(cid=${campaignId})}" class="btn btn-ghost">&larr; Maps</a>
 
             <div class="tool-group" style="position: relative;">
-                <button class="tool-btn" :class="{ active: tool === 'brush' }" @click="setTool('brush')" title="Brush (B) — right-click to erase">🖌 Brush</button>
+                <button class="tool-btn" :class="{ active: tool === 'brush' }" @click="setTool('brush')" title="Brush (B) — right-click to erase"><svg th:replace="~{common/_icon :: icon-sized(name='brush', size='16')}"></svg> Brush</button>
                 <button class="tool-btn" :class="{ active: tool === 'fill-rect' }" @click="setTool('fill-rect')" title="Terrain Rect (T) — right-click to erase">▤ Terrain Rect</button>
-                <button class="tool-btn" :class="{ active: tool === 'bucket' }" @click="setTool('bucket')" title="Bucket (G) — right-click to erase">🪣 Bucket</button>
+                <button class="tool-btn" :class="{ active: tool === 'bucket' }" @click="setTool('bucket')" title="Bucket (G) — right-click to erase"><svg th:replace="~{common/_icon :: icon-sized(name='fill', size='16')}"></svg> Bucket</button>
                 <template x-for="t in terrains" :key="t.key">
                     <button class="terrain-swatch" :class="{ active: terrain === t.key, erase: t.key === '__erase__' }"
                             :style="t.fill ? ('background:' + t.fill) : ''"
                             :title="t.name" @click="terrain = t.key; applyTerrain()"></button>
                 </template>
-                <button class="tool-btn" @click="terrainPanelOpen = !terrainPanelOpen" title="Manage terrain palette">⚙</button>
+                <button class="tool-btn" @click="terrainPanelOpen = !terrainPanelOpen" title="Manage terrain palette"><svg th:replace="~{common/_icon :: icon-sized(name='settings', size='16')}"></svg></button>
                 <div class="terrain-panel" x-show="terrainPanelOpen" style="display: none;" @click.outside="terrainPanelOpen = false">
                     <div class="terrain-panel-list">
                         <template x-for="t in terrains.filter((x) => x.key !== '__erase__')" :key="t.key">
                             <div class="terrain-panel-row">
                                 <span class="terrain-swatch-sm" :style="t.fill ? ('background:' + t.fill) : ''"></span>
                                 <span style="flex: 1;" x-text="t.name"></span>
-                                <button class="btn btn-danger btn-xs action-row__destructive" x-show="t.custom" @click="deleteTerrain(t.key)" title="Delete this terrain">🗑</button>
+                                <button class="btn btn-danger btn-xs action-row__destructive" x-show="t.custom" @click="deleteTerrain(t.key)" title="Delete this terrain"><svg th:replace="~{common/_icon :: icon-sized(name='trash', size='16')}"></svg></button>
                             </div>
                         </template>
                     </div>
@@ -245,7 +245,7 @@
                 <button class="tool-btn" :class="{ active: tool === 'rect' }" @click="setTool('rect')" title="Rectangle (R)">▭ Rect</button>
                 <button class="tool-btn" :class="{ active: tool === 'circle' }" @click="setTool('circle')" title="Circle (C)">○ Circle</button>
                 <button class="tool-btn" :class="{ active: tool === 'line' }" @click="setTool('line')" title="Line (L)">╱ Line</button>
-                <button class="tool-btn" :class="{ active: tool === 'polygon' }" @click="setTool('polygon')" title="Polygon (P): click vertices, double-click or Enter to close, Esc to cancel">⬡ Polygon</button>
+                <button class="tool-btn" :class="{ active: tool === 'polygon' }" @click="setTool('polygon')" title="Polygon (P): click vertices, double-click or Enter to close, Esc to cancel"><svg th:replace="~{common/_icon :: icon-sized(name='polygon', size='16')}"></svg> Polygon</button>
                 <button class="tool-btn" :class="{ active: tool === 'select' }" @click="setTool('select')" title="Select (V): drag a box, Ctrl+C copy, Ctrl+V paste">▦ Select</button>
                 <button class="tool-btn" :class="{ active: snap }" @click="toggleSnap()" title="Snap shapes to grid (on) or place freely (off)">⌗ Snap</button>
             </div>
@@ -262,21 +262,21 @@
             </div>
 
             <div class="tool-group">
-                <button class="tool-btn" @click="$refs.imageInput.click()" title="Import a background reference image (PNG/JPG)">🖼 Import Image</button>
+                <button class="tool-btn" @click="$refs.imageInput.click()" title="Import a background reference image (PNG/JPG)">Import Image</button>
                 <input type="file" accept="image/*" x-ref="imageInput" style="display: none;" @change="importImage($event)">
                 <button class="tool-btn" @click="rotateImage(-90)" title="Rotate image 90° counter-clockwise">↺ Rotate CCW</button>
                 <button class="tool-btn" @click="rotateImage(90)" title="Rotate image 90° clockwise">↻ Rotate CW</button>
-                <button class="tool-btn" @click="startCrop()" title="Crop the background image">✂ Crop</button>
-                <button class="tool-btn" @click="startCalibration()" title="Calibrate grid to image">📐 Calibrate Grid</button>
+                <button class="tool-btn" @click="startCrop()" title="Crop the background image">Crop</button>
+                <button class="tool-btn" @click="startCalibration()" title="Calibrate grid to image">Calibrate Grid</button>
 
                 <label class="map-editor-control" style="display: flex; align-items: center; gap: 4px; padding: 0 4px; cursor: pointer;" title="Lock background image position/size">
-                    <input type="checkbox" x-model="imageLocked" @change="setImageLocked(imageLocked)"> 🔒 Lock
+                    <input type="checkbox" x-model="imageLocked" @change="setImageLocked(imageLocked)"> Lock
                 </label>
-                <button class="tool-btn" @click="exportPng()" title="Export the current map view as a PNG">⬇ Export PNG</button>
+                <button class="tool-btn" @click="exportPng()" title="Export the current map view as a PNG"><svg th:replace="~{common/_icon :: icon-sized(name='download', size='16')}"></svg> Export PNG</button>
             </div>
 
             <div class="tool-group" style="border-right: none; position: relative;">
-                <button class="tool-btn" @click="helpOpen = !helpOpen" title="Keyboard shortcuts">❓ Help</button>
+                <button class="tool-btn" @click="helpOpen = !helpOpen" title="Keyboard shortcuts"><svg th:replace="~{common/_icon :: icon-sized(name='help', size='16')}"></svg> Help</button>
                 <div class="shortcuts-panel" x-show="helpOpen" style="display: none;" @click.outside="helpOpen = false">
                     <h3>Keyboard Shortcuts</h3>
                     <dl>
@@ -313,17 +313,20 @@
                         <div class="layer-item" :class="{ active: activeLayer === l.id }">
                             <span class="layer-name" @click="setLayer(l.id)" x-text="l.name"></span>
                             <button class="btn btn-ghost btn-xs" @click="toggleVisible(l.id)"
-                                    :title="layers[l.id].visible ? 'Hide layer' : 'Show layer'"
-                                    x-text="layers[l.id].visible ? '👁' : '🚫'"></button>
+                                    :title="layers[l.id].visible ? 'Hide layer' : 'Show layer'">
+                                <svg x-cloak x-show="layers[l.id].visible" th:replace="~{common/_icon :: icon-sized(name='eye', size='16')}"></svg>
+                                <svg x-cloak x-show="!layers[l.id].visible" th:replace="~{common/_icon :: icon-sized(name='eye-off', size='16')}"></svg>
+                            </button>
                             <button class="btn btn-ghost btn-xs" @click="toggleLocked(l.id)"
                                     :title="layers[l.id].locked ? 'Unlock layer' : 'Lock layer'"
-                                    x-text="layers[l.id].locked ? '🔒' : '🔓'"></button>
+                                    x-text="layers[l.id].locked ? 'Locked' : 'Lock'"></button>
                             <label class="map-editor-layer-visibility" style="display: inline-flex; align-items: center; cursor: pointer;"
                                    :title="(layers[l.id].playerVisible === false ? 'Hidden from players' : 'Visible to players')">
                                 <input type="checkbox"
                                        :checked="layers[l.id].playerVisible !== false"
                                        @change="togglePlayerVisible(l.id)"
-                                       style="width: 12px; height: 12px; margin: 0;"> 👤
+                                       style="width: 12px; height: 12px; margin: 0;">
+                                <svg th:replace="~{common/_icon :: icon-sized(name='user', size='16')}"></svg>
                             </label>
                         </div>
                     </template>
@@ -497,7 +500,7 @@
 
         <div class="editor-statusbar">
             <span id="statusMessage">Ready</span>
-                <button class="btn btn-ghost map-editor-control" style="padding: 0 6px; display: none;" x-show="conflict" @click="downloadBackup()">⬇ Backup</button>
+                <button class="btn btn-ghost map-editor-control" style="padding: 0 6px; display: none;" x-show="conflict" @click="downloadBackup()"><svg th:replace="~{common/_icon :: icon-sized(name='download', size='16')}"></svg> Backup</button>
                 <span id="cursorInfo" style="color: var(--color-text-muted);"></span>
                 <span id="saveIndicator" class="save-indicator save-saved">Saved</span>
         </div>

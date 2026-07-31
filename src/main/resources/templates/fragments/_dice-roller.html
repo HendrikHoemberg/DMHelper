@@ -9,7 +9,7 @@
      @keydown.escape.window="open = false">
 
     <div class="dice-panel-header">
-        <span>&#x1F3B2; Dice Roller</span>
+        <span><svg th:replace="~{common/_icon :: icon-sized(name='dice', size='16')}"></svg> Dice Roller</span>
         <button class="btn btn-ghost dice-panel-close"
                 aria-label="Close dice roller"
                 @click="open = false">&times;</button>
@@ -27,7 +27,7 @@
                    :disabled="loading"
                    autofocus>
             <button class="btn btn-primary" @click="roll()" :disabled="loading || !expression">
-                <span class="die-icon" :class="{ tumbling: loading }">&#x2684;</span>
+                <span class="die-icon" :class="{ tumbling: loading }"><svg th:replace="~{common/_icon :: icon-sized(name='dice', size='16')}"></svg></span>
                 <span x-show="!loading">Roll</span>
                 <span x-show="loading">...</span>
             </button>

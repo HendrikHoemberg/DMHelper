@@ -29,7 +29,7 @@
                 <th:block th:if="${maps == null or maps.isEmpty()}">
                     <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
                         'No maps yet', 'New map', @{/campaigns/{id}/maps/new(id=${campaignId})},
-                        'Draw a battle map or import an image to run encounters on the grid.', '⌖')}"></th:block>
+                        'Draw a battle map or import an image to run encounters on the grid.', 'map')}"></th:block>
                 </th:block>
                 <th:block th:each="map : ${maps}">
                     <th:block th:replace="~{maps/_card :: card(map=${map}, campaignId=${campaignId})}"></th:block>

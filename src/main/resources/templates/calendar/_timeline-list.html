@@ -12,7 +12,7 @@
         <th:block th:replace="~{common/_empty-state :: empty-state-with-cta(
             message='No events on the timeline',
             description='Log festivals, deadlines, and things that happen while the party travels.',
-            icon='✦', cta=~{common/_form-cta :: swap-cta(
+            icon='calendar', cta=~{common/_form-cta :: swap-cta(
                 actionText='Add event',
                 actionUrl=@{/campaigns/{id}/calendar/events/new(id=${campaignId})},
                 target='#event-form-area')})}"></th:block>

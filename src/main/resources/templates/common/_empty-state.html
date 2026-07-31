@@ -15,8 +15,9 @@
 <!-- Takes the call to action as a fragment. Pages whose "add" route only serves an htmx
      fragment must pass ~{common/_form-cta :: swap-cta(...)} rather than a plain link. -->
 <div class="empty-state" th:fragment="empty-state-with-cta(message, description, icon, cta)">
-    <div th:if="${icon != null}" class="empty-state__icon" aria-hidden="true"
-         th:text="${icon}">✦</div>
+    <div th:if="${icon != null}" class="empty-state__icon" aria-hidden="true">
+        <svg th:replace="~{common/_icon :: icon-sized(name=${icon}, size='24')}"></svg>
+    </div>
     <p class="empty-state__title" th:text="${message}">No items yet.</p>
     <p th:if="${description != null}" class="empty-state__desc text-muted"
        th:text="${description}">A short explanation.</p>

@@ -52,7 +52,7 @@
             <div class="empty-state-host" th:if="${#lists.isEmpty(handouts)}">
                 <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
                     'No handouts yet', 'Upload handout', '#handout-upload',
-                    'Upload images or documents to reveal to players during a session.', '▧')}"></th:block>
+                    'Upload images or documents to reveal to players during a session.', 'scroll')}"></th:block>
             </div>
 
         </main>

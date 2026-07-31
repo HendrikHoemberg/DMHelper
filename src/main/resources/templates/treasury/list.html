@@ -72,7 +72,7 @@
                         <th:block th:replace="~{common/_empty-state :: empty-state-with-cta(
                             message='The party stash is empty',
                             description='Track coin, gems, and magic items the party is carrying.',
-                            icon='◇', cta=~{common/_form-cta :: swap-cta(
+                            icon='gem', cta=~{common/_form-cta :: swap-cta(
                                 actionText='Add item',
                                 actionUrl=@{/campaigns/{id}/treasury/new(id=${campaignId})},
                                 target='#treasury-form-area')})}"></th:block>

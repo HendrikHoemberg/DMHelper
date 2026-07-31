@@ -43,7 +43,7 @@
                 </th:block>
                 <th:block th:if="${trait['damageExpr'] != null}">
                     <button class="roll-btn" th:attr="data-roll=${trait.damageExpr}"
-                            type="button" th:title="Damage roll (${trait.damageExpr})">&#x1F3B2;</button>
+                            type="button" th:title="Damage roll (${trait.damageExpr})"><svg th:replace="~{common/_icon :: icon-sized(name='dice', size='16')}"></svg></button>
                 </th:block>
             </div>
             <div class="sb-ability-text" th:text="${trait.description}">Description.</div>
@@ -61,7 +61,7 @@
                 </th:block>
                 <th:block th:if="${action['damageExpr'] != null}">
                     <button class="roll-btn" th:attr="data-roll=${action.damageExpr}"
-                            type="button" th:title="Damage roll (${action.damageExpr})">&#x1F3B2;</button>
+                            type="button" th:title="Damage roll (${action.damageExpr})"><svg th:replace="~{common/_icon :: icon-sized(name='dice', size='16')}"></svg></button>
                 </th:block>
             </div>
             <div class="sb-ability-text" th:text="${action.description}">Description.</div>
@@ -79,7 +79,7 @@
                 </th:block>
                 <th:block th:if="${ba['damageExpr'] != null}">
                     <button class="roll-btn" th:attr="data-roll=${ba.damageExpr}"
-                            type="button" th:title="Damage roll (${ba.damageExpr})">&#x1F3B2;</button>
+                            type="button" th:title="Damage roll (${ba.damageExpr})"><svg th:replace="~{common/_icon :: icon-sized(name='dice', size='16')}"></svg></button>
                 </th:block>
             </div>
             <div class="sb-ability-text" th:text="${ba.description}"></div>
@@ -97,7 +97,7 @@
                 </th:block>
                 <th:block th:if="${r['damageExpr'] != null}">
                     <button class="roll-btn" th:attr="data-roll=${r.damageExpr}"
-                            type="button" th:title="Damage roll (${r.damageExpr})">&#x1F3B2;</button>
+                            type="button" th:title="Damage roll (${r.damageExpr})"><svg th:replace="~{common/_icon :: icon-sized(name='dice', size='16')}"></svg></button>
                 </th:block>
             </div>
             <div class="sb-ability-text" th:text="${r.description}"></div>
@@ -116,7 +116,7 @@
                 </th:block>
                 <th:block th:if="${la['damageExpr'] != null}">
                     <button class="roll-btn" th:attr="data-roll=${la.damageExpr}"
-                            type="button" th:title="Damage roll (${la.damageExpr})">&#x1F3B2;</button>
+                            type="button" th:title="Damage roll (${la.damageExpr})"><svg th:replace="~{common/_icon :: icon-sized(name='dice', size='16')}"></svg></button>
                 </th:block>
             </div>
             <div class="sb-ability-text" th:text="${la.description}"></div>
@@ -134,7 +134,7 @@
                 </th:block>
                 <th:block th:if="${la['damageExpr'] != null}">
                     <button class="roll-btn" th:attr="data-roll=${la.damageExpr}"
-                            type="button" th:title="Damage roll (${la.damageExpr})">&#x1F3B2;</button>
+                            type="button" th:title="Damage roll (${la.damageExpr})"><svg th:replace="~{common/_icon :: icon-sized(name='dice', size='16')}"></svg></button>
                 </th:block>
             </div>
             <div class="sb-ability-text" th:text="${la.description}"></div>

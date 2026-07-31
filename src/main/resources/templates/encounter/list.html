@@ -30,7 +30,7 @@
                     <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
                         'No encounters yet', 'New encounter',
                         @{/campaigns/{id}/encounters/new(id=${campaignId})},
-                        'Build one ahead of the session so initiative is one click away.', '⚔')}"></th:block>
+                        'Build one ahead of the session so initiative is one click away.', 'swords')}"></th:block>
                 </th:block>
                 <th:block th:each="e : ${encounters}">
                     <th:block th:replace="~{encounter/_card :: card(

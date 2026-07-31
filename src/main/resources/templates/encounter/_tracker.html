@@ -314,7 +314,7 @@
             <div class="recharge-banner" x-show="rechargePrompts.length > 0">
                 <template x-for="prompt in rechargePrompts" :key="prompt.abilityName">
                     <div class="recharge-prompt">
-                        <span>🔄 <strong x-text="prompt.abilityName"></strong></span>
+                        <span><svg th:replace="~{common/_icon :: icon-sized(name='redo', size='16')}"></svg> <strong x-text="prompt.abilityName"></strong></span>
                         <button class="btn" @click="resolveRecharge(activeCombatantId, prompt.abilityName, Math.floor(Math.random() * (prompt.maxRoll || 6)) + 1)">Roll d<span x-text="prompt.maxRoll || 6"></span></button>
                         <button class="btn" @click="resolveRecharge(activeCombatantId, prompt.abilityName, null)">Skip</button>
                     </div>
@@ -427,7 +427,7 @@
                     <span class="init-badge lair-init">20</span>
                     <span class="combatant-name" x-text="encounter?.lairActionName || 'Lair Action'"></span>
                     <span class="tracker-lair-status" style="color: var(--color-text-muted); margin-left: auto;"
-                          x-show="!encounter?.lairActionAvailable">✓ this round</span>
+                          x-show="!encounter?.lairActionAvailable"><svg th:replace="~{common/_icon :: icon-sized(name='check', size='16')}"></svg> this round</span>
                     <button class="btn btn-ghost tracker-small-button" style="padding: 1px 6px;"
                             x-show="encounter?.lairActionAvailable"
                             @click="activateLairAction()">Activate</button>

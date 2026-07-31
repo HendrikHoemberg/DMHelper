@@ -17,7 +17,7 @@
             <th:block th:replace="~{common/_empty-state :: empty-state-with-cta(
                 message='No heroes yet',
                 description='Add the player characters so combat, passive senses, and difficulty math work.',
-                icon='♜', cta=~{common/_form-cta :: swap-cta(
+                icon='users', cta=~{common/_form-cta :: swap-cta(
                     actionText='Add member',
                     actionUrl=@{/campaigns/{cid}/party/new(cid=${campaignId})},
                     target='#party-form-modal')})}"></th:block>

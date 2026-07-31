@@ -75,13 +75,13 @@
              th:text="${s.title}">Scene Title</a>
           <span class="scene-row__affordances">
             <span th:if="${!#lists.isEmpty(s.sections.?[kind.name() == 'READ_ALOUD'])}"
-                  class="affordance" data-affordance="read-aloud" title="Has read-aloud text">&#x1F4D6;</span>
+                  class="affordance" data-affordance="read-aloud" title="Has read-aloud text"><svg th:replace="~{common/_icon :: icon-sized(name='book', size='16')}"></svg></span>
             <span th:if="${!#lists.isEmpty(s.participants)}"
-                  class="affordance" data-affordance="participants" title="Has combat participants">&#x2694;</span>
+                  class="affordance" data-affordance="participants" title="Has combat participants"><svg th:replace="~{common/_icon :: icon-sized(name='swords', size='16')}"></svg></span>
             <span th:if="${!#lists.isEmpty(s.sections.?[kind.name() == 'TRAP' or kind.name() == 'HAZARD'])}"
-                  class="affordance" data-affordance="threats" title="Has a trap or hazard">&#x26A0;</span>
+                  class="affordance" data-affordance="threats" title="Has a trap or hazard"><svg th:replace="~{common/_icon :: icon-sized(name='alert-triangle', size='16')}"></svg></span>
             <span th:if="${!#lists.isEmpty(s.checks)}"
-                  class="affordance" data-affordance="checks" title="Has ability checks">&#x1F3B2;</span>
+                  class="affordance" data-affordance="checks" title="Has ability checks"><svg th:replace="~{common/_icon :: icon-sized(name='dice', size='16')}"></svg></span>
             <span th:if="${!#lists.isEmpty(s.transitions)}"
                   class="affordance" data-affordance="transitions"
                   th:title="|${#lists.size(s.transitions)} outgoing transitions|">&#x2192;</span>

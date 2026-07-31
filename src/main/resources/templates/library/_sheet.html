@@ -11,7 +11,9 @@
         <a th:if="${sb.source.name() == 'CUSTOM'}" class="btn btn-ghost"
            th:href="@{/library/statblocks/{id}/edit(id=${sb.id})}">Edit</a>
         <a class="btn btn-ghost" th:href="@{/library/statblocks/{id}(id=${sb.id})}">Open full page</a>
-        <button type="button" class="btn btn-ghost" data-sheet-close aria-label="Close statblock">&#x2715;</button>
+        <button type="button" class="btn btn-ghost" data-sheet-close aria-label="Close statblock">
+            <svg th:replace="~{common/_icon :: icon-sized(name='close', size='16')}"></svg>
+        </button>
     </div>
 
     <th:block th:replace="~{library/_statblock-renderer :: renderer(sb=${sb})}"></th:block>
