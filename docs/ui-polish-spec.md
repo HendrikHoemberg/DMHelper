@@ -1,5 +1,9 @@
 # DMHelper — UI/UX Polish Specification
 
+> **Superseded:** The whole-product redesign in
+> `docs/superpowers/specs/2026-07-31-whole-product-ui-redesign-design.md`
+> replaces this draft, including its existing-palette and desktop-adaptability constraints.
+
 **Status:** Draft
 **Author:** UX review (2026-07-15)
 **Scope:** Visual and interaction polish on the existing DM-facing web app. No new
