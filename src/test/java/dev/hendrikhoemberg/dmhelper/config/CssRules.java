@@ -139,6 +139,14 @@ final class CssRules {
         return tokens;
     }
 
+    /** How many times a token is referenced across app CSS and template markup. */
+    static long tokenReferenceCount(String token) {
+        String haystack = allApplicationCss() + "\n" + allTemplateMarkup();
+        Matcher m = Pattern.compile("var\\(\\s*" + Pattern.quote(token) + "\\s*[,)]")
+                .matcher(haystack);
+        return m.results().count();
+    }
+
     private static void collect(String file, String css, List<Rule> out) {
         int i = 0;
         while (i < css.length()) {
