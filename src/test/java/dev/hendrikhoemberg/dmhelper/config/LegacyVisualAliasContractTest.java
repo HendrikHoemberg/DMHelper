@@ -43,6 +43,15 @@ class LegacyVisualAliasContractTest {
         BUDGETS.put("--color-border-subtle", 1L);
         BUDGETS.put("--color-bg-elevated", 2L);
         BUDGETS.put("--color-surface-muted", 2L);
+        BUDGETS.put("--color-hp-bar", 1L);
+        BUDGETS.put("--color-hp-bloodied", 2L);
+        BUDGETS.put("--color-hp-dead", 2L);
+        BUDGETS.put("--color-condition-active", 0L);
+        BUDGETS.put("--color-legendary", 0L);
+        BUDGETS.put("--color-tracker-bg", 1L);
+        BUDGETS.put("--color-combatant-active", 1L);
+        BUDGETS.put("--color-combatant-hover", 2L);
+        BUDGETS.put("--color-initiative-badge", 1L);
     }
 
     @Test
@@ -54,9 +63,9 @@ class LegacyVisualAliasContractTest {
 
     @Test
     void noAliasOutsideTheApprovedVocabularyIsIntroduced() {
-        String tokens = CssRules.read("tokens.css");
+        String declaredSource = CssRules.read("tokens.css") + "\n" + CssRules.allApplicationCss();
         var declared = java.util.regex.Pattern.compile("(--color-[a-z0-9-]+)\\s*:")
-                .matcher(tokens).results()
+                .matcher(declaredSource).results()
                 .map(r -> r.group(1))
                 .collect(java.util.stream.Collectors.toSet());
         assertThat(declared)
