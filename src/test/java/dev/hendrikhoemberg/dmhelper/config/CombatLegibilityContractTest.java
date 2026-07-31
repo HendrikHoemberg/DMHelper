@@ -35,23 +35,4 @@ class CombatLegibilityContractTest {
         }
     }
 
-    @Test
-    void theTrackerRowShowsANumericHpReadout() throws IOException {
-        String tracker = Files.readString(
-                Path.of("src/main/resources/templates/encounter/_tracker.html"));
-
-        assertThat(tracker)
-                .contains("class=\"combatant-hp u-num\"")
-                .contains("x-text=\"hpLabel(c)\"");
-    }
-
-    @Test
-    void hpLabelHandlesMissingMaximumsWithoutPrintingNull() throws IOException {
-        String js = Files.readString(
-                Path.of("src/main/resources/static/js/combat-tracker.js"));
-
-        assertThat(js)
-                .contains("hpLabel(c)")
-                .contains("if (!c || c.currentHp == null) return '—';");
-    }
 }

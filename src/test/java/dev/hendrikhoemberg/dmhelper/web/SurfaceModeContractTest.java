@@ -1,5 +1,9 @@
 package dev.hendrikhoemberg.dmhelper.web;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -13,7 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Spec 2026-07-22 section 9.1: every governed page states which of the four surface modes
  * it serves. The declaration is what the separation guard later keys off, so it has to be
- * present, unique and spelled correctly.
+ * present, unique and on the page root.
+ *
+ * <p>Asserted against the parsed document tree, not against source offsets: "the attribute
+ * is on the main element" is a structural question, and answering it by measuring character
+ * distance from `<main` breaks the moment another attribute is added.
  */
 class SurfaceModeContractTest {
 
@@ -37,36 +45,31 @@ class SurfaceModeContractTest {
     @Test
     void everyGovernedPageDeclaresExactlyOneSurfaceMode() throws IOException {
         for (Map.Entry<String, String> entry : governedSurfaces().entrySet()) {
-            String html = Files.readString(TEMPLATES.resolve(entry.getKey()));
-            assertThat(occurrences(html, "data-surface=\""))
+            Elements declarations = parse(entry.getKey()).select("[data-surface]");
+
+            assertThat(declarations)
                     .as("%s must declare exactly one data-surface", entry.getKey())
-                    .isEqualTo(1);
-            assertThat(html)
-                    .as("%s must declare data-surface=\"%s\"", entry.getKey(), entry.getValue())
-                    .contains("data-surface=\"" + entry.getValue() + "\"");
+                    .hasSize(1);
+            assertThat(declarations.first().attr("data-surface"))
+                    .as("%s declares the wrong surface mode", entry.getKey())
+                    .isEqualTo(entry.getValue());
         }
     }
 
     @Test
     void theDeclarationSitsOnTheRootMainElement() throws IOException {
         for (String template : governedSurfaces().keySet()) {
-            String html = Files.readString(TEMPLATES.resolve(template));
-            int mainAt = html.indexOf("<main");
-            int surfaceAt = html.indexOf("data-surface=\"");
-            assertThat(mainAt).as("%s must have a <main> element", template).isGreaterThan(-1);
-            assertThat(surfaceAt)
-                    .as("%s must declare the surface on its <main>, not deeper in the page", template)
-                    .isBetween(mainAt, mainAt + 200);
+            Element main = parse(template).selectFirst("main");
+
+            assertThat(main).as("%s must have a <main> element", template).isNotNull();
+            assertThat(main.hasAttr("data-surface"))
+                    .as("%s must declare the surface on its <main>, not deeper in the page",
+                            template)
+                    .isTrue();
         }
     }
 
-    static int occurrences(String haystack, String needle) {
-        int count = 0;
-        int idx = 0;
-        while ((idx = haystack.indexOf(needle, idx)) != -1) {
-            count++;
-            idx += needle.length();
-        }
-        return count;
+    private static Document parse(String template) throws IOException {
+        return Jsoup.parse(Files.readString(TEMPLATES.resolve(template)));
     }
 }

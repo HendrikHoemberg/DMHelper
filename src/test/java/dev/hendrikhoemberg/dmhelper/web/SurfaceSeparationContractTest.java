@@ -1,19 +1,29 @@
 package dev.hendrikhoemberg.dmhelper.web;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Spec 2026-07-24 §D: read/run surfaces must never embed edit/admin tooling.
- * Each read/run page template and its owned fragments are scanned for
- * forbidden patterns that belong only on edit/admin surfaces.
+ * Spec 2026-07-24 §D: read/run surfaces must never embed edit/admin tooling. A destructive
+ * or administrative control reachable from a surface a DM uses mid-session is a safety
+ * failure, not a styling one.
+ *
+ * <p>The forbidden-pattern scans below look for the <em>absence</em> of a bug pattern across
+ * a whole file, which a substring scan answers correctly. The structural questions — "is
+ * there a danger button inside the page header?", "does this page link to its editor?" —
+ * are answered against the parsed tree, because slicing source at the first {@code </div>}
+ * silently inspects a fragment of what it claims to.
  */
 class SurfaceSeparationContractTest {
 
@@ -40,15 +50,21 @@ class SurfaceSeparationContractTest {
         );
     }
 
+    /** Read/run page → an edit or admin destination it must remain able to reach. */
+    static Map<String, String> requiredDestinations() {
+        return Map.of(
+                "campaigns/detail.html", "/settings",
+                "adventure/_scene-rail.html", "/structure",
+                "encounter/detail.html", "/setup");
+    }
+
     @Test
     void readAndRunSurfacesEmbedNoEditOrAdminTooling() throws IOException {
         for (var entry : readRunSurfaces().entrySet()) {
-            String pageHtml = Files.readString(TEMPLATES.resolve(entry.getKey()));
-            assertNoForbidden(pageHtml, entry.getKey());
+            assertNoForbidden(read(entry.getKey()), entry.getKey());
 
             for (String fragment : entry.getValue()) {
-                String fragmentHtml = Files.readString(TEMPLATES.resolve(fragment));
-                assertNoForbidden(fragmentHtml, fragment);
+                assertNoForbidden(read(fragment), fragment);
             }
         }
     }
@@ -63,18 +79,19 @@ class SurfaceSeparationContractTest {
 
     @Test
     void readAndRunSurfacesCarryNoDestructiveActionInTheirHeader() throws IOException {
-        for (String page : readRunSurfaces().keySet()) {
-            String html = Files.readString(TEMPLATES.resolve(page));
-            // Extract content between page-header class="page-header-actions"
-            int headerStart = html.indexOf("page-header-actions");
-            if (headerStart == -1) continue; // surfaces without a page-header-actions are fine
-            int sectionEnd = html.indexOf("</div>", headerStart);
-            String actionsSection = html.substring(headerStart, sectionEnd);
+        List<String> offenders = new ArrayList<>();
 
-            assertThat(actionsSection)
-                    .as("%s page-header-actions must not contain btn-danger", page)
-                    .doesNotContain("btn-danger");
+        for (String page : readRunSurfaces().keySet()) {
+            for (Element header : parse(page).select(".page-header-actions")) {
+                for (Element danger : header.select(".btn-danger")) {
+                    offenders.add(page + " → " + danger.cssSelector());
+                }
+            }
         }
+
+        assertThat(offenders)
+                .as("a destructive control in a read/run page header is one misclick from data loss")
+                .isEmpty();
     }
 
     @Test
@@ -101,22 +118,26 @@ class SurfaceSeparationContractTest {
 
     @Test
     void everyEditAndAdminSurfaceIsReachableFromItsReadSurface() throws IOException {
-        // campaign/detail.html contains /settings
-        String campaignDetail = Files.readString(TEMPLATES.resolve("campaigns/detail.html"));
-        assertThat(campaignDetail)
-                .as("campaigns/detail.html must link to campaign settings")
-                .contains("/settings");
+        for (var entry : requiredDestinations().entrySet()) {
+            String page = entry.getKey();
+            String destination = entry.getValue();
 
-        // adventure/_scene-rail.html contains /structure
-        String sceneRail = Files.readString(TEMPLATES.resolve("adventure/_scene-rail.html"));
-        assertThat(sceneRail)
-                .as("adventure/_scene-rail.html must link to scene structure")
-                .contains("/structure");
+            boolean reachable = parse(page).select("a").stream()
+                    .anyMatch(link -> link.attr("th:href").contains(destination)
+                            || link.attr("href").contains(destination));
 
-        // encounter/detail.html contains /setup
-        String encounterDetail = Files.readString(TEMPLATES.resolve("encounter/detail.html"));
-        assertThat(encounterDetail)
-                .as("encounter/detail.html must link to encounter setup")
-                .contains("/setup");
+            assertThat(reachable)
+                    .as("%s must link to %s — an edit surface with no route into it is stranded",
+                            page, destination)
+                    .isTrue();
+        }
+    }
+
+    private static String read(String template) throws IOException {
+        return Files.readString(TEMPLATES.resolve(template));
+    }
+
+    private static Document parse(String template) throws IOException {
+        return Jsoup.parse(read(template));
     }
 }

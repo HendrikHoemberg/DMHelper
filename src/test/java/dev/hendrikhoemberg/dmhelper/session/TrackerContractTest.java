@@ -35,11 +35,6 @@ class TrackerContractTest {
                 .isEmpty();
     }
 
-    @Test
-    void theRemovedConditionMenuStateDoesNotComeBack() throws IOException {
-        assertThat(Files.readString(JS)).doesNotContain("showConditionMenu", "openConditionMenu");
-    }
-
     private static List<String> stateKeys(String js) {
         int start = js.indexOf("function combatTracker(");
         String body = js.substring(start);

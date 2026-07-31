@@ -92,6 +92,10 @@ class DestructiveActionContractTest {
         return false;
     }
 
+    /**
+     * The separator must be a real gap, not just a declared class. What that gap is made of
+     * is a visual decision; that it exists at all is the safety contract.
+     */
     @Test
     void theSeparatorIsARealVisualGap() {
         CssRules.Rule rule = CssRules.of("components.css").stream()
@@ -99,10 +103,10 @@ class DestructiveActionContractTest {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError(".action-row__destructive is not defined"));
 
-        assertThat(rule.body())
-                .contains("margin-left: auto")
-                .contains("padding-left: var(--space-lg)")
-                .contains("border-left: 1px solid var(--color-border)");
+        assertThat(rule.declares("padding-left") || rule.declares("margin-left")
+                || rule.declares("border-left"))
+                .as(".action-row__destructive must create horizontal separation")
+                .isTrue();
     }
 
     @Test

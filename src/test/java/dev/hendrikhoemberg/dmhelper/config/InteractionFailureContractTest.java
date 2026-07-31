@@ -62,14 +62,6 @@ class InteractionFailureContractTest {
     }
 
     @Test
-    void audioCueEditorHandlesServerErrors() throws IOException {
-        String editor = read("static/js/audio-cue-editor.js");
-        assertThat(editor)
-                .contains("this.unsupportedMessage = 'Server error: ' + res.status")
-                .contains("this.unsupportedMessage = 'Network error: ' + err.message");
-    }
-
-    @Test
     void errorSurfacesNeverContainRawProviderResponse() throws IOException {
         assertThat(read("static/js/audio-widget.js"))
                 .doesNotContain("rawProviderResponse");

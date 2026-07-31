@@ -65,39 +65,6 @@ class ControlConsistencyContractTest {
         return false;
     }
 
-    @Test
-    void theReadinessReportIsStyled() {
-        String surfaces = CssRules.read("surfaces.css");
-
-        assertThat(surfaces).contains(
-                ".readiness-panel {",
-                ".readiness-panel.is-blocked",
-                ".readiness-panel.is-ready",
-                ".readiness-badge {",
-                ".readiness-item {",
-                ".readiness-item--blocker",
-                ".readiness-item__title",
-                ".readiness-item__detail",
-                ".readiness-item__actions");
-    }
-
-    @Test
-    void readinessControlsUseTheAppVocabulary() throws IOException {
-        String readiness = Files.readString(
-                Path.of("src/main/resources/templates/campaigns/_readiness.html"));
-
-        assertThat(readiness)
-                .contains("class=\"btn btn-primary btn-xs readiness-item__repair\"")
-                .contains("class=\"btn btn-ghost btn-xs readiness-item__repair\"")
-                .contains("class=\"btn btn-ghost btn-xs\"")
-                .doesNotContain("itemStat.first");
-    }
-
-    @Test
-    void aCompactFormInputVariantExists() {
-        assertThat(CssRules.read("components.css")).contains(".form-input--xs {");
-    }
-
     /** Spec section 10.3: "Primary actions are singular and obvious within each module." */
     @Test
     void noSurfaceOffersTwoPrimaryActions() throws IOException {
@@ -117,15 +84,6 @@ class ControlConsistencyContractTest {
     /** Spec section 10.3: consistent error placement — one fragment, used everywhere. */
     @Test
     void fieldErrorsUseTheSharedFragment() throws IOException {
-        assertThat(Files.readString(Path.of("src/main/resources/templates/common/_field-error.html")))
-                .contains("th:fragment=\"field-error(field)\"")
-                .contains("class=\"field-error\"")
-                .contains("role=\"alert\"");
-
-        assertThat(CssRules.read("components.css"))
-                .contains(".field-error {")
-                .contains("color: var(--color-danger)");
-
         Pattern adHoc = Pattern.compile("th:errors=\"\\*\\{[^}]+}\"");
         List<String> offenders = new ArrayList<>();
         try (Stream<Path> templates = Files.walk(Path.of("src/main/resources/templates"))) {

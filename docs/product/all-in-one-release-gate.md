@@ -2,12 +2,13 @@
 
 The executable gate defined in
 `docs/superpowers/specs/2026-07-22-phandelver-all-in-one-corrective-design.md` §11.
-Every requirement row names an executable proof. `ReleaseGateIndexContractTest` parses the
-§11.1 and §11.2 tables, requires each row to name at least one proof, and resolves every
-backticked `*Test`, `*Test#method`, or nested `*Test$Nested#method` reference to
-`src/test/java` and the exact declaring class scope.
-The same reference check covers the representative §11.3 rehearsal claim, so the index cannot
-silently drift away from the suite.
+Every requirement row names an executable proof.
+
+> **This index is human-maintained.** It was previously validated by
+> `ReleaseGateIndexContractTest`, which resolved every backticked test reference against
+> `src/test/java`. That test was removed by the test-suite triage
+> (`docs/test-suite-triage.md`) because it made every test rename a three-place edit.
+> Names here can now drift from the suite — verify them by hand when you rely on this table.
 
 Run the core browser gate (the indexed §11.1 proofs and release-index contract are also run by the full gate):
 
@@ -22,7 +23,7 @@ Run the full release gate; this command must pass before the all-in-one premise 
 | Req | Requirement | Proved by |
 |---|---|---|
 | 11.1.1 | Production-parity integration; `open-in-view=false`; fails on lazy access after a service boundary | `ReadinessProductionParityTest`, `FullPageRenderSmokeTest` |
-| 11.1.2 | Every cockpit module renders empty, populated, loading, error, compact and focused | `CockpitRuntimeModuleContractTest`, `RuntimeModuleShellContractTest` |
+| 11.1.2 | Every cockpit module renders empty, populated, loading, error, compact and focused | `RuntimeModuleShellContractTest`, `CockpitRuntimeModuleControllerTest`, `CockpitRuntimeModuleViewServiceTest`, `CockpitModuleInitialLoadBrowserTest` — **partial, see note** |
 | 11.1.3 | Layout schema migration, constraints, docking, serialization, invalid recovery, preset reset | `CockpitLayoutPresetServiceTest`, `CockpitWorkbenchTemplateContractTest` |
 | 11.1.4 | Browser interaction: edit lock, dividers, docking, tabs, focus, keyboard, persistence, retry, resize | `CoreSessionLoopSmokeTest`, `ViewportAccessibilityGateTest` |
 | 11.1.7 | Tracker-driven defeat/revive and a cross-midnight session produce a faithful log | `SessionEncounterEvidenceIntegrationTest`, `ReleaseRehearsalTest` |
@@ -73,7 +74,21 @@ The visual rules are enforced continuously rather than at gate time:
 `DesignTokenContractTest`, `TypeScaleContractTest`, `TypographyRoleContractTest`,
 `TypographyRenderGateTest`, `CombatLegibilityContractTest`, `GoldAccentContractTest`,
 `SurfaceNestingGateTest`, `ElevationModelContractTest`, `ControlConsistencyContractTest`,
-`DestructiveActionContractTest`, `MotionBudgetContractTest`, `RuntimeStatusSurfaceTest`.
+`DestructiveActionContractTest`, `MotionBudgetContractTest`.
+
+## Note on reduced coverage (test-suite triage)
+
+`docs/test-suite-triage.md` removed 27 test classes that asserted on template and stylesheet
+*source text* rather than on rendered output. Two rows above are affected:
+
+- **11.1.2** previously also named `CockpitRuntimeModuleContractTest`, which asserted the
+  per-module × per-state matrix by grepping template source. The surviving tests prove each
+  module route returns its fragment and that the rendered cockpit emits exactly one root per
+  registry key; the exhaustive state matrix is now covered by the browser gates and visual
+  review rather than by static assertion.
+- **§10** previously also named `RuntimeStatusSurfaceTest`, which booted a full Spring
+  context and then only grepped two files. The status cluster's behaviour remains covered by
+  `RuntimeStatusJavascriptContractTest`, which drives it in a real browser.
 
 ## Scope of the claim
 

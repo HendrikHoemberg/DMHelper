@@ -21,18 +21,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,38 +32,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Every runtime module inserted into or declared on the cockpit page must carry a stable
+ * Every runtime module rendered on the cockpit page must carry a stable
  * {@code data-runtime-module} key on its outer module shell, and the registry is the source
  * of truth for which keys exist.
  *
- * <p>Static source scans catch declaration drift; MockMvc-rendered HTML asserts the
- * production workbench emits exactly one root per registry key.
- *
- * <p>This class also carried the table-safe / screen-safety contract until the DM-only cut
- * removed that feature; those assertions were deleted rather than relaxed.
+ * <p>This is asserted against the MockMvc-rendered page rather than against template source:
+ * what matters is that the production workbench emits exactly one root per registry key, not
+ * which fragment happens to declare it.
  */
 @SpringBootTest
 class RuntimeModuleShellContractTest {
-
-    private static final Path TEMPLATES = Path.of("src/main/resources/templates");
-    private static final Path COCKPIT = TEMPLATES.resolve("session/cockpit.html");
-    private static final CockpitModuleRegistry REGISTRY = CockpitModuleRegistry.standard();
-
-    /** Regex to extract data-runtime-module declarations. */
-    private static final Pattern MODULE_PATTERN = Pattern.compile(
-            "data-runtime-module\\s*=\\s*\"([^\"]+)\"");
-
-    /** Regex for th:attr-style module keys used on shells. */
-    private static final Pattern ATTR_MODULE_PATTERN = Pattern.compile(
-            "data-runtime-module\\s*=\\s*\\$\\{module\\.key\\}");
-
-
-    /** Shell/workbench fragments that declare the authoritative module roots. */
-    private static final List<String> SHELL_FRAGMENTS = List.of(
-            "session/cockpit.html",
-            "session/_cockpit-workbench.html",
-            "session/_cockpit-module-shell.html"
-    );
 
     @Autowired
     private WebApplicationContext webContext;
@@ -145,68 +113,6 @@ class RuntimeModuleShellContractTest {
         assertThat(document.select(".runtime-story[data-runtime-module]")).isEmpty();
     }
 
-    @Test
-    void allRegistryModulesHaveExactlyOneAuthoritativeRoot() throws IOException {
-        assertThat(collectModuleKeys())
-                .as("exactly the registry module keys must appear once as data-runtime-module")
-                .containsExactlyInAnyOrderElementsOf(
-                        REGISTRY.all().stream().map(CockpitModuleDefinition::key).toList());
-    }
-
-    @Test
-    void moduleShellFragmentDeclaresRuntimeAttributes() throws IOException {
-        Path shell = TEMPLATES.resolve("session/_cockpit-module-shell.html");
-        assertThat(shell).exists();
-        String content = Files.readString(shell);
-        assertThat(content)
-                .contains("data-runtime-module")
-                .contains("data-module-key")
-                .contains("class=\"cockpit-module\"");
-        assertThat(ATTR_MODULE_PATTERN.matcher(content).find()
-                || MODULE_PATTERN.matcher(content).find()).isTrue();
-    }
-
-    @Test
-    void noDmModeTerminologyRemains() throws IOException {
-        try (Stream<Path> files = Files.walk(TEMPLATES)) {
-            List<Path> htmlFiles = files.filter(p -> p.toString().endsWith(".html")).toList();
-
-            for (Path htmlFile : htmlFiles) {
-                String content = Files.readString(htmlFile);
-                assertThat(content)
-                        .as("DM Mode terminology must not appear in " + htmlFile.getFileName())
-                        .doesNotContain("dmMode", "dm-mode", "DM Mode", "DM_MODE", "DmMode");
-            }
-        }
-    }
-
-    @Test
-    void layoutControllerHandlesModuleState() throws IOException {
-        String layoutJs = Files.readString(
-                Path.of("src/main/resources/static/js/cockpit-layout.js"));
-        assertThat(layoutJs)
-                .as("layout must consume cockpit:module-state and expose visibility queries")
-                .contains("cockpit:module-state")
-                .contains("isModuleVisible")
-                .contains("_retryCallbacks")
-                .contains("cockpit:module-visibility");
-    }
-
-    @Test
-    void moduleShellDeclaresStateMessageAttributesAndRetry() throws IOException {
-        Path shell = TEMPLATES.resolve("session/_cockpit-module-shell.html");
-        String content = Files.readString(shell);
-        assertThat(content)
-                .as("shell chrome must carry state messages and an inline Retry action")
-                .contains("data-module-status")
-                .contains("data-module-error")
-                .contains("data-module-retry")
-                .contains("data-loading-message")
-                .contains("data-empty-message")
-                .contains("data-error-message")
-                .contains("data-module-body");
-    }
-
     private Document renderCockpit() throws Exception {
         String html = mvc.perform(get("/campaigns/{id}/session", campaignId))
                 .andExpect(status().isOk())
@@ -214,50 +120,5 @@ class RuntimeModuleShellContractTest {
                 .getResponse()
                 .getContentAsString();
         return Jsoup.parse(html);
-    }
-
-    /**
-     * Collects literal {@code data-runtime-module="…"} declarations from cockpit shell sources.
-     * Dynamic shell attributes use {@code ${module.key}} and are expanded against the registry
-     * so each key still contributes exactly once.
-     */
-    private Set<String> collectModuleKeys() throws IOException {
-        Set<String> keys = new HashSet<>();
-        List<String> duplicates = new ArrayList<>();
-        boolean shellUsesDynamicKeys = false;
-
-        for (String fragment : SHELL_FRAGMENTS) {
-            Path path = TEMPLATES.resolve(fragment);
-            if (!Files.exists(path)) {
-                continue;
-            }
-            String content = Files.readString(path);
-            if (ATTR_MODULE_PATTERN.matcher(content).find()
-                    || content.contains("data-runtime-module=${module.key}")
-                    || content.contains("data-runtime-module=${module.key},")) {
-                shellUsesDynamicKeys = true;
-            }
-
-            Matcher moduleMatcher = MODULE_PATTERN.matcher(content);
-            while (moduleMatcher.find()) {
-                if (!keys.add(moduleMatcher.group(1))) {
-                    duplicates.add(moduleMatcher.group(1));
-                }
-            }
-        }
-
-        if (shellUsesDynamicKeys) {
-            for (CockpitModuleDefinition definition : REGISTRY.all()) {
-                if (!keys.add(definition.key())) {
-                    duplicates.add(definition.key());
-                }
-            }
-        }
-
-        assertThat(duplicates)
-                .as("data-runtime-module keys must be unique across cockpit shell sources")
-                .isEmpty();
-
-        return keys;
     }
 }

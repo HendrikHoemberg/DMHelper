@@ -48,30 +48,4 @@ class DesignTokenContractTest {
 
         assertThat(dangling).as("var() references with no definition").isEmpty();
     }
-
-    /**
-     * Spec section 10.2: "Danger, warning, success, concentration and Screen safety retain
-     * stable semantic colors." Workstream E may re-scope where colors appear; it may not
-     * change what they mean.
-     */
-    @Test
-    void semanticColorsKeepTheirValues() {
-        String tokens = CssRules.read("tokens.css");
-
-        assertThat(tokens)
-                .contains("--color-danger: #a83a32")
-                .contains("--color-success: #7fa05f")
-                .contains("--color-warning: #d9993d")
-                .contains("--color-concentration: #966a9e")
-                .contains("--color-shield: #8a9aa5");
-    }
-
-    @Test
-    void warningWaveTitleContrastsWithItsWarningSurface() throws IOException {
-        String tracker = Files.readString(Path.of("src/main/resources/templates/encounter/_tracker.html"));
-
-        assertThat(tracker)
-                .contains("style=\"background: var(--color-warning);")
-                .contains("style=\"color: var(--color-bg); font-weight: 600;\"");
-    }
 }

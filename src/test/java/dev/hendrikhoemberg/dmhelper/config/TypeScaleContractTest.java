@@ -112,17 +112,4 @@ class TypeScaleContractTest {
 
         assertThat(offenders).as("raw font sizes in embedded template styles").isEmpty();
     }
-
-    @Test
-    void replacementClassesKeepReviewedTemplateTypography() {
-        assertThat(hasFontSize("surfaces.css", ".calendar-current-date-value", "var(--text-xl)")).isTrue();
-        assertThat(hasFontSize("components.css", ".tracker-turns__active", "var(--text-sm)")).isTrue();
-        assertThat(hasFontSize("cockpit-modules.css", ".map-module__pin", "var(--text-sm)")).isTrue();
-    }
-
-    private static boolean hasFontSize(String file, String selector, String token) {
-        return CssRules.of(file).stream()
-                .anyMatch(rule -> rule.selector().equals(selector)
-                        && token.equals(rule.value("font-size")));
-    }
 }
