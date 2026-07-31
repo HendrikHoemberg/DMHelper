@@ -24,49 +24,95 @@
 }
 
 :root {
-  /* palette — "candlelit study" (legacy names kept; ~50 templates use them) */
-  --color-bg: #17120c;
-  --color-surface: #211a12;
-  --color-surface-hover: #2b2318;
-  --color-text: #e9dfc9;
-  --color-text-muted: #b3a88f;
-  --color-accent: #c9a35c;          /* aged gold */
-  --color-accent-hover: #ddb977;
-  --color-danger: #a83a32;          /* ember red */
-  --color-danger-hover: #c2564a;
-  --color-success: #7fa05f;         /* moss */
-  --color-warning: #d9993d;         /* amber */
-  --color-warning-bg: #332b00;
-  --color-warning-text: #c9a24a;
-  --color-border: #3a3125;          /* warm hairline */
-  --color-border-strong: #564936;   /* the same hairline, awake — hover and grouping */
+  /* Semantic UI palette: components consume roles, never raw colors. */
+  --surface-canvas: #101113;
+  --surface-navigation: #151619;
+  --surface-workspace: #18191d;
+  --surface-panel: #1d1f24;
+  --surface-raised: #24262c;
+  --surface-inset: #111216;
+  --surface-overlay: #292c33;
 
-  /* compatibility aliases for legacy component references */
-  --color-attack-bonus: var(--color-accent);
-  --color-text-secondary: var(--color-text-muted);
-  --color-border-subtle: var(--color-border);
-  --color-bg-elevated: var(--elevation-raised-bg);
-  --color-surface-muted: var(--color-surface);
-  --elevation-sunken-bg: var(--elevation-base-bg);
+  --border-subtle: #30333a;
+  --border-strong: #686c75;
+
+  --text-primary: #eee8dc;
+  --text-secondary: #b8b4aa;
+  --text-tertiary: #929089;
+
+  --action-primary: #c9a35c;
+  --action-primary-hover: #ddb977;
+  --action-on-primary: #101113;
+  --selection-accent: var(--action-primary);
+  --selection-surface: color-mix(in srgb, var(--selection-accent) 18%, transparent);
+  --focus-ring: var(--action-primary);
+
+  --state-success: #89ad69;
+  --state-success-surface: color-mix(in srgb, var(--state-success) 14%, var(--surface-panel));
+  --state-success-border: color-mix(in srgb, var(--state-success) 62%, var(--surface-panel));
+  --state-warning: #e0a34d;
+  --state-warning-surface: color-mix(in srgb, var(--state-warning) 14%, var(--surface-panel));
+  --state-warning-border: color-mix(in srgb, var(--state-warning) 62%, var(--surface-panel));
+  --state-danger: #d36a61;
+  --state-danger-surface: color-mix(in srgb, var(--state-danger) 14%, var(--surface-panel));
+  --state-danger-border: color-mix(in srgb, var(--state-danger) 62%, var(--surface-panel));
+  --state-info: #74a3c1;
+  --state-info-surface: color-mix(in srgb, var(--state-info) 14%, var(--surface-panel));
+  --state-info-border: color-mix(in srgb, var(--state-info) 62%, var(--surface-panel));
+  --state-shield: #8fa8b8;
+  --state-shield-surface: color-mix(in srgb, var(--state-shield) 14%, var(--surface-panel));
+  --state-shield-border: color-mix(in srgb, var(--state-shield) 62%, var(--surface-panel));
+  --state-concentration: #b58ac1;
+  --state-concentration-surface: color-mix(in srgb, var(--state-concentration) 14%, var(--surface-panel));
+  --state-concentration-border: color-mix(in srgb, var(--state-concentration) 62%, var(--surface-panel));
+
+  --scrim-standard: rgba(8, 9, 11, 0.72);
+  --scrim-strong: rgba(8, 9, 11, 0.88);
+  --neutral-hover-surface: rgba(238, 232, 220, 0.05);
+  --shadow-floating: 0 8px 28px rgba(0, 0, 0, 0.48);
+  --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.62);
+  --shadow-hairline: 0 2px 0 rgba(238, 232, 220, 0.04);
+  --glow-primary: 0 0 16px rgba(201, 163, 92, 0.25);
+
+  /* Temporary migration aliases. LegacyVisualAliasContractTest prevents growth;
+     Task 49 removes them. */
+  --color-bg: var(--surface-canvas);
+  --color-surface: var(--surface-panel);
+  --color-surface-hover: var(--surface-raised);
+  --color-text: var(--text-primary);
+  --color-text-muted: var(--text-secondary);
+  --color-accent: var(--action-primary);
+  --color-accent-hover: var(--action-primary-hover);
+  --color-danger: var(--state-danger);
+  --color-danger-hover: color-mix(in srgb, var(--state-danger) 82%, var(--text-primary));
+  --color-success: var(--state-success);
+  --color-warning: var(--state-warning);
+  --color-warning-bg: var(--state-warning-surface);
+  --color-warning-text: var(--state-warning);
+  --color-border: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-concentration: var(--state-concentration);
+  --color-info: var(--state-info);
+  --color-ember: var(--state-danger);
+  --color-gold-soft: var(--selection-surface);
+  --color-overlay: var(--scrim-strong);
+  --color-shield: var(--state-shield);
+  --color-shield-hover: color-mix(in srgb, var(--state-shield) 82%, var(--text-primary));
+  --color-shield-soft: var(--state-shield-surface);
+  --color-attack-bonus: var(--action-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-border-subtle: var(--border-subtle);
+  --color-bg-elevated: var(--surface-raised);
+  --color-surface-muted: var(--surface-panel);
+  /* End temporary migration aliases. */
+
+  /* Legacy compat kept defined for existing references (dice tints, stagger
+     fallback, radius and shadow shims) — Task 49 removes them. */
+  --dice-high: var(--state-success);
+  --dice-low: var(--state-danger);
+  --stagger: 0;
   --radius-md: var(--radius);
   --shadow-lg: var(--shadow-warm-lg);
-  --stagger: 0;
-
-  --color-concentration: #966a9e;  /* concentration purple — table-wide recognition */
-
-  /* new tokens */
-  --color-info: var(--color-accent);
-  --color-ember: #a83a32;
-  --dice-high: var(--color-success);  /* moss — advantage */
-  --dice-low: var(--color-danger);    /* ember — disadvantage */
-  --color-gold-soft: rgba(201, 163, 92, 0.28);
-  --color-overlay: rgba(10, 7, 4, 0.88);
-
-  /* shielded steel — the player-safe tint. Cool on purpose: it must read as
-     "not candlelight" from across the room. */
-  --color-shield: #8a9aa5;
-  --color-shield-hover: #a6b4bd;
-  --color-shield-soft: rgba(138, 154, 165, 0.28);
 
   --font-display: 'Cinzel', 'Georgia', serif;
   --font-book: 'Alegreya', 'Georgia', serif;
@@ -88,7 +134,7 @@
   --text-3xl: 4rem;   /* error-page status numeral only */
 
   --radius: 6px;
-  --shadow: 0 8px 28px rgba(0, 0, 0, 0.5);   /* overlays/popovers only — not cards */
+  --shadow: var(--shadow-floating);   /* overlays/popovers only — not cards */
   --transition: var(--duration-standard) var(--ease-out);
 
   font-family: var(--font-ui);
@@ -96,14 +142,15 @@
   color: var(--color-text);
   background-color: var(--color-bg);
 
-  /* elevation — candlelight model */
-  --elevation-base-bg: #17120c;
-  --elevation-raised-bg: #1e1811;
-  --elevation-floating-bg: #252019;
+  /* elevation — repointed onto the semantic surface ladder */
+  --elevation-base-bg: var(--surface-canvas);
+  --elevation-raised-bg: var(--surface-panel);
+  --elevation-floating-bg: var(--surface-raised);
+  --elevation-sunken-bg: var(--surface-inset);
 
-  --shadow-warm-sm: 0 2px 8px rgba(8, 5, 2, 0.45);
-  --shadow-warm-md: 0 6px 20px rgba(8, 5, 2, 0.55);
-  --shadow-warm-lg: 0 14px 40px rgba(8, 5, 2, 0.65);
+  --shadow-warm-sm: var(--shadow-floating);
+  --shadow-warm-md: var(--shadow-floating);
+  --shadow-warm-lg: var(--shadow-overlay);
 
   --highlight-candle: inset 0 1px 0 rgba(255, 243, 210, 0.08);
 
