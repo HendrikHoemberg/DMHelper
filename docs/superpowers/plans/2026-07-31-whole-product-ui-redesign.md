@@ -78,7 +78,7 @@ Everything else is strictly sequential.
 
 Restated in full inside every part plan; reproduced here so the index stands alone.
 
-- The design authority is `docs/superpowers/specs/2026-07-31-whole-product-ui-redesign-design.md`. This program supersedes `docs/superpowers/plans/2026-07-31-ui-redesign-visual-foundations.md` and the deleted `2026-07-31-whole-product-ui-redesign-program.md`; both are absorbed here.
+- The design authority is `docs/superpowers/specs/2026-07-31-whole-product-ui-redesign-design.md`. This program supersedes the deleted `2026-07-31-ui-redesign-visual-foundations.md` and `2026-07-31-whole-product-ui-redesign-program.md`; both are absorbed here.
 - `docs/ui-polish-spec.md` is superseded, including its brown-palette-reuse and no-responsive-work requirements.
 - Desktop and laptop browsers only. Minimum supported viewport **1280x720**; primary range **1440x900**–**1920x1080**; large-screen gate **2560x1440**; zoom gates **125%** and **150%**, applied across the primary range.
 - Preserve Spring MVC, Thymeleaf, htmx, Alpine.js, and vanilla JavaScript. No SPA, no frontend package manager, no CSS framework, no icon font, no third-party component system.

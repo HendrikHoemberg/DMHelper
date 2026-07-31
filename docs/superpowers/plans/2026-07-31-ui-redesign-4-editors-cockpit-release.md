@@ -52,7 +52,7 @@ raise it before Stage 8 so the release gate can cover it.
 
 Every task's requirements implicitly include this section.
 
-- The design authority is `docs/superpowers/specs/2026-07-31-whole-product-ui-redesign-design.md`. This program supersedes `docs/superpowers/plans/2026-07-31-ui-redesign-visual-foundations.md` and the deleted `2026-07-31-whole-product-ui-redesign-program.md`; both are absorbed here.
+- The design authority is `docs/superpowers/specs/2026-07-31-whole-product-ui-redesign-design.md`. This program supersedes the deleted `2026-07-31-ui-redesign-visual-foundations.md` and `2026-07-31-whole-product-ui-redesign-program.md`; both are absorbed here.
 - `docs/ui-polish-spec.md` is superseded, including its brown-palette-reuse and no-responsive-work requirements.
 - Desktop and laptop browsers only. Minimum supported viewport **1280x720**; primary range **1440x900**–**1920x1080**; large-screen gate **2560x1440**; zoom gates **125%** and **150%**, applied across the primary range (see Task 51).
 - Preserve Spring MVC, Thymeleaf, htmx, Alpine.js, and vanilla JavaScript. No SPA, no frontend package manager, no CSS framework, no icon font, no third-party component system.
@@ -141,7 +141,6 @@ redesign.
 | `src/test/java/.../config/LegacyVisualAliasContractTest.java` | `LegacyVisualAliasRemovalTest` | 8 |
 | the `--color-*` alias block in `tokens.css` | the semantic roles from Part 1 | 8 |
 | `docs/ui-polish-spec.md` | the approved design spec | 8 |
-| `docs/superpowers/plans/2026-07-31-ui-redesign-visual-foundations.md` | this program | 8 |
 
 ## Public interfaces
 
@@ -1858,7 +1857,6 @@ git commit -m "test: capture the whole-product visual review matrix"
 - Modify: `docs/product/all-in-one-release-gate.md`
 - Modify: `docs/superpowers/plans/2026-07-31-whole-product-ui-redesign.md`
 - Delete: `docs/ui-polish-spec.md`
-- Delete: `docs/superpowers/plans/2026-07-31-ui-redesign-visual-foundations.md`
 
 - [ ] **Step 1: Register the new gates in the release gate index**
 
@@ -1940,11 +1938,14 @@ Expected: PASS with no skipped gates.
 
 ```bash
 git rm docs/ui-polish-spec.md
-git rm docs/superpowers/plans/2026-07-31-ui-redesign-visual-foundations.md
 ```
 
-Search for and update any reference to either path
-(`grep -rn "ui-polish-spec\|ui-redesign-visual-foundations" --include='*.md' --include='*.java' .`).
+`2026-07-31-ui-redesign-visual-foundations.md` was already deleted — it duplicated this
+program's Part 1 under a filename one character away from it, and an agent that opened the
+wrong one would have been told to edit a test that no longer exists.
+
+Search for and update any remaining reference to the retired spec
+(`grep -rn "ui-polish-spec" --include='*.md' --include='*.java' .`).
 
 - [ ] **Step 5: Record the acceptance evidence**
 
