@@ -34,7 +34,10 @@
   --surface-overlay: #292c33;
 
   --border-subtle: #30333a;
-  --border-strong: #686c75;
+  /* Spec 6.1 target #686c75, lightened as the spec permits "only when measured contrast
+     requires it": .btn fills with Raised and sits on cards that fill with Raised, so this
+     1px border is the whole control boundary and #686c75 reached only 2.87:1 there. */
+  --border-strong: #6f737d;
 
   --text-primary: #eee8dc;
   --text-secondary: #b8b4aa;
@@ -49,22 +52,22 @@
 
   --state-success: #89ad69;
   --state-success-surface: color-mix(in srgb, var(--state-success) 14%, var(--surface-panel));
-  --state-success-border: color-mix(in srgb, var(--state-success) 62%, var(--surface-panel));
+  --state-success-border: color-mix(in srgb, var(--state-success) 78%, var(--surface-panel));
   --state-warning: #e0a34d;
   --state-warning-surface: color-mix(in srgb, var(--state-warning) 14%, var(--surface-panel));
-  --state-warning-border: color-mix(in srgb, var(--state-warning) 62%, var(--surface-panel));
-  --state-danger: #d36a61;
+  --state-warning-border: color-mix(in srgb, var(--state-warning) 78%, var(--surface-panel));
+  --state-danger: #d96d64;
   --state-danger-surface: color-mix(in srgb, var(--state-danger) 14%, var(--surface-panel));
-  --state-danger-border: color-mix(in srgb, var(--state-danger) 62%, var(--surface-panel));
+  --state-danger-border: color-mix(in srgb, var(--state-danger) 78%, var(--surface-panel));
   --state-info: #74a3c1;
   --state-info-surface: color-mix(in srgb, var(--state-info) 14%, var(--surface-panel));
-  --state-info-border: color-mix(in srgb, var(--state-info) 62%, var(--surface-panel));
+  --state-info-border: color-mix(in srgb, var(--state-info) 78%, var(--surface-panel));
   --state-shield: #8fa8b8;
   --state-shield-surface: color-mix(in srgb, var(--state-shield) 14%, var(--surface-panel));
-  --state-shield-border: color-mix(in srgb, var(--state-shield) 62%, var(--surface-panel));
+  --state-shield-border: color-mix(in srgb, var(--state-shield) 78%, var(--surface-panel));
   --state-concentration: #b58ac1;
   --state-concentration-surface: color-mix(in srgb, var(--state-concentration) 14%, var(--surface-panel));
-  --state-concentration-border: color-mix(in srgb, var(--state-concentration) 62%, var(--surface-panel));
+  --state-concentration-border: color-mix(in srgb, var(--state-concentration) 78%, var(--surface-panel));
 
   --scrim-standard: rgba(8, 9, 11, 0.72);
   --scrim-strong: rgba(8, 9, 11, 0.88);

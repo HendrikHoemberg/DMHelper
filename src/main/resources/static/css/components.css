@@ -191,16 +191,18 @@
   box-shadow: var(--glow-primary);
 }
 
+/* The label is ivory, not danger-red: red-on-red-tint measures 3.93:1 and misses AA. The
+   danger role is carried by the tinted fill and border instead (spec section 6.4). */
 .btn-danger {
   background: var(--state-danger-surface);
   border-color: var(--state-danger-border);
-  color: var(--color-danger);
+  color: var(--text-primary);
 }
 
 .btn-danger:hover {
   background: var(--state-danger-surface);
   border-color: var(--state-danger);
-  color: var(--color-danger);
+  color: var(--text-primary);
 }
 
 .btn-ghost {
@@ -1512,6 +1514,28 @@
     color: var(--color-bg);
     letter-spacing: 0.06em;
 }
+
+/* Semantic banner (spec section 10). treasury/_attunement-warn.html has asked for these
+   classes since its inline paint was removed; without a rule the warning rendered as plain
+   body copy. Each variant pairs a tinted surface and border with the caller's icon and
+   text, so no state rests on colour alone (spec section 6.4). */
+.banner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--border-subtle);
+    border-left-width: 3px;
+    border-radius: var(--radius);
+    background: var(--surface-panel);
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+}
+
+.banner--success { background: var(--state-success-surface); border-color: var(--state-success-border); }
+.banner--warning { background: var(--state-warning-surface); border-color: var(--state-warning-border); }
+.banner--danger  { background: var(--state-danger-surface);  border-color: var(--state-danger-border); }
+.banner--info    { background: var(--state-info-surface);    border-color: var(--state-info-border); }
 
 .badge-tag {
     background: var(--color-surface-hover);

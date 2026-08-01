@@ -109,13 +109,38 @@ class DestructiveActionContractTest {
                 .isTrue();
     }
 
+    /**
+     * Pinning one declaration ({@code color: var(--color-danger)}) locked in red-on-red-tint,
+     * which measures 3.93:1 and misses AA. What the safety contract actually needs is that a
+     * destructive control cannot be mistaken for the neutral one and that its label stays
+     * readable — both measured through the token graph, so either can be satisfied by any
+     * treatment that genuinely delivers it.
+     */
     @Test
     void destructiveButtonsAreDistinctFromEverythingElse() {
-        CssRules.Rule danger = CssRules.of("components.css").stream()
-                .filter(r -> r.selector().equals(".btn-danger"))
-                .findFirst()
-                .orElseThrow();
+        var rules = CssRules.of("components.css");
+        CssRules.Rule danger = ruleFor(rules, ".btn-danger");
+        CssRules.Rule neutral = ruleFor(rules, ".btn");
 
-        assertThat(danger.body()).contains("color: var(--color-danger)");
+        assertThat(TokenColors.resolveDeclaration(danger.value("background")))
+                .as(".btn-danger must not share the neutral button fill")
+                .isNotEqualTo(TokenColors.resolveDeclaration(neutral.value("background")));
+
+        assertThat(danger.body())
+                .as(".btn-danger must carry the danger role")
+                .contains("--state-danger");
+
+        assertThat(ColorContrast.ratio(
+                TokenColors.resolveDeclaration(danger.value("color")),
+                TokenColors.resolveDeclaration(danger.value("background"))))
+                .as("destructive label on its own fill")
+                .isGreaterThanOrEqualTo(4.5);
+    }
+
+    private static CssRules.Rule ruleFor(java.util.List<CssRules.Rule> rules, String selector) {
+        return rules.stream()
+                .filter(r -> r.selector().equals(selector))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(selector + " is not defined"));
     }
 }
