@@ -1,47 +1,32 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org"
-      th:attr="data-test-audio-provider=${testAudioProvider ? 'FAKE' : null}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1510'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' fill='%23c9a24a' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
-    <link rel="stylesheet" th:href="@{/css/tokens.css}">
-    <link rel="stylesheet" th:href="@{/css/base.css}">
-    <link rel="stylesheet" th:href="@{/css/components.css}">
-    <link rel="stylesheet" th:href="@{/css/book.css}">
-    <link rel="stylesheet" th:href="@{/css/cockpit.css}">
-    <link rel="stylesheet" th:href="@{/css/cockpit-layout.css}">
-    <link rel="stylesheet" th:href="@{/css/cockpit-modules.css}">
-    <script th:src="@{/vendor/htmx.min.js}"></script>
-    <script th:src="@{/js/dm-request.js}"></script>
-    <script th:src="@{/js/keyboard.js}"></script>
-    <script th:src="@{/js/runtime-status.js}" defer></script>
-    <script th:src="@{/js/command-palette.js}"></script>
-    <script th:src="@{/js/quicknotes.js}"></script>
-    <script th:src="@{/js/cockpit-reference.js}"></script>
-    <script th:src="@{/js/ui-elevation.js}"></script>
-    <script th:src="@{/js/campaign-import.js}" defer></script>
-    <script th:src="@{/js/session-cockpit.js}"></script>
-    <script th:src="@{/js/combat-tracker.js}"></script>
-    <script th:src="@{/js/rollable-table-roll.js}"></script>
-    <script th:src="@{/js/dice-roller.js}"></script>
-    <script th:src="@{/js/audio-provider-registry.js}"></script>
-    <script th:src="@{/js/audio-provider-youtube.js}"></script>
-    <script th:if="${testAudioProvider}" th:src="@{/js/audio-provider-fake.js}"></script>
-    <script th:src="@{/js/audio-widget.js}"></script>
-    <script th:src="@{/js/cockpit-layout.js}" defer></script>
-    <script th:src="@{/js/cockpit-modules.js}" defer></script>
-    <script th:src="@{/vendor/alpine.min.js}" defer></script>
-    <title th:text="${workspace.campaign.name + ' — Session'}">Campaign — Session</title>
-</head>
-<body th:attr="data-campaign-id=${campaignId}">
-<main class="session-cockpit" data-surface="run"
-      x-data="sessionCockpit(window.sessionCockpitConfig)"
-      @session-next-turn.window="nextTurn()"
-      @session-scene-step.window="stepScene($event.detail.direction)"
-      @request-encounter-end.window="openEncounterEndDialog()"
-      @cockpit-encounter-ended.window="refreshModules(['story', 'encounter'], 'encounter-ended')"
-      @keydown.window="handleKeyboard($event)">
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${workspace.campaign.name + ' — Session'},
+          archetype='editor',
+          surface='run',
+          header=~{},
+          content=~{::#page-content},
+          rail=~{})}">
+<body>
+<div id="page-content" class="page-content session-cockpit"
+     th:attr="data-campaign-id=${campaignId}, data-test-audio-provider=${testAudioProvider ? 'FAKE' : null}"
+     x-data="sessionCockpit(window.sessionCockpitConfig)" @session-next-turn.window="nextTurn()" @session-scene-step.window="stepScene($event.detail.direction)" @request-encounter-end.window="openEncounterEndDialog()" @cockpit-encounter-ended.window="refreshModules(['story', 'encounter'], 'encounter-ended')" @keydown.window="handleKeyboard($event)">
+<link rel="stylesheet" th:href="@{/css/cockpit.css}">
+<link rel="stylesheet" th:href="@{/css/cockpit-layout.css}">
+<link rel="stylesheet" th:href="@{/css/cockpit-modules.css}">
+<script th:src="@{/js/cockpit-reference.js}"></script>
+<script th:src="@{/js/session-cockpit.js}"></script>
+<script th:src="@{/js/combat-tracker.js}"></script>
+<script th:src="@{/js/rollable-table-roll.js}"></script>
+<script th:src="@{/js/dice-roller.js}"></script>
+<script th:src="@{/js/audio-provider-registry.js}"></script>
+<script th:src="@{/js/audio-provider-youtube.js}"></script>
+<script th:if="${testAudioProvider}" th:src="@{/js/audio-provider-fake.js}"></script>
+<script th:src="@{/js/audio-widget.js}"></script>
+<script th:src="@{/js/cockpit-layout.js}" defer></script>
+<script th:src="@{/js/cockpit-modules.js}" defer></script>
+
+
   <header class="cockpit-topbar">
     <h1 class="cockpit-topbar__title" data-display-title
         th:text="${workspace.campaign.name}">Campaign</h1>
@@ -172,7 +157,8 @@
       <button type="button" class="btn btn-ghost" @click="closeReadinessDialog()">Cancel</button>
     </div>
   </dialog>
-</main>
+
+
 <th:block th:replace="~{fragments/_command-palette :: command-palette}"></th:block>
     <th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>
 <script th:src="@{/vendor/konva.min.js}"></script>
@@ -211,5 +197,7 @@ window.addEventListener('threat-card-open', (event) => {
     window.open(base + detail.threatId, '_blank', 'noopener');
 });
 </script>
+
+</div>
 </body>
 </html>
