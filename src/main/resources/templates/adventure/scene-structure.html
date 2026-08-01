@@ -1,63 +1,65 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|Edit: ${scene.title} — ${adventure.name} — ${campaign.name}|">Edit Scene</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle='Edit Scene',
+          archetype='operational',
+          surface='edit',
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main" data-surface="edit">
-            <div class="page-header">
-                <div class="breadcrumb">
-                    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
-                    <span> / </span>
-                    <a th:href="@{/campaigns/{cid}/adventures/{aid}(cid=${campaignId},aid=${adventure.id})}" th:text="${adventure.name}">Adventure</a>
-                    <span> / </span>
-                    <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}" th:text="${scene.title}">Scene</a>
-                    <span> / </span>
-                    <span>Edit</span>
-                </div>
-                <h1 data-display-title th:text="|Edit: ${scene.title}|">Edit Scene</h1>
-                <div class="page-header-actions">
-                    <a class="btn btn-primary"
-                       th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}">Done</a>
-                </div>
-            </div>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=|Edit: ${scene.title}|,
+        summary='Scene structure',
+        breadcrumb=~{::#breadcrumb},
+        primary=~{::#primaryAction},
+        secondary=~{})}"></th:block>
+</div>
+<nav id="breadcrumb" class="breadcrumb" aria-label="Breadcrumb">
+    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
+    <span> / </span>
+    <a th:href="@{/campaigns/{cid}/adventures/{aid}(cid=${campaignId},aid=${adventure.id})}" th:text="${adventure.name}">Adventure</a>
+    <span> / </span>
+    <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}" th:text="${scene.title}">Scene</a>
+    <span> / </span>
+    <span>Edit</span>
+</nav>
+<a id="primaryAction" class="btn btn-primary"
+   th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}">Done</a>
 
-            <div class="edit-layout">
-                <div class="edit-pane">
-                    <h3>Scene</h3>
-                    <!-- The map/encounter/statblock/handout selectors swap this pane back in
-                         (SceneController.loadSceneEditPane), so the id is load-bearing. -->
-                    <div id="sceneEditPane">
-                        <th:block th:replace="~{adventure/_scene-form :: form}"></th:block>
-                    </div>
-                </div>
-                <div class="edit-preview">
-                    <h3>Preview</h3>
-                    <div id="sceneBody">
-                        <th:block th:replace="~{adventure/_scene-body :: sceneBody}"></th:block>
-                    </div>
-                </div>
+<div id="page-content" class="page-content">
+    <div class="edit-layout">
+        <div class="edit-pane">
+            <h3>Scene</h3>
+            <!-- The map/encounter/statblock/handout selectors swap this pane back in
+                 (SceneController.loadSceneEditPane), so the id is load-bearing. -->
+            <div id="sceneEditPane">
+                <th:block th:replace="~{adventure/_scene-form :: form}"></th:block>
             </div>
-
-            <h3 class="u-mt-lg">Structured content</h3>
-            <div id="sceneStructureEditor">
-                <th:block th:replace="~{adventure/_scene-structure-editor :: structureEditor}"></th:block>
+        </div>
+        <div class="edit-preview">
+            <h3>Preview</h3>
+            <div id="sceneBody">
+                <th:block th:replace="~{adventure/_scene-body :: sceneBody}"></th:block>
             </div>
-
-            <div class="u-mt-lg surface-danger-zone">
-                <h2>Danger zone</h2>
-                <p class="u-text-xs text-muted">This action cannot be undone.</p>
-                <button class="btn btn-danger action-row__destructive"
-                        th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-                        hx-confirm="Delete this scene?"
-                        hx-target="body" hx-swap="outerHTML"
-                        hx-disabled-elt="this">Delete scene</button>
-            </div>
-        </main>
+        </div>
     </div>
+
+    <h3 class="u-mt-lg">Structured content</h3>
+    <div id="sceneStructureEditor">
+        <th:block th:replace="~{adventure/_scene-structure-editor :: structureEditor}"></th:block>
+    </div>
+
+    <div class="u-mt-lg surface-danger-zone">
+        <h2>Danger zone</h2>
+        <p class="u-text-xs text-muted">This action cannot be undone.</p>
+        <button class="btn btn-danger action-row__destructive"
+                th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+                hx-confirm="Delete this scene?"
+                hx-target="body" hx-swap="outerHTML"
+                hx-disabled-elt="this">Delete scene</button>
+    </div>
+</div>
 </body>
 </html>

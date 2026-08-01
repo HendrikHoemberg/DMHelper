@@ -1,39 +1,37 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|${campaign.name} — Adventures|">Adventures</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle='Adventures',
+          archetype='index',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow" th:text="${campaign.name}">Campaign</div>
-                    <h1 data-display-title>Adventures</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" class="btn btn-ghost">&larr; Back to Campaign</a>
-                </div>
-            </div>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title='Adventures',
+        summary=${campaign.name},
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<a id="secondaryActions" th:href="@{/campaigns/{cid}(cid=${campaignId})}" class="btn btn-ghost">&larr; Back to Campaign</a>
 
-            <div th:if="${currentScene}" class="card" style="margin-bottom: var(--space-md); padding: var(--space-md);">
-                <span class="adventure-continue-label" style="color: var(--color-text-muted);">Continue at:</span>
-                <strong th:text="${currentScene.title}">Scene Title</strong>
-                <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}
-                              (cid=${campaignId}, aid=${currentScene.chapter.adventure.id}, sid=${currentScene.id})}"
-                   class="btn btn-primary" style="margin-left: var(--space-md);">Resume</a>
-            </div>
-
-            <div th:replace="~{adventure/_adventure-list :: adventureList}"></div>
-
-            <div style="margin-top: var(--space-lg);">
-                <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='CAMPAIGN', targetId=${campaignId})}"></th:block>
-            </div>
-        </main>
+<div id="page-content" class="page-content">
+    <div th:if="${currentScene}" class="card" style="margin-bottom: var(--space-md); padding: var(--space-md);">
+        <span class="adventure-continue-label" style="color: var(--color-text-muted);">Continue at:</span>
+        <strong th:text="${currentScene.title}">Scene Title</strong>
+        <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}
+                      (cid=${campaignId}, aid=${currentScene.chapter.adventure.id}, sid=${currentScene.id})}"
+           class="btn btn-primary" style="margin-left: var(--space-md);">Resume</a>
     </div>
+
+    <div th:replace="~{adventure/_adventure-list :: adventureList}"></div>
+
+    <div style="margin-top: var(--space-lg);">
+        <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='CAMPAIGN', targetId=${campaignId})}"></th:block>
+    </div>
+</div>
 </body>
 </html>

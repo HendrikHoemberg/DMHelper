@@ -1,41 +1,44 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|${scene.title} — ${adventure.name} — ${campaign.name}|">Scene Detail</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${scene.title},
+          archetype='detail',
+          surface='read',
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{::#page-rail})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main" data-surface="read">
-            <div class="page-header">
-                <div class="breadcrumb">
-                    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
-                    <span> / </span>
-                    <a th:href="@{/campaigns/{cid}/adventures/{aid}(cid=${campaignId},aid=${adventure.id})}" th:text="${adventure.name}">Adventure</a>
-                    <span> / </span>
-                    <span th:text="${scene.title}">Scene</span>
-                </div>
-                <h1 data-display-title th:text="${scene.title}">Scene Title</h1>
-                <div class="page-header-actions">
-                    <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/structure(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-                       class="btn btn-ghost">Edit</a>
-                </div>
-            </div>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${scene.title},
+        summary='Scene',
+        breadcrumb=~{::#breadcrumb},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<nav id="breadcrumb" class="breadcrumb" aria-label="Breadcrumb">
+    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
+    <span> / </span>
+    <a th:href="@{/campaigns/{cid}/adventures/{aid}(cid=${campaignId},aid=${adventure.id})}" th:text="${adventure.name}">Adventure</a>
+    <span> / </span>
+    <span th:text="${scene.title}">Scene</span>
+</nav>
+<a id="secondaryActions" class="btn btn-ghost"
+   th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/structure(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}">Edit</a>
 
-            <div class="scene-layout" style="display: flex; gap: var(--space-lg);">
-                <div id="sceneBody" class="scene-body" style="flex: 1; min-width: 0;">
-                    <th:block th:replace="~{adventure/_scene-body :: sceneBody}"></th:block>
-                </div>
-                <div id="sceneRail" style="width: 300px; flex-shrink: 0;">
-                    <th:block th:replace="~{adventure/_scene-rail :: sceneRail}"></th:block>
-                    <div class="detail-section u-mt-md">
-                        <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='SCENE', targetId=${scene.id})}"></th:block>
-                    </div>
-                </div>
-            </div>
-        </main>
+<div id="page-content" class="page-content">
+    <div id="sceneBody" class="scene-body">
+        <th:block th:replace="~{adventure/_scene-body :: sceneBody}"></th:block>
     </div>
+</div>
+
+<div id="page-rail" class="page-rail-slot">
+    <div id="sceneRail">
+        <th:block th:replace="~{adventure/_scene-rail :: sceneRail}"></th:block>
+        <div class="detail-section u-mt-md">
+            <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='SCENE', targetId=${scene.id})}"></th:block>
+        </div>
+    </div>
+</div>
 </body>
 </html>
