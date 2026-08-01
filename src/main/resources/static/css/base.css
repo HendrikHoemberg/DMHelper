@@ -163,41 +163,11 @@ fieldset {
   border: 1px solid var(--color-border);
 }
 
-.page-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: var(--space-lg);
-  gap: var(--space-md);
-  flex-wrap: wrap;
-}
-
-.page-header h1 {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  margin-bottom: var(--space-xs);
-}
-
-/* Detail pages (scene, NPC, location, faction, quest) put breadcrumb, h1 and actions
-   in as three flex siblings, so space-between stranded the title in mid-air between
-   the trail and the buttons. Giving the breadcrumb its own row leaves h1 and actions
-   as the only two items, which is the layout the index pages already get. */
-.page-header .breadcrumb {
-  flex-basis: 100%;
-  margin-bottom: var(--space-xs);
-}
-
-.page-header .page-header-eyebrow {
-  font-family: var(--font-ui);
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--color-text-muted);
-}
-
-.page-header .rule-taper {
-  max-width: 320px;
-}
+/* The pre-migration .page-header block lived here: a flex-end, space-between row with its
+   own h1, breadcrumb, eyebrow and rule-taper rules. Task 19 moved every page onto
+   fragments/_page-header, which is the only element carrying class="page-header" now, so
+   the block styled nothing and only fought the fragment's column layout. Its replacement
+   is the .page-header* set in components.css. */
 
 .u-nowrap { white-space: nowrap; }
 /* Visually hidden but readable by assistive tech. */

@@ -51,10 +51,10 @@
                     <span th:if="${m.deathSaveSuccesses > 0 or m.deathSaveFailures > 0}"
                           th:text="'DS ' + ${m.deathSaveSuccesses} + '/' + ${m.deathSaveFailures}">DS 0/0</span>
                     <th:block th:if="${m.conditions != null and !m.conditions.isEmpty()}">
-                        <span class="badge badge-warning" th:each="cond : ${m.conditions}" th:text="${cond}">condition</span>
+                        <span class="badge badge--warning" th:each="cond : ${m.conditions}" th:text="${cond}">condition</span>
                     </th:block>
                     <th:block th:if="${m.conditions == null and m.conditionsJson != null and !m.conditionsJson.isEmpty() and !m.conditionsJson.equals('[]')}">
-                        <span class="badge badge-warning">Conditions</span>
+                        <span class="badge badge--warning">Conditions</span>
                     </th:block>
                 </div>
             </th:block>

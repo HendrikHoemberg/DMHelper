@@ -159,8 +159,8 @@
 <div th:fragment="statusBadge" xmlns:th="http://www.thymeleaf.org">
   <div id="sceneStatusBadge" class="status-badge-container">
     <span class="badge"
-          th:classappend="${scene.status.name() == 'DONE'} ? 'badge-success' :
-                          (${scene.status.name() == 'VISITED'} ? 'badge-warning' : '')"
+          th:classappend="${scene.status.name() == 'DONE'} ? 'badge--success' :
+                          (${scene.status.name() == 'VISITED'} ? 'badge--warning' : '')"
           th:text="${#enums.label(scene.status)}">STATUS</span>
   </div>
 </div>

@@ -12,7 +12,7 @@
                    th:text="${handout.title}">Title</a>
             </h3>
             <div class="handout-badges">
-                <span th:if="${handout.presented}" class="badge badge-success">Given to players</span>
+                <span th:if="${handout.presented}" class="badge badge--success">Given to players</span>
                 <span th:each="tag : ${#strings.arraySplit(handout.tags, ',')}"
                       th:if="${!#strings.isEmpty(tag.trim())}"
                       th:text="${tag.trim()}"

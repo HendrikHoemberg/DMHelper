@@ -62,7 +62,7 @@
                 <div><dt>Speed</dt><dd th:text="${pm.speed + ' ft.'}">30 ft.</dd></div>
                 <div><dt>Perception</dt><dd th:text="${pm.passivePerception}">17</dd></div>
             </dl>
-            <div th:if="${pm.characterSheet != null}" class="badge badge-success">Sheet</div>
+            <div th:if="${pm.characterSheet != null}" class="badge badge--success">Sheet</div>
             <div th:unless="${pm.characterSheet != null}" class="badge">Manual</div>
             <div class="pm-actions">
                 <a th:if="${pm.characterSheet != null}"

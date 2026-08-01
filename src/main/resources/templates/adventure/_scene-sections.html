@@ -6,7 +6,7 @@
        th:if="${section.kind.name() == 'READ_ALOUD'}"
        class="structured-block structured-read-aloud"
        th:attr="data-section-id=${section.id}">
-    <span class="badge badge-info">Read Aloud</span>
+    <span class="badge badge--info">Read Aloud</span>
     <strong th:if="${section.label}" th:text="${section.label}">Label</strong>
     <p th:text="${section.body}">Read aloud text</p>
     <span th:if="${section.sourceLocator}" class="u-text-xs text-muted"

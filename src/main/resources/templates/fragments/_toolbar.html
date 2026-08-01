@@ -2,11 +2,16 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <div class="toolbar" data-region="toolbar"
      th:fragment="toolbar(action, searchValue, searchPlaceholder, filters, actions)">
+    <!-- The label wraps the input rather than pointing at an id: the fragment signature is
+         fixed, so a hardcoded id would collide the moment a page renders two toolbars, and
+         a duplicate id silently sends every `for` to the first one. -->
     <form class="toolbar__search" role="search" method="get" th:action="${action}">
-        <label class="sr-only" for="toolbarSearch">Search</label>
         <th:block th:replace="~{common/_icon :: icon-sized(name='search', size='16')}"></th:block>
-        <input type="search" id="toolbarSearch" name="q" class="toolbar__input"
-               th:value="${searchValue}" th:placeholder="${searchPlaceholder}">
+        <label class="toolbar__search-label">
+            <span class="sr-only">Search</span>
+            <input type="search" name="q" class="toolbar__input"
+                   th:value="${searchValue}" th:placeholder="${searchPlaceholder}">
+        </label>
     </form>
     <div class="toolbar__filters"><th:block th:replace="${filters}"></th:block></div>
     <div class="toolbar__spacer"></div>

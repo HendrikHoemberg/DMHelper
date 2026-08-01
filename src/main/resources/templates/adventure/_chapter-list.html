@@ -48,8 +48,8 @@
       <div class="status-legend" data-status-legend>
         <span class="status-legend__caption">Status key</span>
         <span class="badge">Unvisited</span>
-        <span class="badge badge-warning">Visited</span>
-        <span class="badge badge-success">Done</span>
+        <span class="badge badge--warning">Visited</span>
+        <span class="badge badge--success">Done</span>
       </div>
     </div>
 
@@ -70,8 +70,8 @@
         <div th:each="s : ${ch.scenes}" class="scene-row"
              th:attr="data-scene-search=${(s.title ?: '') + ' ' + (s.sceneKey ?: '')}">
           <span class="badge scene-row__status"
-                th:classappend="${s.status == SceneStatus.DONE} ? 'badge-success' :
-                                (${s.status == SceneStatus.VISITED} ? 'badge-warning' : '')"
+                th:classappend="${s.status == SceneStatus.DONE} ? 'badge--success' :
+                                (${s.status == SceneStatus.VISITED} ? 'badge--warning' : '')"
                 th:text="${#enums.label(s.status)}">Unvisited</span>
           <span th:if="${s.sceneKey}" class="badge" th:text="${s.sceneKey}">14</span>
           <a class="scene-row__title"

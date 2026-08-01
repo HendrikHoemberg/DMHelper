@@ -64,17 +64,17 @@
             </span>
             <span class="roster-col roster-col--conditions">
                 <th:block th:if="${pm.deathSaveFailures > 0 or pm.deathSaveSuccesses > 0}">
-                    <span class="badge badge-danger" th:title="'Death saves: ' + ${pm.deathSaveSuccesses} + '/' + ${pm.deathSaveFailures}"
+                    <span class="badge badge--danger" th:title="'Death saves: ' + ${pm.deathSaveSuccesses} + '/' + ${pm.deathSaveFailures}"
                           th:text="'DS ' + ${pm.deathSaveSuccesses} + '/' + ${pm.deathSaveFailures}">DS 0/1</span>
                 </th:block>
                 <th:block th:if="${pm.concentratingOn != null and !pm.concentratingOn.isBlank()}">
-                    <span class="badge badge-info" th:title="'Concentrating: ' + ${pm.concentratingOn}">Concentrating</span>
+                    <span class="badge badge--info" th:title="'Concentrating: ' + ${pm.concentratingOn}">Concentrating</span>
                 </th:block>
                 <th:block th:if="${pm.conditions != null and !pm.conditions.isEmpty()}">
-                    <span class="badge badge-warning" th:each="cond : ${pm.conditions}" th:text="${cond}">poisoned</span>
+                    <span class="badge badge--warning" th:each="cond : ${pm.conditions}" th:text="${cond}">poisoned</span>
                 </th:block>
                 <th:block th:if="${!pm.active}">
-                    <span class="badge badge-muted">Inactive</span>
+                    <span class="badge badge--neutral">Inactive</span>
                 </th:block>
             </span>
         </summary>
@@ -82,8 +82,8 @@
             <div class="roster-row__meta">
                 <span th:if="${pm.initiativeBonus != 0}" th:text="'Init: +' + ${pm.initiativeBonus}">Init: +4</span>
                 <span th:text="'Speed: ' + ${pm.speed} + ' ft.'">Speed: 30 ft.</span>
-                <span th:if="${pm.exhaustion > 0}" class="badge badge-danger" th:text="'Exhaustion: ' + ${pm.exhaustion}">Exhaustion: 1</span>
-                <span th:if="${pm.inspiration}" class="badge badge-success">Inspiration</span>
+                <span th:if="${pm.exhaustion > 0}" class="badge badge--danger" th:text="'Exhaustion: ' + ${pm.exhaustion}">Exhaustion: 1</span>
+                <span th:if="${pm.inspiration}" class="badge badge--success">Inspiration</span>
                 <span th:if="${pm.characterSheet != null}">
                     <a th:href="@{/campaigns/{cid}/party/{pid}/sheet(cid=${pm.campaign.id}, pid=${pm.id})}"
                        class="btn btn-ghost btn-xs">Sheet</a>

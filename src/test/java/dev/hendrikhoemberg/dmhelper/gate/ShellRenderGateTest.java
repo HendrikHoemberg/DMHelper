@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.gate;
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
 import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
+import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
 import dev.hendrikhoemberg.dmhelper.support.ReleaseRehearsalFixture;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,6 +26,7 @@ class ShellRenderGateTest {
 
     @LocalServerPort private int port;
     @Autowired private ReleaseRehearsalFixture fixture;
+    @Autowired private CampaignRepository campaigns;
 
     private static Playwright playwright;
     private static Browser browser;
@@ -62,14 +65,20 @@ class ShellRenderGateTest {
         }
     }
 
-    private List<String> standardPages() {
+    private List<String> campaignPages() {
         String c = "/campaigns/" + seeded.campaignId();
-        return List.of("/campaigns", c, c + "/adventures", c + "/encounters", c + "/maps",
+        return List.of(c, c + "/adventures", c + "/encounters", c + "/maps",
                 c + "/handouts", c + "/audio/cues", c + "/notes", c + "/party", c + "/sheets",
                 c + "/treasury", c + "/ledger", c + "/quests", c + "/world/npcs",
-                c + "/world/locations", c + "/world/factions", c + "/calendar",
-                "/library", "/library/tables", "/library/traps", "/library/hazards",
-                "/library/about");
+                c + "/world/locations", c + "/world/factions", c + "/calendar");
+    }
+
+    private List<String> standardPages() {
+        return Stream.concat(
+                Stream.of("/campaigns"),
+                Stream.concat(campaignPages().stream(),
+                        Stream.of("/library", "/library/tables", "/library/traps",
+                                "/library/hazards", "/library/about"))).toList();
     }
 
     @Test
@@ -113,6 +122,26 @@ class ShellRenderGateTest {
             assertThat((String) counts.get("archetype"))
                     .as("archetype on %s", path)
                     .isIn("index", "detail", "form", "operational", "editor");
+        }
+    }
+
+    /**
+     * Spec 8.1: the top bar carries campaign identity. Asserted in the browser because the
+     * only way this fails is a model attribute nobody publishes — the fragment shipped
+     * bound to {@code ${campaignName}}, which no controller, advice or {@code th:with} ever
+     * set, so the chip was dead markup on every page and the template still parsed clean.
+     */
+    @Test
+    void everyCampaignScopedPageNamesItsCampaignInTheTopBar() {
+        page.setViewportSize(1440, 900);
+        String expected = campaigns.findById(seeded.campaignId()).orElseThrow().getName();
+        assertThat(expected).as("the fixture campaign has a name to show").isNotBlank();
+        for (String path : campaignPages()) {
+            page.navigate("http://localhost:" + port + path);
+            page.waitForLoadState(LoadState.NETWORKIDLE);
+            assertThat(page.locator(".app-topbar__campaign").textContent().trim())
+                    .as("campaign identity in the top bar on %s", path)
+                    .isEqualTo(expected);
         }
     }
 

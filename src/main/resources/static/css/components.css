@@ -373,6 +373,7 @@
 }
 .toolbar__spacer { flex: 1; }
 .toolbar__search { display: flex; align-items: center; gap: var(--space-2xs); }
+.toolbar__search-label { display: flex; align-items: center; }
 .toolbar__input {
   min-width: 18rem; background: var(--surface-inset);
   border: 1px solid var(--border-strong); border-radius: var(--radius);
@@ -3521,31 +3522,14 @@ dialog.modal:not([open]) {
 }
 .page-header__title {
   font-family: var(--font-display);
-  font-size: var(--text-2xl); line-height: 1.2; color: var(--text-primary); margin: 0;
+  font-size: var(--text-2xl); font-weight: 600; line-height: 1.2;
+  color: var(--text-primary); margin: 0;
 }
 .page-header__summary { color: var(--text-secondary); font-size: var(--text-sm); margin: 0; }
 .page-header__breadcrumb { font-size: var(--text-xs); color: var(--text-tertiary); }
 .page-header__breadcrumb:empty { display: none; }
 .page-header__actions { display: flex; align-items: center; gap: var(--space-sm); }
 .page-header__secondary { display: flex; align-items: center; gap: var(--space-2xs); }
-
-/* The legacy .page-header block in base.css predates the fragment; ~58 pre-migration
-   templates still depend on it, so it cannot be deleted. The shared fragment's own rules
-   above already win the properties they set (components.css loads after base.css), but the
-   legacy block also sets align-items:flex-end, justify-content:space-between,
-   flex-wrap:wrap and margin-bottom, which would distort a column-stacked fragment header,
-   and `.page-header h1` (0,1,1) outranks `.page-header__title` (0,1,0) for weight/margin.
-   This scoped block beats the legacy block for exactly those properties. */
-.page-header[data-region="page-header"] {
-  align-items: stretch;
-  justify-content: flex-start;
-  flex-wrap: nowrap;
-  margin-bottom: 0;
-}
-.page-header[data-region="page-header"] h1 {
-  font-weight: 600;
-  margin-bottom: 0;
-}
 
 /* ── Overlay elevation model (spec section 15): popover, side sheet, dialog, toast ──
    The `[hidden]` reset that keeps every level closed on page load sits at the END of this

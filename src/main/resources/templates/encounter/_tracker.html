@@ -22,7 +22,7 @@
                     <h3 data-encounter-name x-text="encounter?.name || 'Combat'"></h3>
                     <span class="tracker-heading__round">Round <strong class="round-counter" x-ref="roundCounter"
                                         x-text="encounter?.round || 0"></strong></span>
-                    <span class="badge badge-warning" x-show="pendingWaves.length > 0"
+                    <span class="badge badge--warning" x-show="pendingWaves.length > 0"
                           x-text="pendingWaves.length + ' wave' + (pendingWaves.length !== 1 ? 's' : '') + ' pending'"></span>
                 </div>
                 <div class="tracker-header__end-zone">
@@ -72,7 +72,7 @@
                             <span class="badge"
                                   x-show="waveLabel(c)"
                                   x-text="waveLabel(c)"></span>
-                            <span class="badge badge-warning"
+                            <span class="badge badge--warning"
                                   x-show="initiativeTies.has(c.initiative)">Tie</span>
                             <input type="number" data-initiative-input
                                    inputmode="numeric"

@@ -3,7 +3,7 @@
     <div class="waves-list">
         <div th:each="wave : ${waves}" class="wave-item u-flex action-row u-gap-sm u-items-center u-mb-sm">
             <span class="badge"
-                  th:classappend="'badge-' + ${wave.status == 'ACTIVE' ? 'success' : (wave.status == 'PENDING' ? 'warning' : 'secondary')}"
+                  th:classappend="'badge--' + ${wave.status == 'ACTIVE' ? 'success' : (wave.status == 'PENDING' ? 'warning' : 'neutral')}"
                   th:text="${#enums.labelOf(wave.status)}">Status</span>
             <span th:text="${wave.name}" class="u-fw-bold">Wave Name</span>
             <span class="text-muted u-text-sm" th:text="'Trigger: ' + ${#enums.labelOf(wave.triggerKind)}">Trigger</span>

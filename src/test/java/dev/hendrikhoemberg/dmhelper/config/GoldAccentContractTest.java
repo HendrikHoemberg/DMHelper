@@ -31,20 +31,22 @@ class GoldAccentContractTest {
     /**
      * Decorative gold that spec 6.3 says to remove — "decorative gold borders, rules, and
      * generic badges are removed" — still standing because the surfaces belong to later
-     * tasks. .badge-info is the sharpest: an <em>information</em> badge filled with the
-     * primary-action colour. Task 15 owns the page header and badges, Task 23 the campaign
-     * and library cards, Task 53 the release sweep.
+     * tasks. Task 23 owns the campaign and library cards, Task 53 the release sweep.
+     *
+     * <p>{@code .badge-info} — an <em>information</em> badge filled with the primary-action
+     * colour — was the sharpest entry and is gone: Task 16 replaced the four legacy semantic
+     * badge rules with the {@code .badge--*} tone set, which paints from {@code --state-*}.
      *
      * <p>This list is debt, not permission. It may only shrink, and
      * {@link #theAcknowledgedGoldDebtNeverGrows()} is what stops Part 2 from quietly
      * appending to it the way this list grew from eleven entries to thirty-four.
      */
     private static final java.util.List<String> GOLD_DEBT_MARKERS = java.util.List.of(
-            ".library-chip--accent", ".dice-input-row", ".badge-info", ".crit-high",
+            ".library-chip--accent", ".dice-input-row", ".crit-high",
             ".statblock-render", ".read-aloud", ".structured-read-aloud",
             ".participant-statblock__name");
 
-    private static final int GOLD_DEBT_BUDGET = 8;
+    private static final int GOLD_DEBT_BUDGET = 7;
 
     @Test
     void theAcknowledgedGoldDebtNeverGrows() {

@@ -2,7 +2,10 @@ package dev.hendrikhoemberg.dmhelper.config;
 
 import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Spec section 10: features specialize content, never recreate the primitives. */
@@ -64,5 +67,80 @@ class SharedComponentContractTest {
         for (String tone : List.of("success", "warning", "danger", "info", "shield", "neutral")) {
             assertThat(css).as("badge tone %s", tone).contains(".badge--" + tone);
         }
+    }
+
+    private static final Pattern RETIRED_TONE =
+            Pattern.compile("badge-(success|warning|danger|info|muted|secondary)\\b");
+
+    /** The six tone words, however a template spells the class that carries them. */
+    private static final Pattern TONE_WORD =
+            Pattern.compile("\\b(success|warning|danger|info|muted|secondary)\\b");
+
+    /**
+     * Spec 6.4: a semantic badge must combine at least two channels, and colour is the one
+     * it always brings. Task 16 replaced the four single-dash semantic badge rules with the
+     * {@code .badge--*} tone set. A template still naming a single-dash tone renders a plain
+     * neutral chip, so GAIN and SPEND, or a death save and an inspiration point, come out
+     * looking identical — and nothing complains, because an unmatched class is not an error
+     * in CSS or in Thymeleaf.
+     */
+    @Test
+    void noTemplateNamesARetiredSingleDashBadgeTone() {
+        List<String> offenders = new ArrayList<>();
+        int scanned = 0;
+
+        for (Path template : TemplateRules.allTemplates()) {
+            scanned++;
+            Matcher match = RETIRED_TONE.matcher(TemplateRules.read(template));
+            while (match.find()) {
+                offenders.add(template + " -> " + match.group());
+            }
+        }
+
+        assertThat(scanned).as("no template was scanned — this test has gone blind")
+                .isGreaterThan(0);
+        assertThat(offenders)
+                .as("retired badge tone: it has no CSS rule, so the state renders colourless")
+                .isEmpty();
+    }
+
+    /**
+     * The same defect, assembled at render time instead of written out. {@code
+     * encounter/_waves.html} built {@code 'badge-' + (ACTIVE ? 'success' : 'warning')}, which
+     * the literal scan above cannot see because no source line ever contains the string
+     * {@code badge-success}. Checked per attribute rather than per file so the domain
+     * families that legitimately concatenate a single-dash prefix — {@code 'badge-' + rarity}
+     * on magic items, {@code 'badge-state-' + …} on inventory — do not have to be exempted:
+     * their expressions carry no tone word.
+     */
+    @Test
+    void noTemplateAssemblesARetiredBadgeToneAtRenderTime() {
+        List<String> offenders = new ArrayList<>();
+        int scanned = 0;
+
+        for (Path template : TemplateRules.allTemplates()) {
+            // Read the attributes off every element rather than selecting on them: a jsoup
+            // CSS selector cannot address the "th:" prefix, and one that silently matches
+            // nothing is exactly the blind test this scan is guarding against.
+            for (var element : TemplateRules.parse(template).getAllElements()) {
+                for (String attribute : List.of("th:class", "th:classappend")) {
+                    String expression = element.attr(attribute);
+                    if (expression.isBlank()) continue;
+                    scanned++;
+                    // Strip the approved prefix first; whatever "badge-" survives is single-dash.
+                    boolean singleDashPrefix = expression.replace("badge--", "").contains("badge-");
+                    if (singleDashPrefix && TONE_WORD.matcher(expression).find()) {
+                        offenders.add(template + " -> " + attribute + "=\"" + expression + "\"");
+                    }
+                }
+            }
+        }
+
+        assertThat(scanned)
+                .as("no dynamic class expression was scanned — this test has gone blind")
+                .isGreaterThan(0);
+        assertThat(offenders)
+                .as("a badge tone concatenated onto the retired single-dash prefix")
+                .isEmpty();
     }
 }

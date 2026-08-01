@@ -2,8 +2,8 @@
 <div th:fragment="card(entry)" th:if="${entry != null}" class="card card--tight">
     <div class="u-flex--md">
         <div class="u-shrink-0">
-            <span th:if="${entry.direction() == 'GAIN'}" class="badge badge-success">GAIN</span>
-            <span th:if="${entry.direction() == 'SPEND'}" class="badge badge-danger">SPEND</span>
+            <span th:if="${entry.direction() == 'GAIN'}" class="badge badge--success">GAIN</span>
+            <span th:if="${entry.direction() == 'SPEND'}" class="badge badge--danger">SPEND</span>
             <span class="badge u-ml-xs" th:text="${#enums.labelOf(entry.kind())}">Gold</span>
         </div>
         <div class="u-flex-1 u-min-w-0">

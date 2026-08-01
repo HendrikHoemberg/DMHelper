@@ -4,8 +4,10 @@
 <header class="app-topbar">
     <a class="app-brand" data-display-title th:href="@{/}">DMHelper</a>
 
-    <span class="app-topbar__campaign" th:if="${campaignName != null}"
-          th:text="${campaignName}">Campaign</span>
+    <!-- Campaign identity (spec 8.1). `campaign` is what CampaignModelAdvice and the
+         campaign-scoped controllers publish; there has never been a `campaignName`. -->
+    <span class="app-topbar__campaign" th:if="${campaign != null}"
+          th:text="${campaign.name}">Campaign</span>
 
     <div class="app-topbar__spacer"></div>
 
@@ -24,6 +26,10 @@
         <th:block th:replace="~{common/_icon :: icon(name='dice')}"></th:block>
     </button>
 
+    <!-- Session state (spec 8.1, "when applicable"). No page publishes `sessionState` yet:
+         spec 12.2 puts session state in the cockpit command bar, which Part 4 builds, and
+         supplying it globally means a CampaignSession lookup on every campaign page render.
+         Part 4 owns that decision; the region and its hook exist so wiring it is one edit. -->
     <div class="app-topbar__session" data-topbar-session
          th:if="${sessionState != null}">
         <span class="badge badge--info" th:text="${sessionState}">Session state</span>
