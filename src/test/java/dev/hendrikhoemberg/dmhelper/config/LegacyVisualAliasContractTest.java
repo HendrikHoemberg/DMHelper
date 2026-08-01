@@ -11,7 +11,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class LegacyVisualAliasContractTest {
 
-    /** Fill each ceiling with the count printed by the first run of this test. */
+    /** Ceilings are measured counts, never estimates. Six names left the vocabulary
+     *  entirely once they proved to have no consumer in CSS, templates or JS. */
     private static final Map<String, Long> BUDGETS = new LinkedHashMap<>();
 
     static {
@@ -21,9 +22,7 @@ class LegacyVisualAliasContractTest {
         BUDGETS.put("--color-text", 113L);
         BUDGETS.put("--color-text-muted", 182L);
         BUDGETS.put("--color-accent", 67L);
-        BUDGETS.put("--color-accent-hover", 0L);
         BUDGETS.put("--color-danger", 35L);
-        BUDGETS.put("--color-danger-hover", 0L);
         BUDGETS.put("--color-success", 23L);
         BUDGETS.put("--color-warning", 32L);
         BUDGETS.put("--color-warning-bg", 1L);
@@ -36,9 +35,7 @@ class LegacyVisualAliasContractTest {
         BUDGETS.put("--color-gold-soft", 12L);
         BUDGETS.put("--color-overlay", 3L);
         BUDGETS.put("--color-shield", 2L);
-        BUDGETS.put("--color-shield-hover", 0L);
         BUDGETS.put("--color-shield-soft", 1L);
-        BUDGETS.put("--color-attack-bonus", 0L);
         BUDGETS.put("--color-text-secondary", 2L);
         BUDGETS.put("--color-border-subtle", 1L);
         BUDGETS.put("--color-bg-elevated", 2L);
@@ -46,8 +43,6 @@ class LegacyVisualAliasContractTest {
         BUDGETS.put("--color-hp-bar", 1L);
         BUDGETS.put("--color-hp-bloodied", 2L);
         BUDGETS.put("--color-hp-dead", 2L);
-        BUDGETS.put("--color-condition-active", 0L);
-        BUDGETS.put("--color-legendary", 0L);
         BUDGETS.put("--color-tracker-bg", 1L);
         BUDGETS.put("--color-combatant-active", 1L);
         BUDGETS.put("--color-combatant-hover", 2L);

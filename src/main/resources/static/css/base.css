@@ -9,7 +9,6 @@ html, body {
 }
 body {
   min-height: 100vh;
-  background-image: var(--texture-paper);
 }
 
 /* subtle vignette on the app frame; sits below overlays */

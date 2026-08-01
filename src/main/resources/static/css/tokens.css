@@ -1,5 +1,5 @@
 /* DMHelper design tokens — the ONLY css file allowed to contain raw values.
-   Spec: docs/superpowers/specs/2026-07-13-ui-overhaul-design.md */
+   Spec: docs/superpowers/specs/2026-07-31-whole-product-ui-redesign-design.md */
 
 @font-face {
   font-family: 'Cinzel';
@@ -85,9 +85,7 @@
   --color-text: var(--text-primary);
   --color-text-muted: var(--text-secondary);
   --color-accent: var(--action-primary);
-  --color-accent-hover: var(--action-primary-hover);
   --color-danger: var(--state-danger);
-  --color-danger-hover: color-mix(in srgb, var(--state-danger) 82%, var(--text-primary));
   --color-success: var(--state-success);
   --color-warning: var(--state-warning);
   --color-warning-bg: var(--state-warning-surface);
@@ -100,9 +98,7 @@
   --color-gold-soft: var(--selection-surface);
   --color-overlay: var(--scrim-strong);
   --color-shield: var(--state-shield);
-  --color-shield-hover: color-mix(in srgb, var(--state-shield) 82%, var(--text-primary));
   --color-shield-soft: var(--state-shield-surface);
-  --color-attack-bonus: var(--action-primary);
   --color-text-secondary: var(--text-secondary);
   --color-border-subtle: var(--border-subtle);
   --color-bg-elevated: var(--surface-raised);
@@ -189,11 +185,11 @@
   /* gold sheen */
   --gold-sheen: linear-gradient(110deg, #c9a35c 0%, #e3c68b 35%, #c9a35c 50%, #b08a4a 100%);
 
-  /* vignette — barely there on prep screens, deeper at the table (§3.1) */
-  --vignette-intensity: 0.14;
+  /* vignette — spec 6.2 allows one on immersive runtime and editor canvases only, so it
+     rests at zero and the cockpit, battle map and handout surfaces raise it. */
+  --vignette-intensity: 0;
 
-  /* textures (inline data-uri noise, ~300 bytes each) */
-  --texture-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  /* texture (inline data-uri noise, ~300 bytes) — in-world surfaces only */
   --texture-parchment: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
 
   /* faint uneven light across an in-world document — the key light, upper left */

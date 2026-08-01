@@ -751,8 +751,6 @@
     --color-hp-bar: var(--color-success);
     --color-hp-bloodied: var(--color-warning);
     --color-hp-dead: var(--color-danger);
-    --color-condition-active: var(--color-warning);
-    --color-legendary: var(--color-warning);
     --color-tracker-bg: var(--color-surface);
     --color-combatant-active: color-mix(in srgb, var(--color-accent) 12%, transparent);
     --color-combatant-hover: var(--neutral-hover-surface);
