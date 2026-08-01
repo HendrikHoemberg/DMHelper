@@ -1,9 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — Edit ' + ${map.name}">DMHelper — Edit Map</title>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle='Edit ' + ${map.name},
+          archetype='editor',
+          surface=null,
+          header=~{},
+          content=~{::#page-content},
+          rail=~{})}">
+<body>
+<div id="page-content" class="page-content">
     <style>
+
         .editor-container {
             display: flex;
             flex-direction: column;
@@ -203,10 +210,8 @@
         }
         .shortcuts-panel dt { font-weight: 600; }
         .shortcuts-panel dd { margin: 0; color: var(--color-text-muted); }
-    </style>
-</head>
-<body>
-    <div class="editor-container" x-data="toolbar()">
+        </style>
+<div class="editor-container" x-data="toolbar()">
         <div class="editor-toolbar">
             <a th:href="@{/campaigns/{cid}/maps(cid=${campaignId})}" class="btn btn-ghost">&larr; Maps</a>
 
@@ -797,5 +802,6 @@
         // Alpine init may run before this module assigns window.mapEditor; load pins once ready.
         editor.loadThreatPins();
     </script>
+</div>
 </body>
 </html>

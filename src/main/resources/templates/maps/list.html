@@ -1,42 +1,38 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|Maps — ${campaign.name}|">DMHelper — Maps</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle='Maps',
+          archetype='index',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title='Maps',
+        summary=${campaign.name},
+        breadcrumb=~{},
+        primary=~{::#primaryAction},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<button id="primaryAction" class="btn btn-primary"
+        th:attr="hx-get=@{/campaigns/{cid}/maps/new(cid=${campaignId})}"
+        hx-target="#map-grid"
+        hx-swap="beforeend">+ New Map</button>
+<a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Back to Campaign</a>
 
-    <div class="app-shell">
-            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow" th:text="${campaign.name}">Maps</div>
-                    <h1 data-display-title>Maps</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Back to Campaign</a>
-                    <button class="btn btn-primary"
-                            th:attr="hx-get=@{/campaigns/{cid}/maps/new(cid=${campaignId})}"
-                            hx-target="#map-grid"
-                            hx-swap="beforeend">+ New Map</button>
-                </div>
-            </div>
-
-            <div id="map-grid" class="card-grid card-grid--bounded empty-state-host">
-                <th:block th:if="${maps == null or maps.isEmpty()}">
-                    <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
-                        'No maps yet', 'New map', @{/campaigns/{id}/maps/new(id=${campaignId})},
-                        'Draw a battle map or import an image to run encounters on the grid.', 'map')}"></th:block>
-                </th:block>
-                <th:block th:each="map : ${maps}">
-                    <th:block th:replace="~{maps/_card :: card(map=${map}, campaignId=${campaignId})}"></th:block>
-                </th:block>
-            </div>
-        </main>
-
+<div id="page-content" class="page-content">
+    <div id="map-grid" class="card-grid card-grid--bounded empty-state-host">
+        <th:block th:if="${maps == null or maps.isEmpty()}">
+            <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
+                'No maps yet', 'New map', @{/campaigns/{id}/maps/new(id=${campaignId})},
+                'Draw a battle map or import an image to run encounters on the grid.', 'map')}"></th:block>
+        </th:block>
+        <th:block th:each="map : ${maps}">
+            <th:block th:replace="~{maps/_card :: card(map=${map}, campaignId=${campaignId})}"></th:block>
+        </th:block>
     </div>
+</div>
 </body>
 </html>
