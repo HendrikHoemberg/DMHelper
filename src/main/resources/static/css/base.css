@@ -116,6 +116,32 @@ fieldset {
 }
 
 
+/* ── Global top bar: identity, search, dice, session, overflow ── */
+.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-nav);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  height: var(--topbar-height);
+  padding-inline: var(--space-md);
+  background: var(--surface-navigation);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.app-topbar__spacer { flex: 1; }
+.app-brand { font-family: var(--font-display); color: var(--text-primary); text-decoration: none; }
+.app-topbar__campaign { color: var(--text-secondary); font-size: var(--text-sm); }
+.topbar-btn {
+  display: inline-flex; align-items: center; gap: var(--space-2xs);
+  padding: var(--space-2xs) var(--space-xs);
+  background: transparent; border: 1px solid transparent; border-radius: var(--radius);
+  color: var(--text-secondary); cursor: pointer;
+}
+.topbar-btn:hover { color: var(--text-primary); background: var(--neutral-hover-surface); }
+.topbar-btn__label { font-size: var(--text-sm); }
+.topbar-btn__key { color: var(--text-tertiary); font-size: var(--text-xs); }
+
 .pin-display {
   font-family: 'Cascadia Code', 'Fira Code', monospace;
   font-size: var(--text-sm);

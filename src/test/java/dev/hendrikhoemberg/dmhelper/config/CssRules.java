@@ -24,7 +24,7 @@ final class CssRules {
     static final List<String> ALL_FILES = discoverCssFiles();
 
     private static final Pattern RAW_COLOR = Pattern.compile(
-            "#[0-9a-fA-F]{3,8}\\b|\\brgba?\\([^)]*\\)|\\bhsla?\\([^)]*\\)");
+            "(?<!&)#[0-9a-fA-F]{3,8}\\b|\\brgba?\\([^)]*\\)|\\bhsla?\\([^)]*\\)");
 
     /** Raw color literals in a CSS or markup source, in document order. */
     static List<String> rawColorLiterals(String source) {

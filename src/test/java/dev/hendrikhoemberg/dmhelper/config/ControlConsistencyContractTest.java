@@ -26,7 +26,7 @@ class ControlConsistencyContractTest {
             "audio-btn", "audio-btn-primary", "tool-btn", "terrain-swatch",
             "appnav-collapse", "cockpit-splitter", "cockpit-zone__tab", "dice-toggle-btn",
             "form-tab", "map-editor-control", "modal-close", "roll-btn", "sb-result-item",
-            "group-count");
+            "group-count", "topbar-btn");
 
     @Test
     void everyButtonInAGovernedTemplateDeclaresItsRole() throws IOException {

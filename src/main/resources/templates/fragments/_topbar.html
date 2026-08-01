@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="topbar">
+<header class="app-topbar">
+    <a class="app-brand" data-display-title th:href="@{/}">DMHelper</a>
+
+    <span class="app-topbar__campaign" th:if="${campaignName != null}"
+          th:text="${campaignName}">Campaign</span>
+
+    <div class="app-topbar__spacer"></div>
+
+    <button type="button" class="topbar-btn" data-topbar-search
+            aria-label="Search everything" title="Search everything"
+            onclick="window.dispatchEvent(new CustomEvent('command-palette-toggle'))">
+        <th:block th:replace="~{common/_icon :: icon(name='search')}"></th:block>
+        <span class="topbar-btn__label">Search</span>
+        <kbd class="topbar-btn__key" id="paletteHintKey">&#8984;K</kbd>
+    </button>
+
+    <button type="button" class="topbar-btn" id="diceToggle" data-topbar-dice
+            th:if="${campaignId != null}" aria-label="Toggle dice roller"
+            title="Toggle dice roller (Ctrl+R)"
+            onclick="window.dispatchEvent(new CustomEvent('dice-roller-toggle'))">
+        <th:block th:replace="~{common/_icon :: icon(name='dice')}"></th:block>
+    </button>
+
+    <div class="app-topbar__session" data-topbar-session
+         th:if="${sessionState != null}">
+        <span class="badge badge--info" th:text="${sessionState}">Session state</span>
+    </div>
+
+    <div class="app-topbar__overflow" data-topbar-overflow x-data="{ open: false }">
+        <button type="button" class="topbar-btn" aria-label="More" title="More"
+                :aria-expanded="open" @click="open = !open">
+            <th:block th:replace="~{common/_icon :: icon(name='menu')}"></th:block>
+        </button>
+        <div class="popover popover--end" x-show="open" x-cloak @click.outside="open = false"
+             role="menu" aria-label="More">
+            <a class="popover__item" role="menuitem" href="/library/about">About</a>
+            <a class="popover__item" role="menuitem"
+               th:if="${campaignId != null}"
+               th:href="@{/campaigns/{id}/settings(id=${campaignId})}">Campaign settings</a>
+        </div>
+    </div>
+
+    <th:block th:replace="~{fragments/_command-palette :: command-palette}"></th:block>
+</header>
+
+<th:block th:if="${campaignId != null}">
+    <th:block th:replace="~{fragments/_dice-roller :: dice-roller}"></th:block>
+</th:block>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+document.body.dataset.campaignId = /*[[${campaignId}]]*/ '';
+/*]]>*/
+</script>
+<script th:src="@{/js/dice-roller.js}"></script>
+<script th:src="@{/js/topbar.js}"></script>
+</th:block>
+</html>
