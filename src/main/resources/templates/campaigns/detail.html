@@ -1,37 +1,38 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — ' + ${campaign.name}">DMHelper — Campaign</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${campaign.name},
+          archetype='operational',
+          surface='read',
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${campaign.name},
+        summary=${campaign.description != null and !campaign.description.isBlank() ? campaign.description : null},
+        breadcrumb=~{},
+        primary=~{::#primaryAction},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<a id="primaryAction" class="btn btn-primary" data-run-entry="session" data-run-session
+   th:href="@{/campaigns/{id}/session(id=${campaign.id})}">Run Session</a>
+<a id="secondaryActions" class="btn btn-ghost"
+   th:href="@{/campaigns/{id}/settings(id=${campaign.id})}">Settings</a>
 
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main" data-surface="read">
-            <div class="dash-header">
-                <h1 th:text="${campaign.name}">Campaign Name</h1>
-                <div class="rule-taper"></div>
-                <p class="dash-desc" th:if="${campaign.description != null and !campaign.description.isBlank()}"
-                   th:text="${campaign.description}">Description</p>
-            </div>
+<div id="page-content" class="page-content">
+    <div class="dash-actions dash-run u-mb-lg">
+        <a class="btn" data-run-entry="scene" th:if="${currentScene != null}"
+           th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaign.id}, aid=${currentScene.chapter.adventure.id}, sid=${currentScene.id})}">Current scene</a>
+        <a class="btn" data-run-entry="encounter" th:if="${activeEncounterId != null}"
+           th:href="@{/campaigns/{id}/encounters/{eid}(id=${campaign.id}, eid=${activeEncounterId})}">Active encounter</a>
+        <!-- Preparation and administration, not run entry points. -->
+        <a class="btn btn-ghost"
+           th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">Plan Adventures</a>
+    </div>
 
-            <div class="dash-actions dash-run u-mb-lg">
-                <a class="btn btn-primary" data-run-entry="session" data-run-session
-                   th:href="@{/campaigns/{id}/session(id=${campaign.id})}">Run Session</a>
-                <a class="btn" data-run-entry="scene" th:if="${currentScene != null}"
-                   th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaign.id}, aid=${currentScene.chapter.adventure.id}, sid=${currentScene.id})}">Current scene</a>
-                <a class="btn" data-run-entry="encounter" th:if="${activeEncounterId != null}"
-                   th:href="@{/campaigns/{id}/encounters/{eid}(id=${campaign.id}, eid=${activeEncounterId})}">Active encounter</a>
-                <!-- Preparation and administration, not run entry points. -->
-                <a class="btn btn-ghost"
-                   th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">Plan Adventures</a>
-                <a class="btn btn-ghost"
-                   th:href="@{/campaigns/{id}/settings(id=${campaign.id})}">Settings</a>
-            </div>
-
-            <th:block th:replace="~{party/_summary-bar :: summary-bar(view=${partyMembers}, mode=${null}, oob=${null})}"></th:block>
+    <th:block th:replace="~{party/_summary-bar :: summary-bar(view=${partyMembers}, mode=${null}, oob=${null})}"></th:block>
 
             <section class="scale-panel" data-scale-panel aria-label="Campaign contents">
                 <a class="scale-tile" data-scale="adventures"
@@ -132,8 +133,6 @@
                 </section>
             </div>
 
-
-        </main>
-    </div>
+</div>
 </body>
 </html>

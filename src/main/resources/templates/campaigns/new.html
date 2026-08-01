@@ -1,25 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title>DMHelper — New Campaign</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle='New Campaign',
+          archetype='form',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title='New Campaign',
+        summary='Every saga starts with a blank page.',
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{})}"></th:block>
+</div>
 
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow">The Grimoire</div>
-                    <h1 data-display-title>New Campaign</h1>
-                    <div class="rule-taper"></div>
-                </div>
-            </div>
-
-            <th:block th:replace="~{campaigns/_form :: form(true)}"></th:block>
-        </main>
-    </div>
+<div id="page-content" class="page-content">
+    <th:block th:replace="~{campaigns/_form :: form(true)}"></th:block>
+</div>
 </body>
 </html>
