@@ -3,9 +3,12 @@
   margin: 0;
   padding: 0;
 }
+html, body {
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+}
 body {
   min-height: 100vh;
-  background-color: var(--elevation-base-bg);
   background-image: var(--texture-paper);
 }
 
@@ -46,9 +49,9 @@ h1, h2 {
   input[type="tel"], input[type="date"], input[type="time"],
   select, textarea
 ) {
-  color: var(--color-text);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  color: var(--text-primary);
+  background: var(--surface-inset);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   font-family: inherit;
 }
@@ -82,11 +85,10 @@ fieldset {
   margin-bottom: var(--space-md);
 }
 
-:where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid var(--color-accent);
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  border-radius: var(--radius);
-  transition: outline-offset var(--duration-micro) var(--ease-out);
+  border-radius: inherit;
 }
 
 .navbar {
@@ -102,7 +104,6 @@ fieldset {
 }
 
 .navbar-brand {
-  font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: 700;
   color: var(--color-text);
@@ -158,15 +159,8 @@ fieldset {
   color: var(--color-text-muted);
 }
 
-.page-header .rule-taper--gold {
+.page-header .rule-taper {
   max-width: 320px;
-  transform-origin: left center;
-  animation: rule-draw var(--duration-theatrical) var(--ease-out) forwards;
-}
-
-@keyframes rule-draw {
-  from { transform: scaleX(0); opacity: 0; }
-  to { transform: scaleX(1); opacity: 1; }
 }
 
 .u-nowrap { white-space: nowrap; }
@@ -193,6 +187,7 @@ fieldset {
 }
 
 .app-shell > .app-main {
+  background: var(--surface-workspace);
   padding: var(--space-lg);
   overflow-y: auto;
   min-width: 0;
@@ -238,7 +233,7 @@ fieldset {
   border-left-color: var(--color-accent);
   background: var(--elevation-floating-bg);
 }
-.appnav-home { font-family: var(--font-display); color: var(--color-text); }
+.appnav-home { color: var(--color-text); }
 
 .appnav-footer { margin-top: auto; padding: var(--space-sm); }
 .appnav-run { width: 100%; }
