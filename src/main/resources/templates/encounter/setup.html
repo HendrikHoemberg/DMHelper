@@ -19,7 +19,7 @@
                         / Setup
                     </div>
                     <h1 data-display-title th:text="'Setup: ' + ${encounter.name}">Setup: Encounter Name</h1>
-                    <div class="rule-taper rule-taper--gold"></div>
+                    <div class="rule-taper"></div>
                 </div>
                 <div class="page-header-actions">
                     <a th:href="@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${encounter.id})}" class="btn btn-primary">Done &mdash; back to encounter</a>

@@ -185,7 +185,6 @@
 
   /* gold sheen */
   --gold-sheen: linear-gradient(110deg, #c9a35c 0%, #e3c68b 35%, #c9a35c 50%, #b08a4a 100%);
-  --gold-sweep: linear-gradient(105deg, transparent 40%, rgba(255, 243, 210, 0.35) 50%, transparent 60%);
 
   /* vignette — barely there on prep screens, deeper at the table (§3.1) */
   --vignette-intensity: 0.14;

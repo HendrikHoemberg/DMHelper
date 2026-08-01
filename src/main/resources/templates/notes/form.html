@@ -15,7 +15,7 @@
                     <div class="page-header-eyebrow" th:text="${campaign.name}">Notes</div>
                     <h1 data-display-title
                         th:text="${note != null} ? 'Edit Note' : 'New Note'">New Note</h1>
-                    <div class="rule-taper rule-taper--gold"></div>
+                    <div class="rule-taper"></div>
                 </div>
                 <div class="page-header-actions">
                     <a th:href="@{/campaigns/{id}/notes(id=${campaignId})}"
