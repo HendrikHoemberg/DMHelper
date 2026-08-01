@@ -3529,6 +3529,24 @@ dialog.modal:not([open]) {
 .page-header__actions { display: flex; align-items: center; gap: var(--space-sm); }
 .page-header__secondary { display: flex; align-items: center; gap: var(--space-2xs); }
 
+/* The legacy .page-header block in base.css predates the fragment; ~58 pre-migration
+   templates still depend on it, so it cannot be deleted. The shared fragment's own rules
+   above already win the properties they set (components.css loads after base.css), but the
+   legacy block also sets align-items:flex-end, justify-content:space-between,
+   flex-wrap:wrap and margin-bottom, which would distort a column-stacked fragment header,
+   and `.page-header h1` (0,1,1) outranks `.page-header__title` (0,1,0) for weight/margin.
+   This scoped block beats the legacy block for exactly those properties. */
+.page-header[data-region="page-header"] {
+  align-items: stretch;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  margin-bottom: 0;
+}
+.page-header[data-region="page-header"] h1 {
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
 /* ── Overlay elevation model (spec section 15): popover, side sheet, dialog, toast ──
    The `[hidden]` reset that keeps every level closed on page load sits at the END of this
    section: `.side-sheet[role="complementary"]` below has the same specificity as

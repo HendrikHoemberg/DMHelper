@@ -90,6 +90,17 @@ fieldset {
   border-radius: inherit;
 }
 
+/* Keyboard skip link: off-screen at rest, slides in on focus. */
+.skip-link {
+  position: absolute; left: var(--space-sm); top: calc(var(--space-sm) * -4);
+  z-index: var(--z-overlay);
+  padding: var(--space-2xs) var(--space-sm);
+  background: var(--surface-raised); color: var(--text-primary);
+  border: 1px solid var(--border-strong); border-radius: var(--radius);
+  transition: top var(--duration-micro) ease;
+}
+.skip-link:focus-visible { top: var(--space-sm); }
+
 .navbar {
   display: flex;
   align-items: center;

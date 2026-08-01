@@ -19,4 +19,26 @@
     <script th:src="@{/js/campaign-import.js}" defer></script>
     <script th:src="@{/vendor/alpine.min.js}" defer></script>
 </head>
+
+<head th:fragment="document-head(pageTitle)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} + ' · DMHelper'">DMHelper</title>
+    <link rel="icon" th:href="@{/icons/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/tokens.css}">
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+    <link rel="stylesheet" th:href="@{/css/book.css}">
+    <link rel="stylesheet" th:href="@{/css/surfaces.css}">
+    <script th:src="@{/vendor/htmx.min.js}"></script>
+    <script th:src="@{/js/dm-request.js}"></script>
+    <script th:src="@{/js/keyboard.js}"></script>
+    <script th:src="@{/js/command-palette.js}"></script>
+    <script th:src="@{/js/quicknotes.js}"></script>
+    <script th:src="@{/js/ui-elevation.js}"></script>
+    <script th:src="@{/js/ui-overlay.js}"></script>
+    <script th:src="@{/js/runtime-status.js}" defer></script>
+    <script th:src="@{/js/campaign-import.js}" defer></script>
+    <script th:src="@{/vendor/alpine.min.js}" defer></script>
+</head>
 </html>

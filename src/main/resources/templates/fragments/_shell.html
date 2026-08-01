@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:fragment="page(pageTitle, archetype, surface, header, content, rail)">
+<head th:replace="~{fragments/head :: document-head(pageTitle=${pageTitle})}"></head>
+<body th:attr="data-archetype=${archetype}">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <th:block th:replace="~{fragments/_topbar :: topbar}"></th:block>
+    <div class="app-shell">
+        <th:block th:replace="~{fragments/_rail :: rail}"></th:block>
+        <main class="app-main" id="main-content" th:attr="data-surface=${surface}">
+            <div th:class="'page page--' + ${archetype}">
+                <th:block th:replace="${header}"></th:block>
+                <th:block th:replace="${content}"></th:block>
+                <th:block th:replace="${rail}"></th:block>
+            </div>
+        </main>
+    </div>
+    <th:block th:replace="~{fragments/_overlay :: toast-region}"></th:block>
+</body>
+</html>

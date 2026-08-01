@@ -2,9 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <header class="page-header" data-region="page-header"
         th:fragment="page-header(title, summary, breadcrumb, primary, secondary)">
-    <nav class="page-header__breadcrumb" aria-label="Breadcrumb">
-        <th:block th:replace="${breadcrumb}"></th:block>
-    </nav>
+    <nav class="page-header__breadcrumb" aria-label="Breadcrumb"><th:block th:replace="${breadcrumb}"></th:block></nav>
     <div class="page-header__row">
         <div class="page-header__identity">
             <h1 class="page-header__title" data-display-title th:text="${title}">Title</h1>
