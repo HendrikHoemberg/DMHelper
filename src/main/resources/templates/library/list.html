@@ -1,550 +1,554 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title>DMHelper -- Library</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle='Monster Library',
+          archetype='index',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main"
-              th:attr="data-initial-tab=${initialTab},data-initial-search=${initialSearch}"
-              id="library-root">
-            <div class="page-header">
-                <h1 data-display-title>Monster Library</h1>
-                <div class="u-flex--md u-flex-wrap">
-                    <button class="form-tab active" id="tab-monsters"
-                            onclick="switchCompendiumTab('monsters')">Monsters</button>
-                    <button class="form-tab" id="tab-spells"
-                            onclick="switchCompendiumTab('spells')">Spells</button>
-                    <button class="form-tab" id="tab-conditions"
-                            onclick="switchCompendiumTab('conditions')">Conditions</button>
-                    <button class="form-tab" id="tab-rules"
-                            onclick="switchCompendiumTab('rules')">Rules</button>
-                    <button class="form-tab" id="tab-equipment"
-                            onclick="switchCompendiumTab('equipment')">Equipment</button>
-                    <button class="form-tab" id="tab-magic-items"
-                            onclick="switchCompendiumTab('magic-items')">Magic Items</button>
-                    <button class="form-tab" id="tab-classes"
-                            onclick="switchCompendiumTab('classes')">Classes</button>
-                    <button class="form-tab" id="tab-species"
-                            onclick="switchCompendiumTab('species')">Species</button>
-                    <button class="form-tab" id="tab-backgrounds"
-                            onclick="switchCompendiumTab('backgrounds')">Backgrounds</button>
-                    <button class="form-tab" id="tab-feats"
-                            onclick="switchCompendiumTab('feats')">Feats</button>
-                </div>
-                <a th:href="@{/library/statblocks/new}" class="btn btn-primary">+ New Homebrew</a>
-            </div>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title='Monster Library',
+        summary='The compendium',
+        breadcrumb=~{},
+        primary=~{::#primaryAction},
+        secondary=~{})}"></th:block>
+</div>
+<a id="primaryAction" th:href="@{/library/statblocks/new}" class="btn btn-primary">+ New Homebrew</a>
 
-            <div id="section-monsters" class="compendium-section">
-                <div class="search-bar">
-                    <div class="form-group">
-                        <label>Search</label>
-                        <input type="text" name="search" id="librarySearch" placeholder="Search by name..."
-                               hx-get="/library/statblocks"
-                               hx-trigger="keyup changed delay:200ms"
-                               hx-target="#library-results"
-                               hx-include="#libraryCr,#libraryType,#librarySource"
-                               hx-indicator="#library-results-loading">
-                    </div>
-                    <div class="form-group">
-                        <label>CR</label>
-                        <select name="cr" id="libraryCr"
-                                hx-get="/library/statblocks" hx-trigger="change"
-                                hx-target="#library-results"
-                                hx-include="#librarySearch,#libraryType,#librarySource"
-                                hx-indicator="#library-results-loading">
-                            <option value="">Any CR</option>
-                            <option value="0">0</option>
-                            <option value="1/8">1/8</option>
-                            <option value="1/4">1/4</option>
-                            <option value="1/2">1/2</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                            <option value="7">7</option>
-                            <option value="8">8</option>
-                            <option value="9">9</option>
-                            <option value="10">10</option>
-                            <option value="11">11</option>
-                            <option value="12">12</option>
-                            <option value="13">13</option>
-                            <option value="14">14</option>
-                            <option value="15">15</option>
-                            <option value="16">16</option>
-                            <option value="17">17</option>
-                            <option value="18">18</option>
-                            <option value="19">19</option>
-                            <option value="20">20</option>
-                            <option value="30">30</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Type</label>
-                        <select name="type" id="libraryType"
-                                hx-get="/library/statblocks" hx-trigger="change"
-                                hx-target="#library-results"
-                                hx-include="#librarySearch,#libraryCr,#librarySource"
-                                hx-indicator="#library-results-loading">
-                            <option value="">Any Type</option>
-                            <option value="Aberration">Aberration</option>
-                            <option value="Beast">Beast</option>
-                            <option value="Celestial">Celestial</option>
-                            <option value="Construct">Construct</option>
-                            <option value="Dragon">Dragon</option>
-                            <option value="Elemental">Elemental</option>
-                            <option value="Fey">Fey</option>
-                            <option value="Fiend">Fiend</option>
-                            <option value="Giant">Giant</option>
-                            <option value="Humanoid">Humanoid</option>
-                            <option value="Monstrosity">Monstrosity</option>
-                            <option value="Ooze">Ooze</option>
-                            <option value="Plant">Plant</option>
-                            <option value="Undead">Undead</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Source</label>
-                        <select name="source" id="librarySource"
-                                hx-get="/library/statblocks" hx-trigger="change"
-                                hx-target="#library-results"
-                                hx-include="#librarySearch,#libraryCr,#libraryType"
-                                hx-indicator="#library-results-loading">
-                            <option value="">All</option>
-                            <option value="SRD">SRD</option>
-                            <option value="CUSTOM">Custom</option>
-                        </select>
-                    </div>
-                </div>
+<div id="page-content" class="page-content">
+<div id="library-root"
+     th:attr="data-initial-tab=${initialTab},data-initial-search=${initialSearch}">
+    <div class="u-flex--md u-flex-wrap">
+        <button class="form-tab active" id="tab-monsters"
+                onclick="switchCompendiumTab('monsters')">Monsters</button>
+        <button class="form-tab" id="tab-spells"
+                onclick="switchCompendiumTab('spells')">Spells</button>
+        <button class="form-tab" id="tab-conditions"
+                onclick="switchCompendiumTab('conditions')">Conditions</button>
+        <button class="form-tab" id="tab-rules"
+                onclick="switchCompendiumTab('rules')">Rules</button>
+        <button class="form-tab" id="tab-equipment"
+                onclick="switchCompendiumTab('equipment')">Equipment</button>
+        <button class="form-tab" id="tab-magic-items"
+                onclick="switchCompendiumTab('magic-items')">Magic Items</button>
+        <button class="form-tab" id="tab-classes"
+                onclick="switchCompendiumTab('classes')">Classes</button>
+        <button class="form-tab" id="tab-species"
+                onclick="switchCompendiumTab('species')">Species</button>
+        <button class="form-tab" id="tab-backgrounds"
+                onclick="switchCompendiumTab('backgrounds')">Backgrounds</button>
+        <button class="form-tab" id="tab-feats"
+                onclick="switchCompendiumTab('feats')">Feats</button>
+    </div>
 
-                <div id="library-results" hx-get="/library/statblocks" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#library-results-loading">
-                </div>
-                <div id="library-results-loading" class="loading-region" aria-hidden="true">
-                    <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
-                </div>
+    <div id="section-monsters" class="compendium-section">
+        <div class="search-bar">
+            <div class="form-group">
+                <label>Search</label>
+                <input type="text" name="search" id="librarySearch" placeholder="Search by name..."
+                       hx-get="/library/statblocks"
+                       hx-trigger="keyup changed delay:200ms"
+                       hx-target="#library-results"
+                       hx-include="#libraryCr,#libraryType,#librarySource"
+                       hx-indicator="#library-results-loading">
             </div>
+            <div class="form-group">
+                <label>CR</label>
+                <select name="cr" id="libraryCr"
+                        hx-get="/library/statblocks" hx-trigger="change"
+                        hx-target="#library-results"
+                        hx-include="#librarySearch,#libraryType,#librarySource"
+                        hx-indicator="#library-results-loading">
+                    <option value="">Any CR</option>
+                    <option value="0">0</option>
+                    <option value="1/8">1/8</option>
+                    <option value="1/4">1/4</option>
+                    <option value="1/2">1/2</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                    <option value="13">13</option>
+                    <option value="14">14</option>
+                    <option value="15">15</option>
+                    <option value="16">16</option>
+                    <option value="17">17</option>
+                    <option value="18">18</option>
+                    <option value="19">19</option>
+                    <option value="20">20</option>
+                    <option value="30">30</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Type</label>
+                <select name="type" id="libraryType"
+                        hx-get="/library/statblocks" hx-trigger="change"
+                        hx-target="#library-results"
+                        hx-include="#librarySearch,#libraryCr,#librarySource"
+                        hx-indicator="#library-results-loading">
+                    <option value="">Any Type</option>
+                    <option value="Aberration">Aberration</option>
+                    <option value="Beast">Beast</option>
+                    <option value="Celestial">Celestial</option>
+                    <option value="Construct">Construct</option>
+                    <option value="Dragon">Dragon</option>
+                    <option value="Elemental">Elemental</option>
+                    <option value="Fey">Fey</option>
+                    <option value="Fiend">Fiend</option>
+                    <option value="Giant">Giant</option>
+                    <option value="Humanoid">Humanoid</option>
+                    <option value="Monstrosity">Monstrosity</option>
+                    <option value="Ooze">Ooze</option>
+                    <option value="Plant">Plant</option>
+                    <option value="Undead">Undead</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Source</label>
+                <select name="source" id="librarySource"
+                        hx-get="/library/statblocks" hx-trigger="change"
+                        hx-target="#library-results"
+                        hx-include="#librarySearch,#libraryCr,#libraryType"
+                        hx-indicator="#library-results-loading">
+                    <option value="">All</option>
+                    <option value="SRD">SRD</option>
+                    <option value="CUSTOM">Custom</option>
+                </select>
+            </div>
+        </div>
 
-            <div id="section-spells" class="compendium-section hidden">
-                <div class="search-bar">
-                    <div class="form-group">
-                        <label>Search</label>
-                        <input type="text" name="search" id="spellSearch" placeholder="Search spells..."
-                               hx-get="/library/spells"
-                               hx-trigger="keyup changed delay:200ms"
-                               hx-target="#spell-results"
-                               hx-include="#spellLevel,#spellSchool,#spellSource"
-                               hx-indicator="#spell-results-loading">
-                    </div>
-                    <div class="form-group">
-                        <label>Level</label>
-                        <select name="level" id="spellLevel"
-                                hx-get="/library/spells" hx-trigger="change"
-                                hx-target="#spell-results"
-                                hx-include="#spellSearch,#spellSchool,#spellSource"
-                                hx-indicator="#spell-results-loading">
-                            <option value="">Any Level</option>
-                            <option value="0">Cantrip</option>
-                            <option value="1">1st</option>
-                            <option value="2">2nd</option>
-                            <option value="3">3rd</option>
-                            <option value="4">4th</option>
-                            <option value="5">5th</option>
-                            <option value="6">6th</option>
-                            <option value="7">7th</option>
-                            <option value="8">8th</option>
-                            <option value="9">9th</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>School</label>
-                        <select name="school" id="spellSchool"
-                                hx-get="/library/spells" hx-trigger="change"
-                                hx-target="#spell-results"
-                                hx-include="#spellSearch,#spellLevel,#spellSource"
-                                hx-indicator="#spell-results-loading">
-                            <option value="">Any School</option>
-                            <option value="Abjuration">Abjuration</option>
-                            <option value="Conjuration">Conjuration</option>
-                            <option value="Divination">Divination</option>
-                            <option value="Enchantment">Enchantment</option>
-                            <option value="Illusion">Illusion</option>
-                            <option value="Necromancy">Necromancy</option>
-                            <option value="Transmutation">Transmutation</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Source</label>
-                        <select name="source" id="spellSource"
-                                hx-get="/library/spells" hx-trigger="change"
-                                hx-target="#spell-results"
-                                hx-include="#spellSearch,#spellLevel,#spellSchool"
-                                hx-indicator="#spell-results-loading">
-                            <option value="">All</option>
-                            <option value="SRD">SRD</option>
-                            <option value="CUSTOM">Custom</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="u-flex u-mb-md">
-                    <a th:href="@{/library/spells/new}" class="btn btn-sm">+ New Spell</a>
-                </div>
-                <div id="spell-results" hx-get="/library/spells" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#spell-results-loading">
-                </div>
-                <div id="spell-results-loading" class="loading-region" aria-hidden="true">
-                    <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
-                </div>
-            </div>
+        <div id="library-results" hx-get="/library/statblocks" hx-trigger="load" hx-swap="innerHTML"
+             hx-indicator="#library-results-loading">
+        </div>
+        <div id="library-results-loading" class="loading-region" aria-hidden="true">
+            <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
+        </div>
+    </div>
 
-            <div id="section-conditions" class="compendium-section hidden">
-                <div class="search-bar">
-                    <div class="form-group">
-                        <label>Search</label>
-                        <input type="text" name="search" id="conditionSearch" placeholder="Search conditions..."
-                               hx-get="/library/conditions"
-                               hx-trigger="keyup changed delay:200ms"
-                               hx-target="#condition-results"
-                               hx-include="#conditionSource"
-                               hx-indicator="#condition-results-loading">
-                    </div>
-                    <div class="form-group">
-                        <label>Source</label>
-                        <select name="source" id="conditionSource"
-                                hx-get="/library/conditions" hx-trigger="change"
-                                hx-target="#condition-results"
-                                hx-include="#conditionSearch"
-                                hx-indicator="#condition-results-loading">
-                            <option value="">All</option>
-                            <option value="SRD">SRD</option>
-                            <option value="CUSTOM">Custom</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="u-flex u-mb-md">
-                    <a th:href="@{/library/conditions/new}" class="btn btn-sm">+ New Condition</a>
-                </div>
-                <div id="condition-results" hx-get="/library/conditions" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#condition-results-loading">
-                </div>
-                <div id="condition-results-loading" class="loading-region" aria-hidden="true">
-                    <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
-                </div>
+    <div id="section-spells" class="compendium-section hidden">
+        <div class="search-bar">
+            <div class="form-group">
+                <label>Search</label>
+                <input type="text" name="search" id="spellSearch" placeholder="Search spells..."
+                       hx-get="/library/spells"
+                       hx-trigger="keyup changed delay:200ms"
+                       hx-target="#spell-results"
+                       hx-include="#spellLevel,#spellSchool,#spellSource"
+                       hx-indicator="#spell-results-loading">
             </div>
+            <div class="form-group">
+                <label>Level</label>
+                <select name="level" id="spellLevel"
+                        hx-get="/library/spells" hx-trigger="change"
+                        hx-target="#spell-results"
+                        hx-include="#spellSearch,#spellSchool,#spellSource"
+                        hx-indicator="#spell-results-loading">
+                    <option value="">Any Level</option>
+                    <option value="0">Cantrip</option>
+                    <option value="1">1st</option>
+                    <option value="2">2nd</option>
+                    <option value="3">3rd</option>
+                    <option value="4">4th</option>
+                    <option value="5">5th</option>
+                    <option value="6">6th</option>
+                    <option value="7">7th</option>
+                    <option value="8">8th</option>
+                    <option value="9">9th</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>School</label>
+                <select name="school" id="spellSchool"
+                        hx-get="/library/spells" hx-trigger="change"
+                        hx-target="#spell-results"
+                        hx-include="#spellSearch,#spellLevel,#spellSource"
+                        hx-indicator="#spell-results-loading">
+                    <option value="">Any School</option>
+                    <option value="Abjuration">Abjuration</option>
+                    <option value="Conjuration">Conjuration</option>
+                    <option value="Divination">Divination</option>
+                    <option value="Enchantment">Enchantment</option>
+                    <option value="Illusion">Illusion</option>
+                    <option value="Necromancy">Necromancy</option>
+                    <option value="Transmutation">Transmutation</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Source</label>
+                <select name="source" id="spellSource"
+                        hx-get="/library/spells" hx-trigger="change"
+                        hx-target="#spell-results"
+                        hx-include="#spellSearch,#spellLevel,#spellSchool"
+                        hx-indicator="#spell-results-loading">
+                    <option value="">All</option>
+                    <option value="SRD">SRD</option>
+                    <option value="CUSTOM">Custom</option>
+                </select>
+            </div>
+        </div>
+        <div class="u-flex u-mb-md">
+            <a th:href="@{/library/spells/new}" class="btn btn-sm">+ New Spell</a>
+        </div>
+        <div id="spell-results" hx-get="/library/spells" hx-trigger="load" hx-swap="innerHTML"
+             hx-indicator="#spell-results-loading">
+        </div>
+        <div id="spell-results-loading" class="loading-region" aria-hidden="true">
+            <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
+        </div>
+    </div>
 
-            <div id="section-rules" class="compendium-section hidden">
-                <div class="search-bar">
-                    <div class="form-group">
-                        <label>Search</label>
-                        <input type="text" name="search" id="ruleSearch" placeholder="Search rules..."
-                               hx-get="/library/rules"
-                               hx-trigger="keyup changed delay:200ms"
-                               hx-target="#rule-results"
-                               hx-include="#ruleSource"
-                               hx-indicator="#rule-results-loading">
-                    </div>
-                    <div class="form-group">
-                        <label>Source</label>
-                        <select name="source" id="ruleSource"
-                                hx-get="/library/rules" hx-trigger="change"
-                                hx-target="#rule-results"
-                                hx-include="#ruleSearch"
-                                hx-indicator="#rule-results-loading">
-                            <option value="">All</option>
-                            <option value="SRD">SRD</option>
-                            <option value="CUSTOM">Custom</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="u-flex u-mb-md">
-                    <a th:href="@{/library/rules/new}" class="btn btn-sm">+ New Rule</a>
-                </div>
-                <div id="rule-results" hx-get="/library/rules" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#rule-results-loading">
-                </div>
-                <div id="rule-results-loading" class="loading-region" aria-hidden="true">
-                    <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
-                </div>
+    <div id="section-conditions" class="compendium-section hidden">
+        <div class="search-bar">
+            <div class="form-group">
+                <label>Search</label>
+                <input type="text" name="search" id="conditionSearch" placeholder="Search conditions..."
+                       hx-get="/library/conditions"
+                       hx-trigger="keyup changed delay:200ms"
+                       hx-target="#condition-results"
+                       hx-include="#conditionSource"
+                       hx-indicator="#condition-results-loading">
             </div>
+            <div class="form-group">
+                <label>Source</label>
+                <select name="source" id="conditionSource"
+                        hx-get="/library/conditions" hx-trigger="change"
+                        hx-target="#condition-results"
+                        hx-include="#conditionSearch"
+                        hx-indicator="#condition-results-loading">
+                    <option value="">All</option>
+                    <option value="SRD">SRD</option>
+                    <option value="CUSTOM">Custom</option>
+                </select>
+            </div>
+        </div>
+        <div class="u-flex u-mb-md">
+            <a th:href="@{/library/conditions/new}" class="btn btn-sm">+ New Condition</a>
+        </div>
+        <div id="condition-results" hx-get="/library/conditions" hx-trigger="load" hx-swap="innerHTML"
+             hx-indicator="#condition-results-loading">
+        </div>
+        <div id="condition-results-loading" class="loading-region" aria-hidden="true">
+            <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
+        </div>
+    </div>
 
-            <div id="section-equipment" class="compendium-section hidden">
-                <div class="search-bar">
-                    <div class="form-group">
-                        <label>Search</label>
-                        <input type="text" name="search" id="equipmentSearch" placeholder="Search equipment..."
-                               hx-get="/library/equipment"
-                               hx-trigger="keyup changed delay:200ms"
-                               hx-target="#equipment-results"
-                               hx-include="#equipmentCategory,#equipmentSource"
-                               hx-indicator="#equipment-results-loading">
-                    </div>
-                    <div class="form-group">
-                        <label>Category</label>
-                        <select name="category" id="equipmentCategory"
-                                hx-get="/library/equipment" hx-trigger="change"
-                                hx-target="#equipment-results"
-                                hx-include="#equipmentSearch,#equipmentSource"
-                                hx-indicator="#equipment-results-loading">
-                            <option value="">All Categories</option>
-                            <option value="WEAPON">Weapons</option>
-                            <option value="ARMOR">Armor</option>
-                            <option value="GEAR">Adventuring Gear</option>
-                            <option value="TOOL">Tools</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Source</label>
-                        <select name="source" id="equipmentSource"
-                                hx-get="/library/equipment" hx-trigger="change"
-                                hx-target="#equipment-results"
-                                hx-include="#equipmentSearch,#equipmentCategory"
-                                hx-indicator="#equipment-results-loading">
-                            <option value="">All</option>
-                            <option value="SRD">SRD</option>
-                            <option value="CUSTOM">Custom</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="u-flex u-mb-md">
-                    <a th:href="@{/library/equipment/new}" class="btn btn-sm">+ New Equipment</a>
-                </div>
-                <div id="equipment-results" hx-get="/library/equipment" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#equipment-results-loading">
-                </div>
-                <div id="equipment-results-loading" class="loading-region" aria-hidden="true">
-                    <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
-                </div>
+    <div id="section-rules" class="compendium-section hidden">
+        <div class="search-bar">
+            <div class="form-group">
+                <label>Search</label>
+                <input type="text" name="search" id="ruleSearch" placeholder="Search rules..."
+                       hx-get="/library/rules"
+                       hx-trigger="keyup changed delay:200ms"
+                       hx-target="#rule-results"
+                       hx-include="#ruleSource"
+                       hx-indicator="#rule-results-loading">
             </div>
+            <div class="form-group">
+                <label>Source</label>
+                <select name="source" id="ruleSource"
+                        hx-get="/library/rules" hx-trigger="change"
+                        hx-target="#rule-results"
+                        hx-include="#ruleSearch"
+                        hx-indicator="#rule-results-loading">
+                    <option value="">All</option>
+                    <option value="SRD">SRD</option>
+                    <option value="CUSTOM">Custom</option>
+                </select>
+            </div>
+        </div>
+        <div class="u-flex u-mb-md">
+            <a th:href="@{/library/rules/new}" class="btn btn-sm">+ New Rule</a>
+        </div>
+        <div id="rule-results" hx-get="/library/rules" hx-trigger="load" hx-swap="innerHTML"
+             hx-indicator="#rule-results-loading">
+        </div>
+        <div id="rule-results-loading" class="loading-region" aria-hidden="true">
+            <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
+        </div>
+    </div>
 
-            <div id="section-magic-items" class="compendium-section hidden">
-                <div class="search-bar">
-                    <div class="form-group">
-                        <label>Search</label>
-                        <input type="text" name="search" id="magicSearch" placeholder="Search magic items..."
-                               hx-get="/library/magic-items"
-                               hx-trigger="keyup changed delay:200ms"
-                               hx-target="#magic-item-results"
-                               hx-include="#magicRarity,#magicCategory,#magicSource"
-                               hx-indicator="#magic-item-results-loading">
-                    </div>
-                    <div class="form-group">
-                        <label>Rarity</label>
-                        <select name="rarity" id="magicRarity"
-                                hx-get="/library/magic-items" hx-trigger="change"
-                                hx-target="#magic-item-results"
-                                hx-include="#magicSearch,#magicCategory,#magicSource"
-                                hx-indicator="#magic-item-results-loading">
-                            <option value="">Any Rarity</option>
-                            <option value="Common">Common</option>
-                            <option value="Uncommon">Uncommon</option>
-                            <option value="Rare">Rare</option>
-                            <option value="Very Rare">Very Rare</option>
-                            <option value="Legendary">Legendary</option>
-                            <option value="Artifact">Artifact</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Category</label>
-                        <select name="category" id="magicCategory"
-                                hx-get="/library/magic-items" hx-trigger="change"
-                                hx-target="#magic-item-results"
-                                hx-include="#magicSearch,#magicRarity,#magicSource"
-                                hx-indicator="#magic-item-results-loading">
-                            <option value="">All Categories</option>
-                            <option value="Armor">Armor</option>
-                            <option value="Weapon">Weapon</option>
-                            <option value="Wondrous Item">Wondrous Item</option>
-                            <option value="Ring">Ring</option>
-                            <option value="Rod">Rod</option>
-                            <option value="Staff">Staff</option>
-                            <option value="Wand">Wand</option>
-                            <option value="Potion">Potion</option>
-                            <option value="Scroll">Scroll</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Source</label>
-                        <select name="source" id="magicSource"
-                                hx-get="/library/magic-items" hx-trigger="change"
-                                hx-target="#magic-item-results"
-                                hx-include="#magicSearch,#magicRarity,#magicCategory"
-                                hx-indicator="#magic-item-results-loading">
-                            <option value="">All</option>
-                            <option value="SRD">SRD</option>
-                            <option value="CUSTOM">Custom</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="u-flex u-mb-md">
-                    <a th:href="@{/library/magic-items/new}" class="btn btn-sm">+ New Magic Item</a>
-                </div>
-                <div id="magic-item-results" hx-get="/library/magic-items" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#magic-item-results-loading">
-                </div>
-                <div id="magic-item-results-loading" class="loading-region" aria-hidden="true">
-                    <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
-                </div>
+    <div id="section-equipment" class="compendium-section hidden">
+        <div class="search-bar">
+            <div class="form-group">
+                <label>Search</label>
+                <input type="text" name="search" id="equipmentSearch" placeholder="Search equipment..."
+                       hx-get="/library/equipment"
+                       hx-trigger="keyup changed delay:200ms"
+                       hx-target="#equipment-results"
+                       hx-include="#equipmentCategory,#equipmentSource"
+                       hx-indicator="#equipment-results-loading">
             </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select name="category" id="equipmentCategory"
+                        hx-get="/library/equipment" hx-trigger="change"
+                        hx-target="#equipment-results"
+                        hx-include="#equipmentSearch,#equipmentSource"
+                        hx-indicator="#equipment-results-loading">
+                    <option value="">All Categories</option>
+                    <option value="WEAPON">Weapons</option>
+                    <option value="ARMOR">Armor</option>
+                    <option value="GEAR">Adventuring Gear</option>
+                    <option value="TOOL">Tools</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Source</label>
+                <select name="source" id="equipmentSource"
+                        hx-get="/library/equipment" hx-trigger="change"
+                        hx-target="#equipment-results"
+                        hx-include="#equipmentSearch,#equipmentCategory"
+                        hx-indicator="#equipment-results-loading">
+                    <option value="">All</option>
+                    <option value="SRD">SRD</option>
+                    <option value="CUSTOM">Custom</option>
+                </select>
+            </div>
+        </div>
+        <div class="u-flex u-mb-md">
+            <a th:href="@{/library/equipment/new}" class="btn btn-sm">+ New Equipment</a>
+        </div>
+        <div id="equipment-results" hx-get="/library/equipment" hx-trigger="load" hx-swap="innerHTML"
+             hx-indicator="#equipment-results-loading">
+        </div>
+        <div id="equipment-results-loading" class="loading-region" aria-hidden="true">
+            <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
+        </div>
+    </div>
 
-            <div id="section-classes" class="compendium-section hidden">
-                <div class="search-bar">
-                    <div class="form-group">
-                        <label>Search</label>
-                        <input type="text" name="search" id="classSearch" placeholder="Search classes..."
-                               hx-get="/library/classes"
-                               hx-trigger="keyup changed delay:200ms"
-                               hx-target="#class-results"
-                               hx-include="#classSource"
-                               hx-indicator="#class-results-loading">
-                    </div>
-                    <div class="form-group">
-                        <label>Source</label>
-                        <select name="source" id="classSource"
-                                hx-get="/library/classes" hx-trigger="change"
-                                hx-target="#class-results"
-                                hx-include="#classSearch"
-                                hx-indicator="#class-results-loading">
-                            <option value="">All</option>
-                            <option value="SRD">SRD</option>
-                            <option value="CUSTOM">Custom</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="u-flex u-mb-md">
-                    <a th:href="@{/library/classes/new}" class="btn btn-sm">+ New Class</a>
-                </div>
-                <div id="class-results" hx-get="/library/classes" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#class-results-loading">
-                </div>
-                <div id="class-results-loading" class="loading-region" aria-hidden="true">
-                    <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
-                </div>
+    <div id="section-magic-items" class="compendium-section hidden">
+        <div class="search-bar">
+            <div class="form-group">
+                <label>Search</label>
+                <input type="text" name="search" id="magicSearch" placeholder="Search magic items..."
+                       hx-get="/library/magic-items"
+                       hx-trigger="keyup changed delay:200ms"
+                       hx-target="#magic-item-results"
+                       hx-include="#magicRarity,#magicCategory,#magicSource"
+                       hx-indicator="#magic-item-results-loading">
             </div>
+            <div class="form-group">
+                <label>Rarity</label>
+                <select name="rarity" id="magicRarity"
+                        hx-get="/library/magic-items" hx-trigger="change"
+                        hx-target="#magic-item-results"
+                        hx-include="#magicSearch,#magicCategory,#magicSource"
+                        hx-indicator="#magic-item-results-loading">
+                    <option value="">Any Rarity</option>
+                    <option value="Common">Common</option>
+                    <option value="Uncommon">Uncommon</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Very Rare">Very Rare</option>
+                    <option value="Legendary">Legendary</option>
+                    <option value="Artifact">Artifact</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select name="category" id="magicCategory"
+                        hx-get="/library/magic-items" hx-trigger="change"
+                        hx-target="#magic-item-results"
+                        hx-include="#magicSearch,#magicRarity,#magicSource"
+                        hx-indicator="#magic-item-results-loading">
+                    <option value="">All Categories</option>
+                    <option value="Armor">Armor</option>
+                    <option value="Weapon">Weapon</option>
+                    <option value="Wondrous Item">Wondrous Item</option>
+                    <option value="Ring">Ring</option>
+                    <option value="Rod">Rod</option>
+                    <option value="Staff">Staff</option>
+                    <option value="Wand">Wand</option>
+                    <option value="Potion">Potion</option>
+                    <option value="Scroll">Scroll</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Source</label>
+                <select name="source" id="magicSource"
+                        hx-get="/library/magic-items" hx-trigger="change"
+                        hx-target="#magic-item-results"
+                        hx-include="#magicSearch,#magicRarity,#magicCategory"
+                        hx-indicator="#magic-item-results-loading">
+                    <option value="">All</option>
+                    <option value="SRD">SRD</option>
+                    <option value="CUSTOM">Custom</option>
+                </select>
+            </div>
+        </div>
+        <div class="u-flex u-mb-md">
+            <a th:href="@{/library/magic-items/new}" class="btn btn-sm">+ New Magic Item</a>
+        </div>
+        <div id="magic-item-results" hx-get="/library/magic-items" hx-trigger="load" hx-swap="innerHTML"
+             hx-indicator="#magic-item-results-loading">
+        </div>
+        <div id="magic-item-results-loading" class="loading-region" aria-hidden="true">
+            <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
+        </div>
+    </div>
 
-            <div id="section-species" class="compendium-section hidden">
-                <div class="search-bar">
-                    <div class="form-group">
-                        <label>Search</label>
-                        <input type="text" name="search" id="speciesSearch" placeholder="Search species..."
-                               hx-get="/library/species"
-                               hx-trigger="keyup changed delay:200ms"
-                               hx-target="#species-results"
-                               hx-include="#speciesSource"
-                               hx-indicator="#species-results-loading">
-                    </div>
-                    <div class="form-group">
-                        <label>Source</label>
-                        <select name="source" id="speciesSource"
-                                hx-get="/library/species" hx-trigger="change"
-                                hx-target="#species-results"
-                                hx-include="#speciesSearch"
-                                hx-indicator="#species-results-loading">
-                            <option value="">All</option>
-                            <option value="SRD">SRD</option>
-                            <option value="CUSTOM">Custom</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="u-flex u-mb-md">
-                    <a th:href="@{/library/species/new}" class="btn btn-sm">+ New Species</a>
-                </div>
-                <div id="species-results" hx-get="/library/species" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#species-results-loading">
-                </div>
-                <div id="species-results-loading" class="loading-region" aria-hidden="true">
-                    <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
-                </div>
+    <div id="section-classes" class="compendium-section hidden">
+        <div class="search-bar">
+            <div class="form-group">
+                <label>Search</label>
+                <input type="text" name="search" id="classSearch" placeholder="Search classes..."
+                       hx-get="/library/classes"
+                       hx-trigger="keyup changed delay:200ms"
+                       hx-target="#class-results"
+                       hx-include="#classSource"
+                       hx-indicator="#class-results-loading">
             </div>
+            <div class="form-group">
+                <label>Source</label>
+                <select name="source" id="classSource"
+                        hx-get="/library/classes" hx-trigger="change"
+                        hx-target="#class-results"
+                        hx-include="#classSearch"
+                        hx-indicator="#class-results-loading">
+                    <option value="">All</option>
+                    <option value="SRD">SRD</option>
+                    <option value="CUSTOM">Custom</option>
+                </select>
+            </div>
+        </div>
+        <div class="u-flex u-mb-md">
+            <a th:href="@{/library/classes/new}" class="btn btn-sm">+ New Class</a>
+        </div>
+        <div id="class-results" hx-get="/library/classes" hx-trigger="load" hx-swap="innerHTML"
+             hx-indicator="#class-results-loading">
+        </div>
+        <div id="class-results-loading" class="loading-region" aria-hidden="true">
+            <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
+        </div>
+    </div>
 
-            <div id="section-backgrounds" class="compendium-section hidden">
-                <div class="search-bar">
-                    <div class="form-group">
-                        <label>Search</label>
-                        <input type="text" name="search" id="backgroundSearch" placeholder="Search backgrounds..."
-                               hx-get="/library/backgrounds"
-                               hx-trigger="keyup changed delay:200ms"
-                               hx-target="#background-results"
-                               hx-include="#backgroundSource"
-                               hx-indicator="#background-results-loading">
-                    </div>
-                    <div class="form-group">
-                        <label>Source</label>
-                        <select name="source" id="backgroundSource"
-                                hx-get="/library/backgrounds" hx-trigger="change"
-                                hx-target="#background-results"
-                                hx-include="#backgroundSearch"
-                                hx-indicator="#background-results-loading">
-                            <option value="">All</option>
-                            <option value="SRD">SRD</option>
-                            <option value="CUSTOM">Custom</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="u-flex u-mb-md">
-                    <a th:href="@{/library/backgrounds/new}" class="btn btn-sm">+ New Background</a>
-                </div>
-                <div id="background-results" hx-get="/library/backgrounds" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#background-results-loading">
-                </div>
-                <div id="background-results-loading" class="loading-region" aria-hidden="true">
-                    <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
-                </div>
+    <div id="section-species" class="compendium-section hidden">
+        <div class="search-bar">
+            <div class="form-group">
+                <label>Search</label>
+                <input type="text" name="search" id="speciesSearch" placeholder="Search species..."
+                       hx-get="/library/species"
+                       hx-trigger="keyup changed delay:200ms"
+                       hx-target="#species-results"
+                       hx-include="#speciesSource"
+                       hx-indicator="#species-results-loading">
             </div>
+            <div class="form-group">
+                <label>Source</label>
+                <select name="source" id="speciesSource"
+                        hx-get="/library/species" hx-trigger="change"
+                        hx-target="#species-results"
+                        hx-include="#speciesSearch"
+                        hx-indicator="#species-results-loading">
+                    <option value="">All</option>
+                    <option value="SRD">SRD</option>
+                    <option value="CUSTOM">Custom</option>
+                </select>
+            </div>
+        </div>
+        <div class="u-flex u-mb-md">
+            <a th:href="@{/library/species/new}" class="btn btn-sm">+ New Species</a>
+        </div>
+        <div id="species-results" hx-get="/library/species" hx-trigger="load" hx-swap="innerHTML"
+             hx-indicator="#species-results-loading">
+        </div>
+        <div id="species-results-loading" class="loading-region" aria-hidden="true">
+            <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
+        </div>
+    </div>
 
-            <div id="section-feats" class="compendium-section hidden">
-                <div class="search-bar">
-                    <div class="form-group">
-                        <label>Search</label>
-                        <input type="text" name="search" id="featSearch" placeholder="Search feats..."
-                               hx-get="/library/feats"
-                               hx-trigger="keyup changed delay:200ms"
-                               hx-target="#feat-results"
-                               hx-include="#featCategory,#featSource"
-                               hx-indicator="#feat-results-loading">
-                    </div>
-                    <div class="form-group">
-                        <label>Category</label>
-                        <select name="category" id="featCategory"
-                                hx-get="/library/feats" hx-trigger="change"
-                                hx-target="#feat-results"
-                                hx-include="#featSearch,#featSource"
-                                hx-indicator="#feat-results-loading">
-                            <option value="">All Categories</option>
-                            <option value="General">General</option>
-                            <option value="Origin">Origin</option>
-                            <option value="Fighting Style">Fighting Style</option>
-                            <option value="Epic Boon">Epic Boon</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Source</label>
-                        <select name="source" id="featSource"
-                                hx-get="/library/feats" hx-trigger="change"
-                                hx-target="#feat-results"
-                                hx-include="#featSearch,#featCategory"
-                                hx-indicator="#feat-results-loading">
-                            <option value="">All</option>
-                            <option value="SRD">SRD</option>
-                            <option value="CUSTOM">Custom</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="u-flex u-mb-md">
-                    <a th:href="@{/library/feats/new}" class="btn btn-sm">+ New Feat</a>
-                </div>
-                <div id="feat-results" hx-get="/library/feats" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#feat-results-loading">
-                </div>
-                <div id="feat-results-loading" class="loading-region" aria-hidden="true">
-                    <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
-                </div>
+    <div id="section-backgrounds" class="compendium-section hidden">
+        <div class="search-bar">
+            <div class="form-group">
+                <label>Search</label>
+                <input type="text" name="search" id="backgroundSearch" placeholder="Search backgrounds..."
+                       hx-get="/library/backgrounds"
+                       hx-trigger="keyup changed delay:200ms"
+                       hx-target="#background-results"
+                       hx-include="#backgroundSource"
+                       hx-indicator="#background-results-loading">
             </div>
-        </main>
+            <div class="form-group">
+                <label>Source</label>
+                <select name="source" id="backgroundSource"
+                        hx-get="/library/backgrounds" hx-trigger="change"
+                        hx-target="#background-results"
+                        hx-include="#backgroundSearch"
+                        hx-indicator="#background-results-loading">
+                    <option value="">All</option>
+                    <option value="SRD">SRD</option>
+                    <option value="CUSTOM">Custom</option>
+                </select>
+            </div>
+        </div>
+        <div class="u-flex u-mb-md">
+            <a th:href="@{/library/backgrounds/new}" class="btn btn-sm">+ New Background</a>
+        </div>
+        <div id="background-results" hx-get="/library/backgrounds" hx-trigger="load" hx-swap="innerHTML"
+             hx-indicator="#background-results-loading">
+        </div>
+        <div id="background-results-loading" class="loading-region" aria-hidden="true">
+            <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
+        </div>
+    </div>
+
+    <div id="section-feats" class="compendium-section hidden">
+        <div class="search-bar">
+            <div class="form-group">
+                <label>Search</label>
+                <input type="text" name="search" id="featSearch" placeholder="Search feats..."
+                       hx-get="/library/feats"
+                       hx-trigger="keyup changed delay:200ms"
+                       hx-target="#feat-results"
+                       hx-include="#featCategory,#featSource"
+                       hx-indicator="#feat-results-loading">
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select name="category" id="featCategory"
+                        hx-get="/library/feats" hx-trigger="change"
+                        hx-target="#feat-results"
+                        hx-include="#featSearch,#featSource"
+                        hx-indicator="#feat-results-loading">
+                    <option value="">All Categories</option>
+                    <option value="General">General</option>
+                    <option value="Origin">Origin</option>
+                    <option value="Fighting Style">Fighting Style</option>
+                    <option value="Epic Boon">Epic Boon</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Source</label>
+                <select name="source" id="featSource"
+                        hx-get="/library/feats" hx-trigger="change"
+                        hx-target="#feat-results"
+                        hx-include="#featSearch,#featCategory"
+                        hx-indicator="#feat-results-loading">
+                    <option value="">All</option>
+                    <option value="SRD">SRD</option>
+                    <option value="CUSTOM">Custom</option>
+                </select>
+            </div>
+        </div>
+        <div class="u-flex u-mb-md">
+            <a th:href="@{/library/feats/new}" class="btn btn-sm">+ New Feat</a>
+        </div>
+        <div id="feat-results" hx-get="/library/feats" hx-trigger="load" hx-swap="innerHTML"
+             hx-indicator="#feat-results-loading">
+        </div>
+        <div id="feat-results-loading" class="loading-region" aria-hidden="true">
+            <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
+        </div>
     </div>
 
     <!-- Statblock side sheet (§5.3): filled by ui-elevation.js when a card is clicked. -->
@@ -577,5 +581,7 @@
             input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'a' }));
         });
     </script>
+</div>
+</div>
 </body>
 </html>

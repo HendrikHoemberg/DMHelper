@@ -1,38 +1,39 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper -- ' + ${magicItem.name}">DMHelper -- Magic Item</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${magicItem.name},
+          archetype='detail',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <a href="/library" class="btn btn-ghost">&larr; Back to Library</a>
-                <div class="u-flex action-row">
-                    <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${magicItem})}"></th:block>
-                    <th:block th:if="${magicItem.source.name() == 'SRD'}">
-                        <form th:hx-post="@{/library/magic-items/{id}/clone(id=${magicItem.id})}" hx-target="body"
-                              hx-disabled-elt="find button[type='submit']">
-                            <button type="submit" class="btn">Clone &amp; Edit</button>
-                        </form>
-                    </th:block>
-                    <th:block th:if="${magicItem.source.name() == 'CUSTOM'}">
-                        <a th:href="@{/library/magic-items/{id}/edit(id=${magicItem.id})}" class="btn btn-primary">Edit</a>
-                        <span class="action-row__destructive">
-                            <button class="btn btn-danger"
-                                    th:hx-delete="@{/library/magic-items/{id}(id=${magicItem.id})}"
-                                    hx-confirm="Delete this magic item?"
-                                    hx-target="body" hx-swap="outerHTML"
-                                    hx-disabled-elt="this">Delete</button>
-                        </span>
-                    </th:block>
-                </div>
-            </div>
-            <div class="detail-section">
-                <h1 data-display-title th:text="${magicItem.name}">Item Name</h1>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${magicItem.name},
+        summary='Magic Item',
+        breadcrumb=~{::#breadcrumb},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<nav id="breadcrumb" class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/library">&larr; Back to Library</a>
+</nav>
+<div id="secondaryActions" class="u-flex u-gap-xs">
+    <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${magicItem})}"></th:block>
+    <th:block th:if="${magicItem.source.name() == 'SRD'}">
+        <form th:hx-post="@{/library/magic-item/{id}/clone(id=${magicItem.id})}" hx-target="body"
+              hx-disabled-elt="find button[type='submit']">
+            <button type="submit" class="btn">Clone &amp; Edit</button>
+        </form>
+    </th:block>
+    <th:block th:if="${magicItem.source.name() == 'CUSTOM'}">
+        <a th:href="@{/library/magic-item/{id}/edit(id=${magicItem.id})}" class="btn btn-ghost">Edit</a>
+    </th:block>
+</div>
+
+<div id="page-content" class="page-content">
+<div class="detail-section">
                 <div class="detail-meta">
                     <span class="badge" th:classappend="'badge-' + ${magicItem.rarity?.toLowerCase()}" th:text="${magicItem.rarity}">Rarity</span>
                     <span class="badge" th:text="${magicItem.category}">Category</span>
@@ -52,7 +53,16 @@
                     <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='MAGIC_ITEM', targetId=${magicItem.id})}"></th:block>
                 </div>
             </th:block>
-        </main>
+    <div class="u-mt-lg surface-danger-zone" th:if="${magicItem.source.name() == 'CUSTOM'}">
+        <h2>Danger zone</h2>
+        <p class="text-muted u-text-sm">This action cannot be undone.</p>
+        <button class="btn btn-danger action-row__destructive"
+                th:hx-delete="@{/library/magic-items/{id}(id=${magicItem.id})}"
+                hx-confirm="Delete this magic item?"
+                hx-target="body" hx-swap="outerHTML"
+                hx-disabled-elt="this">Delete</button>
     </div>
+
+</div>
 </body>
 </html>

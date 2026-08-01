@@ -1,20 +1,29 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title>DMHelper -- Class Detail</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${classDetail.name},
+          archetype='detail',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <a th:href="@{/library}" class="btn btn-text">← Library</a>
-                <h1 data-display-title th:text="${classDetail.name}">Class Name</h1>
-            </div>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${classDetail.name},
+        summary='Class',
+        breadcrumb=~{::#breadcrumb},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<nav id="breadcrumb" class="breadcrumb" aria-label="Breadcrumb">
+    <a th:href="@{/library}" class="btn btn-text">&larr; Library</a>
+</nav>
+<div id="secondaryActions" class="u-flex u-gap-xs">
+</div>
 
-            <div th:if="${subclass != null}" class="card u-mb-md">
+<div id="page-content" class="page-content">
+<div th:if="${subclass != null}" class="card u-mb-md">
                 <p><strong>Subclass of:</strong>
                     <a th:href="@{/library/classes/__${classDetail.subclassOf}__}"
                        th:text="${subclass.name}">Base Class</a></p>
@@ -91,7 +100,6 @@
                     </ul>
                 </div>
             </div>
-        </main>
-    </div>
+</div>
 </body>
 </html>

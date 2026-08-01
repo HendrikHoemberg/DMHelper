@@ -1,38 +1,39 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper -- ' + ${rule.name}">DMHelper -- Rule</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${rule.name},
+          archetype='detail',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <a href="/library" class="btn btn-ghost">&larr; Back to Library</a>
-                <div class="u-flex action-row">
-                    <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${rule})}"></th:block>
-                    <th:block th:if="${rule.source.name() == 'SRD'}">
-                        <form th:hx-post="@{/library/rules/{id}/clone(id=${rule.id})}" hx-target="body"
-                              hx-disabled-elt="find button[type='submit']">
-                            <button type="submit" class="btn">Clone &amp; Edit</button>
-                        </form>
-                    </th:block>
-                    <th:block th:if="${rule.source.name() == 'CUSTOM'}">
-                        <a th:href="@{/library/rules/{id}/edit(id=${rule.id})}" class="btn btn-primary">Edit</a>
-                        <span class="action-row__destructive">
-                            <button class="btn btn-danger"
-                                    th:hx-delete="@{/library/rules/{id}(id=${rule.id})}"
-                                    hx-confirm="Delete this rule?"
-                                    hx-target="body" hx-swap="outerHTML"
-                                    hx-disabled-elt="this">Delete</button>
-                        </span>
-                    </th:block>
-                </div>
-            </div>
-            <div class="detail-section">
-                <h1 data-display-title th:text="${rule.name}">Rule Name</h1>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${rule.name},
+        summary='Rule',
+        breadcrumb=~{::#breadcrumb},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<nav id="breadcrumb" class="breadcrumb" aria-label="Breadcrumb">
+    <a href="/library">&larr; Back to Library</a>
+</nav>
+<div id="secondaryActions" class="u-flex u-gap-xs">
+    <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${rule})}"></th:block>
+    <th:block th:if="${rule.source.name() == 'SRD'}">
+        <form th:hx-post="@{/library/rule/{id}/clone(id=${rule.id})}" hx-target="body"
+              hx-disabled-elt="find button[type='submit']">
+            <button type="submit" class="btn">Clone &amp; Edit</button>
+        </form>
+    </th:block>
+    <th:block th:if="${rule.source.name() == 'CUSTOM'}">
+        <a th:href="@{/library/rule/{id}/edit(id=${rule.id})}" class="btn btn-ghost">Edit</a>
+    </th:block>
+</div>
+
+<div id="page-content" class="page-content">
+<div class="detail-section">
                 <div class="detail-meta">
                     <span th:if="${rule.ruleset != null}" class="library-chip" th:text="${rule.ruleset}">Ruleset</span>
                 </div>
@@ -44,7 +45,16 @@
                     <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='RULE', targetId=${rule.id})}"></th:block>
                 </div>
             </th:block>
-        </main>
+    <div class="u-mt-lg surface-danger-zone" th:if="${rule.source.name() == 'CUSTOM'}">
+        <h2>Danger zone</h2>
+        <p class="text-muted u-text-sm">This action cannot be undone.</p>
+        <button class="btn btn-danger action-row__destructive"
+                th:hx-delete="@{/library/rules/{id}(id=${rule.id})}"
+                hx-confirm="Delete this rule?"
+                hx-target="body" hx-swap="outerHTML"
+                hx-disabled-elt="this">Delete</button>
     </div>
+
+</div>
 </body>
 </html>
