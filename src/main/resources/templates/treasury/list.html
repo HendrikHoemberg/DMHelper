@@ -1,86 +1,80 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — ' + ${campaign.name} + ' — Treasury'">DMHelper — Treasury</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle='Treasury & Loot',
+          archetype='operational',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title='Treasury &amp; Loot',
+        summary=${campaign.name},
+        breadcrumb=~{},
+        primary=~{::#primaryAction},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<button id="primaryAction" class="btn btn-primary"
+        th:hx-get="@{/campaigns/{id}/treasury/new(id=${campaignId})}"
+        hx-target="#treasury-form-area"
+        hx-swap="innerHTML"
+        hx-disabled-elt="this">
+    + Add Item
+</button>
+<a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
 
-    <div class="app-shell">
-            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow" th:text="${campaign.name}">Treasury</div>
-                    <h1 data-display-title>Treasury &amp; Loot</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
-                </div>
+<div id="page-content" class="page-content">
+    <div id="treasury-form-area"></div>
+
+    <!-- Gold Balances -->
+    <div th:if="${not #lists.isEmpty(balances)}" class="detail-section">
+        <h2>Gold Balances</h2>
+        <div style="display:flex; flex-wrap:wrap; gap: var(--space-md);">
+            <div th:each="b : ${balances}" class="card" style="padding: var(--space-sm) var(--space-md);">
+                <strong th:text="${b.holder()}">Holder</strong>
+                <span th:text="${b.balance() + ' ' + b.currency()}"
+                      style="margin-left: var(--space-sm); color: var(--color-accent);">0 GP</span>
             </div>
-
-            <div class="detail-actions" style="margin-bottom: var(--space-lg);">
-                <button class="btn btn-primary"
-                        th:hx-get="@{/campaigns/{id}/treasury/new(id=${campaignId})}"
-                        hx-target="#treasury-form-area"
-                        hx-swap="innerHTML"
-                        hx-disabled-elt="this">
-                    + Add Item
-                </button>
-            </div>
-
-            <div id="treasury-form-area"></div>
-
-            <!-- Gold Balances -->
-            <div th:if="${not #lists.isEmpty(balances)}" class="detail-section">
-                <h2>Gold Balances</h2>
-                <div style="display:flex; flex-wrap:wrap; gap: var(--space-md);">
-                    <div th:each="b : ${balances}" class="card" style="padding: var(--space-sm) var(--space-md);">
-                        <strong th:text="${b.holder()}">Holder</strong>
-                        <span th:text="${b.balance() + ' ' + b.currency()}"
-                              style="margin-left: var(--space-sm); color: var(--color-accent);">0 GP</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Item Assignments by Holder -->
-            <div th:each="pm : ${partyMembers}" class="detail-section">
-                <th:block th:with="holderItems=${assignmentsByMember.get(pm.id)}">
-                    <h2 th:text="|${pm.characterName}&apos;s Items|">PC's Items</h2>
-                    <div th:if="${not #lists.isEmpty(holderItems)}" class="card-grid card-grid--bounded"
-                         th:with="attunementCount=${#lists.toList(holderItems).?[attuned()].size()}">
-                        <!-- th:each on an outer wrapper: th:replace would otherwise outrank it and run once with a null 'a'. -->
-                        <th:block th:each="a : ${holderItems}">
-                            <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=${attunementCount})}"></div>
-                        </th:block>
-                    </div>
-                    <th:block th:if="${#lists.isEmpty(holderItems)}"><th:block th:replace="~{common/_empty-state :: empty-state('No items assigned', null, null, null)}"></th:block></th:block>
-                </th:block>
-            </div>
-
-            <!-- Party Stash -->
-            <div class="detail-section empty-state-host">
-                <th:block th:with="stashItems=${#lists.toList(assignments).?[partyMemberId() == null]}">
-                    <h2>Party Stash</h2>
-                    <div th:if="${not #lists.isEmpty(stashItems)}" class="card-grid card-grid--bounded">
-                        <th:block th:each="a : ${stashItems}">
-                            <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=0)}"></div>
-                        </th:block>
-                    </div>
-                    <th:block th:if="${#lists.isEmpty(stashItems)}">
-                        <th:block th:replace="~{common/_empty-state :: empty-state-with-cta(
-                            message='The party stash is empty',
-                            description='Track coin, gems, and magic items the party is carrying.',
-                            icon='gem', cta=~{common/_form-cta :: swap-cta(
-                                actionText='Add item',
-                                actionUrl=@{/campaigns/{id}/treasury/new(id=${campaignId})},
-                                target='#treasury-form-area')})}"></th:block>
-                    </th:block>
-                </th:block>
-            </div>
-        </main>
+        </div>
     </div>
+
+    <!-- Item Assignments by Holder -->
+    <div th:each="pm : ${partyMembers}" class="detail-section">
+        <th:block th:with="holderItems=${assignmentsByMember.get(pm.id)}">
+            <h2 th:text="|${pm.characterName}&apos;s Items|">PC's Items</h2>
+            <div th:if="${not #lists.isEmpty(holderItems)}" class="card-grid card-grid--bounded"
+                 th:with="attunementCount=${#lists.toList(holderItems).?[attuned()].size()}">
+                <!-- th:each on an outer wrapper: th:replace would otherwise outrank it and run once with a null 'a'. -->
+                <th:block th:each="a : ${holderItems}">
+                    <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=${attunementCount})}"></div>
+                </th:block>
+            </div>
+            <th:block th:if="${#lists.isEmpty(holderItems)}"><th:block th:replace="~{common/_empty-state :: empty-state('No items assigned', null, null, null)}"></th:block></th:block>
+        </th:block>
+    </div>
+
+    <!-- Party Stash -->
+    <div class="detail-section empty-state-host">
+        <th:block th:with="stashItems=${#lists.toList(assignments).?[partyMemberId() == null]}">
+            <h2>Party Stash</h2>
+            <div th:if="${not #lists.isEmpty(stashItems)}" class="card-grid card-grid--bounded">
+                <th:block th:each="a : ${stashItems}">
+                    <div th:replace="~{treasury/_card :: card(assignment=${a}, attunementCount=0)}"></div>
+                </th:block>
+            </div>
+            <th:block th:if="${#lists.isEmpty(stashItems)}">
+                <th:block th:replace="~{common/_empty-state :: empty-state-with-cta(
+                    message='The party stash is empty',
+                    description='Track coin, gems, and magic items the party is carrying.',
+                    icon='gem', cta=~{common/_form-cta :: swap-cta(
+                        actionText='Add item',
+                        actionUrl=@{/campaigns/{id}/treasury/new(id=${campaignId})},
+                        target='#treasury-form-area')})}"></th:block>
+            </th:block>
+        </th:block>
+    </div>
+</div>
 </body>
 </html>

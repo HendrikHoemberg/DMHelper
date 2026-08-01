@@ -1,51 +1,45 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — ' + ${campaign.name} + ' — Ledger'">DMHelper — Ledger</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle='Ledger',
+          archetype='operational',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title='Ledger',
+        summary=${campaign.name},
+        breadcrumb=~{},
+        primary=~{::#primaryAction},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<button id="primaryAction" class="btn btn-primary"
+        th:hx-get="@{/campaigns/{id}/ledger/new(id=${campaignId})}"
+        hx-target="#ledger-form-area"
+        hx-swap="innerHTML"
+        hx-disabled-elt="this">
+    + Record Transaction
+</button>
+<a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
 
-    <div class="app-shell">
-            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow">Ledger</div>
-                    <h1 data-display-title>Ledger</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
-                </div>
-            </div>
+<div id="page-content" class="page-content">
+    <div id="ledger-form-area"></div>
 
-            <div class="detail-actions" style="margin-bottom: var(--space-lg);">
-                <button class="btn btn-primary"
-                        th:hx-get="@{/campaigns/{id}/ledger/new(id=${campaignId})}"
-                        hx-target="#ledger-form-area"
-                        hx-swap="innerHTML"
-                        hx-disabled-elt="this">
-                    + Record Transaction
-                </button>
-            </div>
+    <!-- Balances -->
+    <div th:replace="~{ledger/_balance :: balanceSection}"></div>
 
-            <div id="ledger-form-area"></div>
-
-            <!-- Balances -->
-            <div th:replace="~{ledger/_balance :: balanceSection}"></div>
-
-            <!-- Transaction History -->
-            <h2>Transaction History</h2>
-            <div style="display:flex; flex-direction:column; gap: var(--space-sm);" id="ledger-entries">
-                <!-- th:each on an outer wrapper: th:replace outranks th:each, so on the same tag it runs once with a null 'e'. -->
-                <th:block th:each="e : ${entries}">
-                    <div th:replace="~{ledger/_card :: card(entry=${e})}"></div>
-                </th:block>
-            </div>
-            <th:block th:if="${#lists.isEmpty(entries)}"><th:block th:replace="~{common/_empty-state :: empty-state('No transactions recorded', null, null, null)}"></th:block></th:block>
-        </main>
+    <!-- Transaction History -->
+    <h2>Transaction History</h2>
+    <div style="display:flex; flex-direction:column; gap: var(--space-sm);" id="ledger-entries">
+        <!-- th:each on an outer wrapper: th:replace outranks th:each, so on the same tag it runs once with a null 'e'. -->
+        <th:block th:each="e : ${entries}">
+            <div th:replace="~{ledger/_card :: card(entry=${e})}"></div>
+        </th:block>
     </div>
+    <th:block th:if="${#lists.isEmpty(entries)}"><th:block th:replace="~{common/_empty-state :: empty-state('No transactions recorded', null, null, null)}"></th:block></th:block>
+</div>
 </body>
 </html>
