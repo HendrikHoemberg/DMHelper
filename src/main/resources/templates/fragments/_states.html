@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="state state--empty" th:fragment="empty(icon, title, description, cta)">
+    <th:block th:replace="~{common/_icon :: icon-sized(name=${icon}, size='24')}"></th:block>
+    <p class="state__title" th:text="${title}">Nothing here yet</p>
+    <p class="state__description" th:if="${description != null}" th:text="${description}">Why</p>
+    <div class="state__cta"><th:block th:replace="${cta}"></th:block></div>
+</div>
+
+<div class="state state--loading" role="status" aria-live="polite"
+     th:fragment="loading(label)">
+    <span class="spinner" aria-hidden="true"></span>
+    <span class="state__title" th:text="${label}">Loading…</span>
+</div>
+
+<div class="skeleton-group" aria-hidden="true" th:fragment="skeleton(count)">
+    <div class="skeleton" th:each="i : ${#numbers.sequence(1, count)}"></div>
+</div>
+
+<div class="state state--unavailable" role="status" aria-live="polite"
+     th:fragment="unavailable(title, description, retry)">
+    <th:block th:replace="~{common/_icon :: icon-sized(name='alert-circle', size='24')}"></th:block>
+    <p class="state__title" th:text="${title}">Unavailable</p>
+    <p class="state__description" th:if="${description != null}" th:text="${description}">Why</p>
+    <div class="state__cta"><th:block th:replace="${retry}"></th:block></div>
+</div>
+
+<div class="state state--failed" role="status" aria-live="polite"
+     th:fragment="failed(title, description, retry)">
+    <th:block th:replace="~{common/_icon :: icon-sized(name='alert-triangle', size='24')}"></th:block>
+    <p class="state__title" th:text="${title}">That did not work</p>
+    <p class="state__description" th:if="${description != null}" th:text="${description}">Why</p>
+    <div class="state__cta"><th:block th:replace="${retry}"></th:block></div>
+</div>
+</html>

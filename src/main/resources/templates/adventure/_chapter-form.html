@@ -8,7 +8,8 @@
                    (cid=${campaignId},aid=${adventure.id})}"
         th:method="${editing} ? 'put' : 'post'"
         hx-post th:if="${!editing}"
-        hx-target="closest .detail-section" hx-swap="outerHTML">
+        hx-target="closest .detail-section" hx-swap="outerHTML"
+        hx-disabled-elt="find button[type='submit']">
     <input type="hidden" th:if="${editing}" name="_method" value="put"/>
     <div class="form-group">
       <input type="text" name="title" placeholder="Chapter title" required
@@ -22,7 +23,8 @@
       <button type="submit" class="btn btn-primary" th:text="${editing} ? 'Update' : 'Create'">Create</button>
       <button type="button" class="btn btn-ghost"
               th:hx-get="@{/campaigns/{cid}/adventures/{aid}(cid=${campaignId},aid=${adventure.id})}"
-              hx-target="closest .detail-section" hx-swap="outerHTML">Cancel</button>
+              hx-target="closest .detail-section" hx-swap="outerHTML"
+              hx-disabled-elt="this">Cancel</button>
     </div>
   </form>
 </div>

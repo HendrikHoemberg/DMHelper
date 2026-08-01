@@ -4,7 +4,8 @@
         th:if="${quest.id != null}"
         method="put"
         hx-put="true"
-        hx-target="body" hx-swap="outerHTML">
+        hx-target="body" hx-swap="outerHTML"
+        hx-disabled-elt="find button[type='submit']">
     <div class="form-group">
       <label class="form-label">Title</label>
       <input type="text" name="title" class="form-input" required th:value="${quest.title}">
@@ -55,7 +56,8 @@
         th:if="${quest.id == null}"
         method="post"
         hx-post="true"
-        hx-target="body" hx-swap="outerHTML">
+        hx-target="body" hx-swap="outerHTML"
+        hx-disabled-elt="find button[type='submit']">
     <div class="form-group">
       <label class="form-label">Title</label>
       <input type="text" name="title" class="form-input" required>

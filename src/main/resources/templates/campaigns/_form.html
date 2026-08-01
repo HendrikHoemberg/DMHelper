@@ -29,7 +29,8 @@
             <button th:unless="${standalone}" type="button" class="btn btn-ghost"
                     hx-get="/campaigns?fragment=new-button"
                     hx-target="closest .inline-form"
-                    hx-swap="outerHTML">Cancel</button>
+                    hx-swap="outerHTML"
+                    hx-disabled-elt="this">Cancel</button>
             <button type="submit" class="btn btn-primary">Create</button>
         </div>
     </form>

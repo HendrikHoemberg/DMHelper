@@ -1540,6 +1540,14 @@
 .banner--warning { background: var(--state-warning-surface); border-color: var(--state-warning-border); }
 .banner--danger  { background: var(--state-danger-surface);  border-color: var(--state-danger-border); }
 .banner--info    { background: var(--state-info-surface);    border-color: var(--state-info-border); }
+.banner--shield  { background: var(--state-shield-surface);  border-color: var(--state-shield-border); }
+
+/* The shared banner fragment (fragments/_banner.html) packs icon, copy and actions. The
+   copy owns the flexible middle column so a trailing action sits at the far edge. */
+.banner__text { flex: 1; }
+.banner__title { margin: 0; font-weight: 600; color: var(--text-primary); }
+.banner__body { margin: 0; color: var(--text-secondary); font-size: var(--text-sm); }
+.banner__actions { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
 
 .badge-tag {
     background: var(--color-surface-hover);
@@ -2502,6 +2510,52 @@
 @media (prefers-reduced-motion: reduce) {
   .skeleton-card { animation: none; }
 }
+
+/* ── Feedback and state contracts (spec section 16) ──
+   Every asynchronous surface speaks the same state language: empty, loading,
+   skeleton, unavailable, failed, banner, save-status. The tinted variants pair a
+   surface and a border so no state rests on colour alone (spec section 6.4). */
+.state {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-xs);
+  padding: var(--space-xl) var(--space-md); text-align: center;
+  color: var(--text-secondary);
+  background: var(--surface-panel); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+.state__title { color: var(--text-primary); font-weight: 600; margin: 0; }
+.state__description { margin: 0; max-width: 46ch; }
+.state--failed { border-color: var(--state-danger-border); background: var(--state-danger-surface); }
+.state--unavailable { border-color: var(--state-warning-border); background: var(--state-warning-surface); }
+
+.skeleton-group { display: flex; flex-direction: column; gap: var(--space-xs); }
+.skeleton {
+  min-height: 2.5rem; border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton { animation: skeleton-pulse var(--duration-structural) ease-in-out infinite; }
+  @keyframes skeleton-pulse { 50% { opacity: 0.55; } }
+}
+
+/* Rotating border ring — the app's loading convention (§3.4), matched to the
+   die-tumble cadence so the whole surface moves at one speed. */
+.spinner {
+  width: 1.25rem; height: 1.25rem; flex: none;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--text-secondary);
+  border-radius: 50%;
+  animation: spinner-rotate var(--duration-structural) linear infinite;
+}
+@keyframes spinner-rotate { to { transform: rotate(360deg); } }
+
+.save-status {
+  display: inline-flex; align-items: center; gap: var(--space-2xs);
+  color: var(--text-tertiary); font-size: var(--text-sm);
+}
+.save-status__dot { width: 0.5em; height: 0.5em; border-radius: 50%; background: var(--text-tertiary); }
+.save-status[data-save-status="saving"] .save-status__dot { background: var(--state-info); }
+.save-status[data-save-status="saved"] .save-status__dot { background: var(--state-success); }
+.save-status[data-save-status="error"] .save-status__dot { background: var(--state-danger); }
 
 /* ── Library (§5.3) — speed and focus, not decoration ──
    Resting state is pure information: six columns of names and stats. The actions

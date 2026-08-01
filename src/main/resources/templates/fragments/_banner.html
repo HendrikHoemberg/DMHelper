@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="banner(tone, title, body, actions)" role="alert"
+     th:class="'banner banner--' + ${tone}">
+    <th:block th:replace="~{common/_icon :: icon-sized(
+        name=${tone == 'danger' ? 'alert-triangle' : (tone == 'warning' ? 'alert-circle' :
+             (tone == 'success' ? 'check' : (tone == 'shield' ? 'shield' : 'info')))},
+        size='20')}"></th:block>
+    <div class="banner__text">
+        <p class="banner__title" th:text="${title}">Title</p>
+        <p class="banner__body" th:if="${body != null}" th:text="${body}">Body</p>
+    </div>
+    <div class="banner__actions"><th:block th:replace="${actions}"></th:block></div>
+</div>
+</html>

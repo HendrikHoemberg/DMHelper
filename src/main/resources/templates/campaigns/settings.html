@@ -68,6 +68,7 @@
                     </button>
                     <form hx-post="/campaigns/import"
                           hx-encoding="multipart/form-data"
+                          hx-disabled-elt="find input[type='file']"
                           class="u-contents">
                         <label class="btn">
                             Import Legacy v1 JSON
