@@ -118,4 +118,44 @@ class OverlayBehaviorGateTest {
         page.keyboard().press("Tab");
         assertThat(page.evaluate("() => document.activeElement.id")).isEqualTo("a");
     }
+
+    @Test
+    void aComplementarySideSheetOpensInPlace() {
+        page.evaluate("""
+                () => {
+                  const s = document.createElement('aside');
+                  s.className = 'side-sheet';
+                  s.setAttribute('role', 'complementary');
+                  s.setAttribute('aria-labelledby', 'probeSheetTitle');
+                  s.hidden = true;
+                  s.innerHTML = '<div class="side-sheet__body"><button id="sheetItem">Item</button></div>';
+                  document.body.appendChild(s);
+                  window.dmOverlay.open(s);
+                }
+                """);
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> result = (java.util.Map<String, Object>) page.evaluate("""
+                () => {
+                  const s = document.querySelector('.side-sheet[role="complementary"]');
+                  const rect = s.getBoundingClientRect();
+                  return {
+                    hidden: s.hidden,
+                    transform: getComputedStyle(s).transform,
+                    left: Math.round(rect.left),
+                    width: Math.round(rect.width),
+                    viewport: window.innerWidth
+                  };
+                }
+                """);
+        assertThat(result.get("hidden")).isEqualTo(false);
+        assertThat(result.get("transform"))
+                .as("shared side-sheet must not inherit the legacy translateX(100%)")
+                .isIn("none", "matrix(1, 0, 0, 1, 0, 0)");
+        assertThat(((Number) result.get("width")).intValue()).isGreaterThan(0);
+        assertThat(((Number) result.get("left")).intValue())
+                .as("sheet must be on screen, not pushed off the right edge")
+                .isGreaterThanOrEqualTo(0);
+        assertThat(((Number) result.get("left")).intValue())
+                .isLessThan(((Number) result.get("viewport")).intValue());
+    }
 }

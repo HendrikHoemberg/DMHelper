@@ -3583,6 +3583,15 @@ dialog.modal:not([open]) {
   display: flex; flex-direction: column;
 }
 
+/* The shared fragment sheet is hidden-attribute driven: dmOverlay.open clears `hidden`
+   and never adds the legacy `.open` class, so it must be immune to the statblock sheet's
+   translateX slide-in (spec section 15) and the reduced-motion opacity reveal. The legacy
+   sheet stays role="dialog" and keeps its translateX(100%) → translateX(0) slide. */
+.side-sheet[role="complementary"] {
+  transform: none;
+  opacity: 1;
+}
+
 .popover {
   position: absolute; z-index: var(--z-popover);
   min-width: 12rem; max-height: 60vh; overflow: auto;
