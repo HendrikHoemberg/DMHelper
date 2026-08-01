@@ -1,60 +1,58 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — ' + ${listTitle}">DMHelper — Threats</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${listTitle},
+          archetype='index',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow">Library</div>
-                    <h1 data-display-title th:text="${listTitle}">Threats</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a class="btn btn-primary"
-                       th:href="@{${createHref}(campaignId=${campaignId})}"
-                       th:text="'+ ' + ${createLabel}">+ New Trap</a>
-                    <!-- Routes: /library/traps , /library/hazards -->
-                    <a th:if="${campaignId != null}" class="btn"
-                       th:href="@{/campaigns/{id}(id=${campaignId})}">&larr; Back to Campaign</a>
-                </div>
-            </div>
-            <div class="filter-bar">
-                <form class="u-flex u-gap-sm" method="get">
-                    <input type="text" name="text" placeholder="Search by name or description..."
-                           th:value="${param.text != null ? param.text[0] : ''}">
-                    <select name="severity">
-                        <option value="">All severities</option>
-                        <option value="SETBACK">Setback</option>
-                        <option value="DANGEROUS">Dangerous</option>
-                        <option value="DEADLY">Deadly</option>
-                    </select>
-                    <input type="hidden" name="campaignId" th:value="${campaignId}">
-                    <button type="submit" class="btn btn-sm">Filter</button>
-                </form>
-            </div>
-            <div id="threat-grid" class="card-grid card-grid--bounded empty-state-host">
-                <th:block th:if="${items == null or items.isEmpty()}">
-                    <th:block th:replace="~{common/_empty-state :: empty-state(message='No items yet.', actionText=null, actionHref=null, description=null)}"></th:block>
-                </th:block>
-                <th:block th:each="item : ${items}">
-                    <div class="card">
-                        <h3 th:text="${item.name}">Name</h3>
-                        <p class="text-muted">
-                            <span th:text="${#enums.label(item.severity)}">Severity</span>
-                            <span th:if="${item.source != null}" th:text="' · ' + ${#enums.label(item.source)}"> · Custom</span>
-                        </p>
-                        <a class="btn btn-sm"
-                           th:href="@{${detailBase} + '/' + ${item.id}}">View</a>
-                    </div>
-                </th:block>
-            </div>
-        </main>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${listTitle},
+        summary='Library',
+        breadcrumb=~{},
+        primary=~{::#primaryAction},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<a id="primaryAction" class="btn btn-primary"
+   th:href="@{${createHref}(campaignId=${campaignId})}"
+   th:text="'+ ' + ${createLabel}">+ New Trap</a>
+<a id="secondaryActions" th:if="${campaignId != null}" class="btn btn-ghost"
+   th:href="@{/campaigns/{id}(id=${campaignId})}">&larr; Back to Campaign</a>
+
+<div id="page-content" class="page-content">
+    <div class="filter-bar">
+        <form class="u-flex u-gap-sm" method="get">
+            <input type="text" name="text" placeholder="Search by name or description..."
+                   th:value="${param.text != null ? param.text[0] : ''}">
+            <select name="severity">
+                <option value="">All severities</option>
+                <option value="SETBACK">Setback</option>
+                <option value="DANGEROUS">Dangerous</option>
+                <option value="DEADLY">Deadly</option>
+            </select>
+            <input type="hidden" name="campaignId" th:value="${campaignId}">
+            <button type="submit" class="btn btn-sm">Filter</button>
+        </form>
     </div>
+    <div id="threat-grid" class="card-grid card-grid--bounded empty-state-host">
+        <th:block th:if="${items == null or items.isEmpty()}">
+            <th:block th:replace="~{common/_empty-state :: empty-state(message='No items yet.', actionText=null, actionHref=null, description=null)}"></th:block>
+        </th:block>
+        <th:block th:each="item : ${items}">
+            <div class="card">
+                <h3 th:text="${item.name}">Name</h3>
+                <p class="text-muted">
+                    <span th:text="${#enums.label(item.severity)}">Severity</span>
+                    <span th:if="${item.source != null}" th:text="' · ' + ${#enums.label(item.source)}"> · Custom</span>
+                </p>
+                <a class="btn btn-sm"
+                   th:href="@{${detailBase} + '/' + ${item.id}}">View</a>
+            </div>
+        </th:block>
+    </div>
+</div>
 </body>
 </html>

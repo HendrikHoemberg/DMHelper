@@ -1,73 +1,79 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — ' + ${table.name}">DMHelper — Rollable Table</title>
-</head>
-<body th:attr="data-campaign-id=${campaignId}">
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main" x-data="tableManagement()">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow">Rollable Tables</div>
-                    <h1 data-display-title th:text="${table.name}">Table Name</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a th:href="@{/library/tables}" class="btn btn-ghost">&larr; Back to Tables</a>
-                    <a th:if="${table.source.name() == 'CUSTOM'}"
-                       class="btn btn-ghost"
-                       th:href="@{/library/tables/{id}/edit(id=${table.id})}">Edit</a>
-                    <button type="button" class="btn btn-ghost" @click="cloneTable()"
-                            :disabled="managementLoading">Clone</button>
-                    <button th:if="${table.source.name() == 'CUSTOM' and campaignId != null}"
-                            type="button" class="btn btn-ghost" @click="promoteTable()"
-                            :disabled="managementLoading">Promote</button>
-                    <button th:if="${table.source.name() == 'CUSTOM'}"
-                            type="button" class="btn btn-danger action-row__destructive" @click="deleteTable()"
-                            :disabled="managementLoading">Delete</button>
-                    <span class="u-text-sm" x-show="managementMessage" x-text="managementMessage"></span>
-                </div>
-            </div>
-            <div class="detail-section" th:attr="data-table-id=${table.id}">
-                <div class="detail-meta">
-                    <span class="badge" th:text="${#enums.label(table.category)}">Category</span>
-                    <span class="badge" th:text="${#enums.label(table.addressMode)}">Mode</span>
-                    <span class="badge" th:text="${table.rollExpression}">EXPR</span>
-                </div>
-                <div class="detail-description" th:utext="${markdownDescription}"></div>
-                <div class="u-mt-lg">
-                    <th:block th:replace="~{rollable-table/_roll-panel :: roll-panel(tableId=${table.id}, compact=${false})}"></th:block>
-                </div>
-                <h2 class="u-mt-lg">Entries</h2>
-                <table class="data-table u-mt-md">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Range/Weight</th>
-                            <th>Result</th>
-                            <th>Quantity</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="entry : ${table.entries}">
-                            <td th:text="${entry.sortOrder + 1}">1</td>
-                            <td>
-                                <span th:if="${entry.rangeStart != null}"
-                                      th:text="${entry.rangeStart} + '-' + ${entry.rangeEnd}">1-6</span>
-                                <span th:if="${entry.weight != null}"
-                                      th:text="'w=' + ${entry.weight}">w=1</span>
-                            </td>
-                            <td th:text="${entry.resultText}">Result text</td>
-                            <td th:text="${entry.quantityExpression}">1</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </main>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${table.name},
+          archetype='detail',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
+<body>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${table.name},
+        summary='Rollable Table',
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<div id="secondaryActions" class="u-flex u-gap-xs">
+    <a th:href="@{/library/tables}" class="btn btn-ghost">&larr; Back to Tables</a>
+    <a th:if="${table.source.name() == 'CUSTOM'}"
+       class="btn btn-ghost"
+       th:href="@{/library/tables/{id}/edit(id=${table.id})}">Edit</a>
+    <button type="button" class="btn btn-ghost" @click="cloneTable()"
+            :disabled="managementLoading">Clone</button>
+    <button th:if="${table.source.name() == 'CUSTOM' and campaignId != null}"
+            type="button" class="btn btn-ghost" @click="promoteTable()"
+            :disabled="managementLoading">Promote</button>
+    <span class="u-text-sm" x-show="managementMessage" x-text="managementMessage"></span>
+</div>
+
+<div id="page-content" class="page-content" x-data="tableManagement()"
+     th:attr="data-campaign-id=${campaignId}">
+    <div class="detail-section" th:attr="data-table-id=${table.id}">
+        <div class="detail-meta">
+            <span class="badge" th:text="${#enums.label(table.category)}">Category</span>
+            <span class="badge" th:text="${#enums.label(table.addressMode)}">Mode</span>
+            <span class="badge" th:text="${table.rollExpression}">EXPR</span>
+        </div>
+        <div class="detail-description" th:utext="${markdownDescription}"></div>
+        <div class="u-mt-lg">
+            <th:block th:replace="~{rollable-table/_roll-panel :: roll-panel(tableId=${table.id}, compact=${false})}"></th:block>
+        </div>
+        <h2 class="u-mt-lg">Entries</h2>
+        <table class="data-table u-mt-md">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Range/Weight</th>
+                    <th>Result</th>
+                    <th>Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="entry : ${table.entries}">
+                    <td th:text="${entry.sortOrder + 1}">1</td>
+                    <td>
+                        <span th:if="${entry.rangeStart != null}"
+                              th:text="${entry.rangeStart} + '-' + ${entry.rangeEnd}">1-6</span>
+                        <span th:if="${entry.weight != null}"
+                              th:text="'w=' + ${entry.weight}">w=1</span>
+                    </td>
+                    <td th:text="${entry.resultText}">Result text</td>
+                    <td th:text="${entry.quantityExpression}">1</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
+
+    <div class="u-mt-lg surface-danger-zone" th:if="${table.source.name() == 'CUSTOM'}">
+        <h2>Danger zone</h2>
+        <p class="text-muted u-text-sm">This action cannot be undone.</p>
+        <button type="button" class="btn btn-danger action-row__destructive" @click="deleteTable()"
+                :disabled="managementLoading">Delete</button>
+    </div>
+
     <script th:inline="javascript">
     /*<![CDATA[*/
     window.TABLE_ID = /*[[${table.id}]]*/ null;
@@ -75,5 +81,6 @@
     </script>
     <script th:src="@{/js/rollable-table-roll.js}"></script>
     <script th:src="@{/js/rollable-table-management.js}"></script>
+</div>
 </body>
 </html>

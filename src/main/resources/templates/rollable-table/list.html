@@ -1,59 +1,58 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title>DMHelper — Rollable Tables</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle='Rollable Tables',
+          archetype='index',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow">Library</div>
-                    <h1 data-display-title>Rollable Tables</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a class="btn btn-primary"
-                       th:href="@{/library/tables/new(campaignId=${campaignId})}">+ New Table</a>
-                    <a th:if="${campaignId != null}" class="btn"
-                       th:href="@{/campaigns/{id}(id=${campaignId})}">&larr; Back to Campaign</a>
-                </div>
-            </div>
-            <div class="filter-bar">
-                <form class="u-flex u-gap-sm" method="get">
-                    <input type="text" name="text" placeholder="Search by name, description, or category..."
-                           th:value="${param.text != null ? param.text[0] : ''}">
-                    <select name="category">
-                        <option value="">All categories</option>
-                        <option value="ENCOUNTER">Encounter</option>
-                        <option value="TREASURE">Treasure</option>
-                        <option value="WEATHER">Weather</option>
-                        <option value="RUMOR">Rumor</option>
-                        <option value="EVENT">Event</option>
-                        <option value="GENERIC">Generic</option>
-                    </select>
-                    <input type="hidden" name="tag" th:value="${param.tag != null ? param.tag[0] : ''}">
-                    <input type="hidden" name="campaignId" th:value="${campaignId}">
-                    <button type="submit" class="btn btn-sm">Filter</button>
-                </form>
-            </div>
-            <div id="table-grid" class="card-grid card-grid--bounded empty-state-host">
-                <th:block th:if="${tables == null or tables.isEmpty()}">
-                    <th:block th:replace="~{common/_empty-state :: empty-state(message='No rollable tables yet.', actionText=null, actionHref=null, description=null)}"></th:block>
-                </th:block>
-                <th:block th:each="t : ${tables}">
-                    <div class="card">
-                        <h3 th:text="${t.name}">Table Name</h3>
-                        <p class="text-muted" th:text="${#enums.label(t.category)}">Category</p>
-                        <a class="btn btn-sm"
-                           th:href="@{/library/tables/{id}(id=${t.id})}">View</a>
-                    </div>
-                </th:block>
-            </div>
-        </main>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title='Rollable Tables',
+        summary='Library',
+        breadcrumb=~{},
+        primary=~{::#primaryAction},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<a id="primaryAction" class="btn btn-primary"
+   th:href="@{/library/tables/new(campaignId=${campaignId})}">+ New Table</a>
+<a id="secondaryActions" th:if="${campaignId != null}" class="btn btn-ghost"
+   th:href="@{/campaigns/{id}(id=${campaignId})}">&larr; Back to Campaign</a>
+
+<div id="page-content" class="page-content">
+    <div class="filter-bar">
+        <form class="u-flex u-gap-sm" method="get">
+            <input type="text" name="text" placeholder="Search by name, description, or category..."
+                   th:value="${param.text != null ? param.text[0] : ''}">
+            <select name="category">
+                <option value="">All categories</option>
+                <option value="ENCOUNTER">Encounter</option>
+                <option value="TREASURE">Treasure</option>
+                <option value="WEATHER">Weather</option>
+                <option value="RUMOR">Rumor</option>
+                <option value="EVENT">Event</option>
+                <option value="GENERIC">Generic</option>
+            </select>
+            <input type="hidden" name="tag" th:value="${param.tag != null ? param.tag[0] : ''}">
+            <input type="hidden" name="campaignId" th:value="${campaignId}">
+            <button type="submit" class="btn btn-sm">Filter</button>
+        </form>
     </div>
+    <div id="table-grid" class="card-grid card-grid--bounded empty-state-host">
+        <th:block th:if="${tables == null or tables.isEmpty()}">
+            <th:block th:replace="~{common/_empty-state :: empty-state(message='No rollable tables yet.', actionText=null, actionHref=null, description=null)}"></th:block>
+        </th:block>
+        <th:block th:each="t : ${tables}">
+            <div class="card">
+                <h3 th:text="${t.name}">Table Name</h3>
+                <p class="text-muted" th:text="${#enums.label(t.category)}">Category</p>
+                <a class="btn btn-sm"
+                   th:href="@{/library/tables/{id}(id=${t.id})}">View</a>
+            </div>
+        </th:block>
+    </div>
+</div>
 </body>
 </html>

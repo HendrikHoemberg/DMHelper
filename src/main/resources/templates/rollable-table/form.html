@@ -1,22 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org" xmlns:x="http://www.w3.org/1999/xhtml">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — ' + (${table} != null ? 'Edit ' + ${table.name} : 'New Table')">DMHelper — Rollable Table Editor</title>
-</head>
-<body th:attr="data-campaign-id=${campaignId}">
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow">Rollable Table Editor</div>
-                    <h1 data-display-title th:text="${table != null ? 'Edit ' + table.name : 'New Table'}">New Table</h1>
-                    <div class="rule-taper"></div>
-                </div>
-            </div>
-            <div class="detail-section"
+<html xmlns:th="http://www.thymeleaf.org" xmlns:x="http://www.w3.org/1999/xhtml"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${table != null} ? 'Edit ' + table.name : 'New Table',
+          archetype='form',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
+<body>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${table != null} ? 'Edit ' + table.name : 'New Table',
+        summary='Rollable Table Editor',
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{})}"></th:block>
+</div>
+
+<div id="page-content" class="page-content" th:attr="data-campaign-id=${campaignId}">
+<div class="detail-section"
                  x-data="tableEditor()">
                 <form @submit.prevent="save()">
                     <div class="form-group">
@@ -174,9 +176,7 @@
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
-    <script th:inline="javascript">
+<script th:inline="javascript">
     /*<![CDATA[*/
     window.TABLE_ID = /*[[${table?.id}]]*/ null;
     window.TABLE_NAME = /*[[${table?.name}]]*/ '';
@@ -189,6 +189,7 @@
     window.TABLE_ENTRIES = /*[[${editorEntries}]]*/ null;
     /*]]>*/
     </script>
-    <script th:src="@{/js/rollable-table-editor.js}"></script>
+<script th:src="@{/js/rollable-table-editor.js}"></script>
+</div>
 </body>
 </html>

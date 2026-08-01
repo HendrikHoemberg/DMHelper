@@ -1,50 +1,56 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — ' + ${threat.name}">DMHelper — Threat</title>
-</head>
-<body th:attr="data-campaign-id=${campaignId}">
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main" x-data="threatManagement()">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow" th:text="${listLabel}">Threats</div>
-                    <h1 data-display-title th:text="${threat.name}">Threat Name</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a th:href="@{${listHref}}" class="btn btn-ghost"
-                       th:text="'&larr; Back to ' + ${listLabel}">&larr; Back</a>
-                    <a th:if="${threat.source.name() == 'CUSTOM'}"
-                       class="btn btn-ghost"
-                       th:href="@{${editHref}}">Edit</a>
-                    <button type="button" class="btn btn-ghost" @click="cloneThreat()"
-                            :disabled="managementLoading">Clone</button>
-                    <button th:if="${threat.source.name() == 'CUSTOM' and campaignId != null}"
-                            type="button" class="btn btn-ghost" @click="promoteThreat()"
-                            :disabled="managementLoading">Promote</button>
-                    <button th:if="${threat.source.name() == 'CUSTOM'}"
-                            type="button" class="btn btn-danger action-row__destructive" @click="deleteThreat()"
-                            :disabled="managementLoading">Delete</button>
-                    <span class="u-text-sm" x-show="managementMessage" x-text="managementMessage"></span>
-                </div>
-            </div>
-            <div class="detail-section"
-                 th:attr="data-threat-id=${threat.id}, data-api-base=${apiBase}, data-list-href=${listHref}"
-                 data-deletion-impact="deletion-impact">
-                <div class="detail-description" th:utext="${markdownDescription}"></div>
-                <div class="u-mt-lg">
-                    <th:block th:replace="~{threat/_mechanics-card :: mechanics-card(threat=${threat}, kind=${kind})}"></th:block>
-                </div>
-                <div class="u-mt-lg" th:if="${threat.source.name() == 'CUSTOM'}">
-                    <th:block th:replace="~{threat/_provenance :: provenance(entity=${threat})}"></th:block>
-                </div>
-            </div>
-        </main>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${threat.name},
+          archetype='detail',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
+<body>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${threat.name},
+        summary=${listLabel},
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<div id="secondaryActions" class="u-flex u-gap-xs">
+    <a th:href="@{${listHref}}" class="btn btn-ghost"
+       th:text="'&larr; Back to ' + ${listLabel}">&larr; Back</a>
+    <a th:if="${threat.source.name() == 'CUSTOM'}"
+       class="btn btn-ghost"
+       th:href="@{${editHref}}">Edit</a>
+    <button type="button" class="btn btn-ghost" @click="cloneThreat()"
+            :disabled="managementLoading">Clone</button>
+    <button th:if="${threat.source.name() == 'CUSTOM' and campaignId != null}"
+            type="button" class="btn btn-ghost" @click="promoteThreat()"
+            :disabled="managementLoading">Promote</button>
+    <span class="u-text-sm" x-show="managementMessage" x-text="managementMessage"></span>
+</div>
+
+<div id="page-content" class="page-content" x-data="threatManagement()"
+     th:attr="data-campaign-id=${campaignId}">
+    <div class="detail-section"
+         th:attr="data-threat-id=${threat.id}, data-api-base=${apiBase}, data-list-href=${listHref}"
+         data-deletion-impact="deletion-impact">
+        <div class="detail-description" th:utext="${markdownDescription}"></div>
+        <div class="u-mt-lg">
+            <th:block th:replace="~{threat/_mechanics-card :: mechanics-card(threat=${threat}, kind=${kind})}"></th:block>
+        </div>
+        <div class="u-mt-lg" th:if="${threat.source.name() == 'CUSTOM'}">
+            <th:block th:replace="~{threat/_provenance :: provenance(entity=${threat})}"></th:block>
+        </div>
     </div>
+
+    <div class="u-mt-lg surface-danger-zone" th:if="${threat.source.name() == 'CUSTOM'}">
+        <h2>Danger zone</h2>
+        <p class="text-muted u-text-sm">This action cannot be undone.</p>
+        <button type="button" class="btn btn-danger action-row__destructive" @click="deleteThreat()"
+                :disabled="managementLoading">Delete</button>
+    </div>
+
     <script th:inline="javascript">
     /*<![CDATA[*/
     window.THREAT_ID = /*[[${threat.id}]]*/ null;
@@ -54,5 +60,6 @@
     /*]]>*/
     </script>
     <script th:src="@{/js/threat-editor.js}"></script>
+</div>
 </body>
 </html>

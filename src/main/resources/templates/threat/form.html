@@ -1,22 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org" xmlns:x="http://www.w3.org/1999/xhtml">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — ' + ${editorTitle}">DMHelper — Threat Editor</title>
-</head>
-<body th:attr="data-campaign-id=${campaignId}">
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow">Threat Editor</div>
-                    <h1 data-display-title th:text="${editorTitle}">New Threat</h1>
-                    <div class="rule-taper"></div>
-                </div>
-            </div>
-            <div class="detail-section" x-data="threatEditor()">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:x="http://www.w3.org/1999/xhtml"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${editorTitle},
+          archetype='form',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
+<body>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${editorTitle},
+        summary='Threat Editor',
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{})}"></th:block>
+</div>
+
+<div id="page-content" class="page-content" th:attr="data-campaign-id=${campaignId}">
+<div class="detail-section" x-data="threatEditor()">
                 <form @submit.prevent="save()">
                     <div class="form-group">
                         <label for="name">Name</label>
@@ -347,9 +349,7 @@
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
-    <script th:inline="javascript">
+<script th:inline="javascript">
     /*<![CDATA[*/
     window.THREAT_KIND = /*[[${kind.name()}]]*/ 'TRAP';
     window.THREAT_ID = /*[[${threat?.id}]]*/ null;
@@ -358,6 +358,7 @@
     window.THREAT_LIST_HREF = /*[[${kind.name() == 'TRAP' ? '/library/traps' : '/library/hazards'}]]*/ '/library/traps';
     /*]]>*/
     </script>
-    <script th:src="@{/js/threat-editor.js}"></script>
+<script th:src="@{/js/threat-editor.js}"></script>
+</div>
 </body>
 </html>
