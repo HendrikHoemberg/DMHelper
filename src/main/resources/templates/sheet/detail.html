@@ -1,56 +1,55 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — Sheet | ' + ${member.characterName}">DMHelper — Character Sheet</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${member.characterName + ' — Character Sheet'},
+          archetype='operational',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-        <div class="page-header">
-            <div>
-                <div class="page-header-eyebrow">Sheets</div>
-                <h1 data-display-title th:text="${member.characterName} + ' — Character Sheet'">Character Sheet</h1>
-                <div class="rule-taper"></div>
-            </div>
-            <div class="page-header-actions">
-                <a th:href="@{/campaigns/{cid}/sheets(cid=${campaign.id})}" class="btn btn-ghost">&larr; Back to Sheets</a>
-            </div>
-        </div>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${member.characterName + ' — Character Sheet'},
+        summary='Sheet',
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<a id="secondaryActions" th:href="@{/campaigns/{cid}/sheets(cid=${campaign.id})}" class="btn btn-ghost">&larr; Back to Sheets</a>
 
-        <div th:if="${hasSheet}">
-            <div class="sheet-layout">
-                <nav class="sheet-toc" aria-label="Sheet sections">
-                    <a href="#sheet-overview">Overview</a>
-                    <a href="#sheet-abilities">Abilities</a>
-                    <a href="#sheet-combat">Combat</a>
-                    <a href="#sheet-live">Live State</a>
-                    <a href="#sheet-saves">Saves</a>
-                    <a href="#sheet-skills">Skills</a>
-                    <a href="#sheet-passives">Passives</a>
-                    <a href="#sheet-attacks">Attacks</a>
-                    <a href="#sheet-features">Features</a>
-                    <a href="#sheet-spells">Spells</a>
-                    <a href="#sheet-resources">Resources</a>
-                    <a href="#sheet-overrides">Overrides</a>
-                    <a href="#sheet-proficiencies">Proficiencies</a>
-                    <a href="#sheet-inventory">Inventory</a>
-                </nav>
-                <div>
-                <div class="detail-section" id="sheet-overview">
-                    <h2>Overview</h2>
-                    <dl class="stat-grid">
-                        <div><dt>Class &amp; Level</dt><dd th:text="${sheet.derivedValues().classAndLevel()}">Fighter 5</dd></div>
-                        <div><dt>Total Level</dt><dd th:text="${sheet.derivedValues().totalLevel()}">5</dd></div>
-                        <div><dt>Prof. Bonus</dt><dd th:text="'+' + ${sheet.derivedValues().proficiencyBonus()}">+3</dd></div>
-                        <div><dt>Species</dt><dd th:text="${sheet.speciesName() != null ? sheet.speciesName() : '—'}">Human</dd></div>
-                        <div><dt>Background</dt><dd th:text="${sheet.backgroundName() != null ? sheet.backgroundName() : '—'}">Soldier</dd></div>
-                        <div th:if="${levelingMode == null or levelingMode == 'XP'}"><dt>XP</dt><dd th:text="${sheet.xp()}">6500</dd></div>
-                        <div th:if="${levelingMode == 'MILESTONE'}"><dt>Mode</dt><dd>Milestone</dd></div>
-                    </dl>
-                </div>
+<div id="page-content" class="page-content">
+    <div th:if="${hasSheet}">
+        <div class="sheet-layout">
+            <nav class="sheet-toc" aria-label="Sheet sections">
+                <a href="#sheet-overview">Overview</a>
+                <a href="#sheet-abilities">Abilities</a>
+                <a href="#sheet-combat">Combat</a>
+                <a href="#sheet-live">Live State</a>
+                <a href="#sheet-saves">Saves</a>
+                <a href="#sheet-skills">Skills</a>
+                <a href="#sheet-passives">Passives</a>
+                <a href="#sheet-attacks">Attacks</a>
+                <a href="#sheet-features">Features</a>
+                <a href="#sheet-spells">Spells</a>
+                <a href="#sheet-resources">Resources</a>
+                <a href="#sheet-overrides">Overrides</a>
+                <a href="#sheet-proficiencies">Proficiencies</a>
+                <a href="#sheet-inventory">Inventory</a>
+            </nav>
+            <div>
+            <div class="detail-section" id="sheet-overview">
+                <h2>Overview</h2>
+                <dl class="stat-grid">
+                    <div><dt>Class &amp; Level</dt><dd th:text="${sheet.derivedValues().classAndLevel()}">Fighter 5</dd></div>
+                    <div><dt>Total Level</dt><dd th:text="${sheet.derivedValues().totalLevel()}">5</dd></div>
+                    <div><dt>Prof. Bonus</dt><dd th:text="'+' + ${sheet.derivedValues().proficiencyBonus()}">+3</dd></div>
+                    <div><dt>Species</dt><dd th:text="${sheet.speciesName() != null ? sheet.speciesName() : '—'}">Human</dd></div>
+                    <div><dt>Background</dt><dd th:text="${sheet.backgroundName() != null ? sheet.backgroundName() : '—'}">Soldier</dd></div>
+                    <div th:if="${levelingMode == null or levelingMode == 'XP'}"><dt>XP</dt><dd th:text="${sheet.xp()}">6500</dd></div>
+                    <div th:if="${levelingMode == 'MILESTONE'}"><dt>Mode</dt><dd>Milestone</dd></div>
+                </dl>
+            </div>
 
             <div class="detail-section" id="sheet-abilities">
                 <h2>Ability Scores</h2>
@@ -274,10 +273,8 @@
         </div>
 
         <th:block th:unless="${hasSheet}"><div th:replace="~{common/_empty-state :: empty-state('No character sheet yet.', 'Create Sheet', @{/campaigns/{cid}/party/{pid}/sheet/create(cid=${campaign.id}, pid=${member.id})}, null)}"></div></th:block>
-    </main>
-</div>
 
-<div th:replace="~{sheet/_level-up-dialog :: levelUpDialog(${campaign.id}, ${member.id})}"></div>
+    <div th:replace="~{sheet/_level-up-dialog :: levelUpDialog(${campaign.id}, ${member.id})}"></div>
 <script>
 function addOverrideRow() {
     const tbody = document.getElementById('overrides-rows');
@@ -336,5 +333,6 @@ function buildProficiencies() {
     };
 }
 </script>
+</div>
 </body>
 </html>

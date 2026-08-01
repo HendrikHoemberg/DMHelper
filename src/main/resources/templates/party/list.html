@@ -1,66 +1,64 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|Party — ${campaign.name}|">DMHelper — Party</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle='Party',
+          archetype='operational',
+          surface='read',
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main" data-surface="read">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow" th:text="${campaign.name}">Campaign</div>
-                    <h1 data-display-title>Party</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a th:href="@{/campaigns/{id}(id=${campaign.id})}" class="btn btn-ghost">&larr; Back to Campaign</a>
-                    <a th:href="@{/campaigns/{id}/sheets(id=${campaign.id})}" class="btn btn-ghost">Character Sheets</a>
-                    <button class="btn btn-primary"
-                            th:hx-get="@{/campaigns/{cid}/party/new(cid=${campaign.id})}"
-                            hx-target="#party-form-modal"
-                            hx-swap="innerHTML"
-                            hx-disabled-elt="this">+ Add Member</button>
-                </div>
-            </div>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title='Party',
+        summary=${campaign.name},
+        breadcrumb=~{},
+        primary=~{::#primaryAction},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<div id="secondaryActions" class="u-flex u-gap-xs">
+    <a th:href="@{/campaigns/{id}(id=${campaign.id})}" class="btn btn-ghost">&larr; Back to Campaign</a>
+    <a th:href="@{/campaigns/{id}/sheets(id=${campaign.id})}" class="btn btn-ghost">Character Sheets</a>
+</div>
+<button id="primaryAction" class="btn btn-primary"
+        th:hx-get="@{/campaigns/{cid}/party/new(cid=${campaign.id})}"
+        hx-target="#party-form-modal"
+        hx-swap="innerHTML"
+        hx-disabled-elt="this">+ Add Member</button>
 
-            <details class="party-bulk" id="party-bulk">
-                <summary data-bulk-actions>
-                    <span class="bulk-summary-label">
-                        <label class="batch-toggle">
-                            <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
-                            Select All
-                        </label>
-                        <label class="batch-toggle batch-toggle-inactive">
-                            <input type="checkbox" id="include-inactive" onchange="toggleInactive()">
-                            Include inactive
-                        </label>
-                        <span class="batch-count" id="batch-count">0 selected</span>
-                    </span>
-                    <span class="bulk-summary-chevron">Bulk Actions</span>
-                </summary>
-                <div class="party-bulk__actions">
-                    <button class="btn btn-xs batch-btn" onclick="batchRest('SHORT')" title="Short Rest">Short Rest</button>
-                    <button class="btn btn-xs batch-btn" onclick="batchRest('LONG')" title="Long Rest">Long Rest</button>
-                    <button class="btn btn-xs batch-btn" onclick="batchXp()">Award XP</button>
-                    <button class="btn btn-xs batch-btn" onclick="batchMilestone()">Set Level</button>
-                    <button class="btn btn-xs batch-btn" onclick="batchCondition()">Condition</button>
-                    <button class="btn btn-xs batch-btn" onclick="batchLoot()">Assign Loot</button>
-                    <button class="btn btn-xs batch-btn" onclick="batchClearDeathSaves()">Clear Death Saves</button>
-                </div>
-            </details>
+<div id="page-content" class="page-content">
+    <details class="party-bulk" id="party-bulk">
+        <summary data-bulk-actions>
+            <span class="bulk-summary-label">
+                <label class="batch-toggle">
+                    <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                    Select All
+                </label>
+                <label class="batch-toggle batch-toggle-inactive">
+                    <input type="checkbox" id="include-inactive" onchange="toggleInactive()">
+                    Include inactive
+                </label>
+                <span class="batch-count" id="batch-count">0 selected</span>
+            </span>
+            <span class="bulk-summary-chevron">Bulk Actions</span>
+        </summary>
+        <div class="party-bulk__actions">
+            <button class="btn btn-xs batch-btn" onclick="batchRest('SHORT')" title="Short Rest">Short Rest</button>
+            <button class="btn btn-xs batch-btn" onclick="batchRest('LONG')" title="Long Rest">Long Rest</button>
+            <button class="btn btn-xs batch-btn" onclick="batchXp()">Award XP</button>
+            <button class="btn btn-xs batch-btn" onclick="batchMilestone()">Set Level</button>
+            <button class="btn btn-xs batch-btn" onclick="batchCondition()">Condition</button>
+            <button class="btn btn-xs batch-btn" onclick="batchLoot()">Assign Loot</button>
+            <button class="btn btn-xs batch-btn" onclick="batchClearDeathSaves()">Clear Death Saves</button>
+        </div>
+    </details>
 
-            <div id="party-grid" class="empty-state-host">
-                <th:block th:replace="~{party/_roster :: roster(members=${members}, campaignId=${campaign.id})}"></th:block>
-            </div>
-            <dialog id="party-form-modal" class="modal"
-                    hx-on::after-swap="if(!this.open) this.showModal()"
-                    onclick="if (event.target === this) this.close();"></dialog>
-        </main>
+    <div id="party-grid" class="empty-state-host">
+        <th:block th:replace="~{party/_roster :: roster(members=${members}, campaignId=${campaign.id})}"></th:block>
     </div>
-
+    <dialog id="party-form-modal" class="modal"
+            hx-on::after-swap="if(!this.open) this.showModal()"
+            onclick="if (event.target === this) this.close();"></dialog>
 <script th:inline="javascript">
 const campaignId = /*[[${campaign.id}]]*/ '';
 
@@ -248,5 +246,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+</div>
 </body>
 </html>

@@ -1,142 +1,144 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — Create Sheet | ' + ${member.characterName}">Create Character Sheet</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${member.characterName + ' — Create Character Sheet'},
+          archetype='form',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-        <div class="page-header">
-            <h1 data-display-title th:text="${member.characterName} + ' — Create Character Sheet'">Create Character Sheet</h1>
-            <a th:href="@{/campaigns/{cid}/party/{pid}/sheet(cid=${campaignId}, pid=${member.id})}" class="btn btn-ghost">&larr; Back</a>
-        </div>
-
-        <div class="wizard-progress" id="wizard-progress">
-            <span class="wizard-step active" data-step="1">Class</span>
-            <span class="wizard-step-sep">&rarr;</span>
-            <span class="wizard-step" data-step="2">Subclass &amp; Scores</span>
-            <span class="wizard-step-sep">&rarr;</span>
-            <span class="wizard-step" data-step="3">Skills &amp; Proficiencies</span>
-            <span class="wizard-step-sep">&rarr;</span>
-            <span class="wizard-step" data-step="4">Species &amp; Background</span>
-            <span class="wizard-step-sep">&rarr;</span>
-            <span class="wizard-step" data-step="5">Review &amp; Create</span>
-        </div>
-
-        <form th:action="@{/campaigns/{cid}/party/{pid}/sheet(cid=${campaignId}, pid=${member.id})}" method="post" class="card">
-
-            <fieldset id="step-1" class="wizard-fieldset">
-                <legend>Step 1: Choose Class</legend>
-                <div class="form-group">
-                    <label>Class:</label>
-                    <select name="classSourceKey" id="class-select" required>
-                        <option th:each="cl : ${classList}" th:value="${cl.sourceKey}" th:text="${cl.name}">Fighter</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Starting Level:</label>
-                    <input type="number" name="classLevel" id="class-level" value="1" min="1" max="20" class="small-input">
-                </div>
-                <div id="class-details" class="wizard-details">
-                    <p class="text-muted">Select a class to see details.</p>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn" onclick="goToStep(2)">Next &rarr;</button>
-                </div>
-            </fieldset>
-
-            <fieldset id="step-2" class="wizard-fieldset" style="display:none">
-                <legend>Step 2: Subclass &amp; Ability Scores</legend>
-                <div class="form-group">
-                    <label>Subclass:</label>
-                    <select name="subclassSourceKey" id="subclass-select">
-                        <option value="">— None —</option>
-                    </select>
-                </div>
-                <div class="alert alert-info" id="subclass-notice" style="display:none">
-                    Subclasses are available at level 3+. Select one now if desired.
-                </div>
-                <h3>Ability Scores</h3>
-                <div class="ability-grid">
-                    <div class="form-group" th:each="ability : ${ {'STR','DEX','CON','INT','WIS','CHA'} }">
-                        <label th:text="${ability}">STR</label>
-                        <input type="number" th:name="${ability.toLowerCase()}" value="10" min="1" max="30" class="small-input">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Hit Die Choice:</label>
-                    <label><input type="radio" name="hitDieChoice" value="average" checked> Average</label>
-                    <label><input type="radio" name="hitDieChoice" value="roll"> Roll</label>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-ghost" onclick="goToStep(1)">&larr; Back</button>
-                    <button type="button" class="btn" onclick="goToStep(3)">Next &rarr;</button>
-                </div>
-            </fieldset>
-
-            <fieldset id="step-3" class="wizard-fieldset" style="display:none">
-                <legend>Step 3: Skills, Tools &amp; Languages</legend>
-                <div class="form-group" id="skills-group">
-                    <label>Skill Proficiencies (<span id="skill-count-label">choose 0</span>):</label>
-                    <div id="skill-checkboxes" class="badge-group"></div>
-                    <input type="hidden" name="skills" id="skills-input" value="">
-                </div>
-                <div class="form-group">
-                    <label>Tool Proficiencies (comma-separated):</label>
-                    <input type="text" name="tools" value="" placeholder="thieves_tools, disguise_kit" class="small-input" style="width:100%">
-                </div>
-                <div class="form-group">
-                    <label>Languages (comma-separated):</label>
-                    <input type="text" name="languages" value="" placeholder="common, elvish, dwarvish" class="small-input" style="width:100%">
-                </div>
-                <div class="alert alert-warning" id="incomplete-data-warning" style="display:none">
-                    Rules data for this class is incomplete. You can type skill names directly.
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-ghost" onclick="goToStep(2)">&larr; Back</button>
-                    <button type="button" class="btn" onclick="goToStep(4)">Next &rarr;</button>
-                </div>
-            </fieldset>
-
-            <fieldset id="step-4" class="wizard-fieldset" style="display:none">
-                <legend>Step 4: Species &amp; Background</legend>
-                <div class="form-group">
-                    <label>Species:</label>
-                    <select name="speciesId">
-                        <option value="">— None —</option>
-                        <option th:each="s : ${speciesList}" th:value="${s.id}" th:text="${s.name}">Human</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Background:</label>
-                    <select name="backgroundId">
-                        <option value="">— None —</option>
-                        <option th:each="b : ${backgroundList}" th:value="${b.id}" th:text="${b.name}">Soldier</option>
-                    </select>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-ghost" onclick="goToStep(3)">&larr; Back</button>
-                    <button type="button" class="btn" onclick="goToStep(5)">Next &rarr;</button>
-                </div>
-            </fieldset>
-
-            <fieldset id="step-5" class="wizard-fieldset" style="display:none">
-                <legend>Step 5: Review &amp; Create</legend>
-                <p>Review your choices below, then click Create.</p>
-                <div id="review-content" class="wizard-details"></div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-ghost" onclick="goToStep(4)">&larr; Back</button>
-                    <button type="submit" class="btn btn-primary">Create Sheet</button>
-                </div>
-            </fieldset>
-
-        </form>
-    </main>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${member.characterName + ' — Create Character Sheet'},
+        summary='Character sheet wizard',
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
 </div>
+<a id="secondaryActions" th:href="@{/campaigns/{cid}/party/{pid}/sheet(cid=${campaignId}, pid=${member.id})}" class="btn btn-ghost">&larr; Back</a>
 
+<div id="page-content" class="page-content">
+    <div class="wizard-progress" id="wizard-progress">
+        <span class="wizard-step active" data-step="1">Class</span>
+        <span class="wizard-step-sep">&rarr;</span>
+        <span class="wizard-step" data-step="2">Subclass &amp; Scores</span>
+        <span class="wizard-step-sep">&rarr;</span>
+        <span class="wizard-step" data-step="3">Skills &amp; Proficiencies</span>
+        <span class="wizard-step-sep">&rarr;</span>
+        <span class="wizard-step" data-step="4">Species &amp; Background</span>
+        <span class="wizard-step-sep">&rarr;</span>
+        <span class="wizard-step" data-step="5">Review &amp; Create</span>
+    </div>
+
+    <form th:action="@{/campaigns/{cid}/party/{pid}/sheet(cid=${campaignId}, pid=${member.id})}" method="post" class="card">
+
+        <fieldset id="step-1" class="wizard-fieldset">
+            <legend>Step 1: Choose Class</legend>
+            <div class="form-group">
+                <label>Class:</label>
+                <select name="classSourceKey" id="class-select" required>
+                    <option th:each="cl : ${classList}" th:value="${cl.sourceKey}" th:text="${cl.name}">Fighter</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Starting Level:</label>
+                <input type="number" name="classLevel" id="class-level" value="1" min="1" max="20" class="small-input">
+            </div>
+            <div id="class-details" class="wizard-details">
+                <p class="text-muted">Select a class to see details.</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn" onclick="goToStep(2)">Next &rarr;</button>
+            </div>
+        </fieldset>
+
+        <fieldset id="step-2" class="wizard-fieldset" style="display:none">
+            <legend>Step 2: Subclass &amp; Ability Scores</legend>
+            <div class="form-group">
+                <label>Subclass:</label>
+                <select name="subclassSourceKey" id="subclass-select">
+                    <option value="">— None —</option>
+                </select>
+            </div>
+            <div class="alert alert-info" id="subclass-notice" style="display:none">
+                Subclasses are available at level 3+. Select one now if desired.
+            </div>
+            <h3>Ability Scores</h3>
+            <div class="ability-grid">
+                <div class="form-group" th:each="ability : ${ {'STR','DEX','CON','INT','WIS','CHA'} }">
+                    <label th:text="${ability}">STR</label>
+                    <input type="number" th:name="${ability.toLowerCase()}" value="10" min="1" max="30" class="small-input">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Hit Die Choice:</label>
+                <label><input type="radio" name="hitDieChoice" value="average" checked> Average</label>
+                <label><input type="radio" name="hitDieChoice" value="roll"> Roll</label>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-ghost" onclick="goToStep(1)">&larr; Back</button>
+                <button type="button" class="btn" onclick="goToStep(3)">Next &rarr;</button>
+            </div>
+        </fieldset>
+
+        <fieldset id="step-3" class="wizard-fieldset" style="display:none">
+            <legend>Step 3: Skills, Tools &amp; Languages</legend>
+            <div class="form-group" id="skills-group">
+                <label>Skill Proficiencies (<span id="skill-count-label">choose 0</span>):</label>
+                <div id="skill-checkboxes" class="badge-group"></div>
+                <input type="hidden" name="skills" id="skills-input" value="">
+            </div>
+            <div class="form-group">
+                <label>Tool Proficiencies (comma-separated):</label>
+                <input type="text" name="tools" value="" placeholder="thieves_tools, disguise_kit" class="small-input" style="width:100%">
+            </div>
+            <div class="form-group">
+                <label>Languages (comma-separated):</label>
+                <input type="text" name="languages" value="" placeholder="common, elvish, dwarvish" class="small-input" style="width:100%">
+            </div>
+            <div class="alert alert-warning" id="incomplete-data-warning" style="display:none">
+                Rules data for this class is incomplete. You can type skill names directly.
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-ghost" onclick="goToStep(2)">&larr; Back</button>
+                <button type="button" class="btn" onclick="goToStep(4)">Next &rarr;</button>
+            </div>
+        </fieldset>
+
+        <fieldset id="step-4" class="wizard-fieldset" style="display:none">
+            <legend>Step 4: Species &amp; Background</legend>
+            <div class="form-group">
+                <label>Species:</label>
+                <select name="speciesId">
+                    <option value="">— None —</option>
+                    <option th:each="s : ${speciesList}" th:value="${s.id}" th:text="${s.name}">Human</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Background:</label>
+                <select name="backgroundId">
+                    <option value="">— None —</option>
+                    <option th:each="b : ${backgroundList}" th:value="${b.id}" th:text="${b.name}">Soldier</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-ghost" onclick="goToStep(3)">&larr; Back</button>
+                <button type="button" class="btn" onclick="goToStep(5)">Next &rarr;</button>
+            </div>
+        </fieldset>
+
+        <fieldset id="step-5" class="wizard-fieldset" style="display:none">
+            <legend>Step 5: Review &amp; Create</legend>
+            <p>Review your choices below, then click Create.</p>
+            <div id="review-content" class="wizard-details"></div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-ghost" onclick="goToStep(4)">&larr; Back</button>
+                <button type="submit" class="btn btn-primary">Create Sheet</button>
+            </div>
+        </fieldset>
+
+    </form>
 <script>
 let creationOptionsCache = {};
 
@@ -289,6 +291,6 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchCreationOptions(document.getElementById('class-select').value);
 });
 </script>
-
+</div>
 </body>
 </html>
