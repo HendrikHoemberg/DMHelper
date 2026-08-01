@@ -23,13 +23,13 @@ class PageHeaderContractTest {
             "src/main/resources/templates/quest/list.html");
 
     @Test
-    void everyCampaignPageUsesCampaignNameEyebrowAndGoldRule() throws IOException {
+    void everyCampaignPageUsesCampaignNameEyebrowAndTaperedRule() throws IOException {
         for (String page : CAMPAIGN_LIST_PAGES) {
             String html = Files.readString(Path.of(page));
             assertThat(html).as("%s eyebrow", page)
                     .contains("page-header-eyebrow\" th:text=\"${campaign.name}\"");
-            assertThat(html).as("%s gold rule", page)
-                    .contains("rule-taper rule-taper--gold");
+            assertThat(html).as("%s tapered rule", page)
+                    .contains("class=\"rule-taper\"");
         }
     }
 
