@@ -199,4 +199,16 @@
      right-edge overlays (the dice drawer) can dock beside the tracker instead of over it.
      Declared here so the fallback is a real value rather than a silent inherit. */
   --cockpit-right-zone-width: 0px;
+
+  /* Layout roles (spec section 9). */
+  --topbar-height: 52px;
+  --rail-width-expanded: 232px;
+  --rail-width-collapsed: 56px;
+  --page-gap: 24px;
+  --page-pad: 32px;
+  --context-rail-width: 320px;
+  --measure-prose: 74ch;
+  --page-max-index: 1680px;
+  --page-max-detail: 1440px;
+  --page-max-form: 780px;
 }

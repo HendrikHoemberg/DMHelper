@@ -181,16 +181,85 @@ fieldset {
 /* ── App shell: top bar + grouped left nav (replaces .app-layout as pages migrate) ── */
 .app-shell {
   display: grid;
-  grid-template-columns: 220px 1fr;
-  min-height: calc(100vh - 49px);
+  grid-template-columns: var(--rail-width-expanded) 1fr;
+  min-height: calc(100vh - var(--topbar-height));
+  background: var(--surface-canvas);
 }
 
-.app-shell > .app-main {
+.app-shell--rail-collapsed { grid-template-columns: var(--rail-width-collapsed) 1fr; }
+
+.app-main {
   background: var(--surface-workspace);
-  padding: var(--space-lg);
-  overflow-y: auto;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
+
+/* Archetypes ------------------------------------------------------------- */
+
+.page {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--page-gap);
+  padding: var(--page-pad);
+  width: 100%;
+  margin-inline: auto;
+}
+
+.page--index { max-width: var(--page-max-index); }
+
+.page--detail {
+  max-width: var(--page-max-detail);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--context-rail-width);
+  grid-template-areas: "header header" "content rail";
+  align-content: start;
+}
+/* The grid children are the page's own slot wrappers, not the fragments inside them:
+   the shell replaces its th:block with the page's `<div id="page-header">` element, and
+   `.page-header` lives on the <header> nested one level deeper inside that wrapper. */
+.page--detail > .page-header-slot { grid-area: header; min-width: 0; }
+.page--detail > .page-content { grid-area: content; min-width: 0; }
+.page--detail > .page-rail-slot { grid-area: rail; min-width: 0; }
+.page--detail .prose { max-width: var(--measure-prose); }
+
+/* A detail page with no contextual rail must not reserve an empty 320px column. */
+.page--detail:not(:has(> .page-rail-slot)) {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "header" "content";
+}
+
+.page--form { max-width: var(--page-max-form); }
+
+.page--operational { padding-inline: var(--page-gap); }
+
+.page--editor {
+  height: calc(100vh - var(--topbar-height));
+  overflow: hidden;
+  padding: 0;
+  gap: 0;
+  max-width: none;
+}
+
+/* Below 1440 the contextual rail would squeeze the primary column past use;
+   spec section 9.2 allows it to become an inline lower section there. */
+@media (max-width: 1439px) {
+  .page--detail {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "header" "content" "rail";
+  }
+}
+
+/* Ultrawide: grow the margins, never the measure (spec section 9.6). */
+@media (min-width: 2200px) {
+  .page--index { max-width: var(--page-max-index); }
+  .page--operational { padding-inline: calc(var(--page-pad) * 2); }
+}
+
+/* Editor pages own the viewport; every other page must genuinely fit. */
+body[data-archetype="editor"] { overflow-x: hidden; }
 
 .appnav {
   background: var(--color-surface);
