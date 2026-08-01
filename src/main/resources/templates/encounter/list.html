@@ -1,44 +1,40 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|Encounters — ${campaign.name}|">DMHelper — Encounters</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle='Encounters',
+          archetype='index',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title='Encounters',
+        summary=${encounters == null ? '0 prepared' : encounters.size() + ' prepared'},
+        breadcrumb=~{},
+        primary=~{::#primaryAction},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Back to Campaign</a>
+<button id="primaryAction" class="btn btn-primary"
+        th:attr="hx-get=@{/campaigns/{cid}/encounters/new(cid=${campaignId})}"
+        hx-target="#encounter-grid"
+        hx-swap="beforeend">+ New Encounter</button>
 
-    <div class="app-shell">
-            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow" th:text="${campaign.name}">Encounters</div>
-                    <h1 data-display-title>Encounters</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Back to Campaign</a>
-                    <button class="btn btn-primary"
-                            th:attr="hx-get=@{/campaigns/{cid}/encounters/new(cid=${campaignId})}"
-                            hx-target="#encounter-grid"
-                            hx-swap="beforeend">+ New Encounter</button>
-                </div>
-            </div>
-
-            <div id="encounter-grid" class="card-grid card-grid--bounded empty-state-host">
-                <th:block th:if="${encounters == null or encounters.isEmpty()}">
-                    <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
-                        'No encounters yet', 'New encounter',
-                        @{/campaigns/{id}/encounters/new(id=${campaignId})},
-                        'Build one ahead of the session so initiative is one click away.', 'swords')}"></th:block>
-                </th:block>
-                <th:block th:each="e : ${encounters}">
-                    <th:block th:replace="~{encounter/_card :: card(
-                        encounter=${e}, campaignId=${campaignId})}"></th:block>
-                </th:block>
-            </div>
-        </main>
-
+<div id="page-content" class="page-content">
+    <div id="encounter-grid" class="card-grid card-grid--bounded empty-state-host">
+        <th:block th:if="${encounters == null or encounters.isEmpty()}">
+            <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
+                'No encounters yet', 'New encounter',
+                @{/campaigns/{id}/encounters/new(id=${campaignId})},
+                'Build one ahead of the session so initiative is one click away.', 'swords')}"></th:block>
+        </th:block>
+        <th:block th:each="e : ${encounters}">
+            <th:block th:replace="~{encounter/_card :: card(
+                encounter=${e}, campaignId=${campaignId})}"></th:block>
+        </th:block>
     </div>
+</div>
 </body>
 </html>

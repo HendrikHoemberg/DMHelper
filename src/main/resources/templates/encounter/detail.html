@@ -1,79 +1,78 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — ' + ${encounter.name}">DMHelper — Encounter</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${encounter.name},
+          archetype='detail',
+          surface='read',
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${encounter.name},
+        summary='Encounter',
+        breadcrumb=~{},
+        primary=~{::#primaryAction},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<form id="primaryAction" method="post"
+      th:action="@{/campaigns/{cid}/encounters/{eid}/run(cid=${campaignId}, eid=${encounter.id})}"
+      data-run-action class="u-inline">
+    <button type="submit" class="btn btn-primary">Run</button>
+</form>
+<div id="secondaryActions" class="u-flex u-gap-xs">
+    <span class="detail-meta">
+        <span th:if="${encounter.status == 'ACTIVE'}" class="u-text-success u-fw-bold">ACTIVE</span>
+        <span th:if="${encounter.status == 'PLANNED'}" class="u-text-info u-fw-bold">PLANNED</span>
+        <span th:if="${encounter.status == 'DONE'}" class="text-muted u-fw-bold">DONE</span>
+        <span th:if="${encounter.round > 0}" th:text="' · Round ' + ${encounter.round}"> · Round 1</span>
+    </span>
+    <a th:href="@{/campaigns/{cid}/encounters/{eid}/setup(cid=${campaignId}, eid=${encounter.id})}"
+       class="btn btn-ghost">Setup</a>
+    <a th:href="@{/campaigns/{cid}/encounters(cid=${campaignId})}" class="btn btn-ghost">&larr; Back to Encounters</a>
+</div>
 
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main" data-surface="read">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow">Encounters</div>
-                    <h1 data-display-title th:text="${encounter.name}">Encounter Name</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <span class="detail-meta u-mr-lg">
-                        <span th:if="${encounter.status == 'ACTIVE'}" class="u-text-success u-fw-bold">ACTIVE</span>
-                        <span th:if="${encounter.status == 'PLANNED'}" class="u-text-info u-fw-bold">PLANNED</span>
-                        <span th:if="${encounter.status == 'DONE'}" class="text-muted u-fw-bold">DONE</span>
-                        <span th:if="${encounter.round > 0}" th:text="' · Round ' + ${encounter.round}"> · Round 1</span>
-                    </span>
-                    <form method="post"
-                          th:action="@{/campaigns/{cid}/encounters/{eid}/run(cid=${campaignId}, eid=${encounter.id})}"
-                          data-run-action class="u-inline">
-                        <button type="submit" class="btn btn-primary">Run</button>
-                    </form>
-                    <a th:href="@{/campaigns/{cid}/encounters/{eid}/setup(cid=${campaignId}, eid=${encounter.id})}"
-                       class="btn btn-ghost">Setup</a>
-                    <a th:href="@{/campaigns/{cid}/encounters(cid=${campaignId})}" class="btn btn-ghost">&larr; Back to Encounters</a>
-                </div>
-            </div>
+<div id="page-content" class="page-content">
+    <div class="detail-section">
+        <div th:replace="~{encounter/_prep-summary :: prepSummary}"></div>
 
-            <div class="detail-section">
-                <div th:replace="~{encounter/_prep-summary :: prepSummary}"></div>
+        <h2>Combatants</h2>
+        <div class="u-mb-lg">
+            <table class="data-table" th:if="${not #lists.isEmpty(combatants)}">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Kind</th>
+                        <th>HP</th>
+                        <th>Initiative</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="c : ${combatants}"
+                        th:classappend="${c.defeated} ? 'row-defeated' : (${c.bloodied} ? 'row-bloodied' : '')">
+                        <td th:text="${c.name}">Name</td>
+                        <td th:text="${T(dev.hendrikhoemberg.dmhelper.common.web.DisplayLabels).humanize(c.kind)}">Kind</td>
+                        <td th:text="${c.currentHp + ' / ' + c.maxHp}">HP</td>
+                        <!-- Zero is a legal initiative; only a null is unset (workstream A3). -->
+                        <td th:text="${c.initiative != null} ? ${c.initiative} : 'not set'">0</td>
+                        <td>
+                            <span th:if="${c.defeated}" class="u-text-danger">Defeated</span>
+                            <span th:if="${c.bloodied and !c.defeated}" class="u-text-warning">Bloodied</span>
+                            <span th:if="${!c.bloodied and !c.defeated}" class="u-text-success">Healthy</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <th:block th:if="${#lists.isEmpty(combatants)}"><th:block th:replace="~{common/_empty-state :: empty-state(
+                'No combatants yet.', 'Add combatants',
+                @{/campaigns/{cid}/encounters/{eid}/setup(cid=${campaignId}, eid=${encounter.id})}, null)}"></th:block></th:block>
+        </div>
 
-                <h2>Combatants</h2>
-                <div class="u-mb-lg">
-                    <table class="data-table" th:if="${not #lists.isEmpty(combatants)}">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Kind</th>
-                                <th>HP</th>
-                                <th>Initiative</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="c : ${combatants}"
-                                th:classappend="${c.defeated} ? 'row-defeated' : (${c.bloodied} ? 'row-bloodied' : '')">
-                                <td th:text="${c.name}">Name</td>
-                                <td th:text="${T(dev.hendrikhoemberg.dmhelper.common.web.DisplayLabels).humanize(c.kind)}">Kind</td>
-                                <td th:text="${c.currentHp + ' / ' + c.maxHp}">HP</td>
-                                <!-- Zero is a legal initiative; only a null is unset (workstream A3). -->
-                                <td th:text="${c.initiative != null} ? ${c.initiative} : 'not set'">0</td>
-                                <td>
-                                    <span th:if="${c.defeated}" class="u-text-danger">Defeated</span>
-                                    <span th:if="${c.bloodied and !c.defeated}" class="u-text-warning">Bloodied</span>
-                                    <span th:if="${!c.bloodied and !c.defeated}" class="u-text-success">Healthy</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <th:block th:if="${#lists.isEmpty(combatants)}"><th:block th:replace="~{common/_empty-state :: empty-state(
-                        'No combatants yet.', 'Add combatants',
-                        @{/campaigns/{cid}/encounters/{eid}/setup(cid=${campaignId}, eid=${encounter.id})}, null)}"></th:block></th:block>
-                </div>
-
-                <h2 th:if="${not #lists.isEmpty(combatants)}">Notes</h2>
-                <div class="u-mt-lg" th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='ENCOUNTER', targetId=${encounter.id})}"></div>
-            </div>
-        </main>
+        <h2 th:if="${not #lists.isEmpty(combatants)}">Notes</h2>
+        <div class="u-mt-lg" th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='ENCOUNTER', targetId=${encounter.id})}"></div>
     </div>
+</div>
 </body>
 </html>

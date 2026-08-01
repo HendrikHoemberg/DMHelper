@@ -1,30 +1,27 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|New Encounter — ${campaign.name}|">DMHelper — New Encounter</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle='New Encounter',
+          archetype='form',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title='New Encounter',
+        summary=${campaign.name},
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<a id="secondaryActions" th:href="@{/campaigns/{id}/encounters(id=${campaignId})}"
+   class="btn btn-ghost">&larr; Back to Encounters</a>
 
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow" th:text="${campaign.name}">Encounters</div>
-                    <h1 data-display-title>New Encounter</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a th:href="@{/campaigns/{id}/encounters(id=${campaignId})}"
-                       class="btn btn-ghost">&larr; Back to Encounters</a>
-                </div>
-            </div>
-
-            <th:block th:replace="~{encounter/_form :: form(
-                campaignId=${campaignId}, encounter=${encounter}, maps=${maps})}"></th:block>
-        </main>
-    </div>
+<div id="page-content" class="page-content">
+    <th:block th:replace="~{encounter/_form :: form(
+        campaignId=${campaignId}, encounter=${encounter}, maps=${maps})}"></th:block>
+</div>
 </body>
 </html>
