@@ -314,8 +314,10 @@
                             <span class="layer-name" @click="setLayer(l.id)" x-text="l.name"></span>
                             <button class="btn btn-ghost btn-xs" @click="toggleVisible(l.id)"
                                     :title="layers[l.id].visible ? 'Hide layer' : 'Show layer'">
-                                <svg x-cloak x-show="layers[l.id].visible" th:replace="~{common/_icon :: icon-sized(name='eye', size='16')}"></svg>
-                                <svg x-cloak x-show="!layers[l.id].visible" th:replace="~{common/_icon :: icon-sized(name='eye-off', size='16')}"></svg>
+                                <span x-show="layers[l.id].visible" x-cloak
+                                      th:insert="~{common/_icon :: icon-sized(name='eye', size='16')}"></span>
+                                <span x-show="!layers[l.id].visible" x-cloak
+                                      th:insert="~{common/_icon :: icon-sized(name='eye-off', size='16')}"></span>
                             </button>
                             <button class="btn btn-ghost btn-xs" @click="toggleLocked(l.id)"
                                     :title="layers[l.id].locked ? 'Unlock layer' : 'Lock layer'"
