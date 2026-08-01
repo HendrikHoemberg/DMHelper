@@ -1,18 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|${faction.id != null} ? 'Edit' : 'New' Faction — ${campaign.name}|">Faction Form</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${faction.id != null} ? 'Edit Faction' : 'New Faction',
+          archetype='form',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <h1 data-display-title th:text="${faction.id != null} ? 'Edit Faction' : 'New Faction'">Faction Form</h1>
-            </div>
-            <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${faction.id != null} ? 'Edit Faction' : 'New Faction',
+        summary='Faction',
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{})}"></th:block>
+</div>
+
+<div id="page-content" class="page-content">
+<th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
             <form class="inline-form"
                   th:action="@{${faction.id != null}
                       ? '/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${faction.id})'
@@ -52,7 +58,6 @@
                            : '/campaigns/{cid}/world/factions(cid=${campaignId})'}">Cancel</a>
                 </div>
             </form>
-        </main>
-    </div>
+</div>
 </body>
 </html>

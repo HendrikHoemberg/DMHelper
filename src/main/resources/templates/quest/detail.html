@@ -1,154 +1,164 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|${quest.title} — ${campaign.name}|">Quest Detail</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${quest.title},
+          archetype='detail',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div class="breadcrumb">
-                    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
-                    <span> / </span>
-                    <a th:href="@{/campaigns/{cid}/quests(cid=${campaignId})}">Quests</a>
-                    <span> / </span>
-                    <span th:text="${quest.title}">Quest</span>
-                </div>
-                <h1 data-display-title th:text="${quest.title}">Quest Title</h1>
-                <div class="page-header-actions">
-                    <span class="badge" th:text="${#enums.label(quest.status)}">STATUS</span>
-                    <button class="btn btn-ghost"
-                            th:hx-get="@{/campaigns/{cid}/quests/{qid}/edit(cid=${campaignId},qid=${quest.id})}"
-                            hx-target="#questForm"
-                            hx-swap="innerHTML"
-                            hx-disabled-elt="this">Edit</button>
-                    <button class="btn btn-danger action-row__destructive"
-                            th:hx-delete="@{/campaigns/{cid}/quests/{qid}(cid=${campaignId},qid=${quest.id})}"
-                            hx-confirm="Delete this quest?"
-                            hx-target="body" hx-swap="outerHTML"
-                            hx-disabled-elt="this">Delete</button>
-                </div>
-            </div>
-            <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
-            <div id="questForm"></div>
-            <div class="detail-section">
-                <div th:if="${quest.summary}" class="u-mb-md" th:text="${quest.summary}">Summary</div>
-                <div th:if="${quest.sourceLocator}" class="u-text-xs text-muted u-mb-md"
-                     th:text="|Source: ${quest.sourceLocator}|">Source</div>
-                <!-- Prerequisites, rewards and outcome notes are prep material. -->
-                <div th:if="${quest.prerequisites}" class="u-mb-md">
-                    <h4>Prerequisites</h4>
-                    <p th:text="${quest.prerequisites}">Prerequisites</p>
-                </div>
-                <div th:if="${quest.rewards}" class="u-mb-md">
-                    <h4>Rewards</h4>
-                    <p th:text="${quest.rewards}">Rewards</p>
-                </div>
-                <div th:if="${quest.outcomeNotes}" class="u-mb-md">
-                    <h4>Outcome Notes</h4>
-                    <p th:text="${quest.outcomeNotes}">Outcome Notes</p>
-                </div>
-            </div>
-            <!-- Objectives -->
-            <div class="detail-section">
-                <h3>Objectives</h3>
-                <div id="objectiveList">
-                    <th:block th:replace="~{quest/_objective-list :: objectiveList}"></th:block>
-                </div>
-                <div class="u-mt-md">
-                    <details>
-                        <summary>Add Objective</summary>
-                        <form class="inline-form u-mt-sm"
-                              th:hx-post="@{/campaigns/{cid}/quests/{qid}/objectives(cid=${campaignId},qid=${quest.id})}"
-                              hx-target="#objectiveList" hx-swap="innerHTML"
-                              hx-disabled-elt="find button[type='submit']">
-                            <div class="form-group">
-                                <label class="form-label">Title</label>
-                                <input type="text" name="title" class="form-input" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Description</label>
-                                <textarea name="description" class="form-input"></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Status</label>
-                                <select name="status" class="form-input">
-                                    <option value="NOT_STARTED">Not Started</option>
-                                    <option value="ACTIVE">Active</option>
-                                    <option value="COMPLETED">Completed</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Sort Order</label>
-                                <input type="number" name="sortOrder" class="form-input" value="0">
-                            </div>
-                            <button type="submit" class="btn">Add</button>
-                        </form>
-                    </details>
-                </div>
-            </div>
-            <!-- Dependencies -->
-            <div class="detail-section">
-                <h3>Dependencies</h3>
-                <div id="dependencyList">
-                    <th:block th:replace="~{quest/_dependency-list :: dependencyList}"></th:block>
-                </div>
-            </div>
-            <!-- Links -->
-            <div class="detail-section">
-                <h3>Related Links</h3>
-                <div id="linkList">
-                    <th:block th:replace="~{quest/_link-list :: linkList}"></th:block>
-                </div>
-                <div class="u-mt-md">
-                    <details>
-                        <summary>Add Link</summary>
-                        <form class="inline-form u-mt-sm"
-                              th:hx-post="@{/campaigns/{cid}/quests/{qid}/links(cid=${campaignId},qid=${quest.id})}"
-                              hx-target="#linkList" hx-swap="innerHTML"
-                              hx-disabled-elt="find button[type='submit']">
-                            <div class="form-group">
-                                <label class="form-label">Role</label>
-                                <select name="role" class="form-input">
-                                    <option value="REFERENCE">Reference</option>
-                                    <option value="HANDOUT">Handout</option>
-                                    <option value="RULE">Rule</option>
-                                    <option value="NPC">NPC</option>
-                                    <option value="LOCATION">Location</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Target Scope</label>
-                                <select name="targetScope" class="form-input">
-                                    <option value="PACKAGE">Package</option>
-                                    <option value="CATALOG">Catalog</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Target Type</label>
-                                <input type="text" name="targetType" class="form-input" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Target ID</label>
-                                <input type="text" name="targetId" class="form-input" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Display Text</label>
-                                <input type="text" name="displayText" class="form-input">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Condition</label>
-                                <input type="text" name="condition" class="form-input">
-                            </div>
-                            <button type="submit" class="btn btn-primary">Add</button>
-                        </form>
-                    </details>
-                </div>
-            </div>
-        </main>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${quest.title},
+        summary='Quest',
+        breadcrumb=~{::#breadcrumb},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<nav id="breadcrumb" class="breadcrumb" aria-label="Breadcrumb">
+    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
+    <span> / </span>
+    <a th:href="@{/campaigns/{cid}/quests(cid=${campaignId})}">Quests</a>
+    <span> / </span>
+    <span th:text="${quest.title}">Quest</span>
+</nav>
+<div id="secondaryActions" class="u-flex u-gap-xs">
+    <span class="badge" th:text="${#enums.label(quest.status)}">STATUS</span>
+    <button class="btn btn-ghost"
+            th:hx-get="@{/campaigns/{cid}/quests/{qid}/edit(cid=${campaignId},qid=${quest.id})}"
+            hx-target="#questForm"
+            hx-swap="innerHTML"
+            hx-disabled-elt="this">Edit</button>
+</div>
+
+<div id="page-content" class="page-content">
+    <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+    <div id="questForm"></div>
+    <div class="detail-section">
+        <div th:if="${quest.summary}" class="u-mb-md" th:text="${quest.summary}">Summary</div>
+        <div th:if="${quest.sourceLocator}" class="u-text-xs text-muted u-mb-md"
+             th:text="|Source: ${quest.sourceLocator}|">Source</div>
+        <!-- Prerequisites, rewards and outcome notes are prep material. -->
+        <div th:if="${quest.prerequisites}" class="u-mb-md">
+            <h4>Prerequisites</h4>
+            <p th:text="${quest.prerequisites}">Prerequisites</p>
+        </div>
+        <div th:if="${quest.rewards}" class="u-mb-md">
+            <h4>Rewards</h4>
+            <p th:text="${quest.rewards}">Rewards</p>
+        </div>
+        <div th:if="${quest.outcomeNotes}" class="u-mb-md">
+            <h4>Outcome Notes</h4>
+            <p th:text="${quest.outcomeNotes}">Outcome Notes</p>
+        </div>
     </div>
+    <!-- Objectives -->
+    <div class="detail-section">
+        <h3>Objectives</h3>
+        <div id="objectiveList">
+            <th:block th:replace="~{quest/_objective-list :: objectiveList}"></th:block>
+        </div>
+        <div class="u-mt-md">
+            <details>
+                <summary>Add Objective</summary>
+                <form class="inline-form u-mt-sm"
+                      th:hx-post="@{/campaigns/{cid}/quests/{qid}/objectives(cid=${campaignId},qid=${quest.id})}"
+                      hx-target="#objectiveList" hx-swap="innerHTML"
+                      hx-disabled-elt="find button[type='submit']">
+                    <div class="form-group">
+                        <label class="form-label">Title</label>
+                        <input type="text" name="title" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-input"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-input">
+                            <option value="NOT_STARTED">Not Started</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="COMPLETED">Completed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Sort Order</label>
+                        <input type="number" name="sortOrder" class="form-input" value="0">
+                    </div>
+                    <button type="submit" class="btn">Add</button>
+                </form>
+            </details>
+        </div>
+    </div>
+    <!-- Dependencies -->
+    <div class="detail-section">
+        <h3>Dependencies</h3>
+        <div id="dependencyList">
+            <th:block th:replace="~{quest/_dependency-list :: dependencyList}"></th:block>
+        </div>
+    </div>
+    <!-- Links -->
+    <div class="detail-section">
+        <h3>Related Links</h3>
+        <div id="linkList">
+            <th:block th:replace="~{quest/_link-list :: linkList}"></th:block>
+        </div>
+        <div class="u-mt-md">
+            <details>
+                <summary>Add Link</summary>
+                <form class="inline-form u-mt-sm"
+                      th:hx-post="@{/campaigns/{cid}/quests/{qid}/links(cid=${campaignId},qid=${quest.id})}"
+                      hx-target="#linkList" hx-swap="innerHTML"
+                      hx-disabled-elt="find button[type='submit']">
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <select name="role" class="form-input">
+                            <option value="REFERENCE">Reference</option>
+                            <option value="HANDOUT">Handout</option>
+                            <option value="RULE">Rule</option>
+                            <option value="NPC">NPC</option>
+                            <option value="LOCATION">Location</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Target Scope</label>
+                        <select name="targetScope" class="form-input">
+                            <option value="PACKAGE">Package</option>
+                            <option value="CATALOG">Catalog</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Target Type</label>
+                        <input type="text" name="targetType" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Target ID</label>
+                        <input type="text" name="targetId" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Display Text</label>
+                        <input type="text" name="displayText" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Condition</label>
+                        <input type="text" name="condition" class="form-input">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </form>
+            </details>
+        </div>
+    </div>
+
+    <div class="u-mt-lg surface-danger-zone">
+        <h2>Danger zone</h2>
+        <p class="text-muted u-text-sm">This action cannot be undone.</p>
+        <button class="btn btn-danger action-row__destructive"
+                th:hx-delete="@{/campaigns/{cid}/quests/{qid}(cid=${campaignId},qid=${quest.id})}"
+                hx-confirm="Delete this quest?"
+                hx-target="body" hx-swap="outerHTML"
+                hx-disabled-elt="this">Delete</button>
+    </div>
+</div>
 </body>
 </html>

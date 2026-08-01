@@ -1,70 +1,70 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — ' + ${note.title}">DMHelper — Note</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${note.title},
+          archetype='detail',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${note.title},
+        summary='Note',
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<div id="secondaryActions" class="u-flex u-gap-xs">
+    <a th:href="@{/campaigns/{id}/notes(id=${campaignId})}" class="btn btn-ghost">&larr; Notes</a>
+    <a th:href="@{/campaigns/{cid}/notes/{nid}/edit(cid=${campaignId}, nid=${note.id})}"
+       class="btn btn-ghost">Edit</a>
+</div>
 
-    <div class="app-shell">
-            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow">Notes</div>
-                    <h1 data-display-title th:text="${note.title}">Note Title</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a th:href="@{/campaigns/{id}/notes(id=${campaignId})}" class="btn btn-ghost">&larr; Notes</a>
-                </div>
-            </div>
+<div id="page-content" class="page-content">
+    <div class="detail-section">
+        <div class="detail-meta">
+            <span class="badge" th:text="${#enums.label(note.type)}">Type</span>
+            <span style="margin-left: var(--space-md);"
+                  th:text="'Created ' + ${#temporals.format(note.createdAt, 'yyyy-MM-dd HH:mm')}">Date</span>
+            <th:block th:if="${note.tags != null and !note.tags.isBlank()}">
+                <span class="badge" th:each="tag : ${note.tags.split(',')}"
+                      th:text="${#strings.trim(tag)}">tag</span>
+            </th:block>
+        </div>
 
-            <div class="detail-section">
-                <div class="detail-meta">
-                    <span class="badge" th:text="${#enums.label(note.type)}">Type</span>
-                    <span style="margin-left: var(--space-md);"
-                          th:text="'Created ' + ${#temporals.format(note.createdAt, 'yyyy-MM-dd HH:mm')}">Date</span>
-                    <th:block th:if="${note.tags != null and !note.tags.isBlank()}">
-                        <span class="badge" th:each="tag : ${note.tags.split(',')}"
-                              th:text="${#strings.trim(tag)}">tag</span>
-                    </th:block>
-                </div>
-
-                <div class="note-body" th:utext="${renderedBody}">
-                    Rendered body here
-                </div>
-
-                <div class="detail-actions" style="margin-top: var(--space-lg);">
-                    <a th:href="@{/campaigns/{cid}/notes/{nid}/edit(cid=${campaignId}, nid=${note.id})}"
-                       class="btn">Edit</a>
-                    <button class="btn btn-danger action-row__destructive"
-                            th:hx-delete="@{/campaigns/{cid}/notes/{nid}(cid=${campaignId}, nid=${note.id})}"
-                            hx-confirm="Delete this note?"
-                            hx-target="body" hx-swap="outerHTML"
-                            hx-disabled-elt="this">
-                        Delete
-                    </button>
-                </div>
-            </div>
-
-            <div th:if="${not #lists.isEmpty(backlinks)}" class="detail-section" style="margin-top: var(--space-lg);">
-                <h2>Referenced By</h2>
-                <ul style="list-style: none; padding: 0;">
-                    <li th:each="bl : ${backlinks}" style="padding: var(--space-xs) 0;">
-                        <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaignId}, nid=${bl.id})}"
-                           th:text="${bl.title}">Backlink</a>
-                        <span class="badge backlink-type" th:text="${#enums.label(bl.type)}" style="margin-left: var(--space-sm);">Type</span>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="detail-section" style="margin-top: var(--space-lg);">
-                <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='NOTE', targetId=${note.id})}"></th:block>
-            </div>
-        </main>
-
+        <div class="note-body" th:utext="${renderedBody}">
+            Rendered body here
+        </div>
     </div>
+
+    <div th:if="${not #lists.isEmpty(backlinks)}" class="detail-section" style="margin-top: var(--space-lg);">
+        <h2>Referenced By</h2>
+        <ul style="list-style: none; padding: 0;">
+            <li th:each="bl : ${backlinks}" style="padding: var(--space-xs) 0;">
+                <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaignId}, nid=${bl.id})}"
+                   th:text="${bl.title}">Backlink</a>
+                <span class="badge backlink-type" th:text="${#enums.label(bl.type)}" style="margin-left: var(--space-sm);">Type</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="detail-section" style="margin-top: var(--space-lg);">
+        <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='NOTE', targetId=${note.id})}"></th:block>
+    </div>
+
+    <div class="u-mt-lg surface-danger-zone">
+        <h2>Danger zone</h2>
+        <p class="text-muted u-text-sm">This action cannot be undone.</p>
+        <button class="btn btn-danger action-row__destructive"
+                th:hx-delete="@{/campaigns/{cid}/notes/{nid}(cid=${campaignId}, nid=${note.id})}"
+                hx-confirm="Delete this note?"
+                hx-target="body" hx-swap="outerHTML"
+                hx-disabled-elt="this">
+            Delete
+        </button>
+    </div>
+</div>
 </body>
 </html>

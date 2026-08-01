@@ -1,18 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|${npc.id != null} ? 'Edit' : 'New' NPC — ${campaign.name}|">NPC Form</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${npc.id != null} ? 'Edit NPC' : 'New NPC',
+          archetype='form',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <h1 data-display-title th:text="${npc.id != null} ? 'Edit NPC' : 'New NPC'">NPC Form</h1>
-            </div>
-            <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${npc.id != null} ? 'Edit NPC' : 'New NPC',
+        summary='NPC',
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{})}"></th:block>
+</div>
+
+<div id="page-content" class="page-content">
+<th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
             <form class="inline-form"
                   th:action="@{${npc.id != null}
                       ? '/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${npc.id})'
@@ -102,7 +108,6 @@
                     <button type="submit" class="btn btn-primary" th:text="${npc.id != null} ? 'Update' : 'Create'">Save</button>
                 </div>
             </form>
-        </main>
-    </div>
+</div>
 </body>
 </html>

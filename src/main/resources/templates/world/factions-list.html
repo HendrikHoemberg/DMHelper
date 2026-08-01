@@ -1,27 +1,27 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|Factions — ${campaign.name}|">Factions</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle='Factions',
+          archetype='index',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow" th:text="${campaign.name}">Campaign</div>
-                    <h1 data-display-title>Factions</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
-                    <a class="btn btn-primary"
-                       th:href="@{/campaigns/{cid}/world/factions/new(cid=${campaignId})}">+ New Faction</a>
-                </div>
-            </div>
-            <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title='Factions',
+        summary=${campaign.name},
+        breadcrumb=~{},
+        primary=~{::#primaryAction},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<a id="primaryAction" class="btn btn-primary"
+   th:href="@{/campaigns/{cid}/world/factions/new(cid=${campaignId})}">+ New Faction</a>
+<a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
+
+<div id="page-content" class="page-content">
+<th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
             <div th:if="${factions.empty}" class="empty-state">No factions yet.</div>
             <div th:unless="${factions.empty}" class="card-grid">
                 <div th:each="faction : ${factions}" class="card">
@@ -35,7 +35,6 @@
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
+</div>
 </body>
 </html>

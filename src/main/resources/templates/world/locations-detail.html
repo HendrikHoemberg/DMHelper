@@ -1,38 +1,39 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|${location.name} — ${campaign.name}|">Location Detail</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${location.name},
+          archetype='detail',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div class="breadcrumb">
-                    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
-                    <span> / </span>
-                    <a th:href="@{/campaigns/{cid}/world/locations(cid=${campaignId})}">Locations</a>
-                    <span> / </span>
-                    <span th:text="${location.name}">Location</span>
-                </div>
-                <h1 data-display-title th:text="${location.name}">Location Name</h1>
-                <div class="page-header-actions">
-                    <span class="badge" th:text="${#enums.label(location.kind)}">KIND</span>
-                    <button class="btn btn-ghost"
-                            th:hx-get="@{/campaigns/{cid}/world/locations/{lid}/edit(cid=${campaignId},lid=${location.id})}"
-                            hx-target="#locationForm"
-                            hx-swap="innerHTML"
-                            hx-disabled-elt="this">Edit</button>
-                    <button class="btn btn-danger action-row__destructive"
-                            th:hx-delete="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${location.id})}"
-                            hx-confirm="Delete this location?"
-                            hx-target="body" hx-swap="outerHTML"
-                            hx-disabled-elt="this">Delete</button>
-                </div>
-            </div>
-            <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${location.name},
+        summary='Location',
+        breadcrumb=~{::#breadcrumb},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<nav id="breadcrumb" class="breadcrumb" aria-label="Breadcrumb">
+    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
+    <span> / </span>
+    <a th:href="@{/campaigns/{cid}/world/locations(cid=${campaignId})}">Locations</a>
+    <span> / </span>
+    <span th:text="${location.name}">Location</span>
+</nav>
+<div id="secondaryActions" class="u-flex u-gap-xs">
+    <span class="badge" th:text="${#enums.label(location.kind)}">KIND</span>
+    <button class="btn btn-ghost"
+            th:hx-get="@{/campaigns/{cid}/world/locations/{lid}/edit(cid=${campaignId},lid=${location.id})}"
+            hx-target="#locationForm"
+            hx-swap="innerHTML"
+            hx-disabled-elt="this">Edit</button>
+</div>
+
+<div id="page-content" class="page-content">
+<th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
             <div id="locationForm"></div>
             <div class="detail-section">
                 <div th:if="${location.kind}" class="u-mb-md" th:text="|Kind: ${#enums.label(location.kind)}|">Kind</div>
@@ -98,7 +99,16 @@
                     </form>
                 </details>
             </div>
-        </main>
+
+    <div class="u-mt-lg surface-danger-zone">
+        <h2>Danger zone</h2>
+        <p class="text-muted u-text-sm">This action cannot be undone.</p>
+        <button class="btn btn-danger action-row__destructive"
+                th:hx-delete="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${location.id})}"
+                hx-confirm="Delete this location?"
+                hx-target="body" hx-swap="outerHTML"
+                hx-disabled-elt="this">Delete</button>
     </div>
+</div>
 </body>
 </html>

@@ -1,18 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|${location.id != null} ? 'Edit' : 'New' Location — ${campaign.name}|">Location Form</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${location.id != null} ? 'Edit Location' : 'New Location',
+          archetype='form',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <h1 data-display-title th:text="${location.id != null} ? 'Edit Location' : 'New Location'">Location Form</h1>
-            </div>
-            <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${location.id != null} ? 'Edit Location' : 'New Location',
+        summary='Location',
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{})}"></th:block>
+</div>
+
+<div id="page-content" class="page-content">
+<th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
             <form class="inline-form"
                   th:action="@{${location.id != null}
                       ? '/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${location.id})'
@@ -86,7 +92,6 @@
                            : '/campaigns/{cid}/world/locations(cid=${campaignId})'}">Cancel</a>
                 </div>
             </form>
-        </main>
-    </div>
+</div>
 </body>
 </html>
