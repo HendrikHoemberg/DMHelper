@@ -24,7 +24,7 @@ class ControlConsistencyContractTest {
     private static final Set<String> APP_CONTROL_CLASSES = Set.of(
             "btn", "btn-primary", "btn-ghost", "btn-danger", "btn-warning",
             "audio-btn", "audio-btn-primary", "tool-btn", "terrain-swatch",
-            "appnav-collapse", "cockpit-splitter", "cockpit-zone__tab", "dice-toggle-btn",
+            "rail__collapse", "cockpit-splitter", "cockpit-zone__tab", "dice-toggle-btn",
             "form-tab", "map-editor-control", "modal-close", "roll-btn", "sb-result-item",
             "group-count", "topbar-btn");
 

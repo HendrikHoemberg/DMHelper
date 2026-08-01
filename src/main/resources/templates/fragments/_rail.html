@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<nav class="rail" th:fragment="rail" id="rail" aria-label="Primary">
+    <button type="button" class="rail__collapse" id="railCollapse"
+            aria-label="Collapse navigation" aria-expanded="true" title="Collapse navigation">
+        <th:block th:replace="~{common/_icon :: icon-sized(name='chevron-right', size='16')}"></th:block>
+    </button>
+
+    <th:block th:if="${campaignId != null}" data-rail-branch="campaign">
+        <div class="rail__group">
+            <div class="rail__label">Campaign</div>
+            <a class="rail__link" data-label="Campaign Home" title="Campaign Home"
+               th:href="@{/campaigns/{id}(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='castle')}"></th:block>
+                <span class="rail__text">Campaign Home</span></a>
+            <a class="rail__link" data-label="Run Session" title="Run Session"
+               th:href="@{/campaigns/{id}/session(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='play')}"></th:block>
+                <span class="rail__text">Run Session</span></a>
+        </div>
+
+        <div class="rail__group">
+            <div class="rail__label">Prepare</div>
+            <a class="rail__link" data-label="Adventures" title="Adventures"
+               th:href="@{/campaigns/{id}/adventures(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='book')}"></th:block>
+                <span class="rail__text">Adventures</span></a>
+            <a class="rail__link" data-label="Encounters" title="Encounters"
+               th:href="@{/campaigns/{id}/encounters(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='swords')}"></th:block>
+                <span class="rail__text">Encounters</span></a>
+            <a class="rail__link" data-label="Maps" title="Maps"
+               th:href="@{/campaigns/{id}/maps(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='map')}"></th:block>
+                <span class="rail__text">Maps</span></a>
+            <a class="rail__link" data-label="Handouts" title="Handouts"
+               th:href="@{/campaigns/{id}/handouts(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='scroll')}"></th:block>
+                <span class="rail__text">Handouts</span></a>
+            <a class="rail__link" data-label="Audio" title="Audio"
+               th:href="@{/campaigns/{id}/audio/cues(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='music')}"></th:block>
+                <span class="rail__text">Audio</span></a>
+        </div>
+
+        <div class="rail__group">
+            <div class="rail__label">Party &amp; World</div>
+            <a class="rail__link" data-label="Party" title="Party"
+               th:href="@{/campaigns/{id}/party(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='users')}"></th:block>
+                <span class="rail__text">Party</span></a>
+            <a class="rail__link" data-label="Quests" title="Quests"
+               th:href="@{/campaigns/{id}/quests(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='star')}"></th:block>
+                <span class="rail__text">Quests</span></a>
+            <a class="rail__link" data-label="NPCs" title="NPCs"
+               th:href="@{/campaigns/{id}/world/npcs(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='user')}"></th:block>
+                <span class="rail__text">NPCs</span></a>
+            <a class="rail__link" data-label="Locations" title="Locations"
+               th:href="@{/campaigns/{id}/world/locations(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='location')}"></th:block>
+                <span class="rail__text">Locations</span></a>
+            <a class="rail__link" data-label="Factions" title="Factions"
+               th:href="@{/campaigns/{id}/world/factions(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='flag')}"></th:block>
+                <span class="rail__text">Factions</span></a>
+            <a class="rail__link" data-label="Calendar" title="Calendar"
+               th:href="@{/campaigns/{id}/calendar(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='calendar')}"></th:block>
+                <span class="rail__text">Calendar</span></a>
+        </div>
+
+        <div class="rail__group">
+            <div class="rail__label">Records</div>
+            <a class="rail__link" data-label="Notes" title="Notes"
+               th:href="@{/campaigns/{id}/notes(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='note')}"></th:block>
+                <span class="rail__text">Notes</span></a>
+            <a class="rail__link" data-label="Treasury" title="Treasury"
+               th:href="@{/campaigns/{id}/treasury(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='gem')}"></th:block>
+                <span class="rail__text">Treasury</span></a>
+            <a class="rail__link" data-label="Ledger" title="Ledger"
+               th:href="@{/campaigns/{id}/ledger(id=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='coins')}"></th:block>
+                <span class="rail__text">Ledger</span></a>
+        </div>
+
+        <div class="rail__group">
+            <div class="rail__label">Reference</div>
+            <a class="rail__link" data-label="Library" title="Library"
+               th:href="@{/library(campaignId=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='book')}"></th:block>
+                <span class="rail__text">Library</span></a>
+            <a class="rail__link" data-label="Tables" title="Tables"
+               th:href="@{/library/tables(campaignId=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='dice')}"></th:block>
+                <span class="rail__text">Tables</span></a>
+            <a class="rail__link" data-label="Traps" title="Traps"
+               th:href="@{/library/traps(campaignId=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='alert-triangle')}"></th:block>
+                <span class="rail__text">Traps</span></a>
+            <a class="rail__link" data-label="Hazards" title="Hazards"
+               th:href="@{/library/hazards(campaignId=${campaignId})}">
+                <th:block th:replace="~{common/_icon :: icon(name='skull')}"></th:block>
+                <span class="rail__text">Hazards</span></a>
+        </div>
+    </th:block>
+
+    <th:block th:unless="${campaignId != null}" data-rail-branch="global">
+        <div class="rail__group">
+            <a class="rail__link" data-label="Campaigns" title="Campaigns" href="/campaigns">
+                <th:block th:replace="~{common/_icon :: icon(name='castle')}"></th:block>
+                <span class="rail__text">Campaigns</span></a>
+            <a class="rail__link" data-label="Library" title="Library" href="/library">
+                <th:block th:replace="~{common/_icon :: icon(name='book')}"></th:block>
+                <span class="rail__text">Library</span></a>
+            <a class="rail__link" data-label="Tables" title="Tables" href="/library/tables">
+                <th:block th:replace="~{common/_icon :: icon(name='dice')}"></th:block>
+                <span class="rail__text">Tables</span></a>
+            <a class="rail__link" data-label="Traps" title="Traps" href="/library/traps">
+                <th:block th:replace="~{common/_icon :: icon(name='alert-triangle')}"></th:block>
+                <span class="rail__text">Traps</span></a>
+            <a class="rail__link" data-label="Hazards" title="Hazards" href="/library/hazards">
+                <th:block th:replace="~{common/_icon :: icon(name='skull')}"></th:block>
+                <span class="rail__text">Hazards</span></a>
+            <a class="rail__link" data-label="About" title="About" href="/library/about">
+                <th:block th:replace="~{common/_icon :: icon(name='help')}"></th:block>
+                <span class="rail__text">About</span></a>
+        </div>
+    </th:block>
+
+    <script th:src="@{/js/rail.js}"></script>
+</nav>
+</html>
