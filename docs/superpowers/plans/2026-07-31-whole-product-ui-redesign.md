@@ -180,4 +180,4 @@ appends the release evidence for the twelve acceptance criteria.
 
 | Stage | Date | Evidence |
 |---|---|---|
-| — | — | not started |
+| 1. Visual foundations | 2026-08-01 | `./mvnw test` green (2464 tests); budgets: --color-bg 82, --color-surface 45, --color-surface-hover 24, --color-text 113, --color-text-muted 182, --color-accent 67, --color-danger 35, --color-success 23, --color-warning 32, --color-border 173, --color-border-strong 40, --color-overlay 3, --color-shield 2, --color-shield-soft 1, --color-text-secondary 2, --color-border-subtle 1, --color-bg-elevated 2, --color-surface-muted 2, --color-warning-bg 1, --color-warning-text 1, --color-concentration 1, --color-info 1, --color-ember 10, --color-gold-soft 12, --color-hp-bar 1, --color-hp-bloodied 2, --color-hp-dead 2, --color-tracker-bg 1, --color-combatant-active 1, --color-combatant-hover 2, --color-initiative-badge 1 (zeros omitted); screenshots: target/ui-redesign/visual-foundations/ |
