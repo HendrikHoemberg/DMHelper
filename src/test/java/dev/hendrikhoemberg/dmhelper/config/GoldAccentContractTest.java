@@ -15,6 +15,10 @@ class GoldAccentContractTest {
             "--color-attack-bonus", "--color-combatant-active", "--color-condition-active",
             "--color-legendary");
 
+    /**
+     * Selectors where gold is one of the roles spec 5.3 grants it: the single primary action,
+     * current selection, keyboard focus, campaign identity.
+     */
     private static final java.util.List<String> GOLD_ROLE_MARKERS = java.util.List.of(
             ".btn-primary", ":focus-visible", ":focus", ":checked", "::selection",
             "[aria-current", "[aria-selected", ".is-selected", ".app-brand",
@@ -22,10 +26,38 @@ class GoldAccentContractTest {
             "--action-primary", ".combatant-row.active", ".turn-marker", "[data-dock-active",
             ".condition-chip", ".form-check", ".audio-btn-primary", ".form-tab.active",
             ".combatant-chip.active", ".note-type-chip.active", ".dice-toggle-btn.active",
-            ".tool-btn.active", ".wizard-step.active", ".library-chip--accent",
-            ".dice-input-row", ".badge-info", ".crit-high", ".book-cover", ".campaign-sigil",
+            ".tool-btn.active", ".wizard-step.active", ".book-cover", ".campaign-sigil");
+
+    /**
+     * Decorative gold that spec 6.3 says to remove — "decorative gold borders, rules, and
+     * generic badges are removed" — still standing because the surfaces belong to later
+     * tasks. .badge-info is the sharpest: an <em>information</em> badge filled with the
+     * primary-action colour. Task 15 owns the page header and badges, Task 23 the campaign
+     * and library cards, Task 53 the release sweep.
+     *
+     * <p>This list is debt, not permission. It may only shrink, and
+     * {@link #theAcknowledgedGoldDebtNeverGrows()} is what stops Part 2 from quietly
+     * appending to it the way this list grew from eleven entries to thirty-four.
+     */
+    private static final java.util.List<String> GOLD_DEBT_MARKERS = java.util.List.of(
+            ".library-chip--accent", ".dice-input-row", ".badge-info", ".crit-high",
             ".statblock-render", ".read-aloud", ".structured-read-aloud",
             ".participant-statblock__name");
+
+    private static final int GOLD_DEBT_BUDGET = 8;
+
+    @Test
+    void theAcknowledgedGoldDebtNeverGrows() {
+        assertThat(GOLD_DEBT_MARKERS)
+                .as("decorative gold awaiting Tasks 15/23/53 — budgets only ratchet down")
+                .hasSizeLessThanOrEqualTo(GOLD_DEBT_BUDGET);
+    }
+
+    private static java.util.List<String> allowedGoldSelectors() {
+        return java.util.stream.Stream
+                .concat(GOLD_ROLE_MARKERS.stream(), GOLD_DEBT_MARKERS.stream())
+                .toList();
+    }
 
     @Test
     void goldPaintsOnlyPrimaryActionSelectionAndFocus() {
@@ -39,7 +71,7 @@ class GoldAccentContractTest {
                                 || value.contains("--selection-accent")
                                 || value.contains("--focus-ring")
                                 || GOLD_ALIASES.stream().anyMatch(value::contains)))
-                .filter(rule -> GOLD_ROLE_MARKERS.stream()
+                .filter(rule -> allowedGoldSelectors().stream()
                         .noneMatch(marker -> rule.selector().contains(marker)))
                 .map(CssRules.Rule::where)
                 .toList();

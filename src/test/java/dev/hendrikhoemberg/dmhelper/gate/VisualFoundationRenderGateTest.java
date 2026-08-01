@@ -109,6 +109,77 @@ class VisualFoundationRenderGateTest {
         assertThat(((Number) broken).intValue()).isZero();
     }
 
+    /**
+     * Spec 7.1: Cinzel is the wordmark plus at most one principal title per view. The CSS
+     * contract can only check which selector is allowed to reach for the display face; how
+     * many elements carry it is a markup property and is visible only here. Today the
+     * campaigns index renders one per card and campaign pages add the rail's Campaign Home
+     * link — both of which spec 7.1 forbids ("Cinzel must not be used for card titles").
+     *
+     * <p>Ceilings are today's measured counts and may only fall: Task 13 owns the rail,
+     * Task 15 the page header, Task 23 the campaign cards. The target is 1 everywhere.
+     */
+    /**
+     * Counting elements would move with the fixture — seed one more campaign and the ceiling
+     * breaks without the design changing. These are the three structural offences spec 7.1
+     * actually names, so the measurement is independent of how many records exist.
+     */
+    @SuppressWarnings("unchecked")
+    private List<String> displayTitleOffences() {
+        return (List<String>) page.evaluate("""
+                () => {
+                  // The wordmark is the one chrome use spec 7.1 grants outright.
+                  const titles = [...document.querySelectorAll('[data-display-title]')]
+                        .filter(t => !t.closest('.navbar-brand, .app-brand'));
+                  const main = document.querySelector('.app-main') || document.body;
+                  const offences = new Set();
+                  let principal = 0;
+                  for (const title of titles) {
+                    if (title.closest('.card')) offences.add('card-title');
+                    else if (title.closest('nav, .appnav')) offences.add('nav-item');
+                    else if (main.contains(title)) principal++;
+                  }
+                  if (principal > 1) offences.add('multiple-principal-titles');
+                  return [...offences].sort();
+                }
+                """);
+    }
+
+    /**
+     * Spec 7.1: Cinzel is the wordmark plus at most one principal title per view, and "must
+     * not be used for card titles". The CSS contract can only police which selector may reach
+     * for the display face; how it is applied is a markup property visible only here.
+     *
+     * <p>The allowances below are today's measured offences and may only shrink: Task 13 owns
+     * the rail's Campaign Home link, Task 23 the campaign and library card titles. The target
+     * is an empty list on every route.
+     */
+    @Test
+    void displayTitleUseNeverGrows() {
+        String c = "/campaigns/" + seeded.campaignId();
+        var allowed = new java.util.LinkedHashMap<String, List<String>>();
+        allowed.put("/campaigns", List.of("multiple-principal-titles"));  // Task 23
+        allowed.put(c, List.of("nav-item"));                              // Task 13
+        allowed.put(c + "/encounters", List.of("nav-item"));              // Task 13
+        allowed.put(c + "/party", List.of("nav-item"));                   // Task 13
+        allowed.put("/library", List.of());                               // already clean
+        allowed.put(c + "/maps", List.of("nav-item"));                    // Task 13
+
+        var measured = new java.util.LinkedHashMap<String, List<String>>();
+        for (String route : allowed.keySet()) {
+            open(route);
+            measured.put(route, displayTitleOffences());
+        }
+
+        var regressions = measured.entrySet().stream()
+                .filter(entry -> !allowed.get(entry.getKey()).containsAll(entry.getValue()))
+                .map(entry -> entry.getKey() + " -> " + entry.getValue())
+                .toList();
+        assertThat(regressions)
+                .as("spec 7.1 display-title offences. Measured: %s", measured)
+                .isEmpty();
+    }
+
     @Test
     void captureTheFoundationReviewSet() {
         record Shot(String name, String path) {
