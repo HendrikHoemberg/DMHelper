@@ -32,7 +32,7 @@ class InteractionFailureContractTest {
         // The tracker's request logic moved from the inline template script to combat-tracker.js.
         assertThat(read("static/js/combat-tracker.js"))
                 .contains("window.dmRequest", "window.reportActionFailure");
-        assertThat(read("templates/fragments/navbar.html"))
+        assertThat(read("static/js/topbar.js"))
                 .contains("window.dmRequest", "window.reportActionFailure");
         assertThat(read("static/js/map/battle-map.js"))
                 .contains("window.dmRequest", "window.reportActionFailure");

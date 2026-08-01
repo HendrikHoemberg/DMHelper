@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|DMHelper — ${status != null ? status : 'Error'}|">DMHelper — Error</title>
-</head>
+<head th:replace="~{fragments/head :: document-head(pageTitle=${status != null ? 'Error ' + status : 'Error'})}"></head>
 <body>
     <main class="app-main error-page">
         <div class="error-page-card detail-section">
