@@ -34,7 +34,8 @@
                 <select class="form-input"
                         th:hx-put="@{/api/v1/campaigns/{cid}/audio/assignments/encounters/{eid}(cid=${campaignId},eid=${encounterEntity.id})}"
                         hx-target="this" hx-swap="none"
-                        hx-trigger="change">
+                        hx-trigger="change"
+                        hx-disabled-elt="this">
                     <option value="">— None —</option>
                     <option th:each="c : ${audioCues}" th:value="${c.id}"
                             th:selected="${encounterEntity.combatAudioCue != null and encounterEntity.combatAudioCue.id == c.id}"
@@ -47,7 +48,8 @@
                         th:hx-put="@{/api/v1/campaigns/{cid}/audio/assignments/encounters/{eid}(cid=${campaignId},eid=${encounterEntity.id})}"
                         hx-target="this" hx-swap="none"
                         hx-trigger="change"
-                        hx-vals='{"role":"victory"}'>
+                        hx-vals='{"role":"victory"}'
+                        hx-disabled-elt="this">
                     <option value="">— None —</option>
                     <option th:each="c : ${audioCues}" th:value="${c.id}"
                             th:selected="${encounterEntity.victoryAudioCue != null and encounterEntity.victoryAudioCue.id == c.id}"

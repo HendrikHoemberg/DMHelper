@@ -6,7 +6,7 @@
         hx-target="#sceneBody"
         hx-swap="innerHTML"
         hx-throttle="500ms"
-        hx-indicator="#sceneBody">
+        hx-indicator="#scene-save-indicator">
     <div class="form-group">
       <label class="form-label">Title</label>
       <input type="text" name="title" placeholder="Scene title" required
@@ -25,6 +25,7 @@
                 th:hx-put="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
                 hx-target="#sceneBody"
                 hx-swap="innerHTML"
+                hx-indicator="#scene-save-indicator"
                 hx-include="[name='title'], [name='sceneKey'], [name='summary'], [name='sourceLocator'], [name='tags'], [name='mapRegionKey']"></textarea>
     </div>
     <div class="form-group">
@@ -56,7 +57,8 @@
               th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/link-map(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
               hx-target="#sceneEditPane"
               hx-swap="innerHTML"
-              hx-include="[name='pinX'], [name='pinY']">
+              hx-include="[name='pinX'], [name='pinY']"
+              hx-disabled-elt="this">
         <option value="">None</option>
         <option th:each="m : ${maps}" th:value="${m.id}" th:selected="${scene.map != null and scene.map.id == m.id}"
                 th:text="${m.name}">Map Name</option>
@@ -70,13 +72,15 @@
       <button type="button" class="btn btn-danger btn-sm action-row__destructive"
               th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/unlink-map(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
               hx-target="#sceneEditPane" hx-swap="innerHTML"
-              th:if="${scene.map != null}">Unlink Map</button>
+              th:if="${scene.map != null}"
+              hx-disabled-elt="this">Unlink Map</button>
     </div>
     <div class="form-group">
       <label class="form-label">Linked Encounter</label>
       <select name="encounterId" class="form-input"
               th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/link-encounter(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-              hx-target="#sceneEditPane" hx-swap="innerHTML">
+              hx-target="#sceneEditPane" hx-swap="innerHTML"
+              hx-disabled-elt="this">
         <option value="">None</option>
         <option th:each="e : ${encounters}" th:value="${e.id}" th:selected="${scene.encounter != null and scene.encounter.id == e.id}"
                 th:text="${e.name}">Encounter Name</option>
@@ -84,13 +88,15 @@
       <button type="button" class="btn btn-danger btn-sm action-row__destructive"
               th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/unlink-encounter(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
               hx-target="#sceneEditPane" hx-swap="innerHTML"
-              th:if="${scene.encounter != null}">Unlink Encounter</button>
+              th:if="${scene.encounter != null}"
+              hx-disabled-elt="this">Unlink Encounter</button>
     </div>
     <div class="form-group">
       <label class="form-label">Linked Statblocks</label>
       <select name="statBlockId" class="form-input"
               th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/add-statblock(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-              hx-target="#sceneEditPane" hx-swap="innerHTML">
+              hx-target="#sceneEditPane" hx-swap="innerHTML"
+              hx-disabled-elt="this">
         <option value="">Add statblock...</option>
         <option th:each="sb : ${statBlocks}" th:value="${sb.id}" th:text="${sb.name}">StatBlock Name</option>
       </select>
@@ -100,7 +106,8 @@
           <button type="button" class="btn btn-danger btn-sm action-row__destructive"
                   th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/remove-statblock(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
                   th:attr="hx-vals='{&quot;statBlockId&quot;: &quot;' + ${sb.id} + '&quot;}'"
-                  hx-target="#sceneEditPane" hx-swap="innerHTML">&times;</button>
+                  hx-target="#sceneEditPane" hx-swap="innerHTML"
+                  hx-disabled-elt="this">&times;</button>
         </div>
       </div>
     </div>
@@ -109,7 +116,8 @@
       <select name="audioCueId" class="form-input"
               th:hx-put="@{/api/v1/campaigns/{cid}/audio/assignments/scenes/{sid}(cid=${campaignId},sid=${scene.id})}"
               hx-target="this" hx-swap="none"
-              hx-trigger="change">
+              hx-trigger="change"
+              hx-disabled-elt="this">
         <option value="">— None —</option>
         <option th:each="c : ${audioCues}" th:value="${c.id}"
                 th:selected="${scene.sceneAudioCue != null and scene.sceneAudioCue.id == c.id}"
@@ -120,7 +128,8 @@
       <label class="form-label">Linked Handouts</label>
       <select name="handoutId" class="form-input"
               th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/add-handout(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-              hx-target="#sceneEditPane" hx-swap="innerHTML">
+              hx-target="#sceneEditPane" hx-swap="innerHTML"
+              hx-disabled-elt="this">
         <option value="">Add handout...</option>
         <option th:each="h : ${handouts}" th:value="${h.id}" th:text="${h.title}">Handout Title</option>
       </select>
@@ -130,12 +139,14 @@
           <button type="button" class="btn btn-danger btn-sm action-row__destructive"
                   th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/remove-handout(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
                   th:attr="hx-vals='{&quot;handoutId&quot;: &quot;' + ${h.id} + '&quot;}'"
-                  hx-target="#sceneEditPane" hx-swap="innerHTML">&times;</button>
+                  hx-target="#sceneEditPane" hx-swap="innerHTML"
+                  hx-disabled-elt="this">&times;</button>
         </div>
       </div>
     </div>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Save</button>
+      <span id="scene-save-indicator" class="spinner save-indicator" aria-hidden="true"></span>
       <a class="btn btn-ghost"
          th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}">Cancel</a>
     </div>

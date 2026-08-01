@@ -2,7 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <div th:fragment="configForm" class="card" style="padding: var(--space-md);">
     <form th:hx-post="@{/campaigns/{id}/calendar/config(id=${campaignId})}"
-          hx-target="body" hx-swap="outerHTML">
+          hx-target="body" hx-swap="outerHTML"
+          hx-disabled-elt="find button[type='submit']">
 
         <div class="form-group">
             <label>Month Names (comma-separated, 12 values)</label>

@@ -19,13 +19,15 @@
         <div class="u-flex u-gap-xs u-shrink-0 u-ml-md">
             <button class="btn btn-ghost btn-xs"
                     th:hx-get="@{/campaigns/{cid}/calendar/events/{eid}/edit(cid=${event.campaignId()}, eid=${event.id()})}"
-                    hx-target="#event-form-area" hx-swap="innerHTML">
+                    hx-target="#event-form-area" hx-swap="innerHTML"
+                    hx-disabled-elt="this">
                 Edit
             </button>
             <button class="btn btn-danger btn-xs action-row__destructive"
                     th:hx-delete="@{/campaigns/{cid}/calendar/events/{eid}(cid=${event.campaignId()}, eid=${event.id()})}"
                     hx-target="closest .card" hx-swap="outerHTML"
-                    hx-confirm="Delete this event?">
+                    hx-confirm="Delete this event?"
+                    hx-disabled-elt="this">
                 &times;
             </button>
         </div>

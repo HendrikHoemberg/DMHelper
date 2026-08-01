@@ -21,7 +21,8 @@
                     <button class="btn btn-ghost"
                             th:hx-get="@{/campaigns/{cid}/adventures/{id}/edit(cid=${campaignId},id=${adventure.id})}"
                             hx-target="#adventure-header"
-                            hx-swap="innerHTML">Edit</button>
+                            hx-swap="innerHTML"
+                            hx-disabled-elt="this">Edit</button>
                 </div>
             </div>
 

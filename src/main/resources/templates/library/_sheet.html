@@ -4,7 +4,8 @@
      th:aria-label="${sb.name}" tabindex="-1">
     <div class="side-sheet-header">
         <th:block th:if="${sb.source.name() == 'SRD'}">
-            <form th:hx-post="@{/library/statblocks/{id}/clone(id=${sb.id})}" hx-target="body">
+            <form th:hx-post="@{/library/statblocks/{id}/clone(id=${sb.id})}" hx-target="body"
+                  hx-disabled-elt="find button[type='submit']">
                 <button type="submit" class="btn btn-ghost">Clone &amp; Edit</button>
             </form>
         </th:block>

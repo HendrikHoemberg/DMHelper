@@ -2,7 +2,8 @@
 <div th:fragment="form" class="card u-mb-md">
     <h3>Record Transaction</h3>
     <form th:hx-post="@{/campaigns/{id}/ledger(id=${campaignId})}"
-          hx-target="body" hx-swap="outerHTML">
+          hx-target="body" hx-swap="outerHTML"
+          hx-disabled-elt="find button[type='submit']">
 
         <div class="form-group">
             <label>Type</label>

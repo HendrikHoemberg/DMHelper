@@ -6,5 +6,6 @@
 <button th:fragment="swap-cta(actionText, actionUrl, target)" type="button"
         class="btn btn-primary empty-state__cta"
         th:hx-get="${actionUrl}" th:hx-target="${target}" hx-swap="innerHTML"
+        hx-disabled-elt="this"
         th:text="${actionText}">Create</button>
 </html>

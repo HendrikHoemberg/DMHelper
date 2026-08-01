@@ -23,11 +23,13 @@
                     <button class="btn btn-ghost"
                             th:hx-get="@{/campaigns/{cid}/world/locations/{lid}/edit(cid=${campaignId},lid=${location.id})}"
                             hx-target="#locationForm"
-                            hx-swap="innerHTML">Edit</button>
+                            hx-swap="innerHTML"
+                            hx-disabled-elt="this">Edit</button>
                     <button class="btn btn-danger action-row__destructive"
                             th:hx-delete="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${location.id})}"
                             hx-confirm="Delete this location?"
-                            hx-target="body" hx-swap="outerHTML">Delete</button>
+                            hx-target="body" hx-swap="outerHTML"
+                            hx-disabled-elt="this">Delete</button>
                 </div>
             </div>
             <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
@@ -69,7 +71,8 @@
                     <button class="btn btn-danger btn-sm action-row__destructive"
                             th:hx-delete="@{/campaigns/{cid}/world/locations/{lid}/tables/{linkId}(cid=${campaignId},lid=${location.id},linkId=${link.id})}"
                             hx-confirm="Remove this table link?"
-                            hx-target="body" hx-swap="outerHTML">&times;</button>
+                            hx-target="body" hx-swap="outerHTML"
+                            hx-disabled-elt="this">&times;</button>
                 </div>
                 <div th:if="${#lists.isEmpty(tableLinks)}">
                     <span class="u-text-sm text-muted">No tables linked</span>
@@ -78,7 +81,8 @@
                     <summary class="u-text-sm">Link a table</summary>
                     <form class="inline-form u-mt-xs"
                           th:hx-post="@{/campaigns/{cid}/world/locations/{lid}/tables(cid=${campaignId},lid=${location.id})}"
-                          hx-target="body" hx-swap="outerHTML">
+                          hx-target="body" hx-swap="outerHTML"
+                          hx-disabled-elt="find button[type='submit']">
                         <div class="form-group">
                             <label class="form-label">Table</label>
                             <select name="tableId" class="form-input" required>

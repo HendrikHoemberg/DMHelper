@@ -22,11 +22,13 @@
                     <button class="btn btn-ghost"
                             th:hx-get="@{/campaigns/{cid}/world/factions/{fid}/edit(cid=${campaignId},fid=${faction.id})}"
                             hx-target="#factionForm"
-                            hx-swap="innerHTML">Edit</button>
+                            hx-swap="innerHTML"
+                            hx-disabled-elt="this">Edit</button>
                     <button class="btn btn-danger action-row__destructive"
                             th:hx-delete="@{/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${faction.id})}"
                             hx-confirm="Delete this faction?"
-                            hx-target="body" hx-swap="outerHTML">Delete</button>
+                            hx-target="body" hx-swap="outerHTML"
+                            hx-disabled-elt="this">Delete</button>
                 </div>
             </div>
             <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>

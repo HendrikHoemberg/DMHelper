@@ -42,7 +42,8 @@
                     <button class="btn btn-danger action-row__destructive"
                             th:hx-delete="@{/campaigns/{cid}/notes/{nid}(cid=${campaignId}, nid=${note.id})}"
                             hx-confirm="Delete this note?"
-                            hx-target="body" hx-swap="outerHTML">
+                            hx-target="body" hx-swap="outerHTML"
+                            hx-disabled-elt="this">
                         Delete
                     </button>
                 </div>

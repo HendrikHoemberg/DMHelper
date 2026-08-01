@@ -23,11 +23,13 @@
                     <button class="btn btn-ghost"
                             th:hx-get="@{/campaigns/{cid}/quests/{qid}/edit(cid=${campaignId},qid=${quest.id})}"
                             hx-target="#questForm"
-                            hx-swap="innerHTML">Edit</button>
+                            hx-swap="innerHTML"
+                            hx-disabled-elt="this">Edit</button>
                     <button class="btn btn-danger action-row__destructive"
                             th:hx-delete="@{/campaigns/{cid}/quests/{qid}(cid=${campaignId},qid=${quest.id})}"
                             hx-confirm="Delete this quest?"
-                            hx-target="body" hx-swap="outerHTML">Delete</button>
+                            hx-target="body" hx-swap="outerHTML"
+                            hx-disabled-elt="this">Delete</button>
                 </div>
             </div>
             <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
@@ -61,7 +63,8 @@
                         <summary>Add Objective</summary>
                         <form class="inline-form u-mt-sm"
                               th:hx-post="@{/campaigns/{cid}/quests/{qid}/objectives(cid=${campaignId},qid=${quest.id})}"
-                              hx-target="#objectiveList" hx-swap="innerHTML">
+                              hx-target="#objectiveList" hx-swap="innerHTML"
+                              hx-disabled-elt="find button[type='submit']">
                             <div class="form-group">
                                 <label class="form-label">Title</label>
                                 <input type="text" name="title" class="form-input" required>
@@ -105,7 +108,8 @@
                         <summary>Add Link</summary>
                         <form class="inline-form u-mt-sm"
                               th:hx-post="@{/campaigns/{cid}/quests/{qid}/links(cid=${campaignId},qid=${quest.id})}"
-                              hx-target="#linkList" hx-swap="innerHTML">
+                              hx-target="#linkList" hx-swap="innerHTML"
+                              hx-disabled-elt="find button[type='submit']">
                             <div class="form-group">
                                 <label class="form-label">Role</label>
                                 <select name="role" class="form-input">

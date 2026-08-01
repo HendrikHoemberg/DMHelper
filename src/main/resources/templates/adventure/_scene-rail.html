@@ -8,16 +8,19 @@
               th:classappend="${scene.status.name() == 'VISITED'} ? 'btn' : 'btn-ghost'"
               th:hx-put="@{/scenes/{id}/status(id=${scene.id})}"
               hx-vals='{"status": "VISITED"}'
-              hx-target="#sceneStatusBadge" hx-swap="outerHTML">Visited</button>
+              hx-target="#sceneStatusBadge" hx-swap="outerHTML"
+              hx-disabled-elt="this">Visited</button>
       <button class="btn btn-sm"
               th:classappend="${scene.status.name() == 'DONE'} ? 'btn-success' : 'btn-ghost'"
               th:hx-put="@{/scenes/{id}/status(id=${scene.id})}"
               hx-vals='{"status": "DONE"}'
-              hx-target="#sceneStatusBadge" hx-swap="outerHTML">Done</button>
+              hx-target="#sceneStatusBadge" hx-swap="outerHTML"
+              hx-disabled-elt="this">Done</button>
       <button class="btn btn-sm btn-ghost"
               th:hx-put="@{/scenes/{id}/status(id=${scene.id})}"
               hx-vals='{"status": "UNVISITED"}'
-              hx-target="#sceneStatusBadge" hx-swap="outerHTML">Unvisit</button>
+              hx-target="#sceneStatusBadge" hx-swap="outerHTML"
+              hx-disabled-elt="this">Unvisit</button>
     </div>
 
     <div th:replace="~{adventure/_scene-rail :: statusBadge}"></div>
@@ -27,7 +30,8 @@
               th:hx-post="@{/campaigns/{cid}/current-scene(cid=${campaignId})}"
               th:attr="hx-vals='{&quot;sceneId&quot;: &quot;' + ${scene.id} + '&quot;}'"
               hx-target="#scenePanel"
-              hx-swap="innerHTML">Set as Current Scene</button>
+              hx-swap="innerHTML"
+              hx-disabled-elt="this">Set as Current Scene</button>
     </div>
 
     <div th:if="${scene.map != null}" class="u-mb-md">
@@ -54,7 +58,8 @@
     <div th:if="${scene.encounter == null and canSeedEncounter}" class="u-mb-md">
       <button class="btn btn-sm"
               th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/seed-encounter(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-              hx-target="#sceneRail" hx-swap="innerHTML">
+              hx-target="#sceneRail" hx-swap="innerHTML"
+              hx-disabled-elt="this">
         Create an encounter here
       </button>
     </div>

@@ -17,7 +17,8 @@
                 th:hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
                 hx-confirm="Delete this campaign?"
                 hx-target="closest .book-cover-wrapper"
-                hx-swap="outerHTML swap:200ms">
+                hx-swap="outerHTML swap:200ms"
+                hx-disabled-elt="this">
             Delete
         </button>
     </div>

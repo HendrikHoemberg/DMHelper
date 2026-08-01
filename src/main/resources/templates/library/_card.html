@@ -19,7 +19,8 @@
     </div>
     <div class="card-actions u-mt-auto">
         <th:block th:if="${sb.source.name() == 'SRD'}">
-            <form th:hx-post="@{/library/statblocks/{id}/clone(id=${sb.id})}" hx-target="body" class="u-inline">
+            <form th:hx-post="@{/library/statblocks/{id}/clone(id=${sb.id})}" hx-target="body" class="u-inline"
+                  hx-disabled-elt="find button[type='submit']">
                 <button type="submit" class="btn btn-ghost btn-xs">Clone &amp; Edit</button>
             </form>
         </th:block>
@@ -30,13 +31,15 @@
                         th:hx-put="@{/library/statblocks/{id}/promote(id=${sb.id})}"
                         hx-confirm="Promote to global? It will be available in all campaigns."
                         hx-target="closest .statblock-card"
-                        hx-swap="outerHTML">Promote</button>
+                        hx-swap="outerHTML"
+                        hx-disabled-elt="this">Promote</button>
             </th:block>
             <button class="btn btn-danger btn-xs action-row__destructive"
                     th:hx-delete="@{/library/statblocks/{id}(id=${sb.id})}"
                     hx-confirm="Delete this statblock?"
                     hx-target="closest .statblock-card"
-                    hx-swap="outerHTML">Delete</button>
+                    hx-swap="outerHTML"
+                    hx-disabled-elt="this">Delete</button>
         </th:block>
     </div>
 </div>
@@ -61,7 +64,8 @@
                     th:hx-get="@{/library/statblocks(limit=${cap + 120})}"
                     hx-include="#librarySearch,#libraryCr,#libraryType,#librarySource"
                     hx-target="#statblock-results"
-                    hx-swap="outerHTML">
+                    hx-swap="outerHTML"
+                    hx-disabled-elt="this">
                 Show <span th:text="${statblocks.size() - cap}">252</span> more
             </button>
         </div>

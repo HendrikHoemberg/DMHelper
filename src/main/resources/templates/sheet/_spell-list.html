@@ -10,10 +10,12 @@
                 <button type="button" class="btn btn-xs btn-ghost"
                         th:hx-put="@{/api/v1/campaigns/{cid}/party/{mid}/sheet/spells/slots(cid=${campaignId}, mid=${memberId}, level=${iterStat.index})}"
                         hx-swap="none"
+                        hx-disabled-elt="this"
                         hx-on::after-request="if(event.detail.successful) location.reload()">+</button>
                 <button type="button" class="btn btn-xs btn-ghost"
                         th:hx-put="@{/api/v1/campaigns/{cid}/party/{mid}/sheet/spells/slots/recover(cid=${campaignId}, mid=${memberId}, level=${iterStat.index})}"
                         hx-swap="none"
+                        hx-disabled-elt="this"
                         hx-on::after-request="if(event.detail.successful) location.reload()">−</button>
             </span>
         </th:block>
@@ -25,10 +27,12 @@
                 <button type="button" class="btn btn-xs btn-ghost"
                         th:hx-put="@{/api/v1/campaigns/{cid}/party/{mid}/sheet/spells/slots(cid=${campaignId}, mid=${memberId}, level=pact)}"
                         hx-swap="none"
+                        hx-disabled-elt="this"
                         hx-on::after-request="if(event.detail.successful) location.reload()">+</button>
                 <button type="button" class="btn btn-xs btn-ghost"
                         th:hx-put="@{/api/v1/campaigns/{cid}/party/{mid}/sheet/spells/slots/recover(cid=${campaignId}, mid=${memberId}, level=pact)}"
                         hx-swap="none"
+                        hx-disabled-elt="this"
                         hx-on::after-request="if(event.detail.successful) location.reload()">−</button>
             </span>
         </th:block>
@@ -44,7 +48,8 @@
             <input type="checkbox" th:checked="${spell.prepared()}"
                    th:hx-put="@{/api/v1/campaigns/{cid}/party/{mid}/sheet/spells/{sid}/prepared(cid=${campaignId}, mid=${memberId}, sid=${spell.id()})}"
                    hx-trigger="change"
-                   hx-swap="none">
+                   hx-swap="none"
+                   hx-disabled-elt="this">
         </label>
 
         <details class="spell-details">

@@ -25,7 +25,8 @@
                 <button class="btn btn-primary"
                         th:hx-get="@{/campaigns/{id}/treasury/new(id=${campaignId})}"
                         hx-target="#treasury-form-area"
-                        hx-swap="innerHTML">
+                        hx-swap="innerHTML"
+                        hx-disabled-elt="this">
                     + Add Item
                 </button>
             </div>

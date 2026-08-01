@@ -25,17 +25,20 @@
               th:hx-put="@{/campaigns/{cid}/current-scene/step(cid=${campaignId})}"
               hx-vals='{"direction": -1}'
               hx-target="body" hx-swap="outerHTML"
-              title="Previous scene">&larr;</button>
+              title="Previous scene"
+              hx-disabled-elt="this">&larr;</button>
       <button class="btn btn-primary btn-sm"
               th:hx-put="@{/campaigns/{cid}/current-scene/step(cid=${campaignId})}"
               hx-vals='{"direction": 1}'
               hx-target="body" hx-swap="outerHTML"
-              title="Next scene">&rarr;</button>
+              title="Next scene"
+              hx-disabled-elt="this">&rarr;</button>
       <button class="btn btn-ghost btn-sm"
               th:hx-post="@{/campaigns/{cid}/current-scene(cid=${campaignId})}"
               hx-vals='{"sceneId": ""}'
               hx-target="closest .scene-panel-card" hx-swap="outerHTML"
-              title="Clear current scene">&times;</button>
+              title="Clear current scene"
+              hx-disabled-elt="this">&times;</button>
     </div>
     <div th:if="${currentScene.map != null}" style="margin-top: var(--space-sm);">
       <a th:href="@{/campaigns/{cid}/maps/{mid}/play(cid=${campaignId},mid=${currentScene.map.id})}"

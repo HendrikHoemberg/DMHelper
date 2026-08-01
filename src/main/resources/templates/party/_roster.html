@@ -92,22 +92,26 @@
             <div class="roster-row__actions">
                 <button class="btn btn-ghost btn-xs"
                         th:hx-get="@{/campaigns/{cid}/party/{pid}/edit(cid=${pm.campaign.id}, pid=${pm.id})}"
-                        hx-target="#party-form-modal" hx-swap="innerHTML">Edit</button>
+                        hx-target="#party-form-modal" hx-swap="innerHTML"
+                        hx-disabled-elt="this">Edit</button>
                 <th:block th:if="${pm.active}">
                     <button class="btn btn-ghost btn-xs"
                             th:hx-put="@{/campaigns/{cid}/party/{pid}/toggle-active(cid=${pm.campaign.id}, pid=${pm.id})}"
-                            hx-target="closest .roster-row" hx-swap="outerHTML">Mark Inactive</button>
+                            hx-target="closest .roster-row" hx-swap="outerHTML"
+                            hx-disabled-elt="this">Mark Inactive</button>
                 </th:block>
                 <th:block th:if="${!pm.active}">
                     <button class="btn btn-ghost btn-xs"
                             th:hx-put="@{/campaigns/{cid}/party/{pid}/toggle-active(cid=${pm.campaign.id}, pid=${pm.id})}"
-                            hx-target="closest .roster-row" hx-swap="outerHTML">Mark Active</button>
+                            hx-target="closest .roster-row" hx-swap="outerHTML"
+                            hx-disabled-elt="this">Mark Active</button>
                 </th:block>
                 <span class="roster-row__destructive">
                     <button class="btn btn-danger btn-xs action-row__destructive"
                             th:hx-delete="@{/campaigns/{cid}/party/{pid}(cid=${pm.campaign.id}, pid=${pm.id})}"
                             hx-confirm="Remove this party member?"
-                            hx-target="closest .roster-row" hx-swap="outerHTML">Remove</button>
+                            hx-target="closest .roster-row" hx-swap="outerHTML"
+                            hx-disabled-elt="this">Remove</button>
                 </span>
             </div>
             <div class="roster-row__notes">

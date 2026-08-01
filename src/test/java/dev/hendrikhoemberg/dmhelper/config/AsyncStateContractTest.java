@@ -36,7 +36,11 @@ class AsyncStateContractTest {
     void everyHtmxTargetDeclaresAnIndicatorOrSwapPreservingRegion() {
         for (Path template : TemplateRules.allTemplates()) {
             var document = TemplateRules.parse(template);
-            for (var trigger : document.select("[hx-get], [hx-post], [hx-put], [hx-delete]")) {
+            // th:hx-* (Thymeleaf-conditional verbs) render to hx-* at serve time, so a
+            // trigger whose URL only exists at render must still declare its in-flight
+            // state on the element itself.
+            for (var trigger : document.select("[hx-get], [hx-post], [hx-put], [hx-delete], " +
+                    "[th:hx-get], [th:hx-post], [th:hx-put], [th:hx-delete]")) {
                 boolean declared = trigger.hasAttr("hx-indicator")
                         || trigger.hasAttr("hx-disabled-elt")
                         || trigger.hasAttr("hx-sync")

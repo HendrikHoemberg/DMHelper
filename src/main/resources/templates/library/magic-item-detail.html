@@ -14,7 +14,8 @@
                 <div class="u-flex action-row">
                     <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${magicItem})}"></th:block>
                     <th:block th:if="${magicItem.source.name() == 'SRD'}">
-                        <form th:hx-post="@{/library/magic-items/{id}/clone(id=${magicItem.id})}" hx-target="body">
+                        <form th:hx-post="@{/library/magic-items/{id}/clone(id=${magicItem.id})}" hx-target="body"
+                              hx-disabled-elt="find button[type='submit']">
                             <button type="submit" class="btn">Clone &amp; Edit</button>
                         </form>
                     </th:block>
@@ -24,7 +25,8 @@
                             <button class="btn btn-danger"
                                     th:hx-delete="@{/library/magic-items/{id}(id=${magicItem.id})}"
                                     hx-confirm="Delete this magic item?"
-                                    hx-target="body" hx-swap="outerHTML">Delete</button>
+                                    hx-target="body" hx-swap="outerHTML"
+                                    hx-disabled-elt="this">Delete</button>
                         </span>
                     </th:block>
                 </div>

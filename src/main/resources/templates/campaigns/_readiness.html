@@ -35,7 +35,8 @@
             </th:block>
             <form th:action="@{|/campaigns/${campaignId}/readiness/accept|}" method="post" class="inline-form"
                   th:hx-post="@{|/campaigns/${campaignId}/readiness/accept|}"
-                  hx-target="closest .readiness-panel" hx-swap="outerHTML">
+                  hx-target="closest .readiness-panel" hx-swap="outerHTML"
+                  hx-disabled-elt="find button[type='submit']">
               <input type="hidden" name="itemKey" th:value="${item.key()}"/>
               <button type="submit" class="btn btn-ghost btn-xs"
                       th:text="${item.category().acceptanceActionLabel()}">Accept blocker</button>
@@ -57,7 +58,8 @@
           <div class="readiness-item__actions">
             <button type="button" class="btn btn-ghost btn-xs readiness-item__undo"
                     th:hx-delete="@{/campaigns/{cid}/readiness/accept(cid=${campaignId},itemKey=${item.key()})}"
-                    hx-target="closest .readiness-panel" hx-swap="outerHTML">Undo</button>
+                    hx-target="closest .readiness-panel" hx-swap="outerHTML"
+                    hx-disabled-elt="this">Undo</button>
           </div>
         </li>
       </ul>
@@ -74,6 +76,7 @@
             class="inline-form readiness-advisories__bulk"
             th:hx-post="@{|/campaigns/${campaignId}/readiness/seed-all|}"
             hx-target="closest .readiness-panel" hx-swap="outerHTML"
+            hx-disabled-elt="find button[type='submit']"
             th:if="${advisories.?[repairKind() == T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessRepairKind).SEED_ENCOUNTER].size() > 1}">
         <button type="submit" class="btn btn-ghost btn-xs">Seed all encounters</button>
       </form>

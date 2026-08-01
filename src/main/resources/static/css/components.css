@@ -2537,7 +2537,7 @@
   @keyframes skeleton-pulse { 50% { opacity: 0.55; } }
 }
 
-/* Rotating border ring — the app's loading convention (§3.4), matched to the
+/* Rotating border ring for the loading state (spec section 16), matched to the
    die-tumble cadence so the whole surface moves at one speed. */
 .spinner {
   width: 1.25rem; height: 1.25rem; flex: none;
@@ -2556,6 +2556,14 @@
 .save-status[data-save-status="saving"] .save-status__dot { background: var(--state-info); }
 .save-status[data-save-status="saved"] .save-status__dot { background: var(--state-success); }
 .save-status[data-save-status="error"] .save-status__dot { background: var(--state-danger); }
+
+/* hx-indicator regions that collapse out of layout at rest and only appear while a
+   request is in flight (htmx adds .htmx-request to the indicator target). Using
+   display instead of the opacity-based default means no invisible layout gap. */
+.loading-region { display: none; }
+.loading-region.htmx-request { display: block; }
+.save-indicator { display: none; }
+.save-indicator.htmx-request { display: inline-block; }
 
 /* ── Library (§5.3) — speed and focus, not decoration ──
    Resting state is pure information: six columns of names and stats. The actions

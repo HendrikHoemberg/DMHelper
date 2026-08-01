@@ -14,7 +14,8 @@
                             th:hx-delete="@{/api/v1/combatants/{id}(id=${c.id})}"
                             th:hx-confirm="|Remove ${c.name} from this encounter?|"
                             hx-target="closest [data-combatant-row]"
-                            hx-swap="delete">
+                            hx-swap="delete"
+                            hx-disabled-elt="this">
                         Remove
                     </button>
                 </td>

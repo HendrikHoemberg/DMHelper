@@ -20,13 +20,15 @@
     <div class="u-flex u-gap-xs u-shrink-0 u-ml-md">
         <form th:method="'put'"
               th:hx-put="@{/campaigns/{cid}/treasury/{id}/attune(cid=${assignment.campaignId()}, id=${assignment.id()})}"
-              hx-target="closest .detail-section" hx-swap="outerHTML" class="u-inline">
+              hx-target="closest .detail-section" hx-swap="outerHTML" class="u-inline"
+              hx-disabled-elt="find button[type='submit']">
             <button class="btn btn-ghost btn-xs"
                     th:text="${assignment.attuned()} ? 'Unattune' : 'Attune'">Attune</button>
         </form>
         <form th:method="'put'"
               th:hx-put="@{/campaigns/{cid}/treasury/{id}/quantity(cid=${assignment.campaignId()}, id=${assignment.id()})}"
-              hx-target="closest .card" hx-swap="outerHTML" class="u-flex u-gap-xs">
+              hx-target="closest .card" hx-swap="outerHTML" class="u-flex u-gap-xs"
+              hx-disabled-elt="find button[type='submit']">
             <label class="u-flex u-gap-xs" style="align-items: center;">
                 <span class="text-muted u-text-xs">Qty</span>
                 <input type="number" name="quantity" th:value="${assignment.quantity()}" min="1"
@@ -36,7 +38,8 @@
         </form>
         <button class="btn btn-danger btn-xs action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/treasury/{id}(cid=${assignment.campaignId()}, id=${assignment.id()})}"
-                hx-target="closest .card" hx-swap="outerHTML" hx-confirm="Remove this item?">
+                hx-target="closest .card" hx-swap="outerHTML" hx-confirm="Remove this item?"
+                hx-disabled-elt="this">
             &times;
         </button>
     </div>

@@ -45,7 +45,8 @@
                     th:hx-get="${event != null}
                         ? @{/campaigns/{cid}/calendar/events/new(cid=${event.campaignId()})}
                         : @{/campaigns/{id}/calendar/events/new(id=${campaignId})}"
-                    hx-target="#event-form-area" hx-swap="innerHTML">
+                    hx-target="#event-form-area" hx-swap="innerHTML"
+                    hx-disabled-elt="this">
                 Cancel
             </button>
         </div>

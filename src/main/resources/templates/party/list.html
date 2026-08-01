@@ -21,7 +21,8 @@
                     <button class="btn btn-primary"
                             th:hx-get="@{/campaigns/{cid}/party/new(cid=${campaign.id})}"
                             hx-target="#party-form-modal"
-                            hx-swap="innerHTML">+ Add Member</button>
+                            hx-swap="innerHTML"
+                            hx-disabled-elt="this">+ Add Member</button>
                 </div>
             </div>
 

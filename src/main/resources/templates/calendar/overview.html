@@ -28,6 +28,7 @@
             <div class="detail-section">
                 <form th:hx-post="@{/campaigns/{id}/calendar/advance(id=${campaignId})}"
                       hx-target="#current-date-wrapper" hx-swap="outerHTML"
+                      hx-disabled-elt="find button[type='submit']"
                       class="u-flex">
                     <label>Advance by</label>
                     <input type="number" name="days" value="1" min="1" class="calendar-days-input" />
@@ -42,6 +43,7 @@
                     <summary>Set Date</summary>
                     <form th:hx-post="@{/campaigns/{id}/calendar/set-date(id=${campaignId})}"
                           hx-target="body" hx-swap="outerHTML"
+                          hx-disabled-elt="find button[type='submit']"
                           class="calendar-setdate-form">
                         <div>
                             <label class="u-text-sm">Year</label>
@@ -76,7 +78,8 @@
                 <button class="btn"
                         th:hx-get="@{/campaigns/{id}/calendar/events/new(id=${campaignId})}"
                         hx-target="#event-form-area"
-                        hx-swap="innerHTML">
+                        hx-swap="innerHTML"
+                        hx-disabled-elt="this">
                     + Add Event
                 </button>
             </div>

@@ -15,19 +15,23 @@
                 th:classappend="${obj.status.name() == 'COMPLETED'} ? 'btn-success' : 'btn-ghost'"
                 th:hx-post="@{/campaigns/{cid}/quests/objectives/{oid}/status(cid=${campaignId},oid=${obj.id})}"
                 hx-vals='{"status": "COMPLETED"}'
-                hx-target="closest [data-objective-id]" hx-swap="outerHTML">Complete</button>
+                hx-target="closest [data-objective-id]" hx-swap="outerHTML"
+                hx-disabled-elt="this">Complete</button>
         <button class="btn btn-sm btn-ghost"
                 th:hx-post="@{/campaigns/{cid}/quests/objectives/{oid}/status(cid=${campaignId},oid=${obj.id})}"
                 hx-vals='{"status": "ACTIVE"}'
-                hx-target="closest [data-objective-id]" hx-swap="outerHTML">Activate</button>
+                hx-target="closest [data-objective-id]" hx-swap="outerHTML"
+                hx-disabled-elt="this">Activate</button>
         <button class="btn btn-sm btn-ghost"
                 th:hx-post="@{/campaigns/{cid}/quests/objectives/{oid}/status(cid=${campaignId},oid=${obj.id})}"
                 hx-vals='{"status": "NOT_STARTED"}'
-                hx-target="closest [data-objective-id]" hx-swap="outerHTML">Reset</button>
+                hx-target="closest [data-objective-id]" hx-swap="outerHTML"
+                hx-disabled-elt="this">Reset</button>
         <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/quests/{qid}/objectives/{oid}(cid=${campaignId},qid=${quest.id},oid=${obj.id})}"
                 hx-target="#objectiveList" hx-swap="innerHTML"
-                hx-confirm="Delete this objective?">&times;</button>
+                hx-confirm="Delete this objective?"
+                hx-disabled-elt="this">&times;</button>
       </div>
     </div>
   </div>

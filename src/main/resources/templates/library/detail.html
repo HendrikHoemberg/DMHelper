@@ -13,7 +13,8 @@
                 <a href="/library" class="btn btn-ghost">&larr; Back to Library</a>
                 <div class="u-flex action-row">
                     <th:block th:if="${sb.source.name() == 'SRD'}">
-                        <form th:hx-post="@{/library/statblocks/{id}/clone(id=${sb.id})}" hx-target="body">
+                        <form th:hx-post="@{/library/statblocks/{id}/clone(id=${sb.id})}" hx-target="body"
+                              hx-disabled-elt="find button[type='submit']">
                             <button type="submit" class="btn">Clone &amp; Edit</button>
                         </form>
                     </th:block>
@@ -23,7 +24,8 @@
                             <button class="btn btn-danger"
                                     th:hx-delete="@{/library/statblocks/{id}(id=${sb.id})}"
                                     hx-confirm="Delete this statblock?"
-                                    hx-target="body" hx-swap="outerHTML">Delete</button>
+                                    hx-target="body" hx-swap="outerHTML"
+                                    hx-disabled-elt="this">Delete</button>
                         </span>
                     </th:block>
                 </div>

@@ -123,10 +123,9 @@
                 </div>
 
                 <div id="library-results" hx-get="/library/statblocks" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#library-results">
-                    <th:block th:replace="~{common/_skeleton :: skeleton(12)}"></th:block>
+                     hx-indicator="#library-results-loading">
                 </div>
-                <div id="library-results-loading" class="htmx-indicator" aria-hidden="true">
+                <div id="library-results-loading" class="loading-region" aria-hidden="true">
                     <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
                 </div>
             </div>
@@ -196,10 +195,9 @@
                     <a th:href="@{/library/spells/new}" class="btn btn-sm">+ New Spell</a>
                 </div>
                 <div id="spell-results" hx-get="/library/spells" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#spell-results">
-                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
+                     hx-indicator="#spell-results-loading">
                 </div>
-                <div id="spell-results-loading" class="htmx-indicator" aria-hidden="true">
+                <div id="spell-results-loading" class="loading-region" aria-hidden="true">
                     <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
                 </div>
             </div>
@@ -232,10 +230,9 @@
                     <a th:href="@{/library/conditions/new}" class="btn btn-sm">+ New Condition</a>
                 </div>
                 <div id="condition-results" hx-get="/library/conditions" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#condition-results">
-                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
+                     hx-indicator="#condition-results-loading">
                 </div>
-                <div id="condition-results-loading" class="htmx-indicator" aria-hidden="true">
+                <div id="condition-results-loading" class="loading-region" aria-hidden="true">
                     <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
                 </div>
             </div>
@@ -268,10 +265,9 @@
                     <a th:href="@{/library/rules/new}" class="btn btn-sm">+ New Rule</a>
                 </div>
                 <div id="rule-results" hx-get="/library/rules" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#rule-results">
-                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
+                     hx-indicator="#rule-results-loading">
                 </div>
-                <div id="rule-results-loading" class="htmx-indicator" aria-hidden="true">
+                <div id="rule-results-loading" class="loading-region" aria-hidden="true">
                     <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
                 </div>
             </div>
@@ -318,10 +314,9 @@
                     <a th:href="@{/library/equipment/new}" class="btn btn-sm">+ New Equipment</a>
                 </div>
                 <div id="equipment-results" hx-get="/library/equipment" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#equipment-results">
-                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
+                     hx-indicator="#equipment-results-loading">
                 </div>
-                <div id="equipment-results-loading" class="htmx-indicator" aria-hidden="true">
+                <div id="equipment-results-loading" class="loading-region" aria-hidden="true">
                     <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
                 </div>
             </div>
@@ -389,10 +384,9 @@
                     <a th:href="@{/library/magic-items/new}" class="btn btn-sm">+ New Magic Item</a>
                 </div>
                 <div id="magic-item-results" hx-get="/library/magic-items" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#magic-item-results">
-                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
+                     hx-indicator="#magic-item-results-loading">
                 </div>
-                <div id="magic-item-results-loading" class="htmx-indicator" aria-hidden="true">
+                <div id="magic-item-results-loading" class="loading-region" aria-hidden="true">
                     <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
                 </div>
             </div>
@@ -425,10 +419,9 @@
                     <a th:href="@{/library/classes/new}" class="btn btn-sm">+ New Class</a>
                 </div>
                 <div id="class-results" hx-get="/library/classes" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#class-results">
-                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
+                     hx-indicator="#class-results-loading">
                 </div>
-                <div id="class-results-loading" class="htmx-indicator" aria-hidden="true">
+                <div id="class-results-loading" class="loading-region" aria-hidden="true">
                     <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
                 </div>
             </div>
@@ -461,10 +454,9 @@
                     <a th:href="@{/library/species/new}" class="btn btn-sm">+ New Species</a>
                 </div>
                 <div id="species-results" hx-get="/library/species" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#species-results">
-                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
+                     hx-indicator="#species-results-loading">
                 </div>
-                <div id="species-results-loading" class="htmx-indicator" aria-hidden="true">
+                <div id="species-results-loading" class="loading-region" aria-hidden="true">
                     <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
                 </div>
             </div>
@@ -497,10 +489,9 @@
                     <a th:href="@{/library/backgrounds/new}" class="btn btn-sm">+ New Background</a>
                 </div>
                 <div id="background-results" hx-get="/library/backgrounds" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#background-results">
-                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
+                     hx-indicator="#background-results-loading">
                 </div>
-                <div id="background-results-loading" class="htmx-indicator" aria-hidden="true">
+                <div id="background-results-loading" class="loading-region" aria-hidden="true">
                     <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
                 </div>
             </div>
@@ -547,10 +538,9 @@
                     <a th:href="@{/library/feats/new}" class="btn btn-sm">+ New Feat</a>
                 </div>
                 <div id="feat-results" hx-get="/library/feats" hx-trigger="load" hx-swap="innerHTML"
-                     hx-indicator="#feat-results">
-                    <th:block th:replace="~{common/_skeleton :: skeleton(8)}"></th:block>
+                     hx-indicator="#feat-results-loading">
                 </div>
-                <div id="feat-results-loading" class="htmx-indicator" aria-hidden="true">
+                <div id="feat-results-loading" class="loading-region" aria-hidden="true">
                     <th:block th:replace="~{fragments/_states :: skeleton(count=4)}"></th:block>
                 </div>
             </div>

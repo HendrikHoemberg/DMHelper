@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div th:fragment="banner(tone, title, body, actions)" role="alert"
+<div th:fragment="banner(tone, title, body, actions)" role="alert" aria-live="assertive"
      th:class="'banner banner--' + ${tone}">
     <th:block th:replace="~{common/_icon :: icon-sized(
         name=${tone == 'danger' ? 'alert-triangle' : (tone == 'warning' ? 'alert-circle' :

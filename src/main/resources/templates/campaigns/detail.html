@@ -122,7 +122,8 @@
                     <select class="form-input"
                             th:hx-put="@{/api/v1/campaigns/{cid}/audio/assignments/campaign(cid=${campaign.id})}"
                             hx-target="this" hx-swap="none"
-                            hx-trigger="change">
+                            hx-trigger="change"
+                            hx-disabled-elt="this">
                         <option value="">— None —</option>
                         <option th:each="c : ${audioCues}" th:value="${c.id}"
                                 th:selected="${campaign.defaultAudioCue != null and campaign.defaultAudioCue.id == c.id}"

@@ -143,13 +143,15 @@
                     <button type="button" class="btn"
                             onclick="document.getElementById('rest-preview-dialog').innerHTML = '<p>Loading...</p>'; document.getElementById('rest-preview-dialog').showModal();"
                             th:hx-get="@{/campaigns/{cid}/party/{pid}/sheet/rest/preview(cid=${campaign.id}, pid=${member.id}, type=SHORT, hitDiceSpent=0)}"
-                            hx-target="#rest-preview-dialog" hx-swap="innerHTML">
+                            hx-target="#rest-preview-dialog" hx-swap="innerHTML"
+                            hx-disabled-elt="this">
                         Short Rest
                     </button>
                     <button type="button" class="btn"
                             onclick="document.getElementById('rest-preview-dialog').innerHTML = '<p>Loading...</p>'; document.getElementById('rest-preview-dialog').showModal();"
                             th:hx-get="@{/campaigns/{cid}/party/{pid}/sheet/rest/preview(cid=${campaign.id}, pid=${member.id}, type=LONG, hitDiceSpent=0)}"
-                            hx-target="#rest-preview-dialog" hx-swap="innerHTML">
+                            hx-target="#rest-preview-dialog" hx-swap="innerHTML"
+                            hx-disabled-elt="this">
                         Long Rest
                     </button>
                     <button class="btn" onclick="document.getElementById('level-up-dialog').showModal()">Level Up</button>
@@ -192,7 +194,8 @@
                         <button type="button" class="btn"
                                 th:hx-put="@{/campaigns/{cid}/party/{pid}/sheet/overrides(cid=${campaign.id}, pid=${member.id})}"
                                 hx-headers='{"Content-Type": "application/json"}'
-                                hx-vals='js:buildOverrides()'>Save Overrides</button>
+                                hx-vals='js:buildOverrides()'
+                                hx-disabled-elt="this">Save Overrides</button>
                     </div>
                 </div>
             </div>
@@ -257,7 +260,8 @@
                         <button type="button" class="btn btn-primary"
                                 th:hx-post="@{/campaigns/{cid}/party/{pid}/sheet/proficiencies(cid=${campaign.id}, pid=${member.id})}"
                                 hx-headers='{"Content-Type": "application/json"}'
-                                hx-vals='js:buildProficiencies()'>Save Proficiencies</button>
+                                hx-vals='js:buildProficiencies()'
+                                hx-disabled-elt="this">Save Proficiencies</button>
                     </div>
                 </div>
             </div>

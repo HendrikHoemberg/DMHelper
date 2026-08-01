@@ -6,7 +6,8 @@
     <summary class="u-text-sm">Edit metadata</summary>
     <form class="inline-form u-mt-xs"
           th:hx-post="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/metadata(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id})}"
-          hx-target="#sceneStructureEditor" hx-swap="innerHTML">
+          hx-target="#sceneStructureEditor" hx-swap="innerHTML"
+          hx-disabled-elt="find button[type='submit']">
       <div class="form-group">
         <label class="form-label">Summary</label>
         <textarea name="summary" class="form-input" rows="2" th:text="${scene.summary}"
@@ -41,14 +42,16 @@
         <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/sections/{sectionId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},sectionId=${section.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
-                hx-confirm="Delete this section?">&times;</button>
+                hx-confirm="Delete this section?"
+                hx-disabled-elt="this">&times;</button>
       </div>
     </div>
     <section class="editor-block">
       <h4>Add section</h4>
       <form class="inline-form"
             th:hx-post="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/sections(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id})}"
-            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="section">
+            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="section"
+            hx-disabled-elt="find button[type='submit']">
         <div class="form-group">
           <label class="form-label">Kind</label>
           <select name="kind" class="form-input" required
@@ -144,14 +147,16 @@
         <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/checks/{checkId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},checkId=${check.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
-                hx-confirm="Delete this check?">&times;</button>
+                hx-confirm="Delete this check?"
+                hx-disabled-elt="this">&times;</button>
       </div>
     </div>
     <section class="editor-block">
       <h4>Add check</h4>
       <form class="inline-form"
             th:hx-post="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/checks(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id})}"
-            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="check">
+            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="check"
+            hx-disabled-elt="find button[type='submit']">
         <div class="form-group">
           <label class="form-label">Label</label>
           <input type="text" name="label" class="form-input" required>
@@ -222,14 +227,16 @@
         <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/participants/{pid}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},pid=${p.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
-                hx-confirm="Delete this participant?">&times;</button>
+                hx-confirm="Delete this participant?"
+                hx-disabled-elt="this">&times;</button>
       </div>
     </div>
     <section class="editor-block">
       <h4>Add participant</h4>
       <form class="inline-form"
             th:hx-post="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/participants(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id})}"
-            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="participant">
+            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="participant"
+            hx-disabled-elt="find button[type='submit']">
         <div class="form-group">
           <label class="form-label">Display Name</label>
           <input type="text" name="displayName" class="form-input" required>
@@ -281,14 +288,16 @@
         <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/transitions/{tid}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},tid=${t.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
-                hx-confirm="Delete this transition?">&times;</button>
+                hx-confirm="Delete this transition?"
+                hx-disabled-elt="this">&times;</button>
       </div>
     </div>
     <section class="editor-block">
       <h4>Add transition</h4>
       <form class="inline-form"
             th:hx-post="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/transitions(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id})}"
-            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="transition">
+            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="transition"
+            hx-disabled-elt="find button[type='submit']">
         <div class="form-group">
           <label class="form-label">Kind</label>
           <select name="kind" class="form-input" required>
@@ -342,14 +351,16 @@
         <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/links/{linkId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},linkId=${link.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
-                hx-confirm="Delete this link?">&times;</button>
+                hx-confirm="Delete this link?"
+                hx-disabled-elt="this">&times;</button>
       </div>
     </div>
     <section class="editor-block">
       <h4>Add link</h4>
       <form class="inline-form"
             th:hx-post="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/links(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id})}"
-            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="link">
+            hx-target="#sceneStructureEditor" hx-swap="innerHTML" data-create="link"
+            hx-disabled-elt="find button[type='submit']">
         <div class="form-group">
           <label class="form-label">Role</label>
           <select name="role" class="form-input" required>
@@ -411,11 +422,13 @@
       <button class="btn btn-ghost btn-sm"
               th:hx-put="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/move(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
               hx-vals='{"direction": -1}'
-              hx-target="body" hx-swap="outerHTML">Move earlier</button>
+              hx-target="body" hx-swap="outerHTML"
+              hx-disabled-elt="this">Move earlier</button>
       <button class="btn btn-ghost btn-sm"
               th:hx-put="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/move(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
               hx-vals='{"direction": 1}'
-              hx-target="body" hx-swap="outerHTML">Move later</button>
+              hx-target="body" hx-swap="outerHTML"
+              hx-disabled-elt="this">Move later</button>
     </div>
   </section>
 </div>

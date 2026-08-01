@@ -54,7 +54,8 @@
                 <button class="btn btn-danger action-row__destructive"
                         th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
                         hx-confirm="Delete this scene?"
-                        hx-target="body" hx-swap="outerHTML">Delete scene</button>
+                        hx-target="body" hx-swap="outerHTML"
+                        hx-disabled-elt="this">Delete scene</button>
             </div>
         </main>
     </div>

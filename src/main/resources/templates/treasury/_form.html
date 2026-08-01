@@ -3,7 +3,8 @@
 <div th:fragment="form" class="card" style="padding: var(--space-md); margin-bottom: var(--space-md);">
     <h3 style="margin-top:0;">Add Item</h3>
     <form th:hx-post="@{/campaigns/{id}/treasury(id=${campaignId})}"
-          hx-target="body" hx-swap="outerHTML">
+          hx-target="body" hx-swap="outerHTML"
+          hx-disabled-elt="find button[type='submit']">
 
         <div class="form-group">
             <label>Assign To</label>

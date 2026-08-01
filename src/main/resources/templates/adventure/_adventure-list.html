@@ -3,7 +3,8 @@
     <h2>Adventures <button class="btn btn-primary"
             th:hx-get="@{/campaigns/{cid}/adventures/new(cid=${campaignId})}"
             hx-target="#adventure-form-placeholder"
-            hx-swap="innerHTML">+ New</button></h2>
+            hx-swap="innerHTML"
+            hx-disabled-elt="this">+ New</button></h2>
     <div id="adventure-form-placeholder"></div>
     <th:block th:if="${adventures.isEmpty()}"><th:block th:replace="~{common/_empty-state :: empty-state('No adventures yet.', null, null, null)}"></th:block></th:block>
     <div th:each="a : ${adventures}" class="card">
@@ -26,20 +27,24 @@
                 th:hx-put="@{/campaigns/{cid}/adventures/{id}/move(cid=${campaignId},id=${a.adventure.id})}"
                 hx-vals='{"direction": -1}'
                 hx-target="closest .detail-section"
-                hx-swap="outerHTML">↑</button>
+                hx-swap="outerHTML"
+                hx-disabled-elt="this">↑</button>
         <button class="btn btn-ghost btn-sm"
                 th:hx-put="@{/campaigns/{cid}/adventures/{id}/move(cid=${campaignId},id=${a.adventure.id})}"
                 hx-vals='{"direction": 1}'
                 hx-target="closest .detail-section"
-                hx-swap="outerHTML">↓</button>
+                hx-swap="outerHTML"
+                hx-disabled-elt="this">↓</button>
         <button class="btn btn-ghost btn-sm"
                 th:hx-get="@{/campaigns/{cid}/adventures/{id}/edit(cid=${campaignId},id=${a.adventure.id})}"
                 hx-target="closest .card"
-                hx-swap="outerHTML">Edit</button>
+                hx-swap="outerHTML"
+                hx-disabled-elt="this">Edit</button>
         <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{id}(cid=${campaignId},id=${a.adventure.id})}"
                 hx-confirm="Delete this adventure and all its chapters and scenes?"
-                hx-target="body" hx-swap="outerHTML">Delete</button>
+                hx-target="body" hx-swap="outerHTML"
+                hx-disabled-elt="this">Delete</button>
       </div>
     </div>
   </div>

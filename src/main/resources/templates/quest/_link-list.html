@@ -10,7 +10,8 @@
       <button class="btn btn-danger btn-sm action-row__destructive"
               th:hx-delete="@{/campaigns/{cid}/quests/{qid}/links/{linkId}(cid=${campaignId},qid=${quest.id},linkId=${link.id})}"
               hx-target="#linkList" hx-swap="innerHTML"
-              hx-confirm="Delete this link?">&times;</button>
+              hx-confirm="Delete this link?"
+              hx-disabled-elt="this">&times;</button>
     </div>
   </div>
 </div>

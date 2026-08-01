@@ -21,7 +21,8 @@
                 <h2>Details</h2>
                 <form th:hx-put="@{/campaigns/{id}(id=${campaign.id})}"
                       hx-target="body"
-                      hx-swap="outerHTML">
+                      hx-swap="outerHTML"
+                      hx-disabled-elt="find button[type='submit']">
                     <div class="form-group">
                         <label for="editName">Name</label>
                         <input type="text" id="editName" name="name" required
@@ -89,7 +90,8 @@
                                 th:hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
                                 hx-confirm="Delete this campaign?"
                                 hx-target="body"
-                                hx-swap="outerHTML">
+                                hx-swap="outerHTML"
+                                hx-disabled-elt="this">
                             Delete Campaign
                         </button>
                     </span>

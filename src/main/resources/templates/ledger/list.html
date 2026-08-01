@@ -25,7 +25,8 @@
                 <button class="btn btn-primary"
                         th:hx-get="@{/campaigns/{id}/ledger/new(id=${campaignId})}"
                         hx-target="#ledger-form-area"
-                        hx-swap="innerHTML">
+                        hx-swap="innerHTML"
+                        hx-disabled-elt="this">
                     + Record Transaction
                 </button>
             </div>
