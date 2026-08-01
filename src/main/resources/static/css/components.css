@@ -1326,7 +1326,7 @@
 .handout-overlay img {
   max-width: 88vw;
   max-height: 80vh;
-  border: 1px solid var(--color-gold-soft);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
   box-shadow: var(--shadow-warm-lg);
   background: var(--surface-overlay);
@@ -2122,7 +2122,7 @@
 .campaign-cover { text-align: center; padding: var(--space-xl) var(--space-md); position: relative; }
 .campaign-cover::before {
   content: ''; position: absolute; inset: 6px;
-  border: 1px solid var(--color-gold-soft); border-radius: 4px; pointer-events: none;
+  border: 1px solid var(--border-subtle); border-radius: 4px; pointer-events: none;
 }
 .campaign-cover h3 { font-size: var(--text-lg); }
 
@@ -2302,7 +2302,7 @@
 .book-cover::before {
   content: '';
   position: absolute; inset: 6px;
-  border: 1px solid var(--color-gold-soft);
+  border: 1px solid var(--border-subtle);
   border-radius: 2px 6px 6px 2px;
   pointer-events: none;
 }
