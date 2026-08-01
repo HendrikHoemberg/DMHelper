@@ -26,7 +26,7 @@
                    @keydown.enter="roll()"
                    :disabled="loading"
                    autofocus>
-            <button class="btn btn-primary" @click="roll()" :disabled="loading || !expression">
+            <button class="btn" @click="roll()" :disabled="loading || !expression">
                 <span class="die-icon" :class="{ tumbling: loading }"><svg th:replace="~{common/_icon :: icon-sized(name='dice', size='16')}"></svg></span>
                 <span x-show="!loading">Roll</span>
                 <span x-show="loading">...</span>

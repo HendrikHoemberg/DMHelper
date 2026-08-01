@@ -9,7 +9,7 @@
         <span th:text="${map.gridWidth} + '×' + ${map.gridHeight} + ' · ' + ${map.cellSizePx} + 'px cells'">30×20 · 48px cells</span>
     </div>
     <div class="card-actions action-row">
-        <a class="btn btn-primary"
+        <a class="btn btn-ghost"
            th:href="@{/campaigns/{cid}/maps/{mid}/play(cid=${campaignId}, mid=${map.id})}">
             Play
         </a>

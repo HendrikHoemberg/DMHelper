@@ -30,14 +30,22 @@ class PageHeaderContractTest {
 
     @Test
     void everyMigratedPageHasOneHeaderAndAtMostOnePrimaryAction() {
+        int scanned = 0;
         for (Path template : TemplateRules.pageTemplates()) {
             String markup = TemplateRules.read(template);
             if (!markup.contains("fragments/_shell :: page")) continue;
+            // Editor archetypes (maps/editor, session/cockpit) own their command bars and
+            // deliberately pass header=~{}, so the page-header contract does not apply to them.
+            if (markup.contains("archetype='editor'")) continue;
+            scanned++;
             assertThat(markup.split("_page-header :: page-header", -1).length - 1)
                     .as("page headers in %s", template).isEqualTo(1);
             assertThat(markup.split("btn-primary", -1).length - 1)
                     .as("filled primary actions in %s (spec 6.3)", template)
                     .isLessThanOrEqualTo(1);
         }
+        assertThat(scanned)
+                .as("no migrated page template matched — this test has gone blind")
+                .isGreaterThan(0);
     }
 }

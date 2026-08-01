@@ -67,7 +67,7 @@
             <div class="pm-actions">
                 <a th:if="${pm.characterSheet != null}"
                    th:href="@{/campaigns/{cid}/party/{pid}/sheet(cid=${campaign.id}, pid=${pm.id})}"
-                   class="btn btn-primary">View Sheet</a>
+                   class="btn btn-ghost">View Sheet</a>
                 <a th:unless="${pm.characterSheet != null}"
                    th:href="@{/campaigns/{cid}/party/{pid}/sheet(cid=${campaign.id}, pid=${pm.id})}"
                    class="btn btn-ghost">Create Sheet</a>

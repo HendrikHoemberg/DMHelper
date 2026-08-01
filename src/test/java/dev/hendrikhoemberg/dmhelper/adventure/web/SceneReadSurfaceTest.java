@@ -95,8 +95,8 @@ class SceneReadSurfaceTest {
 
     @Test
     void thePageHeaderCarriesNoDestructiveAction() {
-        int headerStart = body.indexOf("page-header-actions");
-        assertThat(headerStart).as("page-header-actions must exist").isGreaterThan(-1);
+        int headerStart = body.indexOf("data-action-region");
+        assertThat(headerStart).as("the shared header action region must exist").isGreaterThan(-1);
         String headerSection = body.substring(headerStart, body.indexOf("</div>", headerStart));
         assertThat(headerSection)
                 .as("page header must not contain a delete/danger button")

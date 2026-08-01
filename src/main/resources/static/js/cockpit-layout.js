@@ -527,6 +527,12 @@
       this.current = this.clone(preset.layout);
       this.overlayActiveTabs(this.current);
       this.currentPresetKey = key;
+      // Respect each module's minimum width the moment a preset is applied, not only when
+      // the DM drags a splitter. The preset catalog ships no ratios of its own, so without
+      // this the workbench's fixed default columns can starve a module below its minimum
+      // (e.g. the encounter rail squeezed so combatant names truncate) until the first resize.
+      const defaults = { left: 0.2, primary: 0.56, right: 0.24, bottom: 0.24 };
+      this.current.ratios = this.clampRatios({ ...defaults, ...(this.current.ratios || {}) });
       this.renderLayout();
 
       if (this.picker) this.picker.value = key;

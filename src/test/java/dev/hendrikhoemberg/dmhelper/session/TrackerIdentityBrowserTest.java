@@ -95,6 +95,10 @@ class TrackerIdentityBrowserTest {
         assertThat(label).isEqualTo("Goblin");
 
         var module = page.locator("[data-runtime-module='encounter']").first();
+        // The module body scrolls its list internally since the shell migration cost the
+        // cockpit vertical space; bring the row into the module's own scroll area first,
+        // then assert the toggle sits within the module — not clipped by its edge.
+        groupRow.scrollIntoViewIfNeeded();
         var moduleBox = module.boundingBox();
         var toggleBox = groupRow.locator(".group-count").boundingBox();
 

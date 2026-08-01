@@ -24,6 +24,20 @@ body:has(.session-cockpit) {
   overscroll-behavior: none;
 }
 
+/* The shell sits inside the pinned cockpit body, so its heights must track the body
+   (percentage-based) rather than a fixed 100vh: CSS zoom scales the body box but not
+   vh units, so the fixed-height shell overflowed the viewport at zoom > 1. */
+body:has(.session-cockpit) .app-shell {
+  min-height: 0;
+  height: calc(100% - var(--topbar-height));
+}
+body:has(.session-cockpit) .app-main {
+  min-height: 0;
+}
+body:has(.session-cockpit) .page--editor {
+  height: 100%;
+}
+
 .session-cockpit {
   position: relative;
   width: 100%;

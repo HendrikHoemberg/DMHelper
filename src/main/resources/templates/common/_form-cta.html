@@ -4,7 +4,7 @@
      the same target the page's own header button uses, instead of navigating away. Linking
      to such a route lands the browser on a document with no <head>, which renders unstyled. -->
 <button th:fragment="swap-cta(actionText, actionUrl, target)" type="button"
-        class="btn btn-primary empty-state__cta"
+        class="btn btn-ghost empty-state__cta"
         th:hx-get="${actionUrl}" th:hx-target="${target}" hx-swap="innerHTML"
         hx-disabled-elt="this"
         th:text="${actionText}">Create</button>

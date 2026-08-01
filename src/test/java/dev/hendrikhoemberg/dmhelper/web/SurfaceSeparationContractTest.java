@@ -80,15 +80,20 @@ class SurfaceSeparationContractTest {
     @Test
     void readAndRunSurfacesCarryNoDestructiveActionInTheirHeader() throws IOException {
         List<String> offenders = new ArrayList<>();
+        int scanned = 0;
 
         for (String page : readRunSurfaces().keySet()) {
-            for (Element header : parse(page).select(".page-header-actions")) {
+            for (Element header : parse(page).select("#page-header, .page-header-slot")) {
+                scanned++;
                 for (Element danger : header.select(".btn-danger")) {
-                    offenders.add(page + " → " + danger.cssSelector());
+                    offenders.add(page + " -> " + danger.cssSelector());
                 }
             }
         }
 
+        assertThat(scanned)
+                .as("no header slot was found on any read/run surface — this test has gone blind")
+                .isGreaterThanOrEqualTo(4);
         assertThat(offenders)
                 .as("a destructive control in a read/run page header is one misclick from data loss")
                 .isEmpty();

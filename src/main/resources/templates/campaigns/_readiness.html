@@ -30,7 +30,7 @@
           <div class="readiness-item__actions">
             <th:block th:with="href=${repairService.hrefFor(campaignId, item.repairKind(), item.targetId())}">
               <a th:if="${href != null}" th:href="${href}"
-                 class="btn btn-primary btn-xs readiness-item__repair"
+                 class="btn btn-ghost btn-xs readiness-item__repair"
                  th:text="${item.category().repairActionLabel()}">Open preparation</a>
             </th:block>
             <form th:action="@{|/campaigns/${campaignId}/readiness/accept|}" method="post" class="inline-form"

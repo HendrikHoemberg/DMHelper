@@ -273,6 +273,7 @@ fieldset {
 .page--operational { padding-inline: var(--page-gap); }
 
 .page--editor {
+  flex: 0 1 auto;
   height: calc(100vh - var(--topbar-height));
   overflow: hidden;
   padding: 0;
@@ -305,6 +306,7 @@ body[data-archetype="editor"] { overflow-x: hidden; }
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
+  max-height: calc(100vh - var(--topbar-height));
   overflow-y: auto;
 }
 .rail__group { display: flex; flex-direction: column; padding-block: var(--space-2xs); }

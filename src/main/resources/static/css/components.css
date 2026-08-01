@@ -385,7 +385,7 @@
   display: inline-flex; align-items: center; gap: 0.25em;
   padding: 0.1em 0.5em; border-radius: var(--radius);
   font-size: var(--text-sm); line-height: 1.5;
-  border: 1px solid var(--border-subtle); background: var(--surface-raised);
+  border: 1px solid var(--border-subtle); background: transparent;
   color: var(--text-secondary);
 }
 .badge--neutral { }

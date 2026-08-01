@@ -24,7 +24,7 @@
         <strong th:text="${currentScene.title}">Scene Title</strong>
         <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}
                       (cid=${campaignId}, aid=${currentScene.chapter.adventure.id}, sid=${currentScene.id})}"
-           class="btn btn-primary" style="margin-left: var(--space-md);">Resume</a>
+           class="btn" style="margin-left: var(--space-md);">Resume</a>
     </div>
 
     <div th:replace="~{adventure/_adventure-list :: adventureList}"></div>

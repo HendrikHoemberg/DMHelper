@@ -255,7 +255,7 @@ class MapEditorBrowserTest {
                 }
                 """);
 
-        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).gridWidth = 10");
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data=\"toolbar()\"]')).gridWidth = 10");
         page.locator("[data-map-control=\"resize-canvas-btn\"]").click();
         page.waitForTimeout(100);
 
@@ -268,9 +268,9 @@ class MapEditorBrowserTest {
         assertThat(page.locator("[data-map-control=\"resize-dialog\"]").isVisible()).isFalse();
         assertThat(page.locator("[data-map-control=\"grid-width\"]").inputValue()).isEqualTo("30");
 
-        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).gridWidth = 40");
-        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).gridHeight = 30");
-        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).cellSizePx = 64");
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data=\"toolbar()\"]')).gridWidth = 40");
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data=\"toolbar()\"]')).gridHeight = 30");
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data=\"toolbar()\"]')).cellSizePx = 64");
         page.locator("[data-map-control=\"resize-canvas-btn\"]").click();
 
         page.waitForResponse(
@@ -304,7 +304,7 @@ class MapEditorBrowserTest {
                     l => l.type === 'IMAGE' && l.image != null)
                 """);
 
-        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).setLayer('image')");
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data=\"toolbar()\"]')).setLayer('image')");
         page.waitForTimeout(100);
 
         assertThat(page.locator("[data-image-control=\"background-section\"]").isVisible()).isTrue();
@@ -544,7 +544,7 @@ class MapEditorBrowserTest {
                 }
                 """);
 
-        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).gridWidth = 10");
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data=\"toolbar()\"]')).gridWidth = 10");
         page.locator("[data-map-control=\"resize-canvas-btn\"]").click();
         page.waitForTimeout(200);
 
@@ -811,12 +811,12 @@ class MapEditorBrowserTest {
 
         page.evaluate("() => window.mapEditor.fetchTokens()");
         page.waitForFunction("() => window.mapEditor.tokenSnapshot.length === 1");
-        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).gridWidth = 10");
-        page.evaluate("() => Alpine.$data(document.querySelector('[x-data]')).gridHeight = 10");
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data=\"toolbar()\"]')).gridWidth = 10");
+        page.evaluate("() => Alpine.$data(document.querySelector('[x-data=\"toolbar()\"]')).gridHeight = 10");
         page.locator("[data-map-control=\"resize-canvas-btn\"]").click();
 
         Map<String, Object> resolution = (Map<String, Object>) page.evaluate("""
-                () => Alpine.$data(document.querySelector('[x-data]')).tokenResolutions[0]
+                () => Alpine.$data(document.querySelector('[x-data=\"toolbar()\"]')).tokenResolutions[0]
                 """);
         assertThat(resolution.get("tokenId").toString()).isEqualTo(token.getId().toString());
         assertThat(resolution).containsEntry("action", "")

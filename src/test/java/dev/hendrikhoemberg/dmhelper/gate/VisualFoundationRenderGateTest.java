@@ -136,7 +136,7 @@ class VisualFoundationRenderGateTest {
                   let principal = 0;
                   for (const title of titles) {
                     if (title.closest('.card')) offences.add('card-title');
-                    else if (title.closest('nav, .appnav')) offences.add('nav-item');
+                    else if (title.closest('nav.rail')) offences.add('nav-item');
                     else if (main.contains(title)) principal++;
                   }
                   if (principal > 1) offences.add('multiple-principal-titles');

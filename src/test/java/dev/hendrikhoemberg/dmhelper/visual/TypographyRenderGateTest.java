@@ -90,7 +90,7 @@ class TypographyRenderGateTest {
         withGuardedPage(path, page -> {
             Object count = page.evaluate("""
                     () => Array.from(document.querySelectorAll('[data-display-title]'))
-                        .filter(el => !el.closest('.navbar, .appnav, .book-cover'))
+                        .filter(el => !el.closest('.app-topbar, .rail, .book-cover'))
                         .length
                     """);
 
