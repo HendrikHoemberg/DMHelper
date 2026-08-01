@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<span th:fragment="badge(tone, icon, label)"
+      th:class="'badge badge--' + ${tone}">
+    <th:block th:if="${icon != null}">
+        <th:block th:replace="~{common/_icon :: icon-sized(name=${icon}, size='16')}"></th:block>
+    </th:block>
+    <span class="badge__label" th:text="${label}">Label</span>
+</span>
+</html>

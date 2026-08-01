@@ -365,13 +365,44 @@
   margin-bottom: var(--space-md);
 }
 
+.toolbar {
+  display: flex; align-items: center; gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle); border-radius: var(--radius);
+}
+.toolbar__spacer { flex: 1; }
+.toolbar__search { display: flex; align-items: center; gap: var(--space-2xs); }
+.toolbar__input {
+  min-width: 18rem; background: var(--surface-inset);
+  border: 1px solid var(--border-strong); border-radius: var(--radius);
+  color: var(--text-primary); padding: var(--space-2xs) var(--space-xs);
+}
+.toolbar__filters { display: flex; align-items: center; gap: var(--space-2xs); flex-wrap: wrap; }
+.toolbar__selection { color: var(--text-secondary); font-size: var(--text-sm); }
+
 .badge {
-  display: inline-block;
-  padding: 2px 8px;
-  font-size: var(--text-sm);
-  border-radius: 4px;
-  background: var(--color-border-strong);
-  color: var(--color-text);
+  display: inline-flex; align-items: center; gap: 0.25em;
+  padding: 0.1em 0.5em; border-radius: var(--radius);
+  font-size: var(--text-sm); line-height: 1.5;
+  border: 1px solid var(--border-subtle); background: var(--surface-raised);
+  color: var(--text-secondary);
+}
+.badge--neutral { }
+.badge--success { color: var(--state-success); background: var(--state-success-surface); border-color: var(--state-success-border); }
+.badge--warning { color: var(--state-warning); background: var(--state-warning-surface); border-color: var(--state-warning-border); }
+.badge--danger  { color: var(--state-danger);  background: var(--state-danger-surface);  border-color: var(--state-danger-border); }
+.badge--info    { color: var(--state-info);    background: var(--state-info-surface);    border-color: var(--state-info-border); }
+.badge--shield  { color: var(--state-shield);  background: var(--state-shield-surface);  border-color: var(--state-shield-border); }
+
+.page-rail { display: flex; flex-direction: column; gap: var(--space-md); min-width: 0; }
+.rail-section {
+  background: var(--surface-panel); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius); padding: var(--space-sm);
+}
+.rail-section__title {
+  font-size: var(--text-sm); font-weight: 600; color: var(--text-secondary);
+  margin: 0 0 var(--space-xs);
 }
 
 .alert {
@@ -1486,31 +1517,6 @@
     background: var(--color-accent);
     border-color: var(--color-accent);
     color: var(--color-bg);
-}
-
-/* Character Sheet Styles */
-.badge-success {
-    background: var(--color-success);
-    color: var(--color-bg);
-}
-
-.badge-danger {
-    background: var(--color-danger);
-    color: var(--color-bg);
-}
-
-.badge-warning {
-    background: var(--color-warning);
-    color: var(--color-bg);
-}
-
-/* Marks read-aloud blocks in the scene page and the cockpit story rail. Both templates
-   already used .badge-info; the rule itself was never written, so the label rendered
-   identically to a generic section-kind badge. */
-.badge-info {
-    background: var(--color-accent);
-    color: var(--color-bg);
-    letter-spacing: 0.06em;
 }
 
 /* Semantic banner (spec section 10). treasury/_attunement-warn.html has asked for these

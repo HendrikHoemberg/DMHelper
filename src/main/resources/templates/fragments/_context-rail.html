@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<aside class="page-rail" data-region="rail" th:fragment="rail(body)"
+       aria-label="Related information">
+    <th:block th:replace="${body}"></th:block>
+</aside>
+
+<section class="rail-section" th:fragment="rail-section(title, body)">
+    <h2 class="rail-section__title" th:text="${title}">Section</h2>
+    <div class="rail-section__body"><th:block th:replace="${body}"></th:block></div>
+</section>
+</html>

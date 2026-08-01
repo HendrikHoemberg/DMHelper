@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div class="toolbar" data-region="toolbar"
+     th:fragment="toolbar(action, searchValue, searchPlaceholder, filters, actions)">
+    <form class="toolbar__search" role="search" method="get" th:action="${action}">
+        <label class="sr-only" for="toolbarSearch">Search</label>
+        <th:block th:replace="~{common/_icon :: icon-sized(name='search', size='16')}"></th:block>
+        <input type="search" id="toolbarSearch" name="q" class="toolbar__input"
+               th:value="${searchValue}" th:placeholder="${searchPlaceholder}">
+    </form>
+    <div class="toolbar__filters"><th:block th:replace="${filters}"></th:block></div>
+    <div class="toolbar__spacer"></div>
+    <div class="toolbar__actions" data-action-region>
+        <th:block th:replace="${actions}"></th:block>
+    </div>
+</div>
+
+<div class="toolbar toolbar--table" data-region="table-toolbar" role="toolbar"
+     th:fragment="table-toolbar(selectionLabel, actions)">
+    <span class="toolbar__selection" aria-live="polite" th:text="${selectionLabel}">0 selected</span>
+    <div class="toolbar__spacer"></div>
+    <div class="toolbar__actions" data-action-region>
+        <th:block th:replace="${actions}"></th:block>
+    </div>
+</div>
+</html>
