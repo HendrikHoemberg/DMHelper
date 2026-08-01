@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="dialog(id, title, body, actions)" th:id="${id}"
+     class="dialog" role="dialog" aria-modal="true"
+     aria-labelledby="dialogTitle"
+     th:attr="aria-labelledby=${id} + 'Title'" hidden>
+    <div class="dialog__backdrop" data-overlay-dismiss></div>
+    <div class="dialog__panel">
+        <div class="dialog__header">
+            <h2 class="dialog__title" th:id="${id} + 'Title'" th:text="${title}">Title</h2>
+            <button type="button" class="icon-btn" data-overlay-dismiss aria-label="Close">
+                <th:block th:replace="~{common/_icon :: icon(name='close')}"></th:block>
+            </button>
+        </div>
+        <div class="dialog__body"><th:block th:replace="${body}"></th:block></div>
+        <div class="dialog__actions" data-action-region>
+            <th:block th:replace="${actions}"></th:block>
+        </div>
+    </div>
+</div>
+
+<aside th:fragment="side-sheet(id, title, body)" th:id="${id}"
+       class="side-sheet" role="complementary"
+       aria-labelledby="sideSheetTitle"
+       th:attr="aria-labelledby=${id} + 'Title'" hidden>
+    <div class="side-sheet__header">
+        <h2 class="side-sheet__title" th:id="${id} + 'Title'" th:text="${title}">Title</h2>
+        <button type="button" class="icon-btn" data-overlay-dismiss aria-label="Close">
+            <th:block th:replace="~{common/_icon :: icon(name='close')}"></th:block>
+        </button>
+    </div>
+    <div class="side-sheet__body"><th:block th:replace="${body}"></th:block></div>
+</aside>
+
+<div th:fragment="popover(id, label, body)" th:id="${id}" class="popover"
+     role="menu" th:attr="aria-label=${label}" hidden>
+    <th:block th:replace="${body}"></th:block>
+</div>
+
+<div th:fragment="toast-region" class="toast-region" id="toastRegion"
+     role="status" aria-live="polite"></div>
+</html>
