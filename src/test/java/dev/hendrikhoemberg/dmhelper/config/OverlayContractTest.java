@@ -63,10 +63,15 @@ class OverlayContractTest {
     @Test
     void overlaysBoundThemselvesToTheViewport() {
         var rules = CssRules.of(CssRules.ALL_FILES);
-        for (String level : List.of(".dialog__panel", ".side-sheet", ".popover")) {
+        for (String level : List.of(".dialog__panel", ".popover")) {
             var rule = rules.stream().filter(r -> r.selector().equals(level)).findFirst().orElseThrow();
             assertThat(rule.value("max-height")).as("%s max-height", level).isNotNull();
             assertThat(rule.value("overflow")).as("%s overflow", level).isNotNull();
         }
+        var sheet = rules.stream()
+                .filter(rule -> rule.selector().equals(".side-sheet[role=\"complementary\"]"))
+                .findFirst().orElseThrow();
+        assertThat(sheet.value("max-height")).as("shared side-sheet max-height").isNotNull();
+        assertThat(sheet.value("overflow")).as("shared side-sheet overflow").isNotNull();
     }
 }

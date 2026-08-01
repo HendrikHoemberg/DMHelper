@@ -2,36 +2,56 @@
     const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), '
         + 'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
     const triggers = new WeakMap();
+    const openOverlays = [];
     let trapped = null;
 
+    /* getClientRects() rather than offsetParent: offsetParent is null for position:fixed
+       elements and descendants of some transform/filter containing blocks, which would
+       wrongly exclude them. A focusable with layout boxes is a focusable we can move to. */
     function focusables(root) {
-        return [...root.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null);
+        return [...root.querySelectorAll(FOCUSABLE)]
+            .filter(el => el.getClientRects().length > 0);
+    }
+
+    function topBlocking() {
+        for (let i = openOverlays.length - 1; i >= 0; i--) {
+            if (openOverlays[i].getAttribute('aria-modal') === 'true') return openOverlays[i];
+        }
+        return null;
+    }
+
+    function retrap() {
+        trapped = topBlocking();
     }
 
     function open(element) {
+        if (!openOverlays.includes(element)) openOverlays.push(element);
         triggers.set(element, document.activeElement);
         element.hidden = false;
-        const blocking = element.getAttribute('aria-modal') === 'true';
-        if (blocking) trapped = element;
+        retrap();
         const first = focusables(element)[0];
         if (first) first.focus();
     }
 
     function close(element) {
+        const index = openOverlays.indexOf(element);
+        if (index !== -1) openOverlays.splice(index, 1);
         element.hidden = true;
-        if (trapped === element) trapped = null;
         const trigger = triggers.get(element);
-        if (trigger && document.contains(trigger)) trigger.focus();
         triggers.delete(element);
+        retrap();
+        if (trigger && document.contains(trigger)) trigger.focus();
     }
 
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
-            const openOverlay = document.querySelector(
-                '.dialog:not([hidden]), .side-sheet:not([hidden]), .popover:not([hidden])');
-            if (openOverlay) {
+            /* Only overlays dmOverlay opened are ours to close. The legacy statblock sheet
+               (ui-elevation.js) manages its own Escape and slide-out, so it stays out of
+               reach. Closing the last-opened overlay also keeps nested stacks sane. */
+            const overlay = openOverlays[openOverlays.length - 1];
+            if (overlay) {
                 event.preventDefault();
-                close(openOverlay);
+                close(overlay);
             }
             return;
         }

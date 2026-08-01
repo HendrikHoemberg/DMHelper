@@ -2632,8 +2632,7 @@
   bottom: 0;
   width: min(560px, 100vw);
   z-index: var(--z-sheet);
-  max-height: 100vh;
-  overflow: auto;
+  overflow-y: auto;
   padding: var(--space-lg);
   background: var(--elevation-floating-bg);
   border-left: 1px solid var(--color-border-strong);
@@ -3531,11 +3530,9 @@ dialog.modal:not([open]) {
 .page-header__secondary { display: flex; align-items: center; gap: var(--space-2xs); }
 
 /* ── Overlay elevation model (spec section 15): popover, side sheet, dialog, toast ──
-   MUST come first. A class rule that sets `display` outranks the UA `[hidden] {display:none}`
-   on specificity, so without this every dialog and side sheet renders open on page load. */
-.dialog[hidden],
-.side-sheet[hidden],
-.popover[hidden] { display: none; }
+   The `[hidden]` reset that keeps every level closed on page load sits at the END of this
+   section: `.side-sheet[role="complementary"]` below has the same specificity as
+   `.side-sheet[hidden]`, so the reset must be declared after it to win the hidden state. */
 
 .icon-btn {
   display: inline-flex;
@@ -3574,22 +3571,23 @@ dialog.modal:not([open]) {
   padding: var(--space-sm); border-top: 1px solid var(--border-subtle);
 }
 
-.side-sheet {
+/* The shared side-sheet fragment is the only complementary side-sheet, and it is
+   hidden-attribute driven: dmOverlay.open clears `hidden` and never adds the legacy `.open`
+   class, so it must be fully immune to the legacy statblock sheet's geometry and its
+   translateX(100%) → translateX(0) slide (spec section 15). That sheet shares the
+   `.side-sheet` class (role="dialog", slid in by ui-elevation.js, which manages its own
+   Escape and transitionend-driven close), so this rule is scoped by role rather than class
+   alone. If the legacy sheet ever becomes role="complementary", give the shared sheet a
+   dedicated modifier class instead of relying on this role seam. */
+.side-sheet[role="complementary"] {
   position: fixed; inset-block: var(--topbar-height) 0; inset-inline-end: 0;
   width: min(480px, 40vw); max-height: calc(100vh - var(--topbar-height)); overflow: auto;
   z-index: var(--z-sheet);
   background: var(--surface-panel); border-left: 1px solid var(--border-strong);
   box-shadow: var(--shadow-floating);
   display: flex; flex-direction: column;
-}
-
-/* The shared fragment sheet is hidden-attribute driven: dmOverlay.open clears `hidden`
-   and never adds the legacy `.open` class, so it must be immune to the statblock sheet's
-   translateX slide-in (spec section 15) and the reduced-motion opacity reveal. The legacy
-   sheet stays role="dialog" and keeps its translateX(100%) → translateX(0) slide. */
-.side-sheet[role="complementary"] {
-  transform: none;
-  opacity: 1;
+  padding: 0; view-transition-name: none;
+  transform: none; opacity: 1;
 }
 
 .popover {
@@ -3610,11 +3608,27 @@ dialog.modal:not([open]) {
   position: fixed; inset-block-end: var(--space-md); inset-inline-end: var(--space-md);
   z-index: var(--z-toast); display: flex; flex-direction: column; gap: var(--space-2xs);
 }
-.toast {
+/* The new toast system owns its look and its visibility inside its own region; the legacy
+   showToast (ui-elevation.js) renders into #toast-container, outside .toast-region, and
+   keeps its own `.toast`/`.toast.show` rules untouched. */
+.toast-region .toast {
   padding: var(--space-xs) var(--space-sm);
   background: var(--surface-overlay); color: var(--text-primary);
   border: 1px solid var(--border-strong); border-radius: var(--radius);
   box-shadow: var(--shadow-floating);
+  opacity: 0; transform: translateY(12px);
+  transition: opacity var(--duration-standard) var(--ease-out),
+              transform var(--duration-standard) var(--ease-out);
 }
-.toast--success { border-color: var(--state-success-border); }
-.toast--danger  { border-color: var(--state-danger-border); }
+.toast-region .toast.show { opacity: 1; transform: translateY(0); }
+.toast-region .toast--neutral { border-color: var(--border-strong); }
+.toast-region .toast--success { border-color: var(--state-success-border); }
+.toast-region .toast--danger  { border-color: var(--state-danger-border); }
+
+/* Hidden overlays must be display:none even though the class rules above set `display`:
+   an author class rule outranks the UA `[hidden] {display:none}` on cascade origin, so
+   without this every dialog and side sheet would render open on page load. Declared last
+   so it beats the equal-specificity `.side-sheet[role="complementary"]` display rule. */
+.dialog[hidden],
+.side-sheet[hidden],
+.popover[hidden] { display: none; }

@@ -158,4 +158,38 @@ class OverlayBehaviorGateTest {
         assertThat(((Number) result.get("left")).intValue())
                 .isLessThan(((Number) result.get("viewport")).intValue());
     }
+
+    @Test
+    void closingATopDialogRestoresTheTrapToTheDialogBeneath() {
+        page.evaluate("""
+                () => {
+                  const a = document.createElement('div');
+                  a.className = 'dialog'; a.id = 'a';
+                  a.setAttribute('role', 'dialog'); a.setAttribute('aria-modal', 'true');
+                  a.hidden = true;
+                  a.innerHTML = '<div class="dialog__panel"><button id="aBtn">A</button></div>';
+                  document.body.appendChild(a);
+                  const b = document.createElement('div');
+                  b.className = 'dialog'; b.id = 'b';
+                  b.setAttribute('role', 'dialog'); b.setAttribute('aria-modal', 'true');
+                  b.hidden = true;
+                  b.innerHTML = '<div class="dialog__panel"><button id="bBtn">B</button></div>';
+                  document.body.appendChild(b);
+                  window.dmOverlay.open(a);
+                  window.dmOverlay.open(b);
+                }
+                """);
+        assertThat(page.evaluate("() => document.activeElement.id")).isEqualTo("bBtn");
+        page.keyboard().press("Escape");
+        assertThat(page.evaluate("() => document.getElementById('b').hidden")).isEqualTo(true);
+        assertThat(page.evaluate("() => document.getElementById('a').hidden")).isEqualTo(false);
+        assertThat(page.evaluate("() => document.activeElement.id"))
+                .as("focus returns to the top dialog's trigger, which lives inside the "
+                        + "dialog beneath")
+                .isEqualTo("aBtn");
+        page.keyboard().press("Tab");
+        assertThat(page.evaluate("() => document.activeElement.id"))
+                .as("the trap follows the remaining dialog, not the page")
+                .isEqualTo("aBtn");
+    }
 }
