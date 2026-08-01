@@ -325,6 +325,7 @@
                             <label class="map-editor-layer-visibility" style="display: inline-flex; align-items: center; cursor: pointer;"
                                    :title="(layers[l.id].playerVisible === false ? 'Hidden from players' : 'Visible to players')">
                                 <input type="checkbox"
+                                       aria-label="Visible to players"
                                        :checked="layers[l.id].playerVisible !== false"
                                        @change="togglePlayerVisible(l.id)"
                                        style="width: 12px; height: 12px; margin: 0;">
