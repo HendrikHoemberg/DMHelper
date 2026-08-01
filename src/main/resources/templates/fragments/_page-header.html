@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<header class="page-header" data-region="page-header"
+        th:fragment="page-header(title, summary, breadcrumb, primary, secondary)">
+    <nav class="page-header__breadcrumb" aria-label="Breadcrumb">
+        <th:block th:replace="${breadcrumb}"></th:block>
+    </nav>
+    <div class="page-header__row">
+        <div class="page-header__identity">
+            <h1 class="page-header__title" data-display-title th:text="${title}">Title</h1>
+            <p class="page-header__summary" th:if="${summary != null}" th:text="${summary}">Summary</p>
+        </div>
+        <div class="page-header__actions" data-action-region>
+            <div class="page-header__secondary"><th:block th:replace="${secondary}"></th:block></div>
+            <div class="page-header__primary"><th:block th:replace="${primary}"></th:block></div>
+        </div>
+    </div>
+</header>
+</html>
