@@ -1,77 +1,83 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — ' + ${cue.name}">DMHelper — Audio Cue</title>
-</head>
-<body th:attr="data-campaign-id=${campaignId}">
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main" x-data="audioCueManagement()">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow" th:text="${listLabel}">Audio Cues</div>
-                    <h1 data-display-title th:text="${cue.name}">Cue Name</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a th:href="@{${listHref}}" class="btn btn-ghost"
-                       th:text="'&larr; Back to ' + ${listLabel}">&larr; Back</a>
-                    <a class="btn btn-ghost"
-                       th:href="@{${editHref}}">Edit</a>
-                    <button type="button" class="btn btn-ghost" @click="cloneCue()"
-                            :disabled="managementLoading">Clone</button>
-                    <button type="button" class="btn btn-danger action-row__destructive" @click="deleteCue()"
-                            :disabled="managementLoading">Delete</button>
-                    <span class="u-text-sm" x-show="managementMessage" x-text="managementMessage"></span>
-                </div>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${cue.name},
+          archetype='detail',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
+<body>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${cue.name},
+        summary=${listLabel},
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<div id="secondaryActions" class="u-flex u-gap-xs">
+    <a th:href="@{${listHref}}" class="btn btn-ghost"
+       th:text="'&larr; Back to ' + ${listLabel}">&larr; Back</a>
+    <a class="btn btn-ghost" th:href="@{${editHref}}">Edit</a>
+    <button type="button" class="btn btn-ghost" @click="cloneCue()"
+            :disabled="managementLoading">Clone</button>
+    <span class="u-text-sm" x-show="managementMessage" x-text="managementMessage"></span>
+</div>
+
+<div id="page-content" class="page-content" x-data="audioCueManagement()"
+     th:attr="data-campaign-id=${campaignId}">
+    <div class="detail-section"
+         th:attr="data-cue-id=${cue.id}, data-api-base=${apiBase}, data-list-href=${listHref}"
+         data-deletion-impact="deletion-impact">
+        <div class="detail-metadata">
+            <div><strong>Key:</strong> <span th:text="${cue.cueKey}">cue-key</span></div>
+            <div><strong>Provider:</strong> <span th:text="${cue.providerId}">youtube</span></div>
+            <div><strong>Reference:</strong> <span th:text="${cue.providerReference}">ref</span></div>
+            <div><strong>Category:</strong> <span th:text="${#enums.label(cue.category)}">Ambient</span></div>
+            <div th:if="${cue.volumeHint != null}"><strong>Volume:</strong> <span th:text="${cue.volumeHint}">80</span></div>
+            <div><strong>Transition:</strong> <span th:text="${#enums.label(cue.transitionPreference)}">Crossfade</span></div>
+            <div th:if="${cue.durationSeconds != null}"><strong>Duration:</strong> <span th:text="${cue.durationSeconds}">212</span>s</div>
+            <div th:if="${cue.cachedTitle != null}"><strong>Title:</strong> <span th:text="${cue.cachedTitle}">Cached Title</span></div>
+            <div th:if="${cue.artistOrOwner != null}"><strong>Artist:</strong> <span th:text="${cue.artistOrOwner}">Artist</span></div>
+            <div th:if="${cue.artworkUrl != null}"><strong>Artwork URL:</strong> <span th:text="${cue.artworkUrl}">https://example.com/art.jpg</span></div>
+        </div>
+        <div class="u-mt-lg" th:if="${cue.notes != null}">
+            <h3>Notes</h3>
+            <div class="detail-description" th:utext="${markdownNotes}"></div>
+        </div>
+        <div class="u-mt-lg" th:unless="${#lists.isEmpty(usedByScenes)} or ${#lists.isEmpty(usedByCombatEncounters)} or ${#lists.isEmpty(usedByVictoryEncounters)} or ${#lists.isEmpty(usedByLocations)} or ${#lists.isEmpty(usedByCampaigns)}">
+            <h3>Used By</h3>
+            <div th:if="${not #lists.isEmpty(usedByScenes)}">
+                <strong>Scenes:</strong>
+                <div th:each="s : ${usedByScenes}" th:text="${s.title}">Scene Title</div>
             </div>
-            <div class="detail-section"
-                 th:attr="data-cue-id=${cue.id}, data-api-base=${apiBase}, data-list-href=${listHref}"
-                 data-deletion-impact="deletion-impact">
-                <div class="detail-metadata">
-                    <div><strong>Key:</strong> <span th:text="${cue.cueKey}">cue-key</span></div>
-                    <div><strong>Provider:</strong> <span th:text="${cue.providerId}">youtube</span></div>
-                    <div><strong>Reference:</strong> <span th:text="${cue.providerReference}">ref</span></div>
-                    <div><strong>Category:</strong> <span th:text="${#enums.label(cue.category)}">Ambient</span></div>
-                    <div th:if="${cue.volumeHint != null}"><strong>Volume:</strong> <span th:text="${cue.volumeHint}">80</span></div>
-                    <div><strong>Transition:</strong> <span th:text="${#enums.label(cue.transitionPreference)}">Crossfade</span></div>
-                    <div th:if="${cue.durationSeconds != null}"><strong>Duration:</strong> <span th:text="${cue.durationSeconds}">212</span>s</div>
-                    <div th:if="${cue.cachedTitle != null}"><strong>Title:</strong> <span th:text="${cue.cachedTitle}">Cached Title</span></div>
-                    <div th:if="${cue.artistOrOwner != null}"><strong>Artist:</strong> <span th:text="${cue.artistOrOwner}">Artist</span></div>
-                    <div th:if="${cue.artworkUrl != null}"><strong>Artwork URL:</strong> <span th:text="${cue.artworkUrl}">https://example.com/art.jpg</span></div>
-                </div>
-                <div class="u-mt-lg" th:if="${cue.notes != null}">
-                    <h3>Notes</h3>
-                    <div class="detail-description" th:utext="${markdownNotes}"></div>
-                </div>
-                <div class="u-mt-lg" th:unless="${#lists.isEmpty(usedByScenes)} or ${#lists.isEmpty(usedByCombatEncounters)} or ${#lists.isEmpty(usedByVictoryEncounters)} or ${#lists.isEmpty(usedByLocations)} or ${#lists.isEmpty(usedByCampaigns)}">
-                    <h3>Used By</h3>
-                    <div th:if="${not #lists.isEmpty(usedByScenes)}">
-                        <strong>Scenes:</strong>
-                        <div th:each="s : ${usedByScenes}" th:text="${s.title}">Scene Title</div>
-                    </div>
-                    <div th:if="${not #lists.isEmpty(usedByCombatEncounters)}">
-                        <strong>Encounters (combat):</strong>
-                        <div th:each="e : ${usedByCombatEncounters}" th:text="${e.name}">Encounter Name</div>
-                    </div>
-                    <div th:if="${not #lists.isEmpty(usedByVictoryEncounters)}">
-                        <strong>Encounters (victory):</strong>
-                        <div th:each="e : ${usedByVictoryEncounters}" th:text="${e.name}">Encounter Name</div>
-                    </div>
-                    <div th:if="${not #lists.isEmpty(usedByLocations)}">
-                        <strong>Locations:</strong>
-                        <div th:each="l : ${usedByLocations}" th:text="${l.name}">Location Name</div>
-                    </div>
-                    <div th:if="${not #lists.isEmpty(usedByCampaigns)}">
-                        <strong>Campaign defaults:</strong>
-                        <div th:each="c : ${usedByCampaigns}" th:text="${c.name}">Campaign Name</div>
-                    </div>
-                </div>
+            <div th:if="${not #lists.isEmpty(usedByCombatEncounters)}">
+                <strong>Encounters (combat):</strong>
+                <div th:each="e : ${usedByCombatEncounters}" th:text="${e.name}">Encounter Name</div>
             </div>
-        </main>
+            <div th:if="${not #lists.isEmpty(usedByVictoryEncounters)}">
+                <strong>Encounters (victory):</strong>
+                <div th:each="e : ${usedByVictoryEncounters}" th:text="${e.name}">Encounter Name</div>
+            </div>
+            <div th:if="${not #lists.isEmpty(usedByLocations)}">
+                <strong>Locations:</strong>
+                <div th:each="l : ${usedByLocations}" th:text="${l.name}">Location Name</div>
+            </div>
+            <div th:if="${not #lists.isEmpty(usedByCampaigns)}">
+                <strong>Campaign defaults:</strong>
+                <div th:each="c : ${usedByCampaigns}" th:text="${c.name}">Campaign Name</div>
+            </div>
+        </div>
     </div>
+
+    <div class="u-mt-lg surface-danger-zone">
+        <h2>Danger zone</h2>
+        <p class="text-muted u-text-sm">Deleting a cue removes its assignments across scenes, encounters, locations, and campaign defaults.</p>
+        <button type="button" class="btn btn-danger action-row__destructive" @click="deleteCue()"
+                :disabled="managementLoading">Delete</button>
+    </div>
+
     <script th:inline="javascript">
     /*<![CDATA[*/
     window.CUE_ID = /*[[${cue.id}]]*/ null;
@@ -80,5 +86,6 @@
     /*]]>*/
     </script>
     <script th:src="@{/js/audio-cue-editor.js}"></script>
+</div>
 </body>
 </html>

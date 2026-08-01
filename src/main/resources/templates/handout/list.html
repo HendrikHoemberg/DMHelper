@@ -1,61 +1,57 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="'DMHelper — ' + ${campaign.name} + ' Handouts'">DMHelper — Handouts</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle='Handouts',
+          archetype='index',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title='Handouts',
+        summary=${campaign.name},
+        breadcrumb=~{},
+        primary=~{},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaign.id})}" class="btn btn-ghost">&larr; Back to Campaign</a>
 
-    <div class="app-shell">
-            <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow">Handouts</div>
-                    <h1 data-display-title>Handouts</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a th:href="@{/campaigns/{id}(id=${campaign.id})}" class="btn btn-ghost">&larr; Back to Campaign</a>
-                </div>
+<div id="page-content" class="page-content">
+    <div id="handout-upload" class="inline-form" style="margin-bottom: var(--space-lg);">
+        <h3>Upload New Handout</h3>
+        <form th:action="@{/campaigns/{cid}/handouts(cid=${campaignId})}"
+              method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Image (PNG, JPEG, WebP)</label>
+                <input type="file" name="file" accept="image/png,image/jpeg,image/webp" required>
             </div>
-
-            <div id="handout-upload" class="inline-form" style="margin-bottom: var(--space-lg);">
-                <h3>Upload New Handout</h3>
-                <form th:action="@{/campaigns/{cid}/handouts(cid=${campaignId})}"
-                      method="post" enctype="multipart/form-data">
-                    <div class="form-group">
-                        <label>Image (PNG, JPEG, WebP)</label>
-                        <input type="file" name="file" accept="image/png,image/jpeg,image/webp" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Title</label>
-                        <input type="text" name="title" placeholder="Optional — uses filename if blank">
-                    </div>
-                    <div class="form-group">
-                        <label>Tags (comma-separated)</label>
-                        <input type="text" name="tags" placeholder="e.g. quest, regent, letter">
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Upload</button>
-                    </div>
-                </form>
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" name="title" placeholder="Optional — uses filename if blank">
             </div>
-
-            <div class="card-grid" id="handoutList" th:if="${not #lists.isEmpty(handouts)}">
-                <th:block th:each="h : ${handouts}">
-                    <th:block th:replace="~{handout/_card :: card(${h})}"></th:block>
-                </th:block>
+            <div class="form-group">
+                <label>Tags (comma-separated)</label>
+                <input type="text" name="tags" placeholder="e.g. quest, regent, letter">
             </div>
-
-            <div class="empty-state-host" th:if="${#lists.isEmpty(handouts)}">
-                <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
-                    'No handouts yet', 'Upload handout', '#handout-upload',
-                    'Upload images or documents to reveal to players during a session.', 'scroll')}"></th:block>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Upload</button>
             </div>
-
-        </main>
+        </form>
     </div>
+
+    <div class="card-grid" id="handoutList" th:if="${not #lists.isEmpty(handouts)}">
+        <th:block th:each="h : ${handouts}">
+            <th:block th:replace="~{handout/_card :: card(${h})}"></th:block>
+        </th:block>
+    </div>
+
+    <div class="empty-state-host" th:if="${#lists.isEmpty(handouts)}">
+        <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
+            'No handouts yet', 'Upload handout', '#handout-upload',
+            'Upload images or documents to reveal to players during a session.', 'scroll')}"></th:block>
+    </div>
+</div>
 </body>
 </html>

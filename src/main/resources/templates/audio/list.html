@@ -1,44 +1,43 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <th:block th:replace="~{fragments/head :: head}"></th:block>
-    <title th:text="|${listTitle} — ${campaign.name}|">DMHelper — Audio Cues</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/_shell :: page(
+          pageTitle=${listTitle},
+          archetype='index',
+          surface=null,
+          header=~{::#page-header},
+          content=~{::#page-content},
+          rail=~{})}">
 <body>
-    <th:block th:replace="~{fragments/navbar :: navbar}"></th:block>
-    <div class="app-shell">
-        <th:block th:replace="~{fragments/_appnav :: appnav}"></th:block>
-        <main class="app-main">
-            <div class="page-header">
-                <div>
-                    <div class="page-header-eyebrow" th:text="${campaign.name}">Audio</div>
-                    <h1 data-display-title th:text="${listTitle}">Audio Cues</h1>
-                    <div class="rule-taper"></div>
-                </div>
-                <div class="page-header-actions">
-                    <a class="btn btn-ghost"
-                       th:href="@{/campaigns/{id}(id=${campaignId})}">&larr; Back to Campaign</a>
-                    <a class="btn btn-primary"
-                       th:href="@{${createHref}}"
-                       th:text="'+ ' + ${createLabel}">+ New Cue</a>
-                </div>
-            </div>
-            <div class="filter-bar">
-                <form class="u-flex u-gap-sm" method="get">
-                    <input type="text" name="text" placeholder="Search by name or key..."
-                           th:value="${param.text != null ? param.text[0] : ''}">
-                    <button type="submit" class="btn btn-sm">Filter</button>
-                </form>
-            </div>
-            <div id="cue-grid" class="card-grid card-grid--bounded empty-state-host">
-                <th:block th:if="${cues == null or cues.isEmpty()}">
-                    <th:block th:replace="~{common/_empty-state :: empty-state(message='No audio cues yet.', actionText=null, actionHref=null, description=null)}"></th:block>
-                </th:block>
-                <th:block th:each="cue : ${cues}">
-                    <th:block th:replace="~{audio/_card :: card(cue=${cue}, campaignId=${campaignId})}"></th:block>
-                </th:block>
-            </div>
-        </main>
+<div id="page-header" class="page-header-slot">
+    <th:block th:replace="~{fragments/_page-header :: page-header(
+        title=${listTitle},
+        summary=${campaign.name},
+        breadcrumb=~{},
+        primary=~{::#primaryAction},
+        secondary=~{::#secondaryActions})}"></th:block>
+</div>
+<a id="primaryAction" class="btn btn-primary"
+   th:href="@{${createHref}}"
+   th:text="'+ ' + ${createLabel}">+ New Cue</a>
+<a id="secondaryActions" class="btn btn-ghost"
+   th:href="@{/campaigns/{id}(id=${campaignId})}">&larr; Back to Campaign</a>
+
+<div id="page-content" class="page-content">
+    <div class="filter-bar">
+        <form class="u-flex u-gap-sm" method="get">
+            <input type="text" name="text" placeholder="Search by name or key..."
+                   th:value="${param.text != null ? param.text[0] : ''}">
+            <button type="submit" class="btn btn-sm">Filter</button>
+        </form>
     </div>
+    <div id="cue-grid" class="card-grid card-grid--bounded empty-state-host">
+        <th:block th:if="${cues == null or cues.isEmpty()}">
+            <th:block th:replace="~{common/_empty-state :: empty-state(message='No audio cues yet.', actionText=null, actionHref=null, description=null)}"></th:block>
+        </th:block>
+        <th:block th:each="cue : ${cues}">
+            <th:block th:replace="~{audio/_card :: card(cue=${cue}, campaignId=${campaignId})}"></th:block>
+        </th:block>
+    </div>
+</div>
 </body>
 </html>
