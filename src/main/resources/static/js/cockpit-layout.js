@@ -584,6 +584,16 @@
       const placed = new Set();
       const compact = new Set(layout.compactModuleKeys || []);
 
+      // Apply ratios before the zone loop so measured zone widths reflect the layout the
+      // browser will actually render; the tab-vs-stacked decision depends on that width.
+      const ratios = layout.ratios || { left: 0.2, primary: 0.56, right: 0.24, bottom: 0.24 };
+      this.workbench.style.setProperty('--left-size', `${ratios.left * 100}fr`);
+      this.workbench.style.setProperty('--primary-size', `${ratios.primary * 100}fr`);
+      this.workbench.style.setProperty('--right-size', `${ratios.right * 100}fr`);
+      const topShare = Math.max(0.01, 1 - (ratios.bottom || 0));
+      this.workbench.style.setProperty('--top-size', `${topShare * 100}fr`);
+      this.workbench.style.setProperty('--bottom-size', `${(ratios.bottom || 0) * 100}fr`);
+
       for (const zone of ZONES) {
         const zoneEl = this.workbench.querySelector(`[data-cockpit-zone="${zone}"]`);
         if (!zoneEl) continue;
@@ -598,6 +608,10 @@
           active = moduleKeys[0] || null;
           zoneLayout.activeModuleKey = active;
         }
+
+        const stacked = this.supportZoneShouldStack(zone, zoneEl, moduleKeys);
+        zoneEl.setAttribute('data-zone', zone);
+        zoneEl.dataset.zoneMode = stacked ? 'stacked' : 'tabs';
 
         const tabsEl = zoneEl.querySelector('.cockpit-zone__tabs');
         const panelsEl = zoneEl.querySelector('[data-zone-panels]');
@@ -618,46 +632,54 @@
         }
 
         tabsEl.replaceChildren();
+        tabsEl.hidden = stacked;
         moduleKeys.forEach((key) => {
           const def = this.modules.get(key);
           const title = def?.title || key;
           const tabId = `cockpitTab-${zone}-${key}`;
           const panelId = `cockpitPanel-${zone}-${key}`;
           const selected = key === active;
-
-          const tab = document.createElement('button');
-          tab.type = 'button';
-          tab.className = 'cockpit-zone__tab';
-          tab.setAttribute('role', 'tab');
-          tab.id = tabId;
-          tab.setAttribute('aria-controls', panelId);
-          tab.setAttribute('aria-selected', selected ? 'true' : 'false');
-          tab.setAttribute('data-module-tab', key);
-          if (!selected) tab.tabIndex = -1;
-          const tabLabel = document.createElement('span');
-          tabLabel.className = 'cockpit-zone__tab-label';
-          tabLabel.textContent = title;
-          tab.appendChild(tabLabel);
           const attention = this.attention.get(key) || 0;
-          if (attention > 0 && !selected) {
-            const badge = document.createElement('span');
-            badge.className = 'cockpit-module__attention';
-            badge.textContent = String(attention);
-            badge.setAttribute('aria-label', `${attention} updates`);
-            tab.appendChild(badge);
+
+          if (!stacked) {
+            const tab = document.createElement('button');
+            tab.type = 'button';
+            tab.className = 'cockpit-zone__tab';
+            tab.setAttribute('role', 'tab');
+            tab.id = tabId;
+            tab.setAttribute('aria-controls', panelId);
+            tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+            tab.setAttribute('data-module-tab', key);
+            if (!selected) tab.tabIndex = -1;
+            const tabLabel = document.createElement('span');
+            tabLabel.className = 'cockpit-zone__tab-label';
+            tabLabel.textContent = title;
+            tab.appendChild(tabLabel);
+            if (attention > 0 && !selected) {
+              const badge = document.createElement('span');
+              badge.className = 'cockpit-module__attention';
+              badge.textContent = String(attention);
+              badge.setAttribute('aria-label', `${attention} updates`);
+              tab.appendChild(badge);
+            }
+            tabsEl.appendChild(tab);
           }
-          tabsEl.appendChild(tab);
 
           let panel = existingPanels.get(key);
           if (!panel) {
             panel = document.createElement('div');
             panel.className = 'cockpit-zone__panel';
-            panel.setAttribute('role', 'tabpanel');
             panel.setAttribute('data-module-panel', key);
             panelsEl.appendChild(panel);
           }
           panel.id = panelId;
-          panel.setAttribute('aria-labelledby', tabId);
+          if (stacked) {
+            panel.setAttribute('role', 'region');
+            panel.setAttribute('aria-label', title);
+          } else {
+            panel.setAttribute('role', 'tabpanel');
+            panel.setAttribute('aria-labelledby', tabId);
+          }
 
           let shell = panel.querySelector(`[data-module-key="${key}"]`);
           if (!shell && this.focusedModuleKey !== key) {
@@ -670,7 +692,7 @@
             }
           }
           if (shell) {
-            if (def?.compactSupported && compact.has(key) && selected) {
+            if (def?.compactSupported && compact.has(key) && (selected || stacked)) {
               shell.setAttribute('data-compact', 'true');
             } else {
               shell.removeAttribute('data-compact');
@@ -692,7 +714,7 @@
             }
           }
 
-          if (selected) {
+          if (selected || stacked) {
             panel.hidden = false;
             panel.removeAttribute('inert');
           } else {
@@ -731,13 +753,6 @@
         }
       });
 
-      const ratios = layout.ratios || { left: 0.2, primary: 0.56, right: 0.24, bottom: 0.24 };
-      this.workbench.style.setProperty('--left-size', `${ratios.left * 100}fr`);
-      this.workbench.style.setProperty('--primary-size', `${ratios.primary * 100}fr`);
-      this.workbench.style.setProperty('--right-size', `${ratios.right * 100}fr`);
-      const topShare = Math.max(0.01, 1 - (ratios.bottom || 0));
-      this.workbench.style.setProperty('--top-size', `${topShare * 100}fr`);
-      this.workbench.style.setProperty('--bottom-size', `${(ratios.bottom || 0) * 100}fr`);
       this.syncSplitterAria(ratios);
       this.syncEditChrome();
       for (const key of this.modules.keys()) {
@@ -1159,6 +1174,20 @@
       if (!key) return 0;
       const def = this.modules.get(key);
       return def?.minHeightPx || 0;
+    }
+
+    /**
+     * Spec 12.4: support modules become tabs within their support zone when space is
+     * constrained. A support zone holding several modules renders them stacked while it is
+     * wide enough for the widest module at its minimum width; below that it falls back to
+     * the role=tablist tabs pattern. PRIMARY and BOTTOM_UTILITY keep tabs regardless.
+     */
+    supportZoneShouldStack(zone, zoneEl, moduleKeys) {
+      if (zone !== 'LEFT_SUPPORT' && zone !== 'RIGHT_SUPPORT') return false;
+      if (moduleKeys.length < 2) return false;
+      const widest = Math.max(...moduleKeys.map((key) => this.modules.get(key)?.minWidthPx || 0));
+      if (widest === 0) return false;
+      return zoneEl.getBoundingClientRect().width > widest;
     }
 
     workbenchMetrics() {

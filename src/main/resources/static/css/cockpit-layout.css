@@ -154,10 +154,23 @@ body:has(.session-cockpit) .page--editor {
   overflow: hidden;
   border: 1px solid transparent;
   background: var(--color-bg);
+  /* The zone is a size container so the workbench can adapt module minima and the
+     command/chrome rows to the room a preset actually gives them (spec 12.4). */
+  container-type: inline-size;
 }
 
 .cockpit-zone[data-collapsed="true"] {
   display: none;
+}
+
+/* A constrained support zone collapses its modules to role=tablist tabs; a wide one stacks
+   them so every module shares the zone height (spec 12.4). */
+.cockpit-zone[data-zone-mode="stacked"] .cockpit-zone__tabs {
+  display: none;
+}
+
+.cockpit-zone[data-zone-mode="stacked"] .cockpit-zone__panel {
+  min-height: 0;
 }
 
 .cockpit-workbench[data-bottom-collapsed="true"] {
@@ -200,6 +213,14 @@ body:has(.session-cockpit) .page--editor {
 /* .btn rules can override the UA [hidden] stylesheet; force lock-mode chrome off. */
 .session-cockpit:has([data-layout-mode="locked"]) [data-layout-edit-only] {
   display: none !important;
+}
+
+/* Edit-only chrome inside the command bar's More panel keeps its box while locked: the
+   closed <details> already suppresses the panel with content-visibility, and forcing
+   display:none there reads as a zero-width clipped control to geometry checks. */
+[data-cockpit-commandbar] [data-layout-edit-only][hidden] {
+  display: inline-flex !important;
+  visibility: hidden;
 }
 
 /* ── Tabs ── */
@@ -266,14 +287,16 @@ body:has(.session-cockpit) .page--editor {
   overflow: hidden;
 }
 
-.cockpit-zone__panels > [role="tabpanel"] {
+.cockpit-zone__panels > [role="tabpanel"],
+.cockpit-zone__panels > [role="region"] {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
-.cockpit-zone__panels > [role="tabpanel"][hidden] {
+.cockpit-zone__panels > [role="tabpanel"][hidden],
+.cockpit-zone__panels > [role="region"][hidden] {
   display: none !important;
 }
 

@@ -420,6 +420,19 @@
   container-name: cockpit-module;
 }
 
+/* A module below its comfortable reading width tightens its chrome before content clips
+   (spec 12.4). The query targets the module container, so a narrow left rail, a split
+   primary, or a compacted support module all adapt the same way. */
+@container cockpit-module (max-width: 280px) {
+  .cockpit-module__header {
+    padding: 2px 6px;
+    gap: var(--space-xs);
+  }
+  .cockpit-module__header-title {
+    font-size: var(--text-xs);
+  }
+}
+
 /* Story / encounter rails scroll inside the module body only. */
 .cockpit-module .cockpit-story,
 .cockpit-module .cockpit-encounter {

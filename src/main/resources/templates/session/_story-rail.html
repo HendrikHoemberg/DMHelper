@@ -74,6 +74,7 @@
             <div th:if="${t.kind == 'CHOICE' and t.targetSceneTitle != null}"
                  class="transition-choice u-mb-xs">
               <button class="btn btn-sm" data-scene-transition
+                      data-runtime-action
                       th:attr="data-transition-id=${t.id}"
                       @click="followTransition($el.dataset.transitionId)"
                       th:text="${t.label ?: t.targetSceneTitle}">Follow</button>
@@ -112,6 +113,7 @@
           </span>
         </button>
         <button class="btn btn-primary scene-actions__control"
+                data-runtime-action
                 th:if="${view.linkedEncounterId != null}"
                 th:attr="data-encounter-id=${view.linkedEncounterId}"
                 @click="runEncounter($el.dataset.encounterId)">

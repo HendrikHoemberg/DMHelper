@@ -28,7 +28,7 @@
                 </div>
                 <div class="tracker-header__end-zone">
                     <button class="btn btn-danger action-row__destructive tracker-small-button"
-                            data-end-encounter style="padding: 2px 8px;"
+                            data-end-encounter data-runtime-action style="padding: 2px 8px;"
                             @click="$dispatch('request-encounter-end')">End encounter</button>
                 </div>
             </div>
@@ -105,6 +105,7 @@
                         class="btn btn-primary"
                         data-action="start-combat"
                         data-start-combat
+                        data-runtime-action
                         :disabled="setupBusy || setupSaveCount > 0 || !canStartCombat"
                         @click="startCombat()">
                     Start combat
@@ -117,7 +118,7 @@
                  data-encounter-turn
                  x-show="encounter?.combatPhase === 'RUNNING'">
                 <button class="btn btn-ghost" style="padding: 2px 8px;" @click="previousTurn()"
-                        data-action="previous-turn">◀ Prev</button>
+                        data-action="previous-turn" data-runtime-action>◀ Prev</button>
                 <span class="tracker-turns__active">
                     <span class="tracker-turns__active-prefix">Active:</span>
                     <strong class="tracker-turns__active-name"
@@ -125,7 +126,7 @@
                             x-text="activeCombatant?.name || '—'"></strong>
                 </span>
                 <button class="btn btn-ghost" style="padding: 2px 8px;" @click="nextTurn()"
-                        data-action="next-turn">Next ▶</button>
+                        data-action="next-turn" data-runtime-action>Next ▶</button>
             </div>
 
             <!-- Active threat mechanics card (TRAP/HAZARD turn only) -->
