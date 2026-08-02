@@ -6,7 +6,7 @@
   controller redirects into the campaign that was just created.
 */-->
 <div class="inline-form" th:fragment="form(standalone)">
-    <h3>New Campaign</h3>
+    <h3 th:unless="${standalone}">New Campaign</h3>
     <!--/* hx-on::after-request stays static: its colons break th:attr's assignation parser, and it
            is inert standalone because htmx never issues a request from an unmanaged form. */-->
     <form method="post" th:action="@{/campaigns}"

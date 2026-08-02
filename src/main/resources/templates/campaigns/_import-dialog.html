@@ -27,53 +27,83 @@
                     <dt>Package Size</dt><dd x-text="(preview.packageSizeBytes / 1024).toFixed(1) + ' KB'"></dd>
                 </dl>
 
-                <template x-if="preview.readiness">
-                    <div>
-                        <h3>Operational readiness</h3>
-                        <p class="import-readiness__label"
-                           x-text="preview.readiness.items.filter(i => i.state === 'BLOCKER').length === 0
-                               ? 'Session-ready'
-                               : 'Valid but not session-ready'"></p>
-                        <template x-if="preview.readiness.items.filter(i => i.state === 'BLOCKER').length">
-                            <ul>
-                                <template x-for="item in preview.readiness.items.filter(i => i.state === 'BLOCKER')">
-                                    <li x-text="item.title"></li>
-                                </template>
-                            </ul>
+                <section data-import-section="errors"
+                         x-show="preview.problems && preview.problems.filter(p => p.severity === 'ERROR').length">
+                    <h3>Errors</h3>
+                    <p class="import-section__lead text-muted u-text-sm">These must be fixed before the package can be imported.</p>
+                    <ul class="problem-list" aria-live="polite">
+                        <template x-for="p in preview.problems.filter(x => x.severity === 'ERROR')">
+                            <li class="problem problem-error">
+                                <strong x-text="p.severity"></strong>
+                                <code x-text="p.code"></code>
+                                <span x-text="p.path"></span>:
+                                <span x-text="p.message"></span>
+                                <em x-show="p.suggestion" x-text="p.suggestion"></em>
+                            </li>
                         </template>
-                    </div>
-                </template>
+                    </ul>
+                </section>
 
-                <template x-if="preview.problems && preview.problems.length">
-                    <div>
-                        <h3>Validation</h3>
-                        <ul class="problem-list" aria-live="polite">
-                            <template x-for="p in preview.problems.filter(x => x.severity === 'ERROR')">
-                                <li class="problem problem-error">
-                                    <strong x-text="p.severity"></strong>
-                                    <code x-text="p.code"></code>
-                                    <span x-text="p.path"></span>:
-                                    <span x-text="p.message"></span>
-                                    <em x-show="p.suggestion" x-text="p.suggestion"></em>
-                                </li>
-                            </template>
-                            <template x-for="p in preview.problems.filter(x => x.severity === 'WARNING')">
-                                <li class="problem problem-warning">
-                                    <strong x-text="p.severity"></strong>
-                                    <code x-text="p.code"></code>
-                                    <span x-text="p.path"></span>:
-                                    <span x-text="p.message"></span>
-                                    <em x-show="p.suggestion" x-text="p.suggestion"></em>
+                <section data-import-section="warnings"
+                         x-show="preview.problems && preview.problems.filter(p => p.severity === 'WARNING').length">
+                    <h3>Warnings</h3>
+                    <p class="import-section__lead text-muted u-text-sm">You can accept these and continue.</p>
+                    <ul class="problem-list" aria-live="polite">
+                        <template x-for="p in preview.problems.filter(x => x.severity === 'WARNING')">
+                            <li class="problem problem-warning">
+                                <strong x-text="p.severity"></strong>
+                                <code x-text="p.code"></code>
+                                <span x-text="p.path"></span>:
+                                <span x-text="p.message"></span>
+                                <em x-show="p.suggestion" x-text="p.suggestion"></em>
+                            </li>
+                        </template>
+                    </ul>
+                    <label x-show="preview.status === 'CONFIRM_WARNINGS'" class="u-mb-sm">
+                        <input type="checkbox" x-model="acceptWarnings">
+                        Accept warnings and continue
+                    </label>
+                </section>
+
+                <section data-import-section="contents">
+                    <h3>Contents</h3>
+                    <template x-if="preview.counts">
+                        <ul class="import-contents">
+                            <template x-for="entry in [
+                                ['Party members', 'partyMembers'],
+                                ['Custom stat blocks', 'customStatBlocks'],
+                                ['Handouts', 'handouts'],
+                                ['Maps', 'maps'],
+                                ['Encounters', 'encounters'],
+                                ['Notes', 'notes'],
+                                ['Adventures', 'adventures'],
+                                ['Scenes', 'scenes'],
+                                ['Ledger entries', 'ledgerEntries'],
+                                ['Timeline events', 'timelineEvents'],
+                                ['Sessions', 'sessions']]">
+                                <li>
+                                    <span x-text="entry[0]"></span>
+                                    <strong x-text="preview.counts[entry[1]]"></strong>
                                 </li>
                             </template>
                         </ul>
-                    </div>
-                </template>
+                    </template>
+                </section>
 
-                <label x-show="preview.status === 'CONFIRM_WARNINGS'" class="u-mb-sm">
-                    <input type="checkbox" x-model="acceptWarnings">
-                    Accept warnings and continue
-                </label>
+                <section data-import-section="readiness" x-show="preview.readiness">
+                    <h3>Operational readiness</h3>
+                    <p class="import-readiness__label"
+                       x-text="preview.readiness.items.filter(i => i.state === 'BLOCKER').length === 0
+                           ? 'Session-ready'
+                           : 'Valid but not session-ready'"></p>
+                    <template x-if="preview.readiness.items.filter(i => i.state === 'BLOCKER').length">
+                        <ul>
+                            <template x-for="item in preview.readiness.items.filter(i => i.state === 'BLOCKER')">
+                                <li x-text="item.title"></li>
+                            </template>
+                        </ul>
+                    </template>
+                </section>
             </div>
         </template>
 

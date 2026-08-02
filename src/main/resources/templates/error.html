@@ -16,9 +16,15 @@
                           : 'The request could not be completed. Try again, or head back to safe ground.'}">
                 The page you were looking for does not exist.
             </p>
-            <a href="/campaigns" class="btn btn-primary error-page-action">
+            <a href="/campaigns" class="btn btn-primary error-page-action"
+               data-error-action
+               data-error-recovery>
                 <svg th:replace="~{common/_icon :: icon(name='castle')}"></svg>
                 Back to Campaigns</a>
+            <p class="error-page-reference u-text-sm" data-error-correlation-id
+               style="color: var(--text-tertiary)"
+               th:if="${correlationId != null}"
+               th:text="'Reference: ' + ${correlationId}">Reference</p>
         </div>
     </main>
 </body>
