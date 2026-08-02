@@ -781,7 +781,6 @@
   border: 0;
 }
 .cockpit-module .chip-stats {
-  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1227,7 +1226,6 @@
     font-size: var(--text-base);
     font-weight: 700;
     flex-shrink: 0;
-    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     border: 1px solid var(--color-border);
 }
@@ -1256,7 +1254,6 @@
 
 /* Read from a metre away, next to the bar rather than instead of it. */
 .combatant-hp {
-    font-family: var(--font-mono);
     font-size: var(--text-base);
     font-variant-numeric: tabular-nums;
     color: var(--color-text);
@@ -1349,7 +1346,6 @@
 }
 
 .hp-delta-input, .detail-hp input {
-    font-family: var(--font-mono);
     font-size: var(--text-base);
     font-variant-numeric: tabular-nums;
 }
@@ -1423,7 +1419,6 @@
 .detail-hp span { color: var(--color-text-muted); }
 
 .hp-display {
-  font-family: var(--font-mono);
   font-size: var(--text-base);
   font-variant-numeric: tabular-nums;
   min-width: 2.5em;
@@ -2085,7 +2080,6 @@
 }
 .slot-count {
     font-weight: 600;
-    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
 }
 
@@ -2471,7 +2465,10 @@
 .u-mt-auto { margin-top: auto; }
 .u-contents { display: contents; }
 .u-text-lg { font-size: var(--text-lg); }
-.u-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+/* Spec 7.2: values take tabular figures, not a monospace face. Monospace is reserved by
+   spec 7.1 for identifiers, formulas, dice expressions, and source keys — those use
+   .u-text-mono, which still carries both. */
+.u-num { font-variant-numeric: tabular-nums; }
 .u-block { display: block; }
 .u-w-full { width: 100%; }
 .u-fw-600 { font-weight: 600; }

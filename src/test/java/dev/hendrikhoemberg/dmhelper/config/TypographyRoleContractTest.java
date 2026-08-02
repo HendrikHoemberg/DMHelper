@@ -56,6 +56,24 @@ class TypographyRoleContractTest {
                                 ".book", ".note-body"));
     }
 
+    /**
+     * Spec 7.1 gives monospace to identifiers, formulas, dice expressions, source keys, and
+     * code-like data — not to values. Spec 7.2 asks values for tabular figures, which is a
+     * different property. {@code .u-num} used to declare both, so every quantity, currency
+     * amount, HP total and date in the product rendered in Cascadia Code; the tabular-figure
+     * contract below passed the whole time, because it only ever asked about
+     * font-variant-numeric. This is the half it could not see.
+     */
+    @Test
+    void monospaceIsScopedToCodeLikeData() {
+        assertThat(rulesUsing("--font-mono"))
+                .as("monospace selectors")
+                .allSatisfy(rule -> assertThat(rule.selector())
+                        .as("monospace in %s", rule.where())
+                        .containsAnyOf(".u-text-mono", "code", "kbd", "__key", "dt",
+                                "dice", "roll", "textarea"));
+    }
+
     @Test
     void tabularFiguresAreDeclaredForNumericSurfaces() {
         var tabular = CssRules.of(CssRules.ALL_FILES).stream()
