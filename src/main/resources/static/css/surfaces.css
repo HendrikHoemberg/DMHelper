@@ -13,6 +13,61 @@
 .book-cover .book-meta { line-height: 1.4; }
 .book-cover .badge { margin-top: var(--space-sm); }
 
+/* ── Campaign Home (spec 11.2) ──
+   The operational overview reads in the approved order: current play, one start action,
+   readiness, party, preparation, plan, admin. */
+.home-section-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
+}
+
+.home-panel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+}
+
+.home-run-link {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.home-run-link:hover { text-decoration: underline; }
+
+.home-empty-line {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.home-empty-line a { color: var(--text-primary); }
+
+.home-start {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.home-admin-group {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.home-audio-cue {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.home-audio-cue .form-input { min-width: 20rem; }
+
 .calendar-current-date-value {
   font-size: var(--text-xl);
 }

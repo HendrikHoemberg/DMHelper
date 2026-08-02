@@ -13,126 +13,176 @@
         title=${campaign.name},
         summary=${campaign.description != null and !campaign.description.isBlank() ? campaign.description : null},
         breadcrumb=~{},
-        primary=~{::#primaryAction},
-        secondary=~{::#secondaryActions})}"></th:block>
+        primary=~{},
+        secondary=~{})}"></th:block>
 </div>
-<a id="primaryAction" class="btn btn-primary" data-run-entry="session" data-run-session
-   th:href="@{/campaigns/{id}/session(id=${campaign.id})}">Run Session</a>
-<a id="secondaryActions" class="btn btn-ghost"
-   th:href="@{/campaigns/{id}/settings(id=${campaign.id})}">Settings</a>
 
 <div id="page-content" class="page-content">
-    <div class="dash-actions dash-run u-mb-lg">
-        <a class="btn" data-run-entry="scene" th:if="${currentScene != null}"
-           th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaign.id}, aid=${currentScene.chapter.adventure.id}, sid=${currentScene.id})}">Current scene</a>
-        <a class="btn" data-run-entry="encounter" th:if="${activeEncounterId != null}"
-           th:href="@{/campaigns/{id}/encounters/{eid}(id=${campaign.id}, eid=${activeEncounterId})}">Active encounter</a>
-        <!-- Preparation and administration, not run entry points. -->
-        <a class="btn btn-ghost"
-           th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">Plan Adventures</a>
-    </div>
+    <!-- 1. Current scene and active encounter (spec 11.2 order) -->
+    <section data-home-section="current" class="home-panel" aria-label="In play">
+        <th:block th:if="${currentScene != null or activeEncounterId != null}">
+            <div class="u-flex u-gap-md u-wrap">
+                <th:block th:if="${currentScene != null}">
+                    <span class="badge badge--info">Current scene</span>
+                    <a class="home-run-link" data-run-entry="scene"
+                       th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaign.id}, aid=${currentScene.chapter.adventure.id}, sid=${currentScene.id})}"
+                       th:text="${currentScene.title}">Scene title</a>
+                </th:block>
+                <th:block th:if="${activeEncounterId != null}">
+                    <span class="badge badge--warning">Active encounter</span>
+                    <a class="home-run-link" data-run-entry="encounter"
+                       th:href="@{/campaigns/{id}/encounters/{eid}(id=${campaign.id}, eid=${activeEncounterId})}">
+                        Open encounter
+                    </a>
+                </th:block>
+            </div>
+        </th:block>
+        <p th:unless="${currentScene != null or activeEncounterId != null}" class="home-empty-line">
+            Nothing is in play right now.
+            <a th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">Choose an adventure to begin.</a>
+        </p>
+    </section>
 
-    <th:block th:replace="~{party/_summary-bar :: summary-bar(view=${partyMembers}, mode=${null}, oob=${null})}"></th:block>
+    <!-- 2. The single Start/Resume action (spec 11.2: never repeated) -->
+    <section data-home-section="start" class="home-start">
+        <a class="btn btn-primary" data-action="start-session" data-run-entry="session" data-run-session
+           th:href="@{/campaigns/{id}/session(id=${campaign.id})}"
+           th:text="${currentScene != null or activeEncounterId != null} ? 'Resume session' : 'Start session'">Start session</a>
+    </section>
 
-            <section class="scale-panel" data-scale-panel aria-label="Campaign contents">
-                <a class="scale-tile" data-scale="adventures"
-                   th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">
-                    <span class="scale-tile__value" th:text="${scale.adventures}">0</span>
-                    <span class="scale-tile__label">Adventures</span>
-                </a>
-                <a class="scale-tile" data-scale="scenes"
-                   th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">
-                    <span class="scale-tile__value" th:text="${scale.scenes}">0</span>
-                    <span class="scale-tile__label" th:text="|Scenes in ${scale.chapters} chapters|">Scenes</span>
-                </a>
-                <a class="scale-tile" data-scale="quests"
-                   th:href="@{/campaigns/{id}/quests(id=${campaign.id})}">
-                    <span class="scale-tile__value" th:text="${scale.quests}">0</span>
-                    <span class="scale-tile__label">Quests</span>
-                </a>
-                <a class="scale-tile" data-scale="npcs"
-                   th:href="@{/campaigns/{id}/world/npcs(id=${campaign.id})}">
-                    <span class="scale-tile__value" th:text="${scale.npcs}">0</span>
-                    <span class="scale-tile__label">NPCs</span>
-                </a>
-                <a class="scale-tile" data-scale="locations"
-                   th:href="@{/campaigns/{id}/world/locations(id=${campaign.id})}">
-                    <span class="scale-tile__value" th:text="${scale.locations}">0</span>
-                    <span class="scale-tile__label">Locations</span>
-                </a>
-                <a class="scale-tile" data-scale="factions"
-                   th:href="@{/campaigns/{id}/world/factions(id=${campaign.id})}">
-                    <span class="scale-tile__value" th:text="${scale.factions}">0</span>
-                    <span class="scale-tile__label">Factions</span>
-                </a>
-                <!-- The library routes are global by default; without campaignId they list
-                     only global content, so these tiles would report a count and then land
-                     the DM on "No items yet". -->
-                <a class="scale-tile" data-scale="threats"
-                   th:href="@{/library/traps(campaignId=${campaign.id})}">
-                    <span class="scale-tile__value" th:text="${scale.traps + scale.hazards}">0</span>
-                    <span class="scale-tile__label">Traps &amp; hazards</span>
-                </a>
-                <a class="scale-tile" data-scale="tables"
-                   th:href="@{/library/tables(campaignId=${campaign.id})}">
-                    <span class="scale-tile__value" th:text="${scale.tables}">0</span>
-                    <span class="scale-tile__label">Rollable tables</span>
-                </a>
-                <a class="scale-tile" data-scale="handouts"
-                   th:href="@{/campaigns/{id}/handouts(id=${campaign.id})}">
-                    <span class="scale-tile__value" th:text="${scale.handouts}">0</span>
-                    <span class="scale-tile__label">Handouts</span>
-                </a>
-                <a class="scale-tile" data-scale="maps"
-                   th:href="@{/campaigns/{id}/maps(id=${campaign.id})}">
-                    <span class="scale-tile__value" th:text="${scale.maps}">0</span>
-                    <span class="scale-tile__label">Maps</span>
-                </a>
+    <!-- 3. Compact readiness summary -->
+    <section data-home-section="readiness">
+        <th:block th:replace="~{campaigns/_readiness :: readiness}"></th:block>
+    </section>
+
+    <!-- 4. Party condition and resource summary -->
+    <section data-home-section="party">
+        <h2 class="home-section-title">Party</h2>
+        <th:block th:replace="~{party/_summary-bar :: summary-bar(view=${partyMembers}, mode=${null}, oob=${null})}"></th:block>
+    </section>
+
+    <!-- 5. Preparation counts with meaningful warnings; no grid of zero-valued tiles -->
+    <section data-home-section="preparation">
+        <h2 class="home-section-title">Preparation</h2>
+        <th:block th:if="${!readiness.sessionReady()}">
+            <th:block th:replace="~{fragments/_banner :: banner(
+                tone='warning',
+                title='Preparation is not session-ready',
+                body='Resolve the blockers above, or accept them explicitly to run the session anyway.',
+                actions=~{})}"></th:block>
+        </th:block>
+        <p class="text-muted u-text-sm"
+           th:if="${scale.adventures == 0 and scale.scenes == 0 and scale.quests == 0
+                   and scale.npcs == 0 and scale.locations == 0 and scale.factions == 0
+                   and (scale.traps + scale.hazards) == 0 and scale.tables == 0
+                   and scale.handouts == 0 and scale.maps == 0}">
+            Nothing to prepare yet.
+        </p>
+        <section class="scale-panel" data-scale-panel aria-label="Campaign contents">
+            <a class="scale-tile" data-scale="adventures" th:if="${scale.adventures > 0}"
+               th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">
+                <span class="scale-tile__value u-num" th:text="${scale.adventures}">0</span>
+                <span class="scale-tile__label">Adventures</span>
+            </a>
+            <a class="scale-tile" data-scale="scenes" th:if="${scale.scenes > 0}"
+               th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">
+                <span class="scale-tile__value u-num" th:text="${scale.scenes}">0</span>
+                <span class="scale-tile__label" th:text="|Scenes in ${scale.chapters} chapters|">Scenes</span>
+            </a>
+            <a class="scale-tile" data-scale="quests" th:if="${scale.quests > 0}"
+               th:href="@{/campaigns/{id}/quests(id=${campaign.id})}">
+                <span class="scale-tile__value u-num" th:text="${scale.quests}">0</span>
+                <span class="scale-tile__label">Quests</span>
+            </a>
+            <a class="scale-tile" data-scale="npcs" th:if="${scale.npcs > 0}"
+               th:href="@{/campaigns/{id}/world/npcs(id=${campaign.id})}">
+                <span class="scale-tile__value u-num" th:text="${scale.npcs}">0</span>
+                <span class="scale-tile__label">NPCs</span>
+            </a>
+            <a class="scale-tile" data-scale="locations" th:if="${scale.locations > 0}"
+               th:href="@{/campaigns/{id}/world/locations(id=${campaign.id})}">
+                <span class="scale-tile__value u-num" th:text="${scale.locations}">0</span>
+                <span class="scale-tile__label">Locations</span>
+            </a>
+            <a class="scale-tile" data-scale="factions" th:if="${scale.factions > 0}"
+               th:href="@{/campaigns/{id}/world/factions(id=${campaign.id})}">
+                <span class="scale-tile__value u-num" th:text="${scale.factions}">0</span>
+                <span class="scale-tile__label">Factions</span>
+            </a>
+            <a class="scale-tile" data-scale="threats" th:if="${(scale.traps + scale.hazards) > 0}"
+               th:href="@{/library/traps(campaignId=${campaign.id})}">
+                <span class="scale-tile__value u-num" th:text="${scale.traps + scale.hazards}">0</span>
+                <span class="scale-tile__label">Traps &amp; hazards</span>
+            </a>
+            <a class="scale-tile" data-scale="tables" th:if="${scale.tables > 0}"
+               th:href="@{/library/tables(campaignId=${campaign.id})}">
+                <span class="scale-tile__value u-num" th:text="${scale.tables}">0</span>
+                <span class="scale-tile__label">Rollable tables</span>
+            </a>
+            <a class="scale-tile" data-scale="handouts" th:if="${scale.handouts > 0}"
+               th:href="@{/campaigns/{id}/handouts(id=${campaign.id})}">
+                <span class="scale-tile__value u-num" th:text="${scale.handouts}">0</span>
+                <span class="scale-tile__label">Handouts</span>
+            </a>
+            <a class="scale-tile" data-scale="maps" th:if="${scale.maps > 0}"
+               th:href="@{/campaigns/{id}/maps(id=${campaign.id})}">
+                <span class="scale-tile__value u-num" th:text="${scale.maps}">0</span>
+                <span class="scale-tile__label">Maps</span>
+            </a>
+        </section>
+    </section>
+
+    <!-- 6. Session plan and recent notes -->
+    <section data-home-section="plan">
+        <h2 class="home-section-title">Session plan &amp; notes</h2>
+        <div class="dash-grid">
+            <section class="card dash-card" style="--stagger: 0">
+                <h3>Session Plan</h3>
+                <th:block th:if="${sessionPlan != null}">
+                    <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaign.id}, nid=${sessionPlan.id})}"
+                       th:text="${sessionPlan.title}" class="dash-link">Plan title</a>
+                    <div class="note-body dash-plan-preview"
+                         th:utext="${#markdown.toHtml(#strings.abbreviate(sessionPlan.body != null ? sessionPlan.body : '', 400))}"></div>
+                </th:block>
+                <p th:unless="${sessionPlan != null}" class="text-muted u-text-sm">
+                    No session plan yet — create a SESSION_PLAN note.
+                </p>
             </section>
 
-            <div th:replace="~{campaigns/_readiness :: readiness}"></div>
+            <section class="card dash-card" style="--stagger: 1">
+                <h3>Recent Notes</h3>
+                <ul class="dash-list">
+                    <li th:each="n : ${recentNotes}">
+                        <a class="dash-link" th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaign.id}, nid=${n.id})}"
+                           th:text="${n.title}">Note</a>
+                        <span class="text-muted u-text-sm" th:text="${#enums.label(n.type)}">TYPE</span>
+                    </li>
+                    <li th:if="${recentNotes.isEmpty()}" class="text-muted u-text-sm">Nothing written yet.</li>
+                </ul>
+            </section>
+        </div>
+    </section>
 
-            <div class="dash-grid">
-                <section class="card dash-card" style="--stagger: 0">
-                    <h3>Session Plan</h3>
-                    <th:block th:if="${sessionPlan != null}">
-                        <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaign.id}, nid=${sessionPlan.id})}"
-                           th:text="${sessionPlan.title}" class="dash-link">Plan title</a>
-                        <div class="note-body dash-plan-preview"
-                             th:utext="${#markdown.toHtml(#strings.abbreviate(sessionPlan.body != null ? sessionPlan.body : '', 400))}"></div>
-                    </th:block>
-                    <p th:unless="${sessionPlan != null}" class="text-muted u-text-sm">
-                        No session plan yet — create a SESSION_PLAN note.
-                    </p>
-                </section>
-
-                <section class="card dash-card" style="--stagger: 1">
-                    <h3>Recent Notes</h3>
-                    <ul class="dash-list">
-                        <li th:each="n : ${recentNotes}">
-                            <a class="dash-link" th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaign.id}, nid=${n.id})}"
-                               th:text="${n.title}">Note</a>
-                            <span class="text-muted u-text-sm" th:text="${#enums.label(n.type)}">TYPE</span>
-                        </li>
-                        <li th:if="${recentNotes.isEmpty()}" class="text-muted u-text-sm">Nothing written yet.</li>
-                    </ul>
-                </section>
-
-                <section class="card dash-card" style="--stagger: 2">
-                    <h3>Default Audio Cue</h3>
-                    <select class="form-input"
-                            th:hx-put="@{/api/v1/campaigns/{cid}/audio/assignments/campaign(cid=${campaign.id})}"
-                            hx-target="this" hx-swap="none"
-                            hx-trigger="change"
-                            hx-disabled-elt="this">
-                        <option value="">— None —</option>
-                        <option th:each="c : ${audioCues}" th:value="${c.id}"
-                                th:selected="${campaign.defaultAudioCue != null and campaign.defaultAudioCue.id == c.id}"
-                                th:text="${c.name + ' (' + c.providerId + ' / ' + c.category + ')'}">Cue Name</option>
-                    </select>
-                </section>
-            </div>
-
+    <!-- 7. Settings and campaign administration (neutral secondary group) -->
+    <section data-home-section="admin">
+        <h2 class="home-section-title">Administration</h2>
+        <div class="home-admin-group">
+            <a class="btn btn-ghost" th:href="@{/campaigns/{id}/settings(id=${campaign.id})}">Settings</a>
+            <label class="home-audio-cue">
+                <span class="u-text-sm">Default Audio Cue</span>
+                <select class="form-input"
+                        th:hx-put="@{/api/v1/campaigns/{cid}/audio/assignments/campaign(cid=${campaign.id})}"
+                        hx-target="this" hx-swap="none"
+                        hx-trigger="change"
+                        hx-disabled-elt="this">
+                    <option value="">— None —</option>
+                    <option th:each="c : ${audioCues}" th:value="${c.id}"
+                            th:selected="${campaign.defaultAudioCue != null and campaign.defaultAudioCue.id == c.id}"
+                            th:text="${c.name + ' (' + c.providerId + ' / ' + c.category + ')'}">Cue Name</option>
+                </select>
+            </label>
+        </div>
+    </section>
 </div>
 </body>
 </html>
