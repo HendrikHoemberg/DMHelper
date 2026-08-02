@@ -21,12 +21,13 @@ class GoldAccentContractTest {
      */
     private static final java.util.List<String> GOLD_ROLE_MARKERS = java.util.List.of(
             ".btn-primary", ":focus-visible", ":focus", ":checked", "::selection",
-            "[aria-current", "[aria-selected", ".is-selected", ".app-brand",
+            "[aria-current", "[aria-selected", "[aria-pressed", ".is-selected", ".app-brand",
             "[data-display-title", ".page-header__title", "--focus-ring", "--selection-",
             "--action-primary", ".combatant-row.active", ".turn-marker", "[data-dock-active",
             ".condition-chip", ".form-check", ".audio-btn-primary", ".form-tab.active",
             ".combatant-chip.active", ".note-type-chip.active", ".dice-toggle-btn.active",
-            ".tool-btn.active", ".wizard-step.active", ".book-cover", ".campaign-sigil");
+            ".tool-btn.active", ".wizard-step.active", ".book-cover", ".campaign-sigil",
+            ".terrain-swatch.active");
 
     /**
      * Decorative gold that spec 6.3 says to remove — "decorative gold borders, rules, and

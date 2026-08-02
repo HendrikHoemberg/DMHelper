@@ -8,510 +8,356 @@
           content=~{::#page-content},
           rail=~{})}">
 <body>
-<div id="page-content" class="page-content">
-    <style>
+<div id="page-content" class="mapedit editor-container" x-data="toolbar()">
+    <div class="mapedit__commandbar">
+        <a class="btn btn-ghost" data-command="back"
+           th:href="@{/campaigns/{cid}/maps(cid=${campaignId})}">
+            <th:block th:replace="~{common/_icon :: icon(name='chevron-right')}"></th:block>
+            Back to Maps</a>
+        <span class="mapedit__name" data-command="map-name" th:text="${map.name}">Map</span>
+        <button type="button" class="icon-btn" data-command="undo" aria-label="Undo"
+                title="Undo (Ctrl+Z)" :disabled="!canUndo" @click="undo()">
+            <th:block th:replace="~{common/_icon :: icon(name='undo')}"></th:block></button>
+        <button type="button" class="icon-btn" data-command="redo" aria-label="Redo"
+                title="Redo (Ctrl+Shift+Z)" :disabled="!canRedo" @click="redo()">
+            <th:block th:replace="~{common/_icon :: icon(name='redo')}"></th:block></button>
+        <span class="mapedit__spacer"></span>
+        <span id="saveIndicator" class="save-indicator save-saved">Saved</span>
+        <button type="button" class="btn" data-command="import" @click="$refs.imageInput.click()">Import</button>
+        <input type="file" accept="image/*" x-ref="imageInput" style="display: none;" @change="importImage($event)">
+        <button type="button" class="btn" data-command="export" @click="exportPng()">Export</button>
+        <div style="position: relative;">
+            <button type="button" class="icon-btn" data-command="help" aria-label="Keyboard help"
+                    title="Keyboard shortcuts" @click="helpOpen = !helpOpen">
+                <th:block th:replace="~{common/_icon :: icon(name='help')}"></th:block></button>
+            <div class="shortcuts-panel" x-show="helpOpen" style="display: none;" @click.outside="helpOpen = false">
+                <h3>Keyboard Shortcuts</h3>
+                <dl>
+                    <dt>B</dt><dd>Brush (right-click erases)</dd>
+                    <dt>T</dt><dd>Terrain Rect</dd>
+                    <dt>G</dt><dd>Bucket fill</dd>
+                    <dt>M</dt><dd>Room</dd>
+                    <dt>D</dt><dd>Door</dd>
+                    <dt>N</dt><dd>Region</dd>
+                    <dt>R / C / L / P</dt><dd>Rect / Circle / Line / Polygon shape</dd>
+                    <dt>V</dt><dd>Select</dd>
+                    <dt>Space (hold)</dt><dd>Pan</dd>
+                    <dt>Scroll</dt><dd>Zoom</dd>
+                    <dt>Ctrl+Z / Ctrl+Y</dt><dd>Undo / Redo</dd>
+                    <dt>Ctrl+C / X / V</dt><dd>Copy / Cut / Paste selection</dd>
+                    <dt>Delete</dt><dd>Remove selected shape or selection</dd>
+                    <dt>Enter</dt><dd>Close polygon</dd>
+                    <dt>Esc</dt><dd>Cancel polygon / clear selection</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
 
-        .editor-container {
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - var(--topbar-height));
-            background: var(--color-bg);
-        }
-        .editor-toolbar {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: var(--space-sm);
-            padding: var(--space-sm) var(--space-md);
-            background: var(--color-surface);
-            border-bottom: 1px solid var(--color-border);
-            flex-shrink: 0;
-        }
-        .editor-toolbar .tool-group {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding-right: var(--space-md);
-            border-right: 1px solid var(--color-border);
-        }
-        .editor-toolbar .tool-btn {
-            padding: 6px 10px;
-            border: 1px solid var(--color-border);
-            border-radius: 4px;
-            background: transparent;
-            color: var(--color-text);
-            cursor: pointer;
-        }
-        .editor-toolbar .tool-btn:hover { background: var(--color-surface-hover); }
-        .editor-toolbar .tool-btn.active {
-            background: var(--color-accent);
-            border-color: var(--color-accent);
-            color: var(--color-bg);
-        }
-        .editor-body {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-        .editor-canvas-wrap {
-            flex: 1;
-            overflow: hidden;
-            position: relative;
-            background: color-mix(in srgb, var(--color-bg), var(--color-text) 2%);
-        }
-        .editor-sidebar {
-            width: 220px;
-            flex-shrink: 0;
-            overflow-y: auto;
-            background: var(--color-surface);
-            border-left: 1px solid var(--color-border);
-            padding: var(--space-sm);
-        }
-        .sidebar-section {
-            margin-bottom: var(--space-md);
-        }
-        .sidebar-section h3 {
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            color: var(--color-text-muted);
-            margin: 0 0 var(--space-xs);
-        }
-        .sidebar-field {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: var(--space-xs);
-            margin-bottom: var(--space-xs);
-        }
-        .sidebar-field input[type="text"] {
-            flex: 1;
-            min-width: 0;
-        }
-        .editor-statusbar {
-            display: flex;
-            align-items: center;
-            gap: var(--space-md);
-            padding: 2px var(--space-md);
-            background: var(--color-surface);
-            border-top: 1px solid var(--color-border);
-            color: var(--color-text-muted);
-            flex-shrink: 0;
-        }
-        .editor-statusbar #saveIndicator { margin-left: auto; }
-        .save-indicator.save-saved { color: var(--color-success); }
-        .save-indicator.save-saving,
-        .save-indicator.save-unsaved { color: var(--color-warning); }
-        .save-indicator.save-error,
-        .save-indicator.save-conflict { color: var(--color-danger); }
-        .layer-item {
-            display: flex;
-            align-items: center;
-            gap: var(--space-xs);
-            padding: 2px 8px;
-            border-radius: 4px;
-            user-select: none;
-        }
-        .layer-item .layer-name { cursor: pointer; }
-        .layer-item:hover { background: var(--color-surface-hover); }
-        .layer-item.active { background: var(--color-accent); color: var(--color-bg); }
-        .layer-item button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0 2px;
-        }
-        .map-label-input {
-            position: absolute;
-            z-index: var(--z-workspace-chrome);
-            padding: 2px 4px;
-            border: 1px solid var(--color-accent);
-            border-radius: 3px;
-            background: color-mix(in srgb, var(--color-bg), var(--color-text) 5%);
-            color: var(--color-text);
-            min-width: 80px;
-        }
-        .terrain-swatch {
-            width: 22px;
-            height: 22px;
-            border: 2px solid var(--color-border);
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 0;
-        }
-        .terrain-swatch.active { border-color: var(--color-accent); }
-        .terrain-swatch.erase { background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--color-bg), var(--color-text) 18%) 0 4px, var(--color-bg) 4px 8px); }
-        .terrain-swatch-sm {
-            width: 14px;
-            height: 14px;
-            border-radius: 3px;
-            display: inline-block;
-            border: 1px solid var(--color-border);
-            flex-shrink: 0;
-        }
-        .terrain-panel {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            z-index: var(--z-workspace-focus);
-            margin-top: 4px;
-            width: 220px;
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: 6px;
-            padding: var(--space-sm);
-            box-shadow: var(--shadow-floating);
-        }
-        .terrain-panel-list {
-            max-height: 200px;
-            overflow-y: auto;
-            margin-bottom: var(--space-sm);
-        }
-        .terrain-panel-row {
-            display: flex;
-            align-items: center;
-            gap: var(--space-xs);
-            padding: 2px 0;
-        }
-        .terrain-panel-form {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            border-top: 1px solid var(--color-border);
-            padding-top: var(--space-xs);
-        }
-        .terrain-panel-form input[type="text"] { width: 100%; }
-        .editor-toolbar .tool-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-        .shortcuts-panel {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            z-index: var(--z-workspace-focus);
-            margin-top: 4px;
-            width: 280px;
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
-            border-radius: 6px;
-            padding: var(--space-sm) var(--space-md);
-            box-shadow: var(--shadow-floating);
-        }
-        .shortcuts-panel h3 {
-            margin: 0 0 var(--space-xs);
-            text-transform: uppercase;
-            color: var(--color-text-muted);
-        }
-        .shortcuts-panel dl {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 4px var(--space-sm);
-            margin: 0;
-        }
-        .shortcuts-panel dt { font-weight: 600; }
-        .shortcuts-panel dd { margin: 0; color: var(--color-text-muted); }
-        </style>
-<div class="editor-container" x-data="toolbar()">
-        <div class="editor-toolbar">
-            <a th:href="@{/campaigns/{cid}/maps(cid=${campaignId})}" class="btn btn-ghost">&larr; Maps</a>
+    <nav class="mapedit__rail" aria-label="Tools">
+        <div class="mapedit__toolgroup">
+            <button type="button" class="tool-btn" data-tool="brush" data-shortcut="B"
+                    aria-label="Brush" aria-pressed="false" :aria-pressed="tool === 'brush'"
+                    title="Brush (B) — right-click to erase" @click="setTool('brush')">
+                <th:block th:replace="~{common/_icon :: icon(name='brush')}"></th:block></button>
+            <button type="button" class="tool-btn" data-tool="fill-rect" data-shortcut="T"
+                    aria-label="Terrain Rect" aria-pressed="false" :aria-pressed="tool === 'fill-rect'"
+                    title="Terrain Rect (T) — right-click to erase" @click="setTool('fill-rect')">
+                <th:block th:replace="~{common/_icon :: icon(name='square')}"></th:block></button>
+            <button type="button" class="tool-btn" data-tool="bucket" data-shortcut="G"
+                    aria-label="Bucket fill" aria-pressed="false" :aria-pressed="tool === 'bucket'"
+                    title="Bucket (G) — right-click to erase" @click="setTool('bucket')">
+                <th:block th:replace="~{common/_icon :: icon(name='fill')}"></th:block></button>
+        </div>
+        <div class="mapedit__toolgroup">
+            <button type="button" class="tool-btn" data-tool="select" data-shortcut="V"
+                    aria-label="Select" aria-pressed="false" :aria-pressed="tool === 'select'"
+                    title="Select (V): drag a box, Ctrl+C copy, Ctrl+V paste" @click="setTool('select')">
+                <th:block th:replace="~{common/_icon :: icon(name='select')}"></th:block></button>
+        </div>
+        <div class="mapedit__toolgroup">
+            <button type="button" class="tool-btn" data-tool="rect" data-shortcut="R"
+                    aria-label="Rectangle" aria-pressed="false" :aria-pressed="tool === 'rect'"
+                    title="Rectangle (R)" @click="setTool('rect')">
+                <th:block th:replace="~{common/_icon :: icon(name='square')}"></th:block></button>
+            <button type="button" class="tool-btn" data-tool="circle" data-shortcut="C"
+                    aria-label="Circle" aria-pressed="false" :aria-pressed="tool === 'circle'"
+                    title="Circle (C)" @click="setTool('circle')">
+                <th:block th:replace="~{common/_icon :: icon(name='circle')}"></th:block></button>
+            <button type="button" class="tool-btn" data-tool="line" data-shortcut="L"
+                    aria-label="Line" aria-pressed="false" :aria-pressed="tool === 'line'"
+                    title="Line (L)" @click="setTool('line')">
+                <th:block th:replace="~{common/_icon :: icon(name='line')}"></th:block></button>
+            <button type="button" class="tool-btn" data-tool="polygon" data-shortcut="P"
+                    aria-label="Polygon" aria-pressed="false" :aria-pressed="tool === 'polygon'"
+                    title="Polygon (P): click vertices, double-click or Enter to close, Esc to cancel"
+                    @click="setTool('polygon')">
+                <th:block th:replace="~{common/_icon :: icon(name='polygon')}"></th:block></button>
+        </div>
+        <div class="mapedit__toolgroup">
+            <button type="button" class="tool-btn" data-tool="room" data-shortcut="M"
+                    aria-label="Room" aria-pressed="false" :aria-pressed="tool === 'room'"
+                    title="Room (M)" @click="setTool('room')">
+                <th:block th:replace="~{common/_icon :: icon(name='room')}"></th:block></button>
+            <button type="button" class="tool-btn" data-tool="door" data-shortcut="D"
+                    aria-label="Door" aria-pressed="false" :aria-pressed="tool === 'door'"
+                    title="Door (D)" @click="setTool('door')">
+                <th:block th:replace="~{common/_icon :: icon(name='door')}"></th:block></button>
+            <button type="button" class="tool-btn" data-tool="region" data-shortcut="N"
+                    aria-label="Region" aria-pressed="false" :aria-pressed="tool === 'region'"
+                    title="Region (N)" @click="setTool('region')">
+                <th:block th:replace="~{common/_icon :: icon(name='corridor')}"></th:block></button>
+        </div>
+    </nav>
 
-            <div class="tool-group" style="position: relative;">
-                <button class="tool-btn" :class="{ active: tool === 'brush' }" @click="setTool('brush')" title="Brush (B) — right-click to erase"><svg th:replace="~{common/_icon :: icon-sized(name='brush', size='16')}"></svg> Brush</button>
-                <button class="tool-btn" :class="{ active: tool === 'fill-rect' }" @click="setTool('fill-rect')" title="Terrain Rect (T) — right-click to erase">▤ Terrain Rect</button>
-                <button class="tool-btn" :class="{ active: tool === 'bucket' }" @click="setTool('bucket')" title="Bucket (G) — right-click to erase"><svg th:replace="~{common/_icon :: icon-sized(name='fill', size='16')}"></svg> Bucket</button>
+    <div class="mapedit__canvas" id="editorCanvasWrap">
+        <!-- Konva stage mounts here -->
+    </div>
+
+    <aside class="mapedit__inspector" aria-label="Inspector">
+        <section data-inspector-section="tool">
+            <h3 class="mapedit__section-title">Tool</h3>
+            <label class="sidebar-field">
+                <span>Snap to grid</span>
+                <button type="button" class="btn btn-ghost snap-toggle"
+                        :aria-pressed="snap" @click="toggleSnap()" x-text="snap ? 'On' : 'Off'">On</button>
+            </label>
+        </section>
+
+        <section data-inspector-section="palette">
+            <h3 class="mapedit__section-title">Terrain</h3>
+            <div style="position: relative;">
                 <template x-for="t in terrains" :key="t.key">
                     <button class="terrain-swatch" :class="{ active: terrain === t.key, erase: t.key === '__erase__' }"
                             :style="t.fill ? ('background:' + t.fill) : ''"
                             :title="t.name" @click="terrain = t.key; applyTerrain()"></button>
                 </template>
-                <button class="tool-btn" @click="terrainPanelOpen = !terrainPanelOpen" title="Manage terrain palette"><svg th:replace="~{common/_icon :: icon-sized(name='settings', size='16')}"></svg></button>
+                <button type="button" class="icon-btn" @click="terrainPanelOpen = !terrainPanelOpen"
+                        title="Manage terrain palette" aria-label="Manage terrain palette">
+                    <th:block th:replace="~{common/_icon :: icon(name='settings')}"></th:block></button>
                 <div class="terrain-panel" x-show="terrainPanelOpen" style="display: none;" @click.outside="terrainPanelOpen = false">
                     <div class="terrain-panel-list">
                         <template x-for="t in terrains.filter((x) => x.key !== '__erase__')" :key="t.key">
                             <div class="terrain-panel-row">
                                 <span class="terrain-swatch-sm" :style="t.fill ? ('background:' + t.fill) : ''"></span>
                                 <span style="flex: 1;" x-text="t.name"></span>
-                                <button class="btn btn-danger btn-xs action-row__destructive" x-show="t.custom" @click="deleteTerrain(t.key)" title="Delete this terrain"><svg th:replace="~{common/_icon :: icon-sized(name='trash', size='16')}"></svg></button>
+                                <button class="btn btn-danger btn-xs action-row__destructive" x-show="t.custom" @click="deleteTerrain(t.key)" title="Delete this terrain">
+                                    <svg th:replace="~{common/_icon :: icon-sized(name='trash', size='16')}"></svg></button>
                             </div>
                         </template>
                     </div>
                     <div class="terrain-panel-form">
                         <input type="text" x-model="newTerrainName" placeholder="New terrain name" @keydown.enter="addTerrain()">
                         <input type="color" x-model="newTerrainColor">
-                            <label class="map-editor-control" style="display: flex; align-items: center; gap: 4px;">
+                        <label class="map-editor-control" style="display: flex; align-items: center; gap: 4px;">
                             <input type="checkbox" x-model="newTerrainWalkable"> Walkable
                         </label>
                         <button class="btn btn-ghost" @click="addTerrain()">Add terrain</button>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <div class="tool-group">
-                <button class="tool-btn" :class="{ active: tool === 'rect' }" @click="setTool('rect')" title="Rectangle (R)">▭ Rect</button>
-                <button class="tool-btn" :class="{ active: tool === 'circle' }" @click="setTool('circle')" title="Circle (C)">○ Circle</button>
-                <button class="tool-btn" :class="{ active: tool === 'line' }" @click="setTool('line')" title="Line (L)">╱ Line</button>
-                <button class="tool-btn" :class="{ active: tool === 'polygon' }" @click="setTool('polygon')" title="Polygon (P): click vertices, double-click or Enter to close, Esc to cancel"><svg th:replace="~{common/_icon :: icon-sized(name='polygon', size='16')}"></svg> Polygon</button>
-                <button class="tool-btn" :class="{ active: tool === 'select' }" @click="setTool('select')" title="Select (V): drag a box, Ctrl+C copy, Ctrl+V paste">▦ Select</button>
-                <button class="tool-btn" :class="{ active: snap }" @click="toggleSnap()" title="Snap shapes to grid (on) or place freely (off)">⌗ Snap</button>
-            </div>
+        <section data-inspector-section="selection" x-show="selectedShape" style="display: none;">
+            <h3 class="mapedit__section-title">Shape</h3>
+            <label class="sidebar-field">Fill
+                <input type="color" :value="selectedShape?.fill || '#000000'"
+                       @change="if (selectedShape) { selectedShape.fill = $event.target.value; applyShapeFill(); }">
+            </label>
+            <label class="sidebar-field">Stroke
+                <input type="color" :value="selectedShape?.stroke || '#000000'"
+                       @change="if (selectedShape) { selectedShape.stroke = $event.target.value; applyShapeStroke(); }">
+            </label>
+            <label class="sidebar-field">Label
+                <input type="text" :value="selectedShape?.label || ''"
+                       @change="if (selectedShape) { selectedShape.label = $event.target.value; applyShapeLabel(); }"
+                       placeholder="Label…">
+            </label>
+            <button class="btn btn-ghost" style="width: 100%; margin-top: var(--space-xs);" @click="deleteShape()">Delete shape</button>
+        </section>
 
-            <div class="tool-group">
-                <button class="tool-btn" :class="{ active: tool === 'room' }" @click="setTool('room')" title="Room (M)">▢ Room</button>
-                <button class="tool-btn" :class="{ active: tool === 'door' }" @click="setTool('door')" title="Door (D)">▯ Door</button>
-                <button class="tool-btn" :class="{ active: tool === 'region' }" @click="setTool('region')" title="Region (N)">▥ Region</button>
-            </div>
+        <section data-inspector-section="layers">
+            <h3 class="mapedit__section-title">Layers</h3>
+            <template x-for="l in layerList" :key="l.id">
+                <div class="layer-item" :class="{ active: activeLayer === l.id }">
+                    <span class="layer-name" @click="setLayer(l.id)" x-text="l.name"></span>
+                    <button class="btn btn-ghost btn-xs" @click="toggleVisible(l.id)"
+                            :title="layers[l.id].visible ? 'Hide layer' : 'Show layer'">
+                        <span x-show="layers[l.id].visible" x-cloak
+                              th:insert="~{common/_icon :: icon-sized(name='eye', size='16')}"></span>
+                        <span x-show="!layers[l.id].visible" x-cloak
+                              th:insert="~{common/_icon :: icon-sized(name='eye-off', size='16')}"></span>
+                    </button>
+                    <button class="btn btn-ghost btn-xs" @click="toggleLocked(l.id)"
+                            :title="layers[l.id].locked ? 'Unlock layer' : 'Lock layer'"
+                            x-text="layers[l.id].locked ? 'Locked' : 'Lock'"></button>
+                    <label class="map-editor-layer-visibility" style="display: inline-flex; align-items: center; cursor: pointer;"
+                           :title="(layers[l.id].playerVisible === false ? 'Hidden from players' : 'Visible to players')">
+                        <input type="checkbox"
+                               aria-label="Visible to players"
+                               :checked="layers[l.id].playerVisible !== false"
+                               @change="togglePlayerVisible(l.id)"
+                               style="width: 12px; height: 12px; margin: 0;">
+                        <svg th:replace="~{common/_icon :: icon-sized(name='user', size='16')}"></svg>
+                    </label>
+                </div>
+            </template>
+        </section>
 
-            <div class="tool-group">
-                <button class="tool-btn" :disabled="!canUndo" @click="undo()" title="Undo (Ctrl+Z)">↩ Undo</button>
-                <button class="tool-btn" :disabled="!canRedo" @click="redo()" title="Redo (Ctrl+Y)">↪ Redo</button>
-            </div>
-
-            <div class="tool-group">
-                <button class="tool-btn" @click="$refs.imageInput.click()" title="Import a background reference image (PNG/JPG)">Import Image</button>
-                <input type="file" accept="image/*" x-ref="imageInput" style="display: none;" @change="importImage($event)">
-                <button class="tool-btn" @click="rotateImage(-90)" title="Rotate image 90° counter-clockwise">↺ Rotate CCW</button>
-                <button class="tool-btn" @click="rotateImage(90)" title="Rotate image 90° clockwise">↻ Rotate CW</button>
-                <button class="tool-btn" @click="startCrop()" title="Crop the background image">Crop</button>
-                <button class="tool-btn" @click="startCalibration()" title="Calibrate grid to image">Calibrate Grid</button>
-
-                <label class="map-editor-control" style="display: flex; align-items: center; gap: 4px; padding: 0 4px; cursor: pointer;" title="Lock background image position/size">
-                    <input type="checkbox" x-model="imageLocked" @change="setImageLocked(imageLocked)"> Lock
+        <section data-inspector-section="map">
+            <h3 class="mapedit__section-title">Map</h3>
+            <div data-map-control="map-section">
+                <label class="sidebar-field">Width
+                    <input type="number" data-map-control="grid-width" x-model.number="gridWidth" min="5" max="100" class="u-w-full">
                 </label>
-                <button class="tool-btn" @click="exportPng()" title="Export the current map view as a PNG"><svg th:replace="~{common/_icon :: icon-sized(name='download', size='16')}"></svg> Export PNG</button>
+                <label class="sidebar-field">Height
+                    <input type="number" data-map-control="grid-height" x-model.number="gridHeight" min="5" max="100" class="u-w-full">
+                </label>
+                <label class="sidebar-field">Cell Size
+                    <input type="number" data-map-control="cell-size" x-model.number="cellSizePx" min="16" max="128" step="8" class="u-w-full">
+                </label>
+                <button class="btn btn-ghost u-w-full" style="margin-top: var(--space-xs);" data-map-control="resize-canvas-btn" @click="previewResize()" :disabled="resizeSaving">Resize canvas</button>
             </div>
 
-            <div class="tool-group" style="border-right: none; position: relative;">
-                <button class="tool-btn" @click="helpOpen = !helpOpen" title="Keyboard shortcuts"><svg th:replace="~{common/_icon :: icon-sized(name='help', size='16')}"></svg> Help</button>
-                <div class="shortcuts-panel" x-show="helpOpen" style="display: none;" @click.outside="helpOpen = false">
-                    <h3>Keyboard Shortcuts</h3>
-                    <dl>
-                        <dt>B</dt><dd>Brush (right-click erases)</dd>
-                        <dt>T</dt><dd>Terrain Rect</dd>
-                        <dt>G</dt><dd>Bucket fill</dd>
-                        <dt>M</dt><dd>Room</dd>
-                        <dt>D</dt><dd>Door</dd>
-                        <dt>N</dt><dd>Region</dd>
-                        <dt>R / C / L / P</dt><dd>Rect / Circle / Line / Polygon shape</dd>
-                        <dt>V</dt><dd>Select</dd>
-                        <dt>Space (hold)</dt><dd>Pan</dd>
-                        <dt>Scroll</dt><dd>Zoom</dd>
-                        <dt>Ctrl+Z / Ctrl+Y</dt><dd>Undo / Redo</dd>
-                        <dt>Ctrl+C / X / V</dt><dd>Copy / Cut / Paste selection</dd>
-                        <dt>Delete</dt><dd>Remove selected shape or selection</dd>
-                        <dt>Enter</dt><dd>Close polygon</dd>
-                        <dt>Esc</dt><dd>Cancel polygon / clear selection</dd>
-                    </dl>
-                </div>
-            </div>
-
-        </div>
-
-        <div class="editor-body">
-            <div class="editor-canvas-wrap" id="editorCanvasWrap">
-                <!-- Konva stage mounts here -->
-            </div>
-
-            <div class="editor-sidebar">
-                <div class="sidebar-section">
-                    <h3>Layers</h3>
-                    <template x-for="l in layerList" :key="l.id">
-                        <div class="layer-item" :class="{ active: activeLayer === l.id }">
-                            <span class="layer-name" @click="setLayer(l.id)" x-text="l.name"></span>
-                            <button class="btn btn-ghost btn-xs" @click="toggleVisible(l.id)"
-                                    :title="layers[l.id].visible ? 'Hide layer' : 'Show layer'">
-                                <span x-show="layers[l.id].visible" x-cloak
-                                      th:insert="~{common/_icon :: icon-sized(name='eye', size='16')}"></span>
-                                <span x-show="!layers[l.id].visible" x-cloak
-                                      th:insert="~{common/_icon :: icon-sized(name='eye-off', size='16')}"></span>
-                            </button>
-                            <button class="btn btn-ghost btn-xs" @click="toggleLocked(l.id)"
-                                    :title="layers[l.id].locked ? 'Unlock layer' : 'Lock layer'"
-                                    x-text="layers[l.id].locked ? 'Locked' : 'Lock'"></button>
-                            <label class="map-editor-layer-visibility" style="display: inline-flex; align-items: center; cursor: pointer;"
-                                   :title="(layers[l.id].playerVisible === false ? 'Hidden from players' : 'Visible to players')">
-                                <input type="checkbox"
-                                       aria-label="Visible to players"
-                                       :checked="layers[l.id].playerVisible !== false"
-                                       @change="togglePlayerVisible(l.id)"
-                                       style="width: 12px; height: 12px; margin: 0;">
-                                <svg th:replace="~{common/_icon :: icon-sized(name='user', size='16')}"></svg>
+            <div data-map-control="resize-dialog" x-show="resizeDialogOpen" style="display: none;" x-cloak>
+                <h3 class="mapedit__section-title">Resize Canvas</h3>
+                <p class="u-text-xs text-muted">Proposed: <span x-text="gridWidth"></span> × <span x-text="gridHeight"></span></p>
+                <p class="u-text-xs text-muted">Current: <span x-text="resizeOldWidth"></span> × <span x-text="resizeOldHeight"></span></p>
+                <template x-if="resizePreview">
+                    <div>
+                        <p class="u-text-xs" data-map-control="resize-affected-cells">
+                            Affected terrain cells: <span x-text="resizePreview.outsideCells.length"></span>
+                        </p>
+                        <p class="u-text-xs" data-map-control="resize-affected-shapes">
+                            Affected shapes: <span x-text="resizePreview.affectedShapes.length"></span>
+                        </p>
+                        <p class="u-text-xs" data-map-control="resize-affected-primitives">
+                            Affected generated regions: <span x-text="resizePreview.affectedPrimitives.length"></span>
+                        </p>
+                        <template x-for="(shape, idx) in (resizePreview.affectedShapes || [])"
+                                  :key="shape.layerId + ':' + shape.shapeIndex">
+                            <label class="sidebar-field">
+                                <span class="u-text-xs" x-text="(shape.label || shape.type) + (shape.requiresRemoval ? ' (must remove)' : '')"></span>
+                                <select x-model="shapeResolutions[idx].action" class="u-w-full">
+                                    <option value="KEEP" :disabled="shape.requiresRemoval">Clip to edge</option>
+                                    <option value="REMOVE">Remove</option>
+                                </select>
                             </label>
-                        </div>
-                    </template>
-                </div>
-
-                <div class="sidebar-section" data-map-control="map-section">
-                    <h3>Map</h3>
-                    <label class="sidebar-field">Width
-                        <input type="number" data-map-control="grid-width" x-model.number="gridWidth" min="5" max="100" class="u-w-full">
-                    </label>
-                    <label class="sidebar-field">Height
-                        <input type="number" data-map-control="grid-height" x-model.number="gridHeight" min="5" max="100" class="u-w-full">
-                    </label>
-                    <label class="sidebar-field">Cell Size
-                        <input type="number" data-map-control="cell-size" x-model.number="cellSizePx" min="16" max="128" step="8" class="u-w-full">
-                    </label>
-                    <button class="btn btn-ghost u-w-full" style="margin-top: var(--space-xs);" data-map-control="resize-canvas-btn" @click="previewResize()" :disabled="resizeSaving">Resize canvas</button>
-                </div>
-
-                <div class="sidebar-section" data-map-control="resize-dialog" x-show="resizeDialogOpen" style="display: none;" x-cloak>
-                    <h3>Resize Canvas</h3>
-                    <p class="u-text-xs text-muted">Proposed: <span x-text="gridWidth"></span> × <span x-text="gridHeight"></span></p>
-                    <p class="u-text-xs text-muted">Current: <span x-text="resizeOldWidth"></span> × <span x-text="resizeOldHeight"></span></p>
-                    <template x-if="resizePreview">
-                        <div>
-                            <p class="u-text-xs" data-map-control="resize-affected-cells">
-                                Affected terrain cells: <span x-text="resizePreview.outsideCells.length"></span>
-                            </p>
-                            <p class="u-text-xs" data-map-control="resize-affected-shapes">
-                                Affected shapes: <span x-text="resizePreview.affectedShapes.length"></span>
-                            </p>
-                            <p class="u-text-xs" data-map-control="resize-affected-primitives">
-                                Affected generated regions: <span x-text="resizePreview.affectedPrimitives.length"></span>
-                            </p>
-                            <template x-for="(shape, idx) in (resizePreview.affectedShapes || [])"
-                                      :key="shape.layerId + ':' + shape.shapeIndex">
-                                <label class="sidebar-field">
-                                    <span class="u-text-xs" x-text="(shape.label || shape.type) + (shape.requiresRemoval ? ' (must remove)' : '')"></span>
-                                    <select x-model="shapeResolutions[idx].action" class="u-w-full">
-                                        <option value="KEEP" :disabled="shape.requiresRemoval">Clip to edge</option>
-                                        <option value="REMOVE">Remove</option>
-                                    </select>
-                                </label>
-                            </template>
-                            <template x-if="resizePreview.affectedTokens && resizePreview.affectedTokens.length">
-                                <div>
-                                    <p class="u-text-xs">Affected tokens: <span x-text="resizePreview.affectedTokens.length"></span></p>
-                                    <template x-for="(token, idx) in resizePreview.affectedTokens" :key="idx">
-                                        <div class="sidebar-field">
-                                            <span class="u-text-xs" x-text="token.name || 'Token ' + (idx + 1)"></span>
-                                            <select x-model="tokenResolutions[idx].action" class="u-w-full">
-                                                <option value="" disabled>Choose resolution…</option>
-                                                <option value="MOVE">Move to edge</option>
-                                                <option value="REMOVE">Remove</option>
-                                            </select>
-                                        </div>
-                                    </template>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-                    <template x-if="resizeError">
-                        <p class="u-text-xs" style="color: var(--color-danger);" x-text="resizeError"></p>
-                    </template>
-                    <div style="display: flex; gap: 4px; margin-top: var(--space-xs);">
-                        <button class="tool-btn" data-map-control="resize-cancel-btn" @click="cancelResize()" :disabled="resizeSaving">Cancel</button>
-                        <button class="btn btn-primary" data-map-control="resize-confirm-btn" @click="confirmResize()"
-                                :disabled="resizeSaving || tokenResolutions.some(resolution => !resolution.action)"
-                                x-text="resizeSaving ? 'Saving…' : 'Crop and continue'"></button>
-                    </div>
-                </div>
-
-                <div class="sidebar-section" data-image-control="background-section" x-show="imagePresent" style="display: none;">
-                    <h3>Background Image</h3>
-                    <label class="sidebar-field">X
-                        <input type="number" data-image-control="image-x" x-model.number="imageX" @change="updateImageField('x', imageX)" step="0.1" class="u-w-full">
-                    </label>
-                    <label class="sidebar-field">Y
-                        <input type="number" data-image-control="image-y" x-model.number="imageY" @change="updateImageField('y', imageY)" step="0.1" class="u-w-full">
-                    </label>
-                    <label class="sidebar-field">Width
-                        <input type="number" data-image-control="image-width" x-model.number="imageWidth" @change="updateImageField('width', imageWidth)" step="0.1" min="0" class="u-w-full">
-                    </label>
-                    <label class="sidebar-field">Height
-                        <input type="number" data-image-control="image-height" x-model.number="imageHeight" @change="updateImageField('height', imageHeight)" step="0.1" min="0" class="u-w-full">
-                    </label>
-                    <label class="sidebar-field">Rotation
-                        <input type="number" data-image-control="image-rotation" x-model.number="imageRotationDeg" @change="updateImageField('rotationDeg', imageRotationDeg)" step="1" class="u-w-full">
-                    </label>
-                    <label class="sidebar-field" style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                        <input type="checkbox" data-image-control="keep-aspect" x-model="imageKeepAspect"
-                               @change="setImageAspectLocked(imageKeepAspect)"> Keep aspect ratio
-                    </label>
-                    <div style="display: flex; gap: 4px; margin-top: var(--space-xs); flex-wrap: wrap;">
-                        <button class="tool-btn" data-image-control="fit-inside" @click="fitImage('fit-inside')" :disabled="!imagePresent">Fit Inside</button>
-                        <button class="tool-btn" data-image-control="fill-cover" @click="fitImage('fill-cover')" :disabled="!imagePresent">Fill Cover</button>
-                        <button class="tool-btn" data-image-control="reset-image" @click="resetImage()" :disabled="!imagePresent">Reset</button>
-                        <button class="tool-btn" data-image-control="rotate-ccw" @click="rotateImage(-90)" :disabled="!imagePresent">↺</button>
-                        <button class="tool-btn" data-image-control="rotate-cw" @click="rotateImage(90)" :disabled="!imagePresent">↻</button>
-                        <button class="tool-btn" data-image-control="calibrate" @click="startCalibration()" :disabled="!imagePresent">Calibrate</button>
-                    </div>
-                    <label class="sidebar-field" style="display: flex; align-items: center; gap: 4px; cursor: pointer; margin-top: var(--space-xs);">
-                        <input type="checkbox" data-image-control="lock-toggle" x-model="imageLocked" @change="setImageLocked(imageLocked)"> Lock
-                    </label>
-                </div>
-
-                <div class="sidebar-section" x-show="selectedShape" style="display: none;">
-                    <h3>Shape</h3>
-                    <label class="sidebar-field">Fill
-                        <input type="color" :value="selectedShape?.fill || '#000000'"
-                               @change="if (selectedShape) { selectedShape.fill = $event.target.value; applyShapeFill(); }">
-                    </label>
-                    <label class="sidebar-field">Stroke
-                        <input type="color" :value="selectedShape?.stroke || '#000000'"
-                               @change="if (selectedShape) { selectedShape.stroke = $event.target.value; applyShapeStroke(); }">
-                    </label>
-                    <label class="sidebar-field">Label
-                        <input type="text" :value="selectedShape?.label || ''"
-                               @change="if (selectedShape) { selectedShape.label = $event.target.value; applyShapeLabel(); }"
-                               placeholder="Label…">
-                    </label>
-                    <button class="btn btn-ghost" style="width: 100%; margin-top: var(--space-xs);" @click="deleteShape()">Delete shape</button>
-                </div>
-
-                <div class="sidebar-section threat-pin-section" data-threat-pins>
-                    <h3>Threat pins</h3>
-                    <p class="text-muted u-text-xs" style="margin: 0 0 var(--space-xs);">DM-only markers. Not shown to players.</p>
-                    <label class="sidebar-field">Type
-                        <select x-model="threatPinKind" @change="threatPinResults = []; threatPinQuery = ''" class="u-w-full">
-                            <option value="TRAP">Trap</option>
-                            <option value="HAZARD">Hazard</option>
-                        </select>
-                    </label>
-                    <label class="sidebar-field">Search
-                        <input type="search" x-model="threatPinQuery" @input.debounce.300ms="searchThreats()"
-                               placeholder="Find trap/hazard…" class="u-w-full">
-                    </label>
-                    <div class="threat-pin-results" x-show="threatPinResults.length" x-cloak style="max-height: 120px; overflow-y: auto; margin-bottom: var(--space-xs);">
-                        <template x-for="item in threatPinResults" :key="item.id">
-                            <button type="button" class="btn btn-ghost u-w-full map-editor-control"
-                                    style="justify-content: flex-start;"
-                                    @click="selectThreat(item)"
-                                    x-text="item.name"></button>
                         </template>
-                    </div>
-                    <p class="text-muted u-text-xs" x-show="selectedThreat" x-text="selectedThreat ? ('Selected: ' + selectedThreat.name) : ''"></p>
-                    <label class="sidebar-field">Label
-                        <input type="text" x-model="threatPinLabel" placeholder="Optional label" class="u-w-full">
-                    </label>
-                    <label class="sidebar-field">X
-                        <input type="number" x-model.number="threatPinX" min="0" class="u-w-full">
-                    </label>
-                    <label class="sidebar-field">Y
-                        <input type="number" x-model.number="threatPinY" min="0" class="u-w-full">
-                    </label>
-                    <button type="button" class="btn u-w-full" style="margin-top: var(--space-xs);"
-                            @click="createThreatPin()" :disabled="!selectedThreat">Create pin</button>
-                    <div class="threat-pin-list" style="margin-top: var(--space-sm);">
-                        <template x-for="pin in threatPins" :key="pin.id">
-                            <div class="map-editor-control u-flex u-items-center u-gap-xs" style="margin-bottom: 4px;">
-                                <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;"
-                                      x-text="(pin.title || pin.key) + ' (' + pin.x + ',' + pin.y + ')'"></span>
-                                <button type="button" class="btn btn-ghost" style="padding: 0 4px;"
-                                        @click="deleteThreatPin(pin.id)" title="Delete pin">×</button>
+                        <template x-if="resizePreview.affectedTokens && resizePreview.affectedTokens.length">
+                            <div>
+                                <p class="u-text-xs">Affected tokens: <span x-text="resizePreview.affectedTokens.length"></span></p>
+                                <template x-for="(token, idx) in resizePreview.affectedTokens" :key="idx">
+                                    <div class="sidebar-field">
+                                        <span class="u-text-xs" x-text="token.name || 'Token ' + (idx + 1)"></span>
+                                        <select x-model="tokenResolutions[idx].action" class="u-w-full">
+                                            <option value="" disabled>Choose resolution…</option>
+                                            <option value="MOVE">Move to edge</option>
+                                            <option value="REMOVE">Remove</option>
+                                        </select>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                     </div>
+                </template>
+                <template x-if="resizeError">
+                    <p class="u-text-xs" style="color: var(--color-danger);" x-text="resizeError"></p>
+                </template>
+                <div style="display: flex; gap: 4px; margin-top: var(--space-xs);">
+                    <button class="btn btn-ghost" data-map-control="resize-cancel-btn" @click="cancelResize()" :disabled="resizeSaving">Cancel</button>
+                    <button class="btn btn-primary" data-map-control="resize-confirm-btn" @click="confirmResize()"
+                            :disabled="resizeSaving || tokenResolutions.some(resolution => !resolution.action)"
+                            x-text="resizeSaving ? 'Saving…' : 'Crop and continue'"></button>
                 </div>
             </div>
-        </div>
 
-        <div class="editor-statusbar">
-            <span id="statusMessage">Ready</span>
-                <button class="btn btn-ghost map-editor-control" style="padding: 0 6px; display: none;" x-show="conflict" @click="downloadBackup()"><svg th:replace="~{common/_icon :: icon-sized(name='download', size='16')}"></svg> Backup</button>
-                <span id="cursorInfo" style="color: var(--color-text-muted);"></span>
-                <span id="saveIndicator" class="save-indicator save-saved">Saved</span>
-        </div>
+            <div data-image-control="background-section" x-show="imagePresent" style="display: none;">
+                <h3 class="mapedit__section-title">Background Image</h3>
+                <label class="sidebar-field">X
+                    <input type="number" data-image-control="image-x" x-model.number="imageX" @change="updateImageField('x', imageX)" step="0.1" class="u-w-full">
+                </label>
+                <label class="sidebar-field">Y
+                    <input type="number" data-image-control="image-y" x-model.number="imageY" @change="updateImageField('y', imageY)" step="0.1" class="u-w-full">
+                </label>
+                <label class="sidebar-field">Width
+                    <input type="number" data-image-control="image-width" x-model.number="imageWidth" @change="updateImageField('width', imageWidth)" step="0.1" min="0" class="u-w-full">
+                </label>
+                <label class="sidebar-field">Height
+                    <input type="number" data-image-control="image-height" x-model.number="imageHeight" @change="updateImageField('height', imageHeight)" step="0.1" min="0" class="u-w-full">
+                </label>
+                <label class="sidebar-field">Rotation
+                    <input type="number" data-image-control="image-rotation" x-model.number="imageRotationDeg" @change="updateImageField('rotationDeg', imageRotationDeg)" step="1" class="u-w-full">
+                </label>
+                <label class="sidebar-field" style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                    <input type="checkbox" data-image-control="keep-aspect" x-model="imageKeepAspect"
+                           @change="setImageAspectLocked(imageKeepAspect)"> Keep aspect ratio
+                </label>
+                <div style="display: flex; gap: 4px; margin-top: var(--space-xs); flex-wrap: wrap;">
+                    <button class="btn btn-ghost btn-xs" data-image-control="fit-inside" @click="fitImage('fit-inside')" :disabled="!imagePresent">Fit Inside</button>
+                    <button class="btn btn-ghost btn-xs" data-image-control="fill-cover" @click="fitImage('fill-cover')" :disabled="!imagePresent">Fill Cover</button>
+                    <button class="btn btn-ghost btn-xs" data-image-control="reset-image" @click="resetImage()" :disabled="!imagePresent">Reset</button>
+                    <button class="btn btn-ghost btn-xs" data-image-control="rotate-ccw" @click="rotateImage(-90)" :disabled="!imagePresent">↺</button>
+                    <button class="btn btn-ghost btn-xs" data-image-control="rotate-cw" @click="rotateImage(90)" :disabled="!imagePresent">↻</button>
+                    <button class="btn btn-ghost btn-xs" data-image-control="crop" @click="startCrop()" :disabled="!imagePresent">Crop</button>
+                    <button class="btn btn-ghost btn-xs" data-image-control="calibrate" @click="startCalibration()" :disabled="!imagePresent">Calibrate</button>
+                </div>
+                <label class="sidebar-field" style="display: flex; align-items: center; gap: 4px; cursor: pointer; margin-top: var(--space-xs);">
+                    <input type="checkbox" data-image-control="lock-toggle" x-model="imageLocked" @change="setImageLocked(imageLocked)"> Lock
+                </label>
+            </div>
+        </section>
+
+        <section data-inspector-section="pins" class="threat-pin-section" data-threat-pins>
+            <h3 class="mapedit__section-title">Threat pins</h3>
+            <p class="text-muted u-text-xs" style="margin: 0 0 var(--space-xs);">DM-only markers. Not shown to players.</p>
+            <label class="sidebar-field">Type
+                <select x-model="threatPinKind" @change="threatPinResults = []; threatPinQuery = ''" class="u-w-full">
+                    <option value="TRAP">Trap</option>
+                    <option value="HAZARD">Hazard</option>
+                </select>
+            </label>
+            <label class="sidebar-field">Search
+                <input type="search" x-model="threatPinQuery" @input.debounce.300ms="searchThreats()"
+                       placeholder="Find trap/hazard…" class="u-w-full">
+            </label>
+            <div class="threat-pin-results" x-show="threatPinResults.length" x-cloak style="max-height: 120px; overflow-y: auto; margin-bottom: var(--space-xs);">
+                <template x-for="item in threatPinResults" :key="item.id">
+                    <button type="button" class="btn btn-ghost u-w-full map-editor-control"
+                            style="justify-content: flex-start;"
+                            @click="selectThreat(item)"
+                            x-text="item.name"></button>
+                </template>
+            </div>
+            <p class="text-muted u-text-xs" x-show="selectedThreat" x-text="selectedThreat ? ('Selected: ' + selectedThreat.name) : ''"></p>
+            <label class="sidebar-field">Label
+                <input type="text" x-model="threatPinLabel" placeholder="Optional label" class="u-w-full">
+            </label>
+            <label class="sidebar-field">X
+                <input type="number" x-model.number="threatPinX" min="0" class="u-w-full">
+            </label>
+            <label class="sidebar-field">Y
+                <input type="number" x-model.number="threatPinY" min="0" class="u-w-full">
+            </label>
+            <button type="button" class="btn u-w-full" style="margin-top: var(--space-xs);"
+                    @click="createThreatPin()" :disabled="!selectedThreat">Create pin</button>
+            <div class="threat-pin-list" style="margin-top: var(--space-sm);">
+                <template x-for="pin in threatPins" :key="pin.id">
+                    <div class="map-editor-control u-flex u-items-center u-gap-xs" style="margin-bottom: 4px;">
+                        <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;"
+                              x-text="(pin.title || pin.key) + ' (' + pin.x + ',' + pin.y + ')'"></span>
+                        <button type="button" class="btn btn-ghost" style="padding: 0 4px;"
+                                @click="deleteThreatPin(pin.id)" title="Delete pin">×</button>
+                    </div>
+                </template>
+            </div>
+        </section>
+    </aside>
+
+    <div class="mapedit__status">
+        <span id="statusMessage">Ready</span>
+        <button class="btn btn-ghost map-editor-control" style="padding: 0 6px; display: none;" x-show="conflict" @click="downloadBackup()">
+            <svg th:replace="~{common/_icon :: icon-sized(name='download', size='16')}"></svg> Backup</button>
+        <span id="cursorInfo" style="color: var(--color-text-muted);"></span>
     </div>
 
     <script th:src="@{/vendor/konva.min.js}"></script>

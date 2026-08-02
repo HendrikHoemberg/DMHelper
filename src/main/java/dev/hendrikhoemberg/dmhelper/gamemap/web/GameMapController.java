@@ -84,6 +84,7 @@ public class GameMapController {
                        Model model) {
         model.addAttribute("campaignId", campaignId);
         model.addAttribute("map", service.findById(mapId));
+        model.addAttribute("editorPage", true);
         return "maps/editor";
     }
 

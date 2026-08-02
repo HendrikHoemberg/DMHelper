@@ -1,0 +1,224 @@
+/* Map editor workspace — four-region grid (spec section 13).
+   Loaded only on the editor page via the `editorPage` model flag. */
+
+.mapedit {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "commandbar commandbar commandbar"
+    "rail canvas inspector"
+    "status status status";
+  height: 100%;
+  min-height: 0;
+  background: var(--surface-canvas);
+}
+.mapedit__commandbar {
+  grid-area: commandbar;
+  display: flex; align-items: center; gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-sm);
+  background: var(--surface-navigation);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.mapedit__spacer { flex: 1; }
+.mapedit__name { font-weight: 600; color: var(--text-primary); }
+.mapedit__rail {
+  grid-area: rail;
+  width: 56px;
+  display: flex; flex-direction: column; gap: var(--space-2xs);
+  padding: var(--space-2xs);
+  background: var(--surface-navigation);
+  border-right: 1px solid var(--border-subtle);
+  overflow-y: auto;
+}
+.mapedit__toolgroup { display: contents; }
+.mapedit__toolgroup + .mapedit__toolgroup::before {
+  content: ""; height: 1px; background: var(--border-subtle); margin-block: var(--space-2xs);
+}
+.tool-btn {
+  display: grid; place-items: center; width: 40px; height: 40px;
+  background: transparent; border: 1px solid transparent; border-radius: var(--radius);
+  color: var(--text-secondary); cursor: pointer;
+}
+.tool-btn:hover { color: var(--text-primary); background: var(--neutral-hover-surface); }
+.tool-btn[aria-pressed="true"] {
+  color: var(--text-primary);
+  background: var(--selection-surface);
+  border-color: var(--selection-accent);
+}
+.snap-toggle[aria-pressed="true"] {
+  color: var(--text-primary);
+  background: var(--selection-surface);
+  border-color: var(--selection-accent);
+}
+.mapedit__canvas { grid-area: canvas; min-width: 0; min-height: 0; overflow: hidden; position: relative; }
+.mapedit__inspector {
+  grid-area: inspector;
+  width: 320px; min-width: 0;
+  padding: var(--space-sm);
+  background: var(--surface-panel);
+  border-left: 1px solid var(--border-subtle);
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: var(--space-sm);
+}
+.mapedit__status {
+  grid-area: status;
+  display: flex; align-items: center; gap: var(--space-sm);
+  padding: var(--space-2xs) var(--space-sm);
+  background: var(--surface-navigation);
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-tertiary); font-size: var(--text-sm);
+}
+/* At the minimum viewport the inspector narrows before the canvas does. */
+@media (max-width: 1439px) {
+  .mapedit__inspector { width: 280px; }
+}
+
+/* ── Inspector sections (formerly .sidebar-section) ── */
+.mapedit__section-title {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-tertiary);
+  margin: 0 0 var(--space-xs);
+}
+.mapedit__inspector > section {
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.mapedit__inspector > section:last-child { border-bottom: none; }
+.sidebar-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
+}
+.sidebar-field input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Command bar helpers ── */
+.mapedit__commandbar .save-indicator { font-size: var(--text-sm); }
+.save-indicator.save-saved { color: var(--state-success); }
+.save-indicator.save-saving,
+.save-indicator.save-unsaved { color: var(--state-warning); }
+.save-indicator.save-error,
+.save-indicator.save-conflict { color: var(--state-danger); }
+
+/* ── Tool rail and canvas ── */
+
+/* ── Layer list ── */
+.layer-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 2px 8px;
+  border-radius: 4px;
+  user-select: none;
+}
+.layer-item .layer-name { cursor: pointer; }
+.layer-item:hover { background: var(--neutral-hover-surface); }
+.layer-item.active { background: var(--selection-surface); color: var(--text-primary); }
+.layer-item button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+/* ── Terrain palette ── */
+.terrain-swatch {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border-subtle);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+.terrain-swatch.active { border-color: var(--selection-accent); }
+.terrain-swatch.erase {
+  background: repeating-linear-gradient(45deg,
+    color-mix(in srgb, var(--surface-panel), var(--text-primary) 18%) 0 4px,
+    var(--surface-panel) 4px 8px);
+}
+.terrain-swatch-sm {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  display: inline-block;
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.terrain-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: var(--z-workspace-focus);
+  margin-top: 4px;
+  width: 220px;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: var(--space-sm);
+  box-shadow: var(--shadow-floating);
+}
+.terrain-panel-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: var(--space-sm);
+}
+.terrain-panel-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 2px 0;
+}
+.terrain-panel-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-xs);
+}
+.terrain-panel-form input[type="text"] { width: 100%; }
+
+/* ── Keyboard shortcuts popover ── */
+.shortcuts-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: var(--z-workspace-focus);
+  margin-top: 4px;
+  width: 280px;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: var(--space-sm) var(--space-md);
+  box-shadow: var(--shadow-floating);
+}
+.shortcuts-panel h3 {
+  margin: 0 0 var(--space-xs);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.shortcuts-panel dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px var(--space-sm);
+  margin: 0;
+}
+.shortcuts-panel dt { font-weight: 600; }
+.shortcuts-panel dd { margin: 0; color: var(--text-tertiary); }
+
+/* ── Floating map label (created by map-editor.js) ── */
+.map-label-input {
+  position: absolute;
+  z-index: var(--z-workspace-chrome);
+  padding: 2px 4px;
+  border: 1px solid var(--selection-accent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--surface-panel), var(--text-primary) 5%);
+  color: var(--text-primary);
+  min-width: 80px;
+}
