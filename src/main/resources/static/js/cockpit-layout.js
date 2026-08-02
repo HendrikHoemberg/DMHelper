@@ -1177,6 +1177,30 @@
     }
 
     /**
+     * The bottom utility zone renders a tab strip above its panel, so the active module
+     * only ever receives {@code zoneHeight - strip - borders}. Sizing the zone to the
+     * module's declared minimum alone leaves the module short of that minimum (spec 12.4:
+     * zone minima are enforced before content clips). Returns the strip's real height when
+     * the zone is visible, otherwise 0.
+     */
+    zoneTabsStripHeight() {
+      const zoneEl = this.workbench?.querySelector('[data-cockpit-zone="BOTTOM_UTILITY"]');
+      if (!zoneEl || zoneEl.dataset.collapsed === 'true') return 0;
+      const tabsEl = zoneEl.querySelector('.cockpit-zone__tabs');
+      if (!tabsEl || tabsEl.hidden) return 0;
+      return tabsEl.getBoundingClientRect().height || 0;
+    }
+
+    zoneBottomMinHeightPx() {
+      const zoneEl = this.workbench?.querySelector('[data-cockpit-zone="BOTTOM_UTILITY"]');
+      const strip = this.zoneTabsStripHeight();
+      const borders = zoneEl ? (zoneEl.offsetHeight - zoneEl.clientHeight) : 0;
+      // A one-pixel cushion absorbs fractional-pixel loss when the ratio is turned back
+      // into fr track sizes, so the module reliably renders at or above its declared min.
+      return this.zoneActiveMinHeight('BOTTOM_UTILITY') + strip + borders + 1;
+    }
+
+    /**
      * Spec 12.4: support modules become tabs within their support zone when space is
      * constrained. A support zone holding several modules renders them stacked while it is
      * wide enough for the widest module at its minimum width; below that it falls back to
@@ -1206,7 +1230,6 @@
       const leftMinPx = this.zoneActiveMinWidth('LEFT_SUPPORT');
       const primaryMinPx = this.zoneActiveMinWidth('PRIMARY') || 240;
       const rightMinPx = this.zoneActiveMinWidth('RIGHT_SUPPORT');
-      const bottomMinPx = this.zoneActiveMinHeight('BOTTOM_UTILITY');
 
       const leftMin = Math.max(0.05, leftMinPx / metrics.width);
       const primaryMin = Math.max(0.50, primaryMinPx / metrics.width);
@@ -1238,7 +1261,7 @@
         };
       }
       // BOTTOM
-      const minBottom = Math.max(0.16, bottomMinPx / metrics.height);
+      const minBottom = Math.max(0.16, this.zoneBottomMinHeightPx() / metrics.height);
       const maxBottom = 0.40;
       return { min: Math.min(minBottom, maxBottom), max: maxBottom };
     }
@@ -1317,7 +1340,7 @@
       ratios.primary /= sum;
       ratios.right /= sum;
 
-      const bottomMinPx = this.zoneActiveMinHeight('BOTTOM_UTILITY');
+      const bottomMinPx = this.zoneBottomMinHeightPx();
       const bottomMin = Math.max(0.16, bottomMinPx / metrics.height);
       ratios.bottom = Math.min(0.40, Math.max(bottomMin, ratios.bottom));
 

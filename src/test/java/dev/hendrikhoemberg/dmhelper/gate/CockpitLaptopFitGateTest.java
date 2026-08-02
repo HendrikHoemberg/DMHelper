@@ -134,4 +134,25 @@ class CockpitLaptopFitGateTest {
                 """);
         assertThat(((Number) hidden).intValue()).isZero();
     }
+
+    @Test
+    void captureTheCockpitReviewSet() throws Exception {
+        java.nio.file.Path shots = java.nio.file.Path.of("target/ui-redesign/cockpit");
+        java.nio.file.Files.createDirectories(shots);
+        java.util.List<String> presets = java.util.List.of("builtin:exploration", "builtin:combat",
+                "builtin:theatre-of-mind", "builtin:session-review");
+        for (String preset : presets) {
+            openCockpitWithPreset(preset, 1440, 900);
+            page.screenshot(new Page.ScreenshotOptions()
+                    .setPath(shots.resolve(preset.replace(':', '-') + "-active.png")));
+        }
+        lifecycleService.abandon(seeded.campaignId());
+        for (String preset : presets) {
+            openCockpitWithPreset(preset, 1440, 900);
+            page.screenshot(new Page.ScreenshotOptions()
+                    .setPath(shots.resolve(preset.replace(':', '-') + "-idle.png")));
+        }
+        lifecycleService.start(seeded.campaignId(), seeded.playableMapId());
+        assertThat(shots.toFile().listFiles()).hasSizeGreaterThanOrEqualTo(8);
+    }
 }

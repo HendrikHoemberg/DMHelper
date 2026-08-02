@@ -8,7 +8,7 @@ import java.util.Set;
 public final class CockpitBuiltInPresetCatalog {
     private static final List<BuiltInPreset> PRESETS = List.of(
             preset("builtin:exploration", "Exploration",
-                    new CockpitLayoutDocument.SplitRatios(0.22, 0.54, 0.24, 0.16),
+                    new CockpitLayoutDocument.SplitRatios(0.18, 0.64, 0.18, 0.16),
                     zone("story"), zone("session-plan"), zone("party"),
                     zone("quick-notes", "audio", "reference"),
                     Set.of("session-plan", "party", "audio", "reference")),

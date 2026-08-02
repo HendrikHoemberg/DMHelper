@@ -94,7 +94,7 @@ Nine runtime modules ship in the cockpit registry. Four modules are server-rende
 
 ### Compact vs Focus behaviour
 
-- `COMPACT` is **not** derived from the zone. Each preset names the modules it wants condensed in its own `compactModuleKeys` set (`CockpitBuiltInPresetCatalog.java`); everything else renders `STANDARD`. Exploration condenses Session plan, Party, Quick notes, Audio and Session log. Combat additionally condenses Story, Encounter and Reference.
+- `COMPACT` is **not** derived from the zone. Each preset names the modules it wants condensed in its own `compactModuleKeys` set (`CockpitBuiltInPresetCatalog.java`); everything else renders `STANDARD`. Exploration condenses Session plan, Party, Audio and Reference. Combat condenses Story, Party, Quick notes, Reference, Audio and Session log. Theatre of Mind condenses Party, Reference, Quick notes, Audio and Session log. Session Review condenses Session plan, Quick notes and Party.
 - A `COMPACT` Story module shows the scene title and read-aloud text only — its summary, DM notes, sections and participants are `STANDARD`-only. That is deliberate: in Combat the Story rail is a prompter, not a reference.
 - Modules that support **Focus** open a full-workbench overlay. **Return** (or `Escape`) restores the previous layout and returns keyboard focus to the Focus trigger.
 
