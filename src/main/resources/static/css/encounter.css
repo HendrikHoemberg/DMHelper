@@ -132,12 +132,17 @@
 }
 
 /* Controls get a real floor so the workspace never drops to micro controls, and
-   every one of them carries a visible label (spec 11.4, 12.5). */
+   every one of them carries a visible label (spec 11.4, 12.5).
+
+   The field deliberately does NOT set min-width: 0. It used to, and that is what made the
+   floors below decorative: the label wrapper collapsed under flex pressure while the input
+   inside kept its own min-width, so the input overflowed its wrapper and painted over the
+   next field. The rows all carry u-flex-wrap; leaving min-width at its automatic value is
+   what lets them actually wrap instead of overlapping. */
 .setup-field {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    min-width: 0;
 }
 
 .setup-label {
@@ -145,7 +150,10 @@
     color: var(--color-text-muted);
 }
 
-.setup-search { min-width: 16rem; }
-.setup-qty    { min-width: 4.5rem; }
-.setup-wave   { min-width: 7rem; }
-.setup-group  { min-width: 12rem; }
+.setup-field > input,
+.setup-field > select { width: 100%; }
+
+.setup-search    { min-width: 16rem; }
+.setup-qty       { min-width: 4.5rem; }
+.setup-wave      { min-width: 7rem; }
+.setup-groupname { min-width: 12rem; }
