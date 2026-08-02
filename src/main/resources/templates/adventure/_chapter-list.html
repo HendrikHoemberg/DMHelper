@@ -83,6 +83,10 @@
                   class="affordance" data-affordance="read-aloud" title="Has read-aloud text"><svg th:replace="~{common/_icon :: icon-sized(name='book', size='16')}"></svg></span>
             <span th:if="${!#lists.isEmpty(s.participants)}"
                   class="affordance" data-affordance="participants" title="Has combat participants"><svg th:replace="~{common/_icon :: icon-sized(name='swords', size='16')}"></svg></span>
+            <span th:if="${s.map != null}"
+                  class="affordance" data-affordance="map" title="Has a linked map"><svg th:replace="~{common/_icon :: icon-sized(name='map', size='16')}"></svg></span>
+            <span th:if="${s.encounter != null}"
+                  class="affordance" data-affordance="encounter" title="Has a linked encounter"><svg th:replace="~{common/_icon :: icon-sized(name='dice', size='16')}"></svg></span>
             <span th:if="${!#lists.isEmpty(s.sections.?[kind.name() == 'TRAP' or kind.name() == 'HAZARD'])}"
                   class="affordance" data-affordance="threats" title="Has a trap or hazard"><svg th:replace="~{common/_icon :: icon-sized(name='alert-triangle', size='16')}"></svg></span>
             <span th:if="${!#lists.isEmpty(s.checks)}"

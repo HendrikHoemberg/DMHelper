@@ -13,25 +13,42 @@
         title='Adventures',
         summary=${campaign.name},
         breadcrumb=~{},
-        primary=~{},
+        primary=~{::#primaryAction},
         secondary=~{::#secondaryActions})}"></th:block>
 </div>
 <a id="secondaryActions" th:href="@{/campaigns/{cid}(cid=${campaignId})}" class="btn btn-ghost">&larr; Back to Campaign</a>
+<button id="primaryAction" class="btn btn-primary"
+        th:attr="hx-get=@{/campaigns/{cid}/adventures/new(cid=${campaignId})}"
+        hx-target="#adventure-form-placeholder"
+        hx-swap="innerHTML"
+        hx-disabled-elt="this">New adventure</button>
 
 <div id="page-content" class="page-content">
-    <div th:if="${currentScene}" class="card" style="margin-bottom: var(--space-md); padding: var(--space-md);">
-        <span class="adventure-continue-label" style="color: var(--color-text-muted);">Continue at:</span>
-        <strong th:text="${currentScene.title}">Scene Title</strong>
-        <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}
-                      (cid=${campaignId}, aid=${currentScene.chapter.adventure.id}, sid=${currentScene.id})}"
-           class="btn" style="margin-left: var(--space-md);">Resume</a>
-    </div>
+    <th:block th:replace="~{fragments/_toolbar :: toolbar(
+        action=@{/campaigns/{cid}/adventures(cid=${campaignId})},
+        searchValue=${null},
+        searchPlaceholder='Filter adventures by name…',
+        filters=~{},
+        actions=~{})}"></th:block>
 
     <div th:replace="~{adventure/_adventure-list :: adventureList}"></div>
-
-    <div style="margin-top: var(--space-lg);">
-        <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='CAMPAIGN', targetId=${campaignId})}"></th:block>
-    </div>
 </div>
+
+<script>
+    window.dmHelperFilterAdventures = function (query) {
+        var needle = (query || '').trim().toLowerCase();
+        document.querySelectorAll('[data-adventure-card]').forEach(function (card) {
+            var haystack = (card.getAttribute('data-adventure-search') || '').toLowerCase();
+            card.hidden = needle !== '' && haystack.indexOf(needle) === -1;
+        });
+    };
+    document.addEventListener('DOMContentLoaded', function () {
+        var input = document.querySelector('.page--index .toolbar__input');
+        if (!input) return;
+        input.addEventListener('input', function () {
+            window.dmHelperFilterAdventures(this.value);
+        });
+    });
+</script>
 </body>
 </html>

@@ -6,24 +6,25 @@
           surface='read',
           header=~{::#page-header},
           content=~{::#page-content},
-          rail=~{})}">
+          rail=~{::#page-rail})}">
 <body>
 <div id="page-header" class="page-header-slot">
     <th:block th:replace="~{fragments/_page-header :: page-header(
         title=${adventure.name},
-        summary='Adventure',
-        breadcrumb=~{},
+        summary=${adventure.description != null and !adventure.description.isBlank() ? adventure.description : null},
+        breadcrumb=~{::#breadcrumb},
         primary=~{},
         secondary=~{::#secondaryActions})}"></th:block>
 </div>
-<div id="secondaryActions" class="u-flex u-gap-xs">
-    <a th:href="@{/campaigns/{cid}/adventures(cid=${campaignId})}"
-       class="btn btn-ghost">&larr; All Adventures</a>
-    <button class="btn btn-ghost"
-            th:hx-get="@{/campaigns/{cid}/adventures/{id}/edit(cid=${campaignId},id=${adventure.id})}"
-            hx-target="#adventure-header"
-            hx-swap="innerHTML"
-            hx-disabled-elt="this">Edit</button>
+<nav id="breadcrumb" class="breadcrumb" aria-label="Breadcrumb">
+    <a th:href="@{/campaigns/{cid}(cid=${campaignId})}" th:text="${campaign.name}">Campaign</a>
+    <span> / </span>
+    <a th:href="@{/campaigns/{cid}/adventures(cid=${campaignId})}">Adventures</a>
+    <span> / </span>
+    <span th:text="${adventure.name}">Adventure</span>
+</nav>
+<div id="secondaryActions">
+    <a th:href="@{/campaigns/{cid}/adventures(cid=${campaignId})}" class="btn btn-ghost">&larr; All Adventures</a>
 </div>
 
 <div id="page-content" class="page-content">
@@ -31,12 +32,40 @@
         <div class="detail-section" th:if="${adventure.sourceAttribution}">
             <div class="detail-meta" th:text="${adventure.sourceAttribution}">Source</div>
         </div>
-        <div class="detail-section" th:if="${adventure.description}">
-            <div class="detail-description" th:text="${adventure.description}">Description</div>
-        </div>
     </div>
 
     <div th:replace="~{adventure/_chapter-list :: chapterList}"></div>
+</div>
+
+<div id="page-rail" class="page-rail-slot">
+    <th:block th:replace="~{fragments/_context-rail :: rail(body=~{::#railBody})}"></th:block>
+    <div id="railBody">
+        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Adventure', body=~{::#railStatus})}"></th:block>
+        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Current position', body=~{::#railPosition})}"></th:block>
+        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Actions', body=~{::#railActions})}"></th:block>
+    </div>
+    <div id="railStatus">
+        <p class="u-text-sm">
+            <span th:text="${#lists.size(chapters)}">0</span> chapters
+            · <span class="u-num" th:text="${#aggregates.sum(chapters.![scenes.size()])}">0</span> scenes
+        </p>
+    </div>
+    <div id="railPosition">
+        <th:block th:if="${currentScene != null and currentScene.chapter.adventure.id == adventure.id}">
+            <span class="badge badge--warning">Current position</span>
+            <a class="u-text-sm"
+               th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${currentScene.id})}"
+               th:text="${currentScene.title}">Scene</a>
+        </th:block>
+        <p th:unless="${currentScene != null and currentScene.chapter.adventure.id == adventure.id}"
+           class="u-text-sm text-muted">Nothing in this adventure is in play.</p>
+    </div>
+    <div id="railActions">
+        <button class="btn"
+                th:hx-get="@{/campaigns/{cid}/adventures/{id}/edit(cid=${campaignId},id=${adventure.id})}"
+                hx-target="#adventure-header" hx-swap="innerHTML"
+                hx-disabled-elt="this">Edit</button>
+    </div>
 </div>
 </body>
 </html>
