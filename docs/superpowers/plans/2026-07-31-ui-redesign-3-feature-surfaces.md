@@ -89,7 +89,8 @@ Applies to every task in this plan.
   and is excluded from the default `./mvnw test`, which is why that command is ~70s and not
   ~4min. Add `-P gates` to include them. The exclusion also applies to `-Dtest=`, so selecting
   a gate class by name needs the profile too: `./mvnw -P gates -Dtest='SomeRenderGateTest' test`.
-  A new render gate must be tagged, or it silently never runs.
+  A new render gate must be tagged: an untagged one runs in both tiers and hands the edit
+  loop its browser cost back.
 - Any new browser gate navigates through `support.PageReady.open(page, base, path)` rather than
   calling `waitForLoadState(NETWORKIDLE)` directly. NETWORKIDLE bills a fixed 500ms to every
   navigation; `PageReady` spends it only on the two route families that actually finish after

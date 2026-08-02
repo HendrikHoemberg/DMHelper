@@ -23,9 +23,11 @@ tiers makes the edit loop cheap without deleting a single assertion.
 
 ## The rules
 
-- **Every class that calls `Playwright.create()` carries `@Tag("browser")`.** A new render
-  gate that forgets the tag will run in neither tier and silently never execute. There is no
-  guard for this yet; it is on the reviewer.
+- **Every class that calls `Playwright.create()` carries `@Tag("browser")`.** `excludedGroups`
+  only excludes what is tagged, so a gate that forgets the tag does not go missing — it runs
+  in *both* tiers, and the edit loop quietly gets its browser cost back. The symptom is a
+  slower `./mvnw test`, not a silent gap in coverage. There is no guard for this yet; it is on
+  the reviewer.
 - **The exclusion also applies to `-Dtest=`.** Selecting a browser class by name still needs
   the profile:
 
