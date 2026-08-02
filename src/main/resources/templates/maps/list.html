@@ -23,6 +23,13 @@
 <a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Back to Campaign</a>
 
 <div id="page-content" class="page-content">
+    <th:block th:replace="~{fragments/_toolbar :: toolbar(
+        action=@{/campaigns/{cid}/maps(cid=${campaignId})},
+        searchValue=${null},
+        searchPlaceholder='Filter maps by name…',
+        filters=~{},
+        actions=~{})}"></th:block>
+
     <div id="map-grid" class="card-grid card-grid--bounded empty-state-host">
         <th:block th:if="${maps == null or maps.isEmpty()}">
             <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
@@ -34,5 +41,22 @@
         </th:block>
     </div>
 </div>
+
+<script>
+    window.dmHelperFilterMaps = function (query) {
+        var needle = (query || '').trim().toLowerCase();
+        document.querySelectorAll('[data-map-card]').forEach(function (card) {
+            var haystack = (card.getAttribute('data-map-search') || '').toLowerCase();
+            card.hidden = needle !== '' && haystack.indexOf(needle) === -1;
+        });
+    };
+    document.addEventListener('DOMContentLoaded', function () {
+        var input = document.querySelector('.page--index .toolbar__input');
+        if (!input) return;
+        input.addEventListener('input', function () {
+            window.dmHelperFilterMaps(this.value);
+        });
+    });
+</script>
 </body>
 </html>

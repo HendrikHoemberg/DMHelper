@@ -303,6 +303,14 @@
   background: var(--elevation-raised-bg);
 }
 
+/* Flattened inside the table toolbar: one bordered surface, not a slab on a slab. */
+.toolbar--table .party-bulk {
+  margin-bottom: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
 .party-bulk > summary {
   padding: var(--space-sm) var(--space-md);
   cursor: pointer;

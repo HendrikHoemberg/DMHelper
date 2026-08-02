@@ -92,7 +92,7 @@
         const classSourceKey = select.value;
         if (!classSourceKey) return;
 
-        fetch('creation-options?classSourceKey=' + encodeURIComponent(classSourceKey))
+        fetch('sheet/creation-options?classSourceKey=' + encodeURIComponent(classSourceKey))
             .then(r => r.json())
             .then(data => {
                 const subclassSection = document.getElementById('lu-subclass-section');

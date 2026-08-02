@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<article class="card handout-card" th:fragment="card(handout)" th:id="'handout-' + ${handout.id}">
+<article class="card handout-card" th:fragment="card(handout)" th:id="'handout-' + ${handout.id}"
+         th:attr="data-handout-card=${true}, data-handout-search=${handout.title}">
     <div class="handout-card-body">
         <div class="handout-thumb">
             <img th:src="@{/files/{id}(id=${handout.id})}"

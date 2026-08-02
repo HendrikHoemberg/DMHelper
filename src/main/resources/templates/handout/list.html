@@ -19,6 +19,13 @@
 <a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaign.id})}" class="btn btn-ghost">&larr; Back to Campaign</a>
 
 <div id="page-content" class="page-content">
+    <th:block th:replace="~{fragments/_toolbar :: toolbar(
+        action=@{/campaigns/{cid}/handouts(cid=${campaignId})},
+        searchValue=${null},
+        searchPlaceholder='Filter handouts by name…',
+        filters=~{},
+        actions=~{})}"></th:block>
+
     <div id="handout-upload" class="inline-form" style="margin-bottom: var(--space-lg);">
         <h3>Upload New Handout</h3>
         <form th:action="@{/campaigns/{cid}/handouts(cid=${campaignId})}"
@@ -53,5 +60,22 @@
             'Upload images or documents to reveal to players during a session.', 'scroll')}"></th:block>
     </div>
 </div>
+
+<script>
+    window.dmHelperFilterHandouts = function (query) {
+        var needle = (query || '').trim().toLowerCase();
+        document.querySelectorAll('[data-handout-card]').forEach(function (card) {
+            var haystack = (card.getAttribute('data-handout-search') || '').toLowerCase();
+            card.hidden = needle !== '' && haystack.indexOf(needle) === -1;
+        });
+    };
+    document.addEventListener('DOMContentLoaded', function () {
+        var input = document.querySelector('.page--index .toolbar__input');
+        if (!input) return;
+        input.addEventListener('input', function () {
+            window.dmHelperFilterHandouts(this.value);
+        });
+    });
+</script>
 </body>
 </html>

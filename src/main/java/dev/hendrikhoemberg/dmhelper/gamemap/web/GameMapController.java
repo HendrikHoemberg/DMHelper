@@ -1,11 +1,18 @@
 package dev.hendrikhoemberg.dmhelper.gamemap.web;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
+import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Controller
@@ -13,16 +20,38 @@ import java.util.UUID;
 public class GameMapController {
 
     private final GameMapService service;
+    private final SceneRepository sceneRepository;
+    private final EncounterRepository encounterRepository;
 
-    public GameMapController(GameMapService service) {
+    public GameMapController(GameMapService service,
+                             SceneRepository sceneRepository,
+                             EncounterRepository encounterRepository) {
         this.service = service;
+        this.sceneRepository = sceneRepository;
+        this.encounterRepository = encounterRepository;
     }
 
     @GetMapping
     public String list(@PathVariable UUID campaignId, Model model) {
         model.addAttribute("campaignId", campaignId);
-        model.addAttribute("maps", service.findByCampaignId(campaignId));
+        var maps = service.findByCampaignId(campaignId);
+        model.addAttribute("maps", maps);
+        model.addAttribute("mapReferences", referenceLabels(maps));
         return "maps/list";
+    }
+
+    /** Which scenes and encounters point at each map, as concise labels for the cards. */
+    private Map<UUID, List<String>> referenceLabels(List<GameMap> maps) {
+        Map<UUID, List<String>> labels = new HashMap<>();
+        for (GameMap map : maps) {
+            List<String> refs = new ArrayList<>();
+            sceneRepository.findByMapId(map.getId())
+                    .forEach(scene -> refs.add(scene.getTitle()));
+            encounterRepository.findByMapIdOrderByNameAsc(map.getId())
+                    .forEach(encounter -> refs.add(encounter.getName()));
+            labels.put(map.getId(), refs);
+        }
+        return labels;
     }
 
     @GetMapping("/new")

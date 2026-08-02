@@ -1,7 +1,9 @@
 package dev.hendrikhoemberg.dmhelper.gamemap.web;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +30,12 @@ class GameMapControllerTest {
 
     @MockitoBean
     private CampaignRepository campaignRepository;
+
+    @MockitoBean
+    private SceneRepository sceneRepository;
+
+    @MockitoBean
+    private EncounterRepository encounterRepository;
 
     @BeforeEach
     void setUp() {

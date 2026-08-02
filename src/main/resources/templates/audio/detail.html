@@ -27,25 +27,56 @@
 
 <div id="page-content" class="page-content" x-data="audioCueManagement()"
      th:attr="data-campaign-id=${campaignId}">
-    <div class="detail-section"
-         th:attr="data-cue-id=${cue.id}, data-api-base=${apiBase}, data-list-href=${listHref}"
-         data-deletion-impact="deletion-impact">
-        <div class="detail-metadata">
-            <div><strong>Key:</strong> <span th:text="${cue.cueKey}">cue-key</span></div>
-            <div><strong>Provider:</strong> <span th:text="${cue.providerId}">youtube</span></div>
-            <div><strong>Reference:</strong> <span th:text="${cue.providerReference}">ref</span></div>
-            <div><strong>Category:</strong> <span th:text="${#enums.label(cue.category)}">Ambient</span></div>
-            <div th:if="${cue.volumeHint != null}"><strong>Volume:</strong> <span th:text="${cue.volumeHint}">80</span></div>
-            <div><strong>Transition:</strong> <span th:text="${#enums.label(cue.transitionPreference)}">Crossfade</span></div>
-            <div th:if="${cue.durationSeconds != null}"><strong>Duration:</strong> <span th:text="${cue.durationSeconds}">212</span>s</div>
-            <div th:if="${cue.cachedTitle != null}"><strong>Title:</strong> <span th:text="${cue.cachedTitle}">Cached Title</span></div>
-            <div th:if="${cue.artistOrOwner != null}"><strong>Artist:</strong> <span th:text="${cue.artistOrOwner}">Artist</span></div>
-            <div th:if="${cue.artworkUrl != null}"><strong>Artwork URL:</strong> <span th:text="${cue.artworkUrl}">https://example.com/art.jpg</span></div>
-        </div>
-        <div class="u-mt-lg" th:if="${cue.notes != null}">
-            <h3>Notes</h3>
-            <div class="detail-description" th:utext="${markdownNotes}"></div>
-        </div>
+        <div class="detail-section"
+             th:attr="data-cue-id=${cue.id}, data-api-base=${apiBase}, data-list-href=${listHref}"
+             data-deletion-impact="deletion-impact">
+            <div class="detail-metadata">
+                <div class="detail-metadata__group" data-cue-state="source">
+                    <strong>Source:</strong>
+                    <span class="badge badge--neutral"
+                          th:text="${cue.providerId != null and !cue.providerId.isBlank()} ? ${cue.providerId} : 'no provider'">youtube</span>
+                    <span class="badge" th:text="${#enums.label(cue.referenceKind)}">Video</span>
+                </div>
+                <div class="detail-metadata__group" data-cue-state="reference">
+                    <strong>Reference:</strong>
+                    <span class="u-text-mono" th:text="${cue.providerReference}">ref</span>
+                    <span th:text="' · key ' + ${cue.cueKey}">key</span>
+                </div>
+                <div class="detail-metadata__group" data-cue-state="availability">
+                    <strong>Availability:</strong>
+                    <th:block th:if="${cue.providerId != null and !cue.providerId.isBlank()}">
+                        <span class="badge badge--success">Configured</span>
+                    </th:block>
+                    <th:block th:if="${cue.providerId == null or cue.providerId.isBlank()}">
+                        <span class="badge badge--warning">Provider unavailable</span>
+                    </th:block>
+                </div>
+                <div class="detail-metadata__group" data-cue-state="runtime">
+                    <strong>Runtime:</strong>
+                    <span th:if="${cue.durationSeconds != null}" class="u-num"
+                          th:text="${cue.durationSeconds} + 's'">212s</span>
+                    <span th:if="${cue.durationSeconds == null}" class="text-muted">unknown duration</span>
+                    <span th:text="' · ' + ${#enums.label(cue.transitionPreference)}">Crossfade</span>
+                    <span th:if="${cue.volumeHint != null}" th:text="' · vol ' + ${cue.volumeHint}">vol 80</span>
+                </div>
+            </div>
+            <div class="detail-metadata">
+                <div th:if="${cue.cachedTitle != null}"><strong>Title:</strong> <span th:text="${cue.cachedTitle}">Cached Title</span></div>
+                <div th:if="${cue.artistOrOwner != null}"><strong>Artist:</strong> <span th:text="${cue.artistOrOwner}">Artist</span></div>
+                <div th:if="${cue.artworkUrl != null}"><strong>Artwork URL:</strong> <span th:text="${cue.artworkUrl}">https://example.com/art.jpg</span></div>
+            </div>
+            <th:block th:if="${cue.providerId == null or cue.providerId.isBlank()}">
+                <div th:replace="~{fragments/_states :: unavailable(
+                    title='Provider unavailable',
+                    description='This cue has no provider configured, so it cannot play.',
+                    retry=~{::#configureProvider})}"></div>
+                <a id="configureProvider" class="btn"
+                   th:href="@{${editHref}}">Configure provider</a>
+            </th:block>
+            <div class="u-mt-lg" th:if="${cue.notes != null}">
+                <h3>Notes</h3>
+                <div class="detail-description" th:utext="${markdownNotes}"></div>
+            </div>
         <div class="u-mt-lg" th:unless="${#lists.isEmpty(usedByScenes)} or ${#lists.isEmpty(usedByCombatEncounters)} or ${#lists.isEmpty(usedByVictoryEncounters)} or ${#lists.isEmpty(usedByLocations)} or ${#lists.isEmpty(usedByCampaigns)}">
             <h3>Used By</h3>
             <div th:if="${not #lists.isEmpty(usedByScenes)}">

@@ -23,13 +23,13 @@
    th:href="@{/campaigns/{id}(id=${campaignId})}">&larr; Back to Campaign</a>
 
 <div id="page-content" class="page-content">
-    <div class="filter-bar">
-        <form class="u-flex u-gap-sm" method="get">
-            <input type="text" name="text" placeholder="Search by name or key..."
-                   th:value="${param.text != null ? param.text[0] : ''}">
-            <button type="submit" class="btn btn-sm">Filter</button>
-        </form>
-    </div>
+    <th:block th:replace="~{fragments/_toolbar :: toolbar(
+        action=@{/campaigns/{cid}/audio/cues(cid=${campaignId})},
+        searchValue=${null},
+        searchPlaceholder='Filter cues by name or key…',
+        filters=~{},
+        actions=~{})}"></th:block>
+
     <div id="cue-grid" class="card-grid card-grid--bounded empty-state-host">
         <th:block th:if="${cues == null or cues.isEmpty()}">
             <th:block th:replace="~{common/_empty-state :: empty-state(message='No audio cues yet.', actionText=null, actionHref=null, description=null)}"></th:block>
@@ -39,5 +39,22 @@
         </th:block>
     </div>
 </div>
+
+<script>
+    window.dmHelperFilterCues = function (query) {
+        var needle = (query || '').trim().toLowerCase();
+        document.querySelectorAll('[data-audio-card]').forEach(function (card) {
+            var haystack = (card.getAttribute('data-audio-search') || '').toLowerCase();
+            card.hidden = needle !== '' && haystack.indexOf(needle) === -1;
+        });
+    };
+    document.addEventListener('DOMContentLoaded', function () {
+        var input = document.querySelector('.page--index .toolbar__input');
+        if (!input) return;
+        input.addEventListener('input', function () {
+            window.dmHelperFilterCues(this.value);
+        });
+    });
+</script>
 </body>
 </html>

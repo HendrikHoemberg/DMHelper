@@ -42,6 +42,11 @@
     <div class="detail-section">
         <div th:replace="~{encounter/_prep-summary :: prepSummary}"></div>
 
+        <div class="detail-section" th:if="${encounter.combatPhase == 'RUNNING'}" style="margin-top: var(--space-lg);">
+            <h2>Live combat</h2>
+            <div th:replace="~{encounter/_tracker :: tracker(mode='FOCUSED')}"></div>
+        </div>
+
         <h2>Combatants</h2>
         <div class="u-mb-lg">
             <table class="data-table" th:if="${not #lists.isEmpty(combatants)}">
@@ -78,6 +83,7 @@
         <h2 th:if="${not #lists.isEmpty(combatants)}">Notes</h2>
         <div class="u-mt-lg" th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='ENCOUNTER', targetId=${encounter.id})}"></div>
     </div>
+    <script th:src="@{/js/combat-tracker.js}"></script>
 </div>
 
 <div id="page-rail" class="page-rail-slot">

@@ -21,7 +21,7 @@
     <!-- 1. Current scene and active encounter (spec 11.2 order) -->
     <section data-home-section="current" class="home-panel" aria-label="In play">
         <th:block th:if="${currentScene != null or activeEncounterId != null}">
-            <div class="u-flex u-gap-md u-wrap">
+            <div class="u-flex u-flex--md u-flex-wrap">
                 <th:block th:if="${currentScene != null}">
                     <span class="badge badge--info">Current scene</span>
                     <a class="home-run-link" data-run-entry="scene"

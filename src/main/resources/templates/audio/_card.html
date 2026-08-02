@@ -1,13 +1,36 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="card" th:fragment="card(cue, campaignId)">
+<div class="card audio-card" th:fragment="card(cue, campaignId)"
+     th:attr="data-audio-card=${true},
+              data-audio-search=${cue.name} + ' ' + ${cue.cueKey}">
     <h3 th:text="${cue.name}">Cue Name</h3>
-    <p class="text-muted">
+    <div class="card-meta">
+        <span class="badge badge--neutral"
+              th:text="${cue.providerId != null and !cue.providerId.isBlank()} ? ${cue.providerId} : 'no provider'">youtube</span>
+        <span class="badge" th:text="${#enums.label(cue.category)}">Ambient</span>
+        <span th:if="${cue.durationSeconds != null}" class="u-num"
+              th:text="${cue.durationSeconds} + 's'">212s</span>
+    </div>
+    <p class="text-muted u-text-sm">
         <span th:text="${cue.cueKey}">cue-key</span>
-        <span th:if="${cue.category != null}" th:text="' · ' + ${#enums.label(cue.category)}"> · AMBIENT</span>
-        <span th:if="${cue.providerId != null}" th:text="' · ' + ${cue.providerId}"> · youtube</span>
+        <span th:if="${cue.providerReference != null and !cue.providerReference.isBlank()}"
+              th:text="' · ' + ${cue.providerReference}">ref</span>
     </p>
-    <a class="btn btn-sm btn-primary"
-       th:href="@{/campaigns/{campaignId}/audio/cues/{id}(campaignId=${campaignId}, id=${cue.id})}">View</a>
+
+    <th:block th:if="${cue.providerId == null or cue.providerId.isBlank()}">
+        <div th:replace="~{fragments/_states :: unavailable(
+            title='Provider unavailable',
+            description='This cue has no provider configured, so it cannot play.',
+            retry=~{::#configureProvider})}"></div>
+        <a id="configureProvider" class="btn btn-sm"
+           th:href="@{/campaigns/{campaignId}/audio/cues/{id}/edit(campaignId=${campaignId}, id=${cue.id})}">Configure provider</a>
+    </th:block>
+
+    <div class="card-actions action-row">
+        <a class="btn btn-ghost"
+           th:href="@{/campaigns/{campaignId}/audio/cues/{id}(campaignId=${campaignId}, id=${cue.id})}">View</a>
+        <a class="btn btn-ghost"
+           th:href="@{/campaigns/{campaignId}/audio/cues/{id}/edit(campaignId=${campaignId}, id=${cue.id})}">Edit</a>
+    </div>
 </div>
 </html>

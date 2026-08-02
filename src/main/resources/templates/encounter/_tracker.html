@@ -1,9 +1,9 @@
 <th:block th:fragment="tracker(mode)">
 
 <div x-data="combatTracker({ campaignId: '', trackerMode: '' })"
+     data-encounter-mode="live"
      th:attr="x-data=|combatTracker({ campaignId: '${campaignId}', trackerMode: '${mode}' })|,
-              data-tracker-mode=${mode},
-              data-encounter-mode="live""
+              data-tracker-mode=${mode}"
      x-init="init()"
      @encounter-end-confirmed.window="endEncounter()"
      class="tracker-panel">

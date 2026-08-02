@@ -1,12 +1,33 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="card" th:fragment="card(map, campaignId)">
+<div class="card map-card" th:fragment="card(map, campaignId)"
+     th:attr="data-map-card=${true},
+              data-map-search=${map.name}">
+    <a class="map-thumb" th:href="@{/campaigns/{cid}/maps/{mid}/play(cid=${campaignId}, mid=${map.id})}"
+       th:attr="aria-label=|Play ${map.name}|">
+        <span class="map-thumb__grid" aria-hidden="true"></span>
+        <span class="map-thumb__label u-num"
+              th:text="${map.gridWidth} + ' × ' + ${map.gridHeight}">30 × 20</span>
+    </a>
     <h3>
         <a th:href="@{/campaigns/{cid}/maps/{mid}/edit(cid=${campaignId}, mid=${map.id})}"
            th:text="${map.name}">Map Name</a>
     </h3>
     <div class="card-meta">
-        <span th:text="${map.gridWidth} + '×' + ${map.gridHeight} + ' · ' + ${map.cellSizePx} + 'px cells'">30×20 · 48px cells</span>
+        <span class="u-num" th:text="'Grid ' + ${map.gridWidth} + '×' + ${map.gridHeight}">Grid 30×20</span>
+        <span class="badge badge--info"
+              th:text="${map.cellSizePx} + 'px cells'">48px cells</span>
+    </div>
+    <div class="map-references" th:if="${mapReferences != null and mapReferences.containsKey(map.id) and !mapReferences.get(map.id).isEmpty()}">
+        <span class="text-muted u-text-sm">Used by:</span>
+        <span class="badge badge-tag"
+              th:each="ref : ${#lists.size(mapReferences.get(map.id)) > 3
+                        ? #lists.subList(mapReferences.get(map.id), 0, 3)
+                        : mapReferences.get(map.id)}"
+              th:text="${ref}">Scene</span>
+        <span class="text-muted u-text-sm"
+              th:if="${#lists.size(mapReferences.get(map.id)) > 3}"
+              th:text="'+' + (${#lists.size(mapReferences.get(map.id))} - 3) + ' more'">+1 more</span>
     </div>
     <div class="card-actions action-row">
         <a class="btn btn-ghost"
