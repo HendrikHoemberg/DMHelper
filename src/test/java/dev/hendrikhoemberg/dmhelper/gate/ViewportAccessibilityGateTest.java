@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("playwright")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Tag("browser")
 class ViewportAccessibilityGateTest {
 
     private static final int[][] VIEWPORTS = {{1366, 768}, {1920, 1080}};

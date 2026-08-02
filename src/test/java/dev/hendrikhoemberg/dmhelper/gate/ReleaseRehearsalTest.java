@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("playwright")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestClassOrder(ClassOrderer.OrderAnnotation.class)
+@Tag("browser")
 class ReleaseRehearsalTest {
 
     static abstract class RehearsalSteps {

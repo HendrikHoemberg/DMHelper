@@ -52,7 +52,7 @@ Every task's requirements implicitly include this section.
 - WCAG AA text contrast; 3:1 for interactive boundaries and focus indicators; complete keyboard operation; reduced-motion support.
 - No database migration. View-only DTO or controller-model additions are permitted where a summary, state cluster, or relationship rail cannot be rendered safely from the existing view model; they must not change persisted semantics.
 - A stage is complete only when every page in its scope is fully migrated. A visibly hybrid page fails review.
-- Keep every existing controller, template, htmx, package, player-safety, encounter, map, cockpit, and accessibility test green. `./mvnw test` must pass at the end of every stage.
+- Keep every existing controller, template, htmx, package, player-safety, encounter, map, cockpit, and accessibility test green. `./mvnw test` must pass at the end of every stage, and `./mvnw test -P gates` — which adds the Playwright gates — at the end of the part.
 - **How tests may assert.** A test may assert on rendered output, parsed CSS rules, a Java
   model, or measured browser geometry. A test may not assert that a template or stylesheet
   *source file* contains a particular string, unless that string is a structural marker with
@@ -85,6 +85,15 @@ Applies to every task in this plan.
 - One task, one commit. Use `feat:`, `refactor:`, `test:`, or `fix:` prefixes.
 - Run the task's focused test command after each red/green cycle; run `./mvnw test` at the
   end of every stage before the stage's review step.
+- **Browser gates are opt-in.** Every class that launches Playwright carries `@Tag("browser")`
+  and is excluded from the default `./mvnw test`, which is why that command is ~70s and not
+  ~4min. Add `-P gates` to include them. The exclusion also applies to `-Dtest=`, so selecting
+  a gate class by name needs the profile too: `./mvnw -P gates -Dtest='SomeRenderGateTest' test`.
+  A new render gate must be tagged, or it silently never runs.
+- Any new browser gate navigates through `support.PageReady.open(page, base, path)` rather than
+  calling `waitForLoadState(NETWORKIDLE)` directly. NETWORKIDLE bills a fixed 500ms to every
+  navigation; `PageReady` spends it only on the two route families that actually finish after
+  the load event.
 - Never add a new legacy alias. Never raise a migration budget. Budgets only ratchet down.
 - When a template moves onto a shared fragment, delete the markup it replaced in the same
   commit. Leaving both is what produces a hybrid page.
@@ -593,7 +602,7 @@ There is no `sceneId()` or `encounterId()` accessor — use `hostileSceneId()` a
 - [ ] **Step 3: Run the Stage 3 gate**
 
 ```bash
-./mvnw -Dtest='NarrativeSurfaceContractTest,NarrativePreparationRenderGateTest' test
+./mvnw -P gates -Dtest='NarrativeSurfaceContractTest,NarrativePreparationRenderGateTest' test
 ./mvnw test
 ```
 
@@ -943,7 +952,7 @@ and these tests:
 - [ ] **Step 3: Run the Stage 4 gate**
 
 ```bash
-./mvnw -Dtest='OperationalSurfaceContractTest,CombatLegibilityContractTest,OperationalPreparationRenderGateTest' test
+./mvnw -P gates -Dtest='OperationalSurfaceContractTest,CombatLegibilityContractTest,OperationalPreparationRenderGateTest' test
 ./mvnw test
 ```
 
@@ -1161,7 +1170,7 @@ Adjust the category paths to the routes `LibraryController` actually maps.
 - [ ] **Step 2: Run the Stage 5 gate**
 
 ```bash
-./mvnw -Dtest='ReferenceSurfaceContractTest,ReferenceWorkspaceRenderGateTest' test
+./mvnw -P gates -Dtest='ReferenceSurfaceContractTest,ReferenceWorkspaceRenderGateTest' test
 ./mvnw test
 ```
 
@@ -1207,7 +1216,7 @@ git commit -m "feat: complete the reference workspace stage"
 
 # Handoff
 
-Part 3 is done when all three stage gates and `./mvnw test` are green and the review sets in
+Part 3 is done when all three stage gates and `./mvnw test -P gates` are green and the review sets in
 `target/ui-redesign/narrative/`, `operational/`, and `reference/` have been looked at.
 Continue with
 `docs/superpowers/plans/2026-07-31-ui-redesign-4-editors-cockpit-release.md`.

@@ -4,10 +4,11 @@ import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
-import com.microsoft.playwright.options.LoadState;
+import dev.hendrikhoemberg.dmhelper.support.PageReady;
 import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
 import dev.hendrikhoemberg.dmhelper.support.PopulatedCampaignFixture;
 import dev.hendrikhoemberg.dmhelper.support.PreparationSurfaceFixture;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -29,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Tag("browser")
 class TypographyRenderGateTest {
 
     @LocalServerPort private int port;
@@ -122,8 +124,7 @@ class TypographyRenderGateTest {
         try (Page page = browser.newPage()) {
             BrowserFailureCollector failures = new BrowserFailureCollector();
             failures.attach(page);
-            page.navigate("http://localhost:" + port + path);
-            page.waitForLoadState(LoadState.NETWORKIDLE);
+            PageReady.open(page, "http://localhost:" + port, path);
             assertion.accept(page);
             failures.assertNoFailures();
         }

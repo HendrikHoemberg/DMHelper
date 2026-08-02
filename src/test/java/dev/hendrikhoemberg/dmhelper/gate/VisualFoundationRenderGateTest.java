@@ -1,7 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.gate;
 
 import com.microsoft.playwright.*;
-import com.microsoft.playwright.options.LoadState;
+import dev.hendrikhoemberg.dmhelper.support.PageReady;
 import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
 import dev.hendrikhoemberg.dmhelper.support.ReleaseRehearsalFixture;
 import org.junit.jupiter.api.*;
@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("playwright")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Tag("browser")
 class VisualFoundationRenderGateTest {
 
     private static final Path SHOTS = Path.of("target/ui-redesign/visual-foundations");
@@ -65,8 +66,7 @@ class VisualFoundationRenderGateTest {
     }
 
     private void open(String path) {
-        page.navigate("http://localhost:" + port + path);
-        page.waitForLoadState(LoadState.NETWORKIDLE);
+        PageReady.open(page, "http://localhost:" + port, path);
     }
 
     private String bg(String selector) {

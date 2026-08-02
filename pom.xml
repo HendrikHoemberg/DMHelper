@@ -30,7 +30,26 @@
 		<java.version>25</java.version>
 		<commonmark.version>0.22.0</commonmark.version>
 		<json-schema-validator.version>3.0.2</json-schema-validator.version>
+		<!-- The Playwright gates are 6% of the tests and were 64% of the wall clock (257s
+		     full, 92s without). They are excluded from the default `./mvnw test` so the
+		     per-task edit loop stays cheap, and run at stage boundaries and before any
+		     merge with `./mvnw test -P gates`.
+
+		     Note this exclusion also applies to `-Dtest=`: selecting a browser class by
+		     name still needs the profile, e.g.
+		     `./mvnw test -P gates -Dtest=ShellRenderGateTest`. -->
+		<excluded.test.groups>browser</excluded.test.groups>
 	</properties>
+
+	<profiles>
+		<!-- Runs everything, browser gates included. -->
+		<profile>
+			<id>gates</id>
+			<properties>
+				<excluded.test.groups></excluded.test.groups>
+			</properties>
+		</profile>
+	</profiles>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -138,6 +157,9 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
+					<!-- @Tag("browser") marks every class that launches Playwright. See the
+					     excluded.test.groups property for what runs when. -->
+					<excludedGroups>${excluded.test.groups}</excludedGroups>
 					<!-- Java 25+ restricts dynamic agent attachment. Start Mockito as an
 					     explicit agent so MockitoSpyBean works reliably in local and CI
 					     process namespaces with the documented plain ./mvnw test command. -->

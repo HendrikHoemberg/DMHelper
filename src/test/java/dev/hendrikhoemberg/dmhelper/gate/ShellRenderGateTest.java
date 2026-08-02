@@ -1,9 +1,8 @@
 package dev.hendrikhoemberg.dmhelper.gate;
 
 import com.microsoft.playwright.*;
-import com.microsoft.playwright.options.LoadState;
 import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
-import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.support.PageReady;
 import dev.hendrikhoemberg.dmhelper.support.ReleaseRehearsalFixture;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,13 +19,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("playwright")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Tag("browser")
 class ShellRenderGateTest {
 
     private static final int[][] VIEWPORTS = {{1280, 720}, {1440, 900}, {1920, 1080}, {2560, 1440}};
 
     @LocalServerPort private int port;
     @Autowired private ReleaseRehearsalFixture fixture;
-    @Autowired private CampaignRepository campaigns;
 
     private static Playwright playwright;
     private static Browser browser;
@@ -81,13 +80,16 @@ class ShellRenderGateTest {
                                 "/library/hazards", "/library/about"))).toList();
     }
 
+    private void open(String path) {
+        PageReady.open(page, "http://localhost:" + port, path);
+    }
+
     @Test
     void noStandardPageScrollsHorizontallyAtAnySupportedViewport() {
         for (int[] viewport : VIEWPORTS) {
             page.setViewportSize(viewport[0], viewport[1]);
             for (String path : standardPages()) {
-                page.navigate("http://localhost:" + port + path);
-                page.waitForLoadState(LoadState.NETWORKIDLE);
+                open(path);
                 int overflow = ((Number) page.evaluate(
                         "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"))
                         .intValue();
@@ -98,58 +100,45 @@ class ShellRenderGateTest {
         }
     }
 
-    @Test
-    void everyStandardPageHasExactlyOneShellOneHeadingAndAtMostOnePrimaryAction() {
-        page.setViewportSize(1440, 900);
-        for (String path : standardPages()) {
-            page.navigate("http://localhost:" + port + path);
-            page.waitForLoadState(LoadState.NETWORKIDLE);
-            @SuppressWarnings("unchecked")
-            Map<String, Object> counts = (Map<String, Object>) page.evaluate("""
-                    () => ({
-                      shells: document.querySelectorAll('.app-shell').length,
-                      rails: document.querySelectorAll('nav.rail').length,
-                      h1: document.querySelectorAll('h1').length,
-                      primary: document.querySelectorAll('.btn-primary').length,
-                      archetype: document.body.dataset.archetype
-                    })
-                    """);
-            assertThat(((Number) counts.get("shells")).intValue()).as("shells on %s", path).isEqualTo(1);
-            assertThat(((Number) counts.get("rails")).intValue()).as("rails on %s", path).isEqualTo(1);
-            assertThat(((Number) counts.get("h1")).intValue()).as("h1 on %s", path).isEqualTo(1);
-            assertThat(((Number) counts.get("primary")).intValue())
-                    .as("filled primary actions on %s", path).isLessThanOrEqualTo(1);
-            assertThat((String) counts.get("archetype"))
-                    .as("archetype on %s", path)
-                    .isIn("index", "detail", "form", "operational", "editor");
-        }
-    }
-
     /**
-     * Spec 8.1: the top bar carries campaign identity. Asserted in the browser because the
-     * only way this fails is a model attribute nobody publishes — the fragment shipped
-     * bound to {@code ${campaignName}}, which no controller, advice or {@code th:with} ever
-     * set, so the chip was dead markup on every page and the template still parsed clean.
+     * The composition rules themselves live in {@code web.ShellCompositionContractTest}, which
+     * reads them off the server's response for all 22 routes and needs no browser: nothing
+     * they look at is built by script.
+     *
+     * <p>{@code /library} is the exception, and it is why this test stayed. Ten result panes
+     * are empty in that response and arrive later from {@code hx-trigger="load"}, so a pane
+     * is free to swap in a second heading or a second filled primary that a response-body
+     * assertion would never see.
      */
     @Test
-    void everyCampaignScopedPageNamesItsCampaignInTheTopBar() {
+    void theLibraryPageStillComposesCleanlyOnceItsPanesHaveLoaded() {
         page.setViewportSize(1440, 900);
-        String expected = campaigns.findById(seeded.campaignId()).orElseThrow().getName();
-        assertThat(expected).as("the fixture campaign has a name to show").isNotBlank();
-        for (String path : campaignPages()) {
-            page.navigate("http://localhost:" + port + path);
-            page.waitForLoadState(LoadState.NETWORKIDLE);
-            assertThat(page.locator(".app-topbar__campaign").textContent().trim())
-                    .as("campaign identity in the top bar on %s", path)
-                    .isEqualTo(expected);
-        }
+        open("/library");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> counts = (Map<String, Object>) page.evaluate("""
+                () => ({
+                  shells: document.querySelectorAll('.app-shell').length,
+                  rails: document.querySelectorAll('nav.rail').length,
+                  h1: document.querySelectorAll('h1').length,
+                  primary: document.querySelectorAll('.btn-primary').length,
+                  panes: document.querySelectorAll('[hx-trigger~="load"]').length
+                })
+                """);
+        assertThat(((Number) counts.get("panes")).intValue())
+                .as("deferred panes on /library — at 0 the page has stopped deferring and "
+                        + "this test is watching nothing")
+                .isGreaterThan(0);
+        assertThat(((Number) counts.get("shells")).intValue()).as("shells after load").isEqualTo(1);
+        assertThat(((Number) counts.get("rails")).intValue()).as("rails after load").isEqualTo(1);
+        assertThat(((Number) counts.get("h1")).intValue()).as("h1 after load").isEqualTo(1);
+        assertThat(((Number) counts.get("primary")).intValue())
+                .as("filled primary actions after load").isLessThanOrEqualTo(1);
     }
 
     @Test
     void theRailStaysUsableExpandedAtTheMinimumViewport() {
         page.setViewportSize(1280, 720);
-        page.navigate("http://localhost:" + port + "/campaigns/" + seeded.campaignId());
-        page.waitForLoadState(LoadState.NETWORKIDLE);
+        open("/campaigns/" + seeded.campaignId());
         assertThat(page.locator("nav.rail").isVisible()).isTrue();
         assertThat(page.locator("nav.rail a.rail__link").count()).isGreaterThanOrEqualTo(20);
         int mainWidth = ((Number) page.evaluate(

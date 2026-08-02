@@ -4,10 +4,11 @@ import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
-import com.microsoft.playwright.options.LoadState;
+import dev.hendrikhoemberg.dmhelper.support.PageReady;
 import dev.hendrikhoemberg.dmhelper.support.CampaignFixtures;
 import dev.hendrikhoemberg.dmhelper.support.PopulatedCampaignFixture;
 import dev.hendrikhoemberg.dmhelper.support.PreparationSurfaceFixture;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Tag("browser")
 class SurfaceNestingGateTest {
 
     private static final String SURFACE_NESTING_DETECTOR = """
@@ -131,8 +133,7 @@ class SurfaceNestingGateTest {
                 ? "/campaigns/" + seeded.campaignId()
                 : "/campaigns/" + prepared.campaignId() + "/encounters/" + prepared.encounterId();
         try (Page page = browser.newPage()) {
-            page.navigate("http://localhost:" + port + path);
-            page.waitForLoadState(LoadState.NETWORKIDLE);
+            PageReady.open(page, "http://localhost:" + port, path);
 
             @SuppressWarnings("unchecked")
             List<String> styles = (List<String>) page.evaluate("""
@@ -156,8 +157,7 @@ class SurfaceNestingGateTest {
     void noBorderedSurfaceSitsOnAnIdenticalBorderedSurface(String path) {
         try (Page page = browser.newPage()) {
             page.setViewportSize(1366, 768);
-            page.navigate("http://localhost:" + port + path);
-            page.waitForLoadState(LoadState.NETWORKIDLE);
+            PageReady.open(page, "http://localhost:" + port, path);
 
             assertThat(findOffenders(page))
                     .as("same-fill bordered surfaces nested on %s — flatten the inner one", path)
@@ -169,8 +169,7 @@ class SurfaceNestingGateTest {
     void readinessActionsWrapWithoutInheritingCardFormStyling() {
         try (Page page = browser.newPage()) {
             page.setViewportSize(760, 900);
-            page.navigate("http://localhost:" + port + "/campaigns/" + blockedCampaignId);
-            page.waitForLoadState(LoadState.NETWORKIDLE);
+            PageReady.open(page, "http://localhost:" + port, "/campaigns/" + blockedCampaignId);
 
             @SuppressWarnings("unchecked")
             Map<String, Object> styles = (Map<String, Object>) page.evaluate("""

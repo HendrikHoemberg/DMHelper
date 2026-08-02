@@ -29,6 +29,7 @@ import static org.assertj.core.api.Assertions.within;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("playwright")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Tag("browser")
 class MapEditorBrowserTest {
 
     @LocalServerPort

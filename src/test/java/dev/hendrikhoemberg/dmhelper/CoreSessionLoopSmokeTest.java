@@ -75,6 +75,7 @@ import static org.assertj.core.api.Assertions.*;
 @ActiveProfiles("playwright")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Tag("browser")
 class CoreSessionLoopSmokeTest {
 
     @LocalServerPort

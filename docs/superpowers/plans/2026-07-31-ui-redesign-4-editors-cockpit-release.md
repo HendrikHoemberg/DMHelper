@@ -65,7 +65,7 @@ Every task's requirements implicitly include this section.
 - WCAG AA text contrast; 3:1 for interactive boundaries and focus indicators; complete keyboard operation; reduced-motion support.
 - No database migration. View-only DTO or controller-model additions are permitted where a summary, state cluster, or relationship rail cannot be rendered safely from the existing view model; they must not change persisted semantics.
 - A stage is complete only when every page in its scope is fully migrated. A visibly hybrid page fails review.
-- Keep every existing controller, template, htmx, package, player-safety, encounter, map, cockpit, and accessibility test green. `./mvnw test` must pass at the end of every stage.
+- Keep every existing controller, template, htmx, package, player-safety, encounter, map, cockpit, and accessibility test green. `./mvnw test` must pass at the end of every stage, and `./mvnw test -P gates` — which adds the Playwright gates — at the end of the part.
 - **How tests may assert.** A test may assert on rendered output, parsed CSS rules, a Java
   model, or measured browser geometry. A test may not assert that a template or stylesheet
   *source file* contains a particular string, unless that string is a structural marker with
@@ -93,6 +93,15 @@ Applies to every task in this plan.
 - One task, one commit. Use `feat:`, `refactor:`, `test:`, or `fix:` prefixes.
 - Run the task's focused test command after each red/green cycle; run `./mvnw test` at the
   end of every stage before the stage's review step.
+- **Browser gates are opt-in.** Every class that launches Playwright carries `@Tag("browser")`
+  and is excluded from the default `./mvnw test`, which is why that command is ~70s and not
+  ~4min. Add `-P gates` to include them. The exclusion also applies to `-Dtest=`, so selecting
+  a gate class by name needs the profile too: `./mvnw -P gates -Dtest='SomeRenderGateTest' test`.
+  A new render gate must be tagged, or it silently never runs.
+- Any new browser gate navigates through `support.PageReady.open(page, base, path)` rather than
+  calling `waitForLoadState(NETWORKIDLE)` directly. NETWORKIDLE bills a fixed 500ms to every
+  navigation; `PageReady` spends it only on the two route families that actually finish after
+  the load event.
 - Never add a new legacy alias. Never raise a migration budget. Budgets only ratchet down.
 - When a template moves onto a shared fragment, delete the markup it replaced in the same
   commit. Leaving both is what produces a hybrid page.
@@ -422,7 +431,7 @@ sections. Keep every `id`, `x-data`, `data-map-control`, and `data-image-control
 - [ ] **Step 5: Run it and watch it pass**
 
 ```bash
-./mvnw -Dtest='MapEditorLayoutContractTest,GameMapControllerTest,MapEditorBrowserTest' test
+./mvnw -P gates -Dtest='MapEditorLayoutContractTest,GameMapControllerTest,MapEditorBrowserTest' test
 ```
 
 `MapEditorBrowserTest` is the existing behavior gate. If it fails, a control was moved
@@ -589,7 +598,7 @@ Add to `MapEditorBrowserTest`:
 - Keep every existing render path; do not touch the 60fps draw loop's structure.
 
 ```bash
-./mvnw -Dtest='MapEditorBrowserTest,MapEditorLayoutContractTest,RawVisualValueContractTest' test
+./mvnw -P gates -Dtest='MapEditorBrowserTest,MapEditorLayoutContractTest,RawVisualValueContractTest' test
 ```
 
 - [ ] **Step 3: Commit**
@@ -657,7 +666,7 @@ Use the route `GameMapController` actually maps for the editor.
 - [ ] **Step 2: Run the Stage 6 gate**
 
 ```bash
-./mvnw -Dtest='MapEditorLayoutContractTest,MapEditorBrowserTest,MapEditorRenderGateTest' test
+./mvnw -P gates -Dtest='MapEditorLayoutContractTest,MapEditorBrowserTest,MapEditorRenderGateTest' test
 ./mvnw test
 ```
 
@@ -1080,7 +1089,7 @@ an automatic preset switch.
 - Every module keeps `overflow: auto`; the document never scrolls.
 
 ```bash
-./mvnw -Dtest='CockpitLaptopFitGateTest,ViewportAccessibilityGateTest' test
+./mvnw -P gates -Dtest='CockpitLaptopFitGateTest,ViewportAccessibilityGateTest' test
 ```
 
 - [ ] **Step 3: Commit**
@@ -1117,7 +1126,7 @@ with the session ended, saving the second set with an `-idle` suffix.
 - [ ] **Step 2: Run the Stage 7 gate**
 
 ```bash
-./mvnw -Dtest='CockpitSurfaceContractTest,CockpitBuiltInPresetCatalogTest,CockpitLaptopFitGateTest,ViewportAccessibilityGateTest' test
+./mvnw -P gates -Dtest='CockpitSurfaceContractTest,CockpitBuiltInPresetCatalogTest,CockpitLaptopFitGateTest,ViewportAccessibilityGateTest' test
 ./mvnw test
 ```
 
@@ -1691,7 +1700,7 @@ package dev.hendrikhoemberg.dmhelper.gate;
 - [ ] **Step 3: Run both, fix every failure at the source**
 
 ```bash
-./mvnw -Dtest='ViewportMatrixGateTest,KeyboardOperationGateTest,ViewportAccessibilityGateTest' test
+./mvnw -P gates -Dtest='ViewportMatrixGateTest,KeyboardOperationGateTest,ViewportAccessibilityGateTest' test
 ```
 
 Fix the page, never the assertion. A page that cannot pass at 150% zoom needs its layout
@@ -1837,7 +1846,7 @@ package dev.hendrikhoemberg.dmhelper.gate;
 - [ ] **Step 2: Run the capture and review every image**
 
 ```bash
-./mvnw -Dtest='VisualReviewMatrixGateTest' test
+./mvnw -P gates -Dtest='VisualReviewMatrixGateTest' test
 ```
 
 Open every file under `target/ui-redesign/matrix/`. For each, answer: is the primary task
