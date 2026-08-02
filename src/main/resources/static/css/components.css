@@ -1629,7 +1629,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-md);
-  background: radial-gradient(ellipse at center, var(--scrim-strong) 45%, var(--surface-canvas) 100%);
+  background: var(--surface-canvas);
   cursor: pointer;
   opacity: 1;
   transition: opacity var(--duration-standard) var(--ease-out);
