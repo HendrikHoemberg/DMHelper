@@ -2,7 +2,8 @@
 
 <div x-data="combatTracker({ campaignId: '', trackerMode: '' })"
      th:attr="x-data=|combatTracker({ campaignId: '${campaignId}', trackerMode: '${mode}' })|,
-              data-tracker-mode=${mode}"
+              data-tracker-mode=${mode},
+              data-encounter-mode="live""
      x-init="init()"
      @encounter-end-confirmed.window="endEncounter()"
      class="tracker-panel">

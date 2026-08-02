@@ -26,23 +26,33 @@
 <div id="page-content" class="page-content">
     <link rel="stylesheet" th:href="@{/css/encounter.css}">
 
-    <div class="edit-layout">
-        <div class="editor-block">
+    <div class="encounter-setup" data-encounter-mode="setup">
+
+        <div class="editor-block" data-setup-column="sources">
             <details class="setup-group" data-setup-group="combatants" open>
                 <summary><h2>Combatants</h2></summary>
                 <div class="setup-group__body">
                     <form method="post"
                           th:action="@{/campaigns/{cid}/encounters/{eid}/combatants(cid=${campaignId}, eid=${encounter.id})}"
-                          class="combatant-quickadd u-flex u-gap-sm u-mb-sm">
-                        <input type="text" name="name" placeholder="Name" required>
-                        <input type="number" name="maxHp" placeholder="HP" value="10">
-                        <select name="kind">
-                            <option value="NPC">NPC</option>
-                            <option value="PC">PC</option>
-                            <option value="MONSTER">Monster</option>
-                            <option value="OBJECT">Object</option>
-                            <option value="HAZARD">Hazard</option>
-                        </select>
+                          class="combatant-quickadd u-flex u-flex-wrap u-gap-sm u-mb-sm">
+                        <label class="setup-field">
+                            <span class="setup-label">Name</span>
+                            <input type="text" name="name" placeholder="Name" required class="setup-search">
+                        </label>
+                        <label class="setup-field">
+                            <span class="setup-label">Max HP</span>
+                            <input type="number" name="maxHp" placeholder="HP" value="10" class="setup-qty">
+                        </label>
+                        <label class="setup-field">
+                            <span class="setup-label">Kind</span>
+                            <select name="kind" class="setup-wave">
+                                <option value="NPC">NPC</option>
+                                <option value="PC">PC</option>
+                                <option value="MONSTER">Monster</option>
+                                <option value="OBJECT">Object</option>
+                                <option value="HAZARD">Hazard</option>
+                            </select>
+                        </label>
                         <button type="submit" class="btn btn-sm">Add</button>
                     </form>
 
@@ -53,7 +63,7 @@
             </details>
         </div>
 
-        <div class="editor-block">
+        <div class="editor-block" data-setup-column="settings">
             <div th:replace="~{encounter/_form :: form(${campaignId}, ${encounter}, ${maps})}"></div>
 
             <div th:replace="~{encounter/_placement-board :: placement-board(${campaignId}, ${encounter}, ${combatants})}"></div>

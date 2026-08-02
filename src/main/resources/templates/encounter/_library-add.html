@@ -2,16 +2,28 @@
      x-data="libraryAdd"
      th:attr="data-encounter-id=${encounterId}">
     <h3>Add from Library</h3>
-    <div class="library-add-search u-flex u-gap-sm">
-        <input type="text" x-model="query" @input.debounce.300ms="search"
-               placeholder="Search creatures by name..." class="u-flex-1">
-        <input type="number" x-model="quantity" min="1" max="50" value="1"
-               class="u-w-sm" title="Quantity">
-        <input type="text" x-model="groupName" placeholder="Group name (optional)" class="u-flex-1">
-        <select x-model="waveId" class="u-w-sm">
-            <option value="">Main wave</option>
-            <option th:each="w : ${waves}" th:value="${w.id}" th:text="${w.name}">Wave</option>
-        </select>
+    <div class="library-add-search u-flex u-flex-wrap u-gap-sm">
+        <label class="setup-field u-flex-1">
+            <span class="setup-label">Search creatures</span>
+            <input type="text" x-model="query" @input.debounce.300ms="search"
+                   placeholder="Search creatures by name..." class="setup-search">
+        </label>
+        <label class="setup-field">
+            <span class="setup-label">Quantity</span>
+            <input type="number" x-model="quantity" min="1" max="50" value="1"
+                   class="setup-qty" title="Quantity">
+        </label>
+        <label class="setup-field">
+            <span class="setup-label">Group name</span>
+            <input type="text" x-model="groupName" placeholder="Group name (optional)" class="setup-group">
+        </label>
+        <label class="setup-field">
+            <span class="setup-label">Wave</span>
+            <select x-model="waveId" class="setup-wave">
+                <option value="">Main wave</option>
+                <option th:each="w : ${waves}" th:value="${w.id}" th:text="${w.name}">Wave</option>
+            </select>
+        </label>
     </div>
     <div class="library-add-results u-mt-sm">
         <template x-if="results.length">

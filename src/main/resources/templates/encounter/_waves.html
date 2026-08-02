@@ -33,17 +33,30 @@
               hx-swap="beforeend"
               hx-vals='js:JSON.stringify(Object.fromEntries(new FormData(this)))'
               hx-on::after-request="this.reset()">
-            <div class="u-flex u-gap-sm">
-                <input type="text" name="waveKey" placeholder="Key (e.g. reinforcements)" required
-                       pattern="^[a-z0-9][a-z0-9._-]{0,99}$">
-                <input type="text" name="name" placeholder="Name" required>
-                <select name="triggerKind">
-                    <option value="MANUAL">Manual</option>
-                    <option value="ROUND">Round</option>
-                    <option value="HP_THRESHOLD">HP Threshold</option>
-                    <option value="CUSTOM">Custom</option>
-                </select>
-                <input type="text" name="triggerValue" placeholder="e.g. 3">
+            <div class="u-flex u-flex-wrap u-gap-sm">
+                <label class="setup-field">
+                    <span class="setup-label">Key</span>
+                    <input type="text" name="waveKey" placeholder="e.g. reinforcements" required
+                           class="setup-search"
+                           pattern="^[a-z0-9][a-z0-9._-]{0,99}$">
+                </label>
+                <label class="setup-field">
+                    <span class="setup-label">Name</span>
+                    <input type="text" name="name" placeholder="Name" required>
+                </label>
+                <label class="setup-field">
+                    <span class="setup-label">Trigger</span>
+                    <select name="triggerKind" class="setup-wave">
+                        <option value="MANUAL">Manual</option>
+                        <option value="ROUND">Round</option>
+                        <option value="HP_THRESHOLD">HP Threshold</option>
+                        <option value="CUSTOM">Custom</option>
+                    </select>
+                </label>
+                <label class="setup-field">
+                    <span class="setup-label">Trigger value</span>
+                    <input type="text" name="triggerValue" placeholder="e.g. 3" class="setup-qty">
+                </label>
                 <button type="submit" class="btn btn-sm">Add Wave</button>
             </div>
         </form>

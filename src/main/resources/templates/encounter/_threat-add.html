@@ -2,18 +2,30 @@
      x-data="threatAdd"
      th:attr="data-encounter-id=${encounterId}, data-campaign-id=${campaignId}">
     <h3>Add Trap / Hazard</h3>
-    <div class="threat-add-search u-flex u-gap-sm u-items-center">
-        <select x-model="kind" class="u-w-sm" @change="results = []; query = ''">
-            <option value="TRAP">Trap</option>
-            <option value="HAZARD">Hazard</option>
-        </select>
-        <input type="text" x-model="query" @input.debounce.300ms="search"
-               placeholder="Search traps and hazards..." class="u-flex-1">
-        <input type="number" x-model="initiative" placeholder="Init" class="u-w-sm" title="Initiative">
-        <select x-model="waveId" class="u-w-sm">
-            <option value="">Main wave</option>
-            <option th:each="w : ${waves}" th:value="${w.id}" th:text="${w.name}">Wave</option>
-        </select>
+    <div class="threat-add-search u-flex u-flex-wrap u-gap-sm u-items-center">
+        <label class="setup-field">
+            <span class="setup-label">Kind</span>
+            <select x-model="kind" class="setup-wave" @change="results = []; query = ''">
+                <option value="TRAP">Trap</option>
+                <option value="HAZARD">Hazard</option>
+            </select>
+        </label>
+        <label class="setup-field u-flex-1">
+            <span class="setup-label">Search</span>
+            <input type="text" x-model="query" @input.debounce.300ms="search"
+                   placeholder="Search traps and hazards..." class="setup-search">
+        </label>
+        <label class="setup-field">
+            <span class="setup-label">Initiative</span>
+            <input type="number" x-model="initiative" placeholder="Init" class="setup-qty" title="Initiative">
+        </label>
+        <label class="setup-field">
+            <span class="setup-label">Wave</span>
+            <select x-model="waveId" class="setup-wave">
+                <option value="">Main wave</option>
+                <option th:each="w : ${waves}" th:value="${w.id}" th:text="${w.name}">Wave</option>
+            </select>
+        </label>
     </div>
     <div class="threat-add-results u-mt-sm">
         <template x-if="results.length">

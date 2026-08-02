@@ -108,3 +108,56 @@
 .unplaced-combatant.is-placed {
     opacity: 0.65;
 }
+
+/* ── Setup as a two-column operational workspace (spec 11.4) ── */
+.encounter-setup {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-lg);
+    align-items: start;
+}
+
+@media (max-width: 1100px) {
+    .encounter-setup {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+[data-setup-column] {
+    min-width: 0;
+}
+
+[data-setup-column] .editor-block {
+    margin-bottom: var(--space-md);
+}
+
+/* Controls get a real floor so the workspace never drops to micro controls, and
+   every one of them carries a visible label (spec 11.4, 12.5). */
+.setup-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.setup-label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+}
+
+.setup-search { min-width: 16rem; }
+.setup-qty    { min-width: 4.5rem; }
+.setup-wave   { min-width: 7rem; }
+.setup-group  { min-width: 12rem; }
+
+/* Live combat must not be mistaken for a setup form: a darker canvas and heavier
+   rows make the running surface read differently from the prep surface. */
+.tracker-panel[data-encounter-mode="live"] {
+    background: var(--color-bg);
+}
+
+.tracker-panel[data-encounter-mode="live"] .combatant-row {
+    border-left-width: 3px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+}

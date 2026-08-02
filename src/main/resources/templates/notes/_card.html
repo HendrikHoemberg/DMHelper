@@ -8,6 +8,9 @@
     </h3>
     <div class="statblock-meta">
         <span class="badge" th:text="${#enums.label(note.type)}">TYPE</span>
+        <th:block th:if="${!note.dmOnly}">
+            <span th:replace="~{fragments/_badge :: badge(tone='shield', icon='shield', label='Player-safe')}"></span>
+        </th:block>
     </div>
     <p th:if="${note.body != null and !note.body.isBlank()}"
        th:text="${#strings.abbreviate(note.body, 150)}">Snippet</p>
