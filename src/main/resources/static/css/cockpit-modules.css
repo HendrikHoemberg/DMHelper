@@ -556,3 +556,182 @@
     border-top: 1px solid var(--color-border);
     margin-top: var(--space-xs);
 }
+
+/* ── Module role hierarchy (spec 12.4) ───────────────────────────────────────
+   The role rides on the module body fragment, so the shell keys its chrome off it
+   with :has(): primary leads with a larger heading, utility stays compact. */
+.cockpit-module:has([data-module-role="primary"]) {
+  --module-role-heading: var(--text-base);
+  --module-role-header-pad: 6px 12px;
+}
+.cockpit-module:has([data-module-role="support"]) {
+  --module-role-heading: var(--text-sm);
+  --module-role-header-pad: 4px 10px;
+}
+.cockpit-module:has([data-module-role="utility"]) {
+  --module-role-heading: var(--text-xs);
+  --module-role-header-pad: 2px 8px;
+}
+.cockpit-module .cockpit-module__header {
+  padding: var(--module-role-header-pad, 2px 8px);
+}
+.cockpit-module .cockpit-module__header-title {
+  font-size: var(--module-role-heading, var(--text-sm));
+}
+.cockpit-module:has([data-module-role="utility"]) [data-module-content-root] {
+  font-size: 0.92em;
+}
+
+/* A module shell that has not been given content yet stacks the empty state with
+   its next action, so an unloaded module never reads as a blank pane (spec 12.4). */
+.cockpit-module__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+}
+
+/* The encounter module renders its turn order and unresolved-initiative summary
+   inline, above the rail, so theatre-of-mind never needs the map module. */
+.runtime-encounter__turn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+.runtime-encounter__turn-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.runtime-encounter__turn-name {
+  font-weight: 600;
+}
+.runtime-encounter__initiative {
+  margin-left: auto;
+  color: var(--state-warning);
+  background: var(--state-warning-surface);
+  border: 1px solid var(--state-warning-border);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: var(--text-sm);
+}
+
+/* ── Runtime emphasis (spec 12.5) ────────────────────────────────────────────
+   Every state pairs a tinted surface or border with an explicit label/icon/shape —
+   never color alone. */
+
+/* Current scene: the DM's place is a raised panel, not a hairline. */
+.scene-card__state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
+  color: var(--state-info);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.scene-card[data-runtime-state="current-scene"] {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--state-info);
+  border-radius: 6px;
+  padding: var(--space-sm);
+}
+.scene-card[data-runtime-state="current-scene"] h4 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+/* Active encounter: a warning-accented panel around the live tracker. */
+[data-runtime-state="active-encounter"] {
+  background: color-mix(in srgb, var(--state-warning) 6%, transparent);
+  border: 1px solid var(--border-subtle);
+  border-top: 3px solid var(--state-warning);
+  border-radius: 6px;
+  padding: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+[data-runtime-state="active-encounter"] > h3 {
+  margin-top: 0;
+  color: var(--state-warning);
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Workspace-map mismatch: the current map is not the encounter map. */
+[data-runtime-state="map-mismatch"] {
+  border: 1px solid var(--state-danger-border);
+  border-radius: 6px;
+  margin: var(--space-sm);
+}
+
+/* Active turn: the combatant row is already the active panel; the turn marker
+   adds a leading indicator plus a bolder name so it never reads as a hairline. */
+.combatant-row[data-runtime-state="active-turn"] {
+  border-left-width: 4px;
+  box-shadow: var(--glow-primary), var(--shadow-warm-sm);
+}
+.combatant-row[data-runtime-state="active-turn"] .combatant-name {
+  font-weight: 600;
+}
+.combatant-row[data-runtime-state="active-turn"] .combatant-name::before {
+  content: "▶";
+  margin-right: 4px;
+  color: var(--state-info);
+  font-size: var(--text-sm);
+}
+
+/* Session state: the lifecycle reads as a filled status pill. */
+[data-runtime-state="session"] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--state-info-surface);
+  border: 1px solid var(--state-info-border);
+  color: var(--state-info);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: var(--text-sm);
+  letter-spacing: 0.5px;
+}
+[data-runtime-state="session"]::before {
+  content: "●";
+  font-size: var(--text-sm);
+}
+
+/* Save/connection state: a status dot that never relies on color alone. */
+[data-runtime-state="connection"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+[data-runtime-state="connection"]::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+[data-runtime-state="connection"][data-state="saved"] { color: var(--state-success); }
+[data-runtime-state="connection"][data-state="busy"] { color: var(--state-warning); }
+[data-runtime-state="connection"][data-state="error"] {
+  color: var(--state-danger);
+  background: var(--state-danger-surface);
+  border: 1px solid var(--state-danger-border);
+  border-radius: 999px;
+  padding: 2px 10px;
+}

@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <th:block th:fragment="encounters(view, mode)">
 <div class="encounter-rail-inner" th:attr="data-module-mode=${mode}">
-  <div class="sidebar-section">
+  <div class="sidebar-section" data-runtime-state="active-encounter">
     <h3>Active Encounter</h3>
     <th:block th:replace="~{encounter/_tracker :: tracker(mode=${mode})}"></th:block>
   </div>

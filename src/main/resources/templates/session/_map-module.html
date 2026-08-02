@@ -2,8 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <th:block th:fragment="map-module-runtime">
     <div class="cockpit-table" th:attr="data-selection-source=${view.selectionSource}">
-      <div class="map-context-warning" role="status"
+      <div class="map-context-warning" role="status" data-runtime-state="map-mismatch"
            th:if="${activeEncounter != null && activeEncounter.activeEncounterId != null && view.mapId != activeEncounter.activeEncounterMapId}">
+        <svg th:replace="~{common/_icon :: icon-sized(name='alert-triangle', size='14')}"></svg>
         Viewing a different map while <span th:text="${activeEncounter.activeEncounterName}"></span> is active.
         <button type="button" @click="switchMap(activeEncounter.mapId)"
                 class="btn btn-ghost" style="padding: 2px 8px;">Return to encounter map</button>

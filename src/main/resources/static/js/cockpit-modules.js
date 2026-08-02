@@ -151,6 +151,15 @@
         this.load(key, { mode: detail.mode });
       });
 
+      // The shell's empty state carries a next action that loads the module on
+      // demand (spec 12.4: empty modules provide a next action).
+      document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-module-load]');
+        if (!trigger) return;
+        const key = trigger.getAttribute('data-module-load');
+        if (!key || !this._shells.has(key)) return;
+        this.load(key, { force: true });
+      });
 
     }
 

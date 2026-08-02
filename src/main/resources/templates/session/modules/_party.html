@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <section th:fragment="body(view, mode)"
          data-cockpit-module-fragment="party"
+         data-module-role="support"
          th:attr="data-module-mode=${mode}, data-module-empty=${view == null or view.members.isEmpty()}">
   <div data-module-content-root class="runtime-party"
        th:classappend="${view != null} ? |runtime-party--${#strings.toLowerCase(mode.name())}| : ''">

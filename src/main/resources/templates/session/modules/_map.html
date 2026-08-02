@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <section th:fragment="body"
          data-cockpit-module-fragment="map"
+         data-module-role="primary"
          th:attr="data-module-mode=${mode}, data-module-empty=${view == null}">
   <div data-module-content-root>
     <th:block th:if="${view == null}">

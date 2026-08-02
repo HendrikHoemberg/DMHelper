@@ -36,6 +36,7 @@
             <!-- Initiative setup panel -->
             <section class="initiative-setup"
                      data-initiative-setup
+                     data-encounter-initiative
                      x-show="encounter?.combatPhase === 'SETUP'"
                      x-cloak>
                 <div class="initiative-setup__header">
@@ -113,6 +114,7 @@
             <!-- Turn controls -->
             <div class="tracker-turns"
                  data-running-turn-controls
+                 data-encounter-turn
                  x-show="encounter?.combatPhase === 'RUNNING'">
                 <button class="btn btn-ghost" style="padding: 2px 8px;" @click="previousTurn()"
                         data-action="previous-turn">◀ Prev</button>
@@ -357,6 +359,7 @@
                 <template x-for="(c, idx) in combatants" :key="c.id">
                     <div class="combatant-row"
                           :data-cid="c.id"
+                          :data-runtime-state="c.id === activeCombatantId ? 'active-turn' : null"
                           :class="{ active: c.id === activeCombatantId,
                                     'combatant-row--active': c.id === activeCombatantId,
                                     selected: c.id === selectedCombatantId,

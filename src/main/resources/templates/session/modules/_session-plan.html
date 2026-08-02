@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <section th:fragment="body(view, mode)"
+         data-module-role="support"
          th:attr="data-cockpit-module-fragment='session-plan', data-module-mode=${mode}, data-module-empty=${view == null or view.title == null}">
   <div data-module-content-root>
     <div class="session-plan-module-inner">

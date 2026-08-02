@@ -2,9 +2,12 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <section th:fragment="body"
          data-cockpit-module-fragment="encounter"
+         data-module-role="primary"
          th:attr="data-module-mode=${mode}, data-module-empty=${view == null or (view.activeEncounterId == null and view.planned.isEmpty())}">
   <div data-module-content-root class="runtime-encounter"
-       th:attr="data-encounter-id=${view != null ? view.activeEncounterId : null}">
+       th:attr="data-encounter-id=${view != null ? view.activeEncounterId : null},
+                data-encounter-turn=${view != null and view.activeEncounterId != null},
+                data-encounter-initiative=${view != null}">
     <th:block th:if="${view == null or (view.activeEncounterId == null and view.planned.isEmpty())}">
       <div class="empty-state" style="padding: var(--space-lg);">
         <p>No active encounter</p>
@@ -12,6 +15,17 @@
       </div>
     </th:block>
     <th:block th:if="${view != null and (view.activeEncounterId != null or !view.planned.isEmpty())}">
+      <div class="runtime-encounter__turn" data-encounter-turn
+           th:if="${view.activeEncounterId != null}">
+        <span class="runtime-encounter__turn-label">
+          <svg th:replace="~{common/_icon :: icon-sized(name='swords', size='14')}"></svg>
+          <span>Turn order</span>
+        </span>
+        <strong class="runtime-encounter__turn-name" th:text="${view.activeEncounterName}">Combat</strong>
+        <span class="runtime-encounter__initiative" data-encounter-initiative
+              th:if="${view.combatants.?[initiative == 0].size() > 0}"
+              th:text="|${view.combatants.?[initiative == 0].size()} without initiative|">0 without initiative</span>
+      </div>
       <th:block th:replace="~{session/_encounter-rail :: encounters(view=${view}, mode=${mode})}"></th:block>
     </th:block>
   </div>

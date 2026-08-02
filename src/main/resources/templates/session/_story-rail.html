@@ -4,7 +4,11 @@
 <div class="story-rail-inner">
   <div class="sidebar-section">
     <h3>Story</h3>
-    <div class="scene-card">
+    <div class="scene-card" data-runtime-state="current-scene">
+      <div class="scene-card__state">
+        <svg th:replace="~{common/_icon :: icon-sized(name='map', size='14')}"></svg>
+        <span>Current scene</span>
+      </div>
       <h4 data-current-scene th:text="${view.title}">Scene Title</h4>
       <th:block th:if="${view.readAloud != null}">
         <div class="structured-block structured-read-aloud u-mb-xs">

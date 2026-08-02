@@ -95,6 +95,28 @@ class CockpitRuntimeModuleControllerTest {
     }
 
     @Test
+    void encounterModuleShowsTurnOrderAndUnresolvedInitiativeInline() throws Exception {
+        when(registry.require("encounter")).thenReturn(CockpitModuleRegistry.standard().require("encounter"));
+        var view = new CockpitRuntimeModuleViewService.EncounterView(
+                UUID.randomUUID(), "Goblin Ambush", UUID.randomUUID(), "RUNNING",
+                List.of(
+                        new CockpitRuntimeModuleViewService.CombatantView(
+                                UUID.randomUUID(), "Goblin", 18, 7, 7, "Goblin"),
+                        new CockpitRuntimeModuleViewService.CombatantView(
+                                UUID.randomUUID(), "Bugbear", 0, 27, 27, "Bugbear")),
+                List.of(), List.of(), List.of(), List.of());
+        when(views.encounter(campaignId)).thenReturn(view);
+
+        mvc.perform(get("/campaigns/{cid}/session/modules/encounter", campaignId)
+                        .param("mode", "STANDARD"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-encounter-turn")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-encounter-initiative")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("1 without initiative")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Goblin Ambush")));
+    }
+
+    @Test
     void sessionPlanRouteReturnsModuleFragment() throws Exception {
         when(registry.require("session-plan")).thenReturn(CockpitModuleRegistry.standard().require("session-plan"));
         when(views.sessionPlan(campaignId)).thenReturn(null);

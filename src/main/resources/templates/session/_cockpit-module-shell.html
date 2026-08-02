@@ -40,6 +40,20 @@
       <th:block th:if="${initialBody != null}">
         <th:block th:insert="${initialBody}"></th:block>
       </th:block>
+      <th:block th:unless="${initialBody != null}">
+        <div class="cockpit-module__empty">
+          <th:block th:replace="~{fragments/_states :: empty(
+              icon='layers',
+              title=${module.states.emptyMessage},
+              description=${module.title + ' has not been loaded yet.'},
+              cta=~{})}"></th:block>
+          <div class="cockpit-module__empty-action">
+            <button type="button" class="btn"
+                    th:attr="data-module-load=${module.key}"
+                    th:text="|Open ${module.title}|">Open module</button>
+          </div>
+        </div>
+      </th:block>
     </div>
   </div>
   <div class="cockpit-module__error" data-module-error role="alert" hidden>

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <section th:fragment="body(view, mode)"
+         data-module-role="utility"
          th:attr="data-cockpit-module-fragment='reference', data-module-mode=${mode}, data-module-empty=${view == null}">
   <div data-module-content-root>
     <div class="reference-module-body" x-data="cockpitReference">

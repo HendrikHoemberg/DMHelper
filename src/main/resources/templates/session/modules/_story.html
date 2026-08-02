@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <section th:fragment="body(view, mode)"
          data-cockpit-module-fragment="story"
+         data-module-role="primary"
          th:attr="data-module-mode=${mode}, data-module-empty=${view == null}">
   <div data-module-content-root class="runtime-story"
        th:classappend="${view != null} ? |runtime-story--${#strings.toLowerCase(mode.name())}| : ''">

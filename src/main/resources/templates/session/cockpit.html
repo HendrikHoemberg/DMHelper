@@ -35,7 +35,7 @@
     <div class="command-slot" data-command-slot="session-state">
       <span class="badge" x-text="sessionStatus" th:attr="data-session-status=${workspace.session.status}">IDLE</span>
       <span id="runtimeStatus" class="cockpit-status" role="status" aria-live="polite">
-        <span class="cockpit-status__atom" data-status-save data-state="idle">Up to date</span>
+        <span class="cockpit-status__atom" data-status-save data-runtime-state="connection" data-state="idle">Up to date</span>
         <span class="cockpit-status__atom cockpit-status__atom--input" data-status-input data-state="rejected" hidden></span>
       </span>
     </div>
