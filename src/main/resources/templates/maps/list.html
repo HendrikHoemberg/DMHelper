@@ -21,6 +21,8 @@
         hx-target="#map-grid"
         hx-swap="beforeend">+ New Map</button>
 <a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Back to Campaign</a>
+<a id="emptyMapAction" th:href="@{/campaigns/{id}/maps/new(id=${campaignId})}"
+   class="btn btn-ghost">New map</a>
 
 <div id="page-content" class="page-content">
     <th:block th:replace="~{fragments/_toolbar :: toolbar(
@@ -32,9 +34,11 @@
 
     <div id="map-grid" class="card-grid card-grid--bounded empty-state-host">
         <th:block th:if="${maps == null or maps.isEmpty()}">
-            <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
-                'No maps yet', 'New map', @{/campaigns/{id}/maps/new(id=${campaignId})},
-                'Draw a battle map or import an image to run encounters on the grid.', 'map')}"></th:block>
+            <th:block th:replace="~{fragments/_states :: empty(
+                icon='map',
+                title='No maps yet',
+                description='Draw a battle map or import an image to run encounters on the grid.',
+                cta=~{::#emptyMapAction})}"></th:block>
         </th:block>
         <th:block th:each="map : ${maps}">
             <th:block th:replace="~{maps/_card :: card(map=${map}, campaignId=${campaignId})}"></th:block>

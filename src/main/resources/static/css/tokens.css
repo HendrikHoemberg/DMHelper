@@ -84,36 +84,8 @@
   --shadow-hairline: 0 2px 0 rgba(238, 232, 220, 0.04);
   --glow-primary: 0 0 16px rgba(201, 163, 92, 0.25);
 
-  /* Temporary migration aliases. LegacyVisualAliasContractTest prevents growth;
-     Task 49 removes them. */
-  --color-bg: var(--surface-canvas);
-  --color-surface: var(--surface-panel);
-  --color-surface-hover: var(--surface-raised);
-  --color-text: var(--text-primary);
-  --color-text-muted: var(--text-secondary);
-  --color-accent: var(--action-primary);
-  --color-danger: var(--state-danger);
-  --color-success: var(--state-success);
-  --color-warning: var(--state-warning);
-  --color-warning-bg: var(--state-warning-surface);
-  --color-warning-text: var(--state-warning);
-  --color-border: var(--border-subtle);
-  --color-border-strong: var(--border-strong);
-  --color-concentration: var(--state-concentration);
-  --color-info: var(--state-info);
-  --color-ember: var(--state-danger);
-  --color-gold-soft: var(--selection-surface);
-  --color-overlay: var(--scrim-strong);
-  --color-shield: var(--state-shield);
-  --color-shield-soft: var(--state-shield-surface);
-  --color-text-secondary: var(--text-secondary);
-  --color-border-subtle: var(--border-subtle);
-  --color-bg-elevated: var(--surface-raised);
-  --color-surface-muted: var(--surface-panel);
-  /* End temporary migration aliases. */
-
-  /* Legacy compat kept defined for existing references (dice tints, stagger
-     fallback, radius and shadow shims) — Task 49 removes them. */
+  /* Legacy compat shims for existing references (dice tints, stagger fallback,
+     radius and shadow shims). */
   --dice-high: var(--state-success);
   --dice-low: var(--state-danger);
   --stagger: 0;
@@ -147,8 +119,8 @@
 
   font-family: var(--font-ui);
   font-size: 16px;
-  color: var(--color-text);
-  background-color: var(--color-bg);
+  color: var(--text-primary);
+  background-color: var(--surface-canvas);
 
   /* elevation — repointed onto the semantic surface ladder */
   --elevation-base-bg: var(--surface-canvas);

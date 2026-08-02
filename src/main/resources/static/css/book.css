@@ -4,9 +4,9 @@
 .statblock-render {
   max-width: 500px;
   margin: 0 auto;
-  background-color: color-mix(in srgb, var(--color-surface) 85%, var(--color-accent));
+  background-color: color-mix(in srgb, var(--surface-panel) 85%, var(--action-primary));
   background-image: var(--tone-parchment), var(--texture-parchment);
-  color: var(--color-text);
+  color: var(--text-primary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
   padding: var(--space-lg);
@@ -17,22 +17,22 @@
   font-size: var(--text-xl);
   font-weight: 700;
   margin-bottom: 2px;
-  color: var(--color-accent);
+  color: var(--action-primary);
 }
 .statblock-render .sb-subtitle {
   font-style: italic;
   font-size: var(--text-sm);
   margin-bottom: var(--space-md);
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
 }
 .statblock-render .sb-rule {
   height: 5px; border: none;
-  background: var(--color-ember);
+  background: var(--state-danger);
   clip-path: polygon(0 0, 100% 50%, 0 100%);
   margin: var(--space-sm) 0;
 }
 .statblock-render .sb-rule-thin {
-  border: none; border-top: 1px solid var(--color-ember);
+  border: none; border-top: 1px solid var(--state-danger);
   opacity: 0.6; margin: var(--space-xs) 0;
 }
 .statblock-render .sb-stat-row {
@@ -45,17 +45,17 @@
   gap: var(--space-xs); text-align: center; margin-bottom: var(--space-sm);
   font-variant-numeric: tabular-nums;
 }
-.statblock-render .sb-abilities div { font-size: var(--text-xs); color: var(--color-text-muted); }
-.statblock-render .sb-abilities .score { font-size: var(--text-base); font-weight: 700; color: var(--color-text); }
+.statblock-render .sb-abilities div { font-size: var(--text-xs); color: var(--text-secondary); }
+.statblock-render .sb-abilities .score { font-size: var(--text-base); font-weight: 700; color: var(--text-primary); }
 .statblock-render .sb-props { font-size: var(--text-sm); margin-bottom: var(--space-sm); }
 .statblock-render .sb-props dt { font-weight: 700; display: inline; }
 .statblock-render .sb-props dd { display: inline; margin-right: 1em; }
 .statblock-render h3 {
   font-size: var(--text-base); font-weight: 700;
-  color: var(--color-ember);
+  color: var(--state-danger);
   letter-spacing: 0.04em;
   margin-top: var(--space-md); margin-bottom: var(--space-xs);
-  border-bottom: 1px solid var(--color-ember);
+  border-bottom: 1px solid var(--state-danger);
   padding-bottom: 2px;
 }
 .statblock-render .sb-ability { margin-bottom: var(--space-sm); }
@@ -69,23 +69,23 @@
   max-width: 68ch;
 }
 .note-body h1, .note-body h2, .note-body h3 {
-  color: var(--color-text);
+  color: var(--text-primary);
   margin-top: var(--space-lg);
   margin-bottom: var(--space-sm);
 }
 .note-body h1 { font-size: var(--text-2xl); }
-.note-body h2 { font-size: var(--text-xl); border-bottom: 1px solid var(--color-border-strong); padding-bottom: var(--space-xs); }
+.note-body h2 { font-size: var(--text-xl); border-bottom: 1px solid var(--border-strong); padding-bottom: var(--space-xs); }
 .note-body h3 { font-size: var(--text-lg); }
 .note-body p { margin-bottom: var(--space-md); }
 .note-body ul, .note-body ol { margin-bottom: var(--space-md); padding-left: var(--space-lg); }
 .note-body li { margin-bottom: var(--space-xs); }
-.note-body code { background: var(--color-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; font-family: var(--font-mono); }
-.note-body pre { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius); padding: var(--space-md); overflow-x: auto; margin-bottom: var(--space-md); }
+.note-body code { background: var(--surface-canvas); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; font-family: var(--font-mono); }
+.note-body pre { background: var(--surface-canvas); border: 1px solid var(--border-subtle); border-radius: var(--radius); padding: var(--space-md); overflow-x: auto; margin-bottom: var(--space-md); }
 .note-body pre code { background: none; padding: 0; }
-.note-body blockquote { border-left: 3px solid var(--color-border-strong); padding-left: var(--space-md); color: var(--color-text-muted); margin-bottom: var(--space-md); font-style: italic; }
+.note-body blockquote { border-left: 3px solid var(--border-strong); padding-left: var(--space-md); color: var(--text-secondary); margin-bottom: var(--space-md); font-style: italic; }
 .note-body table { width: 100%; border-collapse: collapse; margin-bottom: var(--space-md); font-size: var(--text-sm); font-family: var(--font-ui); }
-.note-body th, .note-body td { padding: var(--space-xs) var(--space-sm); border: 1px solid var(--color-border); text-align: left; }
-.note-body th { background: var(--color-surface-hover); font-weight: 600; }
+.note-body th, .note-body td { padding: var(--space-xs) var(--space-sm); border: 1px solid var(--border-subtle); text-align: left; }
+.note-body th { background: var(--surface-raised); font-weight: 600; }
 .note-body img { max-width: 100%; border-radius: var(--radius); }
 
 /* Drop cap — adventure chapters & handouts ONLY (ornament budget) */
@@ -94,7 +94,7 @@
   line-height: 0.85;
   float: left;
   padding-right: 0.08em;
-  color: var(--color-ember);
+  color: var(--state-danger);
 }
 
 /* Read-aloud (boxed) text — a parchment in-world surface: Alegreya at reading size on
@@ -102,11 +102,11 @@
 .read-aloud {
   margin: var(--space-md) 0;
   padding: var(--space-md) var(--space-lg);
-  border-left: 3px solid var(--color-accent);
+  border-left: 3px solid var(--action-primary);
   background:
     var(--tone-parchment),
     var(--texture-parchment),
-    color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+    color-mix(in srgb, var(--action-primary) 8%, var(--surface-panel));
   border-radius: var(--radius);
   font-family: var(--font-book);
   font-style: italic;
@@ -118,9 +118,9 @@
    inked (§5.4). Scale, not width: the underline never touches layout. */
 .wiki-link {
   position: relative;
-  color: var(--color-text);
+  color: var(--text-primary);
   text-decoration: none;
-  border-bottom: 1px dashed var(--color-border-strong);
+  border-bottom: 1px dashed var(--border-strong);
 }
 .wiki-link::after {
   content: '';
@@ -129,13 +129,13 @@
   right: 0;
   bottom: -1px;
   height: 1px;
-  background: var(--color-border-strong);
+  background: var(--border-strong);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform var(--duration-standard) var(--ease-out);
 }
-.wiki-link:hover { color: var(--color-text-muted); }
+.wiki-link:hover { color: var(--text-secondary); }
 .wiki-link:hover::after,
 .wiki-link:focus-visible::after { transform: scaleX(1); }
-.wiki-link-broken { color: var(--color-danger); border-bottom-color: var(--color-danger); cursor: help; }
-.wiki-link-broken::after { background: var(--color-danger); }
+.wiki-link-broken { color: var(--state-danger); border-bottom-color: var(--state-danger); cursor: help; }
+.wiki-link-broken::after { background: var(--state-danger); }

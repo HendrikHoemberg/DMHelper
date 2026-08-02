@@ -35,12 +35,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problem;
     }
 
-    private ModelAndView htmxError(HttpStatus status, String message, HttpServletRequest request) {
-        ModelAndView mav = new ModelAndView("common/_error");
-        mav.addObject("message", message);
-        mav.addObject(CorrelationIdFilter.ATTRIBUTE, CorrelationIdFilter.current(request));
-        mav.setStatus(status);
-        return mav;
+    private ResponseEntity<String> htmxError(HttpStatus status, String message, HttpServletRequest request) {
+        String reference = CorrelationIdFilter.current(request);
+        String fragment = "<div class=\"state state--failed\" role=\"alert\" aria-live=\"polite\">"
+                + "<svg class=\"icon icon--24\" width=\"24\" height=\"24\" aria-hidden=\"true\" focusable=\"false\">"
+                + "<use href=\"/icons/ui.svg#icon-alert-triangle\"></use></svg>"
+                + "<p class=\"state__title\">" + HtmlUtils.htmlEscape(message) + "</p>"
+                + "<span class=\"u-text-sm\"> Reference: "
+                + HtmlUtils.htmlEscape(reference) + "</span></div>";
+        return ResponseEntity.status(status).body(fragment);
     }
 
     /** True for full-page browser navigations, which need an HTML page rather than a JSON ProblemDetail. */

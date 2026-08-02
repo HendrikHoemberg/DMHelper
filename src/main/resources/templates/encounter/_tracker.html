@@ -11,7 +11,7 @@
     <template x-if="!encounter">
         <div class="empty-state" style="padding: var(--space-lg);">
             <p>No active encounter</p>
-            <span class="tracker-empty-hint" style="color: var(--color-text-muted);">Create an encounter to start tracking combat</span>
+            <span class="tracker-empty-hint" style="color: var(--text-secondary);">Create an encounter to start tracking combat</span>
         </div>
     </template>
 
@@ -326,10 +326,10 @@
             </div>
 
             <!-- Wave banner -->
-            <div class="wave-banner" x-show="pendingWaves.length > 0" style="background: var(--color-warning); padding: 8px 12px; border-radius: 4px; margin: 8px 0;">
+            <div class="wave-banner" x-show="pendingWaves.length > 0" style="background: var(--state-warning); padding: 8px 12px; border-radius: 4px; margin: 8px 0;">
                 <template x-for="wave in pendingWaves" :key="wave.id">
                     <div style="display: flex; align-items: center; gap: 8px; margin: 4px 0;">
-                        <span style="color: var(--color-bg); font-weight: 600;" x-text="'Wave ready: ' + wave.name"></span>
+                        <span style="color: var(--surface-canvas); font-weight: 600;" x-text="'Wave ready: ' + wave.name"></span>
                         <span class="text-muted" x-text="wave.triggerKind + (wave.triggerValue ? ' @ ' + wave.triggerValue : '')"></span>
                         <span class="text-muted" x-text="wave.combatantCount + ' combatants'"></span>
                         <button class="btn btn-sm btn-warning" @click="spawnWave(wave.id)">Spawn</button>
@@ -448,7 +448,7 @@
                 <div class="lair-action-row" x-show="lairActionRowVisible">
                     <span class="init-badge lair-init">20</span>
                     <span class="combatant-name" x-text="encounter?.lairActionName || 'Lair Action'"></span>
-                    <span class="tracker-lair-status" style="color: var(--color-text-muted); margin-left: auto;"
+                    <span class="tracker-lair-status" style="color: var(--text-secondary); margin-left: auto;"
                           x-show="!encounter?.lairActionAvailable"><svg th:replace="~{common/_icon :: icon-sized(name='check', size='16')}"></svg> this round</span>
                     <button class="btn btn-ghost tracker-small-button" style="padding: 1px 6px;"
                             x-show="encounter?.lairActionAvailable"
@@ -472,7 +472,7 @@
                     <span>/</span>
                     <span x-text="selected?.maxHp || '?'"></span>
                     <template x-if="selected?.tempHp > 0">
-                        <span class="tracker-temp-hp" style="color: var(--color-warning);">+<span x-text="selected.tempHp"></span> temp</span>
+                        <span class="tracker-temp-hp" style="color: var(--state-warning);">+<span x-text="selected.tempHp"></span> temp</span>
                     </template>
                     <span class="hp-flag bloodied" x-show="selected?.bloodied">Bloodied</span>
                     <span class="hp-flag dead" x-show="selected?.defeated">Defeated</span>
@@ -533,7 +533,7 @@
                                    :checked="hasCondition(selected, cond.sourceKey)"
                                    @change="toggleCondition(selected.id, cond.sourceKey, applyDuration || cond.defaultDuration || 0)">
                             <span x-text="cond.name"></span>
-                            <span class="cond-help" :title="cond.description" style="cursor: help; color: var(--color-text-muted);">ⓘ</span>
+                            <span class="cond-help" :title="cond.description" style="cursor: help; color: var(--text-secondary);">ⓘ</span>
                         </label>
                     </template>
                 </div>
@@ -557,7 +557,7 @@
 
                 <!-- Legendary section -->
                 <div class="detail-legendary" x-show="(selected?.legendaryActionsMax || 0) > 0">
-                    <h4 class="tracker-legendary" style="margin: var(--space-xs) 0; color: var(--color-text-muted);">Legendary</h4>
+                    <h4 class="tracker-legendary" style="margin: var(--space-xs) 0; color: var(--text-secondary);">Legendary</h4>
                     <div class="tracker-legendary" style="margin-bottom: 2px;">
                         Actions: <span x-text="selected?.legendaryActionsUsed || 0"></span> / <span x-text="selected?.legendaryActionsMax || 0"></span>
                         <button class="btn btn-ghost tracker-small-button" style="padding: 1px 6px;" @click="useLegendaryAction(selected.id)">Use</button>
@@ -571,7 +571,7 @@
                 <!-- Focused mode: expanded statblock -->
                 <div class="detail-focused-statblock" x-show="trackerMode === 'FOCUSED'">
                     <h4>Statblock</h4>
-                    <div class="tracker-statblock-loading" x-show="focusedStatblockLoading" style="color: var(--color-text-muted);">Loading...</div>
+                    <div class="tracker-statblock-loading" x-show="focusedStatblockLoading" style="color: var(--text-secondary);">Loading...</div>
                     <template x-if="!focusedStatblockLoading && focusedStatblock">
                       <div class="tracker-statblock">
                         <div x-show="focusedStatblock.size" class="u-text-xs">
@@ -670,7 +670,7 @@
                 <button class="btn btn-ghost tracker-standard-button" style="padding: 2px 8px;"
                         @click="undo()"
                         :disabled="!canUndo">↩ Undo</button>
-                <span class="tracker-footer-count" style="color: var(--color-text-muted); margin-left: auto;" x-text="combatants.length + ' combatants'"></span>
+                <span class="tracker-footer-count" style="color: var(--text-secondary); margin-left: auto;" x-text="combatants.length + ' combatants'"></span>
             </div>
         </div>
     </template>

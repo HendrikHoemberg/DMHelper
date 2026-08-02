@@ -32,7 +32,7 @@
 </div>
 
 <div id="page-content" class="page-content">
-    <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+    <th:block th:if="${error != null}"><div th:replace="~{fragments/_states :: failed(title=${error}, description=null, retry=~{})}"></div></th:block>
     <div id="factionForm"></div>
 
     <div class="prose note-body"

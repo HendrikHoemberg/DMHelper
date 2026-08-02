@@ -50,7 +50,11 @@
                 </th:block>
             </tbody>
         </table>
-        <th:block th:if="${#lists.isEmpty(entries)}"><th:block th:replace="~{common/_empty-state :: empty-state('No transactions recorded', null, null, null)}"></th:block></th:block>
+        <th:block th:if="${#lists.isEmpty(entries)}"><th:block th:replace="~{fragments/_states :: empty(
+            icon=null,
+            title='No transactions recorded',
+            description=null,
+            cta=~{})}"></th:block></th:block>
     </div>
 </div>
 </body>

@@ -10,7 +10,7 @@ import { renderRuntimeDocument } from './runtime-renderer.js';
  */
 
 const KIND_RING_COLORS = { PC: '#4a9eff', NPC: '#2ecc71', MONSTER: '#e74c3c', OBJECT: '#f39c12' };
-const SELECTION_GOLD = '#c9a35c';   // --color-accent; the canvas can't read CSS tokens
+const SELECTION_GOLD = '#c9a35c';   // --action-primary; the canvas can't read CSS tokens
 const HP_COLORS = { high: '#7fa05f', mid: '#d9993d', low: '#a83a32' };
 
 /* Mirrors the warm condition palette in encounter/_tracker.html */

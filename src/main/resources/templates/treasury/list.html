@@ -72,7 +72,11 @@
                     </tbody>
                 </table>
             </th:block>
-            <th:block th:if="${#lists.isEmpty(holderItems)}"><th:block th:replace="~{common/_empty-state :: empty-state('No items assigned', null, null, null)}"></th:block></th:block>
+            <th:block th:if="${#lists.isEmpty(holderItems)}"><th:block th:replace="~{fragments/_states :: empty(
+                icon=null,
+                title='No items assigned',
+                description=null,
+                cta=~{})}"></th:block></th:block>
         </th:block>
     </div>
 
@@ -96,10 +100,11 @@
                 </tbody>
             </table>
             <th:block th:if="${#lists.isEmpty(stashItems)}">
-                <th:block th:replace="~{common/_empty-state :: empty-state-with-cta(
-                    message='The party stash is empty',
+                <th:block th:replace="~{fragments/_states :: empty(
+                    icon='gem',
+                    title='The party stash is empty',
                     description='Track coin, gems, and magic items the party is carrying.',
-                    icon='gem', cta=~{common/_form-cta :: swap-cta(
+                    cta=~{common/_form-cta :: swap-cta(
                         actionText='Add item',
                         actionUrl=@{/campaigns/{id}/treasury/new(id=${campaignId})},
                         target='#treasury-form-area')})}"></th:block>

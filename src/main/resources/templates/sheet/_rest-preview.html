@@ -21,7 +21,7 @@
 
     <div class="form-group" th:if="${preview.clearExhaustionOneLevel}">
       <strong>Exhaustion:</strong> Reduced by 1 level (if any)
-      <span class="rest-rule-note" th:if="${preview.notes().isEmpty() or !#strings.contains(preview.notes()[0], 'SRD')}" style="color: var(--color-text-muted);"> (SRD rest rule)</span>
+      <span class="rest-rule-note" th:if="${preview.notes().isEmpty() or !#strings.contains(preview.notes()[0], 'SRD')}" style="color: var(--text-secondary);"> (SRD rest rule)</span>
     </div>
 
     <div class="form-group" th:if="${!preview.notes().isEmpty()}">

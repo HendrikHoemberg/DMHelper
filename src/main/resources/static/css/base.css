@@ -72,13 +72,13 @@ h1, h2 {
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: var(--elevation-base-bg); }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 5px; border: 2px solid var(--elevation-base-bg); }
-::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 5px; border: 2px solid var(--elevation-base-bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
 
 summary { cursor: pointer; }
 
 fieldset {
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
   padding: var(--space-sm);
   margin-bottom: var(--space-md);
@@ -106,8 +106,8 @@ fieldset {
   align-items: center;
   justify-content: space-between;
   padding: var(--space-sm) var(--space-lg);
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--surface-panel);
+  border-bottom: 1px solid var(--border-subtle);
   position: sticky;
   top: 0;
   z-index: var(--z-nav);
@@ -116,7 +116,7 @@ fieldset {
 .navbar-brand {
   font-size: var(--text-xl);
   font-weight: 700;
-  color: var(--color-text);
+  color: var(--text-primary);
   letter-spacing: 0.5px;
 }
 
@@ -156,11 +156,11 @@ fieldset {
 .pin-display {
   font-family: 'Cascadia Code', 'Fira Code', monospace;
   font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  background: var(--color-bg);
+  color: var(--text-secondary);
+  background: var(--surface-canvas);
   padding: 2px 8px;
   border-radius: 4px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
 }
 
 /* The pre-migration .page-header block lived here: a flex-end, space-between row with its
@@ -352,7 +352,7 @@ body[data-archetype="editor"] .rail__collapse { display: none; }
   left: 0;
   height: 2px;
   width: 0%;
-  background: var(--color-border-strong);
+  background: var(--border-strong);
   z-index: var(--z-filament);
   pointer-events: none;
   opacity: 0;
@@ -363,20 +363,20 @@ body.loading #loading-filament {
 }
 
 .palette-hint {
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   font-family: var(--font-ui);
   white-space: nowrap;
 }
-.palette-hint:hover { color: var(--color-text); }
+.palette-hint:hover { color: var(--text-primary); }
 .palette-hint__icon {
   font-size: var(--text-base);
   line-height: 1;
 }
 .palette-hint__key {
   padding: 1px var(--space-xs);
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   background: var(--elevation-floating-bg);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -395,7 +395,7 @@ body.loading #loading-filament {
 .shortcut-panel {
   position: relative;
   background: var(--elevation-floating-bg);
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--border-strong);
   border-radius: 10px;
   padding: var(--space-lg);
   min-width: 320px;
@@ -406,8 +406,8 @@ body.loading #loading-filament {
 #shortcut-overlay.open .shortcut-panel { transform: translateY(0) scale(1); }
 .shortcut-panel h2 { margin-bottom: var(--space-md); }
 .shortcut-panel dl { display: grid; grid-template-columns: auto 1fr; gap: var(--space-sm) var(--space-md); }
-.shortcut-panel dt { font-family: var(--font-mono); color: var(--color-text-muted); }
-.shortcut-panel dd { color: var(--color-text-muted); }
+.shortcut-panel dt { font-family: var(--font-mono); color: var(--text-secondary); }
+.shortcut-panel dd { color: var(--text-secondary); }
 .shortcut-panel:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .shortcut-close {
   position: absolute;
@@ -415,7 +415,7 @@ body.loading #loading-filament {
   right: var(--space-sm);
   background: transparent;
   border: none;
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   font-size: var(--text-lg);
   line-height: 1;
   cursor: pointer;
@@ -423,7 +423,7 @@ body.loading #loading-filament {
   border-radius: var(--radius);
   transition: color var(--duration-micro) var(--ease-out), background var(--duration-micro) var(--ease-out);
 }
-.shortcut-close:hover { color: var(--color-text); background: var(--elevation-raised-bg); }
+.shortcut-close:hover { color: var(--text-primary); background: var(--elevation-raised-bg); }
 .shortcut-close:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
 /* ── View transitions ──
@@ -464,7 +464,7 @@ body.loading #loading-filament {
 
 /* Unclassed anchors inside content default to the accent, not browser blue. */
 .app-main a:not([class]) {
-    color: var(--color-text);
+    color: var(--text-primary);
     text-decoration: none;
 }
 .app-main a:not([class]):hover {

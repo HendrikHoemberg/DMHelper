@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <th:block th:fragment="plan(workspace)">
 <div class="session-plan-inner" th:if="${workspace.sessionPlan != null}">
-  <h3 class="session-plan__heading" style="margin: 0 var(--space-md); text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-text-muted);"
+  <h3 class="session-plan__heading" style="margin: 0 var(--space-md); text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary);"
       th:text="${workspace.sessionPlan.title}">Session Plan</h3>
   <div class="plan-beats">
     <th:block th:each="beat : ${workspace.sessionPlan.beats()}">
@@ -26,11 +26,11 @@
   </div>
 </div>
 <div class="session-plan-inner" th:if="${workspace.sessionPlan == null}">
-  <p style="margin: 0 var(--space-md); color: var(--color-text-muted);">No session plan yet. Create one from a note.</p>
+  <p style="margin: 0 var(--space-md); color: var(--text-secondary);">No session plan yet. Create one from a note.</p>
 </div>
 <!-- Quest progress is always available alongside an optional session plan -->
 <div class="session-plan-inner quest-progress-panel" data-quest-progress>
-  <h3 class="quest-progress__heading" style="margin: 0 var(--space-md); text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-text-muted);">Quest Progress</h3>
+  <h3 class="quest-progress__heading" style="margin: 0 var(--space-md); text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-secondary);">Quest Progress</h3>
   <div th:if="${workspace.questProgressViews != null and !workspace.questProgressViews.isEmpty()}" class="quest-progress-list">
     <div th:each="qpv : ${workspace.questProgressViews}" class="quest-progress-card u-mb-sm"
          th:attr="data-quest-id=${qpv.quest.id}">
@@ -59,7 +59,7 @@
     </div>
   </div>
   <div th:if="${workspace.questProgressViews == null or workspace.questProgressViews.isEmpty()}" class="empty-state u-mt-sm">
-    <p style="margin: 0 var(--space-md); color: var(--color-text-muted);">No quests yet.</p>
+    <p style="margin: 0 var(--space-md); color: var(--text-secondary);">No quests yet.</p>
   </div>
 </div>
 </th:block>

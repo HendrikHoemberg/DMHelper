@@ -16,8 +16,6 @@ class TokenColorsTest {
     void anAliasResolvesThroughToTheRoleItPointsAt() {
         assertThat(TokenColors.resolve("--selection-accent"))
                 .isEqualTo(TokenColors.resolve("--action-primary"));
-        assertThat(TokenColors.resolve("--color-bg"))
-                .isEqualTo(TokenColors.resolve("--surface-canvas"));
     }
 
     /** 14% of #d96d64 over #1d1f24, the mix --state-danger-surface declares. */

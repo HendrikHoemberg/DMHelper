@@ -57,7 +57,11 @@
     <div class="card-grid card-grid--library" id="statblock-results"
          th:classappend="${sourceFiltered} ? 'card-grid--source-filtered'">
         <th:block th:if="${statblocks.isEmpty()}">
-            <th:block th:replace="~{common/_empty-state :: empty-state('Nothing in the bestiary matches that.', null, null, 'Try a broader search, or clear a filter.')}"></th:block>
+            <th:block th:replace="~{fragments/_states :: empty(
+                icon=null,
+                title='Nothing in the bestiary matches that.',
+                description='Try a broader search, or clear a filter.',
+                cta=~{})}"></th:block>
         </th:block>
         <!-- Cap the rendered cards; the full SRD bestiary is hundreds of entries. -->
         <th:block th:each="sb,iter : ${statblocks}" th:if="${iter.index < cap}">

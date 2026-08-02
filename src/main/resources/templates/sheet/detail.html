@@ -17,6 +17,9 @@
         secondary=~{::#secondaryActions})}"></th:block>
 </div>
 <a id="secondaryActions" th:href="@{/campaigns/{cid}/sheets(cid=${campaign.id})}" class="btn btn-ghost">&larr; Back to Sheets</a>
+<a id="emptySheetAction"
+   th:href="@{/campaigns/{cid}/party/{pid}/sheet/create(cid=${campaign.id}, pid=${member.id})}"
+   class="btn btn-ghost">Create Sheet</a>
 
 <div id="page-content" class="page-content">
     <div th:if="${hasSheet}">
@@ -280,7 +283,11 @@
             </div>
         </div>
 
-        <th:block th:unless="${hasSheet}"><div th:replace="~{common/_empty-state :: empty-state('No character sheet yet.', 'Create Sheet', @{/campaigns/{cid}/party/{pid}/sheet/create(cid=${campaign.id}, pid=${member.id})}, null)}"></div></th:block>
+        <th:block th:unless="${hasSheet}"><div th:replace="~{fragments/_states :: empty(
+            icon=null,
+            title='No character sheet yet.',
+            description=null,
+            cta=~{::#emptySheetAction})}"></div></th:block>
 
     <div th:replace="~{sheet/_level-up-dialog :: levelUpDialog(${campaign.id}, ${member.id})}"></div>
 <script>

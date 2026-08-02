@@ -21,6 +21,8 @@
         th:attr="hx-get=@{/campaigns/{cid}/encounters/new(cid=${campaignId})}"
         hx-target="#encounter-grid"
         hx-swap="beforeend">+ New Encounter</button>
+<a id="emptyEncounterAction" th:href="@{/campaigns/{id}/encounters/new(id=${campaignId})}"
+   class="btn btn-ghost">New encounter</a>
 
 <div id="page-content" class="page-content">
     <th:block th:replace="~{fragments/_toolbar :: toolbar(
@@ -32,10 +34,11 @@
 
     <div id="encounter-grid" class="empty-state-host">
         <th:block th:if="${encounters == null or encounters.isEmpty()}">
-            <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
-                'No encounters yet', 'New encounter',
-                @{/campaigns/{id}/encounters/new(id=${campaignId})},
-                'Build one ahead of the session so initiative is one click away.', 'swords')}"></th:block>
+            <th:block th:replace="~{fragments/_states :: empty(
+                icon='swords',
+                title='No encounters yet',
+                description='Build one ahead of the session so initiative is one click away.',
+                cta=~{::#emptyEncounterAction})}"></th:block>
         </th:block>
 
         <!-- At scale a grid of cards stops scanning; the same view-model count decides without a preference. -->

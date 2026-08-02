@@ -39,7 +39,11 @@
     </div>
     <div id="threat-grid" class="card-grid card-grid--library empty-state-host">
         <th:block th:if="${items == null or items.isEmpty()}">
-            <th:block th:replace="~{common/_empty-state :: empty-state(message='No items yet.', actionText=null, actionHref=null, description=null)}"></th:block>
+            <th:block th:replace="~{fragments/_states :: empty(
+                icon=null,
+                title='No items yet.',
+                description=null,
+                cta=~{})}"></th:block>
         </th:block>
         <th:block th:each="item : ${items}">
             <div class="ref-card">

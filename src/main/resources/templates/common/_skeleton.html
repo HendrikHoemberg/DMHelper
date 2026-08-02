@@ -1,8 +1,0 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<!-- Warm shimmer while a panel loads. The loading state owns its spinner convention;
-     skeletons stay shimmer-only. -->
-<div class="skeleton-grid" th:fragment="skeleton(count)" aria-hidden="true">
-    <div class="skeleton-card" th:each="i : ${#numbers.sequence(1, count)}"></div>
-</div>
-</html>

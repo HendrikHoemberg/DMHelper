@@ -37,6 +37,9 @@
        class="btn btn-ghost">Setup</a>
     <a th:href="@{/campaigns/{cid}/encounters(cid=${campaignId})}" class="btn btn-ghost">&larr; Back to Encounters</a>
 </div>
+<a id="emptyCombatantAction"
+   th:href="@{/campaigns/{cid}/encounters/{eid}/setup(cid=${campaignId}, eid=${encounter.id})}"
+   class="btn btn-ghost">Add combatants</a>
 
 <div id="page-content" class="page-content">
     <div class="detail-section">
@@ -75,9 +78,11 @@
                     </tr>
                 </tbody>
             </table>
-            <th:block th:if="${#lists.isEmpty(combatants)}"><th:block th:replace="~{common/_empty-state :: empty-state(
-                'No combatants yet.', 'Add combatants',
-                @{/campaigns/{cid}/encounters/{eid}/setup(cid=${campaignId}, eid=${encounter.id})}, null)}"></th:block></th:block>
+            <th:block th:if="${#lists.isEmpty(combatants)}"><th:block th:replace="~{fragments/_states :: empty(
+                icon=null,
+                title='No combatants yet.',
+                description=null,
+                cta=~{::#emptyCombatantAction})}"></th:block></th:block>
         </div>
 
         <h2 th:if="${not #lists.isEmpty(combatants)}">Notes</h2>

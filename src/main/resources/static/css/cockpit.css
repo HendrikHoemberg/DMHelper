@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: var(--color-bg);
+  background: var(--surface-canvas);
 }
 .battle-toolbar {
   display: flex;
@@ -10,8 +10,8 @@
   flex-wrap: wrap;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--surface-panel);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 .battle-toolbar .tool-group {
@@ -19,22 +19,22 @@
   align-items: center;
   gap: 4px;
   padding-right: var(--space-md);
-  border-right: 1px solid var(--color-border);
+  border-right: 1px solid var(--border-subtle);
 }
 .tool-btn {
   padding: 6px 10px;
   font-size: var(--text-sm);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
   border-radius: 4px;
   background: transparent;
-  color: var(--color-text);
+  color: var(--text-primary);
   cursor: pointer;
 }
-.tool-btn:hover { background: var(--color-surface-hover); }
+.tool-btn:hover { background: var(--surface-raised); }
 .tool-btn.active {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-bg);
+  background: var(--action-primary);
+  border-color: var(--action-primary);
+  color: var(--surface-canvas);
 }
 .battle-body {
   display: flex;
@@ -45,15 +45,15 @@
   flex: 1;
   overflow: hidden;
   position: relative;
-  background: var(--color-bg);
+  background: var(--surface-canvas);
 }
 .battle-sidebar {
   width: 320px;
   flex-shrink: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  background: var(--color-surface);
-  border-left: 1px solid var(--color-border);
+  background: var(--surface-panel);
+  border-left: 1px solid var(--border-subtle);
   padding: var(--space-sm);
 }
 .battle-statusbar {
@@ -61,10 +61,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 2px var(--space-md);
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
+  background: var(--surface-panel);
+  border-top: 1px solid var(--border-subtle);
   font-size: var(--text-sm);
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 .sidebar-section {
@@ -74,7 +74,7 @@
   font-size: var(--text-sm);
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   margin: 0 0 var(--space-xs);
 }
 .token-list-item {
@@ -86,36 +86,36 @@
   font-size: var(--text-sm);
   cursor: pointer;
 }
-.token-list-item:hover { background: var(--color-surface-hover); }
+.token-list-item:hover { background: var(--surface-raised); }
 .token-swatch {
   width: 14px;
   height: 14px;
   border-radius: 3px;
   display: inline-block;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
   flex-shrink: 0;
   margin-right: 6px;
 }
-.save-indicator.save-saved { color: var(--color-success); }
+.save-indicator.save-saved { color: var(--state-success); }
 .save-indicator.save-saving,
-.save-indicator.save-unsaved { color: var(--color-warning); }
-.save-indicator.save-error { color: var(--color-danger); }
+.save-indicator.save-unsaved { color: var(--state-warning); }
+.save-indicator.save-error { color: var(--state-danger); }
 .hp-input {
   width: 50px;
   padding: 2px 4px;
   font-size: var(--text-sm);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
   border-radius: 3px;
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--surface-canvas);
+  color: var(--text-primary);
   text-align: center;
 }
 .map-switcher select {
   padding: 4px 8px;
   font-size: var(--text-sm);
-  background: var(--color-bg);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
   border-radius: 4px;
 }
 .token-dialog {
@@ -152,13 +152,13 @@
 .aoepresets button {
   padding: 2px 6px;
   font-size: var(--text-sm);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
   border-radius: 3px;
-  background: var(--color-bg);
-  color: var(--color-text-muted);
+  background: var(--surface-canvas);
+  color: var(--text-secondary);
   cursor: pointer;
 }
-.aoepresets button:hover { color: var(--color-text); background: var(--color-surface-hover); }
+.aoepresets button:hover { color: var(--text-primary); background: var(--surface-raised); }
 .statblock-search {
   position: relative;
 }
@@ -166,16 +166,16 @@
   width: 100%;
   padding: 4px 8px;
   font-size: var(--text-sm);
-  background: var(--color-bg);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
   border-radius: 4px;
 }
 .statblock-search .sb-results {
   max-height: 200px;
   overflow-y: auto;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
   border-radius: 4px;
   margin-top: 2px;
 }
@@ -187,23 +187,23 @@
   font-size: var(--text-sm);
   cursor: pointer;
 }
-.sb-result-item:hover { background: var(--color-surface-hover); }
-.sb-result-item .sb-cr { color: var(--color-text-muted); font-size: var(--text-sm); margin-left: 4px; }
-.token-dead { text-decoration: line-through; color: var(--color-text-muted); }
-.aoepresets-label { font-size: var(--text-sm); color: var(--color-text-muted); margin-right: 2px; }
+.sb-result-item:hover { background: var(--surface-raised); }
+.sb-result-item .sb-cr { color: var(--text-secondary); font-size: var(--text-sm); margin-left: 4px; }
+.token-dead { text-decoration: line-through; color: var(--text-secondary); }
+.aoepresets-label { font-size: var(--text-sm); color: var(--text-secondary); margin-right: 2px; }
 
 .map-authoring summary {
   cursor: pointer;
   font-size: var(--text-sm);
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   padding: var(--space-xs) 0;
 }
 .map-authoring[open] summary {
   margin-bottom: var(--space-xs);
 }
-.cockpit-title { font-size: var(--text-lg); color: var(--color-text); }
+.cockpit-title { font-size: var(--text-lg); color: var(--text-primary); }
 .cockpit-spacer { flex: 1; }
 
 /* Command bar slots (spec 12.2): the header owns 3rem chrome, each slot is a
@@ -277,7 +277,7 @@
   min-height: 0;
   overflow: hidden;
   position: relative;
-  background: var(--color-bg);
+  background: var(--surface-canvas);
 }
 
 .story-rail-inner, .encounter-rail-inner, .session-plan-inner {
@@ -285,8 +285,8 @@
 }
 
 .scene-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: var(--space-sm);
 }
@@ -302,14 +302,14 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 1px 6px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  background: var(--surface-canvas);
+  border: 1px solid var(--border-subtle);
   border-radius: 3px;
 }
 
 .scene-key {
   font-size: var(--text-sm);
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
 }
 
 /* No height clamp: the module body owns scrolling (.cockpit-module__body has
@@ -318,7 +318,7 @@
    expand control. */
 .scene-body {
   font-size: var(--text-sm);
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   margin: var(--space-xs) 0;
 }
 
@@ -333,7 +333,7 @@
   flex-direction: column;
   gap: 2px;
   font-size: var(--text-sm);
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
 }
 
 .planned-encounter-row {
@@ -345,7 +345,7 @@
 }
 
 .planned-encounter-row:hover {
-  background: var(--color-surface-hover);
+  background: var(--surface-raised);
   border-radius: 4px;
 }
 
@@ -361,8 +361,8 @@
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--surface-panel);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   font-size: var(--text-sm);
   white-space: nowrap;
@@ -376,21 +376,21 @@
 
 .beat-position {
   font-weight: bold;
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   margin-right: 2px;
 }
 
 .beat-type {
   font-size: var(--text-xs);
   text-transform: uppercase;
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   padding: 1px 4px;
-  background: var(--color-bg);
+  background: var(--surface-canvas);
   border-radius: 3px;
 }
 
 .beat-broken-label {
-  color: var(--color-danger);
+  color: var(--state-danger);
   font-size: var(--text-sm);
 }
 
@@ -399,8 +399,8 @@
 }
 
 .cockpit-audio-section {
-  border-top: 1px solid var(--color-border);
-  background: var(--color-surface);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
   padding: var(--space-sm) var(--space-md);
 }
 .cockpit-audio-widget {
@@ -423,7 +423,7 @@
 }
 .audio-source, .audio-owner {
   font-size: var(--text-xs);
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -435,8 +435,8 @@
 .audio-player-mount {
   width: 480px;
   height: 270px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  background: var(--surface-canvas);
+  border: 1px solid var(--border-subtle);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -448,20 +448,20 @@
 .audio-btn {
   padding: 4px 10px;
   font-size: var(--text-sm);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
   border-radius: 4px;
   background: transparent;
-  color: var(--color-text);
+  color: var(--text-primary);
   cursor: pointer;
   white-space: nowrap;
 }
 .audio-btn:hover {
-  background: var(--color-surface-hover);
+  background: var(--surface-raised);
 }
 .audio-btn-primary {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-bg);
+  background: var(--action-primary);
+  border-color: var(--action-primary);
+  color: var(--surface-canvas);
 }
 .audio-btn-primary:hover {
   opacity: 0.9;
@@ -471,11 +471,11 @@
   align-items: center;
   gap: 4px;
   font-size: var(--text-sm);
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
 }
 .audio-volume {
   width: 80px;
-  accent-color: var(--color-border-strong);
+  accent-color: var(--border-strong);
 }
 .audio-override-controls {
   display: flex;
@@ -492,23 +492,23 @@
   align-items: center;
   gap: var(--space-xs);
   padding: 4px 8px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-warning);
+  background: var(--surface-canvas);
+  border: 1px solid var(--state-warning);
   border-radius: 4px;
 }
 .audio-pending-text {
   font-size: var(--text-sm);
-  color: var(--color-warning);
+  color: var(--state-warning);
 }
 .audio-error {
   font-size: var(--text-sm);
-  color: var(--color-danger);
+  color: var(--state-danger);
   padding: 2px 8px;
 }
 .audio-transition-notice, .audio-visibility-notice {
   max-width: 22rem;
   font-size: var(--text-sm);
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   padding: 2px 8px;
 }
 
@@ -518,10 +518,10 @@
   max-block-size: calc(100dvh - 2rem);
   overflow: auto;
   margin: auto;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
-  background: var(--color-surface);
-  color: var(--color-text);
+  background: var(--surface-panel);
+  color: var(--text-primary);
   padding: 0;
 }
 .lifecycle-dialog label {
@@ -554,10 +554,10 @@
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-xs) var(--space-md);
-  background: var(--color-warning-bg);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--state-warning-surface);
+  border-bottom: 1px solid var(--border-subtle);
   font-size: var(--text-sm);
-  color: var(--color-warning-text);
+  color: var(--state-warning);
 }
 .map-context-warning span {
   font-weight: 600;

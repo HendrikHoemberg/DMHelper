@@ -42,7 +42,11 @@
     </div>
     <div id="table-grid" class="card-grid card-grid--library empty-state-host">
         <th:block th:if="${tables == null or tables.isEmpty()}">
-            <th:block th:replace="~{common/_empty-state :: empty-state(message='No rollable tables yet.', actionText=null, actionHref=null, description=null)}"></th:block>
+            <th:block th:replace="~{fragments/_states :: empty(
+                icon=null,
+                title='No rollable tables yet.',
+                description=null,
+                cta=~{})}"></th:block>
         </th:block>
         <th:block th:each="t : ${tables}">
             <div class="ref-card">

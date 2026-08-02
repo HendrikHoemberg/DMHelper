@@ -19,10 +19,11 @@
         <!-- Gated on upcomingEvents, not events: a timeline whose entries are all in the past
              was rendering a table of column headers over an empty body. -->
         <th:block th:if="${#lists.isEmpty(upcomingEvents)}">
-            <th:block th:replace="~{common/_empty-state :: empty-state-with-cta(
-                message='No upcoming events',
+            <th:block th:replace="~{fragments/_states :: empty(
+                icon='calendar',
+                title='No upcoming events',
                 description='Log festivals, deadlines, and things that happen while the party travels.',
-                icon='calendar', cta=~{common/_form-cta :: swap-cta(
+                cta=~{common/_form-cta :: swap-cta(
                     actionText='Add event',
                     actionUrl=@{/campaigns/{id}/calendar/events/new(id=${campaignId})},
                     target='#event-form-area')})}"></th:block>

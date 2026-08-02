@@ -14,10 +14,11 @@
             <span class="roster-col roster-col--conditions">Conditions</span>
         </div>
         <th:block th:if="${members == null or members.isEmpty()}">
-            <th:block th:replace="~{common/_empty-state :: empty-state-with-cta(
-                message='No heroes yet',
+            <th:block th:replace="~{fragments/_states :: empty(
+                icon='users',
+                title='No heroes yet',
                 description='Add the player characters so combat, passive senses, and difficulty math work.',
-                icon='users', cta=~{common/_form-cta :: swap-cta(
+                cta=~{common/_form-cta :: swap-cta(
                     actionText='Add member',
                     actionUrl=@{/campaigns/{cid}/party/new(cid=${campaignId})},
                     target='#party-form-modal')})}"></th:block>

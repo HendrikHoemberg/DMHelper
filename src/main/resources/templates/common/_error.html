@@ -1,8 +1,0 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<div class="alert alert-error" th:fragment="error" role="alert">
-    <span th:text="${message != null and !#strings.isEmpty(message) ? message : 'The request could not be completed.'}">The request could not be completed.</span>
-    <span class="u-text-sm" th:if="${correlationId != null}"
-          th:text="' Reference: ' + ${correlationId}">Reference</span>
-</div>
-</html>

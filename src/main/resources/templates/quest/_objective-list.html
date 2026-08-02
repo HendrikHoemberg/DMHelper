@@ -1,5 +1,5 @@
 <div th:fragment="objectiveList" xmlns:th="http://www.thymeleaf.org">
-  <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+  <th:block th:if="${error != null}"><div th:replace="~{fragments/_states :: failed(title=${error}, description=null, retry=~{})}"></div></th:block>
   <div th:if="${quest.objectives.empty}" class="empty-state">No objectives yet.</div>
   <div th:unless="${quest.objectives.empty}">
     <div th:each="obj : ${quest.objectives}" class="card card--compact u-mb-xs" th:attr="data-objective-id=${obj.id}">

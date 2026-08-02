@@ -110,7 +110,7 @@ class DestructiveActionContractTest {
     }
 
     /**
-     * Pinning one declaration ({@code color: var(--color-danger)}) locked in red-on-red-tint,
+     * Pinning one declaration ({@code color: var(--state-danger)}) locked in red-on-red-tint,
      * which measures 3.93:1 and misses AA. What the safety contract actually needs is that a
      * destructive control cannot be mistaken for the neutral one and that its label stays
      * readable — both measured through the token graph, so either can be satisfied by any

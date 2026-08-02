@@ -54,7 +54,7 @@ class WorldControllerErrorBannerTest {
 
         mockMvc.perform(get("/campaigns/" + cid + "/world/npcs"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(not(containsString("alert-error"))));
+                .andExpect(content().string(not(containsString("state--failed"))));
     }
 
     @Test
@@ -67,7 +67,7 @@ class WorldControllerErrorBannerTest {
 
         mockMvc.perform(post("/campaigns/" + cid + "/world/npcs").param("name", ""))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("alert-error")))
+                .andExpect(content().string(containsString("state--failed")))
                 .andExpect(content().string(containsString("Name is required")));
     }
 }

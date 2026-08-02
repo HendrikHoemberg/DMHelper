@@ -47,7 +47,7 @@ body:has(.session-cockpit) .page--editor {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--color-bg);
+  background: var(--surface-canvas);
 }
 
 /* Command bar (topbar is the live markup class; commandbar is the contract alias). */
@@ -62,8 +62,8 @@ body:has(.session-cockpit) .page--editor {
   padding: 0 var(--space-md);
   overflow: visible;
   container-type: inline-size;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border-strong);
+  background: var(--surface-panel);
+  border-bottom: 1px solid var(--border-strong);
 }
 
 .cockpit-topbar__title {
@@ -153,7 +153,7 @@ body:has(.session-cockpit) .page--editor {
   flex-direction: column;
   overflow: hidden;
   border: 1px solid transparent;
-  background: var(--color-bg);
+  background: var(--surface-canvas);
   /* The zone is a size container so the workbench can adapt module minima and the
      command/chrome rows to the room a preset actually gives them (spec 12.4). */
   container-type: inline-size;
@@ -234,8 +234,8 @@ body:has(.session-cockpit) .page--editor {
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior: contain;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
 }
 
 .cockpit-tab,
@@ -249,7 +249,7 @@ body:has(.session-cockpit) .page--editor {
   border-bottom-width: 2px;
   border-radius: 4px 4px 0 0;
   background: transparent;
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   cursor: pointer;
   white-space: nowrap;
   display: inline-flex;
@@ -259,20 +259,20 @@ body:has(.session-cockpit) .page--editor {
 
 .cockpit-tab[aria-selected="true"],
 .cockpit-zone__tab[aria-selected="true"] {
-  color: var(--color-text);
+  color: var(--text-primary);
   font-weight: 600;
-  border-color: var(--color-border);
-  border-bottom-color: var(--color-accent);
-  background: var(--color-bg);
-  box-shadow: inset 0 -2px 0 var(--color-accent);
+  border-color: var(--border-subtle);
+  border-bottom-color: var(--action-primary);
+  background: var(--surface-canvas);
+  box-shadow: inset 0 -2px 0 var(--action-primary);
 }
 
 .cockpit-module__attention {
   min-width: 1.25rem;
   padding: 0 4px;
   border-radius: 999px;
-  background: var(--color-warning);
-  color: var(--color-bg);
+  background: var(--state-warning);
+  color: var(--surface-canvas);
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
   text-align: center;
@@ -308,8 +308,8 @@ body:has(.session-cockpit) .page--editor {
   flex-shrink: 0;
   min-height: 36px;
   padding: 2px 8px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
 }
 
 .cockpit-module__header h2 {
@@ -339,17 +339,17 @@ body:has(.session-cockpit) .page--editor {
   min-height: 32px;
   font-size: var(--text-sm);
   padding: 2px 8px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
   border-radius: 4px;
   background: transparent;
-  color: var(--color-text);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
 .cockpit-module__actions button:hover,
 .cockpit-module__header button:hover {
-  background: var(--color-surface-hover);
-  border-color: var(--color-border-strong);
+  background: var(--surface-raised);
+  border-color: var(--border-strong);
 }
 
 /* ── Splitters: locked = invisible + inert; edit = 6px line + 32px hit target ── */
@@ -365,7 +365,7 @@ body:has(.session-cockpit) .page--editor {
 }
 
 .cockpit-workbench[data-layout-mode="edit"] .cockpit-splitter {
-  background: var(--color-border);
+  background: var(--border-subtle);
   pointer-events: auto;
   cursor: col-resize;
 }
@@ -402,21 +402,21 @@ body:has(.session-cockpit) .page--editor {
 [data-cockpit-splitter][aria-disabled="false"] { cursor: col-resize; }
 
 .cockpit-splitter:focus-visible {
-  outline: 3px solid var(--color-accent);
+  outline: 3px solid var(--action-primary);
   outline-offset: -1px;
 }
 
 /* ── Docking targets (edit mode) ── */
 .cockpit-workbench[data-layout-mode="edit"] .cockpit-zone[data-dock-target] {
-  outline: 1px dashed color-mix(in srgb, var(--color-shield) 55%, transparent);
+  outline: 1px dashed color-mix(in srgb, var(--state-shield) 55%, transparent);
   outline-offset: -2px;
 }
 
 .cockpit-workbench[data-layout-mode="edit"] .cockpit-zone[data-dock-active="true"] {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--action-primary);
   outline-offset: -2px;
-  background: color-mix(in srgb, var(--color-gold-soft) 35%, var(--color-bg));
-  box-shadow: inset 0 0 0 1px var(--color-shield-soft);
+  background: color-mix(in srgb, var(--selection-surface) 35%, var(--surface-canvas));
+  box-shadow: inset 0 0 0 1px var(--state-shield-surface);
 }
 
 /* ── Focus layer fills the workbench band under the command bar ── */
@@ -429,8 +429,8 @@ body:has(.session-cockpit) .page--editor {
   z-index: var(--z-workspace-focus);
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
-  border-top: 1px solid var(--color-border);
+  background: var(--surface-canvas);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .cockpit-focus-layer[hidden] {
@@ -444,8 +444,8 @@ body:has(.session-cockpit) .page--editor {
   flex-shrink: 0;
   min-height: 36px;
   padding: var(--space-sm) var(--space-md);
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
 }
 
 .cockpit-focus-layer__bar .btn {
@@ -505,7 +505,7 @@ body:has(.session-cockpit) .page--editor {
   margin-top: 4px;
   padding: var(--space-sm);
   background: var(--elevation-floating-bg);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
@@ -519,7 +519,7 @@ body:has(.session-cockpit) .page--editor {
   min-height: 0;
   padding: 0 var(--space-md);
   font-size: var(--text-sm);
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
 }
 
 .cockpit-layout-notice:not(:empty) {
@@ -537,7 +537,7 @@ body:has(.session-cockpit) .page--editor {
   min-width: 12rem;
   padding: var(--space-xs);
   background: var(--elevation-floating-bg);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
@@ -553,19 +553,19 @@ body:has(.session-cockpit) .page--editor {
   border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
-  color: var(--color-text);
+  color: var(--text-primary);
   cursor: pointer;
   font-size: var(--text-sm);
 }
 
 .cockpit-arrange-menu button:hover {
-  background: var(--color-surface-hover);
-  border-color: var(--color-border-strong);
+  background: var(--surface-raised);
+  border-color: var(--border-strong);
 }
 
 .cockpit-arrange-menu button:focus-visible {
-  background: var(--color-surface-hover);
-  border-color: var(--color-accent);
+  background: var(--surface-raised);
+  border-color: var(--action-primary);
 }
 
 .cockpit-dialog,
@@ -574,16 +574,16 @@ body:has(.session-cockpit) .page--editor {
   max-block-size: calc(100dvh - 2rem);
   margin: auto;
   padding: var(--space-md);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius);
   background: var(--elevation-floating-bg);
-  color: var(--color-text);
+  color: var(--text-primary);
   box-shadow: var(--shadow);
 }
 
 .cockpit-dialog::backdrop,
 .cockpit-layout-dialog::backdrop {
-  background: var(--color-overlay);
+  background: var(--scrim-strong);
   backdrop-filter: blur(4px);
 }
 
@@ -601,7 +601,7 @@ body:has(.session-cockpit) .page--editor {
 .cockpit-dialog p,
 .cockpit-layout-dialog p {
   margin: 0 0 var(--space-md);
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
   font-size: var(--text-sm);
 }
 
@@ -636,21 +636,21 @@ body:has(.session-cockpit) .page--editor {
   width: 100%;
   text-align: left;
   padding: 6px 10px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-subtle);
   border-radius: 4px;
-  background: var(--color-surface);
-  color: var(--color-text);
+  background: var(--surface-panel);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
 .cockpit-dialog [data-add-module]:hover {
-  border-color: var(--color-border-strong);
-  background: var(--color-surface-hover);
+  border-color: var(--border-strong);
+  background: var(--surface-raised);
 }
 
 .cockpit-dialog [data-add-module]:focus-visible {
-  border-color: var(--color-accent);
-  background: var(--color-surface-hover);
+  border-color: var(--action-primary);
+  background: var(--surface-raised);
 }
 
 /* ── Focus outline ── */
@@ -659,7 +659,7 @@ body:has(.session-cockpit) .page--editor {
 .cockpit-focus-layer :focus-visible,
 .cockpit-dialog:focus-visible,
 .cockpit-layout-dialog:focus-visible {
-  outline: 3px solid var(--color-accent);
+  outline: 3px solid var(--action-primary);
   outline-offset: 2px;
 }
 
@@ -687,16 +687,16 @@ body:has(.session-cockpit) .page--editor {
 }
 
 .cockpit-status__atom {
-  color: var(--color-text-muted);
+  color: var(--text-secondary);
 }
 
 [data-status-save][data-state="idle"] { opacity: 0.6; }
-[data-status-save][data-state="busy"] { color: var(--color-text); }
-[data-status-save][data-state="saved"] { color: var(--color-success); }
+[data-status-save][data-state="busy"] { color: var(--text-primary); }
+[data-status-save][data-state="saved"] { color: var(--state-success); }
 [data-status-save][data-state="error"] {
-  color: var(--color-danger);
+  color: var(--state-danger);
   font-weight: 600;
   opacity: 1;
 }
 
-.cockpit-status__atom--input { color: var(--color-warning); }
+.cockpit-status__atom--input { color: var(--state-warning); }

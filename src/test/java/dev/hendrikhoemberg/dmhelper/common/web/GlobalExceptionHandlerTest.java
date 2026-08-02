@@ -47,13 +47,14 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void htmxFailureRendersSafeReference() throws Exception {
+    void htmxFailureRendersSafeCorrelatedFragment() throws Exception {
         mvc.perform(get("/explode").header("HX-Request", "true")
                         .header(CorrelationIdFilter.HEADER, "test-corr-5678"))
                 .andExpect(status().isInternalServerError())
-                .andExpect(view().name("common/_error"))
-                .andExpect(model().attribute("message", "The request could not be completed."))
-                .andExpect(model().attribute("correlationId", "test-corr-5678"));
+                .andExpect(content().string(containsString(
+                        "The request could not be completed.")))
+                .andExpect(content().string(containsString("test-corr-5678")))
+                .andExpect(content().string(not(containsString("database-password"))));
     }
 
     @Test

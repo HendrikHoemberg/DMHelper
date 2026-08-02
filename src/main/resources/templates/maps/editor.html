@@ -261,7 +261,7 @@
                     </div>
                 </template>
                 <template x-if="resizeError">
-                    <p class="u-text-xs" style="color: var(--color-danger);" x-text="resizeError"></p>
+                    <p class="u-text-xs" style="color: var(--state-danger);" x-text="resizeError"></p>
                 </template>
                 <div style="display: flex; gap: 4px; margin-top: var(--space-xs);">
                     <button class="btn btn-ghost" data-map-control="resize-cancel-btn" @click="cancelResize()" :disabled="resizeSaving">Cancel</button>
@@ -357,7 +357,7 @@
         <span id="statusMessage">Ready</span>
         <button class="btn btn-ghost map-editor-control" style="padding: 0 6px; display: none;" x-show="conflict" @click="downloadBackup()">
             <svg th:replace="~{common/_icon :: icon-sized(name='download', size='16')}"></svg> Backup</button>
-        <span id="cursorInfo" style="color: var(--color-text-muted);"></span>
+        <span id="cursorInfo" style="color: var(--text-secondary);"></span>
     </div>
 
     <script th:src="@{/vendor/konva.min.js}"></script>

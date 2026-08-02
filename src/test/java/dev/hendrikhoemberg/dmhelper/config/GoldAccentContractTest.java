@@ -11,9 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class GoldAccentContractTest {
 
     private static final java.util.List<String> GOLD_ALIASES = java.util.List.of(
-            "--color-accent", "--color-gold-soft", "--gold-sheen", "--gold-sweep",
-            "--color-attack-bonus", "--color-combatant-active", "--color-condition-active",
-            "--color-legendary");
+            "--gold-sheen", "--gold-sweep");
 
     /**
      * Selectors where gold is one of the roles spec 5.3 grants it: the single primary action,
@@ -81,10 +79,18 @@ class GoldAccentContractTest {
         assertThat(offenders).as("gold outside an approved role").isEmpty();
     }
 
+    /** Selection states the spec grants gold (section 5.3): a selected card is not a
+     *  generic card, and its gold border is the selection affordance, not decoration. */
+    private static final java.util.List<String> SELECTION_MARKERS = java.util.List.of(
+            "[aria-current", "[aria-selected", "[aria-pressed", ":checked",
+            ".is-selected", ".combatant-row.active", ".turn-marker");
+
     @Test
     void noGenericCardOrSeparatorIsGold() {
         CssRules.of(CssRules.ALL_FILES).stream()
                 .filter(rule -> rule.selector().matches(".*\\.(card|panel|section|divider|rule)\\b.*"))
+                .filter(rule -> SELECTION_MARKERS.stream()
+                        .noneMatch(marker -> rule.selector().contains(marker)))
                 .forEach(rule -> {
                     String border = rule.value("border");
                     String borderColor = rule.value("border-color");

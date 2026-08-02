@@ -2,7 +2,7 @@
      scene-detail.html now wraps this in. Carrying it locally reimplemented the rail and
      dropped the <aside> landmark every other detail page gets. -->
 <div th:fragment="sceneRail" class="scene-rail" xmlns:th="http://www.thymeleaf.org">
-  <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+  <th:block th:if="${error != null}"><div th:replace="~{fragments/_states :: failed(title=${error}, description=null, retry=~{})}"></div></th:block>
 
   <section class="rail-section" data-rail-section="status">
     <h2 class="rail-section__title">Status</h2>

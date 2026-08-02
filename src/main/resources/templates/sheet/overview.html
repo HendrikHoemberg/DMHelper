@@ -17,6 +17,8 @@
         secondary=~{::#secondaryActions})}"></th:block>
 </div>
 <a id="secondaryActions" th:href="@{/campaigns/{id}/party(id=${campaign.id})}" class="btn btn-ghost">&larr; Party Roster</a>
+<a id="emptyPartyAction" th:href="@{/campaigns/{id}/party(id=${campaign.id})}"
+   class="btn btn-ghost">Party Roster</a>
 
 <div id="page-content" class="page-content">
     <div class="batch-bar" id="batch-bar">
@@ -74,7 +76,11 @@
             </div>
         </div>
     </div>
-    <th:block th:if="${members.isEmpty()}"><div th:replace="~{common/_empty-state :: empty-state('No party members yet. Add members in the Party roster first.', 'Party Roster', @{/campaigns/{id}/party(id=${campaign.id})}, null)}"></div></th:block>
+    <th:block th:if="${members.isEmpty()}"><div th:replace="~{fragments/_states :: empty(
+        icon=null,
+        title='No party members yet. Add members in the Party roster first.',
+        description=null,
+        cta=~{::#emptyPartyAction})}"></div></th:block>
 
     <div id="batch-dialog" class="modal" style="display:none;">
         <div class="modal-content" id="batch-dialog-body"></div>

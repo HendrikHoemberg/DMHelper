@@ -13,7 +13,7 @@
     </div>
     <div th:if="${currentScene.body != null and !currentScene.body.isEmpty()}" style="margin-bottom: var(--space-sm);">
       <details>
-        <summary class="scene-notes-summary" style="cursor: pointer; color: var(--color-text-muted);">Scene notes</summary>
+        <summary class="scene-notes-summary" style="cursor: pointer; color: var(--text-secondary);">Scene notes</summary>
         <div class="detail-section scene-notes-body" style="margin-top: var(--space-xs); max-height: 200px; overflow-y: auto;"
              th:utext="${#markdown.toHtml(currentScene.body)}">
           Body preview
@@ -45,7 +45,7 @@
          class="btn btn-sm" target="_blank">Go to Map</a>
     </div>
   </div>
-  <div th:unless="${currentScene != null}" class="scene-panel-card" style="color: var(--color-text-muted); font-style: italic; text-align: center; padding: var(--space-md);">
+  <div th:unless="${currentScene != null}" class="scene-panel-card" style="color: var(--text-secondary); font-style: italic; text-align: center; padding: var(--space-md);">
     No current scene selected.
   </div>
 </div>

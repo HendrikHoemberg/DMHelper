@@ -32,7 +32,11 @@
 
     <div id="cue-grid" class="card-grid card-grid--bounded empty-state-host">
         <th:block th:if="${cues == null or cues.isEmpty()}">
-            <th:block th:replace="~{common/_empty-state :: empty-state(message='No audio cues yet.', actionText=null, actionHref=null, description=null)}"></th:block>
+            <th:block th:replace="~{fragments/_states :: empty(
+                icon=null,
+                title='No audio cues yet.',
+                description=null,
+                cta=~{})}"></th:block>
         </th:block>
         <th:block th:each="cue : ${cues}">
             <th:block th:replace="~{audio/_card :: card(cue=${cue}, campaignId=${campaignId})}"></th:block>

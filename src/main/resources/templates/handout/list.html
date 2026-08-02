@@ -17,6 +17,7 @@
         secondary=~{::#secondaryActions})}"></th:block>
 </div>
 <a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaign.id})}" class="btn btn-ghost">&larr; Back to Campaign</a>
+<a id="emptyHandoutAction" href="#handout-upload" class="btn btn-ghost">Upload handout</a>
 
 <div id="page-content" class="page-content">
     <th:block th:replace="~{fragments/_toolbar :: toolbar(
@@ -55,9 +56,11 @@
     </div>
 
     <div class="empty-state-host" th:if="${#lists.isEmpty(handouts)}">
-        <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
-            'No handouts yet', 'Upload handout', '#handout-upload',
-            'Upload images or documents to reveal to players during a session.', 'scroll')}"></th:block>
+        <th:block th:replace="~{fragments/_states :: empty(
+            icon='scroll',
+            title='No handouts yet',
+            description='Upload images or documents to reveal to players during a session.',
+            cta=~{::#emptyHandoutAction})}"></th:block>
     </div>
 </div>
 
