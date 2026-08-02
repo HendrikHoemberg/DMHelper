@@ -1,18 +1,19 @@
 <div th:fragment="clockRow(clocks, campaignId, factionId)" xmlns:th="http://www.thymeleaf.org">
-    <div th:if="${clocks.empty}" class="u-text-xs text-muted">No clocks.</div>
-    <div th:unless="${clocks.empty}" th:each="clock : ${clocks}" class="card u-mb-sm">
-        <div class="card-header">
-            <strong th:text="${clock.title}">Clock Title</strong>
-            <span class="badge" th:text="|${clock.filled}/${clock.segments}|">0/4</span>
-        </div>
-        <div th:if="${clock.notes}" class="card-body u-text-xs" th:text="${clock.notes}">Notes</div>
-        <div class="card-footer">
+    <div th:if="${clocks.empty}" class="u-text-sm text-muted">No clocks.</div>
+    <div th:unless="${clocks.empty}" th:each="clock : ${clocks}" class="clock-row u-mb-sm">
+        <div class="u-flex u-gap-sm u-items-center">
+            <span class="clock-row__title u-flex-1" th:text="${clock.title}">Clock Title</span>
+            <span class="u-num u-text-sm text-muted" th:text="|${clock.filled}/${clock.segments}|">0/4</span>
             <form th:action="@{/campaigns/{cid}/world/factions/{fid}/clocks/{clkid}(cid=${campaignId},fid=${factionId},clkid=${clock.id})}"
                   method="post" style="display:inline">
                 <input type="hidden" name="_method" value="delete"/>
-                <button type="submit" class="btn btn-danger btn-sm action-row__destructive"
-                        onclick="return confirm('Delete this clock?')">Delete</button>
+                <button type="submit" class="btn btn-danger btn-xs action-row__destructive"
+                        aria-label="Delete clock"
+                        onclick="return confirm('Delete this clock?')">&times;</button>
             </form>
         </div>
+        <progress class="clock-row__bar"
+                  th:attr="max=${clock.segments}, value=${clock.filled}, aria-label=${clock.title} + ' — ' + ${clock.filled} + ' of ' + ${clock.segments} + ' segments filled'"></progress>
+        <div th:if="${clock.notes}" class="u-text-xs text-muted u-mt-xs" th:text="${clock.notes}">Notes</div>
     </div>
 </div>

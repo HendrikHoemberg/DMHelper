@@ -21,22 +21,100 @@
 <a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
 
 <div id="page-content" class="page-content">
-<th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
-            <div th:if="${npcs.empty}" class="empty-state">No NPCs yet.</div>
-            <div th:unless="${npcs.empty}" class="card-grid">
-                <div th:each="npc : ${npcs}" class="card">
-                    <div class="card-header">
-                        <a th:href="@{/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${npc.id})}"
-                           th:text="${npc.name}">NPC Name</a>
-                        <span class="badge" th:text="${#enums.label(npc.status)}">STATUS</span>
-                    </div>
-                    <div th:if="${npc.role}" class="card-body" th:text="${npc.role}">Role</div>
-                    <div class="card-footer">
-                        <span th:if="${npc.faction != null}" class="u-text-xs text-muted"
-                              th:text="|${npc.faction.name}|">Faction</span>
-                    </div>
-                </div>
-            </div>
+    <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+
+    <th:block th:replace="~{fragments/_toolbar :: toolbar(
+        action=@{/campaigns/{cid}/world/npcs(cid=${campaignId})},
+        searchValue=${null},
+        searchPlaceholder='Filter NPCs by name, role, or faction…',
+        filters=~{::#npcFilters},
+        actions=~{})}"></th:block>
+
+    <div id="npcFilters">
+        <label class="sr-only" for="npcStatusFilter">Filter by status</label>
+        <select id="npcStatusFilter" class="form-input" data-npc-status-filter>
+            <option value="">All statuses</option>
+            <option value="ALIVE">Alive</option>
+            <option value="DEAD">Dead</option>
+            <option value="MISSING">Missing</option>
+            <option value="UNKNOWN">Unknown</option>
+        </select>
+    </div>
+
+    <th:block th:if="${npcs.empty}">
+        <th:block th:replace="~{fragments/_states :: empty(
+            icon='users',
+            title='No NPCs yet',
+            description='Add the people who populate this campaign — allies, rivals, and everyone between.',
+            cta=~{})}"></th:block>
+    </th:block>
+
+    <table th:unless="${npcs.empty}" class="data-table npc-table">
+        <thead>
+            <tr>
+                <th scope="col">Status</th>
+                <th scope="col">NPC</th>
+                <th scope="col">Role</th>
+                <th scope="col">Faction</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="npc : ${npcs}" class="npc-row"
+                th:attr="data-npc-search=${npc.name + ' ' + npc.role + ' ' + (npc.faction != null ? npc.faction.name : '')},
+                          data-npc-status=${npc.status.name()}">
+                <td>
+                    <span class="badge"
+                          th:classappend="${npc.status.name() == 'ALIVE'} ? 'badge--success' :
+                                          (${npc.status.name() == 'DEAD'} ? 'badge--danger' : 'badge--warning')"
+                          th:text="${#enums.label(npc.status)}">STATUS</span>
+                </td>
+                <td>
+                    <a th:href="@{/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${npc.id})}"
+                       th:text="${npc.name}">NPC Name</a>
+                    <div th:if="${npc.sourceLocator}" class="u-text-xs text-muted"
+                         th:text="|Source: ${npc.sourceLocator}|">Source</div>
+                </td>
+                <td th:text="${npc.role}">Role</td>
+                <td>
+                    <th:block th:if="${npc.faction != null}">
+                        <a th:href="@{/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${npc.faction.id})}"
+                           th:text="${npc.faction.name}">Faction</a>
+                    </th:block>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 </div>
+
+<script>
+    window.dmHelperFilterNpcs = function (query, status) {
+        var needle = (query || '').trim().toLowerCase();
+        var statusNeedle = (status || '').trim();
+        document.querySelectorAll('.npc-row').forEach(function (row) {
+            var haystack = (row.getAttribute('data-npc-search') || '').toLowerCase();
+            var matchesQuery = needle === '' || haystack.indexOf(needle) !== -1;
+            var matchesStatus = statusNeedle === ''
+                || row.getAttribute('data-npc-status') === statusNeedle;
+            row.hidden = !matchesQuery || !matchesStatus;
+        });
+    };
+    document.addEventListener('DOMContentLoaded', function () {
+        var input = document.querySelector('.page--index .toolbar__input');
+        if (input) {
+            input.addEventListener('input', function () {
+                window.dmHelperFilterNpcs(this.value,
+                    document.querySelector('[data-npc-status-filter]')?.value || '');
+            });
+        }
+        var status = document.querySelector('[data-npc-status-filter]');
+        if (status) {
+            status.addEventListener('change', function () {
+                window.dmHelperFilterNpcs(
+                    document.querySelector('.page--index .toolbar__input')?.value || '',
+                    this.value);
+            });
+        }
+    });
+</script>
 </body>
 </html>

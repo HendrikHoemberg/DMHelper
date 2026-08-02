@@ -21,20 +21,63 @@
 <a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
 
 <div id="page-content" class="page-content">
-<th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
-            <div th:if="${factions.empty}" class="empty-state">No factions yet.</div>
-            <div th:unless="${factions.empty}" class="card-grid">
-                <div th:each="faction : ${factions}" class="card">
-                    <div class="card-header">
-                        <a th:href="@{/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${faction.id})}"
-                           th:text="${faction.name}">Faction Name</a>
-                    </div>
-                    <div th:if="${faction.goals}" class="card-body" th:text="${faction.goals}">Goals</div>
-                    <div class="card-footer">
-                        <span class="u-text-xs text-muted" th:text="|Resources: ${faction.resources}|">Resources</span>
-                    </div>
-                </div>
-            </div>
+    <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+
+    <th:block th:replace="~{fragments/_toolbar :: toolbar(
+        action=@{/campaigns/{cid}/world/factions(cid=${campaignId})},
+        searchValue=${null},
+        searchPlaceholder='Filter factions by name, goals, or tags…',
+        filters=~{},
+        actions=~{})}"></th:block>
+
+    <th:block th:if="${factions.empty}">
+        <th:block th:replace="~{fragments/_states :: empty(
+            icon='flag',
+            title='No factions yet',
+            description='Record the powers that shape this world, their goals, and their clocks.',
+            cta=~{})}"></th:block>
+    </th:block>
+
+    <table th:unless="${factions.empty}" class="data-table faction-table">
+        <thead>
+            <tr>
+                <th scope="col">Faction</th>
+                <th scope="col">Goals</th>
+                <th scope="col">Resources</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="faction : ${factions}" class="faction-row"
+                th:attr="data-faction-search=${faction.name + ' ' + faction.goals + ' ' + faction.tags}">
+                <td>
+                    <a th:href="@{/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${faction.id})}"
+                       th:text="${faction.name}">Faction Name</a>
+                    <div th:if="${faction.sourceLocator}" class="u-text-xs text-muted"
+                         th:text="|Source: ${faction.sourceLocator}|">Source</div>
+                </td>
+                <td th:text="${faction.goals}">Goals</td>
+                <td th:text="${faction.resources}">Resources</td>
+            </tr>
+        </tbody>
+    </table>
 </div>
+
+<script>
+    window.dmHelperFilterFactions = function (query) {
+        var needle = (query || '').trim().toLowerCase();
+        document.querySelectorAll('.faction-row').forEach(function (row) {
+            var haystack = (row.getAttribute('data-faction-search') || '').toLowerCase();
+            row.hidden = needle !== '' && haystack.indexOf(needle) === -1;
+        });
+    };
+    document.addEventListener('DOMContentLoaded', function () {
+        var input = document.querySelector('.page--index .toolbar__input');
+        if (input) {
+            input.addEventListener('input', function () {
+                window.dmHelperFilterFactions(this.value);
+            });
+        }
+    });
+</script>
 </body>
 </html>

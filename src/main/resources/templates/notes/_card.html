@@ -1,31 +1,47 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <th:block th:fragment="card(note)">
-<div class="card">
-    <h3>
+<tr class="note-row"
+    th:attr="data-note-search=${note.title + ' ' + note.body + ' ' + note.tags},
+              data-note-type=${note.type.name()}">
+    <td>
         <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${note.campaign.id}, nid=${note.id})}"
            th:text="${note.title}">Title</a>
-    </h3>
-    <div class="statblock-meta">
+        <div th:if="${note.body != null and !note.body.isBlank()}"
+             class="u-text-sm text-muted"
+             th:text="${#strings.abbreviate(note.body, 120)}">Snippet</div>
+    </td>
+    <td>
         <span class="badge" th:text="${#enums.label(note.type)}">TYPE</span>
         <th:block th:if="${!note.dmOnly}">
             <span th:replace="~{fragments/_badge :: badge(tone='shield', icon='shield', label='Player-safe')}"></span>
         </th:block>
-    </div>
-    <p th:if="${note.body != null and !note.body.isBlank()}"
-       th:text="${#strings.abbreviate(note.body, 150)}">Snippet</p>
-    <div class="card-time" th:text="'Created ' + ${#temporals.format(note.createdAt, 'yyyy-MM-dd HH:mm')}">Time</div>
-    <div class="card-actions">
-        <a th:href="@{/campaigns/{cid}/notes/{nid}/edit(cid=${note.campaign.id}, nid=${note.id})}"
-           class="btn btn-ghost">Edit</a>
-        <button class="btn btn-danger action-row__destructive"
-                th:hx-delete="@{/campaigns/{cid}/notes/{nid}(cid=${note.campaign.id}, nid=${note.id})}"
-                hx-target="#notes-list" hx-swap="outerHTML"
-                hx-confirm="Delete this note?"
-                hx-disabled-elt="this">
-            Delete
-        </button>
-    </div>
-</div>
+    </td>
+    <td>
+        <th:block th:if="${note.tags != null and !note.tags.isBlank()}">
+            <span th:each="tag : ${#strings.arraySplit(note.tags, ',')}"
+                  class="badge badge-tag"
+                  th:if="${!#strings.isEmpty(tag.trim())}"
+                  th:text="${tag.trim()}">tag</span>
+        </th:block>
+    </td>
+    <td class="u-num">
+        <span class="u-text-sm text-muted"
+              th:text="'Created ' + ${#temporals.format(note.createdAt, 'yyyy-MM-dd')}">Date</span>
+    </td>
+    <td>
+        <div class="u-flex u-gap-xs">
+            <a th:href="@{/campaigns/{cid}/notes/{nid}/edit(cid=${note.campaign.id}, nid=${note.id})}"
+               class="btn btn-ghost btn-xs">Edit</a>
+            <button class="btn btn-danger btn-xs action-row__destructive"
+                    th:hx-delete="@{/campaigns/{cid}/notes/{nid}(cid=${note.campaign.id}, nid=${note.id})}"
+                    hx-target="body" hx-swap="outerHTML"
+                    hx-confirm="Delete this note?"
+                    hx-disabled-elt="this">
+                &times;
+            </button>
+        </div>
+    </td>
+</tr>
 </th:block>
 </html>

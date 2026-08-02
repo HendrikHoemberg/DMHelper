@@ -1,31 +1,29 @@
 <div th:fragment="relationshipRow(relationships, campaignId, factionId)" xmlns:th="http://www.thymeleaf.org">
-    <div th:if="${relationships.empty}" class="u-text-xs text-muted">No relationships.</div>
-    <table th:unless="${relationships.empty}" class="table">
+    <div th:if="${relationships.empty}" class="u-text-sm text-muted">No relationships.</div>
+    <table th:unless="${relationships.empty}" class="data-table relationship-table">
         <thead>
             <tr>
-                <th>Kind</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Knowledge</th>
-                <th>Status</th>
-                <th>Notes</th>
-                <th>Actions</th>
+                <th scope="col">Role</th>
+                <th scope="col">Subject</th>
+                <th scope="col">Object</th>
+                <th scope="col">Knowledge</th>
+                <th scope="col">Status</th>
+                <th scope="col"></th>
             </tr>
         </thead>
         <tbody>
             <tr th:each="rel : ${relationships}">
-                <td th:text="${#enums.label(rel.kind)}">Kind</td>
-                <td th:text="|${rel.fromType}:${rel.fromId}|">From</td>
-                <td th:text="|${rel.toType}:${rel.toId}|">To</td>
+                <td><span class="badge" th:text="${#enums.label(rel.kind)}">Role</span></td>
+                <td><code class="u-text-xs" th:text="|${rel.fromType} ${rel.fromId}|">From</code></td>
+                <td><code class="u-text-xs" th:text="|${rel.toType} ${rel.toId}|">To</code></td>
                 <td th:text="${#enums.label(rel.knowledge)}">Knowledge</td>
                 <td th:text="${#enums.label(rel.status)}">Status</td>
-                <td th:text="${rel.notes}">Notes</td>
                 <td>
                     <form th:action="@{/campaigns/{cid}/world/factions/{fid}/relationships/{rid}(cid=${campaignId},fid=${factionId},rid=${rel.id})}"
                           method="post" style="display:inline">
                         <input type="hidden" name="_method" value="delete"/>
-                        <button type="submit" class="btn btn-danger btn-sm action-row__destructive"
-                                onclick="return confirm('Delete this relationship?')">Delete</button>
+                        <button type="submit" class="btn btn-danger btn-xs action-row__destructive"
+                                onclick="return confirm('Delete this relationship?')">&times;</button>
                     </form>
                 </td>
             </tr>

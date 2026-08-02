@@ -6,7 +6,7 @@
           surface=null,
           header=~{::#page-header},
           content=~{::#page-content},
-          rail=~{})}">
+          rail=~{::#page-rail})}">
 <body>
 <div id="page-header" class="page-header-slot">
     <th:block th:replace="~{fragments/_page-header :: page-header(
@@ -32,130 +32,129 @@
 </div>
 
 <div id="page-content" class="page-content">
-<th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
-            <div id="factionForm"></div>
+    <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+    <div id="factionForm"></div>
 
-            <div class="detail-section">
-                <div th:if="${faction.goals}" class="u-mb-md">
-                    <h4>Goals</h4>
-                    <p th:text="${faction.goals}">Goals</p>
+    <div class="prose note-body"
+         th:if="${faction.goals != null or faction.resources != null or faction.reputationNotes != null}">
+        <div th:if="${faction.goals}" class="u-mb-md">
+            <h3>Goals</h3>
+            <p th:text="${faction.goals}">Goals</p>
+        </div>
+        <div th:if="${faction.resources}" class="u-mb-md">
+            <h3>Resources</h3>
+            <p th:text="${faction.resources}">Resources</p>
+        </div>
+        <div th:if="${faction.reputationNotes}" class="u-mb-md">
+            <h3>Reputation Notes</h3>
+            <p th:text="${faction.reputationNotes}">Reputation Notes</p>
+        </div>
+    </div>
+
+    <div class="detail-section u-mt-lg">
+        <h2>Relationships</h2>
+        <div class="relationship-group">
+            <h3 class="relationship-group__title">Outbound</h3>
+            <div th:replace="~{world/_relationship-row :: relationshipRow(
+                relationships=${outboundRelationships},
+                campaignId=${campaignId}, factionId=${faction.id})}"></div>
+        </div>
+        <div class="relationship-group u-mt-md">
+            <h3 class="relationship-group__title">Inbound</h3>
+            <div th:replace="~{world/_relationship-row :: relationshipRow(
+                relationships=${inboundRelationships},
+                campaignId=${campaignId}, factionId=${faction.id})}"></div>
+        </div>
+        <details class="u-mt-md">
+            <summary>Add Relationship</summary>
+            <form class="inline-form u-mt-sm"
+                  th:action="@{/campaigns/{cid}/world/factions/{fid}/relationships(cid=${campaignId},fid=${faction.id})}"
+                  method="post">
+                <div class="form-group">
+                    <label class="form-label">Kind</label>
+                    <select name="kind" class="form-input" required>
+                        <option value="ALLY">Ally</option>
+                        <option value="ENEMY">Enemy</option>
+                        <option value="RIVAL">Rival</option>
+                        <option value="MEMBER_OF">Member Of</option>
+                        <option value="LEADS">Leads</option>
+                        <option value="SERVES">Serves</option>
+                        <option value="RELATED">Related</option>
+                        <option value="KNOWS">Knows</option>
+                        <option value="OWNS">Owns</option>
+                        <option value="LOCATED_IN">Located In</option>
+                        <option value="TRAVELS_TO">Travels To</option>
+                        <option value="OTHER">Other</option>
+                    </select>
                 </div>
-                <div th:if="${faction.resources}" class="u-mb-md">
-                    <h4>Resources</h4>
-                    <p th:text="${faction.resources}">Resources</p>
+                <div class="form-group">
+                    <label class="form-label">From Type</label>
+                    <input type="text" name="fromType" class="form-input" value="NPC" required>
                 </div>
-                <div th:if="${faction.reputationNotes}" class="u-mb-md">
-                    <h4>Reputation Notes</h4>
-                    <p th:text="${faction.reputationNotes}">Reputation Notes</p>
+                <div class="form-group">
+                    <label class="form-label">From ID</label>
+                    <input type="text" name="fromId" class="form-input" required>
                 </div>
-                <div th:if="${faction.tags}" class="u-mb-md" th:text="|Tags: ${faction.tags}|">Tags</div>
-                <div th:if="${faction.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${faction.sourceLocator}|">Source</div>
-            </div>
+                <div class="form-group">
+                    <label class="form-label">To Type</label>
+                    <input type="text" name="toType" class="form-input" value="NPC" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">To ID</label>
+                    <input type="text" name="toId" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Directed</label>
+                    <input type="checkbox" name="directed" class="form-input" value="true" checked>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Knowledge</label>
+                    <select name="knowledge" class="form-input">
+                        <option value="PUBLIC">Public</option>
+                        <option value="SECRET">Secret</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea name="notes" class="form-input"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn">Add</button>
+                </div>
+            </form>
+        </details>
+    </div>
 
-            <div class="detail-section">
-                <h3>Members</h3>
-                <div th:if="${members.empty}" class="u-text-xs text-muted">No members.</div>
-                <ul th:unless="${members.empty}">
-                    <li th:each="m : ${members}">
-                        <a th:href="@{/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${m.id})}"
-                           th:text="${m.name}">Member</a>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="detail-section">
-                <h3>Relationships</h3>
-                <div th:replace="~{world/_relationship-row :: relationshipRow(relationships=${relationships}, campaignId=${campaignId}, factionId=${faction.id})}"></div>
-                <details class="u-mt-md">
-                    <summary>Add Relationship</summary>
-                    <form class="inline-form u-mt-sm"
-                          th:action="@{/campaigns/{cid}/world/factions/{fid}/relationships(cid=${campaignId},fid=${faction.id})}"
-                          method="post">
-                        <div class="form-group">
-                            <label class="form-label">Kind</label>
-                            <select name="kind" class="form-input" required>
-                                <option value="ALLY">Ally</option>
-                                <option value="ENEMY">Enemy</option>
-                                <option value="RIVAL">Rival</option>
-                                <option value="MEMBER_OF">Member Of</option>
-                                <option value="LEADS">Leads</option>
-                                <option value="SERVES">Serves</option>
-                                <option value="RELATED">Related</option>
-                                <option value="KNOWS">Knows</option>
-                                <option value="OWNS">Owns</option>
-                                <option value="LOCATED_IN">Located In</option>
-                                <option value="TRAVELS_TO">Travels To</option>
-                                <option value="OTHER">Other</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">From Type</label>
-                            <input type="text" name="fromType" class="form-input" value="NPC" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">From ID</label>
-                            <input type="text" name="fromId" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">To Type</label>
-                            <input type="text" name="toType" class="form-input" value="NPC" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">To ID</label>
-                            <input type="text" name="toId" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Directed</label>
-                            <input type="checkbox" name="directed" class="form-input" value="true" checked>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Knowledge</label>
-                            <select name="knowledge" class="form-input">
-                                <option value="PUBLIC">Public</option>
-                                <option value="SECRET">Secret</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Notes</label>
-                            <textarea name="notes" class="form-input"></textarea>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn">Add</button>
-                        </div>
-                    </form>
-                </details>
-            </div>
-
-            <div class="detail-section">
-                <h3>Clocks</h3>
-                <div th:replace="~{world/_clock-row :: clockRow(clocks=${clocks}, campaignId=${campaignId}, factionId=${faction.id})}"></div>
-                <details class="u-mt-md">
-                    <summary>Add Clock</summary>
-                    <form class="inline-form u-mt-sm"
-                          th:action="@{/campaigns/{cid}/world/factions/{fid}/clocks(cid=${campaignId},fid=${faction.id})}"
-                          method="post">
-                        <div class="form-group">
-                            <label class="form-label">Title</label>
-                            <input type="text" name="title" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Segments</label>
-                            <input type="number" name="segments" class="form-input" value="4" min="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Filled</label>
-                            <input type="number" name="filled" class="form-input" value="0" min="0" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Notes</label>
-                            <textarea name="notes" class="form-input"></textarea>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Add</button>
-                        </div>
-                    </form>
-                </details>
-            </div>
+    <div class="detail-section u-mt-lg">
+        <h2>Clocks</h2>
+        <div th:replace="~{world/_clock-row :: clockRow(clocks=${clocks}, campaignId=${campaignId}, factionId=${faction.id})}"></div>
+        <details class="u-mt-md">
+            <summary>Add Clock</summary>
+            <form class="inline-form u-mt-sm"
+                  th:action="@{/campaigns/{cid}/world/factions/{fid}/clocks(cid=${campaignId},fid=${faction.id})}"
+                  method="post">
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text" name="title" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Segments</label>
+                    <input type="number" name="segments" class="form-input" value="4" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Filled</label>
+                    <input type="number" name="filled" class="form-input" value="0" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notes</label>
+                    <textarea name="notes" class="form-input"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </details>
+    </div>
 
     <div class="u-mt-lg surface-danger-zone">
         <h2>Danger zone</h2>
@@ -165,6 +164,22 @@
                 hx-confirm="Delete this faction?"
                 hx-target="body" hx-swap="outerHTML"
                 hx-disabled-elt="this">Delete</button>
+    </div>
+</div>
+
+<div id="page-rail" class="page-rail-slot">
+    <th:block th:replace="~{fragments/_context-rail :: rail(body=~{::#railBody})}"></th:block>
+    <div id="railBody">
+        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Members', body=~{::#factionMembers})}"></th:block>
+    </div>
+    <div id="factionMembers">
+        <div th:if="${members.empty}" class="u-text-sm text-muted">No members.</div>
+        <ul th:unless="${members.empty}" class="u-list-none">
+            <li th:each="m : ${members}" class="u-mb-xs">
+                <a th:href="@{/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${m.id})}"
+                   th:text="${m.name}">Member</a>
+            </li>
+        </ul>
     </div>
 </div>
 </body>

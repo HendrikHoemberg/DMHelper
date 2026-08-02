@@ -6,7 +6,7 @@
           surface=null,
           header=~{::#page-header},
           content=~{::#page-content},
-          rail=~{})}">
+          rail=~{::#page-rail})}">
 <body>
 <div id="page-header" class="page-header-slot">
     <th:block th:replace="~{fragments/_page-header :: page-header(
@@ -24,7 +24,10 @@
     <span th:text="${npc.name}">NPC</span>
 </nav>
 <div id="secondaryActions" class="u-flex u-gap-xs">
-    <span class="badge" th:text="${#enums.label(npc.status)}">STATUS</span>
+    <span class="badge"
+          th:classappend="${npc.status.name() == 'ALIVE'} ? 'badge--success' :
+                          (${npc.status.name() == 'DEAD'} ? 'badge--danger' : 'badge--warning')"
+          th:text="${#enums.label(npc.status)}">STATUS</span>
     <button class="btn btn-ghost"
             th:hx-get="@{/campaigns/{cid}/world/npcs/{fid}/edit(cid=${campaignId},fid=${npc.id})}"
             hx-target="#npcForm"
@@ -33,54 +36,80 @@
 </div>
 
 <div id="page-content" class="page-content">
-<th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
-            <div id="npcForm"></div>
-            <div class="detail-section">
-                <div th:if="${npc.role}" class="u-mb-md" th:text="|Role: ${npc.role}|">Role</div>
-                <div th:if="${npc.disposition}" class="u-mb-md" th:text="|Disposition: ${#enums.label(npc.disposition)}|">Disposition</div>
-                <div th:if="${npc.faction}" class="u-mb-md">
-                    <span>Faction: </span>
-                    <a th:href="@{/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${npc.faction.id})}"
-                       th:text="${npc.faction.name}">Faction</a>
-                </div>
-                <div th:if="${npc.location}" class="u-mb-md">
-                    <span>Location: </span>
-                    <a th:href="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${npc.location.id})}"
-                       th:text="${npc.location.name}">Location</a>
-                </div>
-                <div th:if="${npc.appearance}" class="u-mb-md">
-                    <h4>Appearance</h4>
-                    <p th:text="${npc.appearance}">Appearance</p>
-                </div>
-                <div th:if="${npc.voice}" class="u-mb-md">
-                    <h4>Voice</h4>
-                    <p th:text="${npc.voice}">Voice</p>
-                </div>
-                <div th:if="${npc.motivation}" class="u-mb-md">
-                    <h4>Motivation</h4>
-                    <p th:text="${npc.motivation}">Motivation</p>
-                </div>
-                <div th:if="${npc.secret}" class="u-mb-md">
-                    <h4>Secret</h4>
-                    <p th:text="${npc.secret}">Secret</p>
-                </div>
-                <div th:if="${npc.inventoryText}" class="u-mb-md">
-                    <h4>Inventory</h4>
-                    <p th:text="${npc.inventoryText}">Inventory</p>
-                </div>
-                <div th:if="${npc.tags}" class="u-mb-md" th:text="|Tags: ${npc.tags}|">Tags</div>
-                <div th:if="${npc.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${npc.sourceLocator}|">Source</div>
-            </div>
+    <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+    <div id="npcForm"></div>
 
-            <div class="u-mt-lg surface-danger-zone">
-                <h2>Danger zone</h2>
-                <p class="text-muted u-text-sm">This action cannot be undone.</p>
-                <button class="btn btn-danger action-row__destructive"
-                        th:hx-delete="@{/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${npc.id})}"
-                        hx-confirm="Delete this NPC?"
-                        hx-target="body" hx-swap="outerHTML"
-                        hx-disabled-elt="this">Delete</button>
-            </div>
+    <div class="u-flex u-gap-xs u-mb-md">
+        <span class="badge badge--neutral" th:if="${npc.disposition != null}"
+              th:text="${#enums.label(npc.disposition)}">DISPOSITION</span>
+    </div>
+
+    <div class="prose note-body"
+         th:if="${npc.role != null or npc.appearance != null or npc.voice != null or npc.motivation != null or npc.secret != null or npc.inventoryText != null}">
+        <div th:if="${npc.role}" class="u-mb-md" th:text="${npc.role}">Role</div>
+        <div th:if="${npc.appearance}" class="u-mb-md">
+            <h3>Appearance</h3>
+            <p th:text="${npc.appearance}">Appearance</p>
+        </div>
+        <div th:if="${npc.voice}" class="u-mb-md">
+            <h3>Voice</h3>
+            <p th:text="${npc.voice}">Voice</p>
+        </div>
+        <div th:if="${npc.motivation}" class="u-mb-md">
+            <h3>Motivation</h3>
+            <p th:text="${npc.motivation}">Motivation</p>
+        </div>
+        <div th:if="${npc.secret}" class="u-mb-md">
+            <h3>Secret</h3>
+            <p th:text="${npc.secret}">Secret</p>
+        </div>
+        <div th:if="${npc.inventoryText}" class="u-mb-md">
+            <h3>Inventory</h3>
+            <p th:text="${npc.inventoryText}">Inventory</p>
+        </div>
+    </div>
+
+    <div class="u-mt-lg surface-danger-zone">
+        <h2>Danger zone</h2>
+        <p class="text-muted u-text-sm">This action cannot be undone.</p>
+        <button class="btn btn-danger action-row__destructive"
+                th:hx-delete="@{/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${npc.id})}"
+                hx-confirm="Delete this NPC?"
+                hx-target="body" hx-swap="outerHTML"
+                hx-disabled-elt="this">Delete</button>
+    </div>
+</div>
+
+<div id="page-rail" class="page-rail-slot">
+    <th:block th:replace="~{fragments/_context-rail :: rail(body=~{::#railBody})}"></th:block>
+    <div id="railBody">
+        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Faction', body=~{::#npcFaction})}"></th:block>
+        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Location', body=~{::#npcLocation})}"></th:block>
+        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Tags', body=~{::#npcTags})}"></th:block>
+        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Source', body=~{::#npcSource})}"></th:block>
+    </div>
+    <div id="npcFaction">
+        <th:block th:if="${npc.faction != null}">
+            <a th:href="@{/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${npc.faction.id})}"
+               th:text="${npc.faction.name}">Faction</a>
+        </th:block>
+        <p th:unless="${npc.faction != null}" class="u-text-sm text-muted">No faction.</p>
+    </div>
+    <div id="npcLocation">
+        <th:block th:if="${npc.location != null}">
+            <a th:href="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${npc.location.id})}"
+               th:text="${npc.location.name}">Location</a>
+        </th:block>
+        <p th:unless="${npc.location != null}" class="u-text-sm text-muted">No location.</p>
+    </div>
+    <div id="npcTags">
+        <p th:if="${npc.tags}" class="u-text-sm" th:text="${npc.tags}">Tags</p>
+        <p th:unless="${npc.tags}" class="u-text-sm text-muted">No tags.</p>
+    </div>
+    <div id="npcSource">
+        <p th:if="${npc.sourceLocator}" class="u-text-xs text-muted" th:text="${npc.sourceLocator}">Source</p>
+        <p th:unless="${npc.sourceLocator}" class="u-text-xs text-muted">No source.</p>
+    </div>
 </div>
 </body>
 </html>

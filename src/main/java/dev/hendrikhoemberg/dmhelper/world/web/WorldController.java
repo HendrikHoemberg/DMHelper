@@ -17,6 +17,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @Controller
@@ -254,8 +255,15 @@ public class WorldController {
     @GetMapping("/factions/{factionId}")
     public String factionDetail(@PathVariable UUID campaignId, @PathVariable UUID factionId, Model model) {
         Faction faction = worldService.getFaction(campaignId, factionId);
+        List<WorldRelationship> relationships = worldService.getRelationships(campaignId);
         model.addAttribute("faction", faction);
-        model.addAttribute("relationships", worldService.getRelationships(campaignId));
+        model.addAttribute("relationships", relationships);
+        model.addAttribute("outboundRelationships", relationships.stream()
+                .filter(r -> "FACTION".equals(r.getFromType()) && factionId.equals(r.getFromId()))
+                .toList());
+        model.addAttribute("inboundRelationships", relationships.stream()
+                .filter(r -> "FACTION".equals(r.getToType()) && factionId.equals(r.getToId()))
+                .toList());
         model.addAttribute("clocks", worldService.getClocksForFaction(campaignId, factionId));
         model.addAttribute("members", worldService.getNpcs(campaignId).stream()
                 .filter(n -> n.getFaction() != null && n.getFaction().getId().equals(factionId))

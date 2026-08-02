@@ -21,22 +21,99 @@
 <a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
 
 <div id="page-content" class="page-content">
-<th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
-            <div th:if="${locations.empty}" class="empty-state">No locations yet.</div>
-            <div th:unless="${locations.empty}" class="card-grid">
-                <div th:each="loc : ${locations}" class="card">
-                    <div class="card-header">
-                        <a th:href="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${loc.id})}"
-                           th:text="${loc.name}">Location Name</a>
-                        <span class="badge" th:text="${#enums.label(loc.kind)}">KIND</span>
-                    </div>
-                    <div th:if="${loc.summary}" class="card-body" th:text="${loc.summary}">Summary</div>
-                    <div class="card-footer">
-                        <span th:if="${loc.parentLocation != null}" class="u-text-xs text-muted"
-                              th:text="|Parent: ${loc.parentLocation.name}|">Parent</span>
-                    </div>
-                </div>
-            </div>
+    <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
+
+    <th:block th:replace="~{fragments/_toolbar :: toolbar(
+        action=@{/campaigns/{cid}/world/locations(cid=${campaignId})},
+        searchValue=${null},
+        searchPlaceholder='Filter locations by name, summary, or tags…',
+        filters=~{::#locationFilters},
+        actions=~{})}"></th:block>
+
+    <div id="locationFilters">
+        <label class="sr-only" for="locationKindFilter">Filter by kind</label>
+        <select id="locationKindFilter" class="form-input" data-location-kind-filter>
+            <option value="">All kinds</option>
+            <option value="SITE">Site</option>
+            <option value="REGION">Region</option>
+            <option value="SETTLEMENT">Settlement</option>
+            <option value="PLANE">Plane</option>
+            <option value="OTHER">Other</option>
+        </select>
+    </div>
+
+    <th:block th:if="${locations.empty}">
+        <th:block th:replace="~{fragments/_states :: empty(
+            icon='map',
+            title='No locations yet',
+            description='Map the places the party can reach — settlements, sites, regions, and stranger planes.',
+            cta=~{})}"></th:block>
+    </th:block>
+
+    <table th:unless="${locations.empty}" class="data-table location-table">
+        <thead>
+            <tr>
+                <th scope="col">Kind</th>
+                <th scope="col">Location</th>
+                <th scope="col">Summary</th>
+                <th scope="col">Parent</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="loc : ${locations}" class="location-row"
+                th:attr="data-location-search=${loc.name + ' ' + loc.summary + ' ' + (loc.parentLocation != null ? loc.parentLocation.name : '')},
+                          data-location-kind=${loc.kind != null ? loc.kind.name() : ''}">
+                <td>
+                    <span class="badge" th:if="${loc.kind != null}"
+                          th:text="${#enums.label(loc.kind)}">KIND</span>
+                </td>
+                <td>
+                    <a th:href="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${loc.id})}"
+                       th:text="${loc.name}">Location Name</a>
+                    <div th:if="${loc.sourceLocator}" class="u-text-xs text-muted"
+                         th:text="|Source: ${loc.sourceLocator}|">Source</div>
+                </td>
+                <td th:text="${loc.summary}">Summary</td>
+                <td>
+                    <th:block th:if="${loc.parentLocation != null}">
+                        <a th:href="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${loc.parentLocation.id})}"
+                           th:text="${loc.parentLocation.name}">Parent</a>
+                    </th:block>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 </div>
+
+<script>
+    window.dmHelperFilterLocations = function (query, kind) {
+        var needle = (query || '').trim().toLowerCase();
+        var kindNeedle = (kind || '').trim();
+        document.querySelectorAll('.location-row').forEach(function (row) {
+            var haystack = (row.getAttribute('data-location-search') || '').toLowerCase();
+            var matchesQuery = needle === '' || haystack.indexOf(needle) !== -1;
+            var matchesKind = kindNeedle === ''
+                || row.getAttribute('data-location-kind') === kindNeedle;
+            row.hidden = !matchesQuery || !matchesKind;
+        });
+    };
+    document.addEventListener('DOMContentLoaded', function () {
+        var input = document.querySelector('.page--index .toolbar__input');
+        if (input) {
+            input.addEventListener('input', function () {
+                window.dmHelperFilterLocations(this.value,
+                    document.querySelector('[data-location-kind-filter]')?.value || '');
+            });
+        }
+        var kind = document.querySelector('[data-location-kind-filter]');
+        if (kind) {
+            kind.addEventListener('change', function () {
+                window.dmHelperFilterLocations(
+                    document.querySelector('.page--index .toolbar__input')?.value || '',
+                    this.value);
+            });
+        }
+    });
+</script>
 </body>
 </html>
