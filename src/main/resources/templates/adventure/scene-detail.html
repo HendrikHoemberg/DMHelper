@@ -33,11 +33,14 @@
 </div>
 
 <div id="page-rail" class="page-rail-slot">
-    <div id="sceneRail">
-        <th:block th:replace="~{adventure/_scene-rail :: sceneRail}"></th:block>
-        <div class="detail-section u-mt-md">
-            <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='SCENE', targetId=${scene.id})}"></th:block>
-        </div>
+    <th:block th:replace="~{fragments/_context-rail :: rail(body=~{::#sceneRail})}"></th:block>
+</div>
+<!-- Outside the slot, like every other detail page's rail source. #sceneRail stays the
+     htmx target for the encounter-seed swap. -->
+<div id="sceneRail">
+    <th:block th:replace="~{adventure/_scene-rail :: sceneRail}"></th:block>
+    <div class="detail-section u-mt-md">
+        <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='SCENE', targetId=${scene.id})}"></th:block>
     </div>
 </div>
 </body>

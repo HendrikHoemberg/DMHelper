@@ -42,23 +42,35 @@ class SharedComponentContractTest {
         }
     }
 
+    /**
+     * Matched on the parsed class token, not on the literal {@code class="page-rail"}. The
+     * string form was trivially evadable by writing a second class first:
+     * {@code adventure/_scene-rail.html} carried {@code class="scene-rail page-rail"} and
+     * reimplemented the contextual rail — losing the {@code <aside>} landmark every other
+     * detail page gets — while this test reported it clean.
+     */
     @Test
     void featureTemplatesDoNotRecreateThePrimitives() {
+        int scanned = 0;
         for (Path template : TemplateRules.allTemplates()) {
             if (template.toString().contains("/fragments/")) continue;
-            String markup = TemplateRules.read(template);
             // library/_sheet.html is the legacy statblock sheet — it reimplements
             // class="side-sheet" and is NOT a page. It is migrated onto the shared
             // side-sheet fragment in Part 4 (ui-redesign-4, statblock sheet task); until
             // then it keeps its own implementation and is exempted here.
             if (template.toString().endsWith("/library/_sheet.html")) continue;
-            for (String privateCopy : List.of("class=\"toolbar\"", "class=\"page-rail\"",
-                    "class=\"toast\"", "class=\"side-sheet\"", "class=\"page-header\"")) {
-                assertThat(markup)
-                        .as("%s reimplements %s — use the shared fragment", template, privateCopy)
-                        .doesNotContain(privateCopy);
+            var document = TemplateRules.parse(template);
+            scanned++;
+            for (String privateCopy : List.of("toolbar", "page-rail", "toast",
+                    "side-sheet", "page-header")) {
+                assertThat(document.select("." + privateCopy))
+                        .as("%s reimplements .%s — use the shared fragment",
+                                template, privateCopy)
+                        .isEmpty();
             }
         }
+        assertThat(scanned).as("no template was scanned — this test has gone blind")
+                .isGreaterThan(0);
     }
 
     @Test

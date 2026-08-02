@@ -77,7 +77,10 @@
             </div>
         </template>
 
-        <div x-show="error" class="toast toast-error" aria-live="assertive" x-text="error"></div>
+        <!-- An inline alert inside the dialog, not a toast: it does not float, stack, or
+             auto-dismiss, and .toast is the shared overlay primitive. -->
+        <div x-show="error" class="alert alert-error" role="alert" aria-live="assertive"
+             x-text="error"></div>
     </div>
 
     <div id="importActions">

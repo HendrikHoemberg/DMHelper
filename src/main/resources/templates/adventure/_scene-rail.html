@@ -1,4 +1,7 @@
-<div th:fragment="sceneRail" class="scene-rail page-rail" xmlns:th="http://www.thymeleaf.org">
+<!-- No page-rail class here: that primitive belongs to fragments/_context-rail, which
+     scene-detail.html now wraps this in. Carrying it locally reimplemented the rail and
+     dropped the <aside> landmark every other detail page gets. -->
+<div th:fragment="sceneRail" class="scene-rail" xmlns:th="http://www.thymeleaf.org">
   <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
 
   <section class="rail-section" data-rail-section="status">
