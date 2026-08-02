@@ -108,7 +108,27 @@
 }
 
 /* ── Command bar helpers ── */
-.mapedit__commandbar .save-indicator { font-size: var(--text-sm); }
+/* Editor pages own the viewport (base.css §archetypes): collapse the grouped left
+   nav to icons so the canvas keeps the majority of the width at every viewport.
+   Mirrors .app-shell--rail-collapsed in base.css, applied to the archetype so the
+   editor does not depend on the visitor's stored rail preference. */
+body[data-archetype="editor"] .app-shell {
+  grid-template-columns: var(--rail-width-collapsed) 1fr;
+}
+body[data-archetype="editor"] .rail__text {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  clip-path: inset(50%);
+  overflow: hidden; white-space: nowrap;
+}
+body[data-archetype="editor"] .rail__label { display: none; }
+body[data-archetype="editor"] .rail__link { justify-content: center; padding-inline: 0; }
+body[data-archetype="editor"] .rail__collapse { display: none; }
+.mapedit__commandbar .save-indicator {
+  font-size: var(--text-sm);
+  display: inline-block;   /* components.css hides .save-indicator for htmx; the editor's status must stay visible */
+}
 .save-indicator.save-saved { color: var(--state-success); }
 .save-indicator.save-saving,
 .save-indicator.save-unsaved { color: var(--state-warning); }

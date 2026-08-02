@@ -284,23 +284,11 @@ export class BattleMap {
     }
 
     renderGrid() {
-        this.gridGroup.destroyChildren();
         if (this.showGrid) {
-            const s = this.cellSizePx;
-            for (let col = 0; col <= this.gridWidth; col++) {
-                this.gridGroup.add(new Konva.Line({
-                    points: [col * s, 0, col * s, this.gridHeight * s],
-                    stroke: 'rgba(0,0,0,0.18)', strokeWidth: 0.5, listening: false,
-                }));
-            }
-            for (let row = 0; row <= this.gridHeight; row++) {
-                this.gridGroup.add(new Konva.Line({
-                    points: [0, row * s, this.gridWidth * s, row * s],
-                    stroke: 'rgba(0,0,0,0.18)', strokeWidth: 0.5, listening: false,
-                }));
-            }
+            drawGrid(this.gridGroup, this.gridWidth, this.gridHeight, this.cellSizePx);
             this.gridGroup.visible(true);
         } else {
+            this.gridGroup.destroyChildren();
             this.gridGroup.visible(false);
         }
         this.terrainLayer.batchDraw();

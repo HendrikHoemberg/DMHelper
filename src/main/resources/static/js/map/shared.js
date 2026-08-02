@@ -3,6 +3,18 @@
  * Used by both MapEditor and BattleMap.
  */
 
+/** A CSS custom property's resolved value, read once per call. The canvas cannot read
+ *  CSS tokens directly, so Konva consumers resolve them through computed style. */
+function cssColor(name, fallback) {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+}
+
+/** The map editor's selection-marker color (token --map-selection). */
+export function mapSelectionColor() {
+    return cssColor('--map-selection', '#b8efff');
+}
+
 /**
  * Draw grid lines onto a Konva.Layer.
  * @param {import('konva').Layer} layer
@@ -13,19 +25,34 @@
 export function drawGrid(layer, gridWidth, gridHeight, cellSizePx) {
     layer.destroyChildren();
     const s = cellSizePx;
+    const gridLine = cssColor('--map-grid-line', '#e8e8e8');
+    const gridShadow = cssColor('--map-grid-shadow', '#101113');
+    /* A 1px light stroke plus a 1px dark stroke offset by 1px reads on any imagery:
+       on a light image the dark companion carries the line, on a dark one the light
+       stroke does. Both tokens hold ≥3:1 against --surface-canvas and mid-grey alike. */
     for (let col = 0; col <= gridWidth; col++) {
+        const x = col * s;
         layer.add(new Konva.Line({
-            points: [col * s, 0, col * s, gridHeight * s],
-            stroke: 'rgba(0,0,0,0.18)', strokeWidth: 0.5, listening: false,
+            points: [x + 1, 0, x + 1, gridHeight * s],
+            stroke: gridShadow, strokeWidth: 1, listening: false,
+        }));
+        layer.add(new Konva.Line({
+            points: [x, 0, x, gridHeight * s],
+            stroke: gridLine, strokeWidth: 1, listening: false,
         }));
     }
     for (let row = 0; row <= gridHeight; row++) {
+        const y = row * s;
         layer.add(new Konva.Line({
-            points: [0, row * s, gridWidth * s, row * s],
-            stroke: 'rgba(0,0,0,0.18)', strokeWidth: 0.5, listening: false,
+            points: [0, y + 1, gridWidth * s, y + 1],
+            stroke: gridShadow, strokeWidth: 1, listening: false,
+        }));
+        layer.add(new Konva.Line({
+            points: [0, y, gridWidth * s, y],
+            stroke: gridLine, strokeWidth: 1, listening: false,
         }));
     }
-    layer.batchDraw();
+    if (typeof layer.batchDraw === 'function') layer.batchDraw();
 }
 
 /**

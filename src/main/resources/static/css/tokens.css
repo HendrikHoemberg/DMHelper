@@ -50,6 +50,13 @@
   --selection-surface: color-mix(in srgb, var(--selection-accent) 18%, transparent);
   --focus-ring: var(--action-primary);
 
+  /* Map editor canvas legibility (spec section 13): the grid and selection markers
+     must keep ≥3:1 against both --surface-canvas and a mid-grey imported image, so
+     the grid draws a 1px light stroke over a 1px dark companion offset by 1px. */
+  --map-grid-line: #e8e8e8;
+  --map-grid-shadow: #101113;
+  --map-selection: #b8efff;
+
   --state-success: #89ad69;
   --state-success-surface: color-mix(in srgb, var(--state-success) 14%, var(--surface-panel));
   --state-success-border: color-mix(in srgb, var(--state-success) 78%, var(--surface-panel));

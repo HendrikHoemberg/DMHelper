@@ -1,6 +1,6 @@
 import { BUILTIN_TERRAIN, DEFAULT_TERRAIN, ERASE_KEY, SHAPE_COLORS } from './terrain-palette.js';
 import { floodFillCells } from './flood-fill.js';
-import { drawGrid, cellPos, snapPt, expandPrimitives, mapPixelBounds } from './shared.js';
+import { drawGrid, cellPos, snapPt, expandPrimitives, mapPixelBounds, mapSelectionColor } from './shared.js';
 import { boundsImpact, shapeBounds, fitInsideGeometry, fillCoverGeometry, calibratedImageGeometry } from './geometry.js';
 
 /**
@@ -112,8 +112,8 @@ export class MapEditor {
             rotateEnabled: false,
             enabledAnchors: ['top-left', 'top-center', 'top-right', 'middle-left', 'middle-right',
                               'bottom-left', 'bottom-center', 'bottom-right'],
-            borderStroke: '#4a9eff',
-            anchorStroke: '#4a9eff',
+            borderStroke: mapSelectionColor(),
+            anchorStroke: mapSelectionColor(),
             anchorFill: '#fff',
             anchorSize: 8,
         });
@@ -1155,7 +1155,7 @@ export class MapEditor {
         this.previewLayer.add(new Konva.Rect({
             x: px(Math.min(a.x, b.x)), y: px(Math.min(a.y, b.y)),
             width: px(Math.abs(b.x - a.x)), height: px(Math.abs(b.y - a.y)),
-            stroke: '#4a9eff', strokeWidth: 1.5, dash: [6, 4], listening: false,
+            stroke: mapSelectionColor(), strokeWidth: 1.5, dash: [6, 4], listening: false,
         }));
         this.previewLayer.batchDraw();
     }
@@ -1197,7 +1197,7 @@ export class MapEditor {
         const px = (v) => v * this.cellSizePx;
         const rect = new Konva.Rect({
             x: px(b.minX), y: px(b.minY), width: px(b.maxX - b.minX), height: px(b.maxY - b.minY),
-            stroke: '#4a9eff', strokeWidth: 1.5, dash: [6, 4], listening: false,
+            stroke: mapSelectionColor(), strokeWidth: 1.5, dash: [6, 4], listening: false,
         });
         rect.setAttr('_selection', true);
         this.previewLayer.add(rect);
@@ -1221,7 +1221,7 @@ export class MapEditor {
         const rect = new Konva.Rect({
             x: px(b.minX + dx), y: px(b.minY + dy),
             width: px(b.maxX - b.minX), height: px(b.maxY - b.minY),
-            stroke: '#4a9eff', strokeWidth: 1.5, dash: [6, 4], listening: false,
+            stroke: mapSelectionColor(), strokeWidth: 1.5, dash: [6, 4], listening: false,
         });
         rect.setAttr('_selection', true);
         this.previewLayer.add(rect);
@@ -1771,6 +1771,12 @@ export class MapEditor {
         const labels = { unsaved: 'Unsaved…', saving: 'Saving…', saved: 'Saved', error: 'Save failed!', conflict: 'Conflict!' };
         this.saveIndicatorEl.textContent = labels[state] || state;
         this.saveIndicatorEl.className = `save-indicator save-${state}`;
+        /* data-save-status is the machine-readable role: saving, saved, or error.
+           "unsaved" is the waiting-for-debounce phase of an imminent autosave and
+           "conflict" is a failed write, so both collapse onto the three canonical
+           states instead of leaking a fourth. */
+        const status = state === 'saved' ? 'saved' : (state === 'saving' ? 'saving' : 'error');
+        this.saveIndicatorEl.dataset.saveStatus = status;
     }
 
     /** Triggers a browser download for any URL — an object URL (caller creates/revokes it)

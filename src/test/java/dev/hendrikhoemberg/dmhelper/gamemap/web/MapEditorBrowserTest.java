@@ -981,6 +981,37 @@ class MapEditorBrowserTest {
         assertThat(length.intValue()).isLessThan(10_000);
     }
 
+    @Test
+    void theCanvasReceivesTheMajorityOfTheViewport() {
+        page.setViewportSize(1280, 720);
+        double canvas = ((Number) page.evaluate(
+                "() => document.querySelector('.mapedit__canvas').getBoundingClientRect().width"))
+                .doubleValue();
+        assertThat(canvas / 1280.0).as("canvas share of width").isGreaterThan(0.6);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void gridAndSelectionStayLegibleOverImportedImagery() {
+        Object contrastPair = page.evaluate("""
+                () => {
+                  const s = getComputedStyle(document.documentElement);
+                  return [s.getPropertyValue('--map-grid-line').trim(),
+                          s.getPropertyValue('--map-selection').trim()];
+                }
+                """);
+        assertThat((java.util.List<String>) contrastPair).doesNotContain("");
+    }
+
+    @Test
+    void autosaveStateIsVisibleButQuiet() {
+        assertThat(page.isVisible("#saveIndicator")).isTrue();
+        String color = (String) page.evaluate(
+                "() => getComputedStyle(document.querySelector('#saveIndicator')).color");
+        assertThat(color).as("save state must not use the primary text role")
+                .isNotEqualTo("rgb(238, 232, 220)");
+    }
+
     private void expandInspectorSection(String section) {
         page.click("[data-inspector-section='" + section + "'] > summary");
     }
