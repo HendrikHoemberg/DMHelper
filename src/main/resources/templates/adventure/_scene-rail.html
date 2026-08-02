@@ -1,9 +1,9 @@
-<div th:fragment="sceneRail" class="scene-rail" xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="sceneRail" class="scene-rail page-rail" xmlns:th="http://www.thymeleaf.org">
   <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
-  <div class="detail-section">
-    <h3>Scene</h3>
 
-    <div class="u-flex u-gap-xs u-mb-md">
+  <section class="rail-section" data-rail-section="status">
+    <h2 class="rail-section__title">Status</h2>
+    <div class="u-flex u-gap-xs u-mb-sm">
       <button class="btn btn-sm"
               th:classappend="${scene.status.name() == 'VISITED'} ? 'btn' : 'btn-ghost'"
               th:hx-put="@{/scenes/{id}/status(id=${scene.id})}"
@@ -25,46 +25,56 @@
 
     <div th:replace="~{adventure/_scene-rail :: statusBadge}"></div>
 
-    <div class="u-mb-md">
-      <button class="btn btn-primary btn-sm u-w-full"
-              th:hx-post="@{/campaigns/{cid}/current-scene(cid=${campaignId})}"
-              th:attr="hx-vals='{&quot;sceneId&quot;: &quot;' + ${scene.id} + '&quot;}'"
-              hx-target="#scenePanel"
-              hx-swap="innerHTML"
-              hx-disabled-elt="this">Set as Current Scene</button>
+    <div class="u-mb-sm" th:if="${currentScene != null and currentScene.id == scene.id}"
+         data-scene-is-current>
+      <span class="badge badge--warning">Current scene</span>
     </div>
 
-    <div th:if="${scene.map != null}" class="u-mb-md">
-      <h4 class="u-text-sm u-mb-xs">Linked Map</h4>
-      <div class="u-flex u-gap-xs">
-        <span th:text="${scene.map.name}">Map Name</span>
-        <a th:href="@{/campaigns/{cid}/maps/{mid}/play(cid=${campaignId},mid=${scene.map.id})}"
-           class="btn btn-sm" target="_blank">Open</a>
-      </div>
-      <div th:if="${scene.pinX != null and scene.pinY != null}" class="u-text-xs text-muted">
-        Pin: (<span th:text="${scene.pinX}">X</span>, <span th:text="${scene.pinY}">Y</span>)
-      </div>
+    <div th:if="${scene.transitions != null and !scene.transitions.isEmpty()}" data-rail-transitions
+         class="u-flex u-flex-wrap u-gap-xs u-mb-sm">
+      <th:block th:each="t : ${scene.transitions}">
+        <span class="badge badge--info" th:text="${#enums.label(t.kind)}">KIND</span>
+        <span class="badge" th:text="${t.label}">Transition</span>
+      </th:block>
     </div>
 
-    <div th:if="${scene.encounter != null}" class="u-mb-md">
-      <h4 class="u-text-sm u-mb-xs">Linked Encounter</h4>
-      <div class="u-flex u-gap-xs">
-        <span th:text="${scene.encounter.name}">Encounter Name</span>
-        <a th:href="@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId},eid=${scene.encounter.id})}"
-           class="btn btn-sm">Open encounter</a>
-      </div>
-    </div>
+    <button class="btn btn-primary btn-sm u-w-full"
+            th:hx-post="@{/campaigns/{cid}/current-scene(cid=${campaignId})}"
+            th:attr="hx-vals='{&quot;sceneId&quot;: &quot;' + ${scene.id} + '&quot;}'"
+            hx-target="#scenePanel"
+            hx-swap="innerHTML"
+            hx-disabled-elt="this">Set as Current Scene</button>
+  </section>
 
-    <div th:if="${scene.encounter == null and canSeedEncounter}" class="u-mb-md">
-      <button class="btn btn-sm"
-              th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/seed-encounter(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-              hx-target="#sceneRail" hx-swap="innerHTML"
-              hx-disabled-elt="this">
-        Create an encounter here
-      </button>
+  <section class="rail-section" data-rail-section="map" th:if="${scene.map != null}">
+    <h2 class="rail-section__title">Map</h2>
+    <div class="u-flex u-gap-xs">
+      <span th:text="${scene.map.name}">Map Name</span>
+      <a th:href="@{/campaigns/{cid}/maps/{mid}/play(cid=${campaignId},mid=${scene.map.id})}"
+         class="btn btn-sm" target="_blank">Open</a>
     </div>
+    <div th:if="${scene.pinX != null and scene.pinY != null}" class="u-text-xs text-muted">
+      Pin: (<span class="u-num" th:text="${scene.pinX}">X</span>, <span class="u-num" th:text="${scene.pinY}">Y</span>)
+    </div>
+  </section>
 
-    <div th:if="${seedResult != null and !seedResult.alreadyExisted}" class="card card--compact u-mb-md">
+  <section class="rail-section" data-rail-section="encounter">
+    <h2 class="rail-section__title">Encounter</h2>
+    <div th:if="${scene.encounter != null}" class="u-flex u-gap-xs">
+      <span th:text="${scene.encounter.name}">Encounter Name</span>
+      <a th:href="@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId},eid=${scene.encounter.id})}"
+         class="btn btn-sm">Open encounter</a>
+    </div>
+    <button th:if="${scene.encounter == null and canSeedEncounter}" class="btn btn-sm"
+            th:hx-post="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/seed-encounter(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+            hx-target="#sceneRail" hx-swap="innerHTML"
+            hx-disabled-elt="this">
+      Create an encounter here
+    </button>
+    <p th:if="${scene.encounter == null and !canSeedEncounter}" class="u-text-sm text-muted">
+      No encounter linked.
+    </p>
+    <div th:if="${seedResult != null and !seedResult.alreadyExisted}" class="card card--compact u-mb-sm">
       <strong th:text="${seedResult.encounterName}">Encounter</strong>
       <span class="u-text-xs"
             th:text="|${seedResult.combatantsAdded} combatants added|">0 combatants added</span>
@@ -73,87 +83,78 @@
         <span th:text="${#strings.listJoin(seedResult.skippedParticipants, ', ')}">Names</span>
       </div>
     </div>
+  </section>
 
-    <div class="u-mb-md" th:if="${scene.participants != null and !scene.participants.isEmpty()}"
-         data-rail-participants>
-      <h4 class="u-text-sm u-mb-xs">Participants</h4>
-      <div th:each="p : ${scene.participants}" class="card card--compact u-mb-xs"
-           th:attr="data-participant-id=${p.id}">
-        <strong th:text="${p.displayName}">Name</strong>
-        <span class="badge" th:text="|x${p.quantity}|" th:if="${p.quantity > 1}">Qty</span>
-        <span class="badge" th:text="${#enums.label(p.disposition)}" th:if="${p.disposition != null}">Disp</span>
-        <a th:if="${p.statBlock != null}" class="participant-statblock" target="_blank"
-           th:href="@{/library/statblocks/{id}(id=${p.statBlock.id})}"
-           th:title="|Open ${p.statBlock.name}|">
-          <span class="participant-statblock__name" th:text="${p.statBlock.name}">Statblock</span>
-          <span class="participant-statblock__stat" th:text="|AC ${p.statBlock.ac}|">AC 14</span>
-          <span class="participant-statblock__stat" th:text="|HP ${p.statBlock.hp}|">HP 16</span>
-        </a>
-        <span th:if="${p.placementHint}" class="u-text-xs" th:text="${p.placementHint}">Placement</span>
-        <span th:if="${p.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${p.sourceLocator}|">Source</span>
-      </div>
+  <section class="rail-section" data-rail-section="participants"
+           th:if="${scene.participants != null and !scene.participants.isEmpty()}"
+           data-rail-participants>
+    <h2 class="rail-section__title">Participants</h2>
+    <div th:each="p : ${scene.participants}" class="card card--compact u-mb-xs"
+         th:attr="data-participant-id=${p.id}">
+      <strong th:text="${p.displayName}">Name</strong>
+      <span class="badge" th:text="|x${p.quantity}|" th:if="${p.quantity > 1}">Qty</span>
+      <span class="badge" th:text="${#enums.label(p.disposition)}" th:if="${p.disposition != null}">Disp</span>
+      <a th:if="${p.statBlock != null}" class="participant-statblock" target="_blank"
+         th:href="@{/library/statblocks/{id}(id=${p.statBlock.id})}"
+         th:title="|Open ${p.statBlock.name}|">
+        <span class="participant-statblock__name" th:text="${p.statBlock.name}">Statblock</span>
+        <span class="participant-statblock__stat" th:text="|AC ${p.statBlock.ac}|">AC 14</span>
+        <span class="participant-statblock__stat" th:text="|HP ${p.statBlock.hp}|">HP 16</span>
+      </a>
+      <span th:if="${p.placementHint}" class="u-text-xs" th:text="${p.placementHint}">Placement</span>
+      <span th:if="${p.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${p.sourceLocator}|">Source</span>
     </div>
+  </section>
 
-    <div class="u-mb-md" th:if="${scene.checks != null and !scene.checks.isEmpty()}" data-rail-checks>
-      <h4 class="u-text-sm u-mb-xs">Checks</h4>
-      <div th:each="check : ${scene.checks}" class="card card--compact u-mb-xs"
-           th:attr="data-check-id=${check.id}">
-        <strong th:text="${check.label}">Check Label</strong>
-        <span class="badge" th:text="|DC ${check.dc}|" th:if="${check.dc != null}">DC</span>
-        <span class="badge" th:text="${#enums.label(check.visibility)}" th:if="${check.visibility != null}">VISIBILITY</span>
-        <span th:if="${check.ability}" class="u-text-xs" th:text="|${check.ability} ${check.skill}|">Ability/Skill</span>
-        <span th:if="${check.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${check.sourceLocator}|">Source</span>
-        <div th:if="${check.success}" class="u-text-xs">Success: <span th:text="${check.success}">Success</span></div>
-        <div th:if="${check.failure}" class="u-text-xs">Failure: <span th:text="${check.failure}">Failure</span></div>
-        <div th:if="${check.partial}" class="u-text-xs">Partial: <span th:text="${check.partial}">Partial</span></div>
-      </div>
+  <section class="rail-section" data-rail-section="checks"
+           th:if="${scene.checks != null and !scene.checks.isEmpty()}"
+           data-rail-checks>
+    <h2 class="rail-section__title">Checks</h2>
+    <div th:each="check : ${scene.checks}" class="card card--compact u-mb-xs"
+         th:attr="data-check-id=${check.id}">
+      <strong th:text="${check.label}">Check Label</strong>
+      <span class="badge" th:text="|DC ${check.dc}|" th:if="${check.dc != null}">DC</span>
+      <span class="badge" th:text="${#enums.label(check.visibility)}" th:if="${check.visibility != null}">VISIBILITY</span>
+      <span th:if="${check.ability}" class="u-text-xs" th:text="|${check.ability} ${check.skill}|">Ability/Skill</span>
+      <span th:if="${check.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${check.sourceLocator}|">Source</span>
+      <div th:if="${check.success}" class="u-text-xs">Success: <span th:text="${check.success}">Success</span></div>
+      <div th:if="${check.failure}" class="u-text-xs">Failure: <span th:text="${check.failure}">Failure</span></div>
+      <div th:if="${check.partial}" class="u-text-xs">Partial: <span th:text="${check.partial}">Partial</span></div>
     </div>
+  </section>
 
-    <div class="u-mb-md" th:if="${scene.transitions != null and !scene.transitions.isEmpty()}"
-         data-rail-transitions>
-      <h4 class="u-text-sm u-mb-xs">Transitions</h4>
-      <div th:each="t : ${scene.transitions}" class="card card--compact u-mb-xs"
-           th:attr="data-transition-id=${t.id}">
-        <span class="badge" th:text="${#enums.label(t.kind)}">KIND</span>
-        <strong th:text="${t.label}">Label</strong>
-        <span th:if="${t.targetScene != null}" th:text="${t.targetScene.title}">Target</span>
-        <span th:if="${t.externalDestination}" class="u-text-xs" th:text="|→ ${t.externalDestination}|">External</span>
-        <div th:if="${t.condition}" class="u-text-xs">Condition: <span th:text="${t.condition}">Condition</span></div>
-        <div th:if="${t.dmNote}" class="u-text-xs text-muted">DM: <span th:text="${t.dmNote}">DM Note</span></div>
-      </div>
-    </div>
-
-    <div th:if="${scene.statBlocks != null and !scene.statBlocks.isEmpty()}" class="u-mb-md">
-      <h4 class="u-text-sm u-mb-xs">Linked Statblocks</h4>
-      <div th:each="sb : ${scene.statBlocks}" class="card card--compact">
+  <section class="rail-section" data-rail-section="references">
+    <h2 class="rail-section__title">References</h2>
+    <div th:if="${scene.statBlocks != null and !scene.statBlocks.isEmpty()}" class="u-mb-sm">
+      <div th:each="sb : ${scene.statBlocks}" class="card card--compact u-mb-xs">
         <a th:href="@{/library/statblocks/{id}(id=${sb.id})}" target="_blank"
            th:text="${sb.name}">StatBlock</a>
       </div>
     </div>
-
-    <div th:if="${scene.handouts != null and !scene.handouts.isEmpty()}" class="u-mb-md">
-      <h4 class="u-text-sm u-mb-xs">Linked Handouts</h4>
-      <div th:each="h : ${scene.handouts}" class="linked-handout-row">
-        <span th:text="${h.title}">Handout</span>
-        <a th:href="@{/campaigns/{cid}/handouts/{hid}/present(cid=${campaignId},hid=${h.id})}"
-           class="btn btn-sm" target="_blank">Present</a>
-      </div>
-    </div>
-
-    <div class="u-mb-md" th:if="${scene.links != null and !scene.links.isEmpty()}" data-rail-links>
-      <h4 class="u-text-sm u-mb-xs">Links</h4>
+    <div th:if="${scene.links != null and !scene.links.isEmpty()}" data-rail-links>
       <div th:each="link : ${scene.links}" class="card card--compact u-mb-xs">
         <span class="badge" th:text="${#enums.label(link.role)}">ROLE</span>
         <span th:text="${link.displayText ?: link.targetType}">Target</span>
         <span th:if="${link.condition}" class="u-text-xs">Condition: <span th:text="${link.condition}">Condition</span></span>
       </div>
     </div>
+  </section>
 
-    <div class="u-mt-md">
-      <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/structure(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-         class="btn btn-sm">Edit scene &amp; structure</a>
+  <section class="rail-section" data-rail-section="handouts"
+           th:if="${scene.handouts != null and !scene.handouts.isEmpty()}">
+    <h2 class="rail-section__title">Handouts</h2>
+    <div th:each="h : ${scene.handouts}" class="linked-handout-row">
+      <span th:text="${h.title}">Handout</span>
+      <a th:href="@{/campaigns/{cid}/handouts/{hid}/present(cid=${campaignId},hid=${h.id})}"
+         class="btn btn-sm" target="_blank">Present</a>
     </div>
-  </div>
+  </section>
+
+  <section class="rail-section" data-rail-section="actions">
+    <h2 class="rail-section__title">Actions</h2>
+    <a th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}/structure(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
+       class="btn">Edit scene &amp; structure</a>
+  </section>
 </div>
 
 <div th:fragment="statusBadge" xmlns:th="http://www.thymeleaf.org">

@@ -97,13 +97,18 @@
   color: var(--color-ember);
 }
 
-/* Read-aloud (boxed) text */
+/* Read-aloud (boxed) text — a parchment in-world surface: Alegreya at reading size on
+   the warm fibre, so boxed narration reads as narration rather than as chrome (spec 11.3). */
 .read-aloud {
   margin: var(--space-md) 0;
   padding: var(--space-md) var(--space-lg);
   border-left: 3px solid var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  background:
+    var(--tone-parchment),
+    var(--texture-parchment),
+    color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
   border-radius: var(--radius);
+  font-family: var(--font-book);
   font-style: italic;
 }
 .read-aloud p { margin: 0 0 var(--space-sm) 0; }

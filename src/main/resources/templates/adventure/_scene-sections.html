@@ -4,7 +4,7 @@
 
   <div th:each="section : ${scene.sections}"
        th:if="${section.kind.name() == 'READ_ALOUD'}"
-       class="structured-block structured-read-aloud"
+       class="structured-block structured-read-aloud read-aloud"
        th:attr="data-section-id=${section.id}">
     <span class="badge badge--info">Read Aloud</span>
     <strong th:if="${section.label}" th:text="${section.label}">Label</strong>

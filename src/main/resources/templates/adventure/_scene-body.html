@@ -1,14 +1,12 @@
 <th:block th:fragment="sceneBody" xmlns:th="http://www.thymeleaf.org">
-    <div class="detail-section">
-        <div th:if="${scene.sceneKey}" class="detail-meta">
-            <span class="badge" th:text="${scene.sceneKey}">KEY</span>
-        </div>
-        <div class="note-body drop-cap" th:if="${renderedBody != null and !renderedBody.isEmpty()}" th:utext="${renderedBody}">
-            Rendered body
-        </div>
-        <div th:unless="${renderedBody != null and !renderedBody.isEmpty()}" style="color: var(--color-text-muted); font-style: italic;">
-            No body content yet.
-        </div>
+    <div class="u-mb-md">
+        <span class="badge" th:if="${scene.sceneKey}" th:text="${scene.sceneKey}">KEY</span>
     </div>
+    <div class="prose note-body drop-cap" th:if="${renderedBody != null and !renderedBody.isEmpty()}" th:utext="${renderedBody}">
+        Rendered body
+    </div>
+    <p th:unless="${renderedBody != null and !renderedBody.isEmpty()}" class="text-muted u-text-sm">
+        No body content yet.
+    </p>
     <th:block th:replace="~{adventure/_scene-sections :: sceneSections}"></th:block>
 </th:block>
