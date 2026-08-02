@@ -1771,12 +1771,6 @@ export class MapEditor {
         const labels = { unsaved: 'Unsaved…', saving: 'Saving…', saved: 'Saved', error: 'Save failed!', conflict: 'Conflict!' };
         this.saveIndicatorEl.textContent = labels[state] || state;
         this.saveIndicatorEl.className = `save-indicator save-${state}`;
-        /* data-save-status is the machine-readable role: saving, saved, or error.
-           "unsaved" is the waiting-for-debounce phase of an imminent autosave and
-           "conflict" is a failed write, so both collapse onto the three canonical
-           states instead of leaking a fourth. */
-        const status = state === 'saved' ? 'saved' : (state === 'saving' ? 'saving' : 'error');
-        this.saveIndicatorEl.dataset.saveStatus = status;
     }
 
     /** Triggers a browser download for any URL — an object URL (caller creates/revokes it)

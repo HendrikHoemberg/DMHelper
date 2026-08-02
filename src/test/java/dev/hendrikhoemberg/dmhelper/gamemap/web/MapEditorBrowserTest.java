@@ -1003,13 +1003,24 @@ class MapEditorBrowserTest {
         assertThat((java.util.List<String>) contrastPair).doesNotContain("");
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void autosaveStateIsVisibleButQuiet() {
         assertThat(page.isVisible("#saveIndicator")).isTrue();
-        String color = (String) page.evaluate(
-                "() => getComputedStyle(document.querySelector('#saveIndicator')).color");
-        assertThat(color).as("save state must not use the primary text role")
-                .isNotEqualTo("rgb(238, 232, 220)");
+        List<String> colors = (List<String>) page.evaluate("""
+                () => {
+                  const primaryToken = getComputedStyle(document.documentElement)
+                      .getPropertyValue('--text-primary').trim();
+                  const probe = document.createElement('span');
+                  probe.style.color = primaryToken;
+                  document.body.appendChild(probe);
+                  const primary = getComputedStyle(probe).color;
+                  probe.remove();
+                  return [getComputedStyle(document.querySelector('#saveIndicator')).color, primary];
+                }
+                """);
+        assertThat(colors.get(0)).as("save state must not use the primary text role")
+                .isNotEqualTo(colors.get(1));
     }
 
     private void expandInspectorSection(String section) {

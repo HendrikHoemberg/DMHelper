@@ -193,7 +193,11 @@ fieldset {
   background: var(--surface-canvas);
 }
 
-.app-shell--rail-collapsed { grid-template-columns: var(--rail-width-collapsed) 1fr; }
+/* Editor pages own the viewport (see Archetypes below): the grouped left nav stays
+   collapsed to icons so the canvas keeps the majority of the width at every viewport,
+   independent of the visitor's stored rail preference. */
+.app-shell--rail-collapsed,
+body[data-archetype="editor"] .app-shell { grid-template-columns: var(--rail-width-collapsed) 1fr; }
 
 .app-main {
   background: var(--surface-workspace);
@@ -304,15 +308,18 @@ body[data-archetype="editor"] { overflow-x: hidden; }
    would strip the link's accessible name entirely, and a CSS tooltip positioned outside the
    rail would be clipped anyway because overflow-y:auto makes .rail a scroll container in
    both axes. The visual affordance is the native title attribute on the link. */
-.app-shell--rail-collapsed .rail__text {
+.app-shell--rail-collapsed .rail__text,
+body[data-archetype="editor"] .rail__text {
   position: absolute;
   width: 1px; height: 1px;
   margin: -1px; padding: 0; border: 0;
   clip-path: inset(50%);
   overflow: hidden; white-space: nowrap;
 }
-.app-shell--rail-collapsed .rail__label { display: none; }
-.app-shell--rail-collapsed .rail__link { justify-content: center; padding-inline: 0; }
+.app-shell--rail-collapsed .rail__label,
+body[data-archetype="editor"] .rail__label { display: none; }
+.app-shell--rail-collapsed .rail__link,
+body[data-archetype="editor"] .rail__link { justify-content: center; padding-inline: 0; }
 
 .rail__collapse {
   align-self: flex-end;
@@ -327,6 +334,9 @@ body[data-archetype="editor"] { overflow-x: hidden; }
 }
 .rail__collapse:hover { color: var(--text-primary); background: var(--neutral-hover-surface); }
 .app-shell--rail-collapsed .rail__collapse { align-self: center; transform: rotate(180deg); }
+/* The editor archetype always forces the collapsed rail, so its toggle would only
+   promise an expansion that cannot happen — hide it. */
+body[data-archetype="editor"] .rail__collapse { display: none; }
 
 @media (max-width: 900px) {
   .app-shell,

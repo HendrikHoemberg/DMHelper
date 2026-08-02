@@ -4,20 +4,22 @@
  */
 
 /** A CSS custom property's resolved value, read once per call. The canvas cannot read
- *  CSS tokens directly, so Konva consumers resolve them through computed style. */
-function cssColor(name, fallback) {
-    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    return value || fallback;
+ *  CSS tokens directly, so Konva consumers resolve them through computed style.
+ *  The tokens are contractually defined in tokens.css, so no hardcoded fallback is
+ *  kept here (that would be a second source of truth). */
+function cssColor(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
 /** The map editor's selection-marker color (token --map-selection). */
 export function mapSelectionColor() {
-    return cssColor('--map-selection', '#b8efff');
+    return cssColor('--map-selection');
 }
 
 /**
- * Draw grid lines onto a Konva.Layer.
- * @param {import('konva').Layer} layer
+ * Draw grid lines onto a Konva container. MapEditor passes a Konva.Layer and
+ * BattleMap passes a Konva.Group; both accept `add` and `destroyChildren`.
+ * @param {import('konva').Layer | import('konva').Group} layer
  * @param {number} gridWidth
  * @param {number} gridHeight
  * @param {number} cellSizePx
@@ -25,8 +27,8 @@ export function mapSelectionColor() {
 export function drawGrid(layer, gridWidth, gridHeight, cellSizePx) {
     layer.destroyChildren();
     const s = cellSizePx;
-    const gridLine = cssColor('--map-grid-line', '#e8e8e8');
-    const gridShadow = cssColor('--map-grid-shadow', '#101113');
+    const gridLine = cssColor('--map-grid-line');
+    const gridShadow = cssColor('--map-grid-shadow');
     /* A 1px light stroke plus a 1px dark stroke offset by 1px reads on any imagery:
        on a light image the dark companion carries the line, on a dark one the light
        stroke does. Both tokens hold ≥3:1 against --surface-canvas and mid-grey alike. */
