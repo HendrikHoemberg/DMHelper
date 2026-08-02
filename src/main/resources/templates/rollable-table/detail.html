@@ -33,9 +33,9 @@
      th:attr="data-campaign-id=${campaignId}">
     <div class="detail-section" th:attr="data-table-id=${table.id}">
         <div class="detail-meta">
-            <span class="badge" th:text="${#enums.label(table.category)}">Category</span>
-            <span class="badge" th:text="${#enums.label(table.addressMode)}">Mode</span>
-            <span class="badge" th:text="${table.rollExpression}">EXPR</span>
+            <th:block th:replace="~{fragments/_badge :: badge(tone='neutral', icon=${null}, label=${#enums.label(table.category)})}"></th:block>
+            <th:block th:replace="~{fragments/_badge :: badge(tone='neutral', icon=${null}, label=${#enums.label(table.addressMode)})}"></th:block>
+            <th:block th:replace="~{fragments/_badge :: badge(tone='neutral', icon=${null}, label=${table.rollExpression})}"></th:block>
         </div>
         <div class="detail-description" th:utext="${markdownDescription}"></div>
         <div class="u-mt-lg">

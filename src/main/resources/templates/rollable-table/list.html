@@ -40,16 +40,24 @@
             <button type="submit" class="btn btn-sm">Filter</button>
         </form>
     </div>
-    <div id="table-grid" class="card-grid card-grid--bounded empty-state-host">
+    <div id="table-grid" class="card-grid card-grid--library empty-state-host">
         <th:block th:if="${tables == null or tables.isEmpty()}">
             <th:block th:replace="~{common/_empty-state :: empty-state(message='No rollable tables yet.', actionText=null, actionHref=null, description=null)}"></th:block>
         </th:block>
         <th:block th:each="t : ${tables}">
-            <div class="card">
-                <h3 th:text="${t.name}">Table Name</h3>
-                <p class="text-muted" th:text="${#enums.label(t.category)}">Category</p>
-                <a class="btn btn-sm"
-                   th:href="@{/library/tables/{id}(id=${t.id})}">View</a>
+            <div class="ref-card">
+                <h3 class="ref-card__title">
+                    <a th:href="@{/library/tables/{id}(id=${t.id})}" th:text="${t.name}">Table Name</a>
+                </h3>
+                <div class="ref-card__meta">
+                    <span class="ref-card__slot" th:text="${#enums.label(t.category)}">Category</span>
+                    <span class="ref-card__slot" th:if="${t.source != null}" th:text="${#enums.label(t.source)}">Source</span>
+                </div>
+                <div class="ref-card__summary" th:if="${t.description != null and !t.description.isBlank()}"
+                     th:utext="${#markdown.toHtml(t.description)}">Description</div>
+                <div class="ref-card__actions">
+                    <a class="btn btn-sm" th:href="@{/library/tables/{id}(id=${t.id})}">View</a>
+                </div>
             </div>
         </th:block>
     </div>

@@ -5,12 +5,11 @@
          this fragment lands. -->
     <div class="threat-mechanics-card" th:attr="data-threat-kind=${kind}">
         <div class="detail-meta">
-            <span class="badge" th:text="${#enums.label(threat.severity)}">SEVERITY</span>
-            <span class="badge" th:if="${threat.minLevel != null}">
-                Lv <span th:text="${threat.minLevel}">1</span>
-                <span th:if="${threat.maxLevel != null}">–<span th:text="${threat.maxLevel}">5</span></span>
-            </span>
-            <span class="badge" th:text="${#enums.label(threat.source)}">CUSTOM</span>
+            <th:block th:replace="~{fragments/_badge :: badge(tone='neutral', icon=${null}, label=${#enums.label(threat.severity)})}"></th:block>
+            <th:block th:if="${threat.minLevel != null}">
+                <th:block th:replace="~{fragments/_badge :: badge(tone='neutral', icon=${null}, label=${'Lv ' + threat.minLevel + (threat.maxLevel != null ? '–' + threat.maxLevel : '')})}"></th:block>
+            </th:block>
+            <th:block th:replace="~{fragments/_badge :: badge(tone='neutral', icon=${null}, label=${#enums.label(threat.source)})}"></th:block>
         </div>
 
         <!-- Trap-specific mechanics (escaped typed text) -->
