@@ -31,7 +31,7 @@ public final class CockpitModuleRegistry {
     private static List<CockpitModuleDefinition> standardDefinitions() {
         return List.of(
                 endpoint("story", "Story", 240, 220,
-                        Set.of(CockpitZone.PRIMARY, CockpitZone.LEFT_SUPPORT), true, true,
+                        Set.of(CockpitZone.PRIMARY, CockpitZone.LEFT_SUPPORT, CockpitZone.RIGHT_SUPPORT), true, true,
                         "Select a scene to begin."),
                 endpoint("map", "Map", 420, 300,
                         Set.of(CockpitZone.PRIMARY), false, true,
@@ -49,7 +49,8 @@ public final class CockpitModuleRegistry {
                         Set.of(CockpitZone.RIGHT_SUPPORT, CockpitZone.BOTTOM_UTILITY), true, true,
                         "Capture a note from the command action."),
                 endpoint("reference", "Reference", 260, 220,
-                        Set.of(CockpitZone.PRIMARY, CockpitZone.LEFT_SUPPORT, CockpitZone.RIGHT_SUPPORT),
+                        Set.of(CockpitZone.PRIMARY, CockpitZone.LEFT_SUPPORT, CockpitZone.RIGHT_SUPPORT,
+                                CockpitZone.BOTTOM_UTILITY),
                         true, true, "Search rules and compendium content."),
                 endpoint("audio", "Audio", 220, 112,
                         Set.of(CockpitZone.LEFT_SUPPORT, CockpitZone.RIGHT_SUPPORT, CockpitZone.BOTTOM_UTILITY),

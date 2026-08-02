@@ -6,28 +6,24 @@ import java.util.Set;
 
 @org.springframework.stereotype.Component
 public final class CockpitBuiltInPresetCatalog {
-    // The bottom strip is a utility rail for quick notes and audio, not a panel. At a
-    // bottom ratio of 0.24 it took 227px of a 1000px viewport to hold one input line.
-    // Combat is the only preset with an uncollapsed bottom zone, so this is the only
-    // place it shows. 0.16 is the validator's supported minimum; the splitter still
-    // lets a DM grow it for the session log.
-    private static final CockpitLayoutDocument.SplitRatios DEFAULT_RATIOS =
-            new CockpitLayoutDocument.SplitRatios(0.20, 0.56, 0.24, 0.16);
-
     private static final List<BuiltInPreset> PRESETS = List.of(
             preset("builtin:exploration", "Exploration",
-                    zone("story"), zone("session-plan"), zone("party", "quick-notes"),
-                    collapsedZone("audio", "session-log"),
-                    Set.of("session-plan", "party", "quick-notes", "audio", "session-log")),
+                    new CockpitLayoutDocument.SplitRatios(0.22, 0.54, 0.24, 0.16),
+                    zone("story"), zone("session-plan"), zone("party"),
+                    zone("quick-notes", "audio", "reference"),
+                    Set.of("session-plan", "party", "audio", "reference")),
             preset("builtin:combat", "Combat",
-                    zone("map"), zone("story", "party", "reference"), zone("encounter"),
-                    zone("quick-notes", "audio"),
-                    Set.of("story", "party", "reference", "encounter", "quick-notes", "audio")),
+                    new CockpitLayoutDocument.SplitRatios(0.18, 0.52, 0.30, 0.20),
+                    zone("map"), zone("story", "party"), zone("encounter"),
+                    zone("quick-notes", "reference", "audio", "session-log"),
+                    Set.of("story", "party", "quick-notes", "reference", "audio", "session-log")),
             preset("builtin:theatre-of-mind", "Theatre of Mind",
-                    zone("encounter"), zone("story"), zone("party", "quick-notes"),
-                    collapsedZone("audio", "session-log"),
-                    Set.of("story", "party", "quick-notes", "audio", "session-log")),
+                    new CockpitLayoutDocument.SplitRatios(0.19, 0.50, 0.31, 0.16),
+                    zone("encounter"), zone("party", "reference"), zone("story"),
+                    zone("quick-notes", "audio", "session-log"),
+                    Set.of("party", "reference", "quick-notes", "audio", "session-log")),
             preset("builtin:session-review", "Session Review",
+                    new CockpitLayoutDocument.SplitRatios(0.22, 0.56, 0.22, 0.16),
                     zone("session-log"), zone("session-plan"), zone("quick-notes", "party"),
                     collapsedZone(),
                     Set.of("session-plan", "quick-notes", "party"))
@@ -48,6 +44,7 @@ public final class CockpitBuiltInPresetCatalog {
     private static BuiltInPreset preset(
             String key,
             String name,
+            CockpitLayoutDocument.SplitRatios ratios,
             CockpitLayoutDocument.ZoneLayout primary,
             CockpitLayoutDocument.ZoneLayout left,
             CockpitLayoutDocument.ZoneLayout right,
@@ -61,7 +58,7 @@ public final class CockpitBuiltInPresetCatalog {
                         CockpitZone.LEFT_SUPPORT, left,
                         CockpitZone.RIGHT_SUPPORT, right,
                         CockpitZone.BOTTOM_UTILITY, bottom),
-                DEFAULT_RATIOS,
+                ratios,
                 compactModuleKeys);
         return new BuiltInPreset(key, name, layout);
     }
