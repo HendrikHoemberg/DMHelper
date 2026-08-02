@@ -1,13 +1,21 @@
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <div th:fragment="balanceSection" id="balance-section" class="detail-section">
     <h2>Running Balances</h2>
-    <div th:if="${not #lists.isEmpty(balances)}" style="display:flex; flex-wrap:wrap; gap: var(--space-sm);">
-        <div th:each="b : ${balances}" class="card" style="padding: var(--space-sm) var(--space-md);">
-            <strong th:text="${b.holder()}">Holder</strong>
-            <span th:text="${b.balance() + ' ' + b.currency()}"
-                  style="margin-left: var(--space-sm); color: var(--color-accent);">0 GP</span>
-        </div>
-    </div>
+    <table class="data-table balances-table" th:if="${not #lists.isEmpty(balances)}">
+        <thead>
+            <tr>
+                <th>Holder</th>
+                <th>Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="b : ${balances}">
+                <td th:text="${b.holder()}">Holder</td>
+                <td class="u-num" th:text="${b.balance() + ' ' + b.currency()}">0 GP</td>
+            </tr>
+        </tbody>
+    </table>
     <div th:if="${#lists.isEmpty(balances)}" class="empty-state">No balances to show</div>
 </div>
 </html>

@@ -7,7 +7,7 @@
 
         <div class="form-group">
             <label>Type</label>
-            <select name="kind">
+            <select name="kind" class="form-input">
                 <option value="GOLD">GOLD</option>
                 <option value="ITEM">ITEM</option>
             </select>
@@ -15,7 +15,7 @@
 
         <div class="form-group">
             <label>Direction</label>
-            <select name="direction">
+            <select name="direction" class="form-input">
                 <option value="GAIN">GAIN</option>
                 <option value="SPEND">SPEND</option>
             </select>
@@ -23,12 +23,12 @@
 
         <div class="form-group">
             <label>Amount</label>
-            <input type="number" name="amount" step="0.01" min="0" value="0" required />
+            <input type="number" name="amount" step="0.01" min="0" value="0" required class="form-input setup-qty" />
         </div>
 
         <div class="form-group">
             <label>Currency</label>
-            <select name="currency">
+            <select name="currency" class="form-input">
                 <option value="GP">GP</option>
                 <option value="SP">SP</option>
                 <option value="CP">CP</option>
@@ -39,12 +39,12 @@
 
         <div class="form-group">
             <label>Holder</label>
-            <input type="text" name="holder" placeholder="e.g. Thia, Party Stash" required />
+            <input type="text" name="holder" placeholder="e.g. Thia, Party Stash" required class="form-input" />
         </div>
 
         <div class="form-group">
             <label>Note</label>
-            <textarea name="note" rows="2" placeholder="e.g. Quest reward"></textarea>
+            <textarea name="note" rows="2" placeholder="e.g. Quest reward" class="form-input"></textarea>
         </div>
 
         <fieldset>
@@ -52,15 +52,15 @@
             <div class="u-flex-row">
                 <div>
                     <label class="u-text-sm">Year</label>
-                    <input type="number" name="inGameYear" th:value="${currentYear}" class="u-w-80" />
+                    <input type="number" name="inGameYear" th:value="${currentYear}" class="u-w-80 form-input" />
                 </div>
                 <div>
                     <label class="u-text-sm">Month</label>
-                    <input type="number" name="inGameMonth" th:value="${currentMonth}" min="0" class="u-w-80" />
+                    <input type="number" name="inGameMonth" th:value="${currentMonth}" min="0" class="u-w-80 form-input" />
                 </div>
                 <div>
                     <label class="u-text-sm">Day</label>
-                    <input type="number" name="inGameDay" th:value="${currentDay}" min="1" class="u-w-80" />
+                    <input type="number" name="inGameDay" th:value="${currentDay}" min="1" class="u-w-80 form-input" />
                 </div>
             </div>
         </fieldset>

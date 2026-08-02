@@ -1,27 +1,23 @@
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div th:fragment="card(entry)" th:if="${entry != null}" class="card card--tight">
-    <div class="u-flex--md">
-        <div class="u-shrink-0">
-            <span th:if="${entry.direction() == 'GAIN'}" class="badge badge--success">GAIN</span>
-            <span th:if="${entry.direction() == 'SPEND'}" class="badge badge--danger">SPEND</span>
-            <span class="badge u-ml-xs" th:text="${#enums.labelOf(entry.kind())}">Gold</span>
+<tr th:fragment="card(entry)" th:if="${entry != null}" class="ledger-row">
+    <td>
+        <span th:if="${entry.direction() == 'GAIN'}" class="badge badge--success">GAIN</span>
+        <span th:if="${entry.direction() == 'SPEND'}" class="badge badge--danger">SPEND</span>
+        <span class="badge u-ml-xs" th:text="${#enums.labelOf(entry.kind())}">Gold</span>
+    </td>
+    <td class="u-num u-fw-600"
+        th:classappend="${entry.direction() == 'GAIN'} ? 'u-text-success' : 'u-text-danger'"
+        th:text="${entry.direction() == 'GAIN'} ? '+' + ${entry.amount()} + ' ' + ${entry.currency()} : '-' + ${entry.amount()} + ' ' + ${entry.currency()}">+100 GP</td>
+    <td th:text="${entry.holder()}">Holder</td>
+    <td>
+        <div th:if="${entry.note() != null and not entry.note().isEmpty()}"
+             th:text="${entry.note()}" class="detail-meta">Note text</div>
+        <div class="detail-meta">
+            <span th:if="${entry.inGameYear() != null}"
+                  th:text="${entry.inGameYear() + '/' + (entry.inGameMonth() + 1) + '/' + entry.inGameDay()}">1492/3/15</span>
+            <span th:if="${entry.inGameYear() == null}" th:text="${#temporals.format(entry.timestamp(), 'yyyy-MM-dd HH:mm')}">timestamp</span>
         </div>
-        <div class="u-flex-1 u-min-w-0">
-            <div class="u-flex-baseline">
-                <span class="u-fw-600 u-text-success" th:if="${entry.direction() == 'GAIN'}"
-                      th:text="'+' + ${entry.amount()} + ' ' + ${entry.currency()}">+100 GP</span>
-                <span class="u-fw-600 u-text-danger" th:if="${entry.direction() == 'SPEND'}"
-                      th:text="'-' + ${entry.amount()} + ' ' + ${entry.currency()}">-30 GP</span>
-                <span class="badge" th:text="${entry.holder()}">Holder</span>
-            </div>
-            <div th:if="${entry.note() != null and not entry.note().isEmpty()}"
-                 th:text="${entry.note()}" class="detail-meta u-mt-xs">Note text</div>
-            <div class="detail-meta">
-                <span th:if="${entry.inGameYear() != null}"
-                      th:text="${entry.inGameYear() + '/' + (entry.inGameMonth() + 1) + '/' + entry.inGameDay()}">1492/3/15</span>
-                <span th:if="${entry.inGameYear() == null}" th:text="${#temporals.format(entry.timestamp(), 'yyyy-MM-dd HH:mm')}">timestamp</span>
-            </div>
-        </div>
-    </div>
-</div>
+    </td>
+</tr>
 </html>

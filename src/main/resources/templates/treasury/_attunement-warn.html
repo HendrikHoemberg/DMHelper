@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="banner banner--warning" th:fragment="warning(count)">
-    <svg th:replace="~{common/_icon :: icon-sized(name='alert-triangle', size='16')}"></svg>
-    <span th:text="${count} + ' attuned items — at the attunement limit'">warning</span>
-</div>
+<div th:fragment="warning(count)"
+     th:replace="~{fragments/_banner :: banner(
+         tone='warning',
+         title=|${count} attuned items — at the attunement limit|,
+         body=~{},
+         actions=~{})}"></div>
 </html>

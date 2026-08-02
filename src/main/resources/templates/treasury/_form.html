@@ -8,7 +8,7 @@
 
         <div class="form-group">
             <label>Assign To</label>
-            <select name="partyMemberId">
+            <select name="partyMemberId" class="form-input">
                 <option value="">— Party Stash —</option>
                 <option th:each="pm : ${partyMembers}" th:value="${pm.id}" th:text="${pm.characterName}">PC Name</option>
             </select>
@@ -16,7 +16,7 @@
 
         <div class="form-group">
             <label>Magic Item</label>
-            <select name="magicItemId">
+            <select name="magicItemId" class="form-input">
                 <option value="">— None —</option>
                 <option th:each="mi : ${magicItems}" th:value="${mi.id}" th:text="${mi.name}">Magic Item</option>
             </select>
@@ -24,7 +24,7 @@
 
         <div class="form-group">
             <label>Equipment Item</label>
-            <select name="equipmentItemId">
+            <select name="equipmentItemId" class="form-input">
                 <option value="">— None —</option>
                 <option th:each="ei : ${equipmentItems}" th:value="${ei.id}" th:text="${ei.name}">Equipment</option>
             </select>
@@ -32,13 +32,13 @@
 
         <div class="form-group">
             <label>Or Custom Item Name</label>
-            <input type="text" name="customText" placeholder="e.g. mysterious amulet" />
+            <input type="text" name="customText" placeholder="e.g. mysterious amulet" class="form-input" />
         </div>
 
         <div class="form-group" style="display:flex; gap: var(--space-md); align-items:center;">
             <div>
                 <label>Quantity</label>
-                <input type="number" name="quantity" value="1" min="1" style="width:70px;" />
+                <input type="number" name="quantity" value="1" min="1" class="form-input setup-qty" />
             </div>
             <div style="display:flex; align-items:center; gap:4px; padding-top: 1.2em;">
                 <input type="checkbox" name="attuned" value="true" id="attuned-check" />
