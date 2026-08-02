@@ -23,18 +23,116 @@
         hx-swap="beforeend">+ New Encounter</button>
 
 <div id="page-content" class="page-content">
-    <div id="encounter-grid" class="card-grid card-grid--bounded empty-state-host">
+    <th:block th:replace="~{fragments/_toolbar :: toolbar(
+        action=@{/campaigns/{cid}/encounters(cid=${campaignId})},
+        searchValue=${null},
+        searchPlaceholder='Filter encounters by name…',
+        filters=~{::#statusFilter},
+        actions=~{})}"></th:block>
+
+    <div id="encounter-grid" class="empty-state-host">
         <th:block th:if="${encounters == null or encounters.isEmpty()}">
             <th:block th:replace="~{common/_empty-state :: empty-state-with-icon(
                 'No encounters yet', 'New encounter',
                 @{/campaigns/{id}/encounters/new(id=${campaignId})},
                 'Build one ahead of the session so initiative is one click away.', 'swords')}"></th:block>
         </th:block>
-        <th:block th:each="e : ${encounters}">
-            <th:block th:replace="~{encounter/_card :: card(
-                encounter=${e}, campaignId=${campaignId})}"></th:block>
-        </th:block>
+
+        <!-- At scale a grid of cards stops scanning; the same view-model count decides without a preference. -->
+        <table th:if="${encounters != null and !encounters.isEmpty() and encounters.size() > 12}"
+               class="data-table encounter-table" aria-label="Prepared encounters">
+            <thead>
+                <tr>
+                    <th scope="col">Encounter</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Map</th>
+                    <th scope="col">Combatants</th>
+                    <th scope="col">Round</th>
+                    <th scope="col"><span class="sr-only">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="e : ${encounters}" class="encounter-row"
+                    th:attr="data-encounter-id=${e.id},
+                             data-encounter-name=${e.name},
+                             data-encounter-status=${e.status},
+                             data-encounter-round=${e.round},
+                             data-encounter-search=${e.name} + ' ' + ${e.status}">
+                    <td><a th:href="@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${e.id})}"
+                           th:text="${e.name}">Encounter Name</a></td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${e.status == 'ACTIVE'} ? 'badge--warning' :
+                                              (${e.status == 'DONE'} ? 'badge--success' : 'badge--neutral')"
+                              th:text="${#strings.capitalizeWords(#strings.toLowerCase(e.status))}">Planned</span>
+                    </td>
+                    <td th:text="${e.mapId != null and mapNames != null and mapNames.containsKey(e.mapId)} ? ${mapNames[e.mapId]} : '—'">—</td>
+                    <td class="u-num" th:text="${e.combatantCount}">0</td>
+                    <td class="u-num" th:text="${e.round} > 0 ? ${e.round} : '—'">—</td>
+                    <td>
+                        <a class="btn btn-ghost btn-xs"
+                           th:href="@{/campaigns/{cid}/encounters/{eid}/setup(cid=${campaignId}, eid=${e.id})}">Setup</a>
+                        <button class="btn btn-danger btn-xs action-row__destructive"
+                                th:attr="hx-delete=@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${e.id})}"
+                                hx-confirm="Delete this encounter?"
+                                hx-target="closest .encounter-row"
+                                hx-swap="outerHTML">Delete</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div th:if="${encounters != null and !encounters.isEmpty() and encounters.size() <= 12}"
+             class="card-grid card-grid--bounded">
+            <th:block th:each="e : ${encounters}">
+                <th:block th:replace="~{encounter/_card :: card(
+                    encounter=${e}, campaignId=${campaignId})}"></th:block>
+            </th:block>
+        </div>
     </div>
 </div>
+
+<div id="statusFilter">
+    <div class="filter-group" data-filter="status">
+        <label class="sr-only" for="encounterStatusFilter">Filter by status</label>
+        <select id="encounterStatusFilter" class="form-input" data-encounter-status-filter>
+            <option value="">All statuses</option>
+            <option value="PLANNED">Planned</option>
+            <option value="ACTIVE">Active</option>
+            <option value="DONE">Done</option>
+        </select>
+    </div>
+</div>
+
+<script>
+    window.dmHelperFilterEncounters = function (query, status) {
+        var needle = (query || '').trim().toLowerCase();
+        var statusNeedle = (status || '').trim();
+        document.querySelectorAll('[data-encounter-card], [data-encounter-row]').forEach(function (el) {
+            var haystack = (el.getAttribute('data-encounter-search') || '').toLowerCase();
+            var matchesQuery = needle === '' || haystack.indexOf(needle) !== -1;
+            var matchesStatus = statusNeedle === ''
+                || el.getAttribute('data-encounter-status') === statusNeedle;
+            el.hidden = !matchesQuery || !matchesStatus;
+        });
+    };
+    document.addEventListener('DOMContentLoaded', function () {
+        var input = document.querySelector('.page--index .toolbar__input');
+        if (input) {
+            input.addEventListener('input', function () {
+                window.dmHelperFilterEncounters(this.value,
+                    document.querySelector('[data-encounter-status-filter]')?.value || '');
+            });
+        }
+        var status = document.querySelector('[data-encounter-status-filter]');
+        if (status) {
+            status.addEventListener('change', function () {
+                window.dmHelperFilterEncounters(
+                    document.querySelector('.page--index .toolbar__input')?.value || '',
+                    this.value);
+            });
+        }
+    });
+</script>
 </body>
 </html>

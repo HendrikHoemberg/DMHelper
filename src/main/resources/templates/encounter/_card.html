@@ -1,20 +1,31 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="card" th:fragment="card(encounter, campaignId)">
+<div class="card" th:fragment="card(encounter, campaignId)"
+     th:attr="data-encounter-card=${true},
+              data-encounter-id=${encounter.id},
+              data-encounter-name=${encounter.name},
+              data-encounter-status=${encounter.status},
+              data-encounter-round=${encounter.round},
+              data-encounter-search=${encounter.name} + ' ' + ${encounter.status}">
     <h3>
         <a th:href="@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${encounter.id})}"
            th:text="${encounter.name}">Encounter Name</a>
     </h3>
     <div class="card-meta">
-        <span th:if="${encounter.status == 'ACTIVE'}" style="color: var(--color-success);">ACTIVE</span>
-        <span th:if="${encounter.status == 'PLANNED'}" style="color: var(--color-info);">PLANNED</span>
-        <span th:if="${encounter.status == 'DONE'}" style="color: var(--color-text-muted);">DONE</span>
+        <span class="badge"
+              th:classappend="${encounter.status == 'ACTIVE'} ? 'badge--warning' :
+                              (${encounter.status == 'DONE'} ? 'badge--success' : 'badge--neutral')"
+              th:text="${#strings.capitalizeWords(#strings.toLowerCase(encounter.status))}">Planned</span>
         <span th:if="${encounter.mapId != null}"
-              th:text="' · Map: ' + (${mapNames != null and mapNames.containsKey(encounter.mapId)}
-                                     ? ${mapNames[encounter.mapId]} : 'linked map')"></span>
-        <span th:if="${encounter.round > 0}" th:text="' · Round ' + ${encounter.round}"></span>
+              class="badge badge--info"
+              th:text="'Map: ' + (${mapNames != null and mapNames.containsKey(encounter.mapId)}
+                                 ? ${mapNames[encounter.mapId]} : 'linked map')">Map</span>
     </div>
     <div class="card-actions">
+        <span class="u-num" th:text="${encounter.combatantCount} + ' combatants'">0 combatants</span>
+        <span class="u-num" th:if="${encounter.round > 0}" th:text="'Round ' + ${encounter.round}">Round 1</span>
+        <a class="btn btn-ghost"
+           th:href="@{/campaigns/{cid}/encounters/{eid}/setup(cid=${campaignId}, eid=${encounter.id})}">Setup</a>
         <a class="btn btn-ghost"
            th:attr="hx-get=@{/campaigns/{cid}/encounters/{eid}/edit(cid=${campaignId}, eid=${encounter.id})}"
            hx-target="closest .card"
