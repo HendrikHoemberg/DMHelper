@@ -1,91 +1,92 @@
-<div th:fragment="import-dialog">
-    <div x-data="campaignImport" x-show="open" x-cloak
-         class="modal-overlay" @click.self="close"
-         role="dialog" aria-modal="true" aria-labelledby="import-dialog-title">
-        <div class="modal-content" style="max-width:640px">
-            <h2 id="import-dialog-title" tabindex="-1">Import Campaign Package</h2>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="import-dialog" x-data="campaignImport">
+    <th:block th:replace="~{fragments/_overlay :: dialog(
+        id='importDialog',
+        title='Import Campaign Package',
+        body=~{::#importBody},
+        actions=~{::#importActions})}"></th:block>
 
-            <template x-if="!preview">
-                <div>
-                    <label class="btn">
-                        Choose Package
-                        <input type="file" id="import-file-input" accept=".dmcampaign,.dmcampaign.json"
-                               @change="fileSelected" class="hidden">
-                    </label>
-                    <div x-show="uploading" aria-live="polite">Uploading...</div>
-                </div>
-            </template>
+    <div id="importBody">
+        <template x-if="!preview">
+            <div>
+                <label class="btn">
+                    Choose Package
+                    <input type="file" id="import-file-input" accept=".dmcampaign,.dmcampaign.json"
+                           @change="fileSelected" class="hidden">
+                </label>
+                <div x-show="uploading" aria-live="polite">Uploading...</div>
+            </div>
+        </template>
 
-            <template x-if="preview">
-                <div>
-                    <dl class="preview-summary">
-                        <dt>Status</dt><dd x-text="preview.status"></dd>
-                        <dt>Source Version</dt><dd x-text="preview.sourceFormatVersion"></dd>
-                        <dt>Package Size</dt><dd x-text="(preview.packageSizeBytes / 1024).toFixed(1) + ' KB'"></dd>
-                    </dl>
+        <template x-if="preview">
+            <div>
+                <dl class="preview-summary">
+                    <dt>Status</dt><dd x-text="preview.status"></dd>
+                    <dt>Source Version</dt><dd x-text="preview.sourceFormatVersion"></dd>
+                    <dt>Package Size</dt><dd x-text="(preview.packageSizeBytes / 1024).toFixed(1) + ' KB'"></dd>
+                </dl>
 
-                    <template x-if="preview.readiness">
-                        <div>
-                            <h3>Operational readiness</h3>
-                            <p class="import-readiness__label"
-                               x-text="preview.readiness.items.filter(i => i.state === 'BLOCKER').length === 0
-                                   ? 'Session-ready'
-                                   : 'Valid but not session-ready'"></p>
-                            <template x-if="preview.readiness.items.filter(i => i.state === 'BLOCKER').length">
-                                <ul>
-                                    <template x-for="item in preview.readiness.items.filter(i => i.state === 'BLOCKER')">
-                                        <li x-text="item.title"></li>
-                                    </template>
-                                </ul>
-                            </template>
-                        </div>
-                    </template>
-
-                    <template x-if="preview.problems && preview.problems.length">
-                        <div>
-                            <h3>Validation</h3>
-                            <ul class="problem-list" aria-live="polite">
-                                <template x-for="p in preview.problems.filter(x => x.severity === 'ERROR')">
-                                    <li class="problem problem-error">
-                                        <strong x-text="p.severity"></strong>
-                                        <code x-text="p.code"></code>
-                                        <span x-text="p.path"></span>:
-                                        <span x-text="p.message"></span>
-                                        <em x-show="p.suggestion" x-text="p.suggestion"></em>
-                                    </li>
-                                </template>
-                                <template x-for="p in preview.problems.filter(x => x.severity === 'WARNING')">
-                                    <li class="problem problem-warning">
-                                        <strong x-text="p.severity"></strong>
-                                        <code x-text="p.code"></code>
-                                        <span x-text="p.path"></span>:
-                                        <span x-text="p.message"></span>
-                                        <em x-show="p.suggestion" x-text="p.suggestion"></em>
-                                    </li>
+                <template x-if="preview.readiness">
+                    <div>
+                        <h3>Operational readiness</h3>
+                        <p class="import-readiness__label"
+                           x-text="preview.readiness.items.filter(i => i.state === 'BLOCKER').length === 0
+                               ? 'Session-ready'
+                               : 'Valid but not session-ready'"></p>
+                        <template x-if="preview.readiness.items.filter(i => i.state === 'BLOCKER').length">
+                            <ul>
+                                <template x-for="item in preview.readiness.items.filter(i => i.state === 'BLOCKER')">
+                                    <li x-text="item.title"></li>
                                 </template>
                             </ul>
-                        </div>
-                    </template>
-
-                    <label x-show="preview.status === 'CONFIRM_WARNINGS'" class="u-mb-sm">
-                        <input type="checkbox" x-model="acceptWarnings">
-                        Accept warnings and continue
-                    </label>
-                </div>
-            </template>
-
-            <div x-show="error" class="toast toast-error" aria-live="assertive" x-text="error"></div>
-
-            <div class="form-actions u-mt-md">
-                <button class="btn" @click="close"
-                        x-bind:disabled="confirming">Cancel</button>
-                <template x-if="preview && preview.previewId && preview.status !== 'BLOCKED'">
-                    <button class="btn"
-                            @click="confirm"
-                            x-bind:disabled="confirming || (preview.status === 'CONFIRM_WARNINGS' && !acceptWarnings)"
-                            x-text="confirming ? 'Importing...' : 'Import Campaign'"></button>
+                        </template>
+                    </div>
                 </template>
+
+                <template x-if="preview.problems && preview.problems.length">
+                    <div>
+                        <h3>Validation</h3>
+                        <ul class="problem-list" aria-live="polite">
+                            <template x-for="p in preview.problems.filter(x => x.severity === 'ERROR')">
+                                <li class="problem problem-error">
+                                    <strong x-text="p.severity"></strong>
+                                    <code x-text="p.code"></code>
+                                    <span x-text="p.path"></span>:
+                                    <span x-text="p.message"></span>
+                                    <em x-show="p.suggestion" x-text="p.suggestion"></em>
+                                </li>
+                            </template>
+                            <template x-for="p in preview.problems.filter(x => x.severity === 'WARNING')">
+                                <li class="problem problem-warning">
+                                    <strong x-text="p.severity"></strong>
+                                    <code x-text="p.code"></code>
+                                    <span x-text="p.path"></span>:
+                                    <span x-text="p.message"></span>
+                                    <em x-show="p.suggestion" x-text="p.suggestion"></em>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+
+                <label x-show="preview.status === 'CONFIRM_WARNINGS'" class="u-mb-sm">
+                    <input type="checkbox" x-model="acceptWarnings">
+                    Accept warnings and continue
+                </label>
             </div>
-        </div>
+        </template>
+
+        <div x-show="error" class="toast toast-error" aria-live="assertive" x-text="error"></div>
+    </div>
+
+    <div id="importActions">
+        <button class="btn" @click="close()" x-bind:disabled="confirming">Cancel</button>
+        <template x-if="preview && preview.previewId && preview.status !== 'BLOCKED'">
+            <button class="btn" @click="confirm"
+                    x-bind:disabled="confirming || (preview.status === 'CONFIRM_WARNINGS' && !acceptWarnings)"
+                    x-text="confirming ? 'Importing...' : 'Import Campaign'"></button>
+        </template>
     </div>
 </div>
+</html>

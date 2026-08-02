@@ -29,7 +29,9 @@ document.addEventListener('alpine:init', () => {
             this.acceptWarnings = false;
             this.confirming = false;
             document.getElementById('import-file-input').value = '';
-            setTimeout(() => document.getElementById('import-dialog-title')?.focus(), 50);
+            const dialog = this.$root.querySelector('.dialog');
+            if (dialog) window.dmOverlay.open(dialog);
+            setTimeout(() => document.getElementById('importDialogTitle')?.focus(), 50);
         },
 
         async close() {
@@ -48,6 +50,8 @@ document.addEventListener('alpine:init', () => {
             }
             this.open = false;
             this.preview = null;
+            const dialog = this.$root.querySelector('.dialog');
+            if (dialog) window.dmOverlay.close(dialog);
             setTimeout(() => this.returnFocus?.focus(), 0);
         },
 

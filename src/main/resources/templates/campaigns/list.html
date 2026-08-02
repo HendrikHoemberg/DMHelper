@@ -17,25 +17,32 @@
         secondary=~{::#secondaryActions})}"></th:block>
 </div>
 <a id="primaryAction" th:href="@{/campaigns/new}" class="btn btn-primary">New campaign</a>
-<button id="secondaryActions" class="btn"
+<button id="secondaryActions" class="btn" type="button"
         onclick="Alpine.$data(document.querySelector('[x-data=\'campaignImport\']')).openDialog()">
-    Import Campaign Package
+    Import campaign
 </button>
 
 <div id="page-content" class="page-content">
     <div class="bookshelf" id="campaign-grid">
         <div class="shelf-row">
             <th:block th:if="${campaigns == null || campaigns.isEmpty()}">
-                <th:block th:replace="~{common/_empty-state :: empty-state('No campaigns yet. Every saga starts with a blank page.', 'Create campaign', @{/campaigns/new}, null)}"></th:block>
+                <th:block th:replace="~{fragments/_states :: empty(
+                    icon='castle',
+                    title='No campaigns yet',
+                    description='Create one from scratch, or import a campaign package.',
+                    cta=~{::#createPaths})}"></th:block>
             </th:block>
             <th:block th:each="campaign : ${campaigns}">
                 <th:block th:replace="~{campaigns/_card :: card(campaign=${campaign}, sigil=${campaignSigils[campaign.id]})}"></th:block>
             </th:block>
-            <a th:href="@{/campaigns/new}" class="book-cover book-cover--blank">
-                <span class="book-cover-plus">+</span>
-                <span class="book-cover-label">Blank Tome</span>
-            </a>
         </div>
+    </div>
+    <div id="createPaths" class="u-flex u-gap-xs">
+        <a th:href="@{/campaigns/new}" class="btn">Create a campaign</a>
+        <button class="btn btn-ghost" type="button"
+                onclick="Alpine.$data(document.querySelector('[x-data=\'campaignImport\']')).openDialog()">
+            Import a package
+        </button>
     </div>
 </div>
 <th:block th:replace="~{campaigns/_import-dialog :: import-dialog}"></th:block>

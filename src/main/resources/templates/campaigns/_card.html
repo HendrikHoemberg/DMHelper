@@ -8,8 +8,12 @@
             <path class="campaign-sigil__mark"
                   th:attr="d=${sigil.path},transform=|rotate(${sigil.rotation} 50 50)|"></path>
         </svg>
-        <h3 data-display-title th:text="${campaign.name}">Campaign Name</h3>
-        <div class="book-meta" th:text="${campaign.authorLine}">14 sessions · last played July 8</div>
+        <h3 th:text="${campaign.name}">Campaign Name</h3>
+        <div class="book-meta" th:text="${campaign.authorLine}">4 heroes · opened 8 July</div>
+        <th:block th:replace="~{fragments/_badge :: badge(
+            tone=${campaign.currentSceneId != null ? 'warning' : 'neutral'},
+            icon=${campaign.currentSceneId != null ? 'play' : 'flag'},
+            label=${campaign.currentSceneId != null ? 'In progress' : 'Unstarted'})}"></th:block>
     </a>
     <div class="card-actions">
         <button class="btn btn-ghost btn-xs"
