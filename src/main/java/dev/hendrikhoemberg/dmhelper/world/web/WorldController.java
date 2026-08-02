@@ -258,17 +258,38 @@ public class WorldController {
         List<WorldRelationship> relationships = worldService.getRelationships(campaignId);
         model.addAttribute("faction", faction);
         model.addAttribute("relationships", relationships);
+        // Grouped by direction, then ordered by role so same-role rows sit together (spec 11.7).
         model.addAttribute("outboundRelationships", relationships.stream()
                 .filter(r -> "FACTION".equals(r.getFromType()) && factionId.equals(r.getFromId()))
+                .sorted(java.util.Comparator.comparing(r -> r.getKind().name()))
                 .toList());
         model.addAttribute("inboundRelationships", relationships.stream()
                 .filter(r -> "FACTION".equals(r.getToType()) && factionId.equals(r.getToId()))
+                .sorted(java.util.Comparator.comparing(r -> r.getKind().name()))
                 .toList());
+        model.addAttribute("relationshipNames", relationshipNames(campaignId));
         model.addAttribute("clocks", worldService.getClocksForFaction(campaignId, factionId));
         model.addAttribute("members", worldService.getNpcs(campaignId).stream()
                 .filter(n -> n.getFaction() != null && n.getFaction().getId().equals(factionId))
                 .toList());
         return "world/factions-detail";
+    }
+
+    /**
+     * View-only lookup from a relationship endpoint to the thing it names. A WorldRelationship
+     * stores an opaque {@code (type, id)} pair, and the rail was printing that pair verbatim —
+     * {@code FACTION 3f0e8a12-…} — which is graph mechanics leaking into DM-facing copy
+     * (spec 11.7). Keyed {@code TYPE:uuid} so the template can look a row up in one expression.
+     */
+    private java.util.Map<String, String> relationshipNames(UUID campaignId) {
+        var names = new java.util.HashMap<String, String>();
+        worldService.getNpcs(campaignId)
+                .forEach(npc -> names.put("NPC:" + npc.getId(), npc.getName()));
+        worldService.getLocations(campaignId)
+                .forEach(location -> names.put("LOCATION:" + location.getId(), location.getName()));
+        worldService.getFactions(campaignId)
+                .forEach(faction -> names.put("FACTION:" + faction.getId(), faction.getName()));
+        return names;
     }
 
     @GetMapping("/factions/new")

@@ -12,10 +12,24 @@
             </tr>
         </thead>
         <tbody>
+            <!-- Subject and Object name the thing, not its (type, id) pair: raw graph
+                 identifiers are an implementation detail, never DM-facing copy (spec 11.7). -->
             <tr th:each="rel : ${relationships}">
                 <td><span class="badge" th:text="${#enums.label(rel.kind)}">Role</span></td>
-                <td><code class="u-text-xs" th:text="|${rel.fromType} ${rel.fromId}|">From</code></td>
-                <td><code class="u-text-xs" th:text="|${rel.toType} ${rel.toId}|">To</code></td>
+                <td th:with="key=|${rel.fromType}:${rel.fromId}|">
+                    <span th:text="${relationshipNames != null and relationshipNames.containsKey(key)
+                                     ? relationshipNames.get(key)
+                                     : #strings.capitalize(#strings.toLowerCase(rel.fromType))}">Subject</span>
+                    <span class="badge badge--neutral u-text-xs"
+                          th:text="${#strings.capitalize(#strings.toLowerCase(rel.fromType))}">Type</span>
+                </td>
+                <td th:with="key=|${rel.toType}:${rel.toId}|">
+                    <span th:text="${relationshipNames != null and relationshipNames.containsKey(key)
+                                     ? relationshipNames.get(key)
+                                     : #strings.capitalize(#strings.toLowerCase(rel.toType))}">Object</span>
+                    <span class="badge badge--neutral u-text-xs"
+                          th:text="${#strings.capitalize(#strings.toLowerCase(rel.toType))}">Type</span>
+                </td>
                 <td th:text="${#enums.label(rel.knowledge)}">Knowledge</td>
                 <td th:text="${#enums.label(rel.status)}">Status</td>
                 <td>
