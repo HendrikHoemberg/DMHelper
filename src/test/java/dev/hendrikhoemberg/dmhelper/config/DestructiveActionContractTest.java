@@ -5,12 +5,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,15 +43,13 @@ class DestructiveActionContractTest {
     }
 
     @Test
-    void noPrimaryActionSitsBesideADestructiveOne() throws IOException {
+    void noPrimaryActionSitsBesideADestructiveOne() {
         List<String> offenders = new ArrayList<>();
 
-        try (Stream<Path> templates = Files.walk(Path.of("src/main/resources/templates"))) {
-            for (Path template : templates.filter(p -> p.toString().endsWith(".html")).toList()) {
-                for (String ignored : unsafeRows(Files.readString(template))) {
-                    offenders.add(template.toString());
-                    break;
-                }
+        for (Path template : TemplateRules.allTemplates()) {
+            for (String ignored : unsafeRows(TemplateRules.read(template))) {
+                offenders.add(template.toString());
+                break;
             }
         }
 

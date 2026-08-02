@@ -16,7 +16,8 @@
              :open="!hasActive">
       <summary>Planned encounters</summary>
       <div x-data="{ plannedFilter: '' }">
-        <input type="search" class="form-input" x-model="plannedFilter"
+        <label class="sr-only" for="plannedEncounterFilter">Filter planned encounters</label>
+        <input type="search" id="plannedEncounterFilter" class="form-input" x-model="plannedFilter"
                placeholder="Filter encounters..." style="margin-bottom: var(--space-sm);">
         <th:block th:if="${!view.currentScenePlanned.isEmpty()}">
           <div class="planned-encounter-section-label">This scene</div>

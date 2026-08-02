@@ -9,7 +9,7 @@
     </h3>
 
     <form @submit.prevent="add()" class="quicknotes-form">
-        <input type="text" x-model="newBody" placeholder="Jot a quick note...">
+        <input type="text" aria-label="New quick note" x-model="newBody" placeholder="Jot a quick note...">
         <button type="submit" class="btn btn-xs">
             Add
         </button>

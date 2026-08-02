@@ -36,6 +36,8 @@
             <span class="roster-col roster-col--select">
                 <!-- Inside <summary>, a click that reaches the summary toggles the disclosure
                      instead of selecting the member. -->
+                <label class="sr-only" th:for="'sel-' + ${pm.id}"
+                       th:text="'Select ' + ${pm.characterName}">Select member</label>
                 <input type="checkbox" class="member-select" th:value="${pm.id}"
                        th:attr="data-active=${pm.active}"
                        th:id="'sel-' + ${pm.id}"

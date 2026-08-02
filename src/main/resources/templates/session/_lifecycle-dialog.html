@@ -80,7 +80,9 @@
   <p>The session log draft, scenes visited, and attendance record are deleted. Campaign content is not affected.</p>
   <div class="cockpit-dialog__actions">
     <button type="button" class="btn btn-danger action-row__destructive"
-            data-confirm-abandon-session @click="confirmAbandonSession()">Discard session</button>
+            data-confirm-abandon-session
+            data-confirm-consequence="Discarding this session deletes its log draft, the scenes visited, and the attendance record. Campaign content is not affected."
+            @click="confirmAbandonSession()">Discard session</button>
     <button type="button" class="btn btn-ghost" @click="closeAbandonDialog()">Keep session</button>
   </div>
 </dialog>

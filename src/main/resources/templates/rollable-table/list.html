@@ -24,9 +24,11 @@
 <div id="page-content" class="page-content">
     <div class="filter-bar">
         <form class="u-flex u-gap-sm" method="get">
-            <input type="text" name="text" placeholder="Search by name, description, or category..."
+            <label class="sr-only" for="tableSearch">Search rollable tables</label>
+            <input type="text" id="tableSearch" name="text" placeholder="Search by name, description, or category..."
                    th:value="${param.text != null ? param.text[0] : ''}">
-            <select name="category">
+            <label class="sr-only" for="tableCategory">Category</label>
+            <select id="tableCategory" name="category">
                 <option value="">All categories</option>
                 <option value="ENCOUNTER">Encounter</option>
                 <option value="TREASURE">Treasure</option>

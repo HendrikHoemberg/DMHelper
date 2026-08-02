@@ -31,7 +31,8 @@
                   th:hx-put="@{/campaigns/{cid}/treasury/{id}/state(cid=${campaignId}, id=${assignment.id()})}"
                   hx-target="closest .card" hx-swap="outerHTML" class="u-inline"
                   hx-disabled-elt="find select">
-                <select name="inventoryState" class="state-select" onchange="this.form.requestSubmit()">
+                <select name="inventoryState" class="state-select" aria-label="Inventory state"
+                        onchange="this.form.requestSubmit()">
                     <option value="EQUIPPED" th:selected="${assignment.inventoryState().name() == 'EQUIPPED'}">Equipped</option>
                     <option value="CARRIED" th:selected="${assignment.inventoryState().name() == 'CARRIED'}">Carried</option>
                     <option value="STASHED" th:selected="${assignment.inventoryState().name() == 'STASHED'}">Stashed</option>
@@ -43,7 +44,8 @@
                   th:hx-put="@{/campaigns/{cid}/treasury/{id}/quantity-adjust(cid=${campaignId}, id=${assignment.id()})}"
                   hx-target="closest .card" hx-swap="outerHTML" class="u-flex u-gap-xs"
                   hx-disabled-elt="find button[type='submit']">
-                <input type="number" name="delta" value="-1" min="-99" max="99" class="qty-input" style="width: 48px;" />
+                <input type="number" name="delta" value="-1" min="-99" max="99" class="qty-input"
+                       aria-label="Quantity adjustment" style="width: 48px;" />
                 <button class="btn btn-ghost btn-xs">Adj</button>
             </form>
         </div>

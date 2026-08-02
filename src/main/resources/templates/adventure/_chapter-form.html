@@ -12,14 +12,16 @@
         hx-disabled-elt="find button[type='submit']">
     <input type="hidden" th:if="${editing}" name="_method" value="put"/>
     <div class="form-group">
-      <input type="text" name="title" placeholder="Chapter title" required
+      <label class="form-label" for="chapterTitle">Chapter title</label>
+      <input type="text" id="chapterTitle" name="title" placeholder="Chapter title" required
              th:value="${chapter?.title}" class="form-input"/>
     </div>
     <div class="form-group">
-      <textarea name="intro" placeholder="Introduction (optional)"
+      <label class="form-label" for="chapterIntro">Introduction</label>
+      <textarea id="chapterIntro" name="intro" placeholder="Introduction (optional)"
                 th:text="${chapter?.intro}" class="form-input" rows="2"></textarea>
     </div>
-    <div class="form-actions">
+    <div class="form-actions" data-action-region>
       <button type="submit" class="btn btn-primary" th:text="${editing} ? 'Update' : 'Create'">Create</button>
       <button type="button" class="btn btn-ghost"
               th:hx-get="@{/campaigns/{cid}/adventures/{aid}(cid=${campaignId},aid=${adventure.id})}"

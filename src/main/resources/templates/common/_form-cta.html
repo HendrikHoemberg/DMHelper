@@ -2,9 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <!-- Call to action for "add" routes that only serve an htmx fragment: fetches the form into
      the same target the page's own header button uses, instead of navigating away. Linking
-     to such a route lands the browser on a document with no <head>, which renders unstyled. -->
+     to such a route lands the browser on a document with no <head>, which renders unstyled.
+     data-action-region marks the empty state's creation action with the same action
+     vocabulary the shared header, toolbar, and overlay fragments use (spec 14). -->
 <button th:fragment="swap-cta(actionText, actionUrl, target)" type="button"
-        class="btn btn-ghost empty-state__cta"
+        class="btn btn-ghost empty-state__cta" data-action-region
         th:hx-get="${actionUrl}" th:hx-target="${target}" hx-swap="innerHTML"
         hx-disabled-elt="this"
         th:text="${actionText}">Create</button>

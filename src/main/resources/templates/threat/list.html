@@ -25,9 +25,11 @@
 <div id="page-content" class="page-content">
     <div class="filter-bar">
         <form class="u-flex u-gap-sm" method="get">
-            <input type="text" name="text" placeholder="Search by name or description..."
+            <label class="sr-only" for="threatSearch">Search traps and hazards</label>
+            <input type="text" id="threatSearch" name="text" placeholder="Search by name or description..."
                    th:value="${param.text != null ? param.text[0] : ''}">
-            <select name="severity">
+            <label class="sr-only" for="threatSeverity">Severity</label>
+            <select id="threatSeverity" name="severity">
                 <option value="">All severities</option>
                 <option value="SETBACK">Setback</option>
                 <option value="DANGEROUS">Dangerous</option>
