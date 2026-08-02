@@ -428,7 +428,7 @@ class CoreSessionLoopSmokeTest {
     @Order(12)
     void libraryDeepLinkActivatesAndFiltersTheRequestedTab() {
         dmPage.navigate("http://localhost:" + port + "/library?tab=spells&search=Fireball");
-        dmPage.locator("#tab-spells.active").waitFor();
+        dmPage.locator("[data-library-category='Spells'][aria-current='page']").waitFor();
         dmPage.locator("#spell-results").getByText("Fireball").first().waitFor();
 
         assertThat(dmPage.locator("#spellSearch").inputValue()).isEqualTo("Fireball");

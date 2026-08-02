@@ -32,6 +32,11 @@
         actions=~{})}"></th:block>
 
     <div th:replace="~{adventure/_adventure-list :: adventureList}"></div>
+
+    <section class="u-mt-lg">
+        <h2 class="section-heading">Quick notes</h2>
+        <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='CAMPAIGN', targetId=${campaignId})}"></th:block>
+    </section>
 </div>
 
 <script>
