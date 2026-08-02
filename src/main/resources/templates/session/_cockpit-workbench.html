@@ -10,7 +10,7 @@
 <section class="cockpit-workbench"
          data-cockpit-workbench
          data-layout-mode="locked"
-         data-bottom-collapsed="true"
+         data-bottom-collapsed="false"
          aria-label="Session workspace">
 
   <!-- LEFT_SUPPORT: session-plan -->
@@ -71,7 +71,7 @@
           aria-orientation="vertical" aria-valuemin="15" aria-valuemax="35"
           aria-valuenow="24" aria-label="Resize right support" tabindex="-1"></button>
 
-  <!-- RIGHT_SUPPORT: party (active), quick-notes (inactive) -->
+  <!-- RIGHT_SUPPORT: party -->
   <div class="cockpit-zone cockpit-zone--right"
        data-cockpit-zone="RIGHT_SUPPORT"
        data-dock-target="RIGHT_SUPPORT"
@@ -82,12 +82,6 @@
               aria-controls="cockpitPanel-RIGHT_SUPPORT-party"
               aria-selected="true"
               data-module-tab="party">Party</button>
-      <button type="button" class="cockpit-zone__tab" role="tab"
-              id="cockpitTab-RIGHT_SUPPORT-quick-notes"
-              aria-controls="cockpitPanel-RIGHT_SUPPORT-quick-notes"
-              aria-selected="false"
-              data-module-tab="quick-notes"
-              tabindex="-1">Quick notes</button>
     </div>
     <div class="cockpit-zone__panels" data-zone-panels>
       <div class="cockpit-zone__panel" role="tabpanel"
@@ -98,15 +92,6 @@
             module=${cockpitModuleByKey['party']},
             initialBody=~{session/modules/_party :: body(${initialPartyView}, ${cockpitModuleStandardMode})})}"></th:block>
       </div>
-      <div class="cockpit-zone__panel" role="tabpanel"
-           id="cockpitPanel-RIGHT_SUPPORT-quick-notes"
-           aria-labelledby="cockpitTab-RIGHT_SUPPORT-quick-notes"
-           data-module-panel="quick-notes"
-           hidden inert>
-        <th:block th:replace="~{session/_cockpit-module-shell :: shell(
-            module=${cockpitModuleByKey['quick-notes']},
-            initialBody=~{session/modules/_quick-notes :: body(${initialQuickNotesView}, ${cockpitModuleStandardMode})})}"></th:block>
-      </div>
     </div>
   </div>
 
@@ -115,40 +100,55 @@
           aria-orientation="horizontal" aria-valuemin="16" aria-valuemax="40"
           aria-valuenow="24" aria-label="Resize bottom utility" tabindex="-1"></button>
 
-  <!-- BOTTOM_UTILITY: audio (active), session-log (inactive), collapsed -->
+  <!-- BOTTOM_UTILITY: quick-notes (active), audio, reference (expanded) -->
   <div id="cockpitBottomUtility" class="cockpit-zone cockpit-zone--bottom"
        data-cockpit-zone="BOTTOM_UTILITY"
        data-dock-target="BOTTOM_UTILITY"
-       data-collapsed="true">
+       data-collapsed="false">
     <div class="cockpit-zone__tabs" role="tablist" aria-label="Bottom utility modules">
+      <button type="button" class="cockpit-zone__tab" role="tab"
+              id="cockpitTab-BOTTOM_UTILITY-quick-notes"
+              aria-controls="cockpitPanel-BOTTOM_UTILITY-quick-notes"
+              aria-selected="true"
+              data-module-tab="quick-notes">Quick notes</button>
       <button type="button" class="cockpit-zone__tab" role="tab"
               id="cockpitTab-BOTTOM_UTILITY-audio"
               aria-controls="cockpitPanel-BOTTOM_UTILITY-audio"
-              aria-selected="true"
-              data-module-tab="audio">Audio</button>
-      <button type="button" class="cockpit-zone__tab" role="tab"
-              id="cockpitTab-BOTTOM_UTILITY-session-log"
-              aria-controls="cockpitPanel-BOTTOM_UTILITY-session-log"
               aria-selected="false"
-              data-module-tab="session-log"
-              tabindex="-1">Session log</button>
+              data-module-tab="audio"
+              tabindex="-1">Audio</button>
+      <button type="button" class="cockpit-zone__tab" role="tab"
+              id="cockpitTab-BOTTOM_UTILITY-reference"
+              aria-controls="cockpitPanel-BOTTOM_UTILITY-reference"
+              aria-selected="false"
+              data-module-tab="reference"
+              tabindex="-1">Reference</button>
     </div>
     <div class="cockpit-zone__panels" data-zone-panels>
       <div class="cockpit-zone__panel" role="tabpanel"
+           id="cockpitPanel-BOTTOM_UTILITY-quick-notes"
+           aria-labelledby="cockpitTab-BOTTOM_UTILITY-quick-notes"
+           data-module-panel="quick-notes">
+        <th:block th:replace="~{session/_cockpit-module-shell :: shell(
+            module=${cockpitModuleByKey['quick-notes']},
+            initialBody=~{session/modules/_quick-notes :: body(${initialQuickNotesView}, ${cockpitModuleStandardMode})})}"></th:block>
+      </div>
+      <div class="cockpit-zone__panel" role="tabpanel"
            id="cockpitPanel-BOTTOM_UTILITY-audio"
            aria-labelledby="cockpitTab-BOTTOM_UTILITY-audio"
-           data-module-panel="audio">
+           data-module-panel="audio"
+           hidden inert>
         <th:block th:replace="~{session/_cockpit-module-shell :: shell(
             module=${cockpitModuleByKey['audio']},
             initialBody=${null})}"></th:block>
       </div>
       <div class="cockpit-zone__panel" role="tabpanel"
-           id="cockpitPanel-BOTTOM_UTILITY-session-log"
-           aria-labelledby="cockpitTab-BOTTOM_UTILITY-session-log"
-           data-module-panel="session-log"
+           id="cockpitPanel-BOTTOM_UTILITY-reference"
+           aria-labelledby="cockpitTab-BOTTOM_UTILITY-reference"
+           data-module-panel="reference"
            hidden inert>
         <th:block th:replace="~{session/_cockpit-module-shell :: shell(
-            module=${cockpitModuleByKey['session-log']},
+            module=${cockpitModuleByKey['reference']},
             initialBody=${null})}"></th:block>
       </div>
     </div>
@@ -164,7 +164,7 @@
       module=${cockpitModuleByKey['encounter']},
       initialBody=${null})}"></th:block>
   <th:block th:replace="~{session/_cockpit-module-shell :: shell(
-      module=${cockpitModuleByKey['reference']},
+      module=${cockpitModuleByKey['session-log']},
       initialBody=${null})}"></th:block>
 </div>
 

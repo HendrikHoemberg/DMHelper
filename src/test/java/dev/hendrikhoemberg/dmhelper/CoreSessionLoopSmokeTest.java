@@ -1873,7 +1873,10 @@ class CoreSessionLoopSmokeTest {
         assertThat(dmPage.locator("[data-module-key='story']")
                 .evaluate("el => el.isConnected")).isEqualTo(true);
 
-        // A collapsed utility zone remains recoverable with one explicit edit-mode action.
+        // Exploration's bottom utility is now expanded; session-review keeps a
+        // collapsed empty bottom, so a collapsed utility zone remains recoverable
+        // with one explicit edit-mode action there.
+        selectCockpitPreset("builtin:session-review");
         openCockpitMoreMenu();
         dmPage.locator("#cockpitLayoutModeButton").click();
         Locator bottomToggle = dmPage.locator("[data-bottom-utility-toggle]");

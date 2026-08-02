@@ -110,19 +110,19 @@ class CockpitWorkbenchTemplateContractTest {
                 .hasSize(1);
         assertThat(document.select("[data-cockpit-zone=RIGHT_SUPPORT] .cockpit-module[data-module-key=party]"))
                 .hasSize(1);
-        assertThat(document.select("[data-cockpit-zone=RIGHT_SUPPORT] .cockpit-module[data-module-key=quick-notes]"))
+        assertThat(document.select("[data-cockpit-zone=BOTTOM_UTILITY] .cockpit-module[data-module-key=quick-notes]"))
                 .hasSize(1);
         assertThat(document.select("[data-cockpit-zone=BOTTOM_UTILITY] .cockpit-module[data-module-key=audio]"))
                 .hasSize(1);
-        assertThat(document.select("[data-cockpit-zone=BOTTOM_UTILITY] .cockpit-module[data-module-key=session-log]"))
+        assertThat(document.select("[data-cockpit-zone=BOTTOM_UTILITY] .cockpit-module[data-module-key=reference]"))
                 .hasSize(1);
         assertThat(document.select(".cockpit-module-depot .cockpit-module[data-module-key]"))
                 .extracting(e -> e.attr("data-module-key"))
-                .containsExactlyInAnyOrder("map", "encounter", "reference");
+                .containsExactlyInAnyOrder("map", "encounter", "session-log");
         assertThat(document.select("[data-cockpit-zone=BOTTOM_UTILITY]").attr("data-collapsed"))
-                .isEqualTo("true");
+                .isEqualTo("false");
         assertThat(document.select("[data-cockpit-workbench]").attr("data-bottom-collapsed"))
-                .isEqualTo("true");
+                .isEqualTo("false");
     }
 
     @Test
