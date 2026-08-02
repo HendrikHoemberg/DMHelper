@@ -27,31 +27,35 @@
         hx-disabled-elt="this">+ Add Member</button>
 
 <div id="page-content" class="page-content">
-    <details class="party-bulk" id="party-bulk">
-        <summary data-bulk-actions>
-            <span class="bulk-summary-label">
-                <label class="batch-toggle">
-                    <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
-                    Select All
-                </label>
-                <label class="batch-toggle batch-toggle-inactive">
-                    <input type="checkbox" id="include-inactive" onchange="toggleInactive()">
-                    Include inactive
-                </label>
-                <span class="batch-count" id="batch-count">0 selected</span>
-            </span>
-            <span class="bulk-summary-chevron">Bulk Actions</span>
-        </summary>
-        <div class="party-bulk__actions">
-            <button class="btn btn-xs batch-btn" onclick="batchRest('SHORT')" title="Short Rest">Short Rest</button>
-            <button class="btn btn-xs batch-btn" onclick="batchRest('LONG')" title="Long Rest">Long Rest</button>
-            <button class="btn btn-xs batch-btn" onclick="batchXp()">Award XP</button>
-            <button class="btn btn-xs batch-btn" onclick="batchMilestone()">Set Level</button>
-            <button class="btn btn-xs batch-btn" onclick="batchCondition()">Condition</button>
-            <button class="btn btn-xs batch-btn" onclick="batchLoot()">Assign Loot</button>
-            <button class="btn btn-xs batch-btn" onclick="batchClearDeathSaves()">Clear Death Saves</button>
-        </div>
-    </details>
+    <th:block th:replace="~{fragments/_toolbar :: table-toolbar(
+        selectionLabel=${'0 selected'},
+        actions=~{::#bulkActions})}"></th:block>
+    <div id="bulkActions">
+        <details class="party-bulk" id="party-bulk" data-bulk-actions>
+            <summary>
+                <span class="bulk-summary-label">
+                    <label class="batch-toggle">
+                        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                        Select All
+                    </label>
+                    <label class="batch-toggle batch-toggle-inactive">
+                        <input type="checkbox" id="include-inactive" onchange="toggleInactive()">
+                        Include inactive
+                    </label>
+                </span>
+                <span class="bulk-summary-chevron">Bulk Actions</span>
+            </summary>
+            <div class="party-bulk__actions">
+                <button class="btn btn-xs batch-btn" onclick="batchRest('SHORT')" title="Short Rest">Short Rest</button>
+                <button class="btn btn-xs batch-btn" onclick="batchRest('LONG')" title="Long Rest">Long Rest</button>
+                <button class="btn btn-xs batch-btn" onclick="batchXp()">Award XP</button>
+                <button class="btn btn-xs batch-btn" onclick="batchMilestone()">Set Level</button>
+                <button class="btn btn-xs batch-btn" onclick="batchCondition()">Condition</button>
+                <button class="btn btn-xs batch-btn" onclick="batchLoot()">Assign Loot</button>
+                <button class="btn btn-xs batch-btn" onclick="batchClearDeathSaves()">Clear Death Saves</button>
+            </div>
+        </details>
+    </div>
 
     <div id="party-grid" class="empty-state-host">
         <th:block th:replace="~{party/_roster :: roster(members=${members}, campaignId=${campaign.id})}"></th:block>
@@ -84,7 +88,11 @@ function toggleInactive() {
 
 function updateBatchCount() {
     const count = document.querySelectorAll('.member-select:checked').length;
-    document.getElementById('batch-count').textContent = count + ' selected';
+    const label = count + ' selected';
+    const batchCount = document.getElementById('batch-count');
+    if (batchCount) batchCount.textContent = label;
+    const selection = document.querySelector('.toolbar__selection');
+    if (selection) selection.textContent = label;
 }
 
 function getSelectedIds() {

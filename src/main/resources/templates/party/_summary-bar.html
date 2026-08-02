@@ -17,7 +17,7 @@
             <!-- The abbreviations stay — the rail has no room for words — but nothing here
                  depends on hovering to be understood: every stat carries its expanded name,
                  and the dots keep "PI 10 PInv 11" from reading as one number. -->
-            <div class="chip-stats" aria-label="Armour Class, Hit Points, Passive Perception">
+            <div class="chip-stats u-num" aria-label="Armour Class, Hit Points, Passive Perception">
                 <span title="Armour Class"
                       th:attr="aria-label=|Armour Class ${m.ac}|"
                       th:text="'AC ' + ${m.ac}">AC 16</span>
@@ -34,7 +34,7 @@
                       th:text="'THP ' + ${m.tempHp}">THP 0</span>
             </div>
             <th:block th:if="${mode == null or mode.name() != 'COMPACT'}">
-                <div class="chip-detail">
+                <div class="chip-detail u-num">
                     <span title="Passive Insight" th:if="${m.passiveInsight > 0}"
                           th:attr="aria-label=|Passive Insight ${m.passiveInsight}|"
                           th:text="'PI ' + ${m.passiveInsight}">PI 12</span>

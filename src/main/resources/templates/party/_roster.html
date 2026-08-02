@@ -47,15 +47,15 @@
                 <span th:if="${pm.classAndLevel != null and !pm.classAndLevel.isBlank()}"
                       th:text="' (' + ${pm.classAndLevel} + ')'" class="roster-class"> (Class)</span>
             </span>
-            <span class="roster-col roster-col--ac" th:text="${pm.ac}">15</span>
-            <span class="roster-col roster-col--hp">
+            <span class="roster-col roster-col--ac u-num" th:text="${pm.ac}">15</span>
+            <span class="roster-col roster-col--hp u-num">
                 <span th:text="${pm.currentHp} + '/' + ${pm.maxHp}">24/24</span>
                 <span th:if="${pm.tempHp > 0}" class="roster-temp-hp" th:text="'+' + ${pm.tempHp}">+5</span>
                 <span class="roster-hp-bar"><span class="roster-hp-fill"
                       th:style="'width:' + (${pm.maxHp} > 0 ? (${pm.currentHp} * 100 / ${pm.maxHp}) : 0) + '%'"
                       th:classappend="${pm.maxHp > 0 && pm.currentHp * 2 < pm.maxHp} ? 'low' : ''"></span></span>
             </span>
-            <span class="roster-col roster-col--passives">
+            <span class="roster-col roster-col--passives u-num">
                 <span th:text="${pm.passivePerception}">14</span>
                 <span class="roster-passive-sep">/</span>
                 <span th:text="${pm.passiveInsight}">12</span>
@@ -64,17 +64,24 @@
             </span>
             <span class="roster-col roster-col--conditions">
                 <th:block th:if="${pm.deathSaveFailures > 0 or pm.deathSaveSuccesses > 0}">
-                    <span class="badge badge--danger" th:title="'Death saves: ' + ${pm.deathSaveSuccesses} + '/' + ${pm.deathSaveFailures}"
-                          th:text="'DS ' + ${pm.deathSaveSuccesses} + '/' + ${pm.deathSaveFailures}">DS 0/1</span>
+                    <span th:replace="~{fragments/_badge :: badge(
+                        tone='danger', icon='alert-circle',
+                        label=|DS ${pm.deathSaveSuccesses}/${pm.deathSaveFailures}|)}"></span>
                 </th:block>
                 <th:block th:if="${pm.concentratingOn != null and !pm.concentratingOn.isBlank()}">
-                    <span class="badge badge--info" th:title="'Concentrating: ' + ${pm.concentratingOn}">Concentrating</span>
+                    <span th:replace="~{fragments/_badge :: badge(
+                        tone='info', icon='concentration',
+                        label='Concentrating')}"></span>
                 </th:block>
                 <th:block th:if="${pm.conditions != null and !pm.conditions.isEmpty()}">
-                    <span class="badge badge--warning" th:each="cond : ${pm.conditions}" th:text="${cond}">poisoned</span>
+                    <th:block th:each="cond : ${pm.conditions}">
+                        <span th:replace="~{fragments/_badge :: badge(
+                            tone='warning', icon='alert-circle', label=${cond})}"></span>
+                    </th:block>
                 </th:block>
                 <th:block th:if="${!pm.active}">
-                    <span class="badge badge--neutral">Inactive</span>
+                    <span th:replace="~{fragments/_badge :: badge(
+                        tone='neutral', icon='pause', label='Inactive')}"></span>
                 </th:block>
             </span>
         </summary>
