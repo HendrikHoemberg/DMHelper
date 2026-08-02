@@ -1,138 +1,144 @@
-<dialog th:fragment="levelUpDialog(campaignId, memberId)" class="sheet-level-up-dialog" id="level-up-dialog">
-    <h3>Level Up</h3>
-    <div th:if="${sheet != null}" class="u-text-sm u-mb-sm">
-        Current level: <strong th:text="${sheet.derivedValues().totalLevel()}">1</strong>
-        &rarr; New level: <strong th:text="${sheet.derivedValues().totalLevel() + 1}">2</strong>
+<th:block th:fragment="levelUpDialog(campaignId, memberId)">
+    <th:block th:replace="~{fragments/_overlay :: dialog(
+        id='level-up-dialog',
+        title='Level Up',
+        body=~{::#levelUpBody},
+        actions=~{::#levelUpActions})}"></th:block>
+    <div id="levelUpBody" data-change-state="pending">
+        <div th:if="${sheet != null}" class="u-text-sm u-mb-sm">
+            Current level: <strong th:text="${sheet.derivedValues().totalLevel()}">1</strong>
+            &rarr; New level: <strong th:text="${sheet.derivedValues().totalLevel() + 1}">2</strong>
+        </div>
+        <form id="level-up-form" th:action="@{/campaigns/{cid}/party/{pid}/sheet/level-up(cid=${campaignId}, pid=${memberId})}" method="post">
+            <div class="form-group">
+                <label>Class:</label>
+                <select name="classSourceKey" id="lu-class-select" required onchange="updateLevelUpForm()">
+                    <optgroup th:if="${sheet != null}" label="Existing Classes">
+                        <option th:each="cl : ${sheet.classLevels()}" th:value="${cl.classSourceKey()}" th:text="${cl.classSourceKey()} + ' (' + ${cl.level()} + ')'">Fighter 1</option>
+                    </optgroup>
+                    <optgroup label="New Class (Multiclass)">
+                        <option value="srd-2024_barbarian">Barbarian</option>
+                        <option value="srd-2024_bard">Bard</option>
+                        <option value="srd-2024_cleric">Cleric</option>
+                        <option value="srd-2024_druid">Druid</option>
+                        <option value="srd-2024_fighter">Fighter</option>
+                        <option value="srd-2024_monk">Monk</option>
+                        <option value="srd-2024_paladin">Paladin</option>
+                        <option value="srd-2024_ranger">Ranger</option>
+                        <option value="srd-2024_rogue">Rogue</option>
+                        <option value="srd-2024_sorcerer">Sorcerer</option>
+                        <option value="srd-2024_warlock">Warlock</option>
+                        <option value="srd-2024_wizard">Wizard</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div id="lu-subclass-section" style="display:none" class="form-group">
+                <label>Subclass (choose now for level 3+):</label>
+                <select name="subclassSourceKey" id="lu-subclass-select">
+                    <option value="">— None —</option>
+                </select>
+                <p class="u-text-xs u-text-warning u-mt-xs">Subclass selection is required at level 3.</p>
+            </div>
+
+            <div id="lu-asi-section" style="display:none" class="form-group">
+                <label>Ability Score Improvement:</label>
+                <div class="u-flex u-gap-xs u-mb-xs">
+                    <label><input type="radio" name="asiType" value="single" onchange="updateAsiFields()"> +2 to one</label>
+                    <label><input type="radio" name="asiType" value="double" onchange="updateAsiFields()"> +1 to two</label>
+                    <label><input type="radio" name="asiType" value="feat" onchange="updateAsiFields()"> Feat</label>
+                    <label><input type="radio" name="asiType" value="" checked onchange="updateAsiFields()"> Skip</label>
+                </div>
+                <div id="lu-asi-abilities" style="display:none" class="u-flex u-gap-xs u-flex-wrap">
+                    <select name="asiAbility1" class="small-input">
+                        <option value="">—</option>
+                        <option value="str">STR</option>
+                        <option value="dex">DEX</option>
+                        <option value="con">CON</option>
+                        <option value="int">INT</option>
+                        <option value="wis">WIS</option>
+                        <option value="cha">CHA</option>
+                    </select>
+                    <select name="asiAbility2" id="asi-ability-2" class="small-input" style="display:none">
+                        <option value="">—</option>
+                        <option value="str">STR</option>
+                        <option value="dex">DEX</option>
+                        <option value="con">CON</option>
+                        <option value="int">INT</option>
+                        <option value="wis">WIS</option>
+                        <option value="cha">CHA</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Hit Points:</label>
+                <label><input type="radio" name="isAverage" value="true" checked> Average</label>
+                <label><input type="radio" name="isAverage" value="false"> Roll:</label>
+                <input type="number" name="hpRoll" value="1" min="1" max="12" class="small-input">
+            </div>
+        </form>
     </div>
-    <form th:action="@{/campaigns/{cid}/party/{pid}/sheet/level-up(cid=${campaignId}, pid=${memberId})}" method="post">
-        <div class="form-group">
-            <label>Class:</label>
-            <select name="classSourceKey" id="lu-class-select" required onchange="updateLevelUpForm()">
-                <optgroup th:if="${sheet != null}" label="Existing Classes">
-                    <option th:each="cl : ${sheet.classLevels()}" th:value="${cl.classSourceKey()}" th:text="${cl.classSourceKey()} + ' (' + ${cl.level()} + ')'">Fighter 1</option>
-                </optgroup>
-                <optgroup label="New Class (Multiclass)">
-                    <option value="srd-2024_barbarian">Barbarian</option>
-                    <option value="srd-2024_bard">Bard</option>
-                    <option value="srd-2024_cleric">Cleric</option>
-                    <option value="srd-2024_druid">Druid</option>
-                    <option value="srd-2024_fighter">Fighter</option>
-                    <option value="srd-2024_monk">Monk</option>
-                    <option value="srd-2024_paladin">Paladin</option>
-                    <option value="srd-2024_ranger">Ranger</option>
-                    <option value="srd-2024_rogue">Rogue</option>
-                    <option value="srd-2024_sorcerer">Sorcerer</option>
-                    <option value="srd-2024_warlock">Warlock</option>
-                    <option value="srd-2024_wizard">Wizard</option>
-                </optgroup>
-            </select>
-        </div>
+    <div id="levelUpActions">
+        <button type="submit" form="level-up-form" class="btn btn-primary">Confirm Level Up</button>
+        <button type="button" class="btn btn-ghost" data-overlay-dismiss>Cancel</button>
+    </div>
+    <script th:inline="javascript">
+    const sheetTotalLevel = /*[[${sheet != null ? sheet.derivedValues().totalLevel() : 1}]]*/ 1;
 
-        <div id="lu-subclass-section" style="display:none" class="form-group">
-            <label>Subclass (choose now for level 3+):</label>
-            <select name="subclassSourceKey" id="lu-subclass-select">
-                <option value="">— None —</option>
-            </select>
-            <p class="u-text-xs u-text-warning u-mt-xs">Subclass selection is required at level 3.</p>
-        </div>
+    function updateLevelUpForm() {
+        const select = document.getElementById('lu-class-select');
+        if (!select) return;
+        const classSourceKey = select.value;
+        if (!classSourceKey) return;
 
-        <div id="lu-asi-section" style="display:none" class="form-group">
-            <label>Ability Score Improvement:</label>
-            <div class="u-flex u-gap-xs u-mb-xs">
-                <label><input type="radio" name="asiType" value="single" onchange="updateAsiFields()"> +2 to one</label>
-                <label><input type="radio" name="asiType" value="double" onchange="updateAsiFields()"> +1 to two</label>
-                <label><input type="radio" name="asiType" value="feat" onchange="updateAsiFields()"> Feat</label>
-                <label><input type="radio" name="asiType" value="" checked onchange="updateAsiFields()"> Skip</label>
-            </div>
-            <div id="lu-asi-abilities" style="display:none" class="u-flex u-gap-xs u-flex-wrap">
-                <select name="asiAbility1" class="small-input">
-                    <option value="">—</option>
-                    <option value="str">STR</option>
-                    <option value="dex">DEX</option>
-                    <option value="con">CON</option>
-                    <option value="int">INT</option>
-                    <option value="wis">WIS</option>
-                    <option value="cha">CHA</option>
-                </select>
-                <select name="asiAbility2" id="asi-ability-2" class="small-input" style="display:none">
-                    <option value="">—</option>
-                    <option value="str">STR</option>
-                    <option value="dex">DEX</option>
-                    <option value="con">CON</option>
-                    <option value="int">INT</option>
-                    <option value="wis">WIS</option>
-                    <option value="cha">CHA</option>
-                </select>
-            </div>
-        </div>
+        fetch('creation-options?classSourceKey=' + encodeURIComponent(classSourceKey))
+            .then(r => r.json())
+            .then(data => {
+                const subclassSection = document.getElementById('lu-subclass-section');
+                const subclassSelect = document.getElementById('lu-subclass-select');
+                subclassSelect.innerHTML = '<option value="">— None —</option>';
+                if (data.subclasses && data.subclasses.length > 0) {
+                    data.subclasses.forEach(function(sc) {
+                        const opt = document.createElement('option');
+                        opt.value = sc.sourceKey;
+                        opt.textContent = sc.name;
+                        subclassSelect.appendChild(opt);
+                    });
+                    subclassSection.style.display = 'block';
+                } else {
+                    subclassSection.style.display = 'none';
+                }
+            })
+            .catch(() => {});
 
-        <div class="form-group">
-            <label>Hit Points:</label>
-            <label><input type="radio" name="isAverage" value="true" checked> Average</label>
-            <label><input type="radio" name="isAverage" value="false"> Roll:</label>
-            <input type="number" name="hpRoll" value="1" min="1" max="12" class="small-input">
-        </div>
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Confirm Level Up</button>
-            <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
-        </div>
-    </form>
-</dialog>
-<script th:inline="javascript">
-const sheetTotalLevel = /*[[${sheet != null ? sheet.derivedValues().totalLevel() : 1}]]*/ 1;
-
-function updateLevelUpForm() {
-    const select = document.getElementById('lu-class-select');
-    if (!select) return;
-    const classSourceKey = select.value;
-    if (!classSourceKey) return;
-
-    fetch('creation-options?classSourceKey=' + encodeURIComponent(classSourceKey))
-        .then(r => r.json())
-        .then(data => {
-            const subclassSection = document.getElementById('lu-subclass-section');
-            const subclassSelect = document.getElementById('lu-subclass-select');
-            subclassSelect.innerHTML = '<option value="">— None —</option>';
-            if (data.subclasses && data.subclasses.length > 0) {
-                data.subclasses.forEach(function(sc) {
-                    const opt = document.createElement('option');
-                    opt.value = sc.sourceKey;
-                    opt.textContent = sc.name;
-                    subclassSelect.appendChild(opt);
-                });
-                subclassSection.style.display = 'block';
-            } else {
-                subclassSection.style.display = 'none';
-            }
-        })
-        .catch(() => {});
-
-    const newLevel = sheetTotalLevel + 1;
-    const asiLevels = [4, 8, 12, 16, 19];
-    const fighterExtraAsi = [6, 14];
-    const isAsi = asiLevels.includes(newLevel) ||
-        (classSourceKey && classSourceKey.includes('fighter') && fighterExtraAsi.includes(newLevel));
-    document.getElementById('lu-asi-section').style.display = isAsi ? 'block' : 'none';
-}
-
-function updateAsiFields() {
-    const asiType = document.querySelector('input[name="asiType"]:checked');
-    if (!asiType) return;
-    const val = asiType.value;
-    const abilities = document.getElementById('lu-asi-abilities');
-    const secondAbility = document.getElementById('asi-ability-2');
-    if (val === 'single' || val === 'double') {
-        abilities.style.display = 'flex';
-        secondAbility.style.display = val === 'double' ? 'inline-block' : 'none';
-    } else {
-        abilities.style.display = 'none';
+        const newLevel = sheetTotalLevel + 1;
+        const asiLevels = [4, 8, 12, 16, 19];
+        const fighterExtraAsi = [6, 14];
+        const isAsi = asiLevels.includes(newLevel) ||
+            (classSourceKey && classSourceKey.includes('fighter') && fighterExtraAsi.includes(newLevel));
+        document.getElementById('lu-asi-section').style.display = isAsi ? 'block' : 'none';
     }
-}
 
-document.addEventListener('DOMContentLoaded', function() {
-    updateLevelUpForm();
-});
-</script>
-<style>
-#lu-asi-section label { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; font-size: var(--text-sm); }
-</style>
+    function updateAsiFields() {
+        const asiType = document.querySelector('input[name="asiType"]:checked');
+        if (!asiType) return;
+        const val = asiType.value;
+        const abilities = document.getElementById('lu-asi-abilities');
+        const secondAbility = document.getElementById('asi-ability-2');
+        if (val === 'single' || val === 'double') {
+            abilities.style.display = 'flex';
+            secondAbility.style.display = val === 'double' ? 'inline-block' : 'none';
+        } else {
+            abilities.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateLevelUpForm();
+    });
+    </script>
+    <style>
+    #lu-asi-section label { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; font-size: var(--text-sm); }
+    </style>
+</th:block>

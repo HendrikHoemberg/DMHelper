@@ -1,5 +1,5 @@
 <div th:fragment="liveState(campaignId, member)" class="sheet-live-state">
-    <form class="live-state-form"
+    <form class="live-state-form" data-change-state="pending"
           th:hx-put="@{/api/v1/campaigns/{cid}/party/{mid}/live-state(cid=${campaignId}, mid=${member.id})}"
           hx-headers='{"Content-Type": "application/json"}'
           hx-vals='js:{

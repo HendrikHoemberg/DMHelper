@@ -1,7 +1,8 @@
 <div th:fragment="spellList(sheet, campaignId, memberId)" class="sheet-spells"
      x-data="{ query: '' }">
 
-    <div class="spell-slots-tracker" th:if="${sheet.derivedValues().spellSlots() != null}">
+    <div class="spell-slots-tracker" th:if="${sheet.derivedValues().spellSlots() != null}"
+         data-change-state="applied">
         <th:block th:each="slotAmt, iterStat : ${sheet.derivedValues().spellSlots()}">
             <span th:if="${slotAmt > 0 and iterStat.index >= 1}" class="spell-slot-level">
                 Lv <span th:text="${iterStat.index}">1</span>:

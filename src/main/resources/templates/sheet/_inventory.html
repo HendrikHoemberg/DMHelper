@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div th:fragment="inventory(assignments, totalWeight, campaignId)" class="detail-section">
+<div th:fragment="inventory(assignments, totalWeight, campaignId)" class="detail-section" data-sheet-section>
     <h2>Equipment &amp; Inventory</h2>
     <div th:if="${totalWeight != null && totalWeight > 0}" class="u-mb-sm u-text-muted inventory-weight">
         Weight (total lb): <strong th:text="${totalWeight}">0</strong>
@@ -21,7 +21,7 @@
             <div class="u-flex u-gap-xs u-mt-xs" style="flex-wrap: wrap;">
                 <span th:if="${assignment.quantity() > 1}" class="badge" th:text="'x' + ${assignment.quantity()}">x1</span>
                 <span th:if="${assignment.attuned()}" class="badge badge-attune">attuned</span>
-                <span class="badge"
+                <span class="badge" data-change-state="applied"
                       th:classappend="'badge-state-' + ${assignment.inventoryState().name().toLowerCase()}"
                       th:text="${#enums.label(assignment.inventoryState())}">CARRIED</span>
             </div>

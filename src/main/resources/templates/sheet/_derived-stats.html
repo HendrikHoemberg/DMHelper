@@ -1,5 +1,5 @@
-<div th:fragment="derivedStats(sheet)" class="sheet-derived-stats">
-    <dl class="stat-grid stat-grid--tiles">
+<div th:fragment="derivedStats(sheet)" class="sheet-derived-stats" data-change-state="applied">
+    <dl class="stat-grid stat-grid--tiles u-num">
         <div><dt>AC</dt><dd th:text="${sheet.derivedValues().armorClass()}">16</dd></div>
         <div><dt>HP</dt><dd th:text="${sheet.derivedValues().maxHp()}">52</dd></div>
         <div><dt>Init</dt><dd><span th:text="'+' + ${sheet.derivedValues().initiativeBonus()}">+2</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().initiativeBonus()}'" type="button" title="Initiative">d20</button></dd></div>

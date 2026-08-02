@@ -20,6 +20,14 @@
 
 <div id="page-content" class="page-content">
     <div th:if="${hasSheet}">
+        <div class="sheet-identity" data-sheet-identity>
+            <span class="sheet-identity__name" th:text="${member.characterName}">Character</span>
+            <span class="sheet-identity__class" th:text="${sheet.derivedValues().classAndLevel()}">Fighter 5</span>
+            <span class="sheet-identity__stat u-num" th:text="'AC ' + ${sheet.derivedValues().armorClass()}">AC 16</span>
+            <span class="sheet-identity__stat u-num" th:text="'HP ' + ${sheet.derivedValues().maxHp()}">HP 52</span>
+            <span class="sheet-identity__stat u-num" th:text="'Speed ' + ${sheet.derivedValues().speed()}">Speed 30</span>
+            <span class="sheet-identity__stat u-num" th:text="'Prof +' + ${sheet.derivedValues().proficiencyBonus()}">Prof +3</span>
+        </div>
         <div class="sheet-layout">
             <nav class="sheet-toc" aria-label="Sheet sections">
                 <a href="#sheet-overview">Overview</a>
@@ -38,7 +46,7 @@
                 <a href="#sheet-inventory">Inventory</a>
             </nav>
             <div>
-            <div class="detail-section" id="sheet-overview">
+            <div class="detail-section" data-sheet-section id="sheet-overview">
                 <h2>Overview</h2>
                 <dl class="stat-grid">
                     <div><dt>Class &amp; Level</dt><dd th:text="${sheet.derivedValues().classAndLevel()}">Fighter 5</dd></div>
@@ -51,12 +59,12 @@
                 </dl>
             </div>
 
-            <div class="detail-section" id="sheet-abilities">
+            <div class="detail-section" data-sheet-section id="sheet-abilities">
                 <h2>Ability Scores</h2>
                 <div th:replace="~{sheet/_ability-scores :: abilityScores(sheet=${sheet}, campaignId=${campaign.id}, memberId=${member.id})}"></div>
             </div>
 
-            <div class="detail-section" id="sheet-combat">
+            <div class="detail-section" data-sheet-section id="sheet-combat">
                 <h2>Combat</h2>
                 <div th:replace="~{sheet/_derived-stats :: derivedStats(sheet=${sheet})}"></div>
                 <dl class="stat-grid" style="margin-top: var(--space-sm)">
@@ -66,12 +74,12 @@
                 </dl>
             </div>
 
-            <div class="detail-section" id="sheet-live">
+            <div class="detail-section" data-sheet-section id="sheet-live">
                 <h2>Live State</h2>
                 <div th:replace="~{sheet/_live-state :: liveState(campaignId=${campaign.id}, member=${member})}"></div>
             </div>
 
-            <div class="detail-section" id="sheet-saves">
+            <div class="detail-section" data-sheet-section id="sheet-saves">
                 <h2>Saving Throws</h2>
                 <dl class="stat-grid">
                     <div><dt>STR</dt><dd><span th:text="'+' + ${sheet.derivedValues().saveStr()}">+7</span> <button class="roll-btn" th:attr="data-roll='d20+${sheet.derivedValues().saveStr()}'" type="button" title="STR save">d20</button></dd></div>
@@ -83,7 +91,7 @@
                 </dl>
             </div>
 
-            <div class="detail-section" id="sheet-skills">
+            <div class="detail-section" data-sheet-section id="sheet-skills">
                 <h2>Skills</h2>
                 <div class="sheet-skill-list">
                     <div class="sheet-skill" th:each="entry : ${sheet.derivedValues().skillBonuses()}">
@@ -94,7 +102,7 @@
                 </div>
             </div>
 
-            <div class="detail-section" id="sheet-passives">
+            <div class="detail-section" data-sheet-section id="sheet-passives">
                 <h2>Passive Scores</h2>
                 <dl class="stat-grid">
                     <div><dt>Perception</dt><dd th:text="${sheet.derivedValues().passivePerception()}">14</dd></div>
@@ -103,7 +111,7 @@
                 </dl>
             </div>
 
-            <div class="detail-section" id="sheet-spellcasting" th:if="${!sheet.derivedValues().classSpellcastingAbilities().isEmpty()}">
+            <div class="detail-section" data-sheet-section id="sheet-spellcasting" th:if="${!sheet.derivedValues().classSpellcastingAbilities().isEmpty()}">
                 <h2>Spellcasting</h2>
                 <dl class="stat-grid">
                     <div><dt>Spell Save DC</dt>
@@ -116,27 +124,27 @@
                 </div>
             </div>
 
-            <div class="detail-section" id="sheet-attacks">
+            <div class="detail-section" data-sheet-section id="sheet-attacks">
                 <h2>Attacks</h2>
                 <div th:replace="~{sheet/_attacks :: attacks(sheet=${sheet}, campaignId=${campaign.id}, memberId=${member.id})}"></div>
             </div>
 
-            <div class="detail-section" id="sheet-features">
+            <div class="detail-section" data-sheet-section id="sheet-features">
                 <h2>Features &amp; Actions</h2>
                 <div th:replace="~{sheet/_features :: features(sheet=${sheet}, campaignId=${campaign.id}, memberId=${member.id})}"></div>
             </div>
 
-            <div class="detail-section" id="sheet-spells">
+            <div class="detail-section" data-sheet-section id="sheet-spells">
                 <h2>Spells</h2>
                 <div th:replace="~{sheet/_spell-list :: spellList(sheet=${sheet}, campaignId=${campaignId}, memberId=${member.id})}"></div>
             </div>
 
-            <div class="detail-section" id="sheet-resources">
+            <div class="detail-section" data-sheet-section id="sheet-resources">
                 <h2>Resources</h2>
                 <div th:replace="~{sheet/_resources :: resources(sheet=${sheet})}"></div>
             </div>
 
-            <div class="detail-section">
+            <div class="detail-section" data-sheet-section>
                 <h2>Actions</h2>
                 <div class="form-actions" style="flex-wrap: wrap;">
                     <button type="button" class="btn"
@@ -153,11 +161,11 @@
                             hx-disabled-elt="this">
                         Long Rest
                     </button>
-                    <button class="btn" onclick="document.getElementById('level-up-dialog').showModal()">Level Up</button>
+                    <button class="btn" onclick="window.dmOverlay.open(document.getElementById('level-up-dialog'))">Level Up</button>
                 </div>
             </div>
 
-            <div class="detail-section" id="sheet-overrides">
+            <div class="detail-section" data-sheet-section id="sheet-overrides">
                 <h2>Overrides</h2>
                 <div id="overrides-editor">
                     <table class="override-table">
@@ -199,7 +207,7 @@
                 </div>
             </div>
 
-            <div class="detail-section" id="sheet-proficiencies">
+            <div class="detail-section" data-sheet-section id="sheet-proficiencies">
                 <h2>Proficiencies</h2>
                 <div class="proficiency-editor">
                     <div class="prof-group">

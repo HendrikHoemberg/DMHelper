@@ -55,7 +55,7 @@
                 <span th:if="${pm.classAndLevel != null and !pm.classAndLevel.isBlank()}"
                       th:text="${pm.classAndLevel}"></span>
             </div>
-            <dl class="pm-stats stat-grid">
+            <dl class="pm-stats stat-grid u-num">
                 <div><dt>AC</dt><dd th:text="${pm.ac}">16</dd></div>
                 <div><dt>HP</dt><dd th:text="${pm.maxHp}">38</dd></div>
                 <div><dt>Init</dt><dd th:text="'+' + ${pm.initiativeBonus}">+4</dd></div>
