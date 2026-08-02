@@ -1,8 +1,8 @@
 package dev.hendrikhoemberg.dmhelper.gate;
 
 import com.microsoft.playwright.*;
-import com.microsoft.playwright.options.LoadState;
 import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
+import dev.hendrikhoemberg.dmhelper.support.PageReady;
 import dev.hendrikhoemberg.dmhelper.support.ReleaseRehearsalFixture;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,8 +65,7 @@ class OperationalPreparationRenderGateTest {
     }
 
     private void open(String path) {
-        page.navigate("http://localhost:" + port + path);
-        page.waitForLoadState(LoadState.NETWORKIDLE);
+        PageReady.open(page, "http://localhost:" + port, path);
     }
 
     @Test
@@ -80,6 +79,30 @@ class OperationalPreparationRenderGateTest {
                         .map(el => el.getBoundingClientRect().width))
                 """)).doubleValue();
         assertThat(narrowest).as("narrowest setup control").isGreaterThanOrEqualTo(64.0);
+    }
+
+    /**
+     * The width floor above is necessary but not sufficient, and on its own it was actively
+     * misleading: .setup-field carried min-width: 0, so the label wrapper collapsed under flex
+     * pressure while the input inside kept its 16rem floor. Every control still measured well
+     * over 64px — and the quantity box was painted on top of the search box. Measure whether a
+     * control fits the field it belongs to, not just how wide it claims to be.
+     */
+    @Test
+    void encounterSetupControlsStayInsideTheirOwnFieldAtTheMinimumViewport() {
+        page.setViewportSize(1280, 720);
+        open("/campaigns/" + seeded.campaignId() + "/encounters/" + seeded.branchedEncounterId() + "/setup");
+        Object overflowing = page.evaluate("""
+                () => [...document.querySelectorAll('.setup-field')]
+                        .filter(field => field.getClientRects().length > 0)
+                        .flatMap(field => [...field.querySelectorAll('input, select')]
+                            .filter(el => el.getBoundingClientRect().right
+                                          > field.getBoundingClientRect().right + 1)
+                            .map(el => (el.name || el.className) + ' in ' + field.className))
+                """);
+        assertThat((java.util.List<?>) overflowing)
+                .as("a setup control wider than the field it sits in overlaps its neighbour")
+                .isEmpty();
     }
 
     @Test

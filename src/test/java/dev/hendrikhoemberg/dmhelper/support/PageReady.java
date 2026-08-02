@@ -24,9 +24,14 @@ public final class PageReady {
     private PageReady() {
     }
 
-    /** True when the server's response is not yet the final DOM for this route. */
+    /**
+     * True when the server's response is not yet the final DOM for this route. The library's
+     * per-category routes are {@code /library?tab=…}, so the query form has to match too —
+     * matching only the bare path would hand the reference gate a page whose result panes are
+     * still empty, and its card assertions would measure nothing.
+     */
     public static boolean settlesAfterLoad(String path) {
-        return path.equals("/library") || path.endsWith("/session");
+        return path.equals("/library") || path.startsWith("/library?") || path.endsWith("/session");
     }
 
     /** Navigate to {@code base + path} and wait for whichever state that route actually needs. */
