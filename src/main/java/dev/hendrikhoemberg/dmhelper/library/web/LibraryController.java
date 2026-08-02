@@ -62,10 +62,27 @@ public class LibraryController {
                        Model model) {
         Set<String> tabs = Set.of("monsters", "spells", "conditions", "rules", "equipment",
                 "magic-items", "classes", "species", "backgrounds", "feats");
-        model.addAttribute("initialTab", tabs.contains(tab) ? tab : "monsters");
+        String initialTab = tabs.contains(tab) ? tab : "monsters";
+        model.addAttribute("initialTab", initialTab);
         model.addAttribute("initialSearch", search);
+        model.addAttribute("activeCategory", CATEGORY_NAMES.get(initialTab)[0]);
+        model.addAttribute("activeCategorySingular", CATEGORY_NAMES.get(initialTab)[1]);
+        model.addAttribute("activeCategoryNewHref", CATEGORY_NAMES.get(initialTab)[2]);
         return "library/list";
     }
+
+    /** Display names, creation-action names, and creation routes for the ten compendium categories. */
+    private static final Map<String, String[]> CATEGORY_NAMES = Map.of(
+            "monsters", new String[]{"Monsters", "Monster", "/library/statblocks/new"},
+            "spells", new String[]{"Spells", "Spell", "/library/spells/new"},
+            "conditions", new String[]{"Conditions", "Condition", "/library/conditions/new"},
+            "rules", new String[]{"Rules", "Rule", "/library/rules/new"},
+            "equipment", new String[]{"Equipment", "Equipment", "/library/equipment/new"},
+            "magic-items", new String[]{"Magic Items", "Magic Item", "/library/magic-items/new"},
+            "classes", new String[]{"Classes", "Class", "/library/classes/new"},
+            "species", new String[]{"Species", "Species", "/library/species/new"},
+            "backgrounds", new String[]{"Backgrounds", "Background", "/library/backgrounds/new"},
+            "feats", new String[]{"Feats", "Feat", "/library/feats/new"});
 
     @GetMapping("/statblocks")
     public String search(@RequestParam(required = false) String search,

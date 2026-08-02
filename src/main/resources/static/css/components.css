@@ -509,6 +509,36 @@
 .badge-srd { background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-border-strong); font-size: var(--text-sm); padding: 1px 6px; border-radius: 4px; }
 .badge-custom { background: transparent; color: var(--color-success); border: 1px solid var(--color-success); font-size: var(--text-sm); padding: 1px 6px; border-radius: 4px; }
 
+/* Reference workspace category navigator (spec 11.9): a stable local tab strip whose
+   selection is a gold indicator plus high-contrast text, never a gold-filled pill. */
+.category-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  margin-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.category-nav__tab {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.category-nav__tab:hover { color: var(--text-primary); }
+.category-nav__tab:focus-visible {
+  outline: 2px solid var(--action-primary);
+  outline-offset: 2px;
+}
+.category-nav__tab--active {
+  color: var(--text-primary);
+  border-bottom-color: var(--action-primary);
+}
+
 
 /* Treasury assignment card */
 .assignment-card {

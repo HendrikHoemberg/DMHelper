@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/_shell :: page(
-          pageTitle='Monster Library',
+          pageTitle=${activeCategorySingular + ' Library'},
           archetype='index',
           surface=null,
           header=~{::#page-header},
@@ -10,39 +10,60 @@
 <body>
 <div id="page-header" class="page-header-slot">
     <th:block th:replace="~{fragments/_page-header :: page-header(
-        title='Monster Library',
+        title=${activeCategory},
         summary='The compendium',
         breadcrumb=~{},
         primary=~{::#primaryAction},
         secondary=~{})}"></th:block>
 </div>
-<a id="primaryAction" th:href="@{/library/statblocks/new}" class="btn btn-primary">+ New Homebrew</a>
+<a id="primaryAction" th:href="${activeCategoryNewHref}" class="btn btn-primary"
+   th:text="'+ New ' + ${activeCategorySingular}">+ New Monster</a>
 
 <div id="page-content" class="page-content">
 <div id="library-root"
      th:attr="data-initial-tab=${initialTab},data-initial-search=${initialSearch}">
-    <div class="u-flex--md u-flex-wrap">
-        <button class="form-tab active" id="tab-monsters"
-                onclick="switchCompendiumTab('monsters')">Monsters</button>
-        <button class="form-tab" id="tab-spells"
-                onclick="switchCompendiumTab('spells')">Spells</button>
-        <button class="form-tab" id="tab-conditions"
-                onclick="switchCompendiumTab('conditions')">Conditions</button>
-        <button class="form-tab" id="tab-rules"
-                onclick="switchCompendiumTab('rules')">Rules</button>
-        <button class="form-tab" id="tab-equipment"
-                onclick="switchCompendiumTab('equipment')">Equipment</button>
-        <button class="form-tab" id="tab-magic-items"
-                onclick="switchCompendiumTab('magic-items')">Magic Items</button>
-        <button class="form-tab" id="tab-classes"
-                onclick="switchCompendiumTab('classes')">Classes</button>
-        <button class="form-tab" id="tab-species"
-                onclick="switchCompendiumTab('species')">Species</button>
-        <button class="form-tab" id="tab-backgrounds"
-                onclick="switchCompendiumTab('backgrounds')">Backgrounds</button>
-        <button class="form-tab" id="tab-feats"
-                onclick="switchCompendiumTab('feats')">Feats</button>
-    </div>
+    <nav class="category-nav" aria-label="Library categories">
+        <a class="category-nav__tab"
+           th:classappend="${initialTab == 'monsters'} ? 'category-nav__tab--active'"
+           th:href="@{/library(tab='monsters')}" data-library-category="Monsters"
+           th:attr="aria-current=${initialTab == 'monsters'} ? 'page' : null">Monsters</a>
+        <a class="category-nav__tab"
+           th:classappend="${initialTab == 'spells'} ? 'category-nav__tab--active'"
+           th:href="@{/library(tab='spells')}" data-library-category="Spells"
+           th:attr="aria-current=${initialTab == 'spells'} ? 'page' : null">Spells</a>
+        <a class="category-nav__tab"
+           th:classappend="${initialTab == 'conditions'} ? 'category-nav__tab--active'"
+           th:href="@{/library(tab='conditions')}" data-library-category="Conditions"
+           th:attr="aria-current=${initialTab == 'conditions'} ? 'page' : null">Conditions</a>
+        <a class="category-nav__tab"
+           th:classappend="${initialTab == 'rules'} ? 'category-nav__tab--active'"
+           th:href="@{/library(tab='rules')}" data-library-category="Rules"
+           th:attr="aria-current=${initialTab == 'rules'} ? 'page' : null">Rules</a>
+        <a class="category-nav__tab"
+           th:classappend="${initialTab == 'equipment'} ? 'category-nav__tab--active'"
+           th:href="@{/library(tab='equipment')}" data-library-category="Equipment"
+           th:attr="aria-current=${initialTab == 'equipment'} ? 'page' : null">Equipment</a>
+        <a class="category-nav__tab"
+           th:classappend="${initialTab == 'magic-items'} ? 'category-nav__tab--active'"
+           th:href="@{/library(tab='magic-items')}" data-library-category="Magic Items"
+           th:attr="aria-current=${initialTab == 'magic-items'} ? 'page' : null">Magic Items</a>
+        <a class="category-nav__tab"
+           th:classappend="${initialTab == 'classes'} ? 'category-nav__tab--active'"
+           th:href="@{/library(tab='classes')}" data-library-category="Classes"
+           th:attr="aria-current=${initialTab == 'classes'} ? 'page' : null">Classes</a>
+        <a class="category-nav__tab"
+           th:classappend="${initialTab == 'species'} ? 'category-nav__tab--active'"
+           th:href="@{/library(tab='species')}" data-library-category="Species"
+           th:attr="aria-current=${initialTab == 'species'} ? 'page' : null">Species</a>
+        <a class="category-nav__tab"
+           th:classappend="${initialTab == 'backgrounds'} ? 'category-nav__tab--active'"
+           th:href="@{/library(tab='backgrounds')}" data-library-category="Backgrounds"
+           th:attr="aria-current=${initialTab == 'backgrounds'} ? 'page' : null">Backgrounds</a>
+        <a class="category-nav__tab"
+           th:classappend="${initialTab == 'feats'} ? 'category-nav__tab--active'"
+           th:href="@{/library(tab='feats')}" data-library-category="Feats"
+           th:attr="aria-current=${initialTab == 'feats'} ? 'page' : null">Feats</a>
+    </nav>
 
     <div id="section-monsters" class="compendium-section">
         <div class="search-bar">
@@ -197,9 +218,6 @@
                 </select>
             </div>
         </div>
-        <div class="u-flex u-mb-md">
-            <a th:href="@{/library/spells/new}" class="btn btn-sm">+ New Spell</a>
-        </div>
         <div id="spell-results" hx-get="/library/spells" hx-trigger="load" hx-swap="innerHTML"
              hx-indicator="#spell-results-loading">
         </div>
@@ -232,9 +250,6 @@
                 </select>
             </div>
         </div>
-        <div class="u-flex u-mb-md">
-            <a th:href="@{/library/conditions/new}" class="btn btn-sm">+ New Condition</a>
-        </div>
         <div id="condition-results" hx-get="/library/conditions" hx-trigger="load" hx-swap="innerHTML"
              hx-indicator="#condition-results-loading">
         </div>
@@ -266,9 +281,6 @@
                     <option value="CUSTOM">Custom</option>
                 </select>
             </div>
-        </div>
-        <div class="u-flex u-mb-md">
-            <a th:href="@{/library/rules/new}" class="btn btn-sm">+ New Rule</a>
         </div>
         <div id="rule-results" hx-get="/library/rules" hx-trigger="load" hx-swap="innerHTML"
              hx-indicator="#rule-results-loading">
@@ -315,9 +327,6 @@
                     <option value="CUSTOM">Custom</option>
                 </select>
             </div>
-        </div>
-        <div class="u-flex u-mb-md">
-            <a th:href="@{/library/equipment/new}" class="btn btn-sm">+ New Equipment</a>
         </div>
         <div id="equipment-results" hx-get="/library/equipment" hx-trigger="load" hx-swap="innerHTML"
              hx-indicator="#equipment-results-loading">
@@ -386,9 +395,6 @@
                 </select>
             </div>
         </div>
-        <div class="u-flex u-mb-md">
-            <a th:href="@{/library/magic-items/new}" class="btn btn-sm">+ New Magic Item</a>
-        </div>
         <div id="magic-item-results" hx-get="/library/magic-items" hx-trigger="load" hx-swap="innerHTML"
              hx-indicator="#magic-item-results-loading">
         </div>
@@ -420,9 +426,6 @@
                     <option value="CUSTOM">Custom</option>
                 </select>
             </div>
-        </div>
-        <div class="u-flex u-mb-md">
-            <a th:href="@{/library/classes/new}" class="btn btn-sm">+ New Class</a>
         </div>
         <div id="class-results" hx-get="/library/classes" hx-trigger="load" hx-swap="innerHTML"
              hx-indicator="#class-results-loading">
@@ -456,9 +459,6 @@
                 </select>
             </div>
         </div>
-        <div class="u-flex u-mb-md">
-            <a th:href="@{/library/species/new}" class="btn btn-sm">+ New Species</a>
-        </div>
         <div id="species-results" hx-get="/library/species" hx-trigger="load" hx-swap="innerHTML"
              hx-indicator="#species-results-loading">
         </div>
@@ -490,9 +490,6 @@
                     <option value="CUSTOM">Custom</option>
                 </select>
             </div>
-        </div>
-        <div class="u-flex u-mb-md">
-            <a th:href="@{/library/backgrounds/new}" class="btn btn-sm">+ New Background</a>
         </div>
         <div id="background-results" hx-get="/library/backgrounds" hx-trigger="load" hx-swap="innerHTML"
              hx-indicator="#background-results-loading">
@@ -540,9 +537,6 @@
                 </select>
             </div>
         </div>
-        <div class="u-flex u-mb-md">
-            <a th:href="@{/library/feats/new}" class="btn btn-sm">+ New Feat</a>
-        </div>
         <div id="feat-results" hx-get="/library/feats" hx-trigger="load" hx-swap="innerHTML"
              hx-indicator="#feat-results-loading">
         </div>
@@ -556,16 +550,8 @@
     <div id="statblock-sheet-slot"></div>
 
     <script>
-        function switchFormTab(event, tabId) {
-            document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            document.querySelectorAll('.form-tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-        }
         function switchCompendiumTab(tab) {
-            document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.compendium-section').forEach(s => s.classList.add('hidden'));
-            document.getElementById('tab-' + tab)?.classList.add('active');
             document.getElementById('section-' + tab)?.classList.remove('hidden');
         }
 
