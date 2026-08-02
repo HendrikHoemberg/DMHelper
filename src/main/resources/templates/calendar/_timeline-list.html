@@ -16,9 +16,11 @@
         </div>
         <div id="event-form-area"></div>
 
-        <th:block th:if="${#lists.isEmpty(events)}">
+        <!-- Gated on upcomingEvents, not events: a timeline whose entries are all in the past
+             was rendering a table of column headers over an empty body. -->
+        <th:block th:if="${#lists.isEmpty(upcomingEvents)}">
             <th:block th:replace="~{common/_empty-state :: empty-state-with-cta(
-                message='No events on the timeline',
+                message='No upcoming events',
                 description='Log festivals, deadlines, and things that happen while the party travels.',
                 icon='calendar', cta=~{common/_form-cta :: swap-cta(
                     actionText='Add event',
@@ -26,7 +28,7 @@
                     target='#event-form-area')})}"></th:block>
         </th:block>
 
-        <table th:unless="${#lists.isEmpty(events)}" class="data-table calendar-events-table">
+        <table th:unless="${#lists.isEmpty(upcomingEvents)}" class="data-table calendar-events-table">
             <thead>
                 <tr>
                     <th scope="col">Date</th>
