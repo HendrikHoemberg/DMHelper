@@ -4,6 +4,34 @@
     <h3>Campaign readiness</h3>
     <span class="readiness-badge" th:text="${readiness.label()}">Ready</span>
   </header>
+
+  <!-- Spec 11.2 asks Campaign Home for a compact readiness summary. This is that summary:
+       one labelled badge per blocking category plus the accepted/advisory counts, so the
+       state is legible without reading the lists underneath. -->
+  <div class="readiness-summary" data-readiness-summary>
+    <th:block th:if="${readiness.sessionReady()}">
+      <span th:replace="~{fragments/_badge :: badge(
+          tone='success', icon='check', label='Session ready')}"></span>
+    </th:block>
+    <th:block th:each="group : ${readiness.blockerGroups()}">
+      <span th:replace="~{fragments/_badge :: badge(
+          tone='warning',
+          icon='alert-triangle',
+          label=|${group.key.label()} · ${readiness.blockerCountLabel(group.value.size())}|)}"></span>
+    </th:block>
+    <th:block th:with="accepted=${readiness.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).ACCEPTED)}">
+      <th:block th:if="${!accepted.isEmpty()}">
+        <span th:replace="~{fragments/_badge :: badge(
+            tone='neutral', icon='check', label=|${accepted.size()} accepted|)}"></span>
+      </th:block>
+    </th:block>
+    <th:block th:with="advisories=${readiness.byState(T(dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessState).RESOLVED)}">
+      <th:block th:if="${!advisories.isEmpty()}">
+        <span th:replace="~{fragments/_badge :: badge(
+            tone='info', icon='info', label=|${advisories.size()} advisories|)}"></span>
+      </th:block>
+    </th:block>
+  </div>
   <p th:unless="${readiness.sessionReady()}" class="readiness-panel__intro">
     Resolve these blockers, or explicitly choose to continue without the missing preparation.
   </p>

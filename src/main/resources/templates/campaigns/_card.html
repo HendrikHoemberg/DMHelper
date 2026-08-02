@@ -10,8 +10,11 @@
         </svg>
         <h3 th:text="${campaign.name}">Campaign Name</h3>
         <div class="book-meta" th:text="${campaign.authorLine}">4 heroes · opened 8 July</div>
+        <!-- Session progress, not readiness: the warning tone means "unresolved, caution"
+             (spec 6.4), and a campaign being underway is neither. Card-level readiness needs
+             a per-campaign readiness roll-up on the index model and is still outstanding. -->
         <th:block th:replace="~{fragments/_badge :: badge(
-            tone=${campaign.currentSceneId != null ? 'warning' : 'neutral'},
+            tone=${campaign.currentSceneId != null ? 'info' : 'neutral'},
             icon=${campaign.currentSceneId != null ? 'play' : 'flag'},
             label=${campaign.currentSceneId != null ? 'In progress' : 'Unstarted'})}"></th:block>
     </a>

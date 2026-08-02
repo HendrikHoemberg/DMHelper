@@ -21,6 +21,16 @@
         onclick="Alpine.$data(document.querySelector('[x-data=\'campaignImport\']')).openDialog()">
     Import campaign
 </button>
+<!-- The empty state's two creation paths (spec 11.1). This lives outside #page-content on
+     purpose: inside it, the whole slot renders and the CTA showed on every populated index
+     too, duplicating both header actions. -->
+<div id="createPaths" class="u-flex u-gap-xs">
+    <a th:href="@{/campaigns/new}" class="btn">Create a campaign</a>
+    <button class="btn btn-ghost" type="button"
+            onclick="Alpine.$data(document.querySelector('[x-data=\'campaignImport\']')).openDialog()">
+        Import a package
+    </button>
+</div>
 
 <div id="page-content" class="page-content">
     <div class="bookshelf" id="campaign-grid">
@@ -36,13 +46,6 @@
                 <th:block th:replace="~{campaigns/_card :: card(campaign=${campaign}, sigil=${campaignSigils[campaign.id]})}"></th:block>
             </th:block>
         </div>
-    </div>
-    <div id="createPaths" class="u-flex u-gap-xs">
-        <a th:href="@{/campaigns/new}" class="btn">Create a campaign</a>
-        <button class="btn btn-ghost" type="button"
-                onclick="Alpine.$data(document.querySelector('[x-data=\'campaignImport\']')).openDialog()">
-            Import a package
-        </button>
     </div>
 </div>
 <th:block th:replace="~{campaigns/_import-dialog :: import-dialog}"></th:block>

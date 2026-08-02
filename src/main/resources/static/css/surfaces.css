@@ -3,12 +3,16 @@
    across two lines instead of being forced into decorative capitals. */
 .bookshelf { background: var(--surface-workspace); }
 .book-cover { box-shadow: var(--highlight-candle); }
+/* overflow: hidden is what makes -webkit-line-clamp clamp. Without it the clamp is inert,
+   and because .book-cover is a fixed aspect-ratio box, a three-line campaign name did not
+   push the meta line down — it painted over it. */
 .book-cover h3 {
   text-transform: none;
   overflow-wrap: anywhere;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .book-cover .book-meta { line-height: 1.4; }
 .book-cover .badge { margin-top: var(--space-sm); }
@@ -16,6 +20,12 @@
 /* ── Campaign Home (spec 11.2) ──
    The operational overview reads in the approved order: current play, one start action,
    readiness, party, preparation, plan, admin. */
+/* Campaign Home is the hierarchy reference standard other pages are reviewed against, so
+   its seven sections need to read as seven sections. The operational archetype supplies no
+   flow spacing of its own, and .home-section-title only has a margin below it, so without
+   this every section ran straight into the one above (spec 5.4). */
+[data-home-section] + [data-home-section] { margin-top: var(--space-xl); }
+
 .home-section-title {
   font-size: var(--text-base);
   font-weight: 600;
@@ -451,6 +461,16 @@
 }
 
 .readiness-panel__head h3 { margin: 0; font-size: var(--text-base); font-weight: 600; }
+
+/* The compact summary spec 11.2 asks Campaign Home for: a row of labelled badges. */
+.readiness-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-sm);
+}
+
+.readiness-summary:empty { display: none; }
 
 .readiness-badge {
     font-size: var(--text-sm);

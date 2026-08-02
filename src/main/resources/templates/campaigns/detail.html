@@ -87,7 +87,8 @@
             <a class="scale-tile" data-scale="scenes" th:if="${scale.scenes > 0}"
                th:href="@{/campaigns/{id}/adventures(id=${campaign.id})}">
                 <span class="scale-tile__value u-num" th:text="${scale.scenes}">0</span>
-                <span class="scale-tile__label" th:text="|Scenes in ${scale.chapters} chapters|">Scenes</span>
+                <span class="scale-tile__label"
+                      th:text="|Scenes in ${scale.chapters} ${scale.chapters == 1 ? 'chapter' : 'chapters'}|">Scenes</span>
             </a>
             <a class="scale-tile" data-scale="quests" th:if="${scale.quests > 0}"
                th:href="@{/campaigns/{id}/quests(id=${campaign.id})}">
