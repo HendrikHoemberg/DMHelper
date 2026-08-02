@@ -1684,7 +1684,7 @@
 
       if (this.depot && this.depot.contains(shell)) return false;
 
-      const panel = shell.closest('[role="tabpanel"]');
+      const panel = shell.closest('[role="tabpanel"], [role="region"]');
       const zone = shell.closest('[data-cockpit-zone]');
       if (!panel || !zone) return false;
       if (panel.hidden) return false;
