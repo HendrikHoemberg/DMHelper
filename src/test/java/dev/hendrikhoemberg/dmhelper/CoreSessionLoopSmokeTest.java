@@ -149,7 +149,9 @@ class CoreSessionLoopSmokeTest {
     /** Opens the compact topbar "More" menu so overflow pickers become actionable. */
     private void openCockpitMoreMenu() {
         Locator details = dmPage.locator("details.cockpit-topbar__overflow");
-        details.locator("summary").click();
+        if (!Boolean.TRUE.equals(details.evaluate("el => el.open"))) {
+            details.locator("summary").click();
+        }
         details.locator(".cockpit-topbar__overflow-panel").waitFor();
     }
 
@@ -557,13 +559,13 @@ class CoreSessionLoopSmokeTest {
         mapPicker.selectOption(mapId.toString());
         dmPage.waitForFunction("([id]) => window.battleMap.mapId === id", List.of(mapId.toString()));
 
-        dmPage.locator(".cockpit-topbar > button", new Page.LocatorOptions().setHasText("Search")).click();
+        dmPage.locator("[data-cockpit-commandbar] [data-command-slot='search'] button").click();
         dmPage.locator(".command-palette-overlay").waitFor();
         dmPage.keyboard().press("Escape");
         dmPage.locator(".command-palette-overlay").waitFor(
                 new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
 
-        dmPage.locator(".cockpit-topbar > button", new Page.LocatorOptions().setHasText("Dice")).click();
+        dmPage.locator("[data-cockpit-commandbar] [data-command-slot='dice'] button").click();
         dmPage.locator(".dice-panel").waitFor();
         dmPage.keyboard().press("Escape");
         dmPage.locator(".dice-panel").waitFor(
@@ -1872,6 +1874,7 @@ class CoreSessionLoopSmokeTest {
                 .evaluate("el => el.isConnected")).isEqualTo(true);
 
         // A collapsed utility zone remains recoverable with one explicit edit-mode action.
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitLayoutModeButton").click();
         Locator bottomToggle = dmPage.locator("[data-bottom-utility-toggle]");
         assertThat(bottomToggle.isVisible()).isTrue();
@@ -1883,6 +1886,7 @@ class CoreSessionLoopSmokeTest {
         bottomToggle.click();
         assertThat(dmPage.locator("[data-cockpit-zone='BOTTOM_UTILITY']")
                 .getAttribute("data-collapsed")).isEqualTo("true");
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitLayoutModeButton").click();
         if (dmPage.locator("#cockpitLayoutExitDialog").isVisible()) {
             dmPage.locator("[data-layout-exit='discard']").click();
@@ -1968,6 +1972,7 @@ class CoreSessionLoopSmokeTest {
         selectCockpitPreset("builtin:combat");
         dmPage.waitForFunction("document.querySelector('[data-cockpit-zone=\"RIGHT_SUPPORT\"] [data-module-key=\"encounter\"]')");
 
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitLayoutModeButton").click();
         assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
                 .isEqualTo("edit");
@@ -2025,6 +2030,7 @@ class CoreSessionLoopSmokeTest {
         dmPage.evaluate("window.cockpitLayout.selectTab('BOTTOM_UTILITY', 'audio')");
         clickModuleChrome("audio", "remove");
         assertThat(dmPage.locator("[data-cockpit-depot] [data-module-key='audio']").count()).isEqualTo(1);
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitAddModuleButton").click();
         // One entry per allowed zone (Left / Right / Bottom for Audio).
         assertThat(dmPage.locator("#cockpitAddModuleDialog [data-add-module='audio']").count())
@@ -2123,6 +2129,7 @@ class CoreSessionLoopSmokeTest {
         assertThat(((Number) focusMutateMap.get("shells")).intValue()).isEqualTo(1);
 
         // Exit once → Discard restores original combat preset placement.
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitLayoutModeButton").click();
         dmPage.locator("[data-layout-exit='discard']").click();
         assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
@@ -2759,6 +2766,7 @@ class CoreSessionLoopSmokeTest {
                 """)).as("Retry button is keyboard reachable").isEqualTo(true);
 
         // Separators report updated aria-valuenow in edit mode.
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitLayoutModeButton").click();
         assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
                 .isEqualTo("edit");
@@ -2783,6 +2791,7 @@ class CoreSessionLoopSmokeTest {
                 .isEqualTo(true);
 
         // Add dialog is a modal; focus stays inside while open; Escape closes it.
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitAddModuleButton").click();
         assertThat(dmPage.locator("#cockpitAddModuleDialog").evaluate("el => el.open"))
                 .isEqualTo(true);
@@ -2805,6 +2814,7 @@ class CoreSessionLoopSmokeTest {
                 .isEqualTo(false);
 
         // Exit edit cleanly (dirty → discard).
+        openCockpitMoreMenu();
         dmPage.locator("#cockpitLayoutModeButton").click();
         if (dmPage.locator("#cockpitLayoutExitDialog").isVisible()) {
             dmPage.locator("[data-layout-exit='discard']").click();

@@ -82,6 +82,15 @@ class ViewportAccessibilityGateTest {
         page.waitForFunction("window.cockpitLayout?.mounted === true");
     }
 
+    /** Opens the compact topbar "More" menu so overflow pickers become actionable. */
+    private void openCockpitMoreMenu() {
+        Locator details = page.locator("details.cockpit-topbar__overflow");
+        if (!Boolean.TRUE.equals(details.evaluate("el => el.open"))) {
+            details.locator("summary").click();
+        }
+        details.locator(".cockpit-topbar__overflow-panel").waitFor();
+    }
+
     private Locator visibleFirst(String selector) {
         Locator candidates = page.locator(selector);
         for (int index = 0; index < candidates.count(); index++) {
@@ -171,6 +180,7 @@ class ViewportAccessibilityGateTest {
     void theCommandBarStaysFullyReachable() {
         for (int[] viewport : VIEWPORTS) {
             openCockpit(viewport[0], viewport[1]);
+            openCockpitMoreMenu();
 
             for (String selector : List.of("#cockpitLayoutModeButton",
                     "#runtimeStatus", "[data-display-title]", "button[x-ref='sessionButton']")) {
@@ -207,6 +217,7 @@ class ViewportAccessibilityGateTest {
     void keyboardUsersCanDriveTheWorkspace() {
         for (int[] viewport : VIEWPORTS) {
             openCockpit(viewport[0], viewport[1]);
+            openCockpitMoreMenu();
 
         page.locator("#cockpitLayoutModeButton").focus();
         page.keyboard().press("Enter");
@@ -231,6 +242,7 @@ class ViewportAccessibilityGateTest {
                 .isNotNull();
         page.keyboard().press("ArrowLeft");
 
+        openCockpitMoreMenu();
         page.locator("#cockpitLayoutModeButton").focus();
         page.keyboard().press("Enter");
         if (page.locator("#cockpitLayoutExitDialog").isVisible()) {
