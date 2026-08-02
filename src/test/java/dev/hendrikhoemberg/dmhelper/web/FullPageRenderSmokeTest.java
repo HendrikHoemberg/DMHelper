@@ -84,7 +84,12 @@ class FullPageRenderSmokeTest {
                 "/library/hazards/" + seeded.hazardId(),
                 p + "/party",
                 p + "/encounters/" + prepared.encounterId(),
-                p + "/encounters/" + prepared.encounterId() + "/setup"
+                p + "/encounters/" + prepared.encounterId() + "/setup",
+                // The map editor ships today and Part 4 Stage 6 restructures it into four
+                // regions — exactly the shape that invites a slot to render its own source
+                // markup — so the duplicate-id guard covers it before that work, not after.
+                // /maps/{id}/play needs no entry: it 302s to /session, already swept above.
+                p + "/maps/" + prepared.mapId() + "/edit"
         );
     }
 
@@ -112,8 +117,26 @@ class FullPageRenderSmokeTest {
      * slot's own content: every Part 3 detail page shipped its contextual rail two and three
      * times over, through three stage gates and 2500 green tests, because nothing looked.
      */
+    /**
+     * Routes that deliberately answer with a fragment rather than a document, so the
+     * end-with-{@code </html>} assertion does not apply to them. The presentation overlay is
+     * Part 4 Task 47's surface: spec 11.11's requirements land on a fragment overlaid on the
+     * DM page, not on a standalone player document.
+     */
+    List<String> fragmentRoutes() {
+        String c = "/campaigns/" + seeded.campaignId();
+        return List.of(
+                c + "/handouts/" + seeded.playerHandoutId() + "/present",
+                c + "/handouts/" + seeded.dmOnlyHandoutId() + "/present");
+    }
+
+    List<String> everyRenderedRoute() {
+        return java.util.stream.Stream.concat(pages().stream(), fragmentRoutes().stream())
+                .toList();
+    }
+
     @ParameterizedTest
-    @MethodSource("pages")
+    @MethodSource("everyRenderedRoute")
     void pageEmitsEachElementIdOnce(String path) throws Exception {
         var counts = new java.util.LinkedHashMap<String, Integer>();
         for (var element : org.jsoup.Jsoup.parse(get(path).body()).select("[id]")) {
