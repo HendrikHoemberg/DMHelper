@@ -357,7 +357,11 @@
                 <template x-for="(c, idx) in combatants" :key="c.id">
                     <div class="combatant-row"
                           :data-cid="c.id"
-                          :class="{ active: c.id === activeCombatantId, selected: c.id === selectedCombatantId, defeated: c.defeated, hidden: c.hidden, bloodied: c.bloodied }"
+                          :class="{ active: c.id === activeCombatantId,
+                                    'combatant-row--active': c.id === activeCombatantId,
+                                    selected: c.id === selectedCombatantId,
+                                    defeated: c.defeated, hidden: c.hidden,
+                                    bloodied: c.bloodied }"
                           x-show="!c.hidden && showsInOrder(c)"
                          @click="selectCombatant(c.id)">
                         <!-- Initiative badge -->
@@ -389,6 +393,23 @@
 
                         <!-- Meta row: HP bar, HP delta, conditions, concentration -->
                         <div class="combatant-row__meta">
+                            <!-- Runtime state is color + icon + label, never color alone (spec 12.5). -->
+                            <span x-show="c.defeated" data-combatant-state="defeated"
+                                  class="combatant-state combatant-state--defeated">
+                                <svg th:replace="~{common/_icon :: icon-sized(name='skull', size='14')}"></svg>
+                                <span>Defeated</span>
+                            </span>
+                            <span x-show="c.concentratingOn" data-combatant-state="concentrating"
+                                  class="combatant-state combatant-state--concentrating">
+                                <svg th:replace="~{common/_icon :: icon-sized(name='concentration', size='14')}"></svg>
+                                <span>Concentrating</span>
+                            </span>
+                            <span x-show="c.initiative == null" data-combatant-state="unresolved-initiative"
+                                  class="combatant-state combatant-state--unresolved-initiative">
+                                <svg th:replace="~{common/_icon :: icon-sized(name='clock', size='14')}"></svg>
+                                <span>No initiative</span>
+                            </span>
+
                             <!-- HP bar mini -- DM only -->
                             <div class="hp-mini">
                                 <div class="hp-mini-fill"
@@ -415,10 +436,6 @@
 <button class="btn btn-ghost tracker-small-button condition-add" style="padding: 0 2px; line-height: 1;"
         @click.stop="editConditionsFor(c.id)">＋</button>
                             </div>
-
-                            <!-- Concentration badge -->
-                            <span x-show="c.concentratingOn" class="conc-badge"
-                                  :title="c.concentratingOn">⏀</span>
                         </div>
                     </div>
                 </template>

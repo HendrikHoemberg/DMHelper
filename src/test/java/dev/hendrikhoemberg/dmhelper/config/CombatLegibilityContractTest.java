@@ -35,4 +35,39 @@ class CombatLegibilityContractTest {
         }
     }
 
+    @Test
+    void theActiveCombatantGetsSubstantialRowTreatment() {
+        var active = CssRules.of(CssRules.ALL_FILES).stream()
+                .filter(rule -> rule.selector().contains(".combatant-row--active"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(".combatant-row--active is not styled"));
+        long signals = java.util.stream.Stream
+                .of(active.value("background"), active.value("border-left"),
+                        active.value("box-shadow"), active.value("outline"))
+                .filter(java.util.Objects::nonNull)
+                .count();
+        assertThat(signals)
+                .as("active turn needs more than a thin colored border (spec 12.5)")
+                .isGreaterThanOrEqualTo(2);
+    }
+
+    @Test
+    void everyRuntimeStateCombinesColorWithSomethingElse() {
+        String tracker = CssRules.allTemplateMarkup();
+        for (String state : java.util.List.of("defeated", "concentrating", "unresolved-initiative")) {
+            assertThat(tracker)
+                    .as("state %s needs an icon or explicit label, not color alone", state)
+                    .contains("data-combatant-state=\"" + state + "\"");
+        }
+    }
+
+    @Test
+    void combatNumbersUseTabularFigures() {
+        var rules = CssRules.of(CssRules.ALL_FILES);
+        assertThat(rules).anySatisfy(rule -> {
+            assertThat(rule.selector()).containsAnyOf(".combatant-hp", ".combatant-row");
+            assertThat(rule.value("font-variant-numeric")).contains("tabular-nums");
+        });
+    }
+
 }
