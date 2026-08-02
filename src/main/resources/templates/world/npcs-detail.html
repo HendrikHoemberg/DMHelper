@@ -82,34 +82,37 @@
 
 <div id="page-rail" class="page-rail-slot">
     <th:block th:replace="~{fragments/_context-rail :: rail(body=~{::#railBody})}"></th:block>
-    <div id="railBody">
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Faction', body=~{::#npcFaction})}"></th:block>
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Location', body=~{::#npcLocation})}"></th:block>
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Tags', body=~{::#npcTags})}"></th:block>
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Source', body=~{::#npcSource})}"></th:block>
-    </div>
-    <div id="npcFaction">
-        <th:block th:if="${npc.faction != null}">
-            <a th:href="@{/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${npc.faction.id})}"
-               th:text="${npc.faction.name}">Faction</a>
-        </th:block>
-        <p th:unless="${npc.faction != null}" class="u-text-sm text-muted">No faction.</p>
-    </div>
-    <div id="npcLocation">
-        <th:block th:if="${npc.location != null}">
-            <a th:href="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${npc.location.id})}"
-               th:text="${npc.location.name}">Location</a>
-        </th:block>
-        <p th:unless="${npc.location != null}" class="u-text-sm text-muted">No location.</p>
-    </div>
-    <div id="npcTags">
-        <p th:if="${npc.tags}" class="u-text-sm" th:text="${npc.tags}">Tags</p>
-        <p th:unless="${npc.tags}" class="u-text-sm text-muted">No tags.</p>
-    </div>
-    <div id="npcSource">
-        <p th:if="${npc.sourceLocator}" class="u-text-xs text-muted" th:text="${npc.sourceLocator}">Source</p>
-        <p th:unless="${npc.sourceLocator}" class="u-text-xs text-muted">No source.</p>
-    </div>
+</div>
+<!-- The rail's source markup lives outside #page-rail, the same way #primaryAction
+     lives outside #page-content. Inside the slot it renders twice: once where the
+     shared fragment pulls it in, and again as the slot's own content. -->
+<div id="railBody">
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Faction', body=~{::#npcFaction})}"></th:block>
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Location', body=~{::#npcLocation})}"></th:block>
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Tags', body=~{::#npcTags})}"></th:block>
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Source', body=~{::#npcSource})}"></th:block>
+</div>
+<div id="npcFaction">
+    <th:block th:if="${npc.faction != null}">
+        <a th:href="@{/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${npc.faction.id})}"
+           th:text="${npc.faction.name}">Faction</a>
+    </th:block>
+    <p th:unless="${npc.faction != null}" class="u-text-sm text-muted">No faction.</p>
+</div>
+<div id="npcLocation">
+    <th:block th:if="${npc.location != null}">
+        <a th:href="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${npc.location.id})}"
+           th:text="${npc.location.name}">Location</a>
+    </th:block>
+    <p th:unless="${npc.location != null}" class="u-text-sm text-muted">No location.</p>
+</div>
+<div id="npcTags">
+    <p th:if="${npc.tags}" class="u-text-sm" th:text="${npc.tags}">Tags</p>
+    <p th:unless="${npc.tags}" class="u-text-sm text-muted">No tags.</p>
+</div>
+<div id="npcSource">
+    <p th:if="${npc.sourceLocator}" class="u-text-xs text-muted" th:text="${npc.sourceLocator}">Source</p>
+    <p th:unless="${npc.sourceLocator}" class="u-text-xs text-muted">No source.</p>
 </div>
 </body>
 </html>

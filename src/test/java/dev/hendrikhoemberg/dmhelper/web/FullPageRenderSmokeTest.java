@@ -104,6 +104,27 @@ class FullPageRenderSmokeTest {
                 .endsWith("</html>");
     }
 
+    /**
+     * A repeated id means a slot rendered twice. The archetype slots are wired as
+     * {@code content=~{::#page-content}}, {@code rail=~{::#page-rail}}, so any markup a slot
+     * references must live <em>outside</em> that slot — the way {@code #primaryAction} does.
+     * Put it inside and it renders once where the fragment pulls it in and again as the
+     * slot's own content: every Part 3 detail page shipped its contextual rail two and three
+     * times over, through three stage gates and 2500 green tests, because nothing looked.
+     */
+    @ParameterizedTest
+    @MethodSource("pages")
+    void pageEmitsEachElementIdOnce(String path) throws Exception {
+        var counts = new java.util.LinkedHashMap<String, Integer>();
+        for (var element : org.jsoup.Jsoup.parse(get(path).body()).select("[id]")) {
+            counts.merge(element.id(), 1, Integer::sum);
+        }
+        assertThat(counts).isNotEmpty();
+        assertThat(counts.entrySet().stream().filter(e -> e.getValue() > 1).toList())
+                .as("duplicate element ids on %s — a slot rendered its own source markup", path)
+                .isEmpty();
+    }
+
     @Test
     void fullSweepLogsNoLazyInitializationException() throws Exception {
         try (LazyInitLogCapture capture = new LazyInitLogCapture()) {

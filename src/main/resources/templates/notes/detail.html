@@ -56,20 +56,23 @@
 
 <div id="page-rail" class="page-rail-slot">
     <th:block th:replace="~{fragments/_context-rail :: rail(body=~{::#railBody})}"></th:block>
-    <div id="railBody">
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Referenced By', body=~{::#backlinkList})}"></th:block>
-    </div>
-    <div id="backlinkList">
-        <p th:if="${#lists.isEmpty(backlinks)}" class="u-text-sm text-muted">No notes link to this one.</p>
-        <ul th:unless="${#lists.isEmpty(backlinks)}" class="u-list-none">
-            <li th:each="bl : ${backlinks}" class="u-mb-xs">
-                <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaignId}, nid=${bl.id})}"
-                   th:text="${bl.title}">Backlink</a>
-                <span class="badge backlink-type" th:text="${#enums.label(bl.type)}">Type</span>
-            </li>
-        </ul>
-    </div>
     <th:block th:replace="~{notes/_quicknotes-strip :: strip(campaignId=${campaignId}, targetType='NOTE', targetId=${note.id})}"></th:block>
+</div>
+<!-- The rail's source markup lives outside #page-rail, the same way #primaryAction
+     lives outside #page-content. Inside the slot it renders twice: once where the
+     shared fragment pulls it in, and again as the slot's own content. -->
+<div id="railBody">
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Referenced By', body=~{::#backlinkList})}"></th:block>
+</div>
+<div id="backlinkList">
+    <p th:if="${#lists.isEmpty(backlinks)}" class="u-text-sm text-muted">No notes link to this one.</p>
+    <ul th:unless="${#lists.isEmpty(backlinks)}" class="u-list-none">
+        <li th:each="bl : ${backlinks}" class="u-mb-xs">
+            <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${campaignId}, nid=${bl.id})}"
+               th:text="${bl.title}">Backlink</a>
+            <span class="badge backlink-type" th:text="${#enums.label(bl.type)}">Type</span>
+        </li>
+    </ul>
 </div>
 </body>
 </html>

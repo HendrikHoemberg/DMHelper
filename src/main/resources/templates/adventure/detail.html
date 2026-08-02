@@ -39,33 +39,36 @@
 
 <div id="page-rail" class="page-rail-slot">
     <th:block th:replace="~{fragments/_context-rail :: rail(body=~{::#railBody})}"></th:block>
-    <div id="railBody">
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Adventure', body=~{::#railStatus})}"></th:block>
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Current position', body=~{::#railPosition})}"></th:block>
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Actions', body=~{::#railActions})}"></th:block>
-    </div>
-    <div id="railStatus">
-        <p class="u-text-sm">
-            <span th:text="${#lists.size(chapters)}">0</span> chapters
-            · <span class="u-num" th:text="${#aggregates.sum(chapters.![scenes.size()])}">0</span> scenes
-        </p>
-    </div>
-    <div id="railPosition">
-        <th:block th:if="${currentScene != null and currentScene.chapter.adventure.id == adventure.id}">
-            <span class="badge badge--warning">Current position</span>
-            <a class="u-text-sm"
-               th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${currentScene.id})}"
-               th:text="${currentScene.title}">Scene</a>
-        </th:block>
-        <p th:unless="${currentScene != null and currentScene.chapter.adventure.id == adventure.id}"
-           class="u-text-sm text-muted">Nothing in this adventure is in play.</p>
-    </div>
-    <div id="railActions">
-        <button class="btn"
-                th:hx-get="@{/campaigns/{cid}/adventures/{id}/edit(cid=${campaignId},id=${adventure.id})}"
-                hx-target="#adventure-header" hx-swap="innerHTML"
-                hx-disabled-elt="this">Edit</button>
-    </div>
+</div>
+<!-- The rail's source markup lives outside #page-rail, the same way #primaryAction
+     lives outside #page-content. Inside the slot it renders twice: once where the
+     shared fragment pulls it in, and again as the slot's own content. -->
+<div id="railBody">
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Adventure', body=~{::#railStatus})}"></th:block>
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Current position', body=~{::#railPosition})}"></th:block>
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Actions', body=~{::#railActions})}"></th:block>
+</div>
+<div id="railStatus">
+    <p class="u-text-sm">
+        <span th:text="${#lists.size(chapters)}">0</span> chapters
+        · <span class="u-num" th:text="${#aggregates.sum(chapters.![scenes.size()])}">0</span> scenes
+    </p>
+</div>
+<div id="railPosition">
+    <th:block th:if="${currentScene != null and currentScene.chapter.adventure.id == adventure.id}">
+        <span class="badge badge--warning">Current position</span>
+        <a class="u-text-sm"
+           th:href="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${currentScene.id})}"
+           th:text="${currentScene.title}">Scene</a>
+    </th:block>
+    <p th:unless="${currentScene != null and currentScene.chapter.adventure.id == adventure.id}"
+       class="u-text-sm text-muted">Nothing in this adventure is in play.</p>
+</div>
+<div id="railActions">
+    <button class="btn"
+            th:hx-get="@{/campaigns/{cid}/adventures/{id}/edit(cid=${campaignId},id=${adventure.id})}"
+            hx-target="#adventure-header" hx-swap="innerHTML"
+            hx-disabled-elt="this">Edit</button>
 </div>
 </body>
 </html>

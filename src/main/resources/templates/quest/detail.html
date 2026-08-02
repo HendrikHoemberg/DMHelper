@@ -114,64 +114,67 @@
 
 <div id="page-rail" class="page-rail-slot">
     <th:block th:replace="~{fragments/_context-rail :: rail(body=~{::#railBody})}"></th:block>
-    <div id="railBody">
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Dependencies', body=~{::#dependencyList})}"></th:block>
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Related Links', body=~{::#linkList})}"></th:block>
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Annotations', body=~{::#annotationList})}"></th:block>
+</div>
+<!-- The rail's source markup lives outside #page-rail, the same way #primaryAction
+     lives outside #page-content. Inside the slot it renders twice: once where the
+     shared fragment pulls it in, and again as the slot's own content. -->
+<div id="railBody">
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Dependencies', body=~{::#dependencyList})}"></th:block>
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Related Links', body=~{::#linkList})}"></th:block>
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Annotations', body=~{::#annotationList})}"></th:block>
+</div>
+<div id="dependencyList">
+    <th:block th:replace="~{quest/_dependency-list :: dependencyList}"></th:block>
+</div>
+<div id="linkList">
+    <th:block th:replace="~{quest/_link-list :: linkList}"></th:block>
+    <div class="u-mt-md">
+        <details>
+            <summary>Add Link</summary>
+            <form class="inline-form u-mt-sm"
+                  th:hx-post="@{/campaigns/{cid}/quests/{qid}/links(cid=${campaignId},qid=${quest.id})}"
+                  hx-target="#linkList" hx-swap="innerHTML"
+                  hx-disabled-elt="find button[type='submit']">
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select name="role" class="form-input">
+                        <option value="REFERENCE">Reference</option>
+                        <option value="HANDOUT">Handout</option>
+                        <option value="RULE">Rule</option>
+                        <option value="NPC">NPC</option>
+                        <option value="LOCATION">Location</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Target Scope</label>
+                    <select name="targetScope" class="form-input">
+                        <option value="PACKAGE">Package</option>
+                        <option value="CATALOG">Catalog</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Target Type</label>
+                    <input type="text" name="targetType" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Target ID</label>
+                    <input type="text" name="targetId" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Display Text</label>
+                    <input type="text" name="displayText" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Condition</label>
+                    <input type="text" name="condition" class="form-input">
+                </div>
+                <button type="submit" class="btn">Add</button>
+            </form>
+        </details>
     </div>
-    <div id="dependencyList">
-        <th:block th:replace="~{quest/_dependency-list :: dependencyList}"></th:block>
-    </div>
-    <div id="linkList">
-        <th:block th:replace="~{quest/_link-list :: linkList}"></th:block>
-        <div class="u-mt-md">
-            <details>
-                <summary>Add Link</summary>
-                <form class="inline-form u-mt-sm"
-                      th:hx-post="@{/campaigns/{cid}/quests/{qid}/links(cid=${campaignId},qid=${quest.id})}"
-                      hx-target="#linkList" hx-swap="innerHTML"
-                      hx-disabled-elt="find button[type='submit']">
-                    <div class="form-group">
-                        <label class="form-label">Role</label>
-                        <select name="role" class="form-input">
-                            <option value="REFERENCE">Reference</option>
-                            <option value="HANDOUT">Handout</option>
-                            <option value="RULE">Rule</option>
-                            <option value="NPC">NPC</option>
-                            <option value="LOCATION">Location</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Target Scope</label>
-                        <select name="targetScope" class="form-input">
-                            <option value="PACKAGE">Package</option>
-                            <option value="CATALOG">Catalog</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Target Type</label>
-                        <input type="text" name="targetType" class="form-input" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Target ID</label>
-                        <input type="text" name="targetId" class="form-input" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Display Text</label>
-                        <input type="text" name="displayText" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Condition</label>
-                        <input type="text" name="condition" class="form-input">
-                    </div>
-                    <button type="submit" class="btn">Add</button>
-                </form>
-            </details>
-        </div>
-    </div>
-    <div id="annotationList">
-        <th:block th:replace="~{quest/_annotation-list :: annotationList}"></th:block>
-    </div>
+</div>
+<div id="annotationList">
+    <th:block th:replace="~{quest/_annotation-list :: annotationList}"></th:block>
 </div>
 </body>
 </html>

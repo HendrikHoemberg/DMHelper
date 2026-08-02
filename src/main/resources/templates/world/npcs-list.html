@@ -20,6 +20,19 @@
    th:href="@{/campaigns/{cid}/world/npcs/new(cid=${campaignId})}">+ New NPC</a>
 <a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
 
+<!-- Referenced by a slot expression, so it must sit outside #page-content: inside it,
+     it renders once in the toolbar and again as the page's own content. -->
+<div id="npcFilters">
+    <label class="sr-only" for="npcStatusFilter">Filter by status</label>
+    <select id="npcStatusFilter" class="form-input" data-npc-status-filter>
+        <option value="">All statuses</option>
+        <option value="ALIVE">Alive</option>
+        <option value="DEAD">Dead</option>
+        <option value="MISSING">Missing</option>
+        <option value="UNKNOWN">Unknown</option>
+    </select>
+</div>
+
 <div id="page-content" class="page-content">
     <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
 
@@ -29,17 +42,6 @@
         searchPlaceholder='Filter NPCs by name, role, or faction…',
         filters=~{::#npcFilters},
         actions=~{})}"></th:block>
-
-    <div id="npcFilters">
-        <label class="sr-only" for="npcStatusFilter">Filter by status</label>
-        <select id="npcStatusFilter" class="form-input" data-npc-status-filter>
-            <option value="">All statuses</option>
-            <option value="ALIVE">Alive</option>
-            <option value="DEAD">Dead</option>
-            <option value="MISSING">Missing</option>
-            <option value="UNKNOWN">Unknown</option>
-        </select>
-    </div>
 
     <th:block th:if="${npcs.empty}">
         <th:block th:replace="~{fragments/_states :: empty(

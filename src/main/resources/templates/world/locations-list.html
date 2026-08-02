@@ -20,6 +20,20 @@
    th:href="@{/campaigns/{cid}/world/locations/new(cid=${campaignId})}">+ New Location</a>
 <a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
 
+<!-- Referenced by a slot expression, so it must sit outside #page-content: inside it,
+     it renders once in the toolbar and again as the page's own content. -->
+<div id="locationFilters">
+    <label class="sr-only" for="locationKindFilter">Filter by kind</label>
+    <select id="locationKindFilter" class="form-input" data-location-kind-filter>
+        <option value="">All kinds</option>
+        <option value="SITE">Site</option>
+        <option value="REGION">Region</option>
+        <option value="SETTLEMENT">Settlement</option>
+        <option value="PLANE">Plane</option>
+        <option value="OTHER">Other</option>
+    </select>
+</div>
+
 <div id="page-content" class="page-content">
     <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
 
@@ -29,18 +43,6 @@
         searchPlaceholder='Filter locations by name, summary, or tags…',
         filters=~{::#locationFilters},
         actions=~{})}"></th:block>
-
-    <div id="locationFilters">
-        <label class="sr-only" for="locationKindFilter">Filter by kind</label>
-        <select id="locationKindFilter" class="form-input" data-location-kind-filter>
-            <option value="">All kinds</option>
-            <option value="SITE">Site</option>
-            <option value="REGION">Region</option>
-            <option value="SETTLEMENT">Settlement</option>
-            <option value="PLANE">Plane</option>
-            <option value="OTHER">Other</option>
-        </select>
-    </div>
 
     <th:block th:if="${locations.empty}">
         <th:block th:replace="~{fragments/_states :: empty(

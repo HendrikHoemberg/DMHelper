@@ -22,6 +22,12 @@
     <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
 </div>
 
+<!-- Referenced by a slot expression, so it must sit outside #page-content: inside it,
+     it renders once in the toolbar and again as the page's own content. -->
+<div id="configSheetBody">
+    <div th:replace="~{calendar/_config-form :: configForm}"></div>
+</div>
+
 <div id="page-content" class="page-content">
     <div th:replace="~{calendar/_current-date :: currentDateFragment}"></div>
 
@@ -31,9 +37,7 @@
         id='calendar-config-sheet',
         title='Calendar Configuration',
         body=~{::#configSheetBody})}"></th:block>
-    <div id="configSheetBody">
-        <div th:replace="~{calendar/_config-form :: configForm}"></div>
-    </div>
+
 </div>
 </body>
 </html>

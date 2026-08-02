@@ -66,70 +66,73 @@
 
 <div id="page-rail" class="page-rail-slot">
     <th:block th:replace="~{fragments/_context-rail :: rail(body=~{::#railBody})}"></th:block>
-    <div id="railBody">
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Parent Location', body=~{::#locationParent})}"></th:block>
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Linked Tables', body=~{::#locationTables})}"></th:block>
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Audio Cue', body=~{::#locationAudio})}"></th:block>
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Tags', body=~{::#locationTags})}"></th:block>
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Source', body=~{::#locationSource})}"></th:block>
-    </div>
-    <div id="locationParent">
-        <th:block th:if="${location.parentLocation != null}">
-            <a th:href="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${location.parentLocation.id})}"
-               th:text="${location.parentLocation.name}">Parent</a>
-        </th:block>
-        <p th:unless="${location.parentLocation != null}" class="u-text-sm text-muted">No parent location.</p>
-    </div>
-    <div id="locationTables">
-        <div th:if="${#lists.isEmpty(tableLinks)}" class="u-text-sm text-muted">No tables linked.</div>
-        <ul th:unless="${#lists.isEmpty(tableLinks)}" class="u-list-none">
-            <li th:each="link : ${tableLinks}" class="u-flex u-gap-xs u-items-center u-mb-xs">
-                <span th:text="${link.table.name}">Table Name</span>
-                <span class="badge badge--neutral" th:text="${#enums.label(link.role)}">ROLE</span>
-                <button class="btn btn-danger btn-xs action-row__destructive"
-                        th:hx-delete="@{/campaigns/{cid}/world/locations/{lid}/tables/{linkId}(cid=${campaignId},lid=${location.id},linkId=${link.id})}"
-                        hx-confirm="Remove this table link?"
-                        hx-target="body" hx-swap="outerHTML"
-                        hx-disabled-elt="this">&times;</button>
-            </li>
-        </ul>
-        <details class="u-mt-sm">
-            <summary class="u-text-sm">Link a table</summary>
-            <form class="inline-form u-mt-xs"
-                  th:hx-post="@{/campaigns/{cid}/world/locations/{lid}/tables(cid=${campaignId},lid=${location.id})}"
-                  hx-target="body" hx-swap="outerHTML"
-                  hx-disabled-elt="find button[type='submit']">
-                <div class="form-group">
-                    <label class="form-label">Table</label>
-                    <select name="tableId" class="form-input" required>
-                        <option value="">Select table...</option>
-                        <option th:each="t : ${tables}" th:value="${t.id}" th:text="${t.name}">Table</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Sort Order</label>
-                    <input type="number" name="sortOrder" class="form-input" value="0">
-                </div>
-                <button type="submit" class="btn btn-sm btn-primary">Link table</button>
-            </form>
-        </details>
-    </div>
-    <div id="locationAudio">
-        <th:block th:if="${location.locationAudioCue != null}">
-            <div th:text="${location.locationAudioCue.name}">Cue Name</div>
-            <div class="u-text-xs text-muted"
-                 th:text="'(' + ${location.locationAudioCue.providerId} + ' / ' + ${location.locationAudioCue.category} + ')'">(provider/category)</div>
-        </th:block>
-        <p th:unless="${location.locationAudioCue != null}" class="u-text-sm text-muted">No audio cue.</p>
-    </div>
-    <div id="locationTags">
-        <p th:if="${location.tags}" class="u-text-sm" th:text="${location.tags}">Tags</p>
-        <p th:unless="${location.tags}" class="u-text-sm text-muted">No tags.</p>
-    </div>
-    <div id="locationSource">
-        <p th:if="${location.sourceLocator}" class="u-text-xs text-muted" th:text="${location.sourceLocator}">Source</p>
-        <p th:unless="${location.sourceLocator}" class="u-text-xs text-muted">No source.</p>
-    </div>
+</div>
+<!-- The rail's source markup lives outside #page-rail, the same way #primaryAction
+     lives outside #page-content. Inside the slot it renders twice: once where the
+     shared fragment pulls it in, and again as the slot's own content. -->
+<div id="railBody">
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Parent Location', body=~{::#locationParent})}"></th:block>
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Linked Tables', body=~{::#locationTables})}"></th:block>
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Audio Cue', body=~{::#locationAudio})}"></th:block>
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Tags', body=~{::#locationTags})}"></th:block>
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Source', body=~{::#locationSource})}"></th:block>
+</div>
+<div id="locationParent">
+    <th:block th:if="${location.parentLocation != null}">
+        <a th:href="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${location.parentLocation.id})}"
+           th:text="${location.parentLocation.name}">Parent</a>
+    </th:block>
+    <p th:unless="${location.parentLocation != null}" class="u-text-sm text-muted">No parent location.</p>
+</div>
+<div id="locationTables">
+    <div th:if="${#lists.isEmpty(tableLinks)}" class="u-text-sm text-muted">No tables linked.</div>
+    <ul th:unless="${#lists.isEmpty(tableLinks)}" class="u-list-none">
+        <li th:each="link : ${tableLinks}" class="u-flex u-gap-xs u-items-center u-mb-xs">
+            <span th:text="${link.table.name}">Table Name</span>
+            <span class="badge badge--neutral" th:text="${#enums.label(link.role)}">ROLE</span>
+            <button class="btn btn-danger btn-xs action-row__destructive"
+                    th:hx-delete="@{/campaigns/{cid}/world/locations/{lid}/tables/{linkId}(cid=${campaignId},lid=${location.id},linkId=${link.id})}"
+                    hx-confirm="Remove this table link?"
+                    hx-target="body" hx-swap="outerHTML"
+                    hx-disabled-elt="this">&times;</button>
+        </li>
+    </ul>
+    <details class="u-mt-sm">
+        <summary class="u-text-sm">Link a table</summary>
+        <form class="inline-form u-mt-xs"
+              th:hx-post="@{/campaigns/{cid}/world/locations/{lid}/tables(cid=${campaignId},lid=${location.id})}"
+              hx-target="body" hx-swap="outerHTML"
+              hx-disabled-elt="find button[type='submit']">
+            <div class="form-group">
+                <label class="form-label">Table</label>
+                <select name="tableId" class="form-input" required>
+                    <option value="">Select table...</option>
+                    <option th:each="t : ${tables}" th:value="${t.id}" th:text="${t.name}">Table</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Sort Order</label>
+                <input type="number" name="sortOrder" class="form-input" value="0">
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary">Link table</button>
+        </form>
+    </details>
+</div>
+<div id="locationAudio">
+    <th:block th:if="${location.locationAudioCue != null}">
+        <div th:text="${location.locationAudioCue.name}">Cue Name</div>
+        <div class="u-text-xs text-muted"
+             th:text="'(' + ${location.locationAudioCue.providerId} + ' / ' + ${location.locationAudioCue.category} + ')'">(provider/category)</div>
+    </th:block>
+    <p th:unless="${location.locationAudioCue != null}" class="u-text-sm text-muted">No audio cue.</p>
+</div>
+<div id="locationTags">
+    <p th:if="${location.tags}" class="u-text-sm" th:text="${location.tags}">Tags</p>
+    <p th:unless="${location.tags}" class="u-text-sm text-muted">No tags.</p>
+</div>
+<div id="locationSource">
+    <p th:if="${location.sourceLocator}" class="u-text-xs text-muted" th:text="${location.sourceLocator}">Source</p>
+    <p th:unless="${location.sourceLocator}" class="u-text-xs text-muted">No source.</p>
 </div>
 </body>
 </html>

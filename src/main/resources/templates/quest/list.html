@@ -20,6 +20,21 @@
    th:href="@{/campaigns/{cid}/quests/create(cid=${campaignId})}">+ New Quest</a>
 <a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
 
+<!-- Referenced by a slot expression, so it must sit outside #page-content: inside it,
+     it renders once in the toolbar and again as the page's own content. -->
+<div id="statusFilter">
+    <label class="sr-only" for="questStatusFilter">Filter by status</label>
+    <select id="questStatusFilter" class="form-input" data-quest-status-filter>
+        <option value="">All statuses</option>
+        <option value="NOT_STARTED">Not Started</option>
+        <option value="ACTIVE">Active</option>
+        <option value="ON_HOLD">On Hold</option>
+        <option value="COMPLETED">Completed</option>
+        <option value="FAILED">Failed</option>
+        <option value="ABANDONED">Abandoned</option>
+    </select>
+</div>
+
 <div id="page-content" class="page-content">
     <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
 
@@ -68,18 +83,6 @@
         </tbody>
     </table>
 
-    <div id="statusFilter">
-        <label class="sr-only" for="questStatusFilter">Filter by status</label>
-        <select id="questStatusFilter" class="form-input" data-quest-status-filter>
-            <option value="">All statuses</option>
-            <option value="NOT_STARTED">Not Started</option>
-            <option value="ACTIVE">Active</option>
-            <option value="ON_HOLD">On Hold</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="FAILED">Failed</option>
-            <option value="ABANDONED">Abandoned</option>
-        </select>
-    </div>
 </div>
 
 <script>

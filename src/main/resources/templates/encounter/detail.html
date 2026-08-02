@@ -88,39 +88,42 @@
 
 <div id="page-rail" class="page-rail-slot">
     <th:block th:replace="~{fragments/_context-rail :: rail(body=~{::#railBody})}"></th:block>
-    <div id="railBody">
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Map', body=~{::#railMap})}"></th:block>
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Difficulty', body=~{::#railDifficulty})}"></th:block>
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Readiness', body=~{::#railReadiness})}"></th:block>
-    </div>
-    <div id="railMap">
-        <th:block th:if="${encounter.mapId != null}">
-            <a th:href="@{/campaigns/{cid}/maps/{mid}/play(cid=${campaignId}, mid=${encounter.mapId})}"
-               target="_blank">Open battle map</a>
-        </th:block>
-        <p th:if="${encounter.mapId == null}" class="text-muted u-text-sm">No map linked.</p>
-    </div>
-    <div id="railDifficulty">
-        <th:block th:if="${difficulty.rating != 'N/A'}">
-            <span class="badge badge-rating"
-                  th:classappend="'badge-' + ${#strings.toLowerCase(difficulty.rating)}"
-                  th:text="${difficulty.rating}">MODERATE</span>
-            <p class="text-muted u-text-sm u-mt-xs"
-               th:text="'Adjusted XP ' + ${difficulty.adjustedXp}">Adjusted XP</p>
-        </th:block>
-        <p th:if="${difficulty.rating == 'N/A'}" class="text-muted u-text-sm">
-            Add combatants to estimate difficulty.
-        </p>
-    </div>
-    <div id="railReadiness">
-        <ul class="rail-facts">
-            <li th:text="${#lists.size(combatants)} + ' combatants'">0 combatants</li>
-            <li th:if="${#lists.size(combatants.?[initiative == null]) > 0}" class="u-text-warning"
-                th:text="${#lists.size(combatants.?[initiative == null])} + ' initiative unset'">0 unset</li>
-            <li th:unless="${#lists.size(combatants.?[initiative == null]) > 0}" class="u-text-success">Initiative set</li>
-            <li th:if="${encounter.round > 0}" th:text="'Round ' + ${encounter.round}">Round 1</li>
-        </ul>
-    </div>
+</div>
+<!-- The rail's source markup lives outside #page-rail, the same way #primaryAction
+     lives outside #page-content. Inside the slot it renders twice: once where the
+     shared fragment pulls it in, and again as the slot's own content. -->
+<div id="railBody">
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Map', body=~{::#railMap})}"></th:block>
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Difficulty', body=~{::#railDifficulty})}"></th:block>
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Readiness', body=~{::#railReadiness})}"></th:block>
+</div>
+<div id="railMap">
+    <th:block th:if="${encounter.mapId != null}">
+        <a th:href="@{/campaigns/{cid}/maps/{mid}/play(cid=${campaignId}, mid=${encounter.mapId})}"
+           target="_blank">Open battle map</a>
+    </th:block>
+    <p th:if="${encounter.mapId == null}" class="text-muted u-text-sm">No map linked.</p>
+</div>
+<div id="railDifficulty">
+    <th:block th:if="${difficulty.rating != 'N/A'}">
+        <span class="badge badge-rating"
+              th:classappend="'badge-' + ${#strings.toLowerCase(difficulty.rating)}"
+              th:text="${difficulty.rating}">MODERATE</span>
+        <p class="text-muted u-text-sm u-mt-xs"
+           th:text="'Adjusted XP ' + ${difficulty.adjustedXp}">Adjusted XP</p>
+    </th:block>
+    <p th:if="${difficulty.rating == 'N/A'}" class="text-muted u-text-sm">
+        Add combatants to estimate difficulty.
+    </p>
+</div>
+<div id="railReadiness">
+    <ul class="rail-facts">
+        <li th:text="${#lists.size(combatants)} + ' combatants'">0 combatants</li>
+        <li th:if="${#lists.size(combatants.?[initiative == null]) > 0}" class="u-text-warning"
+            th:text="${#lists.size(combatants.?[initiative == null])} + ' initiative unset'">0 unset</li>
+        <li th:unless="${#lists.size(combatants.?[initiative == null]) > 0}" class="u-text-success">Initiative set</li>
+        <li th:if="${encounter.round > 0}" th:text="'Round ' + ${encounter.round}">Round 1</li>
+    </ul>
 </div>
 </body>
 </html>

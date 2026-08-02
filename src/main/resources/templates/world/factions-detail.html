@@ -169,18 +169,21 @@
 
 <div id="page-rail" class="page-rail-slot">
     <th:block th:replace="~{fragments/_context-rail :: rail(body=~{::#railBody})}"></th:block>
-    <div id="railBody">
-        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Members', body=~{::#factionMembers})}"></th:block>
-    </div>
-    <div id="factionMembers">
-        <div th:if="${members.empty}" class="u-text-sm text-muted">No members.</div>
-        <ul th:unless="${members.empty}" class="u-list-none">
-            <li th:each="m : ${members}" class="u-mb-xs">
-                <a th:href="@{/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${m.id})}"
-                   th:text="${m.name}">Member</a>
-            </li>
-        </ul>
-    </div>
+</div>
+<!-- The rail's source markup lives outside #page-rail, the same way #primaryAction
+     lives outside #page-content. Inside the slot it renders twice: once where the
+     shared fragment pulls it in, and again as the slot's own content. -->
+<div id="railBody">
+    <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Members', body=~{::#factionMembers})}"></th:block>
+</div>
+<div id="factionMembers">
+    <div th:if="${members.empty}" class="u-text-sm text-muted">No members.</div>
+    <ul th:unless="${members.empty}" class="u-list-none">
+        <li th:each="m : ${members}" class="u-mb-xs">
+            <a th:href="@{/campaigns/{cid}/world/npcs/{nid}(cid=${campaignId},nid=${m.id})}"
+               th:text="${m.name}">Member</a>
+        </li>
+    </ul>
 </div>
 </body>
 </html>
