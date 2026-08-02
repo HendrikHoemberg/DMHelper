@@ -103,7 +103,11 @@ public class QuestService {
 
     @Transactional(readOnly = true)
     public List<Quest> getQuests(UUID campaignId) {
-        return questRepository.findByCampaignIdOrderByCreatedAtAscIdAsc(campaignId);
+        List<Quest> quests = questRepository.findByCampaignIdOrderByCreatedAtAscIdAsc(campaignId);
+        // The index renders objective progress after this transaction has closed. Keep the
+        // production open-in-view=false boundary honest by hydrating the collection here.
+        quests.forEach(quest -> quest.getObjectives().size());
+        return quests;
     }
 
     @Transactional(readOnly = true)

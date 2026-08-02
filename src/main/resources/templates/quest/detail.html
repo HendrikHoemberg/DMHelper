@@ -6,7 +6,7 @@
           surface=null,
           header=~{::#page-header},
           content=~{::#page-content},
-          rail=~{})}">
+          rail=~{::#page-rail})}">
 <body>
 <div id="page-header" class="page-header-slot">
     <th:block th:replace="~{fragments/_page-header :: page-header(
@@ -24,7 +24,11 @@
     <span th:text="${quest.title}">Quest</span>
 </nav>
 <div id="secondaryActions" class="u-flex u-gap-xs">
-    <span class="badge" th:text="${#enums.label(quest.status)}">STATUS</span>
+    <span class="badge"
+          th:classappend="${quest.status.name() == 'ACTIVE'} ? 'badge--warning' :
+                          (${quest.status.name() == 'COMPLETED'} ? 'badge--success' :
+                          (${quest.status.name() == 'FAILED'} ? 'badge--danger' : ''))"
+          th:text="${#enums.label(quest.status)}">STATUS</span>
     <button class="btn btn-ghost"
             th:hx-get="@{/campaigns/{cid}/quests/{qid}/edit(cid=${campaignId},qid=${quest.id})}"
             hx-target="#questForm"
@@ -35,27 +39,25 @@
 <div id="page-content" class="page-content">
     <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
     <div id="questForm"></div>
-    <div class="detail-section">
+
+    <div class="prose note-body" th:if="${quest.summary != null or quest.prerequisites != null or quest.rewards != null or quest.outcomeNotes != null}">
         <div th:if="${quest.summary}" class="u-mb-md" th:text="${quest.summary}">Summary</div>
-        <div th:if="${quest.sourceLocator}" class="u-text-xs text-muted u-mb-md"
-             th:text="|Source: ${quest.sourceLocator}|">Source</div>
-        <!-- Prerequisites, rewards and outcome notes are prep material. -->
         <div th:if="${quest.prerequisites}" class="u-mb-md">
-            <h4>Prerequisites</h4>
+            <h3>Prerequisites</h3>
             <p th:text="${quest.prerequisites}">Prerequisites</p>
         </div>
         <div th:if="${quest.rewards}" class="u-mb-md">
-            <h4>Rewards</h4>
+            <h3>Rewards</h3>
             <p th:text="${quest.rewards}">Rewards</p>
         </div>
         <div th:if="${quest.outcomeNotes}" class="u-mb-md">
-            <h4>Outcome Notes</h4>
+            <h3>Outcome Notes</h3>
             <p th:text="${quest.outcomeNotes}">Outcome Notes</p>
         </div>
     </div>
-    <!-- Objectives -->
+
     <div class="detail-section">
-        <h3>Objectives</h3>
+        <h2>Objectives</h2>
         <div id="objectiveList">
             <th:block th:replace="~{quest/_objective-list :: objectiveList}"></th:block>
         </div>
@@ -83,6 +85,13 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label class="form-label">Completion Mode</label>
+                        <select name="completionMode" class="form-input">
+                            <option value="ALL">All steps required</option>
+                            <option value="ANY">Any step completes it</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">Sort Order</label>
                         <input type="number" name="sortOrder" class="form-input" value="0">
                     </div>
@@ -91,19 +100,30 @@
             </details>
         </div>
     </div>
-    <!-- Dependencies -->
-    <div class="detail-section">
-        <h3>Dependencies</h3>
-        <div id="dependencyList">
-            <th:block th:replace="~{quest/_dependency-list :: dependencyList}"></th:block>
-        </div>
+
+    <div class="u-mt-lg surface-danger-zone">
+        <h2>Danger zone</h2>
+        <p class="text-muted u-text-sm">This action cannot be undone.</p>
+        <button class="btn btn-danger action-row__destructive"
+                th:hx-delete="@{/campaigns/{cid}/quests/{qid}(cid=${campaignId},qid=${quest.id})}"
+                hx-confirm="Delete this quest?"
+                hx-target="body" hx-swap="outerHTML"
+                hx-disabled-elt="this">Delete</button>
     </div>
-    <!-- Links -->
-    <div class="detail-section">
-        <h3>Related Links</h3>
-        <div id="linkList">
-            <th:block th:replace="~{quest/_link-list :: linkList}"></th:block>
-        </div>
+</div>
+
+<div id="page-rail" class="page-rail-slot">
+    <th:block th:replace="~{fragments/_context-rail :: rail(body=~{::#railBody})}"></th:block>
+    <div id="railBody">
+        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Dependencies', body=~{::#dependencyList})}"></th:block>
+        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Related Links', body=~{::#linkList})}"></th:block>
+        <th:block th:replace="~{fragments/_context-rail :: rail-section(title='Annotations', body=~{::#annotationList})}"></th:block>
+    </div>
+    <div id="dependencyList">
+        <th:block th:replace="~{quest/_dependency-list :: dependencyList}"></th:block>
+    </div>
+    <div id="linkList">
+        <th:block th:replace="~{quest/_link-list :: linkList}"></th:block>
         <div class="u-mt-md">
             <details>
                 <summary>Add Link</summary>
@@ -144,20 +164,13 @@
                         <label class="form-label">Condition</label>
                         <input type="text" name="condition" class="form-input">
                     </div>
-                    <button type="submit" class="btn btn-primary">Add</button>
+                    <button type="submit" class="btn">Add</button>
                 </form>
             </details>
         </div>
     </div>
-
-    <div class="u-mt-lg surface-danger-zone">
-        <h2>Danger zone</h2>
-        <p class="text-muted u-text-sm">This action cannot be undone.</p>
-        <button class="btn btn-danger action-row__destructive"
-                th:hx-delete="@{/campaigns/{cid}/quests/{qid}(cid=${campaignId},qid=${quest.id})}"
-                hx-confirm="Delete this quest?"
-                hx-target="body" hx-swap="outerHTML"
-                hx-disabled-elt="this">Delete</button>
+    <div id="annotationList">
+        <th:block th:replace="~{quest/_annotation-list :: annotationList}"></th:block>
     </div>
 </div>
 </body>

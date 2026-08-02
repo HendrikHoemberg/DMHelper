@@ -4,11 +4,21 @@
   <div th:unless="${quest.objectives.empty}">
     <div th:each="obj : ${quest.objectives}" class="card card--compact u-mb-xs" th:attr="data-objective-id=${obj.id}">
       <div class="u-flex u-gap-xs u-items-center">
-        <span class="badge" th:text="${#enums.label(obj.status)}">STATUS</span>
+        <span class="badge"
+              th:classappend="${obj.status.name() == 'COMPLETED'} ? 'badge--success' :
+                              (${obj.status.name() == 'ACTIVE'} ? 'badge--warning' : '')"
+              th:text="${#enums.label(obj.status)}">STATUS</span>
+        <span class="badge badge--info" data-objective-completion-mode
+              th:text="${#enums.label(obj.completionMode)}">All</span>
         <strong th:text="${obj.title}">Objective</strong>
         <span class="u-text-xs text-muted" th:if="${obj.sortOrder > 0}" th:text="|#${obj.sortOrder}|">#</span>
       </div>
       <div th:if="${obj.description}" class="u-text-sm" th:text="${obj.description}">Description</div>
+      <div th:if="${obj.dependencies != null and !obj.dependencies.isEmpty()}"
+           class="u-text-sm text-muted" data-objective-prerequisite>
+        <span th:each="dep : ${obj.dependencies}"
+              th:text="|Requires: ${dep.prerequisiteObjective.title}|">Requires</span>
+      </div>
       <span th:if="${obj.sourceLocator}" class="u-text-xs text-muted" th:text="|Source: ${obj.sourceLocator}|">Source</span>
       <div class="u-flex u-gap-xs u-mt-xs">
         <button class="btn btn-sm"

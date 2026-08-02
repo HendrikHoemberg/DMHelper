@@ -22,21 +22,95 @@
 
 <div id="page-content" class="page-content">
     <th:block th:if="${error != null}"><div th:replace="~{common/_error :: error(message=${error})}"></div></th:block>
-    <div th:if="${quests.empty}" class="empty-state">No quests yet.</div>
-    <div th:unless="${quests.empty}" class="card-grid">
-        <div th:each="quest : ${quests}" class="card">
-            <div class="card-header">
-                <a th:href="@{/campaigns/{cid}/quests/{qid}(cid=${campaignId},qid=${quest.id})}"
-                   th:text="${quest.title}">Quest Title</a>
-                <span class="badge" th:text="${#enums.label(quest.status)}">STATUS</span>
-            </div>
-            <div th:if="${quest.summary}" class="card-body" th:text="${quest.summary}">Summary</div>
-            <div class="card-footer">
-                <span th:if="${quest.sourceLocator}" class="u-text-xs text-muted"
-                      th:text="|Source: ${quest.sourceLocator}|">Source</span>
-            </div>
-        </div>
+
+    <th:block th:replace="~{fragments/_toolbar :: toolbar(
+        action=@{/campaigns/{cid}/quests(cid=${campaignId})},
+        searchValue=${null},
+        searchPlaceholder='Filter quests by title…',
+        filters=~{::#statusFilter},
+        actions=~{})}"></th:block>
+
+    <th:block th:if="${quests.empty}">
+        <th:block th:replace="~{fragments/_states :: empty(
+            icon='flag',
+            title='No quests yet',
+            description='Create a quest and its objectives to track the party’s progress.',
+            cta=~{})}"></th:block>
+    </th:block>
+
+    <table th:unless="${quests.empty}" class="data-table quest-table">
+        <thead>
+            <tr>
+                <th scope="col">Status</th>
+                <th scope="col">Quest</th>
+                <th scope="col">Objectives</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="quest : ${quests}" class="quest-row"
+                th:attr="data-quest-search=${quest.title}, data-quest-status=${quest.status.name()}">
+                <td>
+                    <span class="badge"
+                          th:classappend="${quest.status.name() == 'ACTIVE'} ? 'badge--warning' :
+                                          (${quest.status.name() == 'COMPLETED'} ? 'badge--success' :
+                                          (${quest.status.name() == 'FAILED'} ? 'badge--danger' : ''))"
+                          th:text="${#enums.label(quest.status)}">STATUS</span>
+                </td>
+                <td>
+                    <a th:href="@{/campaigns/{cid}/quests/{qid}(cid=${campaignId},qid=${quest.id})}"
+                       th:text="${quest.title}">Quest Title</a>
+                </td>
+                <td class="u-num">
+                    <span th:text="${#lists.size(quest.objectives.?[status.name() == 'COMPLETED'])}">0</span>
+                    / <span th:text="${#lists.size(quest.objectives)}">0</span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div id="statusFilter">
+        <label class="sr-only" for="questStatusFilter">Filter by status</label>
+        <select id="questStatusFilter" class="form-input" data-quest-status-filter>
+            <option value="">All statuses</option>
+            <option value="NOT_STARTED">Not Started</option>
+            <option value="ACTIVE">Active</option>
+            <option value="ON_HOLD">On Hold</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="FAILED">Failed</option>
+            <option value="ABANDONED">Abandoned</option>
+        </select>
     </div>
 </div>
+
+<script>
+    window.dmHelperFilterQuests = function (query, status) {
+        var needle = (query || '').trim().toLowerCase();
+        var statusNeedle = (status || '').trim();
+        document.querySelectorAll('.quest-row').forEach(function (row) {
+            var haystack = (row.getAttribute('data-quest-search') || '').toLowerCase();
+            var matchesQuery = needle === '' || haystack.indexOf(needle) !== -1;
+            var matchesStatus = statusNeedle === ''
+                || row.getAttribute('data-quest-status') === statusNeedle;
+            row.hidden = !matchesQuery || !matchesStatus;
+        });
+    };
+    document.addEventListener('DOMContentLoaded', function () {
+        var input = document.querySelector('.page--index .toolbar__input');
+        if (input) {
+            input.addEventListener('input', function () {
+                window.dmHelperFilterQuests(this.value,
+                    document.querySelector('[data-quest-status-filter]')?.value || '');
+            });
+        }
+        var status = document.querySelector('[data-quest-status-filter]');
+        if (status) {
+            status.addEventListener('change', function () {
+                window.dmHelperFilterQuests(
+                    document.querySelector('.page--index .toolbar__input')?.value || '',
+                    this.value);
+            });
+        }
+    });
+</script>
 </body>
 </html>
