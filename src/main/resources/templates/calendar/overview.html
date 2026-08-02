@@ -16,73 +16,24 @@
         primary=~{},
         secondary=~{::#secondaryActions})}"></th:block>
 </div>
-<a id="secondaryActions" th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
+<div id="secondaryActions" class="u-flex u-gap-xs">
+    <button type="button" class="btn btn-ghost"
+            onclick="window.dmOverlay.open(document.getElementById('calendar-config-sheet'))">Calendar Settings</button>
+    <a th:href="@{/campaigns/{id}(id=${campaignId})}" class="btn btn-ghost">&larr; Campaign</a>
+</div>
 
 <div id="page-content" class="page-content">
-    <!-- Current Date -->
     <div th:replace="~{calendar/_current-date :: currentDateFragment}"></div>
 
-    <!-- Advance Days -->
-    <div class="detail-section">
-        <form th:hx-post="@{/campaigns/{id}/calendar/advance(id=${campaignId})}"
-              hx-target="#current-date-wrapper" hx-swap="outerHTML"
-              hx-disabled-elt="find button[type='submit']"
-              class="u-flex">
-            <label>Advance by</label>
-            <input type="number" name="days" value="1" min="1" class="calendar-days-input" />
-            <span>days</span>
-            <button type="submit" class="btn">Advance</button>
-        </form>
-    </div>
-
-    <!-- Set Date -->
-    <div class="detail-section">
-        <details class="calendar-collapsible">
-            <summary>Set Date</summary>
-            <form th:hx-post="@{/campaigns/{id}/calendar/set-date(id=${campaignId})}"
-                  hx-target="body" hx-swap="outerHTML"
-                  hx-disabled-elt="find button[type='submit']"
-                  class="calendar-setdate-form">
-                <div>
-                    <label class="u-text-sm">Year</label>
-                    <input type="number" name="year" th:value="${currentDate.year()}" required class="u-w-80" />
-                </div>
-                <div>
-                    <label class="u-text-sm">Month (0-indexed)</label>
-                    <input type="number" name="month" th:value="${currentDate.month()}" min="0" required class="u-w-80" />
-                </div>
-                <div>
-                    <label class="u-text-sm">Day</label>
-                    <input type="number" name="day" th:value="${currentDate.day()}" min="1" required class="u-w-80" />
-                </div>
-                <button type="submit" class="btn">Set Date</button>
-            </form>
-        </details>
-    </div>
-
-    <!-- Calendar Config -->
-    <div class="detail-section">
-        <details class="calendar-collapsible">
-            <summary>Calendar Configuration</summary>
-            <div id="config-form-area">
-                <div th:replace="~{calendar/_config-form :: configForm}"></div>
-            </div>
-        </details>
-    </div>
-
-    <!-- Timeline -->
-    <h2>Timeline</h2>
-    <div class="detail-actions u-mb-sm">
-        <button class="btn"
-                th:hx-get="@{/campaigns/{id}/calendar/events/new(id=${campaignId})}"
-                hx-target="#event-form-area"
-                hx-swap="innerHTML"
-                hx-disabled-elt="this">
-            + Add Event
-        </button>
-    </div>
-    <div id="event-form-area"></div>
     <div th:replace="~{calendar/_timeline-list :: timelineList}"></div>
+
+    <th:block th:replace="~{fragments/_overlay :: side-sheet(
+        id='calendar-config-sheet',
+        title='Calendar Configuration',
+        body=~{::#configSheetBody})}"></th:block>
+    <div id="configSheetBody">
+        <div th:replace="~{calendar/_config-form :: configForm}"></div>
+    </div>
 </div>
 </body>
 </html>

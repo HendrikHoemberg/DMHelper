@@ -5,9 +5,11 @@
     <div class="event-card-row">
         <div class="u-flex-1 u-min-w-0">
             <div class="u-flex-baseline">
-                <span class="badge" th:text="${event.inGameYear() + '/' + (event.inGameMonth() + 1) + '/' + event.inGameDay()}">1492/3/15</span>
-                <span class="badge" th:text="${event.relativeLabel()}"
-                      th:style="${event.relativeLabel() == 'today' ? 'background: var(--color-accent); color: var(--color-bg);' : ''}">in 12 days</span>
+                <span class="badge u-num"
+                      th:text="|${event.inGameYear()}/${event.inGameMonth() + 1}/${event.inGameDay()}|">1492/3/15</span>
+                <span class="badge"
+                      th:classappend="${event.relativeLabel() == 'today'} ? 'badge--warning' : ''"
+                      th:text="${event.relativeLabel()}">in 12 days</span>
             </div>
             <div class="u-fw-600 u-mt-xs" th:text="${event.title()}">Solar Eclipse</div>
             <div th:if="${event.body() != null and not event.body().isEmpty()}"

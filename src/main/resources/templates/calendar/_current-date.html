@@ -1,18 +1,54 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div th:fragment="currentDateFragment" id="current-date-wrapper" class="detail-section">
-    <h2>Current In-Game Date</h2>
-    <div class="card" style="padding: var(--space-md); text-align:center;">
-        <div class="calendar-current-date-value" style="font-weight: 600;"
-             th:with="monthName=${config.monthNames() != null and config.monthNames().length > currentDate.month() ? config.monthNames()[currentDate.month()] : 'Month ' + (currentDate.month() + 1)}">
-            <span th:text="${currentDate.day()}">15</span>.
-            <span th:text="${monthName}">March</span>
-            <span th:text="${currentDate.year()}">1492</span>
+<div th:fragment="currentDateFragment" id="current-date-wrapper">
+    <section class="calendar-current" data-calendar-region="current" aria-label="Current date">
+        <div class="calendar-current__identity">
+            <h2 class="calendar-current__label">Current In-Game Date</h2>
+            <div class="calendar-current__value"
+                 th:with="monthName=${config.monthNames() != null and config.monthNames().length > currentDate.month() ? config.monthNames()[currentDate.month()] : 'Month ' + (currentDate.month() + 1)}">
+                <span class="u-num" th:text="${currentDate.day()}">15</span><span>.</span>
+                <span th:text="${monthName}">March</span>
+                <span class="u-num" th:text="${currentDate.year()}">1492</span>
+            </div>
+            <span class="badge badge--neutral" th:if="${currentWeekday != null}"
+                  th:text="${currentWeekday}">Weekday</span>
         </div>
-        <div th:if="${currentWeekday != null}"
-             class="detail-meta" style="margin-top:4px;">
-            <span th:text="${currentWeekday}">Weekday</span>
+        <div class="calendar-current__controls">
+            <form class="calendar-advance-form u-flex"
+                  th:hx-post="@{/campaigns/{id}/calendar/advance(id=${campaignId})}"
+                  hx-target="#current-date-wrapper" hx-swap="outerHTML"
+                  hx-disabled-elt="find button[type='submit']">
+                <label class="form-label" for="calendarAdvanceDays">Advance by</label>
+                <input type="number" id="calendarAdvanceDays" name="days" value="1" min="1"
+                       class="form-input calendar-days-input" />
+                <span class="u-text-sm text-muted">days</span>
+                <button type="submit" class="btn btn-primary">Advance</button>
+            </form>
+            <details class="calendar-setdate">
+                <summary class="u-text-sm">Set date</summary>
+                <form class="calendar-setdate-form u-flex u-gap-sm u-mt-sm"
+                      th:hx-post="@{/campaigns/{id}/calendar/set-date(id=${campaignId})}"
+                      hx-target="body" hx-swap="outerHTML"
+                      hx-disabled-elt="find button[type='submit']">
+                    <div>
+                        <label class="form-label u-text-sm" for="calendarSetYear">Year</label>
+                        <input type="number" id="calendarSetYear" name="year"
+                               th:value="${currentDate.year()}" required class="form-input u-w-80" />
+                    </div>
+                    <div>
+                        <label class="form-label u-text-sm" for="calendarSetMonth">Month (0-indexed)</label>
+                        <input type="number" id="calendarSetMonth" name="month"
+                               th:value="${currentDate.month()}" min="0" required class="form-input u-w-80" />
+                    </div>
+                    <div>
+                        <label class="form-label u-text-sm" for="calendarSetDay">Day</label>
+                        <input type="number" id="calendarSetDay" name="day"
+                               th:value="${currentDate.day()}" min="1" required class="form-input u-w-80" />
+                    </div>
+                    <button type="submit" class="btn">Set Date</button>
+                </form>
+            </details>
         </div>
-    </div>
+    </section>
 </div>
 </html>

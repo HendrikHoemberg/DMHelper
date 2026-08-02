@@ -46,34 +46,23 @@
             cta=~{})}"></th:block>
     </th:block>
 
-    <table th:unless="${notes.isEmpty()}" class="data-table note-table">
-        <thead>
-            <tr>
-                <th scope="col">Note</th>
-                <th scope="col">Type</th>
-                <th scope="col">Tags</th>
-                <th scope="col">Created</th>
-                <th scope="col"></th>
-            </tr>
-        </thead>
-        <tbody id="notes-list">
-            <th:block th:each="note : ${notes}">
-                <th:block th:replace="~{notes/_card :: card(note=${note})}"></th:block>
-            </th:block>
-        </tbody>
-    </table>
+    <div id="notes-list" class="card-grid note-grid" th:unless="${notes.isEmpty()}">
+        <th:block th:each="note : ${notes}">
+            <th:block th:replace="~{notes/_card :: card(note=${note})}"></th:block>
+        </th:block>
+    </div>
 </div>
 
 <script>
     window.dmHelperFilterNotes = function (query, type) {
         var needle = (query || '').trim().toLowerCase();
         var typeNeedle = (type || '').trim();
-        document.querySelectorAll('.note-row').forEach(function (row) {
-            var haystack = (row.getAttribute('data-note-search') || '').toLowerCase();
+        document.querySelectorAll('.note-card').forEach(function (card) {
+            var haystack = (card.getAttribute('data-note-search') || '').toLowerCase();
             var matchesQuery = needle === '' || haystack.indexOf(needle) !== -1;
             var matchesType = typeNeedle === ''
-                || row.getAttribute('data-note-type') === typeNeedle;
-            row.hidden = !matchesQuery || !matchesType;
+                || card.getAttribute('data-note-type') === typeNeedle;
+            card.hidden = !matchesQuery || !matchesType;
         });
     };
     document.addEventListener('DOMContentLoaded', function () {

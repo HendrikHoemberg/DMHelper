@@ -1,21 +1,90 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div th:fragment="timelineList" id="timeline-list" class="detail-section empty-state-host">
-    <div th:if="${not #lists.isEmpty(events)}" class="u-flex-col u-gap-sm">
-        <!-- th:replace outranks th:each on the same tag, so iterate on an outer element;
-             otherwise the fragment runs once with a null 'e' and event.id() blows up. -->
-        <th:block th:each="e : ${events}">
-            <div th:replace="~{calendar/_event-card :: eventCard(event=${e})}"></div>
+<div th:fragment="timelineList" id="timeline-list"
+     th:with="upcomingEvents=${events.?[!relativeLabel().endsWith('ago')]},
+              historyEvents=${events.?[relativeLabel().endsWith('ago')]}">
+    <section class="calendar-region" data-calendar-region="upcoming" aria-label="Upcoming events">
+        <h2 class="calendar-region__title">Upcoming events</h2>
+        <div class="u-flex u-mb-sm">
+            <button class="btn"
+                    th:hx-get="@{/campaigns/{id}/calendar/events/new(id=${campaignId})}"
+                    hx-target="#event-form-area"
+                    hx-swap="innerHTML"
+                    hx-disabled-elt="this">
+                + Add Event
+            </button>
+        </div>
+        <div id="event-form-area"></div>
+
+        <th:block th:if="${#lists.isEmpty(events)}">
+            <th:block th:replace="~{common/_empty-state :: empty-state-with-cta(
+                message='No events on the timeline',
+                description='Log festivals, deadlines, and things that happen while the party travels.',
+                icon='calendar', cta=~{common/_form-cta :: swap-cta(
+                    actionText='Add event',
+                    actionUrl=@{/campaigns/{id}/calendar/events/new(id=${campaignId})},
+                    target='#event-form-area')})}"></th:block>
         </th:block>
-    </div>
-    <th:block th:if="${#lists.isEmpty(events)}">
-        <th:block th:replace="~{common/_empty-state :: empty-state-with-cta(
-            message='No events on the timeline',
-            description='Log festivals, deadlines, and things that happen while the party travels.',
-            icon='calendar', cta=~{common/_form-cta :: swap-cta(
-                actionText='Add event',
-                actionUrl=@{/campaigns/{id}/calendar/events/new(id=${campaignId})},
-                target='#event-form-area')})}"></th:block>
-    </th:block>
+
+        <table th:unless="${#lists.isEmpty(events)}" class="data-table calendar-events-table">
+            <thead>
+                <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Event</th>
+                    <th scope="col">When</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <th:block th:each="e : ${upcomingEvents}">
+                    <tr class="calendar-event-row">
+                        <td class="u-num">
+                            <span th:text="|${e.inGameYear()}/${e.inGameMonth() + 1}/${e.inGameDay()}|">1492/3/15</span>
+                        </td>
+                        <td>
+                            <div class="u-fw-600" th:text="${e.title()}">Solar Eclipse</div>
+                            <div th:if="${e.body() != null and not e.body().isEmpty()}"
+                                 class="u-text-sm text-muted" th:text="${e.body()}">The sky darkens</div>
+                            <div th:if="${e.noteId() != null}" class="u-text-sm">
+                                <a th:href="@{/campaigns/{cid}/notes/{nid}(cid=${e.campaignId()}, nid=${e.noteId()})}">Linked Note &rarr;</a>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${e.relativeLabel() == 'today'} ? 'badge--warning' : ''"
+                                  th:text="${e.relativeLabel()}">in 12 days</span>
+                        </td>
+                        <td>
+                            <div class="u-flex u-gap-xs">
+                                <button class="btn btn-ghost btn-xs"
+                                        th:hx-get="@{/campaigns/{cid}/calendar/events/{eid}/edit(cid=${e.campaignId()}, eid=${e.id()})}"
+                                        hx-target="#event-form-area" hx-swap="innerHTML"
+                                        hx-disabled-elt="this">
+                                    Edit
+                                </button>
+                                <button class="btn btn-danger btn-xs action-row__destructive"
+                                        th:hx-delete="@{/campaigns/{cid}/calendar/events/{eid}(cid=${e.campaignId()}, eid=${e.id()})}"
+                                        hx-target="closest tr" hx-swap="outerHTML"
+                                        hx-confirm="Delete this event?"
+                                        hx-disabled-elt="this">
+                                    &times;
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </th:block>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="calendar-region" data-calendar-region="history" aria-label="Event history">
+        <h2 class="calendar-region__title">History</h2>
+        <p th:if="${#lists.isEmpty(historyEvents)}" class="text-muted u-text-sm">No past events yet.</p>
+        <div th:unless="${#lists.isEmpty(historyEvents)}" class="u-flex-col u-gap-sm">
+            <th:block th:each="e : ${historyEvents}">
+                <div th:replace="~{calendar/_event-card :: eventCard(event=${e})}"></div>
+            </th:block>
+        </div>
+    </section>
 </div>
 </html>
