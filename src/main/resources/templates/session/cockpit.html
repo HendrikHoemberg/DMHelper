@@ -27,65 +27,81 @@
 <script th:src="@{/js/cockpit-modules.js}" defer></script>
 
 
-  <header class="cockpit-topbar">
-    <h1 class="cockpit-topbar__title" data-display-title
-        th:text="${workspace.campaign.name}">Campaign</h1>
-    <span class="badge" x-text="sessionStatus" th:attr="data-session-status=${workspace.session.status}">IDLE</span>
-    <span class="u-nowrap cockpit-topbar__date"
-          th:text="${@calendarService.formatDate(campaignId, workspace.currentDate)}">12 July 1492</span>
-    <span id="runtimeStatus" class="cockpit-status" role="status" aria-live="polite">
-      <span class="cockpit-status__atom" data-status-save data-state="idle">Up to date</span>
-      <span class="cockpit-status__atom cockpit-status__atom--input" data-status-input data-state="rejected" hidden></span>
-    </span>
-    <label class="u-nowrap" for="cockpitPresetPicker">
-      <span class="sr-only">Layout preset</span>
-      <select id="cockpitPresetPicker" class="form-input" disabled aria-disabled="true"
-              th:attr="data-default-preset=${cockpitDefaultPresetKey}">
-        <option th:each="preset : ${cockpitPresets}"
-                th:value="${preset.key}"
-                th:text="${preset.name}"
-                th:selected="${preset.key == cockpitDefaultPresetKey}">Exploration</option>
-      </select>
-    </label>
-    <details id="cockpitPresetOverflow" class="cockpit-preset-overflow" hidden>
-      <summary class="btn btn-ghost" aria-label="Preset actions">Preset</summary>
-      <div class="cockpit-preset-overflow__panel" role="menu" aria-label="Preset actions">
-        <button type="button" class="btn btn-ghost" role="menuitem"
-                data-preset-action="duplicate" disabled aria-disabled="true">Duplicate preset</button>
-        <button type="button" class="btn btn-ghost" role="menuitem"
-                data-preset-action="rename" disabled aria-disabled="true">Rename preset</button>
-        <button type="button" class="btn btn-ghost" role="menuitem"
-                data-preset-action="delete" disabled aria-disabled="true">Delete preset</button>
-        <button type="button" class="btn btn-ghost" role="menuitem"
-                data-preset-action="restore" disabled aria-disabled="true">Restore built-in</button>
-      </div>
-    </details>
-    <button type="button" id="cockpitLayoutModeButton" class="btn btn-ghost"
-            disabled aria-disabled="true">Edit layout</button>
-    <button type="button" id="cockpitAddModuleButton" class="btn btn-ghost"
-            data-layout-edit-only hidden disabled aria-disabled="true">Add module</button>
-    <button type="button" id="cockpitBottomUtilityToggle" class="btn btn-ghost"
-            data-bottom-utility-toggle data-layout-edit-only hidden disabled
-            aria-disabled="true" aria-expanded="false"
-            aria-controls="cockpitBottomUtility">Show utilities</button>
-    <span style="flex: 1"></span>
-    <button class="btn btn-ghost" @click="openSearch()">Search</button>
-    <button class="btn btn-ghost" @click="openDice()">Dice</button>
-    <button class="btn btn-ghost" x-ref="sessionButton" @click="openLifecycle()">Session</button>
-        <details class="cockpit-topbar__overflow">
-      <summary class="btn btn-ghost">More</summary>
-      <div class="cockpit-topbar__overflow-panel">
-        <select id="cockpitTablePicker" class="form-input" aria-label="Roll linked table"
-                @change="openLinkedTable($event.target.value, $event.target.options[$event.target.selectedIndex]?.text || ''); $event.target.value = ''">
-          <option value="">Roll linked table…</option>
-          <option th:each="t : ${workspace.linkedTables}" th:value="${t.tableId}" th:text="${t.name}">Table</option>
+  <header class="cockpit-topbar cockpit-commandbar" data-cockpit-commandbar>
+    <div class="command-slot" data-command-slot="identity">
+      <h1 class="cockpit-topbar__title" data-display-title
+          th:text="${workspace.campaign.name}">Campaign</h1>
+    </div>
+    <div class="command-slot" data-command-slot="session-state">
+      <span class="badge" x-text="sessionStatus" th:attr="data-session-status=${workspace.session.status}">IDLE</span>
+      <span id="runtimeStatus" class="cockpit-status" role="status" aria-live="polite">
+        <span class="cockpit-status__atom" data-status-save data-state="idle">Up to date</span>
+        <span class="cockpit-status__atom cockpit-status__atom--input" data-status-input data-state="rejected" hidden></span>
+      </span>
+    </div>
+    <div class="command-slot" data-command-slot="in-game-date">
+      <span class="u-nowrap cockpit-topbar__date"
+            th:text="${@calendarService.formatDate(campaignId, workspace.currentDate)}">12 July 1492</span>
+    </div>
+    <div class="command-slot" data-command-slot="active-preset">
+      <label class="u-nowrap" for="cockpitPresetPicker">
+        <span class="sr-only">Layout preset</span>
+        <select id="cockpitPresetPicker" class="form-input" disabled aria-disabled="true"
+                th:attr="data-default-preset=${cockpitDefaultPresetKey}">
+          <option th:each="preset : ${cockpitPresets}"
+                  th:value="${preset.key}"
+                  th:text="${preset.name}"
+                  th:selected="${preset.key == cockpitDefaultPresetKey}">Exploration</option>
         </select>
-        <a class="btn btn-ghost" target="_blank" href="/library?tab=rules">Rules</a>
-        <a class="btn btn-ghost" target="_blank"
-           th:href="@{/campaigns/{id}/calendar(id=${campaignId})}">Calendar</a>
-        <a class="btn btn-ghost" th:href="@{/campaigns/{id}(id=${campaignId})}">Leave cockpit</a>
-      </div>
-    </details>
+      </label>
+      <details id="cockpitPresetOverflow" class="cockpit-preset-overflow" hidden>
+        <summary class="btn btn-ghost" aria-label="Preset actions">Preset</summary>
+        <div class="cockpit-preset-overflow__panel" role="menu" aria-label="Preset actions">
+          <button type="button" class="btn btn-ghost" role="menuitem"
+                  data-preset-action="duplicate" disabled aria-disabled="true">Duplicate preset</button>
+          <button type="button" class="btn btn-ghost" role="menuitem"
+                  data-preset-action="rename" disabled aria-disabled="true">Rename preset</button>
+          <button type="button" class="btn btn-ghost" role="menuitem"
+                  data-preset-action="delete" disabled aria-disabled="true">Delete preset</button>
+          <button type="button" class="btn btn-ghost" role="menuitem"
+                  data-preset-action="restore" disabled aria-disabled="true">Restore built-in</button>
+        </div>
+      </details>
+    </div>
+    <div class="command-slot" data-command-slot="search">
+      <button type="button" class="btn btn-ghost" @click="openSearch()">Search</button>
+    </div>
+    <div class="command-slot" data-command-slot="dice">
+      <button type="button" class="btn btn-ghost" @click="openDice()">Dice</button>
+    </div>
+    <div class="command-slot" data-command-slot="session">
+      <button type="button" class="btn btn-ghost" x-ref="sessionButton" @click="openLifecycle()">Session</button>
+    </div>
+    <div class="command-slot" data-command-slot="more">
+      <details class="cockpit-topbar__overflow">
+        <summary class="btn btn-ghost">More</summary>
+        <div class="cockpit-topbar__overflow-panel">
+          <button type="button" id="cockpitLayoutModeButton" class="btn btn-ghost"
+                  disabled aria-disabled="true">Edit layout</button>
+          <button type="button" id="cockpitAddModuleButton" class="btn btn-ghost"
+                  data-layout-edit-only th:if="${layoutEditing}" hidden disabled
+                  aria-disabled="true">Add module</button>
+          <button type="button" id="cockpitBottomUtilityToggle" class="btn btn-ghost"
+                  data-bottom-utility-toggle data-layout-edit-only th:if="${layoutEditing}" hidden disabled
+                  aria-disabled="true" aria-expanded="false"
+                  aria-controls="cockpitBottomUtility">Show utilities</button>
+          <select id="cockpitTablePicker" class="form-input" aria-label="Roll linked table"
+                  @change="openLinkedTable($event.target.value, $event.target.options[$event.target.selectedIndex]?.text || ''); $event.target.value = ''">
+            <option value="">Roll linked table…</option>
+            <option th:each="t : ${workspace.linkedTables}" th:value="${t.tableId}" th:text="${t.name}">Table</option>
+          </select>
+          <a class="btn btn-ghost" target="_blank" href="/library?tab=rules">Rules</a>
+          <a class="btn btn-ghost" target="_blank"
+             th:href="@{/campaigns/{id}/calendar(id=${campaignId})}">Calendar</a>
+          <a class="btn btn-ghost" th:href="@{/campaigns/{id}(id=${campaignId})}">Leave cockpit</a>
+        </div>
+      </details>
+    </div>
   </header>
   <th:block th:replace="~{rollable-table/_roll-panel :: roll-panel(tableId=${null}, compact=${true})}"></th:block>
 

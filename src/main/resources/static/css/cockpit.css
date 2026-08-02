@@ -206,6 +206,62 @@
 .cockpit-title { font-size: var(--text-lg); color: var(--color-text); }
 .cockpit-spacer { flex: 1; }
 
+/* Command bar slots (spec 12.2): the header owns 3rem chrome, each slot is a
+   flex region that can absorb overflow independently. */
+[data-cockpit-commandbar] {
+  container-type: inline-size;
+}
+
+[data-cockpit-commandbar] > .command-slot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+[data-cockpit-commandbar] > [data-command-slot="search"] {
+  margin-left: auto;
+}
+
+[data-cockpit-commandbar] > .command-slot > .badge,
+[data-cockpit-commandbar] > .command-slot > .u-nowrap {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-cockpit-commandbar] > .command-slot > label {
+  min-width: 0;
+}
+
+[data-cockpit-commandbar] > .command-slot > label .form-input {
+  min-width: 0;
+  max-width: 10rem;
+}
+
+[data-cockpit-commandbar] > .command-slot > .btn,
+[data-cockpit-commandbar] > .command-slot > button,
+[data-cockpit-commandbar] > .command-slot > details > summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-cockpit-commandbar] > .command-slot > .btn,
+[data-cockpit-commandbar] > .command-slot > button,
+[data-cockpit-commandbar] > .command-slot > details,
+[data-cockpit-commandbar] > .command-slot > .switch-control {
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+@container (max-width: 70rem) {
+  [data-cockpit-commandbar] [data-command-slot="in-game-date"] {
+    display: none;
+  }
+}
+
 /* Module-body content chrome (layout structure lives in cockpit-layout.css). */
 .cockpit-story, .cockpit-encounter { overflow: auto; min-height: 0; }
 .cockpit-table {
